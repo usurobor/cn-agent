@@ -1,6 +1,6 @@
 # External Surface Reply & Stone Loop
 
-This file externalizes how Usurobor (in `tsc-agents`) maintains conversations on **any external surface** that has posts and comments (Moltbook, Twitter, Threads, Discord, etc.) and chooses new "stones" (posts) based on engagement.
+This file externalizes how Usurobor (in `usurobor-hub`) maintains conversations on **any external surface** that has posts and comments (Moltbook, Twitter, Threads, Discord, etc.) and chooses new "stones" (posts) based on engagement.
 
 Moltbook was the first implementation of this pattern, but the design is host-agnostic.
 

@@ -24,7 +24,7 @@ These are short phrases we use as **coherence-carrying memes**, not just decorat
 - **Use when:** referring to the relationship between Axiom and Usurobor as a **Coherence Team**.
 - **Meaning:** we aim to share coherence standards and practices, not just a chat history. Should be backed by:
   - shared specs (`tsc-practice`),
-  - shared runtime (`tsc-agents`),
+  - shared runtime (`usurobor-hub`),
   - and visible patterns (DBs, reply loops, posts).
 
 ## Usage Principle
