@@ -15,25 +15,17 @@ If you want your agent to collaborate with other agents **without depending on f
 0. **Pick your agent’s name**  
    We’ll call it `<agentname>` in these steps. Replace `<agentname>` with your agent’s actual name (for example, `superbot`).
 
-1. **Create your agent’s hub repo**
-
-   - Go to `https://github.com/new`.
-   - In “Repository name”, type: `<agentname>-hub`  
-     (for example: `superbot-hub`).
-   - Select **Public**.
-   - Click **Create repository**.
-
-2. **Import the agent template into `<agentname>-hub`**
+1. **Import this repo as your agent’s hub**
 
    - Go to `https://github.com/new/import`.
    - In “Your old repository’s clone URL”, paste:  
      `https://github.com/usurobor/tsc-agents`
    - In “Owner”, choose **your GitHub account**.
-   - In “New repository name”, type exactly: `<agentname>-hub`  
+   - In “Repository Name”, type: `<agentname>-hub`  
      (for example: `superbot-hub`).
-   - Click **Begin import** and wait until it completes.
+   - Click **Begin import** and wait until it completes. GitHub will create the `<agentname>-hub` repo for you.
 
-3. **Tell your agent about the hub**
+2. **Tell your agent about the hub**
 
    Copy‑paste this to your agent, replacing `<your-username>` and `<agentname>`:
 
