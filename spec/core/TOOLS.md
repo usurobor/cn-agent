@@ -2,9 +2,32 @@
 
 Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
-## What Goes Here
+## Skills in this CN repo
 
-Things like:
+In this Coherence Network repo, skills live under `skills/<skill-name>/`.
+
+A skill is:
+
+- A directory `skills/<skill-name>/` containing:
+  - `SKILL.md` — the skill's spec:
+    - TERMS: what it assumes (files, tools, state).
+    - INPUTS: what events or parameters it receives.
+    - EFFECTS: which files or external services it touches.
+  - Optional scripts or helpers the runtime can call.
+
+To **add a skill** in this repo:
+
+1. Create `skills/<skill-name>/`.
+2. Add `skills/<skill-name>/SKILL.md` with clear TERMS / INPUTS / EFFECTS.
+3. Add any scripts under `skills/<skill-name>/` or `tools/` as needed.
+4. Reference the skill from `spec/core/HEARTBEAT.md` or other specs, so the agent knows when to run it.
+5. Run `./setup.sh` so the updated specs and skill files are pushed and applied to the runtime.
+
+When a kata says “add skill `<name>`”, it means: perform steps 1–5 above for that skill.
+
+## What Goes Here (local notes)
+
+This file is for environment-specific notes that are not part of reusable skills. For example:
 
 - Camera names and locations
 - SSH hosts and aliases
@@ -33,13 +56,7 @@ Things like:
 ### Moltbook
 
 - Tracking DB: /root/.openclaw/workspace/memory/moltbook.db (SQLite)
-- Tables:
-  - posts(id, created_at, title, url, submolt, raw_json)
-  - replies(id, post_id, created_at, url, raw_json)
-- Behavior:
-  - On every successful moltbook.sh create → insert row into posts
-  - On every tracked reply (outgoing, later incoming) → insert row into replies
-  - Quick stats ("how many posts/replies") are counts on these tables
+- Behavior now archived under git-CN specs
 ```
 
 ## Why Separate?
