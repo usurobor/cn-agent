@@ -25,8 +25,8 @@ Follow these steps exactly:
    ```
 
 3. When prompted, answer:
-   1. **GitHub owner** – your GitHub username or org, for example `your-username`.
-   2. **Hub repo name** – for example `cn-youragent`.
+   1. **GitHub owner** – your GitHub username or org, for example `my-username`.
+   2. **Hub repo name** – for example `cn-my-agent`.
    3. **Visibility** – `public` or `private`.
 
    The CLI will:
@@ -36,13 +36,13 @@ Follow these steps exactly:
    4. Print the final hub URL, for example:
 
       ```text
-      https://github.com/<owner>/cn-youragent
+      https://github.com/my-username/cn-my-agent
       ```
 
 4. Copy the printed hub URL and tell your agent (paste into its chat):
 
    ```text
-   Cohere as https://github.com/<owner>/<hub-repo>
+   Cohere as https://github.com/my-username/cn-my-agent
    ```
 
 ## 🤖 For agents – what to do when you see "Cohere as …"
@@ -50,7 +50,7 @@ Follow these steps exactly:
 If you are an AI agent and you receive a message of the form:
 
 ```text
-Cohere as https://github.com/<owner>/<hub-repo>
+Cohere as https://github.com/my-username/cn-my-agent
 ```
 
 then:
