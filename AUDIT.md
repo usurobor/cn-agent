@@ -1,262 +1,219 @@
-# Project Audit – cn-agent v1.0.0
+# Project Audit – cn-agent v1.2.1
 
 **Date:** 2026-02-03
-**Scope:** Full audit of design, code, and documentation.
-**Note:** This audit describes the v1.0.0 state. Some items (git-CN wording, spec/ flattening) are already addressed in v1.1.0. Open items remain as backlog in §6.
+**Branch:** `claude/project-audit-review-kdE3K`
+**Scope:** Full audit of design, code, documentation, and cross-file coherence.
+**Prior audit:** v1.0.0 (same file, now replaced).
 
 ---
 
 ## 1. Executive Summary
 
-cn-agent is a template repository for bootstrapping AI agent "hubs" on GitHub using the git Coherence Network (git-CN) architecture. The project is small (1 source file, ~63 lines of JS, ~28 markdown files) but ambitious in scope: it defines a complete framework for agent identity, behavior, coordination, and communication using git as the substrate.
+cn-agent is a **template repository** for bootstrapping AI agent hubs on the git Coherence Network (git-CN). Since the v1.0.0 audit, the project has undergone significant structural improvements:
 
-**Overall assessment:** The project is strong on vision, documentation quality, and architectural clarity. It is weak on code robustness, testability, and some internal consistency between specs and implementation. The documentation-to-code ratio is very high (~95% docs, ~5% code), which is appropriate for a spec-driven template but creates risk of spec drift.
+- **Two-repo model** adopted: CLI creates a personal hub (`cn-<agentname>/`); template (`cn-agent/`) stays generic and shared.
+- **COHERENCE.md** added as the foundational mindset, grounding all agent behavior in TSC and tsc-practice.
+- **CLI rewritten** from a simple template cloner to a full hub creator (prompts, scaffolding, `gh repo create`, push).
+- **self-cohere rewritten** from a repo-creator to a hub-receiver (agent-side onboarding for a hub the CLI already made).
+- **README rewritten** with 4-path audience dispatch.
+- **Template vs instance ambiguity resolved**: spec files now use placeholder markers; instance-specific content removed.
+- **Whitepaper grounded in TSC**: git-CN explicitly defined as a network of coherent agents.
 
----
-
-## 2. What's Done Well
-
-### 2.1 Whitepaper (docs/CN-WHITEPAPER.md)
-
-The whitepaper is the strongest artifact in the repo. It follows the principles laid out in ENGINEERING.md ("spec voice over fluff", Feynman-style clarity) and delivers on them:
-
-- **Concrete problem statement:** The Moltbook incident is documented with external references ([1][2][3]), not hand-waved.
-- **Clear thesis:** "Linus already gave us the substrate" is a strong, testable claim.
-- **Structured argument:** 11 sections build from problem → analysis → solution → migration path.
-- **Honest scope:** Acknowledges Moltbook "made it easy for humans to watch agents talk" while arguing it failed as substrate.
-
-This document alone makes the project worth reading.
-
-### 2.2 Engineering Principles (mindsets/ENGINEERING.md)
-
-ENGINEERING.md is a model specification document. Key strengths:
-
-- **Actionable principles:** Each principle (KISS, YAGNI, "Done > Perfect", "Bias to action") has clear implications for behavior.
-- **Self-consistent:** The codebase actually follows these principles — the CLI is minimal, no unnecessary abstractions exist.
-- **Dual-perspective:** Axiom (human) and Usurobor (agent) stances are both defined, making the contract explicit.
-
-### 2.3 Skill Specification Format
-
-The TERMS / INPUTS / EFFECTS structure used across all SKILL.md files is well-designed:
-
-- **Preconditions are explicit** (TERMS): "If any of these are false, the skill must stop."
-- **Inputs are typed and defaulted** (INPUTS): Optional vs required, inference strategies defined.
-- **Side effects are enumerated** (EFFECTS): What the skill changes, in order.
-
-`self-cohere/SKILL.md` is the standout — it documents a complex multi-step workflow (clone → prompt user → create repo → push → record state) with enough detail to implement without ambiguity.
-
-### 2.4 Kata Design
-
-The two kata files (`hello-world/kata.md`, `star-sync/kata.md`) follow the CLP pattern (TERMS → POINTER → EXIT) and provide concrete, step-by-step exercises. They are the most "executable" documentation in the repo — an agent can follow them literally.
-
-### 2.5 Architecture Decisions
-
-Several good architectural decisions:
-
-- **Zero runtime dependencies.** The CLI uses only Node.js built-ins (`child_process`, `path`, `fs`). This eliminates supply chain risk and keeps the package tiny.
-- **`spawn()` with array args** instead of `exec()` with string interpolation. Prevents shell injection by design.
-- **`stdio: 'inherit'`** passes git output directly to the user. No buffering, no memory risk, and the user sees native git progress.
-- **Idempotent setup.** The CLI checks for existing `.git` directory and does `pull --ff-only` instead of re-cloning. Rerunning the CLI is safe.
-- **Separation of spec and state.** `spec/` is template content; `state/` is instance-specific. Clean boundary.
-
-### 2.6 README
-
-The README is concise and well-organized. The human/agent split ("For humans" / "For agents") is a good UX decision — it tells both audiences exactly what to do. The repo structure table is accurate and complete.
+**Overall assessment:** The project is substantially more coherent than v1.0.0. The two-repo separation, COHERENCE mindset, and CLI/self-cohere role split are clean architectural decisions. The main remaining issues are: stale references in docs that haven't caught up with the two-repo model, the BOOTSTRAP.md vs symlinks design tension (master has moved to symlinks), missing tests, and some package.json gaps.
 
 ---
 
-## 3. Areas for Improvement
+## 2. v1.0.0 Audit Resolution
 
-### 3.1 Code: cli/index.js
+Tracking what was fixed from the original audit:
 
-The single source file has several issues, ordered by severity.
-
-**HIGH: `git pull --ff-only` has no fallback (line 50)**
-
-```javascript
-await run('git', ['pull', '--ff-only'], { cwd: CN_AGENT_DIR });
-```
-
-If a user (or agent) has made local commits to the clone, `--ff-only` fails with no recovery path. The error message will be a generic exit code, not an explanation. Options:
-- Fall back to `git fetch && git reset --hard origin/main` (destructive but clear).
-- Detect the diverged state and tell the user what happened.
-- At minimum, catch this specific failure and print a human-readable message.
-
-**MEDIUM: No directory writability check (line 38)**
-
-```javascript
-if (!fs.existsSync(WORKSPACE_ROOT)) { ... }
-```
-
-Checks existence but not writability. If the directory exists but is read-only, `git clone` fails with a confusing error. Add `fs.accessSync(WORKSPACE_ROOT, fs.constants.W_OK)`.
-
-**MEDIUM: No `--help` or `--version` flags**
-
-Running `npx @usurobor/cn-agent-setup --help` produces no output — it just runs the setup. Standard CLI expectations are `--help` for usage and `--version` for version info. This is a small addition but improves UX.
-
-**MEDIUM: Environment variable support is specified but not implemented**
-
-`self-cohere/SKILL.md` specifies `TEMPLATE_REPO_URL`, `DRY_RUN`, and `NO_CLONE` as environment variables. The CLI hardcodes `CN_AGENT_REPO` and doesn't read any of these. This is a spec/code mismatch.
-
-**LOW: No timeout on spawned processes**
-
-If `git clone` hangs (network issue, SSH prompt), the CLI hangs forever. `spawn` accepts a `timeout` option.
-
-**LOW: Error messages lack context**
-
-```javascript
-reject(new Error(`${cmd} ${args.join(' ')} exited with code ${code}`));
-```
-
-Exit codes are opaque to most users. Since `stdio: 'inherit'` shows git's own output, this is partially mitigated, but the wrapper error could be more descriptive.
-
-### 3.2 Testing: None
-
-There are no tests, no test framework, no CI pipeline, and no GitHub Actions workflows. For a project that emphasizes "Code wins arguments" and "If it matters, there should be a file, a script, or a metric", the absence of any automated verification is a notable gap.
-
-The CLI is an integration script (spawns git/gh), so pure unit tests are awkward. But:
-
-- The `run()` function could be tested with mocked `spawn`.
-- The existence/writability checks could be tested against temp directories.
-- A smoke test (`node cli/index.js --help` exits 0) would catch regressions.
-- GitHub Actions could at minimum run a lint pass and verify the shebang.
-
-### 3.3 Documentation Inconsistencies
-
-**Whitepaper structure doesn't match actual repo:**
-
-The whitepaper (§5.1) shows this structure:
-
-```text
-spec/
-  core/           # minimal runtime contract
-```
-
-Actual structure has no `core/` subdirectory — specs are flat files directly in `spec/`:
-
-```text
-spec/
-  SOUL.md
-  USER.md
-  USER-ROLE.md
-  AGENTS.md
-  HEARTBEAT.md
-  TOOLS.md
-```
-
-The whitepaper also shows `dojo/` as a top-level directory, but katas actually live under `skills/<name>/kata.md`, and the dojo index is at `docs/DOJO.md`.
-
-**HEARTBEAT.md is under-developed:**
-
-HEARTBEAT.md is referenced by AGENTS.md as a key operational document ("read HEARTBEAT.md for rotating checks"). In practice it contains only 2 vague tasks referencing Moltbook — a platform the whitepaper argues against using as substrate. The heartbeat concept deserves either:
-- Expansion into a proper operational checklist with frequency/priority guidance, or
-- Acknowledgment that it's a placeholder for v1.0.0.
-
-**CHANGELOG.md metrics are undefined:**
-
-```
-| v1.0.0 | B− | B− | C+ | B− | ...
-```
-
-The columns `C_Σ`, `α (PATTERN)`, `β (RELATION)`, `γ (EXIT/PROCESS)` are never defined anywhere in the project. A reader cannot interpret these grades. Either define the scale (in the changelog or glossary) or remove the metrics until they're formalized.
-
-### 3.4 Spec / Code Drift Risk
-
-The project's core value proposition is spec-driven behavior: agents read markdown files and act accordingly. But there's no mechanism to verify that specs and code stay in sync. Specifically:
-
-- `self-cohere/SKILL.md` defines env vars (`TEMPLATE_REPO_URL`, `DRY_RUN`, `NO_CLONE`) that the CLI doesn't implement.
-- `self-cohere/SKILL.md` step 2.1.3 says to "Verify that `spec/` exists and contains `core/` and `extensions/`." Neither `core/` nor `extensions/` exist.
-- The whitepaper's directory layout doesn't match reality (see §3.3).
-
-For a spec-first project, spec accuracy is load-bearing. Drift undermines the core premise.
-
-### 3.5 Template vs Instance Ambiguity
-
-Several files contain content that is specific to the Axiom/Usurobor instance rather than being generic template content:
-
-- `spec/USER.md`: Contains Axiom's personal details (timezone, pronouns, context).
-- `spec/SOUL.md`: Written for Usurobor specifically.
-- `mindsets/IDENTITY.md`: Names Usurobor, describes its creature/vibe.
-- `state/peers.md`: Lists cn-agent itself as a peer.
-- `spec/HEARTBEAT.md`: References Moltbook-specific tasks.
-
-This creates ambiguity: is cn-agent a template that other agents fork and customize, or is it Usurobor's specific hub? The README says template, but the content says instance. The `configure-agent` skill exists to handle personalization, but a cleaner separation (e.g., placeholder values with `<AGENT_NAME>` markers, or a separate `examples/` directory) would make the template nature clearer.
-
-### 3.6 package.json Gaps
-
-Missing fields that affect discoverability and maintainability:
-
-- `repository`: No link to the GitHub repo. npm and tooling use this for links.
-- `keywords`: No search terms. Agents, coherence, git-CN, etc. would help.
-- `bugs`: No issue tracker URL.
-- `homepage`: No project URL.
-
-### 3.7 Skills Coverage
-
-Four skills exist, but only two have katas. The gap:
-
-| Skill | SKILL.md | kata.md |
-|-------|----------|---------|
-| self-cohere | Yes | No |
-| configure-agent | Yes | No |
-| hello-world | Yes | Yes |
-| star-sync | Yes | Yes |
-
-self-cohere and configure-agent are the most complex skills and would benefit most from katas. The DOJO.md belt system (white, orange) is sparse — it jumps from kata 01 to kata 13 with no explanation of the numbering or missing entries.
-
-### 3.8 Experiments Directory
-
-`experiments/external-surface-replies.md` exists as a standalone file with no index, no README, and no cross-reference from other documents. It's unclear whether this is active design work, archived thinking, or aspirational. A brief note in the README or an `experiments/README.md` would contextualize it.
+| # | v1.0.0 Finding | Status | Notes |
+|---|---------------|--------|-------|
+| 1 | spec/code mismatches (spec/core/, env vars) | **Fixed** | Whitepaper layout matches reality; env vars removed from self-cohere |
+| 2 | git pull --ff-only no fallback | **Open** | CLI line 96 still has bare `--ff-only` |
+| 3 | CHANGELOG metrics undefined | **Fixed** | Header now defines TSC axes and C_Sigma formula |
+| 4 | --help / --version | **Fixed** | CLI now handles both flags |
+| 5 | No tests | **Open** | Still zero tests |
+| 6 | HEARTBEAT.md under-developed | **Fixed** | Cleaned to placeholder format; Moltbook references removed |
+| 7 | Template vs instance ambiguity | **Fixed** | Spec files use `*(your human's name)*` etc.; IDENTITY.md renamed to PERSONALITY.md |
+| 8 | package.json gaps | **Partially fixed** | description field exists; still missing repository, keywords, bugs, homepage |
+| 9 | Missing katas for self-cohere, configure-agent | **Open** | Still no katas for these skills |
+| 10 | experiments/ uncontextualized | **Open** | Still no cross-reference or README |
 
 ---
 
-## 4. Design Assessment
+## 3. What's Done Well (New in v1.2.x)
 
-### 4.1 Architecture
+### 3.1 COHERENCE.md (mindsets/COHERENCE.md)
 
-The 5-layer architecture (specs → mindsets → skills → state → docs) is clean and well-motivated. The separation of concerns is appropriate:
+The strongest new addition to the project. Key qualities:
 
-- **specs** define what the agent is (identity, contracts, tools)
-- **mindsets** define how the agent thinks (engineering principles, memes)
-- **skills** define what the agent can do (executable operations)
-- **state** tracks what has happened (peers, threads)
-- **docs** explain why (whitepaper, glossary)
+- **Correct definition of coherence**: "Wholeness that can be *articulated* as parts, among other articulations. The whole comes first." This is the TSC-grounded definition, not the common "parts fitting together" misreading.
+- **Correct stance**: "Articulate coherence, resolve incoherence" — not "increase coherence." Coherence isn't a quantity to maximize; it's a wholeness to discover and clarify.
+- **Self-referential measurement**: "TSC measures itself. If the framework is incoherent, the scores say so."
+- **Practical quick self-check**: PATTERN / RELATION / EXIT as a pre-output checklist.
+- **Links to source**: TSC and tsc-practice repos referenced directly.
 
-The dependency direction is correct: skills depend on specs, state depends on skills, docs are independent.
+### 3.2 Two-Repo Model
 
-### 4.2 Thread Model
+The hub/template separation is well-defined and consistently described across CLI, self-cohere, README, and AGENTS.md:
 
-The "threads as growing markdown files" model (whitepaper §5.2) is simple and git-native. Appending log entries and using PRs as transport is a reasonable design for low-volume, high-signal agent communication. It would struggle at high throughput (merge conflicts on the same file), but the whitepaper doesn't claim to solve that problem.
+- **Hub** (`cn-<agentname>/`): personal identity, specs, state, threads
+- **Template** (`cn-agent/`): shared skills, mindsets, docs
 
-### 4.3 Peer Discovery
+The CLI creates the hub. Self-cohere wires the agent to it. The template updates via `git pull`. Personal files can't be clobbered by template updates.
 
-The peer model (`state/peers.md` with YAML entries) is minimal. There's no discovery mechanism beyond manually adding peers. For a v1.0.0 template this is fine — the star-sync skill begins to address automated peer tracking — but the design doesn't yet answer: how does an agent find new peers?
+### 3.3 CLI Rewrite (cli/index.js)
 
-### 4.4 Security Model
+The CLI is now a proper interactive tool:
 
-The security model is implicit rather than explicit:
+- Prompts for agent name, GitHub owner (inferred via `gh api user`), visibility
+- Scaffolds hub directory with spec files, state dirs, BOOTSTRAP.md, README.md
+- Creates GitHub repo via `gh repo create` with fallback to manual remote
+- Prints the "Cohere as <hub-url>" cue
+- Zero runtime dependencies; `spawn()` with array args (no shell injection)
+- `--help` and `--version` flags
 
-- **Auth:** Delegated to `gh` CLI (GitHub tokens). No token management in cn-agent itself. Good.
-- **Trust:** Not addressed. How does agent B verify that a PR to its thread is actually from agent A? Git commit signing exists but isn't mentioned.
-- **Scope:** The CLI runs as root on OpenClaw hosts. No principle-of-least-privilege discussion.
+### 3.4 README 4-Path Dispatch
 
-For a v1.0.0 this is acceptable, but a `SECURITY.md` or security section in the whitepaper would strengthen the design.
+The README correctly identifies four audiences and routes each:
+
+- Human without agent: full setup guide (DigitalOcean + OpenClaw)
+- Human with agent: CLI instructions + cue
+- Agent told to cohere: step-by-step hub wiring
+- Agent exploring: template orientation
+
+The navigation table at top is clean and uses emoji sparingly for visual scanning.
+
+### 3.5 Whitepaper TSC Grounding
+
+The whitepaper now explicitly defines git-CN as a network of **coherent agents** following TSC. Key additions:
+
+- §0 defines coherence as "wholeness articulated across three axes"
+- §5 establishes agents that "articulate coherence and resolve incoherence"
+- §5.1 lists COHERENCE.md in the mindsets interpretation
+- §8.3 grounds reputation metrics in TSC axes (pattern, relation, process)
+
+### 3.6 Spec File Cleanup
+
+All spec files now use placeholder markers suitable for a template:
+
+- SOUL.md: generic behavioral contract, no instance names
+- USER.md: `*(your human's name)*`, `*(their timezone)*`, etc.
+- PERSONALITY.md: `*(your agent's name)*`, `*(what kind of entity...)*`
+- HEARTBEAT.md: example-format comments, no Moltbook references
+- TOOLS.md: examples in code blocks, actual fields empty
 
 ---
 
-## 5. Quantitative Summary
+## 4. Issues Found
 
-| Dimension | Score | Notes |
-|-----------|-------|-------|
-| Vision & Strategy | 9/10 | Whitepaper is compelling; git-as-substrate thesis is well-argued |
-| Documentation Quality | 8/10 | Strong overall; inconsistencies and gaps in HEARTBEAT, DOJO, CHANGELOG |
-| Code Quality | 7/10 | Clean and minimal; lacks robustness for edge cases |
-| Code Safety | 8/10 | No injection vectors; spawn with arrays; no dependencies |
-| Test Coverage | 1/10 | No tests exist |
-| Spec/Code Alignment | 5/10 | Multiple mismatches between SKILL.md specs and actual CLI |
-| Architecture | 8/10 | Clean layering; good separation of concerns |
-| Developer Experience | 6/10 | No --help, no error recovery, no troubleshooting docs |
-| Completeness | 6/10 | Template vs instance ambiguity; missing katas; sparse heartbeat |
+### 4.1 HIGH: Stale References in Docs (Two-Repo Drift)
+
+Several files haven't fully caught up with the two-repo model:
+
+**Whitepaper §9** (line ~355): "Fork or import `cn-agent` as `cn-<agentname>`" — this contradicts the two-repo model. Agents don't fork the template; the CLI creates a separate hub.
+
+**Whitepaper §5.1** (line ~166): "Minimum structure (current cn-agent v1.1.0)" — version should be v1.2.1. Also, the layout shown is for the template, but doesn't clarify that agents get a *separate* hub repo, not this structure.
+
+**Whitepaper §6** (line ~291): "Merges of branches and PRs" — contradicts §5.3's explicit "No pull requests. No GitHub issues." stance.
+
+**Whitepaper §10** migration step 5 (line ~387): "send them as PRs" — same contradiction.
+
+**Glossary** (docs/GLOSSARY.md):
+- "Mindset" example lists "IDENTITY" — renamed to PERSONALITY in v1.2.0
+- "Kata" says katas live under `dojo/` — they live under `skills/<name>/kata.md`
+- COHERENCE not mentioned in the Mindset definition
+
+**configure-agent SKILL.md** (line ~119-125): The README template shows `skills/` and `mindsets/` in the hub structure table. In the two-repo model, skills and mindsets stay in the template, not the hub. An agent following this would write a misleading README.
+
+### 4.2 HIGH: BOOTSTRAP.md vs Symlinks Tension
+
+The current branch uses BOOTSTRAP.md as the agent's "birth certificate" — CLI creates it, self-cohere reads it, then deletes it. Master has a newer commit (`9d52fe0`) from the `sigma/cli-symlinks` branch that:
+
+- Removes BOOTSTRAP.md from CLI
+- Adds workspace symlinks (SOUL.md, USER.md, etc. at workspace root pointing to hub/template files)
+- Updates self-cohere to v2.1.0 without BOOTSTRAP.md dependency
+
+This branch is **1 commit behind master**. The self-cohere SKILL.md and CLI on disk still reference BOOTSTRAP.md. If the symlinks approach is the direction, these files need updating on this branch too, or this branch should rebase onto master.
+
+### 4.3 MEDIUM: package.json Stale and Incomplete
+
+- **description** (line 3): "CLI to clone/update cn-agent on an OpenClaw host and show the self-cohere cue" — stale. The CLI now creates hub repos.
+- **Missing fields**: `repository`, `keywords`, `bugs`, `homepage` — all flagged in v1.0.0 audit, still missing.
+
+### 4.4 MEDIUM: skills/README.md Version Stale
+
+`skills/README.md` (line 1): "Skills – cn-agent v1.1.0" — should be v1.2.1. Also says "Bootstraps a cn-agent-based hub from this template" for self-cohere — should say the agent wires itself to an existing hub (CLI creates it).
+
+### 4.5 MEDIUM: state/ Files in Template
+
+The template contains `state/peers.md`, `state/remote-threads.md`, `state/threads/yyyyddmmhhmmss-hello-world.md`. In the two-repo model, state lives in the hub. The CLI copies `peers.md` to the hub but **not** `remote-threads.md` or the hello-world thread. This means:
+
+- The hello-world thread stays in the template but is never copied to the hub where it would actually be used.
+- The hello-world SKILL.md and kata.md reference this file as if it exists in the working hub.
+
+Either the CLI should copy these files too, or the self-cohere/hello-world skill should create them in the hub.
+
+### 4.6 MEDIUM: git pull --ff-only No Fallback
+
+CLI line 96: `await run('git', ['pull', '--ff-only'], { cwd: CN_AGENT_DIR })` — still has no fallback if the local template clone has diverged. Flagged in v1.0.0, still open.
+
+### 4.7 LOW: WRITING.md Instance-Specific Reference
+
+WRITING.md line 24: "If you have `sag` (ElevenLabs TTS)" — this is instance-specific tooling in a template file. Minor, but inconsistent with the template-clean goal achieved elsewhere.
+
+### 4.8 LOW: experiments/ Still Uncontextualized
+
+`experiments/external-surface-replies.md` references Moltbook, SQLite, and `surface.sh` — none of which exist in this repo. No cross-reference from README, no experiments/README.md. This is legacy design thinking that may still be relevant but has no context for a new reader.
+
+### 4.9 LOW: No Tests
+
+Still zero tests, zero CI. The CLI now has more code (243 lines) and more surface area (prompts, file scaffolding, gh calls). A smoke test for `--help` / `--version` would be trivial.
+
+### 4.10 LOW: Missing Katas
+
+self-cohere and configure-agent still lack katas. DOJO.md still jumps from kata 01 to kata 13 with no explanation.
+
+---
+
+## 5. Coherence Assessment (TSC Axes)
+
+### 5.1 PATTERN (alpha) — Structural Consistency
+
+**Grade: A-**
+
+The repo structure is clean and consistent:
+- 5 spec files, 6 mindsets, 4 skills, 3 docs — all follow their respective formats
+- TERMS / INPUTS / EFFECTS in all SKILL.md files
+- Placeholder markers in template specs
+- Commit messages follow a consistent style
+
+Deductions: version numbers are inconsistent across files (skills/README says v1.1.0, DOJO says v1.2.0, package.json says v1.2.1). The glossary has stale entries.
+
+### 5.2 RELATION (beta) — Alignment Between Parts
+
+**Grade: B+**
+
+The major architectural decisions (two-repo model, CLI creates hub, self-cohere receives hub) are consistently described across README, CLI, self-cohere, and AGENTS.md. The COHERENCE mindset correctly captures the TSC definition and is referenced from the whitepaper.
+
+Deductions: The whitepaper has 3-4 references that contradict the two-repo model or the git-native principle (PRs in §6 and §10, fork/import in §9). The configure-agent README template shows skills/mindsets in the hub. The glossary hasn't been updated.
+
+### 5.3 EXIT/PROCESS (gamma) — Evolution Stability
+
+**Grade: B**
+
+The project has evolved from v1.0.0 through v1.2.1 with clear improvements at each step. The CHANGELOG tracks this with TSC grades. The two-repo model is a clean architectural evolution. The BOOTSTRAP.md → symlinks evolution (on master) shows continued refinement.
+
+Deductions: This branch is 1 commit behind master (symlinks). The AUDIT.md itself was stuck at v1.0.0 until now. Some files haven't been touched during the v1.2.x evolution (glossary, experiments, skills/README).
+
+### 5.4 Aggregate
+
+```
+C_Sigma = (A- * B+ * B)^(1/3) ~ B+ (intuition-level)
+```
+
+Up from B- at v1.0.0. The COHERENCE mindset, two-repo model, and template cleanup are the biggest wins. The whitepaper doc drift and BOOTSTRAP.md/symlinks tension are the biggest remaining gaps.
 
 ---
 
@@ -264,22 +221,28 @@ For a v1.0.0 this is acceptable, but a `SECURITY.md` or security section in the 
 
 ### Must Address
 
-1. **Fix spec/code mismatches.** The whitepaper's directory layout (`spec/core/`, `dojo/`) and self-cohere's env var references (`TEMPLATE_REPO_URL`, `DRY_RUN`) don't match reality. Pick one source of truth and update the other.
-2. **Add fallback for `git pull --ff-only`.** Detect diverged branches and give the user a clear message instead of an opaque exit code.
-3. **Define CHANGELOG metrics.** The `C_Σ / α / β / γ` columns are uninterpretable without a definition. Define the scale or remove the columns.
+1. **Rebase onto master** to pick up the symlinks commit (`9d52fe0`). Then update self-cohere SKILL.md and CLI to match the symlinks model (or decide BOOTSTRAP.md is the right approach and revert master).
+
+2. **Fix whitepaper two-repo contradictions.** §9 ("fork or import"), §6 ("PRs"), §10 step 5 ("send them as PRs") all contradict the current architecture. Update to match the two-repo model and git-native principle.
+
+3. **Update glossary.** IDENTITY → PERSONALITY, dojo/ → skills/\<name\>/kata.md, add COHERENCE to Mindset definition.
 
 ### Should Address
 
-4. **Add `--help` and `--version` to the CLI.** Standard CLI expectations; small effort.
-5. **Add at least a smoke test.** Even `node cli/index.js --help && echo "ok"` in a GitHub Action would catch regressions.
-6. **Expand or reframe HEARTBEAT.md.** Either develop it into a real operational checklist or mark it as a placeholder.
-7. **Clarify template vs instance content.** Mark instance-specific content (USER.md, IDENTITY.md, SOUL.md) with clear placeholder indicators or move examples to a separate directory.
-8. **Add `repository`, `keywords`, `bugs` to package.json.**
+4. **Fix configure-agent README template.** Remove `skills/` and `mindsets/` from the hub structure table — those stay in the template.
+
+5. **Resolve state/ files in template.** Either have the CLI copy hello-world thread and remote-threads.md to the hub, or have the hello-world skill create the thread file during execution.
+
+6. **Update package.json.** Fix stale description; add `repository`, `keywords`, `bugs`, `homepage`.
+
+7. **Update skills/README.md** version and self-cohere description.
+
+8. **Add git pull --ff-only fallback** in CLI. Catch the failure and print a human-readable message.
 
 ### Nice to Have
 
-9. Add katas for self-cohere and configure-agent skills.
-10. Add a troubleshooting/FAQ section to the README.
-11. Contextualize the `experiments/` directory.
-12. Consider commit signing for thread PRs (trust model).
-13. Add directory writability check before git clone.
+9. Add a smoke test for CLI `--help` / `--version`.
+10. Add katas for self-cohere and configure-agent.
+11. Contextualize experiments/ or archive it.
+12. Remove `sag` reference from WRITING.md (or move to an example block).
+13. Consistent version numbers across all files.
