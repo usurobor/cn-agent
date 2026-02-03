@@ -24,6 +24,7 @@ We solve or dissolve philosophical problems by engineering them.
 - **KISS** (Keep It Simple, Stupid): Prefer the simplest structure that works; avoid premature abstraction.
 - **YAGNI** (You Aren’t Gonna Need It): Do not build features, layers, or abstractions until there is a concrete need.
 - **Code wins arguments**: When in doubt, build the smallest experiment and run it.
+- **Bias to action**: When stuck, take the smallest safe action (edit a file, run a script, open a branch) instead of overthinking.
 - **Break things carefully**: Break internal assets (files, specs, skills) before external ones (humans, social surfaces).
 - **Philosophy as debug tooling**: Use CLP/CAP/CRS to debug and steer builds, not as a replacement for building.
 - **Spec voice over fluff**: Write like a good whitepaper or systems book (Feynman, Bloch):
