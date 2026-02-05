@@ -1,0 +1,335 @@
+(* inbox_test: Tests for inbox_lib *)
+
+open Inbox_lib
+
+(* === GTD Triage === *)
+
+let%expect_test "triage_of_string with payloads" =
+  ["delete:stale branch"; 
+   "d:duplicate"; 
+   "defer:blocked on design";
+   "f:waiting for review";
+   "delegate:pi";
+   "g:omega";
+   "do:merge";
+   "o:merge";
+   "do:reply:response-thread";
+   "do:custom:update docs first"]
+  |> List.iter (fun s ->
+    match triage_of_string s with
+    | Some t -> print_endline (string_of_triage t)
+    | None -> print_endline "NONE");
+  [%expect {|
+    delete:stale branch
+    delete:duplicate
+    defer:blocked on design
+    defer:waiting for review
+    delegate:pi
+    delegate:omega
+    do:merge
+    do:merge
+    do:reply:response-thread
+    do:custom:update docs first
+  |}]
+
+let%expect_test "triage_of_string invalid" =
+  ["delete"; "defer"; "delegate"; "do"; ""; "invalid"]
+  |> List.iter (fun s ->
+    match triage_of_string s with
+    | Some t -> print_endline (string_of_triage t)
+    | None -> print_endline "NONE");
+  [%expect {|
+    NONE
+    NONE
+    NONE
+    NONE
+    NONE
+    NONE
+  |}]
+
+let%expect_test "triage roundtrip" =
+  let examples = [
+    Delete (Reason "stale");
+    Defer (Reason "blocked on X");
+    Delegate (Actor "pi");
+    Do Merge;
+    Do (Reply (BranchName "my-response"));
+    Do (Custom (Description "manual fix needed"))
+  ] in
+  examples |> List.iter (fun t ->
+    let s = string_of_triage t in
+    match triage_of_string s with
+    | Some t' when t = t' -> print_endline "OK"
+    | Some t' -> print_endline (Printf.sprintf "MISMATCH: %s" (string_of_triage t'))
+    | None -> print_endline "FAIL");
+  [%expect {|
+    OK
+    OK
+    OK
+    OK
+    OK
+    OK
+  |}]
+
+let%expect_test "triage descriptions" =
+  let examples = [
+    Delete (Reason "stale");
+    Defer (Reason "blocked on X");
+    Delegate (Actor "pi");
+    Do Merge;
+    Do (Reply (BranchName "response"));
+    Do (Custom (Description "update docs"))
+  ] in
+  examples |> List.iter (fun t -> print_endline (triage_description t));
+  [%expect {|
+    Remove branch (stale)
+    Defer (blocked on X)
+    Delegate to pi
+    Merge branch
+    Reply with branch response
+    Action: update docs
+  |}]
+
+let%expect_test "triage_kind" =
+  let examples = [
+    Delete (Reason "x");
+    Defer (Reason "y");
+    Delegate (Actor "z");
+    Do Merge
+  ] in
+  examples |> List.iter (fun t -> print_endline (triage_kind t));
+  [%expect {|
+    delete
+    defer
+    delegate
+    do
+  |}]
+
+(* === Triage Log === *)
+
+let%expect_test "format_log_entry" =
+  let entry = {
+    timestamp = "2026-02-05T17:20:00Z";
+    branch = "review-request";
+    peer = "pi";
+    decision = Do Merge;
+    actor = "sigma"
+  } in
+  print_endline (format_log_entry entry);
+  [%expect {| - 2026-02-05T17:20:00Z | sigma | pi/review-request | do:merge |}]
+
+let%expect_test "format_log_entry_human" =
+  let entries = [
+    { timestamp = "2026-02-05T17:20:00Z"; branch = "review"; peer = "pi"; 
+      decision = Delete (Reason "stale"); actor = "sigma" };
+    { timestamp = "2026-02-05T17:21:00Z"; branch = "urgent"; peer = "omega"; 
+      decision = Defer (Reason "blocked on X"); actor = "sigma" };
+    { timestamp = "2026-02-05T17:22:00Z"; branch = "task"; peer = "pi"; 
+      decision = Delegate (Actor "tau"); actor = "sigma" };
+    { timestamp = "2026-02-05T17:23:00Z"; branch = "feature"; peer = "pi"; 
+      decision = Do Merge; actor = "sigma" };
+  ] in
+  entries |> List.iter (fun e -> print_endline (format_log_entry_human e));
+  [%expect {|
+    [2026-02-05T17:20:00Z] sigma triaged pi/review → Remove branch (stale)
+    [2026-02-05T17:21:00Z] sigma triaged omega/urgent → Defer (blocked on X)
+    [2026-02-05T17:22:00Z] sigma triaged pi/task → Delegate to tau
+    [2026-02-05T17:23:00Z] sigma triaged pi/feature → Merge branch
+  |}]
+
+let%expect_test "format_log_row" =
+  let entry = {
+    timestamp = "2026-02-05T17:20:00Z";
+    branch = "review-request";
+    peer = "pi";
+    decision = Delete (Reason "duplicate");
+    actor = "sigma"
+  } in
+  print_endline (format_log_row entry);
+  [%expect {| | 17:20 | sigma | pi/review-request | `delete:duplicate` | |}]
+
+let%expect_test "daily_log_path" =
+  print_endline (daily_log_path "20260205");
+  [%expect {| logs/inbox/20260205.md |}]
+
+let%expect_test "daily_log_header" =
+  print_endline (daily_log_header "20260205");
+  [%expect {|
+    # Inbox Log: 2026-02-05
+
+    | Time | Actor | Source | Decision |
+    |------|-------|--------|----------|
+  |}]
+
+let%expect_test "daily_stats" =
+  let decisions = [
+    Delete (Reason "stale");
+    Delete (Reason "dup");
+    Defer (Reason "blocked");
+    Delegate (Actor "pi");
+    Do Merge;
+    Do (Reply (BranchName "resp"))
+  ] in
+  let stats = List.fold_left update_stats empty_stats decisions in
+  print_endline (format_daily_summary stats);
+  [%expect {|
+
+    ## Summary
+    - Processed: 6
+    - Delete: 2
+    - Defer: 1
+    - Delegate: 1
+    - Do: 2
+  |}]
+
+(* === Command parsing (CLI) === *)
+
+let%expect_test "command_of_string valid" =
+  ["check"; "process"; "flush"]
+  |> List.iter (fun s ->
+    match command_of_string s with
+    | Some c -> print_endline (string_of_command c)
+    | None -> print_endline "NONE");
+  [%expect {|
+    check
+    process
+    flush
+  |}]
+
+let%expect_test "command_of_string invalid" =
+  ["chekc"; "PROCESS"; "sync"; ""]
+  |> List.iter (fun s ->
+    match command_of_string s with
+    | Some c -> print_endline (string_of_command c)
+    | None -> print_endline "NONE");
+  [%expect {|
+    NONE
+    NONE
+    NONE
+    NONE
+  |}]
+
+let%expect_test "command roundtrip" =
+  all_commands
+  |> List.iter (fun c ->
+    let s = string_of_command c in
+    match command_of_string s with
+    | Some c' when c = c' -> print_endline "OK"
+    | _ -> print_endline "FAIL");
+  [%expect {|
+    OK
+    OK
+    OK
+  |}]
+
+(* === String helpers === *)
+
+let%expect_test "prefix matching" =
+  [("hello", "hel", true);
+   ("hello", "hello", true);
+   ("hello", "hellox", false);
+   ("", "x", false)]
+  |> List.iter (fun (s, pre, expected) ->
+    let result = prefix ~pre s in
+    print_endline (if result = expected then "OK" else "FAIL"));
+  [%expect {|
+    OK
+    OK
+    OK
+    OK
+  |}]
+
+let%expect_test "strip_prefix" =
+  [("- name: sigma", "- name: ", Some "sigma");
+   ("other line", "- name: ", None);
+   ("- name: ", "- name: ", Some "")]
+  |> List.iter (fun (s, pre, expected) ->
+    let result = strip_prefix ~pre s in
+    match result, expected with
+    | Some r, Some e when r = e -> print_endline "OK"
+    | None, None -> print_endline "OK"
+    | _ -> print_endline "FAIL");
+  [%expect {|
+    OK
+    OK
+    OK
+  |}]
+
+(* === Peer parsing === *)
+
+let%expect_test "parse_peers" =
+  let content = {|# Peers
+- name: pi
+- name: cn-agent
+other line
+- name: omega|} in
+  parse_peers content |> List.iter print_endline;
+  [%expect {|
+    pi
+    cn-agent
+    omega
+  |}]
+
+let%expect_test "derive_name" =
+  [("/path/to/cn-sigma", "sigma");
+   ("./cn-pi", "pi");
+   ("cn-agent", "agent");
+   ("my-hub", "my-hub")]
+  |> List.iter (fun (path, expected) ->
+    let result = derive_name path in
+    print_endline (if result = expected then "OK" else Printf.sprintf "FAIL: got %s" result));
+  [%expect {|
+    OK
+    OK
+    OK
+    OK
+  |}]
+
+(* === Results === *)
+
+let%expect_test "report_result" =
+  [Fetched ("pi", []);
+   Fetched ("omega", ["omega/feature-1"; "omega/bugfix"]);
+   Skipped ("missing", "not found")]
+  |> List.iter (fun r -> print_endline (report_result r));
+  [%expect {|
+    ✓ pi (no inbound)
+    ⚡ omega (2 inbound)
+    · missing (not found)
+  |}]
+
+let%expect_test "collect_alerts empty" =
+  let results = [Fetched ("pi", []); Skipped ("x", "reason")] in
+  let alerts = collect_alerts results in
+  print_endline (Printf.sprintf "alerts: %d" (List.length alerts));
+  [%expect {| alerts: 0 |}]
+
+let%expect_test "collect_alerts with branches" =
+  let results = [
+    Fetched ("pi", ["sigma/feature"]);
+    Fetched ("omega", []);
+    Fetched ("tau", ["sigma/fix-1"; "sigma/fix-2"])
+  ] in
+  let alerts = collect_alerts results in
+  alerts |> List.iter (fun (peer, branches) ->
+    print_endline (Printf.sprintf "%s: %d" peer (List.length branches)));
+  [%expect {|
+    pi: 1
+    tau: 2
+  |}]
+
+let%expect_test "format_alerts none" =
+  format_alerts [] |> List.iter print_endline;
+  [%expect {| No inbound branches. All clear. |}]
+
+let%expect_test "format_alerts some" =
+  let alerts = [("pi", ["sigma/feature"; "sigma/fix"]); ("tau", ["sigma/doc"])] in
+  format_alerts alerts |> List.iter print_endline;
+  [%expect {|
+    === INBOUND BRANCHES ===
+    From pi:
+      sigma/feature
+      sigma/fix
+    From tau:
+      sigma/doc
+  |}]
