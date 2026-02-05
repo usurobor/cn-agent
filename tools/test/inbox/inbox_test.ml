@@ -333,3 +333,45 @@ let%expect_test "format_alerts some" =
     From tau:
       sigma/doc
   |}]
+
+(* === Triage to Actions === *)
+
+let%expect_test "triage_to_actions delete" =
+  (* Delete should only have remote delete - no local branch delete *)
+  let actions = triage_to_actions ~log_path:"logs/inbox.md" ~branch:"pi/stale" 
+    (Delete (Reason "superseded")) in
+  actions |> List.iter (fun a -> print_endline (string_of_atomic_action a));
+  [%expect {|
+    git push origin --delete pi/stale
+    log append logs/inbox.md
+  |}]
+
+let%expect_test "triage_to_actions defer" =
+  let actions = triage_to_actions ~log_path:"logs/inbox.md" ~branch:"pi/blocked"
+    (Defer (Reason "waiting on design")) in
+  actions |> List.iter (fun a -> print_endline (string_of_atomic_action a));
+  [%expect {| log append logs/inbox.md |}]
+
+let%expect_test "triage_to_actions delegate" =
+  let actions = triage_to_actions ~log_path:"logs/inbox.md" ~branch:"pi/task"
+    (Delegate (Actor "omega")) in
+  actions |> List.iter (fun a -> print_endline (string_of_atomic_action a));
+  [%expect {|
+    git push cn-omega pi/task
+    git branch -d pi/task
+    git push origin --delete pi/task
+    log append logs/inbox.md
+  |}]
+
+let%expect_test "triage_to_actions do merge" =
+  let actions = triage_to_actions ~log_path:"logs/inbox.md" ~branch:"pi/feature"
+    (Do Merge) in
+  actions |> List.iter (fun a -> print_endline (string_of_atomic_action a));
+  [%expect {|
+    git checkout main
+    git merge pi/feature
+    git push origin main
+    git branch -d pi/feature
+    git push origin --delete pi/feature
+    log append logs/inbox.md
+  |}]
