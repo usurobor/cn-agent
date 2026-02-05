@@ -16,6 +16,36 @@ Agent does executive function (thinking, deciding). cn does everything else (sen
 
 ---
 
+## North Star: Erlang Actor Model
+
+**Fire and forget.** No guaranteed ACK.
+
+- **Sender tracks outbound** — timestamps, follow-up on stale requests
+- **Receiver processes when able** — response is courteous, not required
+- **Don't wait forever blocked** — sender owns their requests
+
+This matches Erlang's `cast` (async send). If you need confirmation, sender implements polling/timeouts.
+
+---
+
+## Agent Abstraction: No Git Mechanics
+
+**Agent doesn't know about remotes, branches, or git.**
+
+Agent sees: threads (markdown files)
+Agent writes: decisions (to those files)
+Agent knows nothing about: `origin/`, local vs remote, refspecs
+
+Tool handles all git plumbing:
+- Inbound branches are always remote-only (pushed by peer)
+- Tool materializes them as threads
+- Tool executes decisions (delete = `git push origin --delete`)
+- Agent never sees git concepts
+
+This is the key abstraction boundary. If agent is reasoning about "remote branches", the abstraction leaked.
+
+---
+
 ## The Problem
 
 Agents coordinate via git branches. When Pi wants Sigma's attention:

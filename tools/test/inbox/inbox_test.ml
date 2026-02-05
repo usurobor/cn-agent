@@ -333,3 +333,85 @@ let%expect_test "format_alerts some" =
     From tau:
       sigma/doc
   |}]
+
+(* === Triage to Actions === *)
+
+let%expect_test "triage_to_actions delete" =
+  (* Delete should only have remote delete - no local branch delete *)
+  let actions = triage_to_actions ~log_path:"logs/inbox.md" ~branch:"pi/stale" 
+    (Delete (Reason "superseded")) in
+  actions |> List.iter (fun a -> print_endline (string_of_atomic_action a));
+  [%expect {|
+    git push origin --delete pi/stale
+    log append logs/inbox.md
+  |}]
+
+let%expect_test "triage_to_actions defer" =
+  let actions = triage_to_actions ~log_path:"logs/inbox.md" ~branch:"pi/blocked"
+    (Defer (Reason "waiting on design")) in
+  actions |> List.iter (fun a -> print_endline (string_of_atomic_action a));
+  [%expect {| log append logs/inbox.md |}]
+
+let%expect_test "triage_to_actions delegate" =
+  let actions = triage_to_actions ~log_path:"logs/inbox.md" ~branch:"pi/task"
+    (Delegate (Actor "omega")) in
+  actions |> List.iter (fun a -> print_endline (string_of_atomic_action a));
+  [%expect {|
+    git push cn-omega pi/task
+    git branch -d pi/task
+    git push origin --delete pi/task
+    log append logs/inbox.md
+  |}]
+
+let%expect_test "triage_to_actions do merge" =
+  let actions = triage_to_actions ~log_path:"logs/inbox.md" ~branch:"pi/feature"
+    (Do Merge) in
+  actions |> List.iter (fun a -> print_endline (string_of_atomic_action a));
+  [%expect {|
+    git checkout main
+    git merge pi/feature
+    git push origin main
+    git branch -d pi/feature
+    git push origin --delete pi/feature
+    log append logs/inbox.md
+  |}]
+
+(* === Git Command Generation (testable shell commands) === *)
+
+let%expect_test "git_cmd_of_action with hub_path" =
+  let hub = "/path/to/hub" in
+  [
+    Git_checkout "main";
+    Git_merge "pi/feature";
+    Git_push ("origin", "main");
+    Git_branch_delete "pi/old";
+    Git_remote_delete ("origin", "pi/old");
+  ]
+  |> List.iter (fun a ->
+    match git_cmd_of_action ~hub_path:hub a with
+    | Some cmd -> print_endline cmd
+    | None -> print_endline "NONE");
+  [%expect {|
+    cd /path/to/hub && git checkout main
+    cd /path/to/hub && git merge pi/feature
+    cd /path/to/hub && git push origin main
+    cd /path/to/hub && git branch -d pi/old
+    cd /path/to/hub && git push origin --delete pi/old
+  |}]
+
+let%expect_test "git_cmd_of_action file actions return None" =
+  let hub = "/hub" in
+  [
+    File_write ("test.md", "content");
+    Dir_create "logs";
+    Log_append ("log.md", "entry");
+  ]
+  |> List.iter (fun a ->
+    match git_cmd_of_action ~hub_path:hub a with
+    | Some _ -> print_endline "SOME"
+    | None -> print_endline "NONE");
+  [%expect {|
+    NONE
+    NONE
+    NONE
+  |}]

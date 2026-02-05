@@ -1,0 +1,7 @@
+; cn CLI - native OCaml executable
+(executable
+ (name cn)
+ (public_name cn)
+ (libraries str unix)
+ (modules cn cn_command cn_config cn_output status doctor)
+ (preprocess no_preprocessing))

@@ -84,38 +84,34 @@ module Fs_write = struct
   external mkdir_sync : string -> < recursive : bool > Js.t -> unit = "mkdirSync" [@@mel.module "fs"]
 end
 
-let execute_action action =
+let execute_action ~hub_path action =
   try
-    match action with
-    | Git_checkout b -> 
-        run_cmd (Printf.sprintf "git checkout %s" b) |> Option.is_some
-    | Git_merge b -> 
-        run_cmd (Printf.sprintf "git merge %s" b) |> Option.is_some
-    | Git_push (r, b) -> 
-        run_cmd (Printf.sprintf "git push %s %s" r b) |> Option.is_some
-    | Git_branch_delete b -> 
-        run_cmd (Printf.sprintf "git branch -d %s" b) |> Option.is_some
-    | Git_remote_delete (r, b) -> 
-        run_cmd (Printf.sprintf "git push %s --delete %s" r b) |> Option.is_some
-    | File_write (p, content) -> 
-        Fs_write.write_file_sync p content; true
-    | Dir_create p -> 
-        Fs_write.mkdir_sync p [%mel.obj { recursive = true }]; true
-    | Log_append (p, line) ->
-        (* Ensure parent dir exists *)
-        let dir = Path.dirname p in
-        Fs_write.mkdir_sync dir [%mel.obj { recursive = true }];
-        Fs_write.append_file_sync p (line ^ "\n"); true
+    match git_cmd_of_action ~hub_path action with
+    | Some cmd -> 
+        (* Git action: run the generated command *)
+        run_cmd cmd |> Option.is_some
+    | None ->
+        (* File action: use Node.js fs *)
+        match action with
+        | File_write (p, content) -> 
+            Fs_write.write_file_sync p content; true
+        | Dir_create p -> 
+            Fs_write.mkdir_sync p [%mel.obj { recursive = true }]; true
+        | Log_append (p, line) ->
+            let dir = Path.dirname p in
+            Fs_write.mkdir_sync dir [%mel.obj { recursive = true }];
+            Fs_write.append_file_sync p (line ^ "\n"); true
+        | _ -> false  (* shouldn't happen *)
   with _ -> 
     print_endline (Printf.sprintf "  ✗ Failed: %s" (string_of_atomic_action action));
     false
 
-let execute_actions actions =
+let execute_actions ~hub_path actions =
   let rec go = function
     | [] -> true
     | action :: rest ->
         print_endline (Printf.sprintf "  → %s" (string_of_atomic_action action));
-        if execute_action action then go rest else false
+        if execute_action ~hub_path action then go rest else false
   in
   go actions
 
@@ -144,7 +140,7 @@ let materialize_branch hub_path my_name peer branch =
   (* Use short name for thread file path *)
   let actions = materialize_thread_actions ~threads_dir ~branch:short_name ~peer ~content:thread_content in
   print_endline (Printf.sprintf "Materializing %s..." branch);
-  if execute_actions actions then
+  if execute_actions ~hub_path actions then
     print_endline "  ✓ Thread created"
   else
     print_endline "  ✗ Failed to create thread"
@@ -242,9 +238,7 @@ let run_flush hub_path _my_name _peers =
             let actions = triage_to_actions ~log_path ~branch decision in
             print_endline "  Actions:";
             format_action_plan actions |> List.iter print_endline;
-            (* Execute in hub directory *)
-            let _ = run_cmd (Printf.sprintf "cd %s" hub_path) in
-            if execute_actions actions then begin
+            if execute_actions ~hub_path actions then begin
               (* Remove processed thread *)
               let _ = run_cmd (Printf.sprintf "rm %s" thread_path) in
               print_endline "  ✓ Done (thread removed)";
