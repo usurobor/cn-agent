@@ -200,7 +200,7 @@ function isGitRepo(dir) {
 
   try {
     console.log(`cn-agent-setup v${VERSION}`);
-    console.log(bold('Checking prerequisites...'));
+    console.log(dim('Checking prerequisites...'));
 
     // Collect all check results
     const checks = {};
