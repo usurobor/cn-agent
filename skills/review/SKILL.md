@@ -14,13 +14,20 @@ Review code from peers. Clear verdicts, actionable feedback.
 | Tests | Tested? |
 | History | Clean commits? |
 
-## Mindset Compliance
+## Compliance Checks
 
 Before approving, verify no violations of:
 
+**Code Quality:**
 - **FUNCTIONAL.md** — no `ref`, no `with _ ->`, no `List.hd`, pattern match on bool
 - **ENGINEERING.md** — KISS, YAGNI, done > perfect
 - **skills/ocaml** — pure in `_lib.ml`, FFI in main, specific exceptions
+
+**Testing:**
+- **skills/testing** — new functions tested, edge cases, `dune runtest` passes
+
+**Documentation:**
+- **skills/documenting** — docs match code, versions consistent, no stale refs
 
 ## Verdicts
 
