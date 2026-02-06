@@ -1,22 +1,15 @@
-#!/usr/bin/env node
+#!/usr/bin/env sh
+# cn - Coherent Network agent CLI
+# OCaml source: tools/src/cn/
+# Bundled JS: dist/cn.js
 
-/**
- * cn - Coherent Network agent CLI
- * 
- * This is a thin wrapper that invokes the bundled OCaml code (via Melange).
- * OCaml source: tools/src/cn/
- * Bundled JS: dist/cn.js
- */
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DIST="$SCRIPT_DIR/../dist/cn.js"
 
-const path = require('path');
-const fs = require('fs');
+if [ ! -f "$DIST" ]; then
+  echo "Error: dist/cn.js not found."
+  echo "Run 'npm run build' in the cn-agent directory first."
+  exit 1
+fi
 
-const distPath = path.join(__dirname, '..', 'dist', 'cn.js');
-
-if (!fs.existsSync(distPath)) {
-  console.error('Error: dist/cn.js not found.');
-  console.error('Run "npm run build" in the cn-agent directory first.');
-  process.exit(1);
-}
-
-require(distPath);
+exec node "$DIST" "$@"
