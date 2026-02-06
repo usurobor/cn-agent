@@ -2,15 +2,11 @@
 
 Review code from peers. Clear verdicts, actionable feedback.
 
-## Rules (non-negotiable)
+## Rules
 
-### P0 — Governance
-- **No self-merge.** Author never merges own diff to main unless human explicitly instructs.
-- **Branch must be current.** If behind main → REQUEST REBASE before reviewing. Don't assume missing files are intentional deletes — branch may just be stale.
+See `checklist.md` for full checklist (P0/P1/P2).
 
-### P1 — Process
-- **Author rebases, reviewer never rebases.** Reviewer's time > author's time.
-- **Only author deletes their branch.** Reviewer returns branches, never deletes.
+**P0 violations → REQUEST REBASE or reject. No exceptions.**
 
 ## Before Reviewing
 

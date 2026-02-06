@@ -2,9 +2,7 @@
 
 ## P0 — Before Submitting Diff
 
-- **Satisfy Reviewing requirements.** See `skills/review/SKILL.md` Rules section.
-- **Branch rebased on main.** No stale branches.
-- **No self-merge.** Push branch, wait for reviewer.
+**Verify `skills/review/checklist.md` P0 + P1 before pushing.**
 
 ## Process
 
