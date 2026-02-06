@@ -4,7 +4,7 @@ Review code from peers. Clear verdicts, actionable feedback.
 
 ## 1. Go through `checklist.md`
 
-Verify every item. P0 fail → reject immediately.
+Stop at first P0 or P1 failure → REQUEST REBASE. Don't continue reviewing stale branches.
 
 ## Philosophy
 
