@@ -11,8 +11,23 @@ Reflections produce two types of output:
 | **MCA** | "What's the Most Coherent Action?" | Specific action to take now | "Redo the RCA following the skill format" |
 | **MCI** | "What's the Most Coherent Insight?" | Learning that generalizes beyond this situation | "Always follow skills when they exist" |
 
-- MCA = concrete, actionable, immediate
-- MCI = abstract, generalizable, informs future MCAs
+### MCA vs MCI: How to tell
+
+| Property | MCA | MCI |
+|----------|-----|-----|
+| Timeframe | Now | Future |
+| Specificity | This situation | Any similar situation |
+| Form | Verb phrase (do X) | Statement (X is true) |
+| Test | "Can I do this right now?" | "Will this help me next time?" |
+| Result | Immediate effect | Policy/pattern for later |
+
+**Examples:**
+- "Redo the RCA" → MCA (do it now)
+- "Always follow skills" → MCI (future guidance)
+- "Send Sigma the bug report" → MCA
+- "Investigate before escalating" → MCI
+
+**Anti-pattern:** Creating MCI when MCA is available. If you can act now, act. Don't turn actions into abstract principles to avoid doing them.
 
 Track both. Count per session.
 
