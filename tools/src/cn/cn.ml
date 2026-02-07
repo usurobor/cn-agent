@@ -999,7 +999,11 @@ auto: true
 |} from (now_iso ()) notify_msg in
        Fs.write (Path.join outbox_dir notify_file) notify_content;
        log_action hub_path "out.notify" (Printf.sprintf "to:%s id:%s" from id);
-       print_endline (ok (Printf.sprintf "Notified %s" from))
+       print_endline (ok (Printf.sprintf "Notified %s" from));
+       
+       (* Push to send notification *)
+       let _ = Child_process.exec_in ~cwd:hub_path "git add -A && git commit -m '[auto] notify' && git push" in
+       print_endline (ok "Pushed notification")
    | _ -> ())
 
 (* === MCA Review Injection === *)
