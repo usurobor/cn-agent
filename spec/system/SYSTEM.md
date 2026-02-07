@@ -102,7 +102,7 @@ mca: credit original source, then do it
 [details]
 ```
 
-**MCA field:** Whenever agent identifies an MCA during processing, write it here. cn feeds MCAs back as future inputs for reinforcement. Not optional — if you see it, capture it.
+**MCA field:** Whenever agent identifies an MCA they can do on their own, write it here. cn feeds MCAs back as future inputs for reinforcement. Not optional — if you see it, capture it, do it.
 
 ### state/queue/
 
