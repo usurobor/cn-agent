@@ -826,6 +826,74 @@ let run_queue_clear hub_path =
     log_action hub_path "queue.clear" (Printf.sprintf "count:%d" (List.length items));
     print_endline (ok (Printf.sprintf "Cleared %d item(s) from queue" (List.length items)))
 
+(* === MCA Operations === *)
+
+let mca_dir hub_path = Path.join hub_path "state/mca"
+
+let run_mca_add hub_path name description =
+  let dir = mca_dir hub_path in
+  Fs.ensure_dir dir;
+  
+  (* Timestamp-based filename for ordering *)
+  let ts = now_iso () |> Js.String.replaceByRe ~regexp:[%mel.re "/[:.]/g"] ~replacement:"-" in
+  let slug = 
+    description 
+    |> Js.String.slice ~start:0 ~end_:40
+    |> Js.String.toLowerCase 
+    |> Js.String.replaceByRe ~regexp:[%mel.re "/[^a-z0-9]+/g"] ~replacement:"-"
+    |> Js.String.replaceByRe ~regexp:[%mel.re "/^-|-$/g"] ~replacement:""
+  in
+  let file_name = Printf.sprintf "%s-%s.md" ts slug in
+  let file_path = Path.join dir file_name in
+  
+  let content = Printf.sprintf {|---
+id: %s
+surfaced-by: %s
+created: %s
+status: open
+---
+
+# MCA
+
+%s
+|} slug name (now_iso ()) description in
+  
+  Fs.write file_path content;
+  log_action hub_path "mca.add" (Printf.sprintf "id:%s desc:%s" slug description);
+  print_endline (ok (Printf.sprintf "MCA surfaced: %s" description))
+
+let run_mca_list hub_path =
+  let dir = mca_dir hub_path in
+  if not (Fs.exists dir) then print_endline "(no MCAs)"
+  else
+    let items = Fs.readdir dir |> List.filter is_md_file |> List.sort String.compare in
+    match items with
+    | [] -> print_endline "(no MCAs)"
+    | _ ->
+        print_endline (info (Printf.sprintf "Open MCAs: %d" (List.length items)));
+        items |> List.iter (fun file ->
+          let file_path = Path.join dir file in
+          let content = Fs.read file_path in
+          let meta = parse_frontmatter content in
+          let id = meta |> List.find_map (fun (k, v) -> if k = "id" then Some v else None)
+            |> Option.value ~default:"?" in
+          let by = meta |> List.find_map (fun (k, v) -> if k = "surfaced-by" then Some v else None)
+            |> Option.value ~default:"?" in
+          (* Extract description from body (skip frontmatter) *)
+          let lines = String.split_on_char '\n' content in
+          let rec skip_frontmatter in_fm = function
+            | [] -> []
+            | "---" :: rest when not in_fm -> skip_frontmatter true rest
+            | "---" :: rest when in_fm -> rest
+            | _ :: rest when in_fm -> skip_frontmatter in_fm rest
+            | rest -> rest
+          in
+          let body_lines = skip_frontmatter false lines in
+          let desc = body_lines |> List.find_opt (fun l -> 
+            let t = String.trim l in t <> "" && not (starts_with ~prefix:"#" t))
+            |> Option.value ~default:"(no description)" in
+          print_endline (Printf.sprintf "  [%s] %s (by %s)" id (String.trim desc) by))
+
 (* === Runtime === *)
 
 let update_runtime hub_path =
@@ -1196,4 +1264,6 @@ let () =
           | Peer Peer_sync -> run_peer_sync hub_path
           | Queue Queue_list -> run_queue_list hub_path
           | Queue Queue_clear -> run_queue_clear hub_path
+          | Mca Mca_list -> run_mca_list hub_path
+          | Mca (Mca_add desc) -> run_mca_add hub_path name desc
           | Help | Version | Init _ | Update -> () (* handled above *)

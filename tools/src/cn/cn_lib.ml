@@ -38,6 +38,7 @@ type inbox_cmd = Inbox_check | Inbox_process | Inbox_flush
 type outbox_cmd = Outbox_check | Outbox_flush
 type peer_cmd = Peer_list | Peer_add of string * string | Peer_remove of string | Peer_sync
 type queue_cmd = Queue_list | Queue_clear
+type mca_cmd = Mca_list | Mca_add of string
 
 type gtd_cmd =
   | GtdDelete of string
@@ -56,6 +57,7 @@ type command =
   | Outbox of outbox_cmd
   | Peer of peer_cmd
   | Queue of queue_cmd
+  | Mca of mca_cmd
   | Sync
   | Next
   | Read of string
@@ -87,6 +89,8 @@ let string_of_command = function
   | Peer Peer_sync -> "peer sync"
   | Queue Queue_list -> "queue list"
   | Queue Queue_clear -> "queue clear"
+  | Mca Mca_list -> "mca list"
+  | Mca (Mca_add d) -> "mca add " ^ d
   | Sync -> "sync"
   | Next -> "next"
   | Read t -> "read " ^ t
@@ -140,6 +144,11 @@ let parse_queue_cmd = function
   | ["clear"] -> Some Queue_clear
   | _ -> None
 
+let parse_mca_cmd = function
+  | [] | ["list"] -> Some Mca_list
+  | "add" :: rest when rest <> [] -> Some (Mca_add (String.concat " " rest))
+  | _ -> None
+
 let parse_gtd_cmd = function
   | ["delete"; t] -> Some (GtdDelete t)
   | "defer" :: t :: rest -> Some (GtdDefer (t, List.nth_opt rest 0))
@@ -161,6 +170,7 @@ let rec parse_command = function
   | "outbox" :: rest -> parse_outbox_cmd rest |> Option.map (fun c -> Outbox c)
   | "peer" :: rest -> parse_peer_cmd rest |> Option.map (fun c -> Peer c)
   | "queue" :: rest -> parse_queue_cmd rest |> Option.map (fun c -> Queue c)
+  | "mca" :: rest -> parse_mca_cmd rest |> Option.map (fun c -> Mca c)
   | ["sync"] -> Some Sync
   | ["next"] -> Some Next
   | ["process"] -> Some Process
@@ -352,6 +362,7 @@ Commands:
   sync                Fetch inbound + send outbound
   process             Queue inbox → input.md → wake agent
   queue [list|clear]  View or clear the task queue
+  mca [list|add <desc>] Surface MCAs for community pickup
   inbox               List inbox threads
   outbox              List outbox threads
   next                Get next inbox item (with cadence)
@@ -384,4 +395,4 @@ Actor Model:
   Agent reads input.md, processes, deletes when done.
 |}
 
-let version = "2.1.12"
+let version = "2.1.13"
