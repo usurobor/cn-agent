@@ -11,8 +11,10 @@ Ideas borrowed, adapted, and built upon. Attribution matters.
 
 **Source:** *Getting Things Done: The Art of Stress-Free Productivity* (2001)
 
-### Naomi Gleit — Canonical Doc Paradigm
-**What we took:** The canonical doc paradigm — a central source of truth document for every project containing workstreams, owners, processes, and nomenclature.
+### Naomi Gleit — Canonical Doc, UIE
+**What we took:**
+- **Canonical doc paradigm** — a central source of truth document for every project containing workstreams, owners, processes, and nomenclature.
+- **UIE (Understand, Identify, Execute)** — decision framework for turning ambiguity into action.
 
 **Source:** Meta Head of Product (29th Facebook employee). [naomi.com](https://naomi.com/canonical-everything-c85441a84e70), [Lenny's Newsletter interview](https://www.lennysnewsletter.com/p/metas-head-of-product-naomi-gleit)
 
