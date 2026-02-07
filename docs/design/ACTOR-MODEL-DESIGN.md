@@ -197,16 +197,26 @@ cn out delete --reason "duplicate"
 
 **Type-level encoding (OCaml):**
 ```ocaml
+(* Ops — what cn executes for Do *)
+type op =
+  | Reply of { id: string; message: string }
+  | Send of { to_: string; message: string }
+  | Surface of { desc: string }
+  | Ack of { reason: string }
+  | Commit of { artifact: string }  (* hash or URL *)
+
 (* GTD protocol — how agent responds to input *)
 (* ONLY 4 OPTIONS. No other way to out. *)
 type gtd =
-  | Do of Cn.op            (* complete, cn executes the op *)
-  | Defer of string        (* postpone with reason *)
-  | Delegate of string     (* forward to peer *)
-  | Delete of string       (* discard with reason *)
+  | Do of op               (* complete, cn executes op *)
+  | Defer of { reason: string }
+  | Delegate of { to_: string }
+  | Delete of { reason: string }
 
-(* Do takes any op that cn supports *)
-(* See: Cn.op / agent_op in cn_lib.ml *)
+(* Clean separation:
+   - GTD = protocol for handling input (Do/Defer/Delegate/Delete)
+   - Op = what cn executes when agent does Do
+   - Defer/Delegate/Delete are NOT ops, they're GTD actions *)
 
 (* Agent's ENTIRE interface — nothing else exposed *)
 module Agent : sig
