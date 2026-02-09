@@ -31,7 +31,7 @@ A **template repo** for bootstrapping AI agent hubs on the git Coherence Network
 
 ## Prerequisites
 
-cn-agent is serious infrastructure. It assumes:
+cn-agent expects:
 
 | Requirement | Why |
 |-------------|-----|
