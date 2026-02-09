@@ -1,141 +1,103 @@
 # reflect
 
-Coherence reflection using α/β/γ framework.
+## Core Principle
 
-## Outputs
+**Coherent reflection: every reflection produces action or learning.**
 
-Reflections produce two types of output:
+If a reflection produces neither MCA (action) nor MCI (insight), it wasn't reflection — it was noise.
 
-| Type | Question | Definition | Example |
-|------|----------|------------|---------|
-| **MCA** | "What's the Most Coherent Action?" | Specific action to take now | "Redo the RCA following the skill format" |
-| **MCI** | "What's the Most Coherent Insight?" | Learning that generalizes beyond this situation | "Always follow skills when they exist" |
+## 1. Outputs
 
-### MCA vs MCI: How to tell
+Reflection produces two things:
 
-| Property | MCA | MCI |
-|----------|-----|-----|
-| Timeframe | Now | Future |
-| Specificity | This situation | Any similar situation |
-| Form | Verb phrase (do X) | Statement (X is true) |
-| Test | "Can I do this right now?" | "Will this help me next time?" |
-| Result | Immediate effect | Policy/pattern for later |
+1.1. **MCA — Most Coherent Action**
+  - What to do now
+  - ❌ "I should probably look into that sometime"
+  - ✅ "Send Sigma the bug report"
 
-**Examples:**
-- "Redo the RCA" → MCA (do it now)
-- "Always follow skills" → MCI (future guidance)
-- "Send Sigma the bug report" → MCA
-- "Investigate before escalating" → MCI
+1.2. **MCI — Most Coherent Insight**
+  - What generalizes beyond this situation
+  - ❌ "That was hard"
+  - ✅ "Investigate before escalating"
 
-**Anti-pattern:** Creating MCI when MCA is available. If you can act now, act. Don't turn actions into abstract principles to avoid doing them.
+1.3. **MCA over MCI**
+  - If you can act, act
+  - ❌ Turn "Redo the RCA" into "Always redo RCAs when unclear"
+  - ✅ Just redo the RCA
 
-Track both. Count per session.
+## 2. Axes
 
-**Tracking:** 
-- MCAs: execute and record in daily thread
-- MCIs: append to `state/insights.md` with date and source
+Three lenses for examining coherence:
 
-**Migration:** When an MCI is validated (repeated, survived consolidation), migrate it to the relevant skill:
-- Insight about reviews → `skills/eng/review/SKILL.md`
-- Insight about RCAs → `skills/eng/rca/SKILL.md`
-- Insight about agent conduct → `skills/agent/ca-conduct/SKILL.md`
+2.1. **α (Alpha) — Internal**
+  - What is my actual behavior?
+  - Is it internally consistent?
 
-**If no relevant skill exists → create it.** MCIs can spawn new skills.
+2.2. **β (Beta) — Relational**
+  - Am I positioned honestly with others?
+  - Am I over/under claiming?
 
-`state/insights.md` is staging. Skills are permanent home.
+2.3. **γ (Gamma) — Temporal**
+  - How am I evolving?
+  - Real exits or stuck loops?
 
-**Definition of Done (MCI Migration):**
-1. MCI text added to relevant skill (or new skill created)
-2. Skill committed and pushed to cn-agent main
-3. `state/insights.md` updated with "Migrated To" column
-4. insights.md committed and pushed to hub
+## 3. Accountability Test
 
-All 4 = done.
+When reflection surfaces an issue:
 
-## A or I?
+3.1. **Ask: "Can I act on this myself?"**
+  - Yes → You're A (Accountable). Do the MCA.
+  - No → You're I (Informed). Escalate with context.
 
-When reflection surfaces an issue, ask: **"Am I A or I on this?"**
+3.2. **Anti-pattern: false I**
+  - ❌ "I noticed X, passing to human" (when you could investigate)
+  - ✅ Investigate, then escalate with findings
 
-| If you... | You are... |
-|-----------|------------|
-| Can investigate/act yourself | **A** (Accountable) — own it, do it |
-| Cannot act, only need to know | **I** (Informed) — pass with clear reason |
+## 4. Cadences
 
-**The test:** "Can I do something about this myself?"
-- Yes → A. Do the MCA.
-- No → I. Escalate with context.
+| Cadence | When | File |
+|---------|------|------|
+| Daily | End of session | `threads/reflections/daily/YYYYMMDD.md` |
+| Weekly | Sunday | `threads/reflections/weekly/YYYY-WNN.md` |
+| Monthly | 1st | `threads/reflections/monthly/YYYYMM.md` |
 
-**Anti-pattern:** Identifying an issue and passing it as "I" when you could investigate. This is buck-passing, not reflection.
+4.1. **Fill in real-time**
+  - ❌ "Will reflect at EOD"
+  - ✅ Capture MCA/MCI when it happens
 
-## Axes
+4.2. **Higher cadences consolidate lower**
+  - Weekly reviews daily threads
+  - Monthly reviews weekly threads
+  - Pattern that survives consolidation → migrate to skill
 
-| Axis | Question |
-|------|----------|
-| **α** (Pattern) | What is my actual behavior? Internally coherent? |
-| **β** (Relation) | Positioned honestly relative to human/others? |
-| **γ** (Exit) | How am I evolving? Real exits or trapped? |
-
-## Scoring
+## 5. Scoring
 
 | Grade | Meaning |
 |-------|---------|
-| A | Excellent — fully aligned |
-| B | Good — minor drift |
-| C | Adequate — noticeable gaps |
-| D | Poor — needs attention |
-| F | Failed — intervention needed |
+| A | Fully aligned |
+| B | Minor drift |
+| C | Noticeable gaps |
+| D | Needs attention |
+| F | Intervention needed |
 
-## Cadences
-
-| Cadence | File | When |
-|---------|------|------|
-| Daily | `threads/daily/YYYYMMDD.md` | End of session |
-| Weekly | `threads/weekly/YYYYMMDD.md` | Sunday |
-| Monthly | `threads/monthly/YYYYMM01.md` | 1st |
-| Quarterly | `threads/quarterly/YYYYMM01.md` | Q start |
-| Yearly | `threads/yearly/YYYY0101.md` | Jan 1 |
-
-**Fill reflections in real-time.** Don't defer to "(EOD)" — capture MCAs and MCIs when they happen. Deferred reflections lose context and become empty placeholders.
-
-## Daily Template
+## 6. Daily Template
 
 ```markdown
 # YYYYMMDD
 
-## α — [A-F]
-(behavior today)
-**Insight:** ...
-**MCA:** ...
+## Session Summary
+(What happened)
 
-## β — [A-F]
-(relation to human)
-**Insight:** ...
-**MCA:** ...
+## α (What I learned)
+- ...
 
-## γ — [A-F]
-(what shifted, exits)
-**Insight:** ...
-**MCA:** ...
+## β (What surprised me)
+- ...
 
-## Session Totals
-- MCAs: N
-- Insights: N
+## γ (What I'd do differently)
+- ...
 
-## → Next
-(which axis to invest tomorrow)
+## MCAs
+- [ ] ...
+- [x] ...
 ```
-
-## Higher Cadences
-
-Review lower cadence threads. Consolidate patterns.
-
-| Week | α | β | γ |
-|------|---|---|---|
-| ... | . | . | . |
-
-## Mindset Migration
-
-Pattern earns migration when:
-- Repeated in 3+ threads
-- Survived consolidation
-- Still holds after a month
