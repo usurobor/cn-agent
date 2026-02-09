@@ -2,41 +2,45 @@
 
 ## Core Principle
 
-**Every word must earn its place.**
+**Coherent writing: nothing can be removed without loss.**
 
-## Derived Rules
+If a word, sentence, or paragraph can be cut without reducing understanding — cut it.
 
-### Word level
+## Coherence at Each Level
 
-- **Cut words that don't change meaning**
-  - ❌ "In order to configure the settings"
-  - ✅ "To configure settings"
+### Words
 
-### Sentence level
+Remove what doesn't change meaning.
 
-- **Short and direct**
-  - ❌ "It is important to note that the system requires authentication"
-  - ✅ "The system requires authentication"
+- ❌ "In order to configure the settings"
+- ✅ "To configure settings"
 
-- **State things, don't announce them**
-  - ❌ "This section describes how X works"
-  - ✅ "X works by..."
+### Sentences
 
-### Content level
+Direct path to meaning. No preamble.
 
-- **Concrete facts over vibes**
-  - ❌ "This approach is more elegant"
-  - ✅ "This approach uses 3 fewer lines"
+- ❌ "It is important to note that the system requires authentication"
+- ✅ "The system requires authentication"
 
-- **Only claim what you can source**
-  - ❌ "This is the best approach"
-  - ✅ "This approach is used by Linux, Git, and Postgres"
+- ❌ "This section describes how X works"
+- ✅ "X works by..."
 
-### Structure level
+### Content
 
-- **Each paragraph adds new information**
-  - ❌ Filler that restates the previous paragraph
-  - ✅ New fact, new angle, or new consequence
+Concrete and sourceable. Vibes don't survive scrutiny.
+
+- ❌ "This approach is more elegant"
+- ✅ "This approach uses 3 fewer lines"
+
+- ❌ "This is the best approach"
+- ✅ "This approach is used by Linux, Git, and Postgres"
+
+### Structure
+
+Each paragraph moves understanding forward.
+
+- ❌ Restating what was just said
+- ✅ New fact, new angle, or new consequence
 
 ## Platform
 
