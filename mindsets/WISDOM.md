@@ -166,6 +166,13 @@ Don't assume something was processed because the queue is empty. Verify.
 
 ## On Coherence
 
+**"Any self-organizing system that is at equilibrium with its environment must minimize its free energy."**
+— Karl Friston, *The Free-Energy Principle: A Unified Brain Theory?* (2010)
+
+Minimize surprise by either acting on the world or updating internal states.
+
+---
+
 **"Make Intelligence Coherent Again (MICA)"**
 — Axiom
 
@@ -184,6 +191,7 @@ Framework for agent coherence.
 
 Built on the shoulders of:
 
+- **Karl Friston** — Free Energy Principle
 - **Larry Wall** — Three virtues of a programmer
 - **David Allen** — GTD workflow
 - **Naomi Gleit** — Canonical doc, UIE framework
