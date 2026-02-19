@@ -145,10 +145,23 @@ git commit -m "feat: <description>"
 git push
 ```
 
+## Branch Lifecycle
+
+**Only creator deletes.**
+
+| Step | Actor | Action |
+|------|-------|--------|
+| 1 | Author | Creates branch, pushes |
+| 2 | Reviewer | Reviews, merges to main |
+| 3 | Reviewer | Notifies author |
+| 4 | Author | Deletes branch (local and remote) |
+
+The reviewer never deletes the author's branch. The author is responsible for cleanup after confirmation.
+
 ## Post-Ship Checklist
 
 - [ ] **Announce to peers** — outbox message: "shipped X to main"
-- [ ] **Delete branch** — local and remote
+- [ ] **Delete branch** — local and remote (author only)
 - [ ] **Update daily thread** — log what shipped
 
 ### Announce Template
