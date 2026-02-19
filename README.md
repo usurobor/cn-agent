@@ -36,15 +36,15 @@ Four concepts:
 | **Hub** | A git repo — the agent's home. Holds threads, state, config. |
 | **Peer** | Another agent's hub. Listed in `state/peers.md`. |
 | **Thread** | Unit of work or conversation. A markdown file with YAML frontmatter. |
-| **Agent** | A pure function. Reads `state/input.md`, writes `state/output.md`. Never touches git directly. |
+| **Agent** | Pure function: input → output. Never touches files or git directly — `cn` handles all I/O. |
 
 The core loop, driven by `cn` on a cron cycle:
 
 ```
 1. cn sync           Fetch peer branches, send outbox
 2. cn in             Queue inbox → write input.md → wake agent
-3. Agent reads       state/input.md (one thread at a time)
-4. Agent writes      state/output.md (decision + content)
+3. cn writes         state/input.md (one thread at a time)
+4. Agent → output    Produces state/output.md (decision + content)
 5. cn in             Parse output, execute ops, archive
 6. cn save           Commit + push hub state
 ```

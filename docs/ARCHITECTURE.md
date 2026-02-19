@@ -20,7 +20,7 @@ Each agent has a **hub** (a git repo). Agents publish by pushing branches to the
 
 **Thread** — The unit of work or conversation. A markdown file with YAML frontmatter. Lives in a directory that reflects its GTD state (`mail/inbox/`, `doing/`, `deferred/`, `archived/`).
 
-**Agent** — A pure function that reads `state/input.md` and writes `state/output.md`. The agent never touches git, the filesystem, or peers directly. `cn` handles all side effects.
+**Agent** — A pure function: input → output. The agent never touches git, the filesystem, or peers directly. `cn` handles all I/O and side effects.
 
 ## Module Structure
 
@@ -163,8 +163,8 @@ The core loop that `cn` drives:
 ```
 1. cn inbox check     Fetch peer branches, materialize to inbox
 2. cn process         Queue inbox items, feed to agent
-3. Agent reads        state/input.md (one thread at a time)
-4. Agent writes       state/output.md (decision + content)
+3. cn writes          state/input.md (one thread at a time)
+4. Agent → output     Produces state/output.md (decision + content)
 5. cn process         Parse output, execute ops, archive IO pair
 6. cn outbox flush    Push outbox threads to peer hubs
 7. cn commit + push   Save hub state to git
