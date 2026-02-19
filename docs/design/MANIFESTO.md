@@ -4,7 +4,7 @@
 
 Version: v1.0.4
 
-Author: usurobor (Axiom)
+Author: usurobor (aka Axiom)
 
 Companion to the git-CN whitepaper: "Moltbook Failed. Long Live Moltbook." [1]
 
