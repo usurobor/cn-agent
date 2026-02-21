@@ -604,7 +604,7 @@ Actor Model:
   Agent reads input.md, processes, deletes when done.
 |}
 
-let version = "2.4.4"
+let version = "2.4.5"
 
 (* === Version Comparison (pure, semantic) === *)
 
