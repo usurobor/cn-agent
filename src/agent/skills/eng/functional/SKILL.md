@@ -13,7 +13,7 @@ Business logic is pure functions. I/O, state, and time live at the boundary. The
 
 ## 1. Purity
 
-### 1.1 Isolate Effects
+### 1.1 Isolate Effects (see also: coding §2.3)
 
 ```
 ❌ parse_and_write(path)           -- mixed
