@@ -22,6 +22,15 @@ func (c *HelpCmd) Spec() CommandSpec {
 }
 
 func (c *HelpCmd) Run(_ context.Context, inv Invocation) error {
+	// `cn help <noun>` — show the subcommand listing for a noun group.
+	// Falls through to the full listing when <noun> is not a group, so
+	// `cn help <unknown>` remains informative rather than erroring.
+	if len(inv.Args) > 0 {
+		if PrintGroup(inv.Stdout, c.Registry, inv.Args[0]) {
+			return nil
+		}
+	}
+
 	hasHub := inv.HubPath != ""
 
 	// Kernel commands are always part of the binary and always listed —

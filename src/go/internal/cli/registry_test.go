@@ -139,6 +139,66 @@ func TestHelpCmdNoHub(t *testing.T) {
 	}
 }
 
+func TestHelpCmdGroupListing(t *testing.T) {
+	// `cn help kata` — HelpCmd must dispatch to the group listing
+	// instead of the full kernel listing.
+	reg := NewRegistry()
+	help := &HelpCmd{Registry: reg}
+	reg.Register(help)
+	reg.Register(&stubCmd{spec: CommandSpec{Name: "kata-run", Summary: "Run a kata", Source: SourcePackage, Tier: TierPackage}})
+	reg.Register(&stubCmd{spec: CommandSpec{Name: "kata-list", Summary: "List katas", Source: SourcePackage, Tier: TierPackage}})
+
+	var stdout bytes.Buffer
+	inv := Invocation{
+		HubPath: "/some/hub",
+		Args:    []string{"kata"},
+		Stdout:  &stdout,
+		Stderr:  &bytes.Buffer{},
+	}
+	if err := help.Run(context.Background(), inv); err != nil {
+		t.Fatalf("help.Run: %v", err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "kata run") {
+		t.Errorf("expected 'kata run' in group listing, got:\n%s", out)
+	}
+	if !strings.Contains(out, "kata list") {
+		t.Errorf("expected 'kata list' in group listing, got:\n%s", out)
+	}
+	if strings.Contains(out, "Kernel commands:") {
+		t.Errorf("group listing should not include the full kernel listing:\n%s", out)
+	}
+}
+
+func TestHelpCmdUnknownGroupFallsThrough(t *testing.T) {
+	// `cn help bogus` — unknown noun falls through to the full listing
+	// rather than erroring.
+	reg := NewRegistry()
+	help := &HelpCmd{Registry: reg}
+	reg.Register(help)
+	reg.Register(&stubCmd{spec: CommandSpec{Name: "deps", Summary: "Manage package dependencies", Source: SourceKernel}})
+
+	var stdout bytes.Buffer
+	inv := Invocation{
+		HubPath: "/some/hub",
+		Args:    []string{"bogus"},
+		Stdout:  &stdout,
+		Stderr:  &bytes.Buffer{},
+	}
+	if err := help.Run(context.Background(), inv); err != nil {
+		t.Fatalf("help.Run: %v", err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "Kernel commands:") {
+		t.Errorf("expected full listing fallback, got:\n%s", out)
+	}
+	if !strings.Contains(out, "deps") {
+		t.Errorf("expected 'deps' in fallback full listing, got:\n%s", out)
+	}
+}
+
 func TestHelpCmdTieredOutput(t *testing.T) {
 	reg := NewRegistry()
 	help := &HelpCmd{Registry: reg}

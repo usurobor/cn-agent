@@ -63,24 +63,41 @@ func main() {
 		os.Exit(0)
 	}
 
-	cmdName := os.Args[1]
-	args := os.Args[2:]
+	// Resolve the command — supports noun-verb form (cn kata run),
+	// flat form (cn kata-run), and noun-group listing (cn kata).
+	// See docs/alpha/DESIGN-CONSTRAINTS.md §3.1.
+	res := cli.ResolveCommand(reg, os.Args[1:])
 
-	cmd, ok := reg.Lookup(cmdName)
-	if !ok {
-		fmt.Fprintf(os.Stderr, "✗ Unknown command: %s\n\n", cmdName)
+	// Group case: args[0] is a noun prefix with no matching verb.
+	if res.Group != "" {
+		unknownVerb := len(res.Remaining) > 0 && !strings.HasPrefix(res.Remaining[0], "-")
+		if unknownVerb {
+			fmt.Fprintf(os.Stderr, "✗ Unknown subcommand: %s %s\n\n", res.Group, res.Remaining[0])
+			cli.PrintGroup(os.Stderr, reg, res.Group)
+			os.Exit(1)
+		}
+		cli.PrintGroup(os.Stdout, reg, res.Group)
+		os.Exit(0)
+	}
+
+	// No command, no group — unknown.
+	if res.Command == nil {
+		fmt.Fprintf(os.Stderr, "✗ Unknown command: %s\n\n", os.Args[1])
 		fmt.Fprintf(os.Stderr, "Run 'cn help' to see available commands.\n")
 		os.Exit(1)
 	}
 
+	cmd := res.Command
+	args := res.Remaining
+
 	// Check hub requirement.
 	spec := cmd.Spec()
 	if spec.NeedsHub && hubPath == "" {
-		fmt.Fprintf(os.Stderr, "✗ Command '%s' requires a hub, but no hub found.\n\n", cmdName)
+		fmt.Fprintf(os.Stderr, "✗ Command '%s' requires a hub, but no hub found.\n\n", spec.Name)
 		fmt.Fprintf(os.Stderr, "Fix by running:\n")
 		fmt.Fprintf(os.Stderr, "  1) cn init    (to create a new hub)\n")
 		fmt.Fprintf(os.Stderr, "  2) cd <hub>   (to enter an existing hub)\n\n")
-		fmt.Fprintf(os.Stderr, "Then rerun: cn %s %s\n", cmdName, strings.Join(args, " "))
+		fmt.Fprintf(os.Stderr, "Then rerun: cn %s\n", strings.Join(os.Args[1:], " "))
 		os.Exit(1)
 	}
 
