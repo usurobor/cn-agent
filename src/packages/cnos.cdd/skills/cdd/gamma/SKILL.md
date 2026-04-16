@@ -45,11 +45,11 @@ It expands those steps into executable checks, evidence, and gates.
 
 - Step 1 → observe + select (`§2.1–§2.2`)
 - Step 2 → issue pack + issue-quality gate (`§2.3–§2.4`)
-- Steps 3–5 → dispatch + unblocking (`§2.5–§2.6`)
-- Steps 6–7 → deferred release mechanics (`§2.7`)
-- Steps 8–9 → close-out triage (`§2.8`)
-- Steps 10–12 → cycle iteration and process patching (`§2.9–§2.11`)
-- Steps 13–15 → hub memory, branch cleanup, closure declaration (`§2.12`)
+- Steps 3–5 → dispatch + unblocking (`§2.5`)
+- Steps 6–7 → deferred release mechanics (`§2.6`)
+- Steps 8–9 → close-out triage (`§2.7`)
+- Steps 10–12 → cycle iteration and process patching (`§2.8–§2.9`)
+- Steps 13–15 → hub memory, branch cleanup, closure declaration (`§2.10`)
 
 ---
 
@@ -171,8 +171,7 @@ Fix the issue instead.
 #### Step 3 — Dispatch α
 
 ```text
-You are α.
-Project: <project>
+You are α. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md.
 Issue: gh issue view <N>
 ```
@@ -187,8 +186,7 @@ Rules:
 Dispatch β only when α's PR exists and the required CI/build checks for that review mode are complete and green, unless β is explicitly being asked for an offline/non-merge review.
 
 ```text
-You are β.
-Project: <project>
+You are β. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md.
 PR: gh pr view <N>
 Issue: gh issue view <N>

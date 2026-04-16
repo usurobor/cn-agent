@@ -196,7 +196,7 @@ Do not request review before this gate passes.
 
 Once the gate passes:
 
-- open or update the PR
+- open or update the PR; PR body or commit message must include `Closes #N` or `Fixes #N` to auto-close the issue on merge
 - request β review
 - if β returns RC, fix findings on the branch
 - after each patch, repeat self-coherence and pre-review for affected surfaces
@@ -204,8 +204,6 @@ Once the gate passes:
 ### 2.8. Close-out
 
 When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
-
-Note: PR body or commit message must include `Closes #N` or `Fixes #N` to auto-close the issue on merge — include this in step §2.7 when opening the PR, not at close-out time.
 
 ---
 

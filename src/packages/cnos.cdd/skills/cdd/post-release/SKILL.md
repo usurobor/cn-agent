@@ -67,7 +67,12 @@ The assessment produces one artifact with the following sections:
 - **Action:** none / patch skill / patch doc / automate check
 
 ### 4b. Cycle Iteration
-- **Triggered by:** review rounds / mechanical ratio / environment / loaded-skill miss / none
+- **Triggered by** (per CDD.md §9.1 thresholds):
+  - review rounds > 2
+  - mechanical ratio > 20% with ≥ 10 findings
+  - avoidable tooling/environmental failure
+  - loaded skill failed to prevent a finding
+  - none
 - **Root cause:** ...
 - **Disposition:** patch landed now / next MCA #NN / no patch with reason
 - **Evidence:** commit / issue / note

@@ -41,8 +41,8 @@ This file owns β's role boundary, dispatch contract, and phase-linking rules.
 
 ## Phase map
 
-- `CDD.md` β steps 1–2 → intake + independent review readiness
-- `CDD.md` β steps 5–7 → review / RC loop per `review/SKILL.md`
+- `CDD.md` β steps 1–5 → intake (receive, git identity, subscribe, load skills, read PR/issue)
+- `CDD.md` β steps 6–7 → review / RC loop per `review/SKILL.md`
 - `CDD.md` β step 8 → merge / tag / deploy per `release/SKILL.md`
 - `CDD.md` β step 9 → post-release assessment per `post-release/SKILL.md`
 - `CDD.md` β step 10 → β close-out to main
