@@ -35,14 +35,24 @@ This skill is a loader entrypoint. When CDD applies:
 - cycle iteration (§9.1)
 - dispatch prompt format (§1.4)
 
-Role skills own role execution and role-local gates.
-Lifecycle sub-skills own the detailed judgments inside each phase.
+Role skills may add:
+- evidence requirements
+- role-local gates
+- checklists
+- examples and katas
+- execution detail for the steps they own
+
+Role skills may **not** redefine:
+- selection rule order
+- ordered lifecycle steps
+- dispatch artifact contract
+- closeout obligations already named in `CDD.md`
 
 ## Role skills
 
 - `alpha/` — α role: implementation, self-coherence, pre-review gate
 - `beta/` — β role: review, release, post-release assessment
-- `gamma/` — γ role: selection, issue quality, dispatch, close-out triage, process iteration
+- `gamma/` — γ role: issue quality, dispatch, unblocking, close-out triage, process iteration
 
 ## Lifecycle sub-skills
 
@@ -55,5 +65,8 @@ Lifecycle sub-skills own the detailed judgments inside each phase.
 
 ## Conflict rule
 
-If this file and `CDD.md` appear to disagree, treat that as a packaging error: the source of truth is `CDD.md`.
-If a role skill and `CDD.md` appear to disagree on role execution detail, the role skill governs (it is the detailed expansion of the compact algorithm in `CDD.md`).
+If this file and `CDD.md` disagree, `CDD.md` governs.
+
+If a role skill and `CDD.md` disagree on ordered steps, selection rules, or artifact contract, `CDD.md` governs.
+
+If a role skill adds execution detail, gates, or evidence requirements for a `CDD.md` step **without** changing that step's order or meaning, the role skill governs for that local execution detail.

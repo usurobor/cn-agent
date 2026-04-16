@@ -66,6 +66,12 @@ The assessment produces one artifact with the following sections:
 - **Weakest axis:** α / β / γ
 - **Action:** none / patch skill / patch doc / automate check
 
+### 4b. Cycle Iteration
+- **Triggered by:** review rounds / mechanical ratio / environment / loaded-skill miss / none
+- **Root cause:** ...
+- **Disposition:** patch landed now / next MCA #NN / no patch with reason
+- **Evidence:** commit / issue / note
+
 ### 5. Production Verification
 
 **Scenario:** [what to test]
@@ -208,6 +214,23 @@ This drives action, not score-keeping:
 
 If no axis scores below 3, write "no action" and move on.
 
+### Step 5.6a: Cycle iteration
+
+If any `CDD.md` §9.1 trigger fired, this section is mandatory.
+
+For each fired trigger:
+1. name the trigger
+2. name the root cause
+3. name the disposition:
+   - patch landed now
+   - next MCA committed
+   - no patch with explicit reason
+4. link the evidence (commit / issue / note)
+
+If no `CDD.md` §9.1 trigger fired, write either:
+- `No §9.1 trigger fired`, or
+- the independent γ process-gap result if step 12 still found something worth patching.
+
 ### Step 5.7: Production verification
 
 After release, verify the change works in production — not just that CI passes. Design a concrete test that demonstrates the new capability (or blocked failure mode) in a real environment.
@@ -276,6 +299,7 @@ Before committing the assessment, verify mechanically:
 - [ ] §4 has all fields: PRs, review rounds, superseded PRs, finding breakdown, mechanical ratio, action
 - [ ] §4 mechanical ratio: if >20% AND total findings ≥ 10, a process issue is **filed and referenced** (not just noted). Below 10 findings, note the ratio but no filing required.
 - [ ] §4a CDD self-coherence: α/β/γ scored, weakest axis named, action stated (or "none" if all ≥3)
+- [ ] If any `CDD.md` §9.1 trigger fired, §4b Cycle Iteration exists with trigger, root cause, disposition, and evidence.
 - [ ] §3/§4 skill patches: if §3 identifies a recurring failure mode or skill gap, the patch is **in this commit** (not deferred) and synced across all affected surfaces: canonical source under `src/packages/`, package-visible loader entrypoint if affected, human-facing pointer/readme surfaces if they expose the changed rule.
 - [ ] §5.7 has production verification scenario (or explicit deferral with commitment)
 - [ ] §6 CDD Closeout trace present with rows for observe/assess/close steps (incl. step 12a if skill patches landed)

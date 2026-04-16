@@ -19,7 +19,6 @@ triggers: [gamma, coordination, dispatch, select, unblock, issue, next cycle]
 selection, issue quality, dispatch quality, unblocking, close-out triage, and process iteration.
 
 The failure mode is **orchestration by vibes**:
-
 - arbitrary selection
 - vague issues
 - prompts that compensate for underspecified skills or issues
@@ -29,21 +28,28 @@ The failure mode is **orchestration by vibes**:
 ## Load Order
 
 When acting as γ:
-
 1. load `CDD.md` as the canonical lifecycle, selection rules, and role contract
 2. load this file as the γ role surface
-3. load lifecycle sub-skills as needed (e.g. `issue/SKILL.md`, `post-release/SKILL.md`)
+3. load `issue/SKILL.md`
+4. load `post-release/SKILL.md` when operating in close-out
+5. load other lifecycle sub-skills only when the selected gap requires them
 
-The compact step sequence is in CDD.md §1.4 (γ algorithm, 5 phases / 15 steps). This file expands each phase into executable detail with gates and katas. When they diverge, this file governs on role execution; CDD.md governs on lifecycle and selection rules.
+`CDD.md` is the only canonical source for:
+- the ordered γ lifecycle (`CDD.md` §1.4, steps 1–15)
+- selection rule order (`CDD.md` §3)
 
-## Algorithm
+This file does **not** redefine that algorithm.
+It expands those steps into executable checks, evidence, and gates.
 
-1. **Observe** — read the coherence state and enumerate real candidate gaps.
-2. **Select** — apply the CDD selection order and record the decisive rule.
-3. **Package** — produce an issue that passes the issue-quality gate.
-4. **Dispatch** — send α and β only the artifact-level context each needs.
-5. **Unblock** — resolve ambiguity, missing context, or environment blockers without role leakage.
-6. **Close** — triage findings, land immediate process fixes, record the next move, and close the cycle.
+## Step map
+
+- Step 1 → observe + select (`§2.1–§2.2`)
+- Step 2 → issue pack + issue-quality gate (`§2.3–§2.4`)
+- Steps 3–5 → dispatch + unblocking (`§2.5–§2.6`)
+- Steps 6–7 → deferred release mechanics (`§2.7`)
+- Steps 8–9 → close-out triage (`§2.8`)
+- Steps 10–12 → cycle iteration and process patching (`§2.9–§2.11`)
+- Steps 13–15 → hub memory, branch cleanup, closure declaration (`§2.12`)
 
 ---
 
@@ -52,7 +58,6 @@ The compact step sequence is in CDD.md §1.4 (γ algorithm, 5 phases / 15 steps)
 ### 1.1. Identify the parts
 
 A coherent γ cycle has these parts:
-
 - observation inputs
 - candidate table
 - selected gap
@@ -77,7 +82,6 @@ Close-out converts cycle findings into immediate fixes or committed next work.
 ### 1.3. Name the failure mode
 
 γ fails through:
-
 - **selection drift** — choosing by excitement instead of CDD rule order
 - **issue ambiguity** — α must ask for missing constraints, ACs, or skills
 - **prompt compensation** — dispatch prompt grows because the issue or skill is weak
@@ -88,10 +92,9 @@ Close-out converts cycle findings into immediate fixes or committed next work.
 
 ## 2. Unfold
 
-### 2.1. Observe from the required inputs
+### 2.1. Step 1 — Observe and build candidates
 
-Before selecting work, read the current observation surfaces defined by CDD:
-
+Before selecting work, read the observation surfaces required by `CDD.md`:
 1. CHANGELOG TSC table
 2. encoding lag table
 3. doctor / status / operational-health surface
@@ -100,120 +103,102 @@ Before selecting work, read the current observation surfaces defined by CDD:
 Build a candidate table:
 
 ```md
-| Candidate | Source | Rule that nominates it | Leverage | Dependency | Effort | Decision |
-|-----------|--------|------------------------|----------|------------|--------|----------|
-| #NN ...   | lag    | stale / weakest-axis   | ...      | ...        | ...    | ...      |
+| Candidate | Source | Rule clause that nominates it | Dependency | Size | Decision |
+|-----------|--------|-------------------------------|------------|------|----------|
+| #NN ...   | lag    | CDD §3.x                      | ...        | ...  | ...      |
 ```
 
 Do not select from memory or preference alone.
 
-### 2.2. Select by rule order
+- ❌ "I remember issue #143 felt important"
+- ✅ "Candidate table shows #143 is selected under CDD §3.x for a named reason"
 
-Apply the CDD rule order exactly:
+### 2.2. Step 1 — Select by `CDD.md`, then size the intervention
 
-1. P0 override
-2. operational-infrastructure override
-3. prior assessment commitment default
-4. stale backlog re-evaluation
-5. MCI freeze rule — if MCI is frozen (growing-lag count > 3), reject any candidate that is new design work; select only from existing growing-lag MCAs
-6. weakest-axis rule
-7. maximum leverage
-8. dependency order
-9. effort-adjusted tie-break
-10. no-gap case
+Apply `CDD.md` §3 in order.
+Do **not** restate or reorder the rule list here.
 
-Required output:
-
+Required output of selection:
 - selected gap
-- decisive rule
+- decisive `CDD.md` rule / clause
 - rejected alternatives when non-obvious
+- intervention size: immediate output / small change / substantial cycle
 
-- ❌ "This feels like the most interesting next cycle"
-- ✅ "Selected #143 because stale backlog exists and MCI freeze forces the next MCA from the stale set"
+Sizing rule:
+- if the fix is immediate-output sized, execute it now and continue observation
+- if the work qualifies for small-change, route it to the small-change path instead of opening a substantial cycle
+- if the selected candidate is blocked, name the blocking dependency in the record before dispatch
 
-### 2.3. Size the intervention before dispatch
+- ❌ "Selected because it felt highest leverage"
+- ✅ "Selected #143 under CDD §3.x; #151 rejected because dependency unresolved; script fix executed immediately instead of becoming the cycle"
 
-Before opening a substantial cycle, ask:
+### 2.3. Step 2 — Build the issue pack
 
-- is this immediate-output sized?
-- is this a small change rather than a substantial cycle?
-- is the candidate blocked by an unresolved dependency?
-- does the assessment already commit a different next MCA?
+Use `issue/SKILL.md` as the base contract.
+A dispatchable γ issue is:
+- a complete `issue/SKILL.md` issue
+- **plus** a work-shape note (`substantial` / `small-change` / `immediate-output`)
+- **plus** dependency notes when sequencing or blockers are real
 
-If the fix is script / one-line-config / hook sized, execute it now and continue observation.
-Do not burn a full cycle on immediate-output work.
+γ does not restate Tier 1 or Tier 2 skills in the issue.
+γ does name Tier 3 skills, active invariants, related artifacts, non-goals, and priority exactly as `issue/SKILL.md` requires.
 
-### 2.4. Build the issue pack
+If the issue cannot be written to that level, the work is not ready for α dispatch.
 
-"Full implementation guidance" means the issue passes this gate before α is dispatched.
+- ❌ "Fix package restore; it's incoherent"
+- ✅ "Gap, evidence, numbered ACs, non-goals, Tier 3 skills, invariants, related artifacts, priority, work-shape note, dependency note"
 
-A dispatchable issue contains:
+### 2.4. Step 2 — Pass the issue-quality gate
 
-1. **Gap statement** — 3–5 lines naming what exists, what is expected, and where they diverge
-2. **Evidence links** — links to failing artifacts, review comments, logs, or design docs
-3. **Priority / impact** — explicit urgency and consequence if skipped
-4. **Acceptance criteria** — numbered, outcome-level, independently testable
-5. **Non-goals** — explicit scope boundary for substantial work
-6. **Work-shape note** — substantial / small-change / immediate-output if already known
-7. **Tier 3 skills** — only issue-specific skills, not Tier 1 or Tier 2
-8. **Active invariants** — linked governing constraints in plain language
-9. **Related artifacts** — design / plan / related issues when they exist
-10. **Dependency notes** — blockers or sequencing constraints when real
-
-If the issue cannot be written to this level, the work is not ready for α dispatch.
-
-### 2.5. Pass the issue-quality gate
-
-Before dispatch, check:
-
-- problem is concise and concrete
-- ACs are numbered and testable
-- non-goals exist when branch scope is substantial
-- every noun in ACs and work items is actually in scope
+Before dispatch, verify:
+- issue satisfies `issue/SKILL.md`
+- ACs are numbered and independently testable
+- every noun in ACs and work items is in scope
+- non-goals exist when the issue is substantial
 - Tier 3 skills are named explicitly
-- active invariants are linked
-- related design / plan artifacts are linked or explicitly absent
+- active invariants are linked and stated plainly
+- related artifacts are linked or explicitly absent
 - priority is stated
-- no Tier 1 / Tier 2 noise is restated in the issue
+- work-shape is stated
+- dependency notes exist when blockers or sequencing are real
+- no prompt-only constraints are hiding outside the issue
 
-Do not rely on the template being good enough.
-The issue must satisfy the skill, not merely the template.
+Do not compensate for a weak issue by making the prompt longer.
+Fix the issue instead.
 
-### 2.6. Dispatch α
+### 2.5. Steps 3–5 — Dispatch and unblock without leakage
 
-Dispatch prompt format:
+#### Step 3 — Dispatch α
 
 ```text
-You are α. Project: <project>
+You are α.
+Project: <project>
 Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md.
 Issue: gh issue view <N>
 ```
 
 Rules:
-
 - point α at the issue, not a paraphrase of the issue
-- do not restate the whole algorithm in the prompt
+- do not restate the algorithm in the prompt
 - do not smuggle missing constraints into chat prose; fix the issue instead
 
-If α opens a PR and CI is green, β becomes dispatchable.
+#### Step 4 — Dispatch β
 
-### 2.7. Dispatch β
-
-Dispatch prompt format:
+Dispatch β only when α's PR exists and the required CI/build checks for that review mode are complete and green, unless β is explicitly being asked for an offline/non-merge review.
 
 ```text
-You are β. Project: <project>
+You are β.
+Project: <project>
 Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md.
 PR: gh pr view <N>
 Issue: gh issue view <N>
 ```
 
-β receives artifact surfaces, not α's private implementation reasoning.
+β receives artifact surfaces, not α's hidden implementation rationale.
 
-### 2.8. Unblock without collapsing the boundary
+#### Step 5 — Unblock
 
 When α or β is blocked, γ may:
-
 - clarify requirement wording
 - add missing artifact links
 - edit the issue to state an omitted invariant
@@ -221,8 +206,7 @@ When α or β is blocked, γ may:
 - provide mechanical environment help
 - point the role back to the governing skill or artifact
 
-γ may not:
-
+γ may **not**:
 - forward β's internal reasoning transcript to α
 - forward α's hidden rationale transcript to β
 - author the implementation fix inside the review loop
@@ -230,10 +214,12 @@ When α or β is blocked, γ may:
 
 Allowed transfer unit: **artifact facts**, not hidden role state.
 
-### 2.9. Support release mechanically
+- ❌ "β said this design is shaky; just rewrite the parser like this"
+- ✅ "The issue omitted invariant X; γ adds it to the issue and points α back to the updated artifact"
+
+### 2.6. Steps 6–7 — Support deferred release mechanics only
 
 If β deferred a mechanical release step because of environment constraints, γ may:
-
 - push the tag
 - verify release CI fired
 - close the issue if auto-close failed
@@ -241,50 +227,84 @@ If β deferred a mechanical release step because of environment constraints, γ 
 γ does not redo β's judgment.
 γ only completes deferred mechanics.
 
-### 2.10. Triage close-outs
+### 2.7. Steps 8–9 — Triage close-outs explicitly
 
-Before closing the cycle, collect:
-
+Before close-out, collect:
 - α close-out
 - β close-out
 - post-release assessment
 
-For each finding, apply CAP:
-
+For each finding, record one disposition using CAP:
 1. **Immediate MCA available** → ship now
 2. **Project MCI** → file / update project issue or `.cdd/` artifact
 3. **Agent MCI** → update hub / adhoc thread
 4. **One-off** → drop explicitly
 
+Minimum triage record:
+
+```md
+| Finding | Source | Type | Disposition | Artifact / commit |
+|---------|--------|------|-------------|-------------------|
+| ...     | α/β/assessment | process/skill/... | immediate MCA / project MCI / agent MCI / drop | ... |
+```
+
 Silence is not triage.
 Every finding gets a disposition.
 
-### 2.11. Run the γ closeout gate
+### 2.8. Steps 10–11 — Enforce cycle-iteration outputs when triggers fire
+
+Apply the cycle-iteration checks named in `CDD.md` step 10.
+For each fired trigger, γ must do something explicit:
+
+| Trigger | Fire condition | Required γ action | Closure rule |
+|---|---|---|---|
+| Review churn | review rounds > 2 | Verify the assessment contains a `Cycle Iteration` entry naming the root cause and the chosen disposition (patch landed now / next MCA / no patch with reason). | If missing, cycle cannot close. |
+| Mechanical overload | mechanical ratio > 20% **and** total findings ≥ 10 | Verify the assessment names the recurring mechanical class and whether the mechanization patch was landed now or filed as a concrete MCA. | If missing, cycle cannot close. |
+| Avoidable tooling / environment failure | environment or tooling blocked the cycle in a way a guardrail could likely prevent | Verify the assessment names the failure, workaround, and disposition (guard landed now / issue filed / no spec-level fix with reason). | If missing, cycle cannot close. |
+| Loaded-skill miss | a loaded skill should have prevented a finding but did not | Patch the skill now when the correction is clear; otherwise verify the assessment names the exact skill gap and the concrete next MCA. | If neither patch nor committed MCA exists, cycle cannot close. |
+
+This is not just a checklist.
+Each fired trigger must end in one of three states:
+- patch landed now
+- concrete next MCA committed
+- explicit no-patch decision with reason
+
+### 2.9. Step 12 — Run the independent γ process-gap check
+
+Even if no `CDD.md` §9.1 trigger fired, γ must still ask:
+- Did this cycle reveal a recurring friction?
+- Was any gate too weak or too vague?
+- Did a role skill fail to prevent a predictable error?
+- Did coordination burden show a better mechanical path?
+
+If yes:
+- patch the skill / spec now when clear, **or**
+- commit the concrete next MCA (issue / owner / first AC)
+
+If no:
+- state why not in one sentence inside the assessment or γ close-out
+
+- ❌ "No trigger fired, so nothing to do"
+- ✅ "No formal trigger fired, but dispatch kept compensating for issue ambiguity; γ patches issue-quality gate now"
+
+### 2.10. Steps 13–15 — Close only after the closure gate passes
 
 Do not declare the cycle closed until all of the following are true:
-
 1. α close-out exists on main
 2. β close-out exists on main
 3. post-release assessment exists
-4. recurring findings were assessed for skill / spec patching
-5. immediate outputs were either landed or explicitly ruled out
-6. deferred outputs have issue / owner / first AC
-7. next MCA is named
-8. hub memory is updated
-9. merged remote branches are cleaned up
+4. every fired cycle-iteration trigger has a `Cycle Iteration` entry with root cause and disposition
+5. recurring findings were assessed for skill / spec patching
+6. immediate outputs were either landed or explicitly ruled out
+7. deferred outputs have issue / owner / first AC
+8. next MCA is named
+9. hub memory is updated
+10. merged remote branches are cleaned up
 
-### 2.12. Close the learning loop
-
-Apply the cycle-iteration checks:
-
-- review rounds threshold
-- mechanical ratio threshold
-- avoidable tooling / environment failure
-- loaded-skill miss
-- any recurring process friction even if thresholds did not fire
-
-If a process patch is possible now, land it now.
-If no patch is warranted, state why explicitly.
+Then:
+- update hub memory
+- delete merged remote branches
+- state closure explicitly: `Cycle #N closed. Next: #M.`
 
 ---
 
@@ -292,11 +312,11 @@ If no patch is warranted, state why explicitly.
 
 ### 3.1. Select by rule order, not taste
 
-The candidate you like is irrelevant if a stronger selection rule applies.
+The candidate you like is irrelevant if a stronger `CDD.md` rule applies.
 
-### 3.2. Name the decisive rule
+### 3.2. Name the decisive clause
 
-Every selected gap must record why it beat the alternatives.
+Every selected gap must record the `CDD.md` clause that made it win.
 
 ### 3.3. Make the issue executable before dispatch
 
@@ -314,7 +334,7 @@ Repeating them hides the real issue-specific constraints.
 
 ### 3.6. Land immediate process fixes in the same cycle when possible
 
-A missing gate discovered this cycle should not automatically become "future work" when the patch is already clear.
+A missing gate discovered this cycle should not automatically become future work when the patch is already clear.
 
 ### 3.7. Do not close the cycle with unresolved triage
 
@@ -329,20 +349,19 @@ A missing gate discovered this cycle should not automatically become "future wor
 #### Scenario
 
 You have three candidates:
-
 - a newly noticed feature idea
 - a stale process issue from two cycles ago
 - a small infra script fix that takes five minutes
 
 #### Task
 
-Select the next move and justify it using the CDD rule order.
+Select the next move and justify it using `CDD.md` rule order.
 
 #### Expected answer
 
 - immediate-output work executed now if truly immediate
-- stale issue chosen for the next substantial MCA if MCI freeze applies
-- explicit decisive rule named
+- stale issue chosen for the next substantial MCA if the governing `CDD.md` clause forces it
+- explicit decisive clause named
 
 ### Kata B — Issue quality
 
@@ -352,7 +371,7 @@ An issue says only: "Fix package restore; it's incoherent."
 
 #### Task
 
-Rewrite it into a dispatchable issue pack.
+Rewrite it into a dispatchable γ issue pack.
 
 #### Required fields
 
@@ -364,6 +383,8 @@ Rewrite it into a dispatchable issue pack.
 - active invariants
 - related artifacts
 - priority
+- work-shape note
+- dependency note when applicable
 
 #### Common failures
 
@@ -371,3 +392,24 @@ Rewrite it into a dispatchable issue pack.
 - writes vague ACs
 - omits non-goals
 - leaves α to infer the invariant
+
+### Kata C — Cycle iteration
+
+#### Scenario
+
+A cycle finished with:
+- 3 review rounds
+- 12 total findings, 5 mechanical
+- one loaded-skill miss
+- no process patch committed yet
+
+#### Task
+
+State what γ must require before closure.
+
+#### Expected answer
+
+- `Cycle Iteration` section added to the assessment
+- root cause named for review churn / mechanical overload / skill miss
+- disposition given for each fired trigger
+- closure blocked until there is either a landed patch, a concrete next MCA, or an explicit no-patch justification

@@ -15,7 +15,6 @@ triggers: [beta, reviewer, review, release, post-release, gate]
 **Coherent β work preserves independent judgment from first review through release and assessment.**
 
 β owns:
-
 - review verdict
 - release gate
 - merge / tag / deploy
@@ -28,7 +27,6 @@ review, release, and assessment are treated as separate chores, so context leaks
 ## Load Order
 
 When acting as β:
-
 1. load `CDD.md` as the canonical lifecycle and role contract
 2. load this file as the β role surface
 3. load `review/SKILL.md`
@@ -36,16 +34,21 @@ When acting as β:
 5. load `post-release/SKILL.md`
 6. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue and diff
 
-The detailed step sequence is in CDD.md §1.4 (β algorithm). This file owns β's role boundary and dispatch contract. `review/`, `release/`, and `post-release/` are the detailed executable surfaces for each phase.
+The detailed ordered step sequence is in `CDD.md` §1.4 (β algorithm).
+This file owns β's role boundary, dispatch contract, and phase-linking rules.
 
-## Algorithm
+`review/`, `release/`, and `post-release/` are the executable surfaces for each phase.
 
-1. **Review** — read the issue and PR independently; produce a verdict per `review/SKILL.md`.
-2. **Narrow** — if RC, wait for α's fix; re-review only the affected surfaces.
-3. **Merge** — when approved, squash-merge the PR.
-4. **Release** — tag, deploy, verify per `release/SKILL.md`. If tag push fails due to env constraints, commit all release artifacts to main and defer tag push to γ/operator.
-5. **Assess** — write post-release assessment per `post-release/SKILL.md`.
-6. **Close-out** — write β close-out to main directly. This is β's input to γ's cycle iteration decision.
+## Phase map
+
+- `CDD.md` β steps 1–2 → intake + independent review readiness
+- `CDD.md` β steps 5–7 → review / RC loop per `review/SKILL.md`
+- `CDD.md` β step 8 → merge / tag / deploy per `release/SKILL.md`
+- `CDD.md` β step 9 → post-release assessment per `post-release/SKILL.md`
+- `CDD.md` β step 10 → β close-out to main
+
+This file does not replace those sub-skills.
+It states what β must preserve across them.
 
 ## Role Rules
 
@@ -54,21 +57,37 @@ The detailed step sequence is in CDD.md §1.4 (β algorithm). This file owns β'
 β does not author the fix it judges.
 If RC is requested, α performs the fix.
 
+- ❌ "β noticed the missing invariant check and pushed the fix directly to get the PR over the line"
+- ✅ "β names the invariant gap as an RC finding; α lands the fix; β re-reviews the affected surfaces"
+
 ### 2. Keep review, release, and assessment together
 
 The same β session or follow-on β session owns all three unless the operator explicitly reassigns responsibility.
+
+- ❌ "Approve now; tagging and assessment can happen later in a different session"
+- ✅ "The same β ownership carries verdict → merge → tag/deploy → assessment → close-out"
 
 ### 3. Treat stale references and authority conflicts as findings
 
 If canonical doc, executable skill, issue, PR body, release artifact, or assessment disagree, that is reviewable incoherence, not editorial cleanup.
 
+- ❌ "The issue says fallback stays, the release note says fallback was removed — tidy it up after merge"
+- ✅ "Artifact conflict is named as a finding before merge; release waits for one source of truth"
+
 ### 4. Do not merge with unresolved findings
 
 No "approve with follow-up" except an explicitly named design-scope deferral that is filed before merge.
 
+- ❌ "Approve and file a follow-up later for the missing guardrail"
+- ✅ "RC until the guardrail lands, or open an explicit deferral issue before merge and scope approval to that decision"
+
 ### 5. Closure discipline
 
-The same β session that reviews and merges also owns the release, assessment, and close-out. Do not defer these to a separate session or role unless the operator explicitly reassigns. This was the recurring failure mode in cycles 3.55.0–3.56.0; the fix is: review → narrow → merge → release → assess → close-out, all in one pass.
+The same β session that reviews and merges also owns the release, assessment, and close-out.
+Do not defer these to a separate session or role unless the operator explicitly reassigns.
+
+- ❌ "Merge succeeded; another agent can write the assessment later"
+- ✅ "Review → narrow → merge → release → assess → close-out in one β pass"
 
 ## Embedded Kata
 
@@ -79,7 +98,6 @@ You review a branch that is locally correct but the issue, canonical doc, and re
 ### Task
 
 State:
-
 1. the review finding
 2. the release implication if uncorrected
 3. the assessment implication if merged anyway
