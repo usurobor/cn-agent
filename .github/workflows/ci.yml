@@ -140,7 +140,7 @@ jobs:
         run: |
           export PATH="$PWD:$PATH"
           cd ci-tier2/cn-ci-hub
-          cn kata-run --class runtime
+          cn kata run --class runtime
 
       - name: Framework command surface (kata-list, method dispatch, kata-judge)
         # Per #251 review F3: Tier-2 must mechanically protect every new
@@ -152,8 +152,8 @@ jobs:
           cd ci-tier2/cn-ci-hub
           set -euo pipefail
 
-          echo "--- cn kata-list ---"
-          LIST_OUT="$(cn kata-list)"
+          echo "--- cn kata list ---"
+          LIST_OUT="$(cn kata list)"
           echo "$LIST_OUT"
           R_COUNT=$(echo "$LIST_OUT" | grep -cE '^\s+runtime\s+R[0-9]')
           M_COUNT=$(echo "$LIST_OUT" | grep -cE '^\s+method\s+M[0-9]')
@@ -161,8 +161,8 @@ jobs:
           [ "$M_COUNT" -ge 5 ] || { echo "FAIL: kata-list found $M_COUNT method, expected >= 5"; exit 1; }
           echo "PASS: kata-list discovered $R_COUNT runtime + $M_COUNT method across packages"
 
-          echo "--- cn kata-run M0-gap --mode cdd (corpus-only stub path) ---"
-          cn kata-run M0-gap --mode cdd
+          echo "--- cn kata run M0-gap --mode cdd (corpus-only stub path) ---"
+          cn kata run M0-gap --mode cdd
           BUNDLE="$(ls -td .kata-runs/*-M0-gap-cdd | head -1)"
           [ -n "$BUNDLE" ] && [ -f "$BUNDLE/metadata.json" ] \
             || { echo "FAIL: no run bundle produced"; exit 1; }
@@ -170,8 +170,8 @@ jobs:
             || { echo "FAIL: metadata.json missing 'status: stub'"; cat "$BUNDLE/metadata.json"; exit 1; }
           echo "PASS: method-kata stub path produced valid bundle ($BUNDLE)"
 
-          echo "--- cn kata-judge <bundle> ---"
-          JUDGE_OUT="$(cn kata-judge "$BUNDLE")"
+          echo "--- cn kata judge <bundle> ---"
+          JUDGE_OUT="$(cn kata judge "$BUNDLE")"
           echo "$JUDGE_OUT"
           echo "$JUDGE_OUT" | grep -q '"verdict": "not-yet-implemented"' \
             || { echo "FAIL: kata-judge missing honest-stub verdict"; exit 1; }
