@@ -154,7 +154,7 @@ The prompt names the role, provides parameters, and points to the issue or PR. T
 8. Subscribe to PR notifications
 9. Request review from β
 10. If β returns RC: fix findings, push, re-request review
-11. When β approves: write α close-out (cycle findings or "no findings")
+11. When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
 12. Done
 
 **α close-out:** Report cycle-level learnings to γ. Concrete findings (skill gaps, process friction, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is α's input to γ's cycle iteration decision (§9.1).
