@@ -152,16 +152,22 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
 **To α:**
 ```
 You are α. Project: <project>.
-Load src/packages/cnos.cdd/skills/cdd/SKILL.md and follow the α algorithm (§1.4).
+Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md.
 Issue: gh issue view <number>
 ```
 
 **To β:**
 ```
 You are β. Project: <project>.
-Load src/packages/cnos.cdd/skills/cdd/SKILL.md and follow the β algorithm (§1.4).
+Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md.
 PR: gh pr view <number>
 Issue: gh issue view <number>
+```
+
+**To γ (operator or γ-agent):**
+```
+You are γ. Project: <project>.
+Load src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md.
 ```
 
 Parameters: `<project>` is the project name (e.g. `cnos`, `myapp`). Git identity uses `<role>@cdd.<project>` (e.g. `alpha@cdd.cnos`). `<number>` is the issue or PR number.
@@ -496,15 +502,15 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 | 6c | Tests | build | α (or delegated implementer) | test files or explicit reason none apply | — (diff) | diff / primary branch artifact | agent | always | testing |
 | 6d | Code | build | α (or delegated implementer) | implementation diff or "docs/process only" | — (diff) | diff / primary branch artifact | agent | always | active generation skills |
 | 6e | Docs | build | α (or delegated implementer) | changed canonical docs / specs / READMEs | — (diff) | diff | agent | when docs affected | writing |
-| 6f | Delegated handoff | build | α → implementer | implementation prompt with: active skills, test requirements per module, engineering conventions, artifact order + self-verification report from implementer | cdd/SKILL.md §2.5a | prompt + report | delegator + implementer | when implementation is delegated | cdd |
+| 6f | Delegated handoff | build | α → implementer | implementation prompt with: active skills, test requirements per module, engineering conventions, artifact order + self-verification report from implementer | alpha/SKILL.md §2.2 | prompt + report | delegator + implementer | when implementation is delegated | cdd |
 | 7 | Self-coherence | build | α (or delegated implementer) | SELF-COHERENCE.md | `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md` | version directory | agent | substantial only | cdd |
-| 7a | Pre-review | build | α | branch rebased onto current `main`; PR body carries CDD Trace through step 7; tests reference ACs; known debt explicit; **schema/shape audit across all touched files** when contracts change — when introducing or changing a canonical form, verify (a) the new form is present across all relevant files AND (b) any superseded form has been removed; cite the verifying command (e.g. grep that returns exactly one match per file); **workspace-global library-name uniqueness check** when adding a new `(library (name X))` stanza; **post-patch re-audit** — after any mid-cycle code change, re-read the PR body top-to-bottom and verify every CDD Trace / invariant / self-coherence row still matches HEAD; **CI green on head commit** before requesting review (draft-until-green when local verification unavailable) | cdd/SKILL.md §2.5b | PR body | mechanical | always | cdd |
+| 7a | Pre-review | build | α | branch rebased onto current `main`; PR body carries CDD Trace through step 7; tests reference ACs; known debt explicit; **schema/shape audit across all touched files** when contracts change — when introducing or changing a canonical form, verify (a) the new form is present across all relevant files AND (b) any superseded form has been removed; cite the verifying command (e.g. grep that returns exactly one match per file); **workspace-global library-name uniqueness check** when adding a new `(library (name X))` stanza; **post-patch re-audit** — after any mid-cycle code change, re-read the PR body top-to-bottom and verify every CDD Trace / invariant / self-coherence row still matches HEAD; **CI green on head commit** before requesting review (draft-until-green when local verification unavailable) | alpha/SKILL.md §2.6 | PR body | mechanical | always | cdd |
 | 8 | Review | review | β | review artifact / PR review / comment link | review/SKILL.md output format | review surface | reviewer | always | review |
 | 9 | Gate + merge | release | β | gate result / release-readiness evidence + PR merge | `docs/gamma/cdd/GATE-TEMPLATE.md` | release or review surface | mechanical + reviewer | always | release |
 | 10 | Release | release | β | CHANGELOG row, tag, release note | CHANGELOG.md ledger + release/SKILL.md | release surface | agent + mechanical | always | release, writing |
 | 11 | Observe | close | β | post-release observation result | post-release/SKILL.md | post-release assessment | releasing agent | always | post-release |
 | 12 | Assess | close | β | POST-RELEASE-ASSESSMENT.md | post-release/SKILL.md output template | version directory | releasing agent | always | post-release |
-| 12a | Skill patch | close | β | skill/spec patches for recurring failure modes identified in §3; synced across all affected surfaces under src/packages/ | post-release/SKILL.md §3 + cdd/SKILL.md §3.3/§3.3a | same commit as assessment | releasing agent | when §3 identifies recurring failure or skill gap | post-release, cdd |
+| 12a | Skill patch | close | γ | skill/spec patches for recurring failure modes identified in §3; synced across all affected surfaces under src/packages/ | post-release/SKILL.md §3 + gamma/SKILL.md §2.10-§2.12 | same commit as assessment or γ closeout | γ (or releasing agent) | when §3 identifies recurring failure or skill gap | post-release, cdd |
 | 13 | Close | close | β | immediate outputs executed (incl. 12a patches) + deferred committed | post-release/SKILL.md §6 CDD Closeout | post-release assessment | releasing agent | always | post-release |
 
 **Primary branch artifact:** the PR body (`.github/PULL_REQUEST_TEMPLATE.md`) for L5/L6 changes, or the design artifact (design/SKILL.md §3.1) for larger changes.

@@ -14,8 +14,12 @@ triggers: [review, PR, release, issue, design, plan, assess, post-release, ship,
 This skill is a loader entrypoint. When CDD applies:
 
 1. Load `CDD.md` in this directory as the canonical algorithm
-2. Load all required cdd/* sub-skills referenced by that algorithm
-3. Load Tier 2 and Tier 3 skills as directed by the issue and work shape
+2. Load the role skill for the active role:
+   - α: `alpha/SKILL.md`
+   - β: `beta/SKILL.md`
+   - γ: `gamma/SKILL.md`
+3. Load lifecycle sub-skills as directed by the role and work shape
+4. Load Tier 2 and Tier 3 skills as directed by the issue
 
 ## Rule
 
@@ -31,9 +35,16 @@ This skill is a loader entrypoint. When CDD applies:
 - cycle iteration (§9.1)
 - dispatch prompt format (§1.4)
 
-This file does not restate the method. It only tells the runtime and operator what to load.
+Role skills own role execution and role-local gates.
+Lifecycle sub-skills own the detailed judgments inside each phase.
 
-## Sub-skills
+## Role skills
+
+- `alpha/` — α role: implementation, self-coherence, pre-review gate
+- `beta/` — β role: review, release, post-release assessment
+- `gamma/` — γ role: selection, issue quality, dispatch, close-out triage, process iteration
+
+## Lifecycle sub-skills
 
 - `design/` — design artifact production
 - `issue/` — issue creation and structure
@@ -45,3 +56,4 @@ This file does not restate the method. It only tells the runtime and operator wh
 ## Conflict rule
 
 If this file and `CDD.md` appear to disagree, treat that as a packaging error: the source of truth is `CDD.md`.
+If a role skill and `CDD.md` appear to disagree on role execution detail, the role skill governs (it is the detailed expansion of the compact algorithm in `CDD.md`).

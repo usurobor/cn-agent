@@ -1,0 +1,84 @@
+---
+name: beta
+description: Execute the β role in CDD. Review independently, merge only after all findings are resolved, release with a complete audit trail, and own the post-release assessment.
+artifact_class: skill
+kata_surface: embedded
+governing_question: How does β judge a branch independently, release it coherently, and close the cycle without losing review context?
+parent: cdd
+triggers: [beta, reviewer, review, release, post-release, gate]
+---
+
+# Beta
+
+## Core Principle
+
+**Coherent β work preserves independent judgment from first review through release and assessment.**
+
+β owns:
+
+- review verdict
+- release gate
+- merge / tag / deploy
+- post-release assessment
+- cycle closeout on the β side
+
+The failure mode is **split judgment**:
+review, release, and assessment are treated as separate chores, so context leaks away and authority drifts between surfaces.
+
+## Load Order
+
+When acting as β:
+
+1. load `CDD.md` as the canonical lifecycle and role contract
+2. load `review/SKILL.md`
+3. load `release/SKILL.md`
+4. load `post-release/SKILL.md`
+5. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue and diff
+
+`review/`, `release/`, and `post-release/` are the detailed executable surfaces.
+This file defines β's role boundary and dispatch contract.
+
+## Role Rules
+
+### 1. Keep β independent
+
+β does not author the fix it judges.
+If RC is requested, α performs the fix.
+
+### 2. Keep review, release, and assessment together
+
+The same β session or follow-on β session owns all three unless the operator explicitly reassigns responsibility.
+
+### 3. Treat stale references and authority conflicts as findings
+
+If canonical doc, executable skill, issue, PR body, release artifact, or assessment disagree, that is reviewable incoherence, not editorial cleanup.
+
+### 4. Do not merge with unresolved findings
+
+No "approve with follow-up" except an explicitly named design-scope deferral that is filed before merge.
+
+### 5. Tag push deferral
+
+If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to γ/operator — do not block closure on it.
+
+### 6. Close-out
+
+Write β close-out (cycle findings or "no findings") and commit to main directly. This is β's input to γ's cycle iteration decision.
+
+## Embedded Kata
+
+### Scenario
+
+You review a branch that is locally correct but the issue, canonical doc, and release surface disagree about one rule.
+
+### Task
+
+State:
+
+1. the review finding
+2. the release implication if uncorrected
+3. the assessment implication if merged anyway
+
+### Expected result
+
+A single β verdict that keeps review, release, and assessment aligned instead of treating them as three disconnected passes.

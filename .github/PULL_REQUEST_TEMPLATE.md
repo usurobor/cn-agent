@@ -48,3 +48,14 @@
 ## Known Debt
 
 <!-- What remains after this change. "None" is valid. -->
+
+## Pre-Review Gate (alpha/SKILL.md §2.6)
+
+- [ ] Rebased on current `main`
+- [ ] PR body carries CDD Trace through step 7
+- [ ] Every AC mapped to evidence
+- [ ] Peer enumeration completed where closure claim is family-wide
+- [ ] Schema / shape audit completed where contracts changed
+- [ ] Harness audit completed where schema-bearing surfaces changed
+- [ ] Known debt explicit
+- [ ] CI green on head commit (or PR remains draft)

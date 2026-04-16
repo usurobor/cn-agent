@@ -16,17 +16,29 @@ labels: ''
 
 <!-- How was this discovered? Link to logs, traces, sessions, adhoc threads, or essays. -->
 
+## Priority
+
+<!-- P0 / P1 / P2 -->
+
 ## Scope
 
-- **Work shape:** <!-- bugfix / feature / runtime / architecture / docs -->
+- **Work shape:** <!-- substantial / small-change / immediate-output -->
 - **Estimated level:** <!-- L5 / L6 / L7 -->
-- **Suggested active skills:** <!-- 2–3 generation constraints -->
+- **Non-goals:** <!-- explicit scope boundary — what this issue does NOT attempt -->
+
+## Skills and Constraints
+
+- **Tier 3 skills:** <!-- only issue-specific skills, not Tier 1 or Tier 2 -->
+- **Active invariants:** <!-- linked governing constraints in plain language -->
 
 ## Acceptance Criteria
 
-- [ ] 
-- [ ] 
+- [ ] **AC1:**
+- [ ] **AC2:**
 
-## Related
+## Related Artifacts
 
-<!-- Issues, PRs, adhoc threads, essays, docs. -->
+- **Design:** <!-- design doc or "none" -->
+- **Plan:** <!-- plan doc or "none" -->
+- **Related issues:** <!-- #N, #M or "none" -->
+- **Dependency notes:** <!-- blockers or sequencing constraints, or "none" -->
