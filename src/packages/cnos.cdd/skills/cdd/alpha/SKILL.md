@@ -97,7 +97,7 @@ On dispatch:
 Do not start coding until the active skill set is explicit.
 
 - ❌ "I'll pick the language skill once I'm in the file"
-- ✅ "Tier 3 includes `eng/go` and `eng/ux-cli`; both are loaded before implementation"
+- ✅ "Tier 3 includes `eng/<language>` and `eng/ux-cli`; both are loaded before implementation"
 
 ### 2.2. Produce in artifact order
 
@@ -150,7 +150,7 @@ When the branch changes a parser, schema-bearing type, manifest shape, or runtim
 
 This is not optional when a non-code harness can drift from the implementation.
 
-- ❌ "The Go parser is fixed"
+- ❌ "The parser is fixed"
 - ✅ "Parser fixed; shell fixture writer and CI-emitted example JSON audited against the same schema"
 
 ### 2.5. Self-coherence

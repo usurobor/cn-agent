@@ -130,7 +130,7 @@ Review fails via **surface reading** — checking only what changed, missing wha
     - the declared skills are present in the branch or loaded context
     - the implementation is consistent with them
     - findings that a declared active skill would have prevented are process debt (§6.1 / mechanical)
-  - ❌ "Active skills: ocaml" but code has `List.hd` and bare `with _ ->` (OCaml skill §3.1 violations)
+  - ❌ "Active skills: eng/<language>" but code violates the declared language skill (e.g. bare exception swallowing, unsafe casts)
   - ✅ "Active skills: ocaml, performance-reliability — implementation consistent with both"
 
 2.0.8. **CDD execution trace (CDD §5.4)**
@@ -163,7 +163,7 @@ Read the diff for internal coherence.
     - Grep for duplicate entries in any list/array literal added or modified
     - Verify branch name matches project convention (e.g. CDD branch format)
     - If tests are in the diff, verify expect-test outputs are plausible (exact strings, whitespace)
-    - Check new type definitions for overlapping field names within the same module — each shared name creates a disambiguation burden at every access site (see OCaml skill §3.1)
+    - Check new type definitions for overlapping field names within the same module — each shared name creates a disambiguation burden at every access site
     - **Unicode hygiene**: scan added lines for hidden/bidi control characters (U+200B..U+200F, U+202A..U+202E, U+2066..U+2069, U+FEFF, Unicode category Cf). These are blocker-worthy. Visible Unicode (emoji, em dashes, arrows, Greek letters) in human-facing content files (templates, docs) is allowed and not a finding. Do not conflate GitHub's "hidden characters" warning with the presence of visible Unicode — the warning targets invisible control characters, not content.
   - These are deterministic — two reviewers running the same grep must find the same results.
   - ❌ Read the diff for logic only

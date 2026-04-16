@@ -429,7 +429,7 @@ All general skills under `eng/` that apply regardless of domain: coding, design-
 
 **Tier 3 — Issue-specific (named per issue):**
 Skills that depend on what the work touches. The issue's "Skills and constraints" section names these. Examples:
-- Language: `eng/go`, `eng/ocaml`, `eng/typescript`
+- Language: `eng/<language>`
 - Domain: `eng/ux-cli`, `eng/performance-reliability`, `eng/tool-writing`
 - Architecture: `eng/architecture-evolution`, `eng/functional`
 

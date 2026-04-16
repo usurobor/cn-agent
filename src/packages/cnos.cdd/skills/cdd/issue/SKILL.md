@@ -101,11 +101,11 @@ Failure mode: issue requires back-and-forth to clarify scope, acceptance, or pri
 
 2.4.1. **Name the Tier 3 (issue-specific) skills the implementer must load**
   - CDD lifecycle skills (Tier 1) and general eng skills (Tier 2) are always loaded per CDD §4.4 — do not repeat them here
-  - Name only the issue-specific skills: language (`eng/go`, `eng/ocaml`, `eng/typescript`), domain (`eng/ux-cli`, `eng/performance-reliability`), architecture (`eng/architecture-evolution`), etc.
+  - Name only the issue-specific skills: language (`eng/<language>`), domain (`eng/ux-cli`, `eng/performance-reliability`), architecture (`eng/architecture-evolution`), etc.
   - The implementer may be a different agent who has never seen your constraints
   - ❌ Omit Tier 3 skills — implementer writes code that violates language-specific boundaries, caught only by CI or review
   - ❌ List all CDD and general eng skills — those are always loaded, listing them is noise
-  - ✅ "Tier 3 skills: `eng/go` (dispatch boundary §2.18, purity boundary §2.17), `eng/ux-cli` (output formatting)"
+  - ✅ "Tier 3 skills: `eng/<language>` (relevant boundary rules), `eng/ux-cli` (output formatting)"
 
 2.4.2. **Name the active invariants**
   - Link to `docs/alpha/DESIGN-CONSTRAINTS.md` entries that govern the work

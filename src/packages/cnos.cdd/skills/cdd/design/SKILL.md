@@ -82,8 +82,8 @@ Identify what governs before proposing what changes.
   - ✅ "Skill §Authority says canonical doc governs on disagreement — so canonical doc must be updated, or authority claim must be narrowed"
 
 3.2. **Name the abstraction level**
-  - ❌ "Use dune-project as version source" (OCaml package metadata — wrong level for system manifests, lockfiles, tests, status)
-  - ✅ "VERSION file is language-agnostic, sits above all consumers: OCaml build, system manifest, package manifests, lockfiles, tests, CI"
+  - ❌ "Use language-specific build metadata as version source" (wrong level for system manifests, lockfiles, tests, status)
+  - ✅ "VERSION file is language-agnostic, sits above all consumers: build system, system manifest, package manifests, lockfiles, tests, CI"
 
 3.3. **Name what can't change**
   - ❌ Proposal silently breaks an existing interface

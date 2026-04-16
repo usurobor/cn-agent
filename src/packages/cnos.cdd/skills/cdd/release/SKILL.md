@@ -65,7 +65,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - Edit `VERSION` to the new version string (bare, no `v` prefix)
   - Run `scripts/stamp-versions.sh` — derives all manifests (`cn.json`, package `cn.package.json` files) from VERSION
   - Run `scripts/check-version-consistency.sh` — validates all version-stamped files agree
-  - Go binary embeds version from VERSION at build time — no manual edit needed
+  - Binary embeds version from VERSION at build time — no manual edit needed
   - Tests and katas read version dynamically — no manual edit needed
   - ❌ Edit cn.json or package manifests by hand (bypasses single source of truth)
   - ❌ Skip stamp-versions.sh ("I'll update the manifests manually")
