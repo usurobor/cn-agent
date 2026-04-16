@@ -272,7 +272,7 @@ identity templates and bundled verification katas. The set is intentionally clos
 | v3.37.0 | Commands migrated from built-in to package content class |
 | v3.51.0 | Content co-located with manifests in `src/packages/`; `sources` field removed |
 | v3.55.0 | Katas added as 8th content class (kata framework split; `cnos.kata`, `cnos.cdd.kata`) |
-| #253 | Single source of truth in `pkg.ContentClasses`; `cn status` and `cn build --check` agree on membership via filesystem presence |
+| v3.56.1 | Single source of truth in `pkg.ContentClasses`; `cn status` and `cn build --check` agree on membership via filesystem presence (#253) |
 
 ---
 
