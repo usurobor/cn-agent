@@ -40,6 +40,30 @@ cd cn-kata-hub
 
 cn setup >/dev/null 2>&1 || { fail "cn setup failed (precondition)"; kata_summary; }
 
+# `cn setup` writes a default deps.json pinning cnos.core/cnos.eng to
+# the binary version. In CI the binary is built without -ldflags, so
+# the version is "dev" — not a real key in the index. Overwrite with
+# a manifest pinned to the actually-built version of cnos.core (read
+# from the package source, the single authority for package versions).
+# This keeps the kata focused on lock/restore rather than version
+# negotiation between binary build and package source.
+CORE_VER=$(grep -m1 '"version"' "$REPO_ROOT/src/packages/cnos.core/cn.package.json" \
+  | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/')
+if [ -z "$CORE_VER" ]; then
+  fail "could not extract cnos.core version from src/packages/cnos.core/cn.package.json"
+  kata_summary
+fi
+cat > .cn/deps.json <<JSON
+{
+  "schema": "cn.deps.v1",
+  "profile": "engineer",
+  "packages": [
+    {"name": "cnos.core", "version": "$CORE_VER"}
+  ]
+}
+JSON
+info "deps.json pinned to cnos.core@$CORE_VER"
+
 info "running: cn deps lock"
 if cn deps lock >/dev/null 2>&1; then
   pass "cn deps lock exits 0"
@@ -65,16 +89,22 @@ fi
 
 # Count installed packages with a cn.package.json manifest.
 INSTALLED=0
+INSTALLED_NAMES=""
 if [ -d ".cn/vendor/packages" ]; then
   for d in .cn/vendor/packages/*/; do
-    [ -f "${d}cn.package.json" ] && INSTALLED=$((INSTALLED + 1))
+    if [ -f "${d}cn.package.json" ]; then
+      INSTALLED=$((INSTALLED + 1))
+      INSTALLED_NAMES="$INSTALLED_NAMES $(basename "$d")"
+    fi
   done
 fi
 
-if [ "$INSTALLED" -ge 1 ]; then
-  pass "$INSTALLED package(s) installed under .cn/vendor/packages/ with cn.package.json"
+# Per #250: lock+restore must install only what deps.json pinned.
+# We pinned exactly cnos.core, so exactly one package must be installed.
+if [ "$INSTALLED" -eq 1 ] && [ -f ".cn/vendor/packages/cnos.core/cn.package.json" ]; then
+  pass "exactly cnos.core installed (deps.json pin honored)"
 else
-  fail "no packages installed under .cn/vendor/packages/"
+  fail "expected exactly cnos.core installed, got $INSTALLED package(s):$INSTALLED_NAMES"
 fi
 
 echo ""

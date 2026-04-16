@@ -62,6 +62,16 @@ type PackageIndex struct {
 	Packages map[string]map[string]IndexEntry `json:"packages"`
 }
 
+// ParseManifest parses a deps.json manifest from raw JSON bytes.
+// Pure — no IO. The IO wrapper lives in internal/restore/restore.go.
+func ParseManifest(data []byte) (*Manifest, error) {
+	var m Manifest
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, fmt.Errorf("parse manifest: %w", err)
+	}
+	return &m, nil
+}
+
 // ParseLockfile parses a lockfile from raw JSON bytes.
 func ParseLockfile(data []byte) (*Lockfile, error) {
 	var lf Lockfile

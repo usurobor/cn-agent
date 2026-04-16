@@ -117,20 +117,32 @@ jobs:
       - name: Set up CI test hub (cnos.core + cnos.kata + cnos.cdd.kata)
         run: |
           export PATH="$PWD:$PATH"
+          # Extract real versions from package source — the only authority
+          # for what cn build just produced. Pre-#250 the lockfile dumped
+          # the full index, so a stale/wrong manifest still "worked"; now
+          # cn deps lock honors deps.json strictly, so the manifest must
+          # name versions that actually exist in the index.
+          version_of() {
+            grep -m1 '"version"' "src/packages/$1/cn.package.json" \
+              | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
+          }
+          CORE_VER=$(version_of cnos.core)
+          KATA_VER=$(version_of cnos.kata)
+          CDDKATA_VER=$(version_of cnos.cdd.kata)
           mkdir -p ci-tier2
           cd ci-tier2
           cn init ci-hub >/dev/null
           cd cn-ci-hub
           cn setup >/dev/null
-          cat > .cn/deps.json <<'JSON'
+          cat > .cn/deps.json <<JSON
           {
             "schema": "cn.deps.v1",
             "profile": "engineer",
-            "packages": {
-              "cnos.core": "3.54.0",
-              "cnos.kata": "0.2.0",
-              "cnos.cdd.kata": "0.3.0"
-            }
+            "packages": [
+              {"name": "cnos.core", "version": "$CORE_VER"},
+              {"name": "cnos.kata", "version": "$KATA_VER"},
+              {"name": "cnos.cdd.kata", "version": "$CDDKATA_VER"}
+            ]
           }
           JSON
           cn deps lock

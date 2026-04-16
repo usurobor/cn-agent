@@ -57,6 +57,15 @@ func ReadLockfile(path string) (*pkg.Lockfile, error) {
 	return pkg.ParseLockfile(data)
 }
 
+// ReadManifest reads and parses a deps.json manifest from disk.
+func ReadManifest(path string) (*pkg.Manifest, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read manifest %s: %w", path, err)
+	}
+	return pkg.ParseManifest(data)
+}
+
 // ReadPackageIndex reads and parses a package index from disk.
 func ReadPackageIndex(path string) (*pkg.PackageIndex, error) {
 	data, err := os.ReadFile(path)
@@ -376,12 +385,31 @@ type LockResult struct {
 	Count    int
 }
 
-// GenerateLockFromIndex reads the package index and generates a lockfile
-// at <hubPath>/.cn/deps.lock.json. This is the domain logic for
-// `cn deps lock` — CLI wiring calls this, keeping cmd_deps.go thin.
-// Uses canonical pkg.Lockfile/pkg.LockedDep types. Output is sorted
-// by name then version for deterministic lockfile content.
+// GenerateLockFromIndex reads the hub's .cn/deps.json and produces a
+// lockfile pinning exactly the packages the manifest declares, resolving
+// each (name, version) pin against the package index. Writes the result
+// to <hubPath>/.cn/deps.lock.json.
+//
+// This is the domain logic for `cn deps lock` — CLI wiring calls this,
+// keeping cmd_deps.go thin. Uses canonical pkg.Lockfile/pkg.LockedDep
+// types. Output is sorted by name then version for deterministic content.
+//
+// Errors:
+//   - .cn/deps.json missing or unparseable → cannot lock without a manifest
+//   - package index missing or unparseable → cannot resolve pins
+//   - any pinned (name, version) not present in the index → reported in
+//     a single error listing every missing pin
+//
+// Today's resolution semantics are exact-match: the version string in
+// deps.json must equal a key under idx.Packages[name]. Semver range
+// resolution is a separate concern (issue #250 out-of-scope).
 func GenerateLockFromIndex(hubPath, indexPath string) (*LockResult, error) {
+	manifestPath := filepath.Join(hubPath, ".cn", "deps.json")
+	m, err := ReadManifest(manifestPath)
+	if err != nil {
+		return nil, fmt.Errorf("read deps.json: %w", err)
+	}
+
 	idx, err := ReadPackageIndex(indexPath)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
@@ -393,17 +421,26 @@ func GenerateLockFromIndex(hubPath, indexPath string) (*LockResult, error) {
 	}
 
 	lf := pkg.Lockfile{Schema: "cn.lock.v2"}
-	for name, versions := range idx.Packages {
-		for version, entry := range versions {
-			lf.Packages = append(lf.Packages, pkg.LockedDep{
-				Name:    name,
-				Version: version,
-				SHA256:  entry.SHA256,
-			})
+	var missing []string
+	for _, dep := range m.Packages {
+		entry := idx.Lookup(dep.Name, dep.Version)
+		if entry == nil {
+			missing = append(missing, fmt.Sprintf("%s@%s", dep.Name, dep.Version))
+			continue
 		}
+		lf.Packages = append(lf.Packages, pkg.LockedDep{
+			Name:    dep.Name,
+			Version: dep.Version,
+			SHA256:  entry.SHA256,
+		})
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("packages pinned in deps.json not in index: %s",
+			strings.Join(missing, ", "))
 	}
 
-	// Sort for deterministic output — map iteration order is random.
+	// Sort for deterministic output — manifest order is operator-controlled
+	// and lockfile content must be reproducible regardless.
 	sort.Slice(lf.Packages, func(i, j int) bool {
 		if lf.Packages[i].Name != lf.Packages[j].Name {
 			return lf.Packages[i].Name < lf.Packages[j].Name

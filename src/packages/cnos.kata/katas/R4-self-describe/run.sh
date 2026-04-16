@@ -29,7 +29,11 @@ cn init r4-hub >/dev/null 2>&1 || { fail "cn init failed"; kata_summary; }
 cd cn-r4-hub
 cn setup >/dev/null 2>&1 || { fail "cn setup failed"; kata_summary; }
 
-write_deps_json "cnos.core:3.54.0"
+CORE_VER="$(pkg_version_from_source cnos.core "$REPO_DIST")" || {
+  fail "could not read cnos.core version from src/packages/cnos.core/cn.package.json"
+  kata_summary
+}
+write_deps_json "cnos.core:$CORE_VER"
 
 if cn deps lock >/dev/null 2>&1 && cn deps restore >/dev/null 2>&1; then
   pass "cnos.core installed (precondition)"

@@ -58,23 +58,52 @@ find_repo_dist() {
 
 # write_deps_json writes a minimal deps.json into $PWD/.cn/deps.json.
 # Caller must be inside a hub (post-`cn init`). Takes "pkg:version" args.
+#
+# Schema is cn.deps.v1: `packages` is an ARRAY of {name, version}
+# objects (see src/go/internal/pkg/pkg.go and src/ocaml/lib/cn_package.ml).
+# Pre-#250 the lockfile dumped the entire index regardless of manifest
+# content, so a malformed (object-shaped) packages field still produced
+# an installable lockfile. Now `cn deps lock` honors the manifest, so
+# the JSON shape must match the parser.
 write_deps_json() {
   local out=".cn/deps.json"
   {
     echo '{'
     echo '  "schema": "cn.deps.v1",'
     echo '  "profile": "engineer",'
-    echo '  "packages": {'
+    echo '  "packages": ['
     local first=1
     for spec in "$@"; do
       local name="${spec%%:*}"
       local ver="${spec##*:}"
       if [ "$first" -eq 1 ]; then first=0; else echo '    ,'; fi
-      echo "    \"$name\": \"$ver\""
+      echo "    {\"name\": \"$name\", \"version\": \"$ver\"}"
     done
-    echo '  }'
+    echo '  ]'
     echo '}'
   } > "$out"
+}
+
+# pkg_version_from_source echoes the version declared in a package's
+# source manifest. Args: <pkg_name> <repo_dist_path>. The repo source
+# lives one directory above $REPO_DIST. Returns non-zero with no output
+# if the manifest cannot be read or the version field is absent.
+#
+# Used by katas that need to pin to "whatever version cn build just
+# produced" — hardcoded versions go stale and break silently when the
+# parent repo bumps src/packages/<pkg>/cn.package.json.
+pkg_version_from_source() {
+  local pkg="$1"
+  local dist="$2"
+  local repo_root
+  repo_root="$(dirname "$dist")"
+  local manifest="$repo_root/src/packages/$pkg/cn.package.json"
+  [ -f "$manifest" ] || return 1
+  local ver
+  ver=$(grep -m1 '"version"' "$manifest" \
+    | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/')
+  [ -n "$ver" ] || return 1
+  echo "$ver"
 }
 
 # kata_summary prints a one-line pass/fail summary and exits non-zero

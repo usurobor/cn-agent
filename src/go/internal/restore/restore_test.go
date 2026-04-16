@@ -437,6 +437,289 @@ func setupTestPackages(t *testing.T, repoRoot string) {
 		map[string]string{"name": "beta.pkg", "version": "0.5.0"})
 }
 
+// --- GenerateLockFromIndex tests (issue #250) ---
+
+// TestGenerateLockFromIndex_FiltersByManifest covers AC1 + AC4:
+// a single pin in deps.json against a multi-package, multi-version
+// index produces a lockfile containing only that pin. This is the
+// reproducer from issue #250 — the bug was that lock dumped the
+// entire index regardless of deps.json.
+func TestGenerateLockFromIndex_FiltersByManifest(t *testing.T) {
+	hub := t.TempDir()
+
+	// Index has 3 packages × 2 versions each. Bug-mode lock would
+	// produce 6 entries; correct lock produces 1.
+	idxDir := filepath.Join(hub, "dist", "packages")
+	os.MkdirAll(idxDir, 0755)
+	indexPath := filepath.Join(idxDir, "index.json")
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {
+				"1.0.0":  {URL: "cnos.core-1.0.0.tar.gz", SHA256: "core-100"},
+				"3.54.0": {URL: "cnos.core-3.54.0.tar.gz", SHA256: "core-3540"},
+			},
+			"cnos.eng": {
+				"1.0.0":  {URL: "cnos.eng-1.0.0.tar.gz", SHA256: "eng-100"},
+				"3.54.0": {URL: "cnos.eng-3.54.0.tar.gz", SHA256: "eng-3540"},
+			},
+			"cnos.cdd": {
+				"0.1.0": {URL: "cnos.cdd-0.1.0.tar.gz", SHA256: "cdd-010"},
+				"0.2.0": {URL: "cnos.cdd-0.2.0.tar.gz", SHA256: "cdd-020"},
+			},
+		},
+	}
+	writeJSON(t, indexPath, idx)
+
+	// Manifest pins exactly one package.
+	manifest := pkg.Manifest{
+		Schema:  "cn.deps.v1",
+		Profile: "engineer",
+		Packages: []pkg.ManifestDep{
+			{Name: "cnos.core", Version: "3.54.0"},
+		},
+	}
+	writeJSON(t, filepath.Join(hub, ".cn", "deps.json"), manifest)
+
+	res, err := GenerateLockFromIndex(hub, indexPath)
+	if err != nil {
+		t.Fatalf("GenerateLockFromIndex: %v", err)
+	}
+	if res.Count != 1 {
+		t.Errorf("Count = %d, want 1 (only the pinned package)", res.Count)
+	}
+
+	lf, err := ReadLockfile(filepath.Join(hub, ".cn", "deps.lock.json"))
+	if err != nil {
+		t.Fatalf("ReadLockfile: %v", err)
+	}
+	if len(lf.Packages) != 1 {
+		t.Fatalf("lockfile len = %d, want 1\nlockfile: %+v", len(lf.Packages), lf.Packages)
+	}
+	got := lf.Packages[0]
+	if got.Name != "cnos.core" || got.Version != "3.54.0" || got.SHA256 != "core-3540" {
+		t.Errorf("locked dep = %+v, want {cnos.core 3.54.0 core-3540}", got)
+	}
+}
+
+// TestGenerateLockFromIndex_NameAppearsAtMostOnce covers AC2: when the
+// index carries multiple versions of a pinned package, the lockfile
+// records exactly the version pinned in deps.json — not every version
+// available in the index.
+func TestGenerateLockFromIndex_NameAppearsAtMostOnce(t *testing.T) {
+	hub := t.TempDir()
+	indexPath := filepath.Join(hub, "index.json")
+
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {
+				"1.0.0":  {URL: "u1", SHA256: "s1"},
+				"2.0.0":  {URL: "u2", SHA256: "s2"},
+				"3.54.0": {URL: "u3", SHA256: "s3"},
+			},
+		},
+	}
+	writeJSON(t, indexPath, idx)
+
+	manifest := pkg.Manifest{
+		Schema:  "cn.deps.v1",
+		Profile: "engineer",
+		Packages: []pkg.ManifestDep{
+			{Name: "cnos.core", Version: "3.54.0"},
+		},
+	}
+	writeJSON(t, filepath.Join(hub, ".cn", "deps.json"), manifest)
+
+	if _, err := GenerateLockFromIndex(hub, indexPath); err != nil {
+		t.Fatalf("GenerateLockFromIndex: %v", err)
+	}
+
+	lf, err := ReadLockfile(filepath.Join(hub, ".cn", "deps.lock.json"))
+	if err != nil {
+		t.Fatalf("ReadLockfile: %v", err)
+	}
+	seen := map[string]int{}
+	for _, d := range lf.Packages {
+		seen[d.Name]++
+	}
+	for name, n := range seen {
+		if n != 1 {
+			t.Errorf("name %q appears %d times in lockfile, want 1", name, n)
+		}
+	}
+	if lf.Packages[0].Version != "3.54.0" {
+		t.Errorf("locked version = %q, want %q (the pinned one)",
+			lf.Packages[0].Version, "3.54.0")
+	}
+}
+
+// TestGenerateLockFromIndex_RestoreInstallsOnlyPinned covers AC3:
+// restore against a lockfile produced by GenerateLockFromIndex installs
+// only the packages that were pinned in deps.json — even when other
+// packages exist in the index.
+func TestGenerateLockFromIndex_RestoreInstallsOnlyPinned(t *testing.T) {
+	manifest := `{"name": "cnos.core", "version": "1.0.0"}`
+	tarData, tarSHA := makeTarGz(t, map[string]string{
+		"cn.package.json": manifest,
+	})
+
+	// Stage two tarballs in dist (only one will be referenced by the
+	// pinned manifest entry, but both are reachable via the index).
+	hub := t.TempDir()
+	distDir := filepath.Join(hub, "dist", "packages")
+	os.MkdirAll(distDir, 0755)
+	os.WriteFile(filepath.Join(distDir, "cnos.core-1.0.0.tar.gz"), tarData, 0644)
+	// A second package present in the index — restore must NOT install it.
+	otherTar, otherSHA := makeTarGz(t, map[string]string{
+		"cn.package.json": `{"name": "cnos.eng", "version": "1.0.0"}`,
+	})
+	os.WriteFile(filepath.Join(distDir, "cnos.eng-1.0.0.tar.gz"), otherTar, 0644)
+
+	indexPath := filepath.Join(distDir, "index.json")
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {"1.0.0": {URL: "cnos.core-1.0.0.tar.gz", SHA256: tarSHA}},
+			"cnos.eng":  {"1.0.0": {URL: "cnos.eng-1.0.0.tar.gz", SHA256: otherSHA}},
+		},
+	}
+	writeJSON(t, indexPath, idx)
+
+	// Pin only cnos.core in deps.json.
+	depsManifest := pkg.Manifest{
+		Schema:  "cn.deps.v1",
+		Profile: "engineer",
+		Packages: []pkg.ManifestDep{
+			{Name: "cnos.core", Version: "1.0.0"},
+		},
+	}
+	writeJSON(t, filepath.Join(hub, ".cn", "deps.json"), depsManifest)
+
+	if _, err := GenerateLockFromIndex(hub, indexPath); err != nil {
+		t.Fatalf("GenerateLockFromIndex: %v", err)
+	}
+
+	results, err := Restore(context.Background(), hub, indexPath)
+	if err != nil {
+		t.Fatalf("Restore: %v", err)
+	}
+	if HasErrors(results) {
+		for _, r := range Errors(results) {
+			t.Errorf("  %s@%s: %v", r.Name, r.Version, r.Err)
+		}
+		t.Fatal("restore had errors")
+	}
+
+	if _, err := os.Stat(pkg.VendorPath(hub, "cnos.core")); err != nil {
+		t.Errorf("cnos.core should be installed: %v", err)
+	}
+	if _, err := os.Stat(pkg.VendorPath(hub, "cnos.eng")); !os.IsNotExist(err) {
+		t.Errorf("cnos.eng should NOT be installed (not pinned in deps.json), got err=%v", err)
+	}
+}
+
+// TestGenerateLockFromIndex_MissingManifest verifies that lock cannot
+// proceed without a manifest — the lockfile is meaningless without
+// declared intent.
+func TestGenerateLockFromIndex_MissingManifest(t *testing.T) {
+	hub := t.TempDir()
+	indexPath := filepath.Join(hub, "index.json")
+	idx := pkg.PackageIndex{Schema: "cn.package-index.v1", Packages: map[string]map[string]pkg.IndexEntry{}}
+	writeJSON(t, indexPath, idx)
+
+	_, err := GenerateLockFromIndex(hub, indexPath)
+	if err == nil {
+		t.Fatal("expected error for missing deps.json")
+	}
+	if !strings.Contains(err.Error(), "deps.json") {
+		t.Errorf("error should mention deps.json, got: %v", err)
+	}
+}
+
+// TestGenerateLockFromIndex_PinNotInIndex verifies that a pin without
+// a matching index entry surfaces an explicit error rather than silently
+// dropping the package or installing the wrong version.
+func TestGenerateLockFromIndex_PinNotInIndex(t *testing.T) {
+	hub := t.TempDir()
+	indexPath := filepath.Join(hub, "index.json")
+
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {"1.0.0": {URL: "u", SHA256: "s"}},
+		},
+	}
+	writeJSON(t, indexPath, idx)
+
+	manifest := pkg.Manifest{
+		Schema:  "cn.deps.v1",
+		Profile: "engineer",
+		Packages: []pkg.ManifestDep{
+			{Name: "cnos.core", Version: "9.9.9"},
+		},
+	}
+	writeJSON(t, filepath.Join(hub, ".cn", "deps.json"), manifest)
+
+	_, err := GenerateLockFromIndex(hub, indexPath)
+	if err == nil {
+		t.Fatal("expected error for pin not in index")
+	}
+	if !strings.Contains(err.Error(), "cnos.core@9.9.9") {
+		t.Errorf("error should name the missing pin, got: %v", err)
+	}
+}
+
+// TestGenerateLockFromIndex_DefaultProfile verifies the default deps.json
+// produced by `cn setup` (cnos.core + cnos.eng pinned to the binary
+// version) round-trips through lock to a two-entry lockfile.
+func TestGenerateLockFromIndex_DefaultProfile(t *testing.T) {
+	hub := t.TempDir()
+	indexPath := filepath.Join(hub, "index.json")
+
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {"1.0.0": {URL: "core.tgz", SHA256: "core-sha"}},
+			"cnos.eng":  {"1.0.0": {URL: "eng.tgz", SHA256: "eng-sha"}},
+			// Extra package that must NOT leak into the lockfile.
+			"cnos.cdd": {"0.1.0": {URL: "cdd.tgz", SHA256: "cdd-sha"}},
+		},
+	}
+	writeJSON(t, indexPath, idx)
+
+	manifest := pkg.Manifest{
+		Schema:  "cn.deps.v1",
+		Profile: "engineer",
+		Packages: []pkg.ManifestDep{
+			{Name: "cnos.core", Version: "1.0.0"},
+			{Name: "cnos.eng", Version: "1.0.0"},
+		},
+	}
+	writeJSON(t, filepath.Join(hub, ".cn", "deps.json"), manifest)
+
+	res, err := GenerateLockFromIndex(hub, indexPath)
+	if err != nil {
+		t.Fatalf("GenerateLockFromIndex: %v", err)
+	}
+	if res.Count != 2 {
+		t.Errorf("Count = %d, want 2", res.Count)
+	}
+
+	lf, _ := ReadLockfile(filepath.Join(hub, ".cn", "deps.lock.json"))
+	// Sorted alphabetically: cnos.core before cnos.eng.
+	if len(lf.Packages) != 2 ||
+		lf.Packages[0].Name != "cnos.core" ||
+		lf.Packages[1].Name != "cnos.eng" {
+		t.Errorf("lockfile = %+v, want [cnos.core, cnos.eng]", lf.Packages)
+	}
+	for _, d := range lf.Packages {
+		if d.Name == "cnos.cdd" {
+			t.Error("cnos.cdd leaked into lockfile from index")
+		}
+	}
+}
+
 // --- helpers ---
 
 func writeJSON(t *testing.T, path string, v any) {
