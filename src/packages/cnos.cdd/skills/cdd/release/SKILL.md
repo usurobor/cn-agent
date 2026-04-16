@@ -14,22 +14,24 @@ triggers: [release, ship, tag, version, deploy, changelog]
 
 **Coherent release: every version bump is a measured coherence delta with a complete audit trail.**
 
-A release has parts: readiness check, version decision, changelog, tag, binaries, deployment, validation. Coherence = each part completed and each artifact matches the others (version in code = tag = changelog = binary = deployed agent).
+β owns: review approval outcome, merge, release mechanics, deployment, post-release assessment handoff.
 
-Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: releasing without validation, so breakage ships silently.
+A release has parts: readiness check, version decision, changelog, release notes, tag, binaries, deployment, validation. Coherence = each part completed and each artifact matches the others (version in code = tag = changelog = binary = deployed agent). The released system is validated, not merely published.
+
+Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: releasing without validation, so breakage ships silently. Or: incomplete deploy where artifacts ship but assessment never lands.
 
 ## 1. Define
 
 1.1. **Identify the parts**
   - Readiness: CI green, branches merged or returned, main clean
   - Version: semver bump decided from commit content
-  - Artifacts: cn.json, cn_lib.ml, cram tests, CHANGELOG, tag, GitHub release, binaries
+  - Artifacts: cn.json, VERSION, package manifests, CHANGELOG, RELEASE.md, tag, GitHub release, binaries
   - Deployment: binary on target hosts, `cn deps restore`, validation
   - ❌ Push tag, hope it works
   - ✅ Every artifact checked, deployed, validated end-to-end
 
 1.2. **Articulate how they fit**
-  - Version flows: cn.json + cn_lib.ml → cram tests → CHANGELOG → commit → tag → CI → binaries → deploy → validate
+  - Version flows: VERSION → `stamp-versions.sh` → cn.json + package manifests → CHANGELOG → commit → tag → CI → binaries → deploy → validate
   - Each step depends on the prior; skip one and the chain breaks
   - ❌ Tag pushed before version bumped in code (binary reports old version)
   - ✅ Version string updated everywhere before commit, tag matches code
@@ -44,7 +46,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 ## 2. Unfold
 
 2.1. **Readiness check**
-  - CI passing on main (unit tests + cram tests)
+  - CI passing on main (unit tests + integration tests + kata suite)
   - No unmerged branches that should be in this release
   - `git branch -r --no-merged origin/main` — review each, merge or defer
   - ❌ Release with failing CI ("it's just a flaky test")
@@ -63,9 +65,9 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - Edit `VERSION` to the new version string (bare, no `v` prefix)
   - Run `scripts/stamp-versions.sh` — derives all manifests (`cn.json`, package `cn.package.json` files) from VERSION
   - Run `scripts/check-version-consistency.sh` — validates all version-stamped files agree
-  - `cn_lib.ml` reads version from a dune-generated module at build time — no manual edit needed
-  - Cram tests read version dynamically — no manual edit needed
-  - ❌ Edit cn.json or cn_lib.ml by hand (bypasses single source of truth)
+  - Go binary embeds version from VERSION at build time — no manual edit needed
+  - Tests and katas read version dynamically — no manual edit needed
+  - ❌ Edit cn.json or package manifests by hand (bypasses single source of truth)
   - ❌ Skip stamp-versions.sh ("I'll update the manifests manually")
   - ✅ `echo "X.Y.Z" > VERSION && scripts/stamp-versions.sh && scripts/check-version-consistency.sh`
 

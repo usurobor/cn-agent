@@ -313,6 +313,7 @@ Before committing the assessment, verify mechanically:
 - [ ] CHANGELOG TSC row added or updated to match assessment scores
 - [ ] §8 Hub memory: daily reflection written and pushed to hub repo
 - [ ] §8 Hub memory: at least one adhoc thread updated (or explicit note why none applies)
+- [ ] If the triadic protocol is active, `.cdd/.../gamma/CLOSE-OUT.md` exists and reflects α close-out, β close-out, γ triage, and final cycle status
 
 This gate is mechanical. Two agents checking the same template must find the same missing fields.
 
