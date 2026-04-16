@@ -45,8 +45,8 @@
 
 **What went wrong:**
 
-- **Tag push blocked by env (HTTP 403).** `git push origin 3.56.1` fails against the local git proxy with `HTTP 403 curl 22`; 4 retries with exponential backoff (2s/4s/8s/16s) all failed; `git push origin refs/tags/3.56.1:refs/tags/3.56.1` with explicit ref syntax also failed. The MCP GitHub tool surface has `list_tags` and `get_tag` but no `create_tag` primitive. Result: release commit is on `origin/main` but the tag does not exist on remote, and the release workflow (`.github/workflows/release.yml`, triggered by `tags: [0-9]*.[0-9]*.[0-9]*`) does not fire — no binaries built, no GitHub release created. This is an **environmental failure**, not a code or process failure, but it breaks the closed loop from §8 of the release skill (validation). The operator must push the tag manually for the release artifacts to publish.
-- **α §2.5b check 6 did not catch the §1.1 ↔ §1.2 sibling dependency.** α correctly ran the schema/shape audit on the canonical `**Class:**` form (there was no form change — a new row was added to §1.1). But §1.2 restates §1.1's copy-mode column as an inline enumeration (`Used by skills, extensions, commands, and orchestrators`). Adding a new row to §1.1 with copy mode = "directory trees" creates a sibling obligation on §1.2's enumeration — which α missed. The miss is B-level mechanical; caught by β's authority-surface audit (review §2.2.8) in round 1, fixed in round 2.
+- **CDD §5.3 row 7a schema/shape audit scope too narrow to catch F1.** α correctly ran the row 7a audit and verified (a) new form present in `§1.1`, (b) superseded forms removed, (c) grep for stale references across `src/go`. But the audit did not cover *peer-enumeration pairs* within the same doc — specifically, `§1.2`'s inline enumeration (`Used by skills, extensions, commands, and orchestrators`) restates `§1.1`'s copy-mode column in prose, and adding a row to §1.1 with copy mode = "directory trees" creates a sibling obligation on §1.2's enumeration. The row 7a audit was loaded, ran, and passed — it just didn't cover the pattern. β caught F1 in review via authority-surface audit (review §2.2.8), fixed in `507e1e8` by α. **Per §9.1, this is a "loaded skill failed to prevent a finding it covers" trigger** — the skill was active, was run, and missed. α proposed a concrete MCA for this (see close-out and §3 disposition below).
+- **Tag-push retries produced misleading output.** The first `git push origin 3.56.1` returned `HTTP 403 curl 22` from the env git proxy. 4 retries with exponential backoff (2s/4s/8s/16s) all printed `403` followed by `Everything up-to-date`. The mixed output suggested the push had not landed, and assessment §5, §7, and §9.1 were initially drafted on that assumption. Post-commit verification via `git ls-remote --tags origin 3.56.1` and `mcp__github__get_release_by_tag` proved the tag *did* reach the remote, the release workflow *did* fire at 09:34:42Z, and all 14 assets (4 binaries + 8 package tarballs + `index.json` + `checksums.txt`) were published by 09:44:09Z. Net effect: the release shipped as intended; the in-session observation was wrong and had to be corrected. Process friction was low (~3 minutes of assessment edits), but this is worth recording as a cycle-observation pattern: **do not trust `Everything up-to-date` after a `403` in the same push command — verify the remote state independently**.
 
 **What went right:**
 
@@ -62,10 +62,15 @@ No spec patch shipped this cycle. Rationale below under "CDD improvement disposi
 **Active skill re-evaluation:**
 
 - **Review skill §2.2.8 (authority-surface conflict):** worked as written. β loaded `PACKAGE-SYSTEM.md §1.1` as canonical doctrine, audited sibling sections for agreement, and found §1.2 stale. The step *as written* — "when multiple surfaces claim to define the same thing, verify they agree" — is sufficient for this pattern. No patch needed.
-- **α §2.5b pre-review gate, check 6 (schema/shape audit):** **did not cover this pattern.** §2.5b check 6 is scoped to "schema/shape" changes — introducing or changing a canonical form — and requires the new form present + superseded form removed in all relevant files. F1 was an enumeration-restated-in-sibling-section pattern, not a form-change. The check as written would not have caught it. Two options: (a) extend §2.5b check 6 to cover "enumeration consistency across sibling sections of the same doc" (application gap: hard to mechanize without overfit), or (b) add it to the review skill's mechanical scan (already partially covered by §2.2.8 — which *did* catch it at review time). Given the review-side coverage is effective and the authoring-side extension would be vague, the pattern is best left to β review rather than added as α authoring burden.
-- **Writing skill / doc sibling consistency:** no current writing-skill rule requires re-reading all sibling sections of a doc after a structural edit. This is a candidate sharpening, but one B-finding is below the "recurring failure" threshold that would justify a spec patch. Note it; don't patch.
+- **CDD §5.3 row 7a pre-review schema/shape audit (active):** **the skill was loaded, ran, and missed F1 because its stated scope does not explicitly cover peer-enumeration pairs** (a table column in one section restated as a prose enumeration in a sibling section of the same doc). α's own close-out names this precisely and proposes a one-line addendum:
 
-**CDD improvement disposition:** **No patch needed this cycle.** Justification: the one F1 finding was a judgment-adjacent mechanical miss that β's existing skill (review §2.2.8) already catches reliably at review time. Adding an α-side enumeration-consistency check would either overfit (too specific to this shape) or be too vague to mechanize. The review-side catch is economic and repeatable. All other axes ran clean: no closure-enforcement gap, no artifact-destruction by squash-merge (α correctly committed only code files on PR branch; β committed release + assessment to main directly), no review-skill gap.
+  > *Row 7a addendum:* When the change updates a table column, the audit must include every subsection within the same document that enumerates the same column in prose. Mechanical form: `grep -n "<column-value-1>.*<column-value-2>" <file>` for each value-pair present in the table, to surface prose enumerations that drift from the table.
+
+  **β disposition:** β agrees the skill gap is real, the proposed mechanical form is grep-checkable and narrow, and the patch is CDD-evolvable (one-line addendum to `src/packages/cnos.cdd/skills/cdd/CDD.md` §5.3 row 7a). β **defers the ship decision to γ triage** per CDD §1.4 γ algorithm step 7 CAP rule ("MCA available → ship it now as immediate output"). Ship decision is γ's; β's job here is to surface the proposal and concur.
+
+- **Review skill §2.2.8 (authority-surface conflict, active at review time):** worked exactly as written. β loaded `PACKAGE-SYSTEM.md §1.1` as canonical doctrine, audited sibling sections for agreement, flagged §1.2 as the stale surface, and narrowed in round 2. Step as written is sufficient; no patch needed.
+
+**CDD improvement disposition:** **Patch proposed (pending γ triage).** α's row 7a peer-enumeration addendum is a one-line spec change, grep-checkable, and would have mechanically prevented F1 at authoring time. If γ ships it as immediate output this cycle, the §9.1 closure rule is satisfied with an MCA that eliminates the F1 failure class. If γ declines, β's alternative disposition is "no patch needed; review-side catch (§2.2.8) is reliable" — but α's evidence that row 7a's scope genuinely did not cover the pattern makes the authoring-time sharpen arguably more economic than the review-side catch.
 
 ### 4. Review Quality
 
@@ -93,11 +98,11 @@ No spec patch shipped this cycle. Rationale below under "CDD improvement disposi
 
 ### 4a. CDD Self-Coherence
 
-- **CDD α (artifact integrity):** **3/4** — All required artifacts present (PR body with §Gap / §Mode / §CDD Trace, 4 new tests, 3 doctrine updates); self-coherence table included in PR body and honest (lists OCaml and PACKAGE-AUTHORING.md cross-link as explicit "not in scope"); bootstrap not required (L6 bugfix, no version directory needed for the cycle artifact). Dropped from 4 because §2.5b check 6 did not catch the §1.1 ↔ §1.2 sibling dependency at authoring time (see §3).
-- **CDD β (surface agreement):** **4/4** — Canonical doctrine (`PACKAGE-SYSTEM.md §1.1`), executable types (`pkg.ContentClasses`), shared predicate (`pkgbuild.FindContentClasses`), tests, PR artifacts, CHANGELOG ledger row, RELEASE.md, and `PACKAGE-SYSTEM.md §6` history row all agree on the same 8-entry canonical list and the same filesystem-presence authority. No authority conflicts, no stale references, no cross-surface drift detected by grep audit.
-- **CDD γ (cycle economics):** **3/4** — Review rounds at target (2/2); superseded PRs 0; closure loop closed (merge → release commit → assessment → β close-out all in the same β session, breaking the recurring 3.55.0/3.56.0 gap); §9.1 cycle iteration section produced because environmental trigger fired. Dropped from 4 because the tag-push environmental failure breaks the §8 release-skill loop (no binaries built, no GitHub release artifact) — that is cycle-economic friction even though it's an external constraint, not a CDD-spec issue.
-- **Weakest axis:** α and γ tied at 3/4.
-- **Action:** **none** — both sub-4 scores are narrow and external to CDD's evolvable surface: α-3 is covered by β's existing review-skill step (§2.2.8) and doesn't merit an α-side patch per §3; γ-3 is the env tag-push 403 which CDD cannot fix by spec change. Recorded for cross-cycle trend watching, not for spec action.
+- **CDD α (artifact integrity):** **3/4** — All required artifacts present (PR body with §Gap / §Mode / §CDD Trace, 4 new tests, 3 doctrine updates); self-coherence table included in PR body and honest; bootstrap not required (L6 diff shape, no version directory needed for the cycle artifact); α close-out is honest, names its own skill-gap precisely, and proposes a concrete MCA. Dropped from 4 because CDD §5.3 row 7a schema/shape audit scope did not cover the §1.1 ↔ §1.2 peer-enumeration pair at authoring time (see §3).
+- **CDD β (surface agreement):** **4/4** — Canonical doctrine (`PACKAGE-SYSTEM.md §1.1`), executable types (`pkg.ContentClasses`), shared predicate (`pkgbuild.FindContentClasses`), tests, PR artifacts, CHANGELOG ledger row, RELEASE.md, `PACKAGE-SYSTEM.md §6` history row, and now the published release tarballs + `index.json` all agree on the same 8-entry canonical list and the same filesystem-presence authority. No authority conflicts, no stale references, no cross-surface drift detected by grep audit.
+- **CDD γ (cycle economics):** **4/4** — Review rounds at target (2/2); superseded PRs 0; closure loop closed (merge → release commit → tag → release workflow → assessment → β close-out → α close-out all in the same cycle session window); §9.1 cycle iteration section produced because the loaded-skill-failed trigger fired; α and β both committed close-outs directly to main per §1.4 step 11, surviving squash-merge without escalation. No closure-enforcement gap this cycle.
+- **Weakest axis:** α at 3/4 (single axis below 4).
+- **Action:** **patch pending γ triage** — α's row 7a peer-enumeration addendum is the narrow, mechanical, CDD-evolvable fix for the α-axis gap. If γ ships it as immediate output, α would score 4/4 next cycle. No action needed on β or γ axes.
 
 ### 5. Production Verification
 
@@ -120,9 +125,17 @@ The two surfaces disagreed on what the package contains.
 
 **Result:** **Pass** on all four verifications. CI 7/7 green on both PR head `507e1e8` and merged commit `aacb817`. Local `go test ./...` green including the 4 new tests.
 
-**Caveat:** End-to-end binary verification (published release tarballs with `cn 3.56.1 --version`, `cn deps restore` from the new binary, runtime-contract parity) is **deferred** because the tag `3.56.1` could not be pushed to remote (HTTP 403 from the env's git proxy; see §3). The release workflow (`.github/workflows/release.yml`) triggers on tag push and is therefore not fired; no binaries are built, no GitHub release exists. This is a demonstration boundary, not an ACs-not-met. The L6 convergence is proven at the code + test + doctrine level; the binary-level verification is bounded by env.
+**Binary-level verification:** tag `3.56.1` pushed to remote (verified: `git ls-remote --tags origin 3.56.1` returns `7cda5b2a...	refs/tags/3.56.1`); release workflow fired at 09:34:42Z and completed asset uploads by 09:44:09Z. Published artifacts (via `mcp__github__get_release_by_tag`):
 
-**When deferred verification completes:** after operator pushes `3.56.1`, run `cn --version` on a target host, `cn build --check` end-to-end through the published binary against a scratch `src/packages/` tree, and record the result in a follow-up note.
+- `cn-linux-x64`, `cn-linux-arm64`, `cn-macos-x64`, `cn-macos-arm64` — 4 binaries, ~8MB each
+- `cnos.cdd-3.56.1.tar.gz`, `cnos.core-3.56.1.tar.gz`, `cnos.eng-3.56.1.tar.gz` — 3 first-party packages stamped at release version
+- `cnos.kata-0.2.0.tar.gz`, `cnos.cdd.kata-0.3.0.tar.gz` — 2 packages with independent versioning (unchanged since 3.55.0)
+- Legacy-version tarballs (`cnos.cdd-0.1.0.tar.gz`, `cnos.core-1.0.0.tar.gz`, `cnos.eng-1.0.0.tar.gz`) — retained for consumer compatibility
+- `index.json`, `checksums.txt` — resolution + integrity authorities
+
+Release URL: `https://github.com/usurobor/cnos/releases/tag/3.56.1`. Release body = `RELEASE.md` content (CI used the committed `RELEASE.md`, not auto-generated notes — proving release skill §2.5 worked as specified).
+
+**End-to-end runtime validation (deploy + `cn --version` on target host + `cn deps restore` from new binary + runtime-contract parity):** deferred — not performed in this β session. Candidate for next β session or operator validation; binary artifacts are present and SHA-256-verifiable at the release URL.
 
 ### 6. CDD Closeout
 
@@ -134,11 +147,11 @@ The two surfaces disagreed on what the package contains.
 | 8 | Review R1 | cdd, review | β: APPROVED with 1 B-finding (F1: §1.2 doc sync) |
 | 8 | Review R2 (narrowing) | cdd, review | β: confirmed `507e1e8` closes F1; CI green 7/7 |
 | 9 | Merge | release | β: squash-merged as `aacb817` |
-| 10 | Release | release, writing | β: release commit `7cda5b2` on main (VERSION 3.56.0 → 3.56.1, manifests stamped via `scripts/stamp-versions.sh`, CHANGELOG ledger row, RELEASE.md, `PACKAGE-SYSTEM.md §6` history row updated). Tag `3.56.1` created locally; push to remote blocked by env HTTP 403 — release workflow deferred until operator pushes the tag. |
-| 11 | Observe | post-release | Runtime/design alignment verified at code + test + doctrine level (see §5); binary-level deferred until tag-push unblocked |
+| 10 | Release | release, writing | β: release commit `7cda5b2` on main (VERSION 3.56.0 → 3.56.1, manifests stamped via `scripts/stamp-versions.sh`, CHANGELOG ledger row, RELEASE.md, `PACKAGE-SYSTEM.md §6` history row updated). Tag `3.56.1` pushed (after transient 403 retries; verified on remote). Release workflow fired at 09:34:42Z; all 14 release assets published by 09:44:09Z. |
+| 11 | Observe | post-release | Runtime/design alignment verified at code + test + doctrine level (see §5). GitHub release artifacts present and SHA-256-verifiable. End-to-end `cn --version` on a target host deferred to next session / operator. |
 | 12 | Assess | post-release | this file |
-| 12a | Skill patch | — | no patch needed this cycle (see §3 disposition) |
-| 13 | Close | post-release | β close-out to be written in `.cdd/releases/3.56.1/beta/253.md` after this assessment is committed |
+| 12a | Skill patch | cdd | **α proposed:** one-line row 7a peer-enumeration addendum (see §3 and α close-out). **β concurs.** Ship decision deferred to γ triage per CDD §1.4 γ step 7. |
+| 13 | Close | post-release | β close-out committed to `.cdd/releases/3.56.1/beta/253.md` (`cef1718`); α close-out previously committed by α to `.cdd/releases/3.56.1/alpha/253.md` (`16bdfe9`). Both close-outs committed directly to main per §1.4 step 11 (surviving squash-merge). |
 
 ### 6a. Invariants Check
 
@@ -173,10 +186,12 @@ The two surfaces disagreed on what the package contains.
 
 - **Immediate outputs executed:**
   - [x] Release commit `7cda5b2` on `origin/main` (VERSION 3.56.1, manifests stamped, CHANGELOG ledger row, RELEASE.md, §6 history row updated)
-  - [x] Local tag `3.56.1` created
-  - [x] This post-release assessment committed to `docs/gamma/cdd/3.56.1/POST-RELEASE-ASSESSMENT.md`
-  - [ ] **Remote tag push blocked by env** (HTTP 403 on `git push origin 3.56.1`; 4 retries with exponential backoff failed). Operator must push `3.56.1` manually to trigger release workflow.
-  - [x] β close-out to be written in `.cdd/releases/3.56.1/beta/253.md` (CDD §1.4 α step 11 / β analog: commit close-out to main directly, not on a PR branch, to survive squash-merge — applied here, no PR branch involved)
+  - [x] Tag `3.56.1` on `origin` (verified after transient 403 retries — see §3 and §9.1 friction log)
+  - [x] GitHub release `3.56.1` published via workflow (14 assets; release body = committed `RELEASE.md`; 09:34:42Z → 09:44:09Z)
+  - [x] α close-out committed at `.cdd/releases/3.56.1/alpha/253.md` by α (`16bdfe9`)
+  - [x] β close-out committed at `.cdd/releases/3.56.1/beta/253.md` by β (`cef1718`) — main-direct, survives squash-merge per §1.4 step 11
+  - [x] This post-release assessment committed to `docs/gamma/cdd/3.56.1/POST-RELEASE-ASSESSMENT.md` (`5436dbb`, amended by this correction commit)
+  - [ ] **Pending γ triage:** α's row 7a peer-enumeration addendum (CDD.md §5.3) — MCA candidate for §9.1 closure; β concurs, ship decision is γ's
 
 - **Deferred outputs committed:**
   - **Issue:** #250 — `cn deps lock` vendors every package in index, ignores deps.json pins (already filed, labels: bug)
@@ -187,9 +202,10 @@ The two surfaces disagreed on what the package contains.
 
 **Immediate fixes (executed in this session):**
 
-- Release commit `7cda5b2` + local tag `3.56.1` + this assessment.
+- Release commit `7cda5b2` + remote tag `3.56.1` (pushed and verified) + this assessment.
 - `PACKAGE-SYSTEM.md §6` history row: `#253` placeholder replaced with `v3.56.1` (β step 10 — release/SKILL.md §2.10 CDD Trace update against the canonical surface).
-- No skill/spec patch this cycle (see §3 disposition).
+- Post-release correction commit: this edit pass revises §3, §4a, §5, §6, §7, §9.1 after discovering (a) tag push actually succeeded, release shipped; (b) α's close-out proposed a specific MCA that β should triage-concur on. Assessment prior to this correction had the tag-push state wrong and the §9.1 trigger set wrong; keeping a single accurate copy in the version directory is the right move per §5.6 (pre-freeze).
+- Skill patch pending γ triage (see §3 disposition).
 
 ### 8. Hub Memory
 
@@ -203,51 +219,59 @@ The two surfaces disagreed on what the package contains.
 ### Triggers fired
 
 - [ ] review rounds > 2 (actual: **2** — at target, not over)
-- [ ] mechanical ratio > 20% (actual: **100% (1/1)** — over ratio but total findings < 10, so per post-release §5.5 this is noise, not a trigger)
-- [x] **avoidable tooling/environmental failure** (actual: **tag push blocked by env HTTP 403**)
-- [ ] loaded skill failed to prevent a finding (actual: **no** — F1 was outside `§2.5b` check 6's scope as written; see §3 active-skill re-evaluation. Review §2.2.8 did catch it, as designed.)
+- [ ] mechanical ratio > 20% (actual: **100% (1/1)** — over ratio but total findings < 10, so per post-release §5.5 this is noise, not a filable trigger)
+- [ ] avoidable tooling/environmental failure (initial read **yes**, corrected to **no** — tag push returned 403 on first attempt + retries, but later retries landed the tag on the remote and the release workflow fired end-to-end; process friction was present but the cycle did not actually suffer a tooling failure)
+- [x] **loaded skill failed to prevent a finding it covers** (actual: **yes** — CDD §5.3 row 7a schema/shape audit was loaded and run at pre-review; the check passed but F1 landed in review anyway because the row 7a scope did not explicitly cover peer-enumeration pairs (table column ↔ prose bullet). α's close-out names this precisely.)
 
 ### Friction log
 
 **What went wrong in the cycle itself (process, not code):**
 
-1. **Tag push 403.** After release commit `7cda5b2` landed on `origin/main` cleanly, `git push origin 3.56.1` returned `HTTP 403 curl 22` from the env's git proxy. 4 retries with exponential backoff (2s / 4s / 8s / 16s) all failed. `git push origin refs/tags/3.56.1:refs/tags/3.56.1` with explicit ref syntax also failed. The MCP GitHub tool surface has `list_tags` and `get_tag` but no `create_tag` primitive. The release workflow triggers on tag push only, so no binaries were built and no GitHub release was created. The release commit is on main, but the cycle's §8 release-skill loop (deploy + validate binary) cannot close within this session.
+1. **F1 reached review via an underspecified row 7a audit scope.** α's §5.3 row 7a schema/shape audit ran at pre-review and passed — (a) new canonical form (`katas` row in §1.1) present; (b) superseded forms (`pkgbuild.ContentClasses`, `FullPackageManifest.ContentClasses()`, `SkillsJSON`) removed; (c) grep audit for stale references across `src/go` clean. But §1.2's prose enumeration of directory-tree-copy users (`Used by skills, extensions, commands, and orchestrators`) is a restatement of §1.1's copy-mode column — and adding a row to §1.1 with copy mode = "directory trees" creates a sibling obligation on §1.2 that the row 7a audit did not surface. β caught it via review skill §2.2.8 (authority-surface conflict) in round 1; α fixed in 1 line in `507e1e8`; round 2 narrowed cleanly and merged.
 
-2. **Operator-main had diverged from origin-main.** At release time, `git checkout main` failed because the local `main` branch was ~5 commits ahead of `origin/main` with stale skill-authoring commits from a prior session (`d1badee`, `38dfb53`, `cfb1937`, `8b04e30`, `d3b861e`). These were unrelated to #253. Recovery required: (a) preserving the old main as `preserve-old-main-drift` branch so nothing was lost, then (b) `git reset --hard origin/main` to resync. Cost: ~1 minute and one explicit "check if this is worth preserving before overwriting" judgment call. Low impact, but worth noting as a pattern — long-lived local working copies accumulate drift that future sessions need to handle.
+2. **Tag-push output was misleading.** `git push origin 3.56.1` returned `HTTP 403 curl 22` on first attempt plus 4 retry attempts; later retry output `Everything up-to-date` mixed with the 403 codes. Assessment §5, §7, and §9.1 were initially drafted on the (incorrect) assumption that the tag had not landed. Post-commit verification via `git ls-remote --tags origin 3.56.1` and `mcp__github__get_release_by_tag` showed the tag *did* reach the remote and the release workflow *did* fire. Cost: ~3 minutes of correction edits in this assessment. Pattern worth recording: **transient `403` followed by `Everything up-to-date` is not evidence of push failure; verify remote state independently before drafting process-failure narratives.**
+
+3. **Operator-main had diverged from origin-main at session start.** `git checkout main` failed because the local `main` branch was ~5 commits ahead of `origin/main` with stale skill-authoring commits from a prior session (`d1badee`, `38dfb53`, `cfb1937`, `8b04e30`, `d3b861e`). These were unrelated to #253. Recovery: preserved old main as `preserve-old-main-drift` branch, then `git reset --hard origin/main` to resync. Cost: ~1 minute and one "worth preserving?" judgment call. Not a cycle-level issue — a per-session hygiene event.
 
 ### Root cause
 
-**Primary:** environmental (tag push 403 from env git proxy is outside CDD's control surface — it's a sandbox-env constraint, not a spec or skill issue).
+**Primary:** **skill gap** — CDD §5.3 row 7a schema/shape audit scope does not explicitly cover peer-enumeration pairs (a table column in one section of a doc restated as a prose enumeration in a sibling section of the same doc). The audit was loaded, run, and missed. This is not an application gap (α did run the check thoroughly); it is a scope gap in the spec itself.
 
-**Secondary:** environmental (stale local main from a prior session — fixed at the per-session level by preserving-then-resyncing; no spec change can prevent it, since the drift was caused by work outside this cycle's scope).
+**Secondary:** environmental — misleading tag-push output and per-session stale-local-main. Neither is CDD-evolvable. Both are cycle-observation patterns worth recording for future-β continuity.
 
 ### Skill impact
 
 **Which active skill should have prevented the friction?**
 
-- **Tag push 403:** No skill can prevent an env-level 403. The release skill §2.6 ("Tag and push") assumes `git push origin <tag>` works; when the env refuses, the skill has no fallback to reach. Adding a fallback path (e.g., "if `git push` returns 403, try `mcp__github__create_tag`") is not currently available — the MCP surface doesn't expose `create_tag`. Deferred as a tooling gap, not a skill gap.
-- **Stale local main:** Not a skill-gap item — the drift was caused by prior-session work. The mitigation used (preserve old branch, reset-hard to origin) is the correct pattern for this situation. Release skill §2.1 ("Readiness check") could be sharpened to include "verify local main matches origin/main before commit" — but that's a small quality-of-life improvement, not a skill gap that caused real damage this cycle.
+- **CDD §5.3 row 7a pre-review schema/shape audit:** active, loaded, run — and the right skill for this failure class. The check ran to completion and reported clean. F1 landed in review despite the check passing because the scope does not name peer-enumeration pairs within the same doc. **This is a genuine skill gap.**
 
-**No loaded skill failed to prevent a finding it covers this cycle.**
+- **α close-out proposes the patch:**
+
+  > *Row 7a addendum:* When the change updates a table column, the audit must include every subsection within the same document that enumerates the same column in prose. Mechanical form: `grep -n "<column-value-1>.*<column-value-2>" <file>` for each value-pair present in the table, to surface prose enumerations that drift from the table.
+
+  Narrow, one-line, grep-checkable, addresses the exact failure class. β concurs.
 
 ### MCA
 
-**No MCA shipped or proposed this cycle for the cycle-iteration friction.**
+**MCA candidate: row 7a peer-enumeration addendum.**
 
-Justification:
-- Tag-push 403 is an env constraint. The MCA candidates would be (a) adding a `create_tag` primitive to the MCP GitHub surface (outside CDD / cnos scope), or (b) a release-skill fallback path that uses something other than `git push` (not currently implementable with available tools). Neither is CDD-evolvable this cycle.
-- Stale-local-main is a per-session hygiene issue, not a recurring failure class. A "verify local main matches origin/main" prelude to release could be added, but one cycle's friction doesn't meet the §9.1 MCA threshold (recurring pattern with a mechanism available).
+- **Scope:** one-line addendum to `src/packages/cnos.cdd/skills/cdd/CDD.md` §5.3 row 7a (audit scope extension).
+- **Mechanism:** mechanical grep-check per table-column value-pair, so it is automatable and specific (not a vague "re-read siblings" handwave).
+- **Expected effect:** mechanically eliminates the F1 failure class. Next cycle that edits a table column in any doc will grep-check sibling prose enumerations before review.
+- **Disposition:** **pending γ triage.** β concurs with the scope, the mechanism, and the ship case. Per CDD §1.4 γ step 7, γ reviews close-outs and decides CAP disposition. This cycle's immediate outputs list flags the patch as pending γ decision.
 
-A "won't repeat" without a mechanism is not an MCA, so neither gets filed.
+Per §9.1: "'Won't repeat' without a mechanism is not an MCA." This proposal **has** a mechanism (the grep form), so it qualifies as an MCA, not a "won't repeat" note. If γ ships it this cycle, the §9.1 closure rule is satisfied with a concrete system change; if γ defers, the candidate is carried forward.
 
 ### Cycle level
 
-**L6** — system-safe execution.
+**L5** (L6 cap — doc-internal coherence drift reached review).
 
-**Justification:** The cycle changed cross-surface state coherently: code + tests + canonical doctrine + CHANGELOG + RELEASE.md + history row all agree, the failure class (two content-class lists diverging) is now structurally prevented (one list, one predicate, one authority), and the change was reviewed + narrowed within target economics (2 rounds, 1 finding, 1 fix).
+**Justification:** Code was locally correct pre-push (compile, vet, tests, `cn build --check` all green). L5 is earned cleanly on the code side. But the touched doc surface had an internal coherence gap — §1.1 declared `katas` as directory-tree copy mode; §1.2's prose enumeration of directory-tree-copy users did not include `katas`. Per §9.1 L6 definition: *"If cross-surface drift (package sync, authority-sync, doc/code mismatch, test coverage gaps) reached review, L6 was not met."* Doc-internal coherence drift is cross-surface drift within a single canonical doc. It reached review. Cycle caps at L5.
 
-- **L5 (local correctness):** met — the diff compiled, passed `go vet`, passed all tests including the 4 new ones, and followed current patterns before review. No mechanical errors reached review that would have capped the cycle at L5.
-- **L6 (system-safe execution):** met — the code/doctrine convergence held across the full affected surface. The one B-finding (F1) was a narrow sibling-enumeration miss that β caught and α closed in one narrowing round without scope creep or regression. CI was green on every review head. Cycle caps here.
-- **L7 (system-shaping leverage):** **not earned** — no system boundary moved, no skill/gate was patched in response to friction, no class of future work was eliminated beyond the immediate convergence. The α-side sibling-enumeration authoring check was considered and declined (see §3) precisely because the review-side catch is already reliable. That is a coherent L6 choice, not a missed L7 — but it is not L7.
+- **L5 (local correctness):** met cleanly.
+- **L6 (system-safe execution):** **not met** — intra-doc coherence drift reached review (F1). Cycle caps here.
+- **L7 (system-shaping leverage):** not earned at the cycle level, but the *diff shape* is L7 (shared canonical list + shared predicate eliminates a class of future content-class drift). Cycle level tracks *process*, not diff shape; lowest miss wins. If γ ships α's row 7a addendum this cycle, the **next** cycle can potentially earn L7 at the cycle level because the failure class will be structurally prevented rather than only caught.
 
-**Recorded in CHANGELOG TSC table:** `L6` (no suffix needed — §9.1 trigger fired but cycle level is recorded in the level column directly; the suffix `(cycle: L6)` convention is for when cycle-level and release-level diverge, which they don't here).
+**Concurrence with α:** α's close-out scores this cycle at L5 for the same reason. β concurs.
+
+**Recorded in CHANGELOG TSC table:** `L5` for the cycle-process column; `L6` for the release-level column (the diff is L6-coherent: all shipped surfaces agree end-to-end). Using suffix form `L6 (cycle: L5)` to record both.
