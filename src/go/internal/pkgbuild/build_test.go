@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	pkgtypes "github.com/usurobor/cnos/src/go/internal/pkg"
 )
 
 func TestBuildOneProducesTarball(t *testing.T) {
@@ -221,6 +223,81 @@ func TestGenerateLockfile(t *testing.T) {
 	}
 	if lf.Packages[0].Name != "test.pkg" {
 		t.Errorf("package name = %q, want %q", lf.Packages[0].Name, "test.pkg")
+	}
+}
+
+// --- FindContentClasses ---
+
+// TestFindContentClassesEmpty: absent and empty directories count as
+// not-present. This is the conservative behaviour `cn build --check`
+// relied on (an empty class dir is not a content class).
+func TestFindContentClassesEmpty(t *testing.T) {
+	pkgDir := t.TempDir()
+	if got := FindContentClasses(pkgDir); len(got) != 0 {
+		t.Errorf("expected no classes, got %v", got)
+	}
+
+	// Empty class dir is present on disk but should still be absent.
+	if err := os.MkdirAll(filepath.Join(pkgDir, "skills"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if got := FindContentClasses(pkgDir); len(got) != 0 {
+		t.Errorf("empty skills/ should not count, got %v", got)
+	}
+}
+
+// TestFindContentClassesAll: every class enumerated in
+// pkgtypes.ContentClasses is surfaced when its directory is non-empty,
+// and the returned order follows the canonical list. This is the
+// single-source-of-truth check for #253.
+func TestFindContentClassesAll(t *testing.T) {
+	pkgDir := t.TempDir()
+	// Create every canonical class directory with a marker file.
+	for _, class := range pkgtypes.ContentClasses {
+		classDir := filepath.Join(pkgDir, class)
+		if err := os.MkdirAll(classDir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(classDir, ".keep"), []byte{}, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	got := FindContentClasses(pkgDir)
+	if len(got) != len(pkgtypes.ContentClasses) {
+		t.Fatalf("got %d classes, want %d (%v)", len(got), len(pkgtypes.ContentClasses), got)
+	}
+	for i, class := range pkgtypes.ContentClasses {
+		if got[i] != class {
+			t.Errorf("position %d: got %q, want %q", i, got[i], class)
+		}
+	}
+}
+
+// TestFindContentClassesSubset: only non-empty canonical directories
+// are returned; unknown directories alongside them are ignored.
+func TestFindContentClassesSubset(t *testing.T) {
+	pkgDir := t.TempDir()
+	// Two canonical classes, one ignored unknown directory.
+	for _, class := range []string{"skills", "katas", "not-a-class"} {
+		classDir := filepath.Join(pkgDir, class)
+		if err := os.MkdirAll(classDir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(classDir, ".keep"), []byte{}, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	got := FindContentClasses(pkgDir)
+	want := []string{"skills", "katas"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i, class := range want {
+		if got[i] != class {
+			t.Errorf("position %d: got %q, want %q", i, got[i], class)
+		}
 	}
 }
 

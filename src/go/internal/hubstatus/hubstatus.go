@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/usurobor/cnos/src/go/internal/pkg"
+	"github.com/usurobor/cnos/src/go/internal/pkgbuild"
 )
 
 // CommandInfo is the data hubstatus needs to display a command.
@@ -82,7 +83,8 @@ func showPackages(hubPath, version string, stdout io.Writer) error {
 			continue
 		}
 		dirName := entry.Name()
-		manifestPath := filepath.Join(vendorDir, dirName, "cn.package.json")
+		pkgDir := filepath.Join(vendorDir, dirName)
+		manifestPath := filepath.Join(pkgDir, "cn.package.json")
 		data, err := os.ReadFile(manifestPath)
 		if err != nil {
 			// Skip dirs without a manifest — not a valid package.
@@ -92,11 +94,14 @@ func showPackages(hubPath, version string, stdout io.Writer) error {
 		if err != nil {
 			continue
 		}
+		// Content classes are discovered from filesystem presence, not
+		// manifest JSON fields (PACKAGE-SYSTEM.md §3). This is the same
+		// authority used by `cn build --check` via pkgbuild.FindContentClasses.
 		packages = append(packages, installedPackage{
 			name:           manifest.Name,
 			version:        manifest.Version,
 			enginesCnos:    manifest.Engines.Cnos,
-			contentClasses: manifest.ContentClasses(),
+			contentClasses: pkgbuild.FindContentClasses(pkgDir),
 		})
 	}
 

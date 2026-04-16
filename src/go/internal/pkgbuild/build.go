@@ -25,15 +25,34 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/usurobor/cnos/src/go/internal/pkg"
+	pkgtypes "github.com/usurobor/cnos/src/go/internal/pkg"
 )
 
-// ContentClasses lists the content classes that a package may contain.
-// `cn build --check` treats a package as valid if at least one of these
-// directories is present and non-empty.
-var ContentClasses = []string{
-	"doctrine", "mindsets", "skills", "extensions",
-	"templates", "orchestrators", "commands", "katas",
+// FindContentClasses returns the subset of pkgtypes.ContentClasses
+// that are present as non-empty directories inside pkgDir. This is
+// the shared filesystem predicate used by `cn build --check` (validating
+// sources under src/packages/) and `cn status` (inspecting installed
+// packages under .cn/vendor/packages/). Presence is the single
+// authority; manifest JSON fields are not consulted.
+//
+// Order follows pkgtypes.ContentClasses. An error walking an entry
+// is treated as absence — the caller gets a conservative "not present"
+// rather than a partial failure.
+func FindContentClasses(pkgDir string) []string {
+	var present []string
+	for _, class := range pkgtypes.ContentClasses {
+		classDir := filepath.Join(pkgDir, class)
+		info, err := os.Stat(classDir)
+		if err != nil || !info.IsDir() {
+			continue
+		}
+		entries, err := os.ReadDir(classDir)
+		if err != nil || len(entries) == 0 {
+			continue
+		}
+		present = append(present, class)
+	}
+	return present
 }
 
 // PackageManifest is the parsed cn.package.json.
@@ -331,7 +350,7 @@ func CheckOne(pkg DiscoveredPackage) CheckResult {
 	}
 
 	hasContent := false
-	for _, class := range ContentClasses {
+	for _, class := range pkgtypes.ContentClasses {
 		classDir := filepath.Join(pkg.SrcDir, class)
 		if info, err := os.Stat(classDir); err == nil && info.IsDir() {
 			hasContent = true
@@ -351,15 +370,15 @@ func CheckOne(pkg DiscoveredPackage) CheckResult {
 // --- Lockfile generation ---
 
 // GenerateLockfileData produces a cn.lock.v2 lockfile from build results.
-// Uses canonical pkg.Lockfile/pkg.LockedDep types — single schema definition.
-// Pure — no IO.
+// Uses canonical pkgtypes.Lockfile/pkgtypes.LockedDep types — single
+// schema definition. Pure — no IO.
 func GenerateLockfileData(results []BuildResult) ([]byte, error) {
-	lf := pkg.Lockfile{Schema: "cn.lock.v2"}
+	lf := pkgtypes.Lockfile{Schema: "cn.lock.v2"}
 	for _, r := range results {
 		if r.Err != nil {
 			continue
 		}
-		lf.Packages = append(lf.Packages, pkg.LockedDep{
+		lf.Packages = append(lf.Packages, pkgtypes.LockedDep{
 			Name:    r.Name,
 			Version: r.Version,
 			SHA256:  r.SHA256,

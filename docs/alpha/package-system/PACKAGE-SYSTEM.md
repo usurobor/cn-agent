@@ -43,9 +43,10 @@ a package's source directory at `src/packages/<name>/<class>/`.
 | templates | named files | `src/packages/<name>/templates/` | Identity/config scaffolding for new hubs |
 | commands | directory trees | `src/packages/<name>/commands/` | Operator-facing CLI commands |
 | orchestrators | directory trees | `src/packages/<name>/orchestrators/` | Mechanical workflows (`cn.orchestrator.v1`) |
+| katas | directory trees | `src/packages/<name>/katas/` | Executable verification scenarios bundled with the artefact they prove |
 | (metadata) | implicit | `src/packages/<name>/` | `cn.package.json` — package identity, version, engine constraint |
 
-All seven content classes are co-located with their package manifest.
+All eight content classes are co-located with their package manifest.
 `cn build` assembles each package from `src/packages/<name>/` into
 a tarball in `dist/packages/`. `cn deps restore` installs from dist
 into `.cn/vendor/packages/<name>/` on a hub. Content is authored
@@ -73,7 +74,7 @@ The build system uses two copy strategies:
 - **Individual file copy**: Used by doctrine (when named), mindsets, and templates.
   Each declared entry is a single file name relative to the package's class directory.
 
-- **Directory tree copy**: Used by skills, extensions, commands, and orchestrators.
+- **Directory tree copy**: Used by skills, extensions, commands, orchestrators, and katas.
   Each declared entry is a directory path. The entire subtree is copied recursively.
 
 Doctrine has a special case: `"*"` copies all `.md` files (wildcard mode).
@@ -189,8 +190,11 @@ co-located with the manifest, so no `sources` map is needed.
 
 `cn build` discovers content classes by scanning for known directory
 names (`doctrine/`, `mindsets/`, `skills/`, `templates/`, `commands/`,
-`orchestrators/`, `extensions/`) inside each package's source directory.
-A package includes only the classes it has directories for.
+`orchestrators/`, `extensions/`, `katas/`) inside each package's
+source directory. A package includes only the classes it has
+directories for. The canonical list is defined once in
+`src/go/internal/pkg/pkg.go` (`pkg.ContentClasses`) and shared by
+`cn build --check` and `cn status` via `pkgbuild.FindContentClasses`.
 
 ---
 
@@ -206,7 +210,7 @@ extensible model.
 - **Semantics**: Different classes have different copy modes (file vs tree vs wildcard). These are not interchangeable.
 - **Readability**: Each class is a known directory name. No configuration needed.
 - **Debugging**: A mismatch in one class is easy to identify.
-- **Current scale**: 7 classes. The explicit model is not a maintenance burden.
+- **Current scale**: 8 classes. The explicit model is not a maintenance burden.
 
 **When to reconsider:**
 
@@ -223,8 +227,8 @@ Templates became a content class (rather than being special-cased) because:
 
 ### 4.3 Why the set is closed (for now)
 
-The current 6 content classes cover all shipped cognitive assets plus
-identity templates. The set is intentionally closed:
+The current 8 content classes cover all shipped cognitive assets plus
+identity templates and bundled verification katas. The set is intentionally closed:
 
 - New classes should be added only when an existing asset type cannot
   be served by any current class
@@ -267,6 +271,8 @@ identity templates. The set is intentionally closed:
 | v3.24.0 | Templates added as 5th content class (#119) |
 | v3.37.0 | Commands migrated from built-in to package content class |
 | v3.51.0 | Content co-located with manifests in `src/packages/`; `sources` field removed |
+| v3.55.0 | Katas added as 8th content class (kata framework split; `cnos.kata`, `cnos.cdd.kata`) |
+| #253 | Single source of truth in `pkg.ContentClasses`; `cn status` and `cn build --check` agree on membership via filesystem presence |
 
 ---
 

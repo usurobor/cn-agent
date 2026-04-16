@@ -110,48 +110,38 @@ type EnginesJSON struct {
 	Cnos string `json:"cnos"`
 }
 
-// SkillsJSON is the "skills" object in cn.package.json.
-type SkillsJSON struct {
-	Exposed  []string `json:"exposed"`
-	Internal []string `json:"internal"`
+// ContentClasses is the canonical, ordered list of package content
+// class directory names. This is the single source of truth shared
+// by `cn build --check` (filesystem discovery) and `cn status`
+// (installed-package display), per docs/alpha/package-system/PACKAGE-SYSTEM.md
+// §1.1.
+//
+// Order follows the canonical §1.1 table. Filesystem presence — not
+// manifest JSON fields — determines which classes a package contains
+// (PACKAGE-SYSTEM.md §3: "Content classes are discovered by directory
+// presence"). `providers` is intentionally absent: per
+// POLYGLOT-PACKAGES-AND-PROVIDERS.md, providers are a runtime
+// capability surface, not a package content class.
+var ContentClasses = []string{
+	"doctrine", "mindsets", "skills", "extensions",
+	"templates", "commands", "orchestrators", "katas",
 }
 
 // FullPackageManifest is the extended shape of cn.package.json that
-// includes commands, engines, and content class objects. Used by
-// command discovery and status display.
+// includes commands and engines. Used by command discovery and
+// status display.
+//
+// Content-class membership is NOT declared here: it is discovered
+// from filesystem presence (see ContentClasses above). The manifest
+// only carries the metadata that is not derivable from the directory
+// layout itself — currently `commands` metadata and `engines.cnos`.
 type FullPackageManifest struct {
-	Schema        string                        `json:"schema"`
-	Name          string                        `json:"name"`
-	Version       string                        `json:"version"`
-	Kind          string                        `json:"kind"`
-	Engines       EnginesJSON                   `json:"engines"`
-	Commands      map[string]PackageCommandJSON `json:"commands"`
-	Skills        *SkillsJSON                   `json:"skills"`
-	Orchestrators json.RawMessage               `json:"orchestrators"`
-	Extensions    json.RawMessage               `json:"extensions"`
-	Providers     json.RawMessage               `json:"providers"`
-}
-
-// ContentClasses returns the list of content classes present in this
-// package, in a stable order. Pure — no IO.
-func (m *FullPackageManifest) ContentClasses() []string {
-	var classes []string
-	if m.Skills != nil && (len(m.Skills.Exposed) > 0 || len(m.Skills.Internal) > 0) {
-		classes = append(classes, "skills")
-	}
-	if len(m.Commands) > 0 {
-		classes = append(classes, "commands")
-	}
-	if len(m.Orchestrators) > 0 && string(m.Orchestrators) != "null" {
-		classes = append(classes, "orchestrators")
-	}
-	if len(m.Extensions) > 0 && string(m.Extensions) != "null" {
-		classes = append(classes, "extensions")
-	}
-	if len(m.Providers) > 0 && string(m.Providers) != "null" {
-		classes = append(classes, "providers")
-	}
-	return classes
+	Schema   string                        `json:"schema"`
+	Name     string                        `json:"name"`
+	Version  string                        `json:"version"`
+	Kind     string                        `json:"kind"`
+	Engines  EnginesJSON                   `json:"engines"`
+	Commands map[string]PackageCommandJSON `json:"commands"`
 }
 
 // PackageCommandJSON is the JSON shape of one command entry in
