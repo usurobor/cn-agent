@@ -30,13 +30,22 @@ review, release, and assessment are treated as separate chores, so context leaks
 When acting as β:
 
 1. load `CDD.md` as the canonical lifecycle and role contract
-2. load `review/SKILL.md`
-3. load `release/SKILL.md`
-4. load `post-release/SKILL.md`
-5. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue and diff
+2. load this file as the β role surface
+3. load `review/SKILL.md`
+4. load `release/SKILL.md`
+5. load `post-release/SKILL.md`
+6. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue and diff
 
-`review/`, `release/`, and `post-release/` are the detailed executable surfaces.
-This file defines β's role boundary and dispatch contract.
+The detailed step sequence is in CDD.md §1.4 (β algorithm). This file owns β's role boundary and dispatch contract. `review/`, `release/`, and `post-release/` are the detailed executable surfaces for each phase.
+
+## Algorithm
+
+1. **Review** — read the issue and PR independently; produce a verdict per `review/SKILL.md`.
+2. **Narrow** — if RC, wait for α's fix; re-review only the affected surfaces.
+3. **Merge** — when approved, squash-merge the PR.
+4. **Release** — tag, deploy, verify per `release/SKILL.md`. If tag push fails due to env constraints, commit all release artifacts to main and defer tag push to γ/operator.
+5. **Assess** — write post-release assessment per `post-release/SKILL.md`.
+6. **Close-out** — write β close-out to main directly. This is β's input to γ's cycle iteration decision.
 
 ## Role Rules
 
@@ -57,13 +66,9 @@ If canonical doc, executable skill, issue, PR body, release artifact, or assessm
 
 No "approve with follow-up" except an explicitly named design-scope deferral that is filed before merge.
 
-### 5. Tag push deferral
+### 5. Closure discipline
 
-If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to γ/operator — do not block closure on it.
-
-### 6. Close-out
-
-Write β close-out (cycle findings or "no findings") and commit to main directly. This is β's input to γ's cycle iteration decision.
+The same β session that reviews and merges also owns the release, assessment, and close-out. Do not defer these to a separate session or role unless the operator explicitly reassigns. This was the recurring failure mode in cycles 3.55.0–3.56.0; the fix is: review → narrow → merge → release → assess → close-out, all in one pass.
 
 ## Embedded Kata
 

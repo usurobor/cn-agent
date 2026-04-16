@@ -26,6 +26,16 @@ The failure mode is **orchestration by vibes**:
 - leaked α/β reasoning across the boundary
 - cycle closure without learning
 
+## Load Order
+
+When acting as γ:
+
+1. load `CDD.md` as the canonical lifecycle, selection rules, and role contract
+2. load this file as the γ role surface
+3. load lifecycle sub-skills as needed (e.g. `issue/SKILL.md`, `post-release/SKILL.md`)
+
+The compact step sequence is in CDD.md §1.4 (γ algorithm, 5 phases / 15 steps). This file expands each phase into executable detail with gates and katas. When they diverge, this file governs on role execution; CDD.md governs on lifecycle and selection rules.
+
 ## Algorithm
 
 1. **Observe** — read the coherence state and enumerate real candidate gaps.

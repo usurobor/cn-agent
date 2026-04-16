@@ -106,6 +106,8 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
 
 #### γ algorithm
 
+The compact algorithm is here; `gamma/SKILL.md` expands each phase into executable detail with gates, katas, and selection mechanics. When they diverge on role execution, the skill governs.
+
 **Phase 1 — Dispatch**
 
 1. Observe and select the gap (§2)
@@ -176,6 +178,8 @@ The prompt names the role, provides parameters, and points to the issue or PR. T
 
 #### α algorithm
 
+The compact algorithm is here; `alpha/SKILL.md` expands each step into executable detail with self-coherence, pre-review gate, peer enumeration, and harness audit procedures. When they diverge on role execution, the skill governs.
+
 1. Receive dispatch prompt from γ
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "alpha"` and `git config user.email "alpha@cdd.<project>"`
 3. Subscribe to the issue (`gh issue edit <number> --add-assignee @me` or equivalent) so you receive PR and update notifications
@@ -192,6 +196,8 @@ The prompt names the role, provides parameters, and points to the issue or PR. T
 **α close-out:** Report cycle-level learnings to γ. Concrete findings (skill gaps, process friction, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is α's input to γ's cycle iteration decision (§9.1).
 
 #### β algorithm
+
+The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load order, and closure discipline. The detailed review, release, and post-release procedures live in the lifecycle sub-skills (`review/`, `release/`, `post-release/`).
 
 1. Receive dispatch prompt from γ (or pick up from α's review request)
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.<project>"`

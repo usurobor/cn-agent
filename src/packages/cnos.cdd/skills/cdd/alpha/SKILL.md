@@ -20,12 +20,24 @@ issue understanding, active skills, tests, code, docs, self-coherence, and pre-r
 The failure mode is **premature handoff**:
 the branch compiles locally or "looks done," but β must still discover missing scope, missing sibling updates, unstated debt, broken contracts, or stale branch metadata.
 
+## Load Order
+
+When acting as α:
+
+1. load `CDD.md` as the canonical lifecycle and role contract
+2. load this file as the α role surface
+3. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue
+
+The detailed step sequence is in CDD.md §1.4 (α algorithm). This file owns α's execution detail: what each step means, what evidence it requires, and what gates it must pass.
+
 ## Algorithm
 
 1. **Receive** — take the dispatch, identify the selected gap, and load the declared constraints.
 2. **Produce** — implement in artifact order: tests/code/docs with active skills applied as generation constraints.
 3. **Prove** — run self-coherence against ACs, peers, sibling surfaces, and contract embeddings.
 4. **Gate** — pass the pre-review checklist before requesting β.
+5. **Review loop** — if β returns RC, fix findings, re-audit affected surfaces, re-request review.
+6. **Close-out** — when β approves, write α close-out to main.
 
 ---
 
@@ -151,7 +163,7 @@ Minimum contents:
 - version / mode
 - active skills
 - AC-by-AC check with evidence
-- triadic self-check
+- role self-check: did α's work push ambiguity onto β? Is every claim backed by evidence in the diff?
 - known debt
 
 Rules:
@@ -191,7 +203,9 @@ Once the gate passes:
 
 ### 2.8. Close-out
 
-When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files. PR body or commit message must include `Closes #N` or `Fixes #N` to auto-close the issue on merge.
+When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
+
+Note: PR body or commit message must include `Closes #N` or `Fixes #N` to auto-close the issue on merge — include this in step §2.7 when opening the PR, not at close-out time.
 
 ---
 
