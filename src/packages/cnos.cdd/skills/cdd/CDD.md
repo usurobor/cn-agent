@@ -150,7 +150,7 @@ The prompt names the role, provides parameters, and points to the issue or PR. T
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
 5. Read the issue fully, read source files referenced in implementation guidance
 6. Implement: branch, code, tests, self-coherence
-7. Open PR (draft if CI unavailable locally), wait for CI green
+7. Open PR (draft if CI unavailable locally), wait for CI green. PR body or commit message must include `Closes #N` or `Fixes #N` to auto-close the issue on merge.
 8. Subscribe to PR notifications
 9. Request review from β
 10. If β returns RC: fix findings, push, re-request review
@@ -168,7 +168,7 @@ The prompt names the role, provides parameters, and points to the issue or PR. T
 5. Read the PR diff, read the issue
 6. Review: produce CR with findings per review skill, or approve
 7. If RC: post findings as PR comment, wait for α's fix
-8. If A: merge, tag, deploy per release skill
+8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to γ/operator — do not block closure on it.
 9. Write post-release assessment per post-release skill
 10. Write β close-out (cycle findings or "no findings")
 11. Done when assessment and close-out are committed
