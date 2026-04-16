@@ -90,7 +90,7 @@ On dispatch:
 3. read the issue fully
 4. read every linked design / plan / invariant artifact
 5. load:
-   - Tier 1: all `cdd/*`
+   - Tier 1: `CDD.md` + this file + lifecycle sub-skills as needed (do not load β or γ role skills)
    - Tier 2: always-applicable `eng/*`
    - Tier 3: issue-specific skills
 
