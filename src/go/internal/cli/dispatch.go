@@ -31,14 +31,14 @@ type Resolution struct {
 //
 //  1. Noun-verb form: args[0]+"-"+args[1] as a registry key
 //     (e.g., "kata run" → "kata-run").
-//  2. Flat form: args[0] as a registry key
-//     (e.g., "kata-run", "doctor"). Backward-compat for the
-//     hyphenated form.
+//  2. Flat form: args[0] as a registry key (e.g., "doctor").
+//     This handles kernel commands that are single-word.
 //  3. Group: args[0] matches "<noun>-*" in the registry with no
 //     matching verb. Caller lists the group.
 //
-// The user-facing surface is noun-verb. The flat form is kept as an
-// undocumented fallback so existing scripts do not break.
+// Hyphenated flat forms (e.g., "kata-run") are NOT supported.
+// The canonical form is noun-verb ("kata run"). Single-word kernel
+// commands ("doctor", "deps") use the flat path naturally.
 func ResolveCommand(reg *Registry, args []string) Resolution {
 	if len(args) == 0 {
 		return Resolution{}
@@ -51,14 +51,37 @@ func ResolveCommand(reg *Registry, args []string) Resolution {
 		}
 	}
 
-	// 2. Flat form.
+	// 2. Flat form — single-word kernel commands only.
+	// Hyphenated forms like "kata-run" are rejected: if the prefix
+	// before the first hyphen is a known noun group, we skip resolution
+	// and fall through to group listing (step 3).
 	if cmd, ok := reg.Lookup(args[0]); ok {
-		return Resolution{Command: cmd, Remaining: args[1:]}
+		reject := false
+		if i := strings.IndexByte(args[0], '-'); i > 0 {
+			prefix := args[0][:i]
+			if len(GroupMembers(reg, prefix)) > 0 {
+				reject = true
+			}
+		}
+		if !reject {
+			return Resolution{Command: cmd, Remaining: args[1:]}
+		}
 	}
 
-	// 3. Group prefix.
-	if len(GroupMembers(reg, args[0])) > 0 {
-		return Resolution{Group: args[0], Remaining: args[1:]}
+	// 3. Group prefix — check both the raw arg and the prefix before
+	// the first hyphen (so "kata-run" routes to the "kata" group).
+	noun := args[0]
+	if i := strings.IndexByte(noun, '-'); i > 0 {
+		noun = noun[:i]
+	}
+	if len(GroupMembers(reg, noun)) > 0 {
+		return Resolution{Group: noun, Remaining: args[1:]}
+	}
+	// Also check the unmodified arg as a group prefix (single-word nouns).
+	if noun != args[0] {
+		if len(GroupMembers(reg, args[0])) > 0 {
+			return Resolution{Group: args[0], Remaining: args[1:]}
+		}
 	}
 
 	return Resolution{}

@@ -39,19 +39,18 @@ func TestResolveCommandNounVerb(t *testing.T) {
 	}
 }
 
-func TestResolveCommandFlatBackwardCompat(t *testing.T) {
+func TestResolveCommandFlatHyphenatedRejected(t *testing.T) {
+	// Hyphenated forms like "kata-run" are no longer resolved.
+	// They fall through to the group listing for "kata".
 	reg := newTestRegistry()
 
 	res := ResolveCommand(reg, []string{"kata-run", "--verbose"})
 
-	if res.Command == nil {
-		t.Fatal("expected kata-run to resolve from flat form")
+	if res.Command != nil {
+		t.Errorf("Command = %v, want nil (hyphenated form should be rejected)", res.Command)
 	}
-	if got := res.Command.Spec().Name; got != "kata-run" {
-		t.Errorf("Command.Name = %q, want %q", got, "kata-run")
-	}
-	if !reflect.DeepEqual(res.Remaining, []string{"--verbose"}) {
-		t.Errorf("Remaining = %v, want [--verbose]", res.Remaining)
+	if res.Group != "kata" {
+		t.Errorf("Group = %q, want %q", res.Group, "kata")
 	}
 }
 
