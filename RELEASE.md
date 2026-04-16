@@ -2,45 +2,50 @@
 
 ## Outcome
 
-Coherence delta: C_Σ **A** (`α A-`, `β A`, `γ A`) · **Level:** **L6**
+Coherence delta: C_Σ **A** (`α A`, `β A`, `γ A`) · **Level:** **L5**
 
-Content-class authority converged to one source of truth. Two surfaces (`cn build --check` and `cn status`) that disagreed on what counts as a package content class now derive from the same canonical list and the same filesystem predicate. Doctrine (`PACKAGE-SYSTEM.md`) matches the code.
+`cn deps lock` now means what its name says. Pre-3.56.2 the lockfile was a dump of the entire package index; post-3.56.2 it is exactly what `.cn/deps.json` pins, resolved against the index, with explicit errors for missing manifests or unresolved pins. The Go runtime now matches the OCaml `lockfile_for_manifest` behavior that was already correct, and the kata test infrastructure that had been quietly riding on the bug is now gated against regression.
 
 ## Why it matters
 
-`pkgbuild.ContentClasses` (filesystem discovery, 8 entries) and `pkg.FullPackageManifest.ContentClasses()` (JSON-field heuristic, 5 entries including a non-existent `providers`) gave different answers about the same package. Operators had no single truthful answer to "what does this package contain?" and every new content class risked compounding the drift silently — the 3.55.0 cycle already shipped `katas` in `pkgbuild` without updating the manifest heuristic or the canonical doctrine. This release collapses the two surfaces into one list, one predicate, one authority (filesystem presence, per §3), and syncs `PACKAGE-SYSTEM.md §1.1–§4.3` so the doctrine matches what the code actually does. Future content-class additions now touch exactly one list.
+The operator's single source of truth for "what does this hub use?" (`.cn/deps.json`) had no effect on the lockfile. A hub pinning `cnos.core@3.54.0` got a lockfile with every `(name, version)` pair the index knew about, and `cn deps restore` installed all of them — last-writer-wins on `restoreOne` resolved the resulting duplicate-name entries to whichever `cnos.core@*` happened to be last in iteration order. The pin was inert.
+
+Two downstream harnesses had silently grown to depend on the bug. The Tier-2 CI test hub used object-syntax `{"cnos.core": "3.54.0"}` which the parser rejects as `[]ManifestDep`; the Tier-1 `06-install.sh` accepted any installed package count ≥ 1. Both now pin the real version via `pkg_version_from_source` (derived from `src/packages/*/cn.package.json`) and assert exact-match installed sets. The over-vendoring regression class is CI-gated going forward.
 
 ## Fixed
 
-- **ContentClasses divergence** (#253, PR #258): `cn build --check` (8 classes) and `cn status` (5 classes) agreed on content-class membership for the first time.
+- **`cn deps lock` honors `.cn/deps.json` pins** (#250, PR #259): the lockfile contains exactly the packages declared in the manifest, resolved against the index. Unresolved pins error explicitly. Missing `deps.json` errors explicitly. Go/OCaml semantics now agree.
 
 ## Added
 
-- **`pkg.ContentClasses`** (`src/go/internal/pkg/pkg.go`): canonical exported list, 8 entries in §1.1 order: doctrine, mindsets, skills, extensions, templates, commands, orchestrators, katas. Pure (no IO).
-- **`pkgbuild.FindContentClasses(pkgDir)`** (`src/go/internal/pkgbuild/build.go`): shared filesystem predicate iterating `pkg.ContentClasses`. Single authority for both `cn build --check` and `cn status`.
-- **4 new tests** exercising empty, full, subset, and end-to-end (`cn status` with all 8 classes) paths.
+- **`pkg.ParseManifest`** (`src/go/internal/pkg/pkg.go`): pure deps.json parser mirroring the existing `ParseLockfile` / `ParsePackageIndex` shape.
+- **`restore.ReadManifest`** (`src/go/internal/restore/restore.go`): IO wrapper preserving the `eng/go §2.17` Parse/Read purity boundary.
+- **Six AC-named tests** in `restore_test.go` — the reproducer from #250, AC2 duplicate-free, AC3 restore-only-pinned, AC4 revert-behavior, plus missing-manifest and missing-pin error paths.
+- **`pkg_version_from_source`** helper in `src/packages/cnos.kata/lib.sh` — reads `src/packages/<pkg>/cn.package.json` and echoes the version, replacing hardcoded `3.54.0` strings in R3/R4 katas.
 
 ## Changed
 
-- **`pkgbuild.CheckOne`** walks `pkgtypes.ContentClasses` instead of its former local duplicate list.
-- **`hubstatus.Run`** now calls `pkgbuild.FindContentClasses(pkgDir)` instead of the JSON-field heuristic on the manifest. `cn status` output order for multi-class packages now follows the canonical §1.1 order (user-visible convergence, not regression).
-- **`docs/alpha/package-system/PACKAGE-SYSTEM.md`**: §1.1 gains `katas` row as the 8th content class (completes 3.55.0 drift); §1.2 "Directory tree copy" enumeration includes katas; §3 names `pkg.ContentClasses` and `pkgbuild.FindContentClasses` as the implementation; §4.1/§4.3 class counts corrected 7→8 and 6→8; §6 history gains v3.55.0 and v3.56.1 rows.
+- **`restore.GenerateLockFromIndex`**: reads manifest first, iterates `m.Packages`, collects unresolved pins into one explicit error listing every missing `name@version`. Godoc updated to spell out the contract and error cases.
+- **CI `kata-tier2` setup** (`.github/workflows/ci.yml`): derives real package versions at job time, emits the canonical array-schema `deps.json`.
+- **Tier-1 kata `scripts/kata/06-install.sh`**: overwrites the post-`cn setup` `deps.json` with an explicit `cnos.core` pin read from source, and tightens the post-condition from "≥ 1 installed" to "exactly `cnos.core` installed".
+- **`cnos.kata` `lib.sh` `write_deps_json`**: emits `packages` as an array of `{name, version}` objects (matches the parser; the pre-#250 object-syntax worked only because the lockfile dumped the full index regardless).
 
 ## Removed
 
-- **`pkgbuild.ContentClasses`** (local duplicate list) — callers now import `pkgtypes.ContentClasses`.
-- **`(m *FullPackageManifest) ContentClasses() []string`** method and the `Skills`, `Orchestrators`, `Extensions`, `Providers` fields it depended on, plus the now-orphaned `SkillsJSON` type. The JSON-field heuristic was the wrong authority (PACKAGE-SYSTEM.md §3: content classes are discovered by directory presence, not manifest JSON fields). `providers` was never a content class — it's a runtime capability surface per POLYGLOT-PACKAGES-AND-PROVIDERS.md, orthogonal to the content-class model.
+- The "iterate the entire index" code path inside `GenerateLockFromIndex`. There was no policy under which producing a lockfile of the whole index was correct — it was the bug.
 
 ## Validation
 
-- CI (merged commit `aacb817`): 7/7 green — `go`, `kata-tier1`, `kata-tier2`, `Package/source drift (I1)`, `Protocol contract schema sync (I2)`, `notify` ×2.
-- `go build ./...`, `go vet ./...`, `go test ./...` — all green, including 4 new tests.
-- `go run ./cmd/cn build --check` against real `src/packages/` — all 5 packages valid, including `cnos.cdd.kata` (katas-only).
-- Authority-surface audit: single canonical list (`grep -rn "pkgbuild.ContentClasses" src/go` → 0 matches), no JSON-field heuristic (`grep -rn "\.ContentClasses()" src/go` → 0 matches), no orphaned readers of removed fields.
-- Deployment deferred (no binary-breaking change; existing packages unaffected — the removed JSON fields were only consumed by the now-removed method).
+- **Build**: `go build ./... && go vet ./...` — clean on `4f860f1`.
+- **Unit + integration**: `go test ./...` — all packages green.
+- **Race**: `go test -race ./internal/restore/` — green.
+- **Targeted**: `go test ./internal/restore -run TestGenerateLockFromIndex -v` — 6/6 pass.
+- **CI on PR head** (`44d431a`): 7/7 checks green (go, kata-tier1, kata-tier2, Package/source drift I1, Protocol contract schema sync I2, notify × 2).
+- **Module-truth audit** (review §2.2.9): the only `idx.Packages` iteration sites are `pkgbuild/build.go` (index *construction*, correct) and the two `idx.Lookup(name, version)` calls in `restore.go` (both lookup-by-pin). No sibling "dump the index" incoherence remains.
+- **Go/OCaml parity**: `src/ocaml/lib/cn_package.ml` `parse_manifest_dep` and `src/ocaml/cmd/cn_deps.ml` `lockfile_for_manifest` already expected an array of `{name, version}` and resolved per pin; the Go path now matches. `cn setup` in `hubsetup.go` writes the same array shape.
+
+The targeted coherence delta — "`.cn/deps.json` actually controls `.cn/deps.lock.json`" — is proved by six AC-named tests (all six fail on revert), tightened CI post-conditions on Tier-1 and Tier-2 kata suites, and a green 7/7 check matrix on the PR head.
 
 ## Known Issues
 
-- **OCaml `cn_build.ml`** still carries a 7-field `source_decl` shape without `katas`; it is no longer the live `cn build` path (Go kernel owns it), but the OCaml build surface should either be dropped or mechanically synced in a future cycle.
-- **`PACKAGE-AUTHORING.md`** uses the phrase "katas as commands" in one spot — consistent with `katas` being a content class (a package can do either — `cnos.kata` ships runner commands, `cnos.cdd.kata` ships katas as content) but not cross-linked to §1.1. Cosmetic.
-- **`scripts/stamp-versions.sh`** only bumps `cnos.core`, `cnos.cdd`, `cnos.eng` — `cnos.kata` and `cnos.cdd.kata` use independent versioning (established in 3.55.0), which is intentional but not documented next to the script.
+- `cn setup` still pins `deps.json` to the **binary's** version. In dev/CI environments without `-ldflags`, `cn deps lock` immediately after `cn setup` will now error explicitly rather than silently succeeding with an index dump. Tier-1 kata `06-install.sh` works around this by overwriting the default with an explicit pin read from source. A follow-up issue (make `cn setup` resolve against the local index) is a candidate if this bites operators; today it affects only dev checkouts.
