@@ -106,20 +106,46 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
 
 #### γ algorithm
 
+**Phase 1 — Dispatch**
+
 1. Observe and select the gap (§2)
 2. Create the issue with full implementation guidance, including Tier 3 skills (§4.4)
 3. Write α dispatch prompt (see format below)
 4. When α opens PR and CI is green, write β dispatch prompt (see format below)
 5. If α or β is blocked, diagnose and unblock: clarify requirements, resolve ambiguity, provide missing context
-6. After β releases, collect close-outs from both α and β
-7. Review both close-outs. Triage each finding using CAP:
+
+**Phase 2 — Release support**
+
+6. If β deferred tag push (env constraint per β step 8), push the tag: `git tag <version> <release-commit> && git push origin <version>`. Verify release CI fires.
+7. If the issue did not auto-close on merge (missing `Closes #N`), close it: `gh issue close <number>`
+
+**Phase 3 — Close-out triage**
+
+8. Collect close-outs from both α and β. Both must exist on main before proceeding. If either is missing, request it.
+9. Read both close-outs and the post-release assessment. For each finding, triage using CAP:
    - MCA available (skill patch, gate, mechanization) → ship it now as immediate output
    - No MCA yet, pattern real → MCI. Two kinds:
      - **Project MCI** (future cycles on this project need to know) → `.cdd/` in the repo
      - **Agent MCI** (future sessions of this agent need to know, any project) → agent hub (`cn-<agent>/threads/adhoc/`)
    - One-off, no pattern → drop
-8. If any §9.1 trigger fired, verify Cycle Iteration section exists in assessment
-9. Cycle closed when: assessment committed, close-outs reviewed, immediate outputs executed
+
+**Phase 4 — CDD iteration**
+
+10. Check §9.1 triggers against this cycle's data:
+    - Review rounds > 2?
+    - Mechanical ratio > 20% (with ≥ 10 findings)?
+    - Avoidable tooling/environmental failure?
+    - Loaded skill failed to prevent a finding?
+11. If any trigger fired: verify the assessment contains a Cycle Iteration section with root cause and MCA disposition.
+12. Independently assess: did this cycle reveal a CDD process gap — a recurring friction, a missing gate, an underspecified step, or a skill that should have caught something but didn't? If yes, write and commit the skill/spec patch now. If no, state why not (one sentence). **This step applies even when no §9.1 trigger fired.** Triggers catch mechanical failures; this step catches process drift that triggers miss.
+
+**Phase 5 — Hub memory and closure**
+
+13. Update hub memory:
+    - Daily reflection: cycle summary, scoring, MCI freeze status, next move
+    - Adhoc thread: update or create the thread this cycle advances
+14. Delete merged remote branches: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
+15. Cycle is closed. State it: *"Cycle #N closed. Next: #M."*
 
 #### γ dispatch prompt format
 
