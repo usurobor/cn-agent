@@ -108,15 +108,15 @@ else
 fi
 
 # 4. Dispatch.
-info "running: cn kata-rt-test"
-RT_OUT=$(cn kata-rt-test 2>&1 || true)
+info "running: cn kata rt-test"
+RT_OUT=$(cn kata rt-test 2>&1 || true)
 if echo "$RT_OUT" | grep -q 'ROUNDTRIP_OK'; then
-  pass "cn kata-rt-test dispatched and produced marker"
+  pass "cn kata rt-test dispatched and produced marker"
 else
   if echo "$RT_OUT" | grep -qi 'unknown command'; then
-    fail "cn kata-rt-test: unknown command — round-trip broken"
+    fail "cn kata rt-test: unknown command — round-trip broken"
   else
-    fail "cn kata-rt-test: unexpected output"
+    fail "cn kata rt-test: unexpected output"
   fi
   info "output: $RT_OUT"
   kata_summary
