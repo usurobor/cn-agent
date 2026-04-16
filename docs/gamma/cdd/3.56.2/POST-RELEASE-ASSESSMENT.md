@@ -4,6 +4,7 @@
 
 - **Baseline:** 3.56.1 — α A-, β A, γ A
 - **This release:** 3.56.2 — α A, β A, γ A
+- **Level:** **L6** (diff-shape L7 per α close-out — silent-success fallback removed; cycle-process L6 — two pre-review CI iterations prevented L7 cycle level). β originally scored L5 at release time (CHANGELOG); revised to L6 in this assessment after reading α close-out and reconciling scoring. Per post-release §2 "scoring sequence" rule, the assessment governs — CHANGELOG ledger row updated to match.
 - **Delta:**
   - **α** recovered from A- → A. The implementation was clean MCA: read manifest, iterate pins, look up in index, error explicitly on unresolved pins. `pkg.ParseManifest` + `restore.ReadManifest` mirror the existing `Parse*`/`Read*` purity split (`eng/go §2.17`) without inventing new patterns. Six AC-named tests cover the four ACs plus two error paths. Revert-verification proves AC4 ("fails on buggy code, passes on fix") was actually run — all six tests reproduce the symptoms described in the issue when the fix is reverted. α also did the harder-to-remember work: the two latent test-harness bugs the index-dump was masking (Tier-1 accepted `≥1 installed`, Tier-2 used object-syntax `packages`) are both now CI-gated against recurrence. PR body reconstructed the CDD Trace through row 7a honestly, including the binary-version-pin known debt as a non-introduced constraint.
   - **β** held at A. Independent build + vet + `go test ./...` + `go test -race ./internal/restore` + targeted `TestGenerateLockFromIndex_*` run on a worktree of `44d431a`; module-truth audit (review §2.2.9) enumerated every `idx.Packages` iteration site; sibling-fallback audit (§2.2.1b) confirmed the removed silent fallback has no twin; Go/OCaml parity verified by reading `parse_manifest_dep` and `lockfile_for_manifest` in `src/ocaml/`. Review body carried the full §2.0 structural tables + local verification receipts. One round, zero findings, clean approve. Review identity was shared-GitHub (per review §7.1, posted as comment instead of `--approve`).
@@ -77,7 +78,9 @@ No spec patch shipped this cycle. Rationale below under "CDD improvement disposi
 - **`eng/testing` §3.10 regression-test-by-name:** honored. Six test names directly encode the ACs or the failure class (`_FiltersByManifest`, `_NameAppearsAtMostOnce`, `_RestoreInstallsOnlyPinned`, `_MissingManifest`, `_PinNotInIndex`, `_DefaultProfile`).
 - **CDD §5.3 row 7a pre-review schema/shape audit (last cycle's carry-over):** α performed the audit as written and it did cover this cycle's work shape (no peer-enumeration tables, no canonical-form renaming, no library-name uniqueness concerns — the diff is localized to a single Go function plus its tests plus CI-harness JSON shape). The row 7a addendum proposed by α in the 3.56.1 close-out (peer-enumeration grep) did not apply to this cycle's diff, so its absence could not be tested here. It remains pending γ triage as a candidate MCA against a future F1-shaped finding.
 
-**CDD improvement disposition:** **No patch needed this cycle.** All review findings were zero; all loaded skills performed as written; no §9.1 trigger fired. Per post-release §3 rule "every cycle must close the self-learning loop with either a patch or an explicit reason why not": the reason is **(b) zero review findings this cycle**. The row 7a peer-enumeration addendum proposed in 3.56.1 remains a γ-triage candidate on its own merits, not blocked by this cycle's zero-finding shape.
+**CDD improvement disposition (revised after reading α close-out `.cdd/releases/3.56.2/alpha/250.md`):** **Skill patch shipped as immediate output.** α's close-out identified a concrete authoring-time skill gap: `eng/go` §2.12 Schema and compatibility covers Go code handling manifests but does not scope to sibling shell test harnesses producing JSON for the same parsers. That gap allowed `cnos.kata/lib.sh` `write_deps_json`'s object-schema output to survive to CI discovery (two pre-review CI iterations surfaced it) rather than authoring-time audit. α proposed a one-line addendum and recommended shipping it as immediate output (§10.1). **β concurs and shipped the addendum in the same commit as this assessment correction** (see `src/packages/cnos.eng/skills/eng/go/SKILL.md` §2.12). The addendum adds a "sibling harnesses are contract surfaces too" rule with a mechanical grep form (`grep -rn '"<field>"' src/`) and a derivation cite back to this cycle. This closes the §9.1 self-learning loop with a concrete MCA rather than an explicit-why-not.
+
+β's original in-cycle disposition ("no patch needed; zero review findings") was honest but incomplete — it read the zero-finding outcome as evidence that all loaded skills worked, but missed that α's own account attributed the three pre-review CI iterations to a skill-scope gap rather than to natural work-shape discovery. Reading α's close-out sharpened the analysis: the CI iterations surfaced *pre-existing* bug-masked defects, not new ones, so this cycle didn't introduce them — but an authoring-time audit with §2.12 extended to shell harnesses *would have caught them at authoring time*, saving the two CI iterations. That's the L6→L7 gap α's scoring identifies, and the §2.12 addendum is the system-shaping fix.
 
 ### 4. Review Quality
 
@@ -88,7 +91,7 @@ No spec patch shipped this cycle. Rationale below under "CDD improvement disposi
 | Superseded PRs | 0 | 0 | met |
 | Finding breakdown | 0 mechanical / 0 judgment / 0 total | — | — |
 | Mechanical ratio | 0% (0/0) | <20% threshold | met |
-| Action | none filed | — | — |
+| Action | **skill patch shipped** — `eng/go` §2.12 addendum | — | — |
 
 **Finding-count note:** Zero findings across the full A/B/C/D severity range. Per post-release §5.5 "Below 10 findings the ratio is noise — note it but don't file." With 0 findings the mechanical ratio is undefined; recorded as 0% for consistency. No process issue filed.
 
@@ -144,7 +147,7 @@ No spec patch shipped this cycle. Rationale below under "CDD improvement disposi
 | 10 | Release | cdd, release, writing | β: release commit `0dedbc9` on `origin/main` (VERSION 3.56.1 → 3.56.2, manifests stamped via `scripts/stamp-versions.sh`, CHANGELOG ledger row + detailed section, RELEASE.md rewritten). Tag `3.56.2` created locally and pushed — tag-push hit transient 403 (known pattern from 3.56.1); background retry loop `b39vzm337` will land the tag once the environmental issue clears. Release workflow will fire on tag landing. |
 | 11 | Observe | cdd, post-release | Runtime/design alignment verified at code + test + CI level (§5). Binary-level observation deferred until tag lands on remote and release workflow completes. |
 | 12 | Assess | cdd, post-release | this file |
-| 12a | Skill patch | cdd, post-release | **No skill patch this cycle.** Zero review findings, no loaded-skill failure, no §9.1 trigger fired. The row 7a peer-enumeration addendum proposed in 3.56.1 remains pending γ triage on its own merits (not blocked by or applicable to this cycle's zero-finding shape). |
+| 12a | Skill patch | cdd, post-release, eng/skill | **Skill patch shipped** — `eng/go` §2.12 (Schema and compatibility) gains "sibling harnesses are contract surfaces too" addendum with mechanical grep form. Proposed by α in close-out (observed that `write_deps_json` schema mismatch survived authoring-time audit because §2.12 covered Go code only, not shell harnesses producing JSON for the same parsers). β concurs and shipped in the same commit as this assessment correction. Derivation cite to this cycle preserved in skill body. The row 7a peer-enumeration addendum proposed in 3.56.1 α close-out remains pending γ triage on its own merits (orthogonal to this cycle's shell-harness scope gap). |
 | 13 | Close | cdd, post-release | β close-out to be committed to `.cdd/releases/3.56.2/beta/250.md` alongside this assessment (main-direct, survives squash-merge per §1.4 step 11). α close-out expected from α agent at `.cdd/releases/3.56.2/alpha/250.md` per α algorithm step 11. |
 
 ### 6a. Invariants Check
@@ -187,11 +190,12 @@ Invariants document (`docs/alpha/DESIGN-CONSTRAINTS.md`) was not modified by thi
 - **Immediate outputs executed:**
   - [x] PR #259 merged as `4f860f1` (squash) on `origin/main`
   - [x] Release commit `0dedbc9` on `origin/main` (VERSION 3.56.2, all manifests stamped, CHANGELOG ledger row + detailed section, RELEASE.md rewritten)
-  - [ ] **Tag `3.56.2` push — pending remote acceptance.** Local tag created; push hitting transient 403 (known environmental pattern, see §3 and §5). Background retry loop `b39vzm337` running until `git ls-remote --tags origin 3.56.2` succeeds.
+  - [ ] **Tag `3.56.2` push — pending remote acceptance.** Local tag created; push hitting transient 403 (known environmental pattern, see §3 and §5). Background retry loop was started but has been cleaned up; if the 403 persists, operator can push the tag manually once the environmental issue clears.
   - [ ] **GitHub release `3.56.2` publication — pending tag landing** (workflow fires on tag push)
-  - [ ] **α close-out expected** at `.cdd/releases/3.56.2/alpha/250.md` by α agent per α algorithm step 11
-  - [ ] **β close-out** committed alongside this assessment at `.cdd/releases/3.56.2/beta/250.md`
-  - [x] This post-release assessment committed to `docs/gamma/cdd/3.56.2/POST-RELEASE-ASSESSMENT.md`
+  - [x] **α close-out** committed at `.cdd/releases/3.56.2/alpha/250.md` by α (`855410e`)
+  - [x] **β close-out** committed at `.cdd/releases/3.56.2/beta/250.md` by β (`f302428`)
+  - [x] This post-release assessment committed to `docs/gamma/cdd/3.56.2/POST-RELEASE-ASSESSMENT.md` (`f302428`, amended by this correction commit)
+  - [x] **Skill patch: `eng/go` §2.12 sibling-harness scope addendum** shipped in this correction commit, per α close-out proposal and §9.1/§10.1 MCA discipline
 
 - **Deferred outputs committed:**
   - **Issue:** #230 — `cn deps restore: version upgrade skips silently with version-less VendorPath` (already filed with P1 label, converged design exists in issue body + `restoreOne` code comment)

@@ -395,6 +395,11 @@ prefer:
 
 If a compatibility path exists, test it explicitly.
 
+**Sibling harnesses are contract surfaces too.** When a Go type defines a JSON schema (e.g. `pkg.Manifest` for `.cn/deps.json`), every non-Go producer of that JSON — shell test harnesses, CI workflow steps, template-emitted defaults — is a contract surface on the same schema. The schema audit must extend to those producers. Mechanical check: for each `Parse*([]byte)` added or changed, grep the repo for non-Go writers of the same JSON shape and verify they still produce the declared schema. *Derives from: 3.56.2 (#250) — `cnos.kata/lib.sh` `write_deps_json` was emitting object-syntax `packages` while the Go parser expected an array; the bug masked the mismatch until the bug itself was fixed.*
+
+  - ❌ Audit only the Go parser when changing a schema-bearing type
+  - ✅ `grep -rn '"packages"' src/` and inspect every writer (Go, shell, workflow YAML)
+
 ### 2.13. Determinism and reproducibility
 
 Deterministic output matters. For artifacts that are:
