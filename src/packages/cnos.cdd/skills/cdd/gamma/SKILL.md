@@ -43,7 +43,7 @@ It expands those steps into executable checks, evidence, and gates.
 
 ## Step map
 
-- Step 1 → observe + select (`§2.1–§2.2`)
+- Step 1a → observe and build candidates (`§2.1`), Step 1b → select and size (`§2.2`)
 - Step 2 → issue pack + issue-quality gate (`§2.3–§2.4`)
 - Steps 3–5 → dispatch + unblocking (`§2.5`)
 - Steps 6–7 → deferred release mechanics (`§2.6`)
@@ -92,7 +92,7 @@ Close-out converts cycle findings into immediate fixes or committed next work.
 
 ## 2. Unfold
 
-### 2.1. Step 1 — Observe and build candidates
+### 2.1. Step 1a — Observe and build candidates
 
 Before selecting work, read the observation surfaces required by `CDD.md`:
 1. CHANGELOG TSC table
@@ -113,7 +113,7 @@ Do not select from memory or preference alone.
 - ❌ "I remember issue #143 felt important"
 - ✅ "Candidate table shows #143 is selected under CDD §3.x for a named reason"
 
-### 2.2. Step 1 — Select by `CDD.md`, then size the intervention
+### 2.2. Step 1b — Select by `CDD.md`, then size the intervention
 
 Apply `CDD.md` §3 in order.
 Do **not** restate or reorder the rule list here.
@@ -141,7 +141,7 @@ A dispatchable γ issue is:
 - **plus** dependency notes when sequencing or blockers are real
 
 γ does not restate Tier 1 or Tier 2 skills in the issue.
-γ does name Tier 3 skills, active invariants, related artifacts, non-goals, and priority exactly as `issue/SKILL.md` requires.
+γ does name Tier 3 skills, active design constraints, related artifacts, non-goals, and priority exactly as `issue/SKILL.md` requires.
 
 If the issue cannot be written to that level, the work is not ready for α dispatch.
 
@@ -156,7 +156,7 @@ Before dispatch, verify:
 - every noun in ACs and work items is in scope
 - non-goals exist when the issue is substantial
 - Tier 3 skills are named explicitly
-- active invariants are linked and stated plainly
+- active design constraints are linked and stated plainly
 - related artifacts are linked or explicitly absent
 - priority is stated
 - work-shape is stated
@@ -378,7 +378,7 @@ Rewrite it into a dispatchable γ issue pack.
 - numbered ACs
 - non-goals
 - Tier 3 skills
-- active invariants
+- active design constraints
 - related artifacts
 - priority
 - work-shape note

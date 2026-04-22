@@ -29,7 +29,7 @@ labels: ''
 ## Skills and Constraints
 
 - **Tier 3 skills:** <!-- only issue-specific skills, not Tier 1 or Tier 2 -->
-- **Active invariants:** <!-- linked governing constraints in plain language -->
+- **Active design constraints:** <!-- linked governing constraints (invariants, transition, process) in plain language -->
 
 ## Acceptance Criteria
 

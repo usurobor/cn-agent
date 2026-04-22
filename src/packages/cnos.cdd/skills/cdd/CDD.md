@@ -3,7 +3,7 @@
 **Version:** 3.15.0
 **Status:** Draft
 **Date:** 2026-03-25
-**Placement:** γ document (`docs/gamma/cdd/`)
+**Placement:** `src/packages/cnos.cdd/skills/cdd/`
 **Audience:** Contributors, reviewers, maintainers, release operators
 **Scope:** Canonical algorithm spec for how cnos selects, executes, measures, and closes substantial development cycles
 
@@ -78,9 +78,9 @@ These are operational roles. They are not a claim that every cycle always uses t
 
 | Role | Function | Steps owned | Responsibility | Identity constraint |
 |------|----------|-------------|----------------|---------------------|
-| **α (Implementer)** | Produce | 0–7a | Code, tests, fixes, self-coherence, pre-review readiness, PR | Must be separate from β |
+| **γ (Coordinator)** | Orchestrate | 0–1 + cycle-wide | Observe, select, issue creation, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification | Must hold full cycle context |
+| **α (Implementer)** | Produce | 2–7a | Branch, bootstrap, gap, mode, artifacts (tests/code/docs), self-coherence, pre-review readiness, PR | Must be separate from β |
 | **β (Reviewer + Releaser)** | Judge and integrate | 8–13 | Review (RC/A decision), merge, tag, deploy, post-release assessment, close the cycle | Must be separate from α |
-| **γ (Coordinator)** | Orchestrate | cycle-wide | Issue creation, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification | Must hold full cycle context |
 
 #### Triadic rule
 
@@ -443,7 +443,7 @@ The Tier 3 skill set must be stated alongside mode. Example:
 
 ```text
 Mode: MCA
-Tier 3 skills: go, ux-cli
+Tier 3 skills: eng/<language>, eng/ux-cli
 ```
 
 When in doubt about mode, apply CAP: if the answer is already in the system, cite it (MCA) — don't reinvent it (MCI). If two paths close the same gap, take the lighter one unless the heavier one buys durability the lighter one cannot.
@@ -521,7 +521,7 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 
 **Primary branch artifact:** the PR body (`.github/PULL_REQUEST_TEMPLATE.md`) for L5/L6 changes, or the design artifact (design/SKILL.md §3.1) for larger changes.
 
-**Role key (§1.4):** *α (implementer)* = steps 0–7a, *β (reviewer + releaser)* = steps 8–13 (review RC/A decision, merge, deploy, assess), *γ (coordinator)* = cycle-wide (issue creation, dispatch, unblocking). Delegated implementer is α-side. Merge is part of step 9 (gate + merge).
+**Role key (§1.4):** *γ (coordinator)* = steps 0–1 (observe, select, issue creation, dispatch, unblocking) + cycle-wide coordination, *α (implementer)* = steps 2–7a (branch, bootstrap, gap, mode, artifacts, self-coherence, pre-review), *β (reviewer + releaser)* = steps 8–13 (review RC/A decision, merge, deploy, assess). Delegated implementer is α-side. Merge is part of step 9 (gate + merge).
 
 **Producer key:** *agent* = judgment required, *mechanical* = automatable by cnos (#94), *reviewer* = produced by the review process.
 

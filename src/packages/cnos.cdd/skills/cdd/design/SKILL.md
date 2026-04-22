@@ -105,12 +105,12 @@ Identify what governs before proposing what changes.
   - What reads, renders, or acts on the artifact you're changing?
   - ❌ Update CDD skill, forget post-release template consumes the new metrics
   - ✅ "CDD §11.11 defines metrics → post-release template must render them → review skill must tag findings by type"
-  - ✅ "Adding a new FSM state → check: protocol .mli, doctor checks, status output, packed context renderer, tests"
+  - ✅ "Adding a new FSM state → check: protocol interface, doctor checks, status output, packed context renderer, tests"
 
 4.2. **Enumerate upstream producers**
   - What produces the inputs your design depends on?
   - ❌ "Tests will use the version" (which version? from where?)
-  - ✅ "VERSION file → build generates cn_version.ml → cn_lib.ml reads it → tests derive from Cn_lib.version"
+  - ✅ "VERSION file → build generates version module → core library reads it → tests derive from the exported version constant"
 
 4.3. **Enumerate copies and embeddings**
   - Where does the same information appear in multiple places?
@@ -120,7 +120,7 @@ Identify what governs before proposing what changes.
 4.4. **Name authority relationships**
   - If two artifacts carry the same information, which governs?
   - ❌ Both skill and canonical doc have the rule, unclear which wins
-  - ✅ "Skill is executable summary. Canonical doc governs on disagreement. New §1.5 exists only in skill — authority explicitly narrowed until canonical catches up."
+  - ✅ "CDD.md is the normative source for the lifecycle algorithm. Role skills (alpha/, beta/, gamma/) expand execution detail for their role. Each fact lives in exactly one place — skills do not restate canonical rules, they add role-local detail that CDD.md does not cover."
 
 4.5. **Trace rule changes through all embeddings**
   - When you add a rule, find every artifact that embeds, templates, or implements that rule
@@ -248,7 +248,7 @@ List every file that needs to change, grouped by action.
 
 9.1. **Create / Generate / Edit / Delete**
   - ❌ "Update the relevant files" (which ones?)
-  - ✅ "Create: `VERSION`. Generate: `src/lib/cn_version.ml`. Edit: `cn_lib.ml`, `cn.json`, 3 package manifests, `cn_deps.ml`, `cn_system.ml`, `cn_runtime_contract.ml`, 3 test files."
+  - ✅ "Create: `VERSION`. Generate: version module. Edit: core library, package manifest, dependency config, system config, runtime contract, 3 test files."
 
 9.2. **Name the specific change per file**
   - ❌ "Edit cn_deps.ml"

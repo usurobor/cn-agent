@@ -107,11 +107,11 @@ Failure mode: issue requires back-and-forth to clarify scope, acceptance, or pri
   - ❌ List all CDD and general eng skills — those are always loaded, listing them is noise
   - ✅ "Tier 3 skills: `eng/<language>` (relevant boundary rules), `eng/ux-cli` (output formatting)"
 
-2.4.2. **Name the active invariants**
-  - Link to `docs/alpha/DESIGN-CONSTRAINTS.md` entries that govern the work
+2.4.2. **Name the active design constraints**
+  - Link to `docs/alpha/DESIGN-CONSTRAINTS.md` entries that govern the work — including invariants, transition constraints, and process constraints
   - State the key rule in plain text so the implementer doesn't have to load the doc to know the constraint exists
   - ❌ "Follow project conventions"
-  - ✅ "`docs/alpha/DESIGN-CONSTRAINTS.md` §5.2: cli/ owns dispatch, domain packages own logic — no cmd_*.go file may exceed 30 lines of domain logic"
+  - ✅ "`docs/alpha/DESIGN-CONSTRAINTS.md` §5.2: cli/ owns dispatch, domain packages own logic — no CLI entry point may contain domain logic beyond dispatch"
 
 ### 2.5. Related artifacts
 
