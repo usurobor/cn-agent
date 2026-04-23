@@ -306,6 +306,34 @@ Exit criteria:
 
 ---
 
+## 8.5 Convergence from practice: the skill system as prototype
+
+The cnos.core skill system (skill, write, design, compose) is independently producing the ecosystem components CTB needs — discovered through practice, not designed top-down.
+
+| CTB component | Practice-side prototype |
+|---------------|------------------------|
+| Type system | Artifact classification: skill, runbook, reference, deprecated — with classification tests |
+| Function model | Skill signature: trigger + input contract + output contract + transformation along one axis |
+| Module system | compose: no inheritance, explicit order, single ownership, publish-or-compose gate |
+| Standard library | The four cnos.core skills |
+| Linter / type checker | The Final Test, the Verify phase in each skill |
+| Test framework | Katas as executable verification surfaces |
+| Calling convention | SKILL-ARCHITECTURE doctrine: skills are functions, not classes |
+
+**Implication for CTB:** the standard library is being written before the compiler. The practice-side skill language is human-readable and human-executed; CTB's job is to give it syntax, determinism, and machine-checkability. CTB should not reinvent the ecosystem — it should formalize what practice has already discovered.
+
+Three practice-side gaps mark where CTB adds the most value:
+
+1. **Loader model** — trigger resolution and precedence are referenced but never formalized
+2. **Pipeline model** — compose declares order but execution semantics are undefined
+3. **Contract grammar** — "Input: ... Output: ..." is convention, not grammar; satisfaction cannot be verified mechanically
+
+These are the seams where CTB syntax makes the skill language checkable.
+
+See also: `src/packages/cnos.core/doctrine/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
+
+---
+
 ## 9. Tradeoffs and explicit choices
 
 ### 9.1 Small language vs. expressive language
