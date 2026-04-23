@@ -1,5 +1,5 @@
 ---
-name: design-principles
+name: design
 description: Design systems so policy stays stable, volatile decisions stay hidden, interfaces stay truthful, and runtime surfaces do not smear together. Use for architectural decomposition, boundary design, package splits, registry design, and refactors.
 artifact_class: skill
 kata_surface: embedded
@@ -346,7 +346,7 @@ A CLI package currently mixes dispatch and domain logic. You need to make dispat
 - domain packages own doctor/status/restore/build logic
 - help/registry behavior stays consistent
 
-**Skills:** design-principles, review, writing
+**Skills:** design, review, write
 
 **Given:**
 
@@ -388,7 +388,7 @@ A tool can be used both by operators and by the runtime. You need to decide whet
 - runtime capability use stays under provider policy
 - the package can contain both without merging the contracts
 
-**Skills:** design-principles, cdd/design, review
+**Skills:** design, cdd/design, review
 
 **Given:**
 

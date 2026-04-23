@@ -1,5 +1,5 @@
 ---
-name: composition
+name: compose
 description: Decide when to publish a new skill, when to compose existing skills, and how to declare the contracts that make that composition coherent.
 artifact_class: skill
 kata_surface: embedded
@@ -24,7 +24,7 @@ This skill transforms a skill proposal or skill set along the axis of compositio
 
 Composition fails through overlap and hidden order.
 
-The skill skill governs whether an artifact is a skill and how skill artifacts are structured. The writing skill governs prose coherence and shared house style. This skill adds only what composition adds.
+The skill skill governs whether an artifact is a skill and how skill artifacts are structured. The write skill governs prose coherence and shared house style. This skill adds only what compose adds.
 
 ## Algorithm
 
@@ -172,10 +172,10 @@ This skill itself composes like this:
 
 When two skills appear to share a rule, choose one owner and replace the other copy with a pointer.
 
-Use writing for prose rules. Use skill for skill-form rules. Add a new owner only when neither existing skill owns the rule.
+Use write for prose rules. Use skill for skill-form rules. Add a new owner only when neither existing skill owns the rule.
 
 - ❌ Restate "front-load the point" in three skills with slight wording drift
-- ✅ Let writing own the rule; point to it from neighboring skills
+- ✅ Let write own the rule; point to it from neighboring skills
 
 ### 2.7. Declare exclusions on both sides
 
@@ -189,7 +189,7 @@ If two skills should not run together, both skills should say so.
 Before publishing a new skill, name the best alternative composition and the specific gap it leaves. Publish only when that gap is real and owned by no existing skill.
 
 - ❌ Publish blog because it feels different from essay
-- ✅ Compare essay + voice(casual) + writing to the proposed skill, then publish only if a specific transformation is still missing
+- ✅ Compare essay + voice(casual) + write to the proposed skill, then publish only if a specific transformation is still missing
 
 ### 2.9. Expose a kata surface
 
@@ -232,7 +232,7 @@ Write a trigger that distinguishes the skill from its neighbors.
 Name the handoff. Do not make neighboring skills infer it.
 
 - ❌ Order inferred from file names or habit
-- ✅ "Runs after writing. Runs before naturalness."
+- ✅ "Runs after write. Runs before naturalness."
 
 ### 3.6. Move shared rules to one owner
 
@@ -259,8 +259,8 @@ A new skill must say which existing composition it replaces and what that compos
 
 Never express skill relationships as inheritance.
 
-- ❌ "`newsletter` extends `writing`"
-- ✅ "`newsletter` composes with writing and adds newsletter-specific form rules"
+- ❌ "`newsletter` extends `write`"
+- ✅ "`newsletter` composes with write and adds newsletter-specific form rules"
 
 ### 3.10. Test the skill in isolation
 
@@ -273,8 +273,8 @@ A skill should show its effect on a sample artifact without needing the whole pi
 
 Say which surface governs on disagreement.
 
-- ❌ Let the reader infer whether skill or writing governs
-- ✅ "design-principles governs system decomposition. skill governs skill form. writing governs prose rules. composition applies design-principles to artifacts of class skill, adding triggers, classification, and the publish-or-compose verdict."
+- ❌ Let the reader infer whether skill or write governs
+- ✅ "design governs system decomposition. skill governs skill form. write governs prose rules. compose applies design to artifacts of class skill, adding triggers, classification, and the publish-or-compose verdict."
 
 ---
 
@@ -345,19 +345,19 @@ Decide whether blog should be published as a new skill, composed from existing s
 ### Governing skills
 
 - skill
-- writing
-- composition
+- write
+- compose
 
 ### Inputs
 
 - the proposed blog skill draft
-- the existing writing skill
+- the existing write skill
 - a hypothetical essay skill with form rules
 - a hypothetical voice skill that applies a voice profile
 
 ### Expected artifacts
 
-- a short composition note naming what essay + voice(casual) + writing already produces
+- a short composition note naming what essay + voice(casual) + write already produces
 - a short gap note naming what blog would add that the composition does not produce
 - a verdict: publish, compose, or refuse
 - if publish, a frontmatter draft plus axis, contract, trigger, and order

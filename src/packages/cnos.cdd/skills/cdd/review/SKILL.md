@@ -294,7 +294,7 @@ Check whether the change creates obligations on code it did not touch.
   - ✅ "Diff adds a second manifest family — this violates one-package-substrate. D finding."
   - ✅ "Diff moves doctor logic inline into cli/ — this moves away from the dispatch-only transition direction. C finding."
 
-2.2.14. **Architecture and design-principles check**
+2.2.14. **Architecture and design check**
   - Use this check when the change touches any of:
     - package boundaries
     - command / provider / orchestrator / skill separation
@@ -303,7 +303,7 @@ Check whether the change creates obligations on code it did not touch.
     - kernel vs package responsibility
     - transport vs protocol semantics
     - command dispatch vs domain logic
-  - Load `core/design-principles` when this check is active.
+  - Load `core/design` when this check is active.
   - Check the change against these questions:
 
   #### A. Reason to change

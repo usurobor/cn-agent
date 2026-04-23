@@ -1,5 +1,5 @@
 ---
-name: writing
+name: write
 description: Write so the reader understands the point on the first pass. Use for docs, issues, specs, READMEs, essays, reviews, and status updates.
 triggers:
   - drafting new docs
