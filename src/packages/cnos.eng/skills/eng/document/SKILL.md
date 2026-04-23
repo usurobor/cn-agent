@@ -1,9 +1,9 @@
 ---
-name: documenting
+name: document
 triggers: [document, docs, README, write docs, explain]
 ---
 
-# Documenting
+# Document
 
 Write documentation that describes reality, not intentions.
 

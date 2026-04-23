@@ -425,13 +425,13 @@ Skills are loaded in three tiers. All tiers are mandatory for substantial change
 All skills under `cdd/` — the master CDD skill plus sub-skills (issue, design, review, release, post-release). These define the lifecycle. Loading these is not optional and not issue-dependent.
 
 **Tier 2 — General engineering (always loaded by α and β):**
-All general skills under `eng/` that apply regardless of domain: coding, design, ship, testing, documenting, process-economics, rca, follow-up, write, skill. These constrain how any code is written or reviewed. Loading these is not optional and not issue-dependent.
+All general skills under `eng/` that apply regardless of domain: code, design, ship, test, document, process-economics, rca, follow-up, write, skill. These constrain how any code is written or reviewed. Loading these is not optional and not issue-dependent.
 
 **Tier 3 — Issue-specific (named per issue):**
 Skills that depend on what the work touches. The issue's "Skills and constraints" section names these. Examples:
 - Language: `eng/<language>`
-- Domain: `eng/ux-cli`, `eng/performance-reliability`, `eng/tool-writing`
-- Architecture: `eng/architecture-evolution`, `eng/functional`
+- Domain: `eng/ux-cli`, `eng/performance-reliability`, `eng/tool`
+- Architecture: `eng/evolve`, `eng/write-functional`
 
 γ names Tier 3 skills when creating the issue. If the issue doesn't name them, α identifies them from the work shape before coding.
 

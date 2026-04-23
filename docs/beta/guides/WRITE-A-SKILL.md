@@ -28,5 +28,5 @@ How to add a new skill to cnos.
 | Skill | Why it's a good model |
 |-------|----------------------|
 | [skills/skill/SKILL.md](../../../src/agent/skills/skill/SKILL.md) | Teaches the format using the format |
-| [skills/eng/coding/SKILL.md](../../../src/agent/skills/eng/coding/SKILL.md) | Full-size skill with numbered rules, examples, process section |
+| [skills/eng/code/SKILL.md](../../../src/agent/skills/eng/code/SKILL.md) | Full-size skill with numbered rules, examples, process section |
 | [skills/agent/hello-world/SKILL.md](../../../src/agent/skills/agent/hello-world/SKILL.md) | Minimal skill — shows the floor |

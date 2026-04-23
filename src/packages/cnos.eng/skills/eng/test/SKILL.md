@@ -1,9 +1,9 @@
 ---
-name: testing
+name: test
 triggers: [test, testing, unit test, integration test, coverage]
 ---
 
-# Testing
+# Test
 
 Prove system behavior from invariants, not just examples.
 
@@ -440,10 +440,10 @@ Inline same-line tags not yet covered.
 
 ## 5. Relationship to Other Skills
 
-- **coding** — this skill proves the invariants the code claims to enforce
+- **code** — this skill proves the invariants the code claims to enforce
 - **design** — design should name the invariants; testing should prove them
 - **review** — review checks whether the evidence depth matches the claim
-- **architecture-evolution** — architecture changes often demand stronger proof forms, not just more examples
+- **evolve** — architecture changes often demand stronger proof forms, not just more examples
 
 ---
 

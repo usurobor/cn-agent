@@ -704,7 +704,7 @@ define the precedence clearly and test it.
 - extracts into vendor
 - returns explicit errors for all malformed/missing cases
 
-**Governing skills:** go, design, testing
+**Governing skills:** go, design, test
 
 **Inputs:**
 
@@ -750,7 +750,7 @@ define the precedence clearly and test it.
 
 into a reusable Go package, leaving command wiring in `cmd/cn`.
 
-**Governing skills:** go, design, writing
+**Governing skills:** go, design, write
 
 **Inputs:**
 

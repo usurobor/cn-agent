@@ -101,7 +101,7 @@ packages/
   cnos.eng/
     cn.package.json
     skills/
-      eng/coding/SKILL.md, eng/review/SKILL.md, ...
+      eng/code/SKILL.md, eng/review/SKILL.md, ...
   cnos.pm/
     cn.package.json
     skills/
@@ -195,7 +195,7 @@ Note: `subdir` is required because multiple packages live in one repo.
         skills/agent/agent-ops/SKILL.md, ...
       cnos.eng@1.0.0/
         cn.package.json
-        skills/eng/coding/SKILL.md, ...
+        skills/eng/code/SKILL.md, ...
 agent/
   doctrine/
     cnos.core/

@@ -3,7 +3,7 @@
 **Issue:** #170
 **Version:** 0.2.0
 **Mode:** MCA
-**Active Skills:** cdd/design, eng/architecture-evolution, eng/process-economics
+**Active Skills:** cdd/design, eng/evolve, eng/process-economics
 **Engineering Level:** L7
 
 ## Problem

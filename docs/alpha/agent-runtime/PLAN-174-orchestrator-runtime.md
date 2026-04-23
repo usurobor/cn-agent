@@ -102,7 +102,7 @@ This is the §8.1 example from ORCHESTRATORS.md made real.
 ## Active skills
 
 - `eng/ocaml` — OCaml conventions
-- `eng/testing` — test-first, expect-test format
+- `eng/test` — test-first, expect-test format
 
 ## Artifact order
 
