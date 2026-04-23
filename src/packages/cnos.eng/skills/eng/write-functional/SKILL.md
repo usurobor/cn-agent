@@ -1,10 +1,15 @@
 ---
-name: functional
+name: write-functional
 description: Write code in functional style — pure core, effects at edges, composition over mutation. Use for design decisions, refactoring toward FP, or reviewing code for functional patterns.
 triggers: [functional, pure, immutable, composition, algebraic]
 ---
 
-# Functional Programming
+# Write Functional
+
+> This skill is a domain specialization of the core `write` skill
+> (`cnos.core/skills/write/SKILL.md`). It applies the verb-and-style
+> convention: `write` governs writing acts in general; `write-functional`
+> narrows that to writing code in functional style.
 
 ## Core Principle
 
@@ -14,7 +19,7 @@ Business logic is pure functions. I/O, state, and time live at the boundary. The
 
 ## 1. Purity
 
-### 1.1 Isolate Effects (see also: coding §2.3)
+### 1.1 Isolate Effects (see also: code §2.3)
 
 ```
 ❌ parse_and_write(path)           -- mixed

@@ -315,8 +315,8 @@ These define structural form:
 
 ### 7.3 Skill articulations
 These define executable local procedures:
-- coding
-- documenting
+- code
+- document
 - release
 - cdd
 - domain skills

@@ -3,7 +3,7 @@
 **Issue:** #182  
 **Version:** 0.1.0  
 **Mode:** MCA  
-**Active Skills:** cdd/design, eng/architecture-evolution, eng/process-economics  
+**Active Skills:** cdd/design, eng/evolve, eng/process-economics  
 **Level:** L7
 
 ---
@@ -508,7 +508,7 @@ The full design is the north star. These three moves execute first:
 | 0 Observe | — | — | Current docs describe a package-driven runtime more clearly than current code structure implements |
 | 1 Select | — | — | Selected gap: internal code structure still centers command handlers instead of core/runtime registries and package-driven surfaces |
 | 4 Gap | this artifact | — | Named incoherence: package/runtime modularity exists in theory but not yet in code structure |
-| 5 Mode | this artifact | cdd/design, eng/architecture-evolution, eng/process-economics | L7 MCA; system-shaping refactor of internal architecture |
+| 5 Mode | this artifact | cdd/design, eng/evolve, eng/process-economics | L7 MCA; system-shaping refactor of internal architecture |
 | 6 Artifacts | this artifact | — | Design artifact drafted; follow-up implementation plan and issue decomposition still required |
 
 ---

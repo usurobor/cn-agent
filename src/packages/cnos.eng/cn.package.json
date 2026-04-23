@@ -8,12 +8,11 @@
   },
   "skills": {
     "exposed": [
-      "eng/architecture-evolution",
-      "eng/coding",
+      "eng/code",
       "eng/design-principles",
-      "eng/documenting",
+      "eng/document",
+      "eng/evolve",
       "eng/follow-up",
-      "eng/functional",
       "eng/go",
       "eng/ocaml",
       "eng/performance-reliability",
@@ -21,10 +20,11 @@
       "eng/rca",
       "eng/ship",
       "eng/skill",
-      "eng/testing",
-      "eng/tool-writing",
+      "eng/test",
+      "eng/tool",
       "eng/typescript",
       "eng/ux-cli",
+      "eng/write-functional",
       "eng/writing",
       "skill"
     ]

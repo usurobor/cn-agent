@@ -3,7 +3,7 @@
 **Issue:** #100  
 **Version:** 0.2.0  
 **Mode:** MCA  
-**Active Skills:** cdd/design, eng/architecture-evolution, eng/writing  
+**Active Skills:** cdd/design, eng/evolve, eng/writing  
 **Engineering Level:** L7
 
 ---
@@ -394,7 +394,7 @@ Do not add:
 | 0 Observe | — | — | Current cnos already distinguishes reflections and conversation history, and adhoc-thread already functions as retained memory in practice |
 | 1 Select | — | — | Selected gap: memory architecture is overcomplicating itself before the current surfaces are fully named |
 | 4 Gap | this artifact | — | Named incoherence: memory semantics are implicit and invite unnecessary new layers |
-| 5 Mode | this artifact | cdd/design, eng/architecture-evolution, eng/writing | L7 MCA; lean architectural clarification |
+| 5 Mode | this artifact | cdd/design, eng/evolve, eng/writing | L7 MCA; lean architectural clarification |
 | 6 Artifacts | this artifact | — | Design drafted; no implementation plan included yet |
 
 ---

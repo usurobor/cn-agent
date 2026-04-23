@@ -51,8 +51,8 @@ let with_test_repo f =
   let skill_dir = Filename.concat agent "skills/agent/hello-world" in
   touch skill_dir "SKILL.md" "# Hello World";
   touch skill_dir "kata.md" "# Kata";
-  let eng_skill = Filename.concat agent "skills/eng/coding" in
-  touch eng_skill "SKILL.md" "# Coding";
+  let eng_skill = Filename.concat agent "skills/eng/code" in
+  touch eng_skill "SKILL.md" "# Code";
   (* Create src/agent/templates/ *)
   touch (Filename.concat agent "templates") "SOUL.md" "# Soul -- Default template.";
   touch (Filename.concat agent "templates") "USER.md" "# User -- Default template.";
@@ -81,7 +81,7 @@ let with_test_repo f =
   "kind": "package",
   "engines": { "cnos": ">=3.4.0 <4.0.0" },
   "sources": {
-    "skills": ["eng/coding"]
+    "skills": ["eng/code"]
   }
 }|};
   Fun.protect ~finally:(fun () -> rm_tree root) (fun () -> f root)
@@ -184,7 +184,7 @@ let%expect_test "build_one for eng copies eng skills" =
     let packages = Cn_build.discover_packages root in
     let eng = List.find (fun (name, _) -> name = "cnos.eng") packages in
     let _pkg = Cn_build.build_one ~agent_root ~pkgs_dir eng in
-    let skill_dir = Filename.concat pkgs_dir "cnos.eng/skills/eng/coding" in
+    let skill_dir = Filename.concat pkgs_dir "cnos.eng/skills/eng/code" in
     let files = Sys.readdir skill_dir |> Array.to_list |> List.sort String.compare in
     List.iter print_endline files);
   [%expect {|

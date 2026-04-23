@@ -4,14 +4,14 @@
 **Status:** Draft
 **Issue:** #186
 **Mode:** MCA
-**Active Skills:** cdd/design, eng/architecture-evolution
+**Active Skills:** cdd/design, eng/evolve
 
 ## Problem
 
 The current package boundary is uneven:
 
 - **cnos.core** is carrying almost everything: doctrine, 9 mindsets, 17 agent/* skills, 7 cdd/* skills, 4 ops/* skills, one extension (cnos.net.http), templates, one orchestrator (daily-review), and 3 commands (daily, weekly, save). That is too much for something called "core."
-- **cnos.eng** is already coherent: it contains the engineering bundle, including architecture-evolution, coding, functional, ocaml, go, typescript, testing, writing, and related engineering skills.
+- **cnos.eng** is already coherent: it contains the engineering bundle, including evolve, code, write-functional, ocaml, go, typescript, test, writing, and related engineering skills.
 - **cnos.pm** is thin and overlaps the stronger CDD bundle: it only contains pm/follow-up, pm/issue, and pm/ship.
 - The package system itself is now explicit that packages can carry skills, extensions, templates, commands, and orchestrators, all through the same source → build → install pipeline.
 

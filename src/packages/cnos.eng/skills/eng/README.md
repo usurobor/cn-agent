@@ -38,10 +38,10 @@ This directory is not an org chart. It is a load-context group.
 
 Use when writing or changing code directly.
 
-- coding/ - make invalid states harder to express - keep side effects bounded and recoverable
-- functional/ - functional design and dataflow discipline
+- code/ - make invalid states harder to express - keep side effects bounded and recoverable
+- write-functional/ - functional design and dataflow discipline
 - ocaml/ - OCaml-specific patterns, pitfalls, and conventions
-- testing/ - prove invariants, not just examples
+- test/ - prove invariants, not just examples
 - performance-reliability/ - model budgets, saturation, degradation, and recovery
 
 ### Design and system-shaping
@@ -49,7 +49,7 @@ Use when writing or changing code directly.
 Use when deciding what the system should look like.
 
 - design/ - name incoherence, constraints, impact graph, and file-level ACs
-- architecture-evolution/ - challenge architecture assumptions and choose higher-leverage boundary moves
+- evolve/ - challenge architecture assumptions and choose higher-leverage boundary moves
 - process-economics/ - make every new process step earn its cost
 - rca/ - explain why the failure happened and what boundary should change
 
@@ -65,14 +65,14 @@ Use when validating and finishing work.
 
 Use when building interfaces or tooling for humans/operators.
 
-- tool-writing/ - build internal tools as stable, reusable system components
+- tool/ - build internal tools as stable, reusable system components
 - ux-cli/ - CLI/operator experience as an engineering surface
 
 ### Authoring engineering knowledge
 
 Use when writing durable engineering artifacts.
 
-- documenting/ - write docs that are authoritative and maintainable
+- document/ - write docs that are authoritative and maintainable
 
 Note: the meta-skill (how to write, classify, and verify skills) lives at the corpus level: `src/agent/skills/skill/SKILL.md`.
 
@@ -86,10 +86,10 @@ These are not separate directories. They are the recommended co-load sets for co
 
 Load when implementing local code changes.
 
-- coding
-- functional
+- code
+- write-functional
 - ocaml
-- testing
+- test
 - performance-reliability
 
 ### 2. Review bundle
@@ -97,15 +97,15 @@ Load when implementing local code changes.
 Load when reviewing correctness and coherence of a branch.
 
 - review
-- documenting
-- testing
+- document
+- test
 
 ### 3. Design bundle
 
 Load when deciding what shape a change should take.
 
 - design
-- architecture-evolution
+- evolve
 - process-economics
 
 ### 4. Runtime / platform bundle
@@ -113,24 +113,24 @@ Load when deciding what shape a change should take.
 Load when changing runtime, substrate, package, extension, registry, transport, or operator-contract surfaces.
 
 - design
-- architecture-evolution
+- evolve
 - performance-reliability
-- testing
+- test
 - review
 
 ### 5. Tooling bundle
 
 Load when building tools or CLI/operator surfaces.
 
-- tool-writing
+- tool
 - ux-cli
-- testing
+- test
 
 ### 6. Writing bundle
 
 Load when writing docs or skills that will become durable system artifacts.
 
-- documenting
+- document
 - review
 - (meta-skill at top-level skill/SKILL.md when authoring skills)
 
@@ -230,12 +230,12 @@ Review, ship, and post-release are **lifecycle skills** — they govern later CD
 
 | Work shape | Typical level | Default active skills | Notes |
 |------------|---------------|----------------------|-------|
-| Local bugfix | L5 | domain skill + testing | e.g. ocaml + testing |
-| Cross-module feature | L6 | domain skill + design + testing | Add review as lifecycle, not generation constraint |
-| Runtime / platform change | L6–L7 | design + testing + one of (performance-reliability, architecture-evolution) | Choose architecture-evolution if the boundary may move; choose performance-reliability if operational behavior is the main risk |
-| Tool / CLI work | L5–L6 | tool-writing or ux-cli + testing + design | Use design when the operator surface changes structure |
-| System-shaping / boundary change | L7 | architecture-evolution + process-economics + one of (testing, performance-reliability, domain skill) | Choose the third skill by the dominant risk |
-| Docs / skills | L5–L6 | documenting + writing | Add skill/ meta-skill when authoring skills |
+| Local bugfix | L5 | domain skill + test | e.g. ocaml + test |
+| Cross-module feature | L6 | domain skill + design + test | Add review as lifecycle, not generation constraint |
+| Runtime / platform change | L6–L7 | design + test + one of (performance-reliability, evolve) | Choose evolve if the boundary may move; choose performance-reliability if operational behavior is the main risk |
+| Tool / CLI work | L5–L6 | tool or ux-cli + test + design | Use design when the operator surface changes structure |
+| System-shaping / boundary change | L7 | evolve + process-economics + one of (test, performance-reliability, domain skill) | Choose the third skill by the dominant risk |
+| Docs / skills | L5–L6 | document + write | Add skill/ meta-skill when authoring skills |
 
 These are defaults, not mandates. Override when the specific change warrants it.
 
@@ -247,7 +247,7 @@ Do not say only "L7 eng skills." Say:
 - and the active skills.
 
 - ❌ "Load L7 eng skills"
-- ✅ "System-shaping, L7: architecture-evolution + process-economics + testing"
+- ✅ "System-shaping, L7: evolve + process-economics + test"
 
 ---
 
@@ -263,8 +263,8 @@ The path from strong L6 to L7 is not "write more code." It is:
 
 In practice, that means using these skills more deliberately:
 
-- architecture-evolution
-- testing
+- evolve
+- test
 - performance-reliability
 - process-economics
 

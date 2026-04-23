@@ -1,9 +1,9 @@
 ---
-name: architecture-evolution
+name: evolve
 triggers: [architecture, evolution, refactor, restructure, migration]
 ---
 
-# Architecture Evolution
+# Evolve
 
 Change the shape of the system so repeated future work becomes simpler, safer, and cheaper.
 
@@ -343,7 +343,7 @@ Phase 1...
 ## 5. Relationship to Other Skills
 
 - **design** — this skill goes beyond local subsystem design and asks whether the system boundary itself should move
-- **testing** — architecture evolution should increase invariant-proof, not reduce it
+- **test** — architecture evolution should increase invariant-proof, not reduce it
 - **review** — reviewers should ask whether a higher-leverage architecture move is being missed
 - **CDD** — this skill is used when the next coherent move is structural, not merely local
 

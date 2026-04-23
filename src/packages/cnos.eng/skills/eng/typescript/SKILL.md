@@ -534,7 +534,7 @@ before claiming the code is ready.
 - resolves a package version
 - returns discriminated result types for missing or malformed cases
 
-**Governing skills:** typescript, design, testing
+**Governing skills:** typescript, design, test
 
 **Inputs:**
 
@@ -580,7 +580,7 @@ before claiming the code is ready.
 - models success/failure as explicit result cases
 - keeps I/O separate from parsing/validation
 
-**Governing skills:** typescript, design, testing
+**Governing skills:** typescript, design, test
 
 **Inputs:**
 

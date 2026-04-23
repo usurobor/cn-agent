@@ -4,7 +4,7 @@
 **Version:** 0.1.0
 **Status:** Draft
 **Mode:** MCA
-**Active Skills:** cdd/design, eng/architecture-evolution, eng/process-economics
+**Active Skills:** cdd/design, eng/evolve, eng/process-economics
 **Engineering Level:** L7
 
 ---
@@ -405,5 +405,5 @@ Collect routing receipts for a few weeks. Tune from actual failures and unnecess
 | 0 Observe | — | — | Current runtime has no explicit model-routing policy even though capability routing belongs in body/runtime policy |
 | 1 Select | — | — | Selected gap: model routing is currently implicit and unauditable |
 | 4 Gap | this artifact | — | Named incoherence: provider choice is not yet a deterministic runtime decision |
-| 5 Mode | this artifact | cdd/design, eng/architecture-evolution, eng/process-economics | L7 MCA; runtime/body architecture decision |
+| 5 Mode | this artifact | cdd/design, eng/evolve, eng/process-economics | L7 MCA; runtime/body architecture decision |
 | 6 Artifacts | this artifact | — | Design drafted; implementation planning deferred |

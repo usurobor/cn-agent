@@ -1,10 +1,10 @@
 ---
-name: coding
+name: code
 description: Ship code where unintended behavior — by machine or maintainer — is unrepresentable. Use before implementing, during review, or pre-ship. Triggers on coding tasks, "check for bugs", "is this safe to ship".
 triggers: [code, implement, write code, program, develop]
 ---
 
-# Coding
+# Code
 
 ## Core Principle
 

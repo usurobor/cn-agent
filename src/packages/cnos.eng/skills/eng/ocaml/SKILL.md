@@ -413,7 +413,7 @@ Run `dune build` and `dune runtest` before push. If not possible locally, audit 
 - validates `cn.package.json`
 - fails visibly on malformed/missing cases
 
-**Governing skills:** ocaml, design, testing
+**Governing skills:** ocaml, design, test
 
 **Inputs:**
 - valid package index fixture
@@ -455,7 +455,7 @@ Run `dune build` and `dune runtest` before push. If not possible locally, audit 
 
 into a reusable pure module, leaving only runtime wiring in the command layer.
 
-**Governing skills:** ocaml, design, writing
+**Governing skills:** ocaml, design, write
 
 **Inputs:**
 - one mixed command-side contract builder
