@@ -8,16 +8,9 @@ Why skills compose instead of inherit, and what that means for a coherence-first
 
 A skill is not a class. No private state, no encapsulated mutation, no inheritable behavior. A skill is advisory text loaded into context to bias a downstream judgment.
 
-A skill has four properties:
+`skill` governs the formal definition of a skill. This doctrine depends on that definition and draws the architectural consequence: a skill behaves like a contract-bearing function, not like a class.
 
-- **Trigger** — when it applies
-- **Input contract** — what it assumes about the artifact it sees
-- **Output contract** — what it guarantees about the artifact after it runs
-- **Transformation along one axis** — what it actually changes
-
-That is the signature of a function with preconditions, a body, and postconditions. Not the signature of a class.
-
-The choice between composition and inheritance is not an engineering trade-off for skills. It is a question about what kind of object a skill is. Inheritance models a skill as a class. Composition models a skill as a function. Only one is faithful to what a skill actually does.
+The choice between composition and inheritance is therefore not a style preference. It follows from what a skill is.
 
 ---
 
@@ -65,13 +58,13 @@ The Unix pipeline is the canonical instance: small tools, clean interfaces, no s
 
 In a system whose foundation is coherence, the question is not just which model is more flexible. It is which model preserves coherence under change.
 
-Coherence: all parts of a system point at the same thing. A coherent skill has one axis, one trigger, one set of contracts, one source of truth for each rule. A coherent skill system has skills that combine without overlap, drift, or hidden order.
+COHERENCE.md governs what coherence means. Applied to skills, coherence requires one axis, one trigger, one contract surface, and one owner for each rule. A coherent skill system combines skills without overlap, drift, or hidden order.
 
 Inheritance violates coherence in two specific ways.
 
 ### 4.1. Two homes for one rule
 
-When a child inherits from a parent, both files contain the rule — the parent declares it, the child inherits it. As the child evolves, it may override or shadow the rule. Two slightly different versions in two places, and the system has no way to know which the loader applies.
+When a child inherits from a parent, the rule acquires two homes in the system — the parent as source text, the child as inherited behavior. As the child evolves, it may override or shadow the rule. Two slightly different versions in two places, and the system has no way to know which the loader applies.
 
 This is exactly the failure mode write names ("say a fact once, then point to it") and compose names ("move shared rules to one owner"). Inheritance institutionalizes that failure.
 
