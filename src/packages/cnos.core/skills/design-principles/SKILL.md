@@ -30,7 +30,7 @@ A system is well designed when:
 
 1. **Define** — name the changing parts, the stable parts, the boundaries, and the failure mode.
 2. **Unfold** — design by reasons to change, information hiding, dependency direction, truthful interfaces, and explicit runtime surfaces.
-3. **Apply** — keep contracts narrow, layers honest, and duplicative systems out.
+3. **Rules** — keep contracts narrow, layers honest, and duplicative systems out.
 4. **Verify** — check that the decomposition still matches reality after the code and docs land.
 
 ---

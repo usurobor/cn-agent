@@ -274,7 +274,7 @@ A skill should show its effect on a sample artifact without needing the whole pi
 Say which surface governs on disagreement.
 
 - ❌ Let the reader infer whether skill or writing governs
-- ✅ "skill governs skill form. writing governs prose rules. composition governs skill composition."
+- ✅ "design-principles governs system decomposition. skill governs skill form. writing governs prose rules. composition applies design-principles to artifacts of class skill, adding triggers, classification, and the publish-or-compose verdict."
 
 ---
 
