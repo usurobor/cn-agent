@@ -303,7 +303,7 @@ Check whether the change creates obligations on code it did not touch.
     - kernel vs package responsibility
     - transport vs protocol semantics
     - command dispatch vs domain logic
-  - Load `eng/design-principles` when this check is active.
+  - Load `core/design-principles` when this check is active.
   - Check the change against these questions:
 
   #### A. Reason to change

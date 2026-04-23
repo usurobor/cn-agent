@@ -6,8 +6,8 @@ triggers: [skill, write skill, create skill, SKILL.md]
 
 # Skill (deprecated)
 
-Moved to top-level corpus governance:
+Moved to cnos.core:
 
 ```text
-src/agent/skills/skill/SKILL.md
+src/packages/cnos.core/skills/skill/SKILL.md
 ```
