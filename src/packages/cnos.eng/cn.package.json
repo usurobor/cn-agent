@@ -9,7 +9,6 @@
   "skills": {
     "exposed": [
       "eng/code",
-      "eng/design-principles",
       "eng/document",
       "eng/evolve",
       "eng/follow-up",
@@ -24,9 +23,7 @@
       "eng/tool",
       "eng/typescript",
       "eng/ux-cli",
-      "eng/write-functional",
-      "eng/writing",
-      "skill"
+      "eng/write-functional"
     ]
   }
 }
