@@ -232,7 +232,7 @@ Write a trigger that distinguishes the skill from its neighbors.
 Name the handoff. Do not make neighboring skills infer it.
 
 - ❌ Order inferred from file names or habit
-- ✅ "Runs after write. Runs before naturalness."
+- ✅ "Runs after write. Runs before naturalize."
 
 ### 3.6. Move shared rules to one owner
 

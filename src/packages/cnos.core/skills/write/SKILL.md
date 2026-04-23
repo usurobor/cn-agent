@@ -133,10 +133,16 @@ It should not do several unrelated things because they are nearby in your head.
 
 Lead with the point. Put stable context first. Put the new or important information at the end.
 
+When a claim depends on an example, number, quote, or case, put the instance before or immediately adjacent to the abstraction. Do not make the reader hold a generic claim while waiting for the evidence.
+
 - ❌ "The current executable path is the Python implementation under reference/python/."
 - ✅ "Python runs the current CLI."
 - ❌ "The target model lives in project.tsc and targets/."
 - ✅ "`project.tsc` is the live config. targets/ defines the named-target model."
+- ❌ "The system improved significantly after the change. Response times dropped from 800 ms to 120 ms."
+- ✅ "Response times dropped from 800 ms to 120 ms after the change."
+- ❌ "Several users hit the same bug. This showed the retry path was broken."
+- ✅ "Several users hit the same bug, which showed the retry path was broken."
 
 ### 2.5. Word
 
@@ -298,6 +304,8 @@ The ending should close the document's job. It should not restart the argument.
 
 ## 4. Revision Pass
 
+Do not mix passes. Finish the current level before moving to the next. Line-editing while restructuring is the most common violation.
+
 Revise in this order.
 
 ### 4.1. File pass
@@ -320,6 +328,7 @@ Revise in this order.
 
 - Point first?
 - Stable context before new information?
+- When a claim depends on an instance, is the instance adjacent to it?
 - Active voice where agency matters?
 
 ### 4.5. Word pass
