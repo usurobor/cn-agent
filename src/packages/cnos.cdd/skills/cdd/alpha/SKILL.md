@@ -198,6 +198,7 @@ Do not request review before this gate passes.
 Once the gate passes:
 
 - open or update the PR; PR body or commit message must include `Closes #N` or `Fixes #N` to auto-close the issue on merge
+- subscribe to PR notifications so RC findings and comments are visible: `gh pr view <number> --comments` or equivalent polling
 - request β review
 - if β returns RC, fix findings on the branch
 - after each patch, repeat self-coherence and pre-review for affected surfaces
