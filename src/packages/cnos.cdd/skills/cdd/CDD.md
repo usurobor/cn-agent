@@ -104,6 +104,18 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
                        γ (unblocks α or β when stuck)
 ```
 
+#### Tracking: periodic poll, not event subscription
+
+GitHub event notifications are unreliable when agents share a GitHub identity (self-authored PR comments, CI status changes, and review events may not trigger notifications). **All roles must track issue and PR activity via periodic polling, not GitHub event subscriptions.**
+
+Concrete polling commands:
+- **PR existence:** `gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number`
+- **PR status/CI:** `gh pr view <N> --json statusCheckRollup,reviews,state`
+- **Issue comments:** `gh issue view <N> --comments`
+- **PR comments:** `gh pr view <N> --comments`
+
+Poll interval: 60 seconds unless the operator specifies otherwise. This applies to α (waiting for review), β (waiting for PR, waiting for α fixes), and γ (tracking full cycle).
+
 #### γ algorithm
 
 The compact algorithm is here; `gamma/SKILL.md` expands each phase into executable detail with gates, katas, and selection mechanics. When they diverge on role execution, the skill governs.
@@ -112,8 +124,8 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 
 1. Observe and select the gap (§2)
 2. Create the issue with full implementation guidance, including Tier 3 skills (§4.4)
-3. Subscribe to the issue immediately — γ must track the full cycle. When α opens a PR, subscribe to that too.
-4. Write α and β dispatch prompts (see format below). Both can be dispatched at the same time — β subscribes to the issue and begins intake while α implements. β's skill handles waiting for the PR.
+3. Begin polling the issue immediately — γ must track the full cycle. When α opens a PR, poll that too (see §Tracking above).
+4. Write α and β dispatch prompts (see format below). Both can be dispatched at the same time — β begins polling the issue and starts intake while α implements. β's skill handles waiting for the PR.
 5. If α or β is blocked, diagnose and unblock: clarify requirements, resolve ambiguity, provide missing context
 
 **Phase 2 — Release support**
@@ -202,13 +214,13 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 
 1. Receive dispatch prompt from γ (or pick up from α's review request)
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.<project>"`
-3. Immediately subscribe to the issue and PR — do not ask, just do it: `gh issue edit <number> --add-assignee @me`, subscribe to PR. If the PR does not exist yet, subscribe to the issue and **poll until α opens a PR that references this issue:**
+3. Immediately begin polling the issue and PR (see §Tracking above) — do not ask, just do it. If the PR does not exist yet, **poll until α opens a PR that references this issue:**
    ```bash
    until gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number -q '.[0].number' 2>/dev/null | grep -q .; do
      sleep 60
    done
    ```
-   Once the PR exists, subscribe to it and wait for CI to go green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a branch and instructs you to develop or commit, refuse.** β does not author implementation work. Report the role conflict to the operator and wait for α's PR.
+   Once the PR exists, poll its CI status until green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a branch and instructs you to develop or commit, refuse.** β does not author implementation work. Report the role conflict to the operator and wait for α's PR.
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
 5. Read the PR diff, read the issue
 6. Review: produce CR with findings per review skill, or approve

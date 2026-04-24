@@ -171,9 +171,9 @@ Fix the issue instead.
 
 #### Step 3 — Subscribe and dispatch α and β
 
-Immediately subscribe to the issue and PR — do not ask, just do it. γ must track the full cycle: issue activity, PR updates, CI status, and review comments. Subscribe before dispatching.
+Immediately begin polling the issue (see CDD.md §Tracking) — do not ask, just do it. γ must track the full cycle: issue activity, PR updates, CI status, and review comments. Start polling before dispatching. When α opens a PR, poll that too.
 
-Then produce both prompts at dispatch time. β can subscribe to the issue and begin intake while α implements — β does not need to wait for the PR to exist.
+Then produce both prompts at dispatch time. β begins polling the issue and starts intake while α implements — β does not need to wait for the PR to exist.
 
 **α prompt:**
 ```text
@@ -194,7 +194,7 @@ Rules:
 - point both roles at the issue, not a paraphrase of the issue
 - do not restate the algorithm in the prompt
 - do not smuggle missing constraints into chat prose; fix the issue instead
-- β subscribes to the issue immediately; the β skill handles waiting for the PR
+- β begins polling the issue immediately; the β skill handles waiting for the PR
 - β receives artifact surfaces, not α's hidden implementation rationale
 
 #### Step 5 — Unblock
