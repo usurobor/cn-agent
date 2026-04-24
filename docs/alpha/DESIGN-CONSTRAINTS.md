@@ -40,17 +40,23 @@ Skills, commands, orchestrators, and providers are distinct runtime surfaces wit
 
 Different source forms normalize into one runtime descriptor model. Help, doctor, status, and runtime contract reveal the same registry truth.
 
-## §5. Architecture
+## §5. Language and runtime
 
-### §5.1 Reason to change
+### §5.0 OCaml is deprecated
+
+The OCaml codebase (`src/ocaml/`, `test/cmd/*.ml`) is deprecated. **Do not modify, extend, or fix OCaml files.** All new work and all fixes to existing behavior must be in Go (`src/go/`). The OCaml code will be removed once the Go port is complete. If a fix appears to require changing OCaml, the correct action is to implement the equivalent in Go and mark the OCaml path as superseded.
+
+## §6. Architecture
+
+### §6.1 Reason to change
 
 Each module/package/boundary has one real reason to change. No convenience buckets.
 
-### §5.2 Policy above detail
+### §6.2 Policy above detail
 
 Policy remains in the kernel. Packages cannot widen their own authority.
 
-### §5.3 Degraded-path visibility
+### §6.3 Degraded-path visibility
 
 Fallback and degraded behavior is explicit, testable, and inspectable via doctor/status.
 
