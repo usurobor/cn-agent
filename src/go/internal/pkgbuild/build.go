@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	pkgtypes "github.com/usurobor/cnos/src/go/internal/pkg"
 )
@@ -193,6 +194,8 @@ func createTarGz(dest, srcDir string) (string, error) {
 	mw := io.MultiWriter(f, h)
 
 	gw := gzip.NewWriter(mw)
+	gw.ModTime = time.Time{}
+	gw.OS = 255 // "unknown" — avoid embedding host OS
 	tw := tar.NewWriter(gw)
 
 	err = filepath.WalkDir(srcDir, func(path string, d fs.DirEntry, walkErr error) error {
@@ -221,6 +224,17 @@ func createTarGz(dest, srcDir string) (string, error) {
 		if d.IsDir() {
 			hdr.Name += "/"
 		}
+
+		// Deterministic headers: strip timestamps and ownership so
+		// the same source tree always produces byte-identical tarballs
+		// regardless of checkout time, machine, or user (#264).
+		hdr.ModTime = time.Time{}
+		hdr.AccessTime = time.Time{}
+		hdr.ChangeTime = time.Time{}
+		hdr.Uid = 0
+		hdr.Gid = 0
+		hdr.Uname = ""
+		hdr.Gname = ""
 
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err

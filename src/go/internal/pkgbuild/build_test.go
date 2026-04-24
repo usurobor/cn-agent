@@ -301,6 +301,54 @@ func TestFindContentClassesSubset(t *testing.T) {
 	}
 }
 
+// --- determinism (#264) ---
+
+func TestCreateTarGzDeterministic(t *testing.T) {
+	repoRoot := t.TempDir()
+	setupTestRepo(t, repoRoot)
+
+	packages, err := DiscoverPackages(repoRoot)
+	if err != nil {
+		t.Fatalf("discover: %v", err)
+	}
+
+	r1 := BuildOne(repoRoot, packages[0])
+	if r1.Err != nil {
+		t.Fatalf("build 1: %v", r1.Err)
+	}
+
+	tarball := filepath.Join(repoRoot, "dist", "packages", "test.pkg-1.0.0.tar.gz")
+	data1, err := os.ReadFile(tarball)
+	if err != nil {
+		t.Fatalf("read tarball 1: %v", err)
+	}
+
+	// Rebuild — same source, different wall-clock time.
+	r2 := BuildOne(repoRoot, packages[0])
+	if r2.Err != nil {
+		t.Fatalf("build 2: %v", r2.Err)
+	}
+
+	data2, err := os.ReadFile(tarball)
+	if err != nil {
+		t.Fatalf("read tarball 2: %v", err)
+	}
+
+	if r1.SHA256 != r2.SHA256 {
+		t.Errorf("SHA256 mismatch: %s vs %s", r1.SHA256, r2.SHA256)
+	}
+
+	if len(data1) != len(data2) {
+		t.Fatalf("tarball size mismatch: %d vs %d", len(data1), len(data2))
+	}
+	for i := range data1 {
+		if data1[i] != data2[i] {
+			t.Fatalf("tarball byte mismatch at offset %d", i)
+			break
+		}
+	}
+}
+
 // --- helpers ---
 
 func setupTestRepo(t *testing.T, repoRoot string) {
