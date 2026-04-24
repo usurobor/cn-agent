@@ -66,7 +66,13 @@ In development terms:
 
 CDD exists to close that gap through coherent action.
 
-### 1.4 Roles
+### 1.4 Large-file authoring rule
+
+Any file longer than ~50 lines (close-outs, assessments, design docs, plans) must be written **section by section to disk**, reporting to the operator after each section is written. Do not compose the entire file in memory before writing. This prevents context loss from API timeouts, session interruptions, or compaction. Partial artifacts must be recoverable.
+
+This applies to all roles and all CDD artifact types. It is not repeated in individual role or phase instructions.
+
+### 1.5 Roles
 
 CDD is triadic at the role level. A substantial cycle needs three distinct functions:
 
@@ -203,7 +209,7 @@ The compact algorithm is here; `alpha/SKILL.md` expands each step into executabl
 8. Subscribe to PR notifications
 9. Request review from β
 10. If β returns RC: fix findings, push, re-request review
-11. When β approves: write α close-out (cycle findings or "no findings"). Write it **section by section to a file**, reporting to the operator after each section is written. **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
+11. When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
 12. Done
 
 **α close-out:** Report cycle-level learnings to γ. Concrete findings (skill gaps, process friction, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is α's input to γ's cycle iteration decision (§9.1). **Voice: factual observations and patterns only.** Do not recommend dispositions ("patch now", "file issue") — triage is γ's job. State what happened, what pattern it matches, and what surfaces were affected. Let γ decide the action.
@@ -227,7 +233,7 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 7. If RC: post findings as PR comment, wait for α's fix
 8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to γ/operator — do not block closure on it.
 9. Write post-release assessment per post-release skill
-10. Write β close-out (cycle findings or "no findings"). Write it **section by section to a file**, reporting to the operator after each section is written. Do not compose the entire close-out in memory — partial artifacts must be recoverable if the session is interrupted.
+10. Write β close-out (cycle findings or "no findings").
 11. Done when assessment and close-out are committed
 
 **β close-out:** Report cycle-level learnings to γ. Concrete findings (review pattern issues, skill gaps, process friction, §3.7 violations, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is β's input to γ's cycle iteration decision (§9.1). **Voice: factual observations and patterns only.** Do not recommend dispositions ("patch now", "file issue", "recommend option X") — triage is γ's job. State what happened, what pattern it matches, and what surfaces were affected. Let γ decide the action.

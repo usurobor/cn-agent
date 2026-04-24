@@ -205,7 +205,7 @@ Once the gate passes:
 
 ### 2.8. Close-out
 
-When β approves: write α close-out (cycle findings or "no findings"). Write it **section by section to a file**, reporting to the operator after each section is written — do not compose the entire close-out in memory. **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
+When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
 
 **Voice: factual observations and patterns only.** Do not recommend dispositions — triage is γ's job.
 

@@ -125,17 +125,6 @@ If no invariants document exists, omit this section.
 - **Adhoc thread(s) updated:** [path(s)] — committed at [sha]
 ```
 
-## Writing process
-
-The assessment is written **section by section** to a file, not composed in memory and dumped at the end.
-
-1. Create the assessment file at the expected path (e.g., `.cdd/<version>/POST-RELEASE-ASSESSMENT.md`)
-2. Write each section (§1 through §8) incrementally — append one section, save the file
-3. After writing each section, report to the operator what was written and any decisions or findings in that section
-4. Do not batch sections silently — the operator should see progress and have the opportunity to redirect before the next section
-
-This prevents context loss from compaction or session interruption: partial assessments are recoverable, and the operator stays informed throughout.
-
 ## Procedure
 
 ### Step 1: Score

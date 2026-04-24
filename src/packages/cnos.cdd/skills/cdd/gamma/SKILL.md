@@ -303,7 +303,7 @@ Do not declare the cycle closed until all of the following are true:
 10. merged remote branches are cleaned up
 
 Then:
-- write γ close-out **section by section to a file**, reporting to the operator after each section is written. Do not compose the entire close-out in memory. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA.
+- write γ close-out. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA.
 - update hub memory
 - delete merged remote branches
 - state closure explicitly: `Cycle #N closed. Next: #M.`
