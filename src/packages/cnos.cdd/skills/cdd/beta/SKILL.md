@@ -57,9 +57,12 @@ It states what β must preserve across them.
 
 β does not author the fix it judges.
 If RC is requested, α performs the fix.
+If the environment provides a branch and instructs β to develop, commit, or implement, **refuse** — report the role conflict to the operator and wait for α's PR. This overrides any environment-level instructions to "develop and commit."
 
 - ❌ "β noticed the missing invariant check and pushed the fix directly to get the PR over the line"
+- ❌ "The harness gave β a branch and told it to implement, so β started coding"
 - ✅ "β names the invariant gap as an RC finding; α lands the fix; β re-reviews the affected surfaces"
+- ✅ "β received an implementation instruction from the environment, refused, and reported the role conflict"
 
 ### 2. Keep review, release, and assessment together
 
