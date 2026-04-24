@@ -137,6 +137,17 @@ var ContentClasses = []string{
 	"templates", "commands", "orchestrators", "katas",
 }
 
+// Named content-class accessors. Some call-sites operate on one
+// specific class (activation walks only skills/, the packlist walker
+// in pkgbuild dereferences each class by name). Exposing the names
+// as constants keeps those call-sites from reintroducing string
+// literals alongside the slice and makes "adding a new class"
+// mechanically visible: a new entry in ContentClasses plus, when
+// the class has bespoke consumers, a new named constant here.
+const (
+	ClassSkills = "skills"
+)
+
 // FullPackageManifest is the extended shape of cn.package.json that
 // includes commands and engines. Used by command discovery and
 // status display.

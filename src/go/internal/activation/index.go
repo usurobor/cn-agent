@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	pkgtypes "github.com/usurobor/cnos/src/go/internal/pkg"
 )
 
 // Entry is one row in the public skill activation index. The caller
@@ -131,7 +133,7 @@ func Discover(hubPath string) []Skill {
 // discoverPackageSkills walks a single installed package's skills/
 // subtree and returns one Skill per SKILL.md file found.
 func discoverPackageSkills(pkgName, pkgDir string) []Skill {
-	skillsRoot := filepath.Join(pkgDir, "skills")
+	skillsRoot := filepath.Join(pkgDir, pkgtypes.ClassSkills)
 	info, err := os.Stat(skillsRoot)
 	if err != nil || !info.IsDir() {
 		return nil

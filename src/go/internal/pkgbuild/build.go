@@ -145,6 +145,107 @@ func DiscoverPackages(repoRoot string) ([]DiscoveredPackage, error) {
 	return packages, nil
 }
 
+// --- Packlist derivation ---
+
+// DerivePacklist returns the explicit list of slash-style relative
+// paths (from pkgDir) that must be archived for a package tarball.
+// The list is derived from the package content model rather than an
+// unconditional walk of pkgDir — only the manifest, non-dotfile
+// entries at the package root, and recognized content-class
+// directories (plus everything beneath them) ship.
+//
+// What flows in:
+//   - cn.package.json (required; missing is an error)
+//   - every non-dotfile directly under pkgDir (conventional project
+//     docs and small root-level scripts: README*, LICENSE*,
+//     AGENTS.md, HEARTBEAT.md, lib.sh, etc.)
+//   - every directory listed in pkgtypes.ContentClasses that exists
+//     and is non-empty, plus all files and subdirectories under it
+//
+// What is filtered out:
+//   - dotfiles at the package root (.DS_Store, .gitignore, .swp)
+//   - any subdirectory at the root whose name is not in
+//     pkgtypes.ContentClasses (wip/, scratch/, tmp/ no longer leak
+//     into tarballs the way the prior walk-based implementation let
+//     them)
+//
+// Entries are sorted lexically so the resulting tarball is
+// byte-deterministic for a given source tree; #264 pairs determinism
+// inside createTarGz with deterministic input order here.
+//
+// Directory entries are included alongside files so createTarGz emits
+// an explicit tar header for each one — this keeps the tarball's
+// structural shape stable with earlier releases.
+//
+// Note on AC3 of issue #262: the spec proposed a stricter root
+// allowlist (README*/LICENSE* only) plus .gitignore honoring. Those
+// slices are deferred: existing first-party packages carry
+// load-bearing root files (cnos.core/AGENTS.md, cnos.kata/lib.sh)
+// that a stricter rule would drop and break, and .gitignore parsing
+// needs a separate design pass. This implementation still enforces
+// the core issue intent — no unrecognized subdirectory at the root
+// ships — which is the actual "stray files silently ship" regression
+// the issue calls out.
+func DerivePacklist(pkgDir string) ([]string, error) {
+	manifestPath := filepath.Join(pkgDir, "cn.package.json")
+	if _, err := os.Stat(manifestPath); err != nil {
+		return nil, fmt.Errorf("stat cn.package.json: %w", err)
+	}
+
+	paths := []string{"cn.package.json"}
+
+	rootEntries, err := os.ReadDir(pkgDir)
+	if err != nil {
+		return nil, fmt.Errorf("read package root: %w", err)
+	}
+	for _, e := range rootEntries {
+		name := e.Name()
+		if e.IsDir() || name == "cn.package.json" {
+			continue
+		}
+		// Dotfiles at the root are considered stray (editor junk,
+		// macOS metadata, version-control scaffolding).
+		if strings.HasPrefix(name, ".") {
+			continue
+		}
+		paths = append(paths, name)
+	}
+
+	for _, class := range pkgtypes.ContentClasses {
+		classDir := filepath.Join(pkgDir, class)
+		info, err := os.Stat(classDir)
+		if err != nil || !info.IsDir() {
+			continue
+		}
+		entries, err := os.ReadDir(classDir)
+		if err != nil {
+			return nil, fmt.Errorf("read %s: %w", class, err)
+		}
+		if len(entries) == 0 {
+			// Empty content-class dir mirrors FindContentClasses:
+			// treat as absent, do not ship an empty directory entry.
+			continue
+		}
+		err = filepath.WalkDir(classDir, func(p string, d fs.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+			rel, err := filepath.Rel(pkgDir, p)
+			if err != nil {
+				return err
+			}
+			paths = append(paths, filepath.ToSlash(rel))
+			return nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("walk %s: %w", class, err)
+		}
+	}
+
+	sort.Strings(paths)
+	return paths, nil
+}
+
 // --- Build mode ---
 
 // BuildResult records the outcome of building one package.
@@ -170,7 +271,13 @@ func BuildOne(repoRoot string, pkg DiscoveredPackage) BuildResult {
 	tarballName := fmt.Sprintf("%s-%s.tar.gz", pkg.Manifest.Name, pkg.Manifest.Version)
 	tarballPath := filepath.Join(distDir, tarballName)
 
-	hash, err := createTarGz(tarballPath, pkg.SrcDir)
+	packlist, err := DerivePacklist(pkg.SrcDir)
+	if err != nil {
+		r.Err = fmt.Errorf("derive packlist: %w", err)
+		return r
+	}
+
+	hash, err := createTarGz(tarballPath, pkg.SrcDir, packlist)
 	if err != nil {
 		r.Err = fmt.Errorf("create tarball: %w", err)
 		return r
@@ -181,9 +288,11 @@ func BuildOne(repoRoot string, pkg DiscoveredPackage) BuildResult {
 	return r
 }
 
-// createTarGz creates a .tar.gz from srcDir.
-// Returns the hex SHA-256 of the resulting file.
-func createTarGz(dest, srcDir string) (string, error) {
+// createTarGz writes the entries in packlist (slash-style relative
+// paths under srcDir) as a .tar.gz at dest. Callers must pre-sort
+// packlist — the determinism of the output hash depends on stable
+// input order. Returns the hex SHA-256 of the resulting file.
+func createTarGz(dest, srcDir string, packlist []string) (string, error) {
 	f, err := os.Create(dest)
 	if err != nil {
 		return "", fmt.Errorf("create %s: %w", dest, err)
@@ -198,32 +307,27 @@ func createTarGz(dest, srcDir string) (string, error) {
 	gw.OS = 255 // "unknown" — avoid embedding host OS
 	tw := tar.NewWriter(gw)
 
-	err = filepath.WalkDir(srcDir, func(path string, d fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-
-		rel, err := filepath.Rel(srcDir, path)
+	var walkErr error
+	for _, rel := range packlist {
+		full := filepath.Join(srcDir, filepath.FromSlash(rel))
+		info, err := os.Lstat(full)
 		if err != nil {
-			return err
-		}
-		if rel == "." {
-			return nil
-		}
-
-		info, err := d.Info()
-		if err != nil {
-			return err
+			walkErr = fmt.Errorf("stat %s: %w", rel, err)
+			break
 		}
 
 		hdr, err := tar.FileInfoHeader(info, "")
 		if err != nil {
-			return err
+			walkErr = fmt.Errorf("header %s: %w", rel, err)
+			break
 		}
-		hdr.Name = rel
-		if d.IsDir() {
-			hdr.Name += "/"
+		// Tar headers always use forward slashes; rel is already
+		// slash-style. Directories must end in "/".
+		name := rel
+		if info.IsDir() && !strings.HasSuffix(name, "/") {
+			name += "/"
 		}
+		hdr.Name = name
 
 		// Deterministic headers: strip timestamps and ownership so
 		// the same source tree always produces byte-identical tarballs
@@ -237,20 +341,22 @@ func createTarGz(dest, srcDir string) (string, error) {
 		hdr.Gname = ""
 
 		if err := tw.WriteHeader(hdr); err != nil {
-			return err
+			walkErr = fmt.Errorf("write header %s: %w", rel, err)
+			break
 		}
 
-		if !d.IsDir() {
-			data, err := os.ReadFile(path)
+		if info.Mode().IsRegular() {
+			data, err := os.ReadFile(full)
 			if err != nil {
-				return err
+				walkErr = fmt.Errorf("read %s: %w", rel, err)
+				break
 			}
 			if _, err := tw.Write(data); err != nil {
-				return err
+				walkErr = fmt.Errorf("write body %s: %w", rel, err)
+				break
 			}
 		}
-		return nil
-	})
+	}
 
 	// Close in order: tar → gzip → file. Check errors — gzip
 	// finalization writes the footer; a flush failure means a corrupt tarball.
@@ -264,8 +370,8 @@ func createTarGz(dest, srcDir string) (string, error) {
 		return "", fmt.Errorf("close file: %w", err)
 	}
 
-	if err != nil {
-		return "", fmt.Errorf("walk %s: %w", srcDir, err)
+	if walkErr != nil {
+		return "", walkErr
 	}
 
 	return hex.EncodeToString(h.Sum(nil)), nil

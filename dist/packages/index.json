@@ -12,13 +12,13 @@
       },
       "3.57.0": {
         "url": "cnos.cdd-3.57.0.tar.gz",
-        "sha256": "320391821c11c4e5a3caf8d891836897c15ab35fd5962fdb1f2dbf437b252f29"
+        "sha256": "5355963a96f9048cfc7bc821186a281a9b5e9fd63160a4edf2f64ec1c3bfa054"
       }
     },
     "cnos.cdd.kata": {
       "0.3.0": {
         "url": "cnos.cdd.kata-0.3.0.tar.gz",
-        "sha256": "8b27fbff58e02544ba9fb010e6af2a5ee0b133decb667d346ed4b53e028dcda2"
+        "sha256": "a01edfe2db4996fc55d26e9c93e90a048de328a2202a02451e0a1b4c85c52624"
       }
     },
     "cnos.core": {

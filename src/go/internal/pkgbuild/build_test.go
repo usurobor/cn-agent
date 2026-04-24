@@ -1,10 +1,16 @@
 package pkgbuild
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"slices"
+	"sort"
 	"strings"
 	"testing"
 
@@ -349,7 +355,323 @@ func TestCreateTarGzDeterministic(t *testing.T) {
 	}
 }
 
+// --- DerivePacklist ---
+//
+// Invariant: the tarball content is a derivation of the package model
+// (manifest + content-class dirs + root README*/LICENSE*), not an
+// arbitrary walk of the package root. Stray files and unknown subdirs
+// at the root must never appear in the packlist.
+
+// TestDerivePacklistMissingManifest: without cn.package.json there is
+// no package; surface the error rather than silently producing an
+// empty tarball.
+func TestDerivePacklistMissingManifest(t *testing.T) {
+	pkgDir := t.TempDir()
+	if _, err := DerivePacklist(pkgDir); err == nil {
+		t.Fatal("expected error for missing cn.package.json")
+	}
+}
+
+// TestDerivePacklistManifestOnly: a package with only the manifest
+// produces a one-entry packlist. Content classes are optional at the
+// derivation layer (CheckOne enforces the "must have content" rule
+// separately).
+func TestDerivePacklistManifestOnly(t *testing.T) {
+	pkgDir := t.TempDir()
+	writeManifest(t, pkgDir, "bare.pkg", "1.0.0")
+
+	got, err := DerivePacklist(pkgDir)
+	if err != nil {
+		t.Fatalf("derive: %v", err)
+	}
+	want := []string{"cn.package.json"}
+	if !slices.Equal(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+// TestDerivePacklistIncludesContentClasses: every file under a
+// recognized, non-empty content-class directory is in the packlist,
+// plus the class directory itself. Multi-level nesting is preserved.
+func TestDerivePacklistIncludesContentClasses(t *testing.T) {
+	pkgDir := t.TempDir()
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+
+	mustWrite(t, filepath.Join(pkgDir, "skills", "alpha", "SKILL.md"), "# alpha\n")
+	mustWrite(t, filepath.Join(pkgDir, "commands", "daily", "cn-daily"), "#!/bin/sh\n")
+	mustWrite(t, filepath.Join(pkgDir, "templates", "t.md"), "template\n")
+
+	got, err := DerivePacklist(pkgDir)
+	if err != nil {
+		t.Fatalf("derive: %v", err)
+	}
+
+	for _, want := range []string{
+		"cn.package.json",
+		"commands",
+		"commands/daily",
+		"commands/daily/cn-daily",
+		"skills",
+		"skills/alpha",
+		"skills/alpha/SKILL.md",
+		"templates",
+		"templates/t.md",
+	} {
+		if !slices.Contains(got, want) {
+			t.Errorf("missing %q in packlist: %v", want, got)
+		}
+	}
+}
+
+// TestDerivePacklistIncludesRootFiles: non-dotfile entries at the
+// package root ship — README/LICENSE for projects that follow
+// convention, AGENTS.md/HEARTBEAT.md/TOOLS.md for cnos.core, lib.sh
+// for cnos.kata. All are exercised together so the test breaks if
+// the rule ever tightens without a migration for the load-bearing
+// root files that exist today.
+func TestDerivePacklistIncludesRootFiles(t *testing.T) {
+	pkgDir := t.TempDir()
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+	for _, name := range []string{"README.md", "LICENSE", "AGENTS.md", "lib.sh"} {
+		mustWrite(t, filepath.Join(pkgDir, name), name+"\n")
+	}
+
+	got, err := DerivePacklist(pkgDir)
+	if err != nil {
+		t.Fatalf("derive: %v", err)
+	}
+
+	for _, want := range []string{"README.md", "LICENSE", "AGENTS.md", "lib.sh"} {
+		if !slices.Contains(got, want) {
+			t.Errorf("missing %q in packlist: %v", want, got)
+		}
+	}
+}
+
+// TestDerivePacklistExcludesStrayEntries: the negative space. Dotfile
+// entries at the root and any unrecognized *subdirectory* at the root
+// never ship. This is the regression the issue calls out: the walk-
+// based implementation included every directory it encountered, so
+// `scratch/wip.txt` leaked into tarballs. The strict README*/LICENSE*-
+// only root allowlist is deferred (see DerivePacklist comment).
+func TestDerivePacklistExcludesStrayEntries(t *testing.T) {
+	pkgDir := t.TempDir()
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "alpha", "SKILL.md"), "# alpha\n")
+
+	// Dotfiles at root.
+	mustWrite(t, filepath.Join(pkgDir, ".DS_Store"), "junk")
+	mustWrite(t, filepath.Join(pkgDir, ".gitignore"), "*.swp\n")
+	// Unrecognized subdirectory at root.
+	mustWrite(t, filepath.Join(pkgDir, "scratch", "wip.txt"), "wip")
+	mustWrite(t, filepath.Join(pkgDir, "tmp", "cache.bin"), "cache")
+
+	got, err := DerivePacklist(pkgDir)
+	if err != nil {
+		t.Fatalf("derive: %v", err)
+	}
+
+	for _, forbidden := range []string{
+		".DS_Store",
+		".gitignore",
+		"scratch",
+		"scratch/wip.txt",
+		"tmp",
+		"tmp/cache.bin",
+	} {
+		if slices.Contains(got, forbidden) {
+			t.Errorf("packlist must not contain %q, got %v", forbidden, got)
+		}
+	}
+}
+
+// TestDerivePacklistSortedLexically: determinism of the tarball's
+// byte output in createTarGz depends on a stably-sorted input.
+func TestDerivePacklistSortedLexically(t *testing.T) {
+	pkgDir := t.TempDir()
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "z", "SKILL.md"), "z")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "a", "SKILL.md"), "a")
+	mustWrite(t, filepath.Join(pkgDir, "templates", "t.md"), "t")
+	mustWrite(t, filepath.Join(pkgDir, "commands", "c", "cn-c"), "c")
+
+	got, err := DerivePacklist(pkgDir)
+	if err != nil {
+		t.Fatalf("derive: %v", err)
+	}
+	if !sort.StringsAreSorted(got) {
+		t.Errorf("packlist not sorted: %v", got)
+	}
+}
+
+// TestDerivePacklistEmptyClassDirSkipped: an empty content-class
+// directory does not contribute to the packlist. Matches the
+// FindContentClasses "empty == absent" rule so the derivation and the
+// check surface agree on what counts as a present class.
+func TestDerivePacklistEmptyClassDirSkipped(t *testing.T) {
+	pkgDir := t.TempDir()
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+	if err := os.MkdirAll(filepath.Join(pkgDir, "skills"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := DerivePacklist(pkgDir)
+	if err != nil {
+		t.Fatalf("derive: %v", err)
+	}
+	if slices.Contains(got, "skills") {
+		t.Errorf("empty skills/ must not appear in packlist: %v", got)
+	}
+}
+
+// TestDerivePacklistReusesContentClassConstant: fail loudly if a
+// future class is added to pkgtypes.ContentClasses but the derivation
+// silently drops it. This is the single-source-of-truth guard for
+// the shared constant (issue #262 AC2).
+func TestDerivePacklistReusesContentClassConstant(t *testing.T) {
+	pkgDir := t.TempDir()
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+	for _, class := range pkgtypes.ContentClasses {
+		mustWrite(t, filepath.Join(pkgDir, class, "x", "marker"), class)
+	}
+
+	got, err := DerivePacklist(pkgDir)
+	if err != nil {
+		t.Fatalf("derive: %v", err)
+	}
+	for _, class := range pkgtypes.ContentClasses {
+		want := class + "/x/marker"
+		if !slices.Contains(got, want) {
+			t.Errorf("missing %q: every canonical class must flow through DerivePacklist", want)
+		}
+	}
+}
+
+// --- Tarball content assertions ---
+//
+// These tests reach past createTarGz's SHA-256 and inspect what
+// actually ships. They prove the negative space: stray files are
+// excluded end-to-end, and visibility metadata does not gate
+// packaging.
+
+// TestBuildOneExcludesStrayFilesFromTarball: integration proof that
+// the stray files which DerivePacklist filters out never reach the
+// produced .tar.gz.
+func TestBuildOneExcludesStrayFilesFromTarball(t *testing.T) {
+	repoRoot := t.TempDir()
+	setupTestRepo(t, repoRoot)
+
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	mustWrite(t, filepath.Join(pkgDir, ".DS_Store"), "junk")
+	mustWrite(t, filepath.Join(pkgDir, ".gitignore"), "*.swp\n")
+	mustWrite(t, filepath.Join(pkgDir, "scratch", "wip.txt"), "wip")
+
+	packages, err := DiscoverPackages(repoRoot)
+	if err != nil {
+		t.Fatalf("discover: %v", err)
+	}
+	result := BuildOne(repoRoot, packages[0])
+	if result.Err != nil {
+		t.Fatalf("build: %v", result.Err)
+	}
+
+	entries := readTarEntries(t, result.TarballPath)
+	for _, forbidden := range []string{
+		".DS_Store", ".gitignore",
+		"scratch", "scratch/", "scratch/wip.txt",
+	} {
+		if _, ok := entries[forbidden]; ok {
+			t.Errorf("tarball must not contain %q, got entries: %v", forbidden, sortedKeys(entries))
+		}
+	}
+}
+
+// TestBuildOneIncludesInternalVisibilitySkill: a skill with
+// visibility: internal is still shipped. Visibility affects
+// activation/discovery (per #261), not packaging (issue #262 AC6).
+func TestBuildOneIncludesInternalVisibilitySkill(t *testing.T) {
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "public", "SKILL.md"),
+		"---\nname: public\n---\n# public\n")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "secret", "SKILL.md"),
+		"---\nname: secret\nvisibility: internal\n---\n# secret\n")
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+
+	packages, err := DiscoverPackages(repoRoot)
+	if err != nil {
+		t.Fatalf("discover: %v", err)
+	}
+	result := BuildOne(repoRoot, packages[0])
+	if result.Err != nil {
+		t.Fatalf("build: %v", result.Err)
+	}
+
+	entries := readTarEntries(t, result.TarballPath)
+	for _, want := range []string{
+		"skills/public/SKILL.md",
+		"skills/secret/SKILL.md",
+	} {
+		if _, ok := entries[want]; !ok {
+			t.Errorf("tarball missing %q — visibility must not affect packaging. entries: %v",
+				want, sortedKeys(entries))
+		}
+	}
+}
+
 // --- helpers ---
+
+// mustWrite creates parent dirs for path and writes content. Fails
+// the test on any IO error.
+func mustWrite(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatalf("mkdir %s: %v", filepath.Dir(path), err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+}
+
+// readTarEntries returns the set of entry names in tarballPath. Keys
+// keep whatever separator the producer wrote (regular files have no
+// trailing "/", directories do). Bodies are not returned.
+func readTarEntries(t *testing.T, tarballPath string) map[string]bool {
+	t.Helper()
+	raw, err := os.ReadFile(tarballPath)
+	if err != nil {
+		t.Fatalf("read tarball: %v", err)
+	}
+	gr, err := gzip.NewReader(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatalf("gzip reader: %v", err)
+	}
+	defer gr.Close()
+
+	entries := make(map[string]bool)
+	tr := tar.NewReader(gr)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("tar next: %v", err)
+		}
+		entries[hdr.Name] = true
+		// We do not care about bodies here; skip.
+	}
+	return entries
+}
+
+func sortedKeys(m map[string]bool) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
 
 func setupTestRepo(t *testing.T, repoRoot string) {
 	t.Helper()
