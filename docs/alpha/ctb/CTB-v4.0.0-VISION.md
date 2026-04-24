@@ -330,6 +330,19 @@ Three practice-side gaps mark where CTB adds the most value:
 
 These are the seams where CTB syntax makes the skill language checkable.
 
+### 8.5.1 Evidence from CDD package audit (2026-04-24)
+
+Operating the CDD skill-program as a triadic agent coordination system surfaced four additional language design requirements. Full evidence at `docs/gamma/essays/SKILLS-LANGUAGE-EVIDENCE.md`.
+
+| CTB requirement | Practice-side evidence | Current workaround |
+|-----------------|----------------------|-------------------|
+| **Global aspects** (E1) | "Write large files section by section" was duplicated in 4 role/phase skills with slight wording drift. When one copy was missing, the agent hit API timeouts. | Hoisted to a single prose rule in CDD.md §1.4; manually deleted duplicates. No enforcement mechanism. |
+| **Authority hierarchy** (E2) | CDD.md and role skills said different things about conflict resolution. Agents couldn't mechanically determine which file wins. | Prose rule: "CDD.md governs lifecycle; role skill governs local detail." Not machine-checkable. |
+| **Visibility enforcement** (E3) | Root skill lacked `visibility: public`. Internal sub-skill triggers leaked as public dispatch targets. A bare "review" keyword could resolve to an internal sub-skill. | Added `visibility: public` to root; wrote prose rule that internal triggers are advisory. Runtime doesn't enforce it. |
+| **Dependency graph** (E4) | Load order was prose instructions that drifted from actual behavior. CDD.md claimed "all skills always loaded" while role skills loaded only what they needed. References to non-existent gamma sections. | Manual audit and correction. No cycle detection, no missing-ref detection. |
+
+**Implication for CTB:** These are not exotic requirements. They are the minimum infrastructure a skill-program needs once it grows past ~10 files. The current markdown format cannot express or enforce any of them — they survive only through manual prose discipline and periodic audits.
+
 See also: `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
 
 ---
