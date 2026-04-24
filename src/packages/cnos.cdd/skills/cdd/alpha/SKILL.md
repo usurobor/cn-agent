@@ -207,6 +207,13 @@ Once the gate passes:
 
 When β approves: write α close-out (cycle findings or "no findings"). Write it **section by section to a file**, reporting to the operator after each section is written — do not compose the entire close-out in memory. **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
 
+**Voice: factual observations and patterns only.** Do not recommend dispositions — triage is γ's job.
+
+- ❌ "Recommend patching eng/go §2.13 now"
+- ❌ "β should file #267 for this"
+- ✅ "Pattern: cross-toolchain gzip non-determinism. Surfaces affected: eng/go §2.13, pkgbuild/build.go"
+- ✅ "Same rebase-race class as D1 in prior cycle. Two occurrences this cycle."
+
 ---
 
 ## 3. Rules
