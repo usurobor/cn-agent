@@ -170,6 +170,7 @@ Issue: gh issue view <number>
 ```
 You are γ. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md.
+Issue: gh issue view <number>
 ```
 
 Parameters: `<project>` is the project name (e.g. `cnos`, `myapp`). Git identity uses `<role>@cdd.<project>` (e.g. `alpha@cdd.cnos`). `<number>` is the issue or PR number.
