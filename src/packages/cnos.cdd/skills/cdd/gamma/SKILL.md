@@ -169,9 +169,11 @@ Fix the issue instead.
 
 ### 2.5. Steps 3–5 — Dispatch and unblock without leakage
 
-#### Step 3 — Dispatch α and β
+#### Step 3 — Subscribe and dispatch α and β
 
-Produce both prompts at dispatch time. β can subscribe to the issue and begin intake while α implements — β does not need to wait for the PR to exist.
+Immediately subscribe to the issue and PR — do not ask, just do it. γ must track the full cycle: issue activity, PR updates, CI status, and review comments. Subscribe before dispatching.
+
+Then produce both prompts at dispatch time. β can subscribe to the issue and begin intake while α implements — β does not need to wait for the PR to exist.
 
 **α prompt:**
 ```text
