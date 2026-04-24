@@ -2,50 +2,47 @@
 
 ## Outcome
 
-Coherence delta: C_Σ **A** (`α A`, `β A`, `γ A`) · **Level:** **L5**
+Coherence delta: C_Σ **A-** (`α A-`, `β A-`, `γ A-`) · **Level:** **L6**
 
-`cn deps lock` now means what its name says. Pre-3.56.2 the lockfile was a dump of the entire package index; post-3.56.2 it is exactly what `.cn/deps.json` pins, resolved against the index, with explicit errors for missing manifests or unresolved pins. The Go runtime now matches the OCaml `lockfile_for_manifest` behavior that was already correct, and the kata test infrastructure that had been quietly riding on the bug is now gated against regression.
+Skill activation moves from OCaml-only to Go, with the single source of truth for skill existence becoming filesystem presence (`<pkg>/skills/<id>/SKILL.md`) rather than a declared manifest field. `visibility: internal` frontmatter — added on 9 CDD sub-skills in 3.56.x but unenforced — is now effective at the runtime activation boundary. `cn doctor` gains a skill-activation check wired over the new Go discovery path, with a severity model where unreadable SKILL.md files fail the hub (structural break) while overlapping trigger keywords across public skills surface as informational warnings (many-to-many hints, not exclusive dispatches).
 
 ## Why it matters
 
-The operator's single source of truth for "what does this hub use?" (`.cn/deps.json`) had no effect on the lockfile. A hub pinning `cnos.core@3.54.0` got a lockfile with every `(name, version)` pair the index knew about, and `cn deps restore` installed all of them — last-writer-wins on `restoreOne` resolved the resulting duplicate-name entries to whichever `cnos.core@*` happened to be last in iteration order. The pin was inert.
+Three latent problems close in the same cycle:
 
-Two downstream harnesses had silently grown to depend on the bug. The Tier-2 CI test hub used object-syntax `{"cnos.core": "3.54.0"}` which the parser rejects as `[]ManifestDep`; the Tier-1 `06-install.sh` accepted any installed package count ≥ 1. Both now pin the real version via `pkg_version_from_source` (derived from `src/packages/*/cn.package.json`) and assert exact-match installed sets. The over-vendoring regression class is CI-gated going forward.
+1. **Authority drift.** `cn.package.json` stopped declaring `sources.skills` in 3.56.x (ef53b939), but the OCaml activation validator iterated only manifest-declared IDs, so it silently turned into a no-op for cnos.core — any authoring problems in 19 core skills would never surface at `cn doctor`. The new Go path walks the filesystem (the authority `DESIGN-CONSTRAINTS.md §1` names) and evaluates every SKILL.md that actually exists, so authoring problems surface immediately.
 
-## Fixed
+2. **Visibility was a docstring, not a contract.** `visibility: internal` was present on 9 CDD sub-skills since 3.55 but had no runtime effect — the OCaml index didn't consume the field because it never saw the sub-skills at all. `BuildIndex` now consumes it, excludes internal skills from the public activation table, and also excludes them from trigger-conflict detection (they aren't addressable, so they can't ambiguate activation).
 
-- **`cn deps lock` honors `.cn/deps.json` pins** (#250, PR #259): the lockfile contains exactly the packages declared in the manifest, resolved against the index. Unresolved pins error explicitly. Missing `deps.json` errors explicitly. Go/OCaml semantics now agree.
+3. **Doctor severity matches the activation model.** The first end-to-end run against the real corpus surfaced that cnos skill keywords are intentionally overlapping across public skills — `coherence`, `verify`, `sync`, `reflect`, etc. are many-to-many activation hints rather than 1:1 dispatches. Rather than fail the hub on every overlap, doctor reports them as ○ warnings (operator-visible without escalation). Only structural breakage — a SKILL.md that cannot be read or parsed — fails.
 
 ## Added
 
-- **`pkg.ParseManifest`** (`src/go/internal/pkg/pkg.go`): pure deps.json parser mirroring the existing `ParseLockfile` / `ParsePackageIndex` shape.
-- **`restore.ReadManifest`** (`src/go/internal/restore/restore.go`): IO wrapper preserving the `eng/go §2.17` Parse/Read purity boundary.
-- **Six AC-named tests** in `restore_test.go` — the reproducer from #250, AC2 duplicate-free, AC3 restore-only-pinned, AC4 revert-behavior, plus missing-manifest and missing-pin error paths.
-- **`pkg_version_from_source`** helper in `src/packages/cnos.kata/lib.sh` — reads `src/packages/<pkg>/cn.package.json` and echoes the version, replacing hardcoded `3.54.0` strings in R3/R4 katas.
+- **`src/go/internal/activation/`** — new Go package. `frontmatter.go` (pure, no IO) parses YAML-subset frontmatter with both block-list and inline flow-sequence triggers, CRLF/BOM handling, malformed-line tolerance. `index.go` (IO) exposes `Discover` (filesystem walk), `BuildIndex` (public filter), `Validate` / `ValidateSkills` (doctor-facing issue generation).
+- **Skill-activation doctor check** in `internal/doctor/doctor.go` — reports `[missing]` / `[empty]` / `[conflict]` issues, mapping only `[missing]` to `StatusFail`.
+- **Real-corpus integration tests** — `TestDiscover_RealCoreSkills_HaveTriggers` + `TestValidate_RealCorpus_NoEmptyTriggers` install unmodified `src/packages/*/skills/**/SKILL.md` into a temp hub and assert the full installed corpus validates clean.
 
 ## Changed
 
-- **`restore.GenerateLockFromIndex`**: reads manifest first, iterates `m.Packages`, collects unresolved pins into one explicit error listing every missing `name@version`. Godoc updated to spell out the contract and error cases.
-- **CI `kata-tier2` setup** (`.github/workflows/ci.yml`): derives real package versions at job time, emits the canonical array-schema `deps.json`.
-- **Tier-1 kata `scripts/kata/06-install.sh`**: overwrites the post-`cn setup` `deps.json` with an explicit `cnos.core` pin read from source, and tightens the post-condition from "≥ 1 installed" to "exactly `cnos.core` installed".
-- **`cnos.kata` `lib.sh` `write_deps_json`**: emits `packages` as an array of `{name, version}` objects (matches the parser; the pre-#250 object-syntax worked only because the lockfile dumped the full index regardless).
+- **`docs/alpha/package-system/PACKAGE-AUTHORING.md §8`** — rewrites the manifest-contract paragraph. Manifest owns `commands` and `engines`; filesystem owns content classes. Drops "if it's not in the manifest, the runtime doesn't know about it" — inverted now: if it's on disk, the runtime knows.
+- **`docs/alpha/package-system/PACKAGE-ARTIFACTS.md`** — replaces `sources.skills` examples with filesystem-walk + `visibility: internal` narrative; the `cnos.cdd` worked example is rewritten end-to-end.
+- **Skill-activation authoring checklist** — "every declared skill directory contains a SKILL.md" becomes "every skill directory under `skills/` contains a valid SKILL.md (non-empty `triggers:`; `visibility: internal` when the skill is internal to its package's orchestrator)".
+- **Trigger-conflict severity** — public-public overlap is now an informational warning rather than a hub failure. Divergence from OCaml `cn_doctor.ml` severity mapping is intentional and ratified by the operator; downstream tooling that grep-ed for `✗ skill activation` on conflicts will see `○ skill activation N warning(s): [conflict] ...` instead.
 
-## Removed
+## Fixed
 
-- The "iterate the entire index" code path inside `GenerateLockFromIndex`. There was no policy under which producing a lockfile of the whole index was correct — it was the bug.
+- **Inline-list trigger parsing** — 42 of 52 production SKILL.md files used `triggers: [a, b, c]` inline-flow format, which the initial Go parser dropped. `parseInlineList` handles the dominant production form with whitespace tolerance, bare-identifier items, and empty-list (`[]` → nil) semantics.
+- **Internal skills no longer ambiguate activation detection** — an internal sub-skill sharing a trigger keyword with its public parent orchestrator is not a conflict (the runtime cannot route to internal skills).
 
 ## Validation
 
-- **Build**: `go build ./... && go vet ./...` — clean on `4f860f1`.
-- **Unit + integration**: `go test ./...` — all packages green.
-- **Race**: `go test -race ./internal/restore/` — green.
-- **Targeted**: `go test ./internal/restore -run TestGenerateLockFromIndex -v` — 6/6 pass.
-- **CI on PR head** (`44d431a`): 7/7 checks green (go, kata-tier1, kata-tier2, Package/source drift I1, Protocol contract schema sync I2, notify × 2).
-- **Module-truth audit** (review §2.2.9): the only `idx.Packages` iteration sites are `pkgbuild/build.go` (index *construction*, correct) and the two `idx.Lookup(name, version)` calls in `restore.go` (both lookup-by-pin). No sibling "dump the index" incoherence remains.
-- **Go/OCaml parity**: `src/ocaml/lib/cn_package.ml` `parse_manifest_dep` and `src/ocaml/cmd/cn_deps.ml` `lockfile_for_manifest` already expected an array of `{name, version}` and resolved per pin; the Go path now matches. `cn setup` in `hubsetup.go` writes the same array shape.
-
-The targeted coherence delta — "`.cn/deps.json` actually controls `.cn/deps.lock.json`" — is proved by six AC-named tests (all six fail on revert), tightened CI post-conditions on Tier-1 and Tier-2 kata suites, and a green 7/7 check matrix on the PR head.
+- `go test ./...` green across all 11 Go packages (33 activation tests, 10 doctor tests).
+- Local reproduction of `kata-tier2`: `cn init ci-hub && cn setup && cn deps lock && cn deps restore && cn doctor` exits rc=0 with `○ skill activation 9 warning(s)` for the overlap hints — pre-break baseline required by `R3-doctor-broken` now holds.
+- `cn kata run --class runtime` passes all 4 runtime katas locally on 7e76798.
+- CI on PR #263: `go`, `kata-tier1`, `kata-tier2`, `Package/source drift (I1)`, `Protocol contract schema sync (I2)` all green; only `Package dist/source sync (I3)` red (deferred per #264).
+- The targeted coherence delta — `visibility: internal` being enforced at the runtime activation boundary rather than being a docstring — is proven by `BuildIndex` excluding internal skills from the public index in unit tests, and by the real-corpus integration tests walking the full `src/packages/` tree into a temp hub.
 
 ## Known Issues
 
-- `cn setup` still pins `deps.json` to the **binary's** version. In dev/CI environments without `-ldflags`, `cn deps lock` immediately after `cn setup` will now error explicitly rather than silently succeeding with an index dump. Tier-1 kata `06-install.sh` works around this by overwriting the default with an explicit pin read from source. A follow-up issue (make `cn setup` resolve against the local index) is a candidate if this bites operators; today it affects only dev checkouts.
+- **#264** — `cn build` produces non-deterministic tarball SHA-256s because `createTarGz` captures live file ModTime and gzip writer time. `Package dist/source sync (I3)` CI check is red on this release as a result; it was red on main pre-#261 and is not a regression of this cycle. Fix scoped in #264 with concrete patch. Deferred per review §7.0 design-scope exception.
+- **Cnos.core trigger overlap corpus** — 9 overlapping trigger keywords across public skills (`alignment`, `boundary`, `coherence`, `drift`, `onboard`, `reflect`, `self-check`, `sync`, `verify`) are intentional per the many-to-many model; whether any future cycle wants to disambiguate them (or introduce activation precedence) is a doctrine question not scoped to #261.

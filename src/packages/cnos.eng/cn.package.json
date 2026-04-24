@@ -1,9 +1,9 @@
 {
   "schema": "cn.package.v1",
   "name": "cnos.eng",
-  "version": "3.56.2",
+  "version": "3.57.0",
   "kind": "package",
   "engines": {
-    "cnos": "3.56.2"
+    "cnos": "3.57.0"
   }
 }
