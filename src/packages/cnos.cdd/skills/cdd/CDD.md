@@ -190,7 +190,7 @@ The compact algorithm is here; `alpha/SKILL.md` expands each step into executabl
 8. Subscribe to PR notifications
 9. Request review from β
 10. If β returns RC: fix findings, push, re-request review
-11. When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
+11. When β approves: write α close-out (cycle findings or "no findings"). Write it **section by section to a file**, reporting to the operator after each section is written. **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
 12. Done
 
 **α close-out:** Report cycle-level learnings to γ. Concrete findings (skill gaps, process friction, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is α's input to γ's cycle iteration decision (§9.1).
@@ -208,7 +208,7 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 7. If RC: post findings as PR comment, wait for α's fix
 8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to γ/operator — do not block closure on it.
 9. Write post-release assessment per post-release skill
-10. Write β close-out (cycle findings or "no findings")
+10. Write β close-out (cycle findings or "no findings"). Write it **section by section to a file**, reporting to the operator after each section is written. Do not compose the entire close-out in memory — partial artifacts must be recoverable if the session is interrupted.
 11. Done when assessment and close-out are committed
 
 **β close-out:** Report cycle-level learnings to γ. Concrete findings (review pattern issues, skill gaps, process friction, §3.7 violations, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is β's input to γ's cycle iteration decision (§9.1).
