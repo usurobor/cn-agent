@@ -44,7 +44,6 @@ func TestRunShowsPackages(t *testing.T) {
 		"version": "3.52.0",
 		"kind": "package",
 		"engines": {"cnos": "3.52.0"},
-		"skills": {"exposed": ["agent/cap"]},
 		"commands": {"daily": {"entrypoint": "commands/daily/cn-daily", "summary": "Daily"}}
 	}`)
 	writeManifest(t, hub, "cnos.eng", `{
@@ -52,8 +51,7 @@ func TestRunShowsPackages(t *testing.T) {
 		"name": "cnos.eng",
 		"version": "3.52.0",
 		"kind": "package",
-		"engines": {"cnos": "3.52.0"},
-		"skills": {"exposed": ["eng/go"]}
+		"engines": {"cnos": "3.52.0"}
 	}`)
 
 	var stdout bytes.Buffer

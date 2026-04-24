@@ -9,20 +9,7 @@
   "commands": {
     "cdd-verify": {
       "entrypoint": "commands/cdd-verify/cn-cdd-verify",
-      "summary": "Verify CDD cycle artifact completeness (γ runs at cycle-close)"
+      "summary": "Verify CDD cycle artifact completeness (\u03b3 runs at cycle-close)"
     }
-  },
-  "skills": {
-    "exposed": [
-      "cdd"
-    ],
-    "internal": [
-      "cdd/design",
-      "cdd/issue",
-      "cdd/plan",
-      "cdd/post-release",
-      "cdd/release",
-      "cdd/review"
-    ]
   }
 }

@@ -5,6 +5,7 @@ artifact_class: skill
 kata_surface: embedded
 governing_question: How do we turn a named incoherence into a design whose impact graph, acceptance criteria, and file changes are explicit before implementation begins?
 parent: cdd
+visibility: internal
 triggers: [design, architecture, plan, subsystem, protocol change]
 ---
 

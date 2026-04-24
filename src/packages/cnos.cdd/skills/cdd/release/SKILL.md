@@ -5,6 +5,7 @@ artifact_class: skill
 kata_surface: embedded
 governing_question: How does β turn a converged branch into a released version with a complete and auditable coherence delta?
 parent: cdd
+visibility: internal
 triggers: [release, ship, tag, version, deploy, changelog]
 ---
 

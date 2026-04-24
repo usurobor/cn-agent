@@ -5,6 +5,7 @@ artifact_class: skill
 kata_surface: embedded
 governing_question: How does γ coordinate a cycle so the right gap is selected, the issue is executable without clarification loops, handoffs preserve independence, and the cycle teaches the system something?
 parent: cdd
+visibility: internal
 triggers: [gamma, coordination, dispatch, select, unblock, issue, next cycle]
 ---
 

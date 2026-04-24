@@ -26,10 +26,6 @@ Every package has a manifest (`cn.package.json`) that declares what it contains,
   "engines": {
     "cnos": ">=3.50.0"
   },
-  "skills": {
-    "exposed": ["skill-a", "skill-b"],
-    "internal": ["skill-c"]
-  },
   "commands": {
     "example-cmd": {
       "entrypoint": "commands/example-cmd/cn-example-cmd",
@@ -49,8 +45,6 @@ Every package has a manifest (`cn.package.json`) that declares what it contains,
 ### Optional fields
 
 - `engines.cnos` — minimum cnos version constraint
-- `skills.exposed` — skills visible to agents
-- `skills.internal` — skills used internally by the package
 - `commands` — commands the package exposes to the CLI
 
 ## 3. When to create a package
@@ -206,10 +200,14 @@ skills/
     supporting-file.md    # optional supporting content
 ```
 
-### Exposed vs internal
+### Visibility
 
-- **Exposed skills** are listed in `skills.exposed` and are visible to agents for loading
-- **Internal skills** are listed in `skills.internal` and are used by the package's own commands or orchestrators
+Skill visibility is declared in the skill's own frontmatter, not in the package manifest:
+
+- `visibility: public` (default) — visible to agents for loading
+- `visibility: internal` — used by the package's own entrypoints (e.g. CDD sub-skills loaded by the `cdd` entrypoint)
+
+The package manifest does not carry a skill inventory. Skills are discovered from directory presence; visibility is declared per-artifact.
 
 ## 7. Katas and testing
 

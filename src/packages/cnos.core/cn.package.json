@@ -6,36 +6,6 @@
   "engines": {
     "cnos": "3.56.2"
   },
-  "skills": {
-    "exposed": [
-      "agent/agent-ops",
-      "agent/ca-conduct",
-      "agent/cap",
-      "agent/cbp",
-      "agent/clp",
-      "agent/coherence-test",
-      "agent/coherent",
-      "agent/communicating",
-      "agent/configure-agent",
-      "agent/emoji-language",
-      "agent/hello-world",
-      "agent/human-interaction",
-      "agent/mca",
-      "agent/mci",
-      "agent/onboarding",
-      "agent/reflect",
-      "agent/self-cohere",
-      "compose",
-      "design",
-      "naturalize",
-      "skill",
-      "write",
-      "ops/adhoc-thread",
-      "ops/inbox",
-      "ops/peer",
-      "ops/star-sync"
-    ]
-  },
   "commands": {
     "daily": {
       "entrypoint": "commands/daily/cn-daily",

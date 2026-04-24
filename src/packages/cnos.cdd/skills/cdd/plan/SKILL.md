@@ -5,6 +5,7 @@ artifact_class: runbook
 kata_surface: none
 governing_question: How does α operationalize an accepted design into an ordered sequence of implementation steps?
 parent: cdd
+visibility: internal
 triggers: [plan, implementation, sequence, steps, operationalize]
 ---
 

@@ -5,6 +5,7 @@ artifact_class: skill
 kata_surface: embedded
 governing_question: How does α turn a selected gap into a review-ready artifact set without pushing ambiguity or hidden debt onto β?
 parent: cdd
+visibility: internal
 triggers: [alpha, implementer, author, self-coherence, pre-review, review-ready]
 ---
 

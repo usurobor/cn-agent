@@ -5,6 +5,7 @@ artifact_class: skill
 kata_surface: embedded
 governing_question: How do we measure what a release actually changed and close the cycle instead of merely shipping and moving on?
 parent: cdd
+visibility: internal
 triggers: [post-release, assessment, retrospective, what shipped]
 ---
 

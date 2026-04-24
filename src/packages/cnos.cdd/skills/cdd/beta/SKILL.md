@@ -5,6 +5,7 @@ artifact_class: skill
 kata_surface: embedded
 governing_question: How does β judge a branch independently, release it coherently, and close the cycle without losing review context?
 parent: cdd
+visibility: internal
 triggers: [beta, reviewer, review, release, post-release, gate]
 ---
 

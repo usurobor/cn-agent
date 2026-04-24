@@ -5,6 +5,7 @@ artifact_class: skill
 kata_surface: embedded
 governing_question: How do we verify that a change closes its declared gap without creating a larger incoherence elsewhere?
 parent: cdd
+visibility: internal
 triggers: [review, PR, approve, request changes, diff, finding]
 ---
 

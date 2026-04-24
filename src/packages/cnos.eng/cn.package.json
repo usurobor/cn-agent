@@ -5,25 +5,5 @@
   "kind": "package",
   "engines": {
     "cnos": "3.56.2"
-  },
-  "skills": {
-    "exposed": [
-      "eng/code",
-      "eng/document",
-      "eng/evolve",
-      "eng/follow-up",
-      "eng/go",
-      "eng/ocaml",
-      "eng/performance-reliability",
-      "eng/process-economics",
-      "eng/rca",
-      "eng/ship",
-      "eng/skill",
-      "eng/test",
-      "eng/tool",
-      "eng/typescript",
-      "eng/ux-cli",
-      "eng/write-functional"
-    ]
   }
 }
