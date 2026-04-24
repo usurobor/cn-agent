@@ -138,6 +138,20 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - #N — description (if any found during validation)
   ```
 
+2.5a. **Move close-outs to release directory**
+  - Move all close-outs from `.cdd/unreleased/` to `.cdd/releases/{X.Y.Z}/`:
+    ```bash
+    mkdir -p .cdd/releases/X.Y.Z/{alpha,beta,gamma}
+    mv .cdd/unreleased/alpha/* .cdd/releases/X.Y.Z/alpha/ 2>/dev/null
+    mv .cdd/unreleased/beta/*  .cdd/releases/X.Y.Z/beta/  2>/dev/null
+    mv .cdd/unreleased/gamma/* .cdd/releases/X.Y.Z/gamma/ 2>/dev/null
+    ```
+  - Include the moves in the release commit
+  - `.cdd/unreleased/` should be empty after the release commit
+  - ❌ Leave close-outs in `unreleased/` after tagging (lose the version association)
+  - ❌ Move close-outs after the release commit (they should be part of the release snapshot)
+  - ✅ Move before commit, include in the release commit
+
 2.6. **Tag and push**
   - **Tag naming convention:** use bare version numbers without `v` prefix: `3.15.1`, not `v3.15.1`. This matches VERSION file content, branch naming (`claude/3.15.0-22-...`), and snapshot directory names (`docs/gamma/cdd/3.15.0/`). Consistency across all version surfaces.
   - Commit: `git commit -m "release: X.Y.Z — summary"` (includes VERSION, manifests, CHANGELOG, RELEASE.md)
