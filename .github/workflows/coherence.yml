@@ -26,42 +26,10 @@ jobs:
       - name: Check package/source sync
         run: ./cn build --check
 
-  dist-source-sync:
-    name: Package dist/source sync (I3)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-          cache-dependency-path: src/go/go.sum
-
-      - name: Build cn binary
-        working-directory: src/go
-        run: go build -o ../../cn ./cmd/cn
-
-      - name: Rebuild packages and check dist matches
-        run: |
-          export PATH="$PWD:$PATH"
-          # Save committed checksums
-          cp dist/packages/checksums.txt /tmp/checksums-before.txt
-          cp dist/packages/index.json /tmp/index-before.json
-          # Rebuild
-          cn build
-          # Compare
-          if ! diff -q /tmp/checksums-before.txt dist/packages/checksums.txt >/dev/null 2>&1; then
-            echo "❌ dist/packages/checksums.txt does not match rebuilt packages"
-            diff /tmp/checksums-before.txt dist/packages/checksums.txt || true
-            exit 1
-          fi
-          if ! diff -q /tmp/index-before.json dist/packages/index.json >/dev/null 2>&1; then
-            echo "❌ dist/packages/index.json does not match rebuilt packages"
-            diff /tmp/index-before.json dist/packages/index.json || true
-            exit 1
-          fi
-          echo "✓ dist/packages/ matches source"
+  # I3 (dist-source-sync) removed per DESIGN-266: dist/ is no longer committed,
+  # so the "committed dist/ drifts from source" failure class cannot arise.
+  # I1 (coherence-build-check via `cn build --check`) continues to gate source
+  # structural validity.
 
   protocol-contract-check:
     name: Protocol contract schema sync (I2)
@@ -73,7 +41,7 @@ jobs:
         run: diff docs/alpha/schemas/protocol-contract.json test/cmd/protocol-contract.json
 
   notify:
-    needs: [coherence-build-check, dist-source-sync, protocol-contract-check]
+    needs: [coherence-build-check, protocol-contract-check]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -84,9 +52,8 @@ jobs:
         run: |
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then exit 0; fi
           R1="${{ needs.coherence-build-check.result }}"
-          R2="${{ needs.dist-source-sync.result }}"
           R3="${{ needs.protocol-contract-check.result }}"
-          STATUS="success"; ([ "$R1" != "success" ] || [ "$R2" != "success" ] || [ "$R3" != "success" ]) && STATUS="failure"
+          STATUS="success"; ([ "$R1" != "success" ] || [ "$R3" != "success" ]) && STATUS="failure"
           ICON="✅"; [ "$STATUS" != "success" ] && ICON="❌"
           REF="${{ github.head_ref || github.ref_name }}"
           MSG="$ICON Coherence $STATUS: ${{ github.repository }}@${REF}"

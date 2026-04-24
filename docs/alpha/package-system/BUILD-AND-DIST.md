@@ -243,8 +243,9 @@ The manual sync is a reliability leak. Every skill edit requires copying to the 
    - Delete `packages/` directory
    - Delete `src/agent/` (content now lives in `src/packages/`)
 
-2. **Add `dist/` to `.gitignore`**
+2. **Add `dist/` to `.gitignore`** *(accomplished: #266, DESIGN-266)*
    - `dist/` is build output, never committed
+   - Removing committed dist/ eliminates the main-side edit vs. PR rebase race described in #266. See `DESIGN-266-dist-out-of-git.md` for the rationale and alternatives rejected.
 
 3. **Update `cn build` to target new layout**
    - Read from `src/packages/<name>/cn.package.json`

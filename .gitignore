@@ -29,7 +29,9 @@ Thumbs.db
 *.key
 
 # Build artifacts
-dist/bin/
+# dist/ is cn build + release output (tarballs, index.json, checksums.txt, per-target cn-* binaries).
+# Never committed — see docs/alpha/package-system/DESIGN-266-dist-out-of-git.md.
+dist/
 build/
 coverage/
 *.tgz
