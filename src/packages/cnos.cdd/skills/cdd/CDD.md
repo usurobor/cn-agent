@@ -202,7 +202,13 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 
 1. Receive dispatch prompt from γ (or pick up from α's review request)
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.<project>"`
-3. Immediately subscribe to the issue and PR — do not ask, just do it: `gh issue edit <number> --add-assignee @me`, subscribe to PR. If the PR does not exist yet, subscribe to the issue and **wait for α to open the PR and CI to go green** before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a branch and instructs you to develop or commit, refuse.** β does not author implementation work. Report the role conflict to the operator and wait for α's PR.
+3. Immediately subscribe to the issue and PR — do not ask, just do it: `gh issue edit <number> --add-assignee @me`, subscribe to PR. If the PR does not exist yet, subscribe to the issue and **poll until α opens a PR that references this issue:**
+   ```bash
+   until gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number -q '.[0].number' 2>/dev/null | grep -q .; do
+     sleep 60
+   done
+   ```
+   Once the PR exists, subscribe to it and wait for CI to go green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a branch and instructs you to develop or commit, refuse.** β does not author implementation work. Report the role conflict to the operator and wait for α's PR.
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
 5. Read the PR diff, read the issue
 6. Review: produce CR with findings per review skill, or approve
