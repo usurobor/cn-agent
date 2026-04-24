@@ -24,6 +24,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/usurobor/cnos/src/go/internal/activation"
 )
 
 // Status classifies a CheckResult.
@@ -101,6 +103,13 @@ func RunAll(ctx context.Context, hubPath, version string, commandIssues []Comman
 
 	// Command integrity — broken vendor commands are fatal.
 	checks = append(checks, checkCommandIntegrity(commandIssues))
+
+	// Skill activation — only unreadable/malformed SKILL.md files are
+	// fatal (genuine structural breakage). Empty triggers and trigger
+	// overlaps between public skills are reported as info: cnos skill
+	// keywords are many-to-many hints, and overlapping keywords are a
+	// legitimate authoring pattern rather than a hub breakage.
+	checks = append(checks, checkSkillActivation(hubPath))
 
 	// Runtime contract — generated at wake; legitimately pending before
 	// the first wake. A present-but-malformed contract is fatal.
@@ -363,6 +372,45 @@ func ValidateCommands(descs []CommandDescriptor) []CommandIssue {
 	}
 
 	return issues
+}
+
+func checkSkillActivation(hubPath string) CheckResult {
+	issues := activation.Validate(hubPath)
+	if len(issues) == 0 {
+		return CheckResult{
+			Name:   "skill activation",
+			Status: StatusPass,
+			Value:  "all skills valid",
+		}
+	}
+	// Severity split: an unreadable/malformed SKILL.md is the only
+	// structural break — the frontmatter parser refuses to produce a
+	// usable record. Empty triggers and public-skill overlaps are
+	// authoring hints that surface to the operator without failing
+	// the hub.
+	var fatal, warn []string
+	for _, iss := range issues {
+		line := fmt.Sprintf("[%s] %s", activation.IssueKindLabel(iss.Kind), iss.Message)
+		if iss.Kind == activation.IssueMissingSkill {
+			fatal = append(fatal, line)
+		} else {
+			warn = append(warn, line)
+		}
+	}
+	if len(fatal) > 0 {
+		parts := append([]string{}, fatal...)
+		parts = append(parts, warn...)
+		return CheckResult{
+			Name:   "skill activation",
+			Status: StatusFail,
+			Value:  fmt.Sprintf("%d issue(s): %s", len(issues), strings.Join(parts, "; ")),
+		}
+	}
+	return CheckResult{
+		Name:   "skill activation",
+		Status: StatusInfo,
+		Value:  fmt.Sprintf("%d warning(s): %s", len(warn), strings.Join(warn, "; ")),
+	}
 }
 
 func checkCommandIntegrity(issues []CommandIssue) CheckResult {

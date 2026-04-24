@@ -160,6 +160,79 @@ func TestFreshHubLifecycleChecksAreInfo(t *testing.T) {
 	}
 }
 
+// TestSkillActivationCheck_PassEmpty: no installed packages means
+// no skill activation problems; the check passes.
+func TestSkillActivationCheck_PassEmpty(t *testing.T) {
+	hub := makeTestHub(t)
+	checks := RunAll(context.Background(), hub, "3.48.0", nil)
+
+	found := false
+	for _, ch := range checks {
+		if ch.Name == "skill activation" {
+			found = true
+			if ch.Status != StatusPass {
+				t.Errorf("skill activation on empty hub: status=%d value=%q, want StatusPass",
+					ch.Status, ch.Value)
+			}
+		}
+	}
+	if !found {
+		t.Error("expected 'skill activation' check in results")
+	}
+}
+
+// TestSkillActivationCheck_WarnsOnTriggerConflict: public-public
+// trigger overlap is StatusInfo (doctor prints ○, hub stays rc=0).
+// Overlapping activation keywords are a legitimate authoring pattern;
+// only structural breakage (unreadable SKILL.md) fails the hub.
+func TestSkillActivationCheck_WarnsOnTriggerConflict(t *testing.T) {
+	hub := makeTestHub(t)
+	writeSkill := func(pkg, skillID, body string) {
+		path := filepath.Join(hub, ".cn", "vendor", "packages", pkg,
+			"skills", skillID, "SKILL.md")
+		os.MkdirAll(filepath.Dir(path), 0o755)
+		os.WriteFile(path, []byte(body), 0o644)
+	}
+	writeSkill("cnos.a", "first",
+		"---\nname: first\ntriggers:\n  - shared\n---\n")
+	writeSkill("cnos.b", "second",
+		"---\nname: second\ntriggers:\n  - shared\n---\n")
+
+	checks := RunAll(context.Background(), hub, "3.48.0", nil)
+
+	found := false
+	for _, ch := range checks {
+		if ch.Name == "skill activation" {
+			found = true
+			if ch.Status != StatusInfo {
+				t.Errorf("status = %d, want StatusInfo", ch.Status)
+			}
+			if !strings.Contains(ch.Value, "conflict") || !strings.Contains(ch.Value, "shared") {
+				t.Errorf("value = %q, want to mention conflict + 'shared' trigger", ch.Value)
+			}
+		}
+	}
+	if !found {
+		t.Error("expected 'skill activation' check in results")
+	}
+	// Scoped assertion: no skill-activation check alone should escalate
+	// to StatusFail on a hub whose only "problem" is overlapping
+	// triggers. (The base test hub has other legitimate failures
+	// around env/hub setup that are orthogonal to activation.)
+	for _, ch := range checks {
+		if ch.Name == "skill activation" && ch.Status == StatusFail {
+			t.Errorf("skill activation escalated to StatusFail on a conflict-only hub: %q", ch.Value)
+		}
+	}
+}
+
+// Note: the StatusFail mapping for IssueMissingSkill is one-line
+// wiring (see checkSkillActivation). The underlying Issue generation
+// is covered by activation.TestValidateSkills_UnreadableSkillMissing.
+// Adding a doctor-level test of the mapping would require platform-
+// specific tricks to produce an unreadable file on linux+root; the
+// coverage cost/benefit doesn't justify it.
+
 func makeTestHub(t *testing.T) string {
 	t.Helper()
 	hub := t.TempDir()

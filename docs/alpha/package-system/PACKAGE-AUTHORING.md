@@ -263,13 +263,14 @@ Three layers. Keep them explicit.
 - ❌ Edit tarballs in `dist/` (artifact treated as source — will be overwritten on next build)
 - ✅ Edit in `src/packages/`, build, restore. Source → artifact → installed.
 
-The manifest (`cn.package.json`) is a **contract**. It declares what the package provides. The runtime holds it to that contract:
-- `cn help` derives command listings from the manifest
-- `cn doctor` validates that declared entrypoints and skills exist
-- `cn status` derives package inventory from installed manifests
-- `cn build --check` validates source structure against manifest claims
+The manifest (`cn.package.json`) is a **contract** for the metadata that cannot be derived from the directory layout — currently command declarations and `engines.cnos`. Content classes (skills, templates, doctrine, etc.) are discovered from filesystem presence under the package root; the manifest does not enumerate them. The runtime holds each contract surface to its own authority:
 
-If the manifest says it, it must be true. If it's not in the manifest, the runtime doesn't know about it.
+- `cn help` derives command listings from the manifest's `commands` object
+- `cn doctor` validates command entrypoint integrity AND sweeps discovered skills for unreadable SKILL.md files, empty triggers, and triggers shared across distinct skill IDs
+- `cn status` derives package inventory from installed manifests and content-class directory presence
+- `cn build --check` validates source structure (at least one content class directory present and non-empty) and manifest command claims
+
+For fields the manifest *does* declare (name, version, commands, engines), if the manifest says it, it must be true. For content that lives on disk (skills and other content classes), the filesystem is the source of truth and the manifest does not speak for it.
 
 ## 9. Build and distribution
 
@@ -312,7 +313,7 @@ Package names use dots as namespace separators. The name in the manifest must ma
 - [ ] `cn.package.json` with schema, name, version, kind
 - [ ] At least one content class directory, non-empty
 - [ ] Every command entrypoint exists and is executable
-- [ ] Every declared skill directory contains a SKILL.md
+- [ ] Every skill directory under `skills/` contains a valid SKILL.md (non-empty `triggers:` in frontmatter; `visibility: internal` declared when the skill is only loaded by the package's own entrypoints)
 - [ ] `cn build --check` passes
 - [ ] `cn build && cn deps restore` round-trips successfully
 - [ ] Package capability is demonstrable — create a `<name>.kata` companion package
@@ -330,4 +331,5 @@ Package names use dots as namespace separators. The name in the manifest must ma
 - ❌ Smearing runtime surfaces (skills that dispatch, commands that choose, providers that orchestrate)
 - ❌ Editing installed state in `.cn/vendor/` — it's derived, not source
 - ❌ Splitting by topic label instead of reason to change
-- ❌ Manifest declares content that doesn't exist on disk
+- ❌ Manifest declares commands whose entrypoints don't exist on disk
+- ❌ Declaring a `skills` field in the manifest — skills are discovered by filesystem presence, not enumerated in `cn.package.json`

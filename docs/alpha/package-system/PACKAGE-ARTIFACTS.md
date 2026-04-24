@@ -159,37 +159,30 @@ triggers: [review, PR, release, issue, design, plan, assess, post-release]
 ---
 ```
 
-When a package is installed, the runtime scans exposed skills' frontmatter and builds an activation table. Agent encounters a trigger keyword → runtime loads the matching skill. No per-agent configuration needed.
+When a package is installed, the runtime walks `<pkg>/skills/` for every SKILL.md on disk, parses each frontmatter, and builds a public activation table from the skills whose `visibility` is not `internal`. Agent encounters a trigger keyword → runtime loads the matching skill. No per-agent configuration needed and no manifest-declared inventory.
 
-**Encapsulation:** The manifest exposes only top-level orchestrator skills, not sub-skills:
+**Encapsulation:** Top-level orchestrator skills stay public; sub-skills are marked internal in their own frontmatter. The manifest does not enumerate skills.
 
-```json
-{
-  "sources": {
-    "skills": ["cdd", "agent/cap", "agent/coherent"]
-  }
-}
-```
+`cdd/design`, `cdd/review`, `cdd/release`, etc. are internal to the CDD skill. They live in the `skills/cdd/` directory and declare `visibility: internal` in their frontmatter, which excludes them from the public activation index. The orchestrator skill (`cdd/SKILL.md`) owns all delegation — it decides which sub-skill to load at which pipeline step.
 
-`cdd/design`, `cdd/review`, `cdd/release`, etc. are internal to the CDD skill. They live in the `skills/cdd/` directory but are not listed in the manifest. The orchestrator skill (`cdd/SKILL.md`) owns all delegation — it decides which sub-skill to load at which pipeline step.
-
-Sub-skills declare their parent:
+Sub-skills declare their parent and visibility:
 
 ```yaml
 ---
 name: review
 description: CLP review protocol...
 parent: cdd
+visibility: internal
 ---
 ```
 
 **Lifecycle:**
 
-1. **Install:** `cn deps restore` extracts package → runtime scans exposed skills' frontmatter → trigger keywords added to agent's activation table, referencing the orchestrator skill
+1. **Install:** `cn deps restore` extracts package → runtime walks `<pkg>/skills/` for SKILL.md files → parses each frontmatter → trigger keywords from public (non-internal) skills are added to the agent's activation table, referencing the orchestrator skill
 2. **Activate:** Agent encounters trigger keyword → runtime looks up activation table → loads the orchestrator skill → orchestrator delegates to internal sub-skills as needed
-3. **Uninstall:** Package directory removed → runtime rebuilds activation table from remaining packages → trigger keywords from uninstalled package disappear
+3. **Uninstall:** Package directory removed → runtime rebuilds activation table by rescanning remaining packages → trigger keywords from the removed package disappear
 
-The activation table is derived, not configured. It is always the union of trigger keywords from all exposed skills in all installed packages. No manual maintenance.
+The activation table is derived, not configured. It is always the union of trigger keywords from every public skill discovered on disk across installed packages. No manual maintenance and no manifest-declared skill inventory.
 
 **Where the activation table lives:** in the runtime contract, emitted at every wake. The runtime contract (`cn_runtime_contract.ml`) already describes the agent's identity, cognition, body, and medium. The activation table belongs in **cognition** — it tells the agent what skills it has and when to use them.
 
@@ -219,14 +212,14 @@ The agent reads this at wake and knows: what skills are available, what keywords
 
 End-to-end flow from package install to skill execution.
 
-**Package structure on disk** (`cnos.core@3.34.0/`):
+**Package structure on disk** (`cnos.cdd/`):
 
 ```
 skills/
 └── cdd/
-    ├── SKILL.md              ← orchestrator (exposed in manifest)
+    ├── SKILL.md              ← orchestrator (public by default)
     ├── design/
-    │   └── SKILL.md          ← sub-skill (internal, parent: cdd)
+    │   └── SKILL.md          ← sub-skill (visibility: internal, parent: cdd)
     ├── review/
     │   └── SKILL.md
     ├── release/
@@ -243,13 +236,14 @@ skills/
 
 ```json
 {
-  "sources": {
-    "skills": ["cdd"]
-  }
+  "schema": "cn.package.v1",
+  "name": "cnos.cdd",
+  "version": "1.0.0",
+  "kind": "package"
 }
 ```
 
-One entry. Sub-skills not listed — they are internal to the CDD skill.
+No `skills` field — skills are discovered by walking `skills/` on disk. Sub-skills are hidden from the public activation index by declaring `visibility: internal` in their own frontmatter.
 
 **Orchestrator frontmatter** (`cdd/SKILL.md`):
 
@@ -268,13 +262,14 @@ triggers: [review, PR, release, issue, design, plan, assess, post-release, ship,
 name: review
 description: CLP review protocol for CDD step 8.
 parent: cdd
+visibility: internal
 ---
 ```
 
 **Loading sequence:**
 
-1. `cn deps restore` installs `cnos.core@3.34.0` → extracts to `.cn/vendor/packages/`
-2. Runtime scans exposed skills' frontmatter → builds activation table: `{review, PR, release, ...} → cdd`
+1. `cn deps restore` installs `cnos.cdd` → extracts to `.cn/vendor/packages/cnos.cdd/`
+2. Runtime walks `.cn/vendor/packages/cnos.cdd/skills/` → parses each SKILL.md → filters to `visibility != internal` → builds activation table: `{review, PR, release, ...} → cdd`
 3. Agent encounters "review this PR"
 4. Runtime matches "review" → loads `skills/cdd/SKILL.md`
 5. CDD SKILL.md §5 delegation table: review = pipeline step 8 → load `cdd/review/SKILL.md`
