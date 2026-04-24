@@ -598,7 +598,7 @@ A release is a milestone on the coherence gradient:
 - `docs/THESIS.md` — the public-facing thesis: cnos as a recurrent coherence system
 
 ### Doctrine / Why
-- `packages/cnos.core/doctrine/FOUNDATIONS.md`
+- `docs/alpha/doctrine/FOUNDATIONS.md`
 - `CAP.md`
 - `COHERENCE.md`
 - `CA-CONDUCT.md`

@@ -700,7 +700,7 @@ It is a milestone on the coherence gradient.
 ## 17. Relationship to Other Documents
 
 ### Doctrine / Why
-- `packages/cnos.core/doctrine/FOUNDATIONS.md`
+- `docs/alpha/doctrine/FOUNDATIONS.md`
 - `CAP.md`
 - `COHERENCE.md`
 - `CA-CONDUCT.md`

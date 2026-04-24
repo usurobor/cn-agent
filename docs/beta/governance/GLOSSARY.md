@@ -314,7 +314,7 @@ The process by which a coherent agent reconstitutes itself from local, versioned
 
 No network. No sibling checkout. Local files only.
 
-Defined in: `packages/cnos.core/doctrine/FOUNDATIONS.md` §6, `docs/alpha/agent-runtime/CAA.md` §4.
+Defined in: `docs/alpha/doctrine/FOUNDATIONS.md` §6, `docs/alpha/agent-runtime/CAA.md` §4.
 
 ### CAR (Cognitive Asset Resolver)
 

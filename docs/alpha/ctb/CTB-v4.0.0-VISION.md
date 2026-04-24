@@ -330,7 +330,7 @@ Three practice-side gaps mark where CTB adds the most value:
 
 These are the seams where CTB syntax makes the skill language checkable.
 
-See also: `src/packages/cnos.core/doctrine/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
+See also: `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
 
 ---
 
