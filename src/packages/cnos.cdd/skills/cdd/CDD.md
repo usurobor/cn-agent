@@ -112,8 +112,7 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 
 1. Observe and select the gap (§2)
 2. Create the issue with full implementation guidance, including Tier 3 skills (§4.4)
-3. Write α dispatch prompt (see format below)
-4. When α opens PR and CI is green, write β dispatch prompt (see format below)
+3. Write α and β dispatch prompts (see format below). Both can be dispatched at the same time — β subscribes to the issue and begins intake while α implements. β's skill handles waiting for the PR.
 5. If α or β is blocked, diagnose and unblock: clarify requirements, resolve ambiguity, provide missing context
 
 **Phase 2 — Release support**

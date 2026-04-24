@@ -169,31 +169,31 @@ Fix the issue instead.
 
 ### 2.5. Steps 3–5 — Dispatch and unblock without leakage
 
-#### Step 3 — Dispatch α
+#### Step 3 — Dispatch α and β
 
+Produce both prompts at dispatch time. β can subscribe to the issue and begin intake while α implements — β does not need to wait for the PR to exist.
+
+**α prompt:**
 ```text
 You are α. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md.
 Issue: gh issue view <N>
+Tier 3 skills: <list issue-specific skills>
 ```
 
-Rules:
-- point α at the issue, not a paraphrase of the issue
-- do not restate the algorithm in the prompt
-- do not smuggle missing constraints into chat prose; fix the issue instead
-
-#### Step 4 — Dispatch β
-
-Dispatch β only when α's PR exists and the required CI/build checks for that review mode are complete and green, unless β is explicitly being asked for an offline/non-merge review.
-
+**β prompt:**
 ```text
 You are β. Project: <project>.
-Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md.
-PR: gh pr view <N>
+Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md and follow its load order.
 Issue: gh issue view <N>
 ```
 
-β receives artifact surfaces, not α's hidden implementation rationale.
+Rules:
+- point both roles at the issue, not a paraphrase of the issue
+- do not restate the algorithm in the prompt
+- do not smuggle missing constraints into chat prose; fix the issue instead
+- β subscribes to the issue immediately; the β skill handles waiting for the PR
+- β receives artifact surfaces, not α's hidden implementation rationale
 
 #### Step 5 — Unblock
 
