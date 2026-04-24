@@ -96,10 +96,10 @@ Close-out converts cycle findings into immediate fixes or committed next work.
 ### 2.1. Step 1a — Observe and build candidates
 
 Before selecting work, read the observation surfaces required by `CDD.md`:
-1. CHANGELOG TSC table
-2. encoding lag table
-3. doctor / status / operational-health surface
-4. last post-release assessment
+1. **Last post-release assessment** — read this first. It contains the prior cycle's next-MCA commitment, deferred outputs, cycle iteration findings, and MCI freeze state. These are binding inputs to selection, not optional context.
+2. CHANGELOG TSC table
+3. encoding lag table
+4. doctor / status / operational-health surface
 
 Build a candidate table:
 
