@@ -416,8 +416,11 @@ ensure:
 - canonical serialization
 - no dependence on map iteration order
 - no hidden timestamps unless intentionally included
+- no dependence on Go toolchain version for output bytes — `compress/gzip` flate output is **not** stable across minor Go versions. Pin the toolchain in `go.mod` and all CI `setup-go` calls. If cross-version byte-identity is required, use `gzip.NoCompression` or generate deterministic artifacts on CI rather than at author-time.
   - ❌ Range over a map and render the result directly
+  - ❌ Assume `gzip.NewWriter` produces identical bytes on Go 1.22 and Go 1.24
   - ✅ Sort keys/items before rendering
+  - ✅ Pin Go version in `go.mod` + CI workflows when artifacts are hashed
 
 ### 2.14. Idempotence and retry safety
 
