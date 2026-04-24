@@ -157,7 +157,6 @@ You are α. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md.
 Issue: gh issue view <number>
 Tier 3 skills: <list issue-specific skills, e.g. eng/go, eng/test>
-When ready, open a PR against main with `Closes #<number>` in the body.
 ```
 
 **To β:**
@@ -165,7 +164,6 @@ When ready, open a PR against main with `Closes #<number>` in the body.
 You are β. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md and follow its load order.
 Issue: gh issue view <number>
-Subscribe to the issue now. Wait for α to open the PR and CI to go green before starting review.
 ```
 
 **To γ (operator or γ-agent):**
