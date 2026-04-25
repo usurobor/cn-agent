@@ -23,6 +23,14 @@ A release has parts: readiness check, version decision, changelog, release notes
 
 Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: releasing without validation, so breakage ships silently. Or: incomplete deploy where artifacts ship but assessment never lands.
 
+## Signature
+
+**Scope:** task-local
+**Inputs:** approved branch or PR, version decision, release context
+**Outputs:** release artifact set (CHANGELOG row, tag, release notes, deploy validation), β close-out
+**Requires:** approval and release readiness
+**Calls:** `writing` if release notes need writing support
+
 ## 1. Define
 
 1.1. **Identify the parts**

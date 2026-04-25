@@ -10,6 +10,14 @@ triggers: [review, PR, release, issue, design, plan, assess, post-release, ship,
 
 # CDD
 
+## Signature
+
+**Scope:** global
+**Inputs:** substantial-change context, active role, issue or PR context
+**Outputs:** canonical method loaded, active role skill loaded, required lifecycle sub-skills selected
+**Requires:** CDD applies; `CDD.md` exists in this directory
+**Calls:** `CDD.md`, one of `alpha/`, `beta/`, `gamma/`, and lifecycle sub-skills as directed by role and work shape
+
 ## Load order
 
 This skill is the package-visible loader entrypoint for CDD. External dispatch enters through `cdd` only — internal sub-skill triggers (`alpha`, `beta`, `gamma`, `issue`, `design`, `plan`, `review`, `release`, `post-release`) are advisory and are used only after `cdd` and the active role skill have been loaded. The runtime must not expose internal sub-skills as public dispatch entrypoints.

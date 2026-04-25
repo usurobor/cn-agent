@@ -17,6 +17,14 @@ Review code so that every verdict traces to evidence in the diff and its surroun
 
 **Coherent review: every claim is verified against the diff, its required surrounding contract, and the relevant unchanged context — and no incoherence passes without being named.**
 
+## Signature
+
+**Scope:** task-local
+**Inputs:** PR diff, issue context, branch artifacts, active design constraints, active skills
+**Outputs:** review verdict (RC / A) with evidence, findings, and architecture check where applicable
+**Requires:** review-ready branch / PR
+**Calls:** `eng/design-principles` when architecture check is active
+
 ---
 
 ## 1. Define

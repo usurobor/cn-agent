@@ -19,6 +19,14 @@ An issue has parts: problem, impact, acceptance criteria. Coherence = each part 
 
 Failure mode: issue requires back-and-forth to clarify scope, acceptance, or priority.
 
+## Signature
+
+**Scope:** task-local
+**Inputs:** selected gap, mode, active design constraints, Tier 3 skills, affected surfaces
+**Outputs:** executable issue pack with implementation guidance
+**Requires:** γ has completed observe/select; canonical `CDD.md` loaded
+**Calls:** none
+
 ---
 
 ## 1. Define

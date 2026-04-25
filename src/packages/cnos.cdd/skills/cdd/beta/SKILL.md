@@ -26,6 +26,14 @@ triggers: [beta, reviewer, review, release, post-release, gate]
 The failure mode is **split judgment**:
 review, release, and β close-out are treated as separate chores, so context leaks away and authority drifts between surfaces.
 
+## Signature
+
+**Scope:** role-local
+**Inputs:** PR, issue, CI state, release context, approved branch state
+**Outputs:** review verdict (RC / A), release delta, β close-out
+**Requires:** β role active; canonical `CDD.md` loaded
+**Calls:** `review/`, `release/`
+
 ## Load Order
 
 When acting as β:

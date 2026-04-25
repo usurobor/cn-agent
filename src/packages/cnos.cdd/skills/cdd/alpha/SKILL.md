@@ -21,6 +21,14 @@ issue understanding, active skills, tests, code, docs, self-coherence, and pre-r
 The failure mode is **premature handoff**:
 the branch compiles locally or "looks done," but β must still discover missing scope, missing sibling updates, unstated debt, broken contracts, or stale branch metadata.
 
+## Signature
+
+**Scope:** role-local
+**Inputs:** issue pack, active design constraints, active skills, branch state, CI state
+**Outputs:** review-ready artifact set (design / plan / tests / code / docs / self-coherence / pre-review gate), PR, α close-out
+**Requires:** α role active; canonical `CDD.md` loaded
+**Calls:** `design/`, `plan/`, language/domain skills as named by the issue
+
 ## Load Order
 
 When acting as α:

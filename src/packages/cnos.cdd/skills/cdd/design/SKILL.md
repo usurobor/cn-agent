@@ -17,6 +17,14 @@ triggers: [design, architecture, subsystem, protocol change]
 
 If you can't name the incoherence, you don't have a design problem. If you can't enumerate what your change affects, you don't have a design — you have a guess.
 
+## Signature
+
+**Scope:** task-local
+**Inputs:** named incoherence, active constraints, affected surfaces, challenged assumption
+**Outputs:** design artifact with impact graph, acceptance criteria, file changes, leverage / negative leverage
+**Requires:** substantial change or explicit design need
+**Calls:** none
+
 ## Algorithm
 
 1. **Define** — name the incoherence, the parts, and the failure mode.

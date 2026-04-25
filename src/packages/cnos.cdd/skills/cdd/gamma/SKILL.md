@@ -26,6 +26,14 @@ The failure mode is **orchestration by vibes**:
 - leaked α/β reasoning across the boundary
 - cycle closure without learning
 
+## Signature
+
+**Scope:** role-local
+**Inputs:** repo state, lag/signals, issue state, PR state, α close-out, β close-out, release state
+**Outputs:** issue pack, dispatch prompts, unblock decisions, post-release assessment, γ close-out triage, cycle closure
+**Requires:** γ role active; canonical `CDD.md` loaded
+**Calls:** `issue/`, `post-release/`
+
 ## Load Order
 
 When acting as γ:

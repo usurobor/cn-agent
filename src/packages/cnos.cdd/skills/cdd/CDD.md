@@ -27,6 +27,24 @@ A release is therefore not just a bundle of outputs. It is a measured coherence 
 
 CDD is a triadic coherence method at development scale.
 
+## Signature
+
+**Scope:** global
+**Inputs:** observed system state, selected gap, project constraints, active role
+**Outputs:** ordered lifecycle, role ownership, artifact contract, dispatch contract, closure rules
+**Requires:** substantial change or explicit small-change invocation
+**Calls:** `alpha/`, `beta/`, `gamma/`, `issue/`, `design/`, `plan/`, `review/`, `release/`, `post-release/`
+
+### Invocation model
+
+CDD is invoked as:
+
+- `cdd` at global scope
+- one role skill at role-local scope
+- zero or more lifecycle sub-skills at task-local scope
+
+This is the execution model the package assumes.
+
 ---
 
 ## 1. Scope

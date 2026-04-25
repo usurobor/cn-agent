@@ -19,6 +19,14 @@ A plan has parts: coherence contract, steps, acceptance, test strategy, non-goal
 
 Failure mode: plan restates the design instead of operationalizing it. Or: steps have no acceptance criteria, so "done" is ambiguous.
 
+## Signature
+
+**Scope:** task-local
+**Inputs:** accepted design artifact, coherence contract, acceptance criteria
+**Outputs:** ordered implementation sequence with per-step acceptance and file changes
+**Requires:** design exists and is accepted
+**Calls:** none
+
 ---
 
 ## 1. Define

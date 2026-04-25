@@ -15,6 +15,14 @@ This module implements CDD steps 11–13: post-release observation, γ-owned ass
 
 Canonical artifact locations (PRA path, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix). Tags are bare `X.Y.Z` everywhere; `v`-prefixed tags are legacy and warn-only.
 
+## Signature
+
+**Scope:** task-local
+**Inputs:** released version state, α close-out, β close-out, production verification evidence
+**Outputs:** post-release assessment, cycle-iteration disposition, closure evidence
+**Requires:** released version exists; γ role active
+**Calls:** none
+
 ## Who
 
 **γ owns the post-release assessment.** The PRA is a cycle-level observation artifact — it measures α's implementation, β's review quality, and the cycle's economics. β assessing its own review quality is a self-grading problem that weakens the independence CDD exists to provide. γ holds the cycle-level observational authority that the assessment requires.
