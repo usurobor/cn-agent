@@ -345,6 +345,39 @@ Operating the CDD skill-program as a triadic agent coordination system surfaced 
 
 See also: `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
 
+### 8.5.2 Emerging shape: agents as scoped function calls
+
+Operating the CDD triad revealed that the skill language already has an execution model hiding in practice. The model is a **call stack with scoped authority**.
+
+| Language concept | CDD practice-side equivalent | Concrete example |
+|-----------------|------------------------------|-----------------|
+| Call stack | `operator → γ → α/β` | Operator dispatches γ; γ dispatches α and β. Each level has strictly more authority than the level below. |
+| Function scope | Each agent owns only its local artifacts | α owns implementation artifacts (branch, code, tests). β owns review artifacts (CR, verdict). γ owns cycle artifacts (PRA, triage). None can write to the other's scope. |
+| Arguments | Dispatch prompt + issue | γ's dispatch to α: `"You are α. Issue: gh issue view 268. Tier 3 skills: skill, eng/tool, eng/document, eng/test."` — input contract, not implementation guidance. |
+| Return value | Close-out | α's close-out returns implementation findings to γ. β's close-out returns review findings. γ receives both, triages, decides. The caller owns the result. |
+| No upward mutation | Lower scope cannot write to higher scope | α cannot modify γ's triage decision. β cannot modify γ's PRA. Close-outs are returned, not pushed. |
+| Type constraint on separation | Role independence = no shared mutable state | α and β having separate scope is the same principle as functions not sharing mutable state. Role leakage = concurrent mutation bug. The CDD independence rule is a soundness property, not a preference. |
+| Error handling | γ unblocks | When α or β is stuck, γ intervenes — the caller catches the exception and decides recovery. |
+| Tail-call optimization | Immediate outputs | When a finding is immediate-output sized, γ fixes it inline rather than dispatching a new cycle — the caller resolves a trivial return without pushing a new frame. |
+
+**Implication for CTB:** This fills the execution-model gap in the §8.5 table. The practice side has types (artifact classes), function signatures (skill contracts), a module system (compose), and a standard library (core skills). The missing piece was how skills are **invoked at runtime with scoped authority**. The CDD triad IS the execution model:
+
+- **Skill** = function definition (trigger + contract + single-axis transformation)
+- **Agent** = function invocation (scoped execution of a skill with concrete inputs)
+- **Triad** = call tree (γ invokes α/β, collects returns, produces own return to operator)
+
+This maps directly to CTB's plan-as-data model (§4.2): a skill returns an effect plan (data), and the caller decides what to do with it. The triad is a call tree where each node returns a plan to its parent. The operator is the top-level caller that ultimately executes.
+
+**Composability:** Once a triad stabilizes, it appears at its external boundary as one articulated whole — a function that takes an issue and returns a release. A fourth agent creates a new two-sided boundary, not a new primitive. The system grows by composing wholes (triads as units at the next scale), not by counting agents. See `docs/alpha/doctrine/COHERENCE-FOR-AGENTS.md` for the structural derivation.
+
+**CTB language requirements surfaced:**
+
+| Requirement | Practice-side evidence |
+|------------|----------------------|
+| **Scoped authority model** | The runtime must enforce that a skill invoked at α scope cannot write to γ scope. Currently enforced by prose rules in role skills. |
+| **Return-type contracts** | Close-outs should satisfy a declared return type. γ's closure gate (10 conditions in `gamma/SKILL.md §2.10`) is already a runtime type check on return values — but not machine-checkable. |
+| **Call-tree composition** | When a triad composes with another triad, their contracts must be compatible at the boundary. Currently verified by human judgment during γ selection. |
+
 ---
 
 ## 9. Tradeoffs and explicit choices
