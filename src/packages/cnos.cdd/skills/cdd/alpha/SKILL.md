@@ -233,10 +233,10 @@ For release-scoped triadic cycles, the canonical path is `.cdd/releases/{X.Y.Z}/
 
 **Voice: factual observations and patterns only.** Do not recommend dispositions — triage is γ's job.
 
-- ❌ "Recommend patching eng/go §2.13 now"
-- ❌ "β should file #267 for this"
-- ✅ "Pattern: cross-toolchain gzip non-determinism. Surfaces affected: eng/go §2.13, pkgbuild/build.go"
-- ✅ "Same rebase-race class as D1 in prior cycle. Two occurrences this cycle."
+- ❌ "Recommend patching `eng/<language>` §X now"
+- ❌ "β should file #N for this"
+- ✅ "Pattern: cross-toolchain non-determinism. Surfaces affected: `eng/<language>` §X, `<runtime-source-tree>/...`"
+- ✅ "Same class as D1 in prior cycle. Two occurrences this cycle."
 
 ---
 

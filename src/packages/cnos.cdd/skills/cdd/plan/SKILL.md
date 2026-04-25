@@ -75,11 +75,12 @@ Failure mode: plan restates the design instead of operationalizing it. Or: steps
   - ✅ "Installed root contains profiles/ and extensions/ when package declares them"
 
 2.2.3. **Each step names files changed**
-  - Reviewer can scope the diff before reading it
-  - Use language-neutral placeholders for the project's runtime source tree (this skill ships in a method package, not a language-specific package). Examples: `<runtime-source-tree>/...`, `src/packages/<package>/...`, `docs/...`.
+  - Reviewer can scope the diff before reading it.
+  - Use language-neutral placeholders for the project's runtime source tree (this skill ships in a method package, not a language-specific package).
   - ❌ "Various files"
-  - ✅ "`<runtime-source-tree>/deps/restore.{src,test}`"
-  - ✅ "`src/packages/cnos.cdd/skills/cdd/CDD.md`, `src/packages/cnos.cdd/skills/cdd/SKILL.md`"
+  - ✅ "`src/packages/<package>/...`"
+  - ✅ "`<runtime-source-tree>/...`"
+  - ✅ "`docs/...`"
 
 2.2.4. **Order minimizes rework**
   - Substrate before consumers. Data model before logic. Logic before presentation.
