@@ -54,6 +54,17 @@ What authority surfaces govern? What is in scope? What is blocked?
 - ❌ Act as if all options are open
 - ✅ Name what constrains the response before choosing one
 
+### 1.2a. Check if the action is already covered
+
+Before producing an artifact or taking an external action, check: does a skill, spec, or existing artifact already define this? If yes, the action is redundant — don't do it.
+
+This is the inverse gate: evaluate "should I NOT do this?" with the same rigor as "should I do this?"
+
+- ❌ Post dispatch prompts on an issue when the CDD skill already defines prompt templates
+- ❌ Write a checklist that restates what a skill already specifies
+- ✅ Recognize the skill already covers it and skip the redundant action
+- ✅ When uncertain, check the skill/spec before producing the artifact
+
 ### 1.3. Read recent history
 
 Has this gap appeared before? Was it closed? Did the closure hold?
