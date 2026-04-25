@@ -84,9 +84,9 @@ These are operational roles. They are not a claim that every cycle always uses t
 
 | Role | Function | Steps owned | Responsibility | Identity constraint |
 |------|----------|-------------|----------------|---------------------|
-| **γ (Coordinator)** | Orchestrate | 0–1 + cycle-wide | Observe, select, issue creation, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification | Must hold full cycle context |
+| **γ (Coordinator)** | Orchestrate | 0–1 + 11–13 + cycle-wide | Observe, select, issue creation, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification, post-release assessment, cycle closure | Must hold full cycle context |
 | **α (Implementer)** | Produce | 2–7a | Branch, bootstrap, gap, mode, artifacts (tests/code/docs), self-coherence, pre-review readiness, PR | Must be separate from β |
-| **β (Reviewer + Releaser)** | Judge and integrate | 8–13 | Review (RC/A decision), merge, tag, deploy, post-release assessment, close the cycle | Must be separate from α |
+| **β (Reviewer + Releaser)** | Judge and integrate | 8–10 | Review (RC/A decision), merge, tag, deploy, β close-out | Must be separate from α |
 
 #### Triadic rule
 
@@ -142,7 +142,7 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 **Phase 3 — Close-out triage**
 
 8. Collect close-outs from both α and β. Both must exist on main before proceeding. If either is missing, request it.
-9. Read both close-outs and the post-release assessment. For each finding, triage using CAP:
+9. Read both close-outs. Write the post-release assessment per `post-release/SKILL.md` — γ owns the PRA as the cycle-level observer. For each finding (from close-outs and the PRA), triage using CAP:
    - MCA available (skill patch, gate, mechanization) → ship it now as immediate output
    - No MCA yet, pattern real → MCI. Two kinds:
      - **Project MCI** (future cycles on this project need to know) → `.cdd/` in the repo
@@ -232,11 +232,10 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 6. Review: produce CR with findings per review skill, or approve
 7. If RC: post findings as PR comment, wait for α's fix
 8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to γ/operator — do not block closure on it.
-9. Write post-release assessment per post-release skill
-10. Write β close-out (cycle findings or "no findings").
-11. Done when assessment and close-out are committed
+9. Write β close-out (review context, release evidence, cycle findings or "no findings"). This is β's input to γ's PRA and cycle iteration decision (§9.1).
+10. Done when close-out is committed. γ writes the post-release assessment separately.
 
-**β close-out:** Report cycle-level learnings to γ. Concrete findings (review pattern issues, skill gaps, process friction, §3.7 violations, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is β's input to γ's cycle iteration decision (§9.1). **Voice: factual observations and patterns only.** Do not recommend dispositions ("patch now", "file issue", "recommend option X") — triage is γ's job. State what happened, what pattern it matches, and what surfaces were affected. Let γ decide the action.
+**β close-out:** Report cycle-level learnings to γ. Concrete findings (review pattern issues, skill gaps, process friction, §3.7 violations, things to mechanize) or "no new findings" — explicitly stated, not omitted. **Voice: factual observations and patterns only.** Do not recommend dispositions ("patch now", "file issue", "recommend option X") — triage is γ's job. State what happened, what pattern it matches, and what surfaces were affected. Let γ decide the action.
 
 #### Minimum configuration
 
@@ -539,14 +538,14 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 | 8 | Review | review | β | review artifact / PR review / comment link | review/SKILL.md output format | review surface | reviewer | always | review |
 | 9 | Gate + merge | release | β | gate result / release-readiness evidence + PR merge | `docs/gamma/cdd/GATE-TEMPLATE.md` | release or review surface | mechanical + reviewer | always | release |
 | 10 | Release | release | β | CHANGELOG row, tag, release note | CHANGELOG.md ledger + release/SKILL.md | release surface | agent + mechanical | always | release, writing |
-| 11 | Observe | close | β | post-release observation result | post-release/SKILL.md | post-release assessment | releasing agent | always | post-release |
-| 12 | Assess | close | β | POST-RELEASE-ASSESSMENT.md | post-release/SKILL.md output template | version directory | releasing agent | always | post-release |
-| 12a | Skill patch | close | γ | skill/spec patches for recurring failure modes identified in §3; synced across all affected surfaces under src/packages/ | post-release/SKILL.md §3 + gamma/SKILL.md §2.10-§2.12 | same commit as assessment or γ closeout | γ (or releasing agent) | when §3 identifies recurring failure or skill gap | post-release, cdd |
-| 13 | Close | close | β | immediate outputs executed (incl. 12a patches) + deferred committed | post-release/SKILL.md §6 CDD Closeout | post-release assessment | releasing agent | always | post-release |
+| 11 | Observe | close | γ | post-release observation result | post-release/SKILL.md | post-release assessment | γ | always | post-release |
+| 12 | Assess | close | γ | POST-RELEASE-ASSESSMENT.md | post-release/SKILL.md output template | version directory | γ | always | post-release |
+| 12a | Skill patch | close | γ | skill/spec patches for recurring failure modes identified in §3; synced across all affected surfaces under src/packages/ | post-release/SKILL.md §3 + gamma/SKILL.md §2.10-§2.12 | same commit as assessment or γ closeout | γ | when §3 identifies recurring failure or skill gap | post-release, cdd |
+| 13 | Close | close | γ | immediate outputs executed (incl. 12a patches) + deferred committed | post-release/SKILL.md §6 CDD Closeout | post-release assessment | γ | always | post-release |
 
 **Primary branch artifact:** the PR body (`.github/PULL_REQUEST_TEMPLATE.md`) for L5/L6 changes, or the design artifact (design/SKILL.md §3.1) for larger changes.
 
-**Role key (§1.4):** *γ (coordinator)* = steps 0–1 (observe, select, issue creation, dispatch, unblocking) + cycle-wide coordination, *α (implementer)* = steps 2–7a (branch, bootstrap, gap, mode, artifacts, self-coherence, pre-review), *β (reviewer + releaser)* = steps 8–13 (review RC/A decision, merge, deploy, assess). Delegated implementer is α-side. Merge is part of step 9 (gate + merge).
+**Role key (§1.4):** *γ (coordinator)* = steps 0–1 (observe, select, issue creation, dispatch) + steps 11–13 (PRA, cycle iteration, closure) + cycle-wide coordination, *α (implementer)* = steps 2–7a (branch, bootstrap, gap, mode, artifacts, self-coherence, pre-review), *β (reviewer + releaser)* = steps 8–10 (review RC/A decision, merge, deploy, β close-out). Delegated implementer is α-side. Merge is part of step 9 (gate + merge).
 
 **Producer key:** *agent* = judgment required, *mechanical* = automatable by cnos (#94), *reviewer* = produced by the review process.
 

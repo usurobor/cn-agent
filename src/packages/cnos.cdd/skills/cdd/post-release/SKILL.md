@@ -15,9 +15,11 @@ After every release, assess what shipped, what the system looks like now, and wh
 
 ## Who
 
-**The agent that performed the release (steps 9–10) owns the post-release assessment (steps 11–13).** The release and its assessment are a single responsibility — splitting them across agents or sessions creates a handoff gap where cycle context is lost. If the releasing agent's session ends before the assessment is complete, the assessment is the first task of its next session, not a task for a different agent.
+**γ owns the post-release assessment.** The PRA is a cycle-level observation artifact — it measures α's implementation, β's review quality, and the cycle's economics. β assessing its own review quality is a self-grading problem that weakens the independence CDD exists to provide. γ holds the cycle-level observational authority that the assessment requires.
 
-**Default: the reviewer releases.** The reviewer already holds the independent evaluation context that the assessment requires. Having the author release and assess their own work weakens the independence CDD exists to provide. See CDD.md §1.4 for the full rationale.
+**β owns release mechanics (merge, tag, deploy) and the β close-out.** β's close-out captures the review context and release evidence. The PRA is a separate artifact written by γ after β's release and close-out are complete.
+
+**Handoff:** β completes release + β close-out → γ reads both close-outs (α + β) + the shipped artifacts → γ writes the PRA. If γ's session ends before the assessment is complete, the assessment is the first task of its next session.
 
 Exception: the operator may explicitly reassign the assessment to another agent. The reassignment must name the target agent and the reason.
 
@@ -146,7 +148,7 @@ Add a row:
 
 The coherence note describes which incoherence was reduced, not what feature was added.
 
-**Scoring sequence:** The CHANGELOG TSC entry written at release time is **provisional** — it is the author's self-score. The post-release assessment is the independent score and MAY revise the CHANGELOG entry. If the assessment disagrees with the self-score, update the CHANGELOG to match the assessment. The assessment governs.
+**Scoring sequence:** The CHANGELOG TSC entry written at release time is **provisional** — it is β's release-time score. The post-release assessment is γ's independent score and MAY revise the CHANGELOG entry. If the assessment disagrees with the release-time score, update the CHANGELOG to match the assessment. The assessment governs.
 
 ### Step 3: Encoding lag table
 

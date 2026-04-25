@@ -1,6 +1,6 @@
 ---
 name: beta
-description: Execute the β role in CDD. Review independently, merge only after all findings are resolved, release with a complete audit trail, and own the post-release assessment.
+description: Execute the β role in CDD. Review independently, merge only after all findings are resolved, and release with a complete audit trail.
 artifact_class: skill
 kata_surface: embedded
 governing_question: How does β judge a branch independently, release it coherently, and close the cycle without losing review context?
@@ -19,8 +19,7 @@ triggers: [beta, reviewer, review, release, post-release, gate]
 - review verdict
 - release gate
 - merge / tag / deploy
-- post-release assessment
-- cycle closeout on the β side
+- β close-out (review context + release evidence)
 
 The failure mode is **split judgment**:
 review, release, and assessment are treated as separate chores, so context leaks away and authority drifts between surfaces.
@@ -32,8 +31,7 @@ When acting as β:
 2. load this file as the β role surface
 3. load `review/SKILL.md`
 4. load `release/SKILL.md`
-5. load `post-release/SKILL.md`
-6. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue and diff
+5. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue and diff
 
 The detailed ordered step sequence is in `CDD.md` §1.4 (β algorithm).
 This file owns β's role boundary, dispatch contract, and phase-linking rules.
@@ -45,8 +43,7 @@ This file owns β's role boundary, dispatch contract, and phase-linking rules.
 - `CDD.md` β steps 1–5 → intake (receive, git identity, poll for PR, load skills, read PR/issue)
 - `CDD.md` β steps 6–7 → review / RC loop per `review/SKILL.md`
 - `CDD.md` β step 8 → merge / tag / deploy per `release/SKILL.md`
-- `CDD.md` β step 9 → post-release assessment per `post-release/SKILL.md`
-- `CDD.md` β step 10 → β close-out to main
+- `CDD.md` β step 9 → β close-out to main (review context + release evidence)
 
 This file does not replace those sub-skills.
 It states what β must preserve across them.
@@ -64,12 +61,12 @@ If the environment provides a branch and instructs β to develop, commit, or imp
 - ✅ "β names the invariant gap as an RC finding; α lands the fix; β re-reviews the affected surfaces"
 - ✅ "β received an implementation instruction from the environment, refused, and reported the role conflict"
 
-### 2. Keep review, release, and assessment together
+### 2. Keep review and release together
 
-The same β session or follow-on β session owns all three unless the operator explicitly reassigns responsibility.
+The same β session or follow-on β session owns review through release and β close-out unless the operator explicitly reassigns responsibility. The post-release assessment is γ's responsibility.
 
-- ❌ "Approve now; tagging and assessment can happen later in a different session"
-- ✅ "The same β ownership carries verdict → merge → tag/deploy → assessment → close-out"
+- ❌ "Approve now; tagging can happen later in a different session"
+- ✅ "The same β ownership carries verdict → merge → tag/deploy → β close-out, then hands off to γ for PRA"
 
 ### 3. Treat stale references and authority conflicts as findings
 
@@ -87,11 +84,11 @@ No "approve with follow-up" except an explicitly named design-scope deferral tha
 
 ### 5. Closure discipline
 
-The same β session that reviews and merges also owns the release, assessment, and close-out.
+The same β session that reviews and merges also owns the release and β close-out.
 Do not defer these to a separate session or role unless the operator explicitly reassigns.
 
-- ❌ "Merge succeeded; another agent can write the assessment later"
-- ✅ "Review → narrow → merge → release → assess → close-out in one β pass"
+- ❌ "Merge succeeded; someone else can write the β close-out later"
+- ✅ "Review → narrow → merge → release → β close-out in one β pass, then γ writes the PRA"
 
 ## Embedded Kata
 
@@ -104,8 +101,8 @@ You review a branch that is locally correct but the issue, canonical doc, and re
 State:
 1. the review finding
 2. the release implication if uncorrected
-3. the assessment implication if merged anyway
+3. what γ needs to know for the PRA
 
 ### Expected result
 
-A single β verdict that keeps review, release, and assessment aligned instead of treating them as three disconnected passes.
+A single β verdict that keeps review and release aligned, with a clean β close-out that gives γ what it needs to assess the cycle.

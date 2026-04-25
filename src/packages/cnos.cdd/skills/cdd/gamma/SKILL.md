@@ -32,7 +32,7 @@ When acting as γ:
 1. load `CDD.md` as the canonical lifecycle, selection rules, and role contract
 2. load this file as the γ role surface
 3. load `issue/SKILL.md`
-4. load `post-release/SKILL.md` when operating in close-out
+4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics)
 5. load other lifecycle sub-skills only when the selected gap requires them
 
 `CDD.md` is the only canonical source for:
@@ -233,7 +233,8 @@ If β deferred a mechanical release step because of environment constraints, γ 
 Before close-out, collect:
 - α close-out
 - β close-out
-- post-release assessment
+
+Then write the post-release assessment per `post-release/SKILL.md`. The PRA is γ's artifact — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
 
 For each finding, record one disposition using CAP:
 1. **Immediate MCA available** → ship now
@@ -293,7 +294,7 @@ If no:
 Do not declare the cycle closed until all of the following are true:
 1. α close-out exists on main
 2. β close-out exists on main
-3. post-release assessment exists
+3. γ has written the post-release assessment per `post-release/SKILL.md`
 4. every fired cycle-iteration trigger has a `Cycle Iteration` entry with root cause and disposition
 5. recurring findings were assessed for skill / spec patching
 6. immediate outputs were either landed or explicitly ruled out

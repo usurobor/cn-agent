@@ -15,7 +15,7 @@ triggers: [release, ship, tag, version, deploy, changelog]
 
 **Coherent release: every version bump is a measured coherence delta with a complete audit trail.**
 
-β owns: review approval outcome, merge, release mechanics, deployment, post-release assessment handoff.
+β owns: review approval outcome, merge, release mechanics, deployment, and β close-out. γ owns the post-release assessment.
 
 A release has parts: readiness check, version decision, changelog, release notes, tag, binaries, deployment, validation. Coherence = each part completed and each artifact matches the others (version in code = tag = changelog = binary = deployed agent). The released system is validated, not merely published.
 
@@ -196,8 +196,9 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
     - skills loaded: release, plus writing if used
     - decision: released version X.Y.Z
   - If the triadic protocol is active, β also writes:
-    - release / assessment evidence in the post-release artifact
+    - release evidence in the β close-out
     - β close-out for γ to review in the `.cdd/` protocol surface
+  - γ writes the post-release assessment after β's release and close-out are complete
   - If the branch has no primary branch artifact, the PR body must carry the trace instead.
 
 ## 3. Rules
@@ -261,6 +262,6 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 5. RELEASE.md with Outcome mirroring the ledger row
 6. Commit, tag (bare version), push
 7. Wait for release CI, deploy, validate with the specific fix
-8. Post-release assessment
+8. β close-out (γ writes PRA separately)
 
 **Verify:** Does `scripts/check-version-consistency.sh` pass? Does RELEASE.md start with the coherence delta? Does validation confirm the targeted incoherence is closed?
