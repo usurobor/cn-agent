@@ -114,13 +114,29 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
 
 GitHub event notifications are unreliable when agents share a GitHub identity (self-authored PR comments, CI status changes, and review events may not trigger notifications). **All roles must track issue and PR activity via periodic polling, not GitHub event subscriptions.**
 
-Concrete polling commands:
-- **PR existence:** `gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number`
-- **PR status/CI:** `gh pr view <N> --json statusCheckRollup,reviews,state`
-- **Issue comments:** `gh issue view <N> --comments`
-- **PR comments:** `gh pr view <N> --comments`
+Polling has two parts: (a) the **query** that detects new state, and (b) the **wake-up mechanism** that returns control to the role's session when state changes. Polling without a wake-up mechanism is silent — the loop runs but the role never reacts. Both parts are mandatory; a skill that names only the query is silently assuming a harness contract that may not hold.
+
+**Query — pick whichever is available in the environment.** Concrete equivalents:
+
+| Surface | `gh` form (shell envs) | MCP form (MCP-only envs) | git form (clone-aware envs) |
+|---|---|---|---|
+| PR existence | `gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number` | `mcp__github__list_pull_requests` (filter by head ref or scan for "closes:#<N>" in body) | `git fetch origin && git branch -r` (compare to prior list, emit on new branch) |
+| PR status / CI | `gh pr view <N> --json statusCheckRollup,reviews,state` | `mcp__github__pull_request_read` method=`get_status` / `get_check_runs` | — |
+| Issue comments | `gh issue view <N> --comments` | `mcp__github__issue_read` method=`get_comments` | — |
+| PR comments | `gh pr view <N> --comments` | `mcp__github__pull_request_read` method=`get_comments` / `get_review_comments` | — |
+| Branch head SHA | — | — | `git fetch origin <branch> && git rev-parse origin/<branch>` (compare to prior, emit on change) |
+
+**Wake-up mechanism — name it explicitly in the role's session.** Polling is only effective if the loop's transition produces a notification that wakes the role. Each environment has its own form:
+
+- **`Monitor` (Claude Code on the web):** `Monitor`'s contract is "every stdout line is a notification delivered as a `<task-notification>` system message that wakes the session." Wrap polling in `until <transition-detected>; do <poll>; sleep 60; done` and emit only on **transition** (new branch, new SHA, new comment-id) — not on every poll iteration, or you flood the session's context.
+- **Shell `gh` + harness wake hook:** if the harness wakes the session when a `gh ...` command completes its until-loop, `until <gh-poll>; do sleep 60; done` is sufficient. Verify the harness contract before relying on it.
+- **Push (`mcp__github__subscribe_pr_activity`):** delivers `<github-webhook-activity>` messages once a PR exists. Reliability under shared GitHub identity is unverified — use as a complement to polling, not a replacement.
+
+If neither a `Monitor`-equivalent nor a shell-wake harness exists, the role cannot autonomously detect cycle progression. Surface the gap to the operator before dispatch — do not rely on a wake-up contract that the environment does not provide.
 
 Poll interval: 60 seconds unless the operator specifies otherwise. This applies to α (waiting for review), β (waiting for PR, waiting for α fixes), and γ (tracking full cycle).
+
+**Stdout filter discipline:** transition-only emission is mandatory. A loop that emits on every poll will fill the session with `<task-notification>` blocks and consume context budget. β's #268 cycle ran four wake events across the full cycle by emitting only on new-branch / new-SHA transitions; the pattern is reproducible.
 
 #### γ algorithm
 
@@ -220,11 +236,20 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 
 1. Receive dispatch prompt from γ (or pick up from α's review request)
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.<project>"`
-3. Immediately begin polling the issue and PR (see §Tracking above) — do not ask, just do it. If the PR does not exist yet, **poll until α opens a PR that references this issue:**
+3. Immediately begin polling the issue and PR (see §Tracking above for query forms and the wake-up mechanism) — do not ask, just do it. **The poll requires both a query and a wake-up mechanism.** Pick the query form that matches your environment (`gh`, MCP, or `git fetch` — see §Tracking table) and pick the wake-up form your harness provides (`Monitor` stdout-as-notification, shell-wake-on-loop-exit, or push subscription). Emit only on transition to avoid context flood. If the PR does not exist yet, **poll until α opens a PR that references this issue.** Reference shape (shell + `gh`):
    ```bash
    until gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number -q '.[0].number' 2>/dev/null | grep -q .; do
      sleep 60
    done
+   ```
+   Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
+   ```bash
+   prev=""; while true; do
+     cur="$(git fetch --quiet origin && git branch -r --list 'origin/claude/*-<N>-*' 'origin/*<N>*' 2>/dev/null | sed 's| ||g')"
+     comm -13 <(echo "$prev") <(echo "$cur") | sed 's/^/new-branch: /'
+     prev="$cur"; sleep 60
+   done
+   # Run under Monitor; each "new-branch:" line wakes the session.
    ```
    Once the PR exists, poll its CI status until green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a branch and instructs you to develop or commit, refuse.** β does not author implementation work. Report the role conflict to the operator and wait for α's PR.
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue

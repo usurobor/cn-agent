@@ -173,7 +173,21 @@ Fix the issue instead.
 
 #### Step 3 — Subscribe and dispatch α and β
 
-Immediately begin polling the issue (see CDD.md §Tracking) — do not ask, just do it. γ must track the full cycle: issue activity, PR updates, CI status, and review comments. Start polling before dispatching. When α opens a PR, poll that too.
+Immediately begin polling the issue (see CDD.md §Tracking for query forms and the wake-up mechanism) — do not ask, just do it. γ must track the full cycle: issue activity, PR updates, CI status, and review comments. Start polling before dispatching. When α opens a PR, poll that too.
+
+**Polling requires both a query and a wake-up mechanism.** Picking a query form (`gh`, MCP, or `git fetch`) without confirming a wake-up form (`Monitor` stdout-as-notification, shell-wake-on-loop-exit, or push subscription) is silent — the loop runs but γ never reacts. Verify both before dispatch. If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, surface the gap to the operator before dispatching α and β; γ cannot autonomously coordinate without a wake-up contract.
+
+For MCP-only γ environments (e.g. Claude Code on the web), the canonical wake-up shape is `Monitor` wrapping a transition-only stdout filter:
+
+```bash
+prev=""; while true; do
+  cur="$(git fetch --quiet origin && git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g')"
+  comm -13 <(echo "$prev") <(echo "$cur") | sed 's/^/new-branch: /'
+  prev="$cur"; sleep 60
+done
+```
+
+Each `new-branch:` stdout line becomes a `<task-notification>` that wakes the session. Once a PR exists, replace the branch-list query with a per-branch SHA query (`git rev-parse origin/<branch>`) for round-2/3 detection. Run under `Monitor`; emit only on transition.
 
 Then produce both prompts at dispatch time. β begins polling the issue and starts intake while α implements — β does not need to wait for the PR to exist.
 

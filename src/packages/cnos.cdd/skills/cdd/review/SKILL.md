@@ -226,12 +226,16 @@ Check whether the change creates obligations on code it did not touch.
   - ❌ "Exclusions look correct in git_diff"
   - ✅ Grep every use of the exclusion set and verify parity
 
-2.2.5. **Cross-reference validation (file moves)**
-  - If files move or are renamed, grep for old paths across all live docs.
+2.2.5. **Cross-reference validation (path-going-stale events)**
+  - If files **move, are renamed, or are deleted**, grep for old paths across all live docs and code. A deletion is structurally a move-to-nothing — every consumer of the deleted path now holds a stale reference.
   - Any live stale path is a D-level blocker.
+  - This rule is symmetric: the trigger is "any path-going-stale event," not just renames. Additive contract changes (new path) require peer enumeration of consumers; subtractive contract changes (deleted path) require peer enumeration of references. The same rule covers both directions.
+  - Cross-package reach: live consumers may live in adjacent packages or in `mindsets/`, `docs/`, OCaml sources, etc. Grep over `src/` and `docs/`, not just the package being changed.
   - Frozen snapshot dirs may allow path-only repair if the docs system explicitly permits it.
-  - ❌ Approve a file-move PR without grepping
-  - ✅ Grep old path → zero live matches
+  - ❌ Approve a file-delete PR without grepping for live consumers of the deleted path
+  - ❌ "moves and renames" read literally — a deletion has no consumers in the package, so the grep is skipped
+  - ✅ Grep old path → zero live matches across the full repo (excluding historical audit docs)
+  - *Derives from: #268 F1 — α deleted `review/checklist.md` per AC9 but did not grep for the path; β R1 caught one live consumer in `cnos.core/mindsets/ENGINEERING.md`. The rule was loaded as Tier 1 but its phrasing biased application toward renames only.*
 
 2.2.6. **Execution timeline for state-changing paths**
   - If code crosses process or binary boundaries, trace which process owns which values at each step.
