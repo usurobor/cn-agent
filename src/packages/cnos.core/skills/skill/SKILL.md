@@ -23,10 +23,15 @@ If the formula is generic, the artifact is not ready. If the artifact is really 
 
 ## Algorithm
 
+Skills are written top-down. Start with the governing question and coherence formula. Structure follows from purpose. Details serve structure. Rules are evidence for the formula, not the formula itself.
+
 1. Define — classify the artifact, name the domain formula, the governing question, the parts, and the failure mode.
 2. Unfold — organize the artifact so each section serves the formula in a necessary order.
 3. Rules — write imperative rules with stable IDs and contrastive ❌/✅ examples.
 4. Verify — check that the artifact, its classification, and its kata surface all match.
+
+- ❌ Start with a list of rules and try to find a formula that justifies them
+- ✅ Start with the formula; rules exist to make it executable
 
 ---
 
