@@ -305,7 +305,7 @@ Check whether the change creates obligations on code it did not touch.
     - kernel vs package responsibility
     - transport vs protocol semantics
     - command dispatch vs domain logic
-  - Load `core/design` when this check is active.
+  - Load `src/packages/cnos.core/skills/design/SKILL.md` when this check is active.
   - Check the change against these questions:
 
   #### A. Reason to change
@@ -507,12 +507,14 @@ Before submitting a review:
 
 ## 5. Severity
 
-| Level | Meaning | Action |
-|-------|---------|--------|
-| **D** | Incoherence demonstrable with a test or direct contradiction | REQUEST CHANGES |
-| **C** | Real incoherence, non-blocking | APPROVED with note |
-| **B** | Improvement opportunity | APPROVED |
-| **A** | Polish | APPROVED |
+Severity describes the incoherence; **merge readiness is independent** — A/B/C/D findings are all not merge-ready until fixed on the branch (or explicitly deferred by design scope per §7.0). No "approved with follow-up."
+
+| Severity | Meaning | Review verdict | Merge readiness |
+|----------|---------|----------------|-----------------|
+| **D** | Demonstrable incoherence (test or direct contradiction) | REQUEST CHANGES | not merge-ready |
+| **C** | Real incoherence, locally non-blocking | APPROVED only after on-branch fix + re-check, otherwise REQUEST CHANGES | not merge-ready until fixed |
+| **B** | Improvement opportunity | APPROVED with required on-branch fix | not merge-ready until fixed |
+| **A** | Polish | APPROVED with required on-branch fix | not merge-ready until fixed |
 
 ### 5.1. Finding taxonomy
 

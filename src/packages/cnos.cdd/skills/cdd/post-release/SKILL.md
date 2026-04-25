@@ -11,7 +11,9 @@ triggers: [post-release, assessment, retrospective, what shipped]
 
 # Post-Release Assessment
 
-After every release, assess what shipped, what the system looks like now, and what to do next. This is CDD §9 (Assessment) and §10 (Closure) executed as a concrete procedure.
+This module implements CDD steps 11–13: post-release observation, γ-owned assessment (PRA), and close-out / closure evidence. After every release, assess what shipped, what the system looks like now, and what to do next. This is CDD §9 (Assessment) and §10 (Closure) executed as a concrete procedure.
+
+Canonical artifact locations (PRA path, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix). Tags are bare `X.Y.Z` everywhere; `v`-prefixed tags are legacy and warn-only.
 
 ## Who
 
@@ -29,14 +31,16 @@ After every `git tag` + `gh release create`. No exceptions — patch, minor, or 
 
 ## Output
 
-The assessment produces one artifact with the following sections:
+The assessment produces one artifact at the canonical path `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (for the CDD package: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). All version strings in the artifact are bare `X.Y.Z`; do not use a `v` prefix.
+
+The artifact has the following sections:
 
 ```markdown
-## Post-Release Assessment — vX.Y.Z
+## Post-Release Assessment — X.Y.Z
 
 ### 1. Coherence Measurement
-- **Baseline:** vPREV — α _, β _, γ _
-- **This release:** vX.Y.Z — α _, β _, γ _
+- **Baseline:** PREV — α _, β _, γ _
+- **This release:** X.Y.Z — α _, β _, γ _
 - **Delta:** which axes improved / held / regressed and why
 - **Coherence contract closed?** Expected effect achieved? If not, what remains?
 
@@ -140,13 +144,13 @@ Rules:
 
 ### Step 2: Update CHANGELOG TSC table
 
-Add a row:
+Add a row in the canonical bare-version format. The Level column is required (per CDD.md §9.1 and `release/SKILL.md` §2.4):
 
 ```
-| vX.Y.Z | C_Σ | α | β | γ | Coherence note |
+| X.Y.Z | C_Σ | α | β | γ | Level | Coherence note |
 ```
 
-The coherence note describes which incoherence was reduced, not what feature was added.
+The coherence note describes which incoherence was reduced, not what feature was added. The Level column records the cycle-level engineering level (L5 / L6 / L7) per CDD.md §9.1.
 
 **Scoring sequence:** The CHANGELOG TSC entry written at release time is **provisional** — it is β's release-time score. The post-release assessment is γ's independent score and MAY revise the CHANGELOG entry. If the assessment disagrees with the release-time score, update the CHANGELOG to match the assessment. The assessment governs.
 

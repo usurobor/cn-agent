@@ -17,6 +17,8 @@ triggers: [release, ship, tag, version, deploy, changelog]
 
 β owns: review approval outcome, merge, release mechanics, deployment, and β close-out. γ owns the post-release assessment.
 
+Canonical artifact locations (β close-out path, RELEASE.md, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix). All tags are bare `X.Y.Z`; `v`-prefixed tags are legacy and warn-only.
+
 A release has parts: readiness check, version decision, changelog, release notes, tag, binaries, deployment, validation. Coherence = each part completed and each artifact matches the others (version in code = tag = changelog = binary = deployed agent). The released system is validated, not merely published.
 
 Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: releasing without validation, so breakage ships silently. Or: incomplete deploy where artifacts ship but assessment never lands.
@@ -232,10 +234,12 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - ✅ For #46: send a message, check telemetry for receipts, confirm artifacts exist
 
 3.6. **If CI fails post-tag, amend don't re-tag**
-  - `git commit --amend --no-edit && git tag -d vX.Y.Z && git tag -a vX.Y.Z && git push --force --tags`
+  - `git commit --amend --no-edit && git tag -d X.Y.Z && git tag X.Y.Z && git push --force origin main X.Y.Z`
+  - Tags are **bare** (`X.Y.Z`, never `vX.Y.Z`) — see §2.6 and CDD.md §5.3a
   - Keeps a clean single tag, single release commit
-  - ❌ v3.9.1, v3.9.1-fix, v3.9.1-fix2
-  - ✅ One tag, amended until CI green
+  - ❌ `git tag -d vX.Y.Z && git tag -a vX.Y.Z && git push --force --tags` (mixes legacy v-prefix; force-pushes all tags)
+  - ❌ `3.9.1`, `3.9.1-fix`, `3.9.1-fix2` (proliferating tags)
+  - ✅ One bare tag, amended until CI green
 
 3.7. **RELEASE.md must exist before tag**
   - The release commit must include `RELEASE.md` at repo root

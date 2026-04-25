@@ -124,7 +124,7 @@ Poll interval: 60 seconds unless the operator specifies otherwise. This applies 
 
 #### γ algorithm
 
-The compact algorithm is here; `gamma/SKILL.md` expands each phase into executable detail with gates, katas, and selection mechanics. When they diverge on role execution, the skill governs.
+The compact algorithm is here; `gamma/SKILL.md` expands each phase into executable detail with gates, katas, and selection mechanics. When they diverge on role-local execution detail, the skill governs, provided it does not alter role ownership, lifecycle order, selection rules, dispatch contract, artifact contract, or closure obligations (those remain CDD.md's authority — see `cdd/SKILL.md` Conflict rule).
 
 **Phase 1 — Dispatch**
 
@@ -191,13 +191,13 @@ Load src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md.
 Issue: gh issue view <number>
 ```
 
-Parameters: `<project>` is the project name (e.g. `cnos`, `myapp`). Git identity uses `<role>@cdd.<project>` (e.g. `alpha@cdd.cnos`). `<number>` is the issue or PR number.
+Parameters: `<project>` is the project name (e.g. `cnos`, `myapp`). Git identity uses `<role>@cdd.<project>` (e.g. `alpha@cdd.cnos`). `<number>` is the **issue number** for dispatch prompts; β and α discover the PR from issue activity, α's review request, or the polling commands in §Tracking. A PR number may be used only for post-hoc review/recovery workflows, in which case the prompt must say explicitly that it is PR-scoped.
 
 The prompt names the role, provides parameters, and points to the issue or PR. The CDD skill tells each role what to load (§4.4) and what to do (§1.4). γ does not enumerate skills or steps in the prompt — that is the skill's job. If the prompt needs to restate the algorithm, the algorithm is not clear enough — fix the skill.
 
 #### α algorithm
 
-The compact algorithm is here; `alpha/SKILL.md` expands each step into executable detail with self-coherence, pre-review gate, peer enumeration, and harness audit procedures. When they diverge on role execution, the skill governs.
+The compact algorithm is here; `alpha/SKILL.md` expands each step into executable detail with self-coherence, pre-review gate, peer enumeration, and harness audit procedures. When they diverge on role-local execution detail, the skill governs, provided it does not alter role ownership, lifecycle order, selection rules, dispatch contract, artifact contract, or closure obligations (those remain CDD.md's authority — see `cdd/SKILL.md` Conflict rule).
 
 1. Receive dispatch prompt from γ
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "alpha"` and `git config user.email "alpha@cdd.<project>"`
@@ -443,25 +443,62 @@ Before creating the branch, verify:
 
 ### 4.4 Skill loading
 
-Skills are loaded in three tiers. All tiers are mandatory for substantial changes.
+Skills are loaded in tiers. For substantial changes, all applicable tiers are mandatory. The tier structure is executable: every role can answer "did I load what this tier requires?" without ambiguity.
 
-**Tier 1 — CDD lifecycle (always loaded by every role):**
-All skills under `cdd/` — the master CDD skill plus sub-skills (issue, design, review, release, post-release). These define the lifecycle. Loading these is not optional and not issue-dependent.
+**Tier 1a — CDD authority (always loaded by every role):**
 
-**Tier 2 — General engineering (always loaded by α and β):**
-All general skills under `eng/` that apply regardless of domain: code, design, ship, test, document, process-economics, rca, follow-up, write, skill. These constrain how any code is written or reviewed. Loading these is not optional and not issue-dependent.
+- `CDD.md` (this document)
+- `src/packages/cnos.cdd/skills/cdd/SKILL.md` (the loader entrypoint)
+- the current role skill: `alpha/SKILL.md`, `beta/SKILL.md`, or `gamma/SKILL.md`
+
+These are loaded unconditionally. Roles do not load peer role skills.
+
+**Tier 1b — CDD lifecycle phase skills (load per current phase or work shape):**
+
+Lifecycle sub-skills under `cdd/`:
+
+- `issue/` — when interpreting issue ACs or quality
+- `design/` — when producing or judging design-required work
+- `plan/` — when implementation sequencing is non-trivial
+- `review/` — when reviewing
+- `release/` — when merging/tagging/deploying
+- `post-release/` — when assessing or closing
+
+Load by phase. Roles that operate across multiple phases load the matching set.
+
+**Tier 1c — β closure bundle (always loaded by β):**
+
+β always loads:
+
+- `review/SKILL.md`
+- `release/SKILL.md`
+
+γ always loads `post-release/SKILL.md` because γ owns the post-release assessment (PRA, see §5.3a Artifact Location Matrix).
+
+**Tier 2 — General engineering (load the applicable bundle from `src/packages/cnos.eng/skills/eng/README.md`):**
+
+Pick the bundle for the work shape (coding, review, design, runtime/platform, tooling, writing). Available skills under `src/packages/cnos.eng/skills/eng/`:
+
+- `code/`, `write-functional/`, `ocaml/`, `go/`, `typescript/`, `test/`, `performance-reliability/`
+- `evolve/`, `process-economics/`, `rca/`
+- `ship/`, `follow-up/`
+- `tool/`, `ux-cli/`
+- `document/`
+
+The skill that owns skill-program/frontmatter coherence is `src/packages/cnos.core/skills/skill/SKILL.md` (load when authoring or modifying skills). The skill that owns architecture/design reasoning is `src/packages/cnos.core/skills/design/SKILL.md` (load when reviewing or producing architecture-level decisions).
 
 **Tier 3 — Issue-specific (named per issue):**
+
 Skills that depend on what the work touches. The issue's "Skills and constraints" section names these. Examples:
+
 - Language: `eng/<language>`
 - Domain: `eng/ux-cli`, `eng/performance-reliability`, `eng/tool`
 - Architecture: `eng/evolve`, `eng/write-functional`
+- Skill authoring: `cnos.core/skills/skill`
 
-γ names Tier 3 skills when creating the issue. If the issue doesn't name them, α identifies them from the work shape before coding.
+γ names only Tier 3 in issues. Tier 1 and Tier 2 are mandatory and not repeated.
 
 **Read each SKILL.md file before beginning any work step.** Naming a skill without reading it is not loading it. Loaded skills are **hard generation constraints** — not post-hoc review checklists.
-
-Rationale: Tier 1 and 2 are always loaded because omitting them is how findings happen at review time instead of authoring time. Tier 3 is selective because language and domain skills only apply when the work touches that language or domain.
 
 The Tier 3 skill set must be stated alongside mode. Example:
 
@@ -472,13 +509,20 @@ Tier 3 skills: eng/<language>, eng/ux-cli
 
 When in doubt about mode, apply CAP: if the answer is already in the system, cite it (MCA) — don't reinvent it (MCI). If two paths close the same gap, take the lighter one unless the heavier one buys durability the lighter one cannot.
 
-Review (step 8) checks whether the implementation is consistent with all three tiers. Findings that a loaded skill would have prevented are process debt (§6.1).
+Review (step 8) checks whether the implementation is consistent with all loaded tiers. Findings that a loaded skill would have prevented are process debt (§6.1).
 
 ---
 
 ## 5. Artifact Contract
 
 CDD is artifact-driven. Every substantial cycle must produce inspectable artifacts.
+
+### 5.0 Terminology: post-release, assessment, close-out, closure
+
+- **Post-release** is the umbrella phase after release. It covers lifecycle steps 11–13: observe, assess, close.
+- **Assessment** (a.k.a. post-release assessment, PRA) is the γ-owned repo artifact at the canonical path declared in §5.3a Artifact Location Matrix.
+- **Close-out** is a role-local findings record written by α, β, and γ at the canonical paths in §5.3a. Close-outs feed γ's PRA and triage. They are not a substitute for the PRA.
+- **Closure** is the final cycle state: PRA committed, all close-outs on main, immediate outputs executed, deferred outputs committed, hub memory updated.
 
 ### 5.1 Bootstrap
 
@@ -526,21 +570,21 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 | 2 | Branch | build | α | valid branch name | — | branch + CDD Trace row | mechanical | always | cdd |
 | 3 | Bootstrap | build | α | version directory + manifest README + declared stubs | §5.1 | branch diff | mechanical | substantial only | cdd |
 | 4 | Gap | build | α | named incoherence / coherence contract | PR template §Gap or design/SKILL.md §3.1 | primary branch artifact | agent | always | cdd |
-| 5 | Mode | build | α | mode + active skills (+ bundle/level if used) | PR template §Mode or design/SKILL.md §3.1 | primary branch artifact | agent | always | cdd, eng/README |
+| 5 | Mode | build | α | mode + active skills (+ bundle/level if used) | PR template §Mode or design/SKILL.md §3.1 | primary branch artifact | agent | always | cdd + applicable eng bundle from `src/packages/cnos.eng/skills/eng/README.md` |
 | 6a | Design | build | α | design artifact or explicit "not required" | design/SKILL.md §3.1 | primary branch artifact | agent | substantial only | design |
-| 6b | Plan | build | α | plan artifact or explicit "not required" | `docs/gamma/cdd/PLAN-TEMPLATE.md` | primary branch artifact or linked plan | agent | L7 / cycle-sized | design |
-| 6c | Tests | build | α (or delegated implementer) | test files or explicit reason none apply | — (diff) | diff / primary branch artifact | agent | always | testing |
-| 6d | Code | build | α (or delegated implementer) | implementation diff or "docs/process only" | — (diff) | diff / primary branch artifact | agent | always | active generation skills |
-| 6e | Docs | build | α (or delegated implementer) | changed canonical docs / specs / READMEs | — (diff) | diff | agent | when docs affected | writing |
+| 6b | Plan | build | α | plan artifact or explicit "not required" | `docs/gamma/cdd/PLAN-TEMPLATE.md` | primary branch artifact or linked plan | agent | L7 / cycle-sized | plan |
+| 6c | Tests | build | α (or delegated implementer) | test files or explicit reason none apply | — (diff) | diff / primary branch artifact | agent | always | eng/test |
+| 6d | Code | build | α (or delegated implementer) | implementation diff or "docs/process only" | — (diff) | diff / primary branch artifact | agent | always | active loaded Tier 2/Tier 3 generation skills (e.g. eng/code, eng/ocaml, eng/go, eng/typescript, eng/tool, eng/ux-cli) |
+| 6e | Docs | build | α (or delegated implementer) | changed canonical docs / specs / READMEs | — (diff) | diff | agent | when docs affected | eng/document for durable docs; eng/write-functional for functional/dataflow prose; `cnos.core/skills/skill` when authoring or modifying skills |
 | 6f | Delegated handoff | build | α → implementer | implementation prompt with: active skills, test requirements per module, engineering conventions, artifact order + self-verification report from implementer | alpha/SKILL.md §2.2 | prompt + report | delegator + implementer | when implementation is delegated | cdd |
 | 7 | Self-coherence | build | α (or delegated implementer) | SELF-COHERENCE.md | `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md` | version directory | agent | substantial only | cdd |
 | 7a | Pre-review | build | α | branch rebased onto current `main`; PR body carries CDD Trace through step 7; tests reference ACs; known debt explicit; **schema/shape audit across all touched files** when contracts change — when introducing or changing a canonical form, verify (a) the new form is present across all relevant files AND (b) any superseded form has been removed; cite the verifying command (e.g. grep that returns exactly one match per file); **workspace-global library-name uniqueness check** when adding a new `(library (name X))` stanza; **post-patch re-audit** — after any mid-cycle code change, re-read the PR body top-to-bottom and verify every CDD Trace / invariant / self-coherence row still matches HEAD; **CI green on head commit** before requesting review (draft-until-green when local verification unavailable) | alpha/SKILL.md §2.6 | PR body | mechanical | always | cdd |
 | 8 | Review | review | β | review artifact / PR review / comment link | review/SKILL.md output format | review surface | reviewer | always | review |
 | 9 | Gate + merge | release | β | gate result / release-readiness evidence + PR merge | `docs/gamma/cdd/GATE-TEMPLATE.md` | release or review surface | mechanical + reviewer | always | release |
-| 10 | Release | release | β | CHANGELOG row, tag, release note | CHANGELOG.md ledger + release/SKILL.md | release surface | agent + mechanical | always | release, writing |
+| 10 | Release | release | β | CHANGELOG row, tag, release note | CHANGELOG.md ledger + release/SKILL.md | release surface | agent + mechanical | always | release + eng/document when authoring release notes/changelog prose |
 | 11 | Observe | close | γ | post-release observation result | post-release/SKILL.md | post-release assessment | γ | always | post-release |
 | 12 | Assess | close | γ | POST-RELEASE-ASSESSMENT.md | post-release/SKILL.md output template | version directory | γ | always | post-release |
-| 12a | Skill patch | close | γ | skill/spec patches for recurring failure modes identified in §3; synced across all affected surfaces under src/packages/ | post-release/SKILL.md §3 + gamma/SKILL.md §2.10-§2.12 | same commit as assessment or γ closeout | γ | when §3 identifies recurring failure or skill gap | post-release, cdd |
+| 12a | Skill patch | close | γ | skill/spec patches for recurring failure modes identified in close-out triage or PRA §3; synced across all affected surfaces under src/packages/ | post-release/SKILL.md §3 + gamma/SKILL.md §2.7–§2.10 | same commit as PRA when identified during assessment, otherwise γ close-out follow-on commit | γ | when close-outs or PRA identify a recurring failure or skill gap | post-release, cdd |
 | 13 | Close | close | γ | immediate outputs executed (incl. 12a patches) + deferred committed | post-release/SKILL.md §6 CDD Closeout | post-release assessment | γ | always | post-release |
 
 **Primary branch artifact:** the PR body (`.github/PULL_REQUEST_TEMPLATE.md`) for L5/L6 changes, or the design artifact (design/SKILL.md §3.1) for larger changes.
@@ -553,6 +597,29 @@ Rules:
 - "Not required" is valid only when stated explicitly.
 - An omitted step with no explicit note is incomplete, not implicit.
 - Small-change mode may collapse steps 4–7 into commit/PR-body evidence, but the same distinctions still apply.
+
+### 5.3a Artifact Location Matrix
+
+For release-scoped triadic cycles, every named artifact has exactly one canonical location. Verifiers (e.g. `cn cdd-verify`) enforce these paths as canonical and treat any other location as legacy/warn-only.
+
+| Artifact | Canonical repo location | CDD package default | Noncanonical / legacy / scratch |
+|---|---|---|---|
+| Version snapshot directory | `docs/{tier}/{bundle}/{X.Y.Z}/` | `docs/gamma/cdd/{X.Y.Z}/` | `.cdd/releases/{X.Y.Z}/` is **not** the frozen snapshot — it is triadic protocol/scratch space |
+| POST-RELEASE-ASSESSMENT.md (PRA) | `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `.cdd/releases/{X.Y.Z}/beta/POST-RELEASE-ASSESSMENT.md` and `.cdd/releases/{X.Y.Z}/beta/ASSESSMENT.md` are legacy/warn-only |
+| α close-out | `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` | same | PR comment is acceptable evidence only for PR-scoped, unreleased, non-triadic cycles |
+| β close-out | `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md` | same | PR comment is acceptable evidence only for PR-scoped, unreleased, non-triadic cycles |
+| γ close-out | `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` | same | none — γ close-out is always a repo artifact |
+| γ kata verdict (optional) | `.cdd/releases/{X.Y.Z}/gamma/KATA-VERDICT.md` when kata is available | same | warn-only when kata unavailable |
+| CHANGELOG ledger row | `CHANGELOG.md` (Release Coherence Ledger) — must include Version, C_Σ, α, β, γ, **Level**, coherence note | same | none |
+| RELEASE.md | `RELEASE.md` at repo root, included in the release commit | same | CI auto-generated body is not an acceptable substitute |
+| Hub memory | external agent-hub state (not a repo artifact) | external agent-hub state | the PRA must record path / commit-sha / unavailable-reason; verifiers do not inspect the external hub directly |
+
+Rules:
+
+- `.cdd/` is triadic protocol space and role-local close-out / close-out evidence storage. It is **not** the canonical frozen post-release snapshot.
+- `docs/{tier}/{bundle}/{X.Y.Z}/` is the canonical frozen post-release snapshot directory. The PRA lives there; close-outs do not.
+- Tags are bare `X.Y.Z` everywhere (VERSION file, git tag, branch name version segment, CHANGELOG row, RELEASE.md, snapshot directory). `v`-prefixed tags are legacy and warn-only.
+- For PR-scoped, unreleased, non-triadic cycles, close-outs may be PR comments; release-scoped triadic cycles require the canonical repo paths above.
 
 ### 5.4 CDD Trace
 
@@ -568,12 +635,16 @@ Required format:
 |------|----------|---------------|----------|
 | 0 Observe | — | — | Observation inputs read; selected signal |
 | 1 Select | — | — | Selected gap |
+| 2 Branch | branch | cdd | Branch created / verified against §4.2 / §4.3 |
+| 3 Bootstrap | version dir | cdd | Bootstrap stubs created or explicit small-change exemption |
 | 4 Gap | primary artifact | — | Named incoherence / coherence contract |
 | 5 Mode | primary artifact | skill1, skill2 | Work shape, level (if used), mode, active skills |
 | 6 Artifacts | design / plan / tests / docs | — | Artifact progress or explicit "not required" |
+| 7 Self-coherence | SELF-COHERENCE.md / PR body | cdd | AC-by-AC self-check completed |
+| 7a Pre-review | PR body | cdd | Pre-review gate passed (alpha/SKILL.md §2.6) |
 | 8 Review | review surface | review (+ others if loaded) | CLP review result |
-| 9 Gate | review or release surface | release (+ writing if loaded) | Release-readiness decision |
-| 10 Release | release surface | release (+ writing if loaded) | Tag / changelog / release decision |
+| 9 Gate | review or release surface | release (+ eng/document if release prose authored) | Release-readiness decision |
+| 10 Release | release surface | release (+ eng/document if release prose authored) | Tag / changelog / release decision |
 ```
 
 Rules:
@@ -805,7 +876,7 @@ That is the handoff from step 13 back to step 0.
 
 ### 11.2 Companion rationale
 
-RATIONALE.md explains why CDD takes this shape.
+`docs/gamma/cdd/RATIONALE.md` explains why CDD takes this shape. Frozen release snapshot directories under `docs/gamma/cdd/{X.Y.Z}/` may also contain version-local rationale files.
 
 ---
 

@@ -31,12 +31,14 @@ When acting as β:
 2. load this file as the β role surface
 3. load `review/SKILL.md`
 4. load `release/SKILL.md`
-5. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue and diff
+5. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue and diff (Tier 2 bundles per `src/packages/cnos.eng/skills/eng/README.md`; `cnos.core/skills/design` when the architecture/design check is active per `review/SKILL.md` §2.2.14)
+
+β does **not** load `post-release/SKILL.md`: γ owns the PRA. β's release close-out is captured in `release/SKILL.md`.
 
 The detailed ordered step sequence is in `CDD.md` §1.4 (β algorithm).
-This file owns β's role boundary, dispatch contract, and phase-linking rules.
+This file owns β's role boundary, dispatch contract, and phase-linking rules. Canonical artifact locations (β close-out path, assessment path, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix).
 
-`review/`, `release/`, and `post-release/` are the executable surfaces for each phase.
+`review/` and `release/` are the executable surfaces for the review and release phases.
 
 ## Phase map
 
@@ -86,6 +88,8 @@ No "approve with follow-up" except an explicitly named design-scope deferral tha
 
 The same β session that reviews and merges also owns the release and β close-out.
 Do not defer these to a separate session or role unless the operator explicitly reassigns.
+
+For release-scoped triadic cycles, the β close-out is committed to `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md` per `CDD.md` §5.3a. PR comments are acceptable only for PR-scoped, unreleased, non-triadic cycles.
 
 - ❌ "Merge succeeded; someone else can write the β close-out later"
 - ✅ "Review → narrow → merge → release → β close-out in one β pass, then γ writes the PRA"

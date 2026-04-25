@@ -32,8 +32,10 @@ When acting as γ:
 1. load `CDD.md` as the canonical lifecycle, selection rules, and role contract
 2. load this file as the γ role surface
 3. load `issue/SKILL.md`
-4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics)
+4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics) and step 12a skill/spec patches
 5. load other lifecycle sub-skills only when the selected gap requires them
+
+Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix).
 
 `CDD.md` is the only canonical source for:
 - the ordered γ lifecycle (`CDD.md` §1.4, steps 1–15)
@@ -231,13 +233,15 @@ If β deferred a mechanical release step because of environment constraints, γ 
 ### 2.7. Steps 8–9 — Triage close-outs explicitly
 
 Before close-out, collect:
-- α close-out
-- β close-out
+- α close-out at `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md`
+- β close-out at `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md`
 
-Then write the post-release assessment per `post-release/SKILL.md`. The PRA is γ's artifact — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
+(see `CDD.md` §5.3a Artifact Location Matrix; PR comments are acceptable only for PR-scoped, unreleased, non-triadic cycles.)
 
-For each finding, record one disposition using CAP:
-1. **Immediate MCA available** → ship now
+Then write the post-release assessment per `post-release/SKILL.md` at the canonical path `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (for the CDD package itself: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). The PRA is γ's artifact — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
+
+γ triages all findings from both close-outs and the PRA. For each finding, record one disposition using CAP:
+1. **Immediate MCA available** → ship now (γ lands the skill/spec patch per CDD §5.3 row 12a; if γ explicitly delegates the patch, name the delegate and the deadline in the triage record)
 2. **Project MCI** → file / update project issue or `.cdd/` artifact
 3. **Agent MCI** → update hub / adhoc thread
 4. **One-off** → drop explicitly
@@ -252,6 +256,7 @@ Minimum triage record:
 
 Silence is not triage.
 Every finding gets a disposition.
+Step 12a skill/spec patches are γ's to land or explicitly delegate — they do not become silent next-cycle work.
 
 ### 2.8. Steps 10–11 — Enforce cycle-iteration outputs when triggers fire
 

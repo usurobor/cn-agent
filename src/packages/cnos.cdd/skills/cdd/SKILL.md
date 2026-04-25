@@ -4,6 +4,7 @@ description: Coherence-Driven Development. Use for substantial changes that requ
 artifact_class: skill
 kata_surface: embedded
 governing_question: How do we evolve a system through a substantial change without losing coherence across selection, implementation, review, release, and closure?
+visibility: public
 triggers: [review, PR, release, issue, design, plan, assess, post-release, ship, tag]
 ---
 
@@ -11,7 +12,9 @@ triggers: [review, PR, release, issue, design, plan, assess, post-release, ship,
 
 ## Load order
 
-This skill is a loader entrypoint. When CDD applies:
+This skill is the package-visible loader entrypoint for CDD. External dispatch enters through `cdd` only — internal sub-skill triggers (`alpha`, `beta`, `gamma`, `issue`, `design`, `plan`, `review`, `release`, `post-release`) are advisory and are used only after `cdd` and the active role skill have been loaded. The runtime must not expose internal sub-skills as public dispatch entrypoints.
+
+When CDD applies:
 
 1. Load `CDD.md` in this directory as the canonical algorithm
 2. Load the role skill for the active role:

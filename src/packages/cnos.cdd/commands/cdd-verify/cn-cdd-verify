@@ -1,45 +1,64 @@
 #!/usr/bin/env bash
-# cn-cdd-verify — verify CDD cycle artifact completeness.
+# cn-cdd-verify — verify CDD cycle artifact completeness against the canonical
+# contract declared in src/packages/cnos.cdd/skills/cdd/CDD.md §5.3a (Artifact
+# Location Matrix).
 #
-# Checks that all required artifacts exist for a given cycle.
-# Designed for γ to run at cycle-close before declaring done.
+# Canonical paths (release-scoped triadic cycles):
+#   PRA          docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md
+#                CDD package default: docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md
+#   α close-out  .cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md
+#   β close-out  .cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md
+#   γ close-out  .cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md
+#   tag          bare X.Y.Z (no v prefix)
+#
+# Legacy paths produce warnings, not pass conditions.
 #
 # Usage:
-#   cn cdd-verify --version <ver>              check release-scoped cycle
-#   cn cdd-verify --pr <number>                check PR-scoped cycle (no release)
-#   cn cdd-verify --version <ver> --triadic    also check .cdd/ artifacts
+#   cn cdd-verify --version <ver>              release-scoped cycle (canonical contract)
+#   cn cdd-verify --pr <number>                PR-scoped cycle (no release)
+#   cn cdd-verify --version <ver> --triadic    also check canonical .cdd/ close-outs
 #
-# Exit 0 if all checks pass; non-zero on missing artifacts.
+# Optional:
+#   --bundle <path>   override bundle-relative PRA dir (default: docs/gamma/cdd)
+#   --repo-root <p>   override repo root detection (used for testing)
+#
+# Exit 0 if all required checks pass; non-zero on missing canonical artifacts.
 
 set -euo pipefail
 
 VERSION=""
 PR=""
 TRIADIC=false
-REPO_ROOT=""
+BUNDLE_DIR="docs/gamma/cdd"
+REPO_ROOT_OVERRIDE=""
 
 usage() {
   cat >&2 <<EOF
 Usage:
-  cn cdd-verify --version <ver>              release-scoped cycle
+  cn cdd-verify --version <ver>              release-scoped cycle (canonical contract)
   cn cdd-verify --pr <number>                PR-scoped cycle (no release)
-  cn cdd-verify --version <ver> --triadic    include .cdd/ artifact checks
+  cn cdd-verify --version <ver> --triadic    include canonical .cdd/ close-out checks
 
-Checks:
-  Core (always):
-    - PR exists and is merged
-    - α close-out present (PR comment or .cdd/)
-    - β close-out present (PR comment or .cdd/)
+Options:
+  --bundle <path>     bundle-relative PRA dir (default: docs/gamma/cdd)
+  --repo-root <path>  override repo root (testing)
 
-  Release-scoped (--version):
-    - CHANGELOG contains version entry
-    - Git tag exists
-    - Post-release assessment exists
+Canonical contract enforced (release-scoped):
+  - bare git tag X.Y.Z exists
+  - CHANGELOG contains the bare version
+  - canonical PRA exists at <repo>/<bundle>/<X.Y.Z>/POST-RELEASE-ASSESSMENT.md
+  - RELEASE.md present (warns if absent)
 
-  Triadic (--triadic):
-    - .cdd/releases/<ver>/gamma/ directory exists
-    - .cdd/releases/<ver>/gamma/CLOSE-OUT.md exists
-    - .cdd/releases/<ver>/gamma/KATA-VERDICT.md exists (if kata is available)
+Triadic adds:
+  - .cdd/releases/<X.Y.Z>/alpha/CLOSE-OUT.md
+  - .cdd/releases/<X.Y.Z>/beta/CLOSE-OUT.md
+  - .cdd/releases/<X.Y.Z>/gamma/CLOSE-OUT.md
+  - .cdd/releases/<X.Y.Z>/gamma/KATA-VERDICT.md (warn-only)
+
+Warnings (not failures):
+  - v-prefixed tag exists (legacy)
+  - legacy PRA at .cdd/releases/<X.Y.Z>/beta/{POST-RELEASE-ASSESSMENT,ASSESSMENT}.md
+  - PR-comment close-out only (canonical close-out missing)
 EOF
   exit 1
 }
@@ -49,6 +68,8 @@ while [[ $# -gt 0 ]]; do
     --version) VERSION="$2"; shift 2 ;;
     --pr) PR="$2"; shift 2 ;;
     --triadic) TRIADIC=true; shift ;;
+    --bundle) BUNDLE_DIR="$2"; shift 2 ;;
+    --repo-root) REPO_ROOT_OVERRIDE="$2"; shift 2 ;;
     -h|--help) usage ;;
     *) echo "Unknown option: $1" >&2; usage ;;
   esac
@@ -59,11 +80,14 @@ if [[ -z "$VERSION" && -z "$PR" ]]; then
   usage
 fi
 
-# Find repo root
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-  echo "Error: not in a git repository" >&2
-  exit 1
-}
+if [[ -n "$REPO_ROOT_OVERRIDE" ]]; then
+  REPO_ROOT="$REPO_ROOT_OVERRIDE"
+else
+  REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+    echo "Error: not in a git repository" >&2
+    exit 1
+  }
+fi
 
 PASS=0
 FAIL=0
@@ -98,11 +122,10 @@ check() {
 
 echo "## Core artifacts"
 
-# PR check
+# PR check (best-effort; warn rather than fail when offline)
 if [[ -n "$PR" ]]; then
   PR_NUM="$PR"
 else
-  # Try to find PR for this version via git log
   PR_NUM=""
   if command -v gh &>/dev/null; then
     PR_NUM=$(gh pr list --state merged --search "$VERSION" --json number -q '.[0].number' 2>/dev/null || echo "")
@@ -110,152 +133,107 @@ else
 fi
 
 if [[ -n "$PR_NUM" ]]; then
-  # Check PR is merged
-  PR_STATE=$(gh pr view "$PR_NUM" --json state -q '.state' 2>/dev/null || echo "UNKNOWN")
-  if [[ "$PR_STATE" == "MERGED" ]]; then
-    check "PR #${PR_NUM} merged" pass
-  elif [[ "$PR_STATE" == "UNKNOWN" ]]; then
-    check "PR #${PR_NUM} state" warn "could not query (gh auth?)"
-  else
-    check "PR #${PR_NUM} merged" fail "state: $PR_STATE"
-  fi
-
-  # Check for α close-out in PR comments
   if command -v gh &>/dev/null; then
-    ALPHA_CLOSEOUT=$(gh pr view "$PR_NUM" --json comments -q '.comments[].body' 2>/dev/null | grep -ci "close-out\|closeout\|close out\|cycle.finding\|no.new.finding\|no findings" || true)
-    ALPHA_CLOSEOUT="${ALPHA_CLOSEOUT:-0}"
-    if [[ "$ALPHA_CLOSEOUT" -gt 0 ]]; then
-      check "α close-out" pass "found in PR comments"
+    PR_STATE=$(gh pr view "$PR_NUM" --json state -q '.state' 2>/dev/null || echo "UNKNOWN")
+    if [[ "$PR_STATE" == "MERGED" ]]; then
+      check "PR #${PR_NUM} merged" pass
+    elif [[ "$PR_STATE" == "UNKNOWN" ]]; then
+      check "PR #${PR_NUM} state" warn "could not query (gh auth?)"
     else
-      # Check .cdd/ if triadic
-      if [[ "$TRIADIC" == true && -n "$VERSION" ]]; then
-        ALPHA_CDD="$REPO_ROOT/.cdd/releases/$VERSION/alpha"
-        if [[ -d "$ALPHA_CDD" ]] && ls "$ALPHA_CDD"/*CLOSE* &>/dev/null 2>&1; then
-          check "α close-out" pass "found in .cdd/"
-        else
-          check "α close-out" fail "not found in PR comments or .cdd/"
-        fi
-      else
-        check "α close-out" warn "not found in PR comments (check manually)"
-      fi
-    fi
-
-    BETA_CLOSEOUT=$(gh pr view "$PR_NUM" --json comments -q '.comments[].body' 2>/dev/null | grep -ci "close-out\|closeout\|close out\|cycle.finding\|no.new.finding\|no findings\|assessment" || true)
-    BETA_CLOSEOUT="${BETA_CLOSEOUT:-0}"
-    if [[ "$BETA_CLOSEOUT" -gt 0 ]]; then
-      check "β close-out" pass "found in PR comments"
-    else
-      if [[ "$TRIADIC" == true && -n "$VERSION" ]]; then
-        BETA_CDD="$REPO_ROOT/.cdd/releases/$VERSION/beta"
-        if [[ -d "$BETA_CDD" ]] && ls "$BETA_CDD"/*CLOSE* &>/dev/null 2>&1; then
-          check "β close-out" pass "found in .cdd/"
-        else
-          check "β close-out" fail "not found in PR comments or .cdd/"
-        fi
-      else
-        check "β close-out" warn "not found in PR comments (check manually)"
-      fi
+      check "PR #${PR_NUM} merged" fail "state: $PR_STATE"
     fi
   else
-    check "α close-out" warn "gh CLI not available"
-    check "β close-out" warn "gh CLI not available"
+    check "PR #${PR_NUM} state" warn "gh CLI not available"
   fi
 else
   check "PR identification" warn "could not determine PR number"
 fi
 
-# --- Release-scoped checks ---
+# --- Release-scoped canonical checks ---
 
 if [[ -n "$VERSION" ]]; then
   echo ""
-  echo "## Release artifacts (v${VERSION})"
+  echo "## Release artifacts (${VERSION})"
 
-  # CHANGELOG
+  # CHANGELOG: bare version required
   if [[ -f "$REPO_ROOT/CHANGELOG.md" ]]; then
     if grep -q "$VERSION" "$REPO_ROOT/CHANGELOG.md"; then
-      check "CHANGELOG entry" pass
+      check "CHANGELOG entry (bare $VERSION)" pass
     else
-      check "CHANGELOG entry" fail "version $VERSION not found in CHANGELOG.md"
+      check "CHANGELOG entry (bare $VERSION)" fail "version $VERSION not found in CHANGELOG.md"
     fi
   else
     check "CHANGELOG entry" warn "no CHANGELOG.md found"
   fi
 
-  # Git tag
-  if git tag -l "v${VERSION}" "$VERSION" 2>/dev/null | grep -q .; then
-    check "Git tag" pass
+  # Git tag: bare X.Y.Z required; v-prefix is legacy and warns
+  if git -C "$REPO_ROOT" tag -l "$VERSION" 2>/dev/null | grep -qx "$VERSION"; then
+    check "Git tag (bare $VERSION)" pass
   else
-    check "Git tag" fail "neither v${VERSION} nor ${VERSION} tag exists"
+    check "Git tag (bare $VERSION)" fail "canonical bare tag '$VERSION' not found"
+  fi
+  if git -C "$REPO_ROOT" tag -l "v$VERSION" 2>/dev/null | grep -qx "v$VERSION"; then
+    check "Legacy v-prefixed tag" warn "v$VERSION exists; v-prefixed tags are legacy/noncanonical"
   fi
 
-  # Post-release assessment
-  ASSESSMENT_PATHS=(
-    "$REPO_ROOT/.cdd/releases/$VERSION/beta/POST-RELEASE-ASSESSMENT.md"
-    "$REPO_ROOT/.cdd/releases/$VERSION/beta/ASSESSMENT.md"
-    "$REPO_ROOT/docs/gamma/cdd/$VERSION/POST-RELEASE-ASSESSMENT.md"
-  )
-  ASSESSMENT_FOUND=false
-  for p in "${ASSESSMENT_PATHS[@]}"; do
-    if [[ -f "$p" ]]; then
-      check "Post-release assessment" pass "$(basename "$(dirname "$p")")/$(basename "$p")"
-      ASSESSMENT_FOUND=true
-      break
+  # Canonical PRA path (CDD §5.3a)
+  CANON_PRA="$REPO_ROOT/$BUNDLE_DIR/$VERSION/POST-RELEASE-ASSESSMENT.md"
+  if [[ -f "$CANON_PRA" ]]; then
+    check "Canonical PRA" pass "$BUNDLE_DIR/$VERSION/POST-RELEASE-ASSESSMENT.md"
+  else
+    check "Canonical PRA" fail "expected $BUNDLE_DIR/$VERSION/POST-RELEASE-ASSESSMENT.md"
+  fi
+
+  # Legacy PRA paths warn-only
+  for legacy in \
+    "$REPO_ROOT/.cdd/releases/$VERSION/beta/POST-RELEASE-ASSESSMENT.md" \
+    "$REPO_ROOT/.cdd/releases/$VERSION/beta/ASSESSMENT.md"; do
+    if [[ -f "$legacy" ]]; then
+      check "Legacy PRA path" warn "${legacy#$REPO_ROOT/} present; canonical path is $BUNDLE_DIR/$VERSION/POST-RELEASE-ASSESSMENT.md"
     fi
   done
-  if [[ "$ASSESSMENT_FOUND" == false ]]; then
-    check "Post-release assessment" fail "not found in any expected location"
+
+  # RELEASE.md (warn-only — release artifact may have been overwritten by next cycle)
+  if [[ -f "$REPO_ROOT/RELEASE.md" ]]; then
+    check "RELEASE.md present" pass
+  else
+    check "RELEASE.md present" warn "absent (may have been overwritten by next release)"
   fi
 fi
 
-# --- Triadic checks ---
+# --- Triadic canonical close-out checks ---
 
 if [[ "$TRIADIC" == true && -n "$VERSION" ]]; then
   echo ""
-  echo "## Triadic protocol artifacts (.cdd/)"
+  echo "## Triadic close-outs (.cdd/releases/$VERSION/)"
 
   CDD_DIR="$REPO_ROOT/.cdd/releases/$VERSION"
 
-  if [[ -d "$CDD_DIR/gamma" ]]; then
-    check "gamma/ directory" pass
-  else
-    check "gamma/ directory" fail "$CDD_DIR/gamma/ does not exist"
-  fi
-
-  if [[ -f "$CDD_DIR/gamma/CLOSE-OUT.md" ]]; then
-    check "γ CLOSE-OUT.md" pass
-  else
-    check "γ CLOSE-OUT.md" fail
-  fi
+  # Canonical α/β/γ close-outs are required per CDD §5.3a for release-scoped
+  # triadic cycles. PR-comment close-outs are legacy and warn-only — they do
+  # not satisfy the canonical contract.
+  for role in alpha beta gamma; do
+    canon="$CDD_DIR/$role/CLOSE-OUT.md"
+    if [[ -f "$canon" ]]; then
+      check "$role/CLOSE-OUT.md" pass
+    else
+      check "$role/CLOSE-OUT.md" fail "expected .cdd/releases/$VERSION/$role/CLOSE-OUT.md"
+      # Note any legacy PR-comment evidence as an additional warning.
+      if [[ "$role" != "gamma" && -n "$PR_NUM" ]] && command -v gh &>/dev/null; then
+        legacy_pat="close-out\|closeout\|close out\|cycle.finding\|no.new.finding\|no findings"
+        hits=$(gh pr view "$PR_NUM" --json comments -q '.comments[].body' 2>/dev/null | grep -ci "$legacy_pat" || true)
+        hits="${hits:-0}"
+        if [[ "$hits" -gt 0 ]]; then
+          check "$role legacy PR-comment close-out" warn "PR-comment close-out present; canonical path is required for release-scoped triadic cycles"
+        fi
+      fi
+    fi
+  done
 
   if [[ -f "$CDD_DIR/gamma/KATA-VERDICT.md" ]]; then
     check "γ KATA-VERDICT.md" pass
   else
-    # Only warn — kata may not be available
     check "γ KATA-VERDICT.md" warn "not found (kata may not have run)"
-  fi
-
-  # Check alpha/beta dirs if they should exist
-  if [[ -d "$CDD_DIR/alpha" ]]; then
-    check "alpha/ directory" pass
-    if ls "$CDD_DIR/alpha/"*SELF-COHERENCE* &>/dev/null 2>&1; then
-      check "α SELF-COHERENCE.md" pass
-    else
-      check "α SELF-COHERENCE.md" warn "not found in .cdd/ (may be in PR)"
-    fi
-  fi
-
-  if [[ -d "$CDD_DIR/beta" ]]; then
-    check "beta/ directory" pass
-    if ls "$CDD_DIR/beta/"*REVIEW* &>/dev/null 2>&1; then
-      check "β REVIEW artifact" pass
-    else
-      check "β REVIEW artifact" warn "not found in .cdd/ (may be in PR comments)"
-    fi
-    if ls "$CDD_DIR/beta/"*ASSESSMENT* &>/dev/null 2>&1; then
-      check "β ASSESSMENT" pass
-    else
-      check "β ASSESSMENT" warn "not found in .cdd/"
-    fi
   fi
 fi
 

@@ -2,7 +2,7 @@
 
 ## P0 — Before Submitting Diff
 
-**Verify `skills/review/checklist.md` P0 + P1 before pushing.**
+**Verify `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` §4 (Checklist) and §7 (After Review) before pushing.**
 
 ## Process
 

@@ -48,18 +48,18 @@ Use when writing or changing code directly.
 
 Use when deciding what the system should look like.
 
-- design/ - name incoherence, constraints, impact graph, and file-level ACs
 - evolve/ - challenge architecture assumptions and choose higher-leverage boundary moves
 - process-economics/ - make every new process step earn its cost
 - rca/ - explain why the failure happened and what boundary should change
+- (architecture/design reasoning lives at `src/packages/cnos.core/skills/design/SKILL.md` — load it when reviewing or producing architecture-level decisions; there is no `eng/design` skill)
 
 ### Review and closeout
 
 Use when validating and finishing work.
 
-- review/ - issue-first evidence-based review
 - ship/ - safe closure and landing discipline
 - follow-up/ - capture what remains open and what must happen next
+- (the review skill is the CDD lifecycle skill at `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` — there is no `eng/review` skill)
 
 ### Tooling and operator surfaces
 
@@ -74,7 +74,7 @@ Use when writing durable engineering artifacts.
 
 - document/ - write docs that are authoritative and maintainable
 
-Note: the meta-skill (how to write, classify, and verify skills) lives at the corpus level: `src/agent/skills/skill/SKILL.md`.
+Note: the meta-skill (how to write, classify, and verify skills) lives at `src/packages/cnos.core/skills/skill/SKILL.md`. Load it when authoring or modifying any skill.
 
 ---
 
@@ -96,7 +96,7 @@ Load when implementing local code changes.
 
 Load when reviewing correctness and coherence of a branch.
 
-- review
+- `cdd/review` (the review lifecycle skill — `src/packages/cnos.cdd/skills/cdd/review/SKILL.md`)
 - document
 - test
 
@@ -104,7 +104,7 @@ Load when reviewing correctness and coherence of a branch.
 
 Load when deciding what shape a change should take.
 
-- design
+- `cnos.core/skills/design` (architecture/design reasoning)
 - evolve
 - process-economics
 
@@ -112,11 +112,11 @@ Load when deciding what shape a change should take.
 
 Load when changing runtime, substrate, package, extension, registry, transport, or operator-contract surfaces.
 
-- design
+- `cnos.core/skills/design`
 - evolve
 - performance-reliability
 - test
-- review
+- `cdd/review`
 
 ### 5. Tooling bundle
 
@@ -131,8 +131,8 @@ Load when building tools or CLI/operator surfaces.
 Load when writing docs or skills that will become durable system artifacts.
 
 - document
-- review
-- (meta-skill at top-level skill/SKILL.md when authoring skills)
+- `cdd/review`
+- `cnos.core/skills/skill` when authoring or modifying skills
 
 ---
 
@@ -231,11 +231,11 @@ Review, ship, and post-release are **lifecycle skills** — they govern later CD
 | Work shape | Typical level | Default active skills | Notes |
 |------------|---------------|----------------------|-------|
 | Local bugfix | L5 | domain skill + test | e.g. ocaml + test |
-| Cross-module feature | L6 | domain skill + design + test | Add review as lifecycle, not generation constraint |
-| Runtime / platform change | L6–L7 | design + test + one of (performance-reliability, evolve) | Choose evolve if the boundary may move; choose performance-reliability if operational behavior is the main risk |
-| Tool / CLI work | L5–L6 | tool or ux-cli + test + design | Use design when the operator surface changes structure |
+| Cross-module feature | L6 | domain skill + `cnos.core/skills/design` + test | Add `cdd/review` as lifecycle, not generation constraint |
+| Runtime / platform change | L6–L7 | `cnos.core/skills/design` + test + one of (performance-reliability, evolve) | Choose evolve if the boundary may move; choose performance-reliability if operational behavior is the main risk |
+| Tool / CLI work | L5–L6 | tool or ux-cli + test + `cnos.core/skills/design` | Use design when the operator surface changes structure |
 | System-shaping / boundary change | L7 | evolve + process-economics + one of (test, performance-reliability, domain skill) | Choose the third skill by the dominant risk |
-| Docs / skills | L5–L6 | document + write | Add skill/ meta-skill when authoring skills |
+| Docs / skills | L5–L6 | document + write-functional | Add `cnos.core/skills/skill` when authoring or modifying skills |
 
 These are defaults, not mandates. Override when the specific change warrants it.
 

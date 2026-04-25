@@ -27,9 +27,13 @@ When acting as α:
 
 1. load `CDD.md` as the canonical lifecycle and role contract
 2. load this file as the α role surface
-3. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue
+3. load lifecycle sub-skills as the work requires:
+   - `issue/SKILL.md` when interpreting AC boundaries or issue quality
+   - `design/SKILL.md` when producing or judging design-required work
+   - `plan/SKILL.md` when implementation sequencing is non-trivial
+4. load Tier 2 + issue-specific Tier 3 engineering skills as required by the issue (Tier 2 bundles per `src/packages/cnos.eng/skills/eng/README.md`; `cnos.core/skills/skill` when authoring or modifying skills)
 
-The detailed step sequence is in CDD.md §1.4 (α algorithm). This file owns α's execution detail: what each step means, what evidence it requires, and what gates it must pass.
+The detailed step sequence is in CDD.md §1.4 (α algorithm). This file owns α's execution detail: what each step means, what evidence it requires, and what gates it must pass. Canonical artifact locations (close-outs, PRA, snapshot dirs, tags) are defined in `CDD.md` §5.3a (Artifact Location Matrix); α writes its close-out at the path declared there.
 
 ## Algorithm
 
@@ -102,19 +106,26 @@ Do not start coding until the active skill set is explicit.
 
 ### 2.2. Produce in artifact order
 
-Produce in this order unless the issue explicitly justifies a narrower path:
+Produce in CDD canonical artifact order (CDD.md §5.2) unless the issue explicitly justifies a narrower path:
 
-1. tests
-2. code
-3. docs
-4. self-coherence
-5. pre-review
+1. design artifact (when required) or explicit "not required"
+2. coherence contract (PR body §Gap, or design artifact §Problem)
+3. plan (when implementation sequencing is non-trivial) or explicit "not required"
+4. tests
+5. code
+6. docs
+7. self-coherence
+8. pre-review
 
 Rules:
 
+- design and plan may be marked "not required" only with a concrete justification (e.g. "single-file rename, no impact graph"); silent omission is incomplete
 - tests must prove the actual claim, not just one happy path
 - docs/specs must be updated before requesting review when authority surfaces changed
 - PR body / primary artifact must carry the CDD Trace through step 7
+
+- ❌ "Tests/code/docs first; design and plan are paperwork"
+- ✅ "Design names the incoherence and ACs; plan orders the steps; only then do tests, code, docs, self-coherence, pre-review proceed — or each is explicitly marked not required with a reason"
 
 ### 2.3. Peer enumeration before closure claims
 
@@ -217,6 +228,8 @@ Once the gate passes:
 ### 2.8. Close-out
 
 When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
+
+For release-scoped triadic cycles, the canonical path is `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` (CDD.md §5.3a Artifact Location Matrix). For PR-scoped, unreleased, non-triadic cycles, a PR comment is acceptable evidence.
 
 **Voice: factual observations and patterns only.** Do not recommend dispositions — triage is γ's job.
 
