@@ -13,7 +13,7 @@ triggers: [beta, reviewer, review, release, post-release, gate]
 
 ## Core Principle
 
-**Coherent β work preserves independent judgment from first review through release and assessment.**
+**Coherent β work preserves independent judgment from first review through release and β close-out.**
 
 β owns:
 - review verdict
@@ -21,8 +21,10 @@ triggers: [beta, reviewer, review, release, post-release, gate]
 - merge / tag / deploy
 - β close-out (review context + release evidence)
 
+γ owns the PRA and cycle-level assessment.
+
 The failure mode is **split judgment**:
-review, release, and assessment are treated as separate chores, so context leaks away and authority drifts between surfaces.
+review, release, and β close-out are treated as separate chores, so context leaks away and authority drifts between surfaces.
 
 ## Load Order
 

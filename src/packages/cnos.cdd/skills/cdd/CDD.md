@@ -190,7 +190,7 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 You are α. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md.
 Issue: gh issue view <number>
-Tier 3 skills: <list issue-specific skills, e.g. eng/go, eng/test>
+Tier 3 skills: <list issue-specific skills>
 ```
 
 **To β:**
@@ -502,13 +502,16 @@ Load by phase. Roles that operate across multiple phases load the matching set.
 
 **Tier 2 — General engineering (load the applicable bundle from `src/packages/cnos.eng/skills/eng/README.md`):**
 
-Pick the bundle for the work shape (coding, review, design, runtime/platform, tooling, writing). Available skills under `src/packages/cnos.eng/skills/eng/`:
+Pick the bundle for the work shape:
 
-- `code/`, `write-functional/`, `ocaml/`, `go/`, `typescript/`, `test/`, `performance-reliability/`
-- `evolve/`, `process-economics/`, `rca/`
-- `ship/`, `follow-up/`
-- `tool/`, `ux-cli/`
-- `document/`
+- coding
+- review
+- design
+- runtime / platform
+- tooling
+- writing
+
+The engineering package README is the source of truth for which bundle covers which work shape and which skills it includes. CDD does not enumerate language- or platform-specific bundles here — that surface lives in the engineering package and changes independently of the method.
 
 The skill that owns skill-program/frontmatter coherence is `src/packages/cnos.core/skills/skill/SKILL.md` (load when authoring or modifying skills). The skill that owns architecture/design reasoning is `src/packages/cnos.core/skills/design/SKILL.md` (load when reviewing or producing architecture-level decisions).
 
@@ -599,7 +602,7 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 | 6a | Design | build | α | design artifact or explicit "not required" | design/SKILL.md §3.1 | primary branch artifact | agent | substantial only | design |
 | 6b | Plan | build | α | plan artifact or explicit "not required" | `docs/gamma/cdd/PLAN-TEMPLATE.md` | primary branch artifact or linked plan | agent | L7 / cycle-sized | plan |
 | 6c | Tests | build | α (or delegated implementer) | test files or explicit reason none apply | — (diff) | diff / primary branch artifact | agent | always | eng/test |
-| 6d | Code | build | α (or delegated implementer) | implementation diff or "docs/process only" | — (diff) | diff / primary branch artifact | agent | always | active loaded Tier 2/Tier 3 generation skills (e.g. eng/code, eng/ocaml, eng/go, eng/typescript, eng/tool, eng/ux-cli) |
+| 6d | Code | build | α (or delegated implementer) | implementation diff or "docs/process only" | — (diff) | diff / primary branch artifact | agent | always | active loaded Tier 2/Tier 3 generation skills (language skill, runtime/platform skill, tooling skill — see `src/packages/cnos.eng/skills/eng/README.md`) |
 | 6e | Docs | build | α (or delegated implementer) | changed canonical docs / specs / READMEs | — (diff) | diff | agent | when docs affected | eng/document for durable docs; eng/write-functional for functional/dataflow prose; `cnos.core/skills/skill` when authoring or modifying skills |
 | 6f | Delegated handoff | build | α → implementer | implementation prompt with: active skills, test requirements per module, engineering conventions, artifact order + self-verification report from implementer | alpha/SKILL.md §2.2 | prompt + report | delegator + implementer | when implementation is delegated | cdd |
 | 7 | Self-coherence | build | α (or delegated implementer) | SELF-COHERENCE.md | `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md` | version directory | agent | substantial only | cdd |
