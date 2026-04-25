@@ -54,7 +54,7 @@ Role skills may **not** redefine:
 ## Role skills
 
 - `alpha/` — α role: implementation, self-coherence, pre-review gate
-- `beta/` — β role: review, release, post-release assessment
+- `beta/` — β role: review, release, β close-out
 - `gamma/` — γ role: issue quality, dispatch, unblocking, close-out triage, process iteration
 
 ## Lifecycle sub-skills
