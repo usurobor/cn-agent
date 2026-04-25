@@ -1,12 +1,26 @@
 ---
 name: issue
-description: Write an issue so problem, impact, and acceptance criteria are specific enough to act on without clarification loops.
+description: Write an executable issue pack that names the incoherence, constraints, required skills, and implementation guidance.
 artifact_class: runbook
 kata_surface: none
-governing_question: How do we write an issue that is specific, actionable, and testable?
-parent: cdd
+governing_question: How does γ turn a selected gap into an issue pack that α and β can execute without guesswork?
 visibility: internal
-triggers: [issue, bug, feature, problem, acceptance criteria]
+parent: cdd
+triggers:
+  - issue
+scope: task-local
+inputs:
+  - selected gap
+  - mode
+  - active design constraints
+  - Tier 3 skills
+  - affected surfaces
+outputs:
+  - executable issue pack
+requires:
+  - γ completed observe/select
+  - canonical CDD.md loaded
+calls: []
 ---
 
 # Issue
@@ -18,14 +32,6 @@ triggers: [issue, bug, feature, problem, acceptance criteria]
 An issue has parts: problem, impact, acceptance criteria. Coherence = each part is specific enough that an engineer who wasn't in the conversation can pick it up and ship.
 
 Failure mode: issue requires back-and-forth to clarify scope, acceptance, or priority.
-
-## Signature
-
-**Scope:** task-local
-**Inputs:** selected gap, mode, active design constraints, Tier 3 skills, affected surfaces
-**Outputs:** executable issue pack with implementation guidance
-**Requires:** γ has completed observe/select; canonical `CDD.md` loaded
-**Calls:** none
 
 ---
 

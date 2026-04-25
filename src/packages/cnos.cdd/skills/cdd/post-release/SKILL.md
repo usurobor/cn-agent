@@ -1,12 +1,29 @@
 ---
 name: post-release
-description: Assess what shipped, what changed, what remains open, and what the next cycle must do.
+description: Assess the released cycle, decide iteration, and close with explicit evidence and triage.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How do we measure what a release actually changed and close the cycle instead of merely shipping and moving on?
-parent: cdd
+governing_question: How does γ assess a released version, decide follow-up, and close the cycle with explicit evidence?
 visibility: internal
-triggers: [post-release, assessment, retrospective, what shipped]
+parent: cdd
+triggers:
+  - post-release
+  - assess
+  - close
+scope: task-local
+inputs:
+  - released version state
+  - alpha close-out
+  - beta close-out
+  - production verification evidence
+outputs:
+  - post-release assessment
+  - cycle-iteration disposition
+  - closure evidence
+requires:
+  - released version exists
+  - γ role active
+calls: []
 ---
 
 # Post-Release Assessment
@@ -14,14 +31,6 @@ triggers: [post-release, assessment, retrospective, what shipped]
 This module implements CDD steps 11–13: post-release observation, γ-owned assessment (PRA), and close-out / closure evidence. After every release, assess what shipped, what the system looks like now, and what to do next. This is CDD §9 (Assessment) and §10 (Closure) executed as a concrete procedure.
 
 Canonical artifact locations (PRA path, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix). Tags are bare `X.Y.Z` everywhere; `v`-prefixed tags are legacy and warn-only.
-
-## Signature
-
-**Scope:** task-local
-**Inputs:** released version state, α close-out, β close-out, production verification evidence
-**Outputs:** post-release assessment, cycle-iteration disposition, closure evidence
-**Requires:** released version exists; γ role active
-**Calls:** none
 
 ## Who
 

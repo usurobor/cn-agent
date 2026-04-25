@@ -1,12 +1,27 @@
 ---
 name: design
-description: Design systems where the impact graph is fully traced and every acceptance criterion maps to a specific file. Use before implementing substantial changes. Triggers on architecture decisions, new subsystems, protocol changes, issue spec writing.
+description: Produce the design artifact for a substantial change: incoherence, challenged assumption, impact graph, acceptance criteria, and leverage.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How do we turn a named incoherence into a design whose impact graph, acceptance criteria, and file changes are explicit before implementation begins?
-parent: cdd
+governing_question: How does α turn a named incoherence into a design that is explicit about impact, authority, leverage, and cost?
 visibility: internal
-triggers: [design, architecture, subsystem, protocol change]
+parent: cdd
+triggers:
+  - design
+scope: task-local
+inputs:
+  - named incoherence
+  - active constraints
+  - affected surfaces
+  - challenged assumption
+outputs:
+  - design artifact with impact graph
+  - acceptance criteria
+  - file changes
+  - leverage and negative leverage
+requires:
+  - substantial change or explicit design need
+calls: []
 ---
 
 # Design
@@ -16,14 +31,6 @@ triggers: [design, architecture, subsystem, protocol change]
 **Coherent design: every decision traces to a named incoherence, and every artifact affected by the decision is enumerated before implementation begins.**
 
 If you can't name the incoherence, you don't have a design problem. If you can't enumerate what your change affects, you don't have a design — you have a guess.
-
-## Signature
-
-**Scope:** task-local
-**Inputs:** named incoherence, active constraints, affected surfaces, challenged assumption
-**Outputs:** design artifact with impact graph, acceptance criteria, file changes, leverage / negative leverage
-**Requires:** substantial change or explicit design need
-**Calls:** none
 
 ## Algorithm
 

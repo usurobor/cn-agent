@@ -1,12 +1,35 @@
 ---
 name: gamma
-description: Execute the γ role in CDD. Select the highest-leverage real gap, create an executable issue, preserve α/β separation across handoffs, and close the learning loop after release.
+description: γ role in CDD. Observes, selects, dispatches, unblocks, runs post-release assessment, and closes the cycle.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How does γ coordinate a cycle so the right gap is selected, the issue is executable without clarification loops, handoffs preserve independence, and the cycle teaches the system something?
-parent: cdd
+governing_question: How does γ keep the full cycle coherent across issue creation, dispatch, unblocking, assessment, and close-out?
 visibility: internal
-triggers: [gamma, coordination, dispatch, select, unblock, issue, next cycle]
+parent: cdd
+triggers:
+  - gamma
+scope: role-local
+inputs:
+  - repo state
+  - lag and signals
+  - issue state
+  - PR state
+  - alpha close-out
+  - beta close-out
+  - release state
+outputs:
+  - issue pack
+  - dispatch prompts
+  - unblock decisions
+  - post-release assessment
+  - gamma close-out triage
+  - cycle closure
+requires:
+  - active role is γ
+  - canonical CDD.md loaded
+calls:
+  - issue/SKILL.md
+  - post-release/SKILL.md
 ---
 
 # Gamma
@@ -25,14 +48,6 @@ The failure mode is **orchestration by vibes**:
 - prompts that compensate for underspecified skills or issues
 - leaked α/β reasoning across the boundary
 - cycle closure without learning
-
-## Signature
-
-**Scope:** role-local
-**Inputs:** repo state, lag/signals, issue state, PR state, α close-out, β close-out, release state
-**Outputs:** issue pack, dispatch prompts, unblock decisions, post-release assessment, γ close-out triage, cycle closure
-**Requires:** γ role active; canonical `CDD.md` loaded
-**Calls:** `issue/`, `post-release/`
 
 ## Load Order
 

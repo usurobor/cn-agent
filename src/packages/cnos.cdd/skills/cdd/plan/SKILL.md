@@ -1,12 +1,29 @@
 ---
 name: plan
-description: Turn a converged design into an ordered implementation sequence with acceptance criteria, file changes, and exit conditions.
+description: Turn an accepted design into an ordered implementation sequence with per-step acceptance and file changes.
 artifact_class: runbook
 kata_surface: none
-governing_question: How does α operationalize an accepted design into an ordered sequence of implementation steps?
-parent: cdd
+governing_question: How does α operationalize an accepted design into an ordered implementation sequence?
 visibility: internal
-triggers: [plan, implementation, sequence, steps, operationalize]
+parent: cdd
+triggers:
+  - plan
+  - implementation
+  - sequence
+  - steps
+  - operationalize
+scope: task-local
+inputs:
+  - accepted design artifact
+  - coherence contract
+  - acceptance criteria
+outputs:
+  - ordered implementation sequence
+  - per-step acceptance conditions
+  - per-step file changes
+requires:
+  - design exists and is accepted
+calls: []
 ---
 
 # Plan
@@ -18,14 +35,6 @@ triggers: [plan, implementation, sequence, steps, operationalize]
 A plan has parts: coherence contract, steps, acceptance, test strategy, non-goals. Coherence = each step is independently verifiable and the sequence builds on prior steps without backtracking.
 
 Failure mode: plan restates the design instead of operationalizing it. Or: steps have no acceptance criteria, so "done" is ambiguous.
-
-## Signature
-
-**Scope:** task-local
-**Inputs:** accepted design artifact, coherence contract, acceptance criteria
-**Outputs:** ordered implementation sequence with per-step acceptance and file changes
-**Requires:** design exists and is accepted
-**Calls:** none
 
 ---
 

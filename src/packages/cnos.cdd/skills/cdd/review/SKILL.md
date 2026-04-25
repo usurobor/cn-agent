@@ -1,12 +1,28 @@
 ---
 name: review
-description: Review changes so every verdict traces to evidence in the diff, the surrounding contract, and the relevant unchanged context.
+description: Produce an evidence-bound review verdict with findings, severity, and architecture checks where applicable.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How do we verify that a change closes its declared gap without creating a larger incoherence elsewhere?
-parent: cdd
+governing_question: How does β judge a change against its contract, surrounding context, and active design constraints?
 visibility: internal
-triggers: [review, PR, approve, request changes, diff, finding]
+parent: cdd
+triggers:
+  - review
+scope: task-local
+inputs:
+  - PR diff
+  - issue context
+  - branch artifacts
+  - active design constraints
+  - active skills
+outputs:
+  - review verdict
+  - findings with severity
+  - architecture check when applicable
+requires:
+  - review-ready branch or PR
+calls:
+  - eng/design-principles
 ---
 
 # Review
@@ -16,14 +32,6 @@ Review code so that every verdict traces to evidence in the diff and its surroun
 ## Core Principle
 
 **Coherent review: every claim is verified against the diff, its required surrounding contract, and the relevant unchanged context — and no incoherence passes without being named.**
-
-## Signature
-
-**Scope:** task-local
-**Inputs:** PR diff, issue context, branch artifacts, active design constraints, active skills
-**Outputs:** review verdict (RC / A) with evidence, findings, and architecture check where applicable
-**Requires:** review-ready branch / PR
-**Calls:** `eng/design-principles` when architecture check is active
 
 ---
 

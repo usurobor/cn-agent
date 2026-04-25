@@ -1,12 +1,31 @@
 ---
 name: alpha
-description: Execute the α role in CDD. Turn a selected gap into a review-ready branch with aligned artifacts, explicit self-coherence, and a complete pre-review gate.
+description: α role in CDD. Implements the selected change, produces the review-ready artifact set, and writes α close-out.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How does α turn a selected gap into a review-ready artifact set without pushing ambiguity or hidden debt onto β?
-parent: cdd
+governing_question: How does α turn an issue pack into a review-ready implementation without violating constraints or skipping required artifacts?
 visibility: internal
-triggers: [alpha, implementer, author, self-coherence, pre-review, review-ready]
+parent: cdd
+triggers:
+  - alpha
+scope: role-local
+inputs:
+  - issue pack
+  - active design constraints
+  - active skills
+  - branch state
+  - CI state
+outputs:
+  - review-ready artifact set
+  - PR
+  - alpha close-out
+requires:
+  - active role is α
+  - canonical CDD.md loaded
+calls:
+  - design/SKILL.md
+  - plan/SKILL.md
+  - Tier 2 and Tier 3 skills named by the issue
 ---
 
 # Alpha
@@ -20,14 +39,6 @@ issue understanding, active skills, tests, code, docs, self-coherence, and pre-r
 
 The failure mode is **premature handoff**:
 the branch compiles locally or "looks done," but β must still discover missing scope, missing sibling updates, unstated debt, broken contracts, or stale branch metadata.
-
-## Signature
-
-**Scope:** role-local
-**Inputs:** issue pack, active design constraints, active skills, branch state, CI state
-**Outputs:** review-ready artifact set (design / plan / tests / code / docs / self-coherence / pre-review gate), PR, α close-out
-**Requires:** α role active; canonical `CDD.md` loaded
-**Calls:** `design/`, `plan/`, language/domain skills as named by the issue
 
 ## Load Order
 

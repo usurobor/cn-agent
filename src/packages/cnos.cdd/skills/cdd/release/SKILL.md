@@ -4,9 +4,27 @@ description: Ship a version as a measured coherence delta with matching code, ch
 artifact_class: skill
 kata_surface: embedded
 governing_question: How does β turn a converged branch into a released version with a complete and auditable coherence delta?
-parent: cdd
 visibility: internal
-triggers: [release, ship, tag, version, deploy, changelog]
+parent: cdd
+triggers:
+  - release
+  - ship
+  - tag
+  - version
+  - deploy
+  - changelog
+scope: task-local
+inputs:
+  - approved branch or PR
+  - version decision
+  - release context
+outputs:
+  - release artifact set
+  - beta close-out
+requires:
+  - approval and release readiness
+calls:
+  - writing
 ---
 
 # Release
@@ -22,14 +40,6 @@ Canonical artifact locations (β close-out path, RELEASE.md, snapshot dirs, tag 
 A release has parts: readiness check, version decision, changelog, release notes, tag, binaries, deployment, validation. Coherence = each part completed and each artifact matches the others (version in code = tag = changelog = binary = deployed agent). The released system is validated, not merely published.
 
 Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: releasing without validation, so breakage ships silently. Or: incomplete deploy where artifacts ship but assessment never lands.
-
-## Signature
-
-**Scope:** task-local
-**Inputs:** approved branch or PR, version decision, release context
-**Outputs:** release artifact set (CHANGELOG row, tag, release notes, deploy validation), β close-out
-**Requires:** approval and release readiness
-**Calls:** `writing` if release notes need writing support
 
 ## 1. Define
 

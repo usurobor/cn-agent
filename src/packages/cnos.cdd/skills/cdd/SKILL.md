@@ -5,18 +5,42 @@ artifact_class: skill
 kata_surface: embedded
 governing_question: How do we evolve a system through a substantial change without losing coherence across selection, implementation, review, release, and closure?
 visibility: public
-triggers: [review, PR, release, issue, design, plan, assess, post-release, ship, tag]
+triggers:
+  - review
+  - PR
+  - release
+  - issue
+  - design
+  - plan
+  - assess
+  - post-release
+  - ship
+  - tag
+scope: global
+inputs:
+  - substantial-change context
+  - active role
+  - issue or PR context
+outputs:
+  - canonical method loaded
+  - active role skill loaded
+  - required lifecycle sub-skills selected
+requires:
+  - CDD applies
+  - CDD.md exists in this directory
+calls:
+  - alpha/SKILL.md
+  - beta/SKILL.md
+  - gamma/SKILL.md
+  - issue/SKILL.md
+  - design/SKILL.md
+  - plan/SKILL.md
+  - review/SKILL.md
+  - release/SKILL.md
+  - post-release/SKILL.md
 ---
 
 # CDD
-
-## Signature
-
-**Scope:** global
-**Inputs:** substantial-change context, active role, issue or PR context
-**Outputs:** canonical method loaded, active role skill loaded, required lifecycle sub-skills selected
-**Requires:** CDD applies; `CDD.md` exists in this directory
-**Calls:** `CDD.md`, one of `alpha/`, `beta/`, `gamma/`, and lifecycle sub-skills as directed by role and work shape
 
 ## Load order
 
