@@ -185,7 +185,7 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 
 **Phase 2 — Release support**
 
-7. If β deferred tag push or other release mechanics (env constraint per β step 8), request δ to execute the gate action. δ signals γ on completion (see `operator/SKILL.md` §3.5). If δ is unavailable, γ may execute directly.
+7. If β deferred tag push or other release mechanics (env constraint per β step 8), request δ to execute the gate action. δ confirms completion to the requesting role (see `operator/SKILL.md` §3.3). If δ is unavailable, γ may execute directly.
 8. If the issue did not auto-close on merge (missing `Closes #N`), close it: `gh issue close {number}`
 
 **Phase 3 — Close-out triage**
@@ -214,11 +214,11 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
     - Daily reflection: cycle summary, scoring, MCI freeze status, next move
     - Adhoc thread: update or create the thread this cycle advances
 15. Request δ to delete merged remote branches. If δ is unavailable, γ may execute directly: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
-16. Cycle is closed. Commit the closure declaration to main and **signal δ**: *"Cycle #N closed. Next: #M. δ: disconnect."* This declaration must be γ's **last commit** for the cycle — no post-closure pushes. The signal to δ is what triggers the disconnect (step 17). If γ cannot reach δ directly, the closure commit on main is the fallback signal (δ polls for it per `operator/SKILL.md` §2.2).
+16. Cycle is closed. Commit the closure declaration to main: *"Cycle #N closed. Next: #M."* This must be γ's **last commit** for the cycle — no post-closure pushes.
 
 **Phase 6 — Disconnect (δ)**
 
-17. δ receives γ's closure declaration (step 16) as the trigger. δ lands any remaining δ session patches, then cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4. This is not optional. **Nothing is committed to main between the closure declaration and the disconnect tag except δ's own patches.**
+17. δ lands any remaining δ session patches, then cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. The tag is git-observable: γ and all future agents can see it. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4. This is not optional. **Nothing is committed to main between the closure declaration and the disconnect tag except δ's own patches.**
 
 #### γ dispatch prompt format
 
@@ -306,7 +306,7 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 5. Read the PR diff, read the issue
 6. Review: produce CR with findings per review skill, or approve
 7. If RC: post findings as PR comment, wait for α's fix
-8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to δ (operator) — do not block closure on it. δ signals γ on completion (see `operator/SKILL.md` §3.5).
+8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to δ (operator) — do not block closure on it. δ confirms completion to the requesting role (see `operator/SKILL.md` §3.3).
 9. Write β close-out (review context, release evidence, cycle findings or "no findings"). This is β's input to γ's PRA and cycle iteration decision (§9.1).
 10. Done when close-out is committed. γ writes the post-release assessment separately.
 

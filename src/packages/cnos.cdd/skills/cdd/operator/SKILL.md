@@ -154,12 +154,11 @@ The triad's work is not complete until it is tagged. Untagged post-cycle patches
 - ❌ δ defers release "because there are no consumers" (the tag is structural, not consumer-driven)
 - ✅ δ tags the final state after all post-cycle work lands: "3.59.1 — δ post-cycle release: operator skill, CDD §Tracking patches, CTB v0.1"
 
-### 3.5. Signal γ after release-phase gates
+### 3.5. The tag is the signal
 
-After completing release-phase gate actions (tag push, branch cleanup, release CI observation), signal γ with a completion summary. γ cannot verify platform state changes by polling — tag existence, branch deletion, and CI results on external workflows are only confirmable by δ. Without this signal, γ remains in observation mode with no way to know the cycle's external actions completed.
+The disconnect tag (§3.4) is git-observable. γ and all future agents can see it. No separate completion signal is needed — the tag appearing on main IS the proof that all gate actions completed and the cycle is disconnected.
 
-- ❌ Complete all gate actions, report to operator, assume γ knows
-- ✅ After release gates complete: "δ release gates done: tag 3.59.0 pushed, 3 branches deleted, release-smoke green. γ may proceed to next-cycle observation."
+For mid-cycle gate actions (tag push before the disconnect, branch cleanup), confirm completion to the requesting role per §3.3. But the disconnect tag itself needs no announcement — it speaks for itself.
 
 ---
 
