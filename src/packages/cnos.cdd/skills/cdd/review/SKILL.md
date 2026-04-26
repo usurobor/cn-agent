@@ -1,12 +1,28 @@
 ---
 name: review
-description: Review changes so every verdict traces to evidence in the diff, the surrounding contract, and the relevant unchanged context.
+description: Produce an evidence-bound review verdict with findings, severity, and architecture checks where applicable.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How do we verify that a change closes its declared gap without creating a larger incoherence elsewhere?
-parent: cdd
+governing_question: How does β judge a change against its contract, surrounding context, and active design constraints?
 visibility: internal
-triggers: [review, PR, approve, request changes, diff, finding]
+parent: cdd
+triggers:
+  - review
+scope: task-local
+inputs:
+  - PR diff
+  - issue context
+  - branch artifacts
+  - active design constraints
+  - active skills
+outputs:
+  - review verdict
+  - findings with severity
+  - architecture check when applicable
+requires:
+  - review-ready branch or PR
+calls:
+  - eng/design-principles
 ---
 
 # Review
@@ -52,7 +68,7 @@ Review fails via **surface reading** — checking only what changed, missing wha
 
 ### 2.0. Issue — what was promised
 
-**PRE-GATE: Verify branch is unmerged.** Before any review work, confirm the branch has not already landed on main. Check PR state (`gh pr view <number> --json state,mergedAt`) or, for offline reviews, `git log main --oneline | grep -w <issue-number>`. If already merged: the branch is stale — either review the merged code on main, or skip. Do not review a dead branch. (If this check is added to the review subagent's preflight, this PRE-GATE becomes informational.)
+**PRE-GATE: Verify branch is unmerged.** Before any review work, confirm the branch has not already landed on main. Check PR state (`gh pr view {number} --json state,mergedAt`) or, for offline reviews, `git log main --oneline | grep -w {issue-number}`. If already merged: the branch is stale — either review the merged code on main, or skip. Do not review a dead branch. (If this check is added to the review subagent's preflight, this PRE-GATE becomes informational.)
   - ❌ Read the diff, post findings, then discover the branch was merged two weeks ago
   - ✅ "`gh pr view 145 --json state` → `MERGED` — branch is stale, redirecting review to main"
 
@@ -131,7 +147,7 @@ Review fails via **surface reading** — checking only what changed, missing wha
     - the declared skills are present in the branch or loaded context
     - the implementation is consistent with them
     - findings that a declared active skill would have prevented are process debt (§6.1 / mechanical)
-  - ❌ "Active skills: eng/<language>" but code violates the declared language skill (e.g. bare exception swallowing, unsafe casts)
+  - ❌ "Active skills: eng/{language}" but code violates the declared language skill (e.g. bare exception swallowing, unsafe casts)
   - ✅ "Active skills: ocaml, performance-reliability — implementation consistent with both"
 
 2.0.8. **CDD execution trace (CDD §5.4)**

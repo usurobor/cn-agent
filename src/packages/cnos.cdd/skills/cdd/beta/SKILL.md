@@ -1,12 +1,30 @@
 ---
 name: beta
-description: Execute the β role in CDD. Review independently, merge only after all findings are resolved, and release with a complete audit trail.
+description: β role in CDD. Reviews the change, releases it when approved, and writes β close-out.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How does β judge a branch independently, release it coherently, and close the cycle without losing review context?
-parent: cdd
+governing_question: How does β preserve independent judgment through review, release, and β close-out?
 visibility: internal
-triggers: [beta, reviewer, review, release, post-release, gate]
+parent: cdd
+triggers:
+  - beta
+scope: role-local
+inputs:
+  - PR
+  - issue
+  - CI state
+  - release context
+  - approved branch state
+outputs:
+  - review verdict (RC or A)
+  - release artifact set
+  - beta close-out
+requires:
+  - active role is β
+  - canonical CDD.md loaded
+calls:
+  - review/SKILL.md
+  - release/SKILL.md
 ---
 
 # Beta

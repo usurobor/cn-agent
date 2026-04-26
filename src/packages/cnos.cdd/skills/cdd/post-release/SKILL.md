@@ -1,12 +1,29 @@
 ---
 name: post-release
-description: Assess what shipped, what changed, what remains open, and what the next cycle must do.
+description: Assess the released cycle, decide iteration, and close with explicit evidence and triage.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How do we measure what a release actually changed and close the cycle instead of merely shipping and moving on?
-parent: cdd
+governing_question: How does γ assess a released version, decide follow-up, and close the cycle with explicit evidence?
 visibility: internal
-triggers: [post-release, assessment, retrospective, what shipped]
+parent: cdd
+triggers:
+  - post-release
+  - assess
+  - close
+scope: task-local
+inputs:
+  - released version state
+  - alpha close-out
+  - beta close-out
+  - production verification evidence
+outputs:
+  - post-release assessment
+  - cycle-iteration disposition
+  - closure evidence
+requires:
+  - released version exists
+  - γ role active
+calls: []
 ---
 
 # Post-Release Assessment

@@ -4,9 +4,27 @@ description: Ship a version as a measured coherence delta with matching code, ch
 artifact_class: skill
 kata_surface: embedded
 governing_question: How does β turn a converged branch into a released version with a complete and auditable coherence delta?
-parent: cdd
 visibility: internal
-triggers: [release, ship, tag, version, deploy, changelog]
+parent: cdd
+triggers:
+  - release
+  - ship
+  - tag
+  - version
+  - deploy
+  - changelog
+scope: task-local
+inputs:
+  - approved branch or PR
+  - version decision
+  - release context
+outputs:
+  - release artifact set
+  - beta close-out
+requires:
+  - approval and release readiness
+calls:
+  - writing
 ---
 
 # Release
@@ -101,7 +119,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
   ## Outcome
 
-  Coherence delta: C_Σ <grade> (`α <grade>`, `β <grade>`, `γ <grade>`) · **Level:** `L<level>`
+  Coherence delta: C_Σ {grade} (`α {grade}`, `β {grade}`, `γ {grade}`) · **Level:** `L{level}`
 
   One short paragraph:
   - what became more coherent
@@ -175,7 +193,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - Release workflow builds binaries (linux-x64, macos-x64, macos-arm64)
   - Wait for completion before deploying
   - ❌ Deploy while CI still running (stale binary from previous release)
-  - ✅ `gh run watch <id> --exit-status` then verify assets attached
+  - ✅ `gh run watch {id} --exit-status` then verify assets attached
 
 2.8. **Deploy to target hosts**
   - Stop daemon, download binary, replace, start daemon
