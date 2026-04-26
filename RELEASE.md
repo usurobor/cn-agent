@@ -2,53 +2,43 @@
 
 ## Outcome
 
-Coherence delta: C_Σ A- (`α A-`, `β A-`, `γ A-`) · **Level:** `L7`
+Coherence delta: C_Σ A- (`α A-`, `β A`, `γ A-`) · **Level:** `L6` (diff: `L7`; cycle cap: `L6`)
 
-Packaging pipeline is now deterministic, content-model-driven, and dist-free. The rebase-race class that blocked two review rounds in the prior cycle is structurally eliminated. CDD triadic coordination is significantly tightened — agents now act on steps instead of asking permission.
+Distribution chain is now structurally honest. The lockfile → installed `cn.package.json` → released-binary chain previously lied silently in two places: a lockfile version bump was ignored if the version-less vendor dir already existed, and there was no automated check that a freshly released binary could bootstrap a fresh hub. Both gaps are closed: `cn deps restore` now reads its own authority on every run, `cn doctor` surfaces the same drift visibly, and a release-bootstrap smoke runs against production endpoints on every published release.
 
 ## Why it matters
 
-Every packaging PR since 3.57.0 hit the same race: α rebases, rebuilds dist, pushes; main moves; dist is stale. This release removes committed tarballs entirely, makes `cn build` derive its packlist from the content-class model, and normalizes tar/gzip output for cross-build determinism. CDD skill patches close a class of agent coordination failures where system prompts overrode skill instructions.
+The `packages/index.json` migration leak (v3.x era) was found by accident, not by a named test. The silent v1→v2 skip was the same shape — a stale install masquerading as a current one. After this release, both failure classes are caught mechanically: `restoreOne` removes the stale tree before reinstalling, `doctor.checkPackages` fails with `(installed X, locked Y)` so the operator can see the drift at runtime, and `release-smoke.yml` blocks any release whose binary cannot self-bootstrap.
 
 ## Fixed
 
-- **Deterministic package tarballs** (#264): zeroed tar header timestamps, uid/gid, uname/gname, and gzip header time/OS byte. Same source tree now produces byte-identical tarballs regardless of checkout time, machine, or user.
-- **Cross-Go-toolchain gzip non-determinism**: bumped go.mod and all CI workflows from Go 1.22 to Go 1.24. `compress/gzip` flate output is not stable across minor Go versions.
-- **CDD agent compliance gap**: agents treated skill instructions as suggestions when system prompts conflicted. Six patches make instructions imperative and explicitly override environment defaults (PR creation, PR subscribe, reply to RC comments, β subscribe+wait, section-by-section writing, dispatch prompt trimming).
-- **CDD β polling gap**: β had "wait for PR" with no mechanism. Now has a concrete `gh pr list` polling loop.
-- **CDD event subscription unreliability**: GitHub notifications are unreliable with shared identity. All roles now use periodic `gh` CLI polling instead of event subscriptions.
+- **Silent v1→v2 skip in `cn deps restore`** (#230, AC1+AC2): `restore.restoreOne` now reads the installed `cn.package.json` version and reinstalls on drift. The reinstall path `os.RemoveAll`s the prior tree first, so v1-only files cannot leak into the v2 install. The same-version fast-path is preserved (one extra `os.ReadFile` of a small file).
+- **Doctor agreed with the lie** (#230, AC6): `doctor.checkPackages` now reads the same installed manifest via the shared pure parser and reports `StatusFail` with `(installed X, locked Y)`, `(no manifest)`, or `(unparseable manifest)` so the runtime surface no longer claims "all present" when the lockfile and the vendor disagree.
 
 ## Added
 
-- **Content-class packlist derivation** (#262 partial, PR #265): `cn build` now derives its packlist from `cn.package.json` + recognized content-class directories, not the whole package root. Stray files no longer ship in tarballs. Shared `pkg.ContentClasses` constant used by both build and activation.
-- **CDD package audit** (`docs/gamma/cdd/CDD-PACKAGE-AUDIT.md`): 34-finding structural review of the CDD skill program. Filed as #268 for convergence work.
-- **CTB §8.5.1**: four skills-language design evidence items from CDD practice (global aspects, authority hierarchy, visibility enforcement, dependency graph).
-- **CDD §1.4 large-file authoring rule**: generic cross-role constraint — any file >50 lines written section by section. Replaces 4 per-step duplicates.
-- **CDD close-out voice constraint**: α/β close-outs report factual observations only; triage is γ's job.
-- **eng/go §2.13**: cross-toolchain determinism axis documented.
+- **`scripts/smoke/90-release-bootstrap.sh`** (#230, AC3): exercises the full bootstrap chain from a fresh empty directory — downloads `cn-<platform>` + `index.json` + every referenced tarball from the GitHub release URL, verifies each tarball's SHA-256 against the `index.json` entry (the same authority `cn deps restore` itself trusts), then `cn init` + `cn setup` + `cn deps lock` + `cn deps restore` + per-package version-match check. Exit codes 0 (ok) / 1 (chain broken) / 2 (skipped — offline / no release).
+- **`.github/workflows/release-smoke.yml`** (#230, AC4+AC5): runs the smoke on `release: types: [published]` (4-platform matrix: linux-x64, linux-arm64, macos-x64, macos-arm64) plus `workflow_dispatch`. rc=2 → `::warning::` (graceful offline skip); rc=1 → `::error::` (release flagged).
+- **`pkg.ParseInstalledManifestData`** + **`restore.ReadInstalledManifest`** (#230): pure parser + IO wrapper for installed `cn.package.json` (name + version), shared by `restore.restoreOne` and `doctor.checkPackages`. `ValidatePackageManifestData` reuses the same parser — one parser per fact (eng/go §2.17 + design §3.2). `pkg.PackageManifest` gained an additive `Version` field; JSON wire format unchanged.
+- **Doctor `(unparseable manifest)` diagnostic + test** (#230, round-2 F3): completes the three-way stale-state coverage in `doctor.checkPackages`.
 
 ## Changed
 
-- **dist/ removed from git** (#266, PR #267): tarballs are no longer committed. I3 (coherence CI) rebuilds from source and compares checksums against committed `checksums.txt`. Eliminates the rebase-race class that hit twice in the #262 cycle.
-- **CDD dispatch model**: γ produces both α and β prompts at dispatch time. β starts intake immediately — no need to wait for α's PR before subscribing.
-- **CDD γ skill**: reads last PRA first (binding selection input), subscribes to issue before dispatching.
+- **`release.yml` build step stamps the version** (#230, supports AC3): `go build -ldflags "-X main.version=${{ github.ref_name }}"` so the released binary's compiled-in `version` equals the release tag. Without this, `cn setup` writes deps.json with `version="dev"` and `cn deps lock` cannot resolve packages in the released index — i.e. the smoke would correctly fail. (Regular CI keeps `dev`; kata 06 already overrides deps.json with src-derived versions.)
 
 ## Removed
 
-- `dist/packages/*.tar.gz` — committed tarballs eliminated from git history going forward.
-- `docs/gamma/essays/SKILLS-LANGUAGE-EVIDENCE.md` — consolidated into CTB §8.5.1.
-- Per-step section-by-section writing instructions (4 locations) — replaced by generic §1.4 rule.
+- (no deletions in this release.)
 
 ## Validation
 
-- `go test ./...` green (all packages)
-- `go test -race ./internal/activation/... ./internal/doctor/...` green
-- `scripts/check-version-consistency.sh` passes
-- `cn build` produces deterministic, byte-identical tarballs across runs
-- I3 coherence check rebuilt and verified
+- `go test ./...` green; `go test -race ./internal/restore/... ./internal/doctor/... ./internal/pkg/...` green.
+- `scripts/check-version-consistency.sh` passes against `VERSION=3.59.0`.
+- CI 7/7 success at the merge-base SHA `93ea1d6` — `go`, `kata-tier1`, `kata-tier2`, `Package/source drift (I1)`, `Protocol contract schema sync (I2)`, `notify` ×2.
+- Smoke verified locally to exit 2 (`RESULT: skipped (offline)`) when offline; full pass-path validated against the released `3.59.0` binary by the `release-smoke.yml` matrix once the release is published.
 
 ## Known Issues
 
-- #262 stays open — AC1 (cn build → cn pack rename), AC5 (--list/--dry-run), AC3 root-file narrowing, .gitignore honoring deferred
-- #268 — CDD package convergence (34 audit findings) dispatched, not yet landed
-- `cn publish` command (#266 design addendum) — not yet implemented; currently manual release-asset upload
+- **`pkg.ContentClasses` documentation reference** (`pkg.go:134`) still points to `POLYGLOT-PACKAGES-AND-PROVIDERS.md` and `eng/go/SKILL.md` §2.17/§2.18 still point to `INVARIANTS.md` — the actual files live at `docs/alpha/agent-runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md` and `docs/alpha/architecture/INVARIANTS.md`. Pre-existing on `main` from before this cycle; out of #230 scope. Surfaced as a γ follow-up.
+- **Branch-naming harness drift**: PR #274's branch was `claude/alpha-tier-3-skills-IZOsO`, non-canonical per CDD §4.2 (`{agent}/{issue}-{scope}`). Harness/dispatch convention should be reconciled with §4.2 — γ-side process iteration.
+- **β polling baseline gap**: CDD §Tracking's reference Monitor scripts use transition-only emission, which silently absorbs pre-existing state on first iteration. β's #274 round 1 missed PR creation as a result. Synchronous-baseline check before transition-only polling is the missing template step — γ-side process iteration for the next CDD pass.
