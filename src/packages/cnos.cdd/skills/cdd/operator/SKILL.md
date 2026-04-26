@@ -137,6 +137,13 @@ After executing a gate action, confirm to the requesting role that the action co
 - ❌ Execute silently and assume the triad will notice
 - ✅ "Tag pushed: `git push origin 3.59.0` — confirmed on remote"
 
+### 3.4. Signal γ after release-phase gates
+
+After completing release-phase gate actions (tag push, branch cleanup, release CI observation), signal γ with a completion summary. γ cannot verify platform state changes by polling — tag existence, branch deletion, and CI results on external workflows are only confirmable by δ. Without this signal, γ remains in observation mode with no way to know the cycle's external actions completed.
+
+- ❌ Complete all gate actions, report to operator, assume γ knows
+- ✅ After release gates complete: "δ release gates done: tag 3.59.0 pushed, 3 branches deleted, release-smoke green. γ may proceed to next-cycle observation."
+
 ---
 
 ## 4. Override
@@ -194,7 +201,8 @@ These are role boundaries. Crossing them without an override declaration breaks 
 | Review | Nothing | β verdict or γ unblock request |
 | Release | Gate actions if requested (merge, tag) | β or γ gate request |
 | Closure | Gate actions if requested (branch delete, issue close) | γ closure declaration |
-| Post-closure | Execute deferred operator actions from γ close-out | γ deferred-output list |
+| Post-release | Execute deferred operator actions from γ close-out, then **signal γ** with completion summary | γ deferred-output list |
+| Inter-cycle | Nothing until next γ dispatch | γ next-cycle selection |
 
 ---
 
