@@ -116,11 +116,11 @@ Failure mode: issue requires back-and-forth to clarify scope, acceptance, or pri
 
 2.4.1. **Name the Tier 3 (issue-specific) skills the implementer must load**
   - CDD lifecycle skills (Tier 1) and general eng skills (Tier 2) are always loaded per CDD §4.4 — do not repeat them here
-  - Name only the issue-specific skills: language (`eng/<language>`), domain (`eng/ux-cli`, `eng/performance-reliability`), architecture (`eng/evolve`), etc.
+  - Name only the issue-specific skills: language (`eng/{language}`), domain (`eng/ux-cli`, `eng/performance-reliability`), architecture (`eng/evolve`), etc.
   - The implementer may be a different agent who has never seen your constraints
   - ❌ Omit Tier 3 skills — implementer writes code that violates language-specific boundaries, caught only by CI or review
   - ❌ List all CDD and general eng skills — those are always loaded, listing them is noise
-  - ✅ "Tier 3 skills: `eng/<language>` (relevant boundary rules), `eng/ux-cli` (output formatting)"
+  - ✅ "Tier 3 skills: `eng/{language}` (relevant boundary rules), `eng/ux-cli` (output formatting)"
 
 2.4.2. **Name the active design constraints**
   - Link to `docs/alpha/DESIGN-CONSTRAINTS.md` entries that govern the work — including invariants, transition constraints, and process constraints

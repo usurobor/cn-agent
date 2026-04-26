@@ -130,23 +130,23 @@ Polling has two parts: (a) the **query** that detects new state, and (b) the **w
 
 | Surface | `gh` form (shell envs) | MCP form (MCP-only envs) | git form (clone-aware envs) |
 |---|---|---|---|
-| PR existence | `gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number` | `mcp__github__list_pull_requests` (filter by head ref or scan for "closes:#<N>" in body) | `git fetch origin && git branch -r` (compare to prior list, emit on new branch) |
-| PR status / CI | `gh pr view <N> --json statusCheckRollup,reviews,state` | `mcp__github__pull_request_read` method=`get_status` / `get_check_runs` | — |
-| Issue comments | `gh issue view <N> --comments` | `mcp__github__issue_read` method=`get_comments` | — |
-| PR comments | `gh pr view <N> --comments` | `mcp__github__pull_request_read` method=`get_comments` / `get_review_comments` | — |
-| Branch head SHA | — | — | `git fetch origin <branch> && git rev-parse origin/<branch>` (compare to prior, emit on change) |
+| PR existence | `gh pr list --search "closes:#{N} OR refs:#{N}" --state open --json number` | `mcp__github__list_pull_requests` (filter by head ref or scan for "closes:#{N}" in body) | `git fetch origin && git branch -r` (compare to prior list, emit on new branch) |
+| PR status / CI | `gh pr view {N} --json statusCheckRollup,reviews,state` | `mcp__github__pull_request_read` method=`get_status` / `get_check_runs` | — |
+| Issue comments | `gh issue view {N} --comments` | `mcp__github__issue_read` method=`get_comments` | — |
+| PR comments | `gh pr view {N} --comments` | `mcp__github__pull_request_read` method=`get_comments` / `get_review_comments` | — |
+| Branch head SHA | — | — | `git fetch origin {branch} && git rev-parse origin/{branch}` (compare to prior, emit on change) |
 
 **Wake-up mechanism — name it explicitly in the role's session.** Polling is only effective if the loop's transition produces a notification that wakes the role. Each environment has its own form:
 
-- **`Monitor` (Claude Code on the web):** `Monitor`'s contract is "every stdout line is a notification delivered as a `<task-notification>` system message that wakes the session." Wrap polling in `until <transition-detected>; do <poll>; sleep 60; done` and emit only on **transition** (new branch, new SHA, new comment-id) — not on every poll iteration, or you flood the session's context.
-- **Shell `gh` + harness wake hook:** if the harness wakes the session when a `gh ...` command completes its until-loop, `until <gh-poll>; do sleep 60; done` is sufficient. Verify the harness contract before relying on it.
-- **Push (`mcp__github__subscribe_pr_activity`):** delivers `<github-webhook-activity>` messages once a PR exists. Reliability under shared GitHub identity is unverified — use as a complement to polling, not a replacement.
+- **`Monitor` (Claude Code on the web):** `Monitor`'s contract is "every stdout line is a notification delivered as a `task-notification` system message that wakes the session." Wrap polling in `until {transition-detected}; do {poll}; sleep 60; done` and emit only on **transition** (new branch, new SHA, new comment-id) — not on every poll iteration, or you flood the session's context.
+- **Shell `gh` + harness wake hook:** if the harness wakes the session when a `gh ...` command completes its until-loop, `until {gh-poll}; do sleep 60; done` is sufficient. Verify the harness contract before relying on it.
+- **Push (`mcp__github__subscribe_pr_activity`):** delivers `github-webhook-activity` messages once a PR exists. Reliability under shared GitHub identity is unverified — use as a complement to polling, not a replacement.
 
 If neither a `Monitor`-equivalent nor a shell-wake harness exists, the role cannot autonomously detect cycle progression. Surface the gap to the operator before dispatch — do not rely on a wake-up contract that the environment does not provide.
 
 Poll interval: 60 seconds unless the operator specifies otherwise. This applies to α (waiting for review), β (waiting for PR, waiting for α fixes), and γ (tracking full cycle).
 
-**Stdout filter discipline:** transition-only emission is mandatory. A loop that emits on every poll will fill the session with `<task-notification>` blocks and consume context budget. β's #268 cycle ran four wake events across the full cycle by emitting only on new-branch / new-SHA transitions; the pattern is reproducible.
+**Stdout filter discipline:** transition-only emission is mandatory. A loop that emits on every poll will fill the session with `task-notification` blocks and consume context budget. β's #268 cycle ran four wake events across the full cycle by emitting only on new-branch / new-SHA transitions; the pattern is reproducible.
 
 #### γ algorithm
 
@@ -162,8 +162,8 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 
 **Phase 2 — Release support**
 
-6. If β deferred tag push (env constraint per β step 8), push the tag: `git tag <version> <release-commit> && git push origin <version>`. Verify release CI fires.
-7. If the issue did not auto-close on merge (missing `Closes #N`), close it: `gh issue close <number>`
+6. If β deferred tag push (env constraint per β step 8), push the tag: `git tag {version} {release-commit} && git push origin {version}`. Verify release CI fires.
+7. If the issue did not auto-close on merge (missing `Closes #N`), close it: `gh issue close {number}`
 
 **Phase 3 — Close-out triage**
 
@@ -172,7 +172,7 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
    - MCA available (skill patch, gate, mechanization) → ship it now as immediate output
    - No MCA yet, pattern real → MCI. Two kinds:
      - **Project MCI** (future cycles on this project need to know) → `.cdd/` in the repo
-     - **Agent MCI** (future sessions of this agent need to know, any project) → agent hub (`cn-<agent>/threads/adhoc/`)
+     - **Agent MCI** (future sessions of this agent need to know, any project) → agent hub (`cn-{agent}/threads/adhoc/`)
    - One-off, no pattern → drop
 
 **Phase 4 — CDD iteration**
@@ -217,7 +217,7 @@ Load src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md.
 Issue: gh issue view <number>
 ```
 
-Parameters: `<project>` is the project name (e.g. `cnos`, `myapp`). Git identity uses `<role>@cdd.<project>` (e.g. `alpha@cdd.cnos`). `<number>` is the **issue number** for dispatch prompts; β and α discover the PR from issue activity, α's review request, or the polling commands in §Tracking. A PR number may be used only for post-hoc review/recovery workflows, in which case the prompt must say explicitly that it is PR-scoped.
+Parameters: `{project}` is the project name (e.g. `cnos`, `myapp`). Git identity uses `{role}@cdd.{project}` (e.g. `alpha@cdd.cnos`). `{number}` is the **issue number** for dispatch prompts; β and α discover the PR from issue activity, α's review request, or the polling commands in §Tracking. A PR number may be used only for post-hoc review/recovery workflows, in which case the prompt must say explicitly that it is PR-scoped.
 
 The prompt names the role, provides parameters, and points to the issue or PR. The CDD skill tells each role what to load (§4.4) and what to do (§1.4). γ does not enumerate skills or steps in the prompt — that is the skill's job. If the prompt needs to restate the algorithm, the algorithm is not clear enough — fix the skill.
 
@@ -226,8 +226,8 @@ The prompt names the role, provides parameters, and points to the issue or PR. T
 The compact algorithm is here; `alpha/SKILL.md` expands each step into executable detail with self-coherence, pre-review gate, peer enumeration, and harness audit procedures. When they diverge on role-local execution detail, the skill governs, provided it does not alter role ownership, lifecycle order, selection rules, dispatch contract, artifact contract, or closure obligations (those remain CDD.md's authority — see `cdd/SKILL.md` Conflict rule).
 
 1. Receive dispatch prompt from γ
-2. Configure git identity using the project name from the dispatch prompt: `git config user.name "alpha"` and `git config user.email "alpha@cdd.<project>"`
-3. Subscribe to the issue (`gh issue edit <number> --add-assignee @me` or equivalent) so you receive PR and update notifications
+2. Configure git identity using the project name from the dispatch prompt: `git config user.name "alpha"` and `git config user.email "alpha@cdd.{project}"`
+3. Subscribe to the issue (`gh issue edit {number} --add-assignee @me` or equivalent) so you receive PR and update notifications
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
 5. Read the issue fully, read source files referenced in implementation guidance
 6. Implement: branch, code, tests, self-coherence
@@ -245,7 +245,7 @@ The compact algorithm is here; `alpha/SKILL.md` expands each step into executabl
 The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load order, and closure discipline. The detailed review, release, and post-release procedures live in the lifecycle sub-skills (`review/`, `release/`, `post-release/`).
 
 1. Receive dispatch prompt from γ (or pick up from α's review request)
-2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.<project>"`
+2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.{project}"`
 3. Immediately begin polling the issue and PR (see §Tracking above for query forms and the wake-up mechanism) — do not ask, just do it. **The poll requires both a query and a wake-up mechanism.** Pick the query form that matches your environment (`gh`, MCP, or `git fetch` — see §Tracking table) and pick the wake-up form your harness provides (`Monitor` stdout-as-notification, shell-wake-on-loop-exit, or push subscription). Emit only on transition to avoid context flood. If the PR does not exist yet, **poll until α opens a PR that references this issue.** Reference shape (shell + `gh`):
    ```bash
    until gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number -q '.[0].number' 2>/dev/null | grep -q .; do
@@ -529,7 +529,7 @@ The skill that owns skill-program/frontmatter coherence is `src/packages/cnos.co
 
 Skills that depend on what the work touches. The issue's "Skills and constraints" section names these. Examples:
 
-- Language: `eng/<language>`
+- Language: `eng/{language}`
 - Domain: `eng/ux-cli`, `eng/performance-reliability`, `eng/tool`
 - Architecture: `eng/evolve`, `eng/write-functional`
 - Skill authoring: `cnos.core/skills/skill`
@@ -542,7 +542,7 @@ The Tier 3 skill set must be stated alongside mode. Example:
 
 ```text
 Mode: MCA
-Tier 3 skills: eng/<language>, eng/ux-cli
+Tier 3 skills: eng/{language}, eng/ux-cli
 ```
 
 When in doubt about mode, apply CAP: if the answer is already in the system, cite it (MCA) — don't reinvent it (MCI). If two paths close the same gap, take the lighter one unless the heavier one buys durability the lighter one cannot.

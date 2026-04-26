@@ -210,7 +210,7 @@ prev=""; while true; do
 done
 ```
 
-Each `new-branch:` stdout line becomes a `<task-notification>` that wakes the session. Once a PR exists, replace the branch-list query with a per-branch SHA query (`git rev-parse origin/<branch>`) for round-2/3 detection. Run under `Monitor`; emit only on transition.
+Each `new-branch:` stdout line becomes a `task-notification` that wakes the session. Once a PR exists, replace the branch-list query with a per-branch SHA query (`git rev-parse origin/{branch}`) for round-2/3 detection. Run under `Monitor`; emit only on transition.
 
 Then produce both prompts at dispatch time. β begins polling the issue and starts intake while α implements — β does not need to wait for the PR to exist.
 

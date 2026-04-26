@@ -59,7 +59,7 @@ Failure mode: plan restates the design instead of operationalizing it. Or: steps
 1.3. **Name the failure mode**
   - Plan fails via **duplication** (restating the design) or **ambiguity** (steps without acceptance criteria). A plan that just reorganizes the design into numbered steps adds no information.
   - ❌ "Step 1: Fix restore. Step 2: Fix third-party." (no criteria, no files, no order rationale)
-  - ✅ "Step 1: Full package restore. AC: profiles and extensions present in installed root. Files: `<runtime-source-tree>/deps/restore.{src,test}`. Depends on: nothing. Unblocks: Step 4 (doctor)."
+  - ✅ "Step 1: Full package restore. AC: profiles and extensions present in installed root. Files: `{runtime-source-tree}/deps/restore.{src,test}`. Depends on: nothing. Unblocks: Step 4 (doctor)."
 
 ---
 
@@ -95,8 +95,8 @@ Failure mode: plan restates the design instead of operationalizing it. Or: steps
   - Reviewer can scope the diff before reading it.
   - Use language-neutral placeholders for the project's runtime source tree (this skill ships in a method package, not a language-specific package).
   - ❌ "Various files"
-  - ✅ "`src/packages/<package>/...`"
-  - ✅ "`<runtime-source-tree>/...`"
+  - ✅ "`src/packages/{package}/...`"
+  - ✅ "`{runtime-source-tree}/...`"
   - ✅ "`docs/...`"
 
 2.2.4. **Order minimizes rework**
@@ -146,7 +146,7 @@ Failure mode: plan restates the design instead of operationalizing it. Or: steps
 3.2. **Every step has AC + files**
   - No step without acceptance criteria. No step without named files.
   - ❌ "Step 5: Clarify metadata source-of-truth"
-  - ✅ "Step 5: Clarify metadata source-of-truth. AC: one explicit rule exists, build/check/doctor enforce it. Files: `<runtime-source-tree>/pkgbuild/`, `docs/`."
+  - ✅ "Step 5: Clarify metadata source-of-truth. AC: one explicit rule exists, build/check/doctor enforce it. Files: `{runtime-source-tree}/pkgbuild/`, `docs/`."
 
 3.3. **Order is explicit, not implicit**
   - State why step N comes before step N+1
