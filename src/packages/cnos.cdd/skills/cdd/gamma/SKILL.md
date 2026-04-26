@@ -64,7 +64,7 @@ When acting as γ:
 Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix).
 
 `CDD.md` is the only canonical source for:
-- the ordered γ lifecycle (`CDD.md` §1.4, steps 1–16)
+- the ordered γ lifecycle (`CDD.md` §1.4, steps 1–16; step 17 is δ's)
 - selection rule order (`CDD.md` §3)
 
 This file does **not** redefine that algorithm.
@@ -79,6 +79,7 @@ It expands those steps into executable checks, evidence, and gates.
 - Steps 9–10 → close-out triage (`§2.7`)
 - Steps 11–13 → cycle iteration and process patching (`§2.8–§2.9`)
 - Steps 14–16 → hub memory, branch cleanup, closure declaration (`§2.10`)
+- Step 17 → δ disconnect release (`operator/SKILL.md` §3.4) — δ's step, not γ's
 
 ---
 

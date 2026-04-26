@@ -97,6 +97,7 @@ These are operational roles. They are not a claim that every cycle always uses t
 | **γ (Coordinator)** | Orchestrate | 0–1 + 11–13 + cycle-wide | Observe, select, issue creation, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification, post-release assessment, cycle closure | Must hold full cycle context |
 | **α (Implementer)** | Produce | 2–7a | Branch, bootstrap, gap, mode, artifacts (tests/code/docs), self-coherence, pre-review readiness, PR | Must be separate from β |
 | **β (Reviewer + Releaser)** | Judge and integrate | 8–10 | Review (RC/A decision), merge, tag, deploy, β close-out | Must be separate from α |
+| **δ (Operator)** | Route and disconnect | gates + 17 | Session routing, external gate execution (merge/tag/branch), post-cycle disconnect release | Owns platform actions agents cannot perform |
 
 #### Triadic rule
 
@@ -111,6 +112,12 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
 - γ sees both — that is its function
 
 β owns both review and release because the reviewer already has full artifact context when it's time to merge — splitting review from release creates a handoff that adds no value. γ owns coordination because issue quality determines implementation quality, dispatch prompts are the control surface, and unblocking requires cross-agent context that only the coordinator holds.
+
+#### δ and the external boundary
+
+δ (operator) is not a fourth triad role — δ is the boundary between the triad-as-whole and the platform. The triad is one-as-three (per `COHERENCE-FOR-AGENTS.md`): producer, judge, inspectable boundary. δ creates a new one-as-two relation with the triad-as-whole: the triad owns the cycle's internal coherence; δ owns the external boundary (platform gates, session routing, override authority, and the disconnect release that crystallizes the triad's output into a tagged whole).
+
+When the operator serves as γ (two-agent configuration), δ and γ collapse — one person holds both coordination and external boundary authority. The δ skill handles this: "If δ is unavailable, γ may execute gates directly." The structural distinction remains even when the roles are held by the same participant.
 
 #### Default flow
 
@@ -178,7 +185,7 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 
 **Phase 2 — Release support**
 
-7. If β deferred tag push (env constraint per β step 8), push the tag: `git tag {version} {release-commit} && git push origin {version}`. Verify release CI fires.
+7. If β deferred tag push or other release mechanics (env constraint per β step 8), request δ to execute the gate action. δ signals γ on completion (see `operator/SKILL.md` §3.5). If δ is unavailable, γ may execute directly.
 8. If the issue did not auto-close on merge (missing `Closes #N`), close it: `gh issue close {number}`
 
 **Phase 3 — Close-out triage**
@@ -206,8 +213,12 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 14. Update hub memory:
     - Daily reflection: cycle summary, scoring, MCI freeze status, next move
     - Adhoc thread: update or create the thread this cycle advances
-15. Delete merged remote branches: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
+15. Request δ to delete merged remote branches. If δ is unavailable, γ may execute directly: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
 16. Cycle is closed. State it: *"Cycle #N closed. Next: #M."*
+
+**Phase 6 — Disconnect (δ)**
+
+17. After all post-cycle work lands on main (γ PRA, γ skill patches, δ session patches), δ cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4. This is not optional.
 
 #### γ dispatch prompt format
 
