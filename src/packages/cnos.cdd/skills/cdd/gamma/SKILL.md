@@ -353,7 +353,7 @@ Then:
 - write γ close-out. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA.
 - update hub memory
 - delete merged remote branches
-- state closure explicitly: `Cycle #N closed. Next: #M.`
+- state closure explicitly and **signal δ**: *"Cycle #N closed. Next: #M. δ: disconnect."* This is γ's last commit. The signal triggers δ to cut the disconnect release (step 17). If γ cannot reach δ directly, the closure commit on main is the fallback.
 
 ---
 

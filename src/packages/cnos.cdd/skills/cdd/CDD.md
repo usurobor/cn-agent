@@ -214,7 +214,7 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
     - Daily reflection: cycle summary, scoring, MCI freeze status, next move
     - Adhoc thread: update or create the thread this cycle advances
 15. Request δ to delete merged remote branches. If δ is unavailable, γ may execute directly: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
-16. Cycle is closed. State it: *"Cycle #N closed. Next: #M."* This declaration must be γ's **last commit** for the cycle — no post-closure pushes. The closure declaration is δ's trigger to begin the disconnect (step 17).
+16. Cycle is closed. Commit the closure declaration to main and **signal δ**: *"Cycle #N closed. Next: #M. δ: disconnect."* This declaration must be γ's **last commit** for the cycle — no post-closure pushes. The signal to δ is what triggers the disconnect (step 17). If γ cannot reach δ directly, the closure commit on main is the fallback signal (δ polls for it per `operator/SKILL.md` §2.2).
 
 **Phase 6 — Disconnect (δ)**
 
