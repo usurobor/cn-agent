@@ -2,7 +2,7 @@
 
 **Version:** 0.1 (draft-normative)
 **Date:** 2026-04-26
-**Status:** Normative reference for the skill-module / invocation layer of CTB. Derived from current practice in `cnos.core` and `cnos.cdd`. Expected to evolve with the kernel and runtime.
+**Status:** Normative reference for the skill-module / invocation layer of CTB. Fully realized today in `cnos.cdd`; prescriptive for the wider package set as it migrates. Expected to evolve with the kernel and runtime.
 
 ---
 
@@ -10,7 +10,9 @@
 
 This document specifies the language-level model of CTB: what a skill is, what it declares, how it is named, scoped, invoked, composed, and bounded against effects.
 
-It is normative for the surface that already exists in the cnos packages — frontmatter, triggers, scope, calls, visibility — and prescriptive for the seams the practice has surfaced but not yet closed (loader model, pipeline semantics, contract grammar, scoped authority).
+The signature surface defined in §2 — frontmatter, scope, visibility, contracts, calls — is fully realized today in `cnos.cdd`. The cnos.core skills (`skill`, `write`, `design`, `compose`, `naturalize`, `audit`) declare only the older minimal frontmatter (`name`, `description`, `triggers`, sometimes `artifact_class` and `kata_surface`) and state their input/output contracts in prose inside the body. For those skills this spec is **prescriptive**: it states the form they should take when migrated. Migration is not a precondition for adopting the spec elsewhere.
+
+The spec also closes the seams the Vision surfaces — loader model, pipeline semantics, contract grammar, scoped authority — that the practice has named but not yet formalized.
 
 It is **not**:
 
@@ -86,12 +88,47 @@ Every skill MUST declare a signature in YAML frontmatter at the top of `SKILL.md
 
 | Field | Type | Meaning |
 |---|---|---|
-| `calls` | list of skill paths | Static call edges. Skills this skill MAY dispatch. |
+| `calls` | list of static call entries | Statically declared call edges. See §2.4.1. |
+| `calls_dynamic` | list of dynamic call sources | Data-driven call sets resolved at runtime. See §2.4.2. |
 | `runs_after` | list of skill names | Pipeline ordering: skills that MUST have completed first. |
 | `runs_before` | list of skill names | Pipeline ordering: skills that MUST NOT have completed first. |
 | `excludes` | list of skill names | Skills that MUST NOT load with this skill in the same activation. |
 
 `runs_after`, `runs_before`, and `excludes` are reciprocal: if A declares `excludes: [B]`, B SHOULD declare `excludes: [A]`. A loader MUST treat a one-sided exclusion as an exclusion; it MAY warn about the missing reciprocal.
+
+#### 2.4.1 `calls` — static call entries
+
+Each entry in `calls` is one of:
+
+- a bare path string: `design/SKILL.md` (sugar for `path: design/SKILL.md`)
+- a mapping: `path: <skill-path>`
+
+Every static target is a concrete skill the loader can resolve at activation time. Static targets form the inspectable call graph. A skill MUST NOT dispatch to a target that is not declared in either `calls` or `calls_dynamic`.
+
+#### 2.4.2 `calls_dynamic` — data-driven call sets
+
+A skill that selects sub-skills based on runtime data (e.g. issue contents, role context, configuration) declares the **source** of those targets, not the targets themselves. Each entry takes the form:
+
+```yaml
+calls_dynamic:
+  - source: <data-path>
+    constraint: <optional shape requirement>
+```
+
+`source` names where the target list comes from (a field on the input, a manifest entry, a runtime-computed set). `constraint` MAY narrow the permissible targets (e.g. "must be skills under `eng/`").
+
+Example, modelled on the current α role:
+
+```yaml
+calls:
+  - design/SKILL.md
+  - plan/SKILL.md
+calls_dynamic:
+  - source: issue.tier3_skills
+  - source: issue.tier2_bundles
+```
+
+The loader cannot enumerate dynamic targets ahead of time, but it can verify at dispatch that every actually-resolved target is reachable by *some* declared source. A dispatch to a skill that matches no static entry and no dynamic source is a violation.
 
 ### 2.5 Worked example
 
@@ -145,11 +182,11 @@ Scope is the lexical region in which a skill's authority and mutations are valid
 | `role-local` | The skill is active only while a named role is bound (e.g. α, β, γ in CDD). |
 | `task-local` | The skill is active only inside a single dispatched task and its descendants. |
 
-A skill without a declared `scope` is treated as `task-local`.
-
 ### 3.2 Scope is first-class
 
-Scope is part of the signature. It MUST be declared. The loader MUST refuse to dispatch a skill into a scope it did not declare to support.
+Scope is part of the signature. A conformant skill MUST declare `scope`. The loader MUST refuse to dispatch a skill into a scope it did not declare to support.
+
+For migration only, a loader MAY treat an omitted `scope` on a legacy skill as `task-local` and SHOULD warn. This is a compatibility behavior, not core semantics: a skill that omits `scope` is not conformant, and a stable release MUST NOT ship such a skill.
 
 ### 3.3 Scope and mutation
 
@@ -171,7 +208,7 @@ This is the same principle as functions not sharing mutable state. The loader an
 | Value | Meaning |
 |---|---|
 | `public` | The skill is a valid external dispatch entrypoint for its package. Its triggers are loader-visible. |
-| `internal` | The skill is callable only from a skill that statically lists it under `calls`. Its triggers are advisory and MUST NOT be used as public dispatch. |
+| `internal` | The skill is callable only from a skill that declares it under `calls` or admits it via `calls_dynamic`. Its triggers are advisory and MUST NOT be used as public dispatch. |
 
 `visibility` defaults to `internal`. A skill that omits `visibility` MUST NOT be dispatched from outside its package.
 
@@ -181,7 +218,7 @@ The loader resolves a dispatch in three steps:
 
 1. **Root dispatch.** An external trigger (operator, harness, peer) is matched against the union of `triggers` across all `public` skills in scope. Exactly one skill MUST match, or dispatch fails.
 2. **Role binding.** If the matched skill declares `scope: role-local`, the dispatcher MUST also supply a role. If `scope: global`, any nested role binding is established by the matched skill itself (e.g. cdd binds α, β, or γ).
-3. **Local expansion.** Once bound, the active skill MAY dispatch to skills it lists under `calls`. Internal sub-skills are reachable only along these static edges.
+3. **Local expansion.** Once bound, the active skill MAY dispatch to skills it lists under `calls` or admits via `calls_dynamic`. Internal sub-skills are reachable only along these declared edges.
 
 Triggers on `internal` skills are advisory: they document under what condition the parent skill should call the sub-skill. The runtime MUST NOT promote them to public entrypoints.
 
@@ -203,15 +240,19 @@ operator
 
 ### 5.2 Static and dynamic calls
 
-A **static call** is a target listed under `calls` in the caller's signature. The loader can verify it before invocation. Static calls form the dispatch graph the loader inspects.
+There are two kinds of declared call edges. Both are first-class.
 
-A **dynamic call** is a dispatch chosen at runtime by the caller — typically by matching one of its own state values against a sub-skill's trigger after it has been loaded along a static edge.
+A **static call** is a target listed under `calls` (§2.4.1). The target is a concrete skill path. The loader can resolve and verify it at activation. Static calls form the inspectable dispatch graph.
 
-A skill MUST declare every dispatch it can issue under `calls`. Dynamic selection among declared targets is permitted; dispatch to undeclared targets is not.
+A **dynamic call** is a target *set* declared under `calls_dynamic` (§2.4.2). The set is sourced from runtime data (issue contents, role context, configuration). The loader cannot enumerate the targets ahead of time; it can only verify, at dispatch, that each resolved target is admitted by some declared source.
 
-> Restated: declared edges may be selected dynamically. Undeclared targets are unreachable.
+Both kinds are reachable from the skill's body. Selection among static targets is permitted at runtime; resolution of a dynamic source happens at runtime by definition.
 
-This makes the call graph statically inspectable while keeping selection policy in the caller.
+What is forbidden is dispatch to a target that matches no static entry and no dynamic source. The call graph stays inspectable: every edge the runtime takes was declared, even if its concrete endpoint was data.
+
+> Restated: declared static edges may be selected dynamically; declared dynamic sources may resolve to any target the source legitimately produces; targets reachable by neither path are unreachable.
+
+This split exists because practice needs both. The CDD lifecycle skills are declared statically (`design/SKILL.md`, `plan/SKILL.md`); the Tier 2 / Tier 3 skills the issue names are declared dynamically (`source: issue.tier3_skills`). Forcing either pattern into the other distorts the model.
 
 ### 5.3 Return values
 
@@ -348,7 +389,7 @@ A composition is well-formed if and only if:
 1. Every skill declares `name`, `description`, `artifact_class`, `kata_surface`, and `governing_question`.
 2. Every skill declares `scope`. Public skills declare `visibility: public`.
 3. Every skill declares `inputs` and `outputs`.
-4. Every dispatch target appears in the caller's `calls`.
+4. Every dispatch target is reachable through the caller's `calls` or `calls_dynamic`.
 5. No skill inherits from another.
 6. No two skills own the same rule.
 7. No declared exclusion is one-sided in a checked package (warning) or is one-sided in a stable release (error).
@@ -368,7 +409,7 @@ The following frontmatter keys are reserved by this spec and MUST NOT be repurpo
 name description artifact_class kata_surface governing_question
 scope visibility triggers
 inputs outputs requires
-calls runs_after runs_before excludes
+calls calls_dynamic runs_after runs_before excludes
 ```
 
 Packages MAY define additional keys. Loaders MUST ignore unknown keys but SHOULD warn.
@@ -377,37 +418,60 @@ Packages MAY define additional keys. Loaders MUST ignore unknown keys but SHOULD
 
 ## 12. Examples from the current package set
 
-### 12.1 A pure transformation skill
+### 12.1 A scoped, public, dispatching skill (fully realized)
 
-`cnos.core/skills/write/SKILL.md` declares:
-
-- one axis (prose coherence)
-- input contract (prose with a governing question)
-- output contract (sections answer one sub-question, stable facts have one home)
-- triggers that distinguish it from neighbors
-
-It owns no calls. It is composed by neighboring skills (e.g. `naturalize` `runs_after: write`).
-
-### 12.2 A scoped, public, dispatching skill
-
-`cnos.cdd/skills/cdd/SKILL.md` declares:
+`cnos.cdd/skills/cdd/SKILL.md` declares the spec's signature directly in frontmatter:
 
 - `visibility: public`, `scope: global`
 - `triggers` that route external dispatch to CDD
+- `inputs`, `outputs`, `requires` as structured fields
 - `calls` listing the static call graph (role skills + lifecycle sub-skills)
 - normative authority deferred to a sibling document (`CDD.md`)
 
 It is the only public entry to its package. Its sub-skills are internal even though they have triggers.
 
-### 12.3 A peer that applies a foundation skill to a class
+### 12.2 A role skill with static and dynamic calls (fully realized)
 
-`cnos.core/skills/compose/SKILL.md` declares:
+`cnos.cdd/skills/cdd/alpha/SKILL.md` declares:
 
-- one axis (compositional fitness of a skill artifact)
-- contracts pointing to `skill` and `write` for shared rules
-- explicit authority (`design` governs decomposition; `write` governs prose; `compose` adds classification, triggers, publish-or-compose verdict)
+- `visibility: internal`, `scope: role-local`
+- `inputs`, `outputs`, `requires` as structured fields
+- a static `calls` set (`design/SKILL.md`, `plan/SKILL.md`)
+- a data-driven set sourced from the issue (Tier 2 / Tier 3 skills the issue names)
 
-It demonstrates the no-inheritance rule: it does not extend `design`; it composes with `design` and adds what it owns.
+In v0.1 the data-driven set is expressed in prose inside `calls` ("Tier 2 and Tier 3 skills named by the issue"). When migrated to the §2.4.2 form it becomes:
+
+```yaml
+calls:
+  - design/SKILL.md
+  - plan/SKILL.md
+calls_dynamic:
+  - source: issue.tier3_skills
+  - source: issue.tier2_bundles
+```
+
+This is the canonical case for `calls_dynamic`.
+
+### 12.3 A pure transformation skill (prescriptive)
+
+`cnos.core/skills/write/SKILL.md` is a single-axis transformation along prose coherence. Its body declares input and output contracts in §1 and §2 prose; its current frontmatter declares only `name`, `description`, and `triggers`.
+
+When migrated, its signature should declare:
+
+- `artifact_class: skill`, `kata_surface: embedded`
+- `governing_question`
+- `scope: task-local`
+- `visibility: public` (it is composed by name from other packages)
+- `inputs` / `outputs` lifted from the body's contract section
+- no `calls` (it does not dispatch sub-skills)
+
+It is composed by neighboring skills via `runs_after: [write]` (e.g. `naturalize`).
+
+### 12.4 A peer that applies a foundation skill to a class (prescriptive)
+
+`cnos.core/skills/compose/SKILL.md` is `design` applied to artifacts of class `skill`. Today its body states the input/output contract in §2.3 prose. Its current frontmatter declares only `name`, `description`, `artifact_class`, `kata_surface`, `governing_question`, and `triggers`.
+
+When migrated, its signature should declare structured contracts and explicit authority pointers. It already demonstrates the no-inheritance rule in its body: it does not extend `design`; it composes with `design` and `write` and adds what it owns (classification, triggers, publish-or-compose verdict).
 
 ---
 
