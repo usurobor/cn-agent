@@ -262,7 +262,7 @@ Allowed transfer unit: **artifact facts**, not hidden role state.
 
 ### 2.6. Steps 6–7 — Support deferred release mechanics only
 
-If β deferred a mechanical release step because of environment constraints, δ (operator) executes the gate action and signals γ on completion (see `operator/SKILL.md` §3.4). γ may also execute directly if δ is unavailable:
+If β deferred a mechanical release step because of environment constraints, δ (operator) executes the gate action and signals γ on completion (see `operator/SKILL.md` §3.5). γ may also execute directly if δ is unavailable:
 - push the tag
 - verify release CI fired
 - close the issue if auto-close failed

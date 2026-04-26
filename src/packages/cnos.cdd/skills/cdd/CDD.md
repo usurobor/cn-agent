@@ -295,7 +295,7 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 5. Read the PR diff, read the issue
 6. Review: produce CR with findings per review skill, or approve
 7. If RC: post findings as PR comment, wait for α's fix
-8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to δ (operator) — do not block closure on it. δ signals γ on completion (see `operator/SKILL.md` §3.4).
+8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to δ (operator) — do not block closure on it. δ signals γ on completion (see `operator/SKILL.md` §3.5).
 9. Write β close-out (review context, release evidence, cycle findings or "no findings"). This is β's input to γ's PRA and cycle iteration decision (§9.1).
 10. Done when close-out is committed. γ writes the post-release assessment separately.
 

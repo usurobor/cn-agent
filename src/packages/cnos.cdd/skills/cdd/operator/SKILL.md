@@ -137,7 +137,18 @@ After executing a gate action, confirm to the requesting role that the action co
 - ❌ Execute silently and assume the triad will notice
 - ✅ "Tag pushed: `git push origin 3.59.0` — confirmed on remote"
 
-### 3.4. Signal γ after release-phase gates
+### 3.4. Assess post-cycle release need
+
+After γ's PRA + skill patches and any δ session patches land on main, δ decides whether to cut a patch release:
+
+- **Release if:** skill patches change behavior that the next cycle's agents need from the distribution chain (not just from git pull). E.g. package-distributed skills that downstream consumers install.
+- **Skip if:** all patches are in repo-local skills that agents consume via git pull, and no package version bump is needed.
+- Document the decision either way (per reflect §3.6 — record basis, not just conclusion).
+
+- ❌ γ's skill patches sit unreleased for 3 cycles because nobody owns the release decision
+- ✅ δ assesses after γ signals closure: "5 skill patches on main, all repo-local, agents pull main — no release needed" or "package-distributed skill changed, cutting 3.59.1"
+
+### 3.5. Signal γ after release-phase gates
 
 After completing release-phase gate actions (tag push, branch cleanup, release CI observation), signal γ with a completion summary. γ cannot verify platform state changes by polling — tag existence, branch deletion, and CI results on external workflows are only confirmable by δ. Without this signal, γ remains in observation mode with no way to know the cycle's external actions completed.
 
@@ -202,6 +213,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 | Release | Gate actions if requested (merge, tag) | β or γ gate request |
 | Closure | Gate actions if requested (branch delete, issue close) | γ closure declaration |
 | Post-release | Execute deferred operator actions from γ close-out, then **signal γ** with completion summary | γ deferred-output list |
+| Post-release patch | Assess whether γ's PRA skill patches + any δ session patches warrant a release. If yes: bump version, tag, push. If no: document the decision. | γ close-out + δ session patches on main |
 | Inter-cycle | Nothing until next γ dispatch | γ next-cycle selection |
 
 ---
