@@ -484,7 +484,164 @@ func CheckOne(pkg DiscoveredPackage) CheckResult {
 		r.Issues = append(r.Issues, "no content class directories found")
 	}
 
+	// AC1 (#235): every commands.<X>.entrypoint declared in
+	// cn.package.json must resolve to an existing regular file under
+	// the package root. Reads through pkgtypes.ParseFullManifestData —
+	// the canonical full-manifest parser — so the entrypoint check
+	// shares one schema definition with the rest of the runtime
+	// (eng/go §2.17 "one parser per fact"). The minimal pkg.Manifest
+	// already validated by DiscoverPackages is reused for name/version
+	// only; commands are only present in the full shape.
+	manifestPath := filepath.Join(pkg.SrcDir, "cn.package.json")
+	manifestData, err := os.ReadFile(manifestPath)
+	if err != nil {
+		r.Issues = append(r.Issues, fmt.Sprintf("read cn.package.json: %v", err))
+	} else {
+		full, err := pkgtypes.ParseFullManifestData(manifestData)
+		if err != nil {
+			r.Issues = append(r.Issues, fmt.Sprintf("parse cn.package.json: %v", err))
+		} else {
+			r.Issues = append(r.Issues, checkCommandEntrypoints(pkg.SrcDir, full.CommandEntries())...)
+		}
+	}
+
+	// AC2 (#235): every leaf directory under skills/ must carry a
+	// SKILL.md. Filesystem-as-authority (#261, DESIGN-CONSTRAINTS §1):
+	// activation discovers skills by walking for SKILL.md files, so a
+	// leaf directory missing one is an unreachable skill — the package
+	// ships content the runtime cannot activate. Container directories
+	// with subdirectories (e.g. cnos.eng/skills/eng/ namespacing all
+	// eng/* sub-skills) are exempt because they are not themselves
+	// skills; their children carry the SKILL.md files.
+	r.Issues = append(r.Issues, checkSkillDirectories(pkg.SrcDir)...)
+
 	return r
+}
+
+// checkCommandEntrypoints returns one issue per declared command whose
+// entrypoint does not resolve to an existing regular file under
+// pkgDir. Paths are rejected if they escape pkgDir (path traversal via
+// "..") or if the resolved target is missing or is not a regular file
+// (directory, symlink to a directory, etc.). Permission bits are not
+// checked — issue #235 non-goal: chmod is platform-variable.
+func checkCommandEntrypoints(pkgDir string, commands []pkgtypes.PackageCommandEntry) []string {
+	var issues []string
+	for _, cmd := range commands {
+		if cmd.Entrypoint == "" {
+			issues = append(issues, fmt.Sprintf("command %q: missing entrypoint", cmd.Name))
+			continue
+		}
+		// Resolve the declared path relative to pkgDir and verify it
+		// stays inside the package root. filepath.Clean collapses
+		// "a/../b" sequences; the rel check then catches any path
+		// that walks above pkgDir.
+		entryAbs := filepath.Join(pkgDir, filepath.FromSlash(cmd.Entrypoint))
+		rel, err := filepath.Rel(pkgDir, entryAbs)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			issues = append(issues, fmt.Sprintf("command %q: entrypoint %q escapes package root",
+				cmd.Name, cmd.Entrypoint))
+			continue
+		}
+		info, err := os.Stat(entryAbs)
+		if err != nil {
+			if os.IsNotExist(err) {
+				issues = append(issues, fmt.Sprintf("command %q: entrypoint %q does not exist",
+					cmd.Name, cmd.Entrypoint))
+			} else {
+				issues = append(issues, fmt.Sprintf("command %q: stat entrypoint %q: %v",
+					cmd.Name, cmd.Entrypoint, err))
+			}
+			continue
+		}
+		if !info.Mode().IsRegular() {
+			issues = append(issues, fmt.Sprintf("command %q: entrypoint %q is not a regular file",
+				cmd.Name, cmd.Entrypoint))
+		}
+	}
+	return issues
+}
+
+// checkSkillDirectories walks each top-level subdirectory of
+// pkgDir/skills/ and returns one issue per top-level directory that
+// has no SKILL.md anywhere in its subtree. Filesystem-as-authority
+// (#261, DESIGN-CONSTRAINTS §1): the activation walk only registers
+// a skill where it finds a SKILL.md, so a top-level skill directory
+// with no SKILL.md descendants is dead weight — the package ships a
+// directory the runtime cannot interpret as anything.
+//
+// The check is intentionally narrow:
+//
+//   - Top-level only. Deeper subdirectories may legitimately be
+//     resource subdirectories of their parent skill (e.g.
+//     `skills/naturalize/references/ai-tells.md`) or sub-skills with
+//     their own SKILL.md. The two are indistinguishable from layout
+//     alone, so the validator does not flag them. This narrowness is
+//     the cost of filesystem-as-authority: there is no manifest-side
+//     declaration to check against.
+//
+//   - "Subtree contains SKILL.md" is the bar, not "this directory
+//     has SKILL.md." Container namespaces such as
+//     `cnos.eng/skills/eng/` carry no SKILL.md themselves but hold
+//     a flat tree of sub-skills (eng/code/, eng/test/, …), each with
+//     their own SKILL.md. They pass.
+//
+// SKILL.md directly under `skills/` has no derivable skill id (see
+// activation/index.go discoverPackageSkills) and is therefore not
+// considered a skill — the walk skips files at skills/'s root.
+func checkSkillDirectories(pkgDir string) []string {
+	skillsRoot := filepath.Join(pkgDir, pkgtypes.ClassSkills)
+	info, err := os.Stat(skillsRoot)
+	if err != nil || !info.IsDir() {
+		return nil
+	}
+
+	topLevel, err := os.ReadDir(skillsRoot)
+	if err != nil {
+		return []string{fmt.Sprintf("read skills/: %v", err)}
+	}
+
+	var issues []string
+	for _, e := range topLevel {
+		if !e.IsDir() {
+			continue
+		}
+		dir := filepath.Join(skillsRoot, e.Name())
+		hasSkillMd, walkErr := containsSkillMd(dir)
+		if walkErr != nil {
+			issues = append(issues, fmt.Sprintf("walk skills/%s: %v", e.Name(), walkErr))
+			continue
+		}
+		if !hasSkillMd {
+			issues = append(issues, fmt.Sprintf("skill directory %q: no SKILL.md found in subtree",
+				filepath.ToSlash(filepath.Join(pkgtypes.ClassSkills, e.Name()))))
+		}
+	}
+	// Stable order across platforms — os.ReadDir returns lexical
+	// order on most filesystems, but readdir order is not specified
+	// by POSIX and we want byte-identical CI output.
+	sort.Strings(issues)
+	return issues
+}
+
+// containsSkillMd reports whether root or any of its descendants
+// contains a regular file named SKILL.md. The walk short-circuits
+// at the first hit via fs.SkipAll.
+func containsSkillMd(root string) (bool, error) {
+	found := false
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if !d.IsDir() && d.Name() == "SKILL.md" {
+			found = true
+			return fs.SkipAll
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return found, nil
 }
 
 // --- Lockfile generation ---

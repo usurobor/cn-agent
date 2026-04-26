@@ -688,3 +688,227 @@ func writeManifest(t *testing.T, pkgDir, name, version string) {
 	data, _ := json.MarshalIndent(manifest, "", "  ")
 	os.WriteFile(filepath.Join(pkgDir, "cn.package.json"), data, 0644)
 }
+
+// writeManifestWithCommands writes a cn.package.json that declares the
+// given command map. The minimal-shape PackageManifest writeManifest
+// uses cannot represent commands; commands validation needs the full
+// shape.
+func writeManifestWithCommands(t *testing.T, pkgDir, name, version string, commands map[string]map[string]string) {
+	t.Helper()
+	cmds := make(map[string]map[string]string, len(commands))
+	for k, v := range commands {
+		cmds[k] = v
+	}
+	manifest := map[string]any{
+		"schema":   "cn.package.v1",
+		"name":     name,
+		"version":  version,
+		"kind":     "package",
+		"commands": cmds,
+	}
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal manifest: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(pkgDir, "cn.package.json"), data, 0644); err != nil {
+		t.Fatalf("write manifest: %v", err)
+	}
+}
+
+// hasIssue reports whether any element of issues contains substr.
+// Used by the AC1/AC2 negative-path tests so the assertion is robust
+// against future tweaks to the human-readable error string.
+func hasIssue(issues []string, substr string) bool {
+	for _, iss := range issues {
+		if strings.Contains(iss, substr) {
+			return true
+		}
+	}
+	return false
+}
+
+// --- #235 AC1: command entrypoint validation ---
+
+// TestCheckOneEntrypointPresent: pass path. Manifest declares a
+// command and the entrypoint exists as a regular file under pkgDir.
+// CheckOne reports no entrypoint issue.
+func TestCheckOneEntrypointPresent(t *testing.T) {
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "alpha", "SKILL.md"), "# alpha\n")
+	mustWrite(t, filepath.Join(pkgDir, "commands", "daily", "cn-daily"), "#!/bin/sh\n")
+	writeManifestWithCommands(t, pkgDir, "test.pkg", "1.0.0", map[string]map[string]string{
+		"daily": {"entrypoint": "commands/daily/cn-daily", "summary": "daily"},
+	})
+
+	packages, err := DiscoverPackages(repoRoot)
+	if err != nil {
+		t.Fatalf("discover: %v", err)
+	}
+	result := CheckOne(packages[0])
+	if hasIssue(result.Issues, "entrypoint") {
+		t.Errorf("expected no entrypoint issue, got %v", result.Issues)
+	}
+}
+
+// TestCheckOneEntrypointMissing: fail path (AC1). Manifest declares a
+// command with an entrypoint that does not exist on disk. CheckOne
+// surfaces a "does not exist" issue naming the command.
+func TestCheckOneEntrypointMissing(t *testing.T) {
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "alpha", "SKILL.md"), "# alpha\n")
+	writeManifestWithCommands(t, pkgDir, "test.pkg", "1.0.0", map[string]map[string]string{
+		"daily": {"entrypoint": "commands/daily/cn-daily", "summary": "daily"},
+	})
+
+	packages, err := DiscoverPackages(repoRoot)
+	if err != nil {
+		t.Fatalf("discover: %v", err)
+	}
+	result := CheckOne(packages[0])
+	if !hasIssue(result.Issues, `command "daily"`) || !hasIssue(result.Issues, "does not exist") {
+		t.Errorf("expected entrypoint-missing issue naming the command, got %v", result.Issues)
+	}
+}
+
+// TestCheckOneEntrypointIsDirectory: fail path. Entrypoint resolves to
+// an existing path that is not a regular file (e.g. a directory).
+// AC1 explicitly requires the entrypoint to be "an existing regular file."
+func TestCheckOneEntrypointIsDirectory(t *testing.T) {
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "alpha", "SKILL.md"), "# alpha\n")
+	if err := os.MkdirAll(filepath.Join(pkgDir, "commands", "daily", "cn-daily"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	writeManifestWithCommands(t, pkgDir, "test.pkg", "1.0.0", map[string]map[string]string{
+		"daily": {"entrypoint": "commands/daily/cn-daily", "summary": "daily"},
+	})
+
+	packages, err := DiscoverPackages(repoRoot)
+	if err != nil {
+		t.Fatalf("discover: %v", err)
+	}
+	result := CheckOne(packages[0])
+	if !hasIssue(result.Issues, "is not a regular file") {
+		t.Errorf("expected non-regular-file issue, got %v", result.Issues)
+	}
+}
+
+// TestCheckOneEntrypointEscapesPackageRoot: fail path. A manifest
+// declaring an entrypoint with a "../" prefix must be rejected even
+// if the resolved path happens to exist outside the package root.
+// Defends the "fact lives under pkgDir" boundary.
+func TestCheckOneEntrypointEscapesPackageRoot(t *testing.T) {
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "alpha", "SKILL.md"), "# alpha\n")
+	// File exists outside pkgDir; the validator must still reject the path.
+	mustWrite(t, filepath.Join(repoRoot, "outside-the-package"), "x")
+	writeManifestWithCommands(t, pkgDir, "test.pkg", "1.0.0", map[string]map[string]string{
+		"escape": {"entrypoint": "../../../outside-the-package", "summary": "evil"},
+	})
+
+	packages, err := DiscoverPackages(repoRoot)
+	if err != nil {
+		t.Fatalf("discover: %v", err)
+	}
+	result := CheckOne(packages[0])
+	if !hasIssue(result.Issues, "escapes package root") {
+		t.Errorf("expected path-escape issue, got %v", result.Issues)
+	}
+}
+
+// TestCheckOneNoCommandsIsValid: a package with no commands declared
+// produces no entrypoint issues. The check is opt-in by manifest
+// declaration; packages that ship only skills/templates/etc. must not
+// be penalized.
+func TestCheckOneNoCommandsIsValid(t *testing.T) {
+	repoRoot := t.TempDir()
+	setupTestRepo(t, repoRoot)
+
+	packages, _ := DiscoverPackages(repoRoot)
+	result := CheckOne(packages[0])
+	if hasIssue(result.Issues, "command") || hasIssue(result.Issues, "entrypoint") {
+		t.Errorf("expected no command/entrypoint issues, got %v", result.Issues)
+	}
+}
+
+// --- #235 AC2: skill directory validation ---
+
+// TestCheckOneSkillDirWithSkillMd: pass path. A leaf skill directory
+// with SKILL.md is valid. setupTestRepo already creates this shape;
+// the test makes the AC2 pass-path explicit so future regressions to
+// the rule are caught directly.
+func TestCheckOneSkillDirWithSkillMd(t *testing.T) {
+	repoRoot := t.TempDir()
+	setupTestRepo(t, repoRoot)
+
+	packages, _ := DiscoverPackages(repoRoot)
+	result := CheckOne(packages[0])
+	if hasIssue(result.Issues, "SKILL.md") {
+		t.Errorf("expected no SKILL.md issue, got %v", result.Issues)
+	}
+}
+
+// TestCheckOneSkillDirMissingSkillMd: fail path (AC2). Top-level
+// directory under skills/ ships only resource files — no SKILL.md
+// anywhere in subtree. The runtime cannot activate it. CheckOne
+// surfaces the directory by path.
+func TestCheckOneSkillDirMissingSkillMd(t *testing.T) {
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	// "ghost" skill dir: only a resource file, no SKILL.md anywhere
+	// in the subtree.
+	mustWrite(t, filepath.Join(pkgDir, "skills", "ghost", "notes.md"), "stray\n")
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+
+	packages, err := DiscoverPackages(repoRoot)
+	if err != nil {
+		t.Fatalf("discover: %v", err)
+	}
+	result := CheckOne(packages[0])
+	if !hasIssue(result.Issues, "skills/ghost") || !hasIssue(result.Issues, "no SKILL.md") {
+		t.Errorf("expected ghost-skill issue naming skills/ghost, got %v", result.Issues)
+	}
+}
+
+// TestCheckOneSkillContainerNamespaceExempt: a top-level "namespace"
+// directory under skills/ that itself has no SKILL.md but contains
+// sub-skills (each with SKILL.md) is valid. This is the
+// cnos.eng/skills/eng/ pattern — eng/ is a flat namespace over
+// eng/code, eng/test, etc. The validator must not flag the parent.
+func TestCheckOneSkillContainerNamespaceExempt(t *testing.T) {
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "eng", "code", "SKILL.md"), "# code\n")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "eng", "test", "SKILL.md"), "# test\n")
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+
+	packages, _ := DiscoverPackages(repoRoot)
+	result := CheckOne(packages[0])
+	if hasIssue(result.Issues, "skills/eng") {
+		t.Errorf("container namespace must not be flagged, got %v", result.Issues)
+	}
+}
+
+// TestCheckOneSkillResourceSubdirExempt: a resource subdirectory
+// inside a skill (e.g. skills/foo/references/) does not need its own
+// SKILL.md. This is the cnos.core/skills/naturalize/references/
+// pattern — the parent skill cites resource markdown alongside its
+// SKILL.md. The validator only checks top-level subdirectories of
+// skills/, so deeper resource dirs are by-construction exempt.
+func TestCheckOneSkillResourceSubdirExempt(t *testing.T) {
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "src", "packages", "test.pkg")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "naturalize", "SKILL.md"), "# naturalize\n")
+	mustWrite(t, filepath.Join(pkgDir, "skills", "naturalize", "references", "ai-tells.md"), "ref\n")
+	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
+
+	packages, _ := DiscoverPackages(repoRoot)
+	result := CheckOne(packages[0])
+	if hasIssue(result.Issues, "references") {
+		t.Errorf("resource subdir must not be flagged, got %v", result.Issues)
+	}
+}
