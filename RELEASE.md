@@ -2,37 +2,38 @@
 
 ## Outcome
 
-Patch release: δ post-cycle disconnect for 3.59.0.
+Coherence delta: C_Σ A (`α A`, `β A`, `γ A-`) · **Level:** `L6` (cycle cap: L5)
 
-No Go kernel changes. No binary changes. Spec, skill, and doc patches only — all from the #230 cycle's close-out triage and the first live δ (operator) session.
+`cn build --check` now catches what it used to silently let through — packages can no longer ship with a manifest declaring `commands.<X>.entrypoint` pointing at a missing or non-regular file, and a `skills/orphan/` subtree with no `SKILL.md` anywhere is now a build-time failure instead of a silent runtime omission. The build-time validator and the runtime activation walk now read from the same filesystem-as-authority surface, so what `cn build --check` accepts is exactly what the runtime can later activate.
 
 ## Why it matters
 
-The 3.59.0 cycle produced 10 commits of post-release work (PRA, close-outs, skill patches, δ operator skill, CTB v0.1). Without a tag, the triad's final output remains entangled with whatever comes next. This release is the disconnection point — the tagged snapshot of everything the #230 cycle and its δ session produced.
+Before this release the manifest-claim ↔ filesystem-fact link was unenforced at build time. A `commands.daily.entrypoint = "commands/daily/cn-daily"` declaration with the file missing produced a tarball that installed cleanly but failed at dispatch. A `skills/orphan-skill/` directory with only stray markdown shipped as dead weight that activation silently dropped. Both classes were latent install-time / run-time degradations that the source repo had no way to surface. They surface now, at the same gate where everything else structural already surfaces (the I1 `coherence-build-check` job).
+
+This is the same authority-surface tightening pattern as #261 (`activation` reads filesystem for skill discovery) and #230 (`restore` + `doctor` read the installed manifest version). Build-time validation, runtime activation, and runtime dispatch now agree on what constitutes a valid command/skill.
 
 ## Added
 
-- **δ operator skill** (`operator/SKILL.md`): New CDD role — δ owns external gates, session routing, override authority. First addition to the CDD role model since the triad. Per `COHERENCE-FOR-AGENTS.md`: δ is whole-to-whole composition — a new one-as-two boundary between the triad-as-whole and the platform, not a fourth triad role.
-- **CTB Language Spec v0.1** (`docs/alpha/ctb/LANGUAGE-SPEC.md`): Normative reference for skill modules — signatures, scope, dispatch, composition, effect-plan boundary. First concrete `calls_dynamic` migration on `alpha/SKILL.md`.
-- **CTB Semantics Notes** (`docs/alpha/ctb/SEMANTICS-NOTES.md`): Non-normative conceptual rationale behind the spec.
-- **Reflect §3.6** — decision-basis capture: when a daily records a triage/classification/disposition, record criteria + per-item basis. A conclusion without basis is a claim the next session cannot verify.
-- **Daily template** `## Decisions` section with basis prompt.
+- **`pkgbuild.checkCommandEntrypoints`** (#235, PR #276) — for every declared command, verifies the entrypoint resolves to an existing regular file under the package root. Rejects missing files, non-regular targets (directory at the entrypoint path), path-traversal (`../`), and empty entrypoints. Reads `cn.package.json` via the canonical `pkg.ParseFullManifestData` parser — no parallel parser introduced (eng/go §2.17 "one parser per fact").
+- **`pkgbuild.checkSkillDirectories` + `pkgbuild.containsSkillMd`** (#235, PR #276) — for every top-level subdirectory of `skills/`, demands at least one `SKILL.md` somewhere in the subtree. Filesystem-as-authority surface (DESIGN-CONSTRAINTS §1, #261), same as activation's `discoverPackageSkills`. Top-level scope is intentionally narrow: namespace containers (e.g. `cnos.eng/skills/eng/`) and resource subdirectories (e.g. `cnos.core/skills/naturalize/references/`) are exempt by construction.
+- **9 tests** in `build_test.go` covering pass + fail + exempt cases for both new validation rules.
 
 ## Changed
 
-- **CDD.md §Tracking:** reachability preflight added as 3rd mandatory polling part. Branch glob broadened. Synchronous baseline step before transition loop. Baseline rule stated explicitly.
-- **CDD.md γ algorithm:** step 1 = git identity (`gamma@cdd.{project}`). All subsequent steps renumbered.
-- **CDD.md β step 8:** defer to δ (was "γ/operator"), reference δ §3.5 signal.
-- **β SKILL.md Rule 1:** refusal is not terminal — polling continues regardless.
-- **γ SKILL.md:** δ added to inputs, calls, and load order (step 5). Waits for δ completion signal before close-out triage. Step map and refs updated for renumbering.
-- **δ §3.2/§2.1:** execute on request, not on observation. Heartbeat observation ≠ gate request.
-- **δ §3.4:** post-cycle release as mandatory disconnection (not optional assessment).
-- **δ §3.5:** signal γ after release-phase gates.
-- **post-release/SKILL.md:** step refs updated (12a → 13a).
-- **alpha/SKILL.md:** `calls_dynamic` frontmatter (`issue.tier2_bundles`, `issue.tier3_skills`) replaces prose "Tier 2 and Tier 3 skills named by the issue."
-- **CTB README.md:** updated document map with authority rules across Vision/Spec/Notes/kernel.
+- **`pkgbuild.CheckOne`** now extends beyond structural content-class presence to enforce the two new rules above.
 
 ## Validation
 
-- No Go code changes — binary is unchanged from 3.59.0.
-- All changes are markdown spec/skill/doc files in `src/packages/` and `docs/`.
+- 7/7 CI checks green on `f7d27b4` (PR #276 head): `go`, `Package/source drift (I1)`, `Protocol contract schema sync (I2)`, `kata-tier1`, `kata-tier2`, `notify`×2.
+- AC4 verified by α via deliberate-break dry-run on a copy of the repo: injecting a fake `commands.fake-cmd.entrypoint` and an `skills/orphan-skill/` with only a stray `notes.md` into `cnos.cdd`, then running the freshly-built `cn`, surfaced both new error classes with exit code 1. The chain "issues → CLI exit non-zero → I1 job fails" is unchanged from the existing structural-check flow.
+- β independently verified the diff against its own contract surface and the surrounding `pkgbuild`/`activation`/`cli` modules at HEAD `f7d27b4`; review APPROVED with no findings (posted as comment per shared-identity rule, `review/SKILL.md` §7.1).
+
+## Known issues
+
+- **N1 — pre-existing parallel manifest parsers in `pkgbuild`.** `pkgbuild.PackageManifest` + `ParseManifestData` (minimal) coexist with `pkg.PackageManifest` + `pkg.ParseInstalledManifestData` (also minimal). Eliminating the duplication changes `DiscoveredPackage.Manifest`'s static type and ripples through `BuildOne`/`UpdateIndex`/`UpdateChecksums`. Cleanly scope-defended in PR #276 §Known debt; latent refactor for a follow-up.
+- **N2 — `BuildOne` does not gate on `CheckOne`.** `cn build` (without `--check`) still tarballs without invoking the validator. CI runs `--check` separately, so the gate exists in CI; the local safety is opt-in. Pre-existing structure, not introduced by this release.
+- **N3 — Symlink entrypoints.** `os.Stat` follows symlinks; an entrypoint that is a symlink to a regular file outside the package root passes `IsRegular()`. Could be tightened later via `os.Lstat` + symlink-target containment if needed.
+
+## β process finding (deferred to γ for `CDD.md §Tracking` patch)
+
+The MCP `head=` filter and `gh pr list --search 'closes:#N'` qualifier are unreliable for in-repo branches with slashes. β's first synchronous PR-existence check after the new-branch transition event used the head filter, got `[]`, and trusted it — PR #276 was already open with that exact head ref. Operator caught it within one polling tick. Recommended `§Tracking` patch: on any new-branch transition event, do a synchronous broad open-PR list (no head/search filter) and scan client-side for `(head.ref == new-branch) OR (body matches (?i)\b(closes\|fixes\|resolves\|refs)\s*#N\b)`. Same shape as the existing baseline rule, extended from session-start to per-event handling.
