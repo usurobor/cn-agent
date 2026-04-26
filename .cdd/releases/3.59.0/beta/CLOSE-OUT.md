@@ -126,10 +126,24 @@ Cross-reference to `docs/alpha/architecture/INVARIANTS.md` (the active invariant
 
 Architecture check (`cdd/review/SKILL.md` §2.2.14) result on the merged diff: 6 of 7 axes `yes`, 1 `n/a` (Registry normalization — not a registry-touching change). No `no` answers; the §2.3.5 architecture-gate was not blocked.
 
+## Tag-push deferral (CDD §1.4 β-step 8)
+
+`git push origin 3.59.0` returned `HTTP 403` from the sandbox-side git proxy (`http://127.0.0.1:43365/git/usurobor/cnos`). `git push origin main` from the same session succeeded — the 403 is specific to tag refs from this β session, not a general remote-write block. Per CDD §1.4 β-step 8:
+
+> If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to γ/operator — do not block closure on it.
+
+Status:
+
+- All release artifacts are on `origin/main` at `9dd30d9d`: `VERSION=3.59.0`, three `cn.package.json` files (3.59.0), `cn.json` (3.59.0), `CHANGELOG.md` ledger row, `RELEASE.md`, `.cdd/releases/3.59.0/beta/CLOSE-OUT.md`.
+- The tag `3.59.0` exists locally at `9dd30d9d` but is NOT on origin (`git ls-remote --tags origin 3.59.0` empty).
+- Deferred to γ/operator (CDD γ phase 2 step 6): `git push origin 3.59.0` from a session with non-sandboxed write access. Once the tag lands on origin, `release.yml` triggers automatically (4-platform matrix build → GitHub release with `RELEASE.md` body → `release-smoke.yml` fires on `release: published`).
+- β does not block closure on this step.
+
 ## β verdict trail
 
 - Round 1: REQUEST CHANGES — https://github.com/usurobor/cnos/pull/274#issuecomment-4321807808
 - Round 2: APPROVED — https://github.com/usurobor/cnos/pull/274#issuecomment-4321845284
-- Merge: `9980e3f5ff6e7221c8f29463443d526ba8a5cb6d`
-- Tag: `3.59.0`
+- Merge commit: `9980e3f5ff6e7221c8f29463443d526ba8a5cb6d` (squash of α PR #274)
+- Release commit: `9dd30d9dd10da965dd01fad72bc04aa6b5046cf8` (`release: 3.59.0 — distribution chain honesty (#230, PR #274)`)
+- Tag (local only, pending γ push): `3.59.0` → `9dd30d9d`
 - Issue closed: #230 `state: closed`, `state_reason: completed`
