@@ -223,10 +223,12 @@ Before requesting β, verify all of the following:
 6. schema / shape audit completed when contracts changed
 7. peer enumeration completed when closure claim touches a family of surfaces
 8. harness audit completed when a schema-bearing contract changed
-9. post-patch re-audit completed after any mid-cycle patch
+9. post-patch re-audit completed after any mid-cycle patch — covering **every language present in the diff**, not only the dominant one
 10. CI is green on the head commit, or PR remains draft pending CI
 
 **Transient vs durable rows.** Rows 1 (branch rebased) and 10 (CI green) describe external state that can change between the moment you write the row and the moment β reads it. Rows 2–9 describe artifact state you control. When updating a transient row, record the state you observed and the moment you observed it (e.g. base SHA + current-main SHA at observation time), not a bare claim. Re-validate transient rows immediately before requesting review (§2.7) and amend the row if drift occurred. *Derives from: #266 F1 / F2 — both findings were transient rows written at PR-open time and not refreshed before β read the PR.*
+
+**Polyglot re-audit (row 9).** A re-audit loop that exercises only the diff's dominant language has a blind spot for findings in the other languages. For a Go + shell + YAML + Markdown diff, `go vet + go test ./... + go test -race` covers Go but not header-contract drift in shell, unused-variable / unreachable-branch detection in shell, schema-validity of YAML workflows, or test-surface enumeration completeness across diagnostic-string families. The re-audit must enumerate every language the diff touches and run the matching toolchain for each: shell → `bash -n` (or `shellcheck` when available) + grep for unused captures + dead-code scan; YAML → `yaml.safe_load` (or `yamllint`); Markdown → table-shape + cross-reference check; Go → `go vet + go test ./... + go test -race` on touched packages. Tests are part of the diff's surfaces; for each new diagnostic string / branch / error code, verify a "must surface" test exists. *Derives from: #274 F2 / F3 / F4 — three of four R1 findings landed in surfaces α's Go-only re-audit did not exercise (smoke header lied about authority; `(unparseable manifest)` doctor branch had no test; smoke `BIN_VERSION_OUT` dead capture survived simplification).*
 
 Do not request review before this gate passes.
 

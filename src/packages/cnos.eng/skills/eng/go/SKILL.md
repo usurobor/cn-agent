@@ -495,6 +495,8 @@ This mirrors the OCaml `src/lib/` (pure) vs `src/cmd/` (IO) discipline.
 
 **Rule:** `Parse*` takes `[]byte`, returns typed data. `Read*` takes a path, calls `Parse*`. No mixing.
 
+**Diff-local generalization: do not introduce a parallel parser when a new pure parser is added in the same PR.** When a diff introduces a new canonical pure parser for a fact (`pkg.ParseInstalledManifestData([]byte) → *PackageManifest`), every other consumer of the same fact in the same diff is structurally bound to the new canonical. Hand-rolling an inline anonymous-struct unmarshal of the same JSON shape elsewhere in the diff is a parallel-parser violation even if every individual call-site obeys the parse/read split — `eng/go §2.17` is also a "one parser per fact" rule, not only a "no IO in pure code" rule. Verification at authoring time: for every new `Parse*` introduced, grep the diff for sibling `json.Unmarshal` / anonymous-struct decodes against the same JSON shape; replace each with a call to the new canonical parser. *Derives from: #274 F1 (severity C judgment) — the same diff that introduced `pkg.ParseInstalledManifestData` and the IO wrapper `restore.ReadInstalledManifest` (correctly applied to `restore.restoreOne`) also landed an inline anonymous-struct unmarshal in `doctor.checkPackages`. β caught it via `cdd/review §2.2.8` (authority-surface conflict); α fixed cleanly in round 2 by importing `pkg` into `doctor.go` and replacing the inline block with `pkg.ParseInstalledManifestData(manifestData)` (~5 lines net).*
+
 ### 2.18. Dispatch boundary: cli/ owns dispatch only
 
 *Derives from: INVARIANTS.md T-002 (kernel remains minimal and trusted)*
