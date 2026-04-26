@@ -217,7 +217,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 | Review | Nothing | β verdict or γ unblock request |
 | Release | Gate actions if requested (merge, tag) | β or γ gate request |
 | Closure | Gate actions if requested (branch delete, issue close) | γ closure declaration |
-| Post-release | Execute deferred operator actions from γ close-out, then **signal γ** with completion summary | γ deferred-output list |
+| Post-release | Execute deferred operator actions from γ close-out | γ deferred-output list |
 | Disconnect | Cut the release — tag the triad's final state after all post-cycle work lands on main | γ close-out + δ session patches on main |
 | Inter-cycle | Nothing until next γ dispatch | γ next-cycle selection |
 

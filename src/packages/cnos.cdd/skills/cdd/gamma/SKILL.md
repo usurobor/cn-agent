@@ -17,7 +17,7 @@ inputs:
   - alpha close-out
   - beta close-out
   - release state
-  - delta completion signals (release-phase gate results)
+  - delta gate results (observable via git: tags, branch state)
 outputs:
   - issue pack
   - dispatch prompts
@@ -58,7 +58,7 @@ When acting as γ:
 2. load this file as the γ role surface
 3. load `issue/SKILL.md`
 4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics) and step 13a skill/spec patches
-5. load `operator/SKILL.md` — δ owns release-phase gate execution (tag push, branch cleanup, release CI). γ receives δ's completion signal (§3.4) before proceeding to close-out triage. If δ is unavailable, γ may execute gates directly.
+5. load `operator/SKILL.md` — δ owns release-phase gate execution (tag push, branch cleanup, release CI) and the disconnect release (§3.4). δ's actions are git-observable (tags, branch state). If δ is unavailable, γ may execute gates directly.
 6. load other lifecycle sub-skills only when the selected gap requires them
 
 Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix).
@@ -263,13 +263,13 @@ Allowed transfer unit: **artifact facts**, not hidden role state.
 
 ### 2.6. Steps 6–7 — Support deferred release mechanics only
 
-If β deferred a mechanical release step because of environment constraints, δ (operator) executes the gate action and signals γ on completion (see `operator/SKILL.md` §3.5). γ may also execute directly if δ is unavailable:
+If β deferred a mechanical release step because of environment constraints, δ (operator) executes the gate action. γ observes the result via git (tag appears, branch deleted). If δ is unavailable, γ may execute directly:
 - push the tag
 - verify release CI fired
 - close the issue if auto-close failed
 
 γ does not redo β's judgment.
-γ only completes deferred mechanics. When δ handles the gate, γ waits for δ's completion signal before proceeding to close-out triage.
+γ only completes deferred mechanics. When δ handles the gate, γ observes completion via git before proceeding to close-out triage.
 
 ### 2.7. Steps 8–9 — Triage close-outs explicitly
 
