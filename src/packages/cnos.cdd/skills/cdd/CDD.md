@@ -214,11 +214,11 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
     - Daily reflection: cycle summary, scoring, MCI freeze status, next move
     - Adhoc thread: update or create the thread this cycle advances
 15. Request δ to delete merged remote branches. If δ is unavailable, γ may execute directly: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
-16. Cycle is closed. State it: *"Cycle #N closed. Next: #M."*
+16. Cycle is closed. State it: *"Cycle #N closed. Next: #M."* This declaration must be γ's **last commit** for the cycle — no post-closure pushes. The closure declaration is δ's trigger to begin the disconnect (step 17).
 
 **Phase 6 — Disconnect (δ)**
 
-17. After all post-cycle work lands on main (γ PRA, γ skill patches, δ session patches), δ cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4. This is not optional.
+17. δ receives γ's closure declaration (step 16) as the trigger. δ lands any remaining δ session patches, then cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4. This is not optional. **Nothing is committed to main between the closure declaration and the disconnect tag except δ's own patches.**
 
 #### γ dispatch prompt format
 
