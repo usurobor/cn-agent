@@ -2,7 +2,7 @@
 
 **Version:** 0.1 (draft-normative)
 **Date:** 2026-04-26
-**Status:** Normative reference for the skill-module / invocation layer of CTB. Fully realized today in `cnos.cdd`; prescriptive for the wider package set as it migrates. Expected to evolve with the kernel and runtime.
+**Status:** Normative reference for the skill-module / invocation layer of CTB. Fully realized today in `cnos.cdd`, with `alpha/SKILL.md` as the first concrete `calls_dynamic` case; prescriptive for the wider package set as it migrates. Expected to evolve with the kernel and runtime.
 
 ---
 
@@ -430,27 +430,25 @@ Packages MAY define additional keys. Loaders MUST ignore unknown keys but SHOULD
 
 It is the only public entry to its package. Its sub-skills are internal even though they have triggers.
 
-### 12.2 A role skill with static and dynamic calls (fully realized)
+### 12.2 A role skill with static and dynamic calls (fully realized — first concrete `calls_dynamic` case)
 
-`cnos.cdd/skills/cdd/alpha/SKILL.md` declares:
+`cnos.cdd/skills/cdd/alpha/SKILL.md` is the first skill to instantiate the `calls_dynamic` field. Its frontmatter declares:
 
 - `visibility: internal`, `scope: role-local`
 - `inputs`, `outputs`, `requires` as structured fields
 - a static `calls` set (`design/SKILL.md`, `plan/SKILL.md`)
-- a data-driven set sourced from the issue (Tier 2 / Tier 3 skills the issue names)
-
-In v0.1 the data-driven set is expressed in prose inside `calls` ("Tier 2 and Tier 3 skills named by the issue"). When migrated to the §2.4.2 form it becomes:
+- a `calls_dynamic` set sourced from the issue:
 
 ```yaml
 calls:
   - design/SKILL.md
   - plan/SKILL.md
 calls_dynamic:
-  - source: issue.tier3_skills
   - source: issue.tier2_bundles
+  - source: issue.tier3_skills
 ```
 
-This is the canonical case for `calls_dynamic`.
+This is the canonical case for `calls_dynamic`: the static set is the lifecycle skills α always reaches for; the dynamic set is the Tier 2 / Tier 3 skills the issue itself names. Any target the runtime resolves through `issue.tier2_bundles` or `issue.tier3_skills` is admitted; anything outside both static and dynamic edges is unreachable.
 
 ### 12.3 A pure transformation skill (prescriptive)
 

@@ -25,7 +25,9 @@ requires:
 calls:
   - design/SKILL.md
   - plan/SKILL.md
-  - Tier 2 and Tier 3 skills named by the issue
+calls_dynamic:
+  - source: issue.tier2_bundles
+  - source: issue.tier3_skills
 ---
 
 # Alpha
