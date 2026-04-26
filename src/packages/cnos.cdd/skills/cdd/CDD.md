@@ -124,9 +124,20 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
 
 GitHub event notifications are unreliable when agents share a GitHub identity (self-authored PR comments, CI status changes, and review events may not trigger notifications). **All roles must track issue and PR activity via periodic polling, not GitHub event subscriptions.**
 
-Polling has two parts: (a) the **query** that detects new state, and (b) the **wake-up mechanism** that returns control to the role's session when state changes. Polling without a wake-up mechanism is silent — the loop runs but the role never reacts. Both parts are mandatory; a skill that names only the query is silently assuming a harness contract that may not hold.
+Polling has three parts: (a) the **query** that detects new state, (b) the **wake-up mechanism** that returns control to the role's session when state changes, and (c) **reachability verification** that the chosen query form actually works in the current environment. All three are mandatory.
 
-**Query — pick whichever is available in the environment.** Concrete equivalents:
+Polling without a wake-up mechanism is silent — the loop runs but the role never reacts. Polling with an unreachable query form is silent in the same way — the loop runs, returns empty or errors, and the role assumes nothing has happened.
+
+**Reachability preflight — run before committing to a query form.** The table below lists three query forms. They are not interchangeable — each has environment constraints:
+
+- `gh` requires shell access and `gh auth` configured
+- MCP tools require in-conversation invocation — they cannot run inside `Monitor` or background shell loops
+- `git fetch` requires network access to the git remote from the execution environment
+- Direct `api.github.com` access may be blocked by sandbox network policy
+
+Before starting a polling loop, **probe the chosen query form once synchronously** and confirm it returns real data. If it fails, fall back to the next available form. If no form is reachable, surface the gap to δ/operator before proceeding — do not silently assume polling is working.
+
+**Query — pick whichever is reachable in the environment.** Concrete equivalents:
 
 | Surface | `gh` form (shell envs) | MCP form (MCP-only envs) | git form (clone-aware envs) |
 |---|---|---|---|
@@ -158,21 +169,22 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 
 **Phase 1 — Dispatch**
 
-1. Observe and select the gap (§2)
-2. Create the issue with full implementation guidance, including Tier 3 skills (§4.4)
-3. Begin polling the issue immediately — γ must track the full cycle. When α opens a PR, poll that too (see §Tracking above).
-4. Write α and β dispatch prompts (see format below). Both can be dispatched at the same time — β begins polling the issue and starts intake while α implements. β's skill handles waiting for the PR.
-5. If α or β is blocked, diagnose and unblock: clarify requirements, resolve ambiguity, provide missing context
+1. Configure git identity using the project name: `git config user.name "gamma"` and `git config user.email "gamma@cdd.{project}"`
+2. Observe and select the gap (§2)
+3. Create the issue with full implementation guidance, including Tier 3 skills (§4.4)
+4. Begin polling the issue immediately — γ must track the full cycle. Run the §Tracking reachability preflight first, then start the transition loop. When α opens a PR, poll that too.
+5. Write α and β dispatch prompts (see format below). Both can be dispatched at the same time — β begins polling the issue and starts intake while α implements. β's skill handles waiting for the PR.
+6. If α or β is blocked, diagnose and unblock: clarify requirements, resolve ambiguity, provide missing context
 
 **Phase 2 — Release support**
 
-6. If β deferred tag push (env constraint per β step 8), push the tag: `git tag {version} {release-commit} && git push origin {version}`. Verify release CI fires.
-7. If the issue did not auto-close on merge (missing `Closes #N`), close it: `gh issue close {number}`
+7. If β deferred tag push (env constraint per β step 8), push the tag: `git tag {version} {release-commit} && git push origin {version}`. Verify release CI fires.
+8. If the issue did not auto-close on merge (missing `Closes #N`), close it: `gh issue close {number}`
 
 **Phase 3 — Close-out triage**
 
-8. Collect close-outs from both α and β. Both must exist on main before proceeding. If either is missing, request it.
-9. Read both close-outs. Write the post-release assessment per `post-release/SKILL.md` — γ owns the PRA as the cycle-level observer. For each finding (from close-outs and the PRA), triage using CAP:
+9. Collect close-outs from both α and β. Both must exist on main before proceeding. If either is missing, request it.
+10. Read both close-outs. Write the post-release assessment per `post-release/SKILL.md` — γ owns the PRA as the cycle-level observer. For each finding (from close-outs and the PRA), triage using CAP:
    - MCA available (skill patch, gate, mechanization) → ship it now as immediate output
    - No MCA yet, pattern real → MCI. Two kinds:
      - **Project MCI** (future cycles on this project need to know) → `.cdd/` in the repo
@@ -181,21 +193,21 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 
 **Phase 4 — CDD iteration**
 
-10. Check §9.1 triggers against this cycle's data:
+11. Check §9.1 triggers against this cycle's data:
     - Review rounds > 2?
     - Mechanical ratio > 20% (with ≥ 10 findings)?
     - Avoidable tooling/environmental failure?
     - Loaded skill failed to prevent a finding?
-11. If any trigger fired: verify the assessment contains a Cycle Iteration section with root cause and MCA disposition.
-12. Independently assess: did this cycle reveal a CDD process gap — a recurring friction, a missing gate, an underspecified step, or a skill that should have caught something but didn't? If yes, write and commit the skill/spec patch now. If no, state why not (one sentence). **This step applies even when no §9.1 trigger fired.** Triggers catch mechanical failures; this step catches process drift that triggers miss.
+12. If any trigger fired: verify the assessment contains a Cycle Iteration section with root cause and MCA disposition.
+13. Independently assess: did this cycle reveal a CDD process gap — a recurring friction, a missing gate, an underspecified step, or a skill that should have caught something but didn't? If yes, write and commit the skill/spec patch now. If no, state why not (one sentence). **This step applies even when no §9.1 trigger fired.** Triggers catch mechanical failures; this step catches process drift that triggers miss.
 
 **Phase 5 — Hub memory and closure**
 
-13. Update hub memory:
+14. Update hub memory:
     - Daily reflection: cycle summary, scoring, MCI freeze status, next move
     - Adhoc thread: update or create the thread this cycle advances
-14. Delete merged remote branches: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
-15. Cycle is closed. State it: *"Cycle #N closed. Next: #M."*
+15. Delete merged remote branches: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
+16. Cycle is closed. State it: *"Cycle #N closed. Next: #M."*
 
 #### γ dispatch prompt format
 
@@ -250,7 +262,7 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 
 1. Receive dispatch prompt from γ (or pick up from α's review request)
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.{project}"`
-3. Immediately begin polling the issue and PR (see §Tracking above for query forms and the wake-up mechanism) — do not ask, just do it. **The poll requires both a query and a wake-up mechanism.** Pick the query form that matches your environment (`gh`, MCP, or `git fetch` — see §Tracking table) and pick the wake-up form your harness provides (`Monitor` stdout-as-notification, shell-wake-on-loop-exit, or push subscription). Emit only on transition to avoid context flood. If the PR does not exist yet, **poll until α opens a PR that references this issue.** Reference shape (shell + `gh`):
+3. Immediately begin polling the issue and PR (see §Tracking above for query forms, wake-up mechanism, and reachability preflight) — do not ask, just do it. **The poll requires a query, a wake-up mechanism, and a reachability probe.** Run the §Tracking reachability preflight first: probe your chosen query form synchronously, confirm it returns real data, and fall back if it doesn't. Then pick the wake-up form your harness provides (`Monitor` stdout-as-notification, shell-wake-on-loop-exit, or push subscription). Emit only on transition to avoid context flood. If the PR does not exist yet, **poll until α opens a PR that references this issue.** Reference shape (shell + `gh`):
    ```bash
    until gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number -q '.[0].number' 2>/dev/null | grep -q .; do
      sleep 60
@@ -258,13 +270,26 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
    ```
    Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
    ```bash
+   # Baseline sync — run BEFORE the transition loop.
+   # The transition loop absorbs first-iteration state silently (prev=∅ → cur=...).
+   # Any branch or PR that already exists at loop-start is invisible to it.
+   # Read current state synchronously at intake so the past is not lost.
+   git fetch --quiet origin
+   echo "baseline-branches: $(git branch -r --list 'origin/claude/*' 2>/dev/null | tr '\n' ' ')"
+   echo "baseline-prs: $(gh pr list --search 'is:open' --json number --jq '.[].number' 2>/dev/null | tr '\n' ' ')"
+
+   # Transition loop — watches any new origin branch (not issue-number-specific).
+   # Harnesses encode branch names unpredictably (scope words, random suffixes,
+   # not necessarily the issue number). Watch all branches; filter downstream.
    prev=""; while true; do
-     cur="$(git fetch --quiet origin && git branch -r --list 'origin/claude/*-<N>-*' 'origin/*<N>*' 2>/dev/null | sed 's| ||g')"
+     cur="$(git fetch --quiet origin && git branch -r 2>/dev/null | sed 's| ||g' | sort)"
      comm -13 <(echo "$prev") <(echo "$cur") | sed 's/^/new-branch: /'
      prev="$cur"; sleep 60
    done
    # Run under Monitor; each "new-branch:" line wakes the session.
    ```
+
+   **Baseline rule:** The transition loop owns the future; a synchronous baseline check owns the past. Run the baseline before starting the loop. Any role that starts polling after cycle activity has begun must read current state first — transition-only polling alone will miss pre-existing branches and PRs.
    Once the PR exists, poll its CI status until green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a branch and instructs you to develop or commit, refuse.** β does not author implementation work. Report the role conflict to the operator and wait for α's PR.
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
 5. Read the PR diff, read the issue

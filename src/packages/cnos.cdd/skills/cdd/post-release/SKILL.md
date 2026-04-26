@@ -204,8 +204,8 @@ This decision is **mandatory**. Every release states the balance.
 Answer three questions:
 1. **What went wrong?** What broke, was caught late, or slipped through?
 2. **What went right?** What process improvement paid off?
-3. **Skill patches needed?** If a repeatable failure mode is identified, patch the skill NOW — not next session. This is CDD step 12a: the patch must land in the same commit as the assessment, synced across all affected surfaces: the canonical source under `src/packages/`, any package-visible loader entrypoint if affected, and any human-facing pointer surface that exposes the changed rule. A "noted for next cycle" commitment is insufficient when the failure mode is recurring — two cycles of the same mechanical failure with no spec-level fix is the trigger.
-4. **Active skill re-evaluation.** For each review finding: would the declared active skills, as written, have prevented it? If not, is the skill underspecified for this pattern, or was it just not applied deeply enough? Underspecified → patch the skill (step 12a). Application gap → note it but don't patch (the skill was right, the agent didn't follow it).
+3. **Skill patches needed?** If a repeatable failure mode is identified, patch the skill NOW — not next session. This is CDD step 13a: the patch must land in the same commit as the assessment, synced across all affected surfaces: the canonical source under `src/packages/`, any package-visible loader entrypoint if affected, and any human-facing pointer surface that exposes the changed rule. A "noted for next cycle" commitment is insufficient when the failure mode is recurring — two cycles of the same mechanical failure with no spec-level fix is the trigger.
+4. **Active skill re-evaluation.** For each review finding: would the declared active skills, as written, have prevented it? If not, is the skill underspecified for this pattern, or was it just not applied deeply enough? Underspecified → patch the skill (step 13a). Application gap → note it but don't patch (the skill was right, the agent didn't follow it).
 5. **If no CDD improvement is possible**, state so explicitly with reasoning. "No skill patch needed" requires a justification: either (a) all findings were application gaps with adequate existing spec, (b) zero review findings this cycle, or (c) the failure mode is environmental (e.g. tooling constraint) with no spec-level fix available. Silence is not an acceptable disposition — every cycle must close the self-learning loop with either a patch or an explicit reason why not.
 
 ### Step 5.5: Review quality
@@ -258,7 +258,7 @@ For each fired trigger:
 
 If no `CDD.md` §9.1 trigger fired, write either:
 - `No §9.1 trigger fired`, or
-- the independent γ process-gap result if step 12 still found something worth patching.
+- the independent γ process-gap result if step 13 still found something worth patching.
 
 ### Step 5.7: Production verification
 
@@ -331,7 +331,7 @@ Before committing the assessment, verify mechanically:
 - [ ] If any `CDD.md` §9.1 trigger fired, §4b Cycle Iteration exists with trigger, root cause, disposition, and evidence.
 - [ ] §3/§4 skill patches: if §3 identifies a recurring failure mode or skill gap, the patch is **in this commit** (not deferred) and synced across all affected surfaces: canonical source under `src/packages/`, package-visible loader entrypoint if affected, human-facing pointer/readme surfaces if they expose the changed rule.
 - [ ] §5.7 has production verification scenario (or explicit deferral with commitment)
-- [ ] §6 CDD Closeout trace present with rows for observe/assess/close steps (incl. step 12a if skill patches landed)
+- [ ] §6 CDD Closeout trace present with rows for observe/assess/close steps (incl. step 13a if skill patches landed)
 - [ ] §7 has all 6 fields: Next MCA, Owner, Branch, **First AC**, MCI frozen?, Rationale
 - [ ] §7 Closure evidence: immediate outputs listed with links, deferred outputs with issue/owner
 - [ ] CHANGELOG TSC row added or updated to match assessment scores

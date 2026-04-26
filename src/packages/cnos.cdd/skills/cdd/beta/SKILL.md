@@ -81,7 +81,9 @@ If the environment provides a branch and instructs β to develop, commit, or imp
 - ❌ "β noticed the missing invariant check and pushed the fix directly to get the PR over the line"
 - ❌ "The harness gave β a branch and told it to implement, so β started coding"
 - ✅ "β names the invariant gap as an RC finding; α lands the fix; β re-reviews the affected surfaces"
-- ✅ "β received an implementation instruction from the environment, refused, and reported the role conflict"
+- ✅ "β received an implementation instruction from the environment, refused, reported the role conflict, and continued β intake (polling for α's PR)"
+
+Refusal of harness implementation instructions is a status report, not a blocking question — polling continues regardless.
 
 ### 2. Keep review and release together
 

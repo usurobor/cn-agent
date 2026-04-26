@@ -94,7 +94,16 @@ Failure mode: motivated reasoning — comfortable conclusions ignoring uncomfort
   - ❌ "Will reflect at EOD" (deferred → lossy)
   - ✅ Immediate capture, cadence-level consolidation
 
-3.6. **Cadence table**
+3.6. **Record decision basis, not just decisions**
+  - When a daily or reflection records a triage, classification, or disposition (e.g. "these are direct-commit," "this is P2," "defer to next cycle"), include:
+    - **Criteria** — what rule or standard was applied
+    - **Per-item basis** — which criterion each item met or failed
+  - A conclusion without basis is not a reflection — it's a claim the next session cannot verify or challenge
+  - ❌ "B16 direct commit: #5, #14, #84, #149"
+  - ✅ "B16 direct commit (criteria: single-file, no design decision, no approval gate): #14 ✓ mechanical, #84 ✓ proposed text exists, #5 ✗ needs design, #149 ✗ SOUL.md gate"
+  - This applies to any entry a future session might inherit as authoritative
+
+3.7. **Cadence table**
 
   | Cadence | When | File |
   |---------|------|------|

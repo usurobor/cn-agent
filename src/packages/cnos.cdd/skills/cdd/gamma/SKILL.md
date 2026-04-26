@@ -55,7 +55,7 @@ When acting as γ:
 1. load `CDD.md` as the canonical lifecycle, selection rules, and role contract
 2. load this file as the γ role surface
 3. load `issue/SKILL.md`
-4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics) and step 12a skill/spec patches
+4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics) and step 13a skill/spec patches
 5. load other lifecycle sub-skills only when the selected gap requires them
 
 Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix).
@@ -69,13 +69,13 @@ It expands those steps into executable checks, evidence, and gates.
 
 ## Step map
 
-- Step 1a → observe and build candidates (`§2.1`), Step 1b → select and size (`§2.2`)
-- Step 2 → issue pack + issue-quality gate (`§2.3–§2.4`)
-- Steps 3–5 → dispatch + unblocking (`§2.5`)
-- Steps 6–7 → deferred release mechanics (`§2.6`)
-- Steps 8–9 → close-out triage (`§2.7`)
-- Steps 10–12 → cycle iteration and process patching (`§2.8–§2.9`)
-- Steps 13–15 → hub memory, branch cleanup, closure declaration (`§2.10`)
+- Step 1 → git identity (`§2.0`), Step 2a → observe and build candidates (`§2.1`), Step 2b → select and size (`§2.2`)
+- Step 3 → issue pack + issue-quality gate (`§2.3–§2.4`)
+- Steps 4–6 → dispatch + unblocking (`§2.5`)
+- Steps 7–8 → deferred release mechanics (`§2.6`)
+- Steps 9–10 → close-out triage (`§2.7`)
+- Steps 11–13 → cycle iteration and process patching (`§2.8–§2.9`)
+- Steps 14–16 → hub memory, branch cleanup, closure declaration (`§2.10`)
 
 ---
 
@@ -293,7 +293,7 @@ Minimum triage record:
 
 Silence is not triage.
 Every finding gets a disposition.
-Step 12a skill/spec patches are γ's to land or explicitly delegate — they do not become silent next-cycle work.
+Step 13a skill/spec patches are γ's to land or explicitly delegate — they do not become silent next-cycle work.
 
 ### 2.8. Steps 10–11 — Enforce cycle-iteration outputs when triggers fire
 
@@ -313,7 +313,7 @@ Each fired trigger must end in one of three states:
 - concrete next MCA committed
 - explicit no-patch decision with reason
 
-### 2.9. Step 12 — Run the independent γ process-gap check
+### 2.9. Step 13 — Run the independent γ process-gap check
 
 Even if no `CDD.md` §9.1 trigger fired, γ must still ask:
 - Did this cycle reveal a recurring friction?
