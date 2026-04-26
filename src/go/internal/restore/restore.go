@@ -86,6 +86,21 @@ func ValidatePackageManifest(pkgDir, expectedName string) error {
 	return pkg.ValidatePackageManifestData(data, expectedName)
 }
 
+// ReadInstalledManifest reads cn.package.json from pkgDir and returns
+// the parsed (name, version) pair. The wrapper around the pure parser
+// in pkg/. Returns an error if the file is missing or malformed.
+//
+// Used by restoreOne (version-aware skip — issue #230) and by doctor
+// (stale-vendor detection).
+func ReadInstalledManifest(pkgDir string) (pkg.PackageManifest, error) {
+	path := filepath.Join(pkgDir, "cn.package.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return pkg.PackageManifest{}, fmt.Errorf("read %s: %w", path, err)
+	}
+	return pkg.ParseInstalledManifestData(data)
+}
+
 // Result records the outcome of restoring one package.
 type Result struct {
 	Name    string
@@ -136,17 +151,44 @@ func restoreOne(ctx context.Context, hubPath string, idx *pkg.PackageIndex, dep 
 
 	pkgDir := pkg.VendorPath(hubPath, dep.Name)
 
-	// Already installed — skip.
-	// NOTE: With version-less VendorPath, this check does not detect
-	// version upgrades (v1 installed, lockfile updated to v2 → directory
-	// exists from v1, skip fires). Version upgrade requires comparing
-	// the installed cn.package.json version against the lockfile version,
-	// or comparing SHA-256 of installed state. Tracked in #230.
+	// Skip-or-reinstall decision (issue #230).
+	//
+	// VendorPath is version-less by design (BUILD-AND-DIST.md keeps the
+	// active runtime simple). The installed version lives inside the
+	// extracted cn.package.json. To detect a lockfile-driven version
+	// bump we read the installed manifest and compare its version to
+	// the lockfile pin:
+	//
+	//   - same version  → skip (no work)
+	//   - drift / unreadable / missing manifest → reinstall
+	//
+	// Reinstall path: remove the stale tree first so leftover files
+	// from the prior version cannot survive the new extraction. The
+	// degraded-path log makes the reinstall visible to the operator
+	// (DESIGN-CONSTRAINTS §6.3).
 	if _, err := os.Stat(pkgDir); err == nil {
-		slog.DebugContext(ctx, "package already installed, skipping",
-			slog.String("package", dep.Name),
-			slog.String("version", dep.Version))
-		return r
+		installed, readErr := ReadInstalledManifest(pkgDir)
+		switch {
+		case readErr == nil && installed.Version == dep.Version:
+			slog.DebugContext(ctx, "package already installed, skipping",
+				slog.String("package", dep.Name),
+				slog.String("version", dep.Version))
+			return r
+		case readErr != nil:
+			slog.WarnContext(ctx, "vendor manifest unreadable, reinstalling",
+				slog.String("package", dep.Name),
+				slog.String("expected_version", dep.Version),
+				slog.String("error", readErr.Error()))
+		default:
+			slog.WarnContext(ctx, "vendor version drift, reinstalling",
+				slog.String("package", dep.Name),
+				slog.String("installed_version", installed.Version),
+				slog.String("lockfile_version", dep.Version))
+		}
+		if err := os.RemoveAll(pkgDir); err != nil {
+			r.Err = fmt.Errorf("remove stale vendor %s: %w", pkgDir, err)
+			return r
+		}
 	}
 
 	// Lookup in index.

@@ -215,10 +215,27 @@ func IsFirstParty(name string) bool {
 
 // --- Package manifest validation ---
 
-// PackageManifest is the minimal shape of cn.package.json that we
-// validate after extraction. Only the name field is checked.
+// PackageManifest is the minimal shape of cn.package.json read after
+// extraction or for installed-state inspection. Only name+version are
+// captured; the full manifest shape is FullPackageManifest.
 type PackageManifest struct {
-	Name string `json:"name"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+// ParseInstalledManifestData parses raw cn.package.json bytes into a
+// PackageManifest. Returns an error only if the JSON is malformed;
+// missing name or version fields are returned as empty strings so the
+// caller can decide whether the absence is fatal in its context.
+//
+// Used by restore + doctor to compare the installed version against
+// the lockfile version (issue #230 — silent v1→v2 skip).
+func ParseInstalledManifestData(data []byte) (PackageManifest, error) {
+	var m PackageManifest
+	if err := json.Unmarshal(data, &m); err != nil {
+		return m, fmt.Errorf("invalid cn.package.json: %w", err)
+	}
+	return m, nil
 }
 
 // ValidatePackageManifestData checks that raw cn.package.json bytes
@@ -226,9 +243,9 @@ type PackageManifest struct {
 // is responsible for reading the file from disk (IO lives in
 // internal/restore/, not here).
 func ValidatePackageManifestData(data []byte, expectedName string) error {
-	var m PackageManifest
-	if err := json.Unmarshal(data, &m); err != nil {
-		return fmt.Errorf("invalid cn.package.json: %w", err)
+	m, err := ParseInstalledManifestData(data)
+	if err != nil {
+		return err
 	}
 	if m.Name == "" {
 		return fmt.Errorf("cn.package.json missing 'name' field")

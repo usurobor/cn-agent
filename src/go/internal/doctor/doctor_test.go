@@ -65,6 +65,103 @@ func TestRunAllPackageMissing(t *testing.T) {
 	}
 }
 
+// TestRunAllPackageVersionDrift covers issue #230 AC6: when the
+// installed cn.package.json version disagrees with the lockfile pin,
+// doctor must surface it (StatusFail). Pre-fix the runtime surface
+// agreed with the silent-skip lie — installed packages were reported
+// as healthy regardless of the lockfile bump.
+func TestRunAllPackageVersionDrift(t *testing.T) {
+	hub := makeTestHub(t)
+	pkgDir := filepath.Join(hub, ".cn", "vendor", "packages", "cnos.core")
+	os.MkdirAll(pkgDir, 0755)
+	// Installed v1, lockfile pins v2.
+	os.WriteFile(filepath.Join(pkgDir, "cn.package.json"),
+		[]byte(`{"name":"cnos.core","version":"1.0.0"}`), 0644)
+	lockfile := `{"schema":"cn.lock.v2","packages":[{"name":"cnos.core","version":"2.0.0","sha256":"aaa"}]}`
+	os.WriteFile(filepath.Join(hub, ".cn", "deps.lock.json"), []byte(lockfile), 0644)
+
+	checks := RunAll(context.Background(), hub, "3.48.0", nil)
+
+	found := false
+	for _, ch := range checks {
+		if ch.Name == "packages" && ch.Status == StatusFail &&
+			strings.Contains(ch.Value, "stale") &&
+			strings.Contains(ch.Value, "1.0.0") &&
+			strings.Contains(ch.Value, "2.0.0") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected StatusFail with stale-vendor diagnostic naming both versions, got: %+v",
+			packagesCheck(checks))
+	}
+}
+
+// TestRunAllPackageManifestUnparseable covers the third stale-state
+// branch (issue #230 F3): cn.package.json is present but contains
+// invalid JSON. Doctor must flag it stale with the "unparseable
+// manifest" diagnostic — same severity as missing/drift.
+func TestRunAllPackageManifestUnparseable(t *testing.T) {
+	hub := makeTestHub(t)
+	pkgDir := filepath.Join(hub, ".cn", "vendor", "packages", "cnos.core")
+	os.MkdirAll(pkgDir, 0755)
+	// Garbage JSON body.
+	os.WriteFile(filepath.Join(pkgDir, "cn.package.json"),
+		[]byte(`{not valid json`), 0644)
+	lockfile := `{"schema":"cn.lock.v2","packages":[{"name":"cnos.core","version":"1.0.0","sha256":"aaa"}]}`
+	os.WriteFile(filepath.Join(hub, ".cn", "deps.lock.json"), []byte(lockfile), 0644)
+
+	checks := RunAll(context.Background(), hub, "3.48.0", nil)
+
+	found := false
+	for _, ch := range checks {
+		if ch.Name == "packages" && ch.Status == StatusFail &&
+			strings.Contains(ch.Value, "unparseable manifest") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected StatusFail with 'unparseable manifest' diagnostic, got: %+v",
+			packagesCheck(checks))
+	}
+}
+
+// TestRunAllPackageManifestMissing covers the half-state case: vendor
+// dir present but cn.package.json absent (a partial install or manual
+// mkdir). Doctor must flag it stale and direct the operator to restore.
+func TestRunAllPackageManifestMissing(t *testing.T) {
+	hub := makeTestHub(t)
+	pkgDir := filepath.Join(hub, ".cn", "vendor", "packages", "cnos.core")
+	os.MkdirAll(pkgDir, 0755) // empty — no cn.package.json
+	lockfile := `{"schema":"cn.lock.v2","packages":[{"name":"cnos.core","version":"1.0.0","sha256":"aaa"}]}`
+	os.WriteFile(filepath.Join(hub, ".cn", "deps.lock.json"), []byte(lockfile), 0644)
+
+	checks := RunAll(context.Background(), hub, "3.48.0", nil)
+
+	found := false
+	for _, ch := range checks {
+		if ch.Name == "packages" && ch.Status == StatusFail &&
+			strings.Contains(ch.Value, "no manifest") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected StatusFail with 'no manifest' diagnostic, got: %+v",
+			packagesCheck(checks))
+	}
+}
+
+// packagesCheck is a small helper to surface only the packages check
+// in test failure messages.
+func packagesCheck(checks []CheckResult) CheckResult {
+	for _, ch := range checks {
+		if ch.Name == "packages" {
+			return ch
+		}
+	}
+	return CheckResult{Name: "packages", Status: StatusInfo, Value: "<not present in results>"}
+}
+
 func TestRunAllRuntimeContract(t *testing.T) {
 	hub := makeTestHub(t)
 	contract := map[string]any{

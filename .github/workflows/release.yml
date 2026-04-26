@@ -32,8 +32,16 @@ jobs:
           cache-dependency-path: src/go/go.sum
 
       - name: Build binary
+        # Stamp the release tag into the binary so `cn setup` writes a
+        # default deps.json pinning packages to the matching version
+        # (issue #230 AC3 — release-bootstrap smoke). Without -ldflags
+        # the binary's compile-time `version` stays "dev", which `cn
+        # setup` then writes into deps.json, breaking `cn deps lock`
+        # against the released package index.
         working-directory: src/go
-        run: go build -o cn ./cmd/cn
+        run: |
+          go build -ldflags "-X main.version=${{ github.ref_name }}" \
+            -o cn ./cmd/cn
 
       - name: Test
         working-directory: src/go

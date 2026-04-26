@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/usurobor/cnos/src/go/internal/activation"
+	"github.com/usurobor/cnos/src/go/internal/pkg"
 )
 
 // Status classifies a CheckResult.
@@ -246,7 +247,8 @@ func checkPackages(hubPath, _ string) CheckResult {
 	}
 	var lf struct {
 		Packages []struct {
-			Name string `json:"name"`
+			Name    string `json:"name"`
+			Version string `json:"version"`
 		} `json:"packages"`
 	}
 	if err := json.Unmarshal(lockData, &lf); err != nil {
@@ -254,15 +256,44 @@ func checkPackages(hubPath, _ string) CheckResult {
 			Value: fmt.Sprintf("%d installed (lockfile parse error)", total)}
 	}
 	missing := 0
+	// stale tracks installed packages whose vendor cn.package.json
+	// version disagrees with the lockfile pin (issue #230 AC6 — make
+	// the runtime surface the same lie that drove the silent skip).
+	var stale []string
 	for _, dep := range lf.Packages {
 		pkgDir := filepath.Join(vendorDir, dep.Name)
 		if _, err := os.Stat(pkgDir); err != nil {
 			missing++
+			continue
+		}
+		manifestData, err := os.ReadFile(filepath.Join(pkgDir, "cn.package.json"))
+		if err != nil {
+			// Vendor dir present but cn.package.json missing — the
+			// install is structurally broken; flag it as stale.
+			stale = append(stale, fmt.Sprintf("%s (no manifest)", dep.Name))
+			continue
+		}
+		// Reuse the pure parser introduced for restoreOne (issue #230 F1):
+		// one parser per fact ("installed package version") — eng/go §2.17
+		// + design §3.2.
+		pm, err := pkg.ParseInstalledManifestData(manifestData)
+		if err != nil {
+			stale = append(stale, fmt.Sprintf("%s (unparseable manifest)", dep.Name))
+			continue
+		}
+		if pm.Version != dep.Version {
+			stale = append(stale, fmt.Sprintf("%s (installed %s, locked %s)",
+				dep.Name, pm.Version, dep.Version))
 		}
 	}
 	if missing > 0 {
 		return CheckResult{Name: "packages", Status: StatusFail,
 			Value: fmt.Sprintf("%d installed, %d missing from lockfile (run 'cn deps restore')", total, missing)}
+	}
+	if len(stale) > 0 {
+		return CheckResult{Name: "packages", Status: StatusFail,
+			Value: fmt.Sprintf("%d installed, stale: %s (run 'cn deps restore')",
+				total, strings.Join(stale, ", "))}
 	}
 	return CheckResult{Name: "packages", Status: StatusPass,
 		Value: fmt.Sprintf("%d installed, all present", total)}

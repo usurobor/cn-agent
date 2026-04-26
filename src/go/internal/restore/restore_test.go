@@ -170,14 +170,16 @@ func TestRestoreAlreadyInstalled(t *testing.T) {
 	hub := t.TempDir()
 	indexPath := filepath.Join(hub, "index.json")
 
-	// Create an empty index (won't be needed — package already installed).
+	// Create an empty index (won't be needed — package already installed
+	// at the same version as the lockfile).
 	idx := pkg.PackageIndex{Schema: "cn.package-index.v1", Packages: map[string]map[string]pkg.IndexEntry{}}
 	writeJSON(t, indexPath, idx)
 
-	// Pre-install the package.
+	// Pre-install the package at the version the lockfile pins.
 	pkgDir := pkg.VendorPath(hub, "cnos.core")
 	os.MkdirAll(pkgDir, 0755)
-	writeJSON(t, filepath.Join(pkgDir, "cn.package.json"), map[string]any{"name": "cnos.core"})
+	writeJSON(t, filepath.Join(pkgDir, "cn.package.json"),
+		map[string]any{"name": "cnos.core", "version": "3.42.0"})
 
 	lockPath := filepath.Join(hub, ".cn", "deps.lock.json")
 	os.MkdirAll(filepath.Dir(lockPath), 0755)
@@ -194,7 +196,147 @@ func TestRestoreAlreadyInstalled(t *testing.T) {
 		t.Fatalf("Restore: %v", err)
 	}
 	if HasErrors(results) {
-		t.Fatal("expected no errors for already-installed package")
+		t.Fatal("expected no errors for already-installed package at matching version")
+	}
+}
+
+// TestRestoreVersionDriftReinstalls is the AC1+AC2 test for issue #230:
+// install v1, bump the lockfile to v2, run restore — the vendor tree
+// must be reinstalled with the v2 manifest. Pre-fix this case silently
+// kept v1 because the version-less VendorPath already existed.
+func TestRestoreVersionDriftReinstalls(t *testing.T) {
+	// Build a v2 tarball with a v2 cn.package.json.
+	v2Manifest := `{"name": "cnos.core", "version": "2.0.0"}`
+	v2Tar, v2SHA := makeTarGz(t, map[string]string{
+		"cn.package.json":   v2Manifest,
+		"doctrine/SOUL.md":  "# v2 Soul\n",
+		"v2-only-marker":    "marker\n",
+	})
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(v2Tar)
+	}))
+	defer srv.Close()
+
+	hub := t.TempDir()
+	indexPath := filepath.Join(hub, "index.json")
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {
+				"2.0.0": {URL: srv.URL + "/cnos.core-2.0.0.tar.gz", SHA256: v2SHA},
+			},
+		},
+	}
+	writeJSON(t, indexPath, idx)
+
+	// Pre-install v1 with a stale-only marker file that proves the
+	// reinstall actually wiped the tree (rather than overwriting on top).
+	pkgDir := pkg.VendorPath(hub, "cnos.core")
+	os.MkdirAll(pkgDir, 0755)
+	writeJSON(t, filepath.Join(pkgDir, "cn.package.json"),
+		map[string]any{"name": "cnos.core", "version": "1.0.0"})
+	os.WriteFile(filepath.Join(pkgDir, "v1-only-marker"), []byte("v1\n"), 0644)
+
+	// Lockfile pins v2.
+	lockPath := filepath.Join(hub, ".cn", "deps.lock.json")
+	os.MkdirAll(filepath.Dir(lockPath), 0755)
+	lf := pkg.Lockfile{
+		Schema: "cn.lock.v2",
+		Packages: []pkg.LockedDep{
+			{Name: "cnos.core", Version: "2.0.0", SHA256: v2SHA},
+		},
+	}
+	writeJSON(t, lockPath, lf)
+
+	results, err := Restore(context.Background(), hub, indexPath)
+	if err != nil {
+		t.Fatalf("Restore: %v", err)
+	}
+	if HasErrors(results) {
+		for _, r := range Errors(results) {
+			t.Errorf("  %s@%s: %v", r.Name, r.Version, r.Err)
+		}
+		t.Fatal("restore had errors")
+	}
+
+	// Vendor manifest must now be v2.
+	installed, err := ReadInstalledManifest(pkgDir)
+	if err != nil {
+		t.Fatalf("read installed manifest: %v", err)
+	}
+	if installed.Version != "2.0.0" {
+		t.Errorf("installed version = %q, want %q (vendor was not reinstalled)",
+			installed.Version, "2.0.0")
+	}
+	// v2-only file must be present.
+	if _, err := os.Stat(filepath.Join(pkgDir, "v2-only-marker")); err != nil {
+		t.Errorf("v2-only-marker missing — extraction did not happen: %v", err)
+	}
+	// v1-only file must be gone — reinstall must wipe the prior tree,
+	// not overlay on top of it.
+	if _, err := os.Stat(filepath.Join(pkgDir, "v1-only-marker")); !os.IsNotExist(err) {
+		t.Errorf("v1-only-marker still present — stale files leaked into v2 install (err=%v)", err)
+	}
+}
+
+// TestRestoreUnreadableManifestReinstalls covers the degraded-path
+// branch of the version-aware skip: when cn.package.json is missing
+// or unparseable, restore treats the install as untrusted and rebuilds
+// it. Pre-fix this case also silently skipped.
+func TestRestoreUnreadableManifestReinstalls(t *testing.T) {
+	manifest := `{"name": "cnos.core", "version": "1.0.0"}`
+	tarData, tarSHA := makeTarGz(t, map[string]string{
+		"cn.package.json": manifest,
+	})
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(tarData)
+	}))
+	defer srv.Close()
+
+	hub := t.TempDir()
+	indexPath := filepath.Join(hub, "index.json")
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {"1.0.0": {URL: srv.URL + "/c.tgz", SHA256: tarSHA}},
+		},
+	}
+	writeJSON(t, indexPath, idx)
+
+	// Pre-create an empty vendor dir with no cn.package.json — the kind
+	// of half-state a crashed extraction or manual mkdir leaves behind.
+	pkgDir := pkg.VendorPath(hub, "cnos.core")
+	os.MkdirAll(pkgDir, 0755)
+
+	lockPath := filepath.Join(hub, ".cn", "deps.lock.json")
+	os.MkdirAll(filepath.Dir(lockPath), 0755)
+	lf := pkg.Lockfile{
+		Schema: "cn.lock.v2",
+		Packages: []pkg.LockedDep{
+			{Name: "cnos.core", Version: "1.0.0", SHA256: tarSHA},
+		},
+	}
+	writeJSON(t, lockPath, lf)
+
+	results, err := Restore(context.Background(), hub, indexPath)
+	if err != nil {
+		t.Fatalf("Restore: %v", err)
+	}
+	if HasErrors(results) {
+		for _, r := range Errors(results) {
+			t.Errorf("  %s@%s: %v", r.Name, r.Version, r.Err)
+		}
+		t.Fatal("restore had errors")
+	}
+	// Manifest must now exist and parse with the lockfile-pinned version.
+	installed, err := ReadInstalledManifest(pkgDir)
+	if err != nil {
+		t.Fatalf("read installed manifest: %v", err)
+	}
+	if installed.Version != "1.0.0" {
+		t.Errorf("installed version = %q, want %q", installed.Version, "1.0.0")
 	}
 }
 
