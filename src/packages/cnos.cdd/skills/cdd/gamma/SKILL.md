@@ -17,6 +17,7 @@ inputs:
   - alpha close-out
   - beta close-out
   - release state
+  - delta completion signals (release-phase gate results)
 outputs:
   - issue pack
   - dispatch prompts
@@ -30,6 +31,7 @@ requires:
 calls:
   - issue/SKILL.md
   - post-release/SKILL.md
+  - operator/SKILL.md
 ---
 
 # Gamma
@@ -56,12 +58,13 @@ When acting as γ:
 2. load this file as the γ role surface
 3. load `issue/SKILL.md`
 4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics) and step 13a skill/spec patches
-5. load other lifecycle sub-skills only when the selected gap requires them
+5. load `operator/SKILL.md` — δ owns release-phase gate execution (tag push, branch cleanup, release CI). γ receives δ's completion signal (§3.4) before proceeding to close-out triage. If δ is unavailable, γ may execute gates directly.
+6. load other lifecycle sub-skills only when the selected gap requires them
 
 Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix).
 
 `CDD.md` is the only canonical source for:
-- the ordered γ lifecycle (`CDD.md` §1.4, steps 1–15)
+- the ordered γ lifecycle (`CDD.md` §1.4, steps 1–16)
 - selection rule order (`CDD.md` §3)
 
 This file does **not** redefine that algorithm.
