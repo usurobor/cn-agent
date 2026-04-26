@@ -1,10 +1,10 @@
 {
   "schema": "cn.package.v1",
   "name": "cnos.core",
-  "version": "3.59.1",
+  "version": "3.59.2",
   "kind": "package",
   "engines": {
-    "cnos": "3.59.1"
+    "cnos": "3.59.2"
   },
   "commands": {
     "daily": {
