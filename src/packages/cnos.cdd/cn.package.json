@@ -1,10 +1,10 @@
 {
   "schema": "cn.package.v1",
   "name": "cnos.cdd",
-  "version": "3.59.2",
+  "version": "3.59.3",
   "kind": "package",
   "engines": {
-    "cnos": "3.59.2"
+    "cnos": "3.59.3"
   },
   "commands": {
     "cdd-verify": {
