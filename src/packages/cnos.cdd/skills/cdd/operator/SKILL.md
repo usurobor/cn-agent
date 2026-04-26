@@ -137,16 +137,22 @@ After executing a gate action, confirm to the requesting role that the action co
 - ❌ Execute silently and assume the triad will notice
 - ✅ "Tag pushed: `git push origin 3.59.0` — confirmed on remote"
 
-### 3.4. Assess post-cycle release need
+### 3.4. Cut the release — disconnect the triad's final state
 
-After γ's PRA + skill patches and any δ session patches land on main, δ decides whether to cut a patch release:
+After all post-cycle work lands on main (γ's PRA + skill patches, δ's own session patches), δ cuts the release. This is not optional — the release is how δ disconnects the triad's output into a distributable, tagged whole.
 
-- **Release if:** skill patches change behavior that the next cycle's agents need from the distribution chain (not just from git pull). E.g. package-distributed skills that downstream consumers install.
-- **Skip if:** all patches are in repo-local skills that agents consume via git pull, and no package version bump is needed.
-- Document the decision either way (per reflect §3.6 — record basis, not just conclusion).
+The triad's work is not complete until it is tagged. Untagged post-cycle patches on main are an open boundary — the triad's output is still entangled with whatever comes next. The tag is the disconnection point.
 
-- ❌ γ's skill patches sit unreleased for 3 cycles because nobody owns the release decision
-- ✅ δ assesses after γ signals closure: "5 skill patches on main, all repo-local, agents pull main — no release needed" or "package-distributed skill changed, cutting 3.59.1"
+**Algorithm:**
+1. Confirm all post-cycle commits are on main (γ PRA, γ skill patches, δ session patches)
+2. Bump VERSION + cn.json + cn.package.json files
+3. Update CHANGELOG
+4. Commit release artifacts
+5. Tag and push
+
+- ❌ γ's skill patches sit on main untagged across multiple cycles
+- ❌ δ defers release "because there are no consumers" (the tag is structural, not consumer-driven)
+- ✅ δ tags the final state after all post-cycle work lands: "3.59.1 — δ post-cycle release: operator skill, CDD §Tracking patches, CTB v0.1"
 
 ### 3.5. Signal γ after release-phase gates
 
@@ -213,7 +219,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 | Release | Gate actions if requested (merge, tag) | β or γ gate request |
 | Closure | Gate actions if requested (branch delete, issue close) | γ closure declaration |
 | Post-release | Execute deferred operator actions from γ close-out, then **signal γ** with completion summary | γ deferred-output list |
-| Post-release patch | Assess whether γ's PRA skill patches + any δ session patches warrant a release. If yes: bump version, tag, push. If no: document the decision. | γ close-out + δ session patches on main |
+| Disconnect | Cut the release — tag the triad's final state after all post-cycle work lands on main | γ close-out + δ session patches on main |
 | Inter-cycle | Nothing until next γ dispatch | γ next-cycle selection |
 
 ---
