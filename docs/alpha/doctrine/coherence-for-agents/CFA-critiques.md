@@ -1,6 +1,6 @@
 # CFA Critiques
 
-Artifact: [Coherence for Agents](../COHERENCE-FOR-AGENTS.md)
+Artifact: [Coherence for Agents](COHERENCE-FOR-AGENTS.md)
 Cycle: Four critique passes, convergence on pass four.
 
 This file records the structural findings from each critique pass in the CFA drafting cycle. Surface-level edits and exchange-by-exchange dialogue are not preserved; only the findings that shaped the final text.

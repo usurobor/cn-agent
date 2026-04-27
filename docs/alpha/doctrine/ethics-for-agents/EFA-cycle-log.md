@@ -1,6 +1,6 @@
 # EFA Cycle Log
 
-Essay: [Ethics for Agents](../ETHICS-FOR-AGENTS.md)
+Essay: [Ethics for Agents](ETHICS-FOR-AGENTS.md)
 Cycle: 2026-04-25 → 2026-04-27
 
 ## β conditional hold — three findings
@@ -17,7 +17,7 @@ All three findings resolved. β approved after reinsertions.
 
 ## Final round — two surgical reinsertions
 
-After external review (see [external-observations.md](external-observations.md)), two observations were incorporated:
+After external review (see [EFA-external-observations.md](EFA-external-observations.md)), two observations were incorporated:
 
 1. **Foreseeability bound on standing** — one paragraph added to the asymmetry section, after standing is defined: "A boundary has standing when its loss is foreseeable, proximate to the move, and material to the move's effect. Speculative downstream impact does not create standing; it creates noise that would paralyze inclusion."
 
@@ -30,5 +30,5 @@ No other paragraphs touched. Essay locked after reinsertions.
 - One full oscillation (draft → β hold → resolution → approval)
 - One conditional hold with three findings, all resolved
 - Two surgical reinsertions from external review
-- Four external observations resolved into two changes (see [external-observations.md](external-observations.md))
+- Four external observations resolved into two changes (see [EFA-external-observations.md](EFA-external-observations.md))
 - Essay locked 2026-04-27

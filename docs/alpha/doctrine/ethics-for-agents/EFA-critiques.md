@@ -1,6 +1,6 @@
 # EFA Critiques — β and γ Verdicts
 
-Essay: [Ethics for Agents](../ETHICS-FOR-AGENTS.md)
+Essay: [Ethics for Agents](ETHICS-FOR-AGENTS.md)
 
 ## β verdicts
 

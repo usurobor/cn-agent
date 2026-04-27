@@ -1,6 +1,6 @@
 # EFA External Observations
 
-Essay: [Ethics for Agents](../ETHICS-FOR-AGENTS.md)
+Essay: [Ethics for Agents](ETHICS-FOR-AGENTS.md)
 Reviewer: Sigma (external to α/β/γ cycle)
 Date: 2026-04-27
 

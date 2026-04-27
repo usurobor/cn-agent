@@ -1,6 +1,6 @@
 # CFA Cycle Log
 
-Artifact: [Coherence for Agents](../COHERENCE-FOR-AGENTS.md)
+Artifact: [Coherence for Agents](COHERENCE-FOR-AGENTS.md)
 Cycle dates: 2026-04-25
 Roles: α (producer), β (judge), γ (cycle observer)
 Skill governing the cycle: write
