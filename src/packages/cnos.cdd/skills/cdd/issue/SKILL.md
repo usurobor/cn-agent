@@ -140,6 +140,12 @@ Failure mode: issue requires back-and-forth to clarify scope, acceptance, or pri
   - ❌ "This is related to some other issues"
   - ✅ "Related: #73 (runtime extensions), #59 (doctor hardening)"
 
+2.5.3. **Link parallel-dependency and constraint documents explicitly**
+  - When the issue body names a cross-cutting reference (parallel-dependency document, related-but-not-load-bearing reference, constraint spec drafted alongside this work), link it with a path, not just a description. α's intake enumerates linked artifacts as the load list; an inline-prose constraint without a path crosses a discoverability boundary.
+  - ❌ "The agent language reference is being drafted in parallel and any conflict must surface here, not silently."
+  - ✅ "The agent language reference [`docs/alpha/ctb/LANGUAGE-SPEC.md`](...) is being drafted in parallel; any conflict must surface here, not silently."
+  - *Derives from: #278 F1 — issue body named `LANGUAGE-SPEC.md` in inline prose without a path; α-1 missed it; β round-1 D-blocker.*
+
 ### 2.6. Artifact boundaries
 
 2.6.1. **Issue owns problem + ACs + priority. Nothing else.**

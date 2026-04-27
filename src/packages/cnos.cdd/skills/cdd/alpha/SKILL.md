@@ -114,7 +114,7 @@ On dispatch:
 1. configure α git identity
 2. begin polling the issue (see CDD.md §Tracking)
 3. read the issue fully
-4. read every linked design / plan / invariant artifact
+4. enumerate every artifact the issue names — both `## Related artifacts` linked entries **and** any artifact named in inline prose (e.g. `## Parallel dependency`, `## Depends on`, "see also X.md", "drafted in parallel"). Read each before drafting; if a named artifact has no path, search the repo to resolve it. Surface unavailability to the operator before treating an artifact as skipped. *Derives from: #278 F1 — α-1 read `## Related artifacts` as the load list and missed the `## Parallel dependency` paragraph naming `docs/alpha/ctb/LANGUAGE-SPEC.md` only by description; β round-1 D-blocker repaired in α-2.*
 5. load:
    - Tier 1: `CDD.md` + this file + lifecycle sub-skills as needed (do not load β or γ role skills)
    - Tier 2: always-applicable `eng/*`
