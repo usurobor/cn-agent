@@ -10,7 +10,7 @@ Governing question: What is the difference between an agent that preserves bound
 
 Related:
 - [Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/COHERENCE-FOR-AGENTS.md) — structural derivation this essay translates
-- [FOUNDATIONS](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/FOUNDATIONS.md) — theory/practice dependency stack
+- [FOUNDATIONS](https://github.com/usurobor/cnos/blob/main/docs/alpha/FOUNDATIONS.md) — theory/practice dependency stack
 - [COHERENCE.md](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/COHERENCE.md) — TSC review geometry
 - [CAP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CAP.md) — single-agent move this essay extends to conduct
 - [CBP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CBP.md) — conduct vocabulary translated here
