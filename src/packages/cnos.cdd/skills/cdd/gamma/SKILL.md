@@ -14,8 +14,10 @@ inputs:
   - lag and signals
   - issue state
   - branch state
-  - .cdd/unreleased/{N}/alpha.md (review-readiness signal + α close-out)
-  - .cdd/unreleased/{N}/beta.md (verdict + release evidence + β close-out)
+  - .cdd/unreleased/{N}/self-coherence.md (α's gap, mode, ACs, CDD Trace, review-readiness, fix-rounds)
+  - .cdd/unreleased/{N}/beta-review.md (β's round-by-round verdicts + findings)
+  - .cdd/unreleased/{N}/alpha-closeout.md (α close-out, post-merge)
+  - .cdd/unreleased/{N}/beta-closeout.md (β close-out + release evidence, post-merge)
   - release state
   - delta gate results (observable via git: tags, branch state)
 outputs:
@@ -200,7 +202,7 @@ Fix the issue instead.
 
 #### Step 3 — Subscribe and dispatch α and β
 
-Immediately begin polling the issue and `.cdd/unreleased/{N}/` (see CDD.md §Tracking for query forms and the wake-up mechanism) — do not ask, just do it. γ must track the full cycle: issue activity, branch state, α's `.cdd/unreleased/{N}/alpha.md` updates, β's `.cdd/unreleased/{N}/beta.md` verdicts, and branch CI status. Start polling before dispatching.
+Immediately begin polling the issue and `.cdd/unreleased/{N}/` (see CDD.md §Tracking for query forms and the wake-up mechanism) — do not ask, just do it. γ must track the full cycle: issue activity, branch state, α's `.cdd/unreleased/{N}/self-coherence.md` updates, β's `.cdd/unreleased/{N}/beta-review.md` verdicts, and branch CI status. Start polling before dispatching.
 
 **Polling requires both a query and a wake-up mechanism.** Picking a query form (`gh issue`, `git fetch`, `git ls-tree`) without confirming a wake-up form (`Monitor` stdout-as-notification or shell-wake-on-loop-exit) is silent — the loop runs but γ never reacts. Verify both before dispatch. If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, surface the gap to the operator before dispatching α and β; γ cannot autonomously coordinate without a wake-up contract.
 
@@ -223,7 +225,7 @@ done
 
 Each transition line becomes a `task-notification` that wakes the session. Run under `Monitor`; emit only on transition.
 
-Then produce both prompts at dispatch time. β begins polling the issue and `.cdd/unreleased/{N}/alpha.md` and starts intake while α implements — β does not need to wait for review-readiness to begin polling.
+Then produce both prompts at dispatch time. β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` and starts intake while α implements — β does not need to wait for review-readiness to begin polling.
 
 **α prompt:**
 ```text
@@ -244,7 +246,7 @@ Rules:
 - point both roles at the issue, not a paraphrase of the issue
 - do not restate the algorithm in the prompt
 - do not smuggle missing constraints into chat prose; fix the issue instead
-- β begins polling the issue and `.cdd/unreleased/{N}/alpha.md` immediately; the β skill handles waiting for α's review-readiness signal
+- β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` immediately; the β skill handles waiting for α's review-readiness signal
 - β receives artifact surfaces, not α's hidden implementation rationale
 
 #### Step 5 — Unblock
@@ -281,10 +283,12 @@ If β deferred a mechanical release step because of environment constraints, δ 
 ### 2.7. Steps 8–9 — Triage close-outs explicitly
 
 Before close-out, collect (in-version, before release):
-- α close-out section in `.cdd/unreleased/{N}/alpha.md`
-- β close-out section in `.cdd/unreleased/{N}/beta.md`
+- `.cdd/unreleased/{N}/alpha-closeout.md` (α close-out narrative)
+- `.cdd/unreleased/{N}/beta-closeout.md` (β close-out narrative + release evidence)
 
-After release, the same files live at `.cdd/releases/{X.Y.Z}/{N}/{alpha,beta}.md` per `release/SKILL.md` §2.5a. The legacy aggregate paths `.cdd/releases/{X.Y.Z}/{alpha,beta}/CLOSE-OUT.md` are warn-only (pre-#283 form). See `CDD.md` §5.3a Artifact Location Matrix.
+`self-coherence.md` and `beta-review.md` carry the in-cycle record (gap/ACs/trace and round-by-round verdicts respectively); the two `*-closeout.md` files are γ's primary triage inputs.
+
+After release, the cycle directory moves to `.cdd/releases/{X.Y.Z}/{N}/` per `release/SKILL.md` §2.5a. The legacy aggregate paths `.cdd/releases/{X.Y.Z}/{alpha,beta,gamma}/CLOSE-OUT.md` are warn-only (pre-#283 form). See `CDD.md` §5.3a Artifact Location Matrix.
 
 Then write the post-release assessment per `post-release/SKILL.md` at the canonical path `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (for the CDD package itself: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). The PRA is γ's artifact — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
 
@@ -345,8 +349,8 @@ If no:
 ### 2.10. Steps 13–15 — Close only after the closure gate passes
 
 Do not declare the cycle closed until all of the following are true:
-1. α close-out exists on main
-2. β close-out exists on main
+1. `.cdd/unreleased/{N}/alpha-closeout.md` exists on main
+2. `.cdd/unreleased/{N}/beta-closeout.md` exists on main
 3. γ has written the post-release assessment per `post-release/SKILL.md`
 4. every fired cycle-iteration trigger has a `Cycle Iteration` entry with root cause and disposition
 5. recurring findings were assessed for skill / spec patching
@@ -357,7 +361,7 @@ Do not declare the cycle closed until all of the following are true:
 10. merged remote branches are cleaned up
 
 Then:
-- write γ close-out. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA.
+- write `.cdd/unreleased/{N}/gamma-closeout.md`. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA.
 - update hub memory
 - delete merged remote branches
 - state closure explicitly: *"Cycle #N closed. Next: #M."* This is γ's last commit. δ will cut the disconnect release (step 17) — the tag appearing on main is the observable proof the cycle is fully closed.

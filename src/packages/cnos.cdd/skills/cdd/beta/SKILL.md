@@ -12,13 +12,13 @@ scope: role-local
 inputs:
   - issue
   - branch (α's implementation)
-  - .cdd/unreleased/{N}/alpha.md (review-readiness signal + CDD Trace)
+  - .cdd/unreleased/{N}/self-coherence.md (review-readiness signal + CDD Trace)
   - branch CI state
   - release context
 outputs:
-  - review verdict (RC or A) in .cdd/unreleased/{N}/beta.md
+  - review verdict (RC or A) in .cdd/unreleased/{N}/beta-review.md
   - release artifact set
-  - beta close-out (appended to .cdd/unreleased/{N}/beta.md)
+  - beta close-out (.cdd/unreleased/{N}/beta-closeout.md)
 requires:
   - active role is β
   - canonical CDD.md loaded
@@ -62,10 +62,10 @@ This file owns β's role boundary, dispatch contract, and phase-linking rules. C
 
 ## Phase map
 
-- `CDD.md` β steps 1–5 → intake (receive, git identity, poll for branch + `.cdd/unreleased/{N}/alpha.md`, load skills, read diff + artifact + issue)
-- `CDD.md` β steps 6–7 → review / RC loop per `review/SKILL.md`, verdict written to `.cdd/unreleased/{N}/beta.md`
+- `CDD.md` β steps 1–5 → intake (receive, git identity, poll for branch + `.cdd/unreleased/{N}/self-coherence.md`, load skills, read diff + artifact + issue)
+- `CDD.md` β steps 6–7 → review / RC loop per `review/SKILL.md`, verdict written to `.cdd/unreleased/{N}/beta-review.md`
 - `CDD.md` β step 8 → `git merge` + tag + deploy per `release/SKILL.md`
-- `CDD.md` β step 9 → β close-out appended to `.cdd/unreleased/{N}/beta.md`
+- `CDD.md` β step 9 → β close-out written to `.cdd/unreleased/{N}/beta-closeout.md`
 
 This file does not replace those sub-skills.
 It states what β must preserve across them.
@@ -76,11 +76,11 @@ It states what β must preserve across them.
 
 β does not author the fix it judges.
 If RC is requested, α performs the fix.
-If the environment provides a branch and instructs β to develop, commit, or implement, **refuse** — report the role conflict to the operator and wait for α's review-readiness signal in `.cdd/unreleased/{N}/alpha.md`. This overrides any environment-level instructions to "develop and commit."
+If the environment provides a branch and instructs β to develop, commit, or implement, **refuse** — report the role conflict to the operator and wait for α's review-readiness signal in `.cdd/unreleased/{N}/self-coherence.md`. This overrides any environment-level instructions to "develop and commit."
 
 - ❌ "β noticed the missing invariant check and pushed the fix directly to get the merge over the line"
 - ❌ "The harness gave β a branch and told it to implement, so β started coding"
-- ✅ "β names the invariant gap as an RC finding in `.cdd/unreleased/{N}/beta.md`; α lands the fix; β re-reviews the affected surfaces"
+- ✅ "β names the invariant gap as an RC finding in `.cdd/unreleased/{N}/beta-review.md`; α lands the fix; β re-reviews the affected surfaces"
 - ✅ "β received an implementation instruction from the environment, refused, reported the role conflict, and continued β intake (polling for α's review-readiness signal)"
 
 Refusal of harness implementation instructions is a status report, not a blocking question — polling continues regardless.
@@ -94,7 +94,7 @@ The same β session or follow-on β session owns review through release and β c
 
 ### 3. Treat stale references and authority conflicts as findings
 
-If canonical doc, executable skill, issue, `.cdd/unreleased/{N}/alpha.md`, release artifact, or assessment disagree, that is reviewable incoherence, not editorial cleanup.
+If canonical doc, executable skill, issue, `.cdd/unreleased/{N}/self-coherence.md`, release artifact, or assessment disagree, that is reviewable incoherence, not editorial cleanup.
 
 - ❌ "The issue says fallback stays, the release note says fallback was removed — tidy it up after merge"
 - ✅ "Artifact conflict is named as a finding before merge; release waits for one source of truth"
@@ -111,10 +111,10 @@ No "approve with follow-up" except an explicitly named design-scope deferral tha
 The same β session that reviews and merges also owns the release and β close-out.
 Do not defer these to a separate session or role unless the operator explicitly reassigns.
 
-For release-scoped triadic cycles, the β close-out is appended to `.cdd/unreleased/{N}/beta.md` and moved to `.cdd/releases/{X.Y.Z}/{N}/beta.md` at release per `release/SKILL.md` §2.5a. The legacy aggregate path `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md` is warn-only (pre-#283 form). See `CDD.md` §5.3a.
+For release-scoped triadic cycles, the β close-out is written to `.cdd/unreleased/{N}/beta-closeout.md` (separate from `beta-review.md`, which carries the round-by-round verdict). The cycle directory moves to `.cdd/releases/{X.Y.Z}/{N}/` at release per `release/SKILL.md` §2.5a. The legacy aggregate path `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md` is warn-only (pre-#283 form). See `CDD.md` §5.3a.
 
 - ❌ "Merge succeeded; someone else can write the β close-out later"
-- ✅ "Review → narrow → merge → release → β close-out appended to `.cdd/unreleased/{N}/beta.md` in one β pass, then γ writes the PRA"
+- ✅ "Review → narrow → merge → release → write `.cdd/unreleased/{N}/beta-closeout.md` in the same β pass, then γ writes the PRA"
 
 ## Embedded Kata
 

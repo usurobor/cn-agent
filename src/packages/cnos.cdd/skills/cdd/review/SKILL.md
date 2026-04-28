@@ -12,15 +12,15 @@ scope: task-local
 inputs:
   - branch diff (git diff main..{branch})
   - issue context
-  - .cdd/unreleased/{N}/alpha.md (review-readiness signal + α's CDD Trace)
+  - .cdd/unreleased/{N}/self-coherence.md (review-readiness signal + α's CDD Trace)
   - active design constraints
   - active skills
 outputs:
-  - review verdict (in .cdd/unreleased/{N}/beta.md)
+  - review verdict (in .cdd/unreleased/{N}/beta-review.md)
   - findings with severity
   - architecture check when applicable
 requires:
-  - review-ready branch + .cdd/unreleased/{N}/alpha.md
+  - review-ready branch + .cdd/unreleased/{N}/self-coherence.md
 calls:
   - eng/design-principles
 ---
@@ -104,7 +104,7 @@ Review fails via **surface reading** — checking only what changed, missing wha
   - ✅ "Issue names 5 docs; 2 updated, 3 absent — are these deferred or forgotten?"
 
 2.0.3. **Distinguish scope reduction from omission**
-  - If scope was intentionally narrowed, the commit message or `.cdd/unreleased/{N}/alpha.md` should say so.
+  - If scope was intentionally narrowed, the commit message or `.cdd/unreleased/{N}/self-coherence.md` should say so.
   - Unmentioned AC omissions are findings.
   - Noted deferrals are known debt.
   - ❌ Assume missing AC was intentionally deferred
@@ -123,13 +123,13 @@ Review fails via **surface reading** — checking only what changed, missing wha
     - governance/process
     - release hardening
   - Verify the required CDD artifacts for that class exist in the diff or branch. Suggested minimums:
-    - substantial feature — design doc, coherence contract, implementation plan, tests, code, docs, self-coherence (in `.cdd/unreleased/{N}/alpha.md`)
-    - bugfix — coherence contract (may live in issue/`.cdd/unreleased/{N}/alpha.md`/commit body), tests, code, self-coherence if substantial
+    - substantial feature — design doc, coherence contract, implementation plan, tests, code, docs, self-coherence (in `.cdd/unreleased/{N}/self-coherence.md`)
+    - bugfix — coherence contract (may live in issue/`.cdd/unreleased/{N}/self-coherence.md`/commit body), tests, code, self-coherence if substantial
     - governance/process — self-coherence, frozen snapshot if versioned, plan if the branch formalizes process changes
     - release hardening — changelog, release artifacts, post-release assessment if method requires it
   - Missing required artifacts are findings.
   - ❌ "Diff looks clean" (governance branch has no self-coherence report)
-  - ✅ "Substantial feature branch — design doc exists, self-coherence exists in `.cdd/unreleased/{N}/alpha.md`, bootstrap stubs present"
+  - ✅ "Substantial feature branch — design doc exists, self-coherence exists in `.cdd/unreleased/{N}/self-coherence.md`, bootstrap stubs present"
 
 2.0.6. **Process economics check**
   - If the diff adds or changes process, governance, artifacts, or gates, verify:
@@ -151,13 +151,13 @@ Review fails via **surface reading** — checking only what changed, missing wha
   - ✅ "Active skills: ocaml, performance-reliability — implementation consistent with both"
 
 2.0.8. **CDD execution trace (CDD §5.4)**
-  - For substantial changes, verify that the primary branch artifact (`.cdd/unreleased/{N}/alpha.md` for triadic cycles, or the design artifact when one exists) contains a CDD Trace.
+  - For substantial changes, verify that the primary branch artifact (`.cdd/unreleased/{N}/self-coherence.md` for triadic cycles, or the design artifact when one exists) contains a CDD Trace.
   - Check that rows exist for all completed steps through the current review point.
   - Check that step 5 records: mode, active skills, work shape, and level if level shorthand is used.
   - Check that any lifecycle skill already used (review, writing, release) is recorded when relevant.
   - Missing or contradictory rows are findings.
   - ❌ "Design exists" but no visible trace of selection, mode, or loaded skills
-  - ✅ "Trace rows in `.cdd/unreleased/{N}/alpha.md` cover observe, select, mode, and current artifacts; decisions align with the diff"
+  - ✅ "Trace rows in `.cdd/unreleased/{N}/self-coherence.md` cover observe, select, mode, and current artifacts; decisions align with the diff"
 
 ---
 
@@ -166,7 +166,7 @@ Review fails via **surface reading** — checking only what changed, missing wha
 Read the diff for internal coherence.
 
 2.1.1. **Check each change against its stated purpose**
-  - Commit / `.cdd/unreleased/{N}/alpha.md` says X, diff does Y.
+  - Commit / `.cdd/unreleased/{N}/self-coherence.md` says X, diff does Y.
   - ❌ "feat: add fs_glob" but glob still returns not_yet_implemented
   - ✅ "feat: add fs_glob" and executor path is complete
 
@@ -267,7 +267,7 @@ Check whether the change creates obligations on code it did not touch.
   - When multiple surfaces claim to define the same thing, verify they agree. Common conflict sites:
     - canonical doc vs executable skill
     - runtime prompt-visible contract vs machine-readable JSON
-    - issue ACs vs narrower coherence contract in `.cdd/unreleased/{N}/alpha.md`
+    - issue ACs vs narrower coherence contract in `.cdd/unreleased/{N}/self-coherence.md`
     - branch summary vs actual branch state
     - runtime defaults vs documented defaults
   - ❌ "Skill looks correct" (didn't compare with canonical doc)
@@ -281,7 +281,7 @@ Check whether the change creates obligations on code it did not touch.
   - ✅ "Diff fixes restore_one for AC3; but default_manifest_for_profile in the same module still references cnos.pm which doesn't exist — C finding"
 
 2.2.10. **Contract-implementation confinement check**
-  - When a function's docstring, AC, or `.cdd/unreleased/{N}/alpha.md` description claims a restricted input domain (e.g. "bare names only," "positive integers," "known enum values"), verify the implementation actually **rejects** inputs outside that domain.
+  - When a function's docstring, AC, or `.cdd/unreleased/{N}/self-coherence.md` description claims a restricted input domain (e.g. "bare names only," "positive integers," "known enum values"), verify the implementation actually **rejects** inputs outside that domain.
   - The function may correctly handle the claimed inputs while silently accepting unclaimed ones — that's a confinement gap, not a correctness bug.
   - Ask: "What inputs does the contract exclude? Does the code reject them, or just not test them?"
   - ❌ "resolve_command handles bare names correctly — approve" (didn't check that `../foo` is also accepted)
@@ -551,7 +551,7 @@ Mechanical findings reaching review are **process bugs**. If mechanical findings
 
 ## 6. Output Format
 
-The review verdict is written to `.cdd/unreleased/{N}/beta.md`. Each review round appends a new section to the same file (the file is the cycle's β record).
+The review verdict is written to `.cdd/unreleased/{N}/beta-review.md`. Each review round appends a new section to the same file (the file is the cycle's β record).
 
 ```markdown
 **Verdict:** APPROVED / REQUEST CHANGES
@@ -597,7 +597,7 @@ The review verdict is written to `.cdd/unreleased/{N}/beta.md`. Each review roun
 ## 7. After Review
 
 - **Approved:** Reviewer `git merge`s the branch into main with `Closes #N` in the merge commit, pushes, then proceeds to release per `release/SKILL.md`. Branch cleaned up after release.
-- **Changes requested:** Author fixes on the branch, appends fix-round section to `.cdd/unreleased/{N}/alpha.md`; reviewer reads and narrows on the next round in `.cdd/unreleased/{N}/beta.md`.
+- **Changes requested:** Author fixes on the branch, appends fix-round section to `.cdd/unreleased/{N}/self-coherence.md`; reviewer reads and narrows on the next round in `.cdd/unreleased/{N}/beta-review.md`.
 
 ### 7.0. All findings must be resolved before merge
 
@@ -618,7 +618,7 @@ The only exception: a finding that requires a design decision outside the scope 
 
 The reviewer must use a different git identity (`user.name` / `user.email`) than α — `beta@cdd.{project}` versus `alpha@cdd.{project}`. The role separation lives in:
 
-- the git author of `.cdd/unreleased/{N}/alpha.md` commits (α) versus `.cdd/unreleased/{N}/beta.md` commits (β)
+- the git author of `.cdd/unreleased/{N}/self-coherence.md` commits (α) versus `.cdd/unreleased/{N}/beta-review.md` commits (β)
 - `git config user.name` / `user.email` per session, set on dispatch (CDD.md §1.4 step 2 of each role algorithm)
 - the merge commit author (β), distinct from the branch's commits (α)
 

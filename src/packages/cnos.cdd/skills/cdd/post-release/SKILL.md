@@ -184,7 +184,7 @@ Type: `feature` (design/code gap) or `process` (development method gap).
 
 Lag levels:
 - **none** — shipped in this or prior release
-- **low** — implementation in progress (branch exists, `.cdd/unreleased/{N}/alpha.md` present)
+- **low** — implementation in progress (branch exists, `.cdd/unreleased/{N}/self-coherence.md` present)
 - **growing** — design converged, no implementation started
 - **stale** — design aging without implementation plan
 
@@ -211,7 +211,7 @@ Answer three questions:
 ### Step 5.5: Review quality
 
 For every triadic cycle in this release, record:
-1. **Review rounds** — how many iterations before merge (fix-round appendices in `.cdd/unreleased/{N}/alpha.md` + RC verdicts in `.cdd/unreleased/{N}/beta.md`). Target: ≤1 for docs cycles, ≤2 for code cycles.
+1. **Review rounds** — how many iterations before merge (fix-round appendices in `.cdd/unreleased/{N}/self-coherence.md` + RC verdicts in `.cdd/unreleased/{N}/beta-review.md`). Target: ≤1 for docs cycles, ≤2 for code cycles.
 2. **Superseded cycles** — count of branches abandoned-not-merged and replaced. Target: 0.
 3. **Finding taxonomy** — tag each review finding as `mechanical` (automatable: stale cross-refs, missing scope items, wrong branch name) or `judgment` (design coherence, architecture trade-offs).
 4. **Mechanical ratio** — mechanical findings / total findings. If >20% AND total findings ≥ 10, file an issue to add the missing pre-flight check. Below 10 findings the ratio is noise — note it but don't file.

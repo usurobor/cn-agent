@@ -219,7 +219,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 |-------|----------------|----------|
 | Pre-dispatch | Receive γ prompts, confirm agent mapping | γ dispatch |
 | Dispatch | Deliver prompts to agent sessions | — |
-| Implementation | Nothing | α's `.cdd/unreleased/{N}/alpha.md` review-readiness signal or γ unblock request |
+| Implementation | Nothing | α's `.cdd/unreleased/{N}/self-coherence.md` review-readiness signal or γ unblock request |
 | Review | Nothing | β verdict or γ unblock request |
 | Release | Gate actions if requested (merge, tag) | β or γ gate request |
 | Closure | Gate actions if requested (branch delete, issue close) | γ closure declaration |

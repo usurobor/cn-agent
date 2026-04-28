@@ -17,7 +17,7 @@ inputs:
   - CI state
 outputs:
   - review-ready artifact set
-  - .cdd/unreleased/{N}/alpha.md (review-readiness signal + cycle close-out)
+  - .cdd/unreleased/{N}/self-coherence.md (review-readiness signal + cycle close-out)
   - alpha close-out
 requires:
   - active role is α
@@ -79,7 +79,7 @@ A complete α handoff has these parts:
 - acceptance evidence
 - self-coherence report
 - pre-review gate evidence
-- `.cdd/unreleased/{N}/alpha.md` (primary branch artifact) carrying the CDD Trace
+- `.cdd/unreleased/{N}/self-coherence.md` (primary branch artifact) carrying the CDD Trace
 
 - ❌ "The diff is the work"
 - ✅ "The work is the diff plus the evidence that the diff closes the declared gap"
@@ -92,7 +92,7 @@ The artifacts implement the change.
 Self-coherence proves the claimed closure.
 Pre-review proves the branch is structurally ready for β.
 
-- ❌ Code first, then improvise explanation in `.cdd/unreleased/{N}/alpha.md`
+- ❌ Code first, then improvise explanation in `.cdd/unreleased/{N}/self-coherence.md`
 - ✅ Named gap → active skills → tests/code/docs → self-coherence → pre-review → review request
 
 ### 1.3. Name the failure mode
@@ -112,7 +112,7 @@ Pre-review proves the branch is structurally ready for β.
 On dispatch:
 
 1. configure α git identity
-2. begin polling the issue and `.cdd/unreleased/{N}/` (see CDD.md §Tracking) — γ may write coordination notes to `.cdd/unreleased/{N}/gamma.md`, and β will respond in `.cdd/unreleased/{N}/beta.md` once you signal review-readiness
+2. begin polling the issue and `.cdd/unreleased/{N}/` (see CDD.md §Tracking) — γ may write coordination notes to `.cdd/unreleased/{N}/gamma-closeout.md`, and β will respond in `.cdd/unreleased/{N}/beta-review.md` once you signal review-readiness
 3. read the issue fully
 4. enumerate every artifact the issue names — both `## Related artifacts` linked entries **and** any artifact named in inline prose (e.g. `## Parallel dependency`, `## Depends on`, "see also X.md", "drafted in parallel"). Read each before drafting; if a named artifact has no path, search the repo to resolve it. Surface unavailability to the operator before treating an artifact as skipped. *Derives from: #278 F1 — α-1 read `## Related artifacts` as the load list and missed the `## Parallel dependency` paragraph naming `docs/alpha/ctb/LANGUAGE-SPEC.md` only by description; β round-1 D-blocker repaired in α-2.*
 5. load:
@@ -130,7 +130,7 @@ Do not start coding until the active skill set is explicit.
 Produce in CDD canonical artifact order (CDD.md §5.2) unless the issue explicitly justifies a narrower path:
 
 1. design artifact (when required) or explicit "not required"
-2. coherence contract (`.cdd/unreleased/{N}/alpha.md` §Gap, or design artifact §Problem)
+2. coherence contract (`.cdd/unreleased/{N}/self-coherence.md` §Gap, or design artifact §Problem)
 3. plan (when implementation sequencing is non-trivial) or explicit "not required"
 4. tests
 5. code
@@ -143,7 +143,7 @@ Rules:
 - design and plan may be marked "not required" only with a concrete justification (e.g. "single-file rename, no impact graph"); silent omission is incomplete
 - tests must prove the actual claim, not just one happy path
 - docs/specs must be updated before requesting review when authority surfaces changed
-- `.cdd/unreleased/{N}/alpha.md` (the primary branch artifact) must carry the CDD Trace through step 7
+- `.cdd/unreleased/{N}/self-coherence.md` (the primary branch artifact) must carry the CDD Trace through step 7
 
 - ❌ "Tests/code/docs first; design and plan are paperwork"
 - ✅ "Design names the incoherence and ACs; plan orders the steps; only then do tests, code, docs, self-coherence, pre-review proceed — or each is explicitly marked not required with a reason"
@@ -196,7 +196,7 @@ This is not optional when a non-code harness can drift from the implementation.
 
 ### 2.5. Self-coherence
 
-Write a self-coherence section in `.cdd/unreleased/{N}/alpha.md` (or a standalone `SELF-COHERENCE.md` when the project template requires it).
+Write a self-coherence section in `.cdd/unreleased/{N}/self-coherence.md` (or a standalone `SELF-COHERENCE.md` when the project template requires it).
 
 Minimum contents:
 
@@ -215,10 +215,10 @@ Rules:
 
 ### 2.6. Pre-review gate
 
-Before signaling review-readiness in `.cdd/unreleased/{N}/alpha.md`, verify all of the following:
+Before signaling review-readiness in `.cdd/unreleased/{N}/self-coherence.md`, verify all of the following:
 
 1. branch rebased onto current `main`
-2. `.cdd/unreleased/{N}/alpha.md` carries CDD Trace through step 7
+2. `.cdd/unreleased/{N}/self-coherence.md` carries CDD Trace through step 7
 3. tests are present, or explicit reason none apply
 4. every AC has evidence
 5. known debt is explicit
@@ -241,19 +241,19 @@ Do not signal review-readiness before this gate passes.
 
 Once the gate passes:
 
-- **commit `.cdd/unreleased/{N}/alpha.md`** carrying the explicit review-readiness signal (e.g. `## Review-readiness | round 1 | base SHA: ... | head SHA: ... | branch CI: green at HH:MM:SS UTC | ready for β`). Push the branch and the file to `origin/main` (the file is committed on the branch and lands on main via the eventual `git merge`, but α may also commit the file directly to main if the project's flow requires it before merge — branch-only writes are invisible to roles that haven't checked the branch out).
-- immediately begin polling `.cdd/unreleased/{N}/beta.md` and the issue (per §Tracking) — do not ask, just do it. Poll every 60 seconds. This is not optional.
+- **commit `.cdd/unreleased/{N}/self-coherence.md`** carrying the explicit review-readiness signal (e.g. `## Review-readiness | round 1 | base SHA: ... | head SHA: ... | branch CI: green at HH:MM:SS UTC | ready for β`). Push the branch and the file to `origin/main` (the file is committed on the branch and lands on main via the eventual `git merge`, but α may also commit the file directly to main if the project's flow requires it before merge — branch-only writes are invisible to roles that haven't checked the branch out).
+- immediately begin polling `.cdd/unreleased/{N}/beta-review.md` and the issue (per §Tracking) — do not ask, just do it. Poll every 60 seconds. This is not optional.
 - **immediately before signaling review-readiness, re-validate transient pre-review-gate rows** (§2.6 rows 1 and 10). If external state has drifted (base SHA moved, branch CI state changed), update the artifact so the gate record is true at the moment of the signal, not at the moment of the original write. *Derives from: #266 F1 / F2.*
-- if β returns RC in `.cdd/unreleased/{N}/beta.md`: fix findings on the branch, **append a fix-round section to `.cdd/unreleased/{N}/alpha.md`** naming each finding addressed, the commit SHA that addressed it, and any reasoning that β needs to re-verify. Do not ask whether to append, just do it. The artifact thread is the review record.
+- if β returns RC in `.cdd/unreleased/{N}/beta-review.md`: fix findings on the branch, **append a fix-round section to `.cdd/unreleased/{N}/self-coherence.md`** naming each finding addressed, the commit SHA that addressed it, and any reasoning that β needs to re-verify. Do not ask whether to append, just do it. The artifact thread is the review record.
 - after each patch, repeat self-coherence and pre-review for affected surfaces
 
 ### 2.8. Close-out
 
-When β approves and merges: append the final α close-out section to `.cdd/unreleased/{N}/alpha.md` (cycle findings or "no findings"). The file already carries the gap, mode, AC mapping, CDD Trace, and fix-round history; the close-out is the final section.
+When β approves and merges: write `.cdd/unreleased/{N}/alpha-closeout.md` (cycle findings or "no findings"). The close-out is a separate file from `self-coherence.md` — `self-coherence.md` carries the gap/mode/ACs/trace/review-readiness across the in-version cycle, and `alpha-closeout.md` carries the post-merge α-side cycle narrative (summary, friction log, observations, engineering-level reading).
 
-For release-scoped triadic cycles, the file moves to `.cdd/releases/{X.Y.Z}/{N}/alpha.md` at release time per `release/SKILL.md` §2.5a — α does not duplicate the close-out elsewhere. The legacy aggregate path `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` is warn-only (pre-#283 form).
+For release-scoped triadic cycles, the cycle directory moves to `.cdd/releases/{X.Y.Z}/{N}/` at release time per `release/SKILL.md` §2.5a — α does not duplicate the close-out elsewhere. The legacy aggregate path `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` is warn-only (pre-#283 form).
 
-`git merge` (the new merge model per CDD.md §1.4 β step 8) preserves branch commits, so files written on the branch land on main intact. α may write `.cdd/unreleased/{N}/alpha.md` on the branch and trust that `git merge` will carry it to main, or commit it directly to main if the cycle's flow requires earlier visibility.
+`git merge` (the new merge model per CDD.md §1.4 β step 8) preserves branch commits, so files written on the branch land on main intact. α may write `.cdd/unreleased/{N}/alpha-closeout.md` on the branch (post-merge or pre-merge) and trust that `git merge` will carry it to main, or commit it directly to main if the cycle's flow requires earlier visibility.
 
 **Voice: factual observations and patterns only.** Do not recommend dispositions — triage is γ's job.
 
@@ -281,7 +281,7 @@ If the claim is universal, the audit must be exhaustive.
 
 ### 3.4. Re-audit after every patch
 
-A mid-review fix can invalidate `.cdd/unreleased/{N}/alpha.md`, self-coherence, or AC mapping.
+A mid-review fix can invalidate `.cdd/unreleased/{N}/self-coherence.md`, self-coherence, or AC mapping.
 Re-read them against HEAD.
 
 ### 3.5. Keep role boundaries clean
@@ -309,7 +309,7 @@ Produce the α-side evidence needed before requesting review:
 
 ### Expected artifacts
 
-- `.cdd/unreleased/{N}/alpha.md` with step 7 trace
+- `.cdd/unreleased/{N}/self-coherence.md` with step 7 trace
 - self-coherence section with AC mapping
 - one command or note showing the peer / harness audit
 - explicit known debt or explicit "none"

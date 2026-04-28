@@ -167,7 +167,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
       mv "$dir" .cdd/releases/X.Y.Z/
     done
     ```
-  - Each `.cdd/releases/{X.Y.Z}/{N}/` directory carries the same `{alpha,beta,gamma}.md` files that lived in `.cdd/unreleased/{N}/` during the cycle (per CDD.md §Tracking + §5.3a).
+  - Each `.cdd/releases/{X.Y.Z}/{N}/` directory carries the same role-prefixed files that lived in `.cdd/unreleased/{N}/` during the cycle (`self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, plus any cycle-specific extras) per CDD.md §Tracking + §5.3a.
   - Include the moves in the release commit
   - `.cdd/unreleased/` should be empty after the release commit
   - ❌ Leave cycle directories in `unreleased/` after tagging (lose the version association)
@@ -218,10 +218,10 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
     - skills loaded: release, plus writing if used
     - decision: released version X.Y.Z
   - If the triadic protocol is active, β also writes:
-    - release evidence appended to `.cdd/unreleased/{N}/beta.md`
-    - β close-out section in `.cdd/unreleased/{N}/beta.md` for γ to read
+    - release evidence appended to `.cdd/unreleased/{N}/beta-review.md`
+    - β close-out section in `.cdd/unreleased/{N}/beta-review.md` for γ to read
   - γ writes the post-release assessment after β's release and close-out are complete
-  - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/alpha.md` — it carries the trace through step 7a, and β extends it with steps 8–10 in `.cdd/unreleased/{N}/beta.md`.
+  - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/self-coherence.md` — it carries the trace through step 7a, and β extends it with steps 8–10 in `.cdd/unreleased/{N}/beta-review.md`.
 
 ## 3. Rules
 
