@@ -1,5 +1,7 @@
 # Writer Package
 
+> **Status: Superseded by post-SOUL.md redo.** This design assumed peer status with cnos.cdd; UIE-V's migration to skill form makes both writer and CDD specializations of the core triadic agent rather than peers. The redo cycle will reconcile this design against the new structural foundation. This document remains as cycle-input evidence, not as binding design.
+
 **Issue:** #278
 **Version:** unset (not release-scoped; design-lock cycle)
 **Mode:** MCA
