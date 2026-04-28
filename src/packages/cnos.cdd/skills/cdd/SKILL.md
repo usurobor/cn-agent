@@ -7,7 +7,6 @@ governing_question: How do we evolve a system through a substantial change witho
 visibility: public
 triggers:
   - review
-  - PR
   - release
   - issue
   - design
@@ -20,7 +19,7 @@ scope: global
 inputs:
   - substantial-change context
   - active role
-  - issue or PR context
+  - issue or branch context
 outputs:
   - canonical method loaded
   - active role skill loaded

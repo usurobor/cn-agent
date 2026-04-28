@@ -15,7 +15,7 @@ triggers:
   - changelog
 scope: task-local
 inputs:
-  - approved branch or PR
+  - approved branch
   - version decision
   - release context
 outputs:
@@ -106,9 +106,9 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 2.5. **Release notes — RELEASE.md**
   - Write `RELEASE.md` at repo root before tagging. This is the GitHub release body.
   - A release is a measured coherence delta. The release body must foreground what got more coherent and why, then detail the changes.
-  - The release CI workflow uses `RELEASE.md` as the release body if present; otherwise it auto-generates (which produces only PR titles — not acceptable).
+  - The release CI workflow uses `RELEASE.md` as the release body if present; otherwise it auto-generates from commit titles (sparse and unstructured — not acceptable).
   - `RELEASE.md` is committed in the release commit and consumed by CI. It stays in the repo until the next release overwrites it.
-  - ❌ Let CI auto-generate release notes (just PR titles, no detail)
+  - ❌ Let CI auto-generate release notes (just commit titles, no detail)
   - ❌ Jump straight into Fixed/Added/Changed (change-loggy, not coherence-framed)
   - ❌ Manually create the GitHub release after CI (race condition with workflow)
   - ✅ Outcome first, then changes, then proof
@@ -158,18 +158,20 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - #N — description (if any found during validation)
   ```
 
-2.5a. **Move close-outs to release directory**
-  - Move all close-outs from `.cdd/unreleased/` to `.cdd/releases/{X.Y.Z}/`:
+2.5a. **Move cycle directories to release directory**
+  - Move every per-cycle directory from `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/`:
     ```bash
-    mkdir -p .cdd/releases/X.Y.Z/{alpha,beta,gamma}
-    mv .cdd/unreleased/alpha/* .cdd/releases/X.Y.Z/alpha/ 2>/dev/null
-    mv .cdd/unreleased/beta/*  .cdd/releases/X.Y.Z/beta/  2>/dev/null
-    mv .cdd/unreleased/gamma/* .cdd/releases/X.Y.Z/gamma/ 2>/dev/null
+    mkdir -p .cdd/releases/X.Y.Z
+    for dir in .cdd/unreleased/*/; do
+      [ -d "$dir" ] || continue
+      mv "$dir" .cdd/releases/X.Y.Z/
+    done
     ```
+  - Each `.cdd/releases/{X.Y.Z}/{N}/` directory carries the same `{alpha,beta,gamma}.md` files that lived in `.cdd/unreleased/{N}/` during the cycle (per CDD.md §Tracking + §5.3a).
   - Include the moves in the release commit
   - `.cdd/unreleased/` should be empty after the release commit
-  - ❌ Leave close-outs in `unreleased/` after tagging (lose the version association)
-  - ❌ Move close-outs after the release commit (they should be part of the release snapshot)
+  - ❌ Leave cycle directories in `unreleased/` after tagging (lose the version association)
+  - ❌ Move after the release commit (they should be part of the release snapshot)
   - ✅ Move before commit, include in the release commit
 
 2.6. **Tag and push**
@@ -216,10 +218,10 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
     - skills loaded: release, plus writing if used
     - decision: released version X.Y.Z
   - If the triadic protocol is active, β also writes:
-    - release evidence in the β close-out
-    - β close-out for γ to review in the `.cdd/` protocol surface
+    - release evidence appended to `.cdd/unreleased/{N}/beta.md`
+    - β close-out section in `.cdd/unreleased/{N}/beta.md` for γ to read
   - γ writes the post-release assessment after β's release and close-out are complete
-  - If the branch has no primary branch artifact, the PR body must carry the trace instead.
+  - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/alpha.md` — it carries the trace through step 7a, and β extends it with steps 8–10 in `.cdd/unreleased/{N}/beta.md`.
 
 ## 3. Rules
 

@@ -10,17 +10,17 @@ triggers:
   - review
 scope: task-local
 inputs:
-  - PR diff
+  - branch diff (git diff main..{branch})
   - issue context
-  - branch artifacts
+  - .cdd/unreleased/{N}/alpha.md (review-readiness signal + α's CDD Trace)
   - active design constraints
   - active skills
 outputs:
-  - review verdict
+  - review verdict (in .cdd/unreleased/{N}/beta.md)
   - findings with severity
   - architecture check when applicable
 requires:
-  - review-ready branch or PR
+  - review-ready branch + .cdd/unreleased/{N}/alpha.md
 calls:
   - eng/design-principles
 ---
@@ -68,9 +68,9 @@ Review fails via **surface reading** — checking only what changed, missing wha
 
 ### 2.0. Issue — what was promised
 
-**PRE-GATE: Verify branch is unmerged.** Before any review work, confirm the branch has not already landed on main. Check PR state (`gh pr view {number} --json state,mergedAt`) or, for offline reviews, `git log main --oneline | grep -w {issue-number}`. If already merged: the branch is stale — either review the merged code on main, or skip. Do not review a dead branch. (If this check is added to the review subagent's preflight, this PRE-GATE becomes informational.)
+**PRE-GATE: Verify branch is unmerged.** Before any review work, confirm the branch has not already landed on main. Run `git log main --oneline | grep -w {issue-number}` (or check the merge commit's reachability with `git merge-base --is-ancestor {branch} main`). If already merged: the branch is stale — either review the merged code on main, or skip. Do not review a dead branch. (If this check is added to the review subagent's preflight, this PRE-GATE becomes informational.)
   - ❌ Read the diff, post findings, then discover the branch was merged two weeks ago
-  - ✅ "`gh pr view 145 --json state` → `MERGED` — branch is stale, redirecting review to main"
+  - ✅ "`git merge-base --is-ancestor origin/claude/cdd-X main` → 0 — branch is merged, redirecting review to main"
 
 **GATE: Complete §2.0 before reading the diff.** The review is structurally incomplete if these tables are absent.
 
@@ -104,7 +104,7 @@ Review fails via **surface reading** — checking only what changed, missing wha
   - ✅ "Issue names 5 docs; 2 updated, 3 absent — are these deferred or forgotten?"
 
 2.0.3. **Distinguish scope reduction from omission**
-  - If scope was intentionally narrowed, the commit/PR should say so.
+  - If scope was intentionally narrowed, the commit message or `.cdd/unreleased/{N}/alpha.md` should say so.
   - Unmentioned AC omissions are findings.
   - Noted deferrals are known debt.
   - ❌ Assume missing AC was intentionally deferred
@@ -123,13 +123,13 @@ Review fails via **surface reading** — checking only what changed, missing wha
     - governance/process
     - release hardening
   - Verify the required CDD artifacts for that class exist in the diff or branch. Suggested minimums:
-    - substantial feature — design doc, coherence contract, implementation plan, tests, code, docs, self-coherence
-    - bugfix — coherence contract (may live in issue/PR/commit body), tests, code, self-coherence if substantial
+    - substantial feature — design doc, coherence contract, implementation plan, tests, code, docs, self-coherence (in `.cdd/unreleased/{N}/alpha.md`)
+    - bugfix — coherence contract (may live in issue/`.cdd/unreleased/{N}/alpha.md`/commit body), tests, code, self-coherence if substantial
     - governance/process — self-coherence, frozen snapshot if versioned, plan if the branch formalizes process changes
     - release hardening — changelog, release artifacts, post-release assessment if method requires it
   - Missing required artifacts are findings.
   - ❌ "Diff looks clean" (governance branch has no self-coherence report)
-  - ✅ "Substantial feature branch — design doc exists, self-coherence exists, bootstrap stubs present"
+  - ✅ "Substantial feature branch — design doc exists, self-coherence exists in `.cdd/unreleased/{N}/alpha.md`, bootstrap stubs present"
 
 2.0.6. **Process economics check**
   - If the diff adds or changes process, governance, artifacts, or gates, verify:
@@ -151,13 +151,13 @@ Review fails via **surface reading** — checking only what changed, missing wha
   - ✅ "Active skills: ocaml, performance-reliability — implementation consistent with both"
 
 2.0.8. **CDD execution trace (CDD §5.4)**
-  - For substantial changes, verify that the primary branch artifact contains a CDD Trace.
+  - For substantial changes, verify that the primary branch artifact (`.cdd/unreleased/{N}/alpha.md` for triadic cycles, or the design artifact when one exists) contains a CDD Trace.
   - Check that rows exist for all completed steps through the current review point.
   - Check that step 5 records: mode, active skills, work shape, and level if level shorthand is used.
   - Check that any lifecycle skill already used (review, writing, release) is recorded when relevant.
   - Missing or contradictory rows are findings.
   - ❌ "Design exists" but no visible trace of selection, mode, or loaded skills
-  - ✅ "Trace rows cover observe, select, mode, and current artifacts; decisions align with the diff"
+  - ✅ "Trace rows in `.cdd/unreleased/{N}/alpha.md` cover observe, select, mode, and current artifacts; decisions align with the diff"
 
 ---
 
@@ -166,7 +166,7 @@ Review fails via **surface reading** — checking only what changed, missing wha
 Read the diff for internal coherence.
 
 2.1.1. **Check each change against its stated purpose**
-  - Commit/PR says X, diff does Y.
+  - Commit / `.cdd/unreleased/{N}/alpha.md` says X, diff does Y.
   - ❌ "feat: add fs_glob" but glob still returns not_yet_implemented
   - ✅ "feat: add fs_glob" and executor path is complete
 
@@ -205,7 +205,7 @@ Check whether the change creates obligations on code it did not touch.
 2.2.1a. **Input-source enumeration for filters/sanitizers/validators**
   - When the diff adds or modifies a function that filters, sanitizes, or validates, enumerate every input source (caller/call site) that feeds it. Verify each input gets the full pipeline.
   - This is mandatory for security-relevant paths (sanitization, auth, access control).
-  - This is also mandatory when the PR claims a failure class is "impossible by construction" or "structurally prevented" — any such claim requires exhaustive input-source enumeration at the same rigor as a security boundary. An unchecked input source contradicts the closure claim and is a D-level finding.
+  - This is also mandatory when the change claims a failure class is "impossible by construction" or "structurally prevented" — any such claim requires exhaustive input-source enumeration at the same rigor as a security boundary. An unchecked input source contradicts the closure claim and is a D-level finding.
   - ❌ "Body goes through the stripper — looks good"
   - ❌ "fs_read is intercepted — membrane complete" (didn't check fs_list children, fs_glob, git_grep)
   - ✅ "Body goes through strip_xml + strip_frontmatter. Reply goes through is_control_plane_like only. Reply is missing strip_xml — sibling gap."
@@ -248,7 +248,7 @@ Check whether the change creates obligations on code it did not touch.
   - This rule is symmetric: the trigger is "any path-going-stale event," not just renames. Additive contract changes (new path) require peer enumeration of consumers; subtractive contract changes (deleted path) require peer enumeration of references. The same rule covers both directions.
   - Cross-package reach: live consumers may live in adjacent packages or in `mindsets/`, `docs/`, OCaml sources, etc. Grep over `src/` and `docs/`, not just the package being changed.
   - Frozen snapshot dirs may allow path-only repair if the docs system explicitly permits it.
-  - ❌ Approve a file-delete PR without grepping for live consumers of the deleted path
+  - ❌ Approve a file-delete change without grepping for live consumers of the deleted path
   - ❌ "moves and renames" read literally — a deletion has no consumers in the package, so the grep is skipped
   - ✅ Grep old path → zero live matches across the full repo (excluding historical audit docs)
   - *Derives from: #268 F1 — α deleted `review/checklist.md` per AC9 but did not grep for the path; β R1 caught one live consumer in `cnos.core/mindsets/ENGINEERING.md`. The rule was loaded as Tier 1 but its phrasing biased application toward renames only.*
@@ -267,7 +267,7 @@ Check whether the change creates obligations on code it did not touch.
   - When multiple surfaces claim to define the same thing, verify they agree. Common conflict sites:
     - canonical doc vs executable skill
     - runtime prompt-visible contract vs machine-readable JSON
-    - issue ACs vs narrower coherence contract in PR body
+    - issue ACs vs narrower coherence contract in `.cdd/unreleased/{N}/alpha.md`
     - branch summary vs actual branch state
     - runtime defaults vs documented defaults
   - ❌ "Skill looks correct" (didn't compare with canonical doc)
@@ -281,7 +281,7 @@ Check whether the change creates obligations on code it did not touch.
   - ✅ "Diff fixes restore_one for AC3; but default_manifest_for_profile in the same module still references cnos.pm which doesn't exist — C finding"
 
 2.2.10. **Contract-implementation confinement check**
-  - When a function's docstring, AC, or PR description claims a restricted input domain (e.g. "bare names only," "positive integers," "known enum values"), verify the implementation actually **rejects** inputs outside that domain.
+  - When a function's docstring, AC, or `.cdd/unreleased/{N}/alpha.md` description claims a restricted input domain (e.g. "bare names only," "positive integers," "known enum values"), verify the implementation actually **rejects** inputs outside that domain.
   - The function may correctly handle the claimed inputs while silently accepting unclaimed ones — that's a confinement gap, not a correctness bug.
   - Ask: "What inputs does the contract exclude? Does the code reject them, or just not test them?"
   - ❌ "resolve_command handles bare names correctly — approve" (didn't check that `../foo` is also accepted)
@@ -440,7 +440,7 @@ The verdict is a function of the worst named incoherence.
   - ✅ "APPROVED — I do not see a remaining blocker in the executor/sandbox contract"
 
 2.3.8. **Review divergence is a review-skill gap**
-  - When two reviewers review the same PR and one catches findings the other missed, the divergence is a gap in this skill — not in the reviewer who missed it.
+  - When two reviewers review the same change and one catches findings the other missed, the divergence is a gap in this skill — not in the reviewer who missed it.
   - After identifying the divergence:
     1. Name which review-skill step, if followed, would have caught the missed finding
     2. If no step covers it, add one
@@ -479,13 +479,13 @@ The verdict is a function of the worst named incoherence.
   - The bar is coherence, not taste.
 
 3.7. **CI / release-gate state**
-  - If merge is requested, verify required CI/build checks are complete and green.
-  - "Green" means all required checks have **completed** with a passing status — not that a single snapshot of `gh pr checks` showed green. Checks may be re-running, queued, or in an intermediate state.
-  - If checks are missing, stale, re-running, or red, approval is provisional and the merge instruction must say "Do not merge until checks finish green."
+  - If merge is requested, verify required CI/build checks are complete and green on the branch head commit.
+  - "Green" means all required checks have **completed** with a passing status on the branch's head SHA — not a single snapshot. Checks may be re-running, queued, or in an intermediate state.
+  - If checks are missing, stale, re-running, or red, approval is provisional and the merge instruction must say "Do not merge until checks finish green on {branch} HEAD."
   - Do not issue an unconditional merge instruction when required checks have not run or are not in a final completed state.
 
 3.8. **Merge instruction is explicit and scoped**
-  - Approval names the exact branch, PR number, and action.
+  - Approval names the exact branch and merge action (`git merge {branch}` into main with `Closes #N` in the merge commit message).
 
 ---
 
@@ -520,7 +520,7 @@ Before submitting a review:
 - [ ] Prior-round fixes acknowledged by commit hash (multi-round only)
 - [ ] CI/build checks green, or approval explicitly marked provisional
 - [ ] Approval explicitly closes the search space
-- [ ] Merge instruction names branch and PR number
+- [ ] Merge instruction names the branch and the `git merge` action
 - [ ] Verdict stated first
 
 ---
@@ -551,13 +551,15 @@ Mechanical findings reaching review are **process bugs**. If mechanical findings
 
 ## 6. Output Format
 
+The review verdict is written to `.cdd/unreleased/{N}/beta.md`. Each review round appends a new section to the same file (the file is the cycle's β record).
+
 ```markdown
 **Verdict:** APPROVED / REQUEST CHANGES
 
 **Round:** N (if multi-round)
 **Fixed this round:** {commit hashes} closes {prior findings} (if applicable)
-**CI state:** green / provisional / out of scope
-**Merge instruction:** Merge PR #{n} on {branch} / Do not merge yet
+**Branch CI state:** green / provisional / out of scope
+**Merge instruction:** `git merge {branch}` into main with `Closes #{issue}` in the merge commit message / Do not merge yet
 
 ## §2.0 Issue Contract
 
@@ -594,8 +596,8 @@ Mechanical findings reaching review are **process bugs**. If mechanical findings
 
 ## 7. After Review
 
-- **Approved:** Reviewer merges (or signals merge-ready per repo workflow), branch cleaned up
-- **Changes requested:** Author fixes, re-requests; reviewer narrows on the next round
+- **Approved:** Reviewer `git merge`s the branch into main with `Closes #N` in the merge commit, pushes, then proceeds to release per `release/SKILL.md`. Branch cleaned up after release.
+- **Changes requested:** Author fixes on the branch, appends fix-round section to `.cdd/unreleased/{N}/alpha.md`; reviewer reads and narrows on the next round in `.cdd/unreleased/{N}/beta.md`.
 
 ### 7.0. All findings must be resolved before merge
 
@@ -614,18 +616,19 @@ The only exception: a finding that requires a design decision outside the scope 
 
 ### 7.1. Review identity
 
-The reviewer must have a different GitHub identity than the PR author so that:
-- `gh pr review --request-changes` and `--approve` use native GitHub review state
-- Branch protection can enforce "approving review from non-author"
-- Review audit trail is platform-native, not comment-based
+The reviewer must use a different git identity (`user.name` / `user.email`) than α — `beta@cdd.{project}` versus `alpha@cdd.{project}`. The role separation lives in:
 
-If the reviewer shares the author's GitHub account, reviews degrade to comments and review state is unenforceable. This is a known gap (tracked in #45 migration queue) — when it applies, note "posted as comment (shared identity)" in the review.
+- the git author of `.cdd/unreleased/{N}/alpha.md` commits (α) versus `.cdd/unreleased/{N}/beta.md` commits (β)
+- `git config user.name` / `user.email` per session, set on dispatch (CDD.md §1.4 step 2 of each role algorithm)
+- the merge commit author (β), distinct from the branch's commits (α)
+
+The role-separation contract is git-observable: `git log --format='%an %s' main..{branch}` shows α's commits, and the merge commit on main shows β's authorship. No GitHub-native review state is required; the audit trail is the artifact thread plus git history.
 
 ---
 
 ## 8. Kata
 
-**Scenario:** A PR adds a new validation function and claims "structurally prevented" for a failure class. Review it.
+**Scenario:** A branch adds a new validation function and claims "structurally prevented" for a failure class. Review it.
 
 1. Complete §2.0 before reading the diff — walk every AC, check named docs
 2. Read the diff for internal coherence

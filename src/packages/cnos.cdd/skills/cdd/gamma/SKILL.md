@@ -13,9 +13,9 @@ inputs:
   - repo state
   - lag and signals
   - issue state
-  - PR state
-  - alpha close-out
-  - beta close-out
+  - branch state
+  - .cdd/unreleased/{N}/alpha.md (review-readiness signal + α close-out)
+  - .cdd/unreleased/{N}/beta.md (verdict + release evidence + β close-out)
   - release state
   - delta gate results (observable via git: tags, branch state)
 outputs:
@@ -200,23 +200,30 @@ Fix the issue instead.
 
 #### Step 3 — Subscribe and dispatch α and β
 
-Immediately begin polling the issue (see CDD.md §Tracking for query forms and the wake-up mechanism) — do not ask, just do it. γ must track the full cycle: issue activity, PR updates, CI status, and review comments. Start polling before dispatching. When α opens a PR, poll that too.
+Immediately begin polling the issue and `.cdd/unreleased/{N}/` (see CDD.md §Tracking for query forms and the wake-up mechanism) — do not ask, just do it. γ must track the full cycle: issue activity, branch state, α's `.cdd/unreleased/{N}/alpha.md` updates, β's `.cdd/unreleased/{N}/beta.md` verdicts, and branch CI status. Start polling before dispatching.
 
-**Polling requires both a query and a wake-up mechanism.** Picking a query form (`gh`, MCP, or `git fetch`) without confirming a wake-up form (`Monitor` stdout-as-notification, shell-wake-on-loop-exit, or push subscription) is silent — the loop runs but γ never reacts. Verify both before dispatch. If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, surface the gap to the operator before dispatching α and β; γ cannot autonomously coordinate without a wake-up contract.
+**Polling requires both a query and a wake-up mechanism.** Picking a query form (`gh issue`, `git fetch`, `git ls-tree`) without confirming a wake-up form (`Monitor` stdout-as-notification or shell-wake-on-loop-exit) is silent — the loop runs but γ never reacts. Verify both before dispatch. If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, surface the gap to the operator before dispatching α and β; γ cannot autonomously coordinate without a wake-up contract.
 
 For MCP-only γ environments (e.g. Claude Code on the web), the canonical wake-up shape is `Monitor` wrapping a transition-only stdout filter:
 
 ```bash
-prev=""; while true; do
-  cur="$(git fetch --quiet origin && git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g')"
-  comm -13 <(echo "$prev") <(echo "$cur") | sed 's/^/new-branch: /'
-  prev="$cur"; sleep 60
+prev_branches=""; prev_tree=""
+while true; do
+  git fetch --quiet origin
+  cur_branches="$(git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g')"
+  comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
+  cur_tree="$(git ls-tree -r origin/main .cdd/unreleased/<N>/ 2>/dev/null)"
+  if [ "$cur_tree" != "$prev_tree" ] && [ -n "$cur_tree" ]; then
+    echo "unreleased-update: $(echo "$cur_tree" | wc -l) files for cycle <N>"
+  fi
+  prev_branches="$cur_branches"; prev_tree="$cur_tree"
+  sleep 60
 done
 ```
 
-Each `new-branch:` stdout line becomes a `task-notification` that wakes the session. Once a PR exists, replace the branch-list query with a per-branch SHA query (`git rev-parse origin/{branch}`) for round-2/3 detection. Run under `Monitor`; emit only on transition.
+Each transition line becomes a `task-notification` that wakes the session. Run under `Monitor`; emit only on transition.
 
-Then produce both prompts at dispatch time. β begins polling the issue and starts intake while α implements — β does not need to wait for the PR to exist.
+Then produce both prompts at dispatch time. β begins polling the issue and `.cdd/unreleased/{N}/alpha.md` and starts intake while α implements — β does not need to wait for review-readiness to begin polling.
 
 **α prompt:**
 ```text
@@ -237,7 +244,7 @@ Rules:
 - point both roles at the issue, not a paraphrase of the issue
 - do not restate the algorithm in the prompt
 - do not smuggle missing constraints into chat prose; fix the issue instead
-- β begins polling the issue immediately; the β skill handles waiting for the PR
+- β begins polling the issue and `.cdd/unreleased/{N}/alpha.md` immediately; the β skill handles waiting for α's review-readiness signal
 - β receives artifact surfaces, not α's hidden implementation rationale
 
 #### Step 5 — Unblock
@@ -273,11 +280,11 @@ If β deferred a mechanical release step because of environment constraints, δ 
 
 ### 2.7. Steps 8–9 — Triage close-outs explicitly
 
-Before close-out, collect:
-- α close-out at `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md`
-- β close-out at `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md`
+Before close-out, collect (in-version, before release):
+- α close-out section in `.cdd/unreleased/{N}/alpha.md`
+- β close-out section in `.cdd/unreleased/{N}/beta.md`
 
-(see `CDD.md` §5.3a Artifact Location Matrix; PR comments are acceptable only for PR-scoped, unreleased, non-triadic cycles.)
+After release, the same files live at `.cdd/releases/{X.Y.Z}/{N}/{alpha,beta}.md` per `release/SKILL.md` §2.5a. The legacy aggregate paths `.cdd/releases/{X.Y.Z}/{alpha,beta}/CLOSE-OUT.md` are warn-only (pre-#283 form). See `CDD.md` §5.3a Artifact Location Matrix.
 
 Then write the post-release assessment per `post-release/SKILL.md` at the canonical path `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (for the CDD package itself: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). The PRA is γ's artifact — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
 
