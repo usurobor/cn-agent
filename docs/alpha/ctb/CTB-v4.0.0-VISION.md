@@ -264,10 +264,14 @@ Exit criteria:
 
 - A peer can clone a hub, run `ctb check`, and deterministically reproduce a skill's plan.
 
-### 8.2 v2.0 — "Toolchain and packaging"
+### 8.2 v2.0 — "Toolchain, types, and composition"
 
 Deliverables:
 
+- **Two kinds:** `agent-type` (type declarations: loop, invariants, required bindings) and `agent-module` (callable modules with signatures and composition bodies). See `LANGUAGE-SPEC-v0.2-draft.md` §1.
+- **Composition operators:** `>>` (sequence), `>>=` (bind), `|||` (parallel), `case` (branch), `fix` (iterate), `wait` (join), `try` (recover) as first-class effect algebra terms. See `LANGUAGE-SPEC-v0.2-draft.md` §6.
+- **Type satisfaction:** loader verifies that an agent-module's body respects its declared agent-type's invariants.
+- **Scope enforcement:** runtime enforces `task-local` / `role-local` / `global` boundaries — no upward mutation, state dies with scope.
 - Module/import system (small and explicit; no dynamic loading).
 - Package format (lockfile) with content-addressed references.
 - Linter: overlap/totality/witness diagnostics as a first-class CLI.
@@ -275,7 +279,9 @@ Deliverables:
 
 Exit criteria:
 
-- Teams can share and upgrade skills without copy/paste.
+- An agent-type can be declared, instantiated, and its invariants checked by the linter.
+- A triadic cycle (CDD) can be expressed as a single composition expression that the toolchain can parse and verify.
+- Teams can share and upgrade agent-modules without copy/paste.
 
 ### 8.3 v3.0 — "Safety envelope"
 
