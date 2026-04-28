@@ -148,3 +148,75 @@ Every claim above is backed by file edits in the diff or by file mv operations r
 - Diff scope: 9 modified skill files + 6 in-version cycle migrations + 1 new self-coherence artifact
 
 β: please read this file, then `.cdd/unreleased/268/{alpha,beta,gamma}-closeout.md` (verify migrations preserved content), then `git diff main..claude/cdd-tier-1-skills-pptds` for the skill-file changes. Verdict at `.cdd/unreleased/283/beta-review.md`.
+
+---
+
+## Round 1 → Round 2: Fix-round summary
+
+β round-1 verdict: REQUEST CHANGES, 4 findings (`beta-review.md` §Round 1, cherry-picked onto this branch from β's branch as commit `8d78514`). γ resolved F1 (`gamma-clarification.md`, commit `2f83095`) before α began the fix-round; F2/F3/F4 are α-owned mechanical-shape fixes.
+
+### F1 — branch-polling canonical, one cycle branch (D, judgment) — RESOLVED
+
+**γ-side resolution** (`gamma-clarification.md`): branch-polling is canonical; all role artifacts live on the cycle's branch (`α`-opened branch); β and γ commit via the same git mechanism α uses (push directly to the cycle branch); `main` is merge target only, never the in-cycle coordination surface.
+
+**Fix landed across the 5 surfaces β identified:**
+
+| Surface (β R1 reference) | Change |
+|---|---|
+| `CDD.md` §Tracking polling table (was lines 189–196) | Branch row clarifies "the cycle's branch — α's branch — holds all role artifacts." Cycle-dir row now reads `git ls-tree -r origin/{branch} .cdd/unreleased/{N}/`, not `origin/main`. New paragraph after the table states the cycle branch is canonical and that β + γ commit to α's branch. Auth precondition + #283 derivation note added. |
+| `CDD.md` §Tracking baseline-pull paragraph (was line 211) | Baseline reads `git ls-tree -r origin/{cycle-branch} .cdd/unreleased/{N}/`, not `origin/main`. Added explicit note that `origin/main` baseline only surfaces merged cycles. |
+| `CDD.md` §1.4 β step 3 (was lines 317–337) | Reference shell loop replaced: now polls `origin/claude/*` branch set + per-branch head SHA (catches every commit on every cycle branch — α's review-readiness, α's fix-rounds, β's verdicts, γ's clarifications). Drops `origin/main` cycle-dir reads entirely. β-side branch-conflict refusal language added: "If the environment provides a separate β-side branch and instructs you to develop or commit, refuse... β's verdict commits belong on α's cycle branch." |
+| `alpha/SKILL.md` §2.7 review-readiness signal (was line 244) | Drops the "α may also commit the file directly to main if the project's flow requires it" clause. Now explicit: "Push the branch to `origin/{branch}`. The cycle branch — not `main` — is the canonical coordination surface during the cycle. Roles poll the branch, not `origin/main`; the file lands on `main` later as part of β's `git merge`. Do not commit cycle-dir files directly to `main` while the cycle is open." |
+| `gamma/SKILL.md` §2.5 polling snippet (was line 217) | Loop drops the `git ls-tree -r origin/main .cdd/unreleased/<N>/` dereference. Replaced with per-branch head SHA tracking (associative array `prev_head`); when a branch SHA changes, the role dereferences `git ls-tree -r {branch} .cdd/unreleased/{N}/` to inspect what changed. Added explanatory paragraph naming the new model. |
+| `operator/SKILL.md` §2.2 polling snippet (was line 105) | Same pattern as γ: drops `origin/main` cycle-dir baseline; replaces with per-branch head-SHA tracking. δ wakes on any cycle-branch commit. |
+
+**Regression test (β's R1 §Regressions Required, F1):**
+- *Positive case:* The next dispatched cycle's α writes `self-coherence.md` on its branch and pushes; β's polling (per the spec — branch-glob + head-SHA tracking) emits `branch-update: origin/claude/{α-branch} → {SHA}` on the next loop iteration. β dereferences `git ls-tree -r origin/claude/{α-branch} .cdd/unreleased/{N}/`, finds `self-coherence.md`, and proceeds.
+- *Negative case:* The spec contains no surface that says "poll `origin/main`" while cycle-dir artifacts live only on the cycle branch. Verified by `grep -n "origin/main" src/packages/cnos.cdd/skills/cdd/` — all remaining matches are (a) `release/SKILL.md` no-merged enumeration, (b) `CDD.md` §1.4 γ Phase 5 merged-branch cleanup, or (c) explicit prohibition language ("never poll `origin/main` for in-flight cycle artifacts" / "`main` is the merge target only").
+
+**Self-application of the rule (γ-clarification asked α to choose 1 vs 2):** α chose option 1 — cycle exemplifies its own rule. β's `beta-review.md` was cherry-picked from β's branch (`origin/claude/implement-beta-skill-loading-ZXWKe`, commit `1ceb99c`) onto this cycle branch (`claude/cdd-tier-1-skills-pptds`) as commit `8d78514`. The β-side branch will need to be cleaned up by δ during normal merged-branch hygiene; the verdict's git authorship preserves β's identity.
+
+### F2 — release/SKILL.md §2.10 names wrong file for β close-out (C, judgment) — FIXED
+
+`release/SKILL.md` §2.10 (was lines 220–224): the two β-write bullets directed both "release evidence" and "β close-out section" into `beta-review.md`, contradicting four other authority surfaces (`beta/SKILL.md` §5, `CDD.md` §5.3a row 727, `CDD.md` §Tracking canonical filename table, `CDD.md` §1.4 β step 9, `gamma/SKILL.md` §2.7) that all name `beta-closeout.md`.
+
+**Fix:** both β-write bullets now write to `beta-closeout.md`. Final-paragraph trailing sentence rewritten to make the role split explicit: "β records the review verdict in `.cdd/unreleased/{N}/beta-review.md` (steps 8–9) and the close-out + release evidence in `.cdd/unreleased/{N}/beta-closeout.md` (step 10)."
+
+### F3 — post-release pre-publish gate references legacy CLOSE-OUT.md (C, judgment) — FIXED
+
+`post-release/SKILL.md` pre-publish gate (was line 340) required `.cdd/.../gamma/CLOSE-OUT.md` as a positive existence check, contradicting §5.3a row 728 / `gamma/SKILL.md` §2.7 / etc., which mark the legacy aggregate path warn-only.
+
+**Fix:** gate row now reads "If the triadic protocol is active, `.cdd/unreleased/{N}/gamma-closeout.md` (in-version) or `.cdd/releases/{X.Y.Z}/{N}/gamma-closeout.md` (post-release) exists ... Legacy aggregate `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` is warn-only per `CDD.md` §5.3a; do not require it."
+
+### F4 — post-release §5.6 narrative references superseded `{role}.md` shape (B, judgment/mechanical-shape) — FIXED
+
+`post-release/SKILL.md` §5.6 line 226 (CDD β surface-agreement axis): bullet referenced "`.cdd/unreleased/{N}/{role}.md` artifacts," using the superseded rigid shape rejected by `CDD.md` §Tracking line 140.
+
+**Fix:** bullet now reads "`.cdd/unreleased/{N}/` cycle artifacts (per the canonical filename set in `CDD.md` §Tracking)." Authority pointer added to keep this surface from drifting again.
+
+### Final residual scan (post-fix)
+
+- `grep -rn "{role}\\.md" src/packages/cnos.cdd/skills/cdd/` — 0 matches outside the `CDD.md` §Tracking line 140 explicit-prohibition phrasing.
+- `grep -rn "origin/main" src/packages/cnos.cdd/skills/cdd/` — only intentional matches: `release/SKILL.md` no-merged enumeration, `CDD.md` γ-Phase-5 merged-branch cleanup, explicit prohibition prose.
+- `grep -rn "/(alpha\|beta\|gamma)\\.md\\b" src/packages/cnos.cdd/skills/cdd/` — 0 matches.
+
+### Pre-review re-validation (round 2 transient rows per `alpha/SKILL.md` §2.6)
+
+| Row | State | Re-validated at HEAD `pending` |
+|---|---|---|
+| 1. branch rebased onto current `main` | **Yes** | `origin/main` HEAD still `9dbb107a` (no upstream drift since round 1). Branch base unchanged. |
+| 10. branch CI green | **Provisional** | Same as round 1 — markdown-only diff; local CI unavailable; β to confirm at merge time. |
+
+All other gate rows (2–9) remain Met from round 1; F1–F4 fixes did not change the AC mapping evidence (every AC still satisfies at the cited file:section).
+
+### Round-2 review-request: ready for β
+
+- Branch: `claude/cdd-tier-1-skills-pptds`
+- Base SHA: `9dbb107a50c3aa5dc0c120edf9386cc195992647` (origin/main, unchanged)
+- Round-1 head SHA: `1aaf9fb` (α self-coherence + skill-file edits) — **β reviewed at this SHA**
+- Round-1.5: `2f83095` (γ clarification on F1 — branch-polling canonical)
+- Round-1.5.5: `8d78514` (β round-1 review, cherry-picked from β's branch — cycle exemplifies new rule)
+- Round-2 head SHA: pending this commit (F1+F2+F3+F4 fixes + this fix-round appendix)
+- Diff scope (round-2-only): 4 skill-file fixes (CDD.md §Tracking + §1.4 β step 3, alpha/SKILL.md §2.7, gamma/SKILL.md §2.5, operator/SKILL.md §2.2, release/SKILL.md §2.10, post-release/SKILL.md gate + §5.6) + this fix-round section in self-coherence.md.
+
+β: read `gamma-clarification.md` first, then this fix-round, then `git diff 1aaf9fb..HEAD` (round-2 narrowing). Append round-2 verdict to `.cdd/unreleased/283/beta-review.md` (this branch). The β-side branch `claude/implement-beta-skill-loading-ZXWKe` is now redundant under the new model — δ to clean up at normal merged-branch hygiene.

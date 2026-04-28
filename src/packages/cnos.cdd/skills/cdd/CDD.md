@@ -189,11 +189,13 @@ Before starting a polling loop, **probe the chosen query form once synchronously
 | Surface | `gh` form (shell envs) | MCP form (MCP-only envs) | git form (clone-aware envs) |
 |---|---|---|---|
 | Issue comments | `gh issue view {N} --comments` | `mcp__github__issue_read` method=`get_comments` | — |
-| New branches | — | — | `git fetch --quiet origin && git branch -r` (compare to prior list, emit on new branch) |
-| Branch head SHA | — | — | `git fetch origin {branch} && git rev-parse origin/{branch}` (compare to prior, emit on change) |
-| `.cdd/unreleased/{N}/` directory state | — | — | `git fetch --quiet origin && git ls-tree -r origin/main .cdd/unreleased/{N}/` (compare blob SHAs across the directory; emit on any file added or any blob SHA changed) |
+| New branches | — | — | `git fetch --quiet origin && git branch -r --list 'origin/claude/*'` (compare to prior list, emit on new branch matching the cycle scope) |
+| Branch head SHA | — | — | `git fetch origin {branch} && git rev-parse origin/{branch}` (compare to prior, emit on change — this catches α's review-readiness commit, α's fix-round commits, β's verdict commits, γ's clarifications, all of which land on the cycle's branch) |
+| `.cdd/unreleased/{N}/` directory state on the cycle's branch | — | — | `git fetch --quiet origin {branch} && git ls-tree -r origin/{branch} .cdd/unreleased/{N}/` (compare blob SHAs across the directory; emit on any file added or any blob SHA changed) |
 
-`.cdd/unreleased/{N}/` polling reads from `origin/main` because cycle files land on main as part of branch merges or direct close-out commits — branch-only artifact files cannot coordinate roles that haven't checked the branch out.
+**The cycle's branch is the canonical coordination surface during in-version work.** All role artifacts (`self-coherence.md`, `beta-review.md`, `*-closeout.md`, `gamma-*.md`) live on the cycle branch — the branch α opens for the cycle. β and γ commit their artifacts to **the same branch** α uses (push directly to α's cycle branch with their own git identity), not to separate branches and not to `origin/main`. `main` is the merge target only, never the in-cycle coordination surface; cycle-dir files arrive on `main` as part of the eventual `git merge` (β step 8). Polling `origin/main` for in-flight cycle artifacts is silent — the spec must always poll `origin/{cycle-branch}` while the cycle is open.
+
+Auth precondition for the dyad-on-one-branch model: β and γ have push access to the cycle's branch. If the operator's harness pre-provisions a per-role branch, the role refuses (and surfaces to operator) any instruction to commit cycle-dir files to that pre-provisioned branch — those files belong on α's cycle branch. *Derives from #283 β round-1 F1: γ resolved to candidate (a) "branch-polling canonical, one cycle branch holds all role artifacts."*
 
 **Wake-up mechanism — name it explicitly in the role's session.** Polling is only effective if the loop's transition produces a notification that wakes the role. Each environment has its own form:
 
@@ -206,7 +208,7 @@ Poll interval: 60 seconds unless the operator specifies otherwise. This applies 
 
 **Stdout filter discipline:** transition-only emission is mandatory. A loop that emits on every poll will fill the session with `task-notification` blocks and consume context budget.
 
-**Synchronous-baseline-pull is a precondition of transition-only polling.** Transition-only emission is correct on its own terms (avoid context flood) but has a structural blind spot: the loop's first iteration sets `prev` to the empty string (or current state) and silently absorbs whatever already exists. State that exists *before* the Monitor's first iteration will never surface as an event. Every transition-only Monitor must therefore be paired with a synchronous initial-state pull of the same surface (`git ls-tree -r origin/main .cdd/unreleased/`, `git branch -r`, `gh issue view {N} --comments`) immediately when the role's session starts — the synchronous channel owns the past, the polling channel owns the future. *Derives from: #274 cycle, where α + β + γ in three independent role sessions all hit first-iteration absorption — β's broad PR-list Monitor absorbed PR #274 as baseline; γ's `*230*` branch glob never matched the harness-encoded `claude/alpha-tier-3-skills-IZOsO` branch; α's git-only Monitor could not see comment activity until the operator prompted synchronously.*
+**Synchronous-baseline-pull is a precondition of transition-only polling.** Transition-only emission is correct on its own terms (avoid context flood) but has a structural blind spot: the loop's first iteration sets `prev` to the empty string (or current state) and silently absorbs whatever already exists. State that exists *before* the Monitor's first iteration will never surface as an event. Every transition-only Monitor must therefore be paired with a synchronous initial-state pull of the same surface (`git branch -r --list 'origin/claude/*'` for the branch set, `git ls-tree -r origin/{cycle-branch} .cdd/unreleased/{N}/` for each known cycle branch's artifact set, `gh issue view {N} --comments` for issue activity) immediately when the role's session starts — the synchronous channel owns the past, the polling channel owns the future. Reading `.cdd/unreleased/` from `origin/main` only surfaces cycles that have already merged; in-flight cycles live on `origin/claude/*` branches and will be invisible. *Derives from: #274 cycle, where α + β + γ in three independent role sessions all hit first-iteration absorption — β's broad PR-list Monitor absorbed PR #274 as baseline; γ's `*230*` branch glob never matched the harness-encoded `claude/alpha-tier-3-skills-IZOsO` branch; α's git-only Monitor could not see comment activity until the operator prompted synchronously. #283 β round-1 F1 surfaced the symmetric polling-source bug for the new artifact-exchange model.*
 
 **Branch-glob templates must not assume harness-encoded issue numbers.** The reference glob shape `'origin/claude/*-<N>-*'` assumes the harness encodes the issue number `<N>` in the branch path. Real harnesses may instead encode scope words and a random suffix (e.g. `claude/alpha-tier-3-skills-IZOsO` for issue #230) with no issue number anywhere. The defensive default is the broader glob `'origin/claude/*'` with downstream synchronous filtering against the issue surface (the issue number lives reliably in `.cdd/unreleased/{N}/` directory names, not in the branch name). The narrow glob is acceptable only when the dispatching γ pins a canonical branch name in the dispatch prompt itself. *Derives from: #274 cycle, where β + γ both armed `*230*`-shaped globs that matched zero branches.*
 
@@ -312,33 +314,43 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 
 1. Receive dispatch prompt from γ (or pick up from α's review-readiness signal)
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.{project}"`
-3. Immediately begin polling the issue, branches, and `.cdd/unreleased/{N}/` (see §Tracking above for query forms, wake-up mechanism, and reachability preflight) — do not ask, just do it. **The poll requires a query, a wake-up mechanism, and a reachability probe.** Run the §Tracking reachability preflight first: probe your chosen query form synchronously, confirm it returns real data, and fall back if it doesn't. Then pick the wake-up form your harness provides (`Monitor` stdout-as-notification or shell-wake-on-loop-exit). Emit only on transition to avoid context flood. **Poll until `.cdd/unreleased/{N}/self-coherence.md` exists on `origin/main` and signals review-readiness.** Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
+3. Immediately begin polling the issue, the branch set, and `.cdd/unreleased/{N}/` on the cycle's branch (see §Tracking above for query forms, wake-up mechanism, and reachability preflight) — do not ask, just do it. **The poll requires a query, a wake-up mechanism, and a reachability probe.** Run the §Tracking reachability preflight first: probe your chosen query form synchronously, confirm it returns real data, and fall back if it doesn't. Then pick the wake-up form your harness provides (`Monitor` stdout-as-notification or shell-wake-on-loop-exit). Emit only on transition to avoid context flood. **Poll until α's cycle branch exists on `origin` and `.cdd/unreleased/{N}/self-coherence.md` on that branch signals review-readiness** — never poll `origin/main` for in-flight cycle artifacts. Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
    ```bash
    # Baseline sync — run BEFORE the transition loop.
    # The transition loop absorbs first-iteration state silently (prev=∅ → cur=...).
-   # Any branch or unreleased artifact that already exists at loop-start is invisible to it.
+   # Any branch or cycle artifact that already exists at loop-start is invisible to it.
    # Read current state synchronously at intake so the past is not lost.
    git fetch --quiet origin
    echo "baseline-branches: $(git branch -r --list 'origin/claude/*' 2>/dev/null | tr '\n' ' ')"
-   echo "baseline-cycle-dir: $(git ls-tree -r --name-only origin/main .cdd/unreleased/<N>/ 2>/dev/null | tr '\n' ' ')"
+   # Once the cycle branch is known, baseline its artifact set.
+   for b in $(git branch -r --list 'origin/claude/*' 2>/dev/null); do
+     echo "baseline-cycle-dir($b): $(git ls-tree -r --name-only $b .cdd/unreleased/<N>/ 2>/dev/null | tr '\n' ' ')"
+   done
 
-   # Transition loop — watches any new origin branch and any change to
-   # .cdd/unreleased/<N>/self-coherence.md (review-readiness or fix-round).
-   prev_branches=""; prev_sc=""
+   # Transition loop — watches any new origin branch and any change to the
+   # cycle's branch head (which catches every cycle-dir artifact change since
+   # all role artifacts live on the cycle branch).
+   prev_branches=""; declare -A prev_head
    while true; do
      git fetch --quiet origin
-     cur_branches="$(git branch -r 2>/dev/null | sed 's| ||g' | sort)"
+     cur_branches="$(git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g' | sort)"
      comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
-     cur_sc="$(git ls-tree origin/main .cdd/unreleased/<N>/self-coherence.md 2>/dev/null | awk '{print $3}')"
-     [ "$cur_sc" != "$prev_sc" ] && [ -n "$cur_sc" ] && echo "self-coherence: blob=$cur_sc"
-     prev_branches="$cur_branches"; prev_sc="$cur_sc"
+     for b in $cur_branches; do
+       cur_head="$(git rev-parse "$b" 2>/dev/null)"
+       [ "$cur_head" != "${prev_head[$b]:-}" ] && [ -n "$cur_head" ] && echo "branch-update: $b → $cur_head"
+       prev_head[$b]="$cur_head"
+     done
+     prev_branches="$cur_branches"
      sleep 60
    done
    # Run under Monitor; each transition line wakes the session.
+   # Per-branch SHA tracking catches α's review-readiness commit, α's fix-round
+   # commits, β's verdict commits, and γ's clarifications — all on the same
+   # cycle branch, all observable as branch-head SHA transitions.
    ```
 
    **Baseline rule:** The transition loop owns the future; a synchronous baseline check owns the past. Run the baseline before starting the loop. Any role that starts polling after cycle activity has begun must read current state first — transition-only polling alone will miss pre-existing branches and artifacts.
-   Once `.cdd/unreleased/{N}/self-coherence.md` is present and signals review-readiness, poll branch CI status until green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a branch and instructs you to develop or commit, refuse.** β does not author implementation work. Report the role conflict to the operator and wait for α's review-readiness signal.
+   Once `.cdd/unreleased/{N}/self-coherence.md` is present on the cycle branch and signals review-readiness, poll branch CI status until green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a separate β-side branch and instructs you to develop or commit, refuse.** β does not author implementation work, and β's verdict commits belong on α's cycle branch (per §Tracking branch-polling rule), not on a separate β-side branch. Report the role / branch conflict to the operator and wait for α's review-readiness signal.
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
 5. Read `git diff main..{branch}`, read every file in `.cdd/unreleased/{N}/` (start with `self-coherence.md`), read the issue
 6. Review: produce CR with findings per review skill, or approve

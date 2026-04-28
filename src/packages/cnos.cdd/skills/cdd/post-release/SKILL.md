@@ -223,7 +223,7 @@ This step closes the loop from CDD §9 (Assessment). The review quality section 
 Did this cycle itself follow CDD coherently? Score each axis 1–4. The branch-level SELF-COHERENCE.md uses the template at `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md`; this assessment-level check uses the same triadic axes:
 
 - **CDD α (artifact integrity):** required artifacts present? Bootstrap/frozen snapshot complete? Self-coherence present?
-- **CDD β (surface agreement):** canonical doc, executable skill, `.cdd/unreleased/{N}/{role}.md` artifacts, changelog, and assessment agree? Authority conflicts or stale references?
+- **CDD β (surface agreement):** canonical doc, executable skill, `.cdd/unreleased/{N}/` cycle artifacts (per the canonical filename set in `CDD.md` §Tracking), changelog, and assessment agree? Authority conflicts or stale references?
 - **CDD γ (cycle economics):** review rounds within target? Superseded PRs low? Mechanical ratio under threshold? Immediate outputs executed, deferred outputs committed?
 
 ```markdown
@@ -337,7 +337,7 @@ Before committing the assessment, verify mechanically:
 - [ ] CHANGELOG TSC row added or updated to match assessment scores
 - [ ] §8 Hub memory: daily reflection written and pushed to hub repo
 - [ ] §8 Hub memory: at least one adhoc thread updated (or explicit note why none applies)
-- [ ] If the triadic protocol is active, `.cdd/.../gamma/CLOSE-OUT.md` exists and reflects α close-out, β close-out, γ triage, and final cycle status
+- [ ] If the triadic protocol is active, `.cdd/unreleased/{N}/gamma-closeout.md` (in-version) or `.cdd/releases/{X.Y.Z}/{N}/gamma-closeout.md` (post-release) exists and reflects α close-out, β close-out, γ triage, and final cycle status. (Legacy aggregate `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` is warn-only per `CDD.md` §5.3a; do not require it.)
 
 This gate is mechanical. Two agents checking the same template must find the same missing fields.
 

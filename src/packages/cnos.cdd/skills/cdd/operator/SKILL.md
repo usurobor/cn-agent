@@ -97,14 +97,18 @@ done
 Run under `Monitor` or equivalent. 5-minute interval is sufficient for δ — γ owns the tight loop. Supplement with branch + `.cdd/unreleased/` polling once cycles are active:
 
 ```bash
-prev_branches=""; prev_unreleased=""
+prev_branches=""; declare -A prev_head
 while true; do
   cd /path/to/repo && git fetch --quiet origin
   cur_branches="$(git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g' | sort)"
   comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
-  cur_unreleased="$(git ls-tree -r --name-only origin/main .cdd/unreleased/ 2>/dev/null | sort)"
-  comm -13 <(echo "$prev_unreleased") <(echo "$cur_unreleased") | sed 's/^/new-unreleased-file: /'
-  prev_branches="$cur_branches"; prev_unreleased="$cur_unreleased"
+  # Per-branch head SHA — cycle artifacts live on cycle branches, not on main.
+  for b in $cur_branches; do
+    cur_head="$(git rev-parse "$b" 2>/dev/null)"
+    [ "$cur_head" != "${prev_head[$b]:-}" ] && [ -n "$cur_head" ] && echo "branch-update: $b → $cur_head"
+    prev_head[$b]="$cur_head"
+  done
+  prev_branches="$cur_branches"
   sleep 300
 done
 ```

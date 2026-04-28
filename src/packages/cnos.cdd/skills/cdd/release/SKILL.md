@@ -218,10 +218,10 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
     - skills loaded: release, plus writing if used
     - decision: released version X.Y.Z
   - If the triadic protocol is active, β also writes:
-    - release evidence appended to `.cdd/unreleased/{N}/beta-review.md`
-    - β close-out section in `.cdd/unreleased/{N}/beta-review.md` for γ to read
+    - release evidence in `.cdd/unreleased/{N}/beta-closeout.md`
+    - β close-out narrative in `.cdd/unreleased/{N}/beta-closeout.md` for γ to read (separate from `beta-review.md`, which carries the round-by-round verdicts; see `CDD.md` §Tracking canonical filename table)
   - γ writes the post-release assessment after β's release and close-out are complete
-  - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/self-coherence.md` — it carries the trace through step 7a, and β extends it with steps 8–10 in `.cdd/unreleased/{N}/beta-review.md`.
+  - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/self-coherence.md` — it carries the trace through step 7a; β records the review verdict in `.cdd/unreleased/{N}/beta-review.md` (steps 8–9) and the close-out + release evidence in `.cdd/unreleased/{N}/beta-closeout.md` (step 10).
 
 ## 3. Rules
 

@@ -209,21 +209,24 @@ Immediately begin polling the issue and `.cdd/unreleased/{N}/` (see CDD.md §Tra
 For MCP-only γ environments (e.g. Claude Code on the web), the canonical wake-up shape is `Monitor` wrapping a transition-only stdout filter:
 
 ```bash
-prev_branches=""; prev_tree=""
+prev_branches=""; declare -A prev_head
 while true; do
   git fetch --quiet origin
   cur_branches="$(git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g')"
   comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
-  cur_tree="$(git ls-tree -r origin/main .cdd/unreleased/<N>/ 2>/dev/null)"
-  if [ "$cur_tree" != "$prev_tree" ] && [ -n "$cur_tree" ]; then
-    echo "unreleased-update: $(echo "$cur_tree" | wc -l) files for cycle <N>"
-  fi
-  prev_branches="$cur_branches"; prev_tree="$cur_tree"
+  # Per-branch head SHA: catches every commit landing on any cycle branch
+  # (α's review-readiness, α's fix-rounds, β's verdicts, γ's own clarifications).
+  for b in $cur_branches; do
+    cur_head="$(git rev-parse "$b" 2>/dev/null)"
+    [ "$cur_head" != "${prev_head[$b]:-}" ] && [ -n "$cur_head" ] && echo "branch-update: $b → $cur_head"
+    prev_head[$b]="$cur_head"
+  done
+  prev_branches="$cur_branches"
   sleep 60
 done
 ```
 
-Each transition line becomes a `task-notification` that wakes the session. Run under `Monitor`; emit only on transition.
+Each transition line becomes a `task-notification` that wakes the session. Run under `Monitor`; emit only on transition. **All cycle-dir artifacts live on the cycle's branch — not on `main`** (per CDD.md §Tracking). Polling `origin/main` for `.cdd/unreleased/{N}/` is silent for in-flight cycles; γ tracks branch heads and dereferences the cycle directory on each branch via `git ls-tree -r {branch} .cdd/unreleased/{N}/` when a transition fires.
 
 Then produce both prompts at dispatch time. β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` and starts intake while α implements — β does not need to wait for review-readiness to begin polling.
 
