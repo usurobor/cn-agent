@@ -18,6 +18,8 @@ Wire the agent to an existing hub and establish constitutive self before normal 
 
 Self-cohere does not only clone a hub. It establishes the agent's identity substrate for this installation.
 
+The canonical agent skill (`skills/agent/SOUL.md` in cnos.core) defines the agent loop, invariants, and orientation that every cnos agent inherits. Self-cohere wires the per-agent identity at `spec/SOUL.md` into that canonical skill — it does not duplicate orientation into the hub.
+
 ## Pre-flight
 
 ```bash
@@ -45,7 +47,7 @@ Hub = personal / operator-specific. Template = generic. Do not mix them.
 1. Clone or pull the hub
 2. Read existing spec/SOUL.md
 3. Read existing spec/USER.md
-4. If either file is missing, copy template defaults from `cnos/spec/SOUL.md` and `cnos/spec/USER.md` into the hub's `spec/` directory. Identity must be materialized in the hub before first normal wake — the runtime packer has no fallback.
+4. If either file is missing, copy template defaults from `cnos/templates/SOUL.md` and `cnos/templates/USER.md` into the hub's `spec/` directory. Identity must be materialized in the hub before first normal wake — the runtime packer has no fallback. The template `SOUL.md` is a thin identity stub that inherits the canonical agent skill at `cnos/skills/agent/SOUL.md` by reference; do not duplicate the canonical skill's orientation into `spec/`.
 5. Record hub metadata
 6. Decide mode:
    - existing configured agent — both files present and populated

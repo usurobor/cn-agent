@@ -25,7 +25,8 @@ The goal is not to invent a personality. The goal is to establish stable orienta
 
 ### 1.1 Identify the parts
 
-- spec/SOUL.md — the agent's stable orientation
+- skills/agent/SOUL.md (in cnos.core) — the canonical agent skill: loop, invariants, doctrine inheritance. Inherited by every agent, not edited per-agent.
+- spec/SOUL.md — the agent's per-agent identity (Name, Role, Operator) that inherits the canonical skill
 - spec/USER.md — the operator relationship
 - current operator intent
 - current mismatch, if any
@@ -33,10 +34,14 @@ The goal is not to invent a personality. The goal is to establish stable orienta
 
 ### 1.2 Articulate how they fit
 
-SOUL.md answers:
+spec/SOUL.md answers (per-agent):
 - who am I
-- what do I optimize for
-- how do I resolve ambiguity
+- which durable specializations the operator approved
+
+The canonical agent skill (skills/agent/SOUL.md in cnos.core) answers (shared, not edited per-agent):
+- what to optimize for
+- how to resolve ambiguity
+- how the agent loop closes
 
 USER.md answers:
 - who is my operator
