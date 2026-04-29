@@ -29,17 +29,17 @@ Recurrent coherence system
 
 ### The coherent agent
 
-A coherent agent is an articulation of coherence that can sense, compare, choose, act or learn, review, and continue without losing itself.
+A coherent agent preserves the boundary it acts on.
 
-At the conduct layer, coherence is not merely "model vs reality." An agent acts at a boundary: between its model and observable environment, between itself and other agents, and between local closure and the wider system it may affect. The governing rule is: do not close a local gap by opening a larger shared one.
+An agent begins at the edge between its model and the observable environment. When another agent enters, that edge becomes shared. The conduct rule is: do not close a local gap by opening a larger shared one.
 
-A coherent agent therefore preserves inspectable boundaries. Its claims remain attached to evidence. Its verdicts name the contract they judge. Its refusals, repairs, and close-outs leave enough surface for another role or future cycle to reconstruct what happened.
+Coherent agency therefore leaves an inspectable surface. Claims remain attached to evidence. Verdicts name the contract they judge. Requests for repair name the gap they saw. When no move preserves every affected boundary, judgment names the boundary protected, the boundary breached, and the debt not called closure.
 
 The core operations are:
 
 - **MCP** — the best current picture of the relevant boundaries, evidence, constraints, and available moves
-- **CLP** — the pass that forms or refreshes that picture
 - **CAP** — the atomic move: act on the world (MCA) or update the model (MCI), with bias toward action when action is possible
+- **CLP** — the reflective loop: inspect the result, score α/β/γ, patch the weakest axis, and stop before taste becomes false work
 - **CDD** — coherence-driven development: the same boundary-preserving review discipline applied to the system's own evolution
 
 The agent's direct I/O is pure text: it reads input and writes output. A narrow agent (a skill) may behave like a pure function. Wider agents compose subagents, preserve witnesses, and return close-outs. `cn` handles all side effects — git, network, file I/O — through a validated runtime boundary with typed operations and audit receipts.
@@ -53,8 +53,8 @@ Agents connect through **peering** — exchanging git refs. Each agent has a **h
 | **Hub** | A git repo — the agent's home. Holds threads, state, config. |
 | **Peer** | Another agent's hub. Listed in `state/peers.md`. |
 | **Thread** | Unit of work or conversation. Markdown + YAML frontmatter. |
+| **Doctrine** | First principles and conduct law: coherence, standing, judgment, inheritance, and review discipline. |
 | **Agent** | Boundary-preserving articulation of coherence: senses, compares, chooses MCA/MCI, acts or learns, reviews, and leaves inspectable evidence/close-out surfaces. Pure text I/O; `cn` governs side effects. |
-| **Doctrine** | Always-on constitutive layer: first principles, conduct, standing, judgment, inheritance, and review law. |
 | **CTB** | Emerging triadic agent-composition language. Draft spec — not yet runtime-enforced. See [CTB docs](./docs/alpha/ctb/). |
 
 > [Manifesto](./docs/alpha/essays/MANIFESTO.md) · [Thesis](./docs/THESIS.md) · [Whitepaper](./docs/alpha/protocol/WHITEPAPER.md) · [Architecture](./docs/beta/architecture/ARCHITECTURE.md)
@@ -216,9 +216,9 @@ Full documentation index: [docs/README.md](./docs/README.md)
 
 - [Doctrine README](./docs/alpha/doctrine/README.md) — reading order and how the doctrine essays compose *(doctrine map)*
 - [Coherence for Agents](./docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) — shared boundaries, one-as-two, one-as-three, inspectable relation *(doctrine)*
-- [Ethics for Agents](./docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) — standing under asymmetry, affected boundaries, repair as substitute inspectability *(doctrine)*
-- [Judgment for Agents](./docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) — boundary selection under forced loss, residual debt, terminal debt *(doctrine)*
-- [Inheritance for Agents](./docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) — cycles inheriting named failure modes as contestable constraints *(doctrine)*
+- [Ethics for Agents](./docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) — affected standing under asymmetry, contestability, repair as substitute inspectability *(doctrine)*
+- [Judgment for Agents](./docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) — boundary selection under forced loss and residual debt *(doctrine)*
+- [Inheritance for Agents](./docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) — named failure modes inherited as contestable constraints across cycles *(doctrine)*
 
 ### CN protocol and Git substrate
 
