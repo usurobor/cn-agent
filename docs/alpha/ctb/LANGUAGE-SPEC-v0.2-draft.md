@@ -215,6 +215,111 @@ Every invocation returns to its caller. Returns are data — close-out artifacts
 
 When a subagent cannot complete, it returns a witness (structured failure term). The caller decides recovery. A runtime MUST NOT silently swallow a failure.
 
+### 5.4 Witness
+
+A **witness** is the inspectable surface that records what an agent observed, did, verified, failed to verify, or chose not to close. Every close-out (§5.5) carries a witness. A witness is not itself a result — it is the evidence that makes a result honest.
+
+A witness SHOULD contain:
+
+| Field | Meaning |
+|-------|---------|
+| `orientation` | What boundary, task, gap, or question governed the run. |
+| `intervention` | What work, delegation, transformation, or effect plan occurred. |
+| `evidence` | Observations, checks, artifacts, traces, or review material. |
+| `verdict` | The agent's result judgment. |
+| `obligations` | Named obligations discharged, remaining, deferred, or transferred. |
+| `provenance` | Relevant subagents, skills, inputs, or prior close-outs. |
+| `limits` | Known uncertainty, scope limits, missing authority, or blocked checks. |
+
+A witness MAY be partial, but if partial it MUST say what is missing.
+
+### 5.5 Close-out result forms
+
+A **close-out** is a terminal result emitted by an agent-module. Every close-out MUST carry a witness (§5.4). A close-out MUST NOT hide unresolved obligations, failed verification, blocked dependencies, or residual debt.
+
+The core v0.2 close-out forms are:
+
+```
+CloseOut = accepted | repair-needed | blocked | close-with-debt | structured-failure
+```
+
+#### `accepted`
+
+Honest closure. The agent-module completed within its declared scope and the witness supports the close-out.
+
+An `accepted` close-out MUST carry:
+
+- artifact or resulting state
+- witness
+- discharged obligations
+- any limits that remain non-blocking
+
+`accepted` MUST NOT carry active residual debt.
+
+#### `repair-needed`
+
+The agent found a repairable coherence gap and is returning the failed surface to a repair step, caller, or supervising agent.
+
+A `repair-needed` close-out MUST carry:
+
+- the artifact or state needing repair
+- the failed check or unmet obligation
+- the evidence that made repair necessary
+- a repair target or requested correction, if known
+- the witness from the failed attempt
+
+`repair-needed` is not failure. It is a repairable non-final result.
+
+#### `blocked`
+
+The agent cannot proceed within its current scope, authority, inputs, or available dependencies.
+
+A `blocked` close-out MUST carry:
+
+- the blocking condition
+- the needed input, authority, dependency, or decision
+- the current artifact or state, if any
+- the witness accumulated so far
+- allowed next moves
+
+`blocked` MUST NOT present the task as accepted.
+
+#### `close-with-debt`
+
+Witnessed non-closure. The agent could not honestly close the task as accepted, but can close its current scope while preserving unresolved debt.
+
+`close-with-debt` is defined by §6.7 (debt close-out shape and invariants). This section establishes `close-with-debt` as a result form; §6.7 specifies its 10-field minimum structure.
+
+#### `structured-failure`
+
+The run failed in a way that must be preserved as data rather than erased by control flow.
+
+A `structured-failure` close-out MUST carry:
+
+- failure kind
+- failed operation or phase
+- preserved witness
+- affected artifact or state, if any
+- recoverability: `recoverable`, `unrecoverable`, or `unknown`
+- allowed next moves
+
+A `recoverable` structured failure MAY be consumed by `try`/`recover`. An `unrecoverable` structured failure MAY only be propagated, escalated, or converted into debt by an explicit judgment.
+
+### 5.6 Close-out invariants
+
+All close-out forms MUST preserve their witness. A close-out MUST NOT upgrade itself to `accepted` without an explicit verification or judgment step. Only a verifier, supervising agent, or explicit judgment step may convert a non-accepted close-out into another result form.
+
+A consumer of a non-accepted close-out MUST either:
+
+- repair it
+- recover from it
+- propagate it
+- escalate it
+- close with debt
+- or explicitly judge why it no longer governs the current boundary
+
+Silent absorption of a non-accepted close-out is a violation.
+
 ---
 
 ## 6. Composition
@@ -519,6 +624,24 @@ Both `write-essay` and `write-code` satisfy `coherent-agent`. Both use `|||` for
 | "A skill is a function" | An agent-module is a type instance with a composition body. Narrow agents are single expressions. |
 | "Composition is explicit invocation" | Composition is an expression using `>>`, `>>=`, `\|\|\|`, `case`, `fix`, `wait`, `try`. |
 | Global aspect (§7) | The agent-type's invariants propagated through the dispatch tree. |
+
+---
+
+## 15. Non-normative risk: witness theater
+
+The witness and close-out model (§5.4–§5.6, §6.7) can fail if witness fields become persuasive accounting structure rather than accountable evidence. A conformant-looking close-out is not sufficient. Until a checker or runtime enforces v0.2 obligations, an agent may produce a well-structured witness that is not mechanically connected to what actually happened. This risk is called **witness theater**.
+
+A v0.2 implementation SHOULD mitigate witness theater by checking that:
+
+- required witness fields are present
+- evidence fields are non-vacuous where required
+- failed evidence is preserved across `repair`, `fix`, and `try`/`recover`
+- non-accepted close-outs remain active until repaired, recovered, propagated, escalated, closed with debt, or explicitly judged
+- `fix` is bounded or debt-bearing (§6.6)
+- `|||` / `wait` / `join` account for every operand result
+- `accepted` close-outs do not hide active residual debt
+
+Until those checks exist, v0.2 remains a draft discipline rather than enforced semantics.
 
 ---
 
