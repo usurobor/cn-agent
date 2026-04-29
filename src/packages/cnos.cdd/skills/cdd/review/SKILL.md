@@ -1,473 +1,88 @@
 ---
 name: review
-description: Produce an evidence-bound review verdict with findings, severity, and architecture checks where applicable.
+description: Orchestrate β review in phases — contract integrity, then implementation, then verdict. Each phase loads its own sub-skill.
 artifact_class: skill
-kata_surface: embedded
-governing_question: How does β judge a change against its contract, surrounding context, and active design constraints?
+kata_surface: external
+governing_question: Is the branch coherent enough to merge, or what specific incoherence must be named and fixed?
 visibility: internal
 parent: cdd
 triggers:
   - review
+  - pr
+  - approve
+  - request changes
 scope: task-local
 inputs:
-  - branch diff (git diff main..{branch})
-  - issue context
-  - .cdd/unreleased/{N}/self-coherence.md (review-readiness signal + α's CDD Trace)
-  - active design constraints
-  - active skills
+  - branch
+  - issue
+  - diff
+  - .cdd/unreleased/{N}/ artifacts
 outputs:
-  - review verdict (in .cdd/unreleased/{N}/beta-review.md)
-  - findings with severity
-  - architecture check when applicable
+  - beta-review.md
 requires:
-  - review-ready branch + .cdd/unreleased/{N}/self-coherence.md
+  - β completed intake and skill loading
+  - canonical CDD.md loaded
 calls:
-  - eng/design-principles
+  - review/contract/SKILL.md
+  - review/implementation/SKILL.md
+calls_dynamic:
+  - source: project design constraints
+kata_ref: src/packages/cnos.cdd.kata/katas/M2-review/
 ---
 
-# Review
-
-Review code so that every verdict traces to evidence in the diff and its surrounding contract.
+# Review — Orchestrator
 
 ## Core Principle
 
-**Coherent review: every claim is verified against the diff, its required surrounding contract, and the relevant unchanged context — and no incoherence passes without being named.**
+A review is a witnessed judgment, not a rubber stamp. The reviewer owes the same honesty discipline as the implementer: name what is wrong, trace it to evidence, and state what must change.
 
----
-
-## 1. Define
-
-### 1.1. Identify the parts
-
-- Diff — what changed
-- Context — unchanged code, named docs/specs, required branch artifacts, CI/release-gate state
-- Verdict — approve or request changes
-- Evidence — line, commit, artifact, or behavior that supports a claim
-  - ❌ "This looks wrong"
-  - ✅ "Line 42 stages all files, but git_stage validates per-file — compound behavior"
-
-### 1.2. Articulate how they fit
-
-- The diff proposes or modifies an invariant.
-- Context must still cohere with that invariant.
-- The verdict reflects the worst named incoherence.
-- Evidence anchors every claim.
-  - ❌ Review the diff in isolation
-  - ✅ Review the diff, then check whether unchanged siblings now violate the invariant it establishes
-
-### 1.3. Name the failure mode
-
-Review fails via **surface reading** — checking only what changed, missing what the change implies for the rest of the system.
-
-  - ❌ "All changed functions look correct"
-  - ✅ "Three observe ops now use exclusions; the unchanged fourth one no longer matches the pattern"
-
----
-
-## 2. Unfold
-
-### 2.0. Issue — what was promised
-
-**PRE-GATE: Verify branch is unmerged.** Before any review work, confirm the branch has not already landed on main. Run `git log main --oneline | grep -w {issue-number}` (or check the merge commit's reachability with `git merge-base --is-ancestor {branch} main`). If already merged: the branch is stale — either review the merged code on main, or skip. Do not review a dead branch. (If this check is added to the review subagent's preflight, this PRE-GATE becomes informational.)
-  - ❌ Read the diff, post findings, then discover the branch was merged two weeks ago
-  - ✅ "`git merge-base --is-ancestor origin/claude/cdd-X main` → 0 — branch is merged, redirecting review to main"
-
-**GATE: Complete §2.0 before reading the diff.** The review is structurally incomplete if these tables are absent.
-
-```markdown
-## §2.0 Issue Contract
-
-### AC Coverage
-| # | AC | In diff? | Status (met / partial / missing / deferred) |
-|---|----|----------|---------------------------------------------|
-
-### Named Doc Updates
-| Doc / File | In diff? | Status (updated / absent / deferred) |
-|------------|----------|--------------------------------------|
+```text
+Review = tri(contract truth, implementation/projection evidence, witnessed verdict)
 ```
 
-2.0.1. **Walk every acceptance criterion**
-  - Each AC is either:
-    - met
-    - partially met
-    - explicitly deferred
-    - missing
-  - The absence of a required change is a finding.
-  - ❌ Review only what changed without checking what was promised
-  - ✅ "AC 4 (cn doctor validates contract) — not addressed in diff, no known-debt note → D"
-
-2.0.2. **Check required spec/doc updates**
-  - If the issue requires a spec or design doc change, verify that file was changed.
-  - If the issue or plan names specific docs, check each one.
-  - Missing required doc/spec updates are β gaps between issue contract and implementation.
-  - ❌ "Diff looks clean" (required spec update missing)
-  - ✅ "Issue names 5 docs; 2 updated, 3 absent — are these deferred or forgotten?"
-
-2.0.3. **Distinguish scope reduction from omission**
-  - If scope was intentionally narrowed, the commit message or `.cdd/unreleased/{N}/self-coherence.md` should say so.
-  - Unmentioned AC omissions are findings.
-  - Noted deferrals are known debt.
-  - ❌ Assume missing AC was intentionally deferred
-  - ✅ "3 of 6 ACs met; remaining 3 not mentioned — are these deferred or forgotten?"
-
-2.0.4. **AC strength — "met" means fully met**
-  - If an AC says "validate X against Y" and the code only checks "X exists," that is partial, not met.
-  - Partial ACs are findings.
-  - ❌ "Doctor checks for the key → AC met"
-  - ✅ "AC says validate against runtime state; code checks key presence only → partial"
-
-2.0.5. **CDD artifact contract**
-  - Determine the change class:
-    - bugfix
-    - substantial feature
-    - governance/process
-    - release hardening
-  - Verify the required CDD artifacts for that class exist in the diff or branch. Suggested minimums:
-    - substantial feature — design doc, coherence contract, implementation plan, tests, code, docs, self-coherence (in `.cdd/unreleased/{N}/self-coherence.md`)
-    - bugfix — coherence contract (may live in issue/`.cdd/unreleased/{N}/self-coherence.md`/commit body), tests, code, self-coherence if substantial
-    - governance/process — self-coherence, frozen snapshot if versioned, plan if the branch formalizes process changes
-    - release hardening — changelog, release artifacts, post-release assessment if method requires it
-  - Missing required artifacts are findings.
-  - ❌ "Diff looks clean" (governance branch has no self-coherence report)
-  - ✅ "Substantial feature branch — design doc exists, self-coherence exists in `.cdd/unreleased/{N}/self-coherence.md`, bootstrap stubs present"
-
-2.0.6. **Process economics check**
-  - If the diff adds or changes process, governance, artifacts, or gates, verify:
-    - the failure class being prevented is named
-    - the consumer of the new artifact/gate is named
-    - a lighter alternative was considered
-    - the process burden is proportionate to the failure class
-    - an automation boundary or sunset/review criterion is stated where appropriate
-  - ❌ "Added a new required artifact for rigor"
-  - ✅ "SELF-COHERENCE.md is required for governance branches because reviewer and releaser need branch-local proof of process conformance"
-  - ✅ "This stale-path check should be a script, not a repeated reviewer burden"
-
-2.0.7. **Active skill consistency (CDD §4.4)**
-  - If the design/contract artifact declares active skills, verify:
-    - the declared skills are present in the branch or loaded context
-    - the implementation is consistent with them
-    - findings that a declared active skill would have prevented are process debt (§6.1 / mechanical)
-  - ❌ "Active skills: eng/{language}" but code violates the declared language skill (e.g. bare exception swallowing, unsafe casts)
-  - ✅ "Active skills: ocaml, performance-reliability — implementation consistent with both"
-
-2.0.8. **CDD execution trace (CDD §5.4)**
-  - For substantial changes, verify that the primary branch artifact (`.cdd/unreleased/{N}/self-coherence.md` for triadic cycles, or the design artifact when one exists) contains a CDD Trace.
-  - Check that rows exist for all completed steps through the current review point.
-  - Check that step 5 records: mode, active skills, work shape, and level if level shorthand is used.
-  - Check that any lifecycle skill already used (review, writing, release) is recorded when relevant.
-  - Missing or contradictory rows are findings.
-  - ❌ "Design exists" but no visible trace of selection, mode, or loaded skills
-  - ✅ "Trace rows in `.cdd/unreleased/{N}/self-coherence.md` cover observe, select, mode, and current artifacts; decisions align with the diff"
+The review proceeds in three phases. **Each phase loads its own sub-skill.** Do not attempt all phases from memory — the sub-skills contain the detail.
 
 ---
 
-### 2.1. Diff — what changed
+## Phases
 
-Read the diff for internal coherence.
+### Phase 1: Contract integrity
 
-2.1.1. **Check each change against its stated purpose**
-  - Commit / `.cdd/unreleased/{N}/self-coherence.md` says X, diff does Y.
-  - ❌ "feat: add fs_glob" but glob still returns not_yet_implemented
-  - ✅ "feat: add fs_glob" and executor path is complete
+**Load:** `review/contract/SKILL.md`
 
-2.1.2. **Check changes against each other**
-  - Multiple commits in a branch must tell one story.
-  - ❌ Commit 3 silently undoes commit 1
-  - ✅ Fix commits narrow the remaining blockers and reference what they fix
+Before reading the diff for implementation correctness, verify that the work contract (issue + PR body + branch summary) is internally consistent, truthful about status, and non-contradictory.
 
-2.1.3. **Mechanical diff scan**
-  - Before judgment checks, run mechanical scans on the diff itself:
-    - Grep for duplicate entries in any list/array literal added or modified
-    - Verify branch name matches project convention (e.g. CDD branch format)
-    - If tests are in the diff, verify expect-test outputs are plausible (exact strings, whitespace)
-    - Check new type definitions for overlapping field names within the same module — each shared name creates a disambiguation burden at every access site
-    - **Numeric / value-repetition finding — grep for every occurrence before filing.** When a mechanical scan surfaces a numeric, SHA, count, or named-value drift ("doc says 9 tarballs but tree has 10"), grep the containing doc (and peer surfaces carrying the same fact) for every occurrence of the wrong value AND the corrected value before filing the finding. File all sites in one finding, or explicitly state "n of m sites, remaining enumerated below." A single-site finding on a multi-site error sends the author to a first-occurrence fix and re-surfaces as a "-bis" finding in the next round. *Derives from: #266 F3 / F3-bis — R1 named 1 of 3 sites in DESIGN-266; R2 narrowing filed F3-bis for the remaining 2.*
-    - **Unicode hygiene**: scan added lines for hidden/bidi control characters (U+200B..U+200F, U+202A..U+202E, U+2066..U+2069, U+FEFF, Unicode category Cf). These are blocker-worthy. Visible Unicode (emoji, em dashes, arrows, Greek letters) in human-facing content files (templates, docs) is allowed and not a finding. Do not conflate GitHub's "hidden characters" warning with the presence of visible Unicode — the warning targets invisible control characters, not content.
-  - These are deterministic — two reviewers running the same grep must find the same results.
-  - ❌ Read the diff for logic only
-  - ✅ "L74: `<invoke>` appears twice in `xml_prefixes` — duplicate entry"
-  - ✅ "`extension_op.kind` and `backend.kind` share field name in same module — rename to `op_kind`/`backend_kind`"
-  - ❌ "File contains Unicode" (without naming specific hidden/bidi codepoints)
-  - ✅ "L42 contains U+202E (RIGHT-TO-LEFT OVERRIDE) — hidden bidi control, D finding"
-  - ✅ "SOUL.md contains U+2705 (CHECK MARK) — visible content emoji, not a finding"
+Complete the Contract Integrity table. If any row is "no," the review cannot approve unless the row is explicitly out of scope and the reviewer names why.
+
+### Phase 2: Implementation review
+
+**Load:** `review/implementation/SKILL.md`
+
+Walk the issue contract (ACs, named docs, CDD artifacts). Read the diff and its neighbors. Apply mechanical scans, architecture checks, and evidence-bound findings.
+
+> **Future split (deferred).** Phase 2 currently bundles three cognitive modes — issue-contract walk, diff/context inspection, and architecture/design check. When `review/implementation/SKILL.md` grows past the next size budget, split it into siblings `review/issue-contract/SKILL.md`, `review/diff-context/SKILL.md`, and `review/architecture/SKILL.md`, each owning one reason to change. The orchestrator's phase order does not change; only the load granularity does.
+
+### Phase 3: Verdict
+
+Return to this file for verdict rules and output format.
 
 ---
 
-### 2.2. Context — unchanged siblings
+## Verdict Rules
 
-Check whether the change creates obligations on code it did not touch.
+3.1. **Every claim traces to evidence**
+  - No "seems wrong." Point to a line, commit, file, artifact, or behavior.
 
-2.2.1. **Sibling consistency**
-  - If you harden 3 of 4 peers at the same level, the 4th is now incoherent.
-  - ❌ "All changed ops look good"
-  - ✅ "Three observe ops use exclusions; git_status still doesn't"
-
-2.2.1a. **Input-source enumeration for filters/sanitizers/validators**
-  - When the diff adds or modifies a function that filters, sanitizes, or validates, enumerate every input source (caller/call site) that feeds it. Verify each input gets the full pipeline.
-  - This is mandatory for security-relevant paths (sanitization, auth, access control).
-  - This is also mandatory when the change claims a failure class is "impossible by construction" or "structurally prevented" — any such claim requires exhaustive input-source enumeration at the same rigor as a security boundary. An unchecked input source contradicts the closure claim and is a D-level finding.
-  - ❌ "Body goes through the stripper — looks good"
-  - ❌ "fs_read is intercepted — membrane complete" (didn't check fs_list children, fs_glob, git_grep)
-  - ✅ "Body goes through strip_xml + strip_frontmatter. Reply goes through is_control_plane_like only. Reply is missing strip_xml — sibling gap."
-  - ✅ "Self-knowledge membrane covers fs_read and fs_list direct path. Remaining input sources: fs_list child entries, fs_glob results, git_grep content — 3 surfaces still open. Claim 'impossible by construction' is not yet earned."
-  - When the diff introduces a **new data surface** (new log stream, new file format, new query endpoint), enumerate both write paths (what emits to it) AND read paths (what consumes from it). Verify read-path semantics (ordering, filtering, truncation) match the operator-facing contract, not just that writes are correct.
-  - ❌ "All 6 emission points are correct" (didn't verify the reader returns correct chronological order across day boundaries)
-  - ✅ "6 emission points verified. Reader `read_recent` iterates files newest-first, reverses — cross-day order is wrong. Filtered path concatenates without global sort."
-
-2.2.1b. **Sibling fallback audit for compatibility/legacy paths**
-  - When the diff removes, converts, or justifies one legacy/fallback/compatibility path, enumerate sibling fallback paths in the same module/family and verify they are:
-    - also removed,
-    - also converted,
-    - or explicitly kept with justification.
-  - This is mandatory for patterns such as:
-    - `with _ -> []`
-    - `with _ -> None`
-    - silent compatibility aliases
-    - resolver/scanner paths that swallow missing resources
-  - ❌ "Converted one `with _ ->` — looks good"
-  - ✅ "Converted `read_opt`, then audited sibling `with _ -> []` in `list_installed_packages` and `walk_skills`"
-
-2.2.2. **Cross-module leakage**
-  - Follow what the changed code writes/produces and inspect what reads/exposes it.
-  - ❌ Review executor in isolation
-  - ✅ "Executor writes state/artifacts/; git_status now exposes those paths"
-
-2.2.3. **Multi-format parity**
-  - If a module renders to multiple formats (markdown + JSON, prompt + disk, human + machine), verify both carry equivalent semantic content.
-  - ❌ Review render_markdown and to_json independently
-  - ✅ "Markdown includes capabilities sub-block; JSON omits it"
-
-2.2.4. **Exclusion symmetry**
-  - If paths are excluded in one place, verify they are excluded everywhere they should be.
-  - ❌ "Exclusions look correct in git_diff"
-  - ✅ Grep every use of the exclusion set and verify parity
-
-2.2.5. **Cross-reference validation (path-going-stale events)**
-  - If files **move, are renamed, or are deleted**, grep for old paths across all live docs and code. A deletion is structurally a move-to-nothing — every consumer of the deleted path now holds a stale reference.
-  - Any live stale path is a D-level blocker.
-  - This rule is symmetric: the trigger is "any path-going-stale event," not just renames. Additive contract changes (new path) require peer enumeration of consumers; subtractive contract changes (deleted path) require peer enumeration of references. The same rule covers both directions.
-  - Cross-package reach: live consumers may live in adjacent packages or in `mindsets/`, `docs/`, OCaml sources, etc. Grep over `src/` and `docs/`, not just the package being changed.
-  - Frozen snapshot dirs may allow path-only repair if the docs system explicitly permits it.
-  - ❌ Approve a file-delete change without grepping for live consumers of the deleted path
-  - ❌ "moves and renames" read literally — a deletion has no consumers in the package, so the grep is skipped
-  - ✅ Grep old path → zero live matches across the full repo (excluding historical audit docs)
-  - *Derives from: #268 F1 — α deleted `review/checklist.md` per AC9 but did not grep for the path; β R1 caught one live consumer in `cnos.core/mindsets/ENGINEERING.md`. The rule was loaded as Tier 1 but its phrasing biased application toward renames only.*
-
-2.2.6. **Execution timeline for state-changing paths**
-  - If code crosses process or binary boundaries, trace which process owns which values at each step.
-  - ❌ "This reads the version in process, so it's current"
-  - ✅ "Old process still holds old constants after replacement; re-exec before reading"
-
-2.2.7. **Derivation vs validation**
-  - If an AC claims "single source of truth" or "one-file edit," verify that a generation step exists, not only a check.
-  - ❌ "CI script checks VERSION parity → one-file bump met"
-  - ✅ "No generation step exists; multiple manual edits still required"
-
-2.2.8. **Authority-surface conflict**
-  - When multiple surfaces claim to define the same thing, verify they agree. Common conflict sites:
-    - canonical doc vs executable skill
-    - runtime prompt-visible contract vs machine-readable JSON
-    - issue ACs vs narrower coherence contract in `.cdd/unreleased/{N}/self-coherence.md`
-    - branch summary vs actual branch state
-    - runtime defaults vs documented defaults
-  - ❌ "Skill looks correct" (didn't compare with canonical doc)
-  - ✅ "Canonical doc and executable skill agree on artifact contract"
-
-2.2.9. **Module-truth audit for model-correctness changes**
-  - When a change is about **correctness of a model** (package truth, config truth, type safety, schema alignment, profile/manifest consistency), do not limit review to the diff. Scan the full touched module for other assumptions of the same kind.
-  - Ask: "What else in this module assumes the same thing the diff is fixing? Are those assumptions still valid?"
-  - Common sites: hardcoded lists, profile/package name references, format assumptions, default values, conditional branches for categories that no longer exist.
-  - ❌ "The diff fixes the restore path — approve" (didn't check whether the same module still hardcodes a stale package name elsewhere)
-  - ✅ "Diff fixes restore_one for AC3; but default_manifest_for_profile in the same module still references cnos.pm which doesn't exist — C finding"
-
-2.2.10. **Contract-implementation confinement check**
-  - When a function's docstring, AC, or `.cdd/unreleased/{N}/self-coherence.md` description claims a restricted input domain (e.g. "bare names only," "positive integers," "known enum values"), verify the implementation actually **rejects** inputs outside that domain.
-  - The function may correctly handle the claimed inputs while silently accepting unclaimed ones — that's a confinement gap, not a correctness bug.
-  - Ask: "What inputs does the contract exclude? Does the code reject them, or just not test them?"
-  - ❌ "resolve_command handles bare names correctly — approve" (didn't check that `../foo` is also accepted)
-  - ✅ "Contract says 'bare command names' but code accepts any relative path including `../foo` — path confinement gap, D finding"
-
-2.2.11. **Architecture leverage check**
-  - Ask explicitly whether the diff merely improves the current architecture or misses a higher-leverage boundary move.
-  - Useful prompts:
-    - Is this repeated pressure being treated as a one-off patch?
-    - Is the right abstraction being introduced at the right layer?
-    - Should this become a primitive, package, extension, config rule, or be deleted instead?
-  - ❌ "The local fix is correct" (never asked whether the architecture assumption should change)
-  - ✅ "This fix is coherent locally, but the repeated capability-growth pressure suggests an extension architecture instead of another built-in"
-
-2.2.12. **Process overhead check**
-  - If the diff adds new docs, artifacts, gates, or procedures, ask:
-    - What exact failure does this prevent?
-    - Who uses the new artifact?
-    - Could this be automated instead?
-    - Is this branch class carrying the right amount of ceremony?
-  - ❌ "More governance is always safer"
-  - ✅ "This new step catches stale artifact references, but the check is mechanical and should move to CI/lint"
-
-2.2.13. **Project design constraints check**
-  - If the project maintains a design constraints document (e.g. `docs/alpha/DESIGN-CONSTRAINTS.md`), load it before reviewing any substantial cycle.
-  - For each constraint area touched by the diff, verify the change preserves, tightens, or explicitly revises the affected constraint.
-  - Active invariants must not be violated. Transition constraints must not be moved away from. Process constraints must be followed.
-  - If the diff violates a constraint without revising it, that is a D-level finding.
-  - If the diff implicitly revises a constraint without naming the revision, that is a C-level finding.
-  - If no project constraints document exists, skip this check.
-  - ❌ "Diff looks correct" (adds a second package manifest type, violating a one-substrate invariant)
-  - ✅ "Diff adds a second manifest family — this violates one-package-substrate. D finding."
-  - ✅ "Diff moves doctor logic inline into cli/ — this moves away from the dispatch-only transition direction. C finding."
-
-2.2.14. **Architecture and design check**
-  - Use this check when the change touches any of:
-    - package boundaries
-    - command / provider / orchestrator / skill separation
-    - source / artifact / installed-state flow
-    - registry design
-    - kernel vs package responsibility
-    - transport vs protocol semantics
-    - command dispatch vs domain logic
-  - Load `src/packages/cnos.core/skills/design/SKILL.md` when this check is active.
-  - Check the change against these questions:
-
-  #### A. Reason to change
-  - Does each touched module/package/boundary still have one real reason to change?
-  - Has any boundary become a convenience bucket rather than a responsibility boundary?
-  - ❌ CLI wrapper now contains dispatch, doctor logic, and package resolution
-  - ✅ CLI wrapper dispatches; domain packages own doctor and package logic
-
-  #### B. Policy above detail
-  - Does policy remain in the kernel/core?
-  - Can a package/provider widen its own authority or rewrite precedence/routing/permissions?
-  - ❌ Package/provider decides its own effective authority
-  - ✅ Kernel remains the policy decision point
-
-  #### C. Truthful interface
-  - Does each interface promise only what all implementations can actually support?
-  - Are unrelated runtime surfaces being collapsed into one interface?
-  - ❌ One interface for both commands and providers because both "run things"
-  - ✅ Command dispatch and provider protocol remain separate contracts
-
-  #### D. Registry normalization
-  - Do different source forms still normalize into one runtime descriptor model?
-  - Do help / doctor / status / runtime contract reveal the same registry truth?
-  - ❌ Kernel commands and package commands use unrelated registration models
-  - ✅ One runtime descriptor, multiple source forms
-
-  #### E. Source / artifact / installed clarity
-  - Is it still clear what is authored, what is built, and what is installed?
-  - Has any derived layer started acting like source?
-  - ❌ Edit generated package output as if it were authored source
-  - ✅ Source, artifact, and installed state remain explicit and distinct
-
-  #### F. Surface separation
-  - Are skills, commands, orchestrators, and providers still distinct?
-  - Is transport implementation still distinct from protocol semantics?
-  - ❌ Command activation by keyword like a skill
-  - ❌ Provider treated as just a hidden command
-  - ✅ Each surface keeps its own contract and runtime role
-
-  #### G. Degraded-path visibility
-  - If the change introduces fallback or degraded behavior, is it visible and testable?
-  - Does doctor / status / receipts expose it when needed?
-  - ❌ Fallback exists only in code comments
-  - ✅ Fallback is explicit, testable, and inspectable
-
-  **Rules:**
-  - Any silent architectural boundary smear is a blocking finding.
-  - Any silent source-of-truth duplication is a blocking finding.
-  - If a change intentionally tightens or revises a design constraint, the review must name that explicitly rather than treating it as preservation.
-
-  **Output block** (include when §2.2.14 is active):
-
-  ```
-  ## Architecture Check
-
-  | Check | Result | Notes |
-  |---|---|---|
-  | Reason to change preserved | yes / no / n/a | |
-  | Policy above detail preserved | yes / no / n/a | |
-  | Interfaces remain truthful | yes / no / n/a | |
-  | Registry model remains unified | yes / no / n/a | |
-  | Source / artifact / installed boundary preserved | yes / no / n/a | |
-  | Runtime surfaces remain distinct | yes / no / n/a | |
-  | Degraded paths visible and testable | yes / no / n/a | |
-  ```
-
----
-
-### 2.3. Verdict — the judgment
-
-The verdict is a function of the worst named incoherence.
-
-2.3.1. **Every claim traces to evidence**
-  - No "seems wrong." Point to a line, commit, file, artifact, or runtime behavior.
-  - ❌ "Security model seems weak"
-  - ✅ "Line 277 passes user input to git grep without -e"
-
-2.3.2. **Validate fixes against upstream spec where applicable**
-  - If a fix relies on external behavior (Git, library, API), verify against upstream docs.
-  - ❌ "The pathspec seems to work"
-  - ✅ "Git docs confirm exclude-pathspec semantics"
-
-2.3.3. **Name the severity**
+3.2. **Name the severity**
   - D — blocker, demonstrable incoherence
   - C — significant incoherence, non-blocking
   - B — improvement opportunity
   - A — polish
 
-2.3.4. **Specify regression pairs for blockers**
-  - Every D-level finding includes:
-    - positive case
-    - negative case
-  - ❌ "Fix git_status"
-  - ✅ "Positive: show src/ changes. Negative: hide .cn/, state/, logs/."
-
-2.3.5. **Architecture Check gate**
-  - If the Architecture Check (§2.2.14) contains any "no", the review cannot conclude "approve" without an explicit issue-backed redesign or scope reduction.
-  - ❌ "APPROVED" with Architecture Check showing "no" on surface separation
-  - ✅ "REQUEST CHANGES — Architecture Check F (surface separation) failed. File redesign issue or reduce scope."
-
-2.3.6. **Evidence depth matches claim strength**
-  - When judging whether an AC is met, verify that the evidence depth matches the claim:
-    - structural claim → unit/schema proof may suffice
-    - runtime behavior claim → path/integration proof may be required
-    - operator contract claim → output/projection/state artifact may be required
-  - ❌ "Predicate tests exist → runtime filtering AC met"
-  - ✅ "Predicate tests prove the predicate; no integration test proves the queue/offset path"
-
-2.3.7. **Close the search space on approval**
-  - Approval explicitly states that no remaining blocker was found in the relevant contract.
-  - ❌ "APPROVED"
-  - ✅ "APPROVED — I do not see a remaining blocker in the executor/sandbox contract"
-
-2.3.8. **Review divergence is a review-skill gap**
-  - When two reviewers review the same change and one catches findings the other missed, the divergence is a gap in this skill — not in the reviewer who missed it.
-  - After identifying the divergence:
-    1. Name which review-skill step, if followed, would have caught the missed finding
-    2. If no step covers it, add one
-    3. If a step exists but is too vague, sharpen it
-  - The fix is always a patch to this skill. Never "reviewer should have been more careful."
-  - After patching the skill, capture the divergence analysis in a durable adhoc thread (what happened, why, what changed, what to watch for). This converts session-local learning into cross-session continuity.
-  - ❌ "I missed the stale cnos.pm reference — I'll look harder next time"
-  - ✅ "I missed it because no review-skill step says to scan the full touched module for same-kind assumptions. Added §2.2.9 (module-truth audit). Adhoc thread: `20260328-review-divergence-pr130.md`."
-
-2.3.9. **Higher-leverage alternative check**
-  - A diff may be locally correct and still miss the more coherent system move.
-  - Name that explicitly as a review note or finding when appropriate.
-  - ❌ "Looks correct, approved" when the change repeats a known architectural pressure
-  - ✅ "Locally correct, but repeated pressure suggests a higher-leverage architecture move; approve with note / request changes depending on scope"
-
----
-
-## 3. Rules
-
-3.1. **Read the diff, then read the neighbors**
-  - The diff is the figure; unchanged siblings are the ground.
-
-3.2. **Trace system writes to system reads**
-  - If changed code writes files/state, check what reads/exposes them.
-
-3.3. **One round, one narrowing**
-  - Each review round acknowledges fixes by commit hash and names only remaining blockers.
+3.3. **All findings must be resolved before merge**
+  - There is no "approved with follow-up."
+  - D findings block merge. C/B/A findings must be fixed on-branch before merge.
+  - Only exception: finding requires a design decision outside issue scope → "deferred by design scope," author files issue before merge.
 
 3.4. **Verdict before details**
   - Lead with APPROVED / REQUEST CHANGES.
@@ -478,88 +93,80 @@ The verdict is a function of the worst named incoherence.
 3.6. **Approve when coherent, not when perfect**
   - The bar is coherence, not taste.
 
-3.7. **CI / release-gate state**
-  - If merge is requested, verify required CI/build checks are complete and green on the branch head commit.
-  - "Green" means all required checks have **completed** with a passing status on the branch's head SHA — not a single snapshot. Checks may be re-running, queued, or in an intermediate state.
-  - If checks are missing, stale, re-running, or red, approval is provisional and the merge instruction must say "Do not merge until checks finish green on {branch} HEAD."
-  - Do not issue an unconditional merge instruction when required checks have not run or are not in a final completed state.
+3.7. **Close the search space on approval**
+  - Approval explicitly states that no remaining blocker was found in the relevant contract.
 
-3.8. **Merge instruction is explicit and scoped**
-  - Approval names the exact branch and merge action (`git merge {branch}` into main with `Closes #N` in the merge commit message).
+3.8. **Evidence depth matches claim strength**
+  - structural claim → unit/schema proof may suffice
+  - runtime behavior claim → path/integration proof required
+  - operator contract claim → output/projection/state artifact required
 
----
+3.9. **Specify regression pairs for D-level findings**
+  - Every D-level finding includes positive case + negative case.
 
-## 4. Checklist
+3.10. **CI / release-gate state**
+  - If merge is requested, verify required CI/build checks are green on branch head.
+  - If checks are missing/stale/red, approval is provisional: "Do not merge until checks finish green."
 
-Before submitting a review:
+3.11. **Merge instruction is explicit**
+  - Names the exact branch and merge action with `Closes #N` in the merge commit.
 
-- [ ] Every issue AC verified (met, partial, missing, or deferred)
-- [ ] Required named docs/files checked
-- [ ] Required CDD artifacts for this change class exist and are internally consistent
-- [ ] New governance/process artifacts earn their cost and name their consumer
-- [ ] Declared active skills verified: present, implementation consistent, violations are process debt
-- [ ] Mechanical diff scan: duplicates in lists, branch name convention, expect-test plausibility
-- [ ] Every claim traces to evidence
-- [ ] Severity assigned to every finding
-- [ ] Type assigned to every finding (mechanical / judgment)
-- [ ] Multi-format outputs checked for semantic parity
-- [ ] Authority surfaces checked for conflict where multiple define the same thing
-- [ ] Sibling fallback paths audited when one fallback/compatibility path was touched (§2.2.1b)
-- [ ] Higher-leverage architecture move considered where repeated pressure is visible
-- [ ] Added process burden checked for lighter alternatives / automation boundary
-- [ ] Unchanged siblings checked for new incoherence
-- [ ] For model-correctness changes: full touched module scanned for other assumptions of the same kind
-- [ ] For restricted-domain functions: contract claims verified against actual rejection of out-of-domain inputs
-- [ ] For filters/sanitizers/validators: all input sources enumerated, full pipeline verified on each
-- [ ] For "impossible by construction" / structural closure claims: input-source enumeration at security-level rigor (§2.2.1a)
-- [ ] For new data surfaces (logs, streams, query endpoints): both write paths AND read paths verified (§2.2.1a)
-- [ ] File-move cross-refs validated by grep where applicable
-- [ ] System writes traced to system reads
-- [ ] Evidence depth matches claim strength
-- [ ] D-level findings include regression test pairs
-- [ ] Prior-round fixes acknowledged by commit hash (multi-round only)
-- [ ] CI/build checks green, or approval explicitly marked provisional
-- [ ] Approval explicitly closes the search space
-- [ ] Merge instruction names the branch and the `git merge` action
-- [ ] Verdict stated first
+3.12. **Review divergence is a skill gap**
+  - When two reviewers diverge, the fix is a patch to the review skill, not "be more careful."
 
 ---
 
-## 5. Severity
-
-Severity describes the incoherence; **merge readiness is independent** — A/B/C/D findings are all not merge-ready until fixed on the branch (or explicitly deferred by design scope per §7.0). No "approved with follow-up."
-
-| Severity | Meaning | Review verdict | Merge readiness |
-|----------|---------|----------------|-----------------|
-| **D** | Demonstrable incoherence (test or direct contradiction) | REQUEST CHANGES | not merge-ready |
-| **C** | Real incoherence, locally non-blocking | APPROVED only after on-branch fix + re-check, otherwise REQUEST CHANGES | not merge-ready until fixed |
-| **B** | Improvement opportunity | APPROVED with required on-branch fix | not merge-ready until fixed |
-| **A** | Polish | APPROVED with required on-branch fix | not merge-ready until fixed |
-
-### 5.1. Finding taxonomy
-
-Every finding MUST be tagged as one of:
+## Finding Taxonomy
 
 | Type | Definition | Examples |
 |------|-----------|----------|
-| **mechanical** | Could be caught by grep/diff/script without judgment | stale path, wrong branch name, snapshot mismatch, broken link |
-| **judgment** | Requires design/coherence assessment | missing AC coverage, authority conflict, design trade-off |
+| **mechanical** | Caught by grep/diff/script | stale path, wrong branch name, broken link |
+| **judgment** | Requires design/coherence assessment | missing AC, authority conflict, design trade-off |
+| **contract** | Work contract is incoherent | issue contradiction, PR overclaim, draft-as-current, exception contradicts hard gate, proof plan missing |
 
-Mechanical findings reaching review are **process bugs**. If mechanical findings exceed 20% of total findings in a release cycle, file a process issue.
+Contract findings may overlap with mechanical or judgment — tag both when applicable.
+
+Mechanical findings reaching review are **process bugs**. If >20% of findings in a cycle are mechanical, file a process issue.
 
 ---
 
-## 6. Output Format
+## Severity
 
-The review verdict is written to `.cdd/unreleased/{N}/beta-review.md`. Each review round appends a new section to the same file (the file is the cycle's β record).
+| Sev | Meaning | Merge readiness |
+|-----|---------|-----------------|
+| D | Demonstrable incoherence | not merge-ready |
+| C | Real incoherence, locally non-blocking | not merge-ready until fixed |
+| B | Improvement opportunity | not merge-ready until fixed |
+| A | Polish | not merge-ready until fixed |
+
+---
+
+## Output Format
+
+Written to `.cdd/unreleased/{N}/beta-review.md`. Each round appends a new section.
 
 ```markdown
 **Verdict:** APPROVED / REQUEST CHANGES
 
-**Round:** N (if multi-round)
-**Fixed this round:** {commit hashes} closes {prior findings} (if applicable)
-**Branch CI state:** green / provisional / out of scope
-**Merge instruction:** `git merge {branch}` into main with `Closes #{issue}` in the merge commit message / Do not merge yet
+**Round:** N
+**Fixed this round:** {commit hashes} closes {prior findings}
+**Branch CI state:** green / provisional
+**Merge instruction:** `git merge {branch}` into main with `Closes #{issue}`
+
+## §2.0.0 Contract Integrity
+
+| Check | Result | Notes |
+|---|---|---|
+| Status truth preserved | yes / no / n/a | |
+| Canonical sources/paths verified | yes / no / n/a | |
+| Scope/non-goals consistent | yes / no / n/a | |
+| Constraint strata consistent | yes / no / n/a | |
+| Exceptions field-specific/reasoned | yes / no / n/a | |
+| Path resolution base explicit | yes / no / n/a | |
+| Proof shape adequate | yes / no / n/a | |
+| Cross-surface projections updated | yes / no / n/a | |
+| No witness theater / false closure | yes / no / n/a | |
+| PR body matches branch files | yes / no / n/a | |
 
 ## §2.0 Issue Contract
 
@@ -575,67 +182,67 @@ The review verdict is written to `.cdd/unreleased/{N}/beta-review.md`. Each revi
 | Artifact | Required? | Present? | Notes |
 |----------|-----------|----------|-------|
 
+### Active Skill Consistency
+| Skill | Required by | Loaded? | Applied? | Notes |
+|-------|-------------|---------|----------|-------|
+
 ## Findings
 
 | # | Finding | Evidence | Severity | Type |
 |---|---------|----------|----------|------|
-| 1 | git_status leaks internal paths | L179: no exclusions | D | judgment |
-| 2 | stale path to docs/gamma/RULES.md | grep match in ARCHITECTURE.md | D | mechanical |
 
 ## Regressions Required (D-level only)
 
-1. Positive case ...
-2. Negative case ...
-
 ## Notes
-
-(additional context, suggestions, questions)
 ```
 
 ---
 
-## 7. After Review
+## Checklist
 
-- **Approved:** Reviewer `git merge`s the branch into main with `Closes #N` in the merge commit, pushes, then proceeds to release per `release/SKILL.md`. Branch cleaned up after release.
-- **Changes requested:** Author fixes on the branch, appends fix-round section to `.cdd/unreleased/{N}/self-coherence.md`; reviewer reads and narrows on the next round in `.cdd/unreleased/{N}/beta-review.md`.
+Before submitting a review:
 
-### 7.0. All findings must be resolved before merge
-
-Every finding (A/B/C/D) must be fixed by the author on the branch before merge. There is no "approved with follow-up" — findings that ship unresolved become untracked debt. The pattern of deferring B/C findings to follow-up issues adds a cycle of overhead (new issue, new branch, new review) for work that is faster to do in-place.
-
-- **D findings:** already block merge (REQUEST CHANGES)
-- **C findings:** must be fixed on the branch before merge. If the reviewer approved with C notes, the author pushes fixes and the reviewer verifies in a narrowing round.
-- **B findings:** must be fixed on the branch before merge. These are small improvements — faster to fix now than to track.
-- **A findings:** must be fixed on the branch before merge. Polish is cheapest in context.
-
-The only exception: a finding that requires a design decision outside the scope of the current issue. In that case, the reviewer explicitly names it as "deferred by design scope" in the review, and the author files the issue before merge.
-
-- ❌ "APPROVED — F2/F3 are non-blocking, can be follow-up"
-- ✅ "APPROVED — 3 findings. Author: fix all on-branch, ping for re-check."
-- ✅ "APPROVED — F4 requires a design decision on purity boundaries outside this issue's scope. Author: file issue before merge. F1–F3: fix on-branch."
-
-### 7.1. Review identity
-
-The reviewer must use a different git identity (`user.name` / `user.email`) than α — `beta@cdd.{project}` versus `alpha@cdd.{project}`. The role separation lives in:
-
-- the git author of `.cdd/unreleased/{N}/self-coherence.md` commits (α) versus `.cdd/unreleased/{N}/beta-review.md` commits (β)
-- `git config user.name` / `user.email` per session, set on dispatch (CDD.md §1.4 step 2 of each role algorithm)
-- the merge commit author (β), distinct from the branch's commits (α)
-
-The role-separation contract is git-observable: `git log --format='%an %s' main..{branch}` shows α's commits, and the merge commit on main shows β's authorship. No GitHub-native review state is required; the audit trail is the artifact thread plus git history.
+- [ ] Phase 1 (contract integrity) completed before Phase 2
+- [ ] §2.0.0 Contract integrity table filled
+- [ ] Status truth checked: shipped/current/draft/planned/non-goal not conflated
+- [ ] Source-of-truth paths resolve and match canonical docs
+- [ ] Issue/PR examples obey their own rules
+- [ ] Hard gates do not appear in exception examples
+- [ ] Path resolution base verified where paths are validated
+- [ ] Proof plan includes oracle, positive, negative where required
+- [ ] New CI/check/status surfaces update operator-visible projections
+- [ ] PR body matches corrected branch files
+- [ ] No witness theater: structure backed by rejection mechanism or honest caveat
+- [ ] Every issue AC verified (met, partial, missing, deferred)
+- [ ] Required named docs/files checked
+- [ ] CDD artifacts exist and are internally consistent
+- [ ] Mechanical diff scan: duplicates, branch names, snapshot plausibility
+- [ ] Every claim traces to evidence
+- [ ] Severity assigned to every finding
+- [ ] Type assigned to every finding (mechanical / judgment / contract)
+- [ ] D-level findings include regression test pairs
+- [ ] CI/build checks green, or approval marked provisional
+- [ ] Approval explicitly closes the search space
+- [ ] Merge instruction names branch and merge action
+- [ ] Verdict stated first
 
 ---
 
-## 8. Kata
+## After Review
 
-**Scenario:** A branch adds a new validation function and claims "structurally prevented" for a failure class. Review it.
+- **Approved:** β merges branch into main with `Closes #N`, pushes, proceeds to release per `release/SKILL.md`.
+- **Changes requested:** α fixes on branch, appends to `self-coherence.md`; β narrows on next round.
 
-1. Complete §2.0 before reading the diff — walk every AC, check named docs
-2. Read the diff for internal coherence
-3. Enumerate all input sources that feed the validator (§2.2.1a)
-4. Check unchanged siblings for new incoherence
-5. Verify the "structurally prevented" claim against exhaustive input-source enumeration
-6. Assign severity and type to each finding
-7. State verdict with evidence
+### Review identity
 
-**Verify:** Did you complete §2.0 before the diff? Did you enumerate input sources at security-level rigor for the closure claim? Does every finding trace to a line, file, or artifact?
+β uses a different git identity than α — `beta@cdd.{project}` versus `alpha@cdd.{project}`. The role separation is git-observable.
+
+---
+
+## External kata
+
+Practice and evaluation for this review skill live in:
+
+`src/packages/cnos.cdd.kata/katas/M2-review/`
+
+That kata exercises the contract-integrity preflight, implementation review, architecture check, finding taxonomy, active-skill consistency, and evidence-depth rules. The frontmatter `kata_ref` field above carries the same path for machine-readable linkage.

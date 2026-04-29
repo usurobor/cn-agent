@@ -2,8 +2,9 @@
   "id": "M2",
   "name": "Review",
   "class": "method",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "required_artifacts": [
+    "contract_integrity_preflight",
     "verdict",
     "evidence_per_finding",
     "architecture_check",
@@ -12,7 +13,7 @@
   ],
   "level_evidence": {
     "L5": ["findings_exist", "locally_correct"],
-    "L6": ["architecture_check_performed", "sibling_consistency", "evidence_depth_matches_claim"],
+    "L6": ["contract_integrity_completed_before_diff", "architecture_check_performed", "sibling_consistency", "evidence_depth_matches_claim"],
     "L7": ["higher_leverage_alternative", "process_improvement_shipped"]
   }
 }
