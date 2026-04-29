@@ -1,6 +1,9 @@
 ---
 name: ca-conduct
+description: Behavioral foundation for every coherent agent — Peace, Love, Unity, Respect.
+governing_question: How must a coherent agent conduct itself toward operators, peers, and the world?
 triggers: [conduct, boundary, ethics, trust, behavior]
+scope: global
 ---
 
 # CA Conduct

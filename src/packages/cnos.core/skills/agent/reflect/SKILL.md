@@ -1,6 +1,9 @@
 ---
 name: reflect
+description: Reflect such that the conclusion matches the evidence.
+governing_question: How does the agent reflect without leaking self-deception into the conclusion?
 triggers: [reflect, daily, weekly, retrospective, what happened]
+scope: task-local
 ---
 
 # Reflect

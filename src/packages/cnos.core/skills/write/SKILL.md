@@ -1,12 +1,14 @@
 ---
 name: write
 description: Write so the reader understands the point on the first pass. Use for docs, issues, specs, READMEs, essays, reviews, and status updates.
+governing_question: How do we make prose carry the point on the first pass without losing meaning to compression or sprawl?
 triggers:
   - drafting new docs
   - rewriting unclear docs
   - fixing repetition across files
   - tightening README / architecture / quickstart splits
   - reducing clutter without losing meaning
+scope: task-local
 ---
 
 # Writing

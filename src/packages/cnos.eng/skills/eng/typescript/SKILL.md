@@ -10,6 +10,7 @@ triggers:
   - reviewing TypeScript code for runtime/type drift
   - debugging async, module, or schema issues in TS
   - migrating JavaScript into TypeScript
+scope: task-local
 ---
 
 # TypeScript

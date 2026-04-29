@@ -1,6 +1,9 @@
 ---
 name: follow-up
+description: Check that prior work actually held — verify the claim landed, the consumer sees it, and nothing regressed.
+governing_question: How do we close the loop on prior work without leaving silent regressions or unverified claims?
 triggers: [follow up, check, verify, confirm, track]
+scope: task-local
 ---
 
 # Follow-Up Skill

@@ -11,6 +11,7 @@ triggers:
   - deciding what belongs in core vs package/provider
   - introducing or revising an interface
   - reviewing architectural refactors
+scope: task-local
 ---
 
 # Design Principles

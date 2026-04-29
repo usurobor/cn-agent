@@ -1,6 +1,9 @@
 ---
 name: ship
+description: Ship code to production or merge to main.
+governing_question: How do we ship a change so the merged state is verifiably what we intended to release?
 triggers: [ship, deploy, deliver, merge, land]
+scope: task-local
 ---
 
 # Ship

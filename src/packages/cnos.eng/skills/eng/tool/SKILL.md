@@ -1,6 +1,9 @@
 ---
 name: tool
+description: Standards for mechanical scripts in tools/.
+governing_question: How do we write a mechanical script so it is fail-fast, idempotent, machine-readable, and free of runtime dependencies?
 triggers: [tool, script, automation, CLI, utility]
+scope: task-local
 ---
 
 # Tool

@@ -1,6 +1,9 @@
 ---
 name: agent-ops
+description: Operations an agent can request via state/output.md.
+governing_question: How does the agent declare an op on output.md so the harness can route and execute it?
 triggers: [ops, status, doctor, hub, maintenance]
+scope: task-local
 ---
 
 # Agent Ops

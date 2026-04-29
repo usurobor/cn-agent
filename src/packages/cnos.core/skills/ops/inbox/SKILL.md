@@ -9,6 +9,7 @@ triggers:
   - cn agent invoked with state/input.md present
   - peer sends review request, question, ping, or coordination message
   - inbox backlog needs clearing
+scope: task-local
 ---
 
 # Inbox

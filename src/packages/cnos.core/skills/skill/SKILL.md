@@ -9,6 +9,7 @@ triggers:
   - rewriting an old skill
   - deciding whether an artifact is really a skill
   - normalizing a skill to the meta-skill standard
+scope: task-local
 ---
 
 # Skill

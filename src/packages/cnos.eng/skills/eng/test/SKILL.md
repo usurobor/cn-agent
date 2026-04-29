@@ -1,6 +1,9 @@
 ---
 name: test
+description: Prove system behavior from invariants, not just examples.
+governing_question: How do we choose the strongest practical proof for the invariants that actually matter?
 triggers: [test, testing, unit test, integration test, coverage]
+scope: task-local
 ---
 
 # Test

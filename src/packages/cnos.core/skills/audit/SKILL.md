@@ -9,6 +9,7 @@ triggers:
   - assessing whether a package's parts agree
   - preparing convergence work for a package
   - evaluating package health before a release or restructure
+scope: task-local
 ---
 
 # Coherence Audit

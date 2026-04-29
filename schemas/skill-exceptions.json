@@ -1,0 +1,454 @@
+[
+  {
+    "path": "src/packages/cnos.core/skills/agent/agent-ops/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/ca-conduct/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/cap/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/cbp/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/clp/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/coherence-test/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/coherent/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/communicating/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/configure-agent/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/emoji-language/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/hello-world/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/human-interaction/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/mca/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/mci/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/onboarding/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/reflect/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/agent/self-cohere/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/audit/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/compose/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/design/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/naturalize/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/ops/adhoc-thread/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/ops/inbox/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/ops/peer/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/ops/star-sync/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/skill/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.core/skills/write/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/code/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/document/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/evolve/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/follow-up/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/go/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/ocaml/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/performance-reliability/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/process-economics/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/rca/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/ship/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/skill/SKILL.md",
+    "allowed_missing": [
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/test/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/tool/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/typescript/SKILL.md",
+    "allowed_missing": [
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/ux-cli/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  },
+  {
+    "path": "src/packages/cnos.eng/skills/eng/write-functional/SKILL.md",
+    "allowed_missing": [
+      "artifact_class",
+      "kata_surface",
+      "inputs",
+      "outputs"
+    ],
+    "reason": "Pre-#301 skill — v0.1 spec-required-but-exception-backed fields not yet authored.",
+    "spec_ref": "LANGUAGE-SPEC.md §2.1, §2.3"
+  }
+]

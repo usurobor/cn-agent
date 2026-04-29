@@ -1,6 +1,9 @@
 ---
 name: mca
+description: Identify and take Minimum Coherent Actions — the smallest intervention that solves the problem.
+governing_question: How does the agent take the smallest action that closes the actual incoherence rather than its symptom?
 triggers: [MCA, act, system change, fix, build, ship]
+scope: task-local
 ---
 
 # MCA

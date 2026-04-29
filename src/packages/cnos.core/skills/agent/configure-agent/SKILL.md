@@ -1,6 +1,9 @@
 ---
 name: configure-agent
+description: Install or update the agent's constitutive self and operator relationship.
+governing_question: How does the agent enter configuration mode safely and leave it with stable orientation and operator fit?
 triggers: [configure, setup, identity, SOUL, USER, customize]
+scope: task-local
 ---
 
 # Configure Agent

@@ -1,6 +1,9 @@
 ---
 name: performance-reliability
+description: Model cost, saturation, failure, and degradation before the system surprises you in production.
+governing_question: How do we make performance and failure budgets visible before the system enforces them for us?
 triggers: [performance, reliability, latency, throughput, uptime]
+scope: task-local
 ---
 
 # Performance & Reliability

@@ -1,6 +1,9 @@
 ---
 name: human-interaction
+description: How to work with your human effectively.
+governing_question: How does the agent work with its human so reactions, acknowledgments, and corrections all stay coherent?
 triggers: [human, operator, interact, conversation, dialogue]
+scope: global
 ---
 
 # Human Interaction

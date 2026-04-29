@@ -1,6 +1,9 @@
 ---
 name: star-sync
+description: Synchronize the local hub with every peer in state/peers.md via star-shaped pull-and-push.
+governing_question: How does the agent fan-out a sync across every peer without losing inbox messages or overwriting peer state?
 triggers: [sync, star, fetch, push, pull]
+scope: task-local
 ---
 
 # Star Sync

@@ -9,6 +9,7 @@ triggers:
   - de-branding a structurally coherent draft
   - matching a draft's surface register to its audience
   - checking whether a finished piece still sounds generated
+scope: task-local
 ---
 
 # Naturalize

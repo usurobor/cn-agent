@@ -1,6 +1,9 @@
 ---
 name: rca
+description: Blameless Root Cause Analysis after incidents.
+governing_question: How do we trace an incident to its real root cause without blame or premature closure?
 triggers: [RCA, root cause, failure, incident, postmortem, debug]
+scope: task-local
 ---
 
 # RCA

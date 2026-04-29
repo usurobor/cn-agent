@@ -23,8 +23,7 @@ outputs:
   - beta close-out
 requires:
   - approval and release readiness
-calls:
-  - writing
+calls: []
 ---
 
 # Release

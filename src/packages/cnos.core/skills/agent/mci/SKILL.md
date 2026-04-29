@@ -1,6 +1,9 @@
 ---
 name: mci
+description: Identify and capture Minimum Coherent Insights — the smallest learning that changes future behavior.
+governing_question: How does the agent extract a single insight that prevents the next instance of the same mistake?
 triggers: [MCI, model update, learn, reflect, trace, note]
+scope: task-local
 ---
 
 # MCI
