@@ -278,13 +278,72 @@ Parallel composition (`|||`) MUST declare either:
 - a deterministic join, or
 - a caller-visible set of independent close-outs.
 
-A `fix` composition MUST declare either:
+A `fix` composition MUST be bounded (§6.6). A `fix` composition MUST declare either:
 - a bounded stopping condition, or
-- a failure/debt close-out when convergence is not reached.
+- a failure/debt close-out when convergence is not reached (§6.7).
 
 A `try`/`recover` composition MUST preserve the failed witness. Recovery MUST NOT erase the failure surface.
 
 These obligations connect to judgment doctrine: the agent must name the boundary it protects, the boundary it breaches, and the residual debt it does not call closure.
+
+### 6.6 Bounded `fix`
+
+A `fix` composition MUST be bounded. A bound is a declared condition that prevents the repair loop from running indefinitely.
+
+The core v0.2 bounding forms are:
+
+- **`max`** — a finite maximum number of repair attempts.
+- **`worklist`** — a finite set of named obligations, where each iteration MUST discharge, defer, or convert at least one obligation into debt.
+- **`measure`** — a well-founded measure that MUST strictly decrease on every repair iteration.
+
+A **convergence predicate** (e.g. `until accepted`) is not itself a bound. It is a success condition. A valid `fix` MUST pair any convergence predicate with a bound or with an explicit failure/debt close-out.
+
+If the bound is exhausted before convergence, the agent-module MUST return a debt-bearing close-out (§6.7) rather than silently failing or claiming acceptance.
+
+**Negative example:**
+```
+-- INVALID: convergence predicate without bound
+fix (repair >> re-review) until accepted
+```
+
+**Valid examples:**
+```
+-- Fuel-bound with debt close-out
+fix(max=2) (repair >> re-review) until accepted else close-with-debt
+
+-- Worklist-bound
+fix(worklist=findings) (resolve-finding >> re-review) until accepted else close-with-debt
+
+-- Measure-bound
+fix(measure=unmet_obligations) (repair >> re-review) until accepted else close-with-debt
+```
+
+For v0.2, `max` (fuel-bound) is the recommended default. `worklist` and `measure` are admitted for agents that need finer-grained termination arguments. Wall-clock timeouts are not a core language-level bound — they belong to the runtime/protocol layer and surface as `structured-failure { reason: runtime-timeout, ... }` if they fire.
+
+### 6.7 Debt close-out
+
+A debt close-out is a witnessed non-closure. It records that the agent could not honestly close the task as accepted within its declared scope, authority, or repair bound.
+
+A debt close-out MUST carry:
+
+| Field | Meaning |
+|-------|---------|
+| `protected_boundary` | The boundary the agent refused to falsely close. |
+| `attempted_goal` | The task, contract, or gap the fix loop tried to resolve. |
+| `last_artifact` | The latest artifact or state after bounded repair attempts. |
+| `evidence` | The witness material accumulated during attempts. |
+| `attempts` | The ordered repair/review attempts performed. |
+| `exhausted_bound` | Why the loop stopped: max attempts, empty admissible moves, non-decreasing measure, blocked dependency. |
+| `unmet_obligations` | Named obligations that remain unresolved. |
+| `failure_surface` | Why the artifact cannot honestly close as accepted. |
+| `residual_debt` | What remains owed, unsafe, incomplete, unproven, or externally blocked. |
+| `allowed_next_moves` | What a caller may do: escalate, widen scope, accept debt, delegate, request new input, abandon, or retry under new authority. |
+
+**Invariants:**
+
+- A debt close-out MUST preserve the failed witness. It MUST NOT erase the failed repair surface.
+- A debt close-out MUST NOT present unresolved debt as accepted closure.
+- A consuming agent MAY accept a debt close-out, but MUST treat the debt as an active obligation unless it explicitly judges, waives, escalates, or resolves it.
 
 ### 6.5 Composition dimensions
 
