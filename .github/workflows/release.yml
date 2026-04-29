@@ -5,9 +5,24 @@ on:
     tags:
       - '[0-9]*.[0-9]*.[0-9]*'
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      smoke-only:
+        description: "Run smoke test only (skip build+publish)"
+        required: false
+        type: boolean
+        default: true
+      tag:
+        description: "Release tag to smoke-test (default: triggering tag)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   build:
+    if: ${{ !inputs.smoke-only }}
     strategy:
       matrix:
         include:
@@ -54,19 +69,14 @@ jobs:
           chmod +x dist/cn-${{ matrix.target }}
 
       - name: Configure git identity
-        # `cn doctor` (kata 04) checks git user.name / user.email.
-        # GitHub runners have no default identity — set one so the
-        # Tier 1 doctor kata sees a clean config.
         run: |
           git config --global user.name "release-ci"
           git config --global user.email "release-ci@cnos.local"
 
-      - name: Run Tier 1 kata (shipped binary)
-        # Prove the packaged binary — the one being shipped — works
-        # end-to-end (help → init → status → doctor → build → install)
-        # on this platform before uploading. If any kata fails here,
-        # the matrix position fails, the `release` job's `needs: build`
-        # gate fails, and no artifacts are published.
+      - name: Run Tier 1 verification (shipped binary)
+        # Prove the packaged binary works end-to-end before uploading.
+        # If any check fails, the matrix position fails, the `publish`
+        # job's `needs: build` gate fails, and no artifacts are published.
         run: |
           cp dist/cn-${{ matrix.target }} cn
           export PATH="$PWD:$PATH"
@@ -78,11 +88,10 @@ jobs:
           name: cn-${{ matrix.target }}
           path: dist/cn-${{ matrix.target }}
 
-  release:
+  publish:
     needs: build
+    if: ${{ !inputs.smoke-only }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -154,15 +163,83 @@ jobs:
             artifacts/packages/index.json
           generate_release_notes: true
 
+  smoke:
+    needs: publish
+    if: ${{ always() && (needs.publish.result == 'success' || inputs.smoke-only) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+          - os: macos-latest
+            target: macos-x64
+          - os: macos-14
+            target: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve target tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run release bootstrap smoke
+        # Downloads shipped binary + index + tarballs from the GitHub
+        # release URL (same way an operator would) and verifies the
+        # bootstrap chain works. Exit 0=ok, 1=broken, 2=skipped.
+        run: |
+          set +e
+          scripts/smoke/90-release-bootstrap.sh "${{ steps.tag.outputs.tag }}"
+          rc=$?
+          set -e
+          case "$rc" in
+            0) echo "::notice::release-smoke ok on ${{ matrix.target }}" ;;
+            2) echo "::warning::release-smoke skipped on ${{ matrix.target }} (rc=2)" ;;
+            *) echo "::error::release-smoke FAILED on ${{ matrix.target }} (rc=$rc)"; exit "$rc" ;;
+          esac
+
+  notify:
+    needs: [build, publish, smoke]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
       - name: Telegram notification
-        if: always()
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then exit 0; fi
-          STATUS="${{ job.status }}"
-          ICON="✅"; [ "$STATUS" != "success" ] && ICON="❌"
-          MSG="$ICON Release $STATUS: ${{ github.repository }}@${{ github.ref_name }}"
+          FAILED=false
+          RESULTS=""
+          for pair in \
+            "build:${{ needs.build.result }}" \
+            "publish:${{ needs.publish.result }}" \
+            "smoke:${{ needs.smoke.result }}"; do
+            name="${pair%%:*}"
+            result="${pair##*:}"
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              FAILED=true
+              RESULTS="$RESULTS $name:$result"
+            fi
+          done
+          if [ "$FAILED" = "true" ]; then
+            ICON="❌"
+            STATUS="failure —$RESULTS"
+          else
+            ICON="✅"
+            STATUS="success"
+          fi
+          TAG="${{ github.ref_name }}"
+          MSG="$ICON Release $STATUS: ${{ github.repository }}@${TAG}"
           curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TG_CHAT_ID}" -d text="${MSG}" -d disable_notification=true
