@@ -103,4 +103,17 @@ Per `gamma/SKILL.md` §2.10 closure gate:
 
 **γ's closure declaration commit is held until item 1 (α close-out) is satisfied.** Operator: please prompt α to write `.cdd/releases/3.61.0/283/alpha-closeout.md`. When it lands on `origin/main`, γ will write the closure declaration commit ("Cycle #283 closed. Next: #287.") and δ takes the disconnect-release flow.
 
+## Addendum — α-closeout triage (post-write)
+
+α's close-out at `.cdd/releases/3.61.0/283/alpha-closeout.md` (169 lines, 7 sections) landed on `origin/main`. Voice rule observed (factual observations only; no dispositions). Items already covered by PRA / γ-closeout: F1–F4 self-readings, O1 (issue-edit-mid-cycle), O3 (lifecycle-skill drift), O4 (first-cycle pattern), O5 (cherry-pick mechanism). Two α-novel observations need γ triage:
+
+| Finding | Source | Type | Disposition | Artifact / commit |
+|---------|--------|------|-------------|-------------------|
+| **O2 — Clarifying-question discipline is local to the question asked** | α-closeout O2 | skill | **Project MCI — fold into #287.** α asked the literal question (`{N}/{role}.md` vs `{role}/{N}.md`) and got a literal answer; α did not surface the structural question (rigid vs descriptive filename set) because the dispatched text presented `{role}.md` as a settled choice. Pattern is small (N=1) and a cousin of F4 / O1 / γ-O1 (γ's mid-cycle issue rewrites). #287 already addresses the timing surface (γ batches edits via `gamma-clarification.md`); the discipline surface — α scanning dispatched text for "settled choices that may be open questions" — adds a sub-rule to `alpha/SKILL.md` §2.1 step 4 *or* to issue-quality gate review. Folded into #287 close-out / next-cycle PRA. Not patch-now-worthy on its own (N=1) but legitimate. | next-cycle MCA via #287 close-out |
+| **O6 — Section-by-section authoring + resume-on-interruption** | α-closeout O6 | meta-observation | **Drop with reason.** α explicitly states ("not naming it as a spec change request") that the existing `CDD.md` §1.4 large-file authoring rule already covers the discipline; the resume-on-interruption sub-protocol (last-`##`-header detection) is implicit in the existing rule and α + β + γ already practice equivalent disciplines per their close-outs. Recorded as cycle observation; no patch. | (no patch) |
+
+Both items honor the no-`noted` rule: O2 → next-cycle MCA; O6 → explicit drop with reason. γ's PRA and γ-closeout above remain authoritative; this addendum extends the triage table without invalidating prior dispositions.
+
+**Closure-gate state at addendum write:** all 10 conditions met (item 1 is now ✅ — α close-out on main; items 2–8 already met; item 9 hub memory deferred to operator session per unavailable-reason rule; item 10 merged-branch cleanup is δ's job post-closure). γ writes the closure declaration commit next.
+
 — γ (`gamma@cdd.cnos`)
