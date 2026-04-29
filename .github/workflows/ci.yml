@@ -8,6 +8,7 @@ on:
 
 jobs:
   go:
+    name: Go build & test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -191,8 +192,57 @@ jobs:
             || { echo "FAIL: kata-judge missing honest-stub verdict"; exit 1; }
           echo "PASS: kata-judge emitted honest-stub verdict"
 
+  # --- Coherence checks (structural, not build-dependent) ---
+
+  package-source-drift:
+    name: Package/source drift (I1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: src/go/go.sum
+
+      - name: Build cn binary
+        working-directory: src/go
+        run: go build -o ../../cn ./cmd/cn
+
+      - name: Check package/source sync
+        run: ./cn build --check
+
+  protocol-contract-check:
+    name: Protocol contract schema sync (I2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check contract copy matches source
+        run: diff docs/alpha/schemas/protocol-contract.json test/cmd/protocol-contract.json
+
+  link-check:
+    name: Repo link validation (I4)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # lychee: Rust binary link checker, no runtime deps.
+      # --offline: skip external URLs (check local file links only).
+      # --config lychee.toml: progressive ignore list for known pre-existing
+      # broken refs (frozen historical snapshots, schema-placeholder links).
+      # See lychee.toml for entries; tracker: #300.
+      - name: Check repo links with lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress --config lychee.toml '**/*.md'
+          fail: true
+
+  # --- Notification ---
+
   notify:
-    needs: [go, binary-verify, package-verify]
+    needs: [go, binary-verify, package-verify, package-source-drift, protocol-contract-check, link-check]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -202,14 +252,29 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then exit 0; fi
-          STATUS="${{ needs.go.result }}"
-          V1="${{ needs.binary-verify.result }}"
-          V2="${{ needs.package-verify.result }}"
-          if [ "$STATUS" = "success" ] && [ "$V1" = "success" ] && [ "$V2" = "success" ]; then
-            ICON="✅"
-          else
+          # Collect all job results
+          RESULTS=""
+          FAILED=false
+          for pair in \
+            "go:${{ needs.go.result }}" \
+            "binary:${{ needs.binary-verify.result }}" \
+            "package:${{ needs.package-verify.result }}" \
+            "I1:${{ needs.package-source-drift.result }}" \
+            "I2:${{ needs.protocol-contract-check.result }}" \
+            "I4:${{ needs.link-check.result }}"; do
+            name="${pair%%:*}"
+            result="${pair##*:}"
+            if [ "$result" != "success" ]; then
+              FAILED=true
+              RESULTS="$RESULTS $name:$result"
+            fi
+          done
+          if [ "$FAILED" = "true" ]; then
             ICON="❌"
-            STATUS="$STATUS (binary: $V1, package: $V2)"
+            STATUS="failure —$RESULTS"
+          else
+            ICON="✅"
+            STATUS="success"
           fi
           REF="${{ github.head_ref || github.ref_name }}"
           MSG="$ICON CI $STATUS: ${{ github.repository }}@${REF}"
