@@ -2,8 +2,8 @@
 
 A recurrent coherence system with Git as its lowest durable substrate.
 
-**Version:** 3.13.0
-**Date:** 2026-03-23
+**Version:** 3.61.1
+**Date:** 2026-04-29
 
 ---
 
@@ -15,9 +15,11 @@ Then choose your path:
 
 | You want to... | Start with |
 |----------------|------------|
-| Understand what cnos is | [THESIS.md](./THESIS.md) → [COHERENCE-SYSTEM.md](./alpha/doctrine/COHERENCE-SYSTEM.md) → [FOUNDATIONS.md](./alpha/doctrine/FOUNDATIONS.md) |
+| Understand what cnos is | [THESIS.md](./THESIS.md) → [COHERENCE-SYSTEM.md](./alpha/essays/COHERENCE-SYSTEM.md) → [FOUNDATIONS.md](./alpha/essays/FOUNDATIONS.md) |
 | Build or run a cnos agent | [AGENT-RUNTIME.md](./alpha/agent-runtime/AGENT-RUNTIME.md) → [CLI.md](./alpha/cli/CLI.md) → [HANDSHAKE.md](./beta/guides/HANDSHAKE.md) |
 | Contribute code | [CDD.md](./gamma/cdd/CDD.md) → [ARCHITECTURE.md](./beta/architecture/ARCHITECTURE.md) |
+| Understand agent composition / CTB | [CTB README](./alpha/ctb/README.md) → [v0.1 spec](./alpha/ctb/LANGUAGE-SPEC.md) → [v0.2 draft](./alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md) |
+| Understand the formal foundation | [TSC repo](https://github.com/usurobor/tsc) → [C≡](https://github.com/usurobor/tsc/blob/main/spec/c-equiv.md) → [TSC Core](https://github.com/usurobor/tsc/blob/main/spec/tsc-core.md) → [TSC Oper](https://github.com/usurobor/tsc/blob/main/spec/tsc-oper.md) |
 | Understand the runtime extensions model | [RUNTIME-EXTENSIONS.md](./alpha/runtime-extensions/RUNTIME-EXTENSIONS.md) → [runtime-extensions bundle](./alpha/runtime-extensions/) |
 | Write or modify a skill | [WRITE-A-SKILL.md](./beta/guides/WRITE-A-SKILL.md) → [COGNITIVE-SUBSTRATE.md](./alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md) |
 | Do a release | [release skill](../packages/cnos.core/skills/release/SKILL.md) → [BUILD-RELEASE.md](./beta/guides/BUILD-RELEASE.md) |
@@ -64,9 +66,9 @@ The substance of the system — doctrine, specs, definitions.
 
 | Document | Scope |
 |----------|-------|
-| [COHERENCE-SYSTEM.md](./alpha/doctrine/COHERENCE-SYSTEM.md) | Meta-model: coherence as primary; the instruction set |
-| [FOUNDATIONS.md](./alpha/doctrine/FOUNDATIONS.md) | The coherence stack — doctrinal layers |
-| [MANIFESTO.md](./alpha/doctrine/MANIFESTO.md) | Principles and values |
+| [COHERENCE-SYSTEM.md](./alpha/essays/COHERENCE-SYSTEM.md) | Meta-model: coherence as primary; the instruction set |
+| [FOUNDATIONS.md](./alpha/essays/FOUNDATIONS.md) | The coherence stack — doctrinal layers |
+| [MANIFESTO.md](./alpha/essays/MANIFESTO.md) | Principles and values |
 | [CAA.md](./alpha/agent-runtime/CAA.md) | Coherent agent architecture |
 | [AGENT-RUNTIME.md](./alpha/agent-runtime/AGENT-RUNTIME.md) | Runtime spec: CN Shell, typed ops, N-pass orchestration, receipts |
 | [RUNTIME-EXTENSIONS.md](./alpha/runtime-extensions/RUNTIME-EXTENSIONS.md) | Capability providers, discovery, and isolation |
@@ -90,7 +92,7 @@ The substance of the system — doctrine, specs, definitions.
 | [N-PASS-BIND-v3.8.0.md](./alpha/N-PASS-BIND-v3.8.0.md) | N-pass bind loop and indicators | 3.8.0 |
 | [SYSCALL-SURFACE-v3.8.0.md](./alpha/SYSCALL-SURFACE-v3.8.0.md) | Syscall surface redesign | 3.8.0 |
 | [SCHEDULER-v3.7.0.md](./alpha/SCHEDULER-v3.7.0.md) | Scheduler design | 3.7.0 |
-| [CTB-v4.0.0-VISION.md](./alpha/ctb/CTB-v4.0.0-VISION.md) | CTB v4.0.0 vision: skill language | 4.0.0 |
+| [CTB-v4.0.0-VISION.md](./alpha/ctb/CTB-v4.0.0-VISION.md) | CTB v4.0.0 vision: agent-composition language | 4.0.0 |
 
 **Feature bundles:**
 
@@ -99,8 +101,9 @@ The substance of the system — doctrine, specs, definitions.
 | [agent-runtime/](./alpha/agent-runtime/) | Runtime spec, CAA, runtime contract, version-scoped design docs |
 | [cli/](./alpha/cli/) | CLI reference, daemon mode, setup installer |
 | [cognitive-substrate/](./alpha/cognitive-substrate/) | Cognitive asset classes, CAR resolver |
-| [ctb/](./alpha/ctb/) | CTB v4.0.0 vision |
-| [doctrine/](./alpha/doctrine/) | Coherence system, foundations, manifesto |
+| [ctb/](./alpha/ctb/) | CTB — triadic agent-composition language (draft); [v0.1 baseline](./alpha/ctb/LANGUAGE-SPEC.md), [v0.2 draft](./alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md), [notes](./alpha/ctb/SEMANTICS-NOTES.md) |
+| [doctrine/](./alpha/doctrine/) | Doctrine sub-packages (coherence, ethics, judgment, inheritance) |
+| [essays/](./alpha/essays/) | System doctrine: coherence system, foundations, manifesto |
 | [protocol/](./alpha/protocol/) | Whitepaper, protocol FSMs, thread API |
 | [runtime-extensions/](./alpha/runtime-extensions/) | Extensions spec, version snapshots |
 | [security/](./alpha/security/) | Security model, traceability |
@@ -153,10 +156,18 @@ docs/
 │   │   ├── CLI.md, DAEMON.md, SETUP-INSTALLER.md
 │   ├── cognitive-substrate/           # Cognitive assets, CAR
 │   │   ├── COGNITIVE-SUBSTRATE.md, CAR.md
-│   ├── ctb/                           # CTB vision
-│   │   └── CTB-v4.0.0-VISION.md
-│   ├── doctrine/                      # Coherence system, foundations, manifesto
-│   │   ├── COHERENCE-SYSTEM.md, FOUNDATIONS.md, MANIFESTO.md
+│   ├── ctb/                           # CTB agent-composition language (draft)
+│   │   ├── README.md                  # Document map + authority
+│   │   ├── LANGUAGE-SPEC.md           # v0.1 baseline (normative)
+│   │   ├── LANGUAGE-SPEC-v0.2-draft.md # v0.2 agent-module target (draft)
+│   │   ├── SEMANTICS-NOTES.md         # Conceptual rationale (non-normative)
+│   │   └── CTB-v4.0.0-VISION.md      # Strategy + roadmap (non-normative)
+│   ├── doctrine/                      # Doctrine sub-packages
+│   │   └── coherence-for-agents/, ethics-for-agents/, ...
+│   ├── essays/                        # System doctrine and long-form essays
+│   │   ├── COHERENCE-SYSTEM.md        # Meta-model: coherence as primary
+│   │   ├── FOUNDATIONS.md             # Core doctrine and coherence loop
+│   │   └── MANIFESTO.md              # Human+AI commons, sovereignty
 │   ├── protocol/                      # Whitepaper, protocol, thread API
 │   │   ├── PROTOCOL.md, WHITEPAPER.md, THREAD-API.md
 │   ├── runtime-extensions/            # Extensions spec + snapshots

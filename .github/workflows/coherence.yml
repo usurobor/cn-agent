@@ -31,6 +31,22 @@ jobs:
   # I1 (coherence-build-check via `cn build --check`) continues to gate source
   # structural validity.
 
+  readme-link-check:
+    name: README link validation (I4)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # lychee: Rust binary link checker, no runtime deps.
+      # --offline: skip external URLs (check local file links only).
+      # docs/README.md excluded — has known legacy link debt
+      # (version-scoped docs moved to bundles).
+      - name: Check README links with lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress README.md
+          fail: true
+
   protocol-contract-check:
     name: Protocol contract schema sync (I2)
     runs-on: ubuntu-latest
@@ -41,7 +57,7 @@ jobs:
         run: diff docs/alpha/schemas/protocol-contract.json test/cmd/protocol-contract.json
 
   notify:
-    needs: [coherence-build-check, protocol-contract-check]
+    needs: [coherence-build-check, readme-link-check, protocol-contract-check]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -52,8 +68,9 @@ jobs:
         run: |
           if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then exit 0; fi
           R1="${{ needs.coherence-build-check.result }}"
+          R2="${{ needs.readme-link-check.result }}"
           R3="${{ needs.protocol-contract-check.result }}"
-          STATUS="success"; ([ "$R1" != "success" ] || [ "$R3" != "success" ]) && STATUS="failure"
+          STATUS="success"; ([ "$R1" != "success" ] || [ "$R2" != "success" ] || [ "$R3" != "success" ]) && STATUS="failure"
           ICON="✅"; [ "$STATUS" != "success" ] && ICON="❌"
           REF="${{ github.head_ref || github.ref_name }}"
           MSG="$ICON Coherence $STATUS: ${{ github.repository }}@${REF}"

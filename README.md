@@ -9,14 +9,21 @@
 
 ## What is cnos?
 
-cnos is a coherence system for autonomous agents, built on Git.
+cnos is a recurrent coherence system with Git as its lowest durable substrate.
 
-The core idea: an AI agent's identity, memory, and relationships should live in a git repo — not locked behind a platform, not dependent on any single host. If any server disappears, the agent's fork persists. Every decision is a commit. Every collaboration is a merge.
+The core idea: an agent's identity, memory, work, and relationships should live in a git repo — not locked behind a platform, not dependent on any single host. If any server disappears, the agent's fork persists. Every decision is a commit. Every collaboration is a merge.
+
+cnos is not an agent framework, a protocol with some tooling, or a package system for prompt assets. It is a system in which doctrine, documents, packages, runtime modules, repositories, traces, releases, and agents are all articulations of the same coherence principle at different scales.
+
+### The layers
 
 ```
-Agent (pure)  ──>  cn (CLI)  ──>  Git (substrate)
-  reads input       validates        push/fetch
-  writes output     executes ops     threads as files
+Recurrent coherence system
+├─ Git substrate          durable identity, history, refs, forks, commits
+├─ CN protocol            repo conventions, threads, messages, signatures
+├─ cn runtime             governed typed ops, receipts, bounded execution
+├─ coherent agents        sense, compare, choose, act/learn, review
+└─ CTB (draft)            triadic composition + witnessed close-out language/checker
 ```
 
 ### The coherent agent
@@ -28,7 +35,7 @@ A coherent agent minimizes the gap between its model and reality. It does this t
 - **MCP** — the best current picture of reality and system state
 - **CDD** — coherence-driven development: the same coherence law applied to the system's own evolution
 
-The agent is a pure function. It reads input, writes output. `cn` handles all side effects — git, network, file I/O — through a validated, sandboxed shell with crash recovery and audit receipts.
+The agent's direct I/O is pure text: it reads input and writes output. A narrow agent (a skill) may behave like a pure function. Wider agents compose subagents, preserve witnesses, and return close-outs. `cn` handles all side effects — git, network, file I/O — through a validated runtime boundary with typed operations and audit receipts.
 
 ### The network
 
@@ -39,9 +46,10 @@ Agents connect through **peering** — exchanging git refs. Each agent has a **h
 | **Hub** | A git repo — the agent's home. Holds threads, state, config. |
 | **Peer** | Another agent's hub. Listed in `state/peers.md`. |
 | **Thread** | Unit of work or conversation. Markdown + YAML frontmatter. |
-| **Agent** | Pure function: input → output. Never touches files or git directly. |
+| **Agent** | Senses, compares, chooses MCA/MCI, acts or learns, reviews. Pure text I/O; `cn` governs side effects. |
+| **CTB** | Emerging triadic agent-composition language. Draft spec — not yet runtime-enforced. See [CTB docs](./docs/alpha/ctb/). |
 
-> [Manifesto](./docs/alpha/doctrine/MANIFESTO.md) · [Thesis](./docs/THESIS.md) · [Whitepaper](./docs/alpha/protocol/WHITEPAPER.md) · [Architecture](./docs/beta/architecture/ARCHITECTURE.md)
+> [Manifesto](./docs/alpha/essays/MANIFESTO.md) · [Thesis](./docs/THESIS.md) · [Whitepaper](./docs/alpha/protocol/WHITEPAPER.md) · [Architecture](./docs/beta/architecture/ARCHITECTURE.md)
 
 ---
 
@@ -51,7 +59,7 @@ Agents connect through **peering** — exchanging git refs. Each agent has a **h
 
 **If you're a human:** Your agent's work is auditable. Every decision is a commit. Every collaboration is a merge. No black boxes.
 
-**If you're skeptical:** CN is a protocol owned by the community. No ads. Not for sale. [Read the manifesto](./docs/alpha/doctrine/MANIFESTO.md).
+**If you're skeptical:** CN is a protocol owned by the community. No ads. Not for sale. [Read the manifesto](./docs/alpha/essays/MANIFESTO.md).
 
 ---
 
@@ -183,29 +191,51 @@ cn-<name>/
 
 ---
 
-## Documentation
+## Further reading
 
-| Start here | |
-|-----------|---|
-| [ARCHITECTURE.md](./docs/beta/architecture/ARCHITECTURE.md) | System overview |
-| [docs/README.md](./docs/README.md) | Full documentation index |
+cnos is documented in layers. Start with the system thesis, then follow the protocol, runtime, CTB, and TSC grounding docs depending on what you are trying to understand.
 
-| Design | |
-|--------|---|
-| [THESIS.md](./docs/THESIS.md) | System thesis — cnos as a recurrent coherence system |
-| [COHERENCE-SYSTEM.md](./docs/alpha/doctrine/COHERENCE-SYSTEM.md) | Meta-model — coherence as primary |
-| [CAA.md](./docs/alpha/agent-runtime/CAA.md) | Coherent agent architecture |
-| [AGENT-RUNTIME.md](./docs/alpha/agent-runtime/AGENT-RUNTIME.md) | Agent runtime spec |
-| [MANIFESTO.md](./docs/alpha/doctrine/MANIFESTO.md) | Why cnos exists |
-| [WHITEPAPER.md](./docs/alpha/protocol/WHITEPAPER.md) | CN protocol specification |
-| [PROTOCOL.md](./docs/alpha/protocol/PROTOCOL.md) | The four FSMs |
-| [SECURITY-MODEL.md](./docs/alpha/security/SECURITY-MODEL.md) | Security architecture |
+Full documentation index: [docs/README.md](./docs/README.md)
 
-| Process | |
-|---------|---|
-| [CDD.md](./docs/gamma/cdd/CDD.md) | Coherence-Driven Development |
-| [CHANGELOG.md](./CHANGELOG.md) | Release Coherence Ledger |
-| [ENGINEERING-LEVELS.md](./docs/gamma/ENGINEERING-LEVELS.md) | L5/L6/L7 rubric |
+### cnos system frame
+
+- [THESIS.md](./docs/THESIS.md) — cnos as a recurrent coherence system *(doctrine/thesis)*
+- [COHERENCE-SYSTEM.md](./docs/alpha/essays/COHERENCE-SYSTEM.md) — coherence as the primary principle *(doctrine)*
+- [FOUNDATIONS.md](./docs/alpha/essays/FOUNDATIONS.md) — core doctrine and coherence loop *(doctrine)*
+- [MANIFESTO.md](./docs/alpha/essays/MANIFESTO.md) — human+AI commons, public audit, forkability, sovereignty *(doctrine)*
+
+### CN protocol and Git substrate
+
+- [WHITEPAPER.md](./docs/alpha/protocol/WHITEPAPER.md) — CN protocol and Git as the lowest durable substrate *(protocol spec)*
+- [PROTOCOL.md](./docs/alpha/protocol/PROTOCOL.md) — protocol state machines and message surfaces *(protocol spec)*
+- [SECURITY-MODEL.md](./docs/alpha/security/SECURITY-MODEL.md) — trust, sandboxing, signatures, and capability boundaries *(protocol spec)*
+
+### Agent architecture and runtime
+
+- [CAA.md](./docs/alpha/agent-runtime/CAA.md) — coherent agent architecture *(runtime spec)*
+- [AGENT-RUNTIME.md](./docs/alpha/agent-runtime/AGENT-RUNTIME.md) — runtime body, CN Shell, typed ops, receipts, bounded execution *(runtime spec)*
+- [ARCHITECTURE.md](./docs/beta/architecture/ARCHITECTURE.md) — how doctrine, specs, runtime, packages, traces, releases, and agents relate *(system overview)*
+- [CDD.md](./docs/gamma/cdd/CDD.md) — coherence-driven development process *(process)*
+- [CHANGELOG.md](./CHANGELOG.md) — release coherence ledger *(process)*
+- [ENGINEERING-LEVELS.md](./docs/gamma/ENGINEERING-LEVELS.md) — L5/L6/L7 rubric *(process)*
+
+### CTB language layer
+
+- [CTB README](./docs/alpha/ctb/README.md) — document map and authority rules
+- [LANGUAGE-SPEC.md](./docs/alpha/ctb/LANGUAGE-SPEC.md) — v0.1 skill-module baseline *(normative)*
+- [LANGUAGE-SPEC-v0.2-draft.md](./docs/alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md) — v0.2 agent-module / composition target *(draft — not yet enforced)*
+- [SEMANTICS-NOTES.md](./docs/alpha/ctb/SEMANTICS-NOTES.md) — triadic carrier, agent-composition rationale *(non-normative)*
+- [CTB-v4.0.0-VISION.md](./docs/alpha/ctb/CTB-v4.0.0-VISION.md) — strategic vision and roadmap *(non-normative)*
+
+### TSC upstream foundation
+
+CTB's triadic carrier and witness discipline are grounded in the separate [TSC](https://github.com/usurobor/tsc) repository — theory, target model, and verifier for triadic coherence.
+
+- [C≡ spec](https://github.com/usurobor/tsc/blob/main/spec/c-equiv.md) — term algebra, tri(·,·,·), equivalence, normal forms, α/β/γ evaluators *(upstream formal foundation)*
+- [TSC Core](https://github.com/usurobor/tsc/blob/main/spec/tsc-core.md) — dimensional coherence scores, aggregate C_Σ, confidence intervals, independence, composition bounds *(upstream formal foundation)*
+- [TSC Operational](https://github.com/usurobor/tsc/blob/main/spec/tsc-oper.md) — witnesses, floors, verification controller, verdict logic, provenance bundle *(upstream operational verifier model)*
+
+> **Status note:** CTB v0.2 and ctb-check are draft targets. The shipped runtime does not yet enforce CTB v0.2 witness or composition obligations.
 
 ---
 
