@@ -184,4 +184,14 @@ fixture that exercises it.
 | 9 | post-patch re-audit per language present in diff | Done above (YAML, CUE, Bash, JSON, Markdown). |
 | 10 | branch CI green on the head commit | Local equivalents pass: `./tools/validate-skill-frontmatter.sh` → 56/56 green, `--self-test` → 3 positive + 4 negative behave as expected. CI itself runs on push; β waits for green before merge per row 10's transient-row contract. |
 
-## Review-readiness | round 1 | base SHA `a8e67b7` | head SHA `8adfd44` | local validation green at 2026-04-29T23:19:49Z | CI: pending push | ready for β
+## Review-readiness | round 1 | base SHA `a8e67b7` | head SHA `6e5ce21` | local validation green at 2026-04-29T23:19:49Z | CI: pending push | ready for β
+
+The head SHA is updated to the commit that lands this self-coherence
+file. Commits on the branch:
+
+- `8adfd44` — implementation (schema, script, exceptions, fixtures, CI
+  job + notify aggregation, schemas/README.md, hard-gate frontmatter
+  backfill, two YAML normalisations, release/SKILL.md stale-`calls`
+  fix).
+- `6e5ce21` — this self-coherence artifact carrying the review-readiness
+  signal.
