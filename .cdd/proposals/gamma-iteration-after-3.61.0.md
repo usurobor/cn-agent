@@ -6,7 +6,7 @@
 **Author:** γ (`gamma@cdd.cnos`)
 **Date:** 2026-04-29
 **Anchor release:** 3.61.0 (cycle #283 closed at `fbaaa1a` — *"Cycle #283 closed. Next: #287."*)
-**Status:** proposal — operator-pending; spawns issues #287 (filed), #288–#292 (pending operator confirmation)
+**Status:** filed — #287 (existing, this cycle), #292/#293/#294/#295/#296 (filed 2026-04-29 from this proposal). Original draft used #288–#292 as placeholders; those numbers were taken (#288 CTB harvest PR, #289 v0.2 stabilization, #290/#291 v0.2 sub-PRs). Renumbered on file at next-available.
 
 ## Context
 
@@ -39,7 +39,7 @@ Some of the friction is already addressed by issues already filed (#286, #287). 
 
 Direct response to #283 R1 F1's branch-discovery friction. 12 ACs across CDD.md (§1.4 algorithms + §Tracking + §4.2/§4.3 Branch rule), gamma/alpha/beta/operator SKILL.md, dispatch-prompt format. Self-application: implementing cycle uses `cycle/287`. Closes M1 (via AC8 `git fetch` reliability), M2 (β refusal expansion), M3 (γ creates named branch).
 
-### #288 — Resumption protocol for partial CDD artifacts (proposed; closes M8)
+### #292 ✅ — Resumption protocol for partial CDD artifacts (filed; closes M8)
 
 §1.4 Large-file authoring rule expanded with a "Resumption" sub-clause + canonical section-manifest format at the top of any artifact ≥ 50 lines:
 
@@ -52,7 +52,7 @@ Plus role-skill resumption sub-sections (alpha/beta/gamma) pointing at §1.4. Pl
 
 **Why a separate issue:** the failure is genus-level (any role, any artifact, any session timeout). #287's branch-rule changes don't touch it. Markdown-only, ~5 file edits.
 
-### #289 — Disambiguate cycle-tag vs disconnect-tag, lock provisional/final scoring sequence (proposed; closes M9, M10)
+### #293 ✅ — Disambiguate cycle-tag vs disconnect-tag, lock provisional/final scoring sequence (filed; closes M9, M10)
 
 CDD spec ambiguity exposed during this cycle's β→γ handoff: §1.4 Phase 2 step 8 says "β merges + tags + deploys"; Phase 6 step 17 says "δ cuts the disconnect release: bump version, tag, push." Two reads possible:
 
@@ -63,7 +63,7 @@ Issue locks one model and updates §1.4 + `release/SKILL.md` + `operator/SKILL.m
 
 **Why a separate issue:** surgical 5-line CDD.md edit + 2-line `release/SKILL.md` + 2-line `post-release/SKILL.md` edit. Markdown-only.
 
-### #290 — `cn cdd status N` CLI command (proposed; closes M11)
+### #294 ✅ — `cn cdd status N` CLI command (filed; closes M11)
 
 A single `cn` invocation that γ (or operator) runs to get a structured TLDR:
 
@@ -80,15 +80,15 @@ gate state:   8/10 (α-closeout missing; merged-branch cleanup pending δ)
 next:         γ writes closure declaration when α-closeout lands
 ```
 
-Reads only; commits nothing. β-axis infrastructure cycle, separate from CDD spec changes. Naturally pairs with `cn dispatch` (#291 below) — both could be batched into a single "cn cdd commands" cycle if scope allows.
+Reads only; commits nothing. β-axis infrastructure cycle, separate from CDD spec changes. Naturally pairs with `cn dispatch` (#295 below) — both could be batched into a single "cn cdd commands" cycle if scope allows.
 
-### #291 — `cn dispatch` CLI (proposed; unblocks #286, closes M12 partially)
+### #295 ✅ — `cn dispatch` CLI (filed; unblocks #286, closes M12 partially)
 
 The harness precondition for #286 (encapsulation) named in #286 AC4. γ invokes it to spawn α/β as sibling top-level sessions sharing only the cycle branch + artifact channel. Without this, γ can draft prompts but cannot autonomously dispatch — operator still pastes.
 
 **Why a separate issue:** β-axis infrastructure work, identified in #286 Dependencies but not yet a filed issue. Hard precondition for #286 to land meaningfully.
 
-### #292 — Issue-edit cache-bust convention + γ session branch formalization (proposed; closes M5, M14, partial M6/M7)
+### #296 ✅ — Issue-edit cache-bust convention + γ session branch formalization (filed; closes M5, M14, partial M6/M7)
 
 Two small spec items, naturally bundled:
 
@@ -100,7 +100,7 @@ Two small spec items, naturally bundled:
 
 ### #286 — Encapsulate α and β behind γ ✅ already filed
 
-Already filed during this cycle. Hard precondition: #291 (`cn dispatch` CLI). Forward-looking; AC4 names the gap so the spec lands cleanly even if the CLI is built later.
+Already filed during this cycle. Hard precondition: #295 (`cn dispatch` CLI). Forward-looking; AC4 names the gap so the spec lands cleanly even if the CLI is built later.
 
 ### Out of CDD scope: harness gap (M4)
 
@@ -111,18 +111,18 @@ The harness silently ignores `persistent: true` and caps Monitors at 30min. γ r
 ```
 #287  γ creates the cycle branch  (next MCA — direct response to #283 R1 F1)
  ↓
-#288  Resumption protocol         ┐
-#289  Tag/scoring disambiguation  │ small-change cycles, parallel-dispatchable
-#292  Cache-bust + session branch │ if operator dispatches in batch
+#292  Resumption protocol         ┐
+#293  Tag/scoring disambiguation  │ small-change cycles, parallel-dispatchable
+#296  Cache-bust + session branch │ if operator dispatches in batch
                                   ┘
  ↓
-#290  cn cdd status               ┐ infra cycles, β-axis, can pair
-#291  cn dispatch                 ┘ if scope allows
+#294  cn cdd status               ┐ infra cycles, β-axis, can pair
+#295  cn dispatch                 ┘ if scope allows
  ↓
-#286  Encapsulation (depends on #291)
+#286  Encapsulation (depends on #295)
 ```
 
-#287 first: it's #283's direct child. #288 / #289 / #292 are small, parallel-safe, and unblock cleaner cycles immediately. #290 / #291 are the infra unlock for true encapsulation. #286 lands last when its precondition (#291) exists.
+#287 first: it's #283's direct child. #292 / #293 / #296 are small, parallel-safe, and unblock cleaner cycles immediately. #294 / #295 are the infra unlock for true encapsulation. #286 lands last when its precondition (#295) exists.
 
 ## Disposition
 
