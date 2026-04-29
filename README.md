@@ -1,6 +1,6 @@
 # cnos (Coherence Network OS)
 
-[![CI](https://github.com/usurobor/cnos/actions/workflows/ci.yml/badge.svg)](https://github.com/usurobor/cnos/actions/workflows/ci.yml)
+[![Build](https://github.com/usurobor/cnos/actions/workflows/build.yml/badge.svg)](https://github.com/usurobor/cnos/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
 > 🚧 **cnos is under active construction, transitioning to v4.** The Go rewrite is in progress. What's described below is the vision and design — see [Current State](#current-state) for what's shipped and what's next.
@@ -19,6 +19,7 @@ cnos is not an agent framework, a protocol with some tooling, or a package syste
 
 ```
 Recurrent coherence system
+├─ doctrine               first principles, conduct, standing, judgment, inheritance
 ├─ Git substrate          durable identity, history, refs, forks, commits
 ├─ CN protocol            repo conventions, threads, messages, signatures
 ├─ cn runtime             governed typed ops, receipts, bounded execution
@@ -28,12 +29,18 @@ Recurrent coherence system
 
 ### The coherent agent
 
-A coherent agent minimizes the gap between its model and reality. It does this through a small set of primitives:
+A coherent agent is an articulation of coherence that can sense, compare, choose, act or learn, review, and continue without losing itself.
 
+At the conduct layer, coherence is not merely "model vs reality." An agent acts at a boundary: between its model and observable environment, between itself and other agents, and between local closure and the wider system it may affect. The governing rule is: do not close a local gap by opening a larger shared one.
+
+A coherent agent therefore preserves inspectable boundaries. Its claims remain attached to evidence. Its verdicts name the contract they judge. Its refusals, repairs, and close-outs leave enough surface for another role or future cycle to reconstruct what happened.
+
+The core operations are:
+
+- **MCP** — the best current picture of the relevant boundaries, evidence, constraints, and available moves
+- **CLP** — the pass that forms or refreshes that picture
 - **CAP** — the atomic move: act on the world (MCA) or update the model (MCI), with bias toward action when action is possible
-- **CLP** — the reflective loop: score pattern, relation, and exit, then patch the weakest axis
-- **MCP** — the best current picture of reality and system state
-- **CDD** — coherence-driven development: the same coherence law applied to the system's own evolution
+- **CDD** — coherence-driven development: the same boundary-preserving review discipline applied to the system's own evolution
 
 The agent's direct I/O is pure text: it reads input and writes output. A narrow agent (a skill) may behave like a pure function. Wider agents compose subagents, preserve witnesses, and return close-outs. `cn` handles all side effects — git, network, file I/O — through a validated runtime boundary with typed operations and audit receipts.
 
@@ -46,7 +53,8 @@ Agents connect through **peering** — exchanging git refs. Each agent has a **h
 | **Hub** | A git repo — the agent's home. Holds threads, state, config. |
 | **Peer** | Another agent's hub. Listed in `state/peers.md`. |
 | **Thread** | Unit of work or conversation. Markdown + YAML frontmatter. |
-| **Agent** | Senses, compares, chooses MCA/MCI, acts or learns, reviews. Pure text I/O; `cn` governs side effects. |
+| **Agent** | Boundary-preserving articulation of coherence: senses, compares, chooses MCA/MCI, acts or learns, reviews, and leaves inspectable evidence/close-out surfaces. Pure text I/O; `cn` governs side effects. |
+| **Doctrine** | Always-on constitutive layer: first principles, conduct, standing, judgment, inheritance, and review law. |
 | **CTB** | Emerging triadic agent-composition language. Draft spec — not yet runtime-enforced. See [CTB docs](./docs/alpha/ctb/). |
 
 > [Manifesto](./docs/alpha/essays/MANIFESTO.md) · [Thesis](./docs/THESIS.md) · [Whitepaper](./docs/alpha/protocol/WHITEPAPER.md) · [Architecture](./docs/beta/architecture/ARCHITECTURE.md)
@@ -203,6 +211,14 @@ Full documentation index: [docs/README.md](./docs/README.md)
 - [COHERENCE-SYSTEM.md](./docs/alpha/essays/COHERENCE-SYSTEM.md) — coherence as the primary principle *(doctrine)*
 - [FOUNDATIONS.md](./docs/alpha/essays/FOUNDATIONS.md) — core doctrine and coherence loop *(doctrine)*
 - [MANIFESTO.md](./docs/alpha/essays/MANIFESTO.md) — human+AI commons, public audit, forkability, sovereignty *(doctrine)*
+
+### Agent doctrine
+
+- [Doctrine README](./docs/alpha/doctrine/README.md) — reading order and how the doctrine essays compose *(doctrine map)*
+- [Coherence for Agents](./docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) — shared boundaries, one-as-two, one-as-three, inspectable relation *(doctrine)*
+- [Ethics for Agents](./docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) — standing under asymmetry, affected boundaries, repair as substitute inspectability *(doctrine)*
+- [Judgment for Agents](./docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) — boundary selection under forced loss, residual debt, terminal debt *(doctrine)*
+- [Inheritance for Agents](./docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) — cycles inheriting named failure modes as contestable constraints *(doctrine)*
 
 ### CN protocol and Git substrate
 

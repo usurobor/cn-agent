@@ -18,6 +18,7 @@ Then choose your path:
 | Understand what cnos is | [THESIS.md](./THESIS.md) → [COHERENCE-SYSTEM.md](./alpha/essays/COHERENCE-SYSTEM.md) → [FOUNDATIONS.md](./alpha/essays/FOUNDATIONS.md) |
 | Build or run a cnos agent | [AGENT-RUNTIME.md](./alpha/agent-runtime/AGENT-RUNTIME.md) → [CLI.md](./alpha/cli/CLI.md) → [HANDSHAKE.md](./beta/guides/HANDSHAKE.md) |
 | Contribute code | [CDD.md](./gamma/cdd/CDD.md) → [ARCHITECTURE.md](./beta/architecture/ARCHITECTURE.md) |
+| Understand agent doctrine / conduct | [Doctrine README](./alpha/doctrine/README.md) → [Coherence for Agents](./alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) → [Ethics for Agents](./alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) → [Judgment for Agents](./alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) → [Inheritance for Agents](./alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) |
 | Understand agent composition / CTB | [CTB README](./alpha/ctb/README.md) → [v0.1 spec](./alpha/ctb/LANGUAGE-SPEC.md) → [v0.2 draft](./alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md) |
 | Understand the formal foundation | [TSC repo](https://github.com/usurobor/tsc) → [C≡](https://github.com/usurobor/tsc/blob/main/spec/c-equiv.md) → [TSC Core](https://github.com/usurobor/tsc/blob/main/spec/tsc-core.md) → [TSC Oper](https://github.com/usurobor/tsc/blob/main/spec/tsc-oper.md) |
 | Understand the runtime extensions model | [RUNTIME-EXTENSIONS.md](./alpha/runtime-extensions/RUNTIME-EXTENSIONS.md) → [runtime-extensions bundle](./alpha/runtime-extensions/) |
