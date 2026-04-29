@@ -75,3 +75,62 @@
 - **β surfaced its own polling failure honestly.** Rather than noting the Monitor miss as a private observation, β included it in close-out as a §9.1 input. γ does not have to dig for it.
 
 - **γ-creates-branch scope expansion was correctly rolled back.** γ proposed bundling, operator declined, γ executed the discard cleanly (`git reset --hard origin/...`, issue body reverted to 12-AC form, follow-up issue #287 filed). Cycle hygiene preserved. γ's process miss (editing before pausing) was caught at the operator interface; the rollback itself was clean.
+
+### 4. CDD Self-Coherence
+
+**Per-finding triage** (CAP four-state: immediate MCA / project MCI / agent MCI / drop):
+
+| # | Source | Type | Disposition | Artifact / commit |
+|---|--------|------|-------------|-------------------|
+| F1 | β R1 (8d78514) | D, judgment, structural | **Immediate MCA, landed α R2 (fc50265).** γ resolution at `gamma-clarification.md` §"Decision" + α R2 implementation across CDD.md §Tracking + 4 downstream surfaces. Branch-polling canonical; one cycle branch holds all role artifacts. | `gamma-clarification.md` (2f83095) + α R2 (fc50265) |
+| F2 | β R1 | C, judgment | **Immediate MCA, landed α R2.** `release/SKILL.md` §2.10 β-write bullets now point to `beta-closeout.md`. | α R2 (fc50265) |
+| F3 | β R1 | C, judgment | **Immediate MCA, landed α R2.** `post-release/SKILL.md` pre-publish gate now requires `gamma-closeout.md`. | α R2 (fc50265) |
+| F4 | β R1 | B, judgment | **Immediate MCA, landed α R2.** `post-release/SKILL.md` §5.6 references canonical filename set. | α R2 (fc50265) |
+| γ-O1 | γ self-obs | process | **Project MCI** → addressed prospectively by #286 named operator-decision points (mid-cycle issue rewrites + scope expansion = pause for operator). Also fold into #287 by example. | this PRA + #286 AC6 |
+| γ-O2 | γ self-obs | process | **Immediate MCA candidate, deferred to #287.** γ should pause for operator at "scope expansion" decision-point *before* committing local files. The rule lives in #286 §1.4 AC6 not yet in the executable spec. Patch lands when #286 ships; not a one-line skill fix. | #286 AC6 (deferred) |
+| β-O3 (Monitor) | β close-out | tooling | **Project MCI** → file as enhancement to CDD §Tracking. `git fetch --quiet origin` masks network/auth flakes; `--quiet` should be replaced by stderr-aware variant or §Tracking should require an explicit reachability re-probe on N successive empty transitions. Not a one-line fix; out of #283 scope. | next-cycle MCA (note in #287 close-out + file follow-up if not folded) |
+| β-O4 (lifecycle-skill drift) | β close-out + α self-coherence | skill | **Immediate MCA, landed in this PRA's §6 patches.** `alpha/SKILL.md` §2.6 row 9 (post-patch re-audit) expanded to enumerate role-skill peer surfaces *and* lifecycle-skill peer surfaces as separate enumeration classes. See §6 below. | this PRA §6 + a separate skill-patch commit |
+| β-process-gap-1 (first-cycle pattern) | β close-out | process | **Drop with reason.** This is irreducible — a cycle implementing its own protocol cannot pre-test its output. The corrections (rework + cherry-pick) are the cost. Future protocol-change cycles will hit the same shape. | (no patch) |
+| β-process-gap-2 (re-audit checklist) | β close-out | skill | **Same as β-O4 above** — single immediate MCA covers both surfacings. | this PRA §6 |
+
+**Net:** 4 review findings closed in α R2 (immediate MCA each); 1 immediate MCA landed in this PRA's §6 (re-audit checklist); 2 project MCIs (mid-cycle-rewrite rule deferred to #286, Monitor `git fetch` reliability deferred to next-cycle MCA); 1 explicit drop. Zero "noted" without disposition.
+
+### 4b. Cycle Iteration
+
+**Triggers fired:**
+
+- [x] **avoidable tooling/environmental failure** — β's Monitor polling silent failure (`git fetch --quiet` masking network flake) + γ's mid-cycle issue rewrites compounding with it. β's task IDs `b6vala0kx`/`b2m54i3kr`/`b3ak6xcyg`/`beu5utmvj` all timed out without preceding `branch-update:` events; γ's own Monitor saw the same shape (re-armed 5+ times). Operator manually surfaced cross-role activity.
+- [x] **loaded skill failed to prevent a finding** — `alpha/SKILL.md` §2.6 row 9 (post-patch re-audit, including peer enumeration) was loaded by α and listed as cleared in `self-coherence.md` §Pre-review gate, but did not catch F2/F3/F4 in lifecycle skills (`release/`, `post-release/`). The audit's checklist treats role-skill peers and lifecycle-skill peers as one undifferentiated set.
+- [ ] review rounds > 2 — actual: 2 (at threshold, not exceeding)
+- [ ] mechanical ratio > 20% — actual: 0% (0 mechanical / 4 judgment), and total findings = 4 (below the ≥10 floor anyway)
+
+**Friction log:**
+
+- α R1 commit (`aac0607`) was structurally rewritten as `1aaf9fb` after γ's mid-cycle issue body simplification. Rework cost: ~all of α R1's diff against the cycle dir was redone with descriptive filenames.
+- β R1 verdict landed on a separate harness-given β-side branch (`claude/implement-beta-skill-loading-ZXWKe@1ceb99c`) instead of the cycle branch, requiring same-cycle cherry-pick (`8d78514`) once γ resolved F1.
+- β's Monitor missed three α-branch SHA transitions during round-2 dispatch; operator surfaced manually.
+- γ's own Monitor across the cycle re-armed 5+ times before any role-side transition surfaced; same root pattern.
+- γ committed local CDD edits (eb48e17, scope expansion) *after* β's R2 approval, then rolled back when operator chose hygiene; one local commit reset, one issue-body revert.
+
+**Root cause:**
+
+- For loaded-skill miss (β-O4): `alpha/SKILL.md` §2.6 row 9 does not distinguish lifecycle-skill peer surfaces (Tier 1c — `release/`, `post-release/`, `review/`) from role-skill peer surfaces (`alpha/`, `beta/`, `gamma/`, `operator/`). When an upstream contract shifts (e.g. "all role artifacts on the cycle branch"), downstream lifecycle skills drift more than upstream role skills because they encode the contract operationally. α's re-audit covered role-skill peers and missed lifecycle-skill peers.
+- For avoidable tooling failure (β-O3): `git fetch --quiet origin` masks network/auth flakes. The §Tracking polling spec names the synchronous-baseline-pull rule but does not name the underlying transport reliability layer as an explicit dependency. When fetch silently returns stale data, the per-iteration refs comparison sees `cur == prev` and emits nothing.
+- Both root causes are skill / spec gaps, not agent failures. The agents executed the loaded skills correctly; the skills themselves missed a structural distinction.
+
+**Skill impact:**
+
+- `alpha/SKILL.md` §2.6 row 9 should be patched now (immediate MCA, see §6 below) to enumerate role-skill peers and lifecycle-skill peers as separate enumeration classes.
+- `CDD.md` §Tracking should be patched in a future cycle (likely #287 or separate follow-up) to name the `git fetch` reliability layer as an explicit dependency, with a reachability re-probe on N successive empty transitions.
+
+**MCA:**
+
+- Skill patch landed here (alpha/SKILL.md §2.6 row 9 — see §6).
+- Project MCI filed for `git fetch --quiet` reliability — to be folded into #287 close-out or filed as a separate follow-up if not addressed by #287's branch-polling rewrite.
+
+**Cycle level:**
+
+- **L5** (cycle cap; diff is L7).
+- Diff is L7: the cycle ships an MCA that eliminates a friction class (PR-coordination ceremony) for all future cycles. System boundary changed; friction disappears, not just locally fixed.
+- Cycle execution caps at L5: cross-surface drift (F2/F3/F4 in lifecycle skills) reached review per §9.1 L6 trigger, *and* avoidable tooling failure fired per §9.1 L6 trigger. Both are L6-level triggers; cycle level = below the lowest cleanly-cleared = L5.
+- Justification: the L7 diff is real and ships, but it was produced by an L5-execution-quality cycle. β's release commit row provisionally said "L6 cycle cap"; γ revises to L5 because two §9.1 triggers fire (β surfaced both, γ confirms).
