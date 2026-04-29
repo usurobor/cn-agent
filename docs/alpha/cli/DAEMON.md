@@ -4,7 +4,7 @@
 **Created:** 2026-02-05
 **Updated:** 2026-03-12
 
-> **See also:** [SCHEDULER-v3.7.0](SCHEDULER-v3.7.0.md) — the unified scheduler
+> **See also:** [SCHEDULER-v3.7.0](../agent-runtime/3.7.0/DESIGN.md) — the unified scheduler
 > design that implements the core of this vision. The plugin architecture below
 > remains a future direction.
 
@@ -118,11 +118,11 @@ cn enforces security by architecture:
 
 This means agents **cannot go rogue** — they can only affect their designated space through controlled, audited operations.
 
-See [SECURITY-MODEL.md](./SECURITY-MODEL.md) for full details.
+See [SECURITY-MODEL.md](../security/SECURITY-MODEL.md) for full details.
 
 ## Open Questions
 
-- ~~Daemon process management~~ → systemd (documented in [AUTOMATION.md](../how-to/AUTOMATION.md))
+- ~~Daemon process management~~ → systemd (documented in [AUTOMATION.md](../../beta/guides/AUTOMATION.md))
 - Plugin discovery and loading (future)
 - ~~Config format~~ → `.cn/config.json` with `runtime.scheduler` block
 - ~~Telegram auth/tokens~~ → `.cn/secrets.env` or env vars
@@ -130,4 +130,4 @@ See [SECURITY-MODEL.md](./SECURITY-MODEL.md) for full details.
 
 ---
 
-*Original vision doc. See [SCHEDULER-v3.7.0](SCHEDULER-v3.7.0.md) for current implementation.*
+*Original vision doc. See [SCHEDULER-v3.7.0](../agent-runtime/3.7.0/DESIGN.md) for current implementation.*

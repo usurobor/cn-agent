@@ -5,7 +5,7 @@
 **Version:** 1.0
 **Audience:** Operators, runtime implementers, incident responders
 **Supersedes:** ad hoc operational logging model in `LOGGING.md`
-**Complements:** [`CAA.md`](CAA.md), [`AGENT-RUNTIME.md`](AGENT-RUNTIME.md), [`CAR.md`](CAR.md)
+**Complements:** [`CAA.md`](../agent-runtime/CAA.md), [`AGENT-RUNTIME.md`](../agent-runtime/AGENT-RUNTIME.md), [`CAR.md`](../cognitive-substrate/CAR.md)
 
 ---
 
@@ -569,7 +569,7 @@ Each blocked/fallback event SHOULD include a `reason_code`:
 - `xml_tool_syntax` — pseudo-tool XML wrappers (`<observe>`, `<fs_read>`, etc.)
 - `no_presentation_payload` — no safe candidate available
 
-See: [AGENT-RUNTIME §v3.6.0](./AGENT-RUNTIME.md) for the output-plane separation spec.
+See: [AGENT-RUNTIME §v3.6.0](../agent-runtime/AGENT-RUNTIME.md) for the output-plane separation spec.
 
 ### 12.2 Idempotency trace
 
@@ -736,8 +736,8 @@ This replaces ad hoc lifecycle logging with a system that can answer, from files
 
 ## Related
 
-- [`AGENT-RUNTIME.md`](AGENT-RUNTIME.md) — runtime lifecycle this document observes
-- [`CAA.md`](CAA.md) — capability architecture whose execution events are traced
-- [`CAR.md`](CAR.md) — package resolver whose load events are traced
+- [`AGENT-RUNTIME.md`](../agent-runtime/AGENT-RUNTIME.md) — runtime lifecycle this document observes
+- [`CAA.md`](../agent-runtime/CAA.md) — capability architecture whose execution events are traced
+- [`CAR.md`](../cognitive-substrate/CAR.md) — package resolver whose load events are traced
 - [`SECURITY-MODEL.md`](SECURITY-MODEL.md) — audit trail as security mechanism
-- [`AUDIT.md`](AUDIT.md) — audit architecture
+- [`AUDIT.md`](../../beta/evidence/AUDIT.md) — audit architecture

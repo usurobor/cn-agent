@@ -3,7 +3,7 @@
 
 **Status:** Draft
 **Date:** 2026-03-21
-**Implements:** [`N-PASS-BIND-v3.8.0.md`](../../alpha/N-PASS-BIND-v3.8.0.md)
+**Implements:** [`N-PASS-BIND-v3.8.0.md`](../../alpha/agent-runtime/3.8.0/N-PASS-BIND.md)
 **Scope:** Replace the hardcoded two-pass orchestration with a bounded N-pass bind loop and add sink-aware processing indicators (Telegram typing first).
 **Issues:** #50, #48
 

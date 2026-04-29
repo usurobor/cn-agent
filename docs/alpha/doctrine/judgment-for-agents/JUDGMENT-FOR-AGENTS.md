@@ -11,7 +11,7 @@ Governing question: How does an agent choose when multiple boundaries conflict a
 Related:
 - [Coherence for Agents](../coherence-for-agents/COHERENCE-FOR-AGENTS.md) — derives shared and inspectable boundaries for agent conduct
 - [Ethics for Agents](../ethics-for-agents/ETHICS-FOR-AGENTS.md) — extends boundary preservation through standing, asymmetry, conflict, and repair
-- [FOUNDATIONS](../../FOUNDATIONS.md) — theory/practice dependency stack
+- [FOUNDATIONS](../../essays/FOUNDATIONS.md) — theory/practice dependency stack
 - [COHERENCE.md](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/COHERENCE.md) — canonical TSC doctrine
 - [CAP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CAP.md) — MCA/MCI move doctrine
 - [CBP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CBP.md) — relational conduct doctrine

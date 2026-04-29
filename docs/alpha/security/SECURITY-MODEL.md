@@ -31,7 +31,7 @@ Security by architecture: the agent has no direct access to git or filesystem. A
 +-------------------------------------+
 ```
 
-The agent's direct I/O is exactly two files (`state/input.md` for reading, `state/output.md` for writing). Post-call, `cn` may execute governed typed ops on the agent's behalf (see CN Shell Addendum below), but the agent itself never touches additional files. `cn` reads the output, validates the requested operations against FSM state transitions, and executes only valid ones. See [PROTOCOL.md](PROTOCOL.md) for the typed state machines that enforce protocol correctness.
+The agent's direct I/O is exactly two files (`state/input.md` for reading, `state/output.md` for writing). Post-call, `cn` may execute governed typed ops on the agent's behalf (see CN Shell Addendum below), but the agent itself never touches additional files. `cn` reads the output, validates the requested operations against FSM state transitions, and executes only valid ones. See [PROTOCOL.md](../protocol/PROTOCOL.md) for the typed state machines that enforce protocol correctness.
 
 ## Attack Surface Reduction
 
@@ -115,7 +115,7 @@ All transition functions return `Ok state | Error string`. Invalid transitions a
 
 ## CN Shell Addendum (v3.3+)
 
-The CN Shell capability runtime ([AGENT-RUNTIME.md](AGENT-RUNTIME.md), §CN Shell) introduces governed post-call capabilities (`fs_read`, `fs_write`, `git_diff`, `exec`, etc.) that extend the agent's vocabulary beyond coordination ops. This does NOT change the core security architecture — it refines it:
+The CN Shell capability runtime ([AGENT-RUNTIME.md](../agent-runtime/AGENT-RUNTIME.md), §CN Shell) introduces governed post-call capabilities (`fs_read`, `fs_write`, `git_diff`, `exec`, etc.) that extend the agent's vocabulary beyond coordination ops. This does NOT change the core security architecture — it refines it:
 
 | Property | Pre-CN Shell | With CN Shell |
 |----------|-------------|---------------|
@@ -155,4 +155,4 @@ Security is enforced across the module stack:
 | `cn_commands.ml` | Peer add/remove, commit/push scoped to hub |
 | `cn_hub.ml` | Hub discovery, path constants |
 
-See [ARCHITECTURE.md](../beta/architecture/ARCHITECTURE.md) for module structure and dependency layers.
+See [ARCHITECTURE.md](../../beta/architecture/ARCHITECTURE.md) for module structure and dependency layers.

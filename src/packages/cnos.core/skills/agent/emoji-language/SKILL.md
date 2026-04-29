@@ -64,7 +64,7 @@ emoji shorthand → structured shorthand → CTB expressions
 
 This skill is the first layer. As patterns stabilize, frequently-used sequences become structured commands. Eventually, the most precise operations graduate to CTB expressions for deterministic, verifiable agent coordination.
 
-See: [CTB v4.0.0 Vision](docs/alpha/ctb/CTB-v4.0.0-VISION.md)
+See: [CTB v4.0.0 Vision](../../../../../../docs/alpha/ctb/CTB-v4.0.0-VISION.md)
 
 ## 5. Anti-patterns
 

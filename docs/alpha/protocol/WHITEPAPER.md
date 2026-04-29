@@ -14,7 +14,7 @@ date: 2026-03-13
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-03-13
 
-> **Scope:** This paper defines the CN protocol and Git substrate thesis. It does not explain the full cnos system architecture. For cnos as a recurrent coherence system, see [`THESIS.md`](../THESIS.md).
+> **Scope:** This paper defines the CN protocol and Git substrate thesis. It does not explain the full cnos system architecture. For cnos as a recurrent coherence system, see [`THESIS.md`](../../THESIS.md).
 
 ---
 
@@ -327,12 +327,12 @@ The cnos project implements this protocol and extends it with layers not specifi
 
 | Layer | Document | Scope |
 |-------|----------|-------|
-| **System thesis** | [`THESIS.md`](../THESIS.md) | cnos as a recurrent coherence system |
-| **Agent architecture** | [`CAA.md`](./CAA.md) | Structural definition of a coherent agent |
-| **Runtime** | [`AGENT-RUNTIME.md`](./AGENT-RUNTIME.md) | CN Shell, typed ops, N-pass orchestration |
-| **Cognitive packages** | [`CAR.md`](./CAR.md) | Local, versioned, installable cognition |
-| **Observability** | [`TRACEABILITY.md`](./TRACEABILITY.md) | Reconstructable mind/body/sensor state |
-| **Development method** | [`CDD.md`](../gamma/cdd/CDD.md) | Coherence-driven development |
+| **System thesis** | [`THESIS.md`](../../THESIS.md) | cnos as a recurrent coherence system |
+| **Agent architecture** | [`CAA.md`](../agent-runtime/CAA.md) | Structural definition of a coherent agent |
+| **Runtime** | [`AGENT-RUNTIME.md`](../agent-runtime/AGENT-RUNTIME.md) | CN Shell, typed ops, N-pass orchestration |
+| **Cognitive packages** | [`CAR.md`](../cognitive-substrate/CAR.md) | Local, versioned, installable cognition |
+| **Observability** | [`TRACEABILITY.md`](../security/TRACEABILITY.md) | Reconstructable mind/body/sensor state |
+| **Development method** | [`CDD.md`](../../gamma/cdd/CDD.md) | Coherence-driven development |
 
 This paper does not track cnos implementation status. For current system architecture, start with THESIS.md.
 

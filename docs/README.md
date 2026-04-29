@@ -22,7 +22,7 @@ Then choose your path:
 | Understand the formal foundation | [TSC repo](https://github.com/usurobor/tsc) → [C≡](https://github.com/usurobor/tsc/blob/main/spec/c-equiv.md) → [TSC Core](https://github.com/usurobor/tsc/blob/main/spec/tsc-core.md) → [TSC Oper](https://github.com/usurobor/tsc/blob/main/spec/tsc-oper.md) |
 | Understand the runtime extensions model | [RUNTIME-EXTENSIONS.md](./alpha/runtime-extensions/RUNTIME-EXTENSIONS.md) → [runtime-extensions bundle](./alpha/runtime-extensions/) |
 | Write or modify a skill | [WRITE-A-SKILL.md](./beta/guides/WRITE-A-SKILL.md) → [COGNITIVE-SUBSTRATE.md](./alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md) |
-| Do a release | [release skill](../packages/cnos.core/skills/release/SKILL.md) → [BUILD-RELEASE.md](./beta/guides/BUILD-RELEASE.md) |
+| Do a release | [release skill](../src/packages/cnos.cdd/skills/cdd/release/SKILL.md) → [BUILD-RELEASE.md](./beta/guides/BUILD-RELEASE.md) |
 
 ---
 
@@ -88,10 +88,10 @@ The substance of the system — doctrine, specs, definitions.
 
 | Document | Feature | Version |
 |----------|---------|---------|
-| [RUNTIME-CONTRACT-v3.10.0.md](./alpha/RUNTIME-CONTRACT-v3.10.0.md) | Wake-up self-model contract | 3.10.0 |
-| [N-PASS-BIND-v3.8.0.md](./alpha/N-PASS-BIND-v3.8.0.md) | N-pass bind loop and indicators | 3.8.0 |
-| [SYSCALL-SURFACE-v3.8.0.md](./alpha/SYSCALL-SURFACE-v3.8.0.md) | Syscall surface redesign | 3.8.0 |
-| [SCHEDULER-v3.7.0.md](./alpha/SCHEDULER-v3.7.0.md) | Scheduler design | 3.7.0 |
+| [RUNTIME-CONTRACT-v3.10.0.md](./alpha/agent-runtime/3.10.0/DESIGN.md) | Wake-up self-model contract | 3.10.0 |
+| [N-PASS-BIND-v3.8.0.md](./alpha/agent-runtime/3.8.0/N-PASS-BIND.md) | N-pass bind loop and indicators | 3.8.0 |
+| [SYSCALL-SURFACE-v3.8.0.md](./alpha/agent-runtime/3.8.0/SYSCALL-SURFACE.md) | Syscall surface redesign | 3.8.0 |
+| [SCHEDULER-v3.7.0.md](./alpha/agent-runtime/3.7.0/DESIGN.md) | Scheduler design | 3.7.0 |
 | [CTB-v4.0.0-VISION.md](./alpha/ctb/CTB-v4.0.0-VISION.md) | CTB v4.0.0 vision: agent-composition language | 4.0.0 |
 
 **Feature bundles:**

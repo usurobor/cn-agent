@@ -254,7 +254,7 @@ The same contract is persisted to `state/runtime-contract.json` for:
 - `cn doctor` validation
 - traceability reference
 
-See [`RUNTIME-CONTRACT-v2.md`](RUNTIME-CONTRACT-v2.md) for full design.
+See [`RUNTIME-CONTRACT-v2.md`](../agent-runtime/RUNTIME-CONTRACT-v2.md) for full design.
 
 ---
 

@@ -15,7 +15,7 @@
 
 | Document | Status | Action | Notes |
 |----------|--------|--------|-------|
-| **ARCHITECTURE.md** | NEW | Created | Top-level entry point. See [../ARCHITECTURE.md](../ARCHITECTURE.md) |
+| **ARCHITECTURE.md** | NEW | Created | Top-level entry point. See [../architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md) |
 | **MANIFESTO.md** | Current | Keep | Foundational values doc. Not a technical spec. |
 | **WHITEPAPER.md** | Moved | Current | CN protocol spec (v3.0.0). §10 rewritten as relationship table. System thesis in `docs/THESIS.md`. |
 | **WHITEPAPER-v2.0.3.pdf** | Current | Keep | PDF companion to whitepaper. |

@@ -1,0 +1,35 @@
+# lychee link checker config
+#
+# Used by the I4 link-validation job in .github/workflows/coherence.yml to
+# scan **/*.md across the repo. Each `exclude` regex below is a known
+# pre-existing broken reference being tracked for burn-down.
+#
+# Tracker: https://github.com/usurobor/cnos/issues/300
+# Target: keep this list under 50 entries; remove entries as the underlying
+# debt is resolved.
+
+exclude = [
+    # docs/beta/architecture/3.14.4/ARCHITECTURE.md is a frozen historical
+    # snapshot of the canonical architecture doc. Its relative-path links
+    # predate the docs reorg and resolve outside the repo. The canonical at
+    # docs/beta/architecture/ARCHITECTURE.md has been fixed. Snapshots are
+    # read-only by repository policy and are not maintained against later
+    # tree reshuffles.
+    "file://.*/docs/beta/architecture/alpha/.*",
+    "file://.*/docs/beta/architecture/gamma/CDD\\.md$",
+    "file://.*/docs/beta/architecture/THESIS\\.md$",
+    "file://.*/docs/beta/architecture/3\\.14\\.4/evidence/AUDIT\\.md$",
+
+    # docs/alpha/runtime-extensions/1.0.6/README.md is a frozen snapshot
+    # ("MUST NOT be modified in later commits"). Its `../../RUNTIME-EXTENSIONS.md`
+    # back-link was correct at the time of freeze (when the canonical lived one
+    # level higher) but resolves outside the bundle today.
+    "file://.*/docs/alpha/RUNTIME-EXTENSIONS\\.md$",
+
+    # src/packages/cnos.cdd/skills/cdd/issue/SKILL.md teaches issue-authoring
+    # by example; the schema placeholders `(...)` and `(link)` are
+    # illustrative text, not real link targets. Lychee parses them as broken
+    # links because the surrounding markdown is `[text](placeholder)`.
+    "file://.*/src/packages/cnos\\.cdd/skills/cdd/issue/\\.{3}$",
+    "file://.*/src/packages/cnos\\.cdd/skills/cdd/issue/link$",
+]

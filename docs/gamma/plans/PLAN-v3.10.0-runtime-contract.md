@@ -3,7 +3,7 @@
 
 **Status:** Draft
 **Date:** 2026-03-23
-**Implements:** [`RUNTIME-CONTRACT-v3.10.0.md`](../../alpha/RUNTIME-CONTRACT-v3.10.0.md)
+**Implements:** [`RUNTIME-CONTRACT-v3.10.0.md`](../../alpha/agent-runtime/3.10.0/DESIGN.md)
 **Scope:** Replace overloaded capabilities block with structured Runtime Contract (self_model + workspace + capabilities).
 **Issues:** #56
 

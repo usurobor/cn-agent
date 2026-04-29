@@ -188,7 +188,7 @@ All state machines live in `cn_protocol.ml`. States are algebraic types. Transit
 | Transport Sender | Pending → BranchCreated → Pushing → Pushed → Delivered | Outbox delivery |
 | Transport Receiver | Fetched → Materializing → Materialized → Cleaned | Inbox materialization |
 
-Full state diagrams and transition tables: [PROTOCOL.md](../alpha/protocol/PROTOCOL.md).
+Full state diagrams and transition tables: [PROTOCOL.md](../../alpha/protocol/PROTOCOL.md).
 
 ### How they compose
 
@@ -252,10 +252,10 @@ hub/
 
 | Document | Relation |
 |----------|----------|
-| [THESIS.md](../THESIS.md) | The whole — this doc maps its internal relations |
-| [COHERENCE-SYSTEM.md](../alpha/doctrine/COHERENCE-SYSTEM.md) | Meta-model that this doc makes relational |
-| [CAA.md](../alpha/agent-runtime/CAA.md) | Agent structure — this doc maps it to runtime modules |
-| [AGENT-RUNTIME.md](../alpha/agent-runtime/AGENT-RUNTIME.md) | Runtime spec — this doc shows how it relates to FSMs and observability |
-| [PROTOCOL.md](../alpha/protocol/PROTOCOL.md) | FSM design — this doc shows how FSMs compose |
-| [CDD.md](../gamma/cdd/CDD.md) | Development method — governs how all these relations evolve |
-| [AUDIT.md](./evidence/AUDIT.md) | Evidence — tracks which relations are current vs stale |
+| [THESIS.md](../../THESIS.md) | The whole — this doc maps its internal relations |
+| [COHERENCE-SYSTEM.md](../../alpha/essays/COHERENCE-SYSTEM.md) | Meta-model that this doc makes relational |
+| [CAA.md](../../alpha/agent-runtime/CAA.md) | Agent structure — this doc maps it to runtime modules |
+| [AGENT-RUNTIME.md](../../alpha/agent-runtime/AGENT-RUNTIME.md) | Runtime spec — this doc shows how it relates to FSMs and observability |
+| [PROTOCOL.md](../../alpha/protocol/PROTOCOL.md) | FSM design — this doc shows how FSMs compose |
+| [CDD.md](../../gamma/cdd/CDD.md) | Development method — governs how all these relations evolve |
+| [AUDIT.md](../evidence/AUDIT.md) | Evidence — tracks which relations are current vs stale |
