@@ -15,7 +15,7 @@ scope: role-local
 inputs:
   - γ dispatch prompts
   - external gate requests from α/β/γ
-  - cycle state (issue, PR, CI)
+  - cycle state (issue, branch, .cdd/unreleased/{N}/, CI)
 outputs:
   - routed prompts to agent sessions
   - external gate decisions (merge, tag, issue filing)
@@ -66,7 +66,7 @@ Before dispatch, confirm which agent session runs α and which runs β. If only 
 
 ### 2.1. Do not poll internal work
 
-Once dispatched, the triad runs. The operator does not need to monitor PR diffs, review comments, or CI runs — γ owns that.
+Once dispatched, the triad runs. The operator does not need to monitor branch diffs, `.cdd/unreleased/{N}/` files, or CI runs — γ owns that.
 
 The operator's wake-up signals are:
 
@@ -77,7 +77,7 @@ The operator's wake-up signals are:
 
 Between these signals, the operator's correct action is nothing.
 
-- ❌ Check the PR every 30 minutes and suggest changes
+- ❌ Check the branch every 30 minutes and suggest changes
 - ❌ Heartbeat reveals cycle state (tag missing, branches exist) → δ acts on it (observation is not a gate request)
 - ✅ Wait for γ to surface a gate or decision request
 - ✅ Heartbeat reveals cycle state → δ notes it, waits for γ
@@ -94,13 +94,22 @@ prev=""; while true; do
 done
 ```
 
-Run under `Monitor` or equivalent. 5-minute interval is sufficient for δ — γ owns the tight loop. Supplement with PR polling once a PR exists:
+Run under `Monitor` or equivalent. 5-minute interval is sufficient for δ — γ owns the tight loop. Supplement with branch + `.cdd/unreleased/` polling once cycles are active:
 
 ```bash
-prev=""; while true; do
-  cur="$(gh pr list --repo owner/repo --search 'is:open' --json number,title --jq '.[].number' | sort)"
-  comm -13 <(echo "$prev") <(echo "$cur") | sed 's/^/new-pr: /'
-  prev="$cur"; sleep 300
+prev_branches=""; declare -A prev_head
+while true; do
+  cd /path/to/repo && git fetch --quiet origin
+  cur_branches="$(git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g' | sort)"
+  comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
+  # Per-branch head SHA — cycle artifacts live on cycle branches, not on main.
+  for b in $cur_branches; do
+    cur_head="$(git rev-parse "$b" 2>/dev/null)"
+    [ "$cur_head" != "${prev_head[$b]:-}" ] && [ -n "$cur_head" ] && echo "branch-update: $b → $cur_head"
+    prev_head[$b]="$cur_head"
+  done
+  prev_branches="$cur_branches"
+  sleep 300
 done
 ```
 
@@ -114,7 +123,8 @@ These actions require platform permissions agents may lack:
 
 | Action | Trigger | Who requests |
 |--------|---------|-------------|
-| PR merge | β approves, merge ready | β or γ |
+| Branch merge to main | β approves, merge ready (β runs `git merge` itself unless env restricts push to main) | β or γ |
+| Push to main | β cannot push directly | β or γ |
 | Tag push | Release tagged | β or γ |
 | Branch delete | Cycle closed, merged branches | γ |
 | Issue filing on external repos | Cross-project dependency | γ |
@@ -126,7 +136,7 @@ These actions require platform permissions agents may lack:
 Gate actions fire when a role requests them, not when δ notices they're needed. Observing that a tag isn't pushed or a branch exists is not a gate trigger — γ's explicit request is.
 
 - ❌ Heartbeat shows tag not pushed → δ pushes it (role leak: δ decided the gate, not γ)
-- ❌ "β asked me to merge but I think we should wait for one more review"
+- ❌ "β asked me to push the merge but I think we should wait for one more review"
 - ✅ γ requests tag push → δ pushes it and confirms
 - ✅ If you disagree with a gate request, declare an override (§4)
 
@@ -213,7 +223,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 |-------|----------------|----------|
 | Pre-dispatch | Receive γ prompts, confirm agent mapping | γ dispatch |
 | Dispatch | Deliver prompts to agent sessions | — |
-| Implementation | Nothing | α PR or γ unblock request |
+| Implementation | Nothing | α's `.cdd/unreleased/{N}/self-coherence.md` review-readiness signal or γ unblock request |
 | Review | Nothing | β verdict or γ unblock request |
 | Release | Gate actions if requested (merge, tag) | β or γ gate request |
 | Closure | Gate actions if requested (branch delete, issue close) | γ closure declaration |
@@ -247,7 +257,7 @@ Execute the operator role through the full cycle.
 
 #### Common failures
 
-- Checking the PR during review and suggesting changes (role leak into β)
+- Checking the branch during review and suggesting changes (role leak into β)
 - Merging before β approves (gate fired early)
 - Rewriting γ's prompts before delivering (role leak into γ)
 

@@ -76,9 +76,9 @@ The artifact has the following sections:
 **CDD improvement disposition:** (patch landed: [description] / no patch needed: [justification])
 
 ### 4. Review Quality
-**PRs this cycle:** N
+**Cycles this release:** N
 **Avg review rounds:** N.N (target: ≤1 docs, ≤2 code)
-**Superseded PRs:** N (target: 0)
+**Superseded cycles:** N (target: 0)
 **Finding breakdown:** N mechanical / N judgment / N total
 **Mechanical ratio:** N% (threshold: 20% → file process issue)
 **Action:** none / filed #NN
@@ -184,7 +184,7 @@ Type: `feature` (design/code gap) or `process` (development method gap).
 
 Lag levels:
 - **none** — shipped in this or prior release
-- **low** — implementation in progress (branch exists, PR open)
+- **low** — implementation in progress (branch exists, `.cdd/unreleased/{N}/self-coherence.md` present)
 - **growing** — design converged, no implementation started
 - **stale** — design aging without implementation plan
 
@@ -210,9 +210,9 @@ Answer three questions:
 
 ### Step 5.5: Review quality
 
-For every PR in this release cycle, record:
-1. **Review rounds** — how many iterations before merge (fix commits + review comments requesting changes). Target: ≤1 for docs PRs, ≤2 for code PRs.
-2. **Superseded PRs** — count of PRs closed-not-merged and replaced. Target: 0.
+For every triadic cycle in this release, record:
+1. **Review rounds** — how many iterations before merge (fix-round appendices in `.cdd/unreleased/{N}/self-coherence.md` + RC verdicts in `.cdd/unreleased/{N}/beta-review.md`). Target: ≤1 for docs cycles, ≤2 for code cycles.
+2. **Superseded cycles** — count of branches abandoned-not-merged and replaced. Target: 0.
 3. **Finding taxonomy** — tag each review finding as `mechanical` (automatable: stale cross-refs, missing scope items, wrong branch name) or `judgment` (design coherence, architecture trade-offs).
 4. **Mechanical ratio** — mechanical findings / total findings. If >20% AND total findings ≥ 10, file an issue to add the missing pre-flight check. Below 10 findings the ratio is noise — note it but don't file.
 
@@ -223,7 +223,7 @@ This step closes the loop from CDD §9 (Assessment). The review quality section 
 Did this cycle itself follow CDD coherently? Score each axis 1–4. The branch-level SELF-COHERENCE.md uses the template at `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md`; this assessment-level check uses the same triadic axes:
 
 - **CDD α (artifact integrity):** required artifacts present? Bootstrap/frozen snapshot complete? Self-coherence present?
-- **CDD β (surface agreement):** canonical doc, executable skill, PR artifacts, changelog, and assessment agree? Authority conflicts or stale references?
+- **CDD β (surface agreement):** canonical doc, executable skill, `.cdd/unreleased/{N}/` cycle artifacts (per the canonical filename set in `CDD.md` §Tracking), changelog, and assessment agree? Authority conflicts or stale references?
 - **CDD γ (cycle economics):** review rounds within target? Superseded PRs low? Mechanical ratio under threshold? Immediate outputs executed, deferred outputs committed?
 
 ```markdown
@@ -325,7 +325,7 @@ Before committing the assessment, verify mechanically:
 - [ ] §2 has encoding lag table with every open design/process issue
 - [ ] §2 has MCI/MCA balance decision with rationale
 - [ ] §3 has What went wrong, What went right, Skill patches, Active skill re-evaluation, and explicit disposition on CDD improvement (patch landed OR "no patch needed" with justification)
-- [ ] §4 has all fields: PRs, review rounds, superseded PRs, finding breakdown, mechanical ratio, action
+- [ ] §4 has all fields: cycles, review rounds, superseded cycles, finding breakdown, mechanical ratio, action
 - [ ] §4 mechanical ratio: if >20% AND total findings ≥ 10, a process issue is **filed and referenced** (not just noted). Below 10 findings, note the ratio but no filing required.
 - [ ] §4a CDD self-coherence: α/β/γ scored, weakest axis named, action stated (or "none" if all ≥3)
 - [ ] If any `CDD.md` §9.1 trigger fired, §4b Cycle Iteration exists with trigger, root cause, disposition, and evidence.
@@ -337,7 +337,7 @@ Before committing the assessment, verify mechanically:
 - [ ] CHANGELOG TSC row added or updated to match assessment scores
 - [ ] §8 Hub memory: daily reflection written and pushed to hub repo
 - [ ] §8 Hub memory: at least one adhoc thread updated (or explicit note why none applies)
-- [ ] If the triadic protocol is active, `.cdd/.../gamma/CLOSE-OUT.md` exists and reflects α close-out, β close-out, γ triage, and final cycle status
+- [ ] If the triadic protocol is active, `.cdd/unreleased/{N}/gamma-closeout.md` (in-version) or `.cdd/releases/{X.Y.Z}/{N}/gamma-closeout.md` (post-release) exists and reflects α close-out, β close-out, γ triage, and final cycle status. (Legacy aggregate `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` is warn-only per `CDD.md` §5.3a; do not require it.)
 
 This gate is mechanical. Two agents checking the same template must find the same missing fields.
 

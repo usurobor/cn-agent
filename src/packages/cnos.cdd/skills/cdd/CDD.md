@@ -59,7 +59,7 @@ A change is substantial when one or more of the following are true:
 A change may take the small-change path when it is narrowly local, low-risk, and does not need a frozen snapshot. In the small-change path:
 
 - bootstrap does not apply
-- the coherence contract may live in the commit message or PR body
+- the coherence contract may live in the commit message or `.cdd/unreleased/{N}/self-coherence.md`
 - self-coherence is optional
 - the author still owes a named incoherence and an explicit scope
 
@@ -95,7 +95,7 @@ These are operational roles. They are not a claim that every cycle always uses t
 | Role | Function | Steps owned | Responsibility | Identity constraint |
 |------|----------|-------------|----------------|---------------------|
 | **γ (Coordinator)** | Orchestrate | 0–1 + 11–13 + cycle-wide | Observe, select, issue creation, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification, post-release assessment, cycle closure | Must hold full cycle context |
-| **α (Implementer)** | Produce | 2–7a | Branch, bootstrap, gap, mode, artifacts (tests/code/docs), self-coherence, pre-review readiness, PR | Must be separate from β |
+| **α (Implementer)** | Produce | 2–7a | Branch, bootstrap, gap, mode, artifacts (tests/code/docs), self-coherence, pre-review readiness, `.cdd/unreleased/{N}/self-coherence.md` review-readiness signal | Must be separate from β |
 | **β (Reviewer + Releaser)** | Judge and integrate | 8–10 | Review (RC/A decision), merge, tag, deploy, β close-out | Must be separate from α |
 | **δ (Operator)** | Route and disconnect | gates + 17 | Session routing, external gate execution (merge/tag/branch), post-cycle disconnect release | Owns platform actions agents cannot perform |
 
@@ -122,53 +122,95 @@ When the operator serves as γ (two-agent configuration), δ and γ collapse —
 #### Default flow
 
 ```text
-γ (issue + dispatch) → α (implement + PR) → β (review) → RC → α (fix) → β (re-review)
+γ (issue + dispatch) → α (implement + branch + .cdd/unreleased/{N}/self-coherence.md) → β (review) → RC → α (fix) → β (re-review)
                                                         → A  → β (merge, tag, deploy, assess)
                        γ (unblocks α or β when stuck)
 ```
 
-#### Tracking: periodic poll, not event subscription
+#### Tracking: artifact-driven coordination via `.cdd/unreleased/`
 
-GitHub event notifications are unreliable when agents share a GitHub identity (self-authored PR comments, CI status changes, and review events may not trigger notifications). **All roles must track issue and PR activity via periodic polling, not GitHub event subscriptions.**
+Triadic CDD coordination uses three repo-native surfaces:
 
-Polling has three parts: (a) the **query** that detects new state, (b) the **wake-up mechanism** that returns control to the role's session when state changes, and (c) **reachability verification** that the chosen query form actually works in the current environment. All three are mandatory.
+1. **GitHub Issues** — gap-naming surface. γ files; α/β/γ subscribe.
+2. **Git branches** — α's implementation isolation. β reads via `git diff main..{branch}`.
+3. **`.cdd/unreleased/{N}/`** — per-cycle directory. The single coordination surface during in-version work. `{N}` is the issue number. One directory per cycle; multiple files inside named for what they are.
+
+GitHub Pull Requests are **not** part of the triadic protocol. PR creation, polling, subscription, and comment threading add ceremony without value for agent-to-agent coordination — every action a PR records can be expressed as a write to a file in `.cdd/unreleased/{N}/` plus a branch commit. Issues remain (gap-naming); branches remain (isolation); PRs are removed.
+
+**Path layout:** `.cdd/unreleased/{N}/` (e.g. `.cdd/unreleased/283/`). Per-cycle directory keyed by issue number. **Role distinguished by filename, not by directory or by a rigid `{role}.md` shape.** A role may write multiple files (e.g. α writes `self-coherence.md` AND `alpha-closeout.md`); each file's name describes what it is. After release, `release/SKILL.md` §2.5a moves each cycle directory into `.cdd/releases/{X.Y.Z}/`.
+
+**Canonical filenames — what each role writes.**
+
+| File | Owner | Purpose | Minimum contents |
+|---|---|---|---|
+| `self-coherence.md` | α | Primary branch artifact: gap, mode, AC mapping, CDD Trace, review-readiness signal, fix-round appendices | gap, mode, active skills, impact graph, AC-by-AC evidence, CDD Trace through step 7a, known debt, review-readiness section per round (base SHA, head SHA, branch CI state, "ready for β" line), fix-round appendices when β returns RC |
+| `beta-review.md` | β | Review record across rounds | round-by-round verdict (RC / A), findings with severity + type, merge instruction (the `git merge` action β will execute on approval), provisional-vs-green CI state |
+| `alpha-closeout.md` | α | α close-out narrative (after merge) | cycle summary, findings α-side, friction log, observations and patterns, cycle-level engineering level reading; **factual observations only — no dispositions** (γ's job) |
+| `beta-closeout.md` | β | β close-out narrative + release evidence | review context, narrowing pattern across rounds, release evidence (commit SHA, tag, deploy validation), β-side findings; **factual observations only — no dispositions** |
+| `gamma-closeout.md` | γ | γ close-out triage + cycle iteration | close-out triage table (every finding from α + β + PRA → disposition), §9.1 trigger assessment, cycle iteration section if any trigger fired, deferred outputs, next-MCA commitment |
+
+Roles may add additional files when the cycle warrants it (e.g. `alpha-design.md` if a separate design artifact lives in the cycle dir, `gamma-dispatch.md` if dispatch evidence is large enough to deserve its own file). The filename pattern is `{role}-{purpose}.md` (e.g. `alpha-closeout.md`) for role-owned content, and bare `{purpose}.md` (e.g. `self-coherence.md`) for cycle-shared content where the convention identifies the author.
+
+**Coordination loop.**
+
+1. γ files issue #N, dispatches α and β
+2. α implements on a branch; writes `.cdd/unreleased/{N}/self-coherence.md` carrying the review-readiness signal
+3. β polls `.cdd/unreleased/{N}/`; on `self-coherence.md` review-readiness, reads `git diff main..{branch}` + the cycle dir + the issue
+4. β writes verdict to `.cdd/unreleased/{N}/beta-review.md`
+5. If RC: α appends fix-round to `.cdd/unreleased/{N}/self-coherence.md`, β reads and re-reviews (appends new round to `beta-review.md`)
+6. On A: β `git merge`s the branch into main (no `gh pr merge`), pushes, tags, deploys per `release/SKILL.md`
+7. After merge: α writes `.cdd/unreleased/{N}/alpha-closeout.md`; β writes `.cdd/unreleased/{N}/beta-closeout.md` (release evidence + close-out)
+8. γ reads `.cdd/unreleased/{N}/{alpha-closeout,beta-closeout}.md` and writes `.cdd/unreleased/{N}/gamma-closeout.md`, writes PRA, closes the cycle
+9. `release/SKILL.md` §2.5a moves `.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/` for every cycle that shipped in the release
+
+**Issue auto-close.** Use `Closes #N` or `Fixes #N` in the merge commit message (`git merge -m "Closes #N: ..."`) to auto-close on merge. If the convention is missed, γ closes via `gh issue close {N}`.
+
+**Polling.** All roles poll three surfaces:
+
+- **issue activity** — comments, label changes
+- **branch state** — new branches, head-SHA changes (β waits for α's branch + `self-coherence.md` review-readiness signal; γ tracks the full cycle)
+- **`.cdd/unreleased/{N}/` directory state** — new files, file mtime / blob-SHA changes (α waits for `beta-review.md` to land/update; β waits for `self-coherence.md` to update with a new fix-round; γ watches the whole dir)
+
+Polling has three parts: (a) the **query** that detects new state, (b) the **wake-up mechanism** that returns control to the role's session when state changes, and (c) **reachability verification** that the chosen query form works in the current environment. All three are mandatory.
 
 Polling without a wake-up mechanism is silent — the loop runs but the role never reacts. Polling with an unreachable query form is silent in the same way — the loop runs, returns empty or errors, and the role assumes nothing has happened.
 
-**Reachability preflight — run before committing to a query form.** The table below lists three query forms. They are not interchangeable — each has environment constraints:
+**Reachability preflight — run before committing to a query form.** The table below lists query forms. They are not interchangeable — each has environment constraints:
 
-- `gh` requires shell access and `gh auth` configured
+- `gh` requires shell access and `gh auth` configured (used only for issue activity, not PRs)
 - MCP tools require in-conversation invocation — they cannot run inside `Monitor` or background shell loops
 - `git fetch` requires network access to the git remote from the execution environment
 - Direct `api.github.com` access may be blocked by sandbox network policy
 
 Before starting a polling loop, **probe the chosen query form once synchronously** and confirm it returns real data. If it fails, fall back to the next available form. If no form is reachable, surface the gap to δ/operator before proceeding — do not silently assume polling is working.
 
-**Query — pick whichever is reachable in the environment.** Concrete equivalents:
+**Query — pick whichever is reachable in the environment.**
 
 | Surface | `gh` form (shell envs) | MCP form (MCP-only envs) | git form (clone-aware envs) |
 |---|---|---|---|
-| PR existence | `gh pr list --search "closes:#{N} OR refs:#{N}" --state open --json number` | `mcp__github__list_pull_requests` (filter by head ref or scan for "closes:#{N}" in body) | `git fetch origin && git branch -r` (compare to prior list, emit on new branch) |
-| PR status / CI | `gh pr view {N} --json statusCheckRollup,reviews,state` | `mcp__github__pull_request_read` method=`get_status` / `get_check_runs` | — |
 | Issue comments | `gh issue view {N} --comments` | `mcp__github__issue_read` method=`get_comments` | — |
-| PR comments | `gh pr view {N} --comments` | `mcp__github__pull_request_read` method=`get_comments` / `get_review_comments` | — |
-| Branch head SHA | — | — | `git fetch origin {branch} && git rev-parse origin/{branch}` (compare to prior, emit on change) |
+| New branches | — | — | `git fetch --quiet origin && git branch -r --list 'origin/claude/*'` (compare to prior list, emit on new branch matching the cycle scope) |
+| Branch head SHA | — | — | `git fetch origin {branch} && git rev-parse origin/{branch}` (compare to prior, emit on change — this catches α's review-readiness commit, α's fix-round commits, β's verdict commits, γ's clarifications, all of which land on the cycle's branch) |
+| `.cdd/unreleased/{N}/` directory state on the cycle's branch | — | — | `git fetch --quiet origin {branch} && git ls-tree -r origin/{branch} .cdd/unreleased/{N}/` (compare blob SHAs across the directory; emit on any file added or any blob SHA changed) |
+
+**The cycle's branch is the canonical coordination surface during in-version work.** All role artifacts (`self-coherence.md`, `beta-review.md`, `*-closeout.md`, `gamma-*.md`) live on the cycle branch — the branch α opens for the cycle. β and γ commit their artifacts to **the same branch** α uses (push directly to α's cycle branch with their own git identity), not to separate branches and not to `origin/main`. `main` is the merge target only, never the in-cycle coordination surface; cycle-dir files arrive on `main` as part of the eventual `git merge` (β step 8). Polling `origin/main` for in-flight cycle artifacts is silent — the spec must always poll `origin/{cycle-branch}` while the cycle is open.
+
+Auth precondition for the dyad-on-one-branch model: β and γ have push access to the cycle's branch. If the operator's harness pre-provisions a per-role branch, the role refuses (and surfaces to operator) any instruction to commit cycle-dir files to that pre-provisioned branch — those files belong on α's cycle branch. *Derives from #283 β round-1 F1: γ resolved to candidate (a) "branch-polling canonical, one cycle branch holds all role artifacts."*
 
 **Wake-up mechanism — name it explicitly in the role's session.** Polling is only effective if the loop's transition produces a notification that wakes the role. Each environment has its own form:
 
-- **`Monitor` (Claude Code on the web):** `Monitor`'s contract is "every stdout line is a notification delivered as a `task-notification` system message that wakes the session." Wrap polling in `until {transition-detected}; do {poll}; sleep 60; done` and emit only on **transition** (new branch, new SHA, new comment-id) — not on every poll iteration, or you flood the session's context.
-- **Shell `gh` + harness wake hook:** if the harness wakes the session when a `gh ...` command completes its until-loop, `until {gh-poll}; do sleep 60; done` is sufficient. Verify the harness contract before relying on it.
-- **Push (`mcp__github__subscribe_pr_activity`):** delivers `github-webhook-activity` messages once a PR exists. Reliability under shared GitHub identity is unverified — use as a complement to polling, not a replacement.
+- **`Monitor` (Claude Code on the web):** `Monitor`'s contract is "every stdout line is a notification delivered as a `task-notification` system message that wakes the session." Wrap polling in `until {transition-detected}; do {poll}; sleep 60; done` and emit only on **transition** (new branch, new SHA, new file in cycle dir, changed blob SHA on existing file) — not on every poll iteration, or you flood the session's context.
+- **Shell `gh` / `git` + harness wake hook:** if the harness wakes the session when a polling command completes its until-loop, `until {poll}; do sleep 60; done` is sufficient. Verify the harness contract before relying on it.
 
 If neither a `Monitor`-equivalent nor a shell-wake harness exists, the role cannot autonomously detect cycle progression. Surface the gap to the operator before dispatch — do not rely on a wake-up contract that the environment does not provide.
 
-Poll interval: 60 seconds unless the operator specifies otherwise. This applies to α (waiting for review), β (waiting for PR, waiting for α fixes), and γ (tracking full cycle).
+Poll interval: 60 seconds unless the operator specifies otherwise. This applies to α (waiting for β verdict in `.cdd/unreleased/{N}/beta-review.md`), β (waiting for α's branch + review-readiness in `.cdd/unreleased/{N}/self-coherence.md`, then waiting for fix-round appendices), and γ (tracking issue + branch + every file in `.cdd/unreleased/{N}/` across the full cycle).
 
-**Stdout filter discipline:** transition-only emission is mandatory. A loop that emits on every poll will fill the session with `task-notification` blocks and consume context budget. β's #268 cycle ran four wake events across the full cycle by emitting only on new-branch / new-SHA transitions; the pattern is reproducible.
+**Stdout filter discipline:** transition-only emission is mandatory. A loop that emits on every poll will fill the session with `task-notification` blocks and consume context budget.
 
-**Synchronous-baseline-pull is a precondition of transition-only polling.** Transition-only emission is correct on its own terms (avoid context flood) but has a structural blind spot: the loop's first iteration sets `prev` to the empty string (or current state) and silently absorbs whatever already exists. State that exists *before* the Monitor's first iteration will never surface as an event. Every transition-only Monitor must therefore be paired with a synchronous initial-state pull of the same surface (`mcp__github__list_pull_requests state=open` for PRs, `mcp__github__pull_request_read get_comments` for comments, etc.) immediately when the role's session starts — the synchronous channel owns the past, the polling channel owns the future. *Derives from: #274 cycle, where α + β + γ in three independent role sessions all hit first-iteration absorption — β's broad PR-list Monitor absorbed PR #274 as baseline; γ's `*230*` branch glob never matched the harness-encoded `claude/alpha-tier-3-skills-IZOsO` branch; α's git-only Monitor could not see comment activity until the operator prompted synchronously.*
+**Synchronous-baseline-pull is a precondition of transition-only polling.** Transition-only emission is correct on its own terms (avoid context flood) but has a structural blind spot: the loop's first iteration sets `prev` to the empty string (or current state) and silently absorbs whatever already exists. State that exists *before* the Monitor's first iteration will never surface as an event. Every transition-only Monitor must therefore be paired with a synchronous initial-state pull of the same surface (`git branch -r --list 'origin/claude/*'` for the branch set, `git ls-tree -r origin/{cycle-branch} .cdd/unreleased/{N}/` for each known cycle branch's artifact set, `gh issue view {N} --comments` for issue activity) immediately when the role's session starts — the synchronous channel owns the past, the polling channel owns the future. Reading `.cdd/unreleased/` from `origin/main` only surfaces cycles that have already merged; in-flight cycles live on `origin/claude/*` branches and will be invisible. *Derives from: #274 cycle, where α + β + γ in three independent role sessions all hit first-iteration absorption — β's broad PR-list Monitor absorbed PR #274 as baseline; γ's `*230*` branch glob never matched the harness-encoded `claude/alpha-tier-3-skills-IZOsO` branch; α's git-only Monitor could not see comment activity until the operator prompted synchronously. #283 β round-1 F1 surfaced the symmetric polling-source bug for the new artifact-exchange model.*
 
-**Branch-glob templates must not assume harness-encoded issue numbers.** The reference glob shape `'origin/claude/*-<N>-*'` assumes the harness encodes the issue number `<N>` in the branch path. Real harnesses may instead encode scope words and a random suffix (e.g. `claude/alpha-tier-3-skills-IZOsO` for issue #230) with no issue number anywhere. The defensive default is the broader glob `'origin/claude/*'` with downstream synchronous filtering against the issue/PR surface (the issue number lives reliably in the PR body's `Closes #N` line, not in the branch name). The narrow glob is acceptable only when the dispatching γ pins a canonical branch name in the dispatch prompt itself. *Derives from: #274 cycle, where β + γ both armed `*230*`-shaped globs that matched zero branches.*
+**Branch-glob templates must not assume harness-encoded issue numbers.** The reference glob shape `'origin/claude/*-<N>-*'` assumes the harness encodes the issue number `<N>` in the branch path. Real harnesses may instead encode scope words and a random suffix (e.g. `claude/alpha-tier-3-skills-IZOsO` for issue #230) with no issue number anywhere. The defensive default is the broader glob `'origin/claude/*'` with downstream synchronous filtering against the issue surface (the issue number lives reliably in `.cdd/unreleased/{N}/` directory names, not in the branch name). The narrow glob is acceptable only when the dispatching γ pins a canonical branch name in the dispatch prompt itself. *Derives from: #274 cycle, where β + γ both armed `*230*`-shaped globs that matched zero branches.*
 
 #### γ algorithm
 
@@ -179,18 +221,18 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 1. Configure git identity using the project name: `git config user.name "gamma"` and `git config user.email "gamma@cdd.{project}"`
 2. Observe and select the gap (§2)
 3. Create the issue with full implementation guidance, including Tier 3 skills (§4.4)
-4. Begin polling the issue immediately — γ must track the full cycle. Run the §Tracking reachability preflight first, then start the transition loop. When α opens a PR, poll that too.
-5. Write α and β dispatch prompts (see format below). Both can be dispatched at the same time — β begins polling the issue and starts intake while α implements. β's skill handles waiting for the PR.
+4. Begin polling the issue and `.cdd/unreleased/{N}/` immediately — γ must track the full cycle. Run the §Tracking reachability preflight first, then start the transition loop. Once α's branch and `.cdd/unreleased/{N}/self-coherence.md` appear, poll those too.
+5. Write α and β dispatch prompts (see format below). Both can be dispatched at the same time — β begins polling the issue and `.cdd/unreleased/{N}/` and starts intake while α implements.
 6. If α or β is blocked, diagnose and unblock: clarify requirements, resolve ambiguity, provide missing context
 
 **Phase 2 — Release support**
 
 7. If β deferred tag push or other release mechanics (env constraint per β step 8), request δ to execute the gate action. δ confirms completion to the requesting role (see `operator/SKILL.md` §3.3). If δ is unavailable, γ may execute directly.
-8. If the issue did not auto-close on merge (missing `Closes #N`), close it: `gh issue close {number}`
+8. If the issue did not auto-close on merge (missing `Closes #N` in the merge commit message), close it: `gh issue close {number}`
 
 **Phase 3 — Close-out triage**
 
-9. Collect close-outs from both α and β. Both must exist on main before proceeding. If either is missing, request it.
+9. Collect close-outs from both α and β. Both must exist on main (`.cdd/unreleased/{N}/alpha-closeout.md` and `.cdd/unreleased/{N}/beta-closeout.md`) before proceeding. If either is missing, request it.
 10. Read both close-outs. Write the post-release assessment per `post-release/SKILL.md` — γ owns the PRA as the cycle-level observer. For each finding (from close-outs and the PRA), triage using CAP:
    - MCA available (skill patch, gate, mechanization) → ship it now as immediate output
    - No MCA yet, pattern real → MCI. Two kinds:
@@ -244,9 +286,9 @@ Load src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md.
 Issue: gh issue view <number>
 ```
 
-Parameters: `{project}` is the project name (e.g. `cnos`, `myapp`). Git identity uses `{role}@cdd.{project}` (e.g. `alpha@cdd.cnos`). `{number}` is the **issue number** for dispatch prompts; β and α discover the PR from issue activity, α's review request, or the polling commands in §Tracking. A PR number may be used only for post-hoc review/recovery workflows, in which case the prompt must say explicitly that it is PR-scoped.
+Parameters: `{project}` is the project name (e.g. `cnos`, `myapp`). Git identity uses `{role}@cdd.{project}` (e.g. `alpha@cdd.cnos`). `{number}` is the **issue number** for dispatch prompts; β and α discover the branch and α's in-version artifact via `.cdd/unreleased/{N}/` and the polling commands in §Tracking.
 
-The prompt names the role, provides parameters, and points to the issue or PR. The CDD skill tells each role what to load (§4.4) and what to do (§1.4). γ does not enumerate skills or steps in the prompt — that is the skill's job. If the prompt needs to restate the algorithm, the algorithm is not clear enough — fix the skill.
+The prompt names the role, provides parameters, and points to the issue. The CDD skill tells each role what to load (§4.4) and what to do (§1.4). γ does not enumerate skills or steps in the prompt — that is the skill's job. If the prompt needs to restate the algorithm, the algorithm is not clear enough — fix the skill.
 
 #### α algorithm
 
@@ -254,16 +296,15 @@ The compact algorithm is here; `alpha/SKILL.md` expands each step into executabl
 
 1. Receive dispatch prompt from γ
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "alpha"` and `git config user.email "alpha@cdd.{project}"`
-3. Subscribe to the issue (`gh issue edit {number} --add-assignee @me` or equivalent) so you receive PR and update notifications
+3. Subscribe to the issue (`gh issue edit {number} --add-assignee @me` or equivalent) so you receive comment notifications
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
 5. Read the issue fully, read source files referenced in implementation guidance
 6. Implement: branch, code, tests, self-coherence
-7. Open PR (draft if CI unavailable locally), wait for CI green. PR body or commit message must include `Closes #N` or `Fixes #N` to auto-close the issue on merge.
-8. Subscribe to PR notifications
-9. Request review from β
-10. If β returns RC: fix findings, push, re-request review
-11. When β approves: write α close-out (cycle findings or "no findings"). **Commit the close-out to main directly** (not on the PR branch) — squash-merge destroys branch-only files.
-12. Done
+7. Write `.cdd/unreleased/{N}/self-coherence.md` carrying the review-readiness signal (gap, mode, active skills, AC mapping, CDD Trace, known debt). Wait for branch CI green before signaling readiness in the artifact.
+8. Begin polling `.cdd/unreleased/{N}/beta-review.md` for β's verdict (per §Tracking)
+9. If β returns RC: fix findings on the branch, append a fix-round section to `.cdd/unreleased/{N}/self-coherence.md`, re-poll
+10. When β approves and merges: write `.cdd/unreleased/{N}/alpha-closeout.md` (cycle findings or "no findings"). The release skill's §2.5a move carries the cycle directory into the release directory at release time — do not duplicate close-outs elsewhere.
+11. Done
 
 **α close-out:** Report cycle-level learnings to γ. Concrete findings (skill gaps, process friction, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is α's input to γ's cycle iteration decision (§9.1). **Voice: factual observations and patterns only.** Do not recommend dispositions ("patch now", "file issue") — triage is γ's job. State what happened, what pattern it matches, and what surfaces were affected. Let γ decide the action.
 
@@ -271,44 +312,52 @@ The compact algorithm is here; `alpha/SKILL.md` expands each step into executabl
 
 The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load order, and closure discipline. The detailed review, release, and post-release procedures live in the lifecycle sub-skills (`review/`, `release/`, `post-release/`).
 
-1. Receive dispatch prompt from γ (or pick up from α's review request)
+1. Receive dispatch prompt from γ (or pick up from α's review-readiness signal)
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.{project}"`
-3. Immediately begin polling the issue and PR (see §Tracking above for query forms, wake-up mechanism, and reachability preflight) — do not ask, just do it. **The poll requires a query, a wake-up mechanism, and a reachability probe.** Run the §Tracking reachability preflight first: probe your chosen query form synchronously, confirm it returns real data, and fall back if it doesn't. Then pick the wake-up form your harness provides (`Monitor` stdout-as-notification, shell-wake-on-loop-exit, or push subscription). Emit only on transition to avoid context flood. If the PR does not exist yet, **poll until α opens a PR that references this issue.** Reference shape (shell + `gh`):
-   ```bash
-   until gh pr list --search "closes:#<N> OR refs:#<N>" --state open --json number -q '.[0].number' 2>/dev/null | grep -q .; do
-     sleep 60
-   done
-   ```
-   Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
+3. Immediately begin polling the issue, the branch set, and `.cdd/unreleased/{N}/` on the cycle's branch (see §Tracking above for query forms, wake-up mechanism, and reachability preflight) — do not ask, just do it. **The poll requires a query, a wake-up mechanism, and a reachability probe.** Run the §Tracking reachability preflight first: probe your chosen query form synchronously, confirm it returns real data, and fall back if it doesn't. Then pick the wake-up form your harness provides (`Monitor` stdout-as-notification or shell-wake-on-loop-exit). Emit only on transition to avoid context flood. **Poll until α's cycle branch exists on `origin` and `.cdd/unreleased/{N}/self-coherence.md` on that branch signals review-readiness** — never poll `origin/main` for in-flight cycle artifacts. Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
    ```bash
    # Baseline sync — run BEFORE the transition loop.
    # The transition loop absorbs first-iteration state silently (prev=∅ → cur=...).
-   # Any branch or PR that already exists at loop-start is invisible to it.
+   # Any branch or cycle artifact that already exists at loop-start is invisible to it.
    # Read current state synchronously at intake so the past is not lost.
    git fetch --quiet origin
    echo "baseline-branches: $(git branch -r --list 'origin/claude/*' 2>/dev/null | tr '\n' ' ')"
-   echo "baseline-prs: $(gh pr list --search 'is:open' --json number --jq '.[].number' 2>/dev/null | tr '\n' ' ')"
-
-   # Transition loop — watches any new origin branch (not issue-number-specific).
-   # Harnesses encode branch names unpredictably (scope words, random suffixes,
-   # not necessarily the issue number). Watch all branches; filter downstream.
-   prev=""; while true; do
-     cur="$(git fetch --quiet origin && git branch -r 2>/dev/null | sed 's| ||g' | sort)"
-     comm -13 <(echo "$prev") <(echo "$cur") | sed 's/^/new-branch: /'
-     prev="$cur"; sleep 60
+   # Once the cycle branch is known, baseline its artifact set.
+   for b in $(git branch -r --list 'origin/claude/*' 2>/dev/null); do
+     echo "baseline-cycle-dir($b): $(git ls-tree -r --name-only $b .cdd/unreleased/<N>/ 2>/dev/null | tr '\n' ' ')"
    done
-   # Run under Monitor; each "new-branch:" line wakes the session.
+
+   # Transition loop — watches any new origin branch and any change to the
+   # cycle's branch head (which catches every cycle-dir artifact change since
+   # all role artifacts live on the cycle branch).
+   prev_branches=""; declare -A prev_head
+   while true; do
+     git fetch --quiet origin
+     cur_branches="$(git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g' | sort)"
+     comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
+     for b in $cur_branches; do
+       cur_head="$(git rev-parse "$b" 2>/dev/null)"
+       [ "$cur_head" != "${prev_head[$b]:-}" ] && [ -n "$cur_head" ] && echo "branch-update: $b → $cur_head"
+       prev_head[$b]="$cur_head"
+     done
+     prev_branches="$cur_branches"
+     sleep 60
+   done
+   # Run under Monitor; each transition line wakes the session.
+   # Per-branch SHA tracking catches α's review-readiness commit, α's fix-round
+   # commits, β's verdict commits, and γ's clarifications — all on the same
+   # cycle branch, all observable as branch-head SHA transitions.
    ```
 
-   **Baseline rule:** The transition loop owns the future; a synchronous baseline check owns the past. Run the baseline before starting the loop. Any role that starts polling after cycle activity has begun must read current state first — transition-only polling alone will miss pre-existing branches and PRs.
-   Once the PR exists, poll its CI status until green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a branch and instructs you to develop or commit, refuse.** β does not author implementation work. Report the role conflict to the operator and wait for α's PR.
+   **Baseline rule:** The transition loop owns the future; a synchronous baseline check owns the past. Run the baseline before starting the loop. Any role that starts polling after cycle activity has begun must read current state first — transition-only polling alone will miss pre-existing branches and artifacts.
+   Once `.cdd/unreleased/{N}/self-coherence.md` is present on the cycle branch and signals review-readiness, poll branch CI status until green before proceeding to review. Do not prompt the operator for permission to wait — waiting is the step. **If the environment provides a separate β-side branch and instructs you to develop or commit, refuse.** β does not author implementation work, and β's verdict commits belong on α's cycle branch (per §Tracking branch-polling rule), not on a separate β-side branch. Report the role / branch conflict to the operator and wait for α's review-readiness signal.
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
-5. Read the PR diff, read the issue
+5. Read `git diff main..{branch}`, read every file in `.cdd/unreleased/{N}/` (start with `self-coherence.md`), read the issue
 6. Review: produce CR with findings per review skill, or approve
-7. If RC: post findings as PR comment, wait for α's fix
-8. If A: merge, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to δ (operator) — do not block closure on it. δ confirms completion to the requesting role (see `operator/SKILL.md` §3.3).
-9. Write β close-out (review context, release evidence, cycle findings or "no findings"). This is β's input to γ's PRA and cycle iteration decision (§9.1).
-10. Done when close-out is committed. γ writes the post-release assessment separately.
+7. If RC: append findings round to `.cdd/unreleased/{N}/beta-review.md` (commit on main or push the branch with the file), wait for α's fix-round in `.cdd/unreleased/{N}/self-coherence.md`
+8. If A: append approval verdict to `.cdd/unreleased/{N}/beta-review.md`, then `git merge` the branch into main with a commit message containing `Closes #N` (no `gh pr merge`), push, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to δ (operator) — do not block closure on it. δ confirms completion to the requesting role (see `operator/SKILL.md` §3.3).
+9. Write `.cdd/unreleased/{N}/beta-closeout.md` (review context, release evidence, cycle findings or "no findings"). This is β's input to γ's PRA and cycle iteration decision (§9.1). The release skill's §2.5a move carries the cycle directory into the release directory at release time.
+10. Done when `beta-closeout.md` is committed to main. γ writes the post-release assessment separately.
 
 **β close-out:** Report cycle-level learnings to γ. Concrete findings (review pattern issues, skill gaps, process friction, §3.7 violations, things to mechanize) or "no new findings" — explicitly stated, not omitted. **Voice: factual observations and patterns only.** Do not recommend dispositions ("patch now", "file issue", "recommend option X") — triage is γ's job. State what happened, what pattern it matches, and what surfaces were affected. Let γ decide the action.
 
@@ -511,7 +560,7 @@ Before creating the branch, verify:
 
 - version segment, if present, is greater than the latest released/tagged version
 - no remote branch already claims the same issue
-- no open PR already covers the same issue
+- no `.cdd/unreleased/{N}/` directory already exists for this issue (would indicate an in-flight cycle)
 - branch name matches the canonical format
 - current CI / main state is known
 - the intended scope is declared before implementation begins
@@ -617,7 +666,7 @@ Each version directory must contain:
 - README.md — snapshot manifest
 - one stub per declared deliverable
 
-Artifacts outside version directories, such as PR body files or navigation updates, are not required as bootstrap stubs.
+Artifacts outside version directories, such as `.cdd/unreleased/{N}/` files or navigation updates, are not required as bootstrap stubs.
 
 ### 5.2 Ordered artifact flow
 
@@ -647,25 +696,25 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 | 1 | Select | observe | γ | CDD Trace row: selected gap + issue | §5.4 (trace) + `.github/ISSUE_TEMPLATE/cdd-issue.md` (issue) | primary branch artifact + issue tracker | agent | always | cdd |
 | 2 | Branch | build | α | valid branch name | — | branch + CDD Trace row | mechanical | always | cdd |
 | 3 | Bootstrap | build | α | version directory + manifest README + declared stubs | §5.1 | branch diff | mechanical | substantial only | cdd |
-| 4 | Gap | build | α | named incoherence / coherence contract | PR template §Gap or design/SKILL.md §3.1 | primary branch artifact | agent | always | cdd |
-| 5 | Mode | build | α | mode + active skills (+ bundle/level if used) | PR template §Mode or design/SKILL.md §3.1 | primary branch artifact | agent | always | cdd + applicable eng bundle from `src/packages/cnos.eng/skills/eng/README.md` |
+| 4 | Gap | build | α | named incoherence / coherence contract | `.cdd/unreleased/{N}/self-coherence.md` §Gap or design/SKILL.md §3.1 | primary branch artifact | agent | always | cdd |
+| 5 | Mode | build | α | mode + active skills (+ bundle/level if used) | `.cdd/unreleased/{N}/self-coherence.md` §Mode or design/SKILL.md §3.1 | primary branch artifact | agent | always | cdd + applicable eng bundle from `src/packages/cnos.eng/skills/eng/README.md` |
 | 6a | Design | build | α | design artifact or explicit "not required" | design/SKILL.md §3.1 | primary branch artifact | agent | substantial only | design |
 | 6b | Plan | build | α | plan artifact or explicit "not required" | `docs/gamma/cdd/PLAN-TEMPLATE.md` | primary branch artifact or linked plan | agent | L7 / cycle-sized | plan |
 | 6c | Tests | build | α (or delegated implementer) | test files or explicit reason none apply | — (diff) | diff / primary branch artifact | agent | always | eng/test |
 | 6d | Code | build | α (or delegated implementer) | implementation diff or "docs/process only" | — (diff) | diff / primary branch artifact | agent | always | active loaded Tier 2/Tier 3 generation skills (language skill, runtime/platform skill, tooling skill — see `src/packages/cnos.eng/skills/eng/README.md`) |
 | 6e | Docs | build | α (or delegated implementer) | changed canonical docs / specs / READMEs | — (diff) | diff | agent | when docs affected | eng/document for durable docs; eng/write-functional for functional/dataflow prose; `cnos.core/skills/skill` when authoring or modifying skills |
 | 6f | Delegated handoff | build | α → implementer | implementation prompt with: active skills, test requirements per module, engineering conventions, artifact order + self-verification report from implementer | alpha/SKILL.md §2.2 | prompt + report | delegator + implementer | when implementation is delegated | cdd |
-| 7 | Self-coherence | build | α (or delegated implementer) | SELF-COHERENCE.md | `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md` | version directory | agent | substantial only | cdd |
-| 7a | Pre-review | build | α | branch rebased onto current `main`; PR body carries CDD Trace through step 7; tests reference ACs; known debt explicit; **schema/shape audit across all touched files** when contracts change — when introducing or changing a canonical form, verify (a) the new form is present across all relevant files AND (b) any superseded form has been removed; cite the verifying command (e.g. grep that returns exactly one match per file); **workspace-global library-name uniqueness check** when adding a new `(library (name X))` stanza; **post-patch re-audit** — after any mid-cycle code change, re-read the PR body top-to-bottom and verify every CDD Trace / invariant / self-coherence row still matches HEAD; **CI green on head commit** before requesting review (draft-until-green when local verification unavailable) | alpha/SKILL.md §2.6 | PR body | mechanical | always | cdd |
-| 8 | Review | review | β | review artifact / PR review / comment link | review/SKILL.md output format | review surface | reviewer | always | review |
-| 9 | Gate + merge | release | β | gate result / release-readiness evidence + PR merge | `docs/gamma/cdd/GATE-TEMPLATE.md` | release or review surface | mechanical + reviewer | always | release |
+| 7 | Self-coherence | build | α (or delegated implementer) | `.cdd/unreleased/{N}/self-coherence.md` carrying gap, mode, ACs, evidence, known debt | `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md` | `.cdd/unreleased/{N}/self-coherence.md` | agent | substantial only | cdd |
+| 7a | Pre-review | build | α | branch rebased onto current `main`; `.cdd/unreleased/{N}/self-coherence.md` carries CDD Trace through step 7; tests reference ACs; known debt explicit; **schema/shape audit across all touched files** when contracts change — when introducing or changing a canonical form, verify (a) the new form is present across all relevant files AND (b) any superseded form has been removed; cite the verifying command (e.g. grep that returns exactly one match per file); **workspace-global library-name uniqueness check** when adding a new `(library (name X))` stanza; **post-patch re-audit** — after any mid-cycle code change, re-read `.cdd/unreleased/{N}/self-coherence.md` top-to-bottom and verify every CDD Trace / invariant / self-coherence row still matches HEAD; **branch CI green on head commit** before signaling review-readiness in the artifact | alpha/SKILL.md §2.6 | `.cdd/unreleased/{N}/self-coherence.md` | mechanical | always | cdd |
+| 8 | Review | review | β | `.cdd/unreleased/{N}/beta-review.md` verdict + findings | review/SKILL.md output format | `.cdd/unreleased/{N}/beta-review.md` | reviewer | always | review |
+| 9 | Gate + merge | release | β | gate result / release-readiness evidence + `git merge` of branch into main | `docs/gamma/cdd/GATE-TEMPLATE.md` | release surface or `.cdd/unreleased/{N}/beta-review.md` | mechanical + reviewer | always | release |
 | 10 | Release | release | β | CHANGELOG row, tag, release note | CHANGELOG.md ledger + release/SKILL.md | release surface | agent + mechanical | always | release + eng/document when authoring release notes/changelog prose |
 | 11 | Observe | close | γ | post-release observation result | post-release/SKILL.md | post-release assessment | γ | always | post-release |
 | 12 | Assess | close | γ | POST-RELEASE-ASSESSMENT.md | post-release/SKILL.md output template | version directory | γ | always | post-release |
 | 12a | Skill patch | close | γ | skill/spec patches for recurring failure modes identified in close-out triage or PRA §3; synced across all affected surfaces under src/packages/ | post-release/SKILL.md §3 + gamma/SKILL.md §2.7–§2.10 | same commit as PRA when identified during assessment, otherwise γ close-out follow-on commit | γ | when close-outs or PRA identify a recurring failure or skill gap | post-release, cdd |
 | 13 | Close | close | γ | immediate outputs executed (incl. 12a patches) + deferred committed | post-release/SKILL.md §6 CDD Closeout | post-release assessment | γ | always | post-release |
 
-**Primary branch artifact:** the PR body (`.github/PULL_REQUEST_TEMPLATE.md`) for L5/L6 changes, or the design artifact (design/SKILL.md §3.1) for larger changes.
+**Primary branch artifact:** `.cdd/unreleased/{N}/self-coherence.md` for triadic cycles, or the design artifact (design/SKILL.md §3.1) when a separate design doc is required for larger changes. The primary branch artifact owns the named incoherence, mode, active skills, AC mapping, CDD Trace, known debt, and the review-readiness signal.
 
 **Role key (§1.4):** *γ (coordinator)* = steps 0–1 (observe, select, issue creation, dispatch) + steps 11–13 (PRA, cycle iteration, closure) + cycle-wide coordination, *α (implementer)* = steps 2–7a (branch, bootstrap, gap, mode, artifacts, self-coherence, pre-review), *β (reviewer + releaser)* = steps 8–10 (review RC/A decision, merge, deploy, β close-out). Delegated implementer is α-side. Merge is part of step 9 (gate + merge).
 
@@ -674,7 +723,7 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 Rules:
 - "Not required" is valid only when stated explicitly.
 - An omitted step with no explicit note is incomplete, not implicit.
-- Small-change mode may collapse steps 4–7 into commit/PR-body evidence, but the same distinctions still apply.
+- Small-change mode may collapse steps 4–7 into commit-message evidence, but the same distinctions still apply.
 
 ### 5.3a Artifact Location Matrix
 
@@ -684,9 +733,11 @@ For release-scoped triadic cycles, every named artifact has exactly one canonica
 |---|---|---|---|
 | Version snapshot directory | `docs/{tier}/{bundle}/{X.Y.Z}/` | `docs/gamma/cdd/{X.Y.Z}/` | `.cdd/releases/{X.Y.Z}/` is **not** the frozen snapshot — it is triadic protocol/scratch space |
 | POST-RELEASE-ASSESSMENT.md (PRA) | `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `.cdd/releases/{X.Y.Z}/beta/POST-RELEASE-ASSESSMENT.md` and `.cdd/releases/{X.Y.Z}/beta/ASSESSMENT.md` are legacy/warn-only |
-| α close-out | `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` | same | PR comment is acceptable evidence only for PR-scoped, unreleased, non-triadic cycles |
-| β close-out | `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md` | same | PR comment is acceptable evidence only for PR-scoped, unreleased, non-triadic cycles |
-| γ close-out | `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` | same | none — γ close-out is always a repo artifact |
+| α self-coherence (primary branch artifact) | `.cdd/unreleased/{N}/self-coherence.md` (in-version), moved to `.cdd/releases/{X.Y.Z}/{N}/self-coherence.md` at release per `release/SKILL.md` §2.5a | same | none — required for every triadic cycle |
+| β review record | `.cdd/unreleased/{N}/beta-review.md` (in-version), moved to `.cdd/releases/{X.Y.Z}/{N}/beta-review.md` at release | same | none — required for every triadic cycle |
+| α close-out | `.cdd/unreleased/{N}/alpha-closeout.md` (in-version), moved to `.cdd/releases/{X.Y.Z}/{N}/alpha-closeout.md` at release | same | `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` (legacy aggregate form, pre-#283) is warn-only |
+| β close-out | `.cdd/unreleased/{N}/beta-closeout.md` (in-version), moved to `.cdd/releases/{X.Y.Z}/{N}/beta-closeout.md` at release | same | `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md` (legacy aggregate form, pre-#283) is warn-only |
+| γ close-out | `.cdd/unreleased/{N}/gamma-closeout.md` (in-version), moved to `.cdd/releases/{X.Y.Z}/{N}/gamma-closeout.md` at release | same | `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` (legacy aggregate form, pre-#283) is warn-only |
 | γ kata verdict (optional) | `.cdd/releases/{X.Y.Z}/gamma/KATA-VERDICT.md` when kata is available | same | warn-only when kata unavailable |
 | CHANGELOG ledger row | `CHANGELOG.md` (Release Coherence Ledger) — must include Version, C_Σ, α, β, γ, **Level**, coherence note | same | none |
 | RELEASE.md | `RELEASE.md` at repo root, included in the release commit | same | CI auto-generated body is not an acceptable substitute |
@@ -694,16 +745,18 @@ For release-scoped triadic cycles, every named artifact has exactly one canonica
 
 Rules:
 
+- `.cdd/unreleased/{N}/` is the per-cycle coordination directory, keyed by issue number. Files inside are role-distinguished by **filename** — see §Tracking for the canonical filename set (`self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`) and the convention for adding more (`{role}-{purpose}.md` for role-owned content; bare `{purpose}.md` when convention identifies the author).
+- `.cdd/releases/{X.Y.Z}/{N}/` holds the moved-at-release form of each cycle's coordination directory. Multiple cycle directories may live under one release directory when several issues ship in the same release.
 - `.cdd/` is triadic protocol space and role-local close-out / close-out evidence storage. It is **not** the canonical frozen post-release snapshot.
 - `docs/{tier}/{bundle}/{X.Y.Z}/` is the canonical frozen post-release snapshot directory. The PRA lives there; close-outs do not.
 - Tags are bare `X.Y.Z` everywhere (VERSION file, git tag, branch name version segment, CHANGELOG row, RELEASE.md, snapshot directory). `v`-prefixed tags are legacy and warn-only.
-- For PR-scoped, unreleased, non-triadic cycles, close-outs may be PR comments; release-scoped triadic cycles require the canonical repo paths above.
+- All triadic cycles use the in-version `.cdd/unreleased/{N}/` artifact-exchange surface. GitHub Pull Requests are not used for triadic coordination (see §Tracking).
 
 ### 5.4 CDD Trace
 
 Every substantial cycle must carry a lightweight execution trace. Use lifecycle step numbers, not section numbers. For steps 0–10, the trace lives in the primary branch artifact. For steps 11–13, closure lives in the post-release assessment.
 
-The primary branch artifact is the artifact that owns the named incoherence, mode, active skills, and acceptance criteria. In most cycles this is the design artifact. For governance/process work it may be the governing doc being changed. For smaller substantial changes it may be the PR body when no separate design doc is required.
+The primary branch artifact is the artifact that owns the named incoherence, mode, active skills, and acceptance criteria. For triadic cycles this is `.cdd/unreleased/{N}/self-coherence.md`. For governance/process work the governing doc being changed may carry the trace inline. When a separate design artifact exists (design/SKILL.md §3.1), the design artifact carries the trace and `self-coherence.md` references it.
 
 Required format:
 
@@ -718,10 +771,10 @@ Required format:
 | 4 Gap | primary artifact | — | Named incoherence / coherence contract |
 | 5 Mode | primary artifact | skill1, skill2 | Work shape, level (if used), mode, active skills |
 | 6 Artifacts | design / plan / tests / docs | — | Artifact progress or explicit "not required" |
-| 7 Self-coherence | SELF-COHERENCE.md / PR body | cdd | AC-by-AC self-check completed |
-| 7a Pre-review | PR body | cdd | Pre-review gate passed (alpha/SKILL.md §2.6) |
-| 8 Review | review surface | review (+ others if loaded) | CLP review result |
-| 9 Gate | review or release surface | release (+ eng/document if release prose authored) | Release-readiness decision |
+| 7 Self-coherence | `.cdd/unreleased/{N}/self-coherence.md` | cdd | AC-by-AC self-check completed |
+| 7a Pre-review | `.cdd/unreleased/{N}/self-coherence.md` | cdd | Pre-review gate passed (alpha/SKILL.md §2.6); review-readiness signaled |
+| 8 Review | `.cdd/unreleased/{N}/beta-review.md` | review (+ others if loaded) | CLP review result |
+| 9 Gate | `.cdd/unreleased/{N}/beta-review.md` or release surface | release (+ eng/document if release prose authored) | Release-readiness decision |
 | 10 Release | release surface | release (+ eng/document if release prose authored) | Tag / changelog / release decision |
 ```
 
