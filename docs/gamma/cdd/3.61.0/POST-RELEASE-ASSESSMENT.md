@@ -134,3 +134,59 @@
 - Diff is L7: the cycle ships an MCA that eliminates a friction class (PR-coordination ceremony) for all future cycles. System boundary changed; friction disappears, not just locally fixed.
 - Cycle execution caps at L5: cross-surface drift (F2/F3/F4 in lifecycle skills) reached review per §9.1 L6 trigger, *and* avoidable tooling failure fired per §9.1 L6 trigger. Both are L6-level triggers; cycle level = below the lowest cleanly-cleared = L5.
 - Justification: the L7 diff is real and ships, but it was produced by an L5-execution-quality cycle. β's release commit row provisionally said "L6 cycle cap"; γ revises to L5 because two §9.1 triggers fire (β surfaced both, γ confirms).
+
+### 5. Release Verification
+
+- **Tag `3.61.0`** — created locally during β's release commit (`585efe3`). Tag push to `origin` deferred to δ per `release/SKILL.md` deferral protocol (HTTP 403 in β's sandbox env). δ pushes the tag as part of the disconnect release flow.
+- **Release commit on `main`** — `585efe3` ("release: 3.61.0 — replace GH PR workflow with `.cdd/unreleased/{N}/` artifact exchange in CDD"). Pushed to `origin/main` cleanly.
+- **Cycle merge commit** — `58c1666` ("Closes #283: replace GitHub PR workflow with `.cdd/unreleased/{N}/` artifact exchange in CDD"). Pushed; carried the cycle branch into main with role-separated authorship preserved.
+- **`release.yml` / GitHub release / `release-smoke.yml`** — pending `3.61.0` tag push by δ. Deferred verification will land in the disconnect-release commit window.
+- **Issue auto-close** — `Closes #283` in the merge commit message; expected to fire on push. γ verifies `gh issue view 283` state at closure declaration time and falls back to `gh issue close 283` if needed.
+- **CHANGELOG TSC row** — landed in `585efe3` with provisional `C_Σ A-, α A-, β A, γ A-, L6 cycle cap, L7 diff`. **γ revises to `L5 cycle cap`** per §4b above; CHANGELOG row update is an immediate output (see §6 below).
+- **`.cdd/unreleased/{N}/` → `.cdd/releases/3.61.0/{N}/` move** — `release/SKILL.md` §2.5a applied to 268, 278, and 283. Verified by inspection of the commit diff (`b347ec2..` show the moves).
+- **Coherence-delta validation** — passes per β close-out §"Coherence delta validation": cycle-dir is the integration test; zero PRs created during the cycle; β's intake polled the cycle branch directly after one operator-surfaced exception.
+
+### 6. CDD Closeout
+
+**Immediate outputs landed in this PRA window:**
+
+1. **Skill patch — `alpha/SKILL.md` §2.3 Peer enumeration mandatory cases** — added "skill-class peers" mandatory case enumerating role-skill peers (`alpha/`, `beta/`, `gamma/`, `operator/`) and lifecycle-skill peers (`review/`, `release/`, `post-release/`, `design/`, `plan/`, `issue/`) as two distinct enumeration classes. Derives-from: #283 R1 F2/F3/F4. Closes the loaded-skill-miss §9.1 trigger.
+2. **CHANGELOG TSC row revision** — change `L6 cycle cap` → `L5 cycle cap` to match this PRA's §4b cycle-iteration disposition. `L7 diff` stays. (Pending edit; lands in next commit.)
+3. **γ-creates-branch follow-up filed (#287)** — to be filed at γ-closeout time as the named next-MCA.
+
+**Deferred outputs (committed concretely, captured for next cycle):**
+
+- **#287** — γ creates the cycle branch (process MCA, P1). Spec text already drafted in this cycle's chat record + γ's rolled-back local commit `eb48e17`'s message; ready to file as the next-cycle dispatch.
+- **#286** — Encapsulation (γ as autonomous in-cycle coordinator). Sits behind #287 + a separate `cn dispatch` CLI cycle.
+- **`git fetch --quiet` reliability gap in CDD §Tracking** — folded into #287 close-out or filed as separate follow-up if not addressed by #287.
+
+**γ pre-publish gate check (per `post-release/SKILL.md` §pre-publish):**
+
+- α close-out: **missing** at `.cdd/releases/3.61.0/283/alpha-closeout.md`. γ requested at PRA top; still pending α. **γ does NOT close the cycle until α-closeout lands** — closure declaration is held.
+- β close-out: ✅ at `.cdd/releases/3.61.0/283/beta-closeout.md`.
+- γ close-out: pending γ (this PRA's complement; written next at `.cdd/releases/3.61.0/283/gamma-closeout.md`).
+- PRA: this file (in progress; section 8 is the last).
+- §9.1 cycle-iteration entry: ✅ above (§4b).
+- skill/spec patches: ✅ landed (§6.1 above).
+
+### 7. Next Move
+
+**Next MCA committed: #287 — γ creates the cycle branch.**
+
+- Owner: TBD (likely α + γ on the next dispatch; markdown-only diff).
+- First AC: γ creates `cycle/{N}` from `origin/main` and pushes it before α/β are dispatched (CDD.md §1.4 γ algorithm Phase 1 step 3a).
+- Spec text already drafted (this cycle's chat + the rolled-back `eb48e17` commit message) — file as a clean issue at γ close-out time.
+- Sequencing: directly after #283 closes; fold the `git fetch --quiet` reliability rule into #287's CDD §Tracking changes.
+
+**Stacked behind #287:**
+
+- **#286** — Encapsulation. Hard precondition: a `cn dispatch` CLI (separate harness/infrastructure cycle, not yet filed). #286 spec is forward-looking; AC4 already names the gap.
+- **`cn dispatch` CLI** — to be filed as a separate β-axis infrastructure issue when #287 closes. Without it, γ drafts prompts but cannot autonomously spawn α/β; operator still pastes.
+
+**MCI freeze status:** continues. 9 growing-lag items, well above the 3-issue threshold. New design work remains frozen until at least one stale item ships; #287 (out of #283's PRA) qualifies.
+
+### 8. Hub Memory
+
+- **Daily reflection:** to be added to the γ hub adhoc thread for 2026-04-29 once the closure declaration commit lands. Cycle summary: shipped artifact-channel coordination protocol (#283) at 3.61.0; revised cycle cap from β's L6 → L5 due to two §9.1 trigger fires (loaded-skill miss + avoidable tooling failure); landed skill patch (alpha/SKILL.md §2.3 peer enumeration); committed #287 as next MCA.
+- **Adhoc thread updated:** the CDD self-modification thread (covering #268, #274, #278, #283 — successive coordination-protocol cycles) advances with this release. Next cycle (#287) continues the same thread; #286 forks a sub-thread (encapsulation + harness CLI).
+- **Hub commit / SHA:** to be recorded after the hub-side commit lands. **Unavailable-reason placeholder:** if the operator runs hub memory writes externally and γ does not have hub-write authority in this session, this PRA records "hub write deferred to operator session" rather than fabricating a path.

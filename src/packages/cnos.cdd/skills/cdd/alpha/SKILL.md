@@ -159,6 +159,7 @@ Mandatory cases:
 - multiple writers / readers of the same schema
 - multiple input sources feeding one validator / sanitizer / membrane
 - any claim that a failure class is "impossible by construction" or "structurally prevented"
+- **skill-class peers** — when the diff modifies role skills (`alpha/`, `beta/`, `gamma/`, `operator/`), the contract change ripples downstream into lifecycle skills (`review/`, `release/`, `post-release/`, `design/`, `plan/`, `issue/`) which encode the contract operationally. Role-skill peers and lifecycle-skill peers are *two distinct enumeration classes*, not one undifferentiated set. Enumerate each separately and verify each surface against the changed contract; lifecycle-skill drift consistently survives a re-audit that lumps the two together. *Derives from: #283 R1 F2 / F3 / F4 — three of four R1 findings landed in lifecycle skills (`release/`, `post-release/`) while α's re-audit covered role-skill peers; the audit's checklist did not distinguish the two classes.*
 
 Required output:
 
