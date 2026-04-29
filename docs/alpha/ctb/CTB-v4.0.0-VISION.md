@@ -453,6 +453,18 @@ This turns coordination from "I think I did the right thing" to "here's the plan
 
 ---
 
+## 13. Addendum 2026-04-29 — Agent composition turn
+
+The skill-language framing (§1–§6) was correct as a migration path but too narrow as a semantic account. The revised model:
+
+> CTB is a triadic agent-composition language. A skill is a narrow agent. A role is a role-local agent. A triad is a composite agent that appears externally as one agent at the next boundary. `tri()` is the shared carrier across skills, agents, protocols, repairs, reviews, and cycles.
+
+The v2.0 target (§8.2) is therefore not "toolchain, types, and composition" for skills alone. It is the first machine-checkable agent-composition layer. The deliverables listed in §8.2 already reflect this (agent-type, agent-module, composition operators, type satisfaction, scope enforcement). This addendum records the conceptual shift; the roadmap section already describes the concrete target.
+
+See `LANGUAGE-SPEC-v0.2-draft.md` §1.4 (triadic carrier) and `SEMANTICS-NOTES.md` §15 (full rationale) for the detailed treatment.
+
+---
+
 ## Appendix: terminology
 
 - **C≡ (Coherence Calculus):** foundational term algebra and equivalences.

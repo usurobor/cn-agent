@@ -439,6 +439,73 @@ The prior art maps cleanly:
 
 ---
 
+## 15. tri() as the carrier
+
+The agent turn (§13) claims "skills are agents." The deeper claim is that every composable unit in the system exposes a triadic facet. `tri()` is the common carrier. Composition preserves the triadic carrier, and closure requires an inspectable witness.
+
+The core statement:
+
+> CTB is a triadic agent-composition language. `tri()` is the common carrier. A skill is a narrow agent viewed as `tri(input, transform, witnessed-output)`. An agent is a scoped process viewed as `tri(orientation, intervention, witness)`. A protocol is a relation among agents viewed as `tri(roles/capabilities, interaction, close-outs)`. Composition preserves the triadic carrier and closure requires an inspectable witness.
+
+### 15.1 TSC grounding
+
+The theoretical stack supports this directly. C≡ defines `tri(·,·,·)` as the structure that holds one-as-two without collapse: fewer than three cannot hold the pattern; more than three is redundant. C≡ also defines horizontal and vertical embeddings — `H(X) := tri(κ, X, e)` and `V(X,Y) := tri(X, e, Y)` — and provides α/β/γ evaluators for pattern, relation, and process/depth.
+
+The agent doctrine operationalizes the same recurrence: one-as-two creates a shared boundary, one-as-three makes the boundary inspectable, and a stabilized triad appears externally as one articulated whole. `tri()` is not a data structure bolted onto agents — it is the carrier of inspectable coherence at every scale.
+
+### 15.2 Operational lenses
+
+Specific domains read `tri()` through lenses. The position labels (left/center/right, or any named triple) are gauge choices — the TSC foundation treats them as such. The carrier is invariant; the labels are projections.
+
+| Lens | Triadic reading |
+|------|----------------|
+| Skill | contract / transformation / witnessed close-out |
+| Agent | orientation / intervention / witness |
+| Protocol | roles+capabilities / interaction / close-outs |
+| Review | criteria / artifact / verdict+evidence |
+| Repair | defect / edit / restored coherence |
+| Parallel | split / concurrent runs / deterministic join |
+| Hierarchy | delegation / child execution / parent close-out |
+| Cycle | inherited failure / new attempt / updated constraint |
+
+The key property: each lens is a projection of the same carrier. An agent can be viewed through the skill lens (narrow scope), the protocol lens (relational scope), or the cycle lens (temporal scope) without changing the underlying structure. The lens choice depends on the observer's question, not on the agent's kind.
+
+### 15.3 Composition by dimension
+
+§14 named the composition operators. Those operators distribute across three dimensions, corresponding to the three evaluation directions the TSC foundation provides:
+
+| Dimension | Character | Operators | What composes |
+|-----------|-----------|-----------|---------------|
+| Horizontal | sequence, handoff | `>>`, `>>=` | Witness chains: A's close-out feeds B's orientation |
+| Vertical | boundary, role relation, parallel isolation | `\|\|\|`, `case`, `wait`/`join` | Scoped operands: each runs in its own authority region |
+| Deep | recurrence, repair, inheritance, residual debt | `fix`, `try`/`recover` | History: failure becomes witness, not silence; iteration must preserve debt |
+
+This is not a mapping imposed after the fact. The three dimensions correspond to the α/β/γ evaluators in the TSC foundation:
+
+- α (pattern) → horizontal: structural flow of plans and contracts
+- β (relation) → vertical: role boundaries, scoped isolation, parallel composition
+- γ (process/depth) → deep: iteration, repair, cycle history
+
+### 15.4 Permissive composition, strict closure
+
+The Rx insight (§14.4) expressed in CTB-native terms:
+
+> Composition is permissive because any artifact may be lifted into a triadic facet. Closure is strict because the resulting triad must produce an inspectable witness.
+
+This gives the "compose anything" feel without losing coherence. You can lift a test suite into `tri(spec, execution, verdicts)`, a git commit into `tri(parent, diff, hash)`, or a review round into `tri(criteria, artifact, verdict)`. The lifting is always available. But when the composition closes — when the triad declares itself done — the witness slot must be filled with inspectable evidence. An empty witness is a violation.
+
+This connects directly to the judgment doctrine: an agent must name the boundary it protects, the boundary it breaches, and the residual debt it does not call closure. The witness slot carries all three.
+
+### 15.5 Why "skill" remains as a narrow-agent lens
+
+§13 established that there are no skills, only agents. But the skill lens (`tri(input, transform, witnessed-output)`) is not deprecated — it is the correct projection for narrow-scope, single-invocation agents. A `task-local` agent whose lifetime is one call is productively viewed through the skill lens because its orientation is fully determined by its input contract and its witness is fully determined by its output contract.
+
+The skill lens fails when applied to role or composite agents because those agents have internal state, loops, and multi-step witness accumulation. That is when the agent lens (`tri(orientation, intervention, witness)`) or the protocol lens (`tri(roles, interaction, close-outs)`) becomes necessary.
+
+"Skill" is a lens, not a lie. It remains useful precisely where it is appropriate.
+
+---
+
 ## Authority
 
 This document is non-normative. It exists to preserve conceptual progress and to make spec revisions deliberate.

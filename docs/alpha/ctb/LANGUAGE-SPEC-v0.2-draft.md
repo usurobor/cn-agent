@@ -83,11 +83,33 @@ agent review : CoherentAgent =
 
 Types constrain. Modules compose. An agent-module declares `type: <agent-type>` in its signature. The type's invariants apply across all subagent dispatches within the module's body. A well-typed agent-module is one whose body respects its type's invariants.
 
+### 1.4 Triadic carrier
+
+Every agent-module MUST expose at least one triadic operational lens. The default agent lens is:
+
+```
+tri(orientation, intervention, witness)
+```
+
+where:
+
+- **orientation** = the agent's observed boundary, identified gap, governing question, and active obligations
+- **intervention** = the work, dispatches, transformations, or effect-plan synthesis performed
+- **witness** = the close-out evidence, verdict, residual debt, or structured failure term
+
+A narrow agent MAY expose the **skill lens**: `tri(input contract, transformation, witnessed output)`.
+
+A composite agent MAY expose the **protocol lens**: `tri(roles/capabilities, interaction, close-outs)`.
+
+The lens names are semantic annotations over triadic structure. They do not change the kernel grammar. Position labels are gauge choices (per TSC foundation); the carrier is invariant.
+
+Composition preserves the triadic carrier: the output of one agent's witness slot feeds the next agent's orientation slot (`>>=`), or parallel agents produce independent witnesses that a join synchronizes (`|||` + `wait`). Closure requires an inspectable witness — an agent that terminates without filling the witness slot is a violation.
+
 ---
 
 ## 2. Signature
 
-Every agent MUST declare a signature in YAML frontmatter at the top of `SKILL.md`. The signature is the public face of the module.
+Every agent-module MUST declare a signature in YAML frontmatter at the top of its `SKILL.md`. Every agent-type MUST declare its `kind`, `name`, `loop`, `invariants`, and `requires_binding` in a package-recognized type declaration surface. The signature is the public face of the module; the type declaration is the constraint surface.
 
 ### 2.1 Required fields
 
@@ -211,7 +233,7 @@ Composition is the only mechanism by which agents combine. Inheritance MUST NOT 
 | `wait` | join | Block until a parallel agent signals. |
 | `try` | recover | Run A; if it fails, dispatch recovery. |
 
-These are the complete set. Every agent composition — from a narrow pipeline to a triadic cycle — is expressible as a combination of these operators.
+These are the complete core operators for v0.2. Every agent composition — from a narrow pipeline to a triadic cycle — is expressible as a combination of these operators. Packages MAY define derived operators as sugar if they lower to this core.
 
 ### 6.2 Examples
 
@@ -249,6 +271,30 @@ An agent MUST NOT:
 - silently shadow a rule owned by another agent
 - expose two axes in one signature
 - dispatch to a target not declared in `calls` or `calls_dynamic`
+
+### 6.4 Operator obligations
+
+Parallel composition (`|||`) MUST declare either:
+- a deterministic join, or
+- a caller-visible set of independent close-outs.
+
+A `fix` composition MUST declare either:
+- a bounded stopping condition, or
+- a failure/debt close-out when convergence is not reached.
+
+A `try`/`recover` composition MUST preserve the failed witness. Recovery MUST NOT erase the failure surface.
+
+These obligations connect to judgment doctrine: the agent must name the boundary it protects, the boundary it breaches, and the residual debt it does not call closure.
+
+### 6.5 Composition dimensions
+
+The operators distribute across three composition dimensions:
+
+| Dimension | Operators | What composes |
+|-----------|-----------|---------------|
+| Horizontal (sequence, handoff) | `>>`, `>>=` | Witness chains: A's close-out feeds B's orientation |
+| Vertical (boundary, parallel isolation) | `\|\|\|`, `case`, `wait`/`join` | Scoped operands: each runs in its own authority region |
+| Deep (recurrence, repair, debt) | `fix`, `try`/`recover` | History: failure becomes witness, not silence; iteration preserves debt |
 
 ---
 
@@ -320,7 +366,11 @@ The following frontmatter keys are reserved:
 name description governing_question scope visibility triggers
 inputs outputs requires
 calls calls_dynamic runs_after runs_before excludes
+kind type loop invariants requires_binding
+body closeout witness
 ```
+
+The first three lines are module-signature fields. The fourth line (`kind` through `requires_binding`) is for agent-type declarations. The fifth line (`body`, `closeout`, `witness`) is reserved for future use by the triadic carrier model.
 
 Packages MAY define additional keys. Loaders MUST ignore unknown keys but SHOULD warn.
 
@@ -356,7 +406,49 @@ This spec targets v2.0. It is written now so that the migration has a defined de
 
 ---
 
-## 13. Migration from v0.1
+## 13. Worked example: generic triad, specialized agents
+
+This example demonstrates the core insight: the orchestration is shared; the specialization is in the bound subagents and witness rules. Both compose because both expose the same triadic carrier.
+
+```
+-- Type declaration: the coherent agent loop
+agent-type coherent-agent =
+  loop: [orient, intervene, witness]
+
+-- Generic triad: any three-agent coordination
+agent generic-triad : coherent-agent =
+  orient >>= execute >>= verify >> close
+
+-- Specialized: essay writing as a triadic cycle
+agent write-essay : coherent-agent =
+  understand-prompt
+  >> outline
+  >> draft
+  >> (argument-review ||| style-review)
+  >>= join-essay-evidence
+  >> case verdict of
+       accepted -> close
+       repair   -> fix (revise >> re-review) until accepted else close-with-debt
+       blocked  -> close-with-debt
+
+-- Specialized: code production as a triadic cycle
+agent write-code : coherent-agent =
+  understand-request
+  >> design
+  >> implement
+  >> (run-tests ||| typecheck ||| lint ||| static-review)
+  >>= join-code-evidence
+  >> case verdict of
+       accepted -> close
+       repair   -> fix (patch >> re-test) until accepted else close-with-debt
+       blocked  -> close-with-debt
+```
+
+Both `write-essay` and `write-code` satisfy `coherent-agent`. Both use `|||` for parallel review/verification with scoped isolation. Both use `fix` for repair loops. Both require a witness (close-out) regardless of outcome — even `close-with-debt` fills the witness slot. The difference is the bound subagents and what counts as evidence. The triadic carrier is the same.
+
+---
+
+## 14. Migration from v0.1
 
 | v0.1 concept | v0.2 equivalent |
 |---|---|
