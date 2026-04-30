@@ -1,0 +1,168 @@
+## Gap
+
+**Issue:** #297 — docs(ctb): make TSC formal grounding explicit for tri(), witnesses, and composition  
+**Version/mode:** MCA — documentation update only, no code changes  
+**Branch:** cycle/297
+
+CTB's current `SEMANTICS-NOTES.md` §15.1 references C≡ and the α/β/γ evaluators by paraphrase, without naming TSC as the formal upstream or citing specific sections. The TSC repo (usurobor/tsc) already contains:
+
+- C≡ formal term algebra with `tri(·,·,·)`, equivalence, normal form, and evaluators
+- Proof that α/β/γ evaluators are algebraically independent via distinct idempotent profiles
+- TSC Core measurement framework with dimensional scores, aggregate C_Σ, confidence intervals, provenance, and a composition bound
+- TSC Operational witness model, witness floors, verification state machine, fail-fast verdict logic, and provenance bundle
+
+Without explicit grounding, CTB risks re-deriving TSC concepts informally, weakening the tri() claim to an under-specified design metaphor, and building ctb-check without using TSC's witness-independence pattern.
+
+The fix is documentation: update `SEMANTICS-NOTES.md` to make the TSC relationship explicit, with specific section references.
+
+---
+
+## Skills
+
+**Tier 1:**
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` (canonical lifecycle)
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` (α role)
+
+**Tier 2:**
+- `src/packages/cnos.core/skills/write/SKILL.md` (writing — docs-only change)
+
+**Tier 3 (per dispatch):**
+- `src/packages/cnos.core/skills/write/SKILL.md`
+
+No code skill applies; this is a docs-only MCA. Bootstrap not required (no new version snapshot directory; the change updates an existing non-normative notes file).
+
+---
+
+## ACs
+
+### AC1: TSC formal upstream stated
+
+**Criterion:** `SEMANTICS-NOTES.md` §15.1 explicitly states TSC is the formal upstream for CTB's triadic carrier claim, referencing C≡ §1.2, §2.1–2.2, §3.1–3.4, and TSC Core §7.2.
+
+**Evidence:** §15.1 now opens with "TSC (usurobor/tsc) is the formal upstream for CTB's triadic carrier claim." It explicitly references:
+- C≡ §1.2 (three positions hold one-as-two without collapse)
+- C≡ §2.1–2.2 (term syntax, equivalence relation, normal form)
+- C≡ §3.1–3.4 (α/β/γ evaluators with idempotent profiles)
+- TSC Core §7.2 (algebraic independence, no Eckmann-Hilton collapse)
+
+All four required references are present with specific section citations.
+
+**Met:** ✅
+
+---
+
+### AC2: CTB keeps the right level of claim
+
+**Criterion:** The update preserves the distinction — TSC provides formal backing; CTB does not overclaim metaphysical triadic; CTB uses `tri()` as operational carrier.
+
+**Evidence:** §15.1 contains "What CTB claims and does not claim" subsection. It quotes TSC Core §0 directly ("Non-claims: Reality is fundamentally triadic (metaphysical)."), states CTB inherits that restraint, and distinguishes two levels explicitly: "TSC provides formal backing for CTB's `tri()` carrier and checking shape" vs. "CTB's agent-execution model is a practical generalization of the TSC carrier, not a derivation from TSC measurement."
+
+**Met:** ✅
+
+---
+
+### AC3: Witness model mapped to CTB close-outs
+
+**Criterion:** The docs map TSC Operational witness/verdict flow to CTB close-out discipline, showing the HANDSHAKE→MEASURE→WITNESS→DIAGNOSE/VERDICT→ACCEPT/REJECT to orient→intervene→witness→close-out mapping. CTB close-out forms described as agent-execution generalizations of TSC's discipline.
+
+**Evidence:** §15.6 "TSC-Oper: witness model, close-outs, and ctb-check" provides both the state machine flow side-by-side and a table mapping each TSC-Oper outcome to the corresponding CTB close-out form (`accepted`, `repair-needed`, `structured-failure`, `blocked`, `close-with-debt`). Explicitly states CTB does not implement TSC measurement while making the structural parallel clear.
+
+**Met:** ✅
+
+---
+
+### AC4: Witness theater mitigation points to TSC-Oper
+
+**Criterion:** The docs explicitly connect the "witness theater" risk (v0.2 draft §15) to TSC-Oper's W1–W4 witness-independence model. ctb-check should check independently-grounded witnesses, not just field presence.
+
+**Evidence:**
+- `SEMANTICS-NOTES.md` §15.6 "Witness theater and TSC-Oper W1–W4" lists all four witnesses (W1 S₃ permutation, W2 role-gauge independence, W3 scale equivariance, W4 variance/Lipschitz) with CTB-specific readings, and states "ctb-check should not merely verify that witness fields are present — that is W2 at minimum, not the full model."
+- `LANGUAGE-SPEC-v0.2-draft.md` §15 now ends with: "The structural basis for witness independence is TSC-Oper's W1–W4 witness model. See `SEMANTICS-NOTES.md` §15.6 for the mapping."
+
+**Met:** ✅
+
+---
+
+### AC5: Composition bound informs join semantics without overclaiming
+
+**Criterion:** The docs reference TSC Core §10's composition bound (`C_Σ(P) ≥ geometric_mean(C_Σ(Pᵢ)) - ε_comp`) and state the CTB implication carefully: composed runs must name join loss; joins should not hide degradation; any stronger rule is a CTB policy extension.
+
+**Evidence:** §15.3 "Composition by dimension" now includes "Composition bound and join semantics" subsection with the exact theorem statement, the CTB implication ("composed runs must name coupling penalties (join loss) where applicable, and joins should not hide degradation introduced by composition"), and the explicit non-overclaim ("Any stronger rule … is a CTB policy extension, not a consequence of TSC Core §10 directly. CTB should not derive that rule from the theorem unless it is formally closed.").
+
+**Met:** ✅
+
+---
+
+### AC6: ctb-check dependency noted
+
+**Criterion:** The update records that ctb-check v0 should draw from TSC-Oper's witness-independence pattern. Minimum checker implication: field presence is not enough; future checker stages should prefer independent witness signals.
+
+**Evidence:** §15.6 "ctb-check v0 dependency" explicitly states: "Field presence is the minimum check, not the sufficient one. The minimum checker implication from TSC-Oper is: for each required witness field, verify that the evidence is independently grounded rather than self-asserted where the checking surface permits that distinction."
+
+**Met:** ✅
+
+---
+
+## Self-check
+
+**Did α push ambiguity onto β?** No. All six ACs have named evidence in the diff. No AC is claimed "probably met" or "intent matches."
+
+**Peer enumeration.** The change touches §15 of `SEMANTICS-NOTES.md` and §15 of `LANGUAGE-SPEC-v0.2-draft.md`. Peer set:
+- `LANGUAGE-SPEC.md` (v0.1) — non-goal explicitly says do not modify. No change made. ✅ exempt
+- `CTB-v4.0.0-VISION.md` — references TSC conceptually, no section-level citations that conflict with new §15.1 content. No update required. ✅ exempt
+
+**Intra-doc peer check.** `SEMANTICS-NOTES.md` §10 references "the theory stack (Coherence Calculus → TSC → CTB)" — consistent with the new §15.1 framing of TSC as formal upstream. No stale paraphrase conflicts.
+
+**Non-goals respected.** No new CTB concepts added; v0.1 `LANGUAGE-SPEC.md` untouched; no ctb-check implementation; no TSC spec changes; no claim CTB has implemented TSC measurement; additions document the upstream relationship only.
+
+---
+
+## Debt
+
+None. The issue scope is fully addressed. All ACs met. No secondary research was blocked or deferred.
+
+---
+
+## CDD Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Observation inputs read; selected signal: §15.1 lacks explicit TSC formal upstream claim |
+| 1 Select | — | — | Selected gap: #297 — CTB docs need explicit TSC grounding |
+| 2 Branch | `cycle/297` | cdd | Branch verified: `origin/cycle/297` exists, created by γ from `origin/main` (base `eb7617e7`) |
+| 3 Bootstrap | n/a | cdd | Small-change path: docs-only update to non-normative notes file; no new version snapshot directory required |
+| 4 Gap | `.cdd/unreleased/297/self-coherence.md` §Gap | — | Named incoherence: §15.1 grounded TSC by paraphrase only; formal upstream not stated; specific section refs absent |
+| 5 Mode | `.cdd/unreleased/297/self-coherence.md` §Skills | cdd, write | MCA (docs update); Tier 3: `cnos.core/skills/write` |
+| 6 Artifacts | `SEMANTICS-NOTES.md`, `LANGUAGE-SPEC-v0.2-draft.md` | write | Design: not required (targeted section expansion, no architectural decision). Plan: not required (single-file primary, one secondary cross-reference). Tests: not required (docs-only). Code: not required. Docs: updated in the diff. |
+| 7 Self-coherence | `.cdd/unreleased/297/self-coherence.md` | cdd | AC-by-AC self-check completed; all 6 ACs met with diff evidence; peer set enumerated; non-goals verified |
+| 7a Pre-review | `.cdd/unreleased/297/self-coherence.md` | cdd | Pre-review gate check follows (§2.6) |
+
+---
+
+## Pre-review gate (α/SKILL.md §2.6)
+
+1. **Cycle branch rebased onto current `origin/main`:** ✅ — `git merge-base origin/main HEAD` returns `eb7617e7` = current `origin/main` HEAD (observed 2026-04-30T~now UTC). Branch was created from `origin/main` at `eb7617e7`; main has not advanced since.
+
+2. **self-coherence.md carries CDD Trace through step 7:** ✅ — §CDD-Trace present with steps 0–7 complete.
+
+3. **Tests present or explicit reason none apply:** ✅ — Docs-only change. No code modified. Tests not applicable.
+
+4. **Every AC has evidence:** ✅ — AC1–AC6 all have named diff evidence in §ACs section above.
+
+5. **Known debt explicit:** ✅ — §Debt states "None."
+
+6. **Schema/shape audit:** ✅ — Not applicable. No schema-bearing types or contracts changed.
+
+7. **Peer enumeration completed:** ✅ — Peer set: {`LANGUAGE-SPEC.md` (v0.1), `CTB-v4.0.0-VISION.md`}. Both explicitly exempted with reasons in §Self-check.
+
+8. **Harness audit:** ✅ — Not applicable. No schema-bearing contract changed.
+
+9. **Post-patch re-audit:** ✅ — Section ordering fix (`717cdba9`) was the only mid-cycle patch. Re-read self-coherence against HEAD: all AC evidence still matches. Diff is Markdown only; no polyglot re-audit surface.
+
+10. **Branch CI green on head commit:** CI triggers only on `push: main` and `pull_request: main` (see `.github/workflows/build.yml`). No CI runs are available for `cycle/297` without a PR. This is a docs-only change — no Go files modified. CI would pass on the current diff. β should note CI as N/A for this branch shape.
+
+11. **Commit author email:** ✅ — `git log -1 --format='%ae' HEAD` = `alpha@cdd.cnos`.
+
+---
+
+## Review-readiness | round 1 | implementation SHA: 717cdba9 | branch CI: N/A (docs-only, CI only runs on main/PR) | ready for β

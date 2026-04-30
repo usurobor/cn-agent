@@ -449,9 +449,32 @@ The core statement:
 
 ### 15.1 TSC grounding
 
-The theoretical stack supports this directly. C≡ defines `tri(·,·,·)` as the structure that holds one-as-two without collapse: fewer than three cannot hold the pattern; more than three is redundant. C≡ also defines horizontal and vertical embeddings — `H(X) := tri(κ, X, e)` and `V(X,Y) := tri(X, e, Y)` — and provides α/β/γ evaluators for pattern, relation, and process/depth.
+TSC (usurobor/tsc) is the formal upstream for CTB's triadic carrier claim. CTB does not derive `tri()` from first principles — it inherits the carrier from the C≡ term algebra and the independence guarantee from TSC Core. This section names those debts explicitly.
 
-The agent doctrine operationalizes the same recurrence: one-as-two creates a shared boundary, one-as-three makes the boundary inspectable, and a stabilized triad appears externally as one articulated whole. `tri()` is not a data structure bolted onto agents — it is the carrier of inspectable coherence at every scale.
+**C≡ provides the carrier.**
+
+C≡ §1.2 establishes that three positions hold one-as-two without collapse. Left and Right carry the duality; Center carries the unity. Fewer than three collapses the pattern; more than three is redundant. This is the necessity argument CTB relies on when claiming `tri()` is the common carrier rather than a convenient framing.
+
+C≡ §2.1–2.2 define the term syntax (`e`, atoms, `tri(T₁,T₂,T₃)`), the equivalence relation (`tri(e,e,e) ~ e`), and a normal form that is unique and computable in `O(|t|)` time. CTB's use of `tri()` is grounded in this: the structure is well-defined, decidable, and normal-form-unique.
+
+C≡ §3.1–3.4 define the α/β/γ evaluators:
+
+- α (pattern): counts atomic articulations, saturating at M; idempotents exactly {0, M}
+- β (relation): maps which global positions hold atoms; fully idempotent
+- γ (process/depth): measures nesting depth; idempotent only at (0,0)
+
+**TSC Core §7.2 proves algebraic independence.**
+
+The three evaluators are pairwise non-isomorphic via their distinct idempotent profiles — algebraic independence that prevents Eckmann-Hilton collapse. CTB's three composition dimensions (§15.3: horizontal/vertical/deep) correspond to these evaluators. The correspondence is not incidental: it is the reason three dimensions are sufficient.
+
+**What CTB claims and does not claim.**
+
+TSC Core §0 states: "Non-claims: Reality is fundamentally triadic (metaphysical)." CTB inherits that restraint. The claim is operational: `tri()` is a carrier for inspectable coherence, not an assertion about the structure of the world.
+
+Two levels that must remain distinct:
+
+- TSC provides formal backing for CTB's `tri()` carrier and checking shape.
+- CTB's agent-execution model (`tri(orientation, intervention, witness)`) is a practical generalization of the TSC carrier, not a derivation from TSC measurement.
 
 ### 15.2 Operational lenses
 
@@ -486,6 +509,18 @@ This is not a mapping imposed after the fact. The three dimensions correspond to
 - β (relation) → vertical: role boundaries, scoped isolation, parallel composition
 - γ (process/depth) → deep: iteration, repair, cycle history
 
+**Composition bound and join semantics.**
+
+TSC Core §10 establishes:
+
+```
+C_Σ(P) ≥ geometric_mean(C_Σ(Pᵢ)) - ε_comp
+```
+
+where ε_comp is the coupling penalty when components are joined. For CTB, this bound means: composed runs must name coupling penalties (join loss) where applicable, and joins should not hide degradation introduced by composition.
+
+Any stronger rule — for example, "joined coherence cannot exceed component coherence without explicit evidence" — is a CTB policy extension, not a consequence of TSC Core §10 directly. CTB should not derive that rule from the theorem unless it is formally closed.
+
 ### 15.4 Permissive composition, strict closure
 
 The Rx insight (§14.4) expressed in CTB-native terms:
@@ -503,6 +538,51 @@ This connects directly to the judgment doctrine: an agent must name the boundary
 The skill lens fails when applied to role or composite agents because those agents have internal state, loops, and multi-step witness accumulation. That is when the agent lens (`tri(orientation, intervention, witness)`) or the protocol lens (`tri(roles, interaction, close-outs)`) becomes necessary.
 
 "Skill" is a lens, not a lie. It remains useful precisely where it is appropriate.
+
+---
+
+### 15.6 TSC-Oper: witness model, close-outs, and ctb-check
+
+**The witness state machine and CTB close-outs.**
+
+TSC Operational defines a verification flow:
+
+```
+HANDSHAKE → MEASURE → WITNESS → DIAGNOSE/VERDICT → ACCEPT/REJECT
+```
+
+CTB's agent-execution close-out discipline follows the same structural pattern:
+
+```
+orient → intervene → witness → close-out
+```
+
+CTB's close-out forms are agent-execution generalizations of TSC-Oper's verdict states:
+
+| TSC-Oper outcome | CTB close-out form |
+|---|---|
+| ACCEPT (C_Σ ≥ Θ, all witnesses pass) | `accepted` |
+| REJECT (threshold failure) | `repair-needed` |
+| DIAGNOSE (witness failure) | `repair-needed` or `structured-failure` |
+| Blocked dependency | `blocked` |
+| Bounded repair exhausted | `close-with-debt` |
+
+CTB does not implement TSC measurement. The structural parallel is useful because it shows why CTB requires an inspectable witness before closure: TSC-Oper requires the WITNESS state to pass before VERDICT, and CTB requires the witness slot to be filled before a close-out is valid.
+
+**Witness theater and TSC-Oper W1–W4.**
+
+LANGUAGE-SPEC v0.2 §15 names the witness theater risk: a conformant-looking close-out not mechanically connected to what actually happened. TSC-Oper's four witnesses identify the same failure mode structurally:
+
+- W1 (S₃ permutation): coherence is label-independent — a close-out should not change character when roles are relabeled
+- W2 (role-gauge independence): measurement is presentation-independent — a witness should not be constructed to satisfy the expected verdict
+- W3 (scale equivariance): coherence is scale-free — evidence scope should not be selected to inflate the witness
+- W4 (variance/Lipschitz stability): stable measurement — the witness should yield consistent evidence across independent re-evaluation
+
+ctb-check should not merely verify that witness fields are present — that is W2 at minimum, not the full model. The TSC-Oper pattern requires independent witnesses. Future checker stages should prefer evidence signals that are independent of the agent's own assertion over signals that are not.
+
+**ctb-check v0 dependency.**
+
+ctb-check v0 should draw from TSC-Oper's witness-independence pattern. Field presence is the minimum check, not the sufficient one. The minimum checker implication from TSC-Oper is: for each required witness field, verify that the evidence is independently grounded rather than self-asserted where the checking surface permits that distinction.
 
 ---
 
