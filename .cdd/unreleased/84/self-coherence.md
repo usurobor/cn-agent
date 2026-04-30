@@ -126,3 +126,19 @@ No other conduct-adjacent surfaces were modified or required updating.
 ## §Debt
 
 None. All ACs are fully met. No scope was deferred, no known contradictions remain unresolved, and no follow-up issues are required by this change.
+
+---
+
+## §CDD-Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Gap identified: `ca-conduct` lacks explicit reflection requirement while `reflect` and `mci` skills exist |
+| 1 Select | — | — | Selected gap #84: add Reflect section to CA conduct surfaces |
+| 2 Branch | `cycle/84` | cdd | Branch pre-exists (γ-created); verified `origin/cycle/84` exists; α switched to it |
+| 3 Bootstrap | — | cdd | Small-change path: doc-only, no version snapshot required |
+| 4 Gap | `.cdd/unreleased/84/self-coherence.md` §Gap | — | Named incoherence: `ca-conduct` does not explicitly require reflection |
+| 5 Mode | `.cdd/unreleased/84/self-coherence.md` §Skills | cdd, document, skill, ca-conduct, reflect, mci | MCA; Writing bundle (document + skill); all tiers loaded |
+| 6 Artifacts | `ca-conduct/SKILL.md`, `CA-CONDUCT.md` | document, skill | Design: not required (targeted addition, no design decision). Plan: not required (two files, clear insertion). Tests: not applicable (behavioral doctrine). Code: not applicable. Docs: both primary artifacts updated in commit `ce8b8108`. |
+| 7 Self-coherence | `.cdd/unreleased/84/self-coherence.md` | cdd | AC-by-AC self-check completed; all 6 ACs pass; peer enumeration complete; no debt |
+| 7a Pre-review | `.cdd/unreleased/84/self-coherence.md` | cdd | Pre-review gate row-by-row below |
