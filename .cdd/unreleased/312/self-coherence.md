@@ -99,5 +99,38 @@ Daemon (labeled "target — planned, not shipped"), Step 6: Install daemon
 §9 ACs (labeled target for full planned implementation), §10–§11 (design
 plan/questions). Lines 16 and 39 describe problem/goals, not runtime behavior.  ✓
 
+---
+
+## §Self-check
+
+**Did α push ambiguity onto β?**  
+No. Every AC has concrete evidence tied to a commit SHA. Grep commands are
+reproducible. Section boundaries are verifiable by line numbers.
+
+**Is every claim backed by evidence in the diff?**  
+Yes. Each AC evidence point names the exact commit and the specific line/section
+change. No claim is made that β must verify by inference.
+
+**Peer enumeration (docs family):**  
+The three files (#313 README.md, #314 OPERATOR.md, #315 SETUP-INSTALLER.md)
+are the full peer set named by the umbrella issue. Each updated. No sibling
+files were edited (non-goal verified: README was not touched by #314 or #315;
+OPERATOR.md was not touched by #313 or #315; SETUP-INSTALLER.md was not
+touched by #313 or #314). Confirmed by checking git diff per commit.
+
+Related artifact `docs/alpha/agent-runtime/AGENT-RUNTIME.md` — read, confirmed
+as the target/runtime spec reference; no edits required (issue explicitly
+out-of-scope).
+
+**No design artifact required:** single-file-scoped doc edits; no contract or
+API change; no impact graph requiring design doc.
+
+**No plan artifact required:** three sequential independent file changes;
+no non-trivial sequencing.
+
+**No tests required:** docs-only change; no code, schema, or runtime contract.
+No test surface applies.
+
+
 
 
