@@ -199,3 +199,21 @@ Yes:
 **Step 6 — Docs:** The artifact is the doc. No secondary documentation surface changed.
 
 **Step 7 — Self-coherence:** This file. Written incrementally (one section per commit) per α §2.5. Commits: `dc562fe1` (§Gap), `80a5abcf` (§Skills), `5d858595` (§ACs), `bafc7437` (§Self-check), `ac9ba3bf` (§Debt), this commit (§CDD-Trace).
+
+## Pre-review gate
+
+| Row | Check | Status |
+|-----|-------|--------|
+| 1 | Branch rebased on `origin/main` | ✅ merge-base = `0e976257` (main HEAD at 2026-04-30T observed pre-signal) |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | ✅ §CDD-Trace present |
+| 3 | Tests present or explicit reason none apply | ✅ No code tests apply; proof via kata + AC mapping (single SKILL.md artifact) |
+| 4 | Every AC has evidence | ✅ §ACs maps all 9 ACs to diff evidence |
+| 5 | Known debt explicit | ✅ §Debt: D1 (`cue` CLI not installed; manual validation confirmed) |
+| 6 | Schema/shape audit completed when contracts changed | ✅ Not applicable — no schema-bearing contract changed |
+| 7 | Peer enumeration completed when closure claim touches a family | ✅ Not applicable — single new file, no sibling modifications |
+| 8 | Harness audit completed when schema-bearing contract changed | ✅ Not applicable |
+| 9 | Post-patch re-audit completed after mid-cycle patch | ✅ Not applicable — no mid-cycle patch |
+| 10 | Branch CI green on head commit | ⚠️ `build.yml` triggers on `main` only; cycle branches do not run CI. The I5 coherence-CI job (frontmatter validation) will run after merge. β should verify green before final merge approval. Head commit: `76a8b623` |
+| 11 | Author email matches `alpha@cdd.cnos` | ✅ All 7 commits carry `alpha@cdd.cnos` |
+
+## Review-readiness | round 1 | implementation SHA: `76a8b623` | branch CI: not triggered on cycle branches (see row 10) | ready for β
