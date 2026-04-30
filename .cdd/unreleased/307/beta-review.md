@@ -118,3 +118,52 @@ None (no D findings).
 - Peer enumeration in self-coherence covers all nine cdd lifecycle skills — none silently inherit the change.
 - CI gate: not configured on cycle branches; CI runs on main push (job I5 `skill-frontmatter-check` via `tools/validate-skill-frontmatter.sh`). β accepts α's explicit-not-applicable on row 10 of the pre-review gate.
 - The single finding (F1) is resolution-straightforward: a 2-line KATAS.md table addition or an explicit debt entry. No design decision required.
+
+---
+
+## Round 2
+
+**Verdict:** APPROVED
+
+**Round:** 2
+**Base SHA (origin/main):** `396d9982af2c2318400fb5c9eb400178d488f99b`
+**Head SHA (cycle/307):** `e71831dc3112920bd2bd7f5e9554cf571d919521`
+**Fixed this round:** `e71831dc` — closes F1 (KATAS.md stale catalog)
+**Branch CI state:** not configured on cycle branches (unchanged from R1; CI runs on main push)
+**Merge instruction:** `git merge cycle/307 -m "Closes #307: skill(cdd/issue): move issue katas to cnos.cdd.kata package"` into main
+
+---
+
+## §2.0.0 Contract Integrity — R2 (narrowed to F1 fix scope)
+
+| Check | Result | Notes |
+|---|---|---|
+| Cross-surface projections updated | **yes** | F1 resolved: `docs/gamma/cdd/KATAS.md` M5 row added; M0–M5 reference updated in Architecture section |
+
+All other R1 contract integrity rows carry forward unchanged — fix-round commit does not touch those surfaces.
+
+## F1 Resolution Verification
+
+**F1:** `docs/gamma/cdd/KATAS.md` Tier 3 table stale (M0–M4 only; M5-issue-authoring not listed; omission unnamed in §Debt).
+
+**Fix commit:** `e71831dc` authored as `alpha@cdd.cnos` — "α(#307): fix-round 1 — add M5 row to KATAS.md (β R1 F1)"
+
+**Verification:**
+- Diff `origin/main..origin/cycle/307 -- docs/gamma/cdd/KATAS.md` shows two changes: (1) Architecture bullet: "M0–M4" → "M0–M5"; (2) Tier 3 table: `| M5 | Issue authoring | schema validation + README alignment + witness-theater check |` row added after M4.
+- Oracle: `grep -n "M5" docs/gamma/cdd/KATAS.md` → 2 matches (L15: reference update, L89: table row). Both expected matches present.
+- Fix scope: only `docs/gamma/cdd/KATAS.md` and `.cdd/unreleased/307/self-coherence.md` (fix-round appendix) changed in `e71831dc`. No frontmatter, schema, skill body, or kata content touched.
+
+**F1 status:** RESOLVED.
+
+## Findings — R2
+
+| # | Finding | Evidence | Severity | Type |
+|---|---------|----------|----------|------|
+| — | None | F1 resolved; no new incoherence introduced by fix commit | — | — |
+
+## Notes
+
+- R2 scope: verification of F1 fix only. R1 AC coverage, architecture check, and skill consistency remain as assessed in R1 — fix-round commit does not touch those surfaces.
+- Fix commit identity: `alpha@cdd.cnos` — role-observable separation maintained in identity-rotation.
+- Approval explicitly closes the search space: no remaining blocker found in the contract, implementation, or fix-round scope.
+- β proceeds to merge and close-out per `release/SKILL.md`.
