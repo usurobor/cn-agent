@@ -531,6 +531,16 @@ This gives the "compose anything" feel without losing coherence. You can lift a 
 
 This connects directly to the judgment doctrine: an agent must name the boundary it protects, the boundary it breaches, and the residual debt it does not call closure. The witness slot carries all three.
 
+### 15.5 Why "skill" remains as a narrow-agent lens
+
+§13 established that there are no skills, only agents. But the skill lens (`tri(input, transform, witnessed-output)`) is not deprecated — it is the correct projection for narrow-scope, single-invocation agents. A `task-local` agent whose lifetime is one call is productively viewed through the skill lens because its orientation is fully determined by its input contract and its witness is fully determined by its output contract.
+
+The skill lens fails when applied to role or composite agents because those agents have internal state, loops, and multi-step witness accumulation. That is when the agent lens (`tri(orientation, intervention, witness)`) or the protocol lens (`tri(roles, interaction, close-outs)`) becomes necessary.
+
+"Skill" is a lens, not a lie. It remains useful precisely where it is appropriate.
+
+---
+
 ### 15.6 TSC-Oper: witness model, close-outs, and ctb-check
 
 **The witness state machine and CTB close-outs.**
@@ -573,16 +583,6 @@ ctb-check should not merely verify that witness fields are present — that is W
 **ctb-check v0 dependency.**
 
 ctb-check v0 should draw from TSC-Oper's witness-independence pattern. Field presence is the minimum check, not the sufficient one. The minimum checker implication from TSC-Oper is: for each required witness field, verify that the evidence is independently grounded rather than self-asserted where the checking surface permits that distinction.
-
----
-
-### 15.5 Why "skill" remains as a narrow-agent lens
-
-§13 established that there are no skills, only agents. But the skill lens (`tri(input, transform, witnessed-output)`) is not deprecated — it is the correct projection for narrow-scope, single-invocation agents. A `task-local` agent whose lifetime is one call is productively viewed through the skill lens because its orientation is fully determined by its input contract and its witness is fully determined by its output contract.
-
-The skill lens fails when applied to role or composite agents because those agents have internal state, loops, and multi-step witness accumulation. That is when the agent lens (`tri(orientation, intervention, witness)`) or the protocol lens (`tri(roles, interaction, close-outs)`) becomes necessary.
-
-"Skill" is a lens, not a lie. It remains useful precisely where it is appropriate.
 
 ---
 
