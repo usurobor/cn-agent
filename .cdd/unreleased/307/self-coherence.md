@@ -73,3 +73,45 @@ The issue's §Skills to load names exactly `cnos.core/skills/design`; Tier 1 + T
 - **Oracle:** `grep -nE "^## 5\. External kata" src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` → 1 match (L703).
 - **Evidence:** `## 5. External kata` body section names the path `src/packages/cnos.cdd.kata/katas/M5-issue-authoring/`, lists the three drill scenarios it exercises, and references the frontmatter `kata_ref` for machine-readable linkage — mirroring the `## External kata` section that `review/SKILL.md` carries (L249–L255).
 - **Status:** met.
+
+## Self-check
+
+**Did α push ambiguity onto β?** No.
+- Boundary decisions taken: Option B over Option A (named in §Gap with reason); kata bundle includes full prompt-pair + rubric (named with reason); M-series number = 5 (named with reason).
+- All five ACs map to a concrete oracle and a single piece of evidence (commit SHA + line numbers).
+- Peer enumeration completed (see below); no sibling skill silently inherits the move.
+
+**Is every claim backed by evidence in the diff?** Yes.
+- AC1: grep counts in §ACs (run + reported = 0/0).
+- AC2/AC3: filesystem layout shipped in `a16ad77f`.
+- AC4: frontmatter lines L5 + L26 in `e61c2615`.
+- AC5: `## 5. External kata` body section L703 in `e61c2615`.
+
+**Peer enumeration — kata_surface peers (skill-class peers).**
+The diff modifies frontmatter `kata_surface` on `issue/SKILL.md`. The peer set is every cdd lifecycle skill with a `kata_surface` declaration:
+
+| Skill | kata_surface | kata_ref | Status this cycle |
+|---|---|---|---|
+| `cdd/alpha/SKILL.md` | embedded | n/a | exempt — embedded `## 4. Embedded Kata` (L316–L344) intentional; not a §307 target |
+| `cdd/beta/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
+| `cdd/gamma/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
+| `cdd/design/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
+| `cdd/plan/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
+| `cdd/issue/SKILL.md` | external (was embedded) | M5-issue-authoring/ | **updated this cycle** |
+| `cdd/review/SKILL.md` | external | M2-review/ | unchanged — moved in #304 (`5a8bb3e`); the precedent this cycle mirrors |
+| `cdd/release/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
+| `cdd/post-release/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
+
+Issue §Non-goals explicitly excludes "Touching review katas (already moved)" and limits scope to the three issue katas; β/γ/design/plan/release/post-release skills are not in this cycle's scope. No skill silently inherits the convention change.
+
+**Peer enumeration — `## External kata` body-section peers.**
+`review/SKILL.md` is the precedent (§External kata at L249). `issue/SKILL.md` now matches its structural shape. No other lifecycle skill currently carries a §External kata section because no other has external kata content yet — adding the section to skills without an external kata target would be a future-as-present claim.
+
+**Peer enumeration — kata_ref consumers.**
+Searched the repo for code that reads `kata_ref` (machine-readable consumers). None present today; the field is documentation-shaped per the open-schema §11 contract. No downstream surface needs updating.
+
+**Harness audit.** Schema (`schemas/skill.cue`) is open via trailing `...`; `kata_ref` passes through without schema change required (review/SKILL.md ships with the same key already). `tools/validate-skill-frontmatter.sh` validates via `cue vet` and is unaffected. No CI workflow, fixture, or generator emits skill frontmatter — no harness drift surface exists.
+
+**Intra-doc repetition check.** `grep -nE "Kata A|Kata B|Kata C|^### 5\." src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` → 0 matches (verified post-commit). The §5 body-removal claim is exhaustive against the doc, not just the dominant heading.
+
+**Closure-overclaim check.** The cycle does not claim "all CDD lifecycle skills now carry external katas" — only that `issue/SKILL.md` now does, mirroring `review/SKILL.md` per #304. Issue §Non-goals are preserved unchanged.
