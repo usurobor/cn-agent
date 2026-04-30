@@ -89,3 +89,34 @@ Verification: `grep -rn "mindsets/CA" src/packages/cnos.core/skills/agent/ca-con
 Evidence: Both `ca-conduct/SKILL.md` and `CA-CONDUCT.md` received identical Reflect section content. Both are live authoritative surfaces — the SKILL.md is the skill (with frontmatter, kata surface) and CA-CONDUCT.md is the doctrine mirror (plain text). Both are updated in the same commit (`ce8b8108`).
 
 **PASS.**
+
+---
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+No. Every AC has a concrete evidence trace. The diff is bounded (two files, one section each). No judgment was deferred to β — all scope decisions were made explicitly per the issue.
+
+**Is every claim backed by evidence in the diff?**
+
+Yes:
+- AC1–AC4 evidence: specific line numbers in the modified files where each requirement lands.
+- AC5 evidence: grep command with zero-match assertion, verifiable by running `grep -rn "mindsets/CA" src/packages/cnos.core/skills/agent/ca-conduct/ src/packages/cnos.core/doctrine/`.
+- AC6 evidence: both files modified in the same commit.
+
+**Scope discipline check:**
+
+The issue scope says not to: create a new reflection skill, add a command, change reflection cadence table, change thread paths, add runtime enforcement, or rewrite CA conduct beyond the reflection addition. None of those were done. Only the Reflect section was added; the rest of both files is unchanged.
+
+**Peer enumeration:**
+
+Surfaces checked:
+- `ca-conduct/SKILL.md` — updated ✓
+- `CA-CONDUCT.md` (doctrine mirror) — updated ✓
+- `reflect/SKILL.md` — referenced; no contradictions found; not modified ✓
+- `mci/SKILL.md` — referenced; no contradictions found; not modified ✓
+- `src/packages/cnos.core/AGENTS.md` — out of scope (issue explicitly excludes changing runtime packing) ✓
+- `src/packages/cnos.core/mindsets/OPERATIONS.md` — out of scope (issue explicitly excludes rewriting OPERATIONS.md) ✓
+
+No other conduct-adjacent surfaces were modified or required updating.
