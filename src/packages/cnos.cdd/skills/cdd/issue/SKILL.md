@@ -502,6 +502,7 @@ Before filing or dispatching, check:
 - [ ] Status truth is explicit.
 - [ ] Source-of-truth paths resolve.
 - [ ] Scope and non-goals do not contradict ACs.
+- [ ] Contradictions between issue sections are resolved explicitly (not left for α to interpret).
 - [ ] Hard gates do not appear in exception examples.
 - [ ] Optional/defaulted fields name defaults.
 - [ ] Path resolution base is explicit.
@@ -556,6 +557,9 @@ Before filing or dispatching, check:
 
 3.13. **Issue owns entry point, not full depth**
   - Issue owns problem, impact, scope, ACs, priority, proof boundary, and links. Design owns gap analysis. Plan owns step sequencing.
+
+3.14. **Contradiction resolution must be explicit**
+  - When an issue body contains contradictions between sections (e.g. non-goals vs ACs, scope vs constraints, status truth vs implementation guidance), the contradiction must be resolved in the issue before dispatch. If α discovers a contradiction during implementation, α must surface it back to γ before implementing either interpretation. α does not resolve contradictions by choosing one side silently. *Derives from: #301 α O4 — issue-body non-goal vs hard-gate AC created a forced reading that α resolved implicitly; the resolution should have been stated back to γ.*
 
 ---
 
