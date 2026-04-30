@@ -163,3 +163,57 @@ let the polling protocol carry HEAD" — either of which makes the
 review-readiness signal self-consistent on first write. This is recorded
 here for γ; β does not block on it.
 
+
+## Round 2
+
+**Verdict:** APPROVED (provisional on CI green — see merge instruction)
+
+**Branch:** `claude/cnos-alpha-tier3-skills-MuE2P`
+**Base:** `a8e67b7` (origin/main)
+**Round-1 verdict commit:** `40af6c0` (β round-1 RC, this file)
+**Fix-round commit:** `171188e` (α round-2 F1+F2+F3 fixes)
+**Appendix commit:** `55642db` (α round-2 appendix to self-coherence.md)
+**Head reviewed:** `55642db`
+**Branch CI state:** **unverified-from-β-environment** — required for merge; see merge instruction
+**Merge instruction:** **Do not merge until CI is green on `55642db`.** Once δ confirms `skill-frontmatter-check` (I5) and all other required jobs (`go`, `binary-verify`, `package-verify`, `package-source-drift`, `protocol-contract-check`, `link-check`) report `success` on `55642db`, β (or δ acting as β per operator override) executes:
+
+```
+git merge --no-ff origin/claude/cnos-alpha-tier3-skills-MuE2P \
+  -m "Closes #301: infra(ci) — CUE-based SKILL.md frontmatter validation (I5)"
+```
+
+then proceeds to release per `release/SKILL.md` (version bump, CHANGELOG, RELEASE.md, tag, push), and β writes the close-out per CDD §β step 9.
+
+### Fixed this round
+
+| Finding (round-1) | Severity | Fix verified at HEAD `55642db` |
+|---|---|---|
+| F1 — `release/SKILL.md` L103 + L217 prose still references non-existent "writing" skill | C | Both prose sites renamed `writing` → `write`. `grep -n "writing" src/packages/cnos.cdd/skills/cdd/release/SKILL.md` → 0 hits. Fix is in scope (the touched file only); wider rename debt across `CDD.md` L611 / L785 and `eng/skills/eng/README.md` L165 ("writing bundle") remains pre-existing debt for a follow-up issue, as scoped in round-1 verdict. |
+| F2 — self-coherence.md "45" claim drift (3 sites) | A | All three sites updated to `43`. `grep -nE "(45 entries\|45 file-specific)" .cdd/unreleased/301/self-coherence.md` → 0 hits. Matches actual `jq 'length' schemas/skill-exceptions.json` → 43. |
+| F3 — readiness-signal head SHA recursively self-stales | A | Convention changed: signal names the **implementation commit SHA** (`8adfd44`), not the readiness commit. New round-2 signal at L239 reads `implementation SHA \`8adfd44\` \| round-2 fix SHA \`171188e\``; both are stable references that do not lag HEAD. "SHA convention" paragraph at L189–195 documents the choice. Branch HEAD as visible to β is still carried by the polling protocol. |
+
+No new findings introduced by the fix-round. Re-audit:
+
+- `release/SKILL.md`: prose-only edit; CUE schema does not parse body prose; no schema impact.
+- `.cdd/unreleased/301/self-coherence.md`: not under `src/packages/`, not in I5's scope.
+- All 56 `src/packages/**/SKILL.md` unchanged from round 1; validator output unchanged.
+
+### Local re-verification at round-2 HEAD `55642db`
+
+β fetched the round-2 HEAD into the worktree and re-ran the validator (CUE `v0.13.2`, `jq 1.7`):
+
+- `./tools/validate-skill-frontmatter.sh --self-test` → **rc=0**; all 3 positive + 4 negative fixtures behave as expected.
+- `./tools/validate-skill-frontmatter.sh` → **rc=0**; `✓ 56 SKILL.md validated; no findings.`
+
+Local proof confirms the validator behaves correctly on the round-2 tree. It does not substitute for the `skill-frontmatter-check` (I5) GitHub-Actions job's own `success` on `55642db` — that remains δ's gate, and is the one outstanding precondition for merge.
+
+### Round-1 → round-2 narrowing pattern
+
+α addressed every named finding in scope on the same branch (no new branch, no follow-up issue used as a substitute for the fix). The fix-round is two commits: implementation (`171188e`) + readiness-signal appendix (`55642db`). Pattern is clean: one round of narrowing, no scope drift, no new findings opened by the fix. β does not need a round 3.
+
+### Outstanding precondition
+
+The single outstanding precondition is **δ confirmation of CI green on `55642db`**, per `review/SKILL.md` §3.7. β's environment cannot reach `api.github.com` (HTTP 403 on check-runs and workflow-runs endpoints); δ holds the verification surface. Once δ confirms, the merge command above is the merge instruction; if δ is unavailable and the operator authorizes γ or β to execute the merge, the same command applies.
+
+After merge, β writes `.cdd/unreleased/301/beta-closeout.md` (review context across rounds + release evidence) per CDD §β step 9 and the release skill's §2.10 close-out hook. γ owns the PRA.
+
