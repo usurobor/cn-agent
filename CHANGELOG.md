@@ -133,6 +133,22 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.67.0 (2026-04-30)
+
+### Added
+- **eng/troubleshoot** — live diagnosis skill for environmental and runtime failures (#309)
+- **CA conduct reflection** — Reflect section in ca-conduct as core continuity requirement (#84)
+- **SOUL.md skill-loading gate** — imperative rule in §2.1 Observation requiring skill loading before action (#149)
+- **scripts/release.sh** — single-command release gate (stamp, verify, commit, tag, push)
+- **Dispatch failure evidence log** for #295
+
+### Changed
+- CDD: δ dispatches all roles sequentially — γ produces prompts, δ executes dispatch
+- CDD: β owns merge only; δ owns release boundary (tag/deploy/disconnect)
+- eng/troubleshoot: operator review patches (escalation path, flexible triage, sources, corrective action terminology)
+
+---
+
 ## 3.56.2 (2026-04-16)
 
 ### Fixed
