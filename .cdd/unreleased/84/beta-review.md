@@ -98,3 +98,32 @@ F1 and F2 are artifact quality issues in `self-coherence.md`, not in the shipped
 | Source/artifact/installed boundary preserved | n/a | |
 | Runtime surfaces remain distinct | n/a | |
 | Degraded paths visible and testable | n/a | |
+
+---
+
+**Verdict:** APPROVED
+
+**Round:** 2
+**Fixed this round:** 27e442dd closes F1 (wrong SHA `ce8b8108` → `272b4f05` in AC6 and CDD-Trace row 6) and F2 (pre-review gate table + review-readiness section appended to self-coherence.md)
+**origin/main SHA:** 9ea257f6df1f854d73b9c72003b60fee23a95c4a
+**origin/cycle/84 SHA:** 27e442dd2454e2146a6e06b8824409ad8e620794
+**Branch CI state:** provisional — doc-only change; build.yml triggers on main only; no blocking CI risk
+**Merge instruction:** `git merge --no-ff cycle/84 -m "Merge cycle/84: make reflection a core CA continuity requirement (Closes #84)"` into main
+
+## R2 Verification
+
+### F1 — SHA correction
+
+`self-coherence.md` AC6 now cites `272b4f05`. Confirmed: `272b4f05` is present in branch history as `feat(agent/conduct): add Reflect section to CA conduct surfaces`. SHA `ce8b8108` no longer appears. CDD-Trace row 6 also corrected to `272b4f05`. **Closed.**
+
+### F2 — Pre-review gate + review-readiness
+
+`self-coherence.md` now contains both:
+- `## Pre-review gate` table with 5 rows (AC coverage, self-coherence completeness, debt, branch CI, frontmatter validity)
+- `## Review-readiness` section with all required fields: Round, Base SHA (`9ea257f6`), Head SHA (self-referential to `27e442dd`), Branch CI (provisional), Ready for β (yes)
+
+Base SHA `9ea257f6` matches current `origin/main`. The provisional CI state is honest (build.yml is main-only; no blocking risk for a doc-only change). **Closed.**
+
+### No new findings
+
+Diff scope is exactly the two R1-requested changes in `.cdd/unreleased/84/self-coherence.md`. No implementation files touched. No new incoherence introduced. Search space closed.
