@@ -115,3 +115,13 @@ Searched the repo for code that reads `kata_ref` (machine-readable consumers). N
 **Intra-doc repetition check.** `grep -nE "Kata A|Kata B|Kata C|^### 5\." src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` → 0 matches (verified post-commit). The §5 body-removal claim is exhaustive against the doc, not just the dominant heading.
 
 **Closure-overclaim check.** The cycle does not claim "all CDD lifecycle skills now carry external katas" — only that `issue/SKILL.md` now does, mirroring `review/SKILL.md` per #304. Issue §Non-goals are preserved unchanged.
+
+## Debt
+
+**Carried into this cycle (none new from this cycle):**
+
+- **Other cdd lifecycle skills with `kata_surface: embedded`** — `alpha/`, `beta/`, `gamma/`, `design/`, `release/`, `post-release/` retain embedded kata bodies. This cycle is explicitly out-of-scope for them per issue §Non-goals; whether they should also move externalises is a separate γ decision, not α-side debt.
+- **No `rubric.json` / `baseline.prompt.md` / `cdd.prompt.md` deferred** — the issue's exception-backed strata permitted deferring these per-kata if "the content shape doesn't yet warrant baseline-vs-CDD evaluation," but the M-series shape ships them uniformly and the issue-authoring drill supports method-level evaluation. M5 carries the full quartet, mirroring M2-review.
+- **Per-scenario rubric and prompt-pair files not split** — Option B's three `## Worked examples` share one rubric.json and one prompt-pair (the M2-review precedent). If a future cycle wants per-scenario evaluation, that is a separate split; the issue's "Deferred" entry covers exactly this case.
+
+**No known α debt new this cycle.**
