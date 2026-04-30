@@ -63,11 +63,13 @@ cat /tmp/gamma-prompt.md | claude -p --allowedTools "Read,Write,Bash" --model <m
 
 ```bash
 # α — implements
-cat /tmp/alpha-prompt.md | claude -p --allowedTools "Read,Write,Bash" --model <model>
+cat /tmp/alpha-prompt.md | claude -p --allowedTools "Read,Write,Bash" --permission-mode acceptEdits --model <model>
 
-# β — reviews (Read,Write only — no Bash)
-cat /tmp/beta-prompt.md | claude -p --allowedTools "Read,Write" --model <model>
+# β — reviews (needs Bash for git/gh read-only commands)
+cat /tmp/beta-prompt.md | claude -p --allowedTools "Read,Write,Bash" --permission-mode acceptEdits --model <model>
 ```
+
+Note: `--permission-mode acceptEdits` is required because `claude -p` as a fresh session hits the trust dialog. Without it, agents cannot write files. β gets Bash because it needs `git diff`, `gh issue view`, etc. — role boundaries are enforced by beta/SKILL.md, not tool scoping.
 
 - ❌ Rewrite the prompt to add constraints or context γ didn't include
 - ✅ Deliver the prompt verbatim to the `claude -p` session
