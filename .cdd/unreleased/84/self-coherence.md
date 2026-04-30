@@ -120,3 +120,9 @@ Surfaces checked:
 - `src/packages/cnos.core/mindsets/OPERATIONS.md` — out of scope (issue explicitly excludes rewriting OPERATIONS.md) ✓
 
 No other conduct-adjacent surfaces were modified or required updating.
+
+---
+
+## §Debt
+
+None. All ACs are fully met. No scope was deferred, no known contradictions remain unresolved, and no follow-up issues are required by this change.
