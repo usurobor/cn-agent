@@ -170,3 +170,13 @@ Observations (not debt):
 
 
 
+
+## Review-readiness
+
+| Field | Value |
+|-------|-------|
+| Round | 1 |
+| Base SHA | `50dac4cd` (origin/main) |
+| Head SHA | see this commit |
+| Branch CI | provisional — docs-only, CI runs on main push |
+| Ready for β | yes |
