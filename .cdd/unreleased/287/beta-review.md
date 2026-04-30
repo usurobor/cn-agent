@@ -232,3 +232,83 @@ Or a footnote on the row. α's call.
 **Path to approval:** α addresses F3 (and optionally F4) with a fix-round commit on `cycle/287`, appends a fix-round section to `.cdd/unreleased/287/self-coherence.md` per `alpha/SKILL.md` §2.7. β re-fetches `origin/main` synchronously before R3 (closing the β-side gap that produced the R1 false positive), recomputes the diff base, re-reviews against the fix-round, and writes R3 verdict.
 
 — β (`beta@cdd.cnos`) at 2026-04-30 00:35 UTC
+
+---
+
+## Round 3 — Verdict: APPROVED
+
+**Round head SHA reviewed:** `32a384f662ea7fdb6c8b0d525e7a2317d0ec9879`
+**Base:** `origin/main` = `70ff2b1b80e49a30a4d7dddded49a5bd33669b32` *(re-fetched synchronously at 2026-04-30 00:43 UTC, closing the β-side gap that produced R1's F1+F2 false positives)*
+**Branch CI state:** deferred (markdown-only diff; no cycle-branch CI surface in this repo; β will verify post-merge `.github/workflows/build-verify.yml` runs green on `main` after the merge before tagging the release per `release/SKILL.md` §3.2).
+
+**Fixed this round:**
+- F3 (C, identity-truth): **fixed in `9503aee` / `89b8575` / `11d5879`** (α retroactive re-author per β R2 path (a)) — all three α R1 commits re-pushed with canonical `<alpha@cdd.cnos>`. Also applies to fix-round commits (`de32200` / `32a384f`).
+- F4 (A, polish): **fixed in `de32200`** (`CDD.md` §4.1 row 2 Purpose column gains the parenthetical "γ creates `cycle/{N}` per §4.2 Branch rule + §1.4 γ algorithm Phase 1 step 3a; α/β check out, never create"). β finds α's wording acceptable (cross-references both §4.2 and §1.4 step 3a explicitly; preserves the original "Create a dedicated branch" prefix to minimize §4.1 table delta — a stylistic choice β does not contest).
+
+### β R3 verification
+
+1. **F3 — git identity canonical across all α commits.** `git log --pretty="%h %an <%ae>" origin/main..origin/cycle/287` at R3 head:
+
+   ```
+   32a384f alpha <alpha@cdd.cnos>
+   de32200 alpha <alpha@cdd.cnos>
+   d9f1596 beta  <beta@cdd.cnos>
+   c91cf87 gamma <gamma@cdd.cnos>
+   74c3a6d beta  <beta@cdd.cnos>
+   f89bf9f beta  <beta@cdd.cnos>
+   8d2adb4 beta  <beta@cdd.cnos>
+   11d5879 alpha <alpha@cdd.cnos>
+   89b8575 alpha <alpha@cdd.cnos>
+   9503aee alpha <alpha@cdd.cnos>
+   ```
+
+   All 5 α commits use canonical `alpha@cdd.cnos`. β + γ commits unchanged (already canonical). Role-identity-is-git-observable property restored. **F3 closed.**
+
+2. **F4 — §4.1 row 2 wording.** Verified by reading `CDD.md` §4.1 at R3 head:
+
+   ```markdown
+   | 2 | Branch | Create a dedicated branch (γ creates `cycle/{N}` per §4.2 Branch rule + §1.4 γ algorithm Phase 1 step 3a; α/β check out, never create) | Valid branch name |
+   ```
+
+   Row content disambiguates ownership inline; cross-references resolve. **F4 closed.**
+
+3. **AC coverage re-verified at R3 head.** β re-grepped the four canonical facts against R3 HEAD:
+   - "γ creates `cycle/{N}` from `origin/main`" — present at the expected sites in `CDD.md`, `gamma/SKILL.md`. Consistent.
+   - "α and β never create branches" — present at the expected sites in `CDD.md`, `alpha/SKILL.md`, `beta/SKILL.md`. Consistent.
+   - `origin/cycle/{N}` — 35 occurrences in `CDD.md` + multiple in role skills + `operator/SKILL.md`. No accidental `origin/{branch}` placeholders left over.
+   - "warn-only / retrospective" — 3 occurrences in `CDD.md` (§Tracking polling table row, §Tracking ¶ "Single named branch", §4.2 Legacy block); 1 occurrence in `operator/SKILL.md`. Consistent.
+
+   AC walk: 12/12 ACs met (R1 + F4 polish addendum). No regression introduced by the rebase.
+
+4. **Diff content invariance verified.** β re-ran `git diff --stat origin/main..origin/cycle/287` at R3 head: 5 spec files (`CDD.md`, `alpha/SKILL.md`, `beta/SKILL.md`, `gamma/SKILL.md`, `operator/SKILL.md`) + 3 cycle-dir artifacts (`self-coherence.md`, `beta-review.md`, `gamma-clarification.md`). `CDD.md` is now +149 lines (was +147 in R1; +2 lines is exactly the F4 parenthetical wrapping, consistent with α's claim). `alpha/SKILL.md` is +15 lines (unchanged from R1's actual cycle-diff scope after stale-fetch correction). `review/SKILL.md` is **not** in the cycle diff — consistent with R2 withdrawal of F1.
+
+5. **No new findings.**
+
+### Search-space closure (per `review/SKILL.md` Verdict Rule 3.7)
+
+β has reviewed the diff against the issue's 12 ACs, the contract integrity table, and the role-skill / lifecycle-skill peer enumeration. β has cross-checked α's self-coherence.md, the γ-clarification, and the fix-round narrative. No remaining blocker was found in the issue's contract, the spec text, the artifact set, or the role-identity surface. The cycle's self-application (AC 12) is exemplified by the cycle's own execution (γ created `cycle/287` before dispatch; α and β check-out only; canonical git identities across all commits; β's verdict commits all on `cycle/287`).
+
+### Verdict — APPROVED
+
+**Round count:** 3.
+
+**§9.1 review-rounds-> 2 trigger:** β acknowledges this fires on the strict-rounds reading. β's framing (concurring with α R2 fix-round narrative): root-cause is the **β-side stale-`origin/main` blind spot** that produced R1's F1+F2 false positives (β's `Monitor` polling targets `cycle/{N}` only and never re-fetches `main`; β read `git diff main..cycle/{N}` against a stale local `origin/main` ref). Mitigation candidate is a `beta/SKILL.md` (or `review/SKILL.md`) rule requiring β to `git fetch --verbose origin main` synchronously immediately before computing the review-diff base. **β reports this as a factual observation in `beta-closeout.md` per β voice rule** (no disposition recommendation; γ owns the §9.1 / cycle-iteration triage).
+
+If R1+R2 had not raised F1+F2 (which were β-side stale-fetch artifacts, not real findings against the diff), the cycle would have closed at R2 with F3+F4 fix-round → R3 approval — at the §9.1 threshold but not exceeding it. The R3 round count is *attributable to β-side process*, not to α's diff. γ's PRA can characterize the trigger accordingly.
+
+### Merge instruction
+
+```
+git merge --no-ff cycle/287 -m "Closes #287: γ creates the cycle branch — α and β only check out cycle/{N}"
+git push origin main
+```
+
+After merge:
+1. β awaits α's `.cdd/unreleased/287/alpha-closeout.md` (α step 10).
+2. β writes `.cdd/unreleased/287/beta-closeout.md` (β step 9).
+3. β starts the release flow per `release/SKILL.md` (`§2.2`–`§2.10`): VERSION bump, `stamp-versions.sh`, CHANGELOG row, `RELEASE.md`, move `.cdd/unreleased/287/` → `.cdd/releases/{X.Y.Z}/287/` per `release/SKILL.md` `§2.5a`, release commit, bare-version tag, push.
+4. β waits for release CI green; γ writes the PRA per γ Phase 3.
+
+The merge itself happens with `--no-ff` to preserve cycle-branch ancestry (β's verdict commits + α's fix-round + γ-clarification all become part of `main`'s recorded history; the merge commit anchors `Closes #287` for issue auto-close).
+
+— β (`beta@cdd.cnos`) at 2026-04-30 00:44 UTC
