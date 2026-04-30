@@ -262,7 +262,7 @@ This preserves discipline while avoiding ritual checks when discriminating evide
 
 ## 4. Worked Examples
 
-The following examples are from the 2026-04-30 identity-rotation dispatch test: five β dispatch failures, three root-cause classes, each diagnosed ad-hoc with a wrong first hypothesis. Each example shows: symptom → wrong first hypothesis → better triage path → root cause → MCA → verification.
+The following examples are from the 2026-04-30 identity-rotation dispatch test: five β dispatch failures, three root-cause classes, each diagnosed ad-hoc with a wrong first hypothesis. Each example shows: symptom → wrong first hypothesis → better triage path → root cause → corrective action → verification.
 
 ### Example 1 — OOM kill
 
@@ -276,7 +276,7 @@ The following examples are from the 2026-04-30 identity-rotation dispatch test: 
 
 **Root cause:** 2 GB VPS, no swap, two Node processes (OpenClaw gateway + Claude CLI) competing for memory. Kernel OOM-killed the largest.
 
-**MCA:** Add 2 GB swap.
+**Corrective action:** Add 2 GB swap.
 
 **Verification:** Re-ran β review under same conditions. Process completed without OOM kill. Original symptom gone.
 
@@ -297,7 +297,7 @@ The following examples are from the 2026-04-30 identity-rotation dispatch test: 
 
 **Root cause:** `gh issue view` without `--json` hits a deprecated GraphQL field. Tool error, not rate limit.
 
-**MCA:** Use `gh issue view N --json title,body,state,comments` in all dispatch prompts.
+**Corrective action:** Use `gh issue view N --json title,body,state,comments` in all dispatch prompts.
 
 **Verification:** Subsequent `gh issue view --json` calls return data without error.
 
@@ -320,7 +320,7 @@ The following examples are from the 2026-04-30 identity-rotation dispatch test: 
 
 **Root cause:** Shell backgrounding (`&`) attaches the process to the parent's session. When the parent exec session ends, the shell cleans up the process tree.
 
-**MCA:** Run `claude -p` as a foreground direct child process only. Never background the session process with `&`.
+**Corrective action:** Run `claude -p` as a foreground direct child process only. Never background the session process with `&`.
 
 **Verification:** Subsequent foreground runs complete without silent exit. Original symptom gone.
 
@@ -365,7 +365,7 @@ An agent running a long beta review goes silent. The stream stops mid-output. No
 
 OOM kill: host memory exhausted, no swap, kernel killed the largest process.
 
-### MCA
+### Corrective action
 
 Add swap or reduce concurrent memory pressure. Verify the process completes the same scenario without OOM.
 
