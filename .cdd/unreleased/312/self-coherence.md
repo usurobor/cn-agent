@@ -13,3 +13,19 @@ shipped. SETUP-INSTALLER.md did not distinguish install / setup / activation /
 target service wiring. A new operator could complete cn setup and have no
 documented next action.
 
+---
+
+## §Skills
+
+**Tier 1**
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` — lifecycle and role contract
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — α role surface
+
+**Tier 2**
+- (no eng/* skill required — docs-only change; no code, tests, or schema)
+
+**Tier 3 (issue-specified)**
+- `src/packages/cnos.core/skills/write/SKILL.md` — prose, house style,
+  status-truth discipline, front-load-the-point, one file one governing question
+
+
