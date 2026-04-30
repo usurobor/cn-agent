@@ -30,11 +30,11 @@ This skill teaches how to isolate an active failure through the cheapest discrim
 
 ## Core Principle
 
-**Coherent live troubleshooting preserves evidence first, tests hypotheses cheapest-to-most-expensive in a fixed triage order, makes one controlled change, and verifies against the original symptom.**
+**Coherent live troubleshooting preserves evidence first, tests the cheapest discriminating hypothesis, accounts for each cheaper failure class, makes one controlled change, and verifies against the original symptom.**
 
 The failure mode is **premature hypothesis**: jumping to application-layer or model-layer speculation before ruling out process state, external kill, tool error, resource pressure, and lifecycle failures. Every dispatch-test failure in 2026-04-30 shared this pattern.
 
-Live troubleshooting ends when the original symptom is resolved. Root cause analysis (`eng/rca`) begins after.
+Live troubleshooting ends when the original symptom is resolved, or when the agent returns a blocked/escalated troubleshooting record because further action would exceed evidence, authority, or safety boundaries. Root cause analysis (`eng/rca`) begins after the live issue is stable enough to analyze.
 
 ## Algorithm
 
