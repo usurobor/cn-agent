@@ -113,3 +113,38 @@ The harness placed β on `claude/implement-beta-skill-loading-BfBkH` and instruc
 After this close-out is committed and the cycle directory is moved to `.cdd/releases/3.63.0/301/` per `release/SKILL.md` §2.5a, the release commit (single commit per `release/SKILL.md` §2.6) lands VERSION `3.63.0`, stamped manifests, CHANGELOG row, RELEASE.md, and the moved cycle directory. Tag `3.63.0` follows. γ then writes the PRA for 3.63.0 against this close-out plus α's `alpha-closeout.md`.
 
 End of β close-out.
+
+---
+
+## Pass 2 — post-release addendum
+
+### O8 — β-side git identity drift on the merge and release commits
+
+The merge commit `b483f36` and the release commit `6300081`, both already on `origin/main`, were authored with identity `beta-merge-test <beta-merge-test@cdd.cnos>` rather than `beta <beta@cdd.cnos>`. β re-discovered this immediately after the release push when reading `git log` for the post-push state report.
+
+**Root cause.** Earlier in the cycle, β created a throwaway worktree under `/tmp/cnos-merge-test/wt` (and later `/tmp/cnos-merge2/wt`) to non-destructively test that the cycle branch auto-merges into fresh `origin/main` and that the I5 validator passes on the merge tree. Each of those worktrees configured `user.name = "beta-merge-test"` / `user.email = "beta-merge-test@cdd.cnos"`. **The worktree-local `git config` setting leaked into `/home/user/cnos`'s `.git/config`** under the harness's worktree-config inheritance behavior — `git config user.name "beta-merge-test"` (without explicit scope flag) on a worktree wrote to the *shared* repository config, not the worktree-local config, on this harness. The next `git commit` in `/home/user/cnos` used the leaked identity.
+
+The pre-merge `git config user.name beta` set at β intake (CDD §β step 2) was overwritten by the worktree-test config and not re-asserted before the actual merge. β's pre-review gate row for `git config user.email` matching `{role}@cdd.{project}` (already named in cycle #287's MCA candidates) is the correct place for this check; it would have caught O8 if it had been loaded into β's pre-merge gate.
+
+**Severity and scope.**
+- **The work itself is correct** — the merge tree, release commit, version-stamping, CHANGELOG row, RELEASE.md, and §2.5a cycle-dir move are all accurate. Only the author/committer metadata is wrong.
+- **The role-separation contract is violated for these two commits.** Per `review/SKILL.md` §7.1: "the merge commit on main shows β's authorship... The role-separation contract is git-observable: `git log --format='%an %s' main..{branch}` shows α's commits, and the merge commit on main shows β's authorship." The git-observable audit trail names `beta-merge-test`, not `beta`.
+- **Both commits are already on `origin/main`.** Force-push to fix authorship would require explicit operator authorization; β does not force-push to `main` autonomously per the standing safety rule.
+
+**β identity restored locally** (`git config user.name beta` + `git config user.email beta@cdd.cnos`) so any subsequent commits in this session use the correct identity.
+
+### O9 — Tag push deferred to δ (env 403)
+
+`git push origin 3.63.0` returns HTTP 403 from this β environment, consistent with σ's `4a0f678` clarification that **δ owns the tag/deploy gate**. Tag `3.63.0 → 6300081` exists locally; δ executes `git push origin 3.63.0` from a δ environment. Per CDD §β step 8 deferral path, all release artifacts (VERSION, manifests, CHANGELOG, RELEASE.md, cycle dir, β close-out) are committed to `main` — closure does not block on the tag push.
+
+### O10 — Branch cleanup deferred to δ (env 403)
+
+`git push origin --delete claude/cnos-alpha-tier3-skills-MuE2P` returns HTTP 403 from this β environment, same surface as O9. Per `release/SKILL.md` §2.6a, the merged remote branches (`claude/cnos-alpha-tier3-skills-MuE2P` and the pre-provisioned `claude/implement-beta-skill-loading-BfBkH`) should be deleted post-release. Both deletions are deferred to δ.
+
+### Outstanding hand-offs to δ
+
+1. `git push origin 3.63.0` — tag push (env 403 from β session).
+2. `git push origin --delete claude/cnos-alpha-tier3-skills-MuE2P` — cycle branch cleanup (env 403).
+3. `git push origin --delete claude/implement-beta-skill-loading-BfBkH` — pre-provisioned β-side branch cleanup (env 403).
+4. Wait for release CI on tag push, deploy, validate (`release/SKILL.md` §2.7–§2.9).
+5. **γ disposition for O8 (identity drift on `b483f36` + `6300081`):** options are (a) leave as-is and accept the audit-trail anomaly with this close-out as the explicit β-side record, (b) authorize β to retroactively force-push `main` after `git rebase --exec 'git commit --amend --reset-author --no-edit' a8e67b7..HEAD`, (c) other operator-defined repair. β does not pick — γ owns disposition per the voice rule.
