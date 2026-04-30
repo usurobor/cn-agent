@@ -531,6 +531,51 @@ This gives the "compose anything" feel without losing coherence. You can lift a 
 
 This connects directly to the judgment doctrine: an agent must name the boundary it protects, the boundary it breaches, and the residual debt it does not call closure. The witness slot carries all three.
 
+### 15.6 TSC-Oper: witness model, close-outs, and ctb-check
+
+**The witness state machine and CTB close-outs.**
+
+TSC Operational defines a verification flow:
+
+```
+HANDSHAKE → MEASURE → WITNESS → DIAGNOSE/VERDICT → ACCEPT/REJECT
+```
+
+CTB's agent-execution close-out discipline follows the same structural pattern:
+
+```
+orient → intervene → witness → close-out
+```
+
+CTB's close-out forms are agent-execution generalizations of TSC-Oper's verdict states:
+
+| TSC-Oper outcome | CTB close-out form |
+|---|---|
+| ACCEPT (C_Σ ≥ Θ, all witnesses pass) | `accepted` |
+| REJECT (threshold failure) | `repair-needed` |
+| DIAGNOSE (witness failure) | `repair-needed` or `structured-failure` |
+| Blocked dependency | `blocked` |
+| Bounded repair exhausted | `close-with-debt` |
+
+CTB does not implement TSC measurement. The structural parallel is useful because it shows why CTB requires an inspectable witness before closure: TSC-Oper requires the WITNESS state to pass before VERDICT, and CTB requires the witness slot to be filled before a close-out is valid.
+
+**Witness theater and TSC-Oper W1–W4.**
+
+LANGUAGE-SPEC v0.2 §15 names the witness theater risk: a conformant-looking close-out not mechanically connected to what actually happened. TSC-Oper's four witnesses identify the same failure mode structurally:
+
+- W1 (S₃ permutation): coherence is label-independent — a close-out should not change character when roles are relabeled
+- W2 (role-gauge independence): measurement is presentation-independent — a witness should not be constructed to satisfy the expected verdict
+- W3 (scale equivariance): coherence is scale-free — evidence scope should not be selected to inflate the witness
+- W4 (variance/Lipschitz stability): stable measurement — the witness should yield consistent evidence across independent re-evaluation
+
+ctb-check should not merely verify that witness fields are present — that is W2 at minimum, not the full model. The TSC-Oper pattern requires independent witnesses. Future checker stages should prefer evidence signals that are independent of the agent's own assertion over signals that are not.
+
+**ctb-check v0 dependency.**
+
+ctb-check v0 should draw from TSC-Oper's witness-independence pattern. Field presence is the minimum check, not the sufficient one. The minimum checker implication from TSC-Oper is: for each required witness field, verify that the evidence is independently grounded rather than self-asserted where the checking surface permits that distinction.
+
+---
+
 ### 15.5 Why "skill" remains as a narrow-agent lens
 
 §13 established that there are no skills, only agents. But the skill lens (`tri(input, transform, witnessed-output)`) is not deprecated — it is the correct projection for narrow-scope, single-invocation agents. A `task-local` agent whose lifetime is one call is productively viewed through the skill lens because its orientation is fully determined by its input contract and its witness is fully determined by its output contract.
