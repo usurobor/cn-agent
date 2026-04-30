@@ -96,3 +96,24 @@ None. The change is narrowly scoped per the issue's explicit non-goals. No defer
 | 5 Mode | `.cdd/unreleased/149/self-coherence.md` §Skills | cdd, skill, write | MCA (small-change). Tier 3: `cnos.core/skills/skill`, `cnos.core/skills/write` |
 | 6 Artifacts | `src/packages/cnos.core/templates/SOUL.md` §2.1 diff | skill, write | Design: not required (single-file prose addition, explicit by issue). Plan: not required (single-file, single-section). Tests: not applicable (prose rule, no executable surface). Code: `SOUL.md` §2.1 edited — skill-loading gate added. Docs: SOUL.md is the doc. |
 | 7 Self-coherence | `.cdd/unreleased/149/self-coherence.md` | cdd | AC-by-AC self-check completed; all three ACs met with direct evidence quotes |
+| 7a Pre-review | `.cdd/unreleased/149/self-coherence.md` | cdd | Pre-review gate passed (see §Review-readiness below) |
+
+---
+
+## Review-readiness | round 1 | implementation SHA: 56438d40 | base SHA: 3cef674f (origin/main at 2026-04-30T15:50 UTC) | branch CI: not available for branch-push CI (CI runs on main pushes only; β to verify on merge) | ready for β
+
+**Pre-review gate rows (alpha/SKILL.md §2.6):**
+
+| Row | Status | Notes |
+|-----|--------|-------|
+| 1. Branch rebased onto current origin/main | ✅ | base SHA `3cef674f` = origin/main at observation time |
+| 2. Self-coherence carries CDD Trace through step 7 | ✅ | §CDD-Trace rows 0–7 present |
+| 3. Tests present or explicit reason none apply | ✅ | Prose rule change — no executable surface |
+| 4. Every AC has evidence | ✅ | AC1–AC3 all cite verbatim diff text |
+| 5. Known debt explicit | ✅ | §Debt: "None" |
+| 6. Schema/shape audit | ✅ | Not applicable — prose-only change |
+| 7. Peer enumeration | ✅ | Issue explicitly scopes to §2.1 only; USER.md and Sigma SOUL explicitly out of scope per issue |
+| 8. Harness audit | ✅ | Not applicable — no schema-bearing contract changed |
+| 9. Post-patch re-audit | ✅ | No mid-cycle patches |
+| 10. Branch CI green | ⚠️ | CI runs on main pushes only; no run available for branch — β verifies before merge |
+| 11. Commit author email | ✅ | `alpha@cdd.cnos` confirmed via `git log -1 --format='%ae' HEAD` |
