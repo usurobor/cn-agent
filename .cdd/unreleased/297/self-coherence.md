@@ -114,3 +114,9 @@ All four required references are present with specific section citations.
 **Intra-doc peer check.** `SEMANTICS-NOTES.md` §10 references "the theory stack (Coherence Calculus → TSC → CTB)" — consistent with the new §15.1 framing of TSC as formal upstream. No stale paraphrase conflicts.
 
 **Non-goals respected.** No new CTB concepts added; v0.1 `LANGUAGE-SPEC.md` untouched; no ctb-check implementation; no TSC spec changes; no claim CTB has implemented TSC measurement; additions document the upstream relationship only.
+
+---
+
+## Debt
+
+None. The issue scope is fully addressed. All ACs met. No secondary research was blocked or deferred.
