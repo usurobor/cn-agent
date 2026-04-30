@@ -151,6 +151,21 @@ Observations (not debt):
   cover `cn logs`. Labeling `cn logs` as target/planned is a reasonable
   follow-on but was not in scope for #312 children.
 
+---
+
+## §CDD-Trace
+
+| Step | Status | Evidence |
+|------|--------|----------|
+| 1 — design artifact | not required — single-file doc edits, no contract or ABI change | explicit |
+| 2 — coherence contract (§Gap) | ✓ | self-coherence.md §Gap committed af3480a5 |
+| 3 — plan | not required — three sequential independent file edits, no non-trivial sequencing | explicit |
+| 4 — tests | not required — docs-only; no code, schema, or runtime contract | explicit |
+| 5 — code | n/a (docs-only) | — |
+| 6 — docs | ✓ | README.md 4ba4cc1c; OPERATOR.md 32063b19; SETUP-INSTALLER.md 0a592d15 |
+| 7 — self-coherence | ✓ | this file, sections §Gap–§Debt committed incrementally | 
+
+
 
 
 
