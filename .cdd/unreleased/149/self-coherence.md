@@ -81,3 +81,18 @@ Same situation (release skill), contrastive (memory vs file), imperative. AC2: *
 ## §Debt
 
 None. The change is narrowly scoped per the issue's explicit non-goals. No deferred items.
+
+---
+
+## §CDD-Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Observation inputs read; selected signal: SOUL.md §2.1 missing explicit skill-loading requirement |
+| 1 Select | — | — | Selected gap: #149 — UIE must include skill loading as part of Understand before Execute |
+| 2 Branch | `cycle/149` | cdd | Branch verified on `origin/cycle/149`; base `origin/main` |
+| 3 Bootstrap | — | cdd | Small-change path (§1.2) — no version directory required |
+| 4 Gap | `.cdd/unreleased/149/self-coherence.md` §Gap | — | Named incoherence: SOUL §2.1 lacked explicit skill-loading gate |
+| 5 Mode | `.cdd/unreleased/149/self-coherence.md` §Skills | cdd, skill, write | MCA (small-change). Tier 3: `cnos.core/skills/skill`, `cnos.core/skills/write` |
+| 6 Artifacts | `src/packages/cnos.core/templates/SOUL.md` §2.1 diff | skill, write | Design: not required (single-file prose addition, explicit by issue). Plan: not required (single-file, single-section). Tests: not applicable (prose rule, no executable surface). Code: `SOUL.md` §2.1 edited — skill-loading gate added. Docs: SOUL.md is the doc. |
+| 7 Self-coherence | `.cdd/unreleased/149/self-coherence.md` | cdd | AC-by-AC self-check completed; all three ACs met with direct evidence quotes |
