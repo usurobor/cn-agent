@@ -97,7 +97,7 @@ These are operational roles. They are not a claim that every cycle always uses t
 | **γ (Coordinator)** | Orchestrate | 0–2 + 11–13 + cycle-wide | Observe, select, issue creation, **branch creation (`cycle/{N}` from `origin/main`, see §1.4 γ algorithm Phase 1 step 3a)**, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification, post-release assessment, cycle closure | Must hold full cycle context |
 | **α (Implementer)** | Produce | 3–7a (uses the branch γ created at step 2) | Check out `cycle/{N}` (never creates), bootstrap, gap, mode, artifacts (tests/code/docs), self-coherence, pre-review readiness, `.cdd/unreleased/{N}/self-coherence.md` review-readiness signal | Must be separate from β |
 | **β (Reviewer + Releaser)** | Judge and integrate | 8–10 | Polls `origin/cycle/{N}` directly (never creates a branch and refuses harness pre-provisioned per-role branches; see `beta/SKILL.md` §1), Review (RC/A decision), merge, tag, deploy, β close-out | Must be separate from α |
-| **δ (Operator)** | Route and disconnect | gates + 17 | Session routing, external gate execution (merge/tag/branch), post-cycle disconnect release | Owns platform actions agents cannot perform |
+| **δ (Operator)** | Route and disconnect | gates + 17 | Session routing, external gate execution (tag/release/deploy), post-cycle disconnect release | Owns platform actions agents cannot perform |
 
 #### Triadic rule
 
@@ -115,7 +115,9 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
 
 #### δ and the external boundary
 
-δ (operator) is not a fourth triad role — δ is the boundary between the triad-as-whole and the platform. The triad is one-as-three (per `COHERENCE-FOR-AGENTS.md`): producer, judge, inspectable boundary. δ creates a new one-as-two relation with the triad-as-whole: the triad owns the cycle's internal coherence; δ owns the external boundary (platform gates, session routing, override authority, and the disconnect release that crystallizes the triad's output into a tagged whole).
+δ (operator) is not a fourth triad role — δ is the boundary between the triad-as-whole and the platform. The triad is one-as-three (per `COHERENCE-FOR-AGENTS.md`): producer, judge, inspectable boundary. δ creates a new one-as-two relation with the triad-as-whole: the triad owns the cycle's internal coherence; δ owns the external release boundary (tag, deploy, disconnect release) and session routing.
+
+**Merge is β's authority, not δ's.** β merges `cycle/{N}` into `main` on approval — this is the natural conclusion of review, not a platform gate. δ's authority begins at the release boundary: tagging, deploying, and the disconnect release that crystallizes the triad's output into an inspectable whole. δ may request changes at the release boundary if something was missed, but the merge itself requires no δ authorization.
 
 When the operator serves as γ (two-agent configuration), δ and γ collapse — one person holds both coordination and external boundary authority. The δ skill handles this: "If δ is unavailable, γ may execute gates directly." The structural distinction remains even when the roles are held by the same participant.
 
@@ -740,7 +742,7 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 | 7 | Self-coherence | build | α (or delegated implementer) | `.cdd/unreleased/{N}/self-coherence.md` carrying gap, mode, ACs, evidence, known debt | `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md` | `.cdd/unreleased/{N}/self-coherence.md` | agent | substantial only | cdd |
 | 7a | Pre-review | build | α | branch rebased onto current `main`; `.cdd/unreleased/{N}/self-coherence.md` carries CDD Trace through step 7; tests reference ACs; known debt explicit; **schema/shape audit across all touched files** when contracts change — when introducing or changing a canonical form, verify (a) the new form is present across all relevant files AND (b) any superseded form has been removed; cite the verifying command (e.g. grep that returns exactly one match per file); **workspace-global library-name uniqueness check** when adding a new `(library (name X))` stanza; **post-patch re-audit** — after any mid-cycle code change, re-read `.cdd/unreleased/{N}/self-coherence.md` top-to-bottom and verify every CDD Trace / invariant / self-coherence row still matches HEAD; **branch CI green on head commit** before signaling review-readiness in the artifact | alpha/SKILL.md §2.6 | `.cdd/unreleased/{N}/self-coherence.md` | mechanical | always | cdd |
 | 8 | Review | review | β | `.cdd/unreleased/{N}/beta-review.md` verdict + findings | review/SKILL.md output format | `.cdd/unreleased/{N}/beta-review.md` | reviewer | always | review |
-| 9 | Gate + merge | release | β | gate result / release-readiness evidence + `git merge` of branch into main | `docs/gamma/cdd/GATE-TEMPLATE.md` | release surface or `.cdd/unreleased/{N}/beta-review.md` | mechanical + reviewer | always | release |
+| 9 | Merge | release | β | `git merge` of `cycle/{N}` into main (β authority — no δ required) | `docs/gamma/cdd/GATE-TEMPLATE.md` | release surface or `.cdd/unreleased/{N}/beta-review.md` | mechanical + reviewer | always | release |
 | 10 | Release | release | β | CHANGELOG row, tag, release note | CHANGELOG.md ledger + release/SKILL.md | release surface | agent + mechanical | always | release + eng/document when authoring release notes/changelog prose |
 | 11 | Observe | close | γ | post-release observation result | post-release/SKILL.md | post-release assessment | γ | always | post-release |
 | 12 | Assess | close | γ | POST-RELEASE-ASSESSMENT.md | post-release/SKILL.md output template | version directory | γ | always | post-release |
