@@ -183,3 +183,19 @@ Yes:
 **D1 — `cue` CLI not installed; frontmatter validator returned exit code 2.** Manual validation against `schemas/skill.cue` confirms shape. If CI runs `tools/validate-skill-frontmatter.sh` on merge, it will fail at the prerequisite check (not a schema failure). β should verify whether CI has `cue` installed or whether the job handles exit-2 separately from exit-1.
 
 **No other known debt.**
+
+## §CDD-Trace
+
+**Step 1 — Receive:** Issue #309 dispatched to α on branch `cycle/309`. Gap identified: no live troubleshooting skill. Constraints loaded: issue ACs, Tier 1/2/3 skills.
+
+**Step 2 — Produce (design):** Single new skill file. Design: not required — scope is one new SKILL.md with no architectural impact. Design skip justification: the artifact boundary is the skill file itself; no interface, schema, or package restructuring.
+
+**Step 3 — Produce (plan):** Not required — single file, no sequencing complexity. AC enumeration drove the section structure directly.
+
+**Step 4 — Tests:** No code tests apply. Evidence proof is via kata surface (§5) and AC-by-AC mapping in §ACs. The skill's invariant (teaches repeatable judgment, not just a checklist) is proven by: the kata positive case (triage order forces process/kernel check before application speculation) and the kata negative case (jumping to model behavior without checking process/kernel/tool/resource/lifecycle fails the kata).
+
+**Step 5 — Code:** `src/packages/cnos.eng/skills/eng/troubleshoot/SKILL.md` written. Commit `e3904408`.
+
+**Step 6 — Docs:** The artifact is the doc. No secondary documentation surface changed.
+
+**Step 7 — Self-coherence:** This file. Written incrementally (one section per commit) per α §2.5. Commits: `dc562fe1` (§Gap), `80a5abcf` (§Skills), `5d858595` (§ACs), `bafc7437` (§Self-check), `ac9ba3bf` (§Debt), this commit (§CDD-Trace).
