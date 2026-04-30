@@ -118,3 +118,81 @@ What went wrong in the cycle itself (process, not code), in execution order:
 7. **Round count = 3 (§9.1 trigger fires on strict reading).** R1 = α-implementation review with 4 findings; R2 = γ-clarification + β R2 (F1+F2 withdrawn, F3+F4 stand); R3 = α fix-round + β R3 approval. The R3 round count is *attributable to β-side process* (stale `origin/main`) per β R3 + α R1+R2 fix-round narratives — without F1+F2's false positives, the cycle would have closed at R2 (F3+F4 fix-round → approval).
 
 **Total wall-clock cycle time:** ~33 minutes (α dispatch ~00:14 UTC → β R3 approval at 00:45 UTC → merge at 00:47 UTC). Of which: α R1 authoring ~5 minutes; β R1 review ~10 minutes; γ-clarification + β R2 ~7 minutes (parallel with α R2 prep); α R2 fix-round + force-push ~5 minutes; β R3 ~3 minutes; merge ~1 minute. The frictions above account for the bulk of "process overhead beyond minimum"; actual content-authoring time was small.
+
+---
+
+## Observations + patterns
+
+### P1 — First-cycle-of-new-protocol friction is *partially* irreducible
+
+The diff this cycle landed *is* the protocol the cycle operates under. AC 12 (self-application) is therefore not a side-property — it is the integration test. This cycle exemplified its own rule end-to-end: γ created `cycle/287` before dispatch; α/β only checked out; β's verdicts landed on the cycle branch.
+
+The friction that remains in a self-applying cycle has two sources: **(a) friction the new protocol does not address** (e.g. β-side stale-`origin/main`, observation O2 in §Findings — the new spec adds AC 8 `git fetch` reliability for cycle-branch polling, not for review-base polling) and **(b) friction the operator's environment imposes on top of the protocol** (e.g. harness pre-provisioned per-role branches, observation O5 — the protocol explicitly forbids those, and the cycle's structural correction is the spec wording itself + α/β refusal to use them).
+
+The (a)-class friction (O2) is the cycle's #1 candidate observation for γ-PRA cycle iteration. The (b)-class friction was anticipated in the issue body ## Active design constraints and structurally addressed.
+
+Compared to #283 (the previous self-applying cycle), this cycle exhibited *less* (b)-class friction (β refused harness instructions cleanly via `beta/SKILL.md` §1, switched to `cycle/287`, and committed verdicts there — there was no need for cherry-picking from a separate β branch as in #283 R1 F1). #283's primary friction was structurally absent here.
+
+### P2 — γ-clarification as a third-role mid-cycle artifact
+
+`gamma-clarification.md` filed at `c91cf87` was a **purely mechanical environment-fact transfer** (per `gamma/SKILL.md` §2.5: "γ may ... provide mechanical environment help"). It did not adjudicate β's findings in either direction. It captured a synchronously-observed `git fetch --verbose` + `git rev-parse origin/main` + `git branch -r --contains 70ff2b1` and let β re-evaluate F1+F2 against the fact.
+
+Pattern: γ-clarification works as designed when it transfers an artifact fact, not a reasoning state. β R2 withdrew F1+F2 by independent verification of γ's fact, not by accepting γ's interpretation. This preserves epistemic separation (`gamma/SKILL.md` §2.5: "γ does not forward β's internal reasoning transcript to α; γ does not forward α's hidden rationale transcript to β; γ may not author the implementation fix inside the review loop"). The cycle exemplified the role-boundary discipline introduced in #283.
+
+### P3 — Authoring-time gate vs review-time gate (O1 generalization)
+
+The role-identity rule lives in `CDD.md` §1.4 α step 2 as a one-line directive. It is not echoed in `alpha/SKILL.md` §2.6 pre-review gate as a verifiable row. The gate that caught the violation (β contract-integrity check) fires *post-α*, not at α authoring time. This is a general pattern: spec mandates that are not echoed as α authoring-time verifiable steps survive past α authoring and are only caught at β review.
+
+Variants of this pattern in the cycle's diff:
+- α §2.6 pre-review gate has 10 rows; none verify the canonical git identity at HEAD (rows 1 + 10 are transient external state; rows 2–9 are diff/artifact state; identity is committer state, a third axis).
+- α §2.1 dispatch intake has identity config in step 1 ("configure α git identity") but does not verify the configured email matches the canonical form.
+- The new α §2.5 incremental-write discipline (committed in `70ff2b1`) names "report progress after each commit" but does not name "verify identity on each commit" — the same authoring-time-gate-vs-review-time-gate gap.
+
+This is a candidate generalization for γ-PRA: not a single skill patch, but a pattern recognition. Multiple authoring-time identity / metadata gates would close the gap categorically.
+
+### P4 — Polling discipline asymmetry (O2 generalization)
+
+The polling discipline added in #283 (synchronous baseline + transition-only stdout) and refined in this cycle (single named branch + N=10 reachability re-probe) is now strong for **cycle-branch state**. The diff-base computation, however, reads `origin/main` synchronously without re-fetching — and `origin/main` is *not* the polled surface for any role.
+
+This creates an asymmetry: cycle-branch state is event-driven (transitions wake the role); main state is polled-on-demand (only when the role explicitly fetches). β computes the review diff base from main; β does not re-fetch main before computing.
+
+The same asymmetry would affect γ if γ's PRA computes against main without re-fetching, or α if α reads `origin/main` for any decision other than the rebase trigger (which already includes a fetch). The pattern is general: **synchronous reads of a non-polled remote surface need an explicit pre-read fetch.**
+
+This is the friction class observation O2 names. β R3 records it for `beta-closeout.md`; γ-PRA can characterize it as a §9.1 cycle-iteration trigger (avoidable tooling failure: stale local ref produced false positives) and decide whether it warrants a `beta/SKILL.md` patch in this same release boundary or a follow-on issue.
+
+### P5 — Path (a) vs path (b) for identity correction (O1 specific)
+
+β R2 §F3 explicitly enumerated two response paths:
+- (a) retroactive re-author + force-push (β preferred for clean cross-cycle archeology)
+- (b) apply rule from next commit forward + disclose as known debt
+
+α chose (a). The execution worked cleanly: cycle/287 reset to origin/main; original 8 commits cherry-picked back with `--reset-author` selectively applied (α commits only); force-pushed with `--force-with-lease` (with one rejection due to parallel γ + β commits, recovered by re-fetching and re-doing the chain rebuild on top).
+
+Pattern: when retroactive history rewrites are needed and the cycle has multi-author commits, the operation requires:
+1. Reset target branch to a clean base
+2. Cherry-pick all original commits in order, with `--reset-author` selectively applied per commit's authoring role
+3. Force-push with `--force-with-lease`
+4. Other roles must `git fetch --force` or `git remote update --prune` to refresh local refs
+
+The total cost was tractable (~5 minutes including one rejected push retry). β R3's content references the new SHAs directly (β's R1+R2 verdict text references the pre-rewrite α SHAs as historical state, which is correct narrative — those SHAs *did* exist; they just no longer have a branch ref pointing to them).
+
+Pattern variant for future cycles: if the rewrite were to span more commits or be done late in the cycle, the cost grows. Doing it at R2-fix-round time (before the cycle is merged) was the correct timing — post-merge rewrite would be a much larger problem.
+
+### P6 — Diff-content invariance under history rewrite
+
+β R3 §4 verified: "Diff content invariance verified. β re-ran `git diff --stat origin/main..origin/cycle/287` at R3 head: 5 spec files + 3 cycle-dir artifacts. `CDD.md` is now +149 lines (was +147 in R1; +2 lines is exactly the F4 parenthetical wrapping, consistent with α's claim)."
+
+This worked because cherry-pick preserves diff content; only authorship + commit SHA change. β's content-level review against R1 + R2 + R3 was strictly additive (R1 reviewed the spec change; R2 walked AC + Issue Contract; R3 verified the F3+F4 fixes). The history rewrite introduced no new content for β to review beyond the F4 polish + the fix-round narrative.
+
+Pattern: if the only change between rounds is identity correction + small polish, β's R3 verification effort is small (β R3 was ~3 minutes). The expensive part of any review is content cognition, which the rewrite did not invalidate.
+
+### P7 — `eb48e17` reconstruction (O3 specific)
+
+The issue body's reference to `eb48e17` (the rolled-back commit message that was the canonical spec source) was unavailable. α reconstructed from:
+- Issue body's 12 ACs (prescriptive — verbatim shell snippets, file paths, exact wording for §4.2 / §4.3 / dispatch prompt format)
+- 3.61.0 PRA §4b (cycle iteration) and §7 (next-MCA) — descriptive context
+- #283 cycle artifacts at `.cdd/releases/3.61.0/283/` — `gamma-clarification.md` provided the "branch-polling canonical, one cycle branch holds all role artifacts" rule that #287 builds on
+
+The reconstruction was sufficient: β R3 found 12/12 ACs met without raising spec-text drift. The risk surface was the descriptive sections (Role table responsibilities text, §Tracking polling-table prose, transition-loop snippet wording), which α produced from existing CDD.md style + the AC's prescriptive constraints.
+
+Pattern: when γ rolls back local spec work and references the rolled-back commit in the issue ## Work-shape, α must reconstruct from the AC text alone (or from secondary sources like prior cycle artifacts). The reconstruction succeeds when ACs are prescriptive; it carries drift risk when ACs are descriptive. #287's ACs were sufficiently prescriptive that the risk did not materialize, but the pattern is a candidate skill-text observation for `issue/SKILL.md` (a rule like "when filing an issue from rolled-back local work, inline the rolled-back content into the issue body or attach as a comment, since downstream roles cannot read the rolled-back commit").
