@@ -141,4 +141,22 @@ None. All ACs met. Implementation is MVP-scoped as the issue defines. Deferred i
 | 5 Mode | `.cdd/unreleased/320/self-coherence.md` §Skills | design, write, tool, test, ux-cli, go | MCA; Tier 3 skills loaded |
 | 6 Artifacts | `internal/activate/activate.go`, `activate_test.go`, `cli/cmd_activate.go`, `cmd/cn/main.go` | design, go, test, ux-cli | Tests → code → docs (help text inline); design: not required (single kernel command, no boundary ambiguity) |
 | 7 Self-coherence | `.cdd/unreleased/320/self-coherence.md` | cdd | AC-by-AC check completed; all ACs met |
-| 7a Pre-review | `.cdd/unreleased/320/self-coherence.md` | cdd | Pre-review gate in progress — see §Review-readiness below |
+| 7a Pre-review | `.cdd/unreleased/320/self-coherence.md` | cdd | Pre-review gate passed — all 11 rows verified; see §Review-readiness |
+
+---
+
+## Review-readiness | round 1 | implementation SHA: f3c154f1 | branch CI: go test ./... green at 2026-04-30 | ready for β
+
+**Pre-review gate rows (alpha/SKILL.md §2.6):**
+
+1. **cycle/320 rebased onto current origin/main** — merge-base equals `origin/main` SHA `8bf7bf84` at 2026-04-30T; observed at readiness-signal time.
+2. **self-coherence.md carries CDD Trace through step 7** — §CDD-Trace above; step 7a row updated.
+3. **Tests present** — `internal/activate/activate_test.go`: 10 test functions covering positive and negative cases.
+4. **Every AC has evidence** — §ACs maps all 12 ACs to tests and diff inspection.
+5. **Known debt explicit** — §Debt: none.
+6. **Schema/shape audit** — no schema-bearing type introduced; not applicable.
+7. **Peer enumeration** — peer set of existing kernel commands {init, setup, status, doctor, build, update}: none modified. `cn activate` is purely additive.
+8. **Harness audit** — no schema-bearing contract changed; not applicable.
+9. **Post-patch re-audit** — single implementation commit; no mid-cycle patches. Go, no shell/YAML/Markdown surfaces introduced.
+10. **Branch CI green** — `go test ./...` and `go build ./...` pass on HEAD; local CI only (no remote CI configured). β to verify on merge.
+11. **Commit author email** — all 5 commits on `cycle/320 ^origin/main` carry `alpha@cdd.cnos`. Verified: `git log --format='%ae' cycle/320 ^origin/main` → all lines `alpha@cdd.cnos`.
