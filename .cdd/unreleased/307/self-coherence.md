@@ -125,3 +125,30 @@ Searched the repo for code that reads `kata_ref` (machine-readable consumers). N
 - **Per-scenario rubric and prompt-pair files not split** — Option B's three `## Worked examples` share one rubric.json and one prompt-pair (the M2-review precedent). If a future cycle wants per-scenario evaluation, that is a separate split; the issue's "Deferred" entry covers exactly this case.
 
 **No known α debt new this cycle.**
+
+## CDD-Trace
+
+CDD canonical artifact order (CDD.md §5.2) mapped to this cycle:
+
+1. **Design artifact** — *not required.* Justification: small-change relocation; the boundary call ("skill body owns rules; kata package owns drill scenarios; one source of truth per fact") is identical to the boundary #304 already decided and shipped for `review/SKILL.md` (`5a8bb3e`). The issue's §Active design constraints make this explicit ("Mirror #304's shape"). No new boundary is being established.
+2. **Coherence contract** — `.cdd/unreleased/307/self-coherence.md` §Gap (commit `8c857ce2`). Names the gap, mode, scope shape, three boundary decisions (Option B / full prompt-pair / M5 numbering), and the failure mode (convention drift) the cycle prevents.
+3. **Plan** — *not required.* Justification: the implementation sequencing is "create kata bundle; flip frontmatter; remove §5 body; add pointer section" — three isolated edits with no shared dependency or sequencing risk. The issue §Implementation guidance names the file paths and the pattern; no further plan adds executable detail.
+4. **Tests** — *not applicable.* Justification: the change is documentation/runbook content + frontmatter shape, not code or runtime. Validation lives in `tools/validate-skill-frontmatter.sh` (CI job I5) which is invariant under this change — `kata_ref` passes the open-schema (`schemas/skill.cue` trailing `...`), `kata_surface: external` is in the enum (LANGUAGE-SPEC §2.1).
+5. **Code** — n/a (no code surface touched).
+6. **Docs** — issue/SKILL.md frontmatter + §5 body replaced with pointer (commit `e61c2615`); kata.md + rubric.json + prompt-pair created in M5-issue-authoring/ (commit `a16ad77f`).
+7. **Self-coherence** — this file. Sections written incrementally per α §2.5: §Gap (`8c857ce2`), §Skills (`9ccfa9f5`), §ACs (`9d430391`), §Self-check (`90a90b80` + `73cebc9c` placeholder-fix), §Debt (`4d91ff04`), §CDD-Trace (this commit), §Review-readiness (next commit).
+
+**Branch commits in cycle order:**
+
+| # | SHA | Author email | Subject |
+|---|---|---|---|
+| 1 | `8c857ce2` | alpha@cdd.cnos | self-coherence §Gap |
+| 2 | `a16ad77f` | alpha@cdd.cnos | create M5-issue-authoring bundle |
+| 3 | `e61c2615` | alpha@cdd.cnos | flip frontmatter + replace §5 body |
+| 4 | `9ccfa9f5` | alpha@cdd.cnos | self-coherence §Skills |
+| 5 | `9d430391` | alpha@cdd.cnos | self-coherence §ACs |
+| 6 | `90a90b80` | alpha@cdd.cnos | self-coherence §Self-check |
+| 7 | `73cebc9c` | alpha@cdd.cnos | self-coherence §Self-check placeholder-fix |
+| 8 | `4d91ff04` | alpha@cdd.cnos | self-coherence §Debt |
+
+All commits authored as `alpha@cdd.cnos` per CDD.md §1.4 α step 2 — role identity is git-observable across the cycle.
