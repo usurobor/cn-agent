@@ -196,3 +196,82 @@ The issue body's reference to `eb48e17` (the rolled-back commit message that was
 The reconstruction was sufficient: β R3 found 12/12 ACs met without raising spec-text drift. The risk surface was the descriptive sections (Role table responsibilities text, §Tracking polling-table prose, transition-loop snippet wording), which α produced from existing CDD.md style + the AC's prescriptive constraints.
 
 Pattern: when γ rolls back local spec work and references the rolled-back commit in the issue ## Work-shape, α must reconstruct from the AC text alone (or from secondary sources like prior cycle artifacts). The reconstruction succeeds when ACs are prescriptive; it carries drift risk when ACs are descriptive. #287's ACs were sufficiently prescriptive that the risk did not materialize, but the pattern is a candidate skill-text observation for `issue/SKILL.md` (a rule like "when filing an issue from rolled-back local work, inline the rolled-back content into the issue body or attach as a comment, since downstream roles cannot read the rolled-back commit").
+
+---
+
+## Cycle-level engineering reading
+
+Per `CDD.md` §9.1 cycle level assessment, applying the level framework from `docs/gamma/ENGINEERING-LEVELS.md` §6 to this cycle (change set):
+
+### L5 — local correctness
+
+Was the diff locally correct before review? Did it compile, pass tests, follow current patterns? **Yes, modulo the metadata gate.**
+
+- The diff is markdown-only — there is no compile / test surface.
+- The 5 spec files passed β's contract-integrity check (canonical sources/paths, constraint strata, exception-reasoning, path-resolution-base, proof-shape, cross-surface projections, no-witness-theater, intra-doc repetition — all yes at R1 P1).
+- The diff was internally coherent at R1: cross-references resolved, intra-doc repetition was consistent across all 4 grepped facts (γ creates / α/β never create / `origin/cycle/{N}` / legacy `claude/*` warn-only).
+- **The metadata gate (git identity) failed L5 strictly** — α's commits did not honor `CDD.md` §1.4 α step 2's mandate. β R1 F3 (severity C) caught it.
+- Per `CDD.md` §9.1 L5 trigger ("if mechanical errors reached review, L5 was not met"), F3 is *contract*, not strictly *mechanical*. β classified F3 as "contract (identity-truth) / mechanical." If β's classification weights mechanical, L5 trigger fires; if it weights contract, L5 may still hold.
+
+**L5 verdict (α self-assessment):** held (with caveat). The diff itself was locally correct; the identity gate is a meta-property the diff doesn't directly encode. Defer to γ-PRA for the canonical reading.
+
+### L6 — system-safe execution
+
+Did the change stay coherent across docs, runtime, artifacts, tests, and operator truth? Were failure modes bounded and visible? **Yes.**
+
+- Cross-surface coherence: the 5 spec files agree (peer enumeration §Role-skill peers + §Lifecycle-skill peers; intra-doc grep across CDD.md). β verified consistency at R1 P2 (10 cross-surface projections updated).
+- Failure modes: γ pre-flight names rejection conditions (branch already exists, stalled cycle dir, scope undeclared, base SHA unknown, issue closed). α/β refusal mechanism is explicit ("α never creates a branch" / "β never creates a branch"). The new contract is enforceable by inspection.
+- Operator-truth: AC 12 self-application proven by execution (γ created `cycle/287`; α/β switched onto it; β verdicts on cycle branch; canonical git identities post-rewrite). The cycle's git history *is* the operator-truth record.
+- The σ-push mid-cycle (`70ff2b1`) created a rebase event; α §2.6 row 1 transient-row rule fired correctly and the rebase + conflict resolution were clean.
+
+**L6 verdict:** held. No cross-surface drift reached review. β R1 F1+F2 were *β-side-process* drift (stale `origin/main`), not *cycle-diff* drift. The cycle exhibited zero false claims about cross-surface state at R1.
+
+### L7 — system-shaping leverage
+
+Did the cycle change the system boundary so the friction class gets easier or disappears? **Yes.**
+
+The cycle's diff *eliminates* the branch-discovery friction class for all future cycles:
+- pre-#287: α created the branch under harness-encoded `claude/{slug}-{rand}`; γ + β had to glob-discover; β's verdict often landed on a separate harness branch (#283 R1 F1).
+- post-#287: γ creates `cycle/{N}` under the canonical pattern; α/β `git switch` from the dispatch prompt; one cycle = one branch = one named target.
+
+The system boundary changed. The friction class disappears, not just locally fixes. Future cycles do not re-encounter the discovery problem because the rule is structural, not heuristic.
+
+Concretely: #287's ACs encode three structural mechanisms that close the friction class:
+1. **γ pre-flight + creation** (§1.4 γ Phase 1 step 3a + §4.3) — γ owns the canonical branch name; one source of truth.
+2. **Refusal mechanisms** in α/β (§1.4 α step 5a + §1.4 β step 3 + alpha/SKILL.md §2.1 step 2 + beta/SKILL.md §1) — α/β never invent or accept other branches.
+3. **Single named polling target** (§Tracking polling table) — no glob discovery for new cycles.
+
+The legacy glob `'origin/claude/*'` is named warn-only / retrospective — backwards compatible without reintroducing the friction.
+
+**L7 verdict:** achieved (diff-level). The cycle ships an MCA that eliminates a friction class for future cycles.
+
+### Cycle level — lowest miss
+
+Per `CDD.md` §9.1 ("the cycle level is the lowest miss"):
+
+- L5: held (with metadata caveat — F3 caught at R1, fixed cleanly at R2; if γ-PRA classifies F3 as mechanical, L5 trigger fires)
+- L6: held (no cross-surface drift; β R1 F1+F2 were β-side, not cycle-diff)
+- L7 diff: achieved (friction class eliminated)
+- L7 cycle execution: caps at L6 if §9.1 review-rounds-> 2 trigger fires. β R3 confirms it does; β attributes the trigger to β-side stale-`origin/main`, not to α's diff.
+
+**α self-assessment of cycle level:** **L6 cycle / L7 diff** if γ-PRA accepts the F3-is-contract-not-mechanical reading + the round-count attribution to β-side process. **L5 cycle / L7 diff** if F3 is reclassified as mechanical (the L5 trigger fires on "mechanical error reached review"). Both readings name the diff as L7 — that part is unambiguous.
+
+α defers the canonical reading to γ-PRA. The friction this cycle's diff eliminates is real; the cycle's execution had two L6 events (F3 metadata, β-side stale-fetch round inflation) — the question is whether either drops to L5.
+
+### What the cycle taught
+
+The cycle is its own integration test for the new protocol — and it passed. Three structural successes in the same cycle:
+
+1. **γ-creates-the-branch worked end-to-end.** No branch-name invention, no glob-match failure, no β-side cherry-pick. The single named branch held all role artifacts (α R1, β R1+R2+R3, γ-clarification, fix-round). The contrast against #283 R1 F1 is structural.
+
+2. **`git fetch` reliability rule (AC 8) is correct for cycle-branch polling but does not generalize to review-base polling.** The cycle surfaced this gap by exercise: β R1 F1+F2 are exactly the failure mode AC 8's N=10 re-probe rule prevents — but only for cycle-branch state, not for `origin/main`. Whether γ-PRA folds the gap into a near-term `beta/SKILL.md` patch or files as a follow-up is γ's call; α flags as the cycle's primary observation for next-MCA candidacy.
+
+3. **γ-clarification as mechanical-fact transfer** preserved epistemic separation. β re-evaluated F1+F2 against γ's synchronously-observed fact, not against γ's interpretation. The role-boundary discipline #283 introduced ("γ transfers artifact facts only") is robust under stress (R1 raised D-blockers; γ resolved by mechanical fact, not by adjudicating).
+
+### What the cycle did *not* test
+
+- **Multi-issue release boundary.** This cycle ships in isolation (one issue per release). Future cycles that bundle multiple issues need to test whether the cycle/{N} canonical name handles multi-issue scoping cleanly. (Open question for #286 encapsulation work.)
+- **Operator-spawned dispatch with full prompt format.** The dispatch prompt α received was operator-pasted; the new `Branch:` line was honored. Whether `cn dispatch` (the future CLI per #286 dependencies) generates the prompt correctly is for that cycle.
+- **Multi-cycle simultaneous activity.** Only `cycle/287` was active during this session; whether two `cycle/{N}` branches with different `{N}` would cause polling conflicts is untested. The single-named-branch rule structurally precludes the conflict at the cycle-scope level, but γ + δ multi-cycle tracking (e.g. `git branch -r --list 'origin/cycle/*'` glob in `operator/SKILL.md`) is a different pattern.
+
+— α (`alpha@cdd.cnos`) at 2026-04-30 ~00:55 UTC. Close-out complete. Cycle handoff to γ for PRA + close-out triage.
