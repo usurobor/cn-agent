@@ -86,7 +86,7 @@ Verification: `grep -rn "mindsets/CA" src/packages/cnos.core/skills/agent/ca-con
 
 **AC6: Conduct mirrors stay aligned**
 
-Evidence: Both `ca-conduct/SKILL.md` and `CA-CONDUCT.md` received identical Reflect section content. Both are live authoritative surfaces — the SKILL.md is the skill (with frontmatter, kata surface) and CA-CONDUCT.md is the doctrine mirror (plain text). Both are updated in the same commit (`ce8b8108`).
+Evidence: Both `ca-conduct/SKILL.md` and `CA-CONDUCT.md` received identical Reflect section content. Both are live authoritative surfaces — the SKILL.md is the skill (with frontmatter, kata surface) and CA-CONDUCT.md is the doctrine mirror (plain text). Both are updated in the same commit (`272b4f05`).
 
 **PASS.**
 
@@ -139,6 +139,26 @@ None. All ACs are fully met. No scope was deferred, no known contradictions rema
 | 3 Bootstrap | — | cdd | Small-change path: doc-only, no version snapshot required |
 | 4 Gap | `.cdd/unreleased/84/self-coherence.md` §Gap | — | Named incoherence: `ca-conduct` does not explicitly require reflection |
 | 5 Mode | `.cdd/unreleased/84/self-coherence.md` §Skills | cdd, document, skill, ca-conduct, reflect, mci | MCA; Writing bundle (document + skill); all tiers loaded |
-| 6 Artifacts | `ca-conduct/SKILL.md`, `CA-CONDUCT.md` | document, skill | Design: not required (targeted addition, no design decision). Plan: not required (two files, clear insertion). Tests: not applicable (behavioral doctrine). Code: not applicable. Docs: both primary artifacts updated in commit `ce8b8108`. |
+| 6 Artifacts | `ca-conduct/SKILL.md`, `CA-CONDUCT.md` | document, skill | Design: not required (targeted addition, no design decision). Plan: not required (two files, clear insertion). Tests: not applicable (behavioral doctrine). Code: not applicable. Docs: both primary artifacts updated in commit `272b4f05`. |
 | 7 Self-coherence | `.cdd/unreleased/84/self-coherence.md` | cdd | AC-by-AC self-check completed; all 6 ACs pass; peer enumeration complete; no debt |
 | 7a Pre-review | `.cdd/unreleased/84/self-coherence.md` | cdd | Pre-review gate row-by-row below |
+
+## Pre-review gate
+
+| Row | Check | Status |
+|-----|-------|--------|
+| 1 | All ACs addressed in diff | ✅ AC1–AC6 mapped to diff evidence |
+| 2 | Self-coherence complete | ✅ §Gap, §Skills, §ACs, §Self-check, §Debt, §CDD-Trace |
+| 3 | No unresolved debt | ✅ No debt identified |
+| 4 | Branch CI | ⚠️ Provisional — build.yml triggers on main only |
+| 5 | Frontmatter valid | ✅ ca-conduct/SKILL.md frontmatter unchanged |
+
+## Review-readiness
+
+| Field | Value |
+|-------|-------|
+| Round | 1 (fix round for F1+F2) |
+| Base SHA | `9ea257f6` (origin/main) |
+| Head SHA | see this commit |
+| Branch CI | provisional |
+| Ready for β | yes |
