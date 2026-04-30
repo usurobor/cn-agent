@@ -2,7 +2,7 @@
 name: issue
 description: Write an executable issue pack that names the incoherence, source-of-truth, constraints, proof obligations, required skills, and implementation guidance without creating ambiguity or false closure.
 artifact_class: runbook
-kata_surface: embedded
+kata_surface: external
 governing_question: How does γ turn a selected gap into an issue pack that α and β can execute, verify, and close without hidden assumptions?
 visibility: internal
 parent: cdd
@@ -23,6 +23,7 @@ requires:
   - γ completed observe/select
   - canonical CDD.md loaded
 calls: []
+kata_ref: src/packages/cnos.cdd.kata/katas/M5-issue-authoring/
 ---
 
 # Issue
@@ -699,43 +700,13 @@ For small issues, compress the shape but preserve:
 
 ---
 
-## 5. Katas
+## 5. External kata
 
-### 5.1 Kata A — schema validation gate
+Practice and evaluation for this issue skill live in:
 
-**Given:** A spec defines fields. Current files may violate it. CI does not enforce it. Some legacy files need temporary exceptions.
+`src/packages/cnos.cdd.kata/katas/M5-issue-authoring/`
 
-**Produce an issue that includes:**
-current spec path; hard gate fields; exception-backed fields; optional/defaulted fields; enum list; exception shape; path resolution base; positive and negative fixtures; CI job; notification/status aggregation; non-goals.
-
-**Anti-patterns:**
-exception example exempts a hard-gate field; CI job added but notify aggregation omitted; schema and shell both own the same validation rule; path resolution base omitted; "verify CI passes" without negative proof.
-
-**Check:** Can an engineer implement without asking which fields are hard failures? Can reviewer reject a missing negative test? Can CI failure tell contributor what to fix?
-
-### 5.2 Kata B — README/source-map alignment
-
-**Given:** The project framing changed. Root README is stale. Docs README has broken links. Upstream formal foundation must be linked. Runtime enforcement does not yet exist.
-
-**Produce an issue that includes:**
-current framing; desired framing; affected README files; source map layers; exact doc paths; status labels; link-checking expectation; runtime truth caveat; non-goals.
-
-**Anti-patterns:**
-making draft CTB the top-level project frame; linking to stale paths; omitting upstream formal docs; claiming runtime enforcement exists; updating root README but not docs README.
-
-**Check:** Do readers see the current system frame? Do links resolve? Do status labels prevent overclaiming?
-
-### 5.3 Kata C — checker against witness theater
-
-**Given:** A spec defines witness fields. No checker enforces them. A well-written close-out can still be fabricated.
-
-**Produce an issue that includes:**
-the risk name; required witness fields; what v0 checks structurally; what v0 does not prove semantically; valid and invalid fixtures; future independence checks; non-goals.
-
-**Anti-patterns:**
-field presence treated as semantic truth; no invalid fixture; checker claims runtime enforcement; TSC or upstream verifier treated as already integrated.
-
-**Check:** Does at least one class of false closure become mechanically rejectable? Does the issue avoid claiming more than v0 can prove?
+That kata exercises the schema-validation-gate, README/source-map alignment, and checker-against-witness-theater drill scenarios — covering status-truth split, source-of-truth alignment, constraint strata, AC negative space, proof-plan oracle, and non-goal discipline. The frontmatter `kata_ref` field above carries the same path for machine-readable linkage.
 
 ---
 
