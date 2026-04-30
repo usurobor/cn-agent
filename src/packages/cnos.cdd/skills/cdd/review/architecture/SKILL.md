@@ -21,8 +21,7 @@ requires:
   - Phase 1 (contract integrity) completed
   - Phase 2b (diff/context inspection) completed
   - review orchestrator loaded
-calls:
-  - src/packages/cnos.core/skills/design/SKILL.md
+calls: []
 ---
 
 # Review — Phase 2c: Architecture and Design Check
