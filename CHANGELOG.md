@@ -133,6 +133,13 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.68.0 (2026-04-30)
+
+### Added
+- **CTB TSC grounding** — explicit TSC formal references in SEMANTICS-NOTES.md §15 for tri(), witnesses, composition bound (#297)
+
+---
+
 ## 3.67.0 (2026-04-30)
 
 ### Added
