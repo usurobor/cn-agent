@@ -1,7 +1,9 @@
 ---
 name: code
-description: Ship code where unintended behavior — by machine or maintainer — is unrepresentable. Use before implementing, during review, or pre-ship. Triggers on coding tasks, "check for bugs", "is this safe to ship".
+description: Ship code where unintended behavior — by machine or maintainer — is unrepresentable. Use before implementing, during review, or pre-ship.
+governing_question: How do we ship code where unintended behavior is unrepresentable rather than merely unlikely?
 triggers: [code, implement, write code, program, develop]
+scope: task-local
 ---
 
 # Code

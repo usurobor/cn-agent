@@ -1,6 +1,9 @@
 ---
 name: document
+description: Write documentation that describes reality, not intentions.
+governing_question: How do we write docs whose every claim is verified against the source of truth?
 triggers: [document, docs, README, write docs, explain]
+scope: task-local
 ---
 
 # Document

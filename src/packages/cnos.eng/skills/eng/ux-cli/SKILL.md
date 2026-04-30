@@ -1,6 +1,9 @@
 ---
 name: ux-cli
+description: Terminal application UX standards — color encodes semantics, output is self-sufficient, failure paths are first-class.
+governing_question: How do we make a terminal interface where an expert spots failures in under two seconds and a novice can fix using only the terminal output?
 triggers: [UX, CLI, interface, usability, ergonomics]
+scope: task-local
 ---
 
 # UX CLI

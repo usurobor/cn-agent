@@ -1,6 +1,9 @@
 ---
 name: process-economics
+description: Add, keep, simplify, automate, or remove process only when it earns its cost.
+governing_question: How do we decide whether a process step earns its overhead or should be cut?
 triggers: [process, economics, cost, efficiency, overhead]
+scope: task-local
 ---
 
 # Process Economics

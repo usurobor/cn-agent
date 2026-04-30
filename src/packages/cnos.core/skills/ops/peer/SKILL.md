@@ -1,6 +1,9 @@
 ---
 name: peer
+description: Add another agent as a peer.
+governing_question: How does the agent register a new peer so handshake, addressing, and sync paths are stable from the first interaction?
 triggers: [peer, handshake, peering, sync, connect]
+scope: task-local
 ---
 
 # Peer

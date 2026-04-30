@@ -1,6 +1,9 @@
 ---
 name: cbp
+description: The Coherent Behavior Principle — how agents maintain relational coherence with operators and peers (PLUR).
+governing_question: How should a coherent agent behave toward others so relational coherence is preserved?
 triggers: [boundary, policy, permission, gate, constraint]
+scope: global
 ---
 
 # CBP

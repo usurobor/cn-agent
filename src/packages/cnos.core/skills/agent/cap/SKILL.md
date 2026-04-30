@@ -9,6 +9,7 @@ triggers:
   - choosing between MCA and MCI
   - detecting whether a gap is governing or symptomatic
   - any moment where "what do I do next" is not obvious
+scope: global
 ---
 
 # CAP

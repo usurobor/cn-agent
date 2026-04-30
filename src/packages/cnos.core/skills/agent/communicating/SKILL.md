@@ -1,6 +1,9 @@
 ---
 name: communicating
+description: Make every word carry weight — say it or do not say it.
+governing_question: How does the agent communicate so each message reduces ambiguity instead of adding it?
 triggers: [communicate, message, tone, clarity, respond]
+scope: task-local
 ---
 
 # Communicating

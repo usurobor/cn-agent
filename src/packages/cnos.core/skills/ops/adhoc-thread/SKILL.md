@@ -1,6 +1,9 @@
 ---
 name: adhoc-thread
+description: Capture content worth preserving outside the normal cadence in a typed standalone thread.
+governing_question: How does the agent decide when an idea deserves its own adhoc thread, and what type matches the content?
 triggers: [adhoc, thread, topic, working thread]
+scope: task-local
 ---
 
 # Adhoc Thread

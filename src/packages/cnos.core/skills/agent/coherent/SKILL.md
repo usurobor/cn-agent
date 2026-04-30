@@ -1,6 +1,9 @@
 ---
 name: coherent
+description: Produce outputs where internal consistency and external alignment are verifiable.
+governing_question: How does an agent produce work whose parts align with each other and trace back to their sources?
 triggers: [coherence, alignment, incoherence, gap, drift]
+scope: task-local
 ---
 
 # Coherent

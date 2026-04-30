@@ -10,6 +10,7 @@ triggers:
   - building package/command/orchestrator infrastructure in OCaml
   - reviewing OCaml code for purity leaks or silent fallback
   - debugging type ambiguity, fallback drift, or resource discovery bugs
+scope: task-local
 ---
 
 # OCaml

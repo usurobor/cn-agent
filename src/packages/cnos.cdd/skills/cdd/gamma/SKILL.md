@@ -19,7 +19,7 @@ inputs:
   - .cdd/unreleased/{N}/alpha-closeout.md (α close-out, post-merge)
   - .cdd/unreleased/{N}/beta-closeout.md (β close-out + release evidence, post-merge)
   - release state
-  - delta gate results (observable via git: tags, branch state)
+  - "delta gate results (observable via git: tags, branch state)"
 outputs:
   - issue pack
   - dispatch prompts

@@ -10,6 +10,7 @@ triggers:
   - building HTTP/file/git/process integrations in Go
   - reviewing Go code for cnos
   - migrating logic from OCaml or shell into Go
+scope: task-local
 ---
 
 # Go

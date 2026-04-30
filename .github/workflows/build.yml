@@ -239,10 +239,30 @@ jobs:
           args: --offline --no-progress --config lychee.toml '**/*.md'
           fail: true
 
+  skill-frontmatter-check:
+    name: SKILL.md frontmatter validation (I5)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # cue-lang/setup-cue: action tag pinned (#301 design constraint).
+      # CUE version pinned for deterministic CI; bump only when the schema
+      # is re-tested against the new release.
+      - name: Setup CUE
+        uses: cue-lang/setup-cue@v1.0.1
+        with:
+          version: v0.13.2
+
+      - name: Schema self-test (positive + negative fixtures)
+        run: ./tools/validate-skill-frontmatter.sh --self-test
+
+      - name: Validate every SKILL.md frontmatter
+        run: ./tools/validate-skill-frontmatter.sh
+
   # --- Notification ---
 
   notify:
-    needs: [go, binary-verify, package-verify, package-source-drift, protocol-contract-check, link-check]
+    needs: [go, binary-verify, package-verify, package-source-drift, protocol-contract-check, link-check, skill-frontmatter-check]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -261,7 +281,8 @@ jobs:
             "package:${{ needs.package-verify.result }}" \
             "I1:${{ needs.package-source-drift.result }}" \
             "I2:${{ needs.protocol-contract-check.result }}" \
-            "I4:${{ needs.link-check.result }}"; do
+            "I4:${{ needs.link-check.result }}" \
+            "I5:${{ needs.skill-frontmatter-check.result }}"; do
             name="${pair%%:*}"
             result="${pair##*:}"
             if [ "$result" != "success" ]; then

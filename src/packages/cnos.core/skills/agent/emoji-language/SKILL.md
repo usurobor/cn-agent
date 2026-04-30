@@ -1,6 +1,9 @@
 ---
 name: emoji-language
+description: Compressed operator↔agent signaling via emoji.
+governing_question: How do operator and agent compress shared intent into unambiguous emoji shorthand?
 triggers: [emoji, expression, shorthand]
+scope: global
 ---
 
 # Emoji Language

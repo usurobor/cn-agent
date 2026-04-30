@@ -1,6 +1,9 @@
 ---
 name: onboarding
+description: First steps for a new coherent agent.
+governing_question: How does a new coherent agent reach a working baseline in the right order?
 triggers: [onboard, new agent, bootstrap, first wake]
+scope: task-local
 ---
 
 # Onboarding

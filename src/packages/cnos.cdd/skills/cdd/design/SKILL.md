@@ -1,6 +1,6 @@
 ---
 name: design
-description: Produce the design artifact for a substantial change: incoherence, challenged assumption, impact graph, acceptance criteria, and leverage.
+description: "Produce the design artifact for a substantial change: incoherence, challenged assumption, impact graph, acceptance criteria, and leverage."
 artifact_class: skill
 kata_surface: embedded
 governing_question: How does α turn a named incoherence into a design that is explicit about impact, authority, leverage, and cost?

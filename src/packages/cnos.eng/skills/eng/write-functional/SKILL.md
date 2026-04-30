@@ -1,7 +1,9 @@
 ---
 name: write-functional
-description: Write code in functional style — pure core, effects at edges, composition over mutation. Use for design decisions, refactoring toward FP, or reviewing code for functional patterns.
+description: Write code in functional style — pure core, effects at edges, composition over mutation.
+governing_question: How do we write code with a pure core, effects at the edges, and composition replacing mutation?
 triggers: [functional, pure, immutable, composition, algebraic]
+scope: task-local
 ---
 
 # Write Functional

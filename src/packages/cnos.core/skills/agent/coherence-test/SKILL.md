@@ -1,6 +1,9 @@
 ---
 name: coherence-test
+description: Certification surface for the Coherent Agent (CA) badge.
+governing_question: How does an agent demonstrate readiness for Coherent Agent certification?
 triggers: [coherence test, verify, validate, self-check]
+scope: task-local
 ---
 
 # Coherence Test

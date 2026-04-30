@@ -1,6 +1,9 @@
 ---
 name: self-cohere
+description: Wire the agent to an existing hub and establish constitutive self before normal work begins.
+governing_question: How does the agent move from cold start to working state on a fresh hub?
 triggers: [self-cohere, self-check, alignment, drift, recalibrate]
+scope: task-local
 ---
 
 # Self Cohere

@@ -1,6 +1,9 @@
 ---
 name: clp
+description: Refine any artifact toward higher coherence before publishing, via versioned triadic self-check.
+governing_question: How does an agent climb an artifact from draft to publish-ready without ever publishing v1.0.0 cold?
 triggers: [coherence, check, verify, CLP, pattern, relation, exit]
+scope: task-local
 ---
 
 # Coherence Ladder Process (CLP)

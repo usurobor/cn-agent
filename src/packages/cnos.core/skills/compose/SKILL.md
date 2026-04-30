@@ -10,6 +10,7 @@ triggers:
   - resolving overlap between skills
   - declaring skill order for a task
   - reviewing whether a proposal should be a composition instead
+scope: task-local
 ---
 
 # Composition

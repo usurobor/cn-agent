@@ -1,6 +1,9 @@
 ---
 name: evolve
+description: Change the shape of the system so repeated future work becomes simpler, safer, and cheaper.
+governing_question: How do we evolve architecture so the next n changes cost less, not more?
 triggers: [architecture, evolution, refactor, restructure, migration]
+scope: task-local
 ---
 
 # Evolve
