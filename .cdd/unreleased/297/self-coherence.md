@@ -120,3 +120,19 @@ All four required references are present with specific section citations.
 ## Debt
 
 None. The issue scope is fully addressed. All ACs met. No secondary research was blocked or deferred.
+
+---
+
+## CDD Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Observation inputs read; selected signal: §15.1 lacks explicit TSC formal upstream claim |
+| 1 Select | — | — | Selected gap: #297 — CTB docs need explicit TSC grounding |
+| 2 Branch | `cycle/297` | cdd | Branch verified: `origin/cycle/297` exists, created by γ from `origin/main` (base `eb7617e7`) |
+| 3 Bootstrap | n/a | cdd | Small-change path: docs-only update to non-normative notes file; no new version snapshot directory required |
+| 4 Gap | `.cdd/unreleased/297/self-coherence.md` §Gap | — | Named incoherence: §15.1 grounded TSC by paraphrase only; formal upstream not stated; specific section refs absent |
+| 5 Mode | `.cdd/unreleased/297/self-coherence.md` §Skills | cdd, write | MCA (docs update); Tier 3: `cnos.core/skills/write` |
+| 6 Artifacts | `SEMANTICS-NOTES.md`, `LANGUAGE-SPEC-v0.2-draft.md` | write | Design: not required (targeted section expansion, no architectural decision). Plan: not required (single-file primary, one secondary cross-reference). Tests: not required (docs-only). Code: not required. Docs: updated in the diff. |
+| 7 Self-coherence | `.cdd/unreleased/297/self-coherence.md` | cdd | AC-by-AC self-check completed; all 6 ACs met with diff evidence; peer set enumerated; non-goals verified |
+| 7a Pre-review | `.cdd/unreleased/297/self-coherence.md` | cdd | Pre-review gate check follows (§2.6) |
