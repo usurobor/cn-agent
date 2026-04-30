@@ -100,3 +100,17 @@ All four required references are present with specific section citations.
 **Evidence:** §15.6 "ctb-check v0 dependency" explicitly states: "Field presence is the minimum check, not the sufficient one. The minimum checker implication from TSC-Oper is: for each required witness field, verify that the evidence is independently grounded rather than self-asserted where the checking surface permits that distinction."
 
 **Met:** ✅
+
+---
+
+## Self-check
+
+**Did α push ambiguity onto β?** No. All six ACs have named evidence in the diff. No AC is claimed "probably met" or "intent matches."
+
+**Peer enumeration.** The change touches §15 of `SEMANTICS-NOTES.md` and §15 of `LANGUAGE-SPEC-v0.2-draft.md`. Peer set:
+- `LANGUAGE-SPEC.md` (v0.1) — non-goal explicitly says do not modify. No change made. ✅ exempt
+- `CTB-v4.0.0-VISION.md` — references TSC conceptually, no section-level citations that conflict with new §15.1 content. No update required. ✅ exempt
+
+**Intra-doc peer check.** `SEMANTICS-NOTES.md` §10 references "the theory stack (Coherence Calculus → TSC → CTB)" — consistent with the new §15.1 framing of TSC as formal upstream. No stale paraphrase conflicts.
+
+**Non-goals respected.** No new CTB concepts added; v0.1 `LANGUAGE-SPEC.md` untouched; no ctb-check implementation; no TSC spec changes; no claim CTB has implemented TSC measurement; additions document the upstream relationship only.
