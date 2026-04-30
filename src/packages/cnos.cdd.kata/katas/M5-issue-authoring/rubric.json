@@ -1,0 +1,23 @@
+{
+  "id": "M5",
+  "name": "Issue Authoring",
+  "class": "method",
+  "version": "0.1.0",
+  "required_artifacts": [
+    "problem_statement",
+    "status_truth_split",
+    "source_of_truth_table",
+    "scope_and_non_goals",
+    "constraint_strata",
+    "acceptance_criteria",
+    "proof_plan",
+    "tier3_skills",
+    "active_design_constraints",
+    "related_artifacts"
+  ],
+  "level_evidence": {
+    "L5": ["issue_exists", "locally_executable"],
+    "L6": ["status_truth_split_present", "source_of_truth_resolves", "acs_have_negative_space", "non_goals_named", "constraint_strata_stratified", "cross_surface_projections_enumerated"],
+    "L7": ["gap_framing_changes_future_work_shape", "exception_ledger_names_removable_debt", "proof_plan_names_v0_unprovable"]
+  }
+}
