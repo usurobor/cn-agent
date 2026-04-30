@@ -154,3 +154,26 @@ Rule §3.7 reinforces: do not start RCA during live diagnosis.
 No exception entry needed; all required fields are present.
 
 **Met:** fully (cue CLI not available; manual validation against schema confirms shape).
+
+## §Self-check
+
+**Did α push ambiguity onto β?**
+
+No. Every AC maps to concrete evidence in the diff. The single artifact (SKILL.md) is the scope; all ACs are fully addressed. The frontmatter validator could not run (`cue` missing) — this is disclosed in AC9 with manual schema confirmation and noted below in §Debt.
+
+**Is every claim backed by evidence in the diff?**
+
+Yes:
+- AC1 (classification): frontmatter `artifact_class: skill` + §1.0 body — visible in diff
+- AC2 (skills loaded): disclosed in §Skills; five skills loaded before drafting in this session
+- AC3 (external practices): §2.2, §2.3, §2.4, §2.6 with inline citations — visible in diff
+- AC4 (triage algorithm): §2.1–§2.7 — visible in diff
+- AC5 (hypothesis discipline): §2.4, §2.5, §2.6, §3.2–§3.6 — visible in diff
+- AC6 (worked examples): §4 Examples 1–3 — visible in diff
+- AC7 (RCA handoff): §2.7, §3.7 — visible in diff
+- AC8 (kata): §5 — visible in diff
+- AC9 (frontmatter): manual validation disclosed; no exception entry required
+
+**Peer enumeration:** The diff is a single new file. No sibling skill was modified. No peer update is needed.
+
+**Harness audit:** No schema-bearing contract changed. No harness audit required.
