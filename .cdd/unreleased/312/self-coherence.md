@@ -131,6 +131,27 @@ no non-trivial sequencing.
 **No tests required:** docs-only change; no code, schema, or runtime contract.
 No test surface applies.
 
+---
+
+## §Debt
+
+**Known debt: none.**
+
+Observations (not debt):
+
+- SETUP-INSTALLER.md §6 Architecture §5.2 has a "systemd unit (optional)"
+  artifact entry that is not individually labeled target. It is covered by
+  the §5 Phases table ("target service wiring — planned, not shipped") and
+  by §7 UX/Flow being labeled target. This is acceptable per the AC3 oracle
+  ("inside a target/planned section or carries inline marker") since the
+  architecture section is a design spec governed by §5 Phases context.
+
+- `cn logs` in OPERATOR.md §1 Observing is not a shipped command (README
+  shipped list does not include it). The issue ACs and peer scope did not
+  cover `cn logs`. Labeling `cn logs` as target/planned is a reasonable
+  follow-on but was not in scope for #312 children.
+
+
 
 
 
