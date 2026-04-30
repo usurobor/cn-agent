@@ -67,3 +67,34 @@
 | `CA-CONDUCT.md` | Tier 3 | yes | yes | Doctrine mirror modified consistently. |
 | `reflect/SKILL.md` | Tier 3 (reference) | yes | yes | Referenced in new text; not modified (correct per scope). |
 | `mci/SKILL.md` | Tier 3 (reference) | yes | yes | Referenced in new text; not modified (correct per scope). |
+
+---
+
+## Findings
+
+| # | Finding | Evidence | Severity | Type |
+|---|---------|----------|----------|------|
+| F1 | Wrong commit SHA in `self-coherence.md` AC6 | AC6 evidence cites commit `ce8b8108`; actual implementation commit is `272b4f05` (`feat(agent/conduct): add Reflect section to CA conduct surfaces`). SHA `ce8b8108` does not appear in branch history. The underlying claim (both files updated in the same commit) is correct; only the citation is wrong. | B | mechanical |
+| F2 | Missing review-readiness section in `self-coherence.md` | CDD-Trace row 7a ends with "Pre-review gate row-by-row below" but the file ends there — no gate rows and no review-readiness section follow. Per `alpha/SKILL.md` §2.7, the review-readiness signal must be a named section: `## Review-readiness \| round 1 \| base SHA: ... \| head SHA: ... \| branch CI: ... \| ready for β`. This section is mandatory and serves as the transient-state audit record (base SHA, head SHA, CI state at readiness time). | C | mechanical |
+
+## Regressions Required (D-level only)
+
+None — no D findings.
+
+## Notes
+
+The implementation is substantively coherent. All 6 ACs are met with verifiable diff evidence. The Reflect section content is well-crafted and exceeds the issue's suggested text sensibly (adds "Agents wake fresh" framing, expands triggers, includes full skill paths). Scope discipline is clean. Both surfaces are identically updated.
+
+F1 and F2 are artifact quality issues in `self-coherence.md`, not in the shipped content (`ca-conduct/SKILL.md` and `CA-CONDUCT.md`). Per §3.3, both must be fixed on-branch before merge. The fix is a single commit: correct the SHA in AC6 and append the review-readiness section.
+
+## Architecture Check
+
+| Check | Result | Notes |
+|---|---|---|
+| Reason to change preserved | n/a | Doc-only; no package boundary, module, or runtime surface touched. |
+| Policy above detail preserved | n/a | |
+| Interfaces remain truthful | n/a | |
+| Registry model remains unified | n/a | |
+| Source/artifact/installed boundary preserved | n/a | |
+| Runtime surfaces remain distinct | n/a | |
+| Degraded paths visible and testable | n/a | |
