@@ -69,8 +69,11 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - CI passing on main (unit tests + integration tests + kata suite)
   - No unmerged branches that should be in this release
   - `git branch -r --no-merged origin/main` — review each, merge or defer
+  - **Non-destructive merge-test on the merge tree before merge.** Build the merge tree in a throwaway worktree (`git worktree add /tmp/cnos-merge-test/wt origin/main && cd /tmp/cnos-merge-test/wt && git merge --no-ff --no-commit origin/cycle/{N}`); run any contract validators the cycle ships (e.g. `./tools/validate-skill-frontmatter.sh` if the cycle adds or modifies SKILL.md frontmatter; `cn-cdd-verify` for `.cdd/` artifacts; `scripts/check-version-consistency.sh` for version stamping); confirm zero unmerged paths and zero new validator findings. Tear down the worktree. **Set any worktree-local git config with the explicit `--worktree` flag** (`git config --worktree user.name X`) to avoid leaking identity to the shared repo `.git/config` (cycle #301 O8). This pattern is also referenced from `beta/SKILL.md` § pre-merge gate row 3 — it is the same step, named here so the release-flow doc is authoritative.
   - ❌ Release with failing CI ("it's just a flaky test")
+  - ❌ Merge without running the cycle's own validators on the merge tree ("the cycle branch passes; the merge tree will too")
   - ✅ CI green, or known failure documented and accepted (e.g. Coherence workflow on #22)
+  - ✅ Merge-tree validation green (especially when the cycle ships a new contract surface like #301's I5 frontmatter validator)
 
 2.2. **Version decision**
   - Review commits since last tag: `git log --oneline $(git describe --tags --abbrev=0)..HEAD`

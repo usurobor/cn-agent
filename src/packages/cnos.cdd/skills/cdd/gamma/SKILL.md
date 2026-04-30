@@ -63,6 +63,8 @@ When acting as γ:
 5. load `operator/SKILL.md` — δ owns release-phase gate execution (tag push, branch cleanup, release CI) and the disconnect release (§3.4). δ's actions are git-observable (tags, branch state). If δ is unavailable, γ may execute gates directly.
 6. load other lifecycle sub-skills only when the selected gap requires them
 
+**Canonical-skill staleness check before each γ phase change.** Before transitioning from one CDD phase to another (intake → dispatch, dispatch → close-out triage, close-out triage → PRA, PRA → closure), γ runs `git fetch --verbose origin main && git rev-parse origin/main`. If `origin/main` HEAD has advanced beyond the SHA at which the canonical CDD/role skills were loaded, **re-load** `CDD.md`, this file, and the lifecycle sub-skill governing the next phase, then re-evaluate the next phase's plan against the updated canonical surfaces before proceeding. This is the parallel of `beta/SKILL.md`'s pre-merge gate row 2; it catches the same class of failure on the γ-axis (canonical-skill snapshot drift across release boundaries — cycle #301 §9.1 trigger 1: γ proposed an out-of-spec option (b) merge-by-γ because σ's `4a0f678` "merge is β authority" had landed mid-cycle and was not in γ's session-loaded `gamma/SKILL.md`).
+
 Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix).
 
 `CDD.md` is the only canonical source for:
