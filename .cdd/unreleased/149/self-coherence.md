@@ -57,3 +57,21 @@ Same situation (release skill), contrastive (memory vs file), imperative. AC2: *
 **Negative:** Silent load does not satisfy this AC.
 
 **Evidence:** The skill-loading gate includes: "Name the loaded skills before proceeding to Action." AC3: **met**.
+
+---
+
+## §Self-check
+
+**Did α push ambiguity onto β?** No. All three ACs have direct evidence quotes from the diff. The rule is imperative, the examples are contrastive, and the visible-load convention is explicit. No judgment is deferred.
+
+**Is every claim backed by evidence in the diff?** Yes. Each AC cites the verbatim added text from SOUL.md §2.1.
+
+**Non-goals verified unviolated:**
+- No auto-detection logic added.
+- No loading-all-skills-on-every-action logic added.
+- No changes outside §2.1 — §2.2 through §3.6 are untouched.
+- No changes to USER.md.
+- No linter/runtime enforcement added.
+- Sigma's derived SOUL not touched.
+
+**Consistency with #277:** The skill-loading gate is added as a named block adjacent to the falsification gate inside §2.1. It does not anchor to any section number. If #277 renumbers sections, the prose survives without contradiction — the gate is paragraph-level, not number-anchored.
