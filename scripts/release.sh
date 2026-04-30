@@ -1,99 +1,92 @@
 #!/usr/bin/env bash
-# release.sh — Single-command release pipeline for cnos.
+# release.sh — Single-command release: stamp, verify, commit, tag, push.
 #
-# Usage: scripts/release.sh <version>
-# Example: scripts/release.sh 3.34.0
+# Usage: scripts/release.sh [version]
+#   If version is given, writes it to VERSION first.
+#   If omitted, reads the current VERSION file.
 #
-# Steps:
-#   1. Preflight (clean tree, on main, up to date)
-#   2. Bump VERSION
-#   3. Stamp manifests (cn.json, packages)
-#   4. Check consistency
-#   5. Commit + push
-#   6. Tag (v-prefixed) + push tag
-#
-# Release workflow triggers on the tag push.
-# CHANGELOG.md and RELEASE.md must be updated before running this.
+# This is the only way to tag a release. Manual `git tag` is not allowed.
+# See: operator/SKILL.md §3.4, CDD.md release gate.
 
 set -euo pipefail
 
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 <version>"
-  echo "Example: $0 3.34.0"
-  exit 1
-fi
-
-VERSION="$1"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-# --- Preflight ---
+# 1. Set version if provided, otherwise read VERSION
+if [ -n "${1:-}" ]; then
+  echo "$1" > VERSION
+  echo "→ VERSION set to $1"
+fi
 
-if [ -n "$(git status --porcelain)" ]; then
-  echo "ERROR: working tree not clean. Commit or stash first."
+VERSION=$(cat VERSION | tr -d '\n')
+if [ -z "$VERSION" ]; then
+  echo "ERROR: VERSION is empty" >&2
   exit 1
 fi
 
+echo "=== Releasing $VERSION ==="
+
+# 2. Ensure we're on main and up to date
 BRANCH=$(git branch --show-current)
 if [ "$BRANCH" != "main" ]; then
-  echo "ERROR: must be on main (currently on $BRANCH)."
+  echo "ERROR: must be on main (currently on $BRANCH)" >&2
   exit 1
 fi
 
-git fetch origin main --quiet
+git fetch --quiet origin main
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/main)
 if [ "$LOCAL" != "$REMOTE" ]; then
-  echo "ERROR: local main ($LOCAL) differs from origin/main ($REMOTE)."
-  echo "Pull or push first."
+  echo "ERROR: main is not up to date with origin/main" >&2
+  echo "  local:  $LOCAL" >&2
+  echo "  remote: $REMOTE" >&2
   exit 1
 fi
 
-# RELEASE.md and CHANGELOG.md should already reference this version
-if ! grep -q "$VERSION" RELEASE.md 2>/dev/null; then
-  echo "WARNING: RELEASE.md does not mention $VERSION"
-  read -r -p "Continue without release notes? [y/N] " confirm
-  [ "$confirm" = "y" ] || exit 1
-fi
-
-TAG="v$VERSION"
-if git tag -l "$TAG" | grep -q "$TAG"; then
-  echo "ERROR: tag $TAG already exists."
+# 3. Check tag doesn't already exist
+if git rev-parse "$VERSION" >/dev/null 2>&1; then
+  echo "ERROR: tag $VERSION already exists" >&2
   exit 1
 fi
 
-echo "=== Release $TAG ==="
-echo ""
+# 4. Stamp all manifests
+echo "→ stamping manifests..."
+scripts/stamp-versions.sh
 
-# --- Bump + stamp + check ---
+# 5. Verify consistency
+echo "→ verifying consistency..."
+scripts/check-version-consistency.sh
 
-echo "$VERSION" > VERSION
-echo "✓ VERSION → $VERSION"
-
-bash scripts/stamp-versions.sh
-echo ""
-bash scripts/check-version-consistency.sh
-echo ""
-
-# --- Stage and confirm ---
-
-git add -A
-echo "--- Staged changes ---"
-git diff --cached --stat
-echo ""
-
-read -r -p "Commit, tag $TAG, and push? [y/N] " confirm
-if [ "$confirm" != "y" ]; then
-  echo "Aborted. Changes staged but not committed."
-  exit 1
+# 6. Stage and commit if anything changed
+if ! git diff --quiet; then
+  git add -A
+  git commit -m "release: $VERSION"
+  echo "→ committed release artifacts"
+else
+  echo "→ no changes to commit (already stamped)"
 fi
 
-# --- Commit + tag + push ---
+# 7. Update CHANGELOG if it exists and doesn't have this version
+if [ -f CHANGELOG.md ]; then
+  if ! grep -q "## $VERSION" CHANGELOG.md; then
+    echo ""
+    echo "WARNING: CHANGELOG.md does not contain a ## $VERSION entry." >&2
+    echo "  Continue anyway? (y/N)"
+    read -r answer
+    if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
+      echo "Aborted. Update CHANGELOG.md and re-run." >&2
+      exit 1
+    fi
+  fi
+fi
 
-git commit -m "release: $TAG"
-git tag "$TAG"
-git push origin main
-git push origin "$TAG"
+# 8. Tag
+git tag "$VERSION"
+echo "→ tagged $VERSION"
 
+# 9. Push
+git push origin main --tags
 echo ""
-echo "✓ Released $TAG. Workflow will build and publish."
+echo "✅ Released $VERSION — release CI will run."
+echo "   Watch: gh run list --workflow release.yml --limit 1"

@@ -173,14 +173,22 @@ The triad's work is not complete until it is tagged. Untagged post-cycle patches
 
 **Algorithm:**
 1. Confirm all post-cycle commits are on main (γ PRA, γ skill patches, δ session patches)
-2. Bump VERSION + cn.json + cn.package.json files
-3. Update CHANGELOG
-4. Commit release artifacts
-5. Tag and push
+2. Edit VERSION to the new number
+3. Run `scripts/release.sh` — this stamps all manifests, verifies consistency, commits, tags, and pushes in one command
 
+**Manual tagging is not allowed.** Do not run `git tag` directly. The release script is the only way to tag. It prevents the class of failures where VERSION, cn.json, and package manifests disagree (see DISPATCH-FAILURE-EVIDENCE.md, cycle #84 failure 3).
+
+```bash
+# Edit VERSION, then:
+scripts/release.sh
+# Or pass version directly:
+scripts/release.sh 3.67.0
+```
+
+- ❌ `git tag 3.67.0 && git push --tags` (skips stamp, skips consistency check)
 - ❌ γ's skill patches sit on main untagged across multiple cycles
 - ❌ δ defers release "because there are no consumers" (the tag is structural, not consumer-driven)
-- ✅ δ tags the final state after all post-cycle work lands: "3.59.1 — δ post-cycle release: operator skill, CDD §Tracking patches, CTB v0.1"
+- ✅ `scripts/release.sh 3.67.0` — stamps, verifies, commits, tags, pushes
 
 ### 3.5. The tag is the signal
 
