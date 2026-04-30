@@ -1,29 +1,21 @@
-# 3.64.0 — CDD merge/release authority separation, README v4, #307 kata move
-
 ## Outcome
 
-Coherence delta: C_Σ B+ (`α B+`, `β A-`, `γ B+`) · **Level:** `L5 (cycle cap: L5)`
+Coherence delta: C_Σ A- (`α A-`, `β A-`, `γ A-`) · **Level:** `L5`
 
-Three changes ship: a spec-level CDD authority separation (β merges, δ releases), a full README rewrite for v4 convergence, and a small-change kata relocation (#307). The release also records the first live identity-rotation dispatch test.
+`eng/troubleshoot` fills the live diagnosis gap exposed by the 2026-04-30 identity-rotation dispatch test. When an agent hits a live failure mid-task, it now has a structured triage skill instead of improvised poking. The skill teaches the triage order, hypothesis discipline, one-change rule, and RCA handoff boundary — making the diagnosis path explicit and repeatable.
 
 ## Why it matters
 
-CDD's merge/release authority was ambiguous — β owned "merge, tag, deploy" as a bundle, and δ's role blurred between authorization and execution. This release separates the two: β is "Reviewer + Integrator" (merge into main requires no δ), δ owns the release boundary (preflight, tag, deploy, disconnect). A new Phase 5a (δ release-boundary preflight) gates the release without gating the merge. The README rewrite makes cnos legible to outsiders for the first time — thesis-first, layers diagram, honest shipped/not-shipped split.
-
-#307 is notable not for the kata move itself (P3 mechanical) but as the first live test of the identity-rotation dispatch model: γ (Sigma/OpenClaw) dispatched α (Opus via `claude -p`) and β (Sonnet via `claude -p`) on a 2GB VPS. Ten implementation findings are recorded in the hub.
-
-## Changed
-
-- **CDD merge/release authority separation**: β is now "Reviewer + Integrator" — owns review + merge into main (no δ authorization required). δ owns the release boundary: preflight, tag, deploy, disconnect. New Phase 5a added to γ algorithm. Step 9 renamed from "Gate + merge" to "Merge" with "(β authority — no δ required)". Role key, default flow, and coordination loop updated. `operator/SKILL.md` gate table updated.
-- **README rewrite**: thesis-first structure ("recurrent coherence system with Git as its lowest durable substrate"), layers diagram, coherent agents section with MCP/CAP/CLP/CDD operations table, network model, "Why Git?" section, honest shipped vs not-shipped split, v4 roadmap phase table, hub shape diagram, organized further-reading by concern.
+Five β dispatch failures across three root-cause classes were diagnosed ad-hoc during the dispatch test. Each failure shared the same anti-pattern: wrong first hypothesis (token limit, rate limit) before checking process state, kernel log, tool output, resource pressure, and parent-process lifecycle. A structured skill forces the cheaper checks first and records negative results so future agents do not re-test ruled-out hypotheses.
 
 ## Added
 
-- **#307 kata move**: Three embedded katas moved from `issue/SKILL.md` §5 to `src/packages/cnos.cdd.kata/katas/M5-issue-authoring/`. `issue/SKILL.md` frontmatter updated to `kata_surface: external` with `kata_ref`. `docs/gamma/cdd/KATAS.md` updated with M5 row.
-- **δ release-boundary preflight** (Phase 5a in γ algorithm): After β merges and close-outs exist, γ requests δ preflight before closing the cycle. δ verifies merge commit, release artifacts, tag/deploy preconditions. Three outcomes: proceed, request changes, override.
+- **`eng/troubleshoot` skill** (#309): live diagnosis skill for active environmental, runtime, process, and tool failures. Includes: six-class triage order (process state → kernel/OOM → tool output → resource pressure → lifecycle/parent → application/model), hypothesis discipline (state before test, oracle before test, cheapest first, one change), three worked examples from the dispatch test (OOM kill, `gh` GraphQL error, background-process lifecycle kill), RCA handoff triggers, and embedded kata.
 
 ## Validation
 
-- Build CI: pass (main push)
-- Release smoke: pending (this release)
-- #307 review: 2 rounds (R1 RC → R2 Approved), clean merge
+- β merged `cycle/309` with no-ff into `main` (`Closes #309`).
+- Non-destructive merge test confirmed zero unmerged paths.
+- `scripts/check-version-consistency.sh` passed: VERSION, cn.json, all package manifests agree at 3.65.0.
+- Frontmatter manually validated against `schemas/skill.cue` (cue CLI not installed on host — exit 2 = prerequisite missing, not schema failure; all hard-gate and spec-required-exception-backed fields present).
+- I5 frontmatter CI job will run on this push; expected exit 2 (cue not available in CI environment) rather than exit 1 (schema violation).
