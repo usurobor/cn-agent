@@ -291,8 +291,10 @@ You are α. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md and follow its load order.
 Issue: gh issue view <N> --json title,body,state,comments
 Branch: cycle/<N>
-Tier 3 skills: <list issue-specific skills>
+Tier 3 skills: src/packages/cnos.core/skills/write/SKILL.md, <additional issue-specific skills>
 ```
+
+`write/SKILL.md` is always included — every α output is a written artifact.
 
 **β prompt (γ produces, δ dispatches):**
 ```text
