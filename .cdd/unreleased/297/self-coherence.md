@@ -136,3 +136,33 @@ None. The issue scope is fully addressed. All ACs met. No secondary research was
 | 6 Artifacts | `SEMANTICS-NOTES.md`, `LANGUAGE-SPEC-v0.2-draft.md` | write | Design: not required (targeted section expansion, no architectural decision). Plan: not required (single-file primary, one secondary cross-reference). Tests: not required (docs-only). Code: not required. Docs: updated in the diff. |
 | 7 Self-coherence | `.cdd/unreleased/297/self-coherence.md` | cdd | AC-by-AC self-check completed; all 6 ACs met with diff evidence; peer set enumerated; non-goals verified |
 | 7a Pre-review | `.cdd/unreleased/297/self-coherence.md` | cdd | Pre-review gate check follows (§2.6) |
+
+---
+
+## Pre-review gate (α/SKILL.md §2.6)
+
+1. **Cycle branch rebased onto current `origin/main`:** ✅ — `git merge-base origin/main HEAD` returns `eb7617e7` = current `origin/main` HEAD (observed 2026-04-30T~now UTC). Branch was created from `origin/main` at `eb7617e7`; main has not advanced since.
+
+2. **self-coherence.md carries CDD Trace through step 7:** ✅ — §CDD-Trace present with steps 0–7 complete.
+
+3. **Tests present or explicit reason none apply:** ✅ — Docs-only change. No code modified. Tests not applicable.
+
+4. **Every AC has evidence:** ✅ — AC1–AC6 all have named diff evidence in §ACs section above.
+
+5. **Known debt explicit:** ✅ — §Debt states "None."
+
+6. **Schema/shape audit:** ✅ — Not applicable. No schema-bearing types or contracts changed.
+
+7. **Peer enumeration completed:** ✅ — Peer set: {`LANGUAGE-SPEC.md` (v0.1), `CTB-v4.0.0-VISION.md`}. Both explicitly exempted with reasons in §Self-check.
+
+8. **Harness audit:** ✅ — Not applicable. No schema-bearing contract changed.
+
+9. **Post-patch re-audit:** ✅ — Section ordering fix (`717cdba9`) was the only mid-cycle patch. Re-read self-coherence against HEAD: all AC evidence still matches. Diff is Markdown only; no polyglot re-audit surface.
+
+10. **Branch CI green on head commit:** CI triggers only on `push: main` and `pull_request: main` (see `.github/workflows/build.yml`). No CI runs are available for `cycle/297` without a PR. This is a docs-only change — no Go files modified. CI would pass on the current diff. β should note CI as N/A for this branch shape.
+
+11. **Commit author email:** ✅ — `git log -1 --format='%ae' HEAD` = `alpha@cdd.cnos`.
+
+---
+
+## Review-readiness | round 1 | implementation SHA: 717cdba9 | branch CI: N/A (docs-only, CI only runs on main/PR) | ready for β
