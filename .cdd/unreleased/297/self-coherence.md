@@ -14,3 +14,19 @@ CTB's current `SEMANTICS-NOTES.md` §15.1 references C≡ and the α/β/γ evalu
 Without explicit grounding, CTB risks re-deriving TSC concepts informally, weakening the tri() claim to an under-specified design metaphor, and building ctb-check without using TSC's witness-independence pattern.
 
 The fix is documentation: update `SEMANTICS-NOTES.md` to make the TSC relationship explicit, with specific section references.
+
+---
+
+## Skills
+
+**Tier 1:**
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` (canonical lifecycle)
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` (α role)
+
+**Tier 2:**
+- `src/packages/cnos.core/skills/write/SKILL.md` (writing — docs-only change)
+
+**Tier 3 (per dispatch):**
+- `src/packages/cnos.core/skills/write/SKILL.md`
+
+No code skill applies; this is a docs-only MCA. Bootstrap not required (no new version snapshot directory; the change updates an existing non-normative notes file).
