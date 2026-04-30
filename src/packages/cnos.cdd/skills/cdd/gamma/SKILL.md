@@ -76,7 +76,8 @@ It expands those steps into executable checks, evidence, and gates.
 
 - Step 1 → git identity (`§2.0`), Step 2a → observe and build candidates (`§2.1`), Step 2b → select and size (`§2.2`)
 - Step 3 → issue pack + issue-quality gate (`§2.3–§2.4`)
-- Steps 4–6 → dispatch + unblocking (`§2.5`)
+- Step 3a → create the cycle branch (`§2.5` Step 3a — `cycle/{N}` from `origin/main`, with γ-owned branch pre-flight per `CDD.md` §4.3, before any dispatch)
+- Steps 3b–6 → subscribe, dispatch + unblocking (`§2.5` Step 3b)
 - Steps 7–8 → deferred release mechanics (`§2.6`)
 - Steps 9–10 → close-out triage (`§2.7`)
 - Steps 11–13 → cycle iteration and process patching (`§2.8–§2.9`)
@@ -198,35 +199,78 @@ Before dispatch, verify:
 Do not compensate for a weak issue by making the prompt longer.
 Fix the issue instead.
 
-### 2.5. Steps 3–5 — Dispatch and unblock without leakage
+### 2.5. Steps 3a–5 — Create the cycle branch, dispatch, unblock without leakage
 
-#### Step 3 — Subscribe and dispatch α and β
+#### Step 3a — Create the cycle branch
 
-Immediately begin polling the issue and `.cdd/unreleased/{N}/` (see CDD.md §Tracking for query forms and the wake-up mechanism) — do not ask, just do it. γ must track the full cycle: issue activity, branch state, α's `.cdd/unreleased/{N}/self-coherence.md` updates, β's `.cdd/unreleased/{N}/beta-review.md` verdicts, and branch CI status. Start polling before dispatching.
+After the issue passes the issue-quality gate (§2.4) and **before** dispatching α and β, γ creates the cycle branch. The branch is the canonical coordination surface during the cycle (`CDD.md` §Tracking + §4.2); a single named target (`cycle/{N}`) replaces the pre-#287 model where α opened the branch and γ + β had to glob-discover it.
 
-**Polling requires both a query and a wake-up mechanism.** Picking a query form (`gh issue`, `git fetch`, `git ls-tree`) without confirming a wake-up form (`Monitor` stdout-as-notification or shell-wake-on-loop-exit) is silent — the loop runs but γ never reacts. Verify both before dispatch. If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, surface the gap to the operator before dispatching α and β; γ cannot autonomously coordinate without a wake-up contract.
+**γ-owned branch pre-flight (`CDD.md` §4.3):**
 
-For MCP-only γ environments (e.g. Claude Code on the web), the canonical wake-up shape is `Monitor` wrapping a transition-only stdout filter:
+- `origin/cycle/{N}` does not yet exist (`git rev-parse --verify origin/cycle/{N}` returns non-zero — fail loud if it already exists, since one cycle = one branch)
+- no stalled `.cdd/unreleased/{N}/` directory exists on `origin/main` (would indicate a previous cycle for `{N}` did not complete its release-time move per `release/SKILL.md` §2.5a)
+- the issue's intended scope is declared in the issue body
+- base SHA is known (`git rev-parse origin/main`)
+- the issue is open
+
+**Creation snippet:**
 
 ```bash
-prev_branches=""; declare -A prev_head
+git fetch --quiet origin main
+# pre-flight: branch does not yet exist
+if git rev-parse --verify origin/cycle/<N> >/dev/null 2>&1; then
+  echo "pre-flight fail: origin/cycle/<N> already exists" >&2
+  exit 1
+fi
+# pre-flight: no stalled .cdd/unreleased/{N}/ on main
+if git ls-tree -r --name-only origin/main .cdd/unreleased/<N>/ 2>/dev/null | grep -q .; then
+  echo "pre-flight fail: stalled .cdd/unreleased/<N>/ on main" >&2
+  exit 1
+fi
+# create + push
+git switch -c cycle/<N> origin/main
+git push -u origin cycle/<N>
+```
+
+The branch must exist on `origin` before dispatch. α and β never create branches; their prompts include a `Branch: cycle/<N>` line and they `git switch` to it (`alpha/SKILL.md`, `beta/SKILL.md` §1, `CDD.md` §1.4).
+
+#### Step 3b — Subscribe and dispatch α and β
+
+Immediately begin polling the issue and `origin/cycle/{N}` (see `CDD.md` §Tracking for query forms and the wake-up mechanism) — do not ask, just do it. γ must track the full cycle: issue activity, `origin/cycle/{N}` head SHA, α's `.cdd/unreleased/{N}/self-coherence.md` updates, β's `.cdd/unreleased/{N}/beta-review.md` verdicts, and branch CI status. Start polling before dispatching.
+
+**Polling requires a query, a wake-up mechanism, and a reachability probe.** Picking a query form (`gh issue`, `git fetch`, `git ls-tree`) without confirming a wake-up form (`Monitor` stdout-as-notification or shell-wake-on-loop-exit) is silent — the loop runs but γ never reacts. Verify both before dispatch. If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, surface the gap to the operator before dispatching α and β; γ cannot autonomously coordinate without a wake-up contract.
+
+For MCP-only γ environments (e.g. Claude Code on the web), the canonical wake-up shape is `Monitor` wrapping a transition-only stdout filter against the **single named cycle branch** (no glob — γ created it in Step 3a and knows its name):
+
+```bash
+# Baseline sync — run BEFORE the transition loop.
+git fetch --quiet origin cycle/<N>
+git rev-parse --verify origin/cycle/<N>
+echo "baseline-cycle-dir: $(git ls-tree -r --name-only origin/cycle/<N> .cdd/unreleased/<N>/ 2>/dev/null | tr '\n' ' ')"
+
+# Transition loop — single named branch.
+prev_head=""; empty_iters=0
 while true; do
-  git fetch --quiet origin
-  cur_branches="$(git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g')"
-  comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
-  # Per-branch head SHA: catches every commit landing on any cycle branch
-  # (α's review-readiness, α's fix-rounds, β's verdicts, γ's own clarifications).
-  for b in $cur_branches; do
-    cur_head="$(git rev-parse "$b" 2>/dev/null)"
-    [ "$cur_head" != "${prev_head[$b]:-}" ] && [ -n "$cur_head" ] && echo "branch-update: $b → $cur_head"
-    prev_head[$b]="$cur_head"
-  done
-  prev_branches="$cur_branches"
+  git fetch --quiet origin cycle/<N> || echo "fetch-error: cycle/<N>"
+  cur_head="$(git rev-parse origin/cycle/<N> 2>/dev/null)"
+  if [ "$cur_head" != "$prev_head" ] && [ -n "$cur_head" ]; then
+    echo "branch-update: cycle/<N> → $cur_head"
+    prev_head="$cur_head"
+    empty_iters=0
+  else
+    empty_iters=$((empty_iters + 1))
+    # CDD.md §Tracking git fetch reliability rule: every 10 empty iterations, do a synchronous re-probe.
+    if [ "$empty_iters" -ge 10 ]; then
+      git fetch --verbose origin cycle/<N> 2>&1 | tee /tmp/cycle-<N>-fetch.log >&2 || \
+        echo "reachability-fail: cycle/<N> — surface to operator"
+      empty_iters=0
+    fi
+  fi
   sleep 60
 done
 ```
 
-Each transition line becomes a `task-notification` that wakes the session. Run under `Monitor`; emit only on transition. **All cycle-dir artifacts live on the cycle's branch — not on `main`** (per CDD.md §Tracking). Polling `origin/main` for `.cdd/unreleased/{N}/` is silent for in-flight cycles; γ tracks branch heads and dereferences the cycle directory on each branch via `git ls-tree -r {branch} .cdd/unreleased/{N}/` when a transition fires.
+Each transition line becomes a `task-notification` that wakes the session. Run under `Monitor`; emit only on transition. **All cycle-dir artifacts live on `origin/cycle/{N}` — not on `main`** (per `CDD.md` §Tracking). Polling `origin/main` for `.cdd/unreleased/{N}/` is silent for in-flight cycles; γ dereferences the cycle directory on the named branch via `git ls-tree -r origin/cycle/{N} .cdd/unreleased/{N}/` when a transition fires.
 
 Then produce both prompts at dispatch time. β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` and starts intake while α implements — β does not need to wait for review-readiness to begin polling.
 
@@ -235,6 +279,7 @@ Then produce both prompts at dispatch time. β begins polling the issue and `.cd
 You are α. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md.
 Issue: gh issue view <N>
+Branch: cycle/<N>
 Tier 3 skills: <list issue-specific skills>
 ```
 
@@ -243,13 +288,15 @@ Tier 3 skills: <list issue-specific skills>
 You are β. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md and follow its load order.
 Issue: gh issue view <N>
+Branch: cycle/<N>
 ```
 
 Rules:
 - point both roles at the issue, not a paraphrase of the issue
+- include the explicit `Branch: cycle/<N>` line so α and β never have to invent or glob-discover the branch
 - do not restate the algorithm in the prompt
 - do not smuggle missing constraints into chat prose; fix the issue instead
-- β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` immediately; the β skill handles waiting for α's review-readiness signal
+- β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` on `origin/cycle/{N}` immediately; the β skill handles waiting for α's review-readiness signal
 - β receives artifact surfaces, not α's hidden implementation rationale
 
 #### Step 5 — Unblock
