@@ -92,15 +92,15 @@ The diff modifies frontmatter `kata_surface` on `issue/SKILL.md`. The peer set i
 
 | Skill | kata_surface | kata_ref | Status this cycle |
 |---|---|---|---|
-| `cdd/alpha/SKILL.md` | embedded | n/a | exempt — embedded `## 4. Embedded Kata` (L316–L344) intentional; not a §307 target |
-| `cdd/beta/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
-| `cdd/gamma/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
-| `cdd/design/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
-| `cdd/plan/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
+| `cdd/alpha/SKILL.md` | embedded | (none) | exempt — embedded `## 4. Embedded Kata` (L316–L344) intentional; not a §307 target |
+| `cdd/beta/SKILL.md` | embedded | (none) | exempt — out of scope (issue §Non-goals limits to issue katas) |
+| `cdd/gamma/SKILL.md` | embedded | (none) | exempt — out of scope |
+| `cdd/design/SKILL.md` | embedded | (none) | exempt — out of scope |
+| `cdd/plan/SKILL.md` | none | (none) | exempt — `kata_surface: none`; nothing to relocate |
 | `cdd/issue/SKILL.md` | external (was embedded) | M5-issue-authoring/ | **updated this cycle** |
 | `cdd/review/SKILL.md` | external | M2-review/ | unchanged — moved in #304 (`5a8bb3e`); the precedent this cycle mirrors |
-| `cdd/release/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
-| `cdd/post-release/SKILL.md` | (verify below) | (verify below) | exempt — out of scope |
+| `cdd/release/SKILL.md` | embedded | (none) | exempt — out of scope |
+| `cdd/post-release/SKILL.md` | embedded | (none) | exempt — out of scope |
 
 Issue §Non-goals explicitly excludes "Touching review katas (already moved)" and limits scope to the three issue katas; β/γ/design/plan/release/post-release skills are not in this cycle's scope. No skill silently inherits the convention change.
 
