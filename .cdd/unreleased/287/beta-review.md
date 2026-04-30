@@ -122,3 +122,113 @@ This file is appended round-by-round and pass-by-pass per `review/SKILL.md` Outp
    For F1 specifically: α cannot unilaterally drop σ's commit (operator authority). The fix-round response should either (i) report that γ has authorized σ's ride-along via an explicit `gamma-clarification.md` file on `cycle/287`, or (ii) report that σ's commit has been moved off `cycle/287` (rebased away, cherry-picked elsewhere). Either resolution is acceptable to β; the cycle cannot merge with the scope-drift unresolved.
 
 — β (`beta@cdd.cnos`) at 2026-04-30 00:25:00 UTC
+
+---
+
+## Round 2 — Verdict: REQUEST CHANGES (F1 + F2 withdrawn; F3 outstanding)
+
+**Round head SHA reviewed:** `4f33687fc59cab6865a0a9df479d3b0a3c0de064`
+**Base:** `origin/main` = `70ff2b1b80e49a30a4d7dddded49a5bd33669b32` *(re-fetched synchronously per γ-clarification §5.1; was stale at `a8e67b7` during R1)*
+**Branch CI state:** deferred (unchanged from R1; markdown-only diff, no cycle-branch CI surface).
+**Merge instruction:** **deferred until F3 resolved** (F4 polish is α's call: ship with the F3 fix-round or defer to follow-up).
+
+### Trigger: γ-clarification at `4f33687`
+
+γ filed `.cdd/unreleased/287/gamma-clarification.md` (`4f33687`, signed `gamma@cdd.cnos`) capturing a mechanical environment fact: `git fetch --verbose origin main` shows `a8e67b7..70ff2b1 main -> origin/main` — `origin/main` HEAD advanced from `a8e67b7` (β's R1 cached value) to `70ff2b1` (σ's commit) between α dispatch and β R1 review. β verified γ's fact synchronously at `2026-04-30 00:33 UTC` in `/home/user/cnos`:
+
+```text
+$ git fetch --verbose origin main
+POST git-upload-pack (305 bytes)
+   a8e67b7..70ff2b1  main       -> origin/main
+
+$ git rev-parse origin/main
+70ff2b1b80e49a30a4d7dddded49a5bd33669b32
+
+$ git branch -r --contains 70ff2b1
+  origin/cycle/287
+  origin/main
+
+$ git merge-base origin/main origin/cycle/287
+70ff2b1b80e49a30a4d7dddded49a5bd33669b32
+
+$ git diff --name-only origin/main..origin/cycle/287
+.cdd/unreleased/287/beta-review.md
+.cdd/unreleased/287/gamma-clarification.md
+.cdd/unreleased/287/self-coherence.md
+src/packages/cnos.cdd/skills/cdd/CDD.md
+src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md
+src/packages/cnos.cdd/skills/cdd/beta/SKILL.md
+src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md
+src/packages/cnos.cdd/skills/cdd/operator/SKILL.md
+```
+
+Confirmed. γ's fact is authoritative.
+
+### F1 — withdrawn
+
+**R1 finding:** σ commit `70ff2b1` lands an out-of-scope spec change on `cycle/287`.
+
+**R2 disposition:** **WITHDRAWN.** σ's `70ff2b1` is on `origin/main`, not on `cycle/287`'s authorized-scope diff. β verified `origin/main..origin/cycle/287` against fresh `origin/main` and the diff includes exactly the 5 spec files α was supposed to modify (`CDD.md`, `alpha/SKILL.md`, `beta/SKILL.md`, `gamma/SKILL.md`, `operator/SKILL.md`) plus the cycle dir artifacts. `review/SKILL.md` is **not** in the cycle diff (`git diff --name-only origin/main..origin/cycle/287` returns 8 paths, all expected). `alpha/SKILL.md` shows only +15 lines in the cycle diff (vs +38 lines when β computed against the stale `a8e67b7` base — the difference is exactly the σ-authored 25 lines that are now part of the merge base, not part of the cycle's diff).
+
+The sigma rule (incremental write discipline for α self-coherence and β review) is now canonical via `origin/main`, independent of #287. The σ commit's content is reasonable, aligned with `CDD.md` §1.4 large-file authoring rule, and not contested on its own terms. β's R1 wording mischaracterized the placement; β apologizes for the false positive.
+
+**Root-cause note (β-side):** β's polling Monitor (`CDD.md` §1.4 β step 3 reference snippet) fetches `cycle/287` only and emits transitions on `cycle/287`'s head SHA. It does not poll `origin/main`, so β's local `origin/main` ref was last fetched at intake (`2026-04-29 23:11 UTC` window, when main was at `a8e67b7`). Between intake and R1 review, σ pushed `70ff2b1` to `main`. β never observed the transition because main is not the polled surface. β's R1 contract-integrity computation implicitly trusted the stale local `origin/main` ref. **β should have re-fetched `origin/main` synchronously immediately before computing the R1 review diff base.** This is the gap γ-clarification §4 names ("when β reads `git diff main..cycle/{N}` to compute the review surface, β should re-fetch `origin/main` synchronously immediately before computing the diff"). β concurs with γ's recommendation to capture this in `beta-closeout.md` as a §Tracking gap finding for γ's PRA triage; not a #287 R2 blocker.
+
+### F2 — withdrawn
+
+**R1 finding:** α's §Known debt #5 + §Pre-review gate row 1 misidentify `70ff2b1` as `origin/main`.
+
+**R2 disposition:** **WITHDRAWN.** α's claim that "`origin/main` advanced with `70ff2b1`" matches current origin state. α's row 1 evidence "base SHA: `70ff2b1` (`origin/main`)" is correct against fresh fetch. β's R1 contradicting evidence ("main is at `a8e67b7`") was the stale-local-ref artifact described above. β apologizes for the false positive.
+
+α's §Pre-review gate row 1 transient-row discipline (per `alpha/SKILL.md` §2.6 transient-rows note + #266 F1/F2 derivation) fired correctly: α observed main moving during the cycle, rebased onto it, and recorded the post-rebase base SHA in row 1. The transient-row rule worked as designed; β's review-base re-fetch was the one missing.
+
+### F3 — stands
+
+**R1 finding:** α git identity drifts from canonical `alpha@cdd.{project}`.
+
+**R2 disposition:** **STANDS.** Independent of F1/F2. β re-confirms by inspection at R2 head SHA:
+
+```text
+$ git log --pretty="%h %an <%ae>" origin/main..origin/cycle/287 | grep alpha
+6f44dbb alpha <alpha@cnos.local>
+3336fe3 alpha <alpha@cnos.local>
+6a897a4 alpha <alpha@cnos.local>
+```
+
+All three α commits use `alpha@cnos.local` instead of the canonical `alpha@cdd.cnos` named in `CDD.md` §1.4 α algorithm step 2 + matching the metadata in `self-coherence.md` L7. β's identity is `beta@cdd.cnos` (canonical); γ's is `gamma@cdd.cnos` (canonical, see γ-clarification author line); the role-identity-is-git-observable property is broken if α's email drifts.
+
+**α response options** (γ-clarification §5.2 enumerates; either is acceptable to β):
+
+- (a) **Retroactively re-author** the three existing α commits to use `alpha@cdd.cnos`. Procedure: `git config user.email "alpha@cdd.cnos" && git rebase -i 70ff2b1 --exec 'git commit --amend --reset-author --no-edit' && git push --force-with-lease origin cycle/287`. Rebases all three commits with new author email; force-pushes the cycle branch. Cost: β's already-committed verdict commits (`cefb4a8`, `286c5f5`, `045f1f2`) reference the pre-rebase α SHAs in their evidence and notes; those references will become stale-but-not-misleading (the commit graph will renumber, but content claims still hold). **β prefers (a) for clean cross-cycle archeology** — frozen historical branches under canonical identity match the role-identity-is-git-observable property; future readers grepping `alpha@cdd.cnos` see the full set.
+- (b) **Apply the rule from the next commit forward.** `git config user.email "alpha@cdd.cnos"` for the fix-round commit and any subsequent α commits in this cycle. Existing three α commits stay as legacy under `alpha@cnos.local`. Cost: this cycle's git history shows two α email forms; #287 is supposed to land the canonical form mechanically and visibly (AC 12 self-application again), but the existing three commits would not exemplify the rule. **β accepts (b) if α prefers minimal disruption** — but the fix-round narrative should explicitly disclose the partial application as known debt for γ's close-out.
+
+α's call. Either resolves F3 to β's satisfaction. β re-verifies at R3 by re-running the `git log --pretty="%h %an <%ae>"` check against the cycle-branch head.
+
+### F4 — stands (polish, α's call)
+
+**R1 finding:** `CDD.md` §4.1 Lifecycle steps row 2 ambiguous in isolation.
+
+**R2 disposition:** **STANDS as polish.** α may ship in F3 fix-round or defer to follow-up. Suggested wording (β):
+
+```markdown
+| 2 | Branch | Create the cycle branch — γ creates `cycle/{N}` from `origin/main`; α and β only check out (see §4.2) | Branch `cycle/{N}` exists on origin |
+```
+
+Or a footnote on the row. α's call.
+
+### R2 verdict — REQUEST CHANGES
+
+| # | Sev | Type | Status |
+|---|-----|------|--------|
+| F1 | — | — | **withdrawn** (collapsed on fresh `origin/main` fetch) |
+| F2 | — | — | **withdrawn** (collapsed on fresh `origin/main` fetch) |
+| F3 | C | contract (identity-truth) / mechanical | **stands** — α response required |
+| F4 | A | judgment | **stands as polish** — α's call (ship or defer) |
+
+**Mechanical-finding ratio (revised):** 0 mechanical out of 2 outstanding findings = 0%. Below the 20% threshold.
+
+**Round count:** 2 (R1 + R2). Below `CDD.md` §9.1 `Review rounds > 2` trigger; would fire on R3 if F3/F4 are not resolved or new findings emerge — note for γ's cycle-iteration triage if reached.
+
+**Path to approval:** α addresses F3 (and optionally F4) with a fix-round commit on `cycle/287`, appends a fix-round section to `.cdd/unreleased/287/self-coherence.md` per `alpha/SKILL.md` §2.7. β re-fetches `origin/main` synchronously before R3 (closing the β-side gap that produced the R1 false positive), recomputes the diff base, re-reviews against the fix-round, and writes R3 verdict.
+
+— β (`beta@cdd.cnos`) at 2026-04-30 00:35 UTC
