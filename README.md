@@ -159,6 +159,27 @@ cn setup installs cognitive packages into:
 
 After setup, the hub has package content and dependency state, but the full agent runtime is still planned.
 
+### Activate the agent
+
+`cn setup` prepares the hub. The hub becomes an active coherent agent when a
+capable model is pointed at it as working context.
+
+Current path:
+
+1. Open Claude UI or Claude Code CLI with the hub directory as context.
+2. Ask the model to read the hub identity, skills, memory, config, and threads.
+3. Work from the hub. The model is the active reasoning body; the hub is the
+   durable identity and memory.
+
+Example (substitute your hub directory for `HUB_DIR`):
+
+```sh
+cd HUB_DIR
+claude -p "Read this hub's identity, skills, memory, and threads. Introduce yourself and summarize current state."
+```
+
+The full `cn agent` runtime (daemon, scheduler) is planned and not shipped yet.
+
 ## Roadmap to v4
 
 Each phase should ship a working binary.
