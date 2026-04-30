@@ -143,7 +143,14 @@ Mechanical findings reaching review are **process bugs**. If >20% of findings in
 
 ## Output Format
 
-Written to `.cdd/unreleased/{N}/beta-review.md`. Each round appends a new section.
+Written to `.cdd/unreleased/{N}/beta-review.md` **incrementally**. Each review pass (contract, implementation, verdict) is a separate commit+push to the cycle branch. Do not write the entire review in one generation — stream timeouts will discard partial work.
+
+**Incremental write discipline:**
+1. Write each pass as a separate operation (§2.0.0 Contract → §2.1 Implementation → Verdict)
+2. Commit and push after each pass
+3. If resuming after a failure, read what exists on the branch and continue from the last committed pass
+
+Each round appends a new section.
 
 ```markdown
 **Verdict:** APPROVED / REQUEST CHANGES

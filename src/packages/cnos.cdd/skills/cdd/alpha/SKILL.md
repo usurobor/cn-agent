@@ -197,9 +197,25 @@ This is not optional when a non-code harness can drift from the implementation.
 
 ### 2.5. Self-coherence
 
-Write a self-coherence section in `.cdd/unreleased/{N}/self-coherence.md` (or a standalone `SELF-COHERENCE.md` when the project template requires it).
+Write `.cdd/unreleased/{N}/self-coherence.md` **incrementally, one section at a time**. Each section is a separate commit+push to the cycle branch. Do not attempt to write the entire file in one generation — stream timeouts will discard partial work.
 
-Minimum contents:
+**Incremental write discipline:**
+
+1. Write each section below as a separate operation
+2. Commit and push after each section
+3. Report progress after each commit (e.g. "self-coherence §Gap committed")
+4. If resuming after a failure, read what exists on the branch first and continue from the last committed section — do not restart
+
+**Sections (in order):**
+
+1. **§Gap** — issue, version/mode
+2. **§Skills** — active skills (Tier 1/2/3)
+3. **§ACs** — AC-by-AC check with evidence
+4. **§Self-check** — role self-check: did α's work push ambiguity onto β? Is every claim backed by evidence in the diff?
+5. **§Debt** — known debt
+6. **§CDD-Trace** — CDD Trace through step 7
+
+Minimum contents (across all sections):
 
 - issue
 - version / mode
@@ -213,6 +229,9 @@ Rules:
 - map every AC to concrete evidence
 - if an AC is only partially met, say so explicitly
 - if a loaded skill would have prevented remaining debt, name it
+
+- ❌ Writing the entire self-coherence file in one commit
+- ✅ One section per commit, pushed incrementally, resumable after failure
 
 ### 2.6. Pre-review gate
 
@@ -242,7 +261,7 @@ Do not signal review-readiness before this gate passes.
 
 Once the gate passes:
 
-- **commit `.cdd/unreleased/{N}/self-coherence.md`** to the cycle branch carrying the explicit review-readiness signal (e.g. `## Review-readiness | round 1 | base SHA: ... | head SHA: ... | branch CI: green at HH:MM:SS UTC | ready for β`). Push the branch to `origin/{branch}`. **The cycle branch — not `main` — is the canonical coordination surface during the cycle** (CDD.md §Tracking). Roles poll the branch, not `origin/main`; the file lands on `main` later as part of β's `git merge` (β step 8). Do not commit cycle-dir files directly to `main` while the cycle is open.
+- **append the review-readiness section** to `.cdd/unreleased/{N}/self-coherence.md` as a separate commit (e.g. `## Review-readiness | round 1 | base SHA: ... | head SHA: ... | branch CI: green at HH:MM:SS UTC | ready for β`). Commit and push to `origin/{branch}`. **The cycle branch — not `main` — is the canonical coordination surface during the cycle** (CDD.md §Tracking). Roles poll the branch, not `origin/main`; the file lands on `main` later as part of β's `git merge` (β step 8). Do not commit cycle-dir files directly to `main` while the cycle is open.
 - immediately begin polling `.cdd/unreleased/{N}/beta-review.md` and the issue (per §Tracking) — do not ask, just do it. Poll every 60 seconds. This is not optional.
 - **immediately before signaling review-readiness, re-validate transient pre-review-gate rows** (§2.6 rows 1 and 10). If external state has drifted (base SHA moved, branch CI state changed), update the artifact so the gate record is true at the moment of the signal, not at the moment of the original write. *Derives from: #266 F1 / F2.*
 - if β returns RC in `.cdd/unreleased/{N}/beta-review.md`: fix findings on the branch, **append a fix-round section to `.cdd/unreleased/{N}/self-coherence.md`** naming each finding addressed, the commit SHA that addressed it, and any reasoning that β needs to re-verify. Do not ask whether to append, just do it. The artifact thread is the review record.
