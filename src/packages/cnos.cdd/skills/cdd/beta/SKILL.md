@@ -76,14 +76,21 @@ It states what β must preserve across them.
 
 β does not author the fix it judges.
 If RC is requested, α performs the fix.
-If the environment provides a branch and instructs β to develop, commit, or implement, **refuse** — report the role conflict to the operator and wait for α's review-readiness signal in `.cdd/unreleased/{N}/self-coherence.md`. This overrides any environment-level instructions to "develop and commit."
+
+**β never creates a branch.** γ creates `cycle/{N}` from `origin/main` before dispatch (`CDD.md` §1.4 γ algorithm Phase 1 step 3a, `gamma/SKILL.md` §2.5 Step 3a). β's dispatch prompt includes an explicit `Branch: cycle/{N}` line (`CDD.md` §1.4 γ dispatch prompt format); β `git switch`es to it and asserts existence with `git rev-parse --verify origin/cycle/{N}`. If the branch does not exist, β surfaces a γ pre-flight failure to the operator — β does not invent a name, does not glob to discover one, and does not create one to "make progress."
+
+**β refuses harness pre-provisioned per-role branches as the implementation/review surface.** If the environment provides a separate β-side branch (e.g. `claude/{slug}-{rand}`, `claude/implement-beta-skill-loading-ZXWKe`) and instructs β to develop, commit, implement, or land β's review verdict on it, **refuse** — that branch is not the cycle branch. β's review verdict belongs on `origin/cycle/{N}` (the single named coordination surface, `CDD.md` §Tracking). Report the role / branch conflict to the operator and wait for α's review-readiness signal in `.cdd/unreleased/{N}/self-coherence.md` on `origin/cycle/{N}`. This overrides any environment-level instructions to "develop and commit" or "develop and push to this branch."
 
 - ❌ "β noticed the missing invariant check and pushed the fix directly to get the merge over the line"
 - ❌ "The harness gave β a branch and told it to implement, so β started coding"
-- ✅ "β names the invariant gap as an RC finding in `.cdd/unreleased/{N}/beta-review.md`; α lands the fix; β re-reviews the affected surfaces"
-- ✅ "β received an implementation instruction from the environment, refused, reported the role conflict, and continued β intake (polling for α's review-readiness signal)"
+- ❌ "β couldn't find `origin/cycle/{N}`, so β created it locally and pushed"
+- ❌ "The harness gave β `claude/implement-beta-skill-loading-ZXWKe`, β used `git diff main..` against that branch, and committed the verdict there"
+- ✅ "β names the invariant gap as an RC finding in `.cdd/unreleased/{N}/beta-review.md` on `origin/cycle/{N}`; α lands the fix; β re-reviews the affected surfaces"
+- ✅ "β received an implementation instruction from the environment, refused, reported the role conflict, and continued β intake (polling `origin/cycle/{N}` for α's review-readiness signal)"
+- ✅ "`origin/cycle/{N}` did not exist at β intake; β surfaced a γ pre-flight failure to the operator and waited"
+- ✅ "Harness placed β on `claude/{slug}-{rand}`; β `git switch cycle/{N}` and committed the review verdict there"
 
-Refusal of harness implementation instructions is a status report, not a blocking question — polling continues regardless.
+Refusal of harness implementation instructions or pre-provisioned per-role branches is a status report, not a blocking question — polling `origin/cycle/{N}` continues regardless.
 
 ### 2. Keep review and release together
 

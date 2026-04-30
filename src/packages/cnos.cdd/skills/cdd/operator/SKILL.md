@@ -94,13 +94,14 @@ prev=""; while true; do
 done
 ```
 
-Run under `Monitor` or equivalent. 5-minute interval is sufficient for δ — γ owns the tight loop. Supplement with branch + `.cdd/unreleased/` polling once cycles are active:
+Run under `Monitor` or equivalent. 5-minute interval is sufficient for δ — γ owns the tight loop. Supplement with branch + `.cdd/unreleased/` polling once cycles are active. Canonical cycle branches are `origin/cycle/{N}` (per `CDD.md` §4.2, since #287). The pre-#287 `'origin/claude/*'` glob is **warn-only / retrospective** — retained for tracking historical cycles whose branches predate the rule, never as a discovery surface for new cycles:
 
 ```bash
 prev_branches=""; declare -A prev_head
 while true; do
   cd /path/to/repo && git fetch --quiet origin
-  cur_branches="$(git branch -r --list 'origin/claude/*' 2>/dev/null | sed 's| ||g' | sort)"
+  # Canonical: cycle/{N} branches (γ creates these per CDD.md §1.4 γ algorithm Phase 1 step 3a).
+  cur_branches="$(git branch -r --list 'origin/cycle/*' 2>/dev/null | sed 's| ||g' | sort)"
   comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
   # Per-branch head SHA — cycle artifacts live on cycle branches, not on main.
   for b in $cur_branches; do
@@ -111,6 +112,8 @@ while true; do
   prev_branches="$cur_branches"
   sleep 300
 done
+# To track legacy branches retrospectively, swap the glob to 'origin/claude/*'
+# (warn-only — pre-#287 cycles only). Do not use for new cycles.
 ```
 
 ---
