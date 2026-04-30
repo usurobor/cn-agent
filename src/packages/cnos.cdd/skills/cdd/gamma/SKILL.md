@@ -301,17 +301,6 @@ Rules:
 - β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` on `origin/cycle/{N}` immediately; the β skill handles waiting for α's review-readiness signal
 - β receives artifact surfaces, not α's hidden implementation rationale
 
-#### Spec-staleness propagation
-
-When γ (or δ) pushes spec changes to `origin/main` while α or β sessions are in-flight, the loaded skills in those sessions become stale. γ is responsible for propagating awareness of spec changes:
-
-- **Identity-rotation mode (bounded dispatch via `cn dispatch` or `claude -p`):** Not applicable — each role invocation loads skills fresh from the filesystem. γ's spec changes land on `main`; the next dispatch picks them up automatically.
-- **Long-lived polling sessions (legacy model):** γ must notify in-flight α/β sessions when a spec change lands that affects their current phase. Notification surfaces: write a coordination note to `.cdd/unreleased/{N}/gamma-coordination.md` on `origin/cycle/{N}` naming the spec change and affected skill path; or surface directly in the dispatch channel if available.
-- **When to propagate:** Any change to `CDD.md`, role skill files (`alpha/`, `beta/`, `gamma/`, `operator/`), `release/SKILL.md`, or `review/SKILL.md` that lands on `main` while a cycle is in-flight.
-- **When not to propagate:** Changes to skills outside the CDD package, doc-only changes, or changes to issues/threads.
-
-*Derives from: #301 §9.1 trigger — γ proposed an out-of-spec merge option because σ's `4a0f678` (merge is β authority) landed mid-cycle and was not in γ's loaded skill snapshot. The reactive fix (canonical-skill staleness check before phase change) is in § Load Order above. This subsection adds the proactive side: γ pushes awareness, not just γ detects staleness.*
-
 #### Step 5 — Unblock
 
 When α or β is blocked, γ may:
