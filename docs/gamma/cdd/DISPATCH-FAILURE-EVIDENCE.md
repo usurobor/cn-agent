@@ -79,6 +79,36 @@ Result: **SUCCESS** — R1 approved, 0 findings, 3.65.0 tagged
 - First attempt at nesting γ inside `claude -p` (γ dispatching α/β) produced no visible output and was hard to monitor. **Implication for #295:** γ-as-subprocess-of-subprocess is fragile; δ should orchestrate α/β directly or γ must have a structured output channel.
 - Total wall time: ~15 minutes including prompt composition
 
+### Cycle #84 — make reflection a core CA continuity requirement
+
+Date: 2026-04-30
+α model: sonnet
+β model: sonnet
+Result: **SUCCESS** — R1 RC (2 mechanical findings), R2 approved, merged. β respected role boundary (no tag/release).
+
+#### Failure 1: AUTH — β cannot review with Read,Write only
+- Phase: β (R1 attempt 1)
+- Symptom: β sat idle for ~5min, never committed. Could not run `git diff`, `gh issue view`, or any shell commands.
+- Root cause: `--allowedTools "Read,Write"` excludes Bash. β needs shell for read-only git/gh operations.
+- Recovery: killed β, re-dispatched with `--allowedTools "Read,Write,Bash"`
+- Implication for #295: β needs Bash. Role boundary enforcement must be in the skill/prompt, not tool scoping. Future: restricted bash allowlist per role.
+- Time cost: ~5min
+
+#### Failure 2: CONTEXT — α fix round couldn't write files
+- Phase: α (fix round)
+- Symptom: α described the fix but exited without applying it, saying "please grant permission to edit"
+- Root cause: unclear — α had Read,Write,Bash. Possibly claude -p file write permission issue with .cdd/ paths, or α misunderstood its own tools.
+- Recovery: δ applied the mechanical fix directly (SHA correction + review-readiness section)
+- Implication for #295: dispatch should verify α actually committed, not just exited cleanly. Structured exit codes or artifact checks needed.
+- Time cost: ~3min
+
+#### Observation: β respected role boundary after skill fix
+- β merged and wrote close-out but did NOT tag, release, push tags, or delete branches
+- The beta/SKILL.md fix (commit 0e94fe3d) successfully constrained β's behavior
+- Implication for #295: role boundary enforcement via skill text works when the skill is clear. Tool scoping (Read,Write only) is too restrictive for β.
+
+---
+
 #### Failure 1: AUTH — β exceeded role boundary (tagged release)
 - Phase: β
 - Symptom: β tagged 3.65.0, bumped version, updated CHANGELOG, deleted cycle branch, moved .cdd artifacts — all δ responsibilities per CDD §1.4
