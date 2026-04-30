@@ -23,3 +23,47 @@
 | Cross-surface projections updated | yes | Two surfaces identified as authoritative (SKILL.md + doctrine mirror); both updated identically. AGENTS.md and OPERATIONS.md correctly excluded per issue scope. |
 | No witness theater / false closure | yes | The Reflect section adds real behavioral guidance with concrete triggers and skill references. No false closure claim. |
 | PR body matches branch files | n/a | Triadic protocol — no PR. `.cdd/unreleased/84/self-coherence.md` is the coordination surface. |
+
+---
+
+## §2.0 Issue Contract
+
+### AC Coverage
+
+| # | AC | In diff? | Status | Notes |
+|---|----|----------|--------|-------|
+| AC1 | CA conduct includes reflection as core behavior | yes | PASS | `## Reflect` section present in both files. Opens with "Agents wake fresh." framing; uses "captures operational residue before it disappears" — required, not optional. |
+| AC2 | Reflection continuity explained | yes | PASS | Four required points present: agents wake fresh, context does not persist, threads/reflections are continuity, future agents only learn from recorded evidence. |
+| AC3 | Concrete triggers named | yes | PASS | All five triggers present: before ending substantial work, after mistake/repeated pattern, after judgment/triage/classification, capture MCIs immediately, daily/heartbeat cadences. |
+| AC4 | Reflect and MCI skills referenced | yes | PASS | Both full paths present: `src/packages/cnos.core/skills/agent/reflect/SKILL.md` and `src/packages/cnos.core/skills/agent/mci/SKILL.md`. |
+| AC5 | No stale path remains | yes | PASS | `grep -rn "mindsets/CA" src/packages/cnos.core/skills/agent/ca-conduct/ src/packages/cnos.core/doctrine/` → 0 matches (verified). |
+| AC6 | Conduct mirrors stay aligned | yes | PASS | Both files contain identical Reflect section. Both updated in implementation commit `272b4f05` (see F1). |
+
+### Named Doc Updates
+
+| Doc / File | In diff? | Status | Notes |
+|------------|----------|--------|-------|
+| `src/packages/cnos.core/skills/agent/ca-conduct/SKILL.md` | yes | done | Reflect section added before Prepare. |
+| `src/packages/cnos.core/doctrine/CA-CONDUCT.md` | yes | done | Identical Reflect section added before Prepare. |
+
+### CDD Artifact Contract
+
+| Artifact | Required? | Present? | Notes |
+|----------|-----------|----------|-------|
+| `self-coherence.md` | yes | yes | Present with gap, mode, ACs, self-check, CDD-Trace. Missing review-readiness section (see F2). |
+| `beta-review.md` | yes | yes (this document) | Written by β. |
+| `alpha-closeout.md` | yes (post-merge) | not yet | Expected after merge. |
+| `beta-closeout.md` | yes (post-merge) | not yet | Expected after merge. |
+
+### Active Skill Consistency
+
+| Skill | Required by | Loaded? | Applied? | Notes |
+|-------|-------------|---------|----------|-------|
+| `CDD.md` | Tier 1a | yes | yes | CDD Trace present through step 7 (incomplete at 7a — see F2). |
+| `alpha/SKILL.md` | Tier 1a | yes | yes | Pre-review gate referenced; review-readiness section missing (F2). |
+| `eng/document/SKILL.md` | Tier 2 (Writing) | yes | yes | Writing discipline evident in Reflect section prose. |
+| `cnos.core/skills/skill/SKILL.md` | Tier 2 | yes | yes | SKILL.md modified; frontmatter not changed (pre-existing state, no new issue). |
+| `ca-conduct/SKILL.md` | Tier 3 | yes | yes | Primary artifact modified. |
+| `CA-CONDUCT.md` | Tier 3 | yes | yes | Doctrine mirror modified consistently. |
+| `reflect/SKILL.md` | Tier 3 (reference) | yes | yes | Referenced in new text; not modified (correct per scope). |
+| `mci/SKILL.md` | Tier 3 (reference) | yes | yes | Referenced in new text; not modified (correct per scope). |
