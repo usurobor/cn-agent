@@ -19,7 +19,7 @@ inputs:
   - symptom description
   - available evidence (logs, stream output, exit codes, process state)
 outputs:
-  - resolved symptom
+  - resolved symptom or blocked/escalated troubleshooting record
   - triage record (hypotheses tested, results, change made)
   - RCA handoff trigger (if recurrence risk or systemic root cause)
 ---
@@ -119,7 +119,7 @@ Required fields (drawn from IBM troubleshooting problem-description practice):
 
 ### 2.3. Triage order
 
-Test in this order. Each class is cheaper and faster to eliminate than the next. Do not skip forward without testing each class first.
+Test in this order. Each class is cheaper and faster to eliminate than the next. Do not skip a cheaper class without accounting for it (see §3.8).
 
 1. **Process state** — is the process running? Check exit code, PID, process list.
 2. **External kill / kernel log** — was the process killed externally? Check dmesg, kernel log, OOM killer output.
@@ -183,6 +183,24 @@ Do not start an RCA while still diagnosing. `eng/rca` requires a stable system.
 - ❌ Starting Five Whys while the process is still failing
 - ✅ Resolve the live symptom; then trigger RCA if recurrence risk or systemic cause applies
 
+### 2.8. Escalate or close blocked
+
+If no hypothesis can be safely tested, no confirmed fix is available, or the required action exceeds current authority, stop live troubleshooting and return a blocked troubleshooting record.
+
+The record must include:
+- Original symptom
+- Evidence preserved
+- Hypotheses tested
+- Negative results
+- Current best hypothesis, if any
+- Reason live troubleshooting cannot continue
+- Required next authority, resource, tool, or operator action
+
+Do not keep poking after the evidence or authority boundary is exhausted.
+
+- ❌ Trying increasingly risky fixes because "something has to work"
+- ✅ "Cannot test further without root SSH access. Best hypothesis: filesystem full on host. Escalating to operator with evidence."
+
 ---
 
 ## 3. Rules
@@ -200,7 +218,7 @@ If you cannot state the hypothesis before running the test, you are not testing 
 
 ### 3.3. Test the cheapest discriminating hypothesis first
 
-The triage order in §2.3 is not a suggestion. Process state and kernel log are cheaper than API debug logs. API debug logs are cheaper than model behavior speculation.
+The triage order in §2.3 is not optional. Process state and kernel log are cheaper than API debug logs. API debug logs are cheaper than model behavior speculation. But evidence already in hand can satisfy a class without a dedicated test (see §3.8).
 
 - ❌ "Let me check if the token budget was exceeded" (before checking process state)
 - ✅ "Process state first. No process running, no exit code. Step 2: kernel log."
@@ -227,9 +245,18 @@ Proxy verification is not verification. Run the same scenario that originally fa
 
 RCA and live diagnosis are distinct processes. Mixing them produces noise in both.
 
-### 3.8. Do not skip triage steps to reach a "likely" hypothesis
+### 3.8. Do not skip triage steps without accounting for them
 
-Premature hypothesis is the failure mode. "Likely" guesses that skip the triage order consistently cost more than systematic checks.
+Do not skip a cheaper class without accounting for it. For each earlier class, either:
+- Test it
+- Mark it already satisfied by preserved evidence
+- Mark it not applicable with reason
+- Record why testing it would destroy evidence or exceed authority
+
+This preserves discipline while avoiding ritual checks when discriminating evidence is already in hand.
+
+- ❌ "Tool error is obvious — skip process/kernel/resource checks entirely"
+- ✅ "Process: alive (ps confirms). Kernel: no kill (dmesg clean). Tool: error message says 'deprecated GraphQL field' — this is the discriminating evidence. Remaining classes: not tested, not needed."
 
 ---
 
@@ -359,3 +386,14 @@ Re-run the same beta review scenario. Process reaches a result event. Original s
 - Did you state your hypothesis before running each test?
 - Did you make exactly one change and verify against the original symptom, not a proxy?
 - Did you record negative results as evidence for future agents?
+
+---
+
+## 6. Sources
+
+This skill adapts:
+
+- **Google SRE, _Effective Troubleshooting_** — hypothesis-driven troubleshooting, telemetry/log examination, test-and-treat loop, and common pitfalls.
+- **IBM troubleshooting techniques** — complete problem description, conditions, reproducibility, and environment questions.
+- **Red Hat problem-solving** — symptom vs problem, one change at a time, and retesting the original symptom.
+- **CompTIA troubleshooting methodology** — identify, form theory, test, plan, implement/escalate, verify, document.
