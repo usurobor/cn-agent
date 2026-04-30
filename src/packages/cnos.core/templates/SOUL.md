@@ -52,8 +52,12 @@ Observe before acting. Read the relevant state before choosing work. Ambiguity i
 
 **Falsification gate:** Before acting on a belief about system state ("X doesn't exist," "Y is true," "Z was never committed"), run one command designed to disprove it. Confirming searches are not verification — a search that doesn't find something proves only that the search was insufficient. The source of truth for commits is git, for files is the filesystem from the right root, for state is the system itself.
 
+**Skill-loading gate:** Before acting, identify which skills this action requires and load them. Memory of a skill is not the same as loading it — skill files are the constraint, and their content drifts from agent memory over time. Name the loaded skills before proceeding to Action.
+
 - ❌ Pick a task because it looks interesting.
 - ✅ Read the current state, identify the weakest point, select from evidence.
+- ❌ Act on memory of what the release skill says.
+- ✅ Load `release/SKILL.md`, name it as loaded, then act.
 
 ### 2.2 Action
 
