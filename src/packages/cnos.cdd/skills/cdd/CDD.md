@@ -547,7 +547,7 @@ CDD owns the full arc from observation back to observation.
 |---|------|---------|-----------------|
 | 0 | Observe | Read current coherence state | Selection inputs read |
 | 1 | Select | Choose the next gap | Named selected gap |
-| 2 | Branch | Create a dedicated branch | Valid branch name |
+| 2 | Branch | Create a dedicated branch (γ creates `cycle/{N}` per §4.2 Branch rule + §1.4 γ algorithm Phase 1 step 3a; α/β check out, never create) | Valid branch name |
 | 3 | Bootstrap | Create snapshot skeleton | Version dir + stubs |
 | 4 | Gap | Name the incoherence precisely | Coherence contract draft |
 | 5 | Mode | Choose MCA/MCI and governing skills | Mode + active skill set |
