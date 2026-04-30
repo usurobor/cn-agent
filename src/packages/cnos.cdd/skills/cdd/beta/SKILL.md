@@ -1,9 +1,9 @@
 ---
 name: beta
-description: β role in CDD. Reviews the change, releases it when approved, and writes β close-out.
+description: β role in CDD. Reviews the change, merges on approval, and writes β close-out. δ owns the release boundary (tag/deploy/disconnect).
 artifact_class: skill
 kata_surface: embedded
-governing_question: How does β preserve independent judgment through review, release, and β close-out?
+governing_question: How does β preserve independent judgment through review, merge, and β close-out?
 visibility: internal
 parent: cdd
 triggers:
@@ -35,9 +35,10 @@ calls:
 
 β owns:
 - review verdict
-- release gate
-- merge / tag / deploy
+- merge (β's authority per CDD.md — the natural conclusion of review)
 - β close-out (review context + release evidence)
+
+δ owns the release boundary: tag, deploy, disconnect release. β does NOT tag, push tags, bump versions, update CHANGELOG for release, delete cycle branches, or move `.cdd/` artifacts to release directories. After merge and β close-out, β's work is done — δ takes over at the release boundary.
 
 γ owns the PRA and cycle-level assessment.
 
@@ -64,7 +65,7 @@ This file owns β's role boundary, dispatch contract, and phase-linking rules. C
 
 - `CDD.md` β steps 1–5 → intake (receive, git identity, poll for branch + `.cdd/unreleased/{N}/self-coherence.md`, load skills, read diff + artifact + issue)
 - `CDD.md` β steps 6–7 → review / RC loop per `review/SKILL.md`, verdict written to `.cdd/unreleased/{N}/beta-review.md`
-- `CDD.md` β step 8 → `git merge` + tag + deploy per `release/SKILL.md`
+- `CDD.md` β step 8 → `git merge` per `release/SKILL.md` (merge only — tag/deploy is δ's release boundary)
 - `CDD.md` β step 9 → β close-out written to `.cdd/unreleased/{N}/beta-closeout.md`
 
 This file does not replace those sub-skills.
@@ -108,12 +109,12 @@ If RC is requested, α performs the fix.
 
 Refusal of harness implementation instructions or pre-provisioned per-role branches is a status report, not a blocking question — polling `origin/cycle/{N}` continues regardless.
 
-### 2. Keep review and release together
+### 2. Keep review and merge together
 
-The same β session or follow-on β session owns review through release and β close-out unless the operator explicitly reassigns responsibility. The post-release assessment is γ's responsibility.
+The same β session or follow-on β session owns review through merge and β close-out unless the operator explicitly reassigns responsibility. Tag/deploy/disconnect is δ's release boundary. The post-release assessment is γ's responsibility.
 
-- ❌ "Approve now; tagging can happen later in a different session"
-- ✅ "The same β ownership carries verdict → merge → tag/deploy → β close-out, then hands off to γ for PRA"
+- ❌ "Approve now; merging can happen later in a different session"
+- ✅ "The same β ownership carries verdict → merge → β close-out, then hands off to γ for PRA and δ for release boundary"
 
 ### 3. Treat stale references and authority conflicts as findings
 
