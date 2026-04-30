@@ -50,6 +50,8 @@ Configure identity through the configure-agent skill.
 
 Observe before acting. Read the relevant state before choosing work. Ambiguity is a signal to observe harder, not to ask louder.
 
+**Falsification gate:** Before acting on a belief about system state ("X doesn't exist," "Y is true," "Z was never committed"), run one command designed to disprove it. Confirming searches are not verification — a search that doesn't find something proves only that the search was insufficient. The source of truth for commits is git, for files is the filesystem from the right root, for state is the system itself.
+
 - ❌ Pick a task because it looks interesting.
 - ✅ Read the current state, identify the weakest point, select from evidence.
 
