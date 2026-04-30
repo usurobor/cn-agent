@@ -7,7 +7,24 @@ For setup: [SETUP-INSTALLER.md](docs/alpha/cli/SETUP-INSTALLER.md).
 
 ---
 
-## 1. Running
+## Current operation
+
+A hub created with `cn init` and prepared with `cn setup` becomes an active
+coherent agent when a capable model is pointed at it as working context.
+
+Current path:
+
+1. Open Claude UI or Claude Code CLI with the hub directory as context.
+2. Ask the model to read the hub identity, skills, memory, config, and threads.
+3. Work from the hub. The model is the active reasoning body; the hub is the
+   durable identity and memory.
+
+---
+
+## Target runtime (planned)
+
+The following surfaces are target architecture, not shipped today. They are
+documented here for design continuity.
 
 ### Start / Stop
 
@@ -60,7 +77,7 @@ Full config options: [AUTOMATION.md scheduler settings](docs/beta/guides/AUTOMAT
 
 ---
 
-## 2. Observing
+## 1. Observing
 
 ### Unified log (`cn logs`)
 
@@ -109,7 +126,7 @@ cn doctor                      # 20+ checks: tools, config, packages, extensions
 
 ---
 
-## 3. Maintaining
+## 2. Maintaining
 
 ### Updating the binary
 
@@ -126,7 +143,7 @@ Manual update (if `cn update` fails):
 curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | sh
 ```
 
-After updating, restart the daemon: `systemctl restart cn-<name>`.
+After updating, restart the daemon if running: `systemctl restart cn-<name>` (target — when daemon is running).
 
 See [BUILD-RELEASE.md](docs/beta/guides/BUILD-RELEASE.md) for rollback procedure.
 
@@ -155,7 +172,7 @@ See [HANDSHAKE.md](docs/beta/guides/HANDSHAKE.md) for establishing peer-to-peer 
 
 ---
 
-## 4. Releasing
+## 3. Releasing
 
 One command:
 
@@ -185,7 +202,7 @@ The release workflow (`.github/workflows/release.yml`) triggers on the tag push 
 
 ---
 
-## 5. Troubleshooting
+## 4. Troubleshooting
 
 Start with `cn logs --errors`. Every failure path emits to the unified log.
 
@@ -203,7 +220,7 @@ See [TROUBLESHOOTING.md](docs/beta/guides/TROUBLESHOOTING.md) for detailed diagn
 
 ---
 
-## 6. Quick Reference
+## 5. Quick Reference
 
 | Task | Command |
 |------|---------|
@@ -212,5 +229,5 @@ See [TROUBLESHOOTING.md](docs/beta/guides/TROUBLESHOOTING.md) for detailed diagn
 | View hub state | `cn status` |
 | Update binary | `cn update` |
 | Sync peers | `cn sync` |
-| Process one item | `cn agent --process` |
+| Process one item | `cn agent --process` (planned) |
 | Full CLI reference | `cn --help` or [CLI.md](docs/alpha/cli/CLI.md) |

@@ -55,7 +55,22 @@ to:
 | **Secrets file** | `.cn/secrets.env` (gitignored, chmod 0600). |
 | **Config file** | `.cn/config.json` (non-secrets only, under `runtime`). |
 
-## 5. Architecture
+## 5. Phases
+
+The lifecycle from zero to active agent has four phases:
+
+| Phase | Command / path | Status |
+|-------|----------------|--------|
+| **install** | `install.sh` → places `cn` binary on PATH | shipped |
+| **setup** | `cn setup` → prepares hub: packages, config, secrets (implemented in `src/go/internal/cli/cmd_setup.go`) | shipped |
+| **activate** | Open Claude UI or Claude Code CLI with the hub as working context; the model reads hub identity, skills, memory, config, and threads | shipped operator practice |
+| **target service wiring** | `cn agent --daemon`, systemd units, scheduler integration | planned, not shipped |
+
+`cn setup` finishes at the end of the setup phase. The hub has package content
+and dependency state. Activation is the operator's next step: point a capable
+model at the hub. Daemon/service wiring is a separate planned phase.
+
+## 6. Architecture
 
 ### 5.1 Install vs Setup
 
@@ -140,7 +155,7 @@ Implications for `cn setup`:
 
 This subsection is the back-link to the shared vocabulary defined in AGENT-RUNTIME.md §Path Sandbox and referenced by [SECURITY-MODEL.md](../security/SECURITY-MODEL.md) §CN Shell Addendum.
 
-## 6. `cn setup` UX / Flow
+## 7. `cn setup` UX / Flow (target — design spec for planned interactive flow)
 
 `cn setup` is interactive and opinionated. It asks four things in order:
 
@@ -177,7 +192,7 @@ Symbols (✓ ✗ ⚠ → ⏸) remain — they carry semantics independently of c
 - Ensure `.cn/` exists.
 - Create `.cn/config.json` if missing (`{}`).
 
-### Step 1: Daemon
+### Step 1: Daemon (target — planned, not shipped)
 
 The first question establishes deployment intent.
 
@@ -528,7 +543,7 @@ Merge strategy:
 - update known keys under `runtime`
 - preserve everything else
 
-### Step 6: Install daemon
+### Step 6: Install daemon (target — planned, not shipped)
 
 Only if user said yes in Step 1 and systemd is present.
 
@@ -575,7 +590,7 @@ If user says no (or systemd missing), print next steps:
     → cn agent
 ```
 
-## 7. User journey
+## 8. User journey (target — design spec for planned interactive flow)
 
 First run:
 
@@ -683,7 +698,7 @@ $ cn setup
   No changes detected. ✓
 ```
 
-## 8. Acceptance criteria
+## 9. Acceptance criteria (target — for the full planned implementation)
 
 After `install.sh` + `cn setup`:
 
@@ -695,7 +710,7 @@ After `install.sh` + `cn setup`:
 - Re-running `cn setup` with no changes prints "No changes detected"
   and does not rewrite files.
 
-## 9. Implementation plan
+## 10. Implementation plan
 
 | Patch | Scope | Depends on |
 |-------|-------|-----------|
@@ -707,7 +722,7 @@ After `install.sh` + `cn setup`:
 | **F** | Step 4 — Persona: role picker, name prompt, `spec/SOUL.md` scaffolding | B |
 | **G** | Tests (dotenv parsing, setup idempotency, config merge, each step) | A–F |
 
-## 10. Open questions
+## 11. Open questions
 
 1. **User service vs system service by default?**
    User service (no sudo) is friendlier for dev machines;
