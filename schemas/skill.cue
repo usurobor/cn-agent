@@ -22,7 +22,7 @@ package skill
 	// Schema requires these unconditionally; `cue vet` fails if missing.
 	//
 	// `name` accepts a slash to allow compound sub-skill names like
-	// `review/contract` and `review/implementation` that the cdd package
+	// `review/contract` and `review/issue-contract` that the cdd package
 	// uses for orchestrator/sub-skill nesting.
 	name:               string & =~"^[a-z][a-z0-9_/-]*$"
 	description:        !=""

@@ -1,63 +1,35 @@
 ---
-name: review/implementation
-description: Implementation review — issue contract walk, diff inspection, architecture checks, and evidence-bound findings.
+name: review/diff-context
+description: Diff and context inspection — structural closure, multi-format parity, snapshot consistency, stale-path validation, execution timeline, derivation, authority-surface conflict, module-truth audit, contract confinement, architecture leverage, process overhead, and design constraints checks.
 artifact_class: skill
 kata_surface: external
-governing_question: How does β verify that the branch implementation satisfies the issue contract, diff/context invariants, and architecture constraints?
+governing_question: How does β verify that the diff is internally consistent, closes its claimed gap, and does not violate invariants across the full diff context?
 visibility: internal
 parent: review
 triggers:
-  - review implementation
+  - review diff
+  - review context
 scope: task-local
 inputs:
   - branch
-  - issue
   - diff
-  - contract integrity results from Phase 1
+  - issue contract results from Phase 2a
 outputs:
-  - AC coverage table
-  - named doc updates table
-  - CDD artifact contract table
-  - active skill consistency table
-  - findings with severity and type
+  - findings with severity and type (mechanical / judgment / contract)
 requires:
   - Phase 1 (contract integrity) completed
+  - Phase 2a (issue contract walk) completed
+  - review orchestrator loaded
 calls: []
-calls_dynamic:
-  - source: project design constraints
 ---
 
-# Review — Phase 2: Implementation
+# Review — Phase 2b: Diff and Context Inspection
 
-**PRE-GATE: §2.0.0 Contract Integrity must be completed (Phase 1).** Verify branch is unmerged.
-
----
-
-## 2.0 Issue contract walk
-
-Build these tables before reading the diff:
-
-### AC Coverage
-| # | AC | In diff? | Status | Notes |
-|---|----|----------|--------|-------|
-
-### Named Doc Updates
-| Doc / File | In diff? | Status | Notes |
-|------------|----------|--------|-------|
-
-### CDD Artifact Contract
-| Artifact | Required? | Present? | Notes |
-|----------|-----------|----------|-------|
-
-### Active Skill Consistency
-| Skill | Required by | Loaded? | Applied? | Notes |
-|-------|-------------|---------|----------|-------|
-
-Verify that every Tier 3 skill the issue requires (and every active design constraint named in the project) was actually loaded by α and is applied somewhere in the diff. A required skill that is "loaded" but not "applied" is silent process theater. A skill applied without being declared is a discoverability gap.
+**PRE-GATE: Phase 2a (issue contract walk) must be completed.**
 
 ---
 
-## 2.1 Diff and context inspection
+## §2.1 Diff and context inspection
 
 ### 2.1.1 Structural closure and input-source enumeration
 
@@ -129,47 +101,8 @@ If the project maintains a design constraints document, load it. Verify the chan
 
 ---
 
-## 2.2 Architecture and design check
+## After Phase 2b
 
-**Activate when the change touches:** package boundaries, command/provider/orchestrator/skill separation, source/artifact/installed flow, registry design, kernel vs package responsibility, transport vs protocol semantics, command dispatch vs domain logic.
+Collect all diff/context findings with severity and type. Pass to Phase 2c (`review/architecture/SKILL.md`) for architecture check.
 
-**Load:** `src/packages/cnos.core/skills/design/SKILL.md` when active.
-
-| Check | Question |
-|---|---|
-| A. Reason to change | Does each touched module still have one real reason to change? |
-| B. Policy above detail | Does policy remain in the kernel/core? |
-| C. Truthful interface | Does each interface promise only what all implementations support? |
-| D. Registry normalization | Do different source forms normalize into one runtime descriptor? |
-| E. Source/artifact/installed | Is it still clear what is authored, built, and installed? |
-| F. Surface separation | Are skills, commands, orchestrators, providers distinct? |
-| G. Degraded-path visibility | Is fallback behavior visible and testable? |
-
-Output block (include when active):
-
-```markdown
-## Architecture Check
-
-| Check | Result | Notes |
-|---|---|---|
-| Reason to change preserved | yes / no / n/a | |
-| Policy above detail preserved | yes / no / n/a | |
-| Interfaces remain truthful | yes / no / n/a | |
-| Registry model remains unified | yes / no / n/a | |
-| Source/artifact/installed boundary preserved | yes / no / n/a | |
-| Runtime surfaces remain distinct | yes / no / n/a | |
-| Degraded paths visible and testable | yes / no / n/a | |
-```
-
-If any Architecture Check row is "no," the review cannot approve without an explicit issue-backed redesign or scope reduction.
-
-Rules:
-- Silent architectural boundary smear is a blocking finding.
-- Silent source-of-truth duplication is a blocking finding.
-- Intentional constraint revision must be named explicitly.
-
----
-
-## After Phase 2
-
-Collect all findings with severity and type. Return to orchestrator (`review/SKILL.md`) for verdict rules and output format.
+Return to orchestrator (`review/SKILL.md`) after all Phase 2 sub-skills complete for verdict rules and output format.

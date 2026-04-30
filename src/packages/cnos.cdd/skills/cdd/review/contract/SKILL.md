@@ -191,4 +191,4 @@ If all rows are "yes" or "n/a," proceed to Phase 2 (implementation review).
 
 If any row is "no," file findings immediately. The implementation review may still proceed, but verdict must account for the contract-level findings.
 
-**Return to orchestrator** (`review/SKILL.md`) → **Load Phase 2** (`review/implementation/SKILL.md`).
+**Return to orchestrator** (`review/SKILL.md`) → **Load Phase 2** starting with `review/issue-contract/SKILL.md`.
