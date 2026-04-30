@@ -351,3 +351,30 @@ Per `alpha/SKILL.md` §2.6, ten rows. Rows 1 and 10 are transient (re-validated 
 | 10 | Branch CI is green on the head commit | **deferred — explicit per `alpha/SKILL.md` §2.6 row 10 escape hatch** | This package has no CI workflow that runs on cycle branch pushes — the only CI surface (`build-verify.yml`) runs on `main` and on PRs, not on direct cycle-branch pushes (and the new artifact-channel protocol per #283 does not use PRs). Local CI is unavailable in this α session (no test surface to run; the diff is markdown-only and there is no markdown linter / cross-reference checker in this repo's CI). Per `alpha/SKILL.md` §2.6 row 10: "if local CI is unavailable, the artifact's review-readiness section says so explicitly and β waits for green before merge." α records this here and again in §Review-readiness below. β should not block on a green-CI signal that this branch / this diff cannot produce; β should instead verify diff coherence directly. **Transient — will be re-validated immediately before §Review-readiness commit.** |
 
 **Gate verdict at 2026-04-30 00:18:24 UTC:** all 10 rows pass (rows 1 + 10 with transient/explicit-deferral notes; rows 6 + 8 with N/A justifications). Ready to write the §Review-readiness signal as a separate commit per `alpha/SKILL.md` §2.7.
+
+## Review-readiness | round 1 | base SHA: 70ff2b1b80e49a30a4d7dddded49a5bd33669b32 | head SHA: 3336fe38801f9187ec04fd01e4907ecb096755b6 | branch CI: deferred (no cycle-branch CI surface in this repo — see §Pre-review gate row 10) | ready for β
+
+**Re-validation of transient pre-review-gate rows at 2026-04-30 00:19:22 UTC** (per `alpha/SKILL.md` §2.7, derives from #266 F1/F2):
+
+- **Row 1 (rebase) re-validated:** `git fetch --quiet origin main && git rev-parse origin/main` returns `70ff2b1b80e49a30a4d7dddded49a5bd33669b32` — unchanged since pre-review-gate observation (00:18:24 UTC). `git merge-base origin/main HEAD` returns `70ff2b1b80e49a30a4d7dddded49a5bd33669b32` (= origin/main exactly), confirming `cycle/287` is rebased onto current `origin/main` with no drift. `git rev-list --left-right --count origin/main...HEAD` returns `0	2` — 2 cycle commits ahead, 0 commits behind. Pass.
+- **Row 10 (CI) re-validated:** Same as initial observation — this repo has no CI workflow that runs on cycle/* branch pushes (verified by inspection of `.github/workflows/`: `build-verify.yml` runs on `main` + PRs only; `release.yml` runs on tag push). The new artifact-channel coordination protocol (#283) deliberately does not use PRs, so PR-triggered CI does not apply to cycle branches in flight. β should verify diff coherence directly rather than wait for a green-CI signal that this configuration cannot produce; once β `git merge`s into main, `build-verify.yml` will run on the merge commit. Pass with deferral note carried forward.
+
+**Cycle-branch state at signal time:**
+
+- `origin/cycle/287` head: `3336fe38801f9187ec04fd01e4907ecb096755b6` (this self-coherence.md without the §Review-readiness section that this commit will add — i.e. the §Review-readiness section will be in the *next* SHA). After this commit lands, `origin/cycle/287` head will be the new SHA which β should fetch.
+- Two cycle commits ahead of `origin/main`:
+  - `6a897a4 skill(cdd): γ creates the cycle branch — α and β only check out cycle/{N}` (α R1 — the spec change + initial self-coherence draft)
+  - `3336fe3 self-coherence(287): §Pre-review gate + §Debt update post-rebase` (α R1 — incremental commit per new §2.5)
+  - (this commit, when it lands, will be the third)
+
+**β intake checklist** (per `beta/SKILL.md` §1 + `CDD.md` §1.4 β step 3):
+
+1. β receives the dispatch prompt with `Branch: cycle/287` line — must be the new format AC 4 introduces. If the operator paste-dispatches β with a pre-#287 prompt (no `Branch:` line), surface to operator.
+2. β `git fetch origin cycle/287 && git switch cycle/287`. **β never creates a branch.** If the harness places β on a per-role pre-provisioned branch (e.g. `claude/{slug}-{rand}`), β refuses per `beta/SKILL.md` §1 Role Rule 1 and switches to `cycle/287`.
+3. β reads `git diff origin/main..cycle/287` (5 files: `CDD.md`, `alpha/SKILL.md`, `beta/SKILL.md`, `gamma/SKILL.md`, `operator/SKILL.md`; +`.cdd/unreleased/287/self-coherence.md`).
+4. β reads `.cdd/unreleased/287/self-coherence.md` end-to-end and verifies AC-by-AC mapping resolves against the diff.
+5. β writes verdict to `.cdd/unreleased/287/beta-review.md` on `cycle/287`. **β's verdict commits land on `origin/cycle/287` directly** — not on a separate harness branch (this is the structural correction to the #283 R1 F1 pattern).
+
+α now begins polling `.cdd/unreleased/287/beta-review.md` and the `cycle/287` head SHA per `CDD.md` §Tracking. 60-second interval. Will respond to β's RC findings on this branch with a fix-round appendix per `alpha/SKILL.md` §2.7.
+
+— α (`alpha@cdd.cnos`) at 2026-04-30 00:19:22 UTC
