@@ -24,7 +24,7 @@ docs, packaging, runtime contract, CI surface).
 
 `eng/process-economics` (Tier 3 conditional in γ dispatch) loaded but
 did not fire as a design question — the exception list overhead is
-a debt ledger of 45 file-specific entries, not a process surface that
+a debt ledger of 43 file-specific entries, not a process surface that
 needs new mechanism.
 
 ## Gap
@@ -50,7 +50,7 @@ unexcepted spec-required-but-exception-backed gaps.
 | 1 | CUE schema exists with stratified field rules. Hard-gate / spec-required-exception-backed / optional-with-default / reserved / unknown-package-local. | `schemas/skill.cue:23-78`. Hard-gate fields are unconditional CUE values; spec-required-but-exception-backed are `?`; reserved are `?`; struct is open (`...` at L77) so unknown keys (e.g. `parent:`) pass through. |
 | 2 | Extraction script exists with the named standards. | `tools/validate-skill-frontmatter.sh`. `set -euo pipefail` (L34); fail-fast `need cue` / `need jq` / `need awk` / `need find` (L48-54, exit 2); deterministic `find … \| sort` (L257); NO_COLOR (L23-29, only emits color when stdout is a TTY *and* NO_COLOR unset); diagnostics one-per-line `path :: field :: rule :: reason :: fix` (L101-103). Surface boundary: shell owns discovery/extraction/exceptions/calls-fs; CUE owns shape/type/enum (header comment L4-9). Frontmatter delimiter shape was verified pre-implementation across all 56 SKILL.md (`first_line == ---` and ≥2 `---` delimiters; survey ran clean). Two YAML edge-cases discovered (design/SKILL.md, gamma/SKILL.md unquoted-colon-space) were normalised, not silently skipped. |
 | 3 | CI job added. Notify aggregation updated. | `.github/workflows/build.yml`: new job `skill-frontmatter-check` (display name "SKILL.md frontmatter validation (I5)") at L237-256, runs both `--self-test` and the full validation. `notify.needs` extended with `skill-frontmatter-check` at L260; result aggregation row `"I5:${{ needs.skill-frontmatter-check.result }}"` at L284. Pins: `cue-lang/setup-cue@v1.0.1` (action tag, L246); `version: v0.13.2` (CUE version, L248). |
-| 4 | Exception list shape: field-specific `allowed_missing`, with `reason` + `spec_ref`. CI passes on main with exceptions in place. Hard-gate cannot be excepted; only the four exception-backed fields (`artifact_class`, `kata_surface`, `inputs`, `outputs`) are eligible. | `schemas/skill-exceptions.json` (45 entries, all field-specific, each with `reason` and `spec_ref`). The script's `SPEC_REQUIRED_EXCEPTION_BACKED=(artifact_class kata_surface inputs outputs)` array (L72) is the only set the exception path applies to; hard-gate failures surface from `cue vet` regardless. CI green: see "Local verification" below. |
+| 4 | Exception list shape: field-specific `allowed_missing`, with `reason` + `spec_ref`. CI passes on main with exceptions in place. Hard-gate cannot be excepted; only the four exception-backed fields (`artifact_class`, `kata_surface`, `inputs`, `outputs`) are eligible. | `schemas/skill-exceptions.json` (43 entries, all field-specific, each with `reason` and `spec_ref`). The script's `SPEC_REQUIRED_EXCEPTION_BACKED=(artifact_class kata_surface inputs outputs)` array (L72) is the only set the exception path applies to; hard-gate failures surface from `cue vet` regardless. CI green: see "Local verification" below. |
 | 5 | Exception list is intended to shrink. Each entry addressable by adding the field. | `schemas/README.md` "How to shrink the exception list" section gives the mechanical procedure (open SKILL.md → add field → remove entry → re-run validator). Each entry's `spec_ref` points at the LANGUAGE-SPEC section that names the field, so the addresser knows what the field should mean. |
 | 6 | `calls` targets validate against the package skill root. Invalid targets fail CI. `calls_dynamic` target existence not validated. | Script `package_skill_root_of` (L195-217) computes root as the common-ancestor of every SKILL.md in the package's `skills/` subtree, matching the issue-body example (`cdd/alpha` → `cdd/design/SKILL.md`, not `cdd/alpha/design/SKILL.md`). Test: `release/SKILL.md`'s pre-existing `calls: - writing` was discovered as a broken target; the broken-calls fixture exercises the same code path positively (must fail). `calls_dynamic` is parsed for source/constraint shape only (schema L57-63); existence is not checked. |
 | 7 | Enums validated: `scope`, `visibility`, `artifact_class`, `kata_surface`. | `schemas/skill.cue` L27 (`scope: "global" \| "role-local" \| "task-local"`), L36 (`kata_surface`), L35 (`artifact_class`), L40 (`visibility`). Negative fixture `bad-enum-scope` exercises the failure mode. |
@@ -141,7 +141,7 @@ fixture that exercises it.
 
 ## Known debt
 
-1. **Exception list is large** — 45 entries cover the four
+1. **Exception list is large** — 43 entries cover the four
    exception-backed fields across the cnos.core agent / ops skills,
    most cnos.eng skills, and a few cnos.core foundational skills.
    This is the explicit debt ledger AC5 names: each entry is a
@@ -184,14 +184,21 @@ fixture that exercises it.
 | 9 | post-patch re-audit per language present in diff | Done above (YAML, CUE, Bash, JSON, Markdown). |
 | 10 | branch CI green on the head commit | Local equivalents pass: `./tools/validate-skill-frontmatter.sh` → 56/56 green, `--self-test` → 3 positive + 4 negative behave as expected. CI itself runs on push; β waits for green before merge per row 10's transient-row contract. |
 
-## Review-readiness | round 1 | base SHA `a8e67b7` | head SHA `6e5ce21` | local validation green at 2026-04-29T23:19:49Z | CI: pending push | ready for β
+## Review-readiness | round 1 | base SHA `a8e67b7` | implementation SHA `8adfd44` | local validation green at 2026-04-29T23:19:49Z | CI: pending push | ready for β
 
-The head SHA is updated to the commit that lands this self-coherence
-file. Commits on the branch:
+**SHA convention:** the named SHA is the **implementation commit**, not
+the readiness commit. The readiness commit's own SHA cannot reference
+itself before it exists, and naming the prior readiness commit
+recursively self-stales each time this artifact is amended (β round-1
+F3). Branch HEAD as visible to β is whatever `git rev-parse
+origin/{branch}` returns at poll time; the polling protocol carries it,
+not this signal line.
+
+Commits on the branch:
 
 - `8adfd44` — implementation (schema, script, exceptions, fixtures, CI
   job + notify aggregation, schemas/README.md, hard-gate frontmatter
   backfill, two YAML normalisations, release/SKILL.md stale-`calls`
   fix).
-- `6e5ce21` — this self-coherence artifact carrying the review-readiness
-  signal.
+- subsequent commits — this self-coherence artifact and any fix-round
+  appendices β requests.

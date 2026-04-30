@@ -100,7 +100,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - ✅ Each commit's impact named, linked to issues
   - ✅ Honest TSC grades — not everything is A+
   - `RELEASE.md` must restate the ledger row as the Outcome section in prose. The ledger row remains canonical; the release body explains it.
-  - If release notes or CHANGELOG wording are being authored, load the writing skill and record it in the CDD Trace.
+  - If release notes or CHANGELOG wording are being authored, load the write skill and record it in the CDD Trace.
 
 2.5. **Release notes — RELEASE.md**
   - Write `RELEASE.md` at repo root before tagging. This is the GitHub release body.
@@ -214,7 +214,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 2.10. **CDD Trace update**
   - Update the primary branch artifact's CDD Trace with the release row:
     - artifact: tag / CHANGELOG / release artifact
-    - skills loaded: release, plus writing if used
+    - skills loaded: release, plus write if used
     - decision: released version X.Y.Z
   - If the triadic protocol is active, β also writes:
     - release evidence in `.cdd/unreleased/{N}/beta-closeout.md`
