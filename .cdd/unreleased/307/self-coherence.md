@@ -35,3 +35,41 @@ skill(cdd/issue): move issue katas to cnos.cdd.kata package
 - `cnos.core/skills/design` — boundary decision: skill body owns rules, kata package owns drill scenarios; one source of truth per fact; one reason to change. The active design constraint "Source-of-truth split" governs the §5 → kata-package move; "Mirror #304's shape" picks Option B (one bundle with three worked examples) over Option A (three separate M-series bundles).
 
 The issue's §Skills to load names exactly `cnos.core/skills/design`; Tier 1 + Tier 2 are loaded per α §2.1 step 6 without restatement. No skill is loaded as decoration — design directly governs the §5 boundary call and the option choice.
+
+## ACs
+
+### AC1 — §5 Katas body removed from issue/SKILL.md
+
+- **Invariant:** issue skill carries no embedded kata bodies.
+- **Oracle 1:** `grep -nE "^### 5\." src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` → 0 matches.
+- **Oracle 2:** `grep -nE "Kata A|Kata B|Kata C" src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` → 0 matches.
+- **Evidence:** commit `e61c2615` removed `## 5. Katas` + `### 5.1/5.2/5.3 Kata A|B|C` blocks; §5 now reads `## 5. External kata` with a pointer body.
+- **Status:** met.
+
+### AC2 — New kata location(s) exist under cnos.cdd.kata
+
+- **Invariant:** each issue-kata scenario is reachable from `src/packages/cnos.cdd.kata/katas/`.
+- **Oracle:** filesystem ls.
+- **Evidence:** `src/packages/cnos.cdd.kata/katas/M5-issue-authoring/` exists with `kata.md`, `rubric.json`, `baseline.prompt.md`, `cdd.prompt.md` (commit `a16ad77f`). The bundle carries three `## Worked examples` (Example 1 schema validation gate, Example 2 README/source-map alignment, Example 3 checker against witness theater) — Option B per the issue's structural choice.
+- **Status:** met.
+
+### AC3 — Each new kata directory carries kata.md matching M-series shape
+
+- **Invariant:** kata.md follows M0–M4 form (class / level / purpose / scenario / required artifacts).
+- **Oracle:** required headers present.
+- **Evidence:** `M5-issue-authoring/kata.md` opens with `**Class:** method`, `**Default level target:** L6`, `**Purpose:**`, `## Scenario`, `## Required artifacts`, `## Scoring`, `## Worked examples` — identical structural shape to `M2-review/kata.md` (the precedent set in #304's `5a8bb3e`).
+- **Status:** met.
+
+### AC4 — issue/SKILL.md frontmatter declares external kata
+
+- **Invariant:** `kata_surface: external`; `kata_ref` points at the new kata location.
+- **Oracle:** frontmatter parse.
+- **Evidence:** L5 reads `kata_surface: external` (was `embedded`); L26 reads `kata_ref: src/packages/cnos.cdd.kata/katas/M5-issue-authoring/`. The path resolves to a directory containing `kata.md`. Schema (`schemas/skill.cue`) accepts `kata_ref` via the open-schema trailing `...` (LANGUAGE-SPEC §11 — loaders MUST ignore unknown keys); `review/SKILL.md` uses the same key shape.
+- **Status:** met.
+
+### AC5 — issue/SKILL.md body has External kata pointer
+
+- **Invariant:** a human-readable section names the kata location and what it exercises.
+- **Oracle:** `grep -nE "^## 5\. External kata" src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` → 1 match (L703).
+- **Evidence:** `## 5. External kata` body section names the path `src/packages/cnos.cdd.kata/katas/M5-issue-authoring/`, lists the three drill scenarios it exercises, and references the frontmatter `kata_ref` for machine-readable linkage — mirroring the `## External kata` section that `review/SKILL.md` carries (L249–L255).
+- **Status:** met.
