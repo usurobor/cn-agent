@@ -217,3 +217,69 @@ The single outstanding precondition is **δ confirmation of CI green on `55642db
 
 After merge, β writes `.cdd/unreleased/301/beta-closeout.md` (review context across rounds + release evidence) per CDD §β step 9 and the release skill's §2.10 close-out hook. γ owns the PRA.
 
+
+## Round 2 — Pass 2 (re-review against fresh `origin/main`)
+
+**Trigger:** the new `beta/SKILL.md` Role Rule 1 on `origin/main` (shipped in cycle #287, version 3.62.0) requires β to **re-fetch `origin/main` synchronously before computing the review-diff base for each review pass**. β's round-1 and round-2 review passes used `origin/main = a8e67b7` (last fetched at β intake). β re-fetched and re-evaluated.
+
+**Updated state:**
+
+| Surface | Round-1/Round-2 base | Pass-2 (current) |
+|---|---|---|
+| `origin/main` | `a8e67b7` (β intake) | `9d6a0fa` (sigma `docs: rewrite README for v4 convergence`) |
+| Cycle branch HEAD | `55642db` → `acfa0cf` (β round-2 verdict) | `acfa0cf` (unchanged) |
+| Cycle branch base (merge-base) | `a8e67b7` | `a8e67b7` (unchanged — branch never rebased) |
+
+**What advanced on `main` during the review window:** cycle #287 shipped (v3.62.0). Touched these CDD-skill files: `CDD.md`, `alpha/SKILL.md`, `beta/SKILL.md`, `gamma/SKILL.md`, `operator/SKILL.md`, `review/SKILL.md`. Also touched: `README.md`, `CHANGELOG.md`, `RELEASE.md`, `VERSION`, `cn.json`, all three `cn.package.json` files, plus the `.cdd/releases/3.62.0/287/` and `docs/gamma/cdd/3.62.0/POST-RELEASE-ASSESSMENT.md` artifacts.
+
+### File overlap audit
+
+| File touched on both sides | Conflict on auto-merge? |
+|---|---|
+| `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` | no — auto-merged cleanly. Cycle's edit was a one-line YAML quoting (`- "delta gate results (observable via git: tags, branch state)"`) at L22; main's edit restructured the `## γ algorithm` body. Disjoint regions; auto-merge succeeds without human intervention. |
+
+No other file overlap. `cdd/release/SKILL.md` and `cdd/design/SKILL.md` (cycle-only) and `cdd/CDD.md`, `cdd/alpha/SKILL.md`, `cdd/beta/SKILL.md`, `cdd/operator/SKILL.md`, `cdd/review/SKILL.md` (main-only) do not collide.
+
+### Merge tree validation
+
+β built the merge tree (`git merge --no-ff --no-commit origin/claude/cnos-alpha-tier3-skills-MuE2P` against `origin/main = 9d6a0fa`) in a throwaway worktree:
+
+- Auto-merge succeeded; zero unmerged paths.
+- `./tools/validate-skill-frontmatter.sh --self-test` on the merge tree → **rc=0** (3 positive + 4 negative as expected).
+- `./tools/validate-skill-frontmatter.sh` on the merge tree → **rc=0**; `✓ 56 SKILL.md validated; no findings.`
+- All 6 `cdd/*/SKILL.md` files updated by main pass the I5 schema after merge — main did not introduce frontmatter that the cycle's new schema would reject.
+
+### Findings stability under fresh base
+
+| Round-1 finding | Pass-2 status |
+|---|---|
+| F1 — `release/SKILL.md` prose references "writing" | **stable** — content-level finding, independent of `origin/main` advance. α's fix at `171188e` still applies cleanly post-merge (cycle's edit is the only one to L103/L217). |
+| F2 — self-coherence "45 entries" drift | **stable** — internal artifact, independent of main. α's fix unchanged. |
+| F3 — readiness signal head SHA recursion | **stable** — convention-level finding, independent of main. α's fix unchanged. |
+
+**No new findings** emerge against the fresh `origin/main`. None of the round-1 findings collapse on fresh fetch (contrast #287 R1 F1/F2 which collapsed on fresh main — those were scope-drift findings against a stale spec; #301's F1–F3 are content-level findings against the issue's ACs, immune to base advance).
+
+### Approval status
+
+**APPROVED stands.** All three round-1 findings are fixed at `171188e`; round-2 fix appendix at `55642db`; β round-2 verdict at `acfa0cf`. The merge into the current `origin/main = 9d6a0fa` is conflict-free and the I5 validator passes on the merge result.
+
+### Updated merge instruction
+
+The merge target advanced; the merge command is unchanged in shape (the branch name resolves dynamically):
+
+```
+git fetch --verbose origin main
+git checkout main && git pull --ff-only
+git merge --no-ff origin/claude/cnos-alpha-tier3-skills-MuE2P \
+  -m "Closes #301: infra(ci) — CUE-based SKILL.md frontmatter validation (I5)"
+git push origin main
+```
+
+After merge, proceed with release per `release/SKILL.md` (§2.2 version decision, §2.3 VERSION-first stamp, §2.4 CHANGELOG, §2.5 RELEASE.md, §2.5a move `.cdd/unreleased/301/` → `.cdd/releases/{X.Y.Z}/301/`, §2.6 commit + tag + push, §2.7 wait for release CI, §2.8 deploy, §2.9 validate). β writes `.cdd/unreleased/301/beta-closeout.md` per CDD §β step 9.
+
+### Outstanding precondition
+
+Same as round 2: **δ confirmation of CI green on the cycle branch HEAD `acfa0cf`** (β env 403 on `api.github.com`). The merge tree's local validator pass refutes "the validator does not validate"; it does not refute "GitHub-Actions has not yet completed `success` on this SHA." The latter remains δ's gate.
+
+If the operator authorizes β (or δ) to execute the merge in this session — given (a) auto-merge clean, (b) merge-tree validator green, (c) all round-1 findings addressed, (d) approval recorded — β can proceed; otherwise, the verdict + merge instruction above is the durable hand-off and δ executes when CI is verified.
+
