@@ -378,3 +378,99 @@ Per `alpha/SKILL.md` §2.6, ten rows. Rows 1 and 10 are transient (re-validated 
 α now begins polling `.cdd/unreleased/287/beta-review.md` and the `cycle/287` head SHA per `CDD.md` §Tracking. 60-second interval. Will respond to β's RC findings on this branch with a fix-round appendix per `alpha/SKILL.md` §2.7.
 
 — α (`alpha@cdd.cnos`) at 2026-04-30 00:19:22 UTC
+
+---
+
+## Round 1 Fix-round / Round 2 response (after γ-clarification + β R2)
+
+**Round head SHAs to date:**
+- α R1: `9503aee` / `89b8575` / `11d5879` (post identity-correction; equivalent to pre-rewrite `6a897a4` / `3336fe3` / `6f44dbb`)
+- β R1: `8d2adb4` / `f89bf9f` / `74c3a6d` (post-rebase; equivalent to pre-rewrite `cefb4a8` / `286c5f5` / `045f1f2`)
+- γ-clarification: `c91cf87` (pre-rewrite `4f33687`) — capturing the mechanical fact that `origin/main` advanced from `a8e67b7` to `70ff2b1` between α dispatch and β R1, collapsing F1 and F2
+- β R2: `d9f1596` (pre-rewrite `c7e0310`) — F1+F2 **withdrawn** on fresh `origin/main` fetch; F3 stands; F4 polish
+
+This fix-round addresses β's outstanding R2 findings (F3 stands, F4 polish). β R2 explicitly recommends path (a) for F3 ("retroactive re-author + force-push"); α adopted path (a). Per the new α §2.5 incremental-write discipline (committed in `70ff2b1`, now canonical on `main`), this fix-round is appended as a separate commit; the F4 polish is also a separate commit.
+
+### F1 — withdrawn (β R2)
+
+**β R2 disposition:** WITHDRAWN. σ's `70ff2b1` is on `origin/main`, not on cycle/287. β confirmed γ-clarification's mechanical fact at 2026-04-30 00:33 UTC.
+
+**α response:** No further action required. α concurs with γ-clarification §2 and β R2's withdrawal. α's §Known debt #5 + §Pre-review gate row 1 are factually correct as written.
+
+**β-side §Tracking gap noted by γ-clarification §4 + β R2 root-cause note:** β's R1 base-SHA computation used a stale local `origin/main` (last fetched at intake when main was at `a8e67b7`); β's polling loop watches `origin/cycle/287` only, so the σ push to `origin/main` did not produce a wake-up event. **Recommendation (γ-clarification §5.3 + β R2 + α concur):** add a rule in `beta/SKILL.md` (or `review/SKILL.md`) requiring β to `git fetch --verbose origin main` synchronously immediately before computing the review-diff base. Out of #287 scope; flagged for `beta-closeout.md` + γ's PRA triage.
+
+### F2 — withdrawn (β R2)
+
+**β R2 disposition:** WITHDRAWN. Same root cause as F1; α's §Known debt #5 + §Pre-review gate row 1 are factually correct.
+
+**α response:** No further action required. The transient-row discipline (α §2.6 transient rows + #266 F1/F2 derivation) fired correctly during α R1 — α observed `origin/main` move during the cycle, rebased onto it, and recorded the post-rebase base SHA. The transient-row rule worked as designed.
+
+### F3 — fixed (path a — retroactive re-author)
+
+**β R2 finding (stands from R1):** All three α R1 commits used `alpha <alpha@cnos.local>` instead of canonical `alpha@cdd.cnos`. Self-coherence.md L7 metadata claimed `alpha@cdd.cnos` — aspirational, not observed.
+
+**α's response: F3 is correct.** α set `git config user.email "alpha@cnos.local"` at the very start of this session — a manual error inconsistent with `CDD.md` §1.4 α step 2's mandate. α had recall of `cnos.local` from prior session muscle memory and overrode the spec without re-reading §1.4. The metadata (self-coherence.md L7) declared the canonical form as if it had been honored; the metadata was aspirational truth.
+
+**Fix (β R2 recommended path (a) — retroactive re-author):**
+
+1. `git config user.email "alpha@cdd.cnos"` (corrected at 2026-04-30 00:33 UTC; verified by `git config user.email`).
+2. `cycle/287` reset to `origin/main`. Original SHAs cherry-picked from the pre-rewrite `origin/cycle/287` chain:
+   - α R1.1 `6a897a4` → cherry-pick + `git commit --amend --reset-author --no-edit` → `9503aee` (now `<alpha@cdd.cnos>`)
+   - α R1.2 `3336fe3` → same procedure → `89b8575`
+   - α R1.3 `6f44dbb` → same procedure → `11d5879`
+   - β R1.1 `cefb4a8` → cherry-pick (no amend) → `8d2adb4` (preserved `<beta@cdd.cnos>`)
+   - β R1.2 `286c5f5` → same procedure → `f89bf9f`
+   - β R1.3 `045f1f2` → same procedure → `74c3a6d`
+   - γ-clarification `4f33687` → same procedure → `c91cf87` (preserved `<gamma@cdd.cnos>`)
+   - β R2 `c7e0310` → same procedure → `d9f1596` (preserved `<beta@cdd.cnos>`)
+3. F4 polish (separate commit on top): `de32200` (next section).
+4. This fix-round commit will be the new HEAD.
+5. Push with `--force-with-lease`. β should fetch with `--force` or `git remote update --prune` to refresh local refs to the new SHA chain.
+
+**β re-verification command:** `git log --pretty="%h %an <%ae>" origin/main..origin/cycle/287` after this fix-round + force-push lands. Expected output:
+- α commits show `<alpha@cdd.cnos>` (canonical)
+- β commits show `<beta@cdd.cnos>` (canonical, unchanged)
+- γ-clarification shows `<gamma@cdd.cnos>` (canonical, unchanged)
+
+**Cost disclosed:** β's R1 + R2 verdict files reference the pre-rewrite α SHAs (`6a897a4` / `3336fe3` / `6f44dbb`) in their evidence text. After force-push, those SHAs become unreachable from `origin/cycle/287` (still reachable via the reflog and via the original commits' git objects, which are not deleted — but no branch ref points to them). β R2's text "All three α commits use `alpha@cnos.local`" still describes the historical state that triggered the finding; it does not need rewriting. β's R3 review can re-state the new SHAs without invalidating the R1/R2 narrative.
+
+### F4 — fixed (polish)
+
+**β R2 finding (stands from R1, polish):** `CDD.md` §4.1 Lifecycle steps row 2 Purpose column reads "Create a dedicated branch" — ambiguous in isolation now that γ creates and α/β check out. β R2 suggested wording in §F4 polish.
+
+**α's response: F4 is correct.** §4.1 row 2 was unchanged in the original R1 diff (α §Known debt #3 disclosed this and argued §4.1's table shape doesn't carry a Role column). β's read is right that the Purpose-column wording, in isolation, is ambiguous to a reader who reaches §4.1 without §1.4 or §5.3 row 2's context.
+
+**Fix:** Commit `de32200` (`skill(cdd): §4.1 row 2 — name γ as Branch creator (β R1 F4 polish)`). Purpose column now reads:
+
+> Create a dedicated branch (γ creates `cycle/{N}` per §4.2 Branch rule + §1.4 γ algorithm Phase 1 step 3a; α/β check out, never create)
+
+Wording is similar to β R2's suggested form (β suggested "Create the cycle branch — γ creates `cycle/{N}` from `origin/main`; α and β only check out (see §4.2)"); α's wording differs in cross-referencing both §4.2 and §1.4 γ Phase 1 step 3a explicitly within the parenthetical, and keeping the original "Create a dedicated branch" prefix to minimize §4.1 table delta. Either form satisfies the polish; α's choice is stylistic. Open to revision in R3 if β prefers β's exact wording.
+
+The parenthetical resolves the ambiguity without restructuring §4.1's table shape. §4.1 retains its 4-column shape (Step | Name | Purpose | Required output); authoritative role ownership remains canonically in §1.4 Role table + §5.3 Artifact manifest row 2 (both updated in α R1).
+
+### Net effect
+
+| Finding | Severity | Type | R1 verdict | R2 verdict | R2 fix-round disposition |
+|---------|----------|------|------------|------------|--------------------------|
+| F1 | D | contract (scope drift) | RC | **withdrawn** (β R2) | acknowledged; no α action; β-side §Tracking gap (review-base re-fetch) flagged for β-closeout / γ-PRA |
+| F2 | C | contract (status truth) | RC | **withdrawn** (β R2) | acknowledged; no α action |
+| F3 | C | contract (identity-truth) / mechanical | RC | stands | **fixed** (path a — retroactive re-author + force-push); new SHAs disclosed |
+| F4 | A | judgment | RC | stands as polish | **fixed** (parenthetical added to §4.1 row 2) |
+
+### Updated cycle state for β R3
+
+- α commits ahead of `origin/main`: 5 — 3 α R1 (re-authored) + 1 F4 polish + 1 fix-round = 5. β R1 (3 commits) + γ-clarification (1) + β R2 (1) bring total cycle commits to 10 ahead of `origin/main`.
+- Diff against `origin/main` content: identical to R1's diff except (a) `CDD.md` §4.1 row 2 gains the F4 parenthetical (+1 line), (b) `.cdd/unreleased/287/self-coherence.md` gains this fix-round section, (c) `.cdd/unreleased/287/gamma-clarification.md` is a new file (γ R1.5 contribution), (d) `.cdd/unreleased/287/beta-review.md` carries β R1+R2.
+- β R3 review target: the new HEAD SHA after this fix-round + force-with-lease push.
+- Branch CI: same deferral as R1 + R2 (no cycle-branch CI surface in this repo; β verifies diff coherence directly).
+
+**Transient pre-review-gate rows re-validated for R3 at fix-round commit time:**
+
+- Row 1 (rebase): `git fetch --quiet origin main && git rev-parse origin/main` returns `70ff2b1b80e49a30a4d7dddded49a5bd33669b32`. `git merge-base origin/main HEAD` returns `70ff2b1...` (= origin/main exactly). cycle/287 ahead 10, behind 0. **Pass.**
+- Row 10 (CI): same deferral. **Pass with deferral.**
+
+### Round count + §9.1 trigger awareness
+
+This will be the start of β R3 once β re-reviews. β R2 noted: "Round count = 2; CDD.md §9.1 'Review rounds > 2' would fire on R3." α concurs and notes for γ's PRA triage: if β R3 surfaces no new findings and approves, the cycle closes at R3 — at exactly the §9.1 review-rounds threshold (2 was R1+R2; R3 is the approval round, not a new findings round). Whether R3 counts as "exceeded target" depends on γ's interpretation: literally, R3 means rounds > 2, so the trigger fires. β R2 explicitly flagged this for cycle-iteration assessment. α suggests the cycle-iteration entry name the *root cause* as the F1+F2 false positives (β-side stale-origin/main), with the disposition: **β-side polling-discipline gap** (review-base re-fetch rule), MCA candidate for next cycle (or fold into a near-term `beta/SKILL.md` patch). The γ-clarification §4–§5 already characterizes this; γ's PRA can summarize.
+
+— α (`alpha@cdd.cnos`) at 2026-04-30 00:38 UTC. R1+R2 fix-round complete; ready for β R3.
