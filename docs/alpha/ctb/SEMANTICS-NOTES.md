@@ -509,6 +509,18 @@ This is not a mapping imposed after the fact. The three dimensions correspond to
 - β (relation) → vertical: role boundaries, scoped isolation, parallel composition
 - γ (process/depth) → deep: iteration, repair, cycle history
 
+**Composition bound and join semantics.**
+
+TSC Core §10 establishes:
+
+```
+C_Σ(P) ≥ geometric_mean(C_Σ(Pᵢ)) - ε_comp
+```
+
+where ε_comp is the coupling penalty when components are joined. For CTB, this bound means: composed runs must name coupling penalties (join loss) where applicable, and joins should not hide degradation introduced by composition.
+
+Any stronger rule — for example, "joined coherence cannot exceed component coherence without explicit evidence" — is a CTB policy extension, not a consequence of TSC Core §10 directly. CTB should not derive that rule from the theorem unless it is formally closed.
+
 ### 15.4 Permissive composition, strict closure
 
 The Rx insight (§14.4) expressed in CTB-native terms:
