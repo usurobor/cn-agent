@@ -1,14 +1,18 @@
 # CTB Language Spec
 
 **Version:** 0.2 (draft-normative)
+
 **Date:** 2026-04-28
-**Status:** Normative reference for the agent-module / invocation layer of CTB. Supersedes v0.1 by unifying "skill" and "agent" into one primitive.
+
+**Status:** Draft-normative migration target. Conceptually supersedes v0.1 by unifying "skill" and "agent" into one primitive, but does not govern current v0.1 conformance until promoted. Until promotion, `LANGUAGE-SPEC.md` (v0.1) governs conformance.
 
 ---
 
 ## 0. Purpose and status
 
 This document specifies the language-level model of CTB: what an agent is, what it declares, how it is named, scoped, invoked, composed, and bounded against effects.
+
+It is a **draft migration target**, not the active normative spec. v0.1 (`LANGUAGE-SPEC.md`) governs current conformance until v0.2 is explicitly promoted. v0.2 conceptually supersedes v0.1 by collapsing "skill" and "agent" into one primitive; that supersession takes effect through promotion, not through this document's existence.
 
 The core simplification over v0.1: there is one primitive — the **agent**. What v0.1 called a "skill" is a narrow-scope agent with a single axis and short lifetime. What practice calls a "role" is an agent with role-local scope and a loop. What practice calls a "triad" is three agents composing into one agent at the next scale. The composition model is the same at every level: dispatch with scoped authority.
 
@@ -391,6 +395,16 @@ A `try`/`recover` composition MUST preserve the failed witness. Recovery MUST NO
 
 These obligations connect to judgment doctrine: the agent must name the boundary it protects, the boundary it breaches, and the residual debt it does not call closure.
 
+### 6.5 Composition dimensions
+
+The operators distribute across three composition dimensions:
+
+| Dimension | Operators | What composes |
+|-----------|-----------|---------------|
+| Horizontal (sequence, handoff) | `>>`, `>>=` | Witness chains: A's close-out feeds B's orientation |
+| Vertical (boundary, parallel isolation) | `\|\|\|`, `case`, `wait`/`join` | Scoped operands: each runs in its own authority region |
+| Deep (recurrence, repair, debt) | `fix`, `try`/`recover` | History: failure becomes witness, not silence; iteration preserves debt |
+
 ### 6.6 Bounded `fix`
 
 A `fix` composition MUST be bounded. A bound is a declared condition that prevents the repair loop from running indefinitely.
@@ -450,16 +464,6 @@ A debt close-out MUST carry:
 - A debt close-out MUST NOT present unresolved debt as accepted closure.
 - A consuming agent MAY accept a debt close-out, but MUST treat the debt as an active obligation unless it explicitly judges, waives, escalates, or resolves it.
 
-### 6.5 Composition dimensions
-
-The operators distribute across three composition dimensions:
-
-| Dimension | Operators | What composes |
-|-----------|-----------|---------------|
-| Horizontal (sequence, handoff) | `>>`, `>>=` | Witness chains: A's close-out feeds B's orientation |
-| Vertical (boundary, parallel isolation) | `\|\|\|`, `case`, `wait`/`join` | Scoped operands: each runs in its own authority region |
-| Deep (recurrence, repair, debt) | `fix`, `try`/`recover` | History: failure becomes witness, not silence; iteration preserves debt |
-
 ---
 
 ## 7. Global aspects
@@ -511,7 +515,7 @@ Two evaluations of the same agent on the same inputs MUST produce equal plans.
 
 A composition is well-formed if and only if:
 
-1. Every agent declares `name`, `description`, `governing_question`, and `scope`.
+1. Every agent declares `name`, `description`, `governing_question`, `scope`, and `type` (the agent-type it satisfies, per §2.1).
 2. Public agents declare `visibility: public`.
 3. Every dispatch target is reachable through the caller's `calls` or `calls_dynamic`.
 4. No agent inherits from another.
@@ -592,7 +596,7 @@ agent write-essay : coherent-agent =
   >>= join-essay-evidence
   >> case verdict of
        accepted -> close
-       repair   -> fix (revise >> re-review) until accepted else close-with-debt
+       repair   -> fix(max=2) (revise >> re-review) until accepted else close-with-debt
        blocked  -> close-with-debt
 
 -- Specialized: code production as a triadic cycle
@@ -604,7 +608,7 @@ agent write-code : coherent-agent =
   >>= join-code-evidence
   >> case verdict of
        accepted -> close
-       repair   -> fix (patch >> re-test) until accepted else close-with-debt
+       repair   -> fix(max=2) (patch >> re-test) until accepted else close-with-debt
        blocked  -> close-with-debt
 ```
 
@@ -631,7 +635,7 @@ Both `write-essay` and `write-code` satisfy `coherent-agent`. Both use `|||` for
 
 The witness and close-out model (§5.4–§5.6, §6.7) can fail if witness fields become persuasive accounting structure rather than accountable evidence. A conformant-looking close-out is not sufficient. Until a checker or runtime enforces v0.2 obligations, an agent may produce a well-structured witness that is not mechanically connected to what actually happened. This risk is called **witness theater**.
 
-A v0.2 implementation SHOULD mitigate witness theater by checking that:
+This section is non-normative; the modal verbs in this list are recommendations for implementers, not conformance requirements. A v0.2 implementation should mitigate witness theater by checking that:
 
 - required witness fields are present
 - evidence fields are non-vacuous where required

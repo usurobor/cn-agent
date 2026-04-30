@@ -1,7 +1,9 @@
 # CTB Semantics Notes
 
 **Status:** Conceptual rationale and design discussion. Non-normative.
+
 **Date:** 2026-04-26
+
 **Companion to:** `LANGUAGE-SPEC.md` (normative), `CTB-v4.0.0-VISION.md` (strategic).
 
 ---
@@ -13,6 +15,17 @@ The Vision sets direction. The Spec sets rules. Some material belongs in neither
 This document collects that material. It is the place where conceptual moves are recorded so that future revisions of the spec can be made deliberately rather than through drift.
 
 If a claim here ever becomes load-bearing for an implementer, it should migrate into the spec.
+
+### Reading map
+
+This file is a notes collection, not a single linear argument. The sections cluster:
+
+- §§1–12 — v0.1 skill-module rationale (preserved as written).
+- §13 — the agent-as-primitive turn and its FP correspondence.
+- §14 — composition-operator rationale and prior-art survey.
+- §15 — triadic-carrier grounding in TSC and ctb-check implications.
+
+Earlier sections record what was already running before the spec named it. Later sections record what the spec must eventually express.
 
 ---
 
@@ -279,7 +292,9 @@ These are exactly the operators in any concurrent effect system. The agent-speci
 
 ### 14.2 CDD expressed in operators
 
-The CDD triadic cycle, currently ~300 lines of prose algorithms across CDD.md and three role skills, is one composition expression:
+> **Note.** The example below uses the legacy CDD polling/parallel-dispatch model (β polls while α implements). The currently emerging CDD direction is identity-rotation/bounded-role-invocation (γ dispatches roles, roles return, γ decides next call); see #295 / #310 for the in-flight update. Treat this section as one parallel-agent expression of CDD, not as the canonical future dispatch model.
+
+The CDD triadic cycle, currently expressed as prose algorithms across CDD.md and three role skills, can be written as one composition expression:
 
 ```
 cdd-cycle =
@@ -337,27 +352,27 @@ The composition operators in §14.1 were not invented here. Four traditions inde
 
 **Erlang/OTP: supervision trees as composition.**
 
-The CDD triad IS an Erlang supervision tree. γ is the root supervisor; α and β are child workers. The RC loop is a `one_for_one` restart: γ restarts α while β continues watching. "Let it crash" is the same principle as "return a witness to the caller" — don't handle errors locally, let the supervisor decide.
+The CDD triad resembles an Erlang-style supervision tree. γ acts as the root supervisor; α and β as child workers. The RC loop has the shape of a `one_for_one` restart: γ restarts α while β continues watching. "Let it crash" tracks the same principle as "return a witness to the caller" — don't handle errors locally, let the supervisor decide.
 
-OTP behaviours (`gen_server`, `gen_statem`) are agent archetypes: contracts a process implements, not classes it inherits from. Our agent shapes (narrow/role/composite) map directly: `gen_server` = narrow agent (request-response), `gen_statem` = role agent (state machine with loop), `supervisor` = composite agent.
+OTP behaviours (`gen_server`, `gen_statem`) read as agent archetypes: contracts a process implements, not classes it inherits from. Our agent shapes (narrow/role/composite) map onto them: `gen_server` parallels a narrow agent (request-response), `gen_statem` parallels a role agent (state machine with loop), `supervisor` parallels a composite agent.
 
 **Process calculi: session types and choreography.**
 
-CDD.md is a choreography — it describes the global interaction pattern from an omniscient view. Each role skill is the local endpoint projection. The rule "role skill must not contradict CDD.md" is the choreographic faithfulness condition: if projections are faithful, the system is deadlock-free.
+CDD.md reads as a choreography — it describes the global interaction pattern from an omniscient view. Each role skill can be read as the local endpoint projection. The rule "role skill must not contradict CDD.md" mirrors the choreographic faithfulness condition: if projections are faithful, the system is deadlock-free.
 
-Session types give agent signatures a formal reading. α's session type: `!implement . !self-cohere . !request-review . μX.(?RC . !fix . X + ?A . !closeout)` — send implementation, send self-coherence, send review-request, then loop (receive RC, send fix, repeat) or (receive approve, send closeout). This IS the α algorithm. The LANGUAGE-SPEC signature (`inputs`, `outputs`, `calls`) is already a session type — it just lacks the temporal structure (what comes first, what repeats).
+Session types give agent signatures a formal reading. α's session type can be sketched as `!implement . !self-cohere . !request-review . μX.(?RC . !fix . X + ?A . !closeout)` — send implementation, send self-coherence, send review-request, then loop (receive RC, send fix, repeat) or (receive approve, send closeout). The α algorithm can be read as a local endpoint projection of this global protocol. The LANGUAGE-SPEC signature (`inputs`, `outputs`, `calls`) approximates a session type — it just lacks the temporal structure (what comes first, what repeats).
 
-Channel restriction (`(ν c) P`) maps to scoped artifacts. `.cdd/unreleased/{N}/` is a restricted channel — only agents in this cycle can read/write it. Scope IS the ν-binder.
+Channel restriction (`(ν c) P`) maps to scoped artifacts. `.cdd/unreleased/{N}/` behaves as a restricted channel — only agents in this cycle can read/write it. Scope plays the role of the ν-binder.
 
 **Rx/Reactive Streams: observable composition.**
 
-Agents emit streams of artifacts, not single returns. α doesn't return once — it emits self-coherence, then review-request, then fixes, then closeout. Rx models this: agents are Observables, the artifact directory is a ReplaySubject (late subscribers see history), and composition operators (`merge`, `concat`, `zip`, `takeUntil`, `retry`) map to our `|||`, `>>`, `wait`, loop-condition, and `fix`.
+Agents emit streams of artifacts, not single returns. α does not return once — it emits self-coherence, then review-request, then fixes, then closeout. Rx models this kind of pattern: agents read as Observables, the artifact directory reads as a ReplaySubject (late subscribers see history), and composition operators (`merge`, `concat`, `zip`, `takeUntil`, `retry`) parallel our `|||`, `>>`, `wait`, loop-condition, and `fix`.
 
-Rx adds push/pull unification and cancellation — both gaps in the current model. An agent should be disposable: γ cancelling α because the issue was superseded is `dispose()`.
+Rx adds push/pull unification and cancellation — both gaps in the current model. An agent should be disposable: γ cancelling α because the issue was superseded is the `dispose()` shape.
 
 **Schlapbach (2026): process calculus for agentic protocols.**
 
-Recent work formalizing MCP and SGD as π-calculus processes proves that protocol safety is equivalent to schema completeness. For CTB: signature completeness IS verifiable safety. The paper also formalizes capability confinement as a process invariant — the same structure as our "no upward mutation" rule.
+Schlapbach (2026) gives a process-calculus treatment of agentic tool protocols, formalizing MCP and SGD as π-calculus processes. For CTB, the useful lesson is that protocol safety depends on complete, machine-readable interaction surfaces: signature completeness underwrites verifiable safety. The paper also models capability confinement as a process invariant, which parallels the CTB "no upward mutation" rule.
 
 **What CTB should borrow:**
 
