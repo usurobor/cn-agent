@@ -12,7 +12,7 @@ katas) from **kata content** (the actual proofs). Both ship as packages.
   `cn kata judge`. Discovers katas across any installed package
   (convention: `<package>/katas/<id>/`). Also carries its own Tier 2
   runtime katas as dogfood of the framework.
-- **`cnos.cdd.kata`** — content-only: CDD method katas (M0–M4). No
+- **`cnos.cdd.kata`** — content-only: CDD method katas (M0–M5). No
   commands. The framework in `cnos.kata` picks them up on discovery.
 - **Future domain packages** (eng, ops, …) may ship their own katas by
   adding a `katas/` directory; no framework changes needed.
@@ -86,6 +86,7 @@ commands come from `cnos.kata`.
 | M2 | Review | evidence-bound + architecture-aware |
 | M3 | Post-release | closure quality + measurement |
 | M4 | Full cycle | end-to-end CDD loop vs ad hoc on the same change |
+| M5 | Issue authoring | schema validation + README alignment + witness-theater check |
 
 ```bash
 cn kata list                           # list all discovered katas
