@@ -13,7 +13,7 @@
 | §9.1 triggers fired | **2 fired:** loaded-skill miss (β + γ-axis); avoidable tooling/environment failure (δ env reachability — third cycle in a row). |
 | Level | **L6 cycle cap** (diff L6: machine-checkable contract added; not L7 because the gate catches drift at CI time rather than eliminating its source). |
 | Scoring | α A-, β A-, γ A-. β's release-time CHANGELOG row accepted as-is by γ's PRA. |
-| PRA | [`docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md`](../../../docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md) (this commit). |
+| PRA | Embedded in this γ close-out (§ Close-out triage, § §9.1 trigger assessment, § Deferred outputs). |
 
 ## Close-out triage
 
