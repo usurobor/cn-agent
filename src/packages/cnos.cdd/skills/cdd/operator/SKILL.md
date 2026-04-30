@@ -37,27 +37,42 @@ calls:
 
 ## Algorithm
 
-1. **Route** — deliver γ's dispatch prompts to agent sessions.
-2. **Wait** — monitor for gate requests. Do not poll the triad's internal work.
-3. **Gate** — execute external actions when requested by a role.
-4. **Override** — reassign roles or redirect scope only with an explicit declaration.
+1. **Dispatch γ** — run γ via `claude -p`; γ reads the issue, creates the cycle branch, and produces α/β prompts.
+2. **Dispatch α** — run α via `claude -p` with the prompt γ produced; α implements on the cycle branch.
+3. **Dispatch β** — run β via `claude -p` with the prompt γ produced; β reviews and merges.
+4. **Gate** — execute external actions: push main, tag, release, branch cleanup.
+5. **Override** — reassign roles or redirect scope only with an explicit declaration.
+
+δ runs one role at a time. This keeps memory pressure low (single `claude -p` process), gives δ direct visibility into each session, and isolates failures — if α dies, δ retries α without losing γ or β state.
 
 ---
 
 ## 1. Route
 
-### 1.1. Receive dispatch from γ
+### 1.1. Dispatch γ first
 
-γ produces α and β prompts (CDD §1.4). The operator delivers each prompt to the correct agent session.
+δ dispatches γ via `claude -p`. γ reads the issue, creates the cycle branch, and returns α/β prompts to δ. γ does not execute dispatch — δ does.
+
+```bash
+cat /tmp/gamma-prompt.md | claude -p --allowedTools "Read,Write,Bash" --model <model>
+```
+
+### 1.2. Dispatch α and β sequentially
+
+δ dispatches α, waits for completion, then dispatches β. One `claude -p` at a time.
+
+```bash
+# α — implements
+cat /tmp/alpha-prompt.md | claude -p --allowedTools "Read,Write,Bash" --model <model>
+
+# β — reviews (Read,Write only — no Bash)
+cat /tmp/beta-prompt.md | claude -p --allowedTools "Read,Write" --model <model>
+```
 
 - ❌ Rewrite the prompt to add constraints or context γ didn't include
-- ✅ Deliver the prompt verbatim to the target agent session
-
-### 1.2. Confirm session assignment
-
-Before dispatch, confirm which agent session runs α and which runs β. If only two agents are available, the operator serves as γ (CDD §1.4 minimum configuration).
-
-- ❌ Dispatch both prompts to the same session without declaring the configuration
+- ✅ Deliver the prompt verbatim to the `claude -p` session
+- ❌ Run α and β concurrently or nest them inside γ's session
+- ✅ Run one role at a time, inspect artifacts between dispatches
 - ✅ Name the agent-to-role mapping before delivering prompts
 
 ---
@@ -224,11 +239,10 @@ These are role boundaries. Crossing them without an override declaration breaks 
 
 | Phase | Operator action | Wait for |
 |-------|----------------|----------|
-| Pre-dispatch | Receive γ prompts, confirm agent mapping | γ dispatch |
-| Dispatch | Deliver prompts to agent sessions | — |
-| Implementation | Nothing | α's `.cdd/unreleased/{N}/self-coherence.md` review-readiness signal or γ unblock request |
-| Review | Nothing | β verdict or γ unblock request |
-| Release | Gate actions if requested (merge, tag) | β or γ gate request |
+| γ dispatch | Run γ via `claude -p`; γ creates branch, returns α/β prompts | γ completion |
+| α dispatch | Run α via `claude -p` with γ's prompt | α completion |
+| β dispatch | Run β via `claude -p` (Read,Write only) with γ's prompt | β completion (merge) |
+| Release | Gate actions: push main, tag, release | β merge or γ request |
 | Closure | Gate actions if requested (branch delete, issue close) | γ closure declaration |
 | Post-release | Execute deferred operator actions from γ close-out | γ deferred-output list |
 | Disconnect | Cut the release — tag the triad's final state after all post-cycle work lands on main | γ close-out + δ session patches on main |

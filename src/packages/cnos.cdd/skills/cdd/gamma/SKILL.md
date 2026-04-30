@@ -1,6 +1,6 @@
 ---
 name: gamma
-description: γ role in CDD. Observes, selects, dispatches, unblocks, runs post-release assessment, and closes the cycle.
+description: γ role in CDD. Observes, selects, produces dispatch prompts, unblocks, runs post-release assessment, and closes the cycle. δ executes dispatch.
 artifact_class: skill
 kata_surface: embedded
 governing_question: How does γ keep the full cycle coherent across issue creation, dispatch, unblocking, assessment, and close-out?
@@ -42,9 +42,11 @@ calls:
 
 **Coherent γ coordination selects the highest-leverage real gap, turns it into an executable issue pack, preserves role separation during handoffs, and closes the cycle with an explicit next move.**
 
-γ is not a third implementer.
+γ is not a third implementer and not a runtime orchestrator.
 γ holds cycle coherence:
-selection, issue quality, dispatch quality, unblocking, close-out triage, and process iteration.
+selection, issue quality, dispatch prompt quality, unblocking, close-out triage, and process iteration.
+
+γ produces α and β prompts. δ (operator) executes dispatch — one role at a time via `claude -p` or equivalent. This avoids nested subprocess chains (γ spawning α/β), keeps memory pressure low, and gives δ direct visibility into each session.
 
 The failure mode is **orchestration by vibes**:
 - arbitrary selection
@@ -60,7 +62,7 @@ When acting as γ:
 2. load this file as the γ role surface
 3. load `issue/SKILL.md`
 4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics) and step 13a skill/spec patches
-5. load `operator/SKILL.md` — δ owns release-phase gate execution (tag push, branch cleanup, release CI) and the disconnect release (§3.4). δ's actions are git-observable (tags, branch state). If δ is unavailable, γ may execute gates directly.
+5. load `operator/SKILL.md` — δ owns dispatch execution (routes γ/α/β prompts to `claude -p` sessions one at a time), release-phase gate execution (tag push, branch cleanup, release CI), and the disconnect release (§3.4). δ's actions are git-observable (tags, branch state). If δ is unavailable, γ may execute gates directly.
 6. load other lifecycle sub-skills only when the selected gap requires them
 
 **Canonical-skill staleness check before each γ phase change.** Before transitioning from one CDD phase to another (intake → dispatch, dispatch → close-out triage, close-out triage → PRA, PRA → closure), γ runs `git fetch --verbose origin main && git rev-parse origin/main`. If `origin/main` HEAD has advanced beyond the SHA at which the canonical CDD/role skills were loaded, **re-load** `CDD.md`, this file, and the lifecycle sub-skill governing the next phase, then re-evaluate the next phase's plan against the updated canonical surfaces before proceeding. This is the parallel of `beta/SKILL.md`'s pre-merge gate row 2; it catches the same class of failure on the γ-axis (canonical-skill snapshot drift across release boundaries — cycle #301 §9.1 trigger 1: γ proposed an out-of-spec option (b) merge-by-γ because σ's `4a0f678` "merge is β authority" had landed mid-cycle and was not in γ's session-loaded `gamma/SKILL.md`).
@@ -274,28 +276,45 @@ done
 
 Each transition line becomes a `task-notification` that wakes the session. Run under `Monitor`; emit only on transition. **All cycle-dir artifacts live on `origin/cycle/{N}` — not on `main`** (per `CDD.md` §Tracking). Polling `origin/main` for `.cdd/unreleased/{N}/` is silent for in-flight cycles; γ dereferences the cycle directory on the named branch via `git ls-tree -r origin/cycle/{N} .cdd/unreleased/{N}/` when a transition fires.
 
-Then produce both prompts at dispatch time. β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` and starts intake while α implements — β does not need to wait for review-readiness to begin polling.
+Then produce both prompts and return them to δ. δ dispatches each role sequentially — one `claude -p` at a time. γ does not execute dispatch directly; γ produces the prompts and δ routes them.
 
-**α prompt:**
+**γ prompt (δ dispatches γ first):**
+```text
+You are γ. Project: <project>.
+Load src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md and follow its load order.
+Issue: gh issue view <N> --json title,body,state,comments
+```
+
+**α prompt (γ produces, δ dispatches):**
 ```text
 You are α. Project: <project>.
-Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md.
-Issue: gh issue view <N>
+Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md and follow its load order.
+Issue: gh issue view <N> --json title,body,state,comments
 Branch: cycle/<N>
 Tier 3 skills: <list issue-specific skills>
 ```
 
-**β prompt:**
+**β prompt (γ produces, δ dispatches):**
 ```text
 You are β. Project: <project>.
 Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md and follow its load order.
-Issue: gh issue view <N>
+Issue: gh issue view <N> --json title,body,state,comments
 Branch: cycle/<N>
+```
+
+**Dispatch flow:**
+```text
+δ dispatches γ  → γ reads issue, creates branch, produces α/β prompts, returns to δ
+δ dispatches α  → α implements on cycle/{N}
+δ dispatches β  → β reviews, merges to main
+δ holds gates   → push, tag, release, branch cleanup
 ```
 
 Rules:
 - point both roles at the issue, not a paraphrase of the issue
 - include the explicit `Branch: cycle/<N>` line so α and β never have to invent or glob-discover the branch
+- always use `--json title,body,state,comments` with `gh issue view` (bare `gh issue view` hits deprecated GraphQL fields)
+- α gets `--allowedTools "Read,Write,Bash"`; β gets `--allowedTools "Read,Write"` only (β must not tag, release, or run arbitrary commands)
 - do not restate the algorithm in the prompt
 - do not smuggle missing constraints into chat prose; fix the issue instead
 - β begins polling the issue and `.cdd/unreleased/{N}/self-coherence.md` on `origin/cycle/{N}` immediately; the β skill handles waiting for α's review-readiness signal
