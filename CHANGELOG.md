@@ -133,6 +133,16 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.70.0 (2026-04-30)
+
+### Added
+- **`cn activate`** — kernel CLI command that generates a bootstrap prompt from local hub state; stdout-only prompt, stderr diagnostics, no model invocation (#320)
+
+### Changed
+- **CTB docs tightened** — v0.2 status truth, §6 reordering, §10.1 type field, §13 bounded fix examples, §15 non-normative hygiene, SEMANTICS-NOTES reading map + epistemic stance (#317)
+
+---
+
 ## 3.69.0 (2026-04-30)
 
 ### Added
