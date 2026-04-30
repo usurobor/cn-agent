@@ -103,3 +103,42 @@ Negative cases covered:
 - `TestRunNegative_MissingPath` — nonexistent path fails
 - `TestRunNegative_PathWithoutDotCn` — directory without `.cn/` fails
 - ✅ Met.
+
+---
+
+## Self-check
+
+**Did α's work push ambiguity onto β?**
+No. Every AC maps to concrete test evidence. The implementation is complete: command registered, domain logic in dedicated package, tests passing, help text present, stdout/stderr contract proven in tests.
+
+**Is every claim backed by evidence in the diff?**
+- AC1–AC12: all backed by test assertions in `activate_test.go` or by diff inspection (`git grep "cn agent" src/go/` → 0 hits for AC2/AC11; `CommandSpec.NeedsHub: false` visible in diff for AC5).
+- "No model invoked": verifiable by inspection — `activate.go` has no `os/exec` or HTTP imports.
+- "Stdout = prompt only": proven by `TestRunPositive_StdoutOnly`.
+
+**Peer enumeration:**
+- Other kernel commands not affected — `cn activate` is additive only.
+- No schema-bearing type introduced — no harness audit required.
+- No existing command renamed or replaced — AC11 peer set = {`cn init`, `cn setup`, `cn status`, `cn doctor`}; all unchanged. Verified: `git diff main...cycle/320 -- src/go/cmd/cn/main.go` adds exactly one `reg.Register` line.
+
+---
+
+## Debt
+
+None. All ACs met. Implementation is MVP-scoped as the issue defines. Deferred items (remote hub activation, prompt profiles, model-specific templates, runtime integration) remain deferred per the issue's explicit non-goals.
+
+---
+
+## CDD Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Issue #320 read; gap identified: no CLI path to assemble activation prompt |
+| 1 Select | — | — | #320 selected; no stronger override |
+| 2 Branch | `cycle/320` | cdd | Branch created by γ; verified exists at α intake |
+| 3 Bootstrap | — | cdd | Small-change path — no version snapshot required; single new command |
+| 4 Gap | `.cdd/unreleased/320/self-coherence.md` §Gap | — | Named incoherence: no repeatable activation prompt generation |
+| 5 Mode | `.cdd/unreleased/320/self-coherence.md` §Skills | design, write, tool, test, ux-cli, go | MCA; Tier 3 skills loaded |
+| 6 Artifacts | `internal/activate/activate.go`, `activate_test.go`, `cli/cmd_activate.go`, `cmd/cn/main.go` | design, go, test, ux-cli | Tests → code → docs (help text inline); design: not required (single kernel command, no boundary ambiguity) |
+| 7 Self-coherence | `.cdd/unreleased/320/self-coherence.md` | cdd | AC-by-AC check completed; all ACs met |
+| 7a Pre-review | `.cdd/unreleased/320/self-coherence.md` | cdd | Pre-review gate in progress — see §Review-readiness below |
