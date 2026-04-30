@@ -177,3 +177,9 @@ Yes:
 **Peer enumeration:** The diff is a single new file. No sibling skill was modified. No peer update is needed.
 
 **Harness audit:** No schema-bearing contract changed. No harness audit required.
+
+## §Debt
+
+**D1 — `cue` CLI not installed; frontmatter validator returned exit code 2.** Manual validation against `schemas/skill.cue` confirms shape. If CI runs `tools/validate-skill-frontmatter.sh` on merge, it will fail at the prerequisite check (not a schema failure). β should verify whether CI has `cue` installed or whether the job handles exit-2 separately from exit-1.
+
+**No other known debt.**
