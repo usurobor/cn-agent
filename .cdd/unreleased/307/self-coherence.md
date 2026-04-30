@@ -152,3 +152,29 @@ CDD canonical artifact order (CDD.md §5.2) mapped to this cycle:
 | 8 | `4d91ff04` | alpha@cdd.cnos | self-coherence §Debt |
 
 All commits authored as `alpha@cdd.cnos` per CDD.md §1.4 α step 2 — role identity is git-observable across the cycle.
+
+## Review-readiness | round 1
+
+- **Base SHA (origin/main HEAD at signal time):** `396d9982af2c2318400fb5c9eb400178d488f99b`
+- **Head SHA (cycle/307 HEAD at signal time):** *(this commit; appended last)*
+- **Merge-base HEAD ↔ origin/main:** `396d9982` (= origin/main HEAD — cycle is rebased; no drift).
+- **Signal time:** 2026-04-30 08:23 UTC.
+- **Branch CI on cycle/307:** **not configured** — `.github/workflows/build.yml` triggers only on `push: branches: [main]` and `pull_request: branches: [main]`; cycle branches are not gated by GitHub-side CI. Per α §2.6 row 10, this artifact says so explicitly; β waits for green at the post-merge `main` push (workflow includes I5 `skill-frontmatter-check` which validates the new `kata_ref` frontmatter via `cue vet schemas/skill.cue` + `tools/validate-skill-frontmatter.sh`). Local CI is also unavailable in α's environment (`cue` binary not installed in the sandbox) — the schema is open via trailing `...` and `kata_ref` is the same key shape `review/SKILL.md` already ships with, so the schema-conformance assertion is structural rather than executed at signal time.
+
+**Pre-review gate (α §2.6) at signal time:**
+
+| # | Row | State | Evidence |
+|---|---|---|---|
+| 1 | cycle branch rebased onto current origin/main | **pass** (transient) | merge-base = origin/main HEAD = `396d9982` |
+| 2 | self-coherence.md carries CDD Trace through step 7 | **pass** (durable) | §CDD-Trace section above |
+| 3 | tests present or explicit reason none apply | **pass** (durable) | §CDD-Trace step 4 — n/a (doc/runbook + frontmatter, not code/runtime) |
+| 4 | every AC has evidence | **pass** (durable) | §ACs AC1–AC5 |
+| 5 | known debt explicit | **pass** (durable) | §Debt — no new α debt |
+| 6 | schema/shape audit when contracts changed | **pass** (durable) | §CDD-Trace step 4 — `schemas/skill.cue` open via `...`; `kata_ref` precedent in `review/SKILL.md` |
+| 7 | peer enumeration when closure claim touches a family | **pass** (durable) | §Self-check kata_surface peers table (9 lifecycle skills) |
+| 8 | harness audit when schema-bearing contract changed | **pass** (durable) | §Self-check — `tools/validate-skill-frontmatter.sh` invariant; no other frontmatter writers |
+| 9 | post-patch re-audit covering every language in diff | **pass** (durable) | diff languages = Markdown + YAML frontmatter only; Markdown grep oracles run (AC1); YAML frontmatter shape verified against `schemas/skill.cue` |
+| 10 | branch CI green on head commit | **explicit-not-applicable** (transient) | see "Branch CI on cycle/307" note above; β waits for green at post-merge main push |
+| 11 | α commit author email matches `alpha@cdd.{project}` | **pass** (durable) | `git log --format=%ae origin/main..HEAD | sort -u` → `alpha@cdd.cnos` (single value across all 8 cycle commits per §CDD-Trace branch-commit table) |
+
+**Ready for β.**
