@@ -18,7 +18,7 @@ inputs:
   - cycle state (issue, branch, .cdd/unreleased/{N}/, CI)
 outputs:
   - routed prompts to agent sessions
-  - external gate decisions (merge, tag, issue filing)
+  - external gate executions and confirmations (push on β's behalf, tag, release, deploy, issue filing)
   - override declarations when needed
 requires:
   - active CDD cycle exists
@@ -70,7 +70,7 @@ Once dispatched, the triad runs. The operator does not need to monitor branch di
 
 The operator's wake-up signals are:
 
-- **γ requests an external gate** (merge, tag push, issue filing, auth action)
+- **γ requests an external gate** (push on β's behalf, tag push, release, deploy, issue filing, auth action)
 - **γ requests an unblock decision** (design ambiguity, scope question, env constraint)
 - **γ declares cycle closure** and names deferred outputs that need operator action
 - **An agent session dies or stalls** (no activity for an unexpected duration)
@@ -126,9 +126,9 @@ These actions require platform permissions agents may lack:
 
 | Action | Trigger | Who requests |
 |--------|---------|-------------|
-| Branch merge to main | β approves, merge ready (β runs `git merge` itself unless env restricts push to main) | β or γ |
-| Push to main | β cannot push directly | β or γ |
-| Tag push | Release tagged | β or γ |
+| Push β-approved merge to main | β runs `git merge` — δ only pushes when β cannot execute the push directly (env/auth constraint). This is execution of β's integration authority, not δ approval. | β or γ |
+| Release-boundary preflight | After β merge + close-outs + γ PRA, δ verifies merge commit, release artifacts, tag/deploy preconditions, and platform readiness. Proceed / request changes / override. See CDD §1.4 Phase 5a. | γ |
+| Tag push + release | After δ preflight confirms and γ closes the cycle | γ |
 | Branch delete | Cycle closed, merged branches | γ |
 | Issue filing on external repos | Cross-project dependency | γ |
 | Force push | Rebase required with env constraints | α via γ |

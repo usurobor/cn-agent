@@ -96,7 +96,7 @@ These are operational roles. They are not a claim that every cycle always uses t
 |------|----------|-------------|----------------|---------------------|
 | **γ (Coordinator)** | Orchestrate | 0–2 + 11–13 + cycle-wide | Observe, select, issue creation, **branch creation (`cycle/{N}` from `origin/main`, see §1.4 γ algorithm Phase 1 step 3a)**, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification, post-release assessment, cycle closure | Must hold full cycle context |
 | **α (Implementer)** | Produce | 3–7a (uses the branch γ created at step 2) | Check out `cycle/{N}` (never creates), bootstrap, gap, mode, artifacts (tests/code/docs), self-coherence, pre-review readiness, `.cdd/unreleased/{N}/self-coherence.md` review-readiness signal | Must be separate from β |
-| **β (Reviewer + Releaser)** | Judge and integrate | 8–10 | Polls `origin/cycle/{N}` directly (never creates a branch and refuses harness pre-provisioned per-role branches; see `beta/SKILL.md` §1), Review (RC/A decision), merge, tag, deploy, β close-out | Must be separate from α |
+| **β (Reviewer + Integrator)** | Judge and integrate | 8–10 | Polls `origin/cycle/{N}` directly (never creates a branch and refuses harness pre-provisioned per-role branches; see `beta/SKILL.md` §1), Review (RC/A decision), merge into main, β close-out | Must be separate from α |
 | **δ (Operator)** | Route and disconnect | gates + 17 | Session routing, external gate execution (tag/release/deploy), post-cycle disconnect release | Owns platform actions agents cannot perform |
 
 #### Triadic rule
@@ -111,7 +111,7 @@ The structure is a **dyad plus coordinator**: α and β are two workers that int
 - β cannot see α's implementation rationale or conversation state
 - γ sees both — that is its function
 
-β owns both review and release because the reviewer already has full artifact context when it's time to merge — splitting review from release creates a handoff that adds no value. γ owns coordination because issue quality determines implementation quality, dispatch prompts are the control surface, and unblocking requires cross-agent context that only the coordinator holds.
+β owns review and merge because the reviewer already has full artifact context when it's time to integrate — splitting review from merge creates a handoff that adds no value. δ owns the release boundary (tag, deploy, disconnect) because those are external platform actions that may require permissions the triad does not hold. γ owns coordination because issue quality determines implementation quality, dispatch prompts are the control surface, and unblocking requires cross-agent context that only the coordinator holds.
 
 #### δ and the external boundary
 
@@ -125,7 +125,7 @@ When the operator serves as γ (two-agent configuration), δ and γ collapse —
 
 ```text
 γ (issue + dispatch) → α (implement + branch + .cdd/unreleased/{N}/self-coherence.md) → β (review) → RC → α (fix) → β (re-review)
-                                                        → A  → β (merge, tag, deploy, assess)
+                                                        → A  → β (merge) → α/β close-outs → γ (PRA + triage) → δ (release-boundary preflight) → γ (closure) → δ (tag/release/deploy)
                        γ (unblocks α or β when stuck)
 ```
 
@@ -148,7 +148,7 @@ GitHub Pull Requests are **not** part of the triadic protocol. PR creation, poll
 | `self-coherence.md` | α | Primary branch artifact: gap, mode, AC mapping, CDD Trace, review-readiness signal, fix-round appendices | gap, mode, active skills, impact graph, AC-by-AC evidence, CDD Trace through step 7a, known debt, review-readiness section per round (base SHA, head SHA, branch CI state, "ready for β" line), fix-round appendices when β returns RC |
 | `beta-review.md` | β | Review record across rounds | round-by-round verdict (RC / A), findings with severity + type, merge instruction (the `git merge` action β will execute on approval), provisional-vs-green CI state |
 | `alpha-closeout.md` | α | α close-out narrative (after merge) | cycle summary, findings α-side, friction log, observations and patterns, cycle-level engineering level reading; **factual observations only — no dispositions** (γ's job) |
-| `beta-closeout.md` | β | β close-out narrative + release evidence | review context, narrowing pattern across rounds, release evidence (commit SHA, tag, deploy validation), β-side findings; **factual observations only — no dispositions** |
+| `beta-closeout.md` | β | β close-out narrative + merge evidence | review context, narrowing pattern across rounds, merge evidence (merge commit SHA, branch state), β-side findings; **factual observations only — no dispositions** |
 | `gamma-closeout.md` | γ | γ close-out triage + cycle iteration | close-out triage table (every finding from α + β + PRA → disposition), §9.1 trigger assessment, cycle iteration section if any trigger fired, deferred outputs, next-MCA commitment |
 
 Roles may add additional files when the cycle warrants it (e.g. `alpha-design.md` if a separate design artifact lives in the cycle dir, `gamma-dispatch.md` if dispatch evidence is large enough to deserve its own file). The filename pattern is `{role}-{purpose}.md` (e.g. `alpha-closeout.md`) for role-owned content, and bare `{purpose}.md` (e.g. `self-coherence.md`) for cycle-shared content where the convention identifies the author.
@@ -160,9 +160,11 @@ Roles may add additional files when the cycle warrants it (e.g. `alpha-design.md
 3. β polls `.cdd/unreleased/{N}/`; on `self-coherence.md` review-readiness, reads `git diff main..{branch}` + the cycle dir + the issue
 4. β writes verdict to `.cdd/unreleased/{N}/beta-review.md`
 5. If RC: α appends fix-round to `.cdd/unreleased/{N}/self-coherence.md`, β reads and re-reviews (appends new round to `beta-review.md`)
-6. On A: β `git merge`s the branch into main (no `gh pr merge`), pushes, tags, deploys per `release/SKILL.md`
-7. After merge: α writes `.cdd/unreleased/{N}/alpha-closeout.md`; β writes `.cdd/unreleased/{N}/beta-closeout.md` (release evidence + close-out)
-8. γ reads `.cdd/unreleased/{N}/{alpha-closeout,beta-closeout}.md` and writes `.cdd/unreleased/{N}/gamma-closeout.md`, writes PRA, closes the cycle
+6. On A: β `git merge`s the branch into main with a commit message containing `Closes #N` (no `gh pr merge`) and pushes. If β cannot push, δ may execute the push on β/γ request — this is execution of β's integration authority, not δ approval.
+7. After merge: α writes `.cdd/unreleased/{N}/alpha-closeout.md`; β writes `.cdd/unreleased/{N}/beta-closeout.md` (merge evidence, review evidence, cycle findings)
+8. γ reads `.cdd/unreleased/{N}/{alpha-closeout,beta-closeout}.md`, writes PRA, triages findings
+9. δ performs release-boundary preflight (see Phase 5a below). If δ requests changes, γ routes to β, α, or operator override as appropriate.
+10. γ closes the cycle. δ cuts the disconnect release.
 9. `release/SKILL.md` §2.5a moves `.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/` for every cycle that shipped in the release
 
 **Issue auto-close.** Use `Closes #N` or `Fixes #N` in the merge commit message (`git merge -m "Closes #N: ..."`) to auto-close on merge. If the convention is missed, γ closes via `gh issue close {N}`.
@@ -245,9 +247,9 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 5. Write α and β dispatch prompts (see format below). Both prompts include a `Branch: cycle/{N}` line. Both can be dispatched at the same time — β begins polling the issue and `origin/cycle/{N}` and starts intake while α implements.
 6. If α or β is blocked, diagnose and unblock: clarify requirements, resolve ambiguity, provide missing context
 
-**Phase 2 — Release support**
+**Phase 2 — Post-merge support**
 
-7. If β deferred tag push or other release mechanics (env constraint per β step 8), request δ to execute the gate action. δ confirms completion to the requesting role (see `operator/SKILL.md` §3.3). If δ is unavailable, γ may execute directly.
+7. If β could not push the merge (env constraint, auth), request δ to execute the push on β's behalf. This is execution of β's integration authority, not δ approval. δ confirms completion to the requesting role (see `operator/SKILL.md` §3.3). If δ is unavailable, γ may execute directly.
 8. If the issue did not auto-close on merge (missing `Closes #N` in the merge commit message), close it: `gh issue close {number}`
 
 **Phase 3 — Close-out triage**
@@ -270,17 +272,35 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 12. If any trigger fired: verify the assessment contains a Cycle Iteration section with root cause and MCA disposition.
 13. Independently assess: did this cycle reveal a CDD process gap — a recurring friction, a missing gate, an underspecified step, or a skill that should have caught something but didn't? If yes, write and commit the skill/spec patch now. If no, state why not (one sentence). **This step applies even when no §9.1 trigger fired.** Triggers catch mechanical failures; this step catches process drift that triggers miss.
 
-**Phase 5 — Hub memory and closure**
+**Phase 5a — δ release-boundary preflight**
 
-14. Update hub memory:
+After β merges `cycle/{N}` into main and α/β close-outs exist, γ requests δ release-boundary preflight before declaring the cycle closed.
+
+δ reviews the merged release boundary — not the implementation judgment. δ verifies:
+- merge commit is present on main;
+- required release artifacts are present;
+- tag/release/deploy preconditions are satisfied;
+- no external platform/auth/deployment blocker is visible;
+- any requested release action is executable.
+
+Outcomes:
+- **Proceed** — δ confirms the release boundary is ready. γ may close the cycle, after which δ cuts the disconnect release.
+- **Request changes** — δ names the release-boundary gap and returns control to γ. No tag is cut. γ routes the change to β, α, or operator override as appropriate.
+- **Override** — if δ blocks a release for reasons outside the triad's internal judgment, δ declares the override and names the affected boundary.
+
+15. γ requests δ release-boundary preflight. If δ confirms, proceed to closure.
+
+**Phase 5b — Hub memory and closure**
+
+16. Update hub memory:
     - Daily reflection: cycle summary, scoring, MCI freeze status, next move
     - Adhoc thread: update or create the thread this cycle advances
-15. Request δ to delete merged remote branches. If δ is unavailable, γ may execute directly: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
-16. Cycle is closed. Commit the closure declaration to main: *"Cycle #N closed. Next: #M."* This must be γ's **last commit** for the cycle — no post-closure pushes.
+17. Request δ to delete merged remote branches. If δ is unavailable, γ may execute directly: `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}`
+18. Cycle is closed. Commit the closure declaration to main: *"Cycle #N closed. Next: #M."* This must be γ's **last commit** for the cycle — no post-closure pushes.
 
 **Phase 6 — Disconnect (δ)**
 
-17. δ lands any remaining δ session patches, then cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. The tag is git-observable: γ and all future agents can see it. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4. This is not optional. **Nothing is committed to main between the closure declaration and the disconnect tag except δ's own patches.**
+19. δ lands any remaining δ session patches, then cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. The tag is git-observable: γ and all future agents can see it. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4. This is not optional. **Nothing is committed to main between the closure declaration and the disconnect tag except δ's own patches.**
 
 #### γ dispatch prompt format
 
@@ -381,8 +401,8 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 5. Read `git diff main..{branch}`, read every file in `.cdd/unreleased/{N}/` (start with `self-coherence.md`), read the issue
 6. Review: produce CR with findings per review skill, or approve
 7. If RC: append findings round to `.cdd/unreleased/{N}/beta-review.md` (commit on main or push the branch with the file), wait for α's fix-round in `.cdd/unreleased/{N}/self-coherence.md`
-8. If A: append approval verdict to `.cdd/unreleased/{N}/beta-review.md`, then `git merge` the branch into main with a commit message containing `Closes #N` (no `gh pr merge`), push, tag, deploy per release skill. If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to δ (operator) — do not block closure on it. δ confirms completion to the requesting role (see `operator/SKILL.md` §3.3).
-9. Write `.cdd/unreleased/{N}/beta-closeout.md` (review context, release evidence, cycle findings or "no findings"). This is β's input to γ's PRA and cycle iteration decision (§9.1). The release skill's §2.5a move carries the cycle directory into the release directory at release time.
+8. If A: append approval verdict to `.cdd/unreleased/{N}/beta-review.md`, then `git merge` the branch into main with a commit message containing `Closes #N` (no `gh pr merge`) and push. If β cannot execute the push (env constraint, auth), δ may execute the push on β/γ request — this is execution of β's integration authority, not δ approval. Tag, deploy, and release are δ's responsibility at the release boundary (see γ algorithm Phase 5a).
+9. Write `.cdd/unreleased/{N}/beta-closeout.md` (review context, merge evidence, cycle findings or "no findings"). This is β's input to γ's PRA and cycle iteration decision (§9.1). The release skill's §2.5a move carries the cycle directory into the release directory at release time.
 10. Done when `beta-closeout.md` is committed to main. γ writes the post-release assessment separately.
 
 **β close-out:** Report cycle-level learnings to γ. Concrete findings (review pattern issues, skill gaps, process friction, §3.7 violations, things to mechanize) or "no new findings" — explicitly stated, not omitted. **Voice: factual observations and patterns only.** Do not recommend dispositions ("patch now", "file issue", "recommend option X") — triage is γ's job. State what happened, what pattern it matches, and what surfaces were affected. Let γ decide the action.
@@ -751,7 +771,7 @@ CDD is artifact-driven. For substantial changes, each lifecycle step must leave 
 
 **Primary branch artifact:** `.cdd/unreleased/{N}/self-coherence.md` for triadic cycles, or the design artifact (design/SKILL.md §3.1) when a separate design doc is required for larger changes. The primary branch artifact owns the named incoherence, mode, active skills, AC mapping, CDD Trace, known debt, and the review-readiness signal.
 
-**Role key (§1.4):** *γ (coordinator)* = steps 0–2 (observe, select, issue creation, **branch creation**, dispatch) + steps 11–13 (PRA, cycle iteration, closure) + cycle-wide coordination, *α (implementer)* = steps 3–7a (bootstrap, gap, mode, artifacts, self-coherence, pre-review — α checks out the branch γ created in step 2 and never creates one), *β (reviewer + releaser)* = steps 8–10 (review RC/A decision, merge, deploy, β close-out — β polls `origin/cycle/{N}` directly and never creates a branch). Delegated implementer is α-side. Merge is part of step 9 (gate + merge).
+**Role key (§1.4):** *γ (coordinator)* = steps 0–2 (observe, select, issue creation, **branch creation**, dispatch) + steps 11–15 (PRA, cycle iteration, δ preflight request, closure) + cycle-wide coordination, *α (implementer)* = steps 3–7a (bootstrap, gap, mode, artifacts, self-coherence, pre-review — α checks out the branch γ created in step 2 and never creates one), *β (reviewer + integrator)* = steps 8–10 (review RC/A decision, merge into main, β close-out — β polls `origin/cycle/{N}` directly and never creates a branch), *δ (operator)* = release-boundary preflight (step 15) + disconnect release (step 19: tag, deploy). Delegated implementer is α-side. Merge is β's authority (step 9). Tag/release/deploy is δ's authority (step 19).
 
 **Producer key:** *agent* = judgment required, *mechanical* = automatable by cnos (#94), *reviewer* = produced by the review process.
 
