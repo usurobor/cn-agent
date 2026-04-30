@@ -133,6 +133,13 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.69.0 (2026-04-30)
+
+### Added
+- **Agent activation docs** — README quickstart step 5, OPERATOR.md split into current/target, SETUP-INSTALLER phases (#312, #313, #314, #315)
+
+---
+
 ## 3.68.0 (2026-04-30)
 
 ### Added
