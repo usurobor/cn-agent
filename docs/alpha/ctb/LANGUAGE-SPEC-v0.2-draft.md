@@ -643,6 +643,8 @@ A v0.2 implementation SHOULD mitigate witness theater by checking that:
 
 Until those checks exist, v0.2 remains a draft discipline rather than enforced semantics.
 
+The structural basis for witness independence is TSC-Oper's W1–W4 witness model (usurobor/tsc `spec/tsc-oper.md`). See `SEMANTICS-NOTES.md` §15.6 for the mapping between TSC-Oper states and CTB close-out forms, and for the ctb-check implications.
+
 ---
 
 ## Authority
