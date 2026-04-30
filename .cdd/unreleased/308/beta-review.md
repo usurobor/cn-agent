@@ -132,3 +132,20 @@ Applied correctly per cnos.core/skills/design/SKILL.md: one reason to change per
 ## Notes
 
 CI state: The `build.yml` workflow triggers on `push: branches: [main]` and `pull_request: branches: [main]`. No CI runs on `cycle/308` push alone — this is the documented protocol for triadic CDD cycles (no PR; β merges directly). Main's last CI run (`1d157c79`, run 25158163255) is green. The diff is Markdown and YAML only — no Go code, no scripts changed. The I5 (skill-frontmatter-check) and I4 (link-check) gates will pass: new sub-skills carry all hard-gate frontmatter fields; new files contain no markdown links.
+
+---
+
+## Verdict
+
+**Verdict:** APPROVED
+
+**Round:** 1
+**Fixed this round:** n/a (round 1)
+**Branch CI state:** provisional — no CI runs on cycle/308 push (no PR; triadic protocol). Main CI green at base `1d157c79`. Post-merge CI expected green (Markdown/YAML-only diff; all hard-gate frontmatter present; no broken links introduced).
+**Merge instruction:** `git merge --no-ff cycle/308` into main with `Closes #308` in the merge commit message.
+
+### Approval rationale
+
+All six ACs are met with concrete oracle evidence. The diff is a content-preserving structural relocation: three new sub-skills each own one cognitive mode; the monolith is deleted; the orchestrator's calls array enumerates the new siblings; the deferred-split note is removed; the M2-review kata reference is rewired. No stale paths remain in live surfaces. No findings.
+
+The implementation satisfies the issue's stated design constraint (one reason to change per skill) and the stated non-goals (no content rewriting, no phase reordering, no CTB v0.2 promotion, no per-mode katas). The search space is closed.
