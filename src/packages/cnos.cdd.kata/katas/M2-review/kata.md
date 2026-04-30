@@ -13,7 +13,7 @@ Given a PR diff, produce a review under two modes (baseline / CDD) and compare f
 - Contract integrity preflight (Phase 1, `review/contract/SKILL.md`) — completed before any diff inspection
 - Verdict (approve / request changes)
 - Evidence for each finding (line, file, artifact)
-- Architecture check (`review/implementation/SKILL.md §2.2` — 7 questions, A–G)
+- Architecture check (`review/architecture/SKILL.md §2.2` — 7 questions, A–G)
 - Active skill consistency check
 - Finding taxonomy (mechanical vs contract vs judgment)
 
