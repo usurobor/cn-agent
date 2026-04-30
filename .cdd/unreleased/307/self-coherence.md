@@ -178,3 +178,25 @@ All commits authored as `alpha@cdd.cnos` per CDD.md §1.4 α step 2 — role ide
 | 11 | α commit author email matches `alpha@cdd.{project}` | **pass** (durable) | `git log --format=%ae origin/main..HEAD | sort -u` → `alpha@cdd.cnos` (single value across all 8 cycle commits per §CDD-Trace branch-commit table) |
 
 **Ready for β.**
+
+## Fix-round | round 1
+
+**β R1 finding addressed:** F1 — `docs/gamma/cdd/KATAS.md` Tier 3 table stale (M0–M4 only; M5-issue-authoring not listed; omission unnamed in §Debt).
+
+**Fix applied:**
+- `docs/gamma/cdd/KATAS.md` L15: "M0–M4" → "M0–M5" in the Architecture section bullet.
+- `docs/gamma/cdd/KATAS.md` L89: `| M5 | Issue authoring | schema validation + README alignment + witness-theater check |` row added after M4.
+
+**Verification:** `grep -n "M5" docs/gamma/cdd/KATAS.md` → two matches: L15 (reference update) and L89 (table row).
+
+**Base SHA (origin/main at fix time):** `396d9982af2c2318400fb5c9eb400178d488f99b`
+**Head SHA (cycle/307 after fix commit):** *(this commit; appended last)*
+
+**Pre-review gate re-check (fix-round scope):**
+| Row | State | Evidence |
+|---|---|---|
+| KATAS.md cross-surface updated | **pass** | M5 row present; reference updated |
+| No new surfaces affected | **pass** | fix touches only KATAS.md (secondary index); no frontmatter, schema, or skill body changed |
+| Peer enumeration unchanged | **pass** | existing 9-skill table in §Self-check unaffected |
+
+**Ready for β R2.**
