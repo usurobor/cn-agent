@@ -24,7 +24,9 @@ requires:
   - canonical CDD.md loaded
 calls:
   - review/contract/SKILL.md
-  - review/implementation/SKILL.md
+  - review/issue-contract/SKILL.md
+  - review/diff-context/SKILL.md
+  - review/architecture/SKILL.md
 calls_dynamic:
   - source: project design constraints
 kata_ref: src/packages/cnos.cdd.kata/katas/M2-review/
@@ -56,11 +58,13 @@ Complete the Contract Integrity table. If any row is "no," the review cannot app
 
 ### Phase 2: Implementation review
 
-**Load:** `review/implementation/SKILL.md`
+Phase 2 runs three sub-skills sequentially. Load each in order:
+
+1. **`review/issue-contract/SKILL.md`** — issue contract walk (AC coverage, named doc updates, CDD artifact contract, active skill consistency)
+2. **`review/diff-context/SKILL.md`** — diff and context inspection (structural closure, multi-format parity, snapshot consistency, stale paths, authority conflicts, architecture leverage, design constraints)
+3. **`review/architecture/SKILL.md`** — architecture and design check (7 questions A–G; load `cnos.core/skills/design/SKILL.md` when active)
 
 Walk the issue contract (ACs, named docs, CDD artifacts). Read the diff and its neighbors. Apply mechanical scans, architecture checks, and evidence-bound findings.
-
-> **Future split (deferred).** Phase 2 currently bundles three cognitive modes — issue-contract walk, diff/context inspection, and architecture/design check. When `review/implementation/SKILL.md` grows past the next size budget, split it into siblings `review/issue-contract/SKILL.md`, `review/diff-context/SKILL.md`, and `review/architecture/SKILL.md`, each owning one reason to change. The orchestrator's phase order does not change; only the load granularity does.
 
 ### Phase 3: Verdict
 
