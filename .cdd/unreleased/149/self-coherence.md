@@ -75,3 +75,9 @@ Same situation (release skill), contrastive (memory vs file), imperative. AC2: *
 - Sigma's derived SOUL not touched.
 
 **Consistency with #277:** The skill-loading gate is added as a named block adjacent to the falsification gate inside §2.1. It does not anchor to any section number. If #277 renumbers sections, the prose survives without contradiction — the gate is paragraph-level, not number-anchored.
+
+---
+
+## §Debt
+
+None. The change is narrowly scoped per the issue's explicit non-goals. No deferred items.
