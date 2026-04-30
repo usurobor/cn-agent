@@ -84,7 +84,7 @@ Evidence:
 Evidence:
 - `review/issue-contract/SKILL.md`: 63 lines (well under 250 target); self-contained with own `inputs`, `outputs`, `requires`; no cross-references to sibling sub-skills' internal state
 - `review/diff-context/SKILL.md`: 108 lines; self-contained; `inputs` declares dependency on Phase 2a results
-- `review/architecture/SKILL.md`: 77 lines; self-contained; `inputs` declares dependency on Phase 2b results; `calls: src/packages/cnos.core/skills/design/SKILL.md` declared for the design skill it loads
+- `review/architecture/SKILL.md`: 77 lines; self-contained; `inputs` declares dependency on Phase 2b results; `calls: []` (cross-package design skill load kept as prose instruction per same pattern as original `implementation/SKILL.md`)
 
 All three sub-skills declare their inputs and do not rely on undeclared shared state.
 
@@ -111,6 +111,8 @@ Peer enumeration: all live surfaces referencing `review/implementation/SKILL.md`
 - `schemas/skill.cue` L25: illustrative comment — updated to use `review/issue-contract` as example (commit `7c97d257`)
 - `M2-review/kata.md` L16: architecture check reference — updated (commit `690caf14`)
 - Historical release artifacts (`.cdd/releases/3.63.0/301/`) — exempt; audit history, not live code
+
+Additional: `review/architecture/SKILL.md` initially declared `calls: src/packages/cnos.core/skills/design/SKILL.md` — a cross-package static call that the I5 validator cannot resolve (package-skill-root-relative, not repo-root-relative). Fixed in commit `63866d92` to `calls: []` with prose instruction retained (same pattern as original `implementation/SKILL.md`).
 
 ---
 
@@ -162,3 +164,23 @@ The `.cdd/releases/3.63.0/301/` artifacts retain `review/implementation` referen
 **Plan not required:** Five file operations in a deterministic order (create 3, update 1, delete 1, update 2 cross-refs). No non-trivial sequencing.
 
 **Tests not required:** Skill files are SKILL.md artifacts. There is no executable test harness for skill content. Correctness is proved by AC oracle evidence (frontmatter parse, find oracle, grep, line counts). The existing CI job (I5, `tools/validate-skill-frontmatter.sh` via `schemas/skill.cue`) validates frontmatter conformance on changed files.
+
+---
+
+## Review-readiness | round 1 | base SHA: 1d157c79 | head SHA: 63866d92 | branch CI: no runs on cycle/308 (CI runs on PR to main only; I5 frontmatter check will run on PR open) | ready for β
+
+**Pre-review gate:**
+
+| Row | Check | State |
+|-----|-------|-------|
+| 1 | cycle/308 rebased on current origin/main | PASS — merge-base `1d157c79` = origin/main HEAD at 2026-04-30T~10:00 UTC |
+| 2 | self-coherence.md carries CDD Trace through step 7 | PASS — §CDD-Trace present above |
+| 3 | tests present or explicit reason none apply | PASS — no executable test harness for skill content; correctness via AC oracles |
+| 4 | every AC has evidence | PASS — AC1–AC6 all mapped above |
+| 5 | known debt is explicit | PASS — §Debt: none |
+| 6 | schema/shape audit completed when contracts changed | PASS — no schema/runtime contracts changed; SKILL.md frontmatter validated via Python parse; I5 will run on PR |
+| 7 | peer enumeration completed | PASS — stale-path grep across full repo; all live refs to review/implementation addressed |
+| 8 | harness audit completed when schema-bearing contract changed | PASS — no schema-bearing contract changed |
+| 9 | polyglot re-audit completed | PASS — diff is Markdown/YAML only; bash -n not applicable (no shell scripts changed); `grep -r review/implementation` ran across full repo |
+| 10 | branch CI green on head commit | NOTE — CI runs on PR to main; no PR open yet; branch CI not triggered on cycle/308 push alone; I5 (frontmatter) and I4 (link-check) are the relevant gates and will run when PR opens |
+| 11 | author email = alpha@cdd.cnos | PASS — `git log -1 --format='%ae' HEAD` = `alpha@cdd.cnos` |
