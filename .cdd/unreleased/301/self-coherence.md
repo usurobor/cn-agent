@@ -202,3 +202,38 @@ Commits on the branch:
   fix).
 - subsequent commits — this self-coherence artifact and any fix-round
   appendices β requests.
+
+---
+
+## Fix-round 1 — round-2 (after β round-1 verdict `40af6c0`)
+
+β returned REQUEST CHANGES with three findings. All addressed on-branch
+in commit `171188e` (rebased onto β's verdict commit).
+
+| Finding | Severity / Type | Fix | Evidence |
+|---|---|---|---|
+| F1 — `release/SKILL.md` L103 + L217 prose still references "writing" skill (canonical name: `write`) | C, judgment | Renamed both prose sites to `write`. Wider rename debt across `CDD.md` L611 / L785 and `eng/skills/eng/README.md` L165 is **out of scope** per β's scope note (pre-existing debt from prior `writing/` → `write/` rename); fileable as follow-up issue. | `grep "writing" src/packages/cnos.cdd/skills/cdd/release/SKILL.md` → 0 hits. Both sites named in F1's evidence updated. |
+| F2 — numeric drift "45" → actual 43 (3 sites in self-coherence.md) | A, mechanical | All three "45" sites replaced with "43" per `review/SKILL.md` §2.1.3 numeric-repetition rule. | `jq 'length' schemas/skill-exceptions.json` → 43. `grep "45" .cdd/unreleased/301/self-coherence.md` → 0 hits. |
+| F3 — readiness signal head SHA recursively lags HEAD | A, mechanical | Convention changed: signal now names the **implementation commit SHA** (`8adfd44`), not the readiness-commit SHA. Inline note explains why the prior recursive convention self-stales. Branch HEAD as visible to β is carried by `git rev-parse origin/{branch}` at poll time, not this line. | `## Review-readiness` line above now says `implementation SHA \`8adfd44\``; "SHA convention" paragraph documents the choice. |
+
+### Re-audit after fix-round
+
+Surfaces touched in fix-round: `src/packages/cnos.cdd/skills/cdd/release/SKILL.md`
+(prose only — `name`/`triggers`/etc. unchanged so frontmatter validator
+unaffected) and `.cdd/unreleased/301/self-coherence.md` (this file —
+not a SKILL.md; not in I5's scope). Per `alpha/SKILL.md` §2.7
+"after each patch, repeat self-coherence and pre-review for affected
+surfaces":
+
+- **Schema/script/fixtures/CI/exception list/README** — untouched in fix-round; β's round-1 evaluation still applies.
+- **Affected surface (release/SKILL.md prose)** — re-validated. CUE schema does not parse body prose; no schema impact. `--self-test` and full validation re-ran at fix-round HEAD `e48f02d` (pre-rebase) and again at the rebased fix-round HEAD `171188e`: both green (56/56 SKILL.md, fixtures pass).
+- **No D-level findings in round 1.** β's Architecture Check passed. No regressions to recheck.
+
+### Pre-review gate revalidation (transient rows)
+
+| Row | State at round-2 | Notes |
+|---|---|---|
+| 1 | branch rebased onto current `main` | Rebased onto β's round-1 verdict commit `40af6c0` (which is on top of `a8e67b7` origin/main); fix-round commit `171188e` is one commit on top of `40af6c0`. `origin/main` unchanged from round 1. |
+| 10 | branch CI green on the head commit | Local re-verification post-fix at fix-round HEAD: `./tools/validate-skill-frontmatter.sh` → 56/56 green; `--self-test` → 3 positive + 4 negative behave as expected. CI on the round-2 HEAD will run on push; per β's deferral note (env-blocked release mechanics), CI green is δ's gate at merge. |
+
+## Review-readiness | round 2 | base SHA `a8e67b7` | implementation SHA `8adfd44` | round-2 fix SHA `171188e` | local validation green at 2026-04-30T06:29:25Z | CI: pending push | ready for β re-review
