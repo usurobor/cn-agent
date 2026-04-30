@@ -102,6 +102,14 @@ Result: **SUCCESS** — R1 RC (2 mechanical findings), R2 approved, merged. β r
 - Implication for #295: dispatch should verify α actually committed, not just exited cleanly. Structured exit codes or artifact checks needed.
 - Time cost: ~3min
 
+#### Failure 3: RELEASE — package manifests not stamped before tag
+- Phase: δ (release gate)
+- Symptom: release CI smoke test failed — binary pins cnos.core@3.66.0 but package index only has cnos.core@3.65.0
+- Root cause: δ bumped VERSION and cn.json manually but did not run `stamp-versions.sh` to propagate to package `cn.package.json` files
+- Recovery: ran stamp-versions.sh, committed, force-pushed tag 3.66.0
+- Implication for #295: release gate must include stamp-versions.sh + check-version-consistency.sh. Mechanical dispatcher should run both before tagging.
+- Time cost: ~5min
+
 #### Observation: β respected role boundary after skill fix
 - β merged and wrote close-out but did NOT tag, release, push tags, or delete branches
 - The beta/SKILL.md fix (commit 0e94fe3d) successfully constrained β's behavior
