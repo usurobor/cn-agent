@@ -100,4 +100,59 @@ This is the first observed cycle in this project's history where force-push reso
 
 — β (`beta@cdd.cnos`) at 2026-04-30 00:48 UTC
 
-Pass 3 (release evidence) follows the release commit + tag.
+---
+
+## 4. Release evidence (Pass 3)
+
+**Release commit:** `25da053` on `origin/main` (`release: 3.62.0 — γ creates the cycle branch`).
+
+**Version stamping:**
+- `VERSION`: `3.61.1` → `3.62.0`
+- `cn.json`: `3.61.1` → `3.62.0`
+- `src/packages/cnos.core/cn.package.json`: version `3.61.0` → `3.62.0`, `engines.cnos` `3.61.0` → `3.62.0`
+- `src/packages/cnos.cdd/cn.package.json`: version `3.61.0` → `3.62.0`, `engines.cnos` `3.61.0` → `3.62.0`
+- `src/packages/cnos.eng/cn.package.json`: version `3.61.0` → `3.62.0`, `engines.cnos` `3.61.0` → `3.62.0`
+- `bash scripts/check-version-consistency.sh` — PASSED — all version-stamped files agree at `3.62.0`.
+
+**Release artifacts on `main`:**
+- `CHANGELOG.md` ledger row added: `| 3.62.0 | A- | A- | A- | B+ | L7 (diff: L7; cycle cap: L6) | …`
+- `RELEASE.md` authored at repo root as the 3.62.0 release body (Outcome / Why it matters / Changed / Added / Fixed / Removed / Validation / Known Issues sections per `release/SKILL.md` §2.5).
+
+**Cycle directory move (per `release/SKILL.md` §2.5a):**
+- `.cdd/unreleased/287/` → `.cdd/releases/3.62.0/287/` as part of the release commit.
+- 5 artifacts moved: `self-coherence.md` (α), `beta-review.md` (β R1+R2+R3), `gamma-clarification.md` (γ R1.5), `alpha-closeout.md` (α post-merge), `beta-closeout.md` (this file).
+- `.cdd/unreleased/` is empty after the release commit.
+
+**Tag:**
+- Local: `3.62.0` created at `25da053` (bare version per `release/SKILL.md` §2.6 + §3.6).
+- **Push: deferred to δ (HTTP 403 env constraint).** Two `git push origin 3.62.0` attempts at 00:58–01:00 UTC both returned `RPC failed; HTTP 403 curl 22 The requested URL returned error: 403; send-pack: unexpected disconnect while reading sideband packet; fatal: the remote end hung up unexpectedly`. Same env constraint as the 3.61.0 → 3.61.1 release boundary (3.61.1 ledger row: "Tag 3.61.0 pushed (β deferred due to HTTP 403)"). Per `CDD.md` β step 8: "If tag push fails due to env constraints (e.g. sandbox HTTP 403), commit all release artifacts to main and defer tag push to δ (operator) — do not block closure on it." All release artifacts are committed to `main` at `25da053`; the tag is local; δ to execute `git push origin 3.62.0` and the release CI (`release.yml`) triggers on tag receipt at the upstream remote.
+- γ algorithm Phase 2 step 7 handles the operator request: "If β deferred tag push or other release mechanics (env constraint per β step 8), request δ to execute the gate action. δ confirms completion to the requesting role."
+
+**Branches to clean (per `release/SKILL.md` §2.6a; deferred to δ alongside tag push):**
+- `origin/cycle/287` (cycle complete, merged into main as `a5d0f21`).
+- `origin/claude/cnos-skill-module-x9jTE` (β-side harness pre-provisioned branch; never used; refused per `beta/SKILL.md` §1).
+- `origin/claude/alpha-cdd-skill-1aZnw` (α-side harness pre-provisioned branch; α switched off it at intake per `alpha/SKILL.md` §2.1 step 2; never used).
+- Any other `origin/claude/*` merged branches per the standard `git branch -r --merged origin/main | grep -v main | grep -v HEAD | sed 's/origin\///' | xargs -I{} git push origin --delete {}` sweep.
+
+**Branch CI status:**
+- **`cycle/287` (in-flight):** deferred (no CI workflow runs on `cycle/*` branch pushes in this repo; β verified diff coherence directly at R3 per `alpha/SKILL.md` §2.6 row 10 escape hatch).
+- **`main` (post-merge):** `build-verify.yml` will run on the merge commit `a5d0f21` and on the release commit `25da053`. β to verify post-push (this commit's push is the trigger).
+- **Tag `3.62.0` (post-tag-push):** `release.yml` will run on the `3.62.0` tag arrival upstream. β cannot verify until δ pushes the tag; δ confirms completion per `operator/SKILL.md` §3.3.
+
+**Validation:**
+- The cycle's substantive change is markdown-only spec text. No executable surface to deploy or runtime path to exercise. The integration test is AC 12 self-application: the cycle implementing the new contract executed under the new contract end-to-end (γ-creates-branch-before-dispatch, α/β-never-create, single-named-target polling, role-identity-canonical, force-push-as-contract-repair). β verified by execution at every round.
+- `release/SKILL.md` §2.9 ("validate with the specific fix") is satisfied by the cycle's own self-application: the `cycle/287` git history *is* the validation artifact.
+
+## 5. Cycle handoff to γ for PRA
+
+This file is β's input to γ's `gamma-closeout.md` triage and the post-release assessment per `post-release/SKILL.md`. The β-side observations (§3 above) are factual; dispositions are γ's call. γ's PRA inputs:
+
+- **β close-out (this file)** — review context, narrowing pattern, 6 β-side findings, release evidence.
+- **α close-out (`alpha-closeout.md`)** — α-side cycle summary, findings, friction log, observations, engineering reading.
+- **γ-clarification (`gamma-clarification.md`)** — captures the mid-cycle synchronous-fetch fact that collapsed F1+F2.
+- **`beta-review.md`** — round-by-round verdict (R1 P1+P2+P3, R2, R3) with all findings and dispositions.
+- **`self-coherence.md`** — α's authoring-time artifact with CDD Trace, AC mapping, peer enumeration, pre-review gate, R2 fix-round narrative.
+
+§9.1 trigger awareness: review rounds = 3 fires the trigger; root-cause analysis is in this file's §3 (O1 + O6) and α's close-out (O1 — α identity drift, plus α §Friction log). The trigger calls for a cycle-iteration entry in the PRA naming the recurring friction class and the MCA candidate; β voice rule applies (factual observation here; γ disposes).
+
+— β (`beta@cdd.cnos`) at 2026-04-30 ~01:00 UTC. β work complete. Cycle handoff to γ for PRA + close-out triage. Tag push + branch sweep deferred to δ (HTTP 403 env constraint per CDD.md β step 8).
