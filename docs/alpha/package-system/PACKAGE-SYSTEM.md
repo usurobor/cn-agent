@@ -36,21 +36,26 @@ a package's source directory at `src/packages/<name>/<class>/`.
 
 | Class | Copy mode | Source location | Runtime role |
 |-------|-----------|-----------------|--------------|
-| doctrine | wildcard or named | `src/packages/<name>/doctrine/` | Always-on core principles |
+| doctrine | wildcard or named | `src/packages/<name>/doctrine/` | Always-on core principles and kernel doctrine |
 | mindsets | named files | `src/packages/<name>/mindsets/` | Always-on behavioral frames |
 | skills | directory trees | `src/packages/<name>/skills/` | Keyword-scored, bounded |
 | extensions | directory trees | `src/packages/<name>/extensions/` | Runtime capability providers |
-| templates | named files | `src/packages/<name>/templates/` | Identity/config scaffolding for new hubs |
 | commands | directory trees | `src/packages/<name>/commands/` | Operator-facing CLI commands |
 | orchestrators | directory trees | `src/packages/<name>/orchestrators/` | Mechanical workflows (`cn.orchestrator.v1`) |
 | katas | directory trees | `src/packages/<name>/katas/` | Executable verification scenarios bundled with the artefact they prove |
 | (metadata) | implicit | `src/packages/<name>/` | `cn.package.json` — package identity, version, engine constraint |
 
-All eight content classes are co-located with their package manifest.
+All seven content classes are co-located with their package manifest.
 `cn build` assembles each package from `src/packages/<name>/` into
 a tarball in `dist/packages/`. `cn deps restore` installs from dist
 into `.cn/vendor/packages/<name>/` on a hub. Content is authored
 in-place — no copy step, no drift possible.
+
+The `doctrine` class: foundational doctrine files shipped by the package
+and vendored into the hub's context. `cnos.core/doctrine/KERNEL.md` is the
+universal coherence kernel inherited by every hub — it is referenced, not
+forked. The kernel lives in `doctrine/` because it is package doctrine, not
+identity scaffolding to be stamped out per-hub (see `cn activate`).
 
 The `commands` class: each command id has a directory at
 `src/packages/<name>/commands/<id>/` containing an entrypoint script
@@ -71,7 +76,7 @@ present at the package root.
 
 The build system uses two copy strategies:
 
-- **Individual file copy**: Used by doctrine (when named), mindsets, and templates.
+- **Individual file copy**: Used by doctrine (when named) and mindsets.
   Each declared entry is a single file name relative to the package's class directory.
 
 - **Directory tree copy**: Used by skills, extensions, commands, orchestrators, and katas.
@@ -102,19 +107,19 @@ dist/packages/{name}-{version}.tar.gz
 agent context / hub state
 ```
 
-Concrete example for the templates content class:
+Concrete example for the doctrine content class:
 
 ```
-src/packages/cnos.core/templates/SOUL.md
+src/packages/cnos.core/doctrine/KERNEL.md
     |  cn build
     v
-dist/packages/cnos.core-1.0.0.tar.gz  (contains templates/SOUL.md)
+dist/packages/cnos.core-1.0.0.tar.gz  (contains doctrine/KERNEL.md)
     |  cn deps restore
     v
-.cn/vendor/packages/cnos.core/templates/SOUL.md
-    |  read_template
+.cn/vendor/packages/cnos.core/doctrine/KERNEL.md
+    |  cn activate
     v
-spec/SOUL.md (in hub)
+## Kernel section of activation prompt
 ```
 
 ### 2.1 Build (cn build)
@@ -189,12 +194,12 @@ co-located with the manifest, so no `sources` map is needed.
 ```
 
 `cn build` discovers content classes by scanning for known directory
-names (`doctrine/`, `mindsets/`, `skills/`, `templates/`, `commands/`,
-`orchestrators/`, `extensions/`, `katas/`) inside each package's
-source directory. A package includes only the classes it has
-directories for. The canonical list is defined once in
-`src/go/internal/pkg/pkg.go` (`pkg.ContentClasses`) and shared by
-`cn build --check` and `cn status` via `pkgbuild.FindContentClasses`.
+names (`doctrine/`, `mindsets/`, `skills/`, `extensions/`, `commands/`,
+`orchestrators/`, `katas/`) inside each package's source directory.
+A package includes only the classes it has directories for. The canonical
+list is defined once in `src/go/internal/pkg/pkg.go` (`pkg.ContentClasses`)
+and shared by `cn build --check` and `cn status` via
+`pkgbuild.FindContentClasses`.
 
 ---
 
@@ -210,25 +215,20 @@ extensible model.
 - **Semantics**: Different classes have different copy modes (file vs tree vs wildcard). These are not interchangeable.
 - **Readability**: Each class is a known directory name. No configuration needed.
 - **Debugging**: A mismatch in one class is easy to identify.
-- **Current scale**: 8 classes. The explicit model is not a maintenance burden.
+- **Current scale**: 7 classes. The explicit model is not a maintenance burden.
 
 **When to reconsider:**
 
 If adding a new content class feels like boilerplate rather than design,
 refactor to a generic model.
 
-### 4.2 Why templates are a content class (not special-cased)
+### 4.2 Why the set is closed (for now)
 
-Templates became a content class (rather than being special-cased) because:
-- They follow the same source -> build -> install -> read path
-- They benefit from the same drift detection (`cn build --check`)
-- They can be overridden by future third-party packages
-- No special cases in the build, install, or restore pipelines
-
-### 4.3 Why the set is closed (for now)
-
-The current 8 content classes cover all shipped cognitive assets plus
-identity templates and bundled verification katas. The set is intentionally closed:
+The current 7 content classes cover all shipped cognitive assets and
+bundled verification katas. `templates` was removed in #321: the kernel
+(`cnos.core/doctrine/KERNEL.md`) is foundational doctrine, not per-hub
+identity scaffolding. It ships under `doctrine/` where it belongs.
+The set is intentionally closed:
 
 - New classes should be added only when an existing asset type cannot
   be served by any current class
@@ -248,17 +248,8 @@ identity templates and bundled verification katas. The set is intentionally clos
 | Typo protection | Compile-time | Runtime/none |
 | Copy mode per class | Type-safe branches | String dispatch |
 | Readability | High (named fields) | Lower (dynamic) |
-| Maintenance at N=6 | Low | Unnecessary |
+| Maintenance at N=7 | Low | Unnecessary |
 | Maintenance at N=12 | Noticeable | Justified |
-
-### Templates as content class vs special case
-
-| Dimension | Content class (current) | Special case |
-|-----------|------------------------|--------------|
-| Drift detection | Automatic (cn build --check) | Must build separately |
-| Install path | Same as all other content | Custom install logic |
-| Third-party override | Possible | Not without custom code |
-| Code complexity | Zero new abstractions | New special-case path |
 
 ---
 
@@ -273,6 +264,7 @@ identity templates and bundled verification katas. The set is intentionally clos
 | v3.51.0 | Content co-located with manifests in `src/packages/`; `sources` field removed |
 | v3.55.0 | Katas added as 8th content class (kata framework split; `cnos.kata`, `cnos.cdd.kata`) |
 | v3.56.1 | Single source of truth in `pkg.ContentClasses`; `cn status` and `cn build --check` agree on membership via filesystem presence (#253) |
+| v3.71.0 | `templates` removed as content class (#321); kernel relocated to `doctrine/KERNEL.md` |
 
 ---
 

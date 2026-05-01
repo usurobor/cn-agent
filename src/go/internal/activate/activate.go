@@ -55,12 +55,15 @@ func Run(_ context.Context, opts Options) error {
 	fmt.Fprintf(opts.Stderr, "→ Generating activation prompt for hub: %s\n", absPath)
 
 	cfg := readConfig(cnDir)
-	identity := scanIdentity(opts.HubPath)
-	packages := scanPackages(cnDir)
+	kernel := resolveKernel(cnDir)
+	persona := scanPersona(opts.HubPath)
+	operator := scanOperator(opts.HubPath)
+	deps := scanDeps(cnDir)
+	latest := latestReflection(opts.HubPath)
 	memory := scanMemory(opts.HubPath)
 	threads := scanThreads(opts.HubPath)
 
-	writePrompt(opts.Stdout, absPath, cfg, identity, packages, memory, threads)
+	writePrompt(opts.Stdout, absPath, cfg, kernel, persona, operator, deps, latest, memory, threads)
 	return nil
 }
 
@@ -86,25 +89,104 @@ func readConfig(cnDir string) hubConfig {
 	return hubConfig{Name: raw.Name, Version: raw.Version, Created: raw.Created}
 }
 
-func scanIdentity(hubPath string) []string {
-	candidates := []string{
-		"spec/SOUL.md",
-		"spec/identity.md",
-		"agent/identity.md",
-	}
-	var found []string
-	for _, rel := range candidates {
-		if _, err := os.Stat(filepath.Join(hubPath, rel)); err == nil {
-			found = append(found, rel)
-		}
-	}
-	return found
+// kernelState is the result of resolveKernel.
+type kernelState struct {
+	state   string // "vendored", "manifest-only", "none"
+	path    string // vendored path when state == "vendored"
+	version string // kernel version when state == "vendored"
 }
 
-func scanPackages(cnDir string) []string {
-	entries, err := os.ReadDir(filepath.Join(cnDir, "vendor", "packages"))
+// resolveKernel reads the vendored cnos.core package to determine kernel state.
+// Three states:
+//
+//	"vendored"      — doctrine/KERNEL.md is present; path + version returned
+//	"manifest-only" — .cn/deps.json declares cnos.core but no vendor dir
+//	"none"          — no reference to cnos.core at all
+func resolveKernel(cnDir string) kernelState {
+	vendoredKernel := filepath.Join(cnDir, "vendor", "packages", "cnos.core", "doctrine", "KERNEL.md")
+	if _, err := os.Stat(vendoredKernel); err == nil {
+		version := readPackageVersion(filepath.Join(cnDir, "vendor", "packages", "cnos.core", "cn.package.json"))
+		return kernelState{state: "vendored", path: vendoredKernel, version: version}
+	}
+	// Check whether deps.json declares cnos.core.
+	if manifestDeclaresCnosCore(filepath.Join(cnDir, "deps.json")) {
+		return kernelState{state: "manifest-only"}
+	}
+	return kernelState{state: "none"}
+}
+
+func readPackageVersion(manifestPath string) string {
+	data, err := os.ReadFile(manifestPath)
 	if err != nil {
-		return nil
+		return ""
+	}
+	var raw struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return ""
+	}
+	return raw.Version
+}
+
+func manifestDeclaresCnosCore(depsPath string) bool {
+	data, err := os.ReadFile(depsPath)
+	if err != nil {
+		return false
+	}
+	var raw struct {
+		Packages []struct {
+			Name string `json:"name"`
+		} `json:"packages"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return false
+	}
+	for _, p := range raw.Packages {
+		if p.Name == "cnos.core" {
+			return true
+		}
+	}
+	return false
+}
+
+// scanPersona returns "present" path if spec/PERSONA.md exists, else "".
+func scanPersona(hubPath string) string {
+	p := filepath.Join(hubPath, "spec", "PERSONA.md")
+	if _, err := os.Stat(p); err == nil {
+		return "spec/PERSONA.md"
+	}
+	return ""
+}
+
+// scanOperator returns "present" path if spec/OPERATOR.md exists, else "".
+func scanOperator(hubPath string) string {
+	p := filepath.Join(hubPath, "spec", "OPERATOR.md")
+	if _, err := os.Stat(p); err == nil {
+		return "spec/OPERATOR.md"
+	}
+	return ""
+}
+
+// depsState is the result of scanDeps.
+type depsState struct {
+	state    string   // "restored", "manifest-only", "none"
+	packages []string // installed package names when state == "restored"
+}
+
+// scanDeps reads .cn/deps.json and the vendor directory.
+// Three states:
+//
+//	"restored"      — deps.json present and vendor/packages/ has entries
+//	"manifest-only" — deps.json present but vendor/packages/ is empty/absent
+//	"none"          — no deps.json
+func scanDeps(cnDir string) depsState {
+	if _, err := os.Stat(filepath.Join(cnDir, "deps.json")); err != nil {
+		return depsState{state: "none"}
+	}
+	entries, err := os.ReadDir(filepath.Join(cnDir, "vendor", "packages"))
+	if err != nil || len(entries) == 0 {
+		return depsState{state: "manifest-only"}
 	}
 	var names []string
 	for _, e := range entries {
@@ -113,7 +195,26 @@ func scanPackages(cnDir string) []string {
 		}
 	}
 	slices.Sort(names)
-	return names
+	return depsState{state: "restored", packages: names}
+}
+
+// latestReflection returns the path of the most recently modified file
+// under threads/reflections/daily/ or "" if none exist.
+func latestReflection(hubPath string) string {
+	dir := filepath.Join(hubPath, "threads", "reflections", "daily")
+	entries, err := os.ReadDir(dir)
+	if err != nil || len(entries) == 0 {
+		return ""
+	}
+	// ReadDir returns entries sorted by name; pick the last (lexically latest).
+	// Daily reflection files are named YYYY-MM-DD.md, so lexical == chronological.
+	for i := len(entries) - 1; i >= 0; i-- {
+		e := entries[i]
+		if !e.IsDir() {
+			return filepath.Join("threads", "reflections", "daily", e.Name())
+		}
+	}
+	return ""
 }
 
 func scanMemory(hubPath string) []string {
@@ -145,33 +246,98 @@ func presentPaths(hubPath string, candidates []string) []string {
 	return found
 }
 
-func writePrompt(w io.Writer, absPath string, cfg hubConfig, identity, packages, memory, threads []string) {
+func writePrompt(w io.Writer, absPath string, cfg hubConfig,
+	kernel kernelState, persona, operator string,
+	deps depsState, latest string,
+	memory, threads []string,
+) {
 	fmt.Fprintf(w, "You are activating a cnos hub.\n\n")
 	fmt.Fprintf(w, "Hub path: %s\n", absPath)
 	if cfg.Name != "" {
 		fmt.Fprintf(w, "Hub name: %s\n", cfg.Name)
 	}
 	fmt.Fprintln(w)
-	fmt.Fprintf(w, "Read and use the hub as your durable context.\n")
-	fmt.Fprintf(w, "This prompt is an orientation guide — inspect hub files directly for full detail.\n")
-	fmt.Fprintln(w)
 
-	fmt.Fprintf(w, "## Identity\n")
-	if len(identity) > 0 {
-		for _, f := range identity {
-			fmt.Fprintf(w, "- %s: present\n", f)
-		}
+	// ## Read first — ordered reading path
+	fmt.Fprintf(w, "## Read first\n")
+	if persona != "" {
+		fmt.Fprintf(w, "1. %s\n", persona)
 	} else {
-		fmt.Fprintf(w, "- no identity files found\n")
+		fmt.Fprintf(w, "1. spec/PERSONA.md — not found; consider creating one\n")
+	}
+	if operator != "" {
+		fmt.Fprintf(w, "2. %s\n", operator)
+	} else {
+		fmt.Fprintf(w, "2. spec/OPERATOR.md — not found; consider creating one\n")
+	}
+	switch kernel.state {
+	case "vendored":
+		if kernel.version != "" {
+			fmt.Fprintf(w, "3. %s (kernel @%s)\n", kernel.path, kernel.version)
+		} else {
+			fmt.Fprintf(w, "3. %s\n", kernel.path)
+		}
+	case "manifest-only":
+		fmt.Fprintf(w, "3. kernel — dependency manifest declares cnos.core; not restored — run cn deps restore\n")
+	default:
+		fmt.Fprintf(w, "3. kernel — no kernel reference\n")
+	}
+	switch deps.state {
+	case "restored":
+		fmt.Fprintf(w, "4. .cn/deps.json (manifest; %d packages restored)\n", len(deps.packages))
+	case "manifest-only":
+		fmt.Fprintf(w, "4. .cn/deps.json (manifest present; packages not restored — run cn deps restore)\n")
+	default:
+		fmt.Fprintf(w, "4. deps manifest — no dependency manifest\n")
+	}
+	if latest != "" {
+		fmt.Fprintf(w, "5. %s (latest reflection)\n", latest)
 	}
 	fmt.Fprintln(w)
 
-	fmt.Fprintf(w, "## Packages and skills\n")
-	if len(packages) > 0 {
-		fmt.Fprintf(w, "- .cn/vendor/packages/: %d installed (%s)\n",
-			len(packages), strings.Join(packages, ", "))
+	// ## Kernel
+	fmt.Fprintf(w, "## Kernel\n")
+	switch kernel.state {
+	case "vendored":
+		if kernel.version != "" {
+			fmt.Fprintf(w, "vendored at %s@%s\n", kernel.path, kernel.version)
+		} else {
+			fmt.Fprintf(w, "vendored at %s\n", kernel.path)
+		}
+	case "manifest-only":
+		fmt.Fprintf(w, "dependency manifest declares cnos.core; not restored — run cn deps restore\n")
+	default:
+		fmt.Fprintf(w, "no kernel reference\n")
+	}
+	fmt.Fprintln(w)
+
+	// ## Persona
+	fmt.Fprintf(w, "## Persona\n")
+	if persona != "" {
+		fmt.Fprintf(w, "%s: present\n", persona)
 	} else {
-		fmt.Fprintf(w, "- .cn/vendor/packages/: none installed\n")
+		fmt.Fprintf(w, "no spec/PERSONA.md found — consider creating one\n")
+	}
+	fmt.Fprintln(w)
+
+	// ## Operator
+	fmt.Fprintf(w, "## Operator\n")
+	if operator != "" {
+		fmt.Fprintf(w, "%s: present\n", operator)
+	} else {
+		fmt.Fprintf(w, "no spec/OPERATOR.md found — consider creating one\n")
+	}
+	fmt.Fprintln(w)
+
+	// ## Dependencies
+	fmt.Fprintf(w, "## Dependencies\n")
+	switch deps.state {
+	case "restored":
+		fmt.Fprintf(w, "restored: %s\n", strings.Join(deps.packages, ", "))
+	case "manifest-only":
+		fmt.Fprintf(w, "dependency manifest present; packages not restored — run cn deps restore\n")
+	default:
+		fmt.Fprintf(w, "no dependency manifest\n")
 	}
 	fmt.Fprintln(w)
 

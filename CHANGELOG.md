@@ -133,6 +133,24 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.71.0 (2026-05-01)
+
+### Changed
+- **Kernel/Persona/Operator activation triad** — `cn activate` now emits three layered sections (`## Kernel`, `## Persona`, `## Operator`) replacing the conflated `## Identity` bucket (#321, follows #320)
+- **Kernel relocated** — `cnos.core/templates/SOUL.md` moved to `cnos.core/doctrine/KERNEL.md`; per-hub identity slots removed; kernel references `spec/PERSONA.md` and `spec/OPERATOR.md` for per-hub identity (#321)
+
+### Removed
+- **`templates` package content class** — removed from `pkg.ContentClasses` and `PACKAGE-SYSTEM.md`; `cnos.core/templates/USER.md` deleted (unused); `cnos.core/templates/` directory deleted (#321)
+
+### Added
+- **Three kernel states** — `cn activate` distinguishes `vendored at <path>@<version>` / `dependency manifest declares cnos.core; not restored — run cn deps restore` / `no kernel reference` (#321)
+- **Three deps states** — `## Dependencies` distinguishes restored / manifest-only / none (#321)
+- **`## Read first` section** — ordered reading path: persona → operator → kernel → deps manifest → latest reflection (#321)
+- **Latest reflection pointer** — most recent `threads/reflections/daily/` file path appears in `## Read first` when present (#321)
+- **R5 kata P7–P11** — triad split, kernel states, deps states, read-first ordering, reflection pointer (#321)
+
+---
+
 ## 3.70.0 (2026-04-30)
 
 ### Added
