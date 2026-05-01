@@ -131,10 +131,11 @@ type EnginesJSON struct {
 // (PACKAGE-SYSTEM.md §3: "Content classes are discovered by directory
 // presence"). `providers` is intentionally absent: per
 // POLYGLOT-PACKAGES-AND-PROVIDERS.md, providers are a runtime
-// capability surface, not a package content class.
+// capability surface, not a package content class. `templates` is
+// intentionally absent: the kernel ships under `doctrine/` (#321).
 var ContentClasses = []string{
 	"doctrine", "mindsets", "skills", "extensions",
-	"templates", "commands", "orchestrators", "katas",
+	"commands", "orchestrators", "katas",
 }
 
 // Named content-class accessors. Some call-sites operate on one

@@ -399,7 +399,7 @@ func TestDerivePacklistIncludesContentClasses(t *testing.T) {
 
 	mustWrite(t, filepath.Join(pkgDir, "skills", "alpha", "SKILL.md"), "# alpha\n")
 	mustWrite(t, filepath.Join(pkgDir, "commands", "daily", "cn-daily"), "#!/bin/sh\n")
-	mustWrite(t, filepath.Join(pkgDir, "templates", "t.md"), "template\n")
+	mustWrite(t, filepath.Join(pkgDir, "doctrine", "KERNEL.md"), "# Kernel\n")
 
 	got, err := DerivePacklist(pkgDir)
 	if err != nil {
@@ -411,11 +411,11 @@ func TestDerivePacklistIncludesContentClasses(t *testing.T) {
 		"commands",
 		"commands/daily",
 		"commands/daily/cn-daily",
+		"doctrine",
+		"doctrine/KERNEL.md",
 		"skills",
 		"skills/alpha",
 		"skills/alpha/SKILL.md",
-		"templates",
-		"templates/t.md",
 	} {
 		if !slices.Contains(got, want) {
 			t.Errorf("missing %q in packlist: %v", want, got)
@@ -492,7 +492,7 @@ func TestDerivePacklistSortedLexically(t *testing.T) {
 	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
 	mustWrite(t, filepath.Join(pkgDir, "skills", "z", "SKILL.md"), "z")
 	mustWrite(t, filepath.Join(pkgDir, "skills", "a", "SKILL.md"), "a")
-	mustWrite(t, filepath.Join(pkgDir, "templates", "t.md"), "t")
+	mustWrite(t, filepath.Join(pkgDir, "doctrine", "KERNEL.md"), "k")
 	mustWrite(t, filepath.Join(pkgDir, "commands", "c", "cn-c"), "c")
 
 	got, err := DerivePacklist(pkgDir)
@@ -822,7 +822,7 @@ func TestCheckOneEntrypointEscapesPackageRoot(t *testing.T) {
 
 // TestCheckOneNoCommandsIsValid: a package with no commands declared
 // produces no entrypoint issues. The check is opt-in by manifest
-// declaration; packages that ship only skills/templates/etc. must not
+// declaration; packages that ship only skills/doctrine/etc. must not
 // be penalized.
 func TestCheckOneNoCommandsIsValid(t *testing.T) {
 	repoRoot := t.TempDir()

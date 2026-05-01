@@ -100,11 +100,11 @@ func TestRunContentClasses(t *testing.T) {
 	}
 }
 
-// TestRunContentClassesAllEight verifies that cn status surfaces every
+// TestRunContentClassesAllSeven verifies that cn status surfaces every
 // content class enumerated in pkg.ContentClasses when the installed
 // package contains all of them. This is the cn status side of the
 // convergence proved by TestFindContentClassesAll in pkgbuild.
-func TestRunContentClassesAllEight(t *testing.T) {
+func TestRunContentClassesAllSeven(t *testing.T) {
 	hub := t.TempDir()
 	writeManifest(t, hub, "cnos.full", `{
 		"schema": "cn.package.v1",
@@ -115,7 +115,7 @@ func TestRunContentClassesAllEight(t *testing.T) {
 	}`)
 	for _, class := range []string{
 		"doctrine", "mindsets", "skills", "extensions",
-		"templates", "commands", "orchestrators", "katas",
+		"commands", "orchestrators", "katas",
 	} {
 		writeContentDir(t, hub, "cnos.full", class)
 	}
@@ -127,7 +127,7 @@ func TestRunContentClassesAllEight(t *testing.T) {
 
 	// Expect the canonical order from pkg.ContentClasses.
 	out := stdout.String()
-	want := "[doctrine, mindsets, skills, extensions, templates, commands, orchestrators, katas]"
+	want := "[doctrine, mindsets, skills, extensions, commands, orchestrators, katas]"
 	if !strings.Contains(out, want) {
 		t.Errorf("expected content classes %s in output, got:\n%s", want, out)
 	}
