@@ -295,3 +295,35 @@ The table explicitly states: "A small-change cycle may not use the small-change 
 | 9 | Post-patch re-audit | ✅ Markdown only; grepped for "δ preflight" and "Written when" across all changed files; consistent |
 | 10 | Branch CI green | ✅ No CI workflow for docs/skills changes |
 | 11 | α commit author email | ✅ `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` |
+
+---
+
+## Fix-round | R2 → R3 | fix SHA: dcda8a0c | findings addressed: R2-F1
+
+β returned REQUEST CHANGES (R2). One finding addressed in commit `dcda8a0c`:
+
+| Finding | Fix | Commit |
+|---------|-----|--------|
+| R2-F1: §5.3b POST-RELEASE-ASSESSMENT.md "Verified by" omits δ at release-boundary preflight — §4.1a S10 lists PRA as a required S10 input but the matrix row only named γ closure gate as verifier | Changed "Verified by" from `γ closure gate` to `γ closure gate; δ at release-boundary preflight` — now consistent with every other S10-required artifact row | `dcda8a0c` |
+
+**Re-audit:** R2-F1 is C-level. Only one cell in CDD.md §5.3b changed. AC2 (role/artifact ownership matrix) updated by this fix. All other ACs remain MET as stated. No role-skill or lifecycle-skill peers outside CDD.md are affected by this change.
+
+**Peer re-audit (intra-doc):** Grepped CDD.md §5.3b for all "Verified by" entries — RELEASE.md already reads "δ at release-boundary preflight"; `.cdd/releases/` row already reads "γ closure gate row 12; δ preflight". PRA row is now consistent with both.
+
+---
+
+## Review-readiness | round 3 | implementation SHA: dcda8a0c | branch CI: no CI workflow for docs/skills-only changes | ready for β
+
+| # | Row | Result |
+|---|---|---|
+| 1 | `origin/cycle/325` rebased onto `origin/main` | ✅ merge-base `0ff6d427` == `origin/main` at observation time 2026-05-01; cycle branch has not drifted |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | ✅ §CDD-Trace rows 0–7a present; fix-round sections appended |
+| 3 | Tests present or explicit reason none apply | ✅ Docs/skills-only; no runtime; lifecycle invariants proven by §8.1 |
+| 4 | Every AC has evidence | ✅ AC2 updated by R2-F1 fix; all 12 ACs remain MET |
+| 5 | Known debt explicit | ✅ 3 items in §Debt unchanged |
+| 6 | Schema/shape audit | ✅ N/A |
+| 7 | Peer enumeration | ✅ Only CDD.md §5.3b one cell changed; no additional peers affected |
+| 8 | Harness audit | ✅ N/A |
+| 9 | Post-patch re-audit | ✅ Markdown only; grepped "Verified by" across §5.3b — all rows now consistent with S10 inputs declared in §4.1a |
+| 10 | Branch CI green | ✅ No CI workflow for docs/skills changes |
+| 11 | α commit author email | ✅ `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` |
