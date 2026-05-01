@@ -116,3 +116,64 @@ F3 is pre-existing in gamma/SKILL.md §2.10 "Then:" block (the cycle added "(if 
 After these three fixes, the review will re-verify AC2 (F1 fix), AC5 (F2 fix), and gamma/SKILL.md §2.10 coherence (F3 fix). No other ACs are expected to change.
 
 No phantom blockers: all findings are traced to specific lines and demonstrate a real state that produces a wrong outcome.
+
+---
+
+**Verdict:** REQUEST CHANGES
+
+**Round:** 2
+**origin/main SHA:** 0ff6d427275b68998c8413ab8f26079928222c78
+**cycle/325 HEAD SHA:** 2073edb0d5e2554b7ac479247c059f000e02701d
+**Fixed this round:** `1ae0f8cb`, `2073edb0` close R1 F1/F2/F3
+**Branch CI state:** no CI workflow for docs/skills-only changes
+
+---
+
+## §2.0 Issue Contract — R2
+
+### R1 finding resolution
+
+| R1 Finding | Severity | Fix commit | Verified | Notes |
+|---|---|---|---|---|
+| F1: §5.3b POST-RELEASE-ASSESSMENT.md "Written when" wrong (said "+ δ preflight") | D | `1ae0f8cb` | ✅ | CDD.md line 896 now reads "After β merge + close-outs" — δ preflight no longer in "Written when" |
+| F2: gamma/SKILL.md §2.10 missing δ preflight gate row | D | `1ae0f8cb` | ✅ | Row 13 added: "δ release-boundary preflight was requested and returned Proceed (§4.1a S10, operator/SKILL.md §3.4)" |
+| F3: gamma/SKILL.md §2.10 "Then:" block contradicts gate rows 11/12 (instructed "write RELEASE.md and move cycle directories" after gamma-closeout.md) | C | `1ae0f8cb` | ✅ | "write RELEASE.md and move cycle directories per §2.6" removed from the Then block; block now contains only: write gamma-closeout.md, update hub memory, delete merged branches, state closure |
+
+All R1 D-level and C-level findings resolved.
+
+### AC Coverage — R2 delta
+
+| AC | R1 status | R2 status | Notes |
+|---|---|---|---|
+| AC2: Role/artifact ownership matrix exists | MET — partial (F1) | PARTIAL (R2-F1 below) | F1 fixed; new inconsistency in "Verified by" column for PRA row |
+| AC5: γ closure gate is complete | PARTIAL (F2) | MET | Row 13 added; gate now enforces δ preflight before closure |
+| All other ACs | MET | MET (unchanged) | No other ACs affected by R1 fixes or R2 scope |
+
+---
+
+## §2.0.0 Contract Integrity — R2
+
+| Check | R1 result | R2 result | Notes |
+|---|---|---|---|
+| Proof shape adequate | partial | partial | §8.1 checklist is correct; §5.3b PRA "Verified by" incomplete (R2-F1) |
+| All others | yes / n/a | yes / n/a | No change from R1 |
+
+---
+
+## Findings — R2
+
+| # | Finding | Evidence | Severity | Type |
+|---|---------|----------|----------|------|
+| R2-F1 | **§5.3b POST-RELEASE-ASSESSMENT.md "Verified by" is incomplete — omits δ at release-boundary preflight.** §4.1a S10 (δ release-boundary preflight) explicitly lists "PRA present" as a required input. The matrix correctly names δ preflight as a verifier for every other §4.1a S10-required artifact: `RELEASE.md` ("Verified by: δ at release-boundary preflight") and `.cdd/releases/{X.Y.Z}/{N}/` ("Verified by: γ closure gate row 12; δ preflight"). The PRA row is the only S10-required artifact whose "Verified by" does not name δ preflight. A γ or δ reading the matrix to determine who verifies PRA would conclude only γ's closure gate checks it — missing that δ preflight also requires it. This could lead to a γ scheduling PRA after requesting δ preflight (reasoning from "Required before: γ closure"), causing δ to return "Request changes" unexpectedly. | CDD.md §5.3b line 896: `POST-RELEASE-ASSESSMENT.md \| γ \| After β merge + close-outs \| γ closure gate \| γ closure \| γ closure gate blocks`; CDD.md §4.1a S10 "Required inputs: PRA present, RELEASE.md present, .cdd/unreleased/{N}/ not yet moved, merge on main"; CDD.md §5.3b RELEASE.md row: "Verified by: δ at release-boundary preflight"; CDD.md §5.3b .cdd/releases/ row: "Verified by: γ closure gate row 12; δ preflight" | C | judgment |
+
+---
+
+## Notes — R2
+
+R1 fixes are narrow and correct. The overall architecture and all 12 ACs remain sound.
+
+R2-F1 is a missed finding from R1 — the F1 fix (removing δ preflight from "Written when") was correct, but the "Verified by" column for PRA was not updated to reflect that δ preflight also verifies it per §4.1a S10. The fix is one cell in §5.3b.
+
+**Fix for R2-F1:** In CDD.md §5.3b, update the POST-RELEASE-ASSESSMENT.md row "Verified by" from `γ closure gate` to `γ closure gate; δ at release-boundary preflight`. Optionally update "Required before" from `γ closure` to `δ preflight` (earlier enforcement point, consistent with §4.1a S10 ordering) — however updating "Required before" to "δ preflight" is also consistent with the pattern on the `.cdd/releases/` row ("Required before: δ tag/release") which shows the latest enforcement. The minimal correct fix is updating "Verified by" only.
+
+After R2-F1 is fixed, no further review rounds are expected. The branch will be approvable.
