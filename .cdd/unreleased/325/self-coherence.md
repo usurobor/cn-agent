@@ -193,3 +193,49 @@ Evidence: `CDD.md` §1.2 small-change section expanded (commit `e91e72af`) with 
 - Version directory / bootstrap stubs: Not required
 
 The table explicitly states: "A small-change cycle may not use the small-change path to avoid RELEASE.md, cycle-directory movement, or the post-release assessment."
+
+---
+
+## Self-check
+
+**Did α push ambiguity onto β?** No. Every AC has concrete evidence. Known gaps are in §Debt. The design artifact documents the decisions so β can evaluate them, not re-discover them.
+
+**Is every claim backed by evidence in the diff?** Yes. Each AC cites the specific commit SHA and section changed.
+
+**Did α enumerate peers?**
+- Role-skill peers: α, β, γ, operator — all audited
+- Lifecycle-skill peers: review, release, post-release — all audited; release and post-release had a real conflict (β/δ authority split) that was fixed
+
+**Did α overclaim structural closure?** No. The design decisions (D1-D7) are explicitly named as decisions with rationale. AC coverage is AC-by-AC.
+
+**Was the small-change path tested?** The §1.2 artifact collapse table provides the explicit positive and negative truth, reviewable without running any tool.
+
+**Missing:**
+- No runtime test exists for the lifecycle state machine (no runtime implementation exists to test)
+- The §8.1 failure-mode checklist is embedded prose — cannot be executed as CI; that gap is known and stated in §Debt
+
+---
+
+## Debt
+
+1. **No CI-executable lifecycle verifier.** The §8.1 closure checklist is embedded prose. A `cn cdd-verify` command would make it mechanical. This was deferred per issue §Non-goals: "Automated CDD verifier implementation may be a follow-up." Known-debt, not blocking.
+
+2. **`release/SKILL.md` steps 2.1–2.9 still describe tag/release/deploy steps inline as if β executes them.** The Core Principle was fixed (β owns merge, δ owns tag), but the procedural steps 2.6–2.9 still describe `git tag`, `git push`, deploy, validate without attributing them to δ explicitly. This drift is bounded — β/SKILL.md Phase map already says "merge only — tag/deploy is δ's release boundary," and `operator/SKILL.md` §3.4 is the authoritative tag procedure. Partial debt: the release/SKILL.md steps could be reorganized by role owner. Filing as a follow-up rather than expanding this cycle's scope. Known-debt.
+
+3. **No re-dispatch prompt example in the γ dispatch prompt format section.** `CDD.md` §1.6a was added to the new §1.6, not adjacent to §1.4 γ dispatch prompt format where the other prompts live. Cross-reference is present ("see §1.6a") but the prompts are not co-located. Non-blocking — the spec is complete; organization is a future cleanup item.
+
+---
+
+## CDD-Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | CDD.md, alpha/SKILL.md | γ selected #325 as next MCA; CDD lifecycle coherence gap selected under CDD §3.3 (assessment commitment) |
+| 1 Select | Issue #325 | CDD.md | Gap confirmed: coordination model undeclared, α close-out timing broken, ownership matrix missing, small-change vague, no regression surface |
+| 2 Branch | `cycle/325` on `origin/main` | CDD.md §4.2/§4.3 | Branch exists and was verified at intake |
+| 3 Bootstrap | Not required | — | Spec/skill-only change; no frozen snapshot needed; no version directory |
+| 4 Gap | `.cdd/unreleased/325/self-coherence.md` §Gap | CDD.md | Named incoherence: CDD lifecycle gaps in coordination model, close-out timing, ownership matrix, small-change path, regression surface |
+| 5 Mode | `.cdd/unreleased/325/self-coherence.md` §Skills | CDD.md, design, write, test | MCA; Tier 3: write, design, test |
+| 6 Artifacts | alpha-design.md, CDD.md, alpha/SKILL.md, beta/SKILL.md, gamma/SKILL.md, operator/SKILL.md, release/SKILL.md, post-release/SKILL.md, review/SKILL.md | design, write, test | Design artifact committed; all 8 role/lifecycle skills audited and updated or confirmed; regression checklist and lifecycle state table added |
+| 7 Self-coherence | `.cdd/unreleased/325/self-coherence.md` | CDD.md, alpha/SKILL.md | AC-by-AC check completed; all 12 ACs met; 3 known debts stated |
+| 7a Pre-review | `.cdd/unreleased/325/self-coherence.md` | CDD.md, alpha/SKILL.md §2.6 | Pre-review gate check — see Review-readiness section below |
