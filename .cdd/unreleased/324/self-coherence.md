@@ -258,3 +258,19 @@ All 14 rules are represented in the subskill family. Some rules are implicit in 
    - "CI additions include notification/status implications" — preserved.
    - "No draft/target behavior is described as shipped" → consolidated with "Status truth is explicit."
    This is a cosmetic compression, not a semantic loss. The constraint is captured in `issue/contract/SKILL.md §3.2`.
+
+---
+
+## §CDD-Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Observation inputs: issue #324 dispatched; gap is large all-in-one issue skill |
+| 1 Select | — | — | Selected gap: issue/SKILL.md split into orchestrator + 4 focused subskills + label taxonomy |
+| 2 Branch | `cycle/324` | cdd | Branch pre-verified at dispatch: `origin/cycle/324` exists at base SHA `672ba729` (= `origin/main` HEAD at dispatch) |
+| 3 Bootstrap | small-change exemption | cdd | No version directory required: this is a skill-only refactor (no runtime, no docs tier, no frozen snapshot required) |
+| 4 Gap | `.cdd/unreleased/324/self-coherence.md §Gap` | — | Named incoherence: issue skill too large, no label taxonomy, multiple reasons to change |
+| 5 Mode | `.cdd/unreleased/324/self-coherence.md §Skills` | write, design, skill, review | MCA — skill refactor + label taxonomy addition |
+| 6 Artifacts | 5 SKILL.md files | write, design, skill | Design: not required (issue specifies boundaries). Plan: not required. Tests: not applicable (skill files, no runtime). Code: 5 skill files written. Docs: not applicable. |
+| 7 Self-coherence | `.cdd/unreleased/324/self-coherence.md` | cdd | All 12 ACs mapped to evidence. All 14 original rules traced to subskills. Debt explicit. |
+| 7a Pre-review | `.cdd/unreleased/324/self-coherence.md` | cdd | Gate check pending (see §Review-readiness below) |
