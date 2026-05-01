@@ -279,11 +279,25 @@ Once the gate passes:
 
 ### 2.8. Close-out
 
-When β approves and merges: write `.cdd/unreleased/{N}/alpha-closeout.md` (cycle findings or "no findings"). The close-out is a separate file from `self-coherence.md` — `self-coherence.md` carries the gap/mode/ACs/trace/review-readiness across the in-version cycle, and `alpha-closeout.md` carries the post-merge α-side cycle narrative (summary, friction log, observations, engineering-level reading).
+**Close-out mechanism in the sequential bounded dispatch model (§1.6).**
+
+In bounded dispatch, α exits after signaling review-readiness. α does not stay alive to observe β's verdict. The close-out is written through a γ-requested re-dispatch of α after β merge (see `CDD.md` §1.4 α step 10 and §1.6a for the re-dispatch prompt format).
+
+**Re-dispatch path (standard):**
+1. β merges and writes `beta-closeout.md`
+2. γ requests δ to re-dispatch α using the close-out re-dispatch prompt (CDD.md §1.6a)
+3. α is re-dispatched, reads `.cdd/unreleased/{N}/beta-review.md` (approved verdict) and the merged state
+4. α writes `.cdd/unreleased/{N}/alpha-closeout.md` (cycle findings or "no findings"), commits to main, exits
+
+**Provisional close-out fallback (when re-dispatch is unavailable):**
+- α writes `alpha-closeout.md` at review-readiness time (before exit), explicitly marked `[provisional — pending β outcome]`
+- The provisional close-out contains cycle findings known at that point (diff patterns, friction encountered, process observations)
+- γ supplements with PRA observations
+- This must be declared as known debt in `self-coherence.md` §Debt
+
+The close-out is a separate file from `self-coherence.md` — `self-coherence.md` carries the gap/mode/ACs/trace/review-readiness across the in-version cycle, and `alpha-closeout.md` carries the post-merge α-side cycle narrative (summary, friction log, observations, engineering-level reading).
 
 For release-scoped triadic cycles, the cycle directory moves to `.cdd/releases/{X.Y.Z}/{N}/` at release time per `release/SKILL.md` §2.5a — α does not duplicate the close-out elsewhere. The legacy aggregate path `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` is warn-only (pre-#283 form).
-
-`git merge` (the new merge model per CDD.md §1.4 β step 8) preserves branch commits, so files written on the branch land on main intact. α may write `.cdd/unreleased/{N}/alpha-closeout.md` on the branch (post-merge or pre-merge) and trust that `git merge` will carry it to main, or commit it directly to main if the cycle's flow requires earlier visibility.
 
 **Voice: factual observations and patterns only.** Do not recommend dispositions — triage is γ's job.
 
