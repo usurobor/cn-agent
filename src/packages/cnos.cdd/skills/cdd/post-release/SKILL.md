@@ -36,7 +36,7 @@ Canonical artifact locations (PRA path, close-out paths, snapshot dirs, tag poli
 
 **γ owns the post-release assessment.** The PRA is a cycle-level observation artifact — it measures α's implementation, β's review quality, and the cycle's economics. β assessing its own review quality is a self-grading problem that weakens the independence CDD exists to provide. γ holds the cycle-level observational authority that the assessment requires.
 
-**β owns release mechanics (merge, tag, deploy) and the β close-out.** β's close-out captures the review context and release evidence. The PRA is a separate artifact written by γ after β's release and close-out are complete.
+**β owns `git merge` into main and the β close-out.** β's close-out captures the review context and merge evidence. **δ owns tag/release/deploy** (the release boundary per `CDD.md` §1.4 β algorithm and `operator/SKILL.md` §3.4). The PRA is a separate artifact written by γ after β's merge and close-out are complete.
 
 **Handoff:** β completes release + β close-out → γ reads both close-outs (α + β) + the shipped artifacts → γ writes the PRA. If γ's session ends before the assessment is complete, the assessment is the first task of its next session.
 
