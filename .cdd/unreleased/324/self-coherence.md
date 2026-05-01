@@ -199,3 +199,46 @@ All examples use exactly one kind + one priority label. ✅ PASS
 ### AC12: No semantic expansion beyond labels
 
 **Evidence:** Diff adds exactly 5 files (4 subskills + root rewrite). No new issue-contract doctrine was introduced except the label taxonomy. No GitHub label automation, CI checks, structured issue frontmatter, or new internal kata subskill was added. ✅ PASS
+
+---
+
+## §Self-check
+
+**Did α push ambiguity onto β?**
+
+No. All 12 ACs are mapped to concrete evidence in the diff. The subskill content split follows the issue's explicit guidance in AC7 §Expected ownership. No AC required a design judgment call not resolved by the issue.
+
+**Is every claim backed by evidence in the diff?**
+
+- AC1 (orchestrator shape): grep command given to verify label enum not in root; root file is 200 lines.
+- AC2–AC5 (labels): subskill file exists with all required content.
+- AC6 (preserved sections): table mapping every required section to its new location.
+- AC7 (focused subskills): ownership table shows no duplication.
+- AC8 (calls): frontmatter text quoted.
+- AC9 (frontmatter): field-by-field verification table.
+- AC10 (examples): examples quoted from the file.
+- AC11 (kata): directory listing confirming M5 kata exists.
+- AC12 (no semantic expansion): diff file count stated.
+
+**Role self-check: closure overclaim risk?**
+
+The main risk is AC6 — "existing issue-contract sections are preserved." I verified by mapping each required section to its new location in the subskill family. The original issue skill's rules §3.1–§3.14 were distributed into subskills rather than listed as 14 named rules in one file. β should verify that no rule was dropped during redistribution. The rules were redistributed as:
+
+| Original rule | New location |
+|---|---|
+| 3.1 Engineer can act without asking | root §Core Principle |
+| 3.2 Problem is concise | contract §2.1 |
+| 3.3 Status is truthful | contract §2.3 |
+| 3.4 Source of truth is explicit | contract §2.4 |
+| 3.5 ACs are testable | proof §3.1, §3.2 |
+| 3.6 Negative space mandatory for gates | proof §2.3, §3.3 |
+| 3.7 Non-goals mandatory for substantial issues | contract §2.5 |
+| 3.8 Exceptions are debt | constraints §2.2, §3.3 |
+| 3.9 Examples must obey issue's own rules | labels §Discipline |
+| 3.10 Path bases must be named | constraints §2.3, §3.4 |
+| 3.11 Cross-surface projections must be checked | constraints §2.4, §3.5 |
+| 3.12 No future-as-present | contract §2.3 (status truth) |
+| 3.13 Issue owns entry point, not full depth | root §Core Principle |
+| 3.14 Contradiction resolution must be explicit | contract §3.5 |
+
+All 14 rules are represented in the subskill family. Some rules are implicit in examples and ❌/✅ pairs rather than numbered rules — this is intentional: the skill/SKILL.md generation constraint (Tier 3) says rules should be imperative and support the coherence formula; the distribution does this.
