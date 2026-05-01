@@ -242,3 +242,19 @@ The main risk is AC6 — "existing issue-contract sections are preserved." I ver
 | 3.14 Contradiction resolution must be explicit | contract §3.5 |
 
 All 14 rules are represented in the subskill family. Some rules are implicit in examples and ❌/✅ pairs rather than numbered rules — this is intentional: the skill/SKILL.md generation constraint (Tier 3) says rules should be imperative and support the coherence formula; the distribution does this.
+
+---
+
+## §Debt
+
+1. **`issue/labels` artifact_class is `reference`, not `skill`.** The `cnos.core/skills/skill/SKILL.md` reference class is defined as "mainly lookup-oriented." The label taxonomy is a lookup table, so `reference` is the correct classification. However, reference classes have `kata_surface: none` which means the labels taxonomy has no kata practice surface. If γ decides a kata would add value for label selection, a separate subskill could be created. This is intentional and the issue does not require a kata for labels.
+
+2. **`issue/contract` kata is embedded but brief.** The embedded kata scenario covers one context (CUE schema CI gate). Future cycles could extend it with more scenarios (e.g., skill refactor contracts, runtime behavior contracts). Not a gap for this issue's scope.
+
+3. **No `parent` field in `issue/labels` triggers a CTB v0.1 lint warning if such a linter exists.** The `parent` field is listed in CTB LANGUAGE-SPEC.md as a composition field (`calls`, `calls_dynamic`, etc.) but not in the required or invocation fields of §2.1–§2.2. It is present in all new subskills (`parent: issue`) as an optional field. Not a hard-gate gap.
+
+4. **`issue/contract` §2.13 `Handoff checklist` was not extracted into the subskill.** The handoff checklist lives in the root skill. The root skill's checklist is a compressed form. The original §2.13 had a longer checklist (17 items). The root skill now has 15 items. Two items from the original were consolidated:
+   - "Examples obey the rules they are demonstrating" — preserved.
+   - "CI additions include notification/status implications" — preserved.
+   - "No draft/target behavior is described as shipped" → consolidated with "Status truth is explicit."
+   This is a cosmetic compression, not a semantic loss. The constraint is captured in `issue/contract/SKILL.md §3.2`.
