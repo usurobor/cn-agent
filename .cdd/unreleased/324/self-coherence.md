@@ -274,3 +274,23 @@ All 14 rules are represented in the subskill family. Some rules are implicit in 
 | 6 Artifacts | 5 SKILL.md files | write, design, skill | Design: not required (issue specifies boundaries). Plan: not required. Tests: not applicable (skill files, no runtime). Code: 5 skill files written. Docs: not applicable. |
 | 7 Self-coherence | `.cdd/unreleased/324/self-coherence.md` | cdd | All 12 ACs mapped to evidence. All 14 original rules traced to subskills. Debt explicit. |
 | 7a Pre-review | `.cdd/unreleased/324/self-coherence.md` | cdd | Gate check pending (see §Review-readiness below) |
+
+---
+
+## §Pre-review gate
+
+| Row | Check | Result |
+|---|---|---|
+| 1 | `origin/cycle/324` rebased on `origin/main` | ✅ base SHA `672ba729` = current `origin/main` HEAD (verified at `2026-05-01`) |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | ✅ §CDD-Trace present with rows 0–7a |
+| 3 | Tests present or explicit reason none apply | ✅ Not applicable — skill-only docs refactor; no runtime code |
+| 4 | Every AC has evidence | ✅ All 12 ACs mapped with evidence in §ACs |
+| 5 | Known debt is explicit | ✅ §Debt section with 4 named items |
+| 6 | Schema/shape audit completed when contracts changed | ✅ N/A — no parser, schema type, manifest, or runtime contract changed |
+| 7 | Peer enumeration completed | ✅ Peer set = {gamma/SKILL.md, alpha/SKILL.md, cdd/SKILL.md}. All reference `issue/SKILL.md` by stable path; root preserved at same location. No peer update needed. M5 kata still exists. |
+| 8 | Harness audit completed when schema-bearing contract changed | ✅ N/A — no schema-bearing contract changed |
+| 9 | Post-patch re-audit after any mid-cycle patch | ✅ N/A — no mid-cycle patches |
+| 10 | Branch CI green on head commit | ✅ Build CI (`build.yml`) triggers on `main` push only, not `cycle/*`. This diff modifies `.md` files only (no Go source). No CI run was triggered; CI on main will not be affected by this merge. |
+| 11 | α commit author email is `alpha@cdd.cnos` | ✅ All 11 α cycle commits verified as `alpha@cdd.cnos` |
+
+## Review-readiness | round 1 | implementation SHA: 1e98ac56 | branch CI: no CI on cycle branches (docs-only diff) | ready for β
