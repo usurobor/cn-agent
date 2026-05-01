@@ -354,15 +354,20 @@ Allowed transfer unit: **artifact facts**, not hidden role state.
 - ❌ "β said this design is shaky; just rewrite the parser like this"
 - ✅ "The issue omitted invariant X; γ adds it to the issue and points α back to the updated artifact"
 
-### 2.6. Steps 6–7 — Support deferred release mechanics only
+### 2.6. Steps 6–7 — Prepare release artifacts before δ tags
 
-If β deferred a mechanical release step because of environment constraints, δ (operator) executes the gate action. γ observes the result via git (tag appears, branch deleted). If δ is unavailable, γ may execute directly:
-- push the tag
-- verify release CI fired
-- close the issue if auto-close failed
+In the sequential dispatch model, β exits after merge. δ runs `scripts/release.sh` (stamp + tag) but does not author artifacts. γ owns two release-preparation steps that must land on main **before** γ requests the tag from δ:
 
-γ does not redo β's judgment.
-γ only completes deferred mechanics. When δ handles the gate, γ observes completion via git before proceeding to close-out triage.
+1. **Write `RELEASE.md`** — per `release/SKILL.md` §2.5. This is the GitHub release body. Write it at repo root, committed to main. Without it, release CI auto-generates sparse notes.
+
+2. **Move cycle directories** — per `release/SKILL.md` §2.5a. Move `.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/` for every cycle closed in this release. Include in a commit on main before the tag.
+
+Both must be committed before γ requests the disconnect release from δ (§2.10 step 15 → operator/SKILL.md §3.4).
+
+- ❌ Leave RELEASE.md for δ to write (δ does not author)
+- ❌ Leave unreleased directories for "later" (they lose version association)
+- ❌ Assume β handled release prep (β exits at merge in sequential model)
+- ✅ γ writes RELEASE.md + moves cycle dirs → commits to main → requests tag from δ
 
 ### 2.7. Steps 8–9 — Triage close-outs explicitly
 
@@ -372,7 +377,7 @@ Before close-out, collect (in-version, before release):
 
 `self-coherence.md` and `beta-review.md` carry the in-cycle record (gap/ACs/trace and round-by-round verdicts respectively); the two `*-closeout.md` files are γ's primary triage inputs.
 
-After release, the cycle directory moves to `.cdd/releases/{X.Y.Z}/{N}/` per `release/SKILL.md` §2.5a. The legacy aggregate paths `.cdd/releases/{X.Y.Z}/{alpha,beta,gamma}/CLOSE-OUT.md` are warn-only (pre-#283 form). See `CDD.md` §5.3a Artifact Location Matrix.
+The cycle directory move (`.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/`) is γ's responsibility per §2.6 above — it must happen before the tag, not after. The legacy aggregate paths `.cdd/releases/{X.Y.Z}/{alpha,beta,gamma}/CLOSE-OUT.md` are warn-only (pre-#283 form). See `CDD.md` §5.3a Artifact Location Matrix.
 
 Then write the post-release assessment per `post-release/SKILL.md` at the canonical path `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (for the CDD package itself: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). The PRA is γ's artifact — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
 
@@ -443,9 +448,12 @@ Do not declare the cycle closed until all of the following are true:
 8. next MCA is named
 9. hub memory is updated
 10. merged remote branches are cleaned up
+11. `RELEASE.md` is written and committed to main (§2.6)
+12. cycle directories moved from `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/` and committed to main (§2.6)
 
 Then:
 - write `.cdd/unreleased/{N}/gamma-closeout.md`. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA.
+- write `RELEASE.md` and move cycle directories per §2.6
 - update hub memory
 - delete merged remote branches
 - state closure explicitly: *"Cycle #N closed. Next: #M."* This is γ's last commit. δ will cut the disconnect release (step 17) — the tag appearing on main is the observable proof the cycle is fully closed.
