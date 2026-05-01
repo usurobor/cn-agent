@@ -455,10 +455,10 @@ Do not declare the cycle closed until all of the following are true:
 10. merged remote branches are cleaned up
 11. `RELEASE.md` is written and committed to main (§2.6)
 12. cycle directories moved from `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/` and committed to main (§2.6)
+13. δ release-boundary preflight was requested and returned Proceed (§4.1a S10, `operator/SKILL.md` §3.4)
 
 Then:
 - write `.cdd/unreleased/{N}/gamma-closeout.md`. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA. **`gamma-closeout.md` is the closure declaration artifact. δ must not tag/release until `gamma-closeout.md` exists on main.** This is the mechanical signal that γ has verified all closure gate rows. See `CDD.md` §5.3b ownership matrix row for `gamma-closeout.md`.
-- write `RELEASE.md` and move cycle directories per §2.6 (if not already done in §2.6)
 - update hub memory
 - delete merged remote branches
 - state closure explicitly: *"Cycle #N closed. Next: #M."* This is γ's last commit. δ will cut the disconnect release (step 17) — the tag appearing on main is the observable proof the cycle is fully closed.
