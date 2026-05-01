@@ -133,6 +133,19 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.73.0 (2026-05-01)
+
+### Changed
+- **cdd:** Systematic lifecycle audit and refactor (#325). Explicit coordination model (sequential bounded dispatch), lifecycle state table (S0–S12), role/artifact ownership matrix (§5.3b), α close-out re-dispatch mechanism, δ preflight gate in γ closure, closure verification checklist (10 failure-mode rows), small-change artifact collapse table.
+- **cdd/alpha:** Re-dispatch mechanism for close-out writing after β approval.
+- **cdd/gamma:** α close-out re-dispatch protocol, δ preflight gate row (row 13), RELEASE.md and artifact move ownership (§2.6).
+- **cdd/operator:** Algorithm steps 4–6 for re-dispatch paths, lifecycle table updated.
+- **cdd/release, cdd/post-release:** β/δ authority boundary corrected — δ owns tag/release/deploy.
+
+### Fixed
+- **release.sh:** Automatic `.cdd/unreleased/` → `.cdd/releases/{version}/` move at release time.
+- Moved 10 stale unreleased cycle directories to correct release versions (3.65.0–3.72.0).
+
 ## 3.72.0 (2026-05-01)
 
 ### Changed
