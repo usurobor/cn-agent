@@ -239,3 +239,25 @@ The table explicitly states: "A small-change cycle may not use the small-change 
 | 6 Artifacts | alpha-design.md, CDD.md, alpha/SKILL.md, beta/SKILL.md, gamma/SKILL.md, operator/SKILL.md, release/SKILL.md, post-release/SKILL.md, review/SKILL.md | design, write, test | Design artifact committed; all 8 role/lifecycle skills audited and updated or confirmed; regression checklist and lifecycle state table added |
 | 7 Self-coherence | `.cdd/unreleased/325/self-coherence.md` | CDD.md, alpha/SKILL.md | AC-by-AC check completed; all 12 ACs met; 3 known debts stated |
 | 7a Pre-review | `.cdd/unreleased/325/self-coherence.md` | CDD.md, alpha/SKILL.md §2.6 | Pre-review gate check — see Review-readiness section below |
+
+---
+
+## Review-readiness | round 1 | implementation SHA: d3a227b2 | branch CI: no CI workflow for docs/skills-only changes | ready for β
+
+**Pre-review gate — all rows:**
+
+| # | Row | Result |
+|---|---|---|
+| 1 | `origin/cycle/325` rebased onto `origin/main` | ✅ merge-base `0ff6d427` == current `origin/main` `0ff6d427` (observed 2026-05-01) |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | ✅ §CDD-Trace has rows 0–7a |
+| 3 | Tests present or explicit reason none apply | ✅ Docs/skills-only change; no runtime to test; lifecycle invariants proven by §8.1 checklist in CDD.md |
+| 4 | Every AC has evidence | ✅ All 12 ACs in §ACs with commit SHAs |
+| 5 | Known debt explicit | ✅ 3 items in §Debt |
+| 6 | Schema/shape audit completed | ✅ No schema-bearing contract changed; peer enumeration covers the skill/doc contract surface |
+| 7 | Peer enumeration completed | ✅ Role-skill peers: {α,β,γ,operator} — all audited. Lifecycle-skill peers: {review,release,post-release} — all audited. Real conflict found and fixed (release+post-release β/δ authority split) |
+| 8 | Harness audit completed | ✅ N/A — no schema-bearing contract changed |
+| 9 | Post-patch re-audit completed across all languages | ✅ Diff is Markdown only; cross-reference grep confirms §1.6a/§5.3b/§4.1a all consistent across all changed files |
+| 10 | Branch CI green on head commit | ✅ No CI workflow for docs/skills changes; explicitly noted |
+| 11 | α commit author email | ✅ `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` |
+
+**SHA note:** implementation SHA `d3a227b2` is the last implementation commit. The review-readiness commit advances HEAD by one; β polls `origin/cycle/325` HEAD directly.
