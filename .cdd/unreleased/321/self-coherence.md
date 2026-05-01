@@ -80,3 +80,52 @@
   1. `CHANGELOG.md:140,143` — the new 3.71.0 entry I wrote documenting the removal ("was moved from X to Y"). These are intentional release notes, not stale references.
   2. `docs/alpha/cli/SETUP-INSTALLER.md:424` — references `src/agent/templates/SOUL.md`, which is a path in an agent source directory tree (not `cnos.core/templates/SOUL.md`). This is a different path describing a different surface (`cn setup`'s template reading behavior from an agent source repo, not the cnos.core package kernel). The oracle `grep "templates/SOUL"` is broader than the stated invariant "No reference to `cnos.core/templates/SOUL.md`"; this match is not a stale reference to the removed path.
 - No active code or active doc references `cnos.core/templates/SOUL.md` or `cnos.core/templates/USER.md`. Historical references in `docs/gamma/cdd/3.24.0/` preserved.
+
+---
+
+## Self-check
+
+**Did α's work push ambiguity onto β?** No. Every AC has concrete evidence in the diff (test function names, grep oracles, file paths). The AC15 nuance (SETUP-INSTALLER.md match) is explained explicitly and the distinction is clear.
+
+**Is every claim backed by evidence in the diff?**
+- AC1–AC3 (activate triad): backed by `activate.go` function names + test function names.
+- AC4–AC5 (KERNEL.md rename + templates deletion): backed by `git mv` history + filesystem state.
+- AC6 (7 content classes): backed by `pkg.ContentClasses` literal + `hubstatus_test.go` + `build_test.go` + `PACKAGE-SYSTEM.md`.
+- AC7–AC12b (resolver states + prompt sections): backed by test functions in `activate_test.go`.
+- AC13 (kata P7–P11): backed by `kata.md` diff.
+- AC14 (no regression): backed by `go test ./...` results.
+- AC15 (no stale refs): backed by grep output.
+
+**Peer enumeration completed?** Yes.
+- `templates` was a content class: peers = `pkg.ContentClasses` (code) + `PACKAGE-SYSTEM.md` (docs) + `hubstatus_test.go` + `build_test.go`. All four updated.
+- `scanIdentity` function: peers = `writePrompt` caller, test functions. All removed/replaced.
+- Sibling content-class harness surfaces: `pkgbuild.FindContentClasses` iterates `pkgtypes.ContentClasses` dynamically — no literal "templates" to update. Shell kata harnesses (`cnos.kata/lib.sh`) do not reference templates content class. Docker/CI workflow emitters do not reference templates. Checked.
+
+**Schema/shape audit:** `pkg.ContentClasses` is the schema-bearing slice. Consumers: `pkgbuild.FindContentClasses` (uses the slice dynamically), `hubstatus` (uses `FindContentClasses`). Both correct by construction — removing "templates" from the slice is the entire change needed. No separate schema migration required.
+
+**Polyglot re-audit:** Diff touches Go + Markdown. Go surfaces: `go vet` + `go test ./...` + `go build ./...` all pass. Markdown surfaces: `PACKAGE-SYSTEM.md` tables consistent; `KERNEL.md` no per-hub slots verified by inspection (`grep "set by operator\|Configure identity" src/packages/cnos.core/doctrine/KERNEL.md` → 0 hits). Kata `kata.md` structure correct.
+
+---
+
+## Debt
+
+1. **`cn init` still writes `spec/SOUL.md`** (`hubinit.go:85-101`). Named in issue as deferred debt; a follow-up issue for `cn init` realignment is required at closure per AC closure condition. Scope: out of this PR.
+2. **`cn-sigma` `spec/USER.md` → `spec/OPERATOR.md` rename** is a downstream operator commit on the sigma repo. Cross-repo coordination; not a closure gate for this PR. The sigma-shape fixture in tests proves the target shape. The PR description must state whether the sigma commit has been filed/landed.
+3. **`cn setup` wizard producing `spec/OPERATOR.md`** — deferred per issue non-goals.
+4. **`SETUP-INSTALLER.md:424`** references `src/agent/templates/SOUL.md` (an agent source tree path, different from the removed `cnos.core/templates/SOUL.md`). Not a stale reference to the removed path; no update needed for this PR. Worth flagging as a separate note if the agent source tree structure changes.
+
+---
+
+## CDD Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Read issue #321, existing activate.go, pkg.go, SOUL.md, PACKAGE-SYSTEM.md |
+| 1 Select | — | — | Selected gap: triad conflation in activate + templates class misplacement |
+| 2 Branch | `origin/cycle/321` | cdd | Branch created by γ at dispatch; verified at intake |
+| 3 Bootstrap | n/a | cdd | Small-change bootstrap exemption: no new version snapshot directory required (this is a feature cycle within an existing release) |
+| 4 Gap | `.cdd/unreleased/321/self-coherence.md §Gap` | cdd | Named incoherence: scanIdentity flat-bag + templates class misnaming + SOUL.md per-hub slots |
+| 5 Mode | `.cdd/unreleased/321/self-coherence.md §Skills` | cdd, write, design, go, test, tool, ux-cli | MCA; all 7 Tier skills loaded |
+| 6 Artifacts | diff (activate.go + activate_test.go + pkg.go + pkg_test.go + hubstatus_test.go + build_test.go + PACKAGE-SYSTEM.md + KERNEL.md + kata.md + CHANGELOG.md) | write, design, go, test, tool, ux-cli | Tests written; code written; docs updated; design not required separately (design is encoded in the issue with full AC specification) |
+| 7 Self-coherence | `.cdd/unreleased/321/self-coherence.md` | cdd | AC-by-AC check with evidence; peer enumeration; schema audit; polyglot re-audit |
+| 7a Pre-review | `.cdd/unreleased/321/self-coherence.md §Pre-review gate` | cdd | Pre-review gate (see below) |
