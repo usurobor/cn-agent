@@ -1,21 +1,30 @@
 ## Outcome
 
-Coherence delta: C_Σ A- (`α A-`, `β A-`, `γ A-`) · **Level:** `L5`
+Coherence delta: C_Σ A (`α A`, `β A`, `γ A`) · **Level:** L5
 
-`eng/troubleshoot` fills the live diagnosis gap exposed by the 2026-04-30 identity-rotation dispatch test. When an agent hits a live failure mid-task, it now has a structured triage skill instead of improvised poking. The skill teaches the triage order, hypothesis discipline, one-change rule, and RCA handoff boundary — making the diagnosis path explicit and repeatable.
+Issue skill refactored from monolith to orchestrator + focused subskills. Label taxonomy added as a required contract surface. CI unblocked by adding R5-activate `run.sh`.
 
 ## Why it matters
 
-Five β dispatch failures across three root-cause classes were diagnosed ad-hoc during the dispatch test. Each failure shared the same anti-pattern: wrong first hypothesis (token limit, rate limit) before checking process state, kernel log, tool output, resource pressure, and parent-process lifecycle. A structured skill forces the cheaper checks first and records negative results so future agents do not re-test ruled-out hypotheses.
+The issue skill had grown too large for efficient LLM loading — one skill carrying structure, status truth, source maps, constraint strata, proof plans, path resolution, and label rules. Agents loading the root skill paid for all of it even when only writing a simple issue. The split lets agents load only what they need while preserving the full contract.
 
-## Added
+## Changed
 
-- **`eng/troubleshoot` skill** (#309): live diagnosis skill for active environmental, runtime, process, and tool failures. Includes: six-class triage order (process state → kernel/OOM → tool output → resource pressure → lifecycle/parent → application/model), hypothesis discipline (state before test, oracle before test, cheapest first, one change), three worked examples from the dispatch test (OOM kill, `gh` GraphQL error, background-process lifecycle kill), RCA handoff triggers, and embedded kata.
+- **skill(cdd/issue):** Split into orchestrator + 4 focused subskills (#324):
+  - `issue/SKILL.md` — root orchestrator (~200 lines, down from ~800+)
+  - `issue/labels/SKILL.md` — kind + priority label taxonomy
+  - `issue/contract/SKILL.md` — problem, impact, status truth, source map, scope, non-goals
+  - `issue/proof/SKILL.md` — AC shape, proof plan, positive/negative cases
+  - `issue/constraints/SKILL.md` — constraint strata, exceptions, path resolution
+- Every issue now requires exactly one kind label and one priority label.
+
+## Fixed
+
+- **ci:** Added R5-activate `run.sh` — Tier 2 kata suite was blocked since 3.70.0.
 
 ## Validation
 
-- β merged `cycle/309` with no-ff into `main` (`Closes #309`).
-- Non-destructive merge test confirmed zero unmerged paths.
-- `scripts/check-version-consistency.sh` passed: VERSION, cn.json, all package manifests agree at 3.65.0.
-- Frontmatter manually validated against `schemas/skill.cue` (cue CLI not installed on host — exit 2 = prerequisite missing, not schema failure; all hard-gate and spec-required-exception-backed fields present).
-- I5 frontmatter CI job will run on this push; expected exit 2 (cue not available in CI environment) rather than exit 1 (schema violation).
+- β approved R1, 0 findings, merged to main.
+- All 12 ACs met. All 14 original issue-contract rules preserved across subskills.
+- CTB v0.1 frontmatter valid on all new subskills.
+- CI green on main after R5 `run.sh` fix.
