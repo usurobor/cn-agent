@@ -261,3 +261,37 @@ The table explicitly states: "A small-change cycle may not use the small-change 
 | 11 | α commit author email | ✅ `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` |
 
 **SHA note:** implementation SHA `d3a227b2` is the last implementation commit. The review-readiness commit advances HEAD by one; β polls `origin/cycle/325` HEAD directly.
+
+---
+
+## Fix-round | R1 → R2 | fix SHA: 1ae0f8cb | findings addressed: F1, F2, F3
+
+β returned REQUEST CHANGES (R1). Three findings addressed in commit `1ae0f8cb`:
+
+| Finding | Fix | Commit |
+|---------|-----|--------|
+| F1: §5.3b POST-RELEASE-ASSESSMENT.md "Written when" wrong — said "After β merge + close-outs + δ preflight" | Changed to "After β merge + close-outs" — PRA is S9 output, δ preflight is S10 input; the former wording inverted the ordering | `1ae0f8cb` |
+| F2: gamma/SKILL.md §2.10 missing δ preflight gate row | Added row 13: "δ release-boundary preflight was requested and returned Proceed (§4.1a S10, `operator/SKILL.md` §3.4)" — γ can no longer write gamma-closeout.md without δ preflight | `1ae0f8cb` |
+| F3: gamma/SKILL.md §2.10 "Then:" block instructs "write RELEASE.md and move cycle directories" after gamma-closeout.md, contradicting gate rows 11 and 12 | Removed "write `RELEASE.md` and move cycle directories per §2.6 (if not already done in §2.6)" from the Then block — both are gate preconditions (rows 11/12) and must be present before the Then block executes | `1ae0f8cb` |
+
+**Re-audit:** F1 and F2 are D-level. F3 is C-level. No other ACs are affected. AC2 (§5.3b ownership matrix) and AC5 (γ closure gate) are updated by this fix. All other ACs remain MET as stated.
+
+**Peer re-audit:** Only CDD.md §5.3b (one cell) and gamma/SKILL.md §2.10 (one row added, one Then-block line removed) changed. No role-skill or lifecycle-skill peers outside gamma/SKILL.md and CDD.md are affected.
+
+---
+
+## Review-readiness | round 2 | implementation SHA: 1ae0f8cb | branch CI: no CI workflow for docs/skills-only changes | ready for β
+
+| # | Row | Result |
+|---|---|---|
+| 1 | `origin/cycle/325` rebased onto `origin/main` | ✅ merge-base `0ff6d427` == `origin/main` at observation time 2026-05-01; cycle branch has not drifted |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | ✅ §CDD-Trace rows 0–7a present; fix-round section appended |
+| 3 | Tests present or explicit reason none apply | ✅ Docs/skills-only; no runtime; lifecycle invariants proven by §8.1 |
+| 4 | Every AC has evidence | ✅ AC2 and AC5 updated by fix; all 12 ACs remain MET |
+| 5 | Known debt explicit | ✅ 3 items in §Debt unchanged |
+| 6 | Schema/shape audit | ✅ N/A |
+| 7 | Peer enumeration | ✅ Only CDD.md and gamma/SKILL.md changed; no additional peers affected |
+| 8 | Harness audit | ✅ N/A |
+| 9 | Post-patch re-audit | ✅ Markdown only; grepped for "δ preflight" and "Written when" across all changed files; consistent |
+| 10 | Branch CI green | ✅ No CI workflow for docs/skills changes |
+| 11 | α commit author email | ✅ `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` |
