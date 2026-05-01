@@ -15,3 +15,24 @@
 **Design:** Not required — subskill boundaries are specified in the issue. No novel architecture decisions.
 
 **Plan:** Not required — five files in sequence, no complex dependencies, no multi-step execution ordering.
+
+---
+
+## §Skills
+
+**Tier 1a — CDD authority:**
+- `CDD.md` v3.15.0
+- `src/packages/cnos.cdd/skills/cdd/SKILL.md`
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md`
+
+**Tier 1b — CDD lifecycle:**
+- `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` (interpreting issue ACs and quality)
+
+**Tier 2 — Writing bundle:**
+- Applied: write/SKILL.md constraints — one governing question per artifact, no repetition, front-load the point
+
+**Tier 3 — Issue-specific:**
+- `src/packages/cnos.core/skills/write/SKILL.md`
+- `src/packages/cnos.core/skills/design/SKILL.md`
+- `src/packages/cnos.core/skills/skill/SKILL.md`
+- `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` (loaded per issue body §Skills to load)
