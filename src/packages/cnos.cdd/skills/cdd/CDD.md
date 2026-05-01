@@ -893,7 +893,7 @@ Every required cycle artifact has one owner, one verification gate, and one cons
 | `gamma-closeout.md` | γ | After all closure gate rows pass (§gamma/SKILL.md §2.10) | δ before tag/release (implicit: tag requires γ closure declaration which is gamma-closeout.md) | δ tag/release | δ must not tag; γ has not declared closure |
 | `RELEASE.md` | γ | Before requesting δ tag/release; committed to main in release commit | δ at release-boundary preflight | δ tag/release | δ must not tag; CI auto-generates sparse notes |
 | `.cdd/releases/{X.Y.Z}/{N}/` | γ (at release, via `release/SKILL.md` §2.5a) | Before γ requests δ tag; included in release commit | γ closure gate row 12; δ preflight | δ tag/release | Stale unreleased dir; γ closure gate blocks until moved |
-| POST-RELEASE-ASSESSMENT.md | γ | After β merge + close-outs | γ closure gate | γ closure | γ closure gate blocks |
+| POST-RELEASE-ASSESSMENT.md | γ | After β merge + close-outs | γ closure gate; δ at release-boundary preflight | γ closure | γ closure gate blocks |
 | `beta-review.md` fix-round appendix | β | After α fixes RC findings | α at next fix-round | α re-signal | α waits for β's round verdict |
 
 Notes:
