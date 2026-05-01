@@ -177,3 +177,74 @@ R2-F1 is a missed finding from R1 — the F1 fix (removing δ preflight from "Wr
 **Fix for R2-F1:** In CDD.md §5.3b, update the POST-RELEASE-ASSESSMENT.md row "Verified by" from `γ closure gate` to `γ closure gate; δ at release-boundary preflight`. Optionally update "Required before" from `γ closure` to `δ preflight` (earlier enforcement point, consistent with §4.1a S10 ordering) — however updating "Required before" to "δ preflight" is also consistent with the pattern on the `.cdd/releases/` row ("Required before: δ tag/release") which shows the latest enforcement. The minimal correct fix is updating "Verified by" only.
 
 After R2-F1 is fixed, no further review rounds are expected. The branch will be approvable.
+
+---
+
+**Verdict:** APPROVED
+
+**Round:** 3
+**origin/main SHA:** 0ff6d427275b68998c8413ab8f26079928222c78
+**cycle/325 HEAD SHA:** 1ee4dd35308be07d9c5e10dd6f943571fae4c200
+**Fixed this round:** `dcda8a0c` closes R2-F1
+**Branch CI state:** no CI workflow for docs/skills-only changes
+**Merge instruction:** `git merge --no-ff cycle/325` into main with `Closes #325`
+
+---
+
+## §2.0.0 Contract Integrity — R3
+
+| Check | Result | Notes |
+|---|---|---|
+| Status truth preserved | yes | spec/skill only; no runtime claim; R2-F1 fix is one cell |
+| Canonical sources/paths verified | yes | all §-refs resolve; §5.3b PRA "Verified by" now consistent with §4.1a S10 |
+| Scope/non-goals consistent | yes | no runtime implementation; no scope drift in fix |
+| Constraint strata consistent | yes | hard gates enforced; no new exceptions |
+| Exceptions field-specific/reasoned | yes | provisional fallback still narrowly scoped |
+| Path resolution base explicit | yes | relative repo paths throughout |
+| Proof shape adequate | yes | §8.1 checklist correct; §5.3b ownership matrix now fully consistent |
+| Cross-surface projections updated | yes | no additional peers affected by one-cell fix |
+| No witness theater / false closure | yes | debt section unchanged; no false closure added |
+| PR body matches branch files | n/a | triadic protocol — no PR |
+
+---
+
+## §2.0 Issue Contract — R3
+
+### R2 finding resolution
+
+| R2 Finding | Severity | Fix commit | Verified | Notes |
+|---|---|---|---|---|
+| R2-F1: §5.3b POST-RELEASE-ASSESSMENT.md "Verified by" omits δ at release-boundary preflight | C | `dcda8a0c` | ✅ | "Verified by" now reads `γ closure gate; δ at release-boundary preflight` — consistent with §4.1a S10 required inputs and peer rows (RELEASE.md, .cdd/releases/) |
+
+### AC Coverage — R3
+
+| AC | R2 status | R3 status | Notes |
+|---|---|---|---|
+| AC2: Role/artifact ownership matrix exists | PARTIAL (R2-F1) | MET | R2-F1 fixed; all 8 required rows fully consistent |
+| All other ACs | MET | MET (unchanged) | No other ACs affected |
+
+---
+
+## Pre-merge gate — R3
+
+| # | Row | Result |
+|---|---|---|
+| 1 | Identity: `git config --get user.email` | ✅ `beta@cdd.cnos` |
+| 2 | Canonical-skill freshness: origin/main SHA | ✅ `0ff6d427` — matches session-start; skills not reloaded (no advancement) |
+| 3 | Non-destructive merge-test | ✅ Zero unmerged paths; merge exit 0. `validate-skill-frontmatter.sh` requires `cue` (not installed — environment constraint); no SKILL.md frontmatter changed in this cycle, so validator is not blocking |
+
+---
+
+## Findings — R3
+
+None. All prior findings resolved. No new findings.
+
+---
+
+## Notes — R3
+
+R2-F1 fix is correct and complete. The single-cell change in §5.3b PRA "Verified by" closes the last inconsistency between the ownership matrix and the §4.1a lifecycle state table. "Required before: γ closure" is retained as the minimal-fix choice (β R2 explicitly accepted this); the "Verified by: δ at release-boundary preflight" provides sufficient signal to both δ and γ about the earlier enforcement point.
+
+The cycle's three-round narrowing pattern demonstrates the regression surface works: the cycle was fixing CDD incoherence, and β found incoherence within the cycle's own new surfaces in rounds 1 and 2. All were narrow and resolvable. Architecture and design decisions D1–D7 (per alpha-design.md) are sound.
+
+No remaining blockers. Branch is coherent and merge-ready.
