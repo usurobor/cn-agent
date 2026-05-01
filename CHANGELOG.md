@@ -133,6 +133,14 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.72.0 (2026-05-01)
+
+### Changed
+- **skill(cdd/issue):** Split issue skill into focused subskills and add label taxonomy (#324). Root `issue/SKILL.md` rewritten as orchestrator; four subskills added: `labels/`, `contract/`, `proof/`, `constraints/`. Every issue now requires one kind label and one priority label.
+
+### Fixed
+- **ci:** Add R5-activate `run.sh` to unblock Tier 2 kata suite.
+
 ## 3.71.0 (2026-05-01)
 
 ### Changed
