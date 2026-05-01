@@ -371,8 +371,13 @@ Both must be committed before γ requests the disconnect release from δ (§2.10
 
 ### 2.7. Steps 8–9 — Triage close-outs explicitly
 
+**Collecting close-outs in the sequential bounded dispatch model (CDD.md §1.6).** β exits after writing `beta-closeout.md`. α has already exited after signaling review-readiness. γ must actively obtain both close-outs before triaging:
+
+1. **β close-out**: verify `.cdd/unreleased/{N}/beta-closeout.md` exists on main. If missing, request δ to re-dispatch β.
+2. **α close-out**: verify `.cdd/unreleased/{N}/alpha-closeout.md` exists on main. If missing, request δ to re-dispatch α using the close-out re-dispatch prompt (`CDD.md` §1.6a). **γ must explicitly request this re-dispatch** — it does not happen automatically. Route: γ → δ → α re-dispatch → α writes close-out → γ continues.
+
 Before close-out, collect (in-version, before release):
-- `.cdd/unreleased/{N}/alpha-closeout.md` (α close-out narrative)
+- `.cdd/unreleased/{N}/alpha-closeout.md` (α close-out narrative — obtained via re-dispatch if needed)
 - `.cdd/unreleased/{N}/beta-closeout.md` (β close-out narrative + release evidence)
 
 `self-coherence.md` and `beta-review.md` carry the in-cycle record (gap/ACs/trace and round-by-round verdicts respectively); the two `*-closeout.md` files are γ's primary triage inputs.
@@ -450,10 +455,10 @@ Do not declare the cycle closed until all of the following are true:
 10. merged remote branches are cleaned up
 11. `RELEASE.md` is written and committed to main (§2.6)
 12. cycle directories moved from `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/` and committed to main (§2.6)
+13. δ release-boundary preflight was requested and returned Proceed (§4.1a S10, `operator/SKILL.md` §3.4)
 
 Then:
-- write `.cdd/unreleased/{N}/gamma-closeout.md`. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA.
-- write `RELEASE.md` and move cycle directories per §2.6
+- write `.cdd/unreleased/{N}/gamma-closeout.md`. The γ close-out contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA. **`gamma-closeout.md` is the closure declaration artifact. δ must not tag/release until `gamma-closeout.md` exists on main.** This is the mechanical signal that γ has verified all closure gate rows. See `CDD.md` §5.3b ownership matrix row for `gamma-closeout.md`.
 - update hub memory
 - delete merged remote branches
 - state closure explicitly: *"Cycle #N closed. Next: #M."* This is γ's last commit. δ will cut the disconnect release (step 17) — the tag appearing on main is the observable proof the cycle is fully closed.
