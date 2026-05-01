@@ -38,10 +38,12 @@ calls:
 ## Algorithm
 
 1. **Dispatch γ** — run γ via `claude -p`; γ reads the issue, creates the cycle branch, and produces α/β prompts.
-2. **Dispatch α** — run α via `claude -p` with the prompt γ produced; α implements on the cycle branch.
-3. **Dispatch β** — run β via `claude -p` with the prompt γ produced; β reviews and merges.
-4. **Gate** — execute external actions: push main, tag, release, branch cleanup.
-5. **Override** — reassign roles or redirect scope only with an explicit declaration.
+2. **Dispatch α** — run α via `claude -p` with the prompt γ produced; α implements on the cycle branch and exits after signaling review-readiness.
+3. **Dispatch β** — run β via `claude -p` with the prompt γ produced; β reviews, merges, writes β close-out, and exits.
+4. **Re-dispatch α for fix rounds** (when β returns RC) — run α via `claude -p` with the fix-round re-dispatch prompt (CDD.md §1.6a); α fixes findings, appends fix-round to self-coherence.md, exits.
+5. **Re-dispatch α for close-out** (when γ requests after β merge) — run α via `claude -p` with the close-out re-dispatch prompt (CDD.md §1.6a); α writes alpha-closeout.md, commits to main, exits. **This step is mandatory when γ requests it.** γ cannot complete the closure gate without alpha-closeout.md.
+6. **Gate** — execute external actions: push main, tag, release, branch cleanup. **Do not tag/release before `gamma-closeout.md` exists on main.**
+7. **Override** — reassign roles or redirect scope only with an explicit declaration.
 
 δ runs one role at a time. This keeps memory pressure low (single `claude -p` process), gives δ direct visibility into each session, and isolates failures — if α dies, δ retries α without losing γ or β state.
 
@@ -250,12 +252,15 @@ These are role boundaries. Crossing them without an override declaration breaks 
 | Phase | Operator action | Wait for |
 |-------|----------------|----------|
 | γ dispatch | Run γ via `claude -p`; γ creates branch, returns α/β prompts | γ completion |
-| α dispatch | Run α via `claude -p` with γ's prompt | α completion |
-| β dispatch | Run β via `claude -p` (Read,Write only) with γ's prompt | β completion (merge) |
-| Release | Gate actions: push main, tag, release | β merge or γ request |
-| Closure | Gate actions if requested (branch delete, issue close) | γ closure declaration |
+| α dispatch | Run α via `claude -p` with γ's prompt | α completion (exits after review-readiness) |
+| β dispatch | Run β via `claude -p` with γ's prompt | β completion (merge + β close-out) |
+| α fix-round re-dispatch | Run α via `claude -p` with fix-round prompt (CDD.md §1.6a) when β returns RC | α completion (exits after fix-round) |
+| α close-out re-dispatch | Run α via `claude -p` with close-out prompt (CDD.md §1.6a) when γ requests | α completion (alpha-closeout.md on main) |
+| Release prep | γ writes RELEASE.md, moves cycle dirs; δ holds until complete | γ request |
+| δ preflight | Verify merge commit, release artifacts, tag preconditions | γ preflight request |
+| Closure | Gate: do not tag before `gamma-closeout.md` exists on main | γ closure declaration (gamma-closeout.md) |
+| Disconnect | Cut the release — `scripts/release.sh` after γ closure declaration | γ close-out + δ session patches on main |
 | Post-release | Execute deferred operator actions from γ close-out | γ deferred-output list |
-| Disconnect | Cut the release — tag the triad's final state after all post-cycle work lands on main | γ close-out + δ session patches on main |
 | Inter-cycle | Nothing until next γ dispatch | γ next-cycle selection |
 
 ---
