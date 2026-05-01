@@ -58,6 +58,19 @@ scripts/stamp-versions.sh
 echo "→ verifying consistency..."
 scripts/check-version-consistency.sh
 
+# 5a. Move cycle directories from unreleased to releases
+if [ -d ".cdd/unreleased" ] && [ "$(ls -A .cdd/unreleased 2>/dev/null)" ]; then
+  echo "→ moving cycle directories to .cdd/releases/$VERSION/"
+  mkdir -p ".cdd/releases/$VERSION"
+  for dir in .cdd/unreleased/*/; do
+    [ -d "$dir" ] || continue
+    mv "$dir" ".cdd/releases/$VERSION/"
+  done
+  echo "→ moved $(ls .cdd/releases/$VERSION/ | wc -l) cycle dir(s)"
+else
+  echo "→ no unreleased cycle directories to move"
+fi
+
 # 6. Stage and commit if anything changed
 if ! git diff --quiet; then
   git add -A
