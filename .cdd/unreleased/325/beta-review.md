@@ -74,3 +74,45 @@
 | Cross-surface projections updated | yes | all 7 role/lifecycle skills audited; real conflicts found and fixed (release/SKILL.md, post-release/SKILL.md β/δ split) |
 | No witness theater / false closure | yes | debt section names 3 known gaps; F1/F2 are real gaps not covered by debt |
 | PR body matches branch files | n/a | triadic protocol — no PR |
+
+---
+
+## Findings
+
+| # | Finding | Evidence | Severity | Type |
+|---|---------|----------|----------|------|
+| F1 | **§5.3b POST-RELEASE-ASSESSMENT.md "Written when" is wrong — says "after δ preflight" but PRA is written before δ preflight.** The ownership matrix row for POST-RELEASE-ASSESSMENT.md states `Written when: After β merge + close-outs + δ preflight`. But CDD.md §4.1a state table makes PRA an output of S9 (γ triaging) and a required input to S10 (δ preflight). The γ algorithm (Phase 3 write PRA → Phase 5a δ preflight) confirms: PRA comes before δ preflight, not after. A γ reading §5.3b as the canonical lookup would defer PRA writing until after preflight, causing S10's "PRA present" check to fail. | §5.3b row 8 (`POST-RELEASE-ASSESSMENT.md`) col `Written when`; §4.1a S9 "Required outputs: PRA at canonical path"; §4.1a S10 "Required inputs: PRA present"; CDD.md §1.4 γ algorithm Phase 3 (write PRA) → Phase 5a (δ preflight) | D | judgment, contract |
+| F2 | **gamma/SKILL.md §2.10 closure gate is missing δ release-boundary preflight as a gate row — a γ can close without δ preflight.** The 12 closure gate rows in §2.10 do not include δ release-boundary preflight. CDD.md §4.1a S11 explicitly lists "δ preflight passed" as a required input for γ closing. AC5 oracle requires "δ release-boundary preflight result, if the release boundary is being crossed" in the gate. The omission means γ can write gamma-closeout.md (the closure declaration) without δ preflight having occurred, undermining the S10→S11 ordering the lifecycle state table defines. | gamma/SKILL.md §2.10 rows 1–12 (no δ preflight row); CDD.md §4.1a S11 "Required inputs: δ preflight passed; all closure gate rows pass (§gamma/SKILL.md §2.10)"; issue AC5 oracle: "δ release-boundary preflight result, if the release boundary is being crossed" | D | judgment |
+| F3 | **gamma/SKILL.md §2.10 "Then:" block instructs "write RELEASE.md" after writing gamma-closeout.md, contradicting gate row 11 which requires RELEASE.md to be present before the "Then:" block executes.** The "Then:" block sequence: (1) write gamma-closeout.md, (2) "write RELEASE.md and move cycle directories per §2.6 (if not already done in §2.6)". Row 11 says "RELEASE.md is written and committed to main (§2.6)" must be true before γ can declare closure. If RELEASE.md must be present for all gate rows to pass, it cannot be a "Then:" action after gamma-closeout.md. The "(if not already done)" caveat partially addresses this but the instruction sequence remains contradictory: a γ reading sequentially can interpret writing RELEASE.md as a post-closure task, making it unavailable for δ preflight (S10 requires RELEASE.md present). | gamma/SKILL.md §2.10 row 11 "RELEASE.md is written and committed to main"; gamma/SKILL.md §2.10 "Then:" line "write RELEASE.md and move cycle directories per §2.6 (if not already done in §2.6)"; CDD.md §4.1a S10 "Required inputs: RELEASE.md present" | C | judgment |
+
+---
+
+## Regressions Required (D-level only)
+
+### F1 — §5.3b POST-RELEASE-ASSESSMENT.md "Written when" timing
+
+**Positive case:** γ follows §4.1a lifecycle state table. At S9 (γ triaging), γ writes the PRA. At S10 (δ preflight), δ finds "PRA present" in its required inputs — preflight proceeds. γ advances to S11 (γ closing) with PRA already committed.
+
+**Negative case:** γ reads §5.3b "Written when: After β merge + close-outs + δ preflight" as canonical. γ defers PRA writing until after δ preflight. At S10, δ cannot verify "PRA present" — preflight either fails with missing artifact or proceeds with an unchecked row. If γ then reaches S11 without PRA, γ closure gate row 3 ("γ has written the post-release assessment") also blocks, surfacing the missing PRA — but only after δ preflight has already run against an incomplete artifact set.
+
+**Fix:** Change §5.3b POST-RELEASE-ASSESSMENT.md "Written when" from `After β merge + close-outs + δ preflight` to `After β merge + close-outs; before δ preflight (S9: γ triaging)`.
+
+### F2 — gamma/SKILL.md §2.10 missing δ preflight gate row
+
+**Positive case:** gamma/SKILL.md §2.10 includes a row 13 (or equivalent): "δ release-boundary preflight was requested and returned Proceed". γ cannot write gamma-closeout.md until this row is satisfied. γ requests δ preflight → δ returns Proceed → γ satisfies all 13 rows → γ writes gamma-closeout.md. The S10→S11 ordering is enforced on the γ side as well as the δ side.
+
+**Negative case:** gamma/SKILL.md §2.10 has no δ preflight row (current state). γ satisfies all 12 rows (none of which mention δ preflight), writes gamma-closeout.md (closure declaration), and then requests δ preflight. δ, seeing gamma-closeout.md already on main (the closure signal), proceeds to disconnect (S12) without a preflight gate in its own flow explicitly gating on γ's preflight request. The cycle closes without δ preflight ever running — F7 in CDD.md §8.1 was not caught.
+
+**Fix:** Add a row 13 (or renumber as appropriate) to gamma/SKILL.md §2.10 closure gate: "δ release-boundary preflight was requested and returned Proceed (§4.1a S10, operator/SKILL.md §3.4)". Cross-reference operator/SKILL.md §3.4 and CDD.md §4.1a S11 required inputs.
+
+---
+
+## Notes
+
+The three findings are self-referential: this cycle aims to eliminate lifecycle incoherence in CDD, and two of the three findings are incoherence within the cycle's own new surfaces (§5.3b and §4.1a disagree on PRA timing; §2.10 and §4.1a disagree on δ preflight as an S11 input). The cycle's architecture is sound — the design decisions (D1–D7) are correct and the overall structure is right. The fixes are narrow: one "Written when" cell in §5.3b and one missing gate row in §2.10 §2.10.
+
+F3 is pre-existing in gamma/SKILL.md §2.10 "Then:" block (the cycle added "(if not already done)" as mitigation but left the contradictory "write RELEASE.md" instruction). The fix is to remove "write RELEASE.md" from the "Then:" block entirely (it's enforced by row 11 as a gate precondition) or reorder the "Then:" block to put RELEASE.md verification before gamma-closeout.md writing.
+
+After these three fixes, the review will re-verify AC2 (F1 fix), AC5 (F2 fix), and gamma/SKILL.md §2.10 coherence (F3 fix). No other ACs are expected to change.
+
+No phantom blockers: all findings are traced to specific lines and demonstrate a real state that produces a wrong outcome.
