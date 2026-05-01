@@ -1,3 +1,12 @@
+**Verdict:** APPROVED
+
+**Round:** 1
+**Fixed this round:** n/a (first review)
+**Branch CI state:** local `go test ./...` 12/12 green (non-cached); remote CI does not run on cycle branches — will be verified on merge to main
+**Merge instruction:** `git merge --no-ff cycle/321 -m "feat: Kernel/Persona/Operator activation triad; retire templates class (#321)\n\nCloses #321"` into main
+
+---
+
 ## §2.0.0 Contract Integrity
 
 **Round:** 1
@@ -198,3 +207,25 @@ Issue's active design constraints verified:
 | # | Finding | Evidence | Severity | Type |
 |---|---------|----------|----------|------|
 | — | No findings | All ACs met, no authority conflicts, no stale paths in active surfaces, all tests green | — | — |
+
+---
+
+## Regressions Required (D-level only)
+
+None.
+
+---
+
+## Notes
+
+**Closure-time items (not blocking merge):**
+
+1. **Sigma commit status**: The issue's success/closure condition requires stating whether the downstream `cn-sigma` `spec/USER.md` → `spec/OPERATOR.md` commit has been filed/landed with a link. α's `self-coherence.md` names it as debt but does not give a filed/landed status. This must be resolved at γ cycle closure (not a merge gate; cross-repo control boundary acknowledged in issue). γ should collect this status from α or the operator before closing the cycle.
+
+2. **Follow-up issues**: The closure condition requires two follow-up issues: (a) `cn init` realignment to write `spec/PERSONA.md`; (b) `cn setup` wizard producing `spec/OPERATOR.md`. These must be filed before γ closes the cycle. Not a merge gate.
+
+3. **CHANGELOG ledger row**: The 3.71.0 CHANGELOG entry has the detailed section (Added/Changed/Fixed/Removed). The ledger row (TSC grades, Level, coherence note) is β's to write at release — standard split since TSC grades require review outcome. β will add the ledger row in the release commit.
+
+4. **`RELEASE.md`**: β writes `RELEASE.md` at the release step. Not on branch yet — expected.
+
+**Search-space closure**: β reviewed the full diff across `activate.go`, `activate_test.go`, `pkg.go`, `pkg_test.go` (not modified; `hubstatus_test.go` and `build_test.go` updated), `doctrine/KERNEL.md`, `PACKAGE-SYSTEM.md`, `R5-activate/kata.md`, `CHANGELOG.md`. No remaining blocker found in the relevant contract. Approval is explicit.
