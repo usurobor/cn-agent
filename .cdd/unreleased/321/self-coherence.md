@@ -129,3 +129,25 @@
 | 6 Artifacts | diff (activate.go + activate_test.go + pkg.go + pkg_test.go + hubstatus_test.go + build_test.go + PACKAGE-SYSTEM.md + KERNEL.md + kata.md + CHANGELOG.md) | write, design, go, test, tool, ux-cli | Tests written; code written; docs updated; design not required separately (design is encoded in the issue with full AC specification) |
 | 7 Self-coherence | `.cdd/unreleased/321/self-coherence.md` | cdd | AC-by-AC check with evidence; peer enumeration; schema audit; polyglot re-audit |
 | 7a Pre-review | `.cdd/unreleased/321/self-coherence.md §Pre-review gate` | cdd | Pre-review gate (see below) |
+
+---
+
+## Pre-review gate
+
+| Row | Check | State |
+|-----|-------|-------|
+| 1 | cycle/321 rebased onto current origin/main | ✓ `origin/main` = `f9843317` at observation time; `git merge-base --is-ancestor origin/main HEAD` = true |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | ✓ |
+| 3 | Tests present | ✓ `activate_test.go` sigma-shape + init-only + init+setup + kernel-state × 3 + deps-state × 3 + read-first ordering × 2 + reflection × 2 + legacy-paths rejection + no-identity-bucket × 3 + original error-path tests |
+| 4 | Every AC has evidence | ✓ AC1–AC15 all have evidence in §ACs |
+| 5 | Known debt is explicit | ✓ §Debt names 4 items |
+| 6 | Schema/shape audit completed | ✓ `pkg.ContentClasses` is the schema-bearing slice; consumers `pkgbuild.FindContentClasses` and `hubstatus` use it dynamically; no separate migration needed |
+| 7 | Peer enumeration completed | ✓ `templates` class peers (pkg.go + PACKAGE-SYSTEM.md + hubstatus_test.go + build_test.go) all updated; `scanIdentity` peers (writePrompt caller, test functions) all removed/replaced |
+| 8 | Harness audit completed | ✓ Shell harnesses (`cnos.kata/lib.sh`) do not reference `templates`; CI workflow does not emit `templates` content class; no non-Go producer of the `pkg.ContentClasses` slice |
+| 9 | Post-patch re-audit completed | ✓ Re-read self-coherence top-to-bottom after last code change; all AC evidence still matches HEAD; no CDD trace rows inconsistent |
+| 10 | Branch CI green | CI workflow (`build.yml`) only runs on `main` push and PRs targeting main — not on `cycle/321` push. Local: `go test ./...` all 12 packages green. Pre-existing CI failure: "Package verification" Tier 2 kata on SHA `f9843317` (last main commit before this cycle); all other CI jobs green on that SHA. β should verify CI green after merge to main. |
+| 11 | α commit author email matches `alpha@cdd.cnos` | ✓ `git log --format='%ae' HEAD~9..HEAD \| sort -u` → `alpha@cdd.cnos` only |
+
+---
+
+## Review-readiness | round 1 | implementation SHA: 74671a62 | branch CI: local go test ./... green (12/12); remote CI not triggered on cycle branches | ready for β
