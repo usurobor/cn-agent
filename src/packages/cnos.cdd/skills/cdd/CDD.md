@@ -63,6 +63,22 @@ A change may take the small-change path when it is narrowly local, low-risk, and
 - self-coherence is optional
 - the author still owes a named incoherence and an explicit scope
 
+**Artifact collapse for small-change cycles.** The following table states what applies, what collapses, and what is never waived:
+
+| Artifact | Small-change status | Reason |
+|---|---|---|
+| `self-coherence.md` | Optional — commit message may substitute | Scope is narrow enough to state in prose |
+| `alpha-closeout.md` | Optional — write if there are findings; one-liner "no findings" otherwise | No substantial cycle findings expected |
+| `beta-closeout.md` | Not applicable | No independent β in single-author small change |
+| `gamma-closeout.md` | Not applicable unless γ coordinated | No triadic coordination |
+| `beta-review.md` | Not applicable | No independent β review |
+| `RELEASE.md` | **Required before tag/release — no exception** | Release notes are required regardless of change size; CI uses them |
+| `.cdd/releases/{X.Y.Z}/{N}/` move | **Required at release time** | Version association is required regardless of change size |
+| Post-release assessment (PRA) | **Required after every release** | Assessment is mandatory for every release, patch or major |
+| Version directory / bootstrap stubs | Not required | Frozen snapshot is not needed for small changes |
+
+A small-change cycle may not use the small-change path to avoid `RELEASE.md`, cycle-directory movement, or the post-release assessment. Those three are unconditional.
+
 ### 1.3 First principle
 
 CDD begins from the same first principle as the coherent agent:
@@ -169,7 +185,7 @@ Roles may add additional files when the cycle warrants it (e.g. `alpha-design.md
 
 **Issue auto-close.** Use `Closes #N` or `Fixes #N` in the merge commit message (`git merge -m "Closes #N: ..."`) to auto-close on merge. If the convention is missed, γ closes via `gh issue close {N}`.
 
-**Polling.** All roles poll three surfaces:
+**Polling — in-session only.** Polling applies during each role's active session. A role that has completed its phase and exited is not polling. The instructions below describe what each role monitors while it is running; they do not imply a background daemon loop. All roles poll three surfaces:
 
 - **issue activity** — comments, label changes
 - **branch state** — `origin/cycle/{N}` head-SHA changes (β waits for α's `self-coherence.md` review-readiness signal on the branch γ pre-created; γ tracks the full cycle)
@@ -346,7 +362,7 @@ The compact algorithm is here; `alpha/SKILL.md` expands each step into executabl
 7. Write `.cdd/unreleased/{N}/self-coherence.md` carrying the review-readiness signal (gap, mode, active skills, AC mapping, CDD Trace, known debt). Wait for branch CI green before signaling readiness in the artifact.
 8. Begin polling `.cdd/unreleased/{N}/beta-review.md` for β's verdict (per §Tracking)
 9. If β returns RC: fix findings on the branch, append a fix-round section to `.cdd/unreleased/{N}/self-coherence.md`, re-poll
-10. When β approves and merges: write `.cdd/unreleased/{N}/alpha-closeout.md` (cycle findings or "no findings"). The release skill's §2.5a move carries the cycle directory into the release directory at release time — do not duplicate close-outs elsewhere.
+10. **α close-out — re-dispatch mechanism.** In the sequential bounded dispatch model, α has exited before β approves and merges. γ requests δ to re-dispatch α after β merge using the α close-out prompt format (see §1.6a Re-dispatch prompt formats). α is re-dispatched, reads `.cdd/unreleased/{N}/beta-review.md` (the approved verdict) and the merged branch state, writes `.cdd/unreleased/{N}/alpha-closeout.md` (cycle findings or "no findings"), commits to main, and exits. The release skill's §2.5a move carries the cycle directory into the release directory at release time — do not duplicate close-outs elsewhere. **Provisional close-out fallback:** if re-dispatch is unavailable, α may write a provisional close-out at review-readiness time (before exit), explicitly marked `[provisional — pending β outcome]`. γ supplements with PRA observations. The provisional form must be declared as known debt in self-coherence.md §Debt.
 11. Done
 
 **α close-out:** Report cycle-level learnings to γ. Concrete findings (skill gaps, process friction, things to mechanize) or "no new findings" — explicitly stated, not omitted. This is α's input to γ's cycle iteration decision (§9.1). **Voice: factual observations and patterns only.** Do not recommend dispositions ("patch now", "file issue") — triage is γ's job. State what happened, what pattern it matches, and what surfaces were affected. Let γ decide the action.
@@ -436,6 +452,43 @@ In that case:
 - and any direct-to-main commit still triggers the retro-review rule in §3.7 of the executable skill.
 
 **Operator override:** The operator may reassign any role explicitly. The reassignment must name the target agent and the reason. Implicit role drift (e.g., reviewer starts authoring fixes mid-review) is not permitted — if β requests changes, α executes the fix.
+
+### 1.6 Coordination model
+
+**Current model: sequential bounded role invocations.**
+
+Each role is dispatched one at a time via `claude -p` or equivalent, completes its phase, and exits. The triad runs sequentially (γ → α → β → γ for re-dispatch), not concurrently.
+
+| Property | Value |
+|---|---|
+| Dispatch mechanism | `claude -p` one role at a time |
+| Role session lifetime | Bounded — exits when phase is complete |
+| In-session polling | Applies during each role's active session window (§Tracking) — not a background daemon loop |
+| Fix rounds | δ re-dispatches α per γ's instruction when β returns RC |
+| α close-out | δ re-dispatches α after β merge, per γ's request (§1.4 α step 10; see §1.6a for prompt format) |
+| Cross-session coordination | Cycle branch + `.cdd/unreleased/{N}/` artifacts are the coordination surface; roles read them at session start |
+
+**Not current:** persistent polling role sessions where α, β, γ remain alive indefinitely between phases. That model requires dispatch-daemon infrastructure (#310, #295) not yet implemented. When such infrastructure exists, the polling instructions in §Tracking are already compatible — they are written for in-session use and work in either model.
+
+**§1.6a Re-dispatch prompt formats.** Additional bounded re-dispatch prompts beyond the standard α/β/γ dispatches (§1.4 γ dispatch prompt format):
+
+**α close-out re-dispatch (γ requests, δ executes after β merge):**
+```
+You are α. Project: <project>.
+Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md and follow its load order.
+Issue: gh issue view <number> --json title,body,state,comments
+Branch: cycle/<number>
+Close-out re-dispatch: β has merged and approved. Read .cdd/unreleased/<number>/beta-review.md for the approved verdict. Write .cdd/unreleased/<number>/alpha-closeout.md (cycle findings or "no findings"), commit to main, and exit.
+```
+
+**α fix-round re-dispatch (γ requests, δ executes when β returns RC):**
+```
+You are α. Project: <project>.
+Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md and follow its load order.
+Issue: gh issue view <number> --json title,body,state,comments
+Branch: cycle/<number>
+Fix-round re-dispatch: β returned RC in .cdd/unreleased/<number>/beta-review.md. Fix the named findings on cycle/<number>, append a fix-round section to .cdd/unreleased/<number>/self-coherence.md, push, and exit.
+```
 
 ---
 
@@ -583,6 +636,26 @@ CDD owns the full arc from observation back to observation.
 | 13 | Close | Execute immediate outputs and commit deferred outputs | Cycle closed |
 
 Step 13 feeds back to step 0.
+
+### 4.1a Lifecycle state table
+
+The table below is the state machine for a substantial triadic cycle under the sequential bounded dispatch model (§1.6). Each state has one owner, required inputs, required outputs, a next state, and a failure/retry path.
+
+| State | Owner | Required inputs | Required outputs | Next state | Failure / retry |
+|---|---|---|---|---|---|
+| **S0: Observed** | γ | CHANGELOG TSC, lag table, doctor/status, last PRA | Named selected gap + decisive CDD §3 clause | S1: Issue filed | Re-observe if no clear gap |
+| **S1: Issue filed** | γ | Selected gap, issue-quality gate passed | Issue #N with ACs, Tier 3 skills, non-goals, related artifacts | S2: Branch created | Fix issue until quality gate passes |
+| **S2: Branch created** | γ | Issue #N open; `origin/cycle/{N}` does not exist | `origin/cycle/{N}` exists, pre-flight passed | S3: α dispatched | Pre-flight fail → fix and retry |
+| **S3: α dispatched** | δ | α prompt (from γ); `origin/cycle/{N}` exists | α session running | S4: α implementing | α session fails → re-dispatch α |
+| **S4: α implementing** | α | Branch, issue, active skills loaded | Code, tests, docs on `cycle/{N}` | S5: α signaled review-ready | Blocker → γ unblocks; RC from β → re-dispatch α for fix round |
+| **S5: α signaled review-ready** | α | Pre-review gate passed (§2.6) | `self-coherence.md` with review-readiness section on `cycle/{N}` | S6: β dispatched (if not already) | Gate fails → fix and re-signal |
+| **S6: β reviewing** | β | `self-coherence.md` review-readiness, diff, CI green | `beta-review.md` round verdict (RC or A) | RC→S4; A→S7 | β blocked → γ unblocks |
+| **S7: β merged** | β | Approved verdict, pre-merge gate passed | Merge commit on main with `Closes #N`; `beta-closeout.md` | S8: α close-out re-dispatch | Merge conflict → β resolves in throwaway worktree |
+| **S8: α close-out** | α (re-dispatched) | `beta-review.md` (approved), merged branch state | `alpha-closeout.md` on main | S9: γ PRA | Re-dispatch unavailable → provisional close-out at review-readiness (declare as debt) |
+| **S9: γ triaging** | γ | `alpha-closeout.md`, `beta-closeout.md`, RELEASE.md | PRA at canonical path, γ close-out triage, skill patches landed | S10: δ preflight | Missing close-out → request re-dispatch; missing RELEASE.md → γ writes it |
+| **S10: δ release-boundary preflight** | δ | PRA present, RELEASE.md present, `.cdd/unreleased/{N}/` not yet moved, merge on main | Proceed / Request changes / Override | Proceed→S11; RC→route to β/α/override | δ blocks → γ routes change |
+| **S11: γ closing** | γ | δ preflight passed; all closure gate rows pass (§gamma/SKILL.md §2.10) | `gamma-closeout.md`, cycle-dir move to `.cdd/releases/{X.Y.Z}/{N}/`, closure declaration | S12: δ disconnect | Missing artifact → obtain before closing |
+| **S12: δ disconnect** | δ | γ closure declaration; `gamma-closeout.md` exists on main | Tag + release commit; branch cleanup | S0 (next cycle) | Script fails → fix and retry |
 
 ### 4.2 Branch rule
 
@@ -807,6 +880,26 @@ Rules:
 - Tags are bare `X.Y.Z` everywhere (VERSION file, git tag, branch name version segment, CHANGELOG row, RELEASE.md, snapshot directory). `v`-prefixed tags are legacy and warn-only.
 - All triadic cycles use the in-version `.cdd/unreleased/{N}/` artifact-exchange surface. GitHub Pull Requests are not used for triadic coordination (see §Tracking).
 
+### 5.3b Role/artifact ownership matrix
+
+Every required cycle artifact has one owner, one verification gate, and one consequence if missing. γ's closure gate (§gamma/SKILL.md §2.10) checks every row marked "Required before γ closure."
+
+| Artifact | Owner | Written when | Verified by | Required before | Missing means |
+|---|---|---|---|---|---|
+| `self-coherence.md` | α | During α session, incrementally; review-readiness section last | β at review intake | β review | β waits; no review until present with readiness signal |
+| `beta-review.md` | β | During β review session, incrementally per round | γ at close-out triage | γ closure | γ cannot triage; requests β re-dispatch |
+| `alpha-closeout.md` | α (re-dispatched after merge) | After β merge, via δ re-dispatch (§1.4 α step 10, §1.6a) | γ before PRA; γ closure gate | γ closure | γ closure gate blocks; γ requests δ to re-dispatch α |
+| `beta-closeout.md` | β | Before β exits (same β session as merge) | γ before PRA; γ closure gate | γ closure | γ closure gate blocks; γ requests β re-dispatch |
+| `gamma-closeout.md` | γ | After all closure gate rows pass (§gamma/SKILL.md §2.10) | δ before tag/release (implicit: tag requires γ closure declaration which is gamma-closeout.md) | δ tag/release | δ must not tag; γ has not declared closure |
+| `RELEASE.md` | γ | Before requesting δ tag/release; committed to main in release commit | δ at release-boundary preflight | δ tag/release | δ must not tag; CI auto-generates sparse notes |
+| `.cdd/releases/{X.Y.Z}/{N}/` | γ (at release, via `release/SKILL.md` §2.5a) | Before γ requests δ tag; included in release commit | γ closure gate row 12; δ preflight | δ tag/release | Stale unreleased dir; γ closure gate blocks until moved |
+| POST-RELEASE-ASSESSMENT.md | γ | After β merge + close-outs + δ preflight | γ closure gate | γ closure | γ closure gate blocks |
+| `beta-review.md` fix-round appendix | β | After α fixes RC findings | α at next fix-round | α re-signal | α waits for β's round verdict |
+
+Notes:
+- `gamma-closeout.md` is the closure declaration artifact. δ's obligation to not tag before closure is satisfied when `gamma-closeout.md` exists and the closure declaration commit is on main.
+- For small-change cycles: see §1.2 artifact collapse table — `beta-closeout.md` and `gamma-closeout.md` may not apply; `alpha-closeout.md`, `RELEASE.md`, and the cycle-directory move remain required per §1.2.
+
 ### 5.4 CDD Trace
 
 Every substantial cycle must carry a lightweight execution trace. Use lifecycle step numbers, not section numbers. For steps 0–10, the trace lives in the primary branch artifact. For steps 11–13, closure lives in the post-release assessment.
@@ -937,6 +1030,27 @@ A passing gate means:
 It does not mean:
 
 - intellectually perfect
+
+### 8.1 Closure verification checklist
+
+This checklist catches the failure modes that motivated #325. Any reviewer (β, γ, δ) may run through it mechanically before the cycle closes. Each row names the failure mode, the check, and where the authoritative gate lives.
+
+| # | Failure mode | Check | Authoritative gate |
+|---|---|---|---|
+| F1 | Missing `alpha-closeout.md` | `.cdd/unreleased/{N}/alpha-closeout.md` exists on main | §5.3b; `gamma/SKILL.md` §2.10 row 1 |
+| F2 | Missing `beta-closeout.md` | `.cdd/unreleased/{N}/beta-closeout.md` exists on main | §5.3b; `gamma/SKILL.md` §2.10 row 2 |
+| F3 | Missing `gamma-closeout.md` before δ tag | `.cdd/unreleased/{N}/gamma-closeout.md` exists on main before δ runs `scripts/release.sh` | §5.3b; `operator/SKILL.md` §3.4 |
+| F4 | Stale `.cdd/unreleased/{N}/` after release | `git ls-tree -r origin/main .cdd/unreleased/ --name-only` returns empty (or only in-progress cycles) after tag | `release/SKILL.md` §2.5a; `gamma/SKILL.md` §2.6 + §2.10 row 12 |
+| F5 | Missing `RELEASE.md` before tag | `RELEASE.md` exists at repo root, committed in or before the release commit | `release/SKILL.md` §3.7; `gamma/SKILL.md` §2.6; §5.3b |
+| F6 | δ tag before γ closure declaration | `gamma-closeout.md` exists before δ runs release script | §5.3b; §4.1a state S12 requires S11 (γ closing) complete |
+| F7 | δ tag before δ preflight | δ preflight (state S10) was run and returned Proceed before tag | §4.1a S10→S11→S12 ordering |
+| F8 | α close-out relies on already-exited α | α close-out mechanism used: either re-dispatch (§1.6a) or provisional fallback declared in §Debt | §5.3b; §1.4 α step 10; `alpha/SKILL.md` §2.8 |
+| F9 | Polling-required role exits early | Role exited per bounded-dispatch model (§1.6); any fix-round or close-out needed from exited α goes through re-dispatch (§1.6a) | §1.6; `operator/SKILL.md` §1 |
+| F10 | PRA missing after release | `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` exists on main | `post-release/SKILL.md` pre-publish gate; `gamma/SKILL.md` §2.10 row 3 |
+
+**Positive test:** A substantial cycle that reaches S12 (δ disconnect) with all 10 rows above passing has closed correctly.
+
+**Negative test:** Any row that fails when γ reaches state S11 (γ closing) must block closure. γ must not write the closure declaration commit until all rows pass.
 
 ---
 
