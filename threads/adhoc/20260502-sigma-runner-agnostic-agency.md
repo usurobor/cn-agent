@@ -7,7 +7,7 @@ The runner may be Claude, GPT, Gemini, OpenClaw, Claude Code, or a future cnos
 runtime. The runner changes. The hub persists.
 
 For the doctrine, see
-[`docs/alpha/essays/ACTIVATION-BASED-AGENCY.md`](../../docs/alpha/essays/ACTIVATION-BASED-AGENCY.md).
+[`docs/alpha/essays/AGENT-CONTINUITY.md`](../../docs/alpha/essays/AGENT-CONTINUITY.md).
 That essay is canonical. This note records what the doctrine means for Sigma
 operationally.
 
