@@ -1,123 +1,178 @@
-# Activation-Based Agency
+# The Continuity of the Agent
 
-A cnos agent is a Git-native continuity surface activated by temporary runners.
+A cnos agent is accumulated continuity that can be activated by temporary runners.
 
-The hub persists.
+It is persistent because it survives any one session.
+It is portable because different runners can activate it.
+It is evolving because each meaningful activation can change what it knows, how it works, or what evidence it carries forward.
+
 The runner is temporary.
-Activation is the bridge between them.
 
-## The agent is the hub
+The continuity is the agent.
 
-A cnos hub is a Git repository — the durable body of an agent. It carries
-identity, doctrine, skills, memory, threads, branches, commits, close-outs,
-receipts, and history. Those surfaces let a new runner understand what agent it
-is activating and what work it is allowed to do.
+## The higher-level object
 
-A Claude session may disappear. A GPT chat may end. A Gemini window may be
-closed. A VPS may go offline. A Telegram gateway may be replaced.
+Most agent systems begin with the execution surface:
 
-The hub remains.
+- model;
+- tools;
+- runtime;
+- process;
+- platform;
+- channel.
 
-## The runner is an episode
+cnos begins one level higher.
 
-A runner is the temporary reasoning window that activates the hub.
+It asks what persists across those surfaces.
 
-Examples:
+That persistent thing is the accumulated continuity of the agent:
 
-- Claude Code for engineering work
-- Claude UI or Claude CLI for bounded reasoning and repo work
-- GPT for writing, critique, or synthesis
-- Gemini for research or multimodal work
-- OpenClaw or another always-on gateway for chat ingress
-- a future cnos runtime for structured dispatch
+- identity and stance;
+- doctrine and operating frame;
+- operator relationship;
+- skills and habits;
+- memories and reflections;
+- decisions and judgments;
+- failures and repairs;
+- artifacts, receipts, and close-outs.
 
-An always-on runner is still a runner — duration does not turn a window into an
-agent.
+A runner may contribute to continuity, but the runner is not the continuity itself.
 
-The agent is the continuity that survives them.
+## Persistent
 
-## Activation is not deployment
+A cnos agent persists beyond any one activation.
 
-Deployment asks:
+A chat session can end. A CLI process can exit. A gateway can be replaced. A model provider can change. The agent remains coherent only if the important residue returns to its continuity surface.
 
-```text
-How do we keep this process alive?
-```
+Persistence means a later runner can inherit:
 
-Activation asks:
+- what happened;
+- what changed;
+- what failed;
+- what was learned;
+- what remains unfinished.
 
-```text
-How does this temporary runner become this agent long enough to do coherent work?
-```
+Continuity is the answer to the question:
 
-A deployed agent needs process supervision, routing, restarts, live sessions, and
-runtime ownership.
+> What survives the episode?
 
-An activated cnos agent needs a different surface:
+## Portable
 
-- identity
-- doctrine
-- operator contract
-- skills
-- current threads
-- recent reflections
-- working branch
-- authority boundaries
-- expected close-out
+A cnos agent is not bound to one model or platform.
 
-The runner reads those surfaces, performs bounded work, and returns evidence to
-the hub.
+The same agent can be activated through different runners:
 
-## What `cn activate` does
+- Claude Code for engineering;
+- GPT for writing or critique;
+- Gemini for research or multimodal work;
+- OpenClaw or another gateway for chat ingress;
+- a local CLI for deterministic checks;
+- a future cnos runtime for structured orchestration.
 
-`cn activate` prepares the runner. It does not run the agent or start a daemon.
+The runner is selected by the work.
 
-The command should answer:
+Portability means the agent can move across runners without becoming a different agent. That only works if each runner reads the same continuity surface and writes evidence back to it.
 
-- What hub is this?
-- What should the runner read first?
-- What identity and operator surfaces matter?
-- What skills and memories are available?
-- What must not be leaked?
-- What evidence should the runner leave behind?
+## Evolving
 
-The shape is:
+A cnos agent should change when it runs.
 
-```text
-hub state → activation prompt → runner orientation
-```
+A meaningful activation leaves something durable:
 
-The prompt is an orientation guide, not the hub itself. It points the runner at
-the surfaces that matter.
+- work product;
+- reflection;
+- close-out;
+- receipt;
+- decision;
+- repair;
+- skill update;
+- named limitation;
+- debt record.
+
+The value of an agent is not only what it can do now. The value is what it has accumulated through use.
+
+An agent becomes more valuable when its episodes add up.
+
+## The hub implements continuity
+
+In cnos today, continuity lives in a hub.
+
+The hub is the durable body that stores, versions, and exposes the agent's continuity. It gives the accumulated agent a place to persist between runners.
+
+Git is not the philosophical point.
+
+Continuity is the point.
+
+cnos uses a hub because versioned repositories are practical, portable, inspectable, and legible to both humans and tools. Branches, commits, diffs, reviews, and history make the continuity durable enough for many runners to return to it.
+
+The hub is the current body.
+
+The agent is the continuity that body preserves.
+
+## Activation
+
+Activation is the bridge from continuity to runner.
+
+A runner activates the agent when it:
+
+1. reads the continuity surface;
+2. understands the task and authority boundary;
+3. performs bounded work;
+4. writes evidence back.
+
+`cn activate` prepares that bridge.
+
+It does not run the agent, start a daemon, or replace the future runtime.
+
+It generates an orientation surface for the runner.
+
+A good activation prompt tells the runner:
+
+- what continuity surface it is entering;
+- what to read first;
+- what identity and operator surfaces matter;
+- what skills and memories are available;
+- what authority it has;
+- what not to leak;
+- what evidence to return.
+
+The prompt is not the agent.
+
+The prompt helps the runner enter the agent.
 
 ## Kernel, Persona, Operator
 
-Activation needs distinct surfaces.
+Activation needs three distinct surfaces.
 
-- **Kernel** — inherited doctrine and universal operating frame
-- **Persona** — local agent identity, stance, role, and self-description
-- **Operator** — human/operator contract, authority boundary, and working relationship
+**Kernel** is inherited doctrine and the universal operating frame.
 
-The runner should not have to infer these from scattered files or prior chat
-history.
+**Persona** is the local agent identity, stance, role, and self-description.
 
-A new activation should be able to read the hub and answer:
+**Operator** is the human relationship, authority boundary, and working contract.
 
-- What doctrine governs this agent?
-- Who is this agent locally?
-- Who is the operator?
-- What authority does this runner have?
-- What should be done next?
+These should not collapse into one vague system prompt.
 
-## Episodes need receipts
+The Kernel says what coherent agency means.
+The Persona says who this agent is.
+The Operator surface says how this agent relates to the human and what authority it has.
 
-A runner may do meaningful work and then disappear.
+A runner becomes this agent by reading those surfaces and acting within them.
 
-If that work is not written back, the agent fragments.
+## Receipts
 
-Every substantial activation should leave a receipt or close-out.
+A receipt turns an episode into continuity.
 
-A useful receipt records:
+A receipt answers:
+
+- which runner activated the agent;
+- what task was attempted;
+- what branch or surface changed;
+- what artifacts were produced;
+- what failed;
+- what was learned;
+- what should happen next.
+
+A minimal receipt might look like this:
 
 ```json
 {
@@ -125,9 +180,8 @@ A useful receipt records:
   "model": "claude-sonnet",
   "started_at": "...",
   "ended_at": "...",
-  "hub": "...",
-  "branch": "...",
   "task": "...",
+  "branch": "...",
   "artifacts": ["..."],
   "closeout": "...",
   "limitations": "...",
@@ -135,53 +189,68 @@ A useful receipt records:
 }
 ```
 
-The receipt is the witness of one episode, not the agent.
+The receipt is not bureaucracy.
 
-The hub accumulates those witnesses; continuity survives through them.
+It is how one episode becomes part of the agent.
 
 ## Failure modes
 
-Activation-based agency fails when the runner's episode does not return coherent
-evidence to the hub.
+Continuity-based agency fails when temporary work does not return to durable continuity.
 
 | Failure | Meaning | Minimum mitigation |
 | --- | --- | --- |
-| Identity drift | Different runners read the same hub differently. | Make Kernel, Persona, and Operator explicit. |
+| Identity drift | Different runners interpret the agent differently. | Make Kernel, Persona, and Operator explicit. |
 | Memory fragmentation | Work happens in a runner but is not written back. | Require a receipt, close-out, artifact, or debt record. |
-| Capability mismatch | The runner is asked to do work it cannot perform. | Use runner profiles and explicit authority boundaries. |
-| Concurrent activation | Two runners act on the same hub state at once. | Use branch isolation, stale-state checks, and review before merge. |
-| Secret exposure | Activation surfaces leak private material. | Exclude secret files and route sensitive actions through the operator boundary. |
+| Capability mismatch | A runner is asked to do work it cannot perform. | Use runner profiles and authority boundaries. |
+| Concurrent activation | Two runners act on the same continuity surface at once. | Use branch isolation, stale-state checks, and review before merge. |
+| Secret exposure | Activation surfaces leak private material. | Exclude secrets and route sensitive actions through the operator boundary. |
+| False growth | The runner says it learned, but nothing changes in continuity. | Require an MCI, reflection, skill update, or explicit "no durable lesson" close-out. |
 
-These mitigations do not require a runtime. They require the hub to preserve
-the right surfaces and the runner to close its episode honestly.
+These are continuity failures before they are runtime failures.
 
-## Design implications
+The answer is not always to build a daemon.
 
-Activation-based agency changes what cnos should build first. The hub must be
-easy to activate, safe to enter, and hard to leave without evidence. That
-implies a small set of mechanisms — an activation command, durable receipts,
-runner profiles, close-out discipline, conflict handling, and operator
-boundaries — sized to the hub, not to a long-running runtime. Hub- and
-agent-specific applications belong with operational notes.
+Sometimes the answer is to write back better.
+
+## What cnos is protecting
+
+cnos is not primarily protecting a session.
+
+It is protecting the accumulated agent.
+
+That means the important question is not only:
+
+```text
+Can this runner do the work?
+```
+
+It is also:
+
+```text
+Will this work return to the agent?
+```
+
+A runner that produces useful output but leaves no durable evidence has helped the moment but not the agent.
+
+A runner that writes evidence back lets the agent persist, move, and evolve.
 
 ## Rule
 
 Do not ask first:
 
-```text
-Where does this agent run?
-```
+> Where does this agent run?
 
 Ask:
 
-```text
-What hub does this runner activate,
-what authority does it have,
-and what witness will it leave behind?
-```
+> What continuity does this runner activate?
+> What authority does it receive?
+> What evidence will it return?
+> How will the agent grow from this episode?
 
-A cnos agent is not the runner.
+The agent is persistent.
+The agent is portable.
+The agent is evolving.
 
-The runner is an episode.
+The runner is temporary.
 
-The hub is continuity.
+The continuity is the point.
