@@ -121,3 +121,19 @@ filenames from the filesystem; no parser, schema type, or manifest shape is intr
 None. The gate correctly exempts small-change cycles per CDD.md §1.2. The existing
 cn-cdd-verify tool checking legacy `{role}/CLOSE-OUT.md` paths (rather than the new
 per-cycle `{role}-closeout.md` form) is a pre-existing issue outside the scope of #327.
+
+---
+
+## CDD Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Selected signal: P1 bug — release.sh tags without validating required cycle artifacts; 3.73.0 shipped incomplete |
+| 1 Select | — | — | Selected gap: #327 — release gate must validate required cycle artifacts before tag |
+| 2 Branch | `cycle/327` | cdd | Branch created by γ; verified `origin/cycle/327` exists |
+| 3 Bootstrap | — | cdd | Version directory not required — no CDD docs bundle modified; scripts-only change |
+| 4 Gap | `.cdd/unreleased/327/self-coherence.md` §Gap | — | Named incoherence: `release.sh` moves cycle dirs without validating required files |
+| 5 Mode | `.cdd/unreleased/327/self-coherence.md` §Skills | cdd, design, write, test, tool | MCA; active skills listed |
+| 6 Artifacts | tests (commit `d63830f2`), code (commit `d63830f2`), docs (n/a) | test, tool | design: not required; plan: not required; tests: `scripts/test-validate-release-gate.sh` (19 assertions); code: `scripts/validate-release-gate.sh` + `scripts/release.sh`; docs: no doc surface changed |
+| 7 Self-coherence | `.cdd/unreleased/327/self-coherence.md` | cdd | AC-by-AC check completed; self-check done; debt explicit |
+| 7a Pre-review | `.cdd/unreleased/327/self-coherence.md` | cdd | Pre-review gate below |
