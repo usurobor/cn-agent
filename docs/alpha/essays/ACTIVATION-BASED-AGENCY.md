@@ -1,12 +1,10 @@
 # Activation-Based Agency
 
-A cnos agent is a Git-native continuity surface.
+A cnos agent is a Git-native continuity surface activated by temporary runners.
 
-It becomes active when a runner reads the hub, works on its behalf, and writes
-evidence back.
-
-The runner is temporary.
 The hub persists.
+The runner is temporary.
+Activation is the bridge between them.
 
 ## The agent is the hub
 
@@ -70,7 +68,7 @@ An activated cnos agent needs a different surface:
 The runner reads those surfaces, performs bounded work, and returns evidence to
 the hub.
 
-## The activation bridge
+## What `cn activate` does
 
 `cn activate` prepares the runner. It does not run the agent or start a daemon.
 
@@ -143,15 +141,28 @@ The hub accumulates those witnesses; continuity survives through them.
 
 ## Failure modes
 
-Activation-based agency fails in five known ways:
+Activation-based agency fails when the runner's episode does not return coherent
+evidence to the hub.
 
-- **Identity drift** — different runners read the same hub differently
-- **Memory fragmentation** — a runner works without writing evidence back
-- **Capability mismatch** — work exceeds what the runner can do
-- **Concurrent activations** — two runners hold the same hub at once
-- **Secret exposure** — activation surfaces leak what they should not
+| Failure | Meaning | Minimum mitigation |
+| --- | --- | --- |
+| Identity drift | Different runners read the same hub differently. | Make Kernel, Persona, and Operator explicit. |
+| Memory fragmentation | Work happens in a runner but is not written back. | Require a receipt, close-out, artifact, or debt record. |
+| Capability mismatch | The runner is asked to do work it cannot perform. | Use runner profiles and explicit authority boundaries. |
+| Concurrent activation | Two runners act on the same hub state at once. | Use branch isolation, stale-state checks, and review before merge. |
+| Secret exposure | Activation surfaces leak private material. | Exclude secret files and route sensitive actions through the operator boundary. |
 
-Mitigations are runner- and hub-specific and belong with operational notes.
+These mitigations do not require a runtime. They require the hub to preserve
+the right surfaces and the runner to close its episode honestly.
+
+## Design implications
+
+Activation-based agency changes what cnos should build first. The hub must be
+easy to activate, safe to enter, and hard to leave without evidence. That
+implies a small set of mechanisms — an activation command, durable receipts,
+runner profiles, close-out discipline, conflict handling, and operator
+boundaries — sized to the hub, not to a long-running runtime. Hub- and
+agent-specific applications belong with operational notes.
 
 ## Rule
 
