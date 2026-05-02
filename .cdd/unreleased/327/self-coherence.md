@@ -38,3 +38,57 @@ wire in).
   examples; negative space mandatory; oracle explicit
 - `src/packages/cnos.eng/skills/eng/tool/SKILL.md` — shell script standards:
   set -euo pipefail, fail-fast, idempotent, zero runtime deps, machine-readable output
+
+---
+
+## ACs
+
+### AC1: release.sh validates required artifacts before tag
+
+**Status: MET**
+
+Evidence: `scripts/validate-release-gate.sh` (commit `d63830f2`) implements the gate.
+Called by `scripts/release.sh` at step 4, before stamp/move/tag.
+
+Positive: `test-validate-release-gate.sh` test "AC1 positive — triadic cycle with all
+required artifacts" → exit 0. Output contains `✅ cycle 200 (triadic): all required
+artifacts present` and `✅ Release gate passed`.
+
+Negative (missing alpha-closeout.md): test "AC1 negative — missing alpha-closeout.md"
+→ exit 1. Output contains `❌ cycle 201 (triadic): missing alpha-closeout.md` and
+`❌ Release gate FAILED`.
+
+Negative (missing gamma-closeout.md): test "AC1 negative — missing gamma-closeout.md"
+→ exit 1. Output contains `❌ cycle 202 (triadic): missing gamma-closeout.md` and
+`❌ Release gate FAILED`.
+
+All 19 assertions in `test-validate-release-gate.sh` pass: `19 passed, 0 failed`.
+
+### AC2: small-change path explicitly collapses artifact set
+
+**Status: MET**
+
+Evidence: CDD.md §1.2 already contains the explicit artifact collapse table for
+small-change cycles. `scripts/validate-release-gate.sh` follows it: a cycle dir without
+`beta-review.md` is classified as small-change and no cycle-dir artifacts are required
+(header comment references CDD.md §1.2).
+
+Positive: test "AC2 positive — small-change cycle passes without triadic files" → exit 0.
+Output contains `✅ cycle 203 (small-change): no required cycle-dir artifacts (CDD.md §1.2)`.
+
+Negative: test "AC2 negative — small-change cycle not blocked for missing triadic files"
+re-uses the AC2 positive output and asserts `Release gate passed` — confirming the
+small-change cycle is not blocked for absent `beta-closeout.md`.
+
+### AC3: missing RELEASE.md blocks release
+
+**Status: MET**
+
+Evidence: `scripts/validate-release-gate.sh` checks `RELEASE.md` existence at repo root
+as its first check; exits 1 if missing. Called by `release.sh` step 4, before tag.
+
+Positive: test "AC3 positive — RELEASE.md present" → exit 0. Output contains
+`✅ RELEASE.md present`.
+
+Negative: test "AC3 negative — RELEASE.md absent" → exit 1. Output contains
+`❌ RELEASE.md missing at repo root — required before tag` and `❌ Release gate FAILED`.
