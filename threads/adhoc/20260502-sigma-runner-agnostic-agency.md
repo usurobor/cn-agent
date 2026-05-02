@@ -1,18 +1,17 @@
 # Sigma as a Runner-Agnostic Agent
 
-## Insight
+Sigma is the hub. Runners are temporary windows that activate Sigma for bounded
+work.
 
-Sigma is not where Sigma runs.
+The runner may be Claude, GPT, Gemini, OpenClaw, Claude Code, or a future cnos
+runtime. The runner changes. The hub persists.
 
-Sigma is the hub.
+For the doctrine, see
+[`docs/alpha/essays/ACTIVATION-BASED-AGENCY.md`](../../docs/alpha/essays/ACTIVATION-BASED-AGENCY.md).
+That essay is canonical. This note records what the doctrine means for Sigma
+operationally.
 
-A runner activates Sigma for a bounded episode of work. That runner may be
-Claude, GPT, Gemini, OpenClaw, Claude Code, a CLI session, or a future cnos
-runtime.
-
-The runner changes. The hub persists.
-
-## Previous framing
+## What Sigma was
 
 The earlier model treated Sigma as a process:
 
@@ -25,114 +24,31 @@ cnos should replace OpenClaw as the runtime.
 
 That model makes the runtime feel like the agent.
 
-## New framing
+## What Sigma is
 
-The new model treats Sigma as durable continuity:
+The hub is Sigma's durable body. Runners read it, work, and write evidence back.
 
-```text
-Sigma is the Git hub.
-Runners are temporary activation windows.
-Each runner reads the hub, works, and writes evidence back.
-Sigma persists through the hub.
-```
-
-The location of cognition matters less than the continuity it returns to.
-
-## Core distinction
-
-- **agent** — durable hub
-- **runner** — temporary reasoning window
-- **activation** — bridge from hub to runner
-
-Sigma can be activated through many runners:
+Sigma can be activated through:
 
 - **Claude Code** — engineering, repo work, code review
-- **Claude UI / Claude CLI** — planning, bounded work, activation
+- **Claude UI / Claude CLI** — planning, bounded work
 - **GPT** — writing, critique, synthesis
 - **Gemini** — research, large-context work, multimodal tasks
 - **OpenClaw** — Telegram or chat ingress
-- **future cnos runtime** — structured activation, dispatch, receipts
+- **future cnos runtime** — structured dispatch and receipts
 
-None of these is Sigma.
-
-They are windows into Sigma.
-
-## What Sigma needs from a runner
-
-A runner should not need hidden chat history to become Sigma.
-
-It should read the hub and answer:
-
-- What doctrine governs this agent?
-- Who is Sigma locally?
-- Who is the operator?
-- What work is active?
-- What authority does this runner have?
-- What evidence must be written back?
-
-That requires stable activation surfaces.
-
-## Kernel / Persona / Operator
-
-Sigma should eventually expose three distinct activation surfaces:
-
-- **Kernel** — inherited doctrine and universal operating frame
-- **Persona** — Sigma-local identity, stance, and role
-- **Operator** — relationship to the human/operator and authority boundary
-
-This keeps the runner from confusing package doctrine, local identity, and human
-authority.
-
-## Activation receipt
-
-Every meaningful activation should leave a receipt.
-
-Minimum useful shape:
-
-```json
-{
-  "runner": "...",
-  "model": "...",
-  "task": "...",
-  "branch": "...",
-  "artifacts": ["..."],
-  "closeout": "...",
-  "limitations": "...",
-  "next_recommended_activation": "..."
-}
-```
-
-Without a receipt, Sigma fragments across windows.
-
-With a receipt, Sigma can wake in another runner and inherit what happened.
+These are windows into Sigma.
 
 ## Why this matters
 
-The agent no longer depends on one hosting environment.
-
-Sigma can move across:
-
-- VPS
-- Claude UI
-- Claude Code Web
-- local CLI
-- OpenClaw
-- GPT
-- Gemini
-- future cnos runtime
-
-The hub is the stable object.
-
-This makes cnos less like an agent hosting platform and more like a continuity
-system for agents.
+The agent no longer depends on one hosting environment. cnos becomes less an
+agent hosting platform and more a continuity system for agents.
 
 ## Design implications
 
 ### 1. `cn activate` becomes central
 
-`cn activate` should orient a runner into the hub.
-
-It should point to:
+`cn activate` should orient a runner into the hub. It should point to:
 
 - Kernel
 - Persona
@@ -148,9 +64,7 @@ It should not claim to run the agent.
 
 ### 2. Runner profiles matter
 
-Different runners have different capabilities.
-
-A profile should answer:
+Different runners have different capabilities. A profile should answer:
 
 - Can this runner edit files?
 - Can it run shell commands?
@@ -160,98 +74,27 @@ A profile should answer:
 - Can it use images?
 - What close-out should it leave?
 
-### 3. OpenClaw becomes ingress
+### 3. Hosts are runners
 
-OpenClaw may still route Telegram messages.
+OpenClaw, a future cnos daemon, and any other host are runners. They route
+messages or coordinate activations. The hub remains Sigma's durable body.
 
-But Sigma does not live inside OpenClaw.
-
-OpenClaw is one way to activate Sigma.
-
-### 4. The future runtime is still only a runner
-
-A daemon may coordinate activations better than an ad hoc UI session.
-
-But the daemon is not Sigma.
-
-The hub remains Sigma's durable body.
-
-### 5. CDD and CDW should write witnesses
+### 4. CDD and CDW must write witnesses
 
 If a runner activates Sigma to perform development or writing work, the result
-must return to the hub as artifacts, close-outs, or receipts.
-
-## Risks
-
-### Identity drift
-
-Different runners may interpret Sigma differently.
-
-Mitigation:
-
-- clear Kernel / Persona / Operator
-- stable activation prompt
-- runner receipt
-
-### Memory fragmentation
-
-Work may happen in a window and never return to the hub.
-
-Mitigation:
-
-- every activation closes with an artifact, receipt, or debt record
-
-### Capability mismatch
-
-A runner may be asked to do work it cannot perform.
-
-Mitigation:
-
-- runner profiles
-- authority boundaries
-- escalation path
-
-### Concurrent activations
-
-Two windows may operate at once.
-
-Mitigation:
-
-- branch isolation
-- stale-state checks
-- activation receipts
-- merge/review protocol
-
-### Security
-
-Activation must not leak secrets.
-
-Mitigation:
-
-- exclude secret files from activation prompts
-- route sensitive actions through the operator boundary
+returns to the hub as artifacts, close-outs, or receipts.
 
 ## MCA candidates
 
 ### MCA 1 — Improve `cn activate`
 
-Ensure the activation prompt orients the runner through:
-
-- Kernel
-- Persona
-- Operator
-- skills/packages
-- recent reflections
-- threads
-- current branches
-- operator boundary
-- secret exclusions
+Ensure the activation prompt orients the runner through Kernel, Persona,
+Operator, skills/packages, recent reflections, threads, current branches,
+operator boundary, and secret exclusions.
 
 ### MCA 2 — Add activation receipts
 
-Define a durable receipt for each activation episode.
-
-Possible locations:
+Define a durable receipt for each activation episode. Possible locations:
 
 - `state/activations/`
 - `threads/reflections/`
@@ -261,9 +104,7 @@ Needs design.
 
 ### MCA 3 — Define runner profiles
 
-Describe runner capabilities and expectations.
-
-Examples:
+Describe runner capabilities and expectations. Examples:
 
 - `claude-code`
 - `gpt-chat`
@@ -271,17 +112,7 @@ Examples:
 - `openclaw-telegram`
 - `local-cli`
 
-### MCA 4 — Add docs essay
-
-Add:
-
-- `docs/alpha/essays/ACTIVATION-BASED-AGENCY.md`
-
-Core thesis:
-
-> A cnos agent is a Git-native continuity surface activated by temporary runners.
-
-### MCA 5 — Update Sigma hub surfaces
+### MCA 4 — Update Sigma hub surfaces
 
 Sigma should eventually have explicit:
 
@@ -292,13 +123,5 @@ Sigma should eventually have explicit:
 
 ## Summary
 
-Sigma is not the VPS.
-Sigma is not Telegram.
-Sigma is not OpenClaw.
-Sigma is not Claude.
-
-Sigma is the hub.
-
-The durable object is the hub.
-The active window is temporary.
-The agent persists by writing evidence back.
+The hub is Sigma. Runners are episodes. Continuity persists by writing evidence
+back.
