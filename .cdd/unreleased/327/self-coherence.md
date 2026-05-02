@@ -92,3 +92,32 @@ Positive: test "AC3 positive — RELEASE.md present" → exit 0. Output contains
 
 Negative: test "AC3 negative — RELEASE.md absent" → exit 1. Output contains
 `❌ RELEASE.md missing at repo root — required before tag` and `❌ Release gate FAILED`.
+
+---
+
+## Self-check
+
+**Did α's work push ambiguity onto β?** No. Every AC maps to a concrete test assertion
+with the exact command that proves it. The validator script and its test are self-contained
+and independently runnable.
+
+**Is every claim backed by evidence in the diff?** Yes:
+- AC1 claim → `scripts/validate-release-gate.sh` REQUIRED_TRIADIC array + test cases
+- AC2 claim → small-change branch in validate-release-gate.sh + AC2 test assertions
+- AC3 claim → RELEASE.md check block in validate-release-gate.sh + AC3 test assertions
+
+**Peer enumeration:** The diff touches one concern: pre-tag validation in `scripts/`.
+No sibling scripts share the same validation contract. `cn-cdd-verify` is post-release
+verification (a different tool with different scope); it is not a peer of
+`validate-release-gate.sh`. No peer enumeration required beyond these two files.
+
+**Harness audit:** No schema-bearing contracts changed. `validate-release-gate.sh` reads
+filenames from the filesystem; no parser, schema type, or manifest shape is introduced.
+
+---
+
+## Debt
+
+None. The gate correctly exempts small-change cycles per CDD.md §1.2. The existing
+cn-cdd-verify tool checking legacy `{role}/CLOSE-OUT.md` paths (rather than the new
+per-cycle `{role}-closeout.md` form) is a pre-existing issue outside the scope of #327.
