@@ -17,3 +17,24 @@ Design artifact: not required — single-concern tooling addition (2 new scripts
 
 Plan artifact: not required — implementation sequencing is trivial (test → implement →
 wire in).
+
+---
+
+## Skills
+
+**Tier 1a (CDD authority):**
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` — canonical lifecycle and role contract
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — α role surface
+
+**Tier 2 (general engineering):**
+- Tooling bundle applies: all outputs are shell scripts in `scripts/`
+
+**Tier 3 (issue-specific):**
+- `src/packages/cnos.core/skills/design/SKILL.md` — design principles applied to
+  validation contract boundary (one reason to change, truthful interface)
+- `src/packages/cnos.core/skills/write/SKILL.md` — script header comments and
+  self-coherence prose
+- `src/packages/cnos.eng/skills/eng/test/SKILL.md` — test from invariants, not just
+  examples; negative space mandatory; oracle explicit
+- `src/packages/cnos.eng/skills/eng/tool/SKILL.md` — shell script standards:
+  set -euo pipefail, fail-fast, idempotent, zero runtime deps, machine-readable output
