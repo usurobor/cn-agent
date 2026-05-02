@@ -50,15 +50,19 @@ if git rev-parse "$VERSION" >/dev/null 2>&1; then
   exit 1
 fi
 
-# 4. Stamp all manifests
+# 4. Validate release gate: RELEASE.md present + cycle artifact completeness
+echo "→ validating release gate conditions..."
+scripts/validate-release-gate.sh
+
+# 5. Stamp all manifests
 echo "→ stamping manifests..."
 scripts/stamp-versions.sh
 
-# 5. Verify consistency
+# 6. Verify consistency
 echo "→ verifying consistency..."
 scripts/check-version-consistency.sh
 
-# 5a. Move cycle directories from unreleased to releases
+# 6a. Move cycle directories from unreleased to releases
 if [ -d ".cdd/unreleased" ] && [ "$(ls -A .cdd/unreleased 2>/dev/null)" ]; then
   echo "→ moving cycle directories to .cdd/releases/$VERSION/"
   mkdir -p ".cdd/releases/$VERSION"
@@ -71,7 +75,7 @@ else
   echo "→ no unreleased cycle directories to move"
 fi
 
-# 6. Stage and commit if anything changed
+# 7. Stage and commit if anything changed
 if ! git diff --quiet; then
   git add -A
   git commit -m "release: $VERSION"
@@ -80,7 +84,7 @@ else
   echo "→ no changes to commit (already stamped)"
 fi
 
-# 7. Update CHANGELOG if it exists and doesn't have this version
+# 8. Update CHANGELOG if it exists and doesn't have this version
 if [ -f CHANGELOG.md ]; then
   if ! grep -q "## $VERSION" CHANGELOG.md; then
     echo ""
@@ -94,11 +98,11 @@ if [ -f CHANGELOG.md ]; then
   fi
 fi
 
-# 8. Tag
+# 9. Tag
 git tag "$VERSION"
 echo "→ tagged $VERSION"
 
-# 9. Push
+# 10. Push
 git push origin main --tags
 echo ""
 echo "✅ Released $VERSION — release CI will run."
