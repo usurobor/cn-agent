@@ -137,3 +137,23 @@ per-cycle `{role}-closeout.md` form) is a pre-existing issue outside the scope o
 | 6 Artifacts | tests (commit `d63830f2`), code (commit `d63830f2`), docs (n/a) | test, tool | design: not required; plan: not required; tests: `scripts/test-validate-release-gate.sh` (19 assertions); code: `scripts/validate-release-gate.sh` + `scripts/release.sh`; docs: no doc surface changed |
 | 7 Self-coherence | `.cdd/unreleased/327/self-coherence.md` | cdd | AC-by-AC check completed; self-check done; debt explicit |
 | 7a Pre-review | `.cdd/unreleased/327/self-coherence.md` | cdd | Pre-review gate below |
+
+---
+
+## Review-readiness | round 1 | implementation SHA: d63830f2 | branch CI: local gate green | ready for β
+
+**Pre-review gate (alpha/SKILL.md §2.6):**
+
+1. ✅ `cycle/327` rebased onto `origin/main` at `ce315831` (verified at write time; main SHA = merge-base SHA)
+2. ✅ `.cdd/unreleased/327/self-coherence.md` carries CDD Trace through step 7
+3. ✅ Tests present: `scripts/test-validate-release-gate.sh` — 19 assertions, 19 passed, 0 failed (re-run against HEAD)
+4. ✅ Every AC has evidence (§ACs section maps each to concrete test assertions)
+5. ✅ Known debt explicit: none beyond pre-existing cn-cdd-verify legacy-path issue
+6. ✅ Schema/shape audit: no schema-bearing contracts changed (filesystem path reads only)
+7. ✅ Peer enumeration: no peer family affected; `cn-cdd-verify` explicitly scoped out (different concern, different lifecycle phase)
+8. ✅ Harness audit: no parser/schema/manifest introduced; n/a
+9. ✅ Polyglot re-audit: `bash -n` on all 3 diff'd scripts — syntax-clean; no YAML/Go/Markdown surfaces touched
+10. ✅ Branch CI: local gate green (`bash scripts/test-validate-release-gate.sh` → 19/19 pass); remote CI unavailable in this environment — β should wait for CI green before merge
+11. ✅ Commit author email: `alpha@cdd.cnos` on all cycle commits (verified via `git log --format='%ae'`)
+
+Branch is review-ready on branch HEAD.
