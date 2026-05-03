@@ -10,7 +10,7 @@ cnos begins with a continuity question:
 
 That difference changes the architecture. Deployment centers the runtime. Activation centers the accumulated agent.
 
-A deployed agent is kept alive by a process, session, service, or orchestration layer. An activated agent is entered by a runner for a bounded episode of work. The runner may disappear. The agent persists if the episode writes evidence back to continuity.
+A deployed agent is kept alive by a process, service, session, gateway, or orchestration layer. An activated agent is entered by a runner for a bounded episode of work. The runner may disappear. The agent persists if the episode writes evidence back to continuity.
 
 ## Adjacent systems answer different questions
 
@@ -18,19 +18,19 @@ A deployed agent is kept alive by a process, session, service, or orchestration 
 
 > What tools, resources, and prompts can this model session access?
 
-The Model Context Protocol defines resources as a standardized way for servers to expose data and content to clients for use as model context, and prompts as reusable templates that clients can discover and retrieve. That is valuable, but it describes what a runner can access, not what makes the agent persist across runners.
+The Model Context Protocol specifies server features such as resources, which expose data or content to clients for use as model context, and prompts, which expose reusable prompt templates that clients can discover, retrieve, and customize. MCP can therefore help a runner discover files, prompts, tools, or hub resources. That is valuable, but it does not by itself answer the continuity question: which accumulated agent is this runner activating, what authority does it receive, and what evidence must return?
 
 **Memory systems** answer another nearby question:
 
 > What should this model remember about the user or prior conversations?
 
-OpenAI's memory documentation distinguishes saved memories from referenced chat history, both of which help personalize future conversations. That is useful, but cnos continuity is broader than remembered facts. It includes doctrine, identity, operator relationship, skills, artifacts, receipts, close-outs, decisions, failures, and reviewable history.
+OpenAI's memory documentation distinguishes saved memories from referenced chat history as mechanisms for personalizing future conversations. That is useful, but cnos continuity is broader than remembered facts. It includes doctrine, local identity, operator relationship, skills, artifacts, receipts, close-outs, decisions, failures, and reviewable history.
 
-**Agent runtimes** answer yet another question:
+**Agent runtimes** answer another question:
 
 > How do we keep a stateful workflow or agent execution alive and resumable?
 
-LangGraph, for example, explicitly frames itself around long-running, stateful agents with durable execution, persistence, human-in-the-loop control, and memory across sessions. That is a runtime-centered answer. cnos may eventually use runtime machinery, but the runtime is not the agent. The accumulated continuity is.
+LangGraph frames itself around long-running, stateful agents with durable execution, persistence, human-in-the-loop control, and memory across sessions. That is a runtime-centered answer. cnos may eventually use runtime machinery, but the runtime is not the agent. The accumulated continuity is.
 
 ## The cnos question
 
@@ -38,18 +38,19 @@ cnos asks:
 
 > What accumulated agent is this runner activating, and what must return to it?
 
-The answer is not the model.
-The answer is not the platform.
-The answer is not the daemon.
-The answer is not the chat session.
-
 The answer is the continuity surface.
 
 A cnos agent is persistent, portable, and evolving.
 
 It is persistent because it survives any one runner.
+
 It is portable because different runners can activate it.
-It is evolving because each meaningful activation can change what it knows, how it works, and what evidence it carries forward.
+
+It is evolving because each meaningful activation can change what it knows, how it works, or what evidence it carries forward.
+
+Deployment keeps a process alive.
+
+Activation lets accumulated continuity keep becoming the same agent across many processes.
 
 ## Activation
 
@@ -69,8 +70,41 @@ This is why `cn activate` matters.
 The shape is:
 
 ```text
-continuity surface → activation prompt → runner orientation → work → witness
+continuity surface
+→ activation prompt
+→ runner orientation
+→ bounded work
+→ witness
 ```
+
+The prompt is not the agent. It is the bridge into the agent.
+
+## What MCP can become in cnos
+
+MCP can participate in activation.
+
+A cnos MCP server could expose hub resources, package commands, activation prompts, or workflow templates. That would make activation easier because a runner could discover and retrieve relevant surfaces through a standard protocol.
+
+But MCP is not the continuity contract.
+
+MCP can tell a runner what it can access. It does not, by itself, say:
+
+- Which accumulated agent is this?
+- What authority does this runner receive?
+- What evidence must return?
+- What receipt proves the episode happened?
+- What changes in the agent after this work?
+
+In cnos terms:
+
+- MCP can expose capabilities.
+- `cn activate` orients the runner.
+- The continuity surface preserves the agent.
+- Receipts prove what returned.
+
+So MCP can be an activation transport.
+
+It is not the agent's continuity.
 
 ## Worked example
 
@@ -98,11 +132,7 @@ Then the runner can disappear.
 
 A later runner does not need the old chat session. It can read the review artifact, close-out, and receipt from the continuity surface. That is how the agent persists across runners.
 
-## Receipt
-
-A receipt is how one episode becomes part of the agent.
-
-A concrete receipt might look like this:
+The receipt below is illustrative. cnos does not yet require activation receipts for every runner episode; this is the shape the doctrine says should exist.
 
 ```json
 {
@@ -124,7 +154,7 @@ A concrete receipt might look like this:
 }
 ```
 
-The receipt is not bureaucracy. It is the bridge between a temporary episode and durable continuity.
+The receipt is not bureaucracy. It is how one episode becomes part of the agent.
 
 Without the receipt, the runner may have helped the moment.
 
@@ -148,7 +178,7 @@ cnos does not reject deployment. It refuses to confuse deployment with identity.
 
 A future daemon can be useful. A chat gateway can be useful. A runtime can be useful.
 
-They are activation surfaces.
+They can host or coordinate activations.
 
 They are not the accumulated agent.
 
@@ -159,29 +189,59 @@ Activation fails when a runner cannot tell which instruction has which authority
 Kernel, Persona, and Operator separate three different surfaces.
 
 **Kernel** says what coherent agency means.
+
 **Persona** says who this agent is locally.
+
 **Operator** says how this agent relates to the human and what authority it has.
 
 If those collapse into one vague prompt, doctrine becomes local preference, local identity becomes universal rule, and operator authority becomes hidden assumption.
 
-For example, "be direct and decisive" may be a persona instruction. "Do not exceed operator authority" is an operator-boundary instruction. "Preserve evidence before closure" is doctrine. A runner should not treat those as the same kind of claim.
+For example:
+
+> "Be direct and decisive."
+
+may be a persona instruction.
+
+> "Do not exceed operator authority."
+
+is an operator-boundary instruction.
+
+> "Preserve evidence before closure."
+
+is doctrine.
+
+A runner should not treat those as the same kind of claim.
 
 The split is not decorative. It prevents authority, identity, and doctrine from blurring at activation time.
 
-## What MCP can become in cnos
+## One failure case
 
-MCP can still fit this architecture.
+The clean success case is not enough. The doctrine also has to catch failure.
 
-An MCP server could expose hub resources, package commands, prompts, or other capabilities to a runner. That may make activation easier. But MCP does not by itself define the accumulated agent or guarantee that a runner returns evidence to continuity.
+Suppose a runner reviews a PR in a chat window and produces useful feedback, but writes nothing back to the hub.
 
-In cnos terms:
+No review artifact.
 
-- MCP can expose capabilities.
-- `cn activate` orients the runner.
-- The continuity surface preserves the agent.
-- Receipts prove what returned.
+No close-out.
 
-The distinction is not hostile. It is a boundary.
+No receipt.
+
+No issue comment.
+
+No branch update.
+
+The moment may have improved, but the agent did not. The next runner cannot inherit the work except through hidden chat history. That is memory fragmentation.
+
+In cnos terms, the episode failed to return to continuity.
+
+The minimum repair is not necessarily a daemon or a better runtime. It may be much simpler:
+
+- write the review artifact;
+- write the close-out;
+- write the receipt;
+- link the evidence.
+
+Sometimes the answer is to write back better.
 
 ## The rule
 
