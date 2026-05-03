@@ -18,19 +18,31 @@ A deployed agent is kept alive by a process, service, session, gateway, or orche
 
 > What tools, resources, and prompts can this model session access?
 
-The Model Context Protocol specifies server features such as resources, which expose data or content to clients for use as model context, and prompts, which expose reusable prompt templates that clients can discover, retrieve, and customize. MCP can therefore help a runner discover files, prompts, tools, or hub resources. That is valuable, but it does not by itself answer the continuity question: which accumulated agent is this runner activating, what authority does it receive, and what evidence must return?
+The Model Context Protocol specification, version 2025-11-25, defines MCP as an open protocol for connecting LLM applications with external data sources and tools. It says MCP lets applications share contextual information, expose tools/capabilities, and build composable integrations. Its server features include resources, prompts, and tools. Resources expose data/content such as files or schemas as model context; prompts expose reusable templates; tools expose functions a model can invoke. ([MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25), [MCP Resources 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/server/resources))
+
+That is valuable, but it does not by itself answer the continuity question:
+
+```text
+Which accumulated agent is this runner activating?
+What authority does this runner receive?
+What evidence must return?
+What receipt proves the episode happened?
+What changes in the agent after this work?
+```
 
 **Memory systems** answer another nearby question:
 
 > What should this model remember about the user or prior conversations?
 
-OpenAI's memory documentation distinguishes saved memories from referenced chat history as mechanisms for personalizing future conversations. That is useful, but cnos continuity is broader than remembered facts. It includes doctrine, local identity, operator relationship, skills, artifacts, receipts, close-outs, decisions, failures, and reviewable history.
+OpenAI's ChatGPT memory documentation distinguishes saved memories from referenced chat history as mechanisms for personalizing future conversations. That is useful, but cnos continuity is broader than remembered facts. It includes doctrine, local identity, operator relationship, skills, artifacts, receipts, close-outs, decisions, failures, and reviewable history. (OpenAI Memory FAQ, accessed 2026-05-03)
 
 **Agent runtimes** answer another question:
 
 > How do we keep a stateful workflow or agent execution alive and resumable?
 
-LangGraph frames itself around long-running, stateful agents with durable execution, persistence, human-in-the-loop control, and memory across sessions. That is a runtime-centered answer. cnos may eventually use runtime machinery, but the runtime is not the agent. The accumulated continuity is.
+LangGraph's documentation describes it as a low-level orchestration framework and runtime for building, managing, and deploying long-running, stateful agents. It emphasizes durable execution, human-in-the-loop control, comprehensive memory, and production-ready deployment. Its durable-execution docs define durable execution as saving workflow progress so a process can pause and resume from recorded state. (LangGraph overview, accessed 2026-05-03; LangGraph durable execution, accessed 2026-05-03)
+
+cnos may eventually use runtime machinery, but the runtime is not the agent. The accumulated continuity is.
 
 ## The cnos question
 
