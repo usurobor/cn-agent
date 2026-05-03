@@ -34,13 +34,13 @@ What changes in the agent after this work?
 
 > What should this model remember about the user or prior conversations?
 
-OpenAI's ChatGPT memory documentation distinguishes saved memories from referenced chat history as mechanisms for personalizing future conversations. That is useful, but cnos continuity is broader than remembered facts. It includes doctrine, local identity, operator relationship, skills, artifacts, receipts, close-outs, decisions, failures, and reviewable history. (OpenAI Memory FAQ, accessed 2026-05-03)
+OpenAI's ChatGPT memory documentation distinguishes saved memories from referenced chat history as mechanisms for personalizing future conversations. That is useful, but cnos continuity is broader than remembered facts. It includes doctrine, local identity, operator relationship, skills, artifacts, receipts, close-outs, decisions, failures, and reviewable history. ([OpenAI Memory FAQ, accessed 2026-05-03](https://help.openai.com/en/articles/8590148-memory-faq))
 
 **Agent runtimes** answer another question:
 
 > How do we keep a stateful workflow or agent execution alive and resumable?
 
-LangGraph's documentation describes it as a low-level orchestration framework and runtime for building, managing, and deploying long-running, stateful agents. It emphasizes durable execution, human-in-the-loop control, comprehensive memory, and production-ready deployment. Its durable-execution docs define durable execution as saving workflow progress so a process can pause and resume from recorded state. (LangGraph overview, accessed 2026-05-03; LangGraph durable execution, accessed 2026-05-03)
+LangGraph's documentation describes it as a low-level orchestration framework and runtime for building, managing, and deploying long-running, stateful agents. It emphasizes durable execution, human-in-the-loop control, comprehensive memory, and production-ready deployment. Its durable-execution docs define durable execution as saving workflow progress so a process can pause and resume from recorded state. ([LangGraph overview, accessed 2026-05-03](https://docs.langchain.com/oss/python/langgraph/overview); [LangGraph durable execution, accessed 2026-05-03](https://docs.langchain.com/oss/python/langgraph/durable-execution))
 
 cnos may eventually use runtime machinery, but the runtime is not the agent. The accumulated continuity is.
 
