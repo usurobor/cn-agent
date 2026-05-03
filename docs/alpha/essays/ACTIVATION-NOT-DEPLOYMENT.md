@@ -1,5 +1,12 @@
 # Activation, Not Deployment
 
+Related:
+- [AGENT-CONTINUITY](AGENT-CONTINUITY.md) — companion essay; what the agent is
+- [KERNEL](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/KERNEL.md) — canonical for the Kernel/Persona/Operator distinction this essay assumes
+- [AGENT-OPS](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/AGENT-OPS.md) — operational output discipline; receipts and coordination ops at runtime
+
+---
+
 Most agent systems begin with a deployment question:
 
 > How do we run this agent?

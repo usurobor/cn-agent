@@ -7,3 +7,5 @@ Position papers and architectural notes. These predate the doctrine cycle patter
 - [COHERENCE-SYSTEM](COHERENCE-SYSTEM.md) — how coherence unfolds into cnos
 - [SKILL-ARCHITECTURE](SKILL-ARCHITECTURE.md) — why skills compose instead of inherit
 - [SHIPPING-SOFTWARE-AFTER-AI](SHIPPING-SOFTWARE-AFTER-AI.md) — from H2M to a human triad
+- [AGENT-CONTINUITY](AGENT-CONTINUITY.md) — what persists across runners as the agent
+- [ACTIVATION-NOT-DEPLOYMENT](ACTIVATION-NOT-DEPLOYMENT.md) — activation versus deployment, MCP, memory, runtimes

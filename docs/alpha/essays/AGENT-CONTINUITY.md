@@ -1,5 +1,12 @@
 # The Continuity of the Agent
 
+Related:
+- [KERNEL](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/KERNEL.md) — canonical for the Kernel/Persona/Operator distinction this essay assumes
+- [AGENT-OPS](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/AGENT-OPS.md) — operational output discipline; receipts and coordination ops at runtime
+- [ACTIVATION-NOT-DEPLOYMENT](ACTIVATION-NOT-DEPLOYMENT.md) — companion essay; how activation differs from deployment, MCP, memory, and runtimes
+
+---
+
 A cnos agent is accumulated continuity that can be activated by temporary runners.
 
 It is persistent because it survives any one session.
