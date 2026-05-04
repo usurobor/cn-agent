@@ -1,6 +1,7 @@
 # Activation, Not Deployment
 
 Related:
+- [agent doctrine](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/README.md) — structural ground (CFA, EFA, JFA, IFA); see Doctrine lineage below
 - [AGENT-CONTINUITY](AGENT-CONTINUITY.md) — companion essay; what the agent is
 - [KERNEL](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/KERNEL.md) — canonical for the Kernel/Persona/Operator distinction this essay assumes
 - [AGENT-OPS](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/AGENT-OPS.md) — operational output discipline; receipts and coordination ops at runtime
@@ -18,6 +19,18 @@ cnos begins with a continuity question:
 That difference changes the architecture. Deployment centers the runtime. Activation centers the accumulated agent.
 
 A deployed agent is kept alive by a process, service, session, gateway, or orchestration layer. An activated agent is entered by a runner for a bounded episode of work. The runner may disappear. The agent persists if the episode writes evidence back to continuity.
+
+## Doctrine lineage
+
+This essay is an application of the agent doctrine to activation. It is not foundational doctrine and does not claim to derive new structure.
+
+[Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) grounds the receipt requirement: claim, evidence, and verdict must stay connected. A runner episode that leaves no evidence asks the next activation to inherit unverifiable closure.
+
+[Inheritance for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) grounds the continuity requirement: later cycles inherit named constraints, not appearances. A runner can write something back and still weaken continuity if it softens a prior commitment into a form that no longer constrains action.
+
+[Judgment for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) grounds debt and close-out language: when no move preserves every boundary, the agent must name what it protected, what it breached, and what remains unpaid.
+
+[Ethics for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) grounds the future-cycle concern: undocumented drift affects later agents that must inherit the surface left behind.
 
 ## Adjacent systems answer different questions
 

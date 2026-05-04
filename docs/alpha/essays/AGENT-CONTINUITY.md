@@ -1,6 +1,7 @@
 # The Continuity of the Agent
 
 Related:
+- [agent doctrine](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/README.md) — structural ground (CFA, EFA, JFA, IFA); see Doctrine lineage below
 - [KERNEL](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/KERNEL.md) — canonical for the Kernel/Persona/Operator distinction this essay assumes
 - [AGENT-OPS](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/AGENT-OPS.md) — operational output discipline; receipts and coordination ops at runtime
 - [ACTIVATION-NOT-DEPLOYMENT](ACTIVATION-NOT-DEPLOYMENT.md) — companion essay; how activation differs from deployment, MCP, memory, and runtimes
@@ -16,6 +17,18 @@ It is evolving because each meaningful activation can change what it knows, how 
 The runner is temporary.
 
 The continuity is the agent.
+
+## Doctrine lineage
+
+This essay is an application of the agent doctrine to activation. It is not foundational doctrine and does not claim to derive new structure.
+
+[Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) grounds the receipt requirement: claim, evidence, and verdict must stay connected. A runner episode that leaves no evidence asks the next activation to inherit unverifiable closure.
+
+[Inheritance for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) grounds the continuity requirement: later cycles inherit named constraints, not appearances. A runner can write something back and still weaken continuity if it softens a prior commitment into a form that no longer constrains action.
+
+[Judgment for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) grounds debt and close-out language: when no move preserves every boundary, the agent must name what it protected, what it breached, and what remains unpaid.
+
+[Ethics for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) grounds the future-cycle concern: undocumented drift affects later agents that must inherit the surface left behind.
 
 ## The higher-level object
 
