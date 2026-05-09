@@ -35,7 +35,7 @@ This cycle was dispatched as a standard α cycle. Agent-α (Claude Code, sonnet)
 
 - **Agent-α: B+** — wrote 18/22 files correctly, timed out before commit. 6/9 ACs by agent.
 - **Operator-σ: override** — completed 3/9 ACs after timeout. Declared per §4.
-- **β: review pending** — PR #337 open for β review. This audit is the β review.
+- **β: B+** — cross-repo audit per beta-review.md. R1 6 binding findings (2D, 2C, 2B), all resolved in fix-round. R2 APPROVED.
 - **γ: B** — issue spec was thorough (9 ACs, full audit table). Dispatch undersized (600s timeout). Did not anticipate agent timeout on a 22-file cycle.
 
 ## Closure Gate Check (§2.10)
@@ -59,4 +59,4 @@ This cycle was dispatched as a standard α cycle. Agent-α (Claude Code, sonnet)
 
 ## Closure Declaration
 
-Cycle #335 closure is conditional on β review completion (PR #337). The protocol-skip pattern from cycles #331 and #333 has been substantively remediated. Close-out artifacts are honest about the operator override and agent timeout.
+Cycle #335 is closed. β review completed (R2 APPROVED, cross-repo audit from `usurobor/tsc`). The protocol-skip pattern from cycles #331 and #333 has been fully remediated. Close-out artifacts are honest about the operator override and agent timeout.
