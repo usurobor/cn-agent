@@ -1,22 +1,34 @@
 ---
 cycle: 335
 issue: "#335"
-branch: "cycle/335-cdd-retro-closeout"
+pr: "#337"
 date: "2026-05-09"
+reviewer: "TSC (usurobor/tsc, cross-repo audit)"
 ---
 
 # Beta Close-Out — Cycle #335
 
-## Statement
+## Review Summary
 
-This cycle is dispatched as `docs-only` via §2.5b. No β close-out session was conducted. This is consistent with the α-only docs-only dispatch model.
+- **Rounds:** 2 (R1 REQUEST CHANGES → R2 APPROVED)
+- **R1 findings:** 6 (2 D-severity, 2 C-severity, 2 B-severity)
+- **R2 findings:** 0 (all resolved in fix-round)
+- **Merge:** PR #337 merged at `09004488` on 2026-05-09
 
-## Merge Evidence
+## What β caught
 
-The merge commit on `cnos:main` from `cycle/335-cdd-retro-closeout` is the disconnect signal per §2.5b. The merge commit hash is the canonical close signal for this docs-only cycle.
+The central finding was honest-claim failure (F1 + F2): the cycle that introduces rule 3.13 failed rule 3.13 on its own artifacts. Specifically:
+1. §2.5b was cited as authority for skipping β — it grants no such authority
+2. alpha-closeout claimed "All 9 ACs met" when agent timed out and operator completed 3/9
 
-## β Grade (provisional)
+Both were fixed cleanly in the fix-round by declaring the operator override honestly per §4.
 
-**β: N/A** — No in-cycle β review conducted. The retroactive artifacts were authored by α and merged without β review, per the §2.5b docs-only path authorized by issue #335.
+## β grade (self-assessed)
 
-Future β review of this branch's diff against the AC oracle in issue #335 is encouraged to verify rule 3.13 compliance (every measurement in the PRA traces to a commit artifact).
+**β: B+** — caught the recursive honest-claim failure (the most important thing to catch on this cycle). F7 (rubric vocabulary gap) surfaced as observation, not finding — could have been binding but the substance wasn't merge-blocking. Review was post-merge audit rather than pre-merge gate, which is a process deviation (operator override warranted it).
+
+## Observations
+
+- The `--output-format stream-json` without `--verbose` dispatch failure (documented in alpha-closeout friction log) is a `cdd-tooling-gap` finding worth tracking. Already patched on main by sigma (`66fda30`).
+- F7 (§3.8 rubric doesn't handle closure-gate-failure override of math) deserves a small follow-on issue.
+- Cross-repo β review (TSC reviewing cnos cycle) worked cleanly. The pattern is viable for future cross-repo bundles.
