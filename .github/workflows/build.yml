@@ -299,14 +299,16 @@ jobs:
           fi
           REF="${{ github.head_ref || github.ref_name }}"
           MSG="$ICON Build $STATUS: ${{ github.repository }}@${REF}"
+          REPO_URL="https://github.com/${{ github.repository }}"
           if [ -n "${{ github.event.pull_request.number }}" ]; then
-            MSG="$MSG (PR #${{ github.event.pull_request.number }})"
+            PR_NUM="${{ github.event.pull_request.number }}"
+            MSG="$MSG (PR ${REPO_URL}/pull/${PR_NUM})"
           else
             # For push builds: extract issue/PR number from merge commit message
             COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -1)
-            ISSUE_REF=$(echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | head -1)
-            if [ -n "$ISSUE_REF" ]; then
-              MSG="$MSG ($ISSUE_REF)"
+            ISSUE_NUM=$(echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
+            if [ -n "$ISSUE_NUM" ]; then
+              MSG="$MSG (${REPO_URL}/issues/${ISSUE_NUM})"
             fi
           fi
           curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
