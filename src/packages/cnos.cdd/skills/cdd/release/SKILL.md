@@ -305,11 +305,31 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - ❌ Tag without RELEASE.md ("I'll update the release body manually later")
   - ✅ Write RELEASE.md → include in release commit → tag → push
 
-3.8. **TSC scoring in CHANGELOG**
-  - Rate α (pattern), β (relation), γ (process) for each release
-  - Honest grades — not everything is A+
+3.8. **TSC scoring in CHANGELOG — honest-grading rubric**
+
+  Rate α (pattern), β (relation), γ (process) for each release. Honest grades — not everything is A+. The rubric below makes the grading reproducible across releases and reviewers.
+
+  **Per-axis rubric:**
+
+  | Grade | Numeric | Meaning |
+  |---|---|---|
+  | **A**   | 4.0 | met all ACs, no protocol skips, zero binding findings of the wiring or honest-claim class |
+  | **A-**  | 3.7 | met all ACs, ≤1 binding finding, all findings non-blocking |
+  | **B+**  | 3.3 | met all ACs, ≥2 binding findings or one round of RC |
+  | **B**   | 3.0 | met core ACs; partial-protocol release (e.g. missing RELEASE.md at tag time) **or** 2+ rounds of RC |
+  | **C+**  | 2.3 | shipped but missing one of: ledger row, PRA, provenance attachment |
+  | **C**   | 2.0 | partial-protocol release with multiple drift items |
+  | **< C** | < 2 | re-open and remediate; do not close |
+
+  **C_Σ** is the geometric mean of the three numeric grades; report the closest letter grade (e.g. (3.7 · 3.3 · 4.0)^(1/3) ≈ 3.66 ⟹ A-).
+
+  **Score the release, not the intent.** A retroactive partial-protocol close-out earns C+ honestly (e.g. `usurobor/tsc` cycle 27: v0.4.0 retroactive close-out scored α B / β C+ / γ C / C_Σ C+ — the grade reflects what shipped, not the goodwill of fixing it later).
+
   - ❌ Every release is A+ (grade inflation, no signal)
+  - ❌ Score the intent rather than what shipped
+  - ❌ Round up because "the team worked hard"
   - ✅ "β: A- — DUR skills synced but README.md still references old framing"
+  - ✅ "γ: C — partial-protocol release; retroactive close-out planned"
 
 ---
 
