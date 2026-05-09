@@ -56,7 +56,7 @@ calls:
 δ dispatches γ via `claude -p`. γ reads the issue, creates the cycle branch, and returns α/β prompts to δ. γ does not execute dispatch — δ does.
 
 ```bash
-cat /tmp/gamma-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --model <model>
+cat /tmp/gamma-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --verbose --model <model>
 ```
 
 ### 1.2. Dispatch α and β sequentially
@@ -65,13 +65,13 @@ cat /tmp/gamma-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-f
 
 ```bash
 # α — implements
-cat /tmp/alpha-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --permission-mode acceptEdits --model <model>
+cat /tmp/alpha-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --verbose --permission-mode acceptEdits --model <model>
 
 # β — reviews (needs Bash for git/gh read-only commands)
-cat /tmp/beta-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --permission-mode acceptEdits --model <model>
+cat /tmp/beta-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --verbose --permission-mode acceptEdits --model <model>
 ```
 
-Note: `--output-format stream-json` is required for all dispatches — without it, δ cannot monitor agent output in real time. `--permission-mode acceptEdits` is required because `claude -p` as a fresh session hits the trust dialog. Without it, agents cannot write files. β gets Bash because it needs `git diff`, `gh issue view`, etc. — role boundaries are enforced by beta/SKILL.md, not tool scoping.
+Note: `--output-format stream-json --verbose` is required for all dispatches — without it, δ cannot monitor agent output in real time. (`--verbose` is mandatory when combining `--output-format stream-json` with `-p`; without it, `claude` exits with an error.) `--permission-mode acceptEdits` is required because `claude -p` as a fresh session hits the trust dialog. Without it, agents cannot write files. β gets Bash because it needs `git diff`, `gh issue view`, etc. — role boundaries are enforced by beta/SKILL.md, not tool scoping.
 
 - ❌ Rewrite the prompt to add constraints or context γ didn't include
 - ✅ Deliver the prompt verbatim to the `claude -p` session
