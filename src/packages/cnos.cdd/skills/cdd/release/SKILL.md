@@ -96,7 +96,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
 2.4. **CHANGELOG**
   - Add a ledger row matching the format defined in `CHANGELOG.md` § Release Coherence Ledger. That format is canonical — do not reinvent the row shape here.
-  - The ledger row includes: Version, C_Σ, α, β, γ, Level, and a coherence note.
+  - The ledger row includes: Version, C_Σ, α, β, γ, Level, Rounds, and a coherence note. The **Rounds** column records the review-round count for the release's cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`). This is a learning-curve indicator — a rising trend signals process drift, a falling trend signals accumulated context.
   - Add a detailed section below the ledger: Added / Changed / Fixed, with each commit's impact named and linked to issues.
   - ❌ "Various improvements" (no detail)
   - ❌ Ledger row without engineering level (Level column is required)

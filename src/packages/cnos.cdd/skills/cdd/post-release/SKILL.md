@@ -79,8 +79,24 @@ The artifact has the following sections:
 **Cycles this release:** N
 **Avg review rounds:** N.N (target: ≤1 docs, ≤2 code)
 **Superseded cycles:** N (target: 0)
-**Finding breakdown:** N mechanical / N judgment / N total
+
+**Per-cycle round counts:**
+
+| Cycle | Issue | Mode | Rounds | Binding findings (R1) | Notes |
+|-------|-------|------|--------|----------------------|-------|
+
+**Finding-class breakdown** (across cycles in this release):
+
+| Class | Definition | Count |
+|---|---|---|
+| **mechanical** | Caught by grep/diff/script | N |
+| **wiring** | "X is wired into Y" but isn't (see review/SKILL.md 3.13c) | N |
+| **honest-claim** | Doc claims something code/data doesn't back (review/SKILL.md 3.13) | N |
+| **judgment** | Design/coherence assessment | N |
+| **contract** | Work contract incoherent | N |
+
 **Mechanical ratio:** N% (threshold: 20% → file process issue)
+**Honest-claim ratio:** N% (target: <30% — high ratio means α docs are drifting from artifacts; patch by tightening review/SKILL.md 3.13 application or by improving α self-coherence templates)
 **Action:** none / filed #NN
 
 ### 4a. CDD Self-Coherence
@@ -161,13 +177,13 @@ Rules:
 
 ### Step 2: Update CHANGELOG TSC table
 
-Add a row in the canonical bare-version format. The Level column is required (per CDD.md §9.1 and `release/SKILL.md` §2.4):
+Add a row in the canonical bare-version format. The Level and Rounds columns are required (per CDD.md §9.1 and `release/SKILL.md` §2.4):
 
 ```
-| X.Y.Z | C_Σ | α | β | γ | Level | Coherence note |
+| X.Y.Z | C_Σ | α | β | γ | Level | Rounds | Coherence note |
 ```
 
-The coherence note describes which incoherence was reduced, not what feature was added. The Level column records the cycle-level engineering level (L5 / L6 / L7) per CDD.md §9.1.
+The coherence note describes which incoherence was reduced, not what feature was added. The Level column records the cycle-level engineering level (L5 / L6 / L7) per CDD.md §9.1. The Rounds column records the review-round count for the cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`).
 
 **Scoring sequence:** The CHANGELOG TSC entry written at release time is **provisional** — it is β's release-time score. The post-release assessment is γ's independent score and MAY revise the CHANGELOG entry. If the assessment disagrees with the release-time score, update the CHANGELOG to match the assessment. The assessment governs.
 
