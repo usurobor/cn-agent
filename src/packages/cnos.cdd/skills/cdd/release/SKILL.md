@@ -160,7 +160,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - #N — description (if any found during validation)
   ```
 
-2.5a. **Move cycle directories to release directory**
+2.5a. **Move cycle directories to release directory** (tagged release)
   - Move every per-cycle directory from `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/`:
     ```bash
     mkdir -p .cdd/releases/X.Y.Z
@@ -175,6 +175,42 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - ❌ Leave cycle directories in `unreleased/` after tagging (lose the version association)
   - ❌ Move after the release commit (they should be part of the release snapshot)
   - ✅ Move before commit, include in the release commit
+
+2.5b. **Docs-only disconnect (no tag)**
+
+  A cycle that ships only documentation, protocol artifacts, or assessments — with no code change and no version bump — still requires a disconnect, but the disconnect is the merge commit on main, not a tag.
+
+  Cases this covers:
+
+  - Retroactive close-out for a previously-released version (no new code, only frozen artifacts and CHANGELOG row backfill — the cycle for `usurobor/tsc#27` is the canonical example)
+  - Self-coherence reports and post-release assessments produced as their own cycle, not bundled with a code release
+  - Skill patches that ship only as protocol changes
+  - Doc-cleanup cycles (e.g. retiring stale references after a paradigm shift)
+
+  For docs-only cycles:
+
+  - `.cdd/unreleased/{N}/` moves to `.cdd/releases/docs/{ISO-date}/{N}/` where `{ISO-date}` is the merge commit's date in `YYYY-MM-DD` form (e.g. `.cdd/releases/docs/2026-05-08/27/`).
+  - **No CHANGELOG ledger row.** The Release Coherence Ledger tracks tagged releases. γ records the cycle in `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md` instead — same PRA structure as a tagged release, just keyed by date.
+  - The merge commit hash IS the disconnect signal. No `scripts/release.sh` invocation. No version bump. VERSION is unchanged.
+  - `scripts/check-version-consistency.sh` is not required to run (nothing version-stamped changed).
+
+  ```bash
+  # Docs-only disconnect at merge time (run as part of γ closure):
+  ISO_DATE="$(date -u +%Y-%m-%d)"
+  mkdir -p ".cdd/releases/docs/${ISO_DATE}"
+  for dir in .cdd/unreleased/*/; do
+    [ -d "$dir" ] || continue
+    mv "$dir" ".cdd/releases/docs/${ISO_DATE}/"
+  done
+  ```
+
+  - ❌ Leave docs-only cycle directories in `.cdd/unreleased/{N}/` after merge ("there's no release to move them to")
+  - ❌ Force a synthetic version bump on a docs-only cycle just to fit the tagged-release flow
+  - ❌ Skip the PRA because no tag was pushed
+  - ✅ Move to `.cdd/releases/docs/{ISO-date}/{N}/` in the merge commit
+  - ✅ γ writes `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md`
+
+  γ declares `docs-only` in the issue mode header (per `issue/SKILL.md` §Mode declaration); the disconnect path is selected at issue-creation time, not retrofitted at merge.
 
 2.6. **Tag and push**
   - **Tag naming convention:** use bare version numbers without `v` prefix: `3.15.1`, not `v3.15.1`. This matches VERSION file content, branch naming (`claude/3.15.0-22-...`), and snapshot directory names (`docs/gamma/cdd/3.15.0/`). Consistency across all version surfaces.
