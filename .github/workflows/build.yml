@@ -302,13 +302,15 @@ jobs:
           REPO_URL="https://github.com/${{ github.repository }}"
           if [ -n "${{ github.event.pull_request.number }}" ]; then
             PR_NUM="${{ github.event.pull_request.number }}"
-            MSG="$MSG (PR ${REPO_URL}/pull/${PR_NUM})"
+            MSG="$MSG (${REPO_URL}/pull/${PR_NUM})"
           else
-            # For push builds: extract issue/PR number from merge commit message
+            # For push builds: extract issue/PR number from merge commit, fall back to commit URL
             COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -1)
             ISSUE_NUM=$(echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
             if [ -n "$ISSUE_NUM" ]; then
               MSG="$MSG (${REPO_URL}/issues/${ISSUE_NUM})"
+            else
+              MSG="$MSG (${REPO_URL}/commit/${{ github.sha }})"
             fi
           fi
           curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
