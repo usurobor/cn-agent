@@ -321,6 +321,10 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   | **C**   | 2.0 | partial-protocol release with multiple drift items |
   | **< C** | < 2 | re-open and remediate; do not close |
 
+  **Closure-gate override (fires before geometric-mean computation).** If any artifact required by `gamma/SKILL.md` §2.10 closure gate (per `CDD.md` §5.3b ownership matrix) is absent from the cycle's `.cdd/unreleased/{N}/` directory at merge time — specifically any of `alpha-closeout.md`, `beta-closeout.md`, or `gamma-closeout.md` for a triadic cycle — then `C_Σ` is forced to `<C` regardless of per-axis math. Cycle disposition is "open and remediate"; the geometric mean is not computed. This override is verified mechanically by `scripts/validate-release-gate.sh --mode pre-merge` (see AC1, issue #339). The math below applies only after the closure gate passes.
+
+  **Letter normalization (`<C` and `C−`).** The rubric table uses `<C` as the grade label. Prior CHANGELOG, PRA, and alpha-closeout artifacts for cycles #331, #333, and #334 used `C−` for the same disposition. These are the same grade: `C−` is the operator-visible projection of `<C`. Both mean "open and remediate; do not close." Authors may use either form; the CHANGELOG column uses `<C` for rubric fidelity and `C−` is accepted as equivalent in prose artifacts.
+
   **C_Σ** is the geometric mean of the three numeric grades; report the closest letter grade (e.g. (3.7 · 3.3 · 4.0)^(1/3) ≈ 3.66 ⟹ A-).
 
   **Score the release, not the intent.** A retroactive partial-protocol close-out earns C+ honestly (e.g. `usurobor/tsc` cycle 27: v0.4.0 retroactive close-out scored α B / β C+ / γ C / C_Σ C+ — the grade reflects what shipped, not the goodwill of fixing it later).
