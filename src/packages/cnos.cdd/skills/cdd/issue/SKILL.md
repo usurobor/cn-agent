@@ -113,6 +113,55 @@ Mis-labeling MCA is not free — it costs α context and β review patience.
 
 ---
 
+## Cycle scope sizing
+
+γ sizes a cycle at scoping time — not after dispatch. The sizing decision appears explicitly in the issue body and is verified at handoff.
+
+### Soft AC-count guideline
+
+| Band | AC count | Signal |
+|---|---|---|
+| Small | 1–4 | Single-focus; artifact-class collapse optional (see `cdd/CDD.md` §1.2) |
+| Typical | 5–7 | Standard cycle; monitor round-count target (≤2 code, ≤1 docs) |
+| At-edge | 8–10 | Allowed; requires five-factor check and written justification if kept whole |
+| Split-or-justify | ≥11 | Must split into master+subs or provide written justification |
+
+The guideline is soft — γ's judgment governs. The heuristic forces the judgment to be visible.
+
+### Five-factor split-decision heuristic
+
+For any cycle at the at-edge (8–10) or split-or-justify (≥11) band, γ applies:
+
+| Factor | Question | Splitting signal |
+|---|---|---|
+| (a) New code surface | How many new modules, packages, or runtime contracts does this introduce? | ≥2 new modules → split |
+| (b) Cross-module breadth | How many existing modules are touched in non-trivial ways? | ≥3 modules touched → split |
+| (c) Lifecycle span | Does the issue span multiple lifecycle phases (design → code → docs → infra) in ways that would serialize α's context? | Phases can't overlap → split |
+| (d) MCA-precondition stability | Would mid-cycle design discovery force re-scoping? | Design not yet stable → explore or design-and-build cycle first |
+| (e) Independent shippability of AC groups | Can any AC subset be shipped and used independently of the rest? | Yes → subs are the right shape |
+
+A "yes" on any single factor is a signal; a "yes" on two or more factors is a strong split indicator.
+
+### Master+subs pattern
+
+When γ decides to split, the master+subs pattern applies:
+
+1. **Independent shippability of subs** — each sub-issue is executable, verifiable, and shippable on its own. A chain where sub B blocks on sub A's merge is an anti-pattern; avoid it.
+2. **Master cites subs** via the repo's native sub-issue mechanism (cnos: `sub-issue` field; cnos-tsc: `mcp__github__sub_issue_write`).
+3. **Master closes** when all subs are closed, or any deferred sub is explicitly named as tracked debt in the master's closure condition.
+
+### Empirical anchor
+
+Evidence from `usurobor/tsc#23` (cnos-tsc supercycle, cycles 24–29):
+
+- **Cycle 25** (12 ACs, 2 rounds): ran at the at-edge; α's 20-minute reading phase before first commit was operator-ambiguous ("stuck vs thinking"). Smaller issues converge faster and produce a clearer signal.
+- **Cycle 24** (7 ACs, 3 rounds): same AC count as a "typical" cycle but touched 3+ modules with new runtime contracts. AC count alone did not predict round count — factors (a) and (b) were the load driver.
+- **Cycle 26** (6 ACs, 1 round) vs **cycle 29** (6 ACs, 2 rounds): identical AC count, different difficulty. Factor (b) diverged — cycle 29 touched a cross-cutting surface that cycle 26 did not.
+
+The five-factor heuristic encodes what AC count alone cannot capture.
+
+---
+
 ## When to load each subskill
 
 Load subskills as the issue shape requires:
@@ -155,6 +204,18 @@ Where they diverge:
 In scope:
 Out of scope:
 Deferred:
+
+## Cycle scope sizing
+
+| Factor | Reading | Splitting signal? |
+|---|---|---|
+| (a) New code surface | | |
+| (b) Cross-module breadth | | |
+| (c) Lifecycle span | | |
+| (d) MCA preconditions | | |
+| (e) Independent shippability | | |
+
+Decision: keep whole / split into master+subs — <one-line justification>
 
 ## Acceptance criteria
 
@@ -235,6 +296,7 @@ Before filing or dispatching:
 - [ ] Labels: exactly one kind label and one priority label (load `issue/labels`).
 - [ ] Mode declared: MCA / explore / design-and-build / docs-only.
 - [ ] If MCA: design and plan paths cited in source-of-truth table; both stable.
+- [ ] Cycle scope-sizing decision recorded; if at-edge (8–10) or above (≥11), justification or master+subs pointer present.
 
 ---
 
