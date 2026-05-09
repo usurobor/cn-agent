@@ -8,4 +8,4 @@ See `cdd/post-release/SKILL.md` Step 5.6b for the per-finding shape and the aggr
 |-------|-------|------|----------|---------|------|----------|------|
 | 331 | #331 | 2026-05-08 | 6 | 6 | 0 | 0 | .cdd/releases/docs/2026-05-09/331/cdd-iteration.md |
 | 333 | #330 | 2026-05-08 | 3 | 3 | 0 | 0 | .cdd/releases/docs/2026-05-09/333/cdd-iteration.md |
-| 335 | #335 | 2026-05-09 | 1 | 1 | 0 | 0 | .cdd/releases/docs/2026-05-09/335/cdd-iteration.md |
+| 335 | #335 | 2026-05-09 | 2 | 1 | 1 | 0 | .cdd/releases/docs/2026-05-09/335/cdd-iteration.md |
