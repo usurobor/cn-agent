@@ -96,7 +96,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
 2.4. **CHANGELOG**
   - Add a ledger row matching the format defined in `CHANGELOG.md` § Release Coherence Ledger. That format is canonical — do not reinvent the row shape here.
-  - The ledger row includes: Version, C_Σ, α, β, γ, Level, and a coherence note.
+  - The ledger row includes: Version, C_Σ, α, β, γ, Level, Rounds, and a coherence note. The **Rounds** column records the review-round count for the release's cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`). This is a learning-curve indicator — a rising trend signals process drift, a falling trend signals accumulated context.
   - Add a detailed section below the ledger: Added / Changed / Fixed, with each commit's impact named and linked to issues.
   - ❌ "Various improvements" (no detail)
   - ❌ Ledger row without engineering level (Level column is required)
@@ -160,7 +160,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - #N — description (if any found during validation)
   ```
 
-2.5a. **Move cycle directories to release directory**
+2.5a. **Move cycle directories to release directory** (tagged release)
   - Move every per-cycle directory from `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/`:
     ```bash
     mkdir -p .cdd/releases/X.Y.Z
@@ -175,6 +175,42 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - ❌ Leave cycle directories in `unreleased/` after tagging (lose the version association)
   - ❌ Move after the release commit (they should be part of the release snapshot)
   - ✅ Move before commit, include in the release commit
+
+2.5b. **Docs-only disconnect (no tag)**
+
+  A cycle that ships only documentation, protocol artifacts, or assessments — with no code change and no version bump — still requires a disconnect, but the disconnect is the merge commit on main, not a tag.
+
+  Cases this covers:
+
+  - Retroactive close-out for a previously-released version (no new code, only frozen artifacts and CHANGELOG row backfill — the cycle for `usurobor/tsc#27` is the canonical example)
+  - Self-coherence reports and post-release assessments produced as their own cycle, not bundled with a code release
+  - Skill patches that ship only as protocol changes
+  - Doc-cleanup cycles (e.g. retiring stale references after a paradigm shift)
+
+  For docs-only cycles:
+
+  - `.cdd/unreleased/{N}/` moves to `.cdd/releases/docs/{ISO-date}/{N}/` where `{ISO-date}` is the merge commit's date in `YYYY-MM-DD` form (e.g. `.cdd/releases/docs/2026-05-08/27/`).
+  - **No CHANGELOG ledger row.** The Release Coherence Ledger tracks tagged releases. γ records the cycle in `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md` instead — same PRA structure as a tagged release, just keyed by date.
+  - The merge commit hash IS the disconnect signal. No `scripts/release.sh` invocation. No version bump. VERSION is unchanged.
+  - `scripts/check-version-consistency.sh` is not required to run (nothing version-stamped changed).
+
+  ```bash
+  # Docs-only disconnect at merge time (run as part of γ closure):
+  ISO_DATE="$(date -u +%Y-%m-%d)"
+  mkdir -p ".cdd/releases/docs/${ISO_DATE}"
+  for dir in .cdd/unreleased/*/; do
+    [ -d "$dir" ] || continue
+    mv "$dir" ".cdd/releases/docs/${ISO_DATE}/"
+  done
+  ```
+
+  - ❌ Leave docs-only cycle directories in `.cdd/unreleased/{N}/` after merge ("there's no release to move them to")
+  - ❌ Force a synthetic version bump on a docs-only cycle just to fit the tagged-release flow
+  - ❌ Skip the PRA because no tag was pushed
+  - ✅ Move to `.cdd/releases/docs/{ISO-date}/{N}/` in the merge commit
+  - ✅ γ writes `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md`
+
+  γ declares `docs-only` in the issue mode header (per `issue/SKILL.md` §Mode declaration); the disconnect path is selected at issue-creation time, not retrofitted at merge.
 
 2.6. **Tag and push**
   - **Tag naming convention:** use bare version numbers without `v` prefix: `3.15.1`, not `v3.15.1`. This matches VERSION file content, branch naming (`claude/3.15.0-22-...`), and snapshot directory names (`docs/gamma/cdd/3.15.0/`). Consistency across all version surfaces.
@@ -269,11 +305,31 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - ❌ Tag without RELEASE.md ("I'll update the release body manually later")
   - ✅ Write RELEASE.md → include in release commit → tag → push
 
-3.8. **TSC scoring in CHANGELOG**
-  - Rate α (pattern), β (relation), γ (process) for each release
-  - Honest grades — not everything is A+
+3.8. **TSC scoring in CHANGELOG — honest-grading rubric**
+
+  Rate α (pattern), β (relation), γ (process) for each release. Honest grades — not everything is A+. The rubric below makes the grading reproducible across releases and reviewers.
+
+  **Per-axis rubric:**
+
+  | Grade | Numeric | Meaning |
+  |---|---|---|
+  | **A**   | 4.0 | met all ACs, no protocol skips, zero binding findings of the wiring or honest-claim class |
+  | **A-**  | 3.7 | met all ACs, ≤1 binding finding, all findings non-blocking |
+  | **B+**  | 3.3 | met all ACs, ≥2 binding findings or one round of RC |
+  | **B**   | 3.0 | met core ACs; partial-protocol release (e.g. missing RELEASE.md at tag time) **or** 2+ rounds of RC |
+  | **C+**  | 2.3 | shipped but missing one of: ledger row, PRA, provenance attachment |
+  | **C**   | 2.0 | partial-protocol release with multiple drift items |
+  | **< C** | < 2 | re-open and remediate; do not close |
+
+  **C_Σ** is the geometric mean of the three numeric grades; report the closest letter grade (e.g. (3.7 · 3.3 · 4.0)^(1/3) ≈ 3.66 ⟹ A-).
+
+  **Score the release, not the intent.** A retroactive partial-protocol close-out earns C+ honestly (e.g. `usurobor/tsc` cycle 27: v0.4.0 retroactive close-out scored α B / β C+ / γ C / C_Σ C+ — the grade reflects what shipped, not the goodwill of fixing it later).
+
   - ❌ Every release is A+ (grade inflation, no signal)
+  - ❌ Score the intent rather than what shipped
+  - ❌ Round up because "the team worked hard"
   - ✅ "β: A- — DUR skills synced but README.md still references old framing"
+  - ✅ "γ: C — partial-protocol release; retroactive close-out planned"
 
 ---
 

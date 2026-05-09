@@ -118,6 +118,16 @@ Return to this file for verdict rules and output format.
 3.12. **Review divergence is a skill gap**
   - When two reviewers diverge, the fix is a patch to the review skill, not "be more careful."
 
+3.13. **Honest-claim verification**
+
+  Documents claim things; β verifies the claims are backed by code, data, or canonical source. Three sub-checks, all binding:
+
+  - **(a) Reproducibility** — Every measurement quoted in a doc must be reproducible from artifacts in this commit. If the doc says "engine output = 0.83", the run that produced 0.83 must be runnable from the diff with provenance attached. A measurement with no reproduction path is a D-level finding.
+  - **(b) Source-of-truth alignment** — Every term used in a non-spec doc must trace to its canonical definition. Drift between informal and normative usage is a D-level finding (e.g. "W2 spread" used inconsistently with `cnos.cdd/skills/.../W2` spec definition).
+  - **(c) Wiring claims** — If a module documents "X is wired into Y", β grep-checks that X actually appears in Y's call graph. A doc lying about wiring is the most expensive class of bug to find late, because consumers trust the doc and stop reading the code.
+
+  Failure mode this rule catches: α produces a narrative document (release note, self-coherence report, post-release assessment, runtime spec) whose prose is internally consistent but whose claims are not backed by what the cycle actually shipped. The supercycle in cnos-tsc surfaced this pattern across multiple cycles — three of four findings on the v3.2.0 self-coherence report cycle were honest-claim violations (undeclared artifact, score discrepancy, missing provenance attachment).
+
 ---
 
 ## Finding Taxonomy
@@ -127,8 +137,9 @@ Return to this file for verdict rules and output format.
 | **mechanical** | Caught by grep/diff/script | stale path, wrong branch name, broken link |
 | **judgment** | Requires design/coherence assessment | missing AC, authority conflict, design trade-off |
 | **contract** | Work contract is incoherent | issue contradiction, PR overclaim, draft-as-current, exception contradicts hard gate, proof plan missing |
+| **honest-claim** | Doc claims something code/data doesn't back (rule 3.13) | non-reproducible measurement, term used inconsistently with spec, wiring claim that grep disproves |
 
-Contract findings may overlap with mechanical or judgment — tag both when applicable.
+Contract and honest-claim findings may overlap with mechanical or judgment — tag both when applicable.
 
 Mechanical findings reaching review are **process bugs**. If >20% of findings in a cycle are mechanical, file a process issue.
 
@@ -229,8 +240,11 @@ Before submitting a review:
 - [ ] CDD artifacts exist and are internally consistent
 - [ ] Mechanical diff scan: duplicates, branch names, snapshot plausibility
 - [ ] Every claim traces to evidence
+- [ ] Honest-claim verification (3.13a): every quoted measurement reproducible from this commit
+- [ ] Honest-claim verification (3.13b): every term used in a non-spec doc traces to canonical source
+- [ ] Honest-claim verification (3.13c): every wiring claim grep-verified
 - [ ] Severity assigned to every finding
-- [ ] Type assigned to every finding (mechanical / judgment / contract)
+- [ ] Type assigned to every finding (mechanical / judgment / contract / honest-claim)
 - [ ] D-level findings include regression test pairs
 - [ ] CI/build checks green, or approval marked provisional
 - [ ] Approval explicitly closes the search space
