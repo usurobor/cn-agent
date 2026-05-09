@@ -68,6 +68,51 @@ The acceptance criteria and proof plan name the verification surface.
 
 ---
 
+## Mode declaration and MCA preconditions
+
+Every issue declares a mode in its body header. The mode tells α how much design work has already converged and how much α must do before implementation begins.
+
+| Mode | Meaning | When to use |
+|---|---|---|
+| **MCA** (Make-Coherent-Acceleration) | Design + plan already converged; α executes a known sequence | Both design and plan are committed at stable paths and will not be edited during the cycle |
+| **explore** | Gap is real but boundary not yet bounded | The issue names a problem that needs investigation before implementation |
+| **design-and-build** | Design needed before code; both happen in this cycle | Small enough that staging a separate design cycle would be overhead |
+| **docs-only** | No code change, no version bump | Retroactive close-out, self-coherence report, doc cleanup, skill patches as the cycle's only output |
+
+### MCA preconditions (all three must hold)
+
+A cycle qualifies as MCA only when γ can answer **yes** to all of:
+
+1. **Design committed** at a stable path (not in the issue body) — `docs/{tier}/{bundle}/{X.Y.Z}/DESIGN.md`, an architecture doc, or a converged proposal. The path must resolve and the document must be the source of truth, not a draft.
+2. **Plan committed** with explicit step ordering — `docs/{tier}/{bundle}/{X.Y.Z}/PLAN.md` or equivalent, listing the sequenced work items α will execute. The plan names *what* α does in *what order*, not just *that* α will do something.
+3. **Both stable** — neither will be edited during the cycle. If a step would require revising design or plan, the cycle is not MCA.
+
+If any of the three fails, γ declares the cycle as `explore` or `design-and-build` and (where applicable) stages a separate design cycle first.
+
+### MCA cycle citation
+
+When mode = MCA, the issue's *Source of truth* table MUST cite the design path and the plan path:
+
+```markdown
+| Claim / surface | Canonical source | Status |
+|---|---|---|
+| Design | `docs/.../DESIGN.md` | Shipped |
+| Plan | `docs/.../PLAN.md` | Shipped |
+```
+
+Without these rows, the mode is mis-labeled — γ either re-declares the mode or stages the missing artifact.
+
+### Failure mode when mis-labeled MCA
+
+α re-derives the plan from the issue body, which inflates context load and review pressure. The supercycle in `usurobor/tsc` master #23 produced direct evidence:
+
+- Cycles where MCA discipline was honored (design + plan stable, cited) ran in **1–2 review rounds**
+- Cycles where the design surface was ambiguous (no stable plan, α re-deriving) ran in **3 review rounds**
+
+Mis-labeling MCA is not free — it costs α context and β review patience.
+
+---
+
 ## When to load each subskill
 
 Load subskills as the issue shape requires:
@@ -188,6 +233,8 @@ Before filing or dispatching:
 - [ ] Examples obey the rules they are demonstrating.
 - [ ] Known gaps are named honestly.
 - [ ] Labels: exactly one kind label and one priority label (load `issue/labels`).
+- [ ] Mode declared: MCA / explore / design-and-build / docs-only.
+- [ ] If MCA: design and plan paths cited in source-of-truth table; both stable.
 
 ---
 
