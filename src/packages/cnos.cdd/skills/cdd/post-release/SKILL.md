@@ -276,6 +276,56 @@ If no `CDD.md` §9.1 trigger fired, write either:
 - `No §9.1 trigger fired`, or
 - the independent γ process-gap result if step 13 still found something worth patching.
 
+### Step 5.6b: Author `cdd-iteration.md` (when applicable)
+
+When the close-out triage in `gamma-closeout.md` produces ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`, γ writes a first-class artifact `.cdd/unreleased/{N}/cdd-iteration.md` extracting only those findings into a structured form. This is the canonical home for cdd-self-improvement findings; PRA §3 prose remains as narrative, but the structured record lives here.
+
+**Empty cycles produce no file.** If triage produces zero `cdd-*-gap` findings, no `cdd-iteration.md` is written — signal stays high.
+
+**Per-finding shape:**
+
+```markdown
+### F1: <title>
+
+- **Source:** α-closeout / β-review / γ-triage / PRA §3 / PRA §4b — name the artifact and section
+- **Class:** `cdd-skill-gap` | `cdd-protocol-gap` | `cdd-tooling-gap` | `cdd-metric-gap`
+- **Trigger:** §9.1 trigger N | "γ process-gap check" | "review pattern across cycles"
+- **Description:** one paragraph
+- **Root cause:** one paragraph
+- **Disposition:** `patch-landed` | `next-MCA` | `no-patch`
+
+If `patch-landed`:
+- **Patch:** `<commit-sha>` or `<file-path>`
+- **Affects:** `<cdd skill file or section>` (e.g. `cdd/review/SKILL.md` §3.13)
+- **Cross-repo:** `<target-repo>` PR `#NN` if patch landed in a different repo than this cycle (otherwise omit)
+
+If `next-MCA`:
+- **Issue filed:** `<repo>` `#NN`
+- **First AC:** ...
+
+If `no-patch`:
+- **Reason:** required justification per CDD §13a
+```
+
+**Aggregator update.** After writing `cdd-iteration.md`, γ updates `.cdd/iterations/INDEX.md` with one row:
+
+```markdown
+| Cycle | Issue | Date | Findings | Patches | MCAs | No-patch | Path |
+|-------|-------|------|----------|---------|------|----------|------|
+| {N}   | #N    | YYYY-MM-DD | M | P | A | Z | .cdd/releases/{X.Y.Z}/{N}/cdd-iteration.md |
+```
+
+For docs-only releases, the path uses the §2.5b form: `.cdd/releases/docs/{ISO-date}/{N}/cdd-iteration.md`.
+
+**Cross-repo trace.** If any finding's disposition is `patch-landed` with a `Cross-repo` target, γ also creates `.cdd/iterations/cross-repo/{target-repo}/{slug}/` containing:
+
+- the bundle deliverables (patch series, issue body, PR body, apply notes)
+- a `LINEAGE.md` mapping each deliverable to its source cycle(s) and the target repo's PR
+
+The cross-repo directory persists until the target PR merges; γ may delete it thereafter (the lineage is preserved in the target repo's own `cdd-iteration.md`).
+
+**Why this artifact exists.** Without `cdd-iteration.md`, cdd-self-improvement findings are buried in PRA §3 prose. They cannot be aggregated, the protocol cannot measure its own learning rate, and cross-repo work loses traceability. Making the artifact first-class closes cdd's self-iteration loop with the same discipline cdd applies to system-level cycles. Empty cycles produce no file — the cost is paid only when it carries signal.
+
 ### Step 5.7: Production verification
 
 After release, verify the change works in production — not just that CI passes. Design a concrete test that demonstrates the new capability (or blocked failure mode) in a real environment.
@@ -345,6 +395,7 @@ Before committing the assessment, verify mechanically:
 - [ ] §4 mechanical ratio: if >20% AND total findings ≥ 10, a process issue is **filed and referenced** (not just noted). Below 10 findings, note the ratio but no filing required.
 - [ ] §4a CDD self-coherence: α/β/γ scored, weakest axis named, action stated (or "none" if all ≥3)
 - [ ] If any `CDD.md` §9.1 trigger fired, §4b Cycle Iteration exists with trigger, root cause, disposition, and evidence.
+- [ ] If close-out triage produced ≥1 finding tagged `cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`, `.cdd/unreleased/{N}/cdd-iteration.md` exists (Step 5.6b) **and** `.cdd/iterations/INDEX.md` has a new row for cycle N. If patch landed cross-repo, `.cdd/iterations/cross-repo/{target}/{slug}/` exists with `LINEAGE.md`.
 - [ ] §3/§4 skill patches: if §3 identifies a recurring failure mode or skill gap, the patch is **in this commit** (not deferred) and synced across all affected surfaces: canonical source under `src/packages/`, package-visible loader entrypoint if affected, human-facing pointer/readme surfaces if they expose the changed rule.
 - [ ] §5.7 has production verification scenario (or explicit deferral with commitment)
 - [ ] §6 CDD Closeout trace present with rows for observe/assess/close steps (incl. step 13a if skill patches landed)
