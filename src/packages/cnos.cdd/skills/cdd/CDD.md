@@ -491,6 +491,8 @@ Branch: cycle/<number>
 Fix-round re-dispatch: β returned RC in .cdd/unreleased/<number>/beta-review.md. Fix the named findings on cycle/<number>, append a fix-round section to .cdd/unreleased/<number>/self-coherence.md, push, and exit.
 ```
 
+**§1.6b Re-dispatch prompt complexity.** α close-out is a lightweight write task (read β verdict, write findings file, commit). When full α skill loading causes re-dispatch failures (observed in 3/5 TSC #23 cycles), δ should use a simplified dispatch prompt that loads only the close-out contract (§1.4 α step 10) rather than the full α skill. The close-out re-dispatch prompt above is already minimal; if it still fails, δ reduces further: drop `--allowedTools` constraints and provide an explicit single-task instruction. *Derives from: TSC #23 — α close-out re-dispatch consistently failed to commit under full skill load; simplified prompts succeeded.*
+
 ---
 
 ## 2. Inputs
