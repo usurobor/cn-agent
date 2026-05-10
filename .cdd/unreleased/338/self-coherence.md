@@ -174,8 +174,38 @@ No file in the diff is unmentioned. Pre-review gate row 11: **PASS**
 
 **Author email:** `git log -1 --format='%ae' HEAD` = `alpha@cdd.cnos` ✓ Pre-review gate row 14: **PASS**
 
+---
 
+## Review-readiness | round 1 | implementation SHA: 18b3491e | branch CI: N/A (docs-only) | ready for β
 
+**Base SHA:** `cfd322e6` (origin/main at signal time — confirmed ancestor of HEAD at 2026-05-10)
+**Head SHA:** see branch HEAD on `origin/cycle/338` (per SHA-convention: omit forward-reference; β polls HEAD)
+**Implementation SHA:** `18b3491e` (last commit before this readiness-signal commit)
 
+**Pre-review gate summary:**
+
+| Row | Check | Status |
+|-----|-------|--------|
+| 1 | `origin/cycle/338` rebased onto `origin/main` (`cfd322e6`) | PASS — observed at 2026-05-10; origin/main is ancestor of HEAD |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | PASS — §CDD-Trace present with all 7 steps |
+| 3 | Tests present or explicit reason | PASS — docs-only; explicit in §Debt D4 |
+| 4 | Every AC has evidence | PASS — AC1–AC5 all have oracle results in §ACs |
+| 5 | Known debt explicit | PASS — §Debt D1–D4 |
+| 6 | Schema/shape audit | N/A — no schema-bearing changes |
+| 7 | Peer enumeration | PASS — peer set enumerated in §Self-check |
+| 8 | Harness audit | N/A — no schema-bearing contract changes |
+| 9 | Polyglot re-audit | PASS — docs-only (Markdown); no Go/shell/YAML in diff |
+| 10 | Branch CI green | N/A — docs-only cycle; no CI pipeline applies |
+| 11 | Artifact enumeration matches diff | PASS — all 7 files in diff enumerated in §CDD-Trace step 6 |
+| 12 | Caller-path trace for new modules | N/A — no new modules |
+| 13 | Test assertion count from runner | N/A — no tests (docs-only) |
+| 14 | α commit author email = `alpha@cdd.cnos` | PASS — verified via `git log --format='%ae'` |
+
+**Mechanical pre-merge closure gate (active from #339):** All three required close-out artifacts present in `.cdd/unreleased/338/`:
+- `self-coherence.md` ✓
+- `alpha-closeout.md` ✓ (provisional — per §Debt D2)
+- `cdd-iteration.md` ✓
+
+**Ready for β.**
 
 
