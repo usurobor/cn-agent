@@ -1,18 +1,16 @@
 # Agent-First, Not Agent-Added
 
-Every profound shift in computing starts as a faster version of the old way. We do not redesign the world from first principles when a new technology arrives. We bolt it onto the process we already have and judge it by whether things get cheaper, faster, or less awful.
+A recurring pattern in computing is that a new technology first appears as a faster version of the old way. We do not redesign the world from first principles when a new technology arrives. We bolt it onto the process we already have and judge it by whether things get cheaper, faster, or less awful.
 
 [LEO](https://www.bcs.org/articles-opinion-and-research/a-brief-history-of-british-computers-the-first-25-years-1948-1973/), one of the earliest business computers, earned its place by speeding up the same Lyons tea-shop logistics the company was already doing on paper — a faster clerk. The Web, in [CERN's own account](https://home.cern/science/computing/the-birth-of-the-web/short-history-web/), began as a way to share existing technical documents between scientists; the early public web was a directory of papers, server lists, and a CERN phone book. When smartphones arrived, the first instinct was to move familiar desktop and web tasks onto a small touchscreen. In each case, the old process stayed the authority, and the new technology was judged by fit.
 
-Then the threshold gets crossed. The technology stops optimizing the old workflow and starts being the substrate the next workflow is built on. Organizations stopped putting brochures online and became web-first: commerce, identity, distribution, and support, all redesigned around links, search, and online reach. Mobile-first, in [Luke Wroblewski's framing](https://www.lukew.com/ff/entry.asp?933=), was never only about smaller screens. It was about letting the constraints of a pocket-sized, always-carried, sensor-rich device dictate what the product actually is. The new primitive becomes the center of gravity.
+That history does not prove the agent transition is inevitable. It gives us a test. Does the new technology remain a plug-in judged by the old process, or does authority move to a new structure built around it?
 
-We are sitting at that threshold with agents.
+Sometimes the threshold gets crossed. The technology stops optimizing the old workflow and starts being the substrate the next workflow is built on. Organizations stopped putting brochures online and became web-first: commerce, identity, distribution, and support, all redesigned around links, search, and online reach. Mobile-first, in [Luke Wroblewski's framing](https://www.lukew.com/ff/entry.asp?933=), was never only about smaller screens. It was about letting the constraints of a pocket-sized, always-carried, sensor-rich device dictate what the product actually is. The new primitive becomes the center of gravity.
 
----
+Agents are being tested at that threshold now.
 
-## The Substitution Phase
-
-Look at the common adoption pattern around agents today. Teams open the existing forty-step workflow — support queues, Jira tickets, code review gates, approval dashboards, dropdowns from 2014 — and ask: *which of these steps can we replace with an LLM call?*
+Look at the common adoption pattern around them today. Teams open the existing forty-step workflow — support queues, Jira tickets, code review gates, approval dashboards, dropdowns from 2014 — and ask: *which of these steps can we replace with an LLM call?*
 
 So a summarizer goes on the ticketing system. A reviewer agent goes on every pull request. A chat box gets bolted to a legacy database. The architecture diagram does not change. The agent is a shiny new cog inside an old machine.
 
@@ -24,17 +22,11 @@ Picture a support-ticket triage agent shipped on a Monday. Month one is a triump
 
 Nothing in that progression was unreasonable in isolation. Each fix was the smallest reasonable response to the last problem. But notice what owns the state at month six: not the agent. The orchestration layer owns routing. The dead-letter queue owns failure. The two context stores own memory. The reconciliation job owns truth. The meta-agent owns judgment. The "agent" is a stateless model call sitting at the bottom of a scaffolding that exists to compensate for the fact that it has no durable continuity of its own.
 
----
-
-## The Top-Down Trap
-
 This is the top-down trap. Top-down adoption starts with the organization as it already exists. Architects, platform teams, process owners, compliance owners, and budget owners look at the map they already govern and ask where agents can fit. That is not stupidity. Their job is often to preserve operational stability: keep the approvals, keep the queues, keep the reporting lines, keep the audit trail, keep the dashboard that executives already understand.
 
 But preservation becomes a trap when the old workflow remains the unit of meaning. The agent can replace a human step, a service call, or a summarization task, but it cannot reshape the boundary of the work. Every new agent multiplies the surface area because the workflow is still pushing agents around as components.
 
 ---
-
-## The Pipe
 
 The agent-first move is to invert that relationship. The unit of meaning is the agent. The workflow is something agents compose into.
 
@@ -47,8 +39,6 @@ The analogy has a hard limit. Unix tools worked because text streams were simple
 Agent-first design is that philosophy applied to probabilistic intelligence. Agent-first does not mean "one giant corporate brain." It means the opposite: many bounded agents, memories, tools, artifacts, and handoffs composing into larger agency without losing inspectability. The system becomes powerful because the parts are small enough to understand and the handoffs are explicit enough to inherit.
 
 ---
-
-## Runners and Continuity
 
 To make that practical, we have to stop confusing two things the industry currently calls by one name.
 
@@ -64,8 +54,6 @@ The runner may disappear. The episode becomes part of the agent's continuity onl
 
 ---
 
-## Trust Rewritten
-
 This rewrites the trust model, and the rewrite is the part that matters.
 
 Ordinary software trust says: this function has known behavior. Automation trust says: this system usually works. Agent-first trust says something else: this system operates probabilistically, but it leaves enough structural evidence for a later activation to reconstruct what happened and inherit the right constraints. A human reviewer can inspect the same record, and the work can continue without pretending nothing was lost.
@@ -76,8 +64,6 @@ Everything that follows is what it takes to make that kind of trust mechanically
 
 ---
 
-## Infrastructure and the Identity Gap
-
 The industry has built useful infrastructure around the runner and the runtime. The [Model Context Protocol](https://modelcontextprotocol.io/) standardizes how AI applications connect to external systems: data sources, tools, and workflows. That is runner-facing capability discovery. [LangGraph](https://www.langchain.com/langgraph) gives teams ways to build controllable agent workflows with human-in-the-loop checks, memory, and state. That is runtime and workflow infrastructure.
 
 Both are useful. Neither, by itself, settles the identity question: *what accumulated agent is being activated, what authority does the runner receive, and what evidence must return for the next activation to continue honestly?*
@@ -85,8 +71,6 @@ Both are useful. Neither, by itself, settles the identity question: *what accumu
 Tools can extend what a runner can do. Workflow state can resume a process. Continuity decides what the agent is.
 
 ---
-
-## Receipts
 
 The thing that makes activation different from mere resumable state is the receipt. If an activation helps in the moment but no durable evidence is written back, the agent's continuity did not grow. The interaction helped, then disappeared.
 
@@ -128,8 +112,6 @@ The receipt is the agent-first equivalent of the text stream in a Unix pipeline:
 
 ---
 
-## Composition
-
 Once receipts exist, each activation can leave a reliable handoff for the next activation to use, whether the next activation enters the same agent or a different one. A review agent can hand a verdict to a merge agent. A research agent can hand an evidence packet to a drafting agent. A support agent can leave a named unresolved customer risk for an escalation agent. A planning agent can close a task only if the implementation agent returns changed artifacts and the verification agent returns evidence. The parts can stay small because their contracts are explicit.
 
 That is the bottom-up version of agentic architecture. Each unit owns its scope, accepts defined inputs, produces defined outputs, hands off cleanly, and refuses silent sources of truth. Implicit chat history cannot be the contract. Runtime memory cannot be the only witness. A hidden prompt cannot be the place where authority lives.
@@ -140,15 +122,11 @@ That governance does not have to be heavy. It has to be explicit. Without it, bo
 
 ---
 
-## Humans Inside the Boundary
-
 Humans sit differently in this model. In a top-down system, humans are outside the machinery: approvers, architects, escalation handlers, exception processors. In an agent-first system, humans are inside the continuity boundary. The contracts of authority, scope, accountability, and refusal between human and agent are themselves part of what the next activation inherits.
 
 That is what lets an activation be answered legibly: who is waking, under what frame, for whom, with what authority, and with what obligation to return evidence?
 
 ---
-
-## Deployment Still Exists
 
 None of this rejects deployment entirely. Some work requires a live process: a continuous channel, a high-frequency loop, an always-on service. The point is sharper than that. Deployment is a body, transport, or host. It is not the agent's identity.
 
@@ -156,15 +134,11 @@ Activation wins where work is episodic, portable, inspectable, and able to accum
 
 ---
 
-## The Transition
-
 The agent-added phase will last because it works and it pays. Agents will summarize tickets, call tools, draft replies, search databases, and review code inside existing products for years. That is the substitution phase, and it earns the trust the next phase will spend.
 
 But the shift happens when the workflow itself is redesigned around activation, witness, and composition. The durable agent surface — not the legacy diagram — becomes the place where work accumulates, where judgment is recorded, where failures become inspectable constraints, and where future activations inherit the work without pretending a new runner is the same process.
 
 ---
-
-## Four Questions
 
 That is also why the phrase has to be falsifiable. "Agent-first" can rot into a slogan as easily as any other "-first" slogan. It only means something when continuity, evidence, authority, and governance live in the architecture.
 
@@ -183,7 +157,7 @@ A system designed around those answers is agent-first. Its fundamental architect
 
 Computers became more than faster clerks. The Web became more than a networked filing cabinet. Mobile became more than a tiny desktop. Agents become more than plugged-in automation when the question stops being *how do we insert agents into our existing workflow?* and starts being *what process structure do durable, composable, inspectable agents make possible that nothing else does?*
 
-[CNOS](https://github.com/usurobor/cnos) is one worked answer to that question.
+[CNOS](https://github.com/usurobor/cnos) is one worked answer to that question. The companion essay covers it.
 
 ---
 
