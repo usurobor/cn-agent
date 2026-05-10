@@ -227,4 +227,42 @@ Pending (will appear in diff before merge):
 - CDD Trace complete through step 7.
 
 ### Step 7a — Pre-review gate
-- Gate rows: see §Review-readiness section (appended after all artifacts are complete).
+- Gate rows: see §Review-readiness section below.
+
+---
+
+## Review-readiness | round 1 | implementation SHA: fe59d106 | branch CI: local CI unavailable (no CI workflow on cycle branches) | ready for β
+
+**Pre-review gate — all 14 rows:**
+
+| Row | Check | Result |
+|---|---|---|
+| 1 | `origin/cycle/339` rebased onto current `origin/main` | ✅ merge-base = `00e6f8e2` = current origin/main HEAD (verified 2026-05-10) |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | ✅ §CDD-Trace Steps 1–7a present |
+| 3 | Tests present or explicit reason none apply | ✅ No unit test framework applies (shell + Markdown); `bash -n` passes; positive/negative fixtures verified in §ACs |
+| 4 | Every AC has evidence | ✅ AC1 MET, AC2 MET, AC3 MET (β to re-verify SHAs), AC4 IN PROGRESS (pending β + γ close-outs), AC5 PENDING → converted to MET with cdd-iteration.md at commit `fe59d106` |
+| 5 | Known debt explicit | ✅ §Debt lists 4 items: operator/SKILL.md §3.4, CI workflow, eng/writing/SKILL.md not found, provisional α close-out |
+| 6 | Schema/shape audit completed when contracts changed | ✅ Not applicable — no parser/schema/runtime contract changed |
+| 7 | Peer enumeration completed | ✅ §Self-check: scripts/release.sh, operator/SKILL.md §3.4, gamma/SKILL.md §2.10, CDD.md §5.3b all enumerated |
+| 8 | Harness audit completed | ✅ Not applicable — no schema-bearing contract changed |
+| 9 | Post-patch re-audit for every language in diff | ✅ bash: `bash -n scripts/validate-release-gate.sh` passes; Markdown: table shapes and cross-references verified inline; no shell dead-code introduced |
+| 10 | Branch CI green on head commit | ✅ No CI workflow runs on cycle branches; stated explicitly as unavailability |
+| 11 | Every file in `git diff --stat origin/main..HEAD` mentioned in self-coherence.md | ✅ All 6 files listed in §CDD-Trace Step 6 and cross-checked |
+| 12 | Caller-path trace for new modules | ✅ No new module; flag added to existing script; callers: `scripts/release.sh` (release mode) + β oracle (pre-merge mode) |
+| 13 | Test assertion count from runner output | ✅ No runner; fixture outputs quoted verbatim in §ACs (exit 0 positive, exit 1 negative with exact stderr) |
+| 14 | Author email = `alpha@cdd.cnos` | ✅ `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` |
+
+**Artifacts on branch at implementation SHA `fe59d106`:**
+- `.cdd/unreleased/339/self-coherence.md` ✅
+- `.cdd/unreleased/339/alpha-closeout.md` ✅ (provisional)
+- `.cdd/unreleased/339/cdd-iteration.md` ✅
+- `.cdd/iterations/INDEX.md` ✅ (row added)
+- `scripts/validate-release-gate.sh` ✅ (AC1)
+- `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` ✅ (AC2)
+
+**Missing (β and γ to write on branch before merge):**
+- `.cdd/unreleased/339/beta-review.md` — β
+- `.cdd/unreleased/339/beta-closeout.md` — β
+- `.cdd/unreleased/339/gamma-closeout.md` — γ
+
+**β oracle for AC4:** run `scripts/validate-release-gate.sh --mode pre-merge` against `.cdd/unreleased/339/` before approving merge. Record exit code and output in `beta-review.md`.
