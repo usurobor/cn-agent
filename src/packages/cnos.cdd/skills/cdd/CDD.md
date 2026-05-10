@@ -493,6 +493,45 @@ Fix-round re-dispatch: β returned RC in .cdd/unreleased/<number>/beta-review.md
 
 **§1.6b Re-dispatch prompt complexity.** α close-out is a lightweight write task (read β verdict, write findings file, commit). When full α skill loading causes re-dispatch failures (observed in 3/5 TSC #23 cycles), δ should use a simplified dispatch prompt that loads only the close-out contract (§1.4 α step 10) rather than the full α skill. The close-out re-dispatch prompt above is already minimal; if it still fails, δ reduces further: drop `--allowedTools` constraints and provide an explicit single-task instruction. *Derives from: TSC #23 — α close-out re-dispatch consistently failed to commit under full skill load; simplified prompts succeeded.*
 
+### §1.6c Initial dispatch sizing, prompt scope, and commit checkpoints
+
+Three constraints that the initial dispatch prompt MUST satisfy. Sister rule to §1.6b (which covers re-dispatch); the two together close the prompt-engineering surface for bounded dispatch.
+
+#### (a) Timeout budget heuristic
+
+Set the dispatch timeout budget based on cycle mode and AC count:
+
+| Cycle mode | Formula | Minimum floor |
+|---|---|---|
+| Docs-only | `max(300s, 120 × ac_count)` | 300 s |
+| Code | `max(400s, 180 × ac_count)` | 400 s |
+
+These constants are **initial; refine with telemetry** — they are anchored in N=4 observed failures (see empirical evidence below), not a validated dataset. Per-cycle `dispatch_seconds_budget` and `dispatch_seconds_actual` are recorded in the PRA telemetry fields (post-release §4) to enable tightening after ~10 cycles.
+
+**Empirical anchors:**
+
+- **cnos cycle #335** (close-out artifacts at `.cdd/releases/docs/2026-05-09/335/`): 9 ACs, 600 s budget, 0 commits at SIGTERM, 18 files recovered from worktree by operator. Heuristic would have set budget to `max(300, 120×9) = 1080 s` — the 600 s floor was the failure point. When no commits land before SIGTERM, the recovery path is operator-manual per `operator/SKILL.md §timeout-recovery`.
+- **TSC supercycle** (close-outs at `usurobor/tsc:.cdd/releases/{0.5.0,0.6.0,0.7.0}/{25,24,26}/`): 3 of 5 α close-out re-dispatches failed under full α skill load. §1.6b addresses that re-dispatch symptom; this rule addresses the family — context-load vs task-complexity mismatch.
+
+#### (b) Prompt scope
+
+Match skill load to task complexity:
+
+- **Lightweight tasks** (close-out re-dispatch, PRA, single-section skill patches, docs-only cycles with ≤3 ACs): load only the role-skill subsection relevant to the task. For α close-out, this is `alpha/SKILL.md §2.8` alone. Cross-references §1.6b.
+- **Substantial tasks** (new feature cycles, cross-file refactors, multi-AC code cycles): load full Tier 1a/1b/1c. When in doubt, load more — over-loading is recoverable; missing a constraint that generates a β RC round is not.
+
+The dispatch prompt must explicitly name which skill sections are loaded. Silent omission of heavy skill context on a lightweight task is the observed failure class (TSC supercycle 3/5 re-dispatch failures — context-load dominated the token budget before task content).
+
+#### (c) Commit checkpoints
+
+The dispatch prompt MUST include this instruction verbatim (or equivalent with the same binding semantics):
+
+> "Commit after each AC's evidence is in place. The first commit MUST land within the first 25% of the budget. For multi-file work, commit per-file or per-related-group rather than batching to the end."
+
+**Rationale:** when an agent is SIGTERM'd without committing, all in-progress work is lost unless the operator executes the worktree recovery procedure (`operator/SKILL.md §timeout-recovery`). Frequent commits turn a catastrophic loss into a recoverable partial. The 25%-first-commit rule ensures at least one durable checkpoint exists before the most likely timeout window.
+
+**Failure mode handler:** if α terminates without the expected commit history, the operator executes `operator/SKILL.md §timeout-recovery` to assess what is recoverable.
+
 ---
 
 ## 2. Inputs
