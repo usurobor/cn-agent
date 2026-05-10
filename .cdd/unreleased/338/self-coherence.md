@@ -103,5 +103,28 @@ Result:
 
 Both empirical anchors present with reproducible close-out paths. Anyone can navigate to `.cdd/releases/docs/2026-05-09/335/` in the cnos repo or to `usurobor/tsc:.cdd/releases/{0.5.0,0.6.0,0.7.0}/{25,24,26}/` in the TSC repo. **AC5: PASS**
 
+### §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+No unresolved ambiguity was deferred. The three sub-rules in §1.6c each have explicit, operator-actionable guidance. The §timeout-recovery section has a concrete decision table, not vague prose. The telemetry fields are named and defined, not left as "TBD fields."
+
+**Is every claim backed by evidence in the diff?**
+
+- §1.6c heuristic constants (`120s`, `180s`, `300s floor`, `400s floor`): backed by empirical anchors at lines 513–514 of CDD.md citing cycle #335 and TSC supercycle artifacts.
+- §1.6c "initial; refine with telemetry": language present in the section body (line 509) and in the telemetry framing in post-release §4.
+- Cross-refs: all three verified in §ACs above.
+- No frontmatter changes: confirmed — none of the three SKILL.md files had their frontmatter blocks modified.
+- No new sub-skills: §timeout-recovery is inline at `operator/SKILL.md §7`, not a separate file.
+
+**Peer enumeration:**
+
+This is a docs-only cycle touching three files in `src/packages/cnos.cdd/skills/cdd/`. The peer enumeration question is: are there other lifecycle or role skills that need updating as a consequence of §1.6c? The change is additive (new section) to the coordination model. §1.6b (the sister rule) is explicitly cited and not modified. Role skills (`alpha/`, `beta/`, `gamma/`) do not need updating — the sizing rule is a δ/operator concern codified in CDD.md + operator/SKILL.md. The `release/SKILL.md §3.8` rubric is referenced by the operator override declaration template but not changed by this cycle. Peer set = {§1.6a, §1.6b, operator/§4, post-release/§4, release/§3.8}. Updated: operator/§4 (cross-ref present), post-release/§4 (telemetry fields). Exempted: §1.6a (no change required, re-dispatch prompts are already compatible), §1.6b (cited, not modified per design constraint), release/§3.8 (referenced by operator §7.3 template text, structural reference only, no content change needed).
+
+**Recursive coherence (proof plan):**
+
+This cycle's budget was 600s. Heuristic for 5 ACs docs cycle: `max(300, 120×5) = 900s`. The budget set in the dispatch prompt (600s) is below the heuristic. β will verify this discrepancy per the proof plan. α records it honestly: the dispatch predates the heuristic being codified (the heuristic is the output of this cycle), so the budget mismatch is structurally inevitable for the cycle that introduces the rule. This is declared as known debt in §Debt.
+
+
 
 
