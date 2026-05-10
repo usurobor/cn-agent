@@ -11,7 +11,7 @@
 #
 #   --mode pre-merge: pre-merge closure gate (CDD.md §5.3b, gamma/SKILL.md §2.10)
 #     For each cycle dir in .cdd/unreleased/ that has beta-review.md present:
-#       required: alpha-closeout.md, beta-closeout.md, gamma-closeout.md
+#       required: alpha-closeout.md, beta-closeout.md (gamma-closeout.md is post-merge)
 #     RELEASE.md check skipped (release-time only, not pre-merge).
 #     Exit non-zero with diagnostic naming each missing file and cycle number.
 #
@@ -65,8 +65,9 @@ fi
 # release mode: all 5 lifecycle files required for triadic cycles (CDD.md §5.3b)
 REQUIRED_TRIADIC_RELEASE=(self-coherence.md beta-review.md alpha-closeout.md beta-closeout.md gamma-closeout.md)
 
-# pre-merge mode: close-out triple required for triadic cycles (CDD.md §5.3b, gamma/SKILL.md §2.10)
-REQUIRED_TRIADIC_PRE_MERGE=(alpha-closeout.md beta-closeout.md gamma-closeout.md)
+# pre-merge mode: α + β close-outs required; gamma-closeout.md is structurally post-merge
+# (γ records merge commit SHA, β verdict, and cycle-dir destination — none exist pre-merge)
+REQUIRED_TRIADIC_PRE_MERGE=(alpha-closeout.md beta-closeout.md)
 
 if [[ -d "$UNRELEASED_DIR" ]]; then
   shopt -s nullglob
