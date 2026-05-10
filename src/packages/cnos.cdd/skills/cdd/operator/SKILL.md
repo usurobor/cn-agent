@@ -265,7 +265,61 @@ These are role boundaries. Crossing them without an override declaration breaks 
 
 ---
 
-## 7. Embedded Kata
+## 7. Timeout recovery
+
+### §timeout-recovery — What to do when an agent session terminates before committing
+
+An agent dispatched via `claude -p` may be SIGTERM'd by the OS, hit the session timeout, or crash without committing its in-progress work. This section is the executable recovery procedure.
+
+#### 7.1 Inspect the worktree
+
+Run these commands in the repo root to assess what the agent produced before it died:
+
+```bash
+# 1. What is staged or modified but not committed?
+git status --short
+
+# 2. What files were written during the session?
+#    Replace $session_start with the approximate session start time.
+find . -newer /tmp/session-start-sentinel -not -path './.git/*' | sort
+
+# 3. Did the agent stash anything?
+git stash list
+
+# 4. What is the diff against main?
+git diff origin/main..HEAD
+git diff HEAD   # staged + unstaged against last commit
+```
+
+To create the sentinel file before dispatching, run `touch /tmp/session-start-sentinel` immediately before `claude -p`.
+
+#### 7.2 Decision tree
+
+After inspecting the worktree, choose one path:
+
+| Situation | Action |
+|---|---|
+| Work is committed — agent wrote one or more commits before SIGTERM | Normal recovery: the agent left durable checkpoints. Read `origin/cycle/{N}` to see what landed. No further action needed unless the cycle is incomplete. |
+| Work is staged / unstaged but not committed | Commit under agent identity: `git config user.name "Alpha" && git config user.email "alpha@cdd.cnos"`, then `git add <files> && git commit -m "<msg>"`. Preserve the agent's intent; do not rewrite scope. |
+| Work exists only as new/modified files (never staged) | Same as above — stage and commit under agent identity with a commit message that names the recovery context (e.g., `"recovery(338): α partial work — committed by operator after SIGTERM"`). |
+| Nothing useful recovered — session started but produced no artifact content | Declare a failed dispatch. File the failure in the cycle's self-coherence.md §Debt. Re-dispatch α with a fresh budget per §1.6c(a). The override is operator-identity if re-dispatch is not available. |
+| Stash exists | Inspect with `git stash show -p`. Pop and commit if the content is relevant: `git stash pop && git add <files> && git commit`. |
+
+**Agent-identity vs operator-identity commit:** Prefer committing under the agent's canonical identity (`alpha@cdd.cnos`) to preserve the role-identity-is-git-observable property (`CDD.md §1.4`). If the agent's identity cannot be confirmed, commit under operator identity but declare this as an override in `self-coherence.md §Debt` with the operator-override cross-reference to §4.
+
+#### 7.3 Override declaration
+
+If the operator commits work on behalf of an agent, this is an implicit override. Declare it per §4:
+
+> Override: operator-identity commit for cycle #N. Reason: α session SIGTERM'd before committing. Committed staged/unstaged work under operator identity at `<SHA>`. Grade implication: per `release/SKILL.md §3.8`, a cycle with operator override has γ < A.
+
+#### 7.4 Prevention (dispatch side)
+
+The recovery procedure is the failure path. The prevention path is a correctly-sized dispatch budget and commit-checkpoint instruction per `CDD.md §1.6c`. If this recovery section is being exercised, the dispatch that spawned the agent did not satisfy §1.6c — record the actual budget and AC count in the PRA telemetry fields (`post-release/SKILL.md §4`: `dispatch_seconds_budget`, `dispatch_seconds_actual`, `commit_count_at_termination`) so the heuristic can be refined.
+
+---
+
+## 8. Embedded Kata
 
 ### Kata A — Normal cycle
 
