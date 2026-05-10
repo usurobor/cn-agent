@@ -136,3 +136,95 @@ File at `.cdd/unreleased/339/cdd-iteration.md` with both findings:
 
 Both with disposition `patch-landed`, patch SHAs cited, affected files named.
 INDEX.md row added for cycle #339.
+
+---
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+No. Both implementation deliverables are complete and verifiable before β reads the branch:
+- AC1: `scripts/validate-release-gate.sh --mode pre-merge` is runnable; positive and negative fixtures are verified in this document.
+- AC2: `release/SKILL.md` §3.8 amendment is in the diff; source-order constraint is verifiable by line numbers.
+
+**Is every claim backed by evidence in the diff?**
+
+- AC1 evidence: script diff (commit `ed982f6b`); fixture outputs quoted in §ACs.
+- AC2 evidence: skill diff (commit `0b56ff86`); line numbers quoted in §ACs.
+- AC3 evidence: SHA table in §ACs maps every cited commit to a verifiable `git show`.
+- AC4/AC5: status declared as in-progress with explicit remaining items (beta-closeout, gamma-closeout, cdd-iteration.md, INDEX.md row); not claimed as complete.
+
+**Peer enumeration:**
+
+This cycle patches two surfaces: `scripts/validate-release-gate.sh` and `release/SKILL.md` §3.8. Peer enumeration:
+
+- `scripts/release.sh` line 55 (existing invocation of the gate script) — checked; release-mode call passes unchanged. ✅
+- `operator/SKILL.md` §3.4 (δ pre-merge checklist) — the gate script is now available as a δ-side hook. No mandatory update required this cycle (issue explicitly defers δ SKILL.md update; the script exists and is callable). Noted as known debt.
+- `gamma/SKILL.md` §2.10 closure gate rows — not modified by this cycle (issue out-of-scope). Cross-referenced in script diagnostic and §3.8 amendment. ✅
+- `CDD.md` §5.3b — not modified; cited as authority. ✅
+
+**Harness audit:** No parser, schema, or runtime contract changed. Script extension adds a new flag to an existing script; exit codes follow existing conventions (0=pass, 1=fail). Not applicable for harness audit.
+
+**Recursive coherence gate:** This cycle's own close-out triple must be present before β invokes the gate at merge time. α-closeout.md is written provisionally as part of this dispatch. β must write beta-closeout.md on the branch before merge, and γ must write gamma-closeout.md before merge, so the gate passes.
+
+---
+
+## §Debt
+
+1. **`operator/SKILL.md` §3.4 not updated.** The δ pre-merge checklist does not yet include a row for `scripts/validate-release-gate.sh --mode pre-merge`. Issue #339 defers this explicitly ("Watchdog enforcement at PR creation time" is out of scope; the operator-side integration is usable but not mandated by text). β or γ may file a follow-on if desired. This is known debt.
+
+2. **CI workflow integration deferred.** The gate is implemented as a callable script but not wired into a CI workflow that runs automatically on PRs targeting main. Issue #339 leaves this as "CI integration optional" for option B. A future cycle can add `.github/workflows/validate-pre-merge-closure.yml`. Known debt.
+
+3. **`eng/writing/SKILL.md` not found.** The Tier 3 writing skill declared in the issue was not found at `src/packages/cnos.eng/skills/eng/writing/SKILL.md`. The §3.8 prose was authored against the existing §3.8 style directly. No writing skill constraint was missed (the amendment is prose-consistent with adjacent rubric paragraphs), but the load failure is disclosed.
+
+4. **alpha-closeout.md is provisional** (per §2.8 fallback). Written before β outcome is known. Explicitly marked provisional in the file.
+
+---
+
+## §CDD-Trace
+
+### Step 1 — Receive
+- Dispatched by γ on issue #339.
+- Selected gap: F2 (cdd-tooling-gap, cycle #335) + F7 (cdd-protocol-gap, cycle #335).
+- Active constraints enumerated from issue body.
+
+### Step 2 — Design / Plan
+- Design in issue body (mode: `design-and-build`). No separate design artifact required.
+- Plan: not required; implementation sequencing is two independent surfaces (script + skill doc). Commit sequence follows issue dispatch order.
+
+### Step 3 — Tests
+- Mechanical fixtures: positive and negative fixture runs documented in §ACs.
+- No unit test framework applicable (shell script + Markdown). `bash -n` passes. Fixture outputs quoted directly in self-coherence.md.
+
+### Step 4 — Code
+- `scripts/validate-release-gate.sh` — extended with `--mode pre-merge` (commit `ed982f6b`).
+  - Caller: β runs `scripts/validate-release-gate.sh --mode pre-merge` per AC4 oracle. Also invokable from δ pre-merge checklist.
+  - No new module added; function is a flag on the existing script.
+
+### Step 5 — Docs
+- `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` §3.8 — amended (commit `0b56ff86`).
+- Write skill applied: prose written per existing §3.8 style.
+
+### Step 6 — Files in diff (artifact enumeration)
+
+Every file in `git diff --stat origin/main..HEAD` (as of implementation SHA `d32917fc`):
+
+| File | Mentioned in |
+|---|---|
+| `scripts/validate-release-gate.sh` | §ACs AC1, §CDD-Trace Step 4 |
+| `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` | §ACs AC2, §CDD-Trace Step 5 |
+| `.cdd/unreleased/339/self-coherence.md` | this file (primary branch artifact) |
+
+Pending (will appear in diff before merge):
+| File | Mentioned in |
+|---|---|
+| `.cdd/unreleased/339/alpha-closeout.md` | §ACs AC4, §Debt item 4 |
+| `.cdd/unreleased/339/cdd-iteration.md` | §ACs AC5 |
+| `.cdd/iterations/INDEX.md` | §ACs AC5 |
+
+### Step 7 — Self-coherence
+- This file. Written incrementally per §2.5 (one section per commit+push).
+- CDD Trace complete through step 7.
+
+### Step 7a — Pre-review gate
+- Gate rows: see §Review-readiness section (appended after all artifacts are complete).
