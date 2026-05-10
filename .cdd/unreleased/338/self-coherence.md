@@ -157,11 +157,14 @@ CDD step sequence per `CDD.md §1.4 α algorithm`:
 
 **Artifact enumeration against diff** (pre-review gate row 11):
 
-`git diff --stat origin/main..HEAD` at implementation SHA `2c496d10` covers:
+`git diff --name-only origin/main..HEAD` at final pre-signal SHA covers all 7 files:
 - `src/packages/cnos.cdd/skills/cdd/CDD.md` — mentioned in §ACs AC1 and §CDD-Trace step 6 ✓
 - `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` — mentioned in §ACs AC2 and §CDD-Trace step 6 ✓
 - `src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md` — mentioned in §ACs AC3 and §CDD-Trace step 6 ✓
-- `.cdd/unreleased/338/self-coherence.md` — this file ✓
+- `.cdd/unreleased/338/self-coherence.md` — this file; mentioned in §CDD-Trace step 7 ✓
+- `.cdd/unreleased/338/alpha-closeout.md` — mandatory close-out artifact; mentioned in §Debt D2 and §Gap ✓
+- `.cdd/unreleased/338/cdd-iteration.md` — mandatory close-out artifact; triage produced F1: `cdd-protocol-gap`, trigger from dispatch ✓
+- `.cdd/iterations/INDEX.md` — aggregator update per `post-release/SKILL.md §5.6b`; one new row added for cycle #338 ✓
 
 No file in the diff is unmentioned. Pre-review gate row 11: **PASS**
 
