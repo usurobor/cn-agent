@@ -141,6 +141,37 @@ The `120s/180s` multipliers and `300s/400s` floors are anchored in N=4 failures,
 **D4 — No tests**
 Docs-only cycle. All changes are structured prose to three skill files. No test framework applies. Explicit reason: §2.2 "tests must prove the actual claim" — the claim is prose correctness and cross-ref coherence, both verified by oracle commands run in §ACs.
 
+### §CDD-Trace
+
+CDD step sequence per `CDD.md §1.4 α algorithm`:
+
+| Step | Action | Evidence |
+|------|--------|---------|
+| 1. Receive | Dispatch taken. Issue #338 read in full. Active design constraints enumerated. Branch `cycle/338` confirmed (already on branch, origin up to date). Git identity configured: `alpha@cdd.cnos`. | Dispatch prompt + `git config user.email` = `alpha@cdd.cnos` |
+| 2. Produce (design artifact) | Not required — mode is `design-and-build`; design lives in the issue body. Issue body serves as the design artifact. | Issue #338 body contains Problem, Scope, ACs, Proof plan |
+| 3. Produce (coherence contract) | `self-coherence.md §Gap` written first — names the incoherence being closed and the version/mode. | Commit `3722ac07` |
+| 4. Produce (plan) | Not required — three-file docs patch with prescribed order in dispatch prompt. Commit order declared in dispatch: CDD.md → operator → post-release. | Dispatch prompt §Commit checkpoints |
+| 5. Produce (tests) | Not applicable — docs-only cycle. Explicit reason in §Debt D4. AC oracles serve as the mechanical verification. | §Debt D4; AC oracle results in §ACs |
+| 6. Produce (code/docs) | Three skill file patches in declared commit order: (1) `CDD.md §1.6c` — commit `69de7ef8`; (2) `operator/SKILL.md §7 timeout-recovery` — commit `b2f5ee3b`; (3) `post-release/SKILL.md §4 telemetry fields` — commit `482f1c81`. First commit (`69de7ef8`) is the implementation SHA. All files modified; no new files created in skill packages; no frontmatter changes; no new sub-skills. | `git diff --stat origin/main..2c496d10` — 5 files: `CDD.md` (+39), `operator/SKILL.md` (+55/-1), `post-release/SKILL.md` (+11), `.cdd/unreleased/338/self-coherence.md` (created) |
+| 7. Self-coherence | Written incrementally per `alpha/SKILL.md §2.5`. Sections: §Gap (commit `3722ac07`), §Skills (same commit), §ACs (commit `7baa35ae`), §Self-check (commit `c75d86bf`), §Debt (commit `2c496d10`), §CDD-Trace (this commit). | Commit sequence on `origin/cycle/338` |
+
+**Artifact enumeration against diff** (pre-review gate row 11):
+
+`git diff --stat origin/main..HEAD` at implementation SHA `2c496d10` covers:
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` — mentioned in §ACs AC1 and §CDD-Trace step 6 ✓
+- `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` — mentioned in §ACs AC2 and §CDD-Trace step 6 ✓
+- `src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md` — mentioned in §ACs AC3 and §CDD-Trace step 6 ✓
+- `.cdd/unreleased/338/self-coherence.md` — this file ✓
+
+No file in the diff is unmentioned. Pre-review gate row 11: **PASS**
+
+**No new modules or functions** — docs-only patch. Pre-review gate row 12: not applicable.
+
+**Test runner output** — no tests (docs-only). Pre-review gate row 13: not applicable (explicit reason in §Debt D4).
+
+**Author email:** `git log -1 --format='%ae' HEAD` = `alpha@cdd.cnos` ✓ Pre-review gate row 14: **PASS**
+
+
 
 
 
