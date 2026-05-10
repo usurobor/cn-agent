@@ -85,6 +85,17 @@ The artifact has the following sections:
 | Cycle | Issue | Mode | Rounds | Binding findings (R1) | Notes |
 |-------|-------|------|--------|----------------------|-------|
 
+**Per-cycle dispatch telemetry** (optional initially; mandatory after ~10 cycles of data accumulate to validate the §1.6c heuristic):
+
+| Cycle | `dispatch_seconds_budget` | `dispatch_seconds_actual` | `commit_count_at_termination` |
+|-------|--------------------------|--------------------------|-------------------------------|
+
+- `dispatch_seconds_budget` — the timeout budget set in the dispatch prompt (per `CDD.md §1.6c(a)`)
+- `dispatch_seconds_actual` — wall-clock seconds from dispatch start to agent exit (SIGTERM or clean)
+- `commit_count_at_termination` — number of commits α pushed to the cycle branch before session end
+
+These three fields accumulate per-cycle data so the heuristic constants in `CDD.md §1.6c(a)` (`120s × ac_count` docs floor, `180s × ac_count` code floor) can be tightened from informed-guess to empirically-validated after sufficient cycles. If `commit_count_at_termination = 0` and `dispatch_seconds_actual < dispatch_seconds_budget`, the agent was SIGTERM'd without checkpointing — consult `operator/SKILL.md §timeout-recovery`.
+
 **Finding-class breakdown** (across cycles in this release):
 
 | Class | Definition | Count |
