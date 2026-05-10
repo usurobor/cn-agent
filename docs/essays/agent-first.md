@@ -42,6 +42,8 @@ For a precedent, look at the cleanest bottom-up architecture in the history of c
 
 Trust did not come from a central architect mapping every possible workflow in advance. Trust came from local clarity, simple contracts, legible inputs and outputs, and the ability to combine.
 
+The analogy has a hard limit. Unix tools worked because text streams were simple and the programs were mostly deterministic. Agents are not grep. Their handoffs have to carry more than output: authority, provenance, limitations, evidence, and unresolved debt. So the lesson is not that agents are Unix commands. The lesson is that bottom-up composition needs a legible handoff substrate. For agents, that substrate has to be stronger than text.
+
 Agent-first design is that philosophy applied to probabilistic intelligence. Agent-first does not mean "one giant corporate brain." It means the opposite: many bounded agents, memories, tools, artifacts, and handoffs composing into larger agency without losing inspectability. The system becomes powerful because the parts are small enough to understand and the handoffs are explicit enough to inherit.
 
 ---
@@ -88,26 +90,39 @@ Tools can extend what a runner can do. Workflow state can resume a process. Cont
 
 The thing that makes activation different from mere resumable state is the receipt. If an activation helps in the moment but no durable evidence is written back, the agent's continuity did not grow. The interaction helped, then disappeared.
 
-A receipt is the unit of return: it records what ran, under what authority, what task was handled, what artifacts changed, what failed, what was learned, and what the next activation should do. It does not need to be cryptographic. It needs to be structural, inspectable, and present.
+A receipt is the unit of return: it records what ran, under what authority, what task was handled, what artifacts changed, what failed, what was learned, and what the next activation should do.
 
-The smallest useful receipt looks something like this:
+But a receipt should not be trusted merely because the agent emitted it. That would turn the receipt into self-certification, which is exactly the failure mode it is supposed to prevent.
+
+A useful receipt separates sources. Some fields are runtime-observed: tool calls, artifacts touched, authority granted. Some fields are agent-claimed: verdicts, limitations, debts, next steps. Some fields may be verifier- or human-attested. The architecture becomes trustworthy when those zones are explicit and inspectable instead of collapsed into fluent prose.
+
+The smallest useful receipt looks more like this:
 
 ```yaml
 runner: claude-code-web
 task: "review PR #297 for documentation coherence"
 authority: review only; no merge rights
-artifacts:
-  - docs/spec.md
-  - .review/closeout.md
-limitations:
-  - did not validate browser-rendered Markdown
-debt:
-  - link checker was skipped; owed before merge
-next:
-  - re-review after documentation build changes land
+observed:
+  artifacts:
+    - docs/spec.md
+    - .review/closeout.md
+  actions:
+    - wrote .review/closeout.md
+agent_claims:
+  verdict: documentation is coherent enough for review
+  limitations:
+    - did not validate browser-rendered Markdown
+  debt:
+    - link checker was skipped; owed before merge
+  next:
+    - re-review after documentation build changes land
 ```
 
-It is a few lines. It is not glamorous. But it is what turns a temporary episode into evidence the next activation can inherit.
+The point is not that every field is equally trustworthy. The point is that the source of each field is visible. Later activations and human reviewers can see what was observed, what was claimed, what was skipped, and what still needs checking.
+
+A verifier does not have to be a hidden orchestration layer. It becomes scaffolding when it silently owns truth for the whole workflow. It remains bottom-up when it is bounded: a link checker, a diff validator, a policy check, a human review, or another activation that checks one claim and leaves its own evidence.
+
+The receipt is how self-report becomes inspectable instead of self-authorizing.
 
 The receipt is the agent-first equivalent of the text stream in a Unix pipeline: the legible handoff that makes composition possible. The output is not merely text. It is witnessed change: an artifact, a verdict, a close-out, a sharpened capability, a named debt, or a boundary the next runner can read.
 
@@ -150,6 +165,8 @@ But the shift happens when the workflow itself is redesigned around activation, 
 ---
 
 ## Four Questions
+
+That is also why the phrase has to be falsifiable. "Agent-first" can rot into a slogan as easily as any other "-first" slogan. It only means something when continuity, evidence, authority, and governance live in the architecture.
 
 So how do you tell, in practice, whether a system is agent-added or agent-first? Ask four questions, and look for architectural answers, not documentation answers:
 
