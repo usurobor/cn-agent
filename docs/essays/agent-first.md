@@ -1,26 +1,32 @@
 # Agent-First, Not Agent-Added
 
-A recurring pattern in computing is that a new technology first appears as a faster version of the old way. We do not redesign the world from first principles when a new technology arrives. We bolt it onto the process we already have and judge it by whether things get cheaper, faster, or less awful.
+Durable evidence beats runtime memory as the substrate for composing probabilistic systems. That is the narrow version of "agent-first." It is not a claim that every organization should redesign itself around agents. It is not a claim that agents automatically repeat every previous computing shift. It is a claim about what breaks when probabilistic work is composed through transient memory, hidden prompts, and workflow scaffolding instead of through durable, inspectable evidence.
+
+A recurring pattern in computing is that a new technology first appears as a faster version of the old way. We bolt it onto the process we already have and judge it by whether things get cheaper, faster, or less awful.
 
 [LEO](https://www.bcs.org/articles-opinion-and-research/a-brief-history-of-british-computers-the-first-25-years-1948-1973/), one of the earliest business computers, earned its place by speeding up the same Lyons tea-shop logistics the company was already doing on paper — a faster clerk. The Web, in [CERN's own account](https://home.cern/science/computing/the-birth-of-the-web/short-history-web/), began as a way to share existing technical documents between scientists; the early public web was a directory of papers, server lists, and a CERN phone book. When smartphones arrived, the first instinct was to move familiar desktop and web tasks onto a small touchscreen. In each case, the old process stayed the authority, and the new technology was judged by fit.
 
 That history does not prove the agent transition is inevitable. It gives us a test. Does the new technology remain a plug-in judged by the old process, or does authority move to a new structure built around it?
 
-Sometimes the threshold gets crossed. The technology stops optimizing the old workflow and starts being the substrate the next workflow is built on. Organizations stopped putting brochures online and became web-first: commerce, identity, distribution, and support, all redesigned around links, search, and online reach. Mobile-first, in [Luke Wroblewski's framing](https://www.lukew.com/ff/entry.asp?933=), was never only about smaller screens. It was about letting the constraints of a pocket-sized, always-carried, sensor-rich device dictate what the product actually is. The new primitive becomes the center of gravity.
-
-Agents are being tested at that threshold now.
+Agents are being tested against that question now.
 
 Look at the common adoption pattern around them today. Teams open the existing forty-step workflow — support queues, Jira tickets, code review gates, approval dashboards, dropdowns from 2014 — and ask: *which of these steps can we replace with an LLM call?*
 
 So a summarizer goes on the ticketing system. A reviewer agent goes on every pull request. A chat box gets bolted to a legacy database. The architecture diagram does not change. The agent is a shiny new cog inside an old machine.
 
-This is useful. It can save money. It earns trust the way LEO earned trust. But it is agent-added, not agent-first — and the difference is going to matter much sooner than people think.
+This is useful. It can save money. It earns trust the way LEO earned trust. But it is agent-added, not agent-first — and the difference matters whenever agents have to compose work across time, tools, and other agents.
 
 Here is why.
 
 Picture a support-ticket triage agent shipped on a Monday. Month one is a triumph: it summarizes incoming tickets, suggests a queue, and saves real hours. Month two, someone notices it misclassifies refunds, so a routing table gets bolted on outside the agent. Month three, a retry policy lands in the orchestrator because the model occasionally invents a ticket ID, and now retries need their own dead-letter queue. Month four, a context store appears because the agent keeps forgetting that this customer already escalated last week. Then a second context store appears because the first one cannot be queried fast enough during peak load. Month five, the two stores disagree often enough that someone writes a reconciliation job. Month six, a meta-agent gets proposed to rank what the triage agent is producing, because no one trusts a single output anymore.
 
 Nothing in that progression was unreasonable in isolation. Each fix was the smallest reasonable response to the last problem. But notice what owns the state at month six: not the agent. The orchestration layer owns routing. The dead-letter queue owns failure. The two context stores own memory. The reconciliation job owns truth. The meta-agent owns judgment. The "agent" is a stateless model call sitting at the bottom of a scaffolding that exists to compensate for the fact that it has no durable continuity of its own.
+
+That is the actual agent-specific problem. A normal service can hand off a result through a stable contract. A deterministic function does not need to explain what it was trying to do, which context it used, what authority it had, what it skipped, or how confident it was. If the contract is right and the output is valid, the next step can proceed.
+
+A probabilistic agent is different. Its output is not enough. The next step needs to know the authority boundary, the evidence used, the tools called, the artifacts changed, the limitations discovered, the debts left behind, and which claims were observed rather than merely asserted. Runtime memory is a bad substrate for that. It is local, fragile, hard to inspect, and easy to confuse with truth. It can help a runner during an episode, but it cannot by itself make work inheritable. Durable evidence can.
+
+---
 
 This is the top-down trap. Top-down adoption starts with the organization as it already exists. Architects, platform teams, process owners, compliance owners, and budget owners look at the map they already govern and ask where agents can fit. That is not stupidity. Their job is often to preserve operational stability: keep the approvals, keep the queues, keep the reporting lines, keep the audit trail, keep the dashboard that executives already understand.
 
@@ -78,9 +84,9 @@ A receipt is the unit of return: it records what ran, under what authority, what
 
 But a receipt should not be trusted merely because the agent emitted it. That would turn the receipt into self-certification, which is exactly the failure mode it is supposed to prevent.
 
-A useful receipt separates sources. Some fields are runtime-observed: tool calls, artifacts touched, authority granted. Some fields are agent-claimed: verdicts, limitations, debts, next steps. Some fields may be verifier- or human-attested. The architecture becomes trustworthy when those zones are explicit and inspectable instead of collapsed into fluent prose.
+Most useful receipts are not written by one voice. They are assembled from zones. Some fields are runtime-observed: tool calls, artifacts touched, permissions granted. Some fields are agent-claimed: verdicts, limitations, debts, next steps. Some fields may be verifier- or human-attested. The architecture becomes trustworthy when those zones are explicit and inspectable instead of collapsed into fluent prose.
 
-The smallest useful receipt looks more like this:
+A useful receipt looks like this:
 
 ```yaml
 runner: claude-code-web
@@ -104,9 +110,19 @@ agent_claims:
 
 The point is not that every field is equally trustworthy. The point is that the source of each field is visible. Later activations and human reviewers can see what was observed, what was claimed, what was skipped, and what still needs checking.
 
-A verifier does not have to be a hidden orchestration layer. It becomes scaffolding when it silently owns truth for the whole workflow. It remains bottom-up when it is bounded: a link checker, a diff validator, a policy check, a human review, or another activation that checks one claim and leaves its own evidence.
+A verifier does not have to become a hidden orchestration layer. It becomes scaffolding when it silently owns truth for the whole workflow. It remains bottom-up when it is bounded: a link checker, a diff validator, a policy check, a human review, or another activation that checks one claim and leaves its own evidence.
 
 The receipt is how self-report becomes inspectable instead of self-authorizing.
+
+A bad receipt looks like this:
+
+```yaml
+task: "review PR #297"
+result: looks good
+next: merge
+```
+
+That receipt is short, but it is not useful. It does not say who ran, what authority it had, which artifacts changed, what evidence was observed, which checks were skipped, or what debt remains. A merge agent cannot tell whether "looks good" means the docs were read, the links were checked, the rendered Markdown was inspected, or the agent merely summarized a diff. A human reviewer cannot tell what to trust. The next activation inherits confidence without inheritance. That is what breaks downstream. Bad receipts do not merely lose detail. They create false continuity.
 
 The receipt is the agent-first equivalent of the text stream in a Unix pipeline: the legible handoff that makes composition possible. The output is not merely text. It is witnessed change: an artifact, a verdict, a close-out, a sharpened capability, a named debt, or a boundary the next runner can read.
 
@@ -122,7 +138,7 @@ That governance does not have to be heavy. It has to be explicit. Without it, bo
 
 ---
 
-Humans sit differently in this model. In a top-down system, humans are outside the machinery: approvers, architects, escalation handlers, exception processors. In an agent-first system, humans are inside the continuity boundary. The contracts of authority, scope, accountability, and refusal between human and agent are themselves part of what the next activation inherits.
+Humans do not become "inside the continuity boundary" by being added as approval steps. Top-down workflows already have approval steps. The difference is where human authority lives. In an agent-first system, the record says what authority a human granted, which decisions require human attestation, which refusals or debts persist, who can contest a result, and what accountability the next activation inherits. Human participation becomes part of the durable surface of the agent, not an exception path outside it.
 
 That is what lets an activation be answered legibly: who is waking, under what frame, for whom, with what authority, and with what obligation to return evidence?
 
@@ -142,6 +158,8 @@ But the shift happens when the workflow itself is redesigned around activation, 
 
 That is also why the phrase has to be falsifiable. "Agent-first" can rot into a slogan as easily as any other "-first" slogan. It only means something when continuity, evidence, authority, and governance live in the architecture.
 
+The four diagnostic axes are not arbitrary. Latency, cost, reversibility, and blast radius matter, but they are operating constraints. They tell you whether a system is fast, cheap, recoverable, or safe to bound. They do not tell you whether probabilistic work can be inherited. Continuity, evidence, contracts, and governance are the inheritance axes. Continuity answers: *what is the durable agent?* Evidence answers: *what returned from the activation?* Contracts answer: *how do parts compose without silent memory or hidden authority?* Governance answers: *what prevents drift when many probabilistic parts optimize locally?*
+
 So how do you tell, in practice, whether a system is agent-added or agent-first? Ask four questions, and look for architectural answers, not documentation answers:
 
 1. **What continuity does this system claim to have, and where does it physically live?**
@@ -155,7 +173,7 @@ A system designed around those answers is agent-first. Its fundamental architect
 
 ---
 
-Computers became more than faster clerks. The Web became more than a networked filing cabinet. Mobile became more than a tiny desktop. Agents become more than plugged-in automation when the question stops being *how do we insert agents into our existing workflow?* and starts being *what process structure do durable, composable, inspectable agents make possible that nothing else does?*
+Computers became more than faster clerks. The Web became more than a networked filing cabinet. Mobile became more than a tiny desktop. Agents become more than plugged-in automation when the question stops being *how do we insert agents into our existing workflow?* and starts being *what evidence structure lets probabilistic work compose without disappearing into runtime memory?*
 
 [CNOS](https://github.com/usurobor/cnos) is one worked answer to that question. The companion essay covers it.
 
