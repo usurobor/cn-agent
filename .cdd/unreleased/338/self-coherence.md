@@ -125,6 +125,23 @@ This is a docs-only cycle touching three files in `src/packages/cnos.cdd/skills/
 
 This cycle's budget was 600s. Heuristic for 5 ACs docs cycle: `max(300, 120×5) = 900s`. The budget set in the dispatch prompt (600s) is below the heuristic. β will verify this discrepancy per the proof plan. α records it honestly: the dispatch predates the heuristic being codified (the heuristic is the output of this cycle), so the budget mismatch is structurally inevitable for the cycle that introduces the rule. This is declared as known debt in §Debt.
 
+### §Debt
+
+**D1 — Recursive coherence: dispatch budget below heuristic**
+This cycle's dispatch budget (600s) is below the heuristic this cycle proposes (`max(300, 120×5) = 900s`). The bootstrap paradox is unavoidable: the rule is the output of the cycle that needed it, so the cycle that introduces the rule cannot simultaneously satisfy it. β's recursive-coherence check (per the issue proof plan) will find this discrepancy. α declares it honestly rather than hiding it.
+- No remediation possible within this cycle.
+- The discrepancy validates that the heuristic is non-trivial and would have changed the dispatch if it had existed prior.
+
+**D2 — Provisional alpha-closeout.md**
+In the sequential bounded dispatch model, α exits before β approves. `alpha-closeout.md` is written before exit, explicitly marked `[provisional — pending β outcome]`, per `alpha/SKILL.md §2.8` provisional close-out fallback. This is standard protocol for non-re-dispatch cycles.
+
+**D3 — Heuristic constants not empirically validated**
+The `120s/180s` multipliers and `300s/400s` floors are anchored in N=4 failures, not a dataset. Validation deferred per the issue Scope §Deferred: ≥10 cycles of telemetry needed from the new PRA fields before tightening is possible. Filed as issue scope intent; no issue number yet.
+
+**D4 — No tests**
+Docs-only cycle. All changes are structured prose to three skill files. No test framework applies. Explicit reason: §2.2 "tests must prove the actual claim" — the claim is prose correctness and cross-ref coherence, both verified by oracle commands run in §ACs.
+
+
 
 
 
