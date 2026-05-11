@@ -1,40 +1,47 @@
 ---
 cycle: 342
 role: alpha
-status: scaffolded
+status: in-progress
 ---
 
 # Self-Coherence — Cycle #342
 
-_α populates this file during implementation._
-
 ## Gap
 
-cdd/operator: Add §5 — Dispatch configurations (single-session δ-as-γ via Agent tool, Claude Code activation)
+**Issue:** cdd/operator: Add §5 — Dispatch configurations (single-session δ-as-γ via Agent tool, Claude Code activation)
+**Mode:** design-and-build
+**Version:** CDD 3.15.0
 
-## Mode
+`cdd/operator/SKILL.md` names only the canonical `claude -p` multi-session dispatch model. The single-session δ-as-γ configuration (one parent Claude Code agent dispatching α and β as sub-agents) is in active use but ungoverned — no canonical text names what is preserved, what is lost, or what grading implications follow. This cycle adds `operator/SKILL.md §5 Dispatch configurations` and amends `release/SKILL.md §3.8` with a configuration-floor clause.
 
-design-and-build
+## Skills
+
+**Tier 1:**
+- `cdd/CDD.md` (v3.15.0) — canonical lifecycle, artifact contract, role algorithm
+- `cdd/alpha/SKILL.md` — α role surface and execution detail
+
+**Tier 2:**
+- (docs-only cycle; no eng/* tier-2 code skills apply)
+
+**Tier 3:**
+- `cnos.core/skills/write/SKILL.md` — prose authoring: one governing question per section, front-load the point, cut throat-clearing
+- `cnos.core/skills/skill/SKILL.md` — skill-program/frontmatter coherence; no frontmatter changes allowed per issue constraint
 
 ## ACs
 
-1. `cdd/operator/SKILL.md` §5 section added with three sub-sections (§5.1, §5.2, §5.3)
-2. §5.2 names three structural consequences explicitly (γ/δ collapse, summary-not-transcript returns, branch-name churn)
-3. §3.8 amended with configuration-floor clause (A− cap for §5.2 cycles)
-4. §5.3 escalation criteria are operator-actionable (≥4 bullet conditions)
-5. Empirical anchor cited (cnos-tsc supercycle + tsc cycle #32)
-6. Recursive coherence — this cycle's own configuration declared in gamma-closeout.md
+_Populated in §ACs section below._
 
-## CDD Trace
+## Self-check
+
+_Populated after implementation._
+
+## Debt
+
+_Populated after implementation._
+
+## CDD-Trace
 
 | Step | Artifact | Skills loaded | Decision |
 |------|----------|---------------|----------|
 | scaffold | .cdd/unreleased/342/self-coherence.md | — | cycle branch created by γ |
-
-## Review-readiness
-
-_α updates when ready for β review._
-
-## Fix rounds
-
-_Appended per fix round if β returns RC._
+| α intake | self-coherence.md §Gap + §Skills | Tier 1 + Tier 3 | loaded; no ambiguity; proceeding |
