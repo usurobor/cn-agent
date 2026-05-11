@@ -467,6 +467,10 @@ Immediate fixes (executed this session):
 
 ---
 
+## Identity migration
+
+Cycle #343 (merged 2026-05-11) is the cutover from the deprecated `{role}@cdd.{project}` form to `{role}@{project}.cdd.cnos` (cnos elision: `{role}@cdd.cnos`). Git history is immutable; commits made before the cutover retain their original trailers. From cycle #343 onward all new commits must use the new form. Cycles that spanned the cutover may show mixed trailer forms in their history — this is acceptable during the transition window. Close-out artifacts may reference both forms transparently.
+
 ## Kata
 
 **Scenario:** v3.29.1 just shipped. Write the post-release assessment.

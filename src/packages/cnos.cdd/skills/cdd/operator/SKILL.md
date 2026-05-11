@@ -49,6 +49,33 @@ calls:
 
 ---
 
+## Git identity for role actors
+
+Every CDD role actor configures a git identity in the form `{role}@{project}.cdd.cnos` before making any commits on the cycle branch. DNS domains read broad-to-narrow right-to-left: `cnos` is the origin repository where the cdd protocol is defined and versioned, `cdd` is the protocol namespace inside cnos, and `{project}` is the tenant project running the protocol. The role name is the local part. This form makes the protocol's origin repo visible in every commit trailer and leaves namespace room for sibling protocols (`cnav`, `cnobs`) under the same cnos root.
+
+**Special case — cnos itself.** When the project running the cycle is the cnos repo, the literal form would be `{role}@cnos.cdd.cnos` (redundant `cnos`). The canonical elision is `{role}@cdd.cnos`, which reads as "the cdd protocol at cnos." Existing cnos commit trailers already use this form; the redundancy adds no information.
+
+| Role | Project | Canonical identity | Notes |
+|------|---------|-------------------|-------|
+| alpha | tsc | `alpha@tsc.cdd.cnos` | tsc project actor |
+| beta | cnos | `beta@cdd.cnos` | cnos actor — elision form (see above) |
+| gamma | acme | `gamma@acme.cdd.cnos` | hypothetical third project |
+| beta | * | `beta@cdd.{project}` | **(deprecated)** — cycle #287 form; cycle #343 cutover |
+
+Set identity before the first commit of each dispatch session:
+
+```bash
+# general form (non-cnos projects):
+git config user.name "{role}"
+git config user.email "{role}@{project}.cdd.cnos"
+
+# cnos project (elision form):
+git config user.name "{role}"
+git config user.email "{role}@cdd.cnos"
+```
+
+---
+
 ## 1. Route
 
 ### 1.1. Dispatch γ first

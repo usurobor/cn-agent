@@ -250,7 +250,7 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
 
 **Phase 1 — Dispatch**
 
-1. Configure git identity using the project name: `git config user.name "gamma"` and `git config user.email "gamma@cdd.{project}"`
+1. Configure git identity using the project name: `git config user.name "gamma"` and `git config user.email "gamma@{project}.cdd.cnos"` (cnos project uses elision: `gamma@cdd.cnos`; see `operator/SKILL.md` §Git identity for role actors)
 2. Observe and select the gap (§2)
 3. Create the issue with full implementation guidance, including Tier 3 skills (§4.4)
 3a. **Create the cycle branch.** From `origin/main`, create `cycle/{N}` and push it before any dispatch:
@@ -345,7 +345,7 @@ Load src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md.
 Issue: gh issue view <number>
 ```
 
-Parameters: `{project}` is the project name (e.g. `cnos`, `myapp`). Git identity uses `{role}@cdd.{project}` (e.g. `alpha@cdd.cnos`). `{number}` is the **issue number** for dispatch prompts. The α and β prompts include a `Branch:` line because γ creates `cycle/{N}` from `origin/main` before dispatch (§1.4 γ algorithm Phase 1 step 3a) and α/β `git switch` to it — they do not invent a name and they do not glob to discover it. The γ prompt does not include `Branch:` because γ owns its own session and creates the branch as part of Phase 1.
+Parameters: `{project}` is the project name (e.g. `cnos`, `myapp`). Git identity uses `{role}@{project}.cdd.cnos` (e.g. `alpha@tsc.cdd.cnos`; cnos project uses elision `alpha@cdd.cnos` — see `operator/SKILL.md` §Git identity for role actors). `{number}` is the **issue number** for dispatch prompts. The α and β prompts include a `Branch:` line because γ creates `cycle/{N}` from `origin/main` before dispatch (§1.4 γ algorithm Phase 1 step 3a) and α/β `git switch` to it — they do not invent a name and they do not glob to discover it. The γ prompt does not include `Branch:` because γ owns its own session and creates the branch as part of Phase 1.
 
 The prompt names the role, provides parameters, points to the issue, and (for α and β) names the branch. The CDD skill tells each role what to load (§4.4) and what to do (§1.4). γ does not enumerate skills or steps in the prompt — that is the skill's job. If the prompt needs to restate the algorithm, the algorithm is not clear enough — fix the skill.
 
@@ -354,7 +354,7 @@ The prompt names the role, provides parameters, points to the issue, and (for α
 The compact algorithm is here; `alpha/SKILL.md` expands each step into executable detail with self-coherence, pre-review gate, peer enumeration, and harness audit procedures. When they diverge on role-local execution detail, the skill governs, provided it does not alter role ownership, lifecycle order, selection rules, dispatch contract, artifact contract, or closure obligations (those remain CDD.md's authority — see `cdd/SKILL.md` Conflict rule).
 
 1. Receive dispatch prompt from γ. The prompt names the cycle branch explicitly (`Branch: cycle/{N}`).
-2. Configure git identity using the project name from the dispatch prompt: `git config user.name "alpha"` and `git config user.email "alpha@cdd.{project}"`
+2. Configure git identity using the project name from the dispatch prompt: `git config user.name "alpha"` and `git config user.email "alpha@{project}.cdd.cnos"` (cnos project uses elision: `alpha@cdd.cnos`; see `operator/SKILL.md` §Git identity for role actors)
 3. Subscribe to the issue (`gh issue edit {number} --add-assignee @me` or equivalent) so you receive comment notifications
 4. Load CDD skill, load all Tier 1 + Tier 2 skills (§4.4), load Tier 3 skills from the issue
 5. Read the issue fully, read source files referenced in implementation guidance
@@ -373,7 +373,7 @@ The compact algorithm is here; `alpha/SKILL.md` expands each step into executabl
 The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load order, and closure discipline. The detailed review, release, and post-release procedures live in the lifecycle sub-skills (`review/`, `release/`, `post-release/`).
 
 1. Receive dispatch prompt from γ. The prompt names the cycle branch explicitly (`Branch: cycle/{N}`).
-2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@cdd.{project}"`
+2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@{project}.cdd.cnos"` (cnos project uses elision: `beta@cdd.cnos`; see `operator/SKILL.md` §Git identity for role actors)
 3. Immediately begin polling the issue and `origin/cycle/{N}` (see §Tracking above for query forms, wake-up mechanism, and reachability preflight) — do not ask, just do it. **The poll target is a single named branch — no glob.** Run the §Tracking reachability preflight first: probe `git rev-parse --verify origin/cycle/{N}` synchronously, confirm it returns a SHA, and fall back to the operator if it does not (γ creates the branch in γ algorithm Phase 1 step 3a; if it is missing at β intake, that is a γ pre-flight failure to surface). Then pick the wake-up form your harness provides (`Monitor` stdout-as-notification or shell-wake-on-loop-exit). Emit only on transition to avoid context flood. **β never creates a branch.** Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
    ```bash
    # Baseline sync — run BEFORE the transition loop.
