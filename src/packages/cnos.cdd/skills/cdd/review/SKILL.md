@@ -260,7 +260,7 @@ Before submitting a review:
 
 ### Review identity
 
-β uses a different git identity than α — `beta@cdd.{project}` versus `alpha@cdd.{project}`. The role separation is git-observable.
+β uses a different git identity than α — different role names in the email local part. The canonical form is `{role}@{project}.cdd.cnos` (or the cnos elision `{role}@cdd.cnos`); see `operator/SKILL.md` §Git identity for role actors for the full prescription, rationale, and worked examples. The role separation is git-observable. The two-level form from cycle #287 is deprecated as of cycle #343.
 
 ---
 
