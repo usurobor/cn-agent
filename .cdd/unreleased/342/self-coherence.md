@@ -97,11 +97,37 @@ Matches `usurobor/tsc`, `cycle/32-impl`, `δ = γ`. **PASS.**
 
 ## Self-check
 
-_Populated after implementation._
+**Did α push ambiguity onto β?**
+
+No. Every AC has explicit evidence. The one open item (AC6) is structurally post-merge (γ's close-out); it is declared as known debt, not omitted.
+
+**Is every claim backed by evidence in the diff?**
+
+- AC1: grepped and confirmed (4 matches, exact ordering).
+- AC2: grepped and confirmed (5 matches, all three consequences represented).
+- AC3: grepped and confirmed (3 matches in/near §3.8).
+- AC4: §5.3 body is in the diff; bullet count verified in-session (4 bullets, all quantifiable).
+- AC5: empirical anchors are verbatim references to close-out paths in `usurobor/tsc`; the branch trail is the exact 5-link chain recorded in tsc #32 `gamma-closeout.md`.
+- AC6: declared as β-visible known debt; γ owns it post-merge.
+
+**Peer enumeration:**
+
+Scope is two prose files; no sibling surface touches the same contract. The §5 section heading renaming (§5→§6, §6→§7, §7→§8, §8→§9) is a mechanical change. Cross-file references from `operator/SKILL.md §5.2` to `release/SKILL.md §3.8` and vice versa are explicit and internally consistent.
+
+**Skill constraint compliance:**
+
+- `write/SKILL.md`: each sub-section has one governing question; points are front-loaded; no throat-clearing. The §5.2 empirical anchor paragraph is long but each sentence makes a single move (cite supercycle → cite tsc #26 → cite tsc #32 branch trail → close with structural observation).
+- `skill/SKILL.md`: no frontmatter changes to either file (confirmed: diff contains no `---` block modifications); §5 is additive, not replacing §5.1/§1.2 content.
+
+**Harness audit:** Not applicable — no schema-bearing type or parser change. Two prose-only SKILL.md files.
+
+**Intra-doc repetition check:** §5.1 restates the canonical multi-session model briefly; §1.2 owns the detail. §5.1 references §1.2 back — one home, one pointer. No duplicate facts introduced without gain.
 
 ## Debt
 
-_Populated after implementation._
+**AC6 (recursive coherence — γ close-out configuration declaration):** This is not α's artifact to produce pre-merge. γ must declare §5.1 or §5.2 in `gamma-closeout.md` and apply the §3.8 floor to this cycle's own γ grade. The AC6 oracle fires at close-out time. β should verify that the design constraint is clearly stated in the diff (it is — §3.8 clause is explicit on the requirement); the runtime fulfillment is γ's post-merge obligation.
+
+**No other known debt.** Docs-only change; no code, no tests, no runtime contract. Peer set is complete (two files, both updated). Section renumbering is mechanical and internally consistent.
 
 ## CDD-Trace
 
