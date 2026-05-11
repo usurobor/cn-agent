@@ -329,11 +329,15 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
   **Score the release, not the intent.** A retroactive partial-protocol close-out earns C+ honestly (e.g. `usurobor/tsc` cycle 27: v0.4.0 retroactive close-out scored α B / β C+ / γ C / C_Σ C+ — the grade reflects what shipped, not the goodwill of fixing it later).
 
+  **Configuration-floor clause.** Cycles run under `operator/SKILL.md §5.2` (single-session δ-as-γ via Agent tool) cap the γ axis at **A−** regardless of execution quality, because γ/δ separation is structurally absent. The A− γ floor applies from the cycle's merge forward; it is not retroactive. The configuration must be recorded explicitly in `gamma-closeout.md` (see AC6 of any cycle introducing or running under §5.2). Applying the A− cap is operator-honest discipline: if `gamma-closeout.md` does not declare §5.2, the rubric treats the cycle as §5.1 and the cap does not apply.
+
   - ❌ Every release is A+ (grade inflation, no signal)
   - ❌ Score the intent rather than what shipped
   - ❌ Round up because "the team worked hard"
+  - ❌ Rate a §5.2 cycle's γ axis above A− (grade inflation, structural absence of γ/δ separation unaccounted)
   - ✅ "β: A- — DUR skills synced but README.md still references old framing"
   - ✅ "γ: C — partial-protocol release; retroactive close-out planned"
+  - ✅ "γ: A− — §5.2 cycle; γ/δ separation absent; A− γ floor applied per §3.8 configuration-floor clause"
 
 ---
 
