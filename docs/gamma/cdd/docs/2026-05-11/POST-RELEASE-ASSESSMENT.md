@@ -164,3 +164,29 @@ Hub memory is operator-owned. No hub repo is accessible in this γ session.
 - **Daily reflection:** Cycle #343 closed (docs-only, A/A/A). Identity convention canonicalized: `{role}@{project}.cdd.cnos`; cnos elision `{role}@cdd.cnos`. Deprecated form `{role}@cdd.{project}` documented with migration note. Self-application on cycle's own commit trail (all three roles). Cleanest cycle in recent history — 0 findings, R1 single-pass approval. Next: `operator/SKILL.md §3.4` pre-merge gate row (small-change, carried from #339).
 - **Adhoc thread (CDD identity convention):** Convention now canonical in `operator/SKILL.md §Git identity for role actors` (lines 52–76). Cross-referenced from `CDD.md §Parameters`, `review/SKILL.md §Review identity`, `alpha/SKILL.md` pre-review gate row 14, `post-release/SKILL.md §Identity migration`. Deprecated `{role}@cdd.{project}` form documented; no history rewrite expected; transition-window tolerance stated.
 - **Adhoc thread (CDD self-improvement arc):** `operator/SKILL.md §3.4` pre-merge gate row still open (growing lag). CI workflow integration still open (growing lag). Both carried to next cycle.
+
+---
+
+## Addendum — Cycle #342
+
+**Cycle:** #342 — cdd/operator: Add §5 Dispatch configurations + release §3.8 floor
+**Date:** 2026-05-11 (merge commit `5e1414b9`, docs-only §2.5b)
+**Assessed by:** γ (post-merge, cycle #343 already closed)
+
+**Coherence measurement:**
+- Baseline: #343 (docs) — α A, β A, γ A
+- This cycle: #342 (docs) — α A, β A, γ A
+- Delta: Holds at A on all axes. Cycle ran under §5.1 (canonical multi-session dispatch) — no §3.8 A− floor applies. AC6 (recursive coherence) met post-merge in `gamma-closeout.md`.
+- Coherence contract closed? Yes. The ungoverned δ-as-γ single-session configuration is now canonical in `operator/SKILL.md §5`. Grading discipline for §5.2 cycles is explicit in `release/SKILL.md §3.8`. Operators have escalation criteria (§5.3) to switch back to §5.1.
+
+**Encoding lag:** No change from #343 assessment. The two open items (`operator/SKILL.md §3.4` pre-merge gate row, CI integration) carry forward. MCI/MCA balance: balanced.
+
+**Process learning:** 0 findings, 1 below-coherence-bar observation (N1: character inconsistency "A-" vs "A−" in §3.8 — dropped; same grade meaning, same rendering, single occurrence). No skill patches. No CDD improvement warranted from this cycle's data.
+
+**Review quality:** 1 round, 0 findings, R1 APPROVED. Target ≤1 for docs — met.
+
+**§9.1 triggers:** None fired.
+
+**Next move:** Unchanged from #343 — `operator/SKILL.md §3.4` pre-merge gate row (small-change, carried from #339).
+
+**Assessment detail:** See `.cdd/releases/docs/2026-05-11/342/gamma-closeout.md`.
