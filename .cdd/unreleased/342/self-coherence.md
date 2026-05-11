@@ -160,3 +160,11 @@ Scope is two prose files; no sibling surface touches the same contract. The §5 
 | 12 | Caller-path trace for new modules | ✓ — not applicable; no new modules or functions |
 | 13 | Test assertion count from runner | ✓ — not applicable; docs-only cycle; no test runner |
 | 14 | α commit author email | ✓ — `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` (canonical cnos elision form) |
+
+## Review-readiness | round 1 | implementation SHA: 916615fa | base SHA: d989342a | branch CI: not applicable (docs-only; workflow triggers on push to main only) | ready for β
+
+All 14 pre-review gate rows pass. AC1–AC5 evidenced by grep in-session. AC6 is γ's post-merge obligation (declared known debt). Branch is 8 commits ahead of `origin/main` (base SHA d989342a, re-verified at 2026-05-11 UTC immediately before this signal). β polls `origin/cycle/342`.
+
+## Fix rounds
+
+_Appended per fix round if β returns RC._
