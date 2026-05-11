@@ -1,7 +1,7 @@
 ---
 cycle: 343
 branch: cycle/343
-status: pending
+status: approved
 ---
 
 # Beta Review — Cycle #343
@@ -126,3 +126,28 @@ None.
 ## Notes
 
 Docs-only cycle. No executable tests; no CI checks to verify. All five targeted surfaces updated, three untouched surfaces verified correct by inspection. Peer enumeration complete. No surviving prescriptive instances of the deprecated `{role}@cdd.{project}` form.
+
+---
+
+## R1 — Pass 3: Verdict
+
+**Verdict:** APPROVED
+
+**Round:** 1
+**Fixed this round:** n/a (first round, no prior findings)
+**Branch CI state:** docs-only — no executable CI; not applicable
+**Merge instruction:** `git merge --no-ff cycle/343` into main with `Closes #343` in the merge commit
+
+### Summary
+
+The cycle coherently resolves the namespace inversion in CDD identity convention. All five ACs are met:
+
+- **AC1:** `operator/SKILL.md` §Git identity for role actors is the canonical prescription site with a 2-sentence DNS-hierarchy + cnos-as-origin rationale. ✓
+- **AC2:** Elision form `{role}@cdd.cnos` is the unambiguous choice for cnos-side actors; one form prescribed, no fallback. ✓
+- **AC3:** 4-row worked example table in `operator/SKILL.md` covers tsc/cnos/acme/deprecated; deprecated row marked; table reachable from CDD.md §Parameters. ✓
+- **AC4:** `post-release/SKILL.md` §Identity migration subsection present; 70 words (≤80); names cycle #343 and cutover date 2026-05-11; no history-rewrite expectation. ✓
+- **AC5:** All cycle/343 commits carry `alpha@cdd.cnos` (α) or `gamma@cdd.cnos` (γ) — new canonical elision form throughout. ✓
+
+No D, C, B, or A findings. The AC1 oracle imprecision (noted as observation) is not actionable on the branch and does not affect merge readiness. The implementation is coherent.
+
+β closes the search space: no blocker found across contract integrity, issue contract walk, diff/context inspection, or architecture check.
