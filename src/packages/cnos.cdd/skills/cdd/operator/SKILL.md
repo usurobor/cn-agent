@@ -262,7 +262,48 @@ Override is for information asymmetry or hard constraints, not preference.
 
 ---
 
-## 5. What the operator does NOT do
+## 5. Dispatch configurations
+
+CDD defines two valid dispatch configurations. Choose one before dispatching; record it in `gamma-closeout.md`.
+
+### 5.1 Canonical multi-session dispatch
+
+One `claude -p` process per role; each has an independent auth context and no shared memory. This is the model described in §1.2 above.
+
+- γ/δ separation is structurally present: the operator (δ) selects and scaffolds; γ coordinates; α and β are separate processes with no access to each other's reasoning or conversation state.
+- Sub-agent returns do not apply — each `claude -p` session exits cleanly; the operator reads committed artifacts.
+- Branch names are stable: `cycle/{N}` persists through all fix rounds because each role session checks it out fresh.
+
+Use this configuration when the cycle is substantial (see §5.3 escalation criteria).
+
+### 5.2 Single-session δ-as-γ via Agent tool (Claude Code activation)
+
+When the operator is a Claude Code agent (one parent session), α and β are dispatched as sub-agents using the Agent tool rather than via separate `claude -p` processes. Sub-agents run with fresh context per invocation and are functionally equivalent to `claude -p` for role-isolation purposes (each sub-agent reasons independently, cannot see the parent's conversation state, and cannot see the other sub-agent's conversation state). However, sub-agents inherit MCP scope and filesystem access from the parent session.
+
+Three structural consequences follow:
+
+1. **δ=γ collapse.** γ/δ separation is structurally absent: one parent session holds both the selection/scaffolding function (γ) and the external gate authority (δ). The cycle proceeds, but the grading floor in §3.8 of `release/SKILL.md` applies — see §3.8 configuration-floor clause.
+
+2. **sub-agent return messages are summaries, not full transcripts.** The Agent tool returns a summary message from the sub-agent, not a full conversation transcript. δ-as-γ verifies committed artifacts — specifically `beta-review.md` for β's verdict and `self-coherence.md` for α's review-readiness signal — rather than relying on the sub-agent's return message. This is the protocol invariant that makes §5.2 valid despite the summary-not-transcript limitation: the artifact β commits is canonical; the return message is informational only.
+
+3. **Harness push restrictions surface as branch-name churn under fix-rounds.** Some Claude Code harness environments block updates to existing remote branches (403 on push to a previously-written branch). Under this constraint, a fresh-branch chain (`cycle/{N}` → `cycle/{N}-impl` → `cycle/{N}-impl-r2` → `cycle/{N}-impl-r3` → `cycle/{N}-merged` → `cycle/{N}-final`) is an acceptable workaround. Each link in the chain is a valid cycle branch for that fix-round; the final fast-forward into `main` becomes an external operator action.
+
+**Empirical anchors:** The cnos-tsc supercycle (cycles 24–26, close-outs at `usurobor/tsc:.cdd/releases/{0.5.0,0.6.0,0.7.0}/{24,25,26}/gamma-closeout.md`) ran under §5.2 end-to-end; tsc cycle 26 γ-closeout explicitly records "operator (δ = γ in this two-agent configuration)." Tsc cycle #32 (close-out at `usurobor/tsc:.cdd/releases/docs/2026-05-09/32/gamma-closeout.md`) ran §5.2 and produced a five-link branch trail (`cycle/32` → `cycle/32-impl` → `cycle/32-impl-r2` → `cycle/32-merged` → `cycle/32-final`) due to harness push restrictions; that trail is the source observation for consequence (3) above.
+
+**Reference dependencies:** §5.2 dispatch sizing follows `CDD.md §1.6c` (sub-agent dispatch budget heuristic). The harness push restriction that produces branch-name churn is the same constraint that makes the mechanical pre-merge gate (`release/SKILL.md §2.1`) an operator-side action when β cannot push directly (`CDD.md §1.4 β algorithm step 8`).
+
+### 5.3 Escalation criteria
+
+Switch from §5.2 to §5.1 (multi-session) when any of the following is true at γ scaffold time:
+
+- **≥7 ACs** in the cycle (complexity exceeds what a single-session coordinator can reliably hold across sub-agent round-trips)
+- **New contract surface or cross-repo deliverables** (γ/δ separation matters for audit when external systems are affected)
+- **≥3 β rounds expected** (multiple fix-round re-dispatches compound the branch-name churn problem under §5.2 harness constraints)
+- **≥3 γ judgment calls expected mid-cycle** (design ambiguity, scope changes, unblock decisions — each requires full cross-agent context that δ-as-γ holds less reliably than a dedicated γ session)
+
+---
+
+## 6. What the operator does NOT do
 
 These are role boundaries. Crossing them without an override declaration breaks the coherence record.
 
@@ -274,7 +315,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 
 ---
 
-## 6. Cycle lifecycle from the operator's view
+## 7. Cycle lifecycle from the operator's view
 
 | Phase | Operator action | Wait for |
 |-------|----------------|----------|
@@ -292,7 +333,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 
 ---
 
-## 7. Timeout recovery
+## 8. Timeout recovery
 
 ### §timeout-recovery — What to do when an agent session terminates before committing
 
@@ -346,7 +387,7 @@ The recovery procedure is the failure path. The prevention path is a correctly-s
 
 ---
 
-## 8. Embedded Kata
+## 9. Embedded Kata
 
 ### Kata A — Normal cycle
 
