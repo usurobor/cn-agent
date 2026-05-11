@@ -6,6 +6,15 @@ round: 1
 
 # Beta Review — Cycle #342
 
+**Verdict:** APPROVED
+
+**Round:** 1
+**Fixed this round:** n/a — R1, no prior findings
+**Branch CI state:** not applicable (docs-only; CI workflow triggers on push to main only)
+**Merge instruction:** `git merge --no-ff cycle/342 -m "feat(cdd/342): add operator §5 dispatch configurations + release §3.8 floor\n\nCloses #342"` into main
+
+---
+
 ## §2.0.0 Contract Integrity
 
 **Review pass:** R1 contract preflight
