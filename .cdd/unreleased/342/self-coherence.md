@@ -133,5 +133,30 @@ Scope is two prose files; no sibling surface touches the same contract. The §5 
 
 | Step | Artifact | Skills loaded | Decision |
 |------|----------|---------------|----------|
-| scaffold | .cdd/unreleased/342/self-coherence.md | — | cycle branch created by γ |
-| α intake | self-coherence.md §Gap + §Skills | Tier 1 + Tier 3 | loaded; no ambiguity; proceeding |
+| 0 — scaffold | `.cdd/unreleased/342/self-coherence.md`, `alpha-prompt.md`, `beta-prompt.md` | — | γ created cycle/342 from origin/main d989342a; scaffolded cycle dir |
+| 1 — intake | `self-coherence.md §Gap + §Skills` | CDD.md, alpha/SKILL.md, write/SKILL.md, skill/SKILL.md | Loaded; issue read fully; related artifacts read (operator/SKILL.md, release/SKILL.md §3.8); no ambiguity |
+| 2 — design | not required | — | Mode = design-and-build; design lives in issue body per §Mode declaration; no separate design artifact warranted |
+| 3 — plan | not required | — | 2-file prose patch; implementation order is unambiguous (operator §5 first, release §3.8 second, self-coherence last) |
+| 4 — tests | not applicable | — | Docs-only; no code, no runtime contract change; no test suite exists for SKILL.md prose |
+| 5 — code | — | — | Not applicable (prose-only) |
+| 6 — implementation | `operator/SKILL.md §5` + `release/SKILL.md §3.8` | write/SKILL.md, skill/SKILL.md | §5 added (§5.1 canonical, §5.2 single-session, §5.3 escalation); old §5→§6 §6→§7 §7→§8 §8→§9; §3.8 configuration-floor clause appended; all AC oracles verified by grep in-session; no frontmatter changes to either file. Diff files: `operator/SKILL.md` (AC1/2/4/5), `release/SKILL.md` (AC3), `self-coherence.md` (primary artifact), `alpha-prompt.md` + `beta-prompt.md` (γ-scaffolded, read-only from α perspective). |
+| 7 — self-coherence | `.cdd/unreleased/342/self-coherence.md` | all Tier 1 + Tier 3 | AC1–AC5 all PASS; AC6 declared known debt (γ post-merge obligation); peer enumeration complete (2 files, both updated); no harness audit needed (prose-only) |
+
+**Pre-review gate:**
+
+| Row | Check | Result |
+|-----|-------|--------|
+| 1 | Branch rebased onto origin/main | ✓ — origin/main SHA d989342a = merge-base SHA; no drift observed at 2026-05-11 UTC |
+| 2 | self-coherence.md carries CDD Trace through step 7 | ✓ — this document |
+| 3 | Tests present or reason stated | ✓ — docs-only; no test suite for SKILL.md prose |
+| 4 | Every AC has evidence | ✓ — §ACs above; AC1–AC5 PASS; AC6 is γ's post-merge obligation, declared as known debt |
+| 5 | Known debt explicit | ✓ — §Debt: AC6 only |
+| 6 | Schema/shape audit | ✓ — not applicable; no schema-bearing contract changed |
+| 7 | Peer enumeration | ✓ — scope is {operator/SKILL.md, release/SKILL.md}; both updated; no other sibling surfaces share the §5 / §3.8 contract |
+| 8 | Harness audit | ✓ — not applicable; prose-only |
+| 9 | Polyglot re-audit | ✓ — diff is Markdown only; `bash -n` not applicable; grep-based oracle checks run for all 5 ACs |
+| 10 | Branch CI green | CI workflow triggers only on push to `main` or PR; no CI runs on `cycle/342`. Docs-only change; no Go or shell code in diff. β may merge without waiting for CI on this branch — no compile/test surface exists. |
+| 11 | Artifact enumeration matches diff | ✓ — all 5 files in `git diff --stat origin/main..HEAD` are enumerated in CDD Trace step 6 above |
+| 12 | Caller-path trace for new modules | ✓ — not applicable; no new modules or functions |
+| 13 | Test assertion count from runner | ✓ — not applicable; docs-only cycle; no test runner |
+| 14 | α commit author email | ✓ — `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` (canonical cnos elision form) |
