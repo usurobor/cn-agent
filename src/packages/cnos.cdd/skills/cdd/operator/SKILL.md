@@ -316,6 +316,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 - **Do not triage findings.** That's γ. If you want a finding handled differently, tell γ.
 - **Do not rewrite prompts.** γ owns prompt quality. If the prompt is weak, tell γ to fix the issue.
 - **Do not merge without β's approval.** The merge gate fires when β says it's ready, not before.
+- **Do not communicate directly with α or β during in-cycle work.** γ is the bridge. δ-to-γ, γ-to-α/β. δ remains external to the triad; γ is the operator's only in-cycle counterparty.
 
 ---
 

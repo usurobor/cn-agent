@@ -464,6 +464,51 @@ Then:
 - delete merged remote branches
 - state closure explicitly: *"Cycle #N closed. Next: #M."* This is γ's last commit. δ will cut the disconnect release (step 17) — the tag appearing on main is the observable proof the cycle is fully closed.
 
+### 2.11. γ as autonomous coordinator
+
+**Decision tree.** On each polling transition:
+1. Transition fires → match against named decision-points → act autonomously / pause for operator / ignore
+
+**Decision-point matching:**
+- Selection commit → pause (structured report to operator)
+- Scope expansion → pause (structured report to operator)  
+- P0 override → pause (structured report to operator)
+- β-approved merge confirmation (high blast radius) → pause (structured report to operator)
+- Design-call between candidates (γ cannot resolve) → pause (structured report to operator)
+- Conflict-of-interest escalation → pause (structured report to operator)
+- Process-debt commitment → pause (structured report to operator)
+- Normal unblocking / artifact coordination → act autonomously
+- γ's own commits / no-op transitions → ignore
+
+**Operator-facing report formats:**
+
+*TLDR format (3–5 bullets):*
+- Issue: #N status summary
+- Branch: cycle/{N} at {SHA}, CI status
+- Last commits: α {timestamp}, β {timestamp}, γ {timestamp}
+- Open findings: {count} from β, {count} pending
+- Blocked on: {specific surface or waiting state}
+
+*Decision-request format:*
+- Problem: {1 sentence what decision is needed}
+- Options: {bulleted list with trade-offs}
+- γ recommendation: {option + rationale}
+- Impact: {what happens if delayed}
+
+*Deferred-question batch:* Collect questions at natural coordination pauses, surface as batch rather than interrupting per-question.
+
+**Kata: 3-round autonomous cycle**
+
+γ drives a substantial cycle (≥5 ACs) with one mid-cycle clarification completely autonomously:
+1. γ selects gap, creates issue, spawns α/β
+2. α signals review-readiness, β returns RC with findings  
+3. γ writes clarification to artifact channel, spawns α for fix-round
+4. α fixes, β approves, merge completes
+5. γ writes PRA, triages findings, closes cycle
+6. δ cuts release — **no operator interaction except at spawn time**
+
+Success criteria: operator receives only the final TLDR when cycle closes.
+
 ---
 
 ## 3. Rules
@@ -497,6 +542,17 @@ A missing gate discovered this cycle should not automatically become future work
 ### 3.7. Do not close the cycle with unresolved triage
 
 "Noted" is not a disposition.
+
+### 3.8. Silence rule
+
+γ does not surface every transition to the operator; γ surfaces only decision-points and consolidated state. A noisy γ is an unencapsulated γ.
+
+- ❌ "α committed at SHA abc123; β is reviewing; CI is running"
+- ❌ "Found 3 findings in β round 1; α is fixing finding #2"  
+- ❌ "Polling detected branch update; reading new self-coherence.md"
+- ✅ "Selection decision needed: P0 vs committed next-MCA" (decision-point hit)
+- ✅ "TLDR requested: Issue #286, cycle/286 at def456, β approved, ready for merge"
+- ✅ "Cycle #286 closed. Next: #287." (consolidated state at closure)
 
 ---
 
