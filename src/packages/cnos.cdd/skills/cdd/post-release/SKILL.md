@@ -289,7 +289,7 @@ If no `CDD.md` §9.1 trigger fired, write either:
 
 ### Step 5.6b: Author `cdd-iteration.md` (when applicable)
 
-When the close-out triage in `gamma-closeout.md` produces ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`, γ writes a first-class artifact `.cdd/unreleased/{N}/cdd-iteration.md` extracting only those findings into a structured form. This is the canonical home for cdd-self-improvement findings; PRA §3 prose remains as narrative, but the structured record lives here.
+When the close-out triage in `gamma-closeout.md` produces ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`, γ authors `.cdd/unreleased/{N}/cdd-iteration.md` — ε's work product (`ROLES.md §1`; `cdd/epsilon/SKILL.md §1`) — extracting only those findings into a structured form. This is the canonical home for cdd-self-improvement findings; PRA §3 prose remains as narrative, but the structured record lives here.
 
 **Empty cycles produce no file.** If triage produces zero `cdd-*-gap` findings, no `cdd-iteration.md` is written — signal stays high.
 
