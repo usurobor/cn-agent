@@ -63,3 +63,9 @@
 - ✅ **Clear prevention value.** Prevents fix-round cycles caused by concurrent edits (30+ min cost vs 5-10 min wait cost)
 - ✅ **Target audience identified.** §5.2 operators who need concrete guidance on parent-session behavior
 - ✅ **Not automatable.** Requires human operator discipline; documentation is appropriate solution
+
+## §2.2 Architecture and Design Check
+
+**Result:** ✅ **NOT ACTIVE** - Documentation-only change to existing skill file
+
+**Rationale:** Change adds prose subsection to `cdd/operator/SKILL.md` without touching package boundaries, runtime surfaces, source/artifact/installed flow, or other architectural surfaces listed in activation criteria. This documents an operational invariant for existing §5.2 dispatch configuration.
