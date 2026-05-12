@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs] -->
+<!-- completed: [Gap, Skills, ACs, Self-check] -->
 
 # Self-Coherence Report — Issue #292
 
@@ -43,3 +43,16 @@
 
 **AC5**: Worked example added to CDD.md §1.4 or alongside it
 ✅ **Evidence**: This self-coherence.md file itself serves as the worked example - demonstrates section manifest + section-by-section commits as specified.
+
+## Self-check
+
+**Did α's work push ambiguity onto β?** No. The resumption protocol is precisely specified with concrete steps and role-specific examples. β has clear mechanics to apply.
+
+**Is every claim backed by evidence in the diff?** Yes. All AC claims map to specific modifications:
+- AC1: CDD.md §1.4 resumption sub-clause with 4-step protocol
+- AC2: HTML-comment manifest format canonized in CDD.md + demonstrated here
+- AC3: Resumption sub-sections added to all 3 role skills
+- AC4: cn resume directive named in CDD.md §1.4 harness integration
+- AC5: This file serves as worked example of section manifest pattern
+
+**Role boundary compliance?** Yes. α modified only CDD protocol files as appropriate for self-modification. No scope creep into unrelated surfaces. Changes enhance existing section-by-section discipline with recovery capability.
