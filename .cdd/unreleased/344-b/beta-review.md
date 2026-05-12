@@ -172,3 +172,93 @@ if: >
 ### Closing the search space
 
 No remaining D-level finding was found in the relevant contract. All three findings are correctable without design decisions outside issue scope — no issue deferral required. The implementation is structurally sound: shell syntax valid, YAML valid, event vocabulary matches `activation/SKILL.md §10.1`, no hardcoded tokens, all adapter contract items implemented. Round 2 narrows to the three findings above.
+
+---
+
+## Round 2 Review
+
+**Reviewer:** β (`beta@cdd.cnos`)
+**Round:** 2
+**Fix SHA range:** `f3b1c72d` (F1+F3), `79ec55e2` (F2), `a5281d82` (self-coherence fix-round)
+**Review base:** `e7d995a4` (R1 verdict)
+**Branch head:** `72cc6011`
+
+---
+
+### Verdict: APPROVED
+
+**Fixed this round:** `f3b1c72d`, `79ec55e2` close F1 (C), F2 (B), F3 (A)
+**Branch CI state:** n/a — templates cycle, no CI on this branch
+**Merge instruction:** `git merge --no-ff cycle/344-b` into `main` with `Closes #344 (Cycle B)`
+
+---
+
+### F1 (C) — Verified resolved
+
+**Claim:** `activation/templates/README.md` now contains a B.AC4-compliant walkthrough.
+
+**Evidence:**
+- File at `src/packages/cnos.cdd/skills/cdd/activation/templates/README.md` lines 8–32 contains a "Quick Start — Telegram Notifier" section with four numbered steps: (1) create bot via BotFather, (2) get chat ID via `getUpdates`, (3) set `CDD_TELEGRAM_BOT_TOKEN` + `CDD_TELEGRAM_CHAT_ID` secrets in GitHub Settings, (4) copy files and wire workflow.
+- `wc -w activation/templates/README.md` → **297 words** (≤300 limit met).
+- No hardcoded tokens: `123456:ABC-DEF...` and `<YOUR_TOKEN>` are clearly illustrative placeholders; no credential-shaped strings present.
+- All four B.AC4 required steps (bot registration → chat ID → secrets → wiring) are present and correctly ordered.
+
+**Finding resolved.**
+
+---
+
+### F2 (B) — Verified resolved
+
+**Claim:** `cdd-notify.yml` `notify-beta-verdict` `if:` expression now correctly parenthesizes both `contains()` clauses.
+
+**Evidence:**
+- `cdd-notify.yml` lines 60–64 now read:
+  ```
+  startsWith(github.ref, 'refs/heads/cycle/') &&
+  github.event.created != true &&
+  (contains(join(github.event.commits.*.added, ','), 'beta-review.md') ||
+   contains(join(github.event.commits.*.modified, ','), 'beta-review.md'))
+  ```
+- Expression evaluates as `A && B && (C || D)`. The `startsWith(cycle/)` branch guard correctly protects both `contains()` clauses. Main-branch pushes modifying `beta-review.md` will not trigger this job.
+- YAML validation: `python3 -c "import yaml; yaml.safe_load(open('cdd-notify.yml').read())"` → **YAML OK** (re-verified post-fix).
+- Diff confirmed: commit `79ec55e2` added parentheses around both `contains()` lines, no other changes.
+
+**Finding resolved. No regression: semantics corrected, not weakened.**
+
+---
+
+### F3 (A) — Verified resolved
+
+**Claim:** `activation/templates/README.md` now notes the `validate-release-gate.sh` dependency.
+
+**Evidence:**
+- `activation/templates/README.md` line 52: `cdd-artifact-validate.yml` table row reads: "Validates `.cdd/` structure on every push to `cycle/**` and `main`; requires `scripts/validate-release-gate.sh` in the tenant repository"
+- Sentence is in the correct location (under the `cdd-artifact-validate.yml` table row in the `github-actions/` section).
+
+**Finding resolved.**
+
+---
+
+### Regression scan
+
+| Surface | Check | Result |
+|---|---|---|
+| `telegram-notifier/README.md` | Unchanged by fixes (F1 fix was top-level README only) | no regression |
+| `notify.sh` | Unchanged by fixes | no regression |
+| `cdd-artifact-validate.yml` | Unchanged by fixes | no regression |
+| `cdd-cycle-on-merge.yml` | Unchanged by fixes | no regression |
+| `cdd-notify.yml` | F2 fix: only 2 lines changed (added parentheses); all other jobs and conditions untouched | no regression |
+| `activation/templates/README.md` | F1+F3 fix: 33 lines added, 10 deleted; new Quick Start section and updated table row; no existing content removed | no regression |
+| All three YAML files | `python3 yaml.safe_load` on all three → **YAML OK** | no regression |
+| Word count constraint | `wc -w activation/templates/README.md` → 297 (≤300) | within bound |
+| Token check | README contains only illustrative placeholders (`123456:ABC-DEF...`, `<YOUR_TOKEN>`); no credentials | no regression |
+
+No regressions introduced by the fix round.
+
+---
+
+### Closing the search space (Round 2)
+
+All three R1 findings are resolved. No new findings identified in the narrowed Phase 2 scan of the changed surfaces. The implementation is coherent: B.AC1–B.AC5 all met, YAML valid, shell syntax valid, event vocabulary matches `activation/SKILL.md §10.1`, no hardcoded tokens, all adapter contract items implemented, `validate-release-gate.sh` dependency documented, operator-precedence defect corrected.
+
+No remaining blocker found in the relevant contract. Branch is merge-ready.
