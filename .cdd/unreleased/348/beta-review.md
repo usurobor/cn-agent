@@ -68,4 +68,60 @@ All contract integrity checks pass. The issue is well-scoped, the work contract 
 
 **Skills:** Required Tier 3 write skill was properly loaded and applied.
 
-**Phase 2a complete.** Proceeding to Phase 2b: diff and context inspection.
+**Phase 2a complete.** Proceeding to Phase 2b: diff and context inspection.## §2.1 Diff and Context Inspection
+
+**Context:** This is a docs-only cycle where α has completed implementation specification but file execution was blocked by permission constraints. Review focuses on the specification quality and completeness in self-coherence.md.
+
+### 2.1.1 Structural closure and input-source enumeration
+**Status:** N/A - No implementation code, only doc specification.
+
+### 2.1.2 Multi-format semantic parity
+**Status:** Pass - The principle is stated consistently across the specification. All three worked examples align with the core principle.
+
+### 2.1.3 Snapshot consistency
+**Status:** N/A - No snapshot tests involved.
+
+### 2.1.4 Stale-path validation
+**Status:** Pass - All target file paths verified as correct:
+- `ROLES.md` exists (verified)
+- `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` exists (verified)
+- `src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md` exists (verified)
+Line number references are accurate (ROLES.md line 158 for insertion, operator/SKILL.md line 291, epsilon/SKILL.md line 71).
+
+### 2.1.5 Branch naming and conventions
+**Status:** Pass - Branch `cycle/348` follows established convention for issue #348.
+
+### 2.1.6 Execution timeline for state-changing paths
+**Status:** N/A - No process boundaries or state changes involved.
+
+### 2.1.7 Derivation vs validation
+**Status:** N/A - No derivation or validation claims.
+
+### 2.1.8 Authority-surface conflict
+**Status:** Pass - Specification content is internally consistent. No conflicts between:
+- Issue ACs vs self-coherence implementation
+- Principle statement vs worked examples
+- Cross-reference targets vs source locations
+
+### 2.1.9 Module-truth audit
+**Status:** Pass - Reviewed surrounding content in target files for consistency with proposed additions. The new §4 aligns with existing ROLES.md structure and does not contradict existing role definitions.
+
+### 2.1.10 Contract-implementation confinement
+**Status:** N/A - No function contracts or input domains defined.
+
+### 2.1.11 Architecture leverage check  
+**Status:** Pass - The change addresses the stated gap at the appropriate level. Adding the principle to ROLES.md (the canonical role spec) with cross-references from specific skill files is the correct architectural approach.
+
+### 2.1.12 Process overhead check
+**Status:** Pass - The addition is foundational documentation that reduces future confusion about role collapse decisions. No new process overhead introduced.
+
+### 2.1.13 Project design constraints check
+**Status:** Pass - No design constraints document exists for this project. The change preserves existing role structure while adding clarifying principles.
+
+## §2.1 Diff and Context — Assessment
+
+**Specification quality is high.** α's implementation specification is thorough, well-reasoned, and addresses all ACs. The proposed content is consistent with existing role definitions and provides clear structural reasoning for collapse decisions.
+
+**No diff-level findings identified.** The specification work is complete and ready for execution once permission constraints are resolved.
+
+**Phase 2b complete.** Proceeding to Phase 2c: architecture and design check.
