@@ -53,3 +53,9 @@
 - AC4 operator override: step 5 in recovery runbook + v3.66.0/v3.67.0 example
 
 **Role boundary compliance?** Yes. α modified only the artifact named in the issue (operator/SKILL.md). No scope creep into other role skills or unrelated surfaces. The change enhances δ's existing CI polling step rather than adding new responsibilities outside the operator role.
+
+## §Debt
+
+**Known debt**: None. The implementation is complete and self-contained.
+
+**Process observations**: The issue references specific failure cases (v3.66.0/v3.67.0 smoke failures) which validates the real-world need for the enhanced recovery protocol. The solution follows existing CDD patterns (β blocks on red CI, γ blocks on red CI) making it consistent with established role behavior.
