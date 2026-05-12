@@ -37,6 +37,27 @@
 |-------|-------------|---------|----------|-------|
 | CDD Tier 1 | Issue "Tier 3 skills" section | yes | yes | CDD self-modification within Tier 1 scope |
 
+## §2.1 Diff and Context Inspection
+
+**Multi-format parity (2.1.2):** ✅ Cache-bust rule consistently described across CDD.md, alpha/SKILL.md, gamma/SKILL.md
+
+**Stale-path validation (2.1.4):** ✅ No paths moved/renamed/deleted
+
+**Branch naming (2.1.5):** ✅ `cycle/296` follows project convention
+
+**Authority-surface conflict (2.1.8):** ⚠️ Gap identified - cache-bust instruction in CDD.md β algorithm but AC3 specified beta/SKILL.md should be updated
+
+**Module-truth audit (2.1.9):** ✅ No other issue-edit patterns require unification
+
+**Architecture leverage (2.1.11):** ✅ Systematic solution using existing branch-polling infrastructure rather than ad-hoc fix
+
+**Process overhead (2.1.12):** ✅ Minimal overhead (one file per issue edit) prevents real cache invalidation failures
+
+**Design constraints (2.1.13):** ✅ All three active constraints preserved:
+- Branch-polling rule leveraged (not changed)
+- cycle/{N} remains canonical branch  
+- γ edit authority preserved with procedural side-effect
+
 ## §2.0.0 Contract Integrity
 
 | Check | Result | Notes |
