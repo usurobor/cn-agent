@@ -260,6 +260,8 @@ If the re-probe succeeds (no stderr errors, ref advances or is confirmed unchang
 
 **γ-on-transition semantics.** For each polling transition γ chooses one of: (a) act autonomously (artifact channel + spawn-back), (b) pause for operator (decision-point hit), (c) ignore (no-op transition such as γ's own commit). The polling table shape doesn't change.
 
+**Issue-edit cache-bust rule.** When γ edits an issue body during an active cycle, γ writes a `gamma-clarification.md` entry to `.cdd/unreleased/{N}/` on the cycle branch. The entry names: date, summary of edit, which ACs / non-goals / constraints / artifacts changed. Roles polling the cycle branch see the SHA transition; their next intake re-fetches the issue body from the live source rather than trusting cached state. The cache-bust signal is the cycle-branch SHA transition, not the GitHub issue mtime (which may be invisible to MCP-cached reads). **Worked example:** cycle #283 — γ created `gamma-clarification.md` on the cycle branch (commit `2f83095`) when resolving F1; that commit was the cache-bust signal that α/β picked up via cycle-branch polling.
+
 #### γ algorithm
 
 The compact algorithm is here; `gamma/SKILL.md` expands each phase into executable detail with gates, katas, and selection mechanics. When they diverge on role-local execution detail, the skill governs, provided it does not alter role ownership, lifecycle order, selection rules, dispatch contract, artifact contract, or closure obligations (those remain CDD.md's authority — see `cdd/SKILL.md` Conflict rule).
@@ -404,7 +406,7 @@ The compact algorithm is here; `beta/SKILL.md` defines β's role boundary, load 
 
 1. Receive dispatch prompt from γ. The prompt names the cycle branch explicitly (`Branch: cycle/{N}`).
 2. Configure git identity using the project name from the dispatch prompt: `git config user.name "beta"` and `git config user.email "beta@{project}.cdd.cnos"` (cnos project uses elision: `beta@cdd.cnos`; see `operator/SKILL.md` §Git identity for role actors)
-3. Immediately begin polling the issue and `origin/cycle/{N}` (see §Tracking above for query forms, wake-up mechanism, and reachability preflight) — do not ask, just do it. **The poll target is a single named branch — no glob.** Run the §Tracking reachability preflight first: probe `git rev-parse --verify origin/cycle/{N}` synchronously, confirm it returns a SHA, and fall back to the operator if it does not (γ creates the branch in γ algorithm Phase 1 step 3a; if it is missing at β intake, that is a γ pre-flight failure to surface). Then pick the wake-up form your harness provides (`Monitor` stdout-as-notification or shell-wake-on-loop-exit). Emit only on transition to avoid context flood. **β never creates a branch.** Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
+3. Immediately begin polling the issue and `origin/cycle/{N}` (see §Tracking above for query forms, wake-up mechanism, and reachability preflight) — do not ask, just do it. **The poll target is a single named branch — no glob.** Run the §Tracking reachability preflight first: probe `git rev-parse --verify origin/cycle/{N}` synchronously, confirm it returns a SHA, and fall back to the operator if it does not (γ creates the branch in γ algorithm Phase 1 step 3a; if it is missing at β intake, that is a γ pre-flight failure to surface). Then pick the wake-up form your harness provides (`Monitor` stdout-as-notification or shell-wake-on-loop-exit). Emit only on transition to avoid context flood. **Issue-edit cache-bust:** when polling sees a `gamma-clarification.md` add or update on the cycle branch, re-read the issue body via `gh issue view {N}` (or MCP equivalent) to get the live version, not cached state. **β never creates a branch.** Reference shape (MCP-only, `Monitor`-wrapped, transition-only stdout):
    ```bash
    # Baseline sync — run BEFORE the transition loop.
    # The transition loop absorbs first-iteration state silently (prev=∅ → cur=...).
@@ -744,6 +746,8 @@ cycle/{N}
 where `{N}` is the issue number. One cycle = one branch = one named target for all polling.
 
 **Ownership:** γ creates the branch from `origin/main` before dispatch (§1.4 γ algorithm Phase 1 step 3a). α and β never create branches — they `git switch cycle/{N}` from the name in their dispatch prompt and refuse to invent or accept any other name (§1.4 α step 5a, §1.4 β step 3, `alpha/SKILL.md`, `beta/SKILL.md` §1 Role Rule 1).
+
+**γ session branch rule.** γ's session is on a separate γ session branch (harness-given as `claude/...` or operator-named as `gamma/session-{N}`); this branch is γ's pre-publication drafting surface for work that cannot land directly on `cycle/{N}`. **Default rule:** γ commits cycle artifacts directly to `cycle/{N}`. The session branch is for genuine drafts only (e.g. PRA work-in-progress that requires γ-only review before publication). Any γ-session-branch commit must merge into `cycle/{N}` or `main` by closure declaration time, or be discarded. No orphan γ session branches survive past closure.
 
 **Legacy shapes — warn-only.** The pre-#287 shapes are warn-only (verifiers may flag them; nothing else changes):
 

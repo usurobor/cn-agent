@@ -211,6 +211,7 @@ The triad's work is not complete until it is tagged. Untagged post-cycle patches
 1. Confirm all post-cycle commits are on main (γ PRA, γ skill patches, δ session patches)
 2. Edit VERSION to the new number
 3. Run `scripts/release.sh` — this stamps all manifests, verifies consistency, commits, tags, and pushes in one command
+4. **Branch cleanup** — delete merged cycle branches (`cycle/{N}`) and γ session branches (harness-given `claude/...` or operator-named `gamma/session-{N}` patterns) that were used during the cycle. No orphan γ session branches survive past closure.
 
 **Manual tagging is not allowed.** Do not run `git tag` directly. The release script is the only way to tag. It prevents the class of failures where VERSION, cn.json, and package manifests disagree (see DISPATCH-FAILURE-EVIDENCE.md, cycle #84 failure 3).
 

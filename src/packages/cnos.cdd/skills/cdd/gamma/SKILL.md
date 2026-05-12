@@ -356,6 +356,8 @@ Allowed transfer unit: **artifact facts**, not hidden role state.
 - ❌ "β said this design is shaky; just rewrite the parser like this"
 - ✅ "The issue omitted invariant X; γ adds it to the issue and points α back to the updated artifact"
 
+**Issue-edit cache-bust procedure.** When γ edits an issue body during an active cycle, γ commits the `gamma-clarification.md` entry on the cycle branch *before* signaling the edit to α/β. The signal is the cycle-branch transition; γ does not need to chat-relay the edit. Write the clarification entry to `.cdd/unreleased/{N}/gamma-clarification.md` on `cycle/{N}` naming: date, summary of edit, which ACs / non-goals / constraints / artifacts changed.
+
 ### 2.6. Steps 6–7 — Prepare release artifacts before δ tags
 
 In the sequential dispatch model, β exits after merge. δ runs `scripts/release.sh` (stamp + tag) but does not author artifacts. γ owns two release-preparation steps that must land on main **before** γ requests the tag from δ:
