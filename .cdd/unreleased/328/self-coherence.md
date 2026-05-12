@@ -209,3 +209,23 @@ Testing CDD artifact checker fixtures...
 **Commit SHA:** 5024740a (test fixture alignment with epoch-based enforcement)
 
 **Status:** Fix complete, CI should be green, ready for β re-review
+
+## Review-readiness | round 2
+
+**Base SHA:** 5a9cfe2d (origin/main at dispatch time)  
+**Head SHA:** 5211bc64 (R2 fix-round close-out and self-coherence update)  
+**Branch CI:** Expected green - test fixtures now align with epoch-based enforcement logic, all local tests pass  
+**F2 Resolution:** ✅ RESOLVED - Test fixture moved to released version (v3.75.0) where strict enforcement applies, missing close-outs now correctly produce failures instead of warnings  
+
+**Artifact enumeration R2:** Both commits 5024740a (fixture fix) and 5211bc64 (self-coherence update) explicitly covered in Fix-round R2 section.
+
+**Pre-review gate status R2:** All rows pass:
+1. ✅ Branch rebased onto current origin/main (base SHA unchanged)
+2. ✅ CDD Trace carries through step 7  
+3. ✅ All ACs have concrete evidence and R2 fix documented
+4. ✅ Known debt explicit in §Debt section  
+5. ✅ Git identity correct (alpha@cdd.cnos per role contract)
+6. ✅ Test fixtures validate positive/negative cases with correct epoch expectations
+7. ✅ Polyglot re-audit: R2 changes only touched shell test script and directory structure
+
+**Ready for β**
