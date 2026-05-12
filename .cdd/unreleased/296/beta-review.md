@@ -58,6 +58,20 @@
 - cycle/{N} remains canonical branch  
 - γ edit authority preserved with procedural side-effect
 
+## §2.2 Architecture Check
+
+**Active:** Yes - touches CDD skill files (skill separation surface)
+
+| Check | Result | Notes |
+|---|---|---|
+| Reason to change preserved | yes | Each skill retains single purpose (α/β/γ/operator remain distinct) |
+| Policy above detail preserved | yes | No policy changes - purely procedural additions to existing roles |
+| Interfaces remain truthful | n/a | No interface changes |
+| Registry model remains unified | n/a | No registry changes |
+| Source/artifact/installed boundary preserved | n/a | No build/install changes |
+| Runtime surfaces remain distinct | yes | Skills remain skills - no surface blurring |
+| Degraded paths visible and testable | yes | Cache-bust rule improves visibility of stale cache detection |
+
 ## §2.0.0 Contract Integrity
 
 | Check | Result | Notes |
