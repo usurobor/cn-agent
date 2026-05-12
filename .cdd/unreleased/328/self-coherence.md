@@ -88,3 +88,39 @@ All tests pass per commit f98da74e.
 
 **AC12: release.sh and CDD checker boundaries are clear**
 Evidence: Help text and README.md document: "`scripts/validate-release-gate.sh` = pre-tag release gate; `cdd-verify` = repository ledger validation." Different purposes: release gate checks current release, CDD checker validates entire repository history (commit dabf6c05).
+
+## Self-check
+
+Did α's work push ambiguity onto β? **No** - all claims are backed by concrete evidence:
+- Every AC maps to specific commits and file paths
+- Test fixtures demonstrate actual checker behavior, not just prose claims
+- CI integration is verifiable (job I6 exists in build.yml)
+- Documentation includes concrete examples users can run
+
+Is every claim backed by evidence in the diff? **Yes** - implementation is incremental and verifiable:
+- CDD checker updates: commit 4326d259 + 4db68fc4 (core functionality)
+- Test fixtures: commit f98da74e (positive/negative validation)  
+- CI integration: commit 58bb3f15 (job + aggregation)
+- Documentation: commit dabf6c05 (usage examples + README)
+
+## Debt
+
+**Known debt:**
+- Exception file parsing uses simple regex instead of full YAML parser - works for documented format but may break on complex YAML edge cases
+- Section validation in artifacts is basic pattern matching, not semantic validation of content quality
+- No validation of cross-artifact consistency (e.g., issue ACs match self-coherence ACs)
+
+**No additional debt** - all AC requirements implemented per specification.
+
+## CDD Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Observation inputs read from issue #328; CDD artifact validation gap selected |
+| 1 Select | — | — | Selected gap: CI lacks systematic CDD artifact ledger validation |
+| 2 Branch | cycle/328 | cdd | Branch existed; checked out from dispatch |
+| 3 Bootstrap | .cdd/unreleased/328/ | cdd | Cycle directory created for self-coherence artifact |
+| 4 Gap | self-coherence.md §Gap | — | Named incoherence: missing CI validation of CDD artifacts |
+| 5 Mode | self-coherence.md §Skills | cdd + eng/tool + eng/test + eng/ux-cli + cnos.core/skills/design + cdd/review | MCA mode with T2/T3 generation constraints applied |
+| 6 Artifacts | Updated cdd-verify command, test fixtures, CI job, README | eng/tool + eng/test + eng/ux-cli | Implementation complete: 4 commits covering functionality, tests, CI, docs |
+| 7 Self-coherence | self-coherence.md complete | cdd | AC-by-AC self-check completed with evidence mapping |
