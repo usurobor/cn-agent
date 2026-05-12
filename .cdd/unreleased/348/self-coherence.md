@@ -9,3 +9,15 @@
 **Version/Mode:** docs-only, design-and-build
 
 **Selected change:** Add ROLES.md §4 stating the hats-vs-actors principle with worked examples and cross-references from operator/SKILL.md §5.2 and epsilon/SKILL.md collapse notes.
+
+## §Skills
+
+**Tier 1 (CDD lifecycle):**
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` — canonical lifecycle
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — α role surface and algorithm
+
+**Tier 2 (always-applicable engineering):**
+- None required for this docs-only cycle
+
+**Tier 3 (issue-specific):**
+- `src/packages/cnos.core/skills/write/SKILL.md` — writing skill for coherent prose
