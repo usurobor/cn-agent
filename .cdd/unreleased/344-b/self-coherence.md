@@ -173,3 +173,46 @@ grep confirms the 4 event names in `notify.sh` match exactly.
 
 4. **alpha-closeout.md provisional** — written at review-readiness per `alpha/SKILL.md §2.8`
    bounded-dispatch fallback; marked `[provisional — pending β outcome]`.
+
+---
+
+## §CDD-Trace
+
+**Step 1 — Receive dispatch:** Cycle B dispatch received. Branch `cycle/344-b` checked out.
+Git identity set to `alpha@cdd.cnos`.
+
+**Step 2 — Identify gap:** `cdd/activation/SKILL.md §10.2` defines adapter contract with no
+reference implementation. Cycle B closes this with a complete template tree.
+
+**Step 3 — Active skills declared:** Tier 1: CDD.md, alpha/SKILL.md, activation/SKILL.md.
+Tier 2: shell, YAML, Markdown. Tier 3: none. (See §Skills above.)
+
+**Step 4 — Design:** Not required (purely additive new directory; no inter-package contracts).
+
+**Step 5 — Plan:** Not required (artifact order prescribed by ACs B.AC1–B.AC5).
+
+**Step 6 — Implementation (commit 22be2525):**
+
+Files delivered:
+- `src/packages/cnos.cdd/skills/cdd/activation/templates/telegram-notifier/notify.sh`
+  — shell adapter; caller: `cdd-notify.yml` (each job step calls `bash .github/cdd/notify.sh`)
+- `src/packages/cnos.cdd/skills/cdd/activation/templates/telegram-notifier/cdd-notify.yml`
+  — GitHub Actions workflow; caller: GitHub Actions runner on push events
+- `src/packages/cnos.cdd/skills/cdd/activation/templates/telegram-notifier/README.md`
+  — documentation; caller: tenant reading setup instructions
+- `src/packages/cnos.cdd/skills/cdd/activation/templates/github-actions/cdd-artifact-validate.yml`
+  — CI workflow; caller: GitHub Actions runner on push events
+- `src/packages/cnos.cdd/skills/cdd/activation/templates/github-actions/cdd-cycle-on-merge.yml`
+  — CI workflow; caller: GitHub Actions runner on push to main
+- `src/packages/cnos.cdd/skills/cdd/activation/templates/README.md`
+  — top-level overview; caller: tenant discovering templates
+
+Caller-path trace: all template files are consumed by tenant repos (copy-paste deployment).
+Within the cnos repo they are documentation/reference artifacts — no in-repo call site is
+expected or required. `cdd-notify.yml` and `cdd-cycle-on-merge.yml` both call `notify.sh`.
+
+**Step 7 — Self-coherence:** This file. Written incrementally (one section per commit) per
+`alpha/SKILL.md §2.5`. Sections: §Gap (53aeb6d1), §Skills (3b729d1b), §ACs (450a2754),
+§Self-check (82631388), §Debt (1a007688), §CDD-Trace (this commit).
+
+**CDD Trace complete through step 7.**
