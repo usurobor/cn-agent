@@ -274,6 +274,79 @@ All CDD-managed secrets use the `CDD_` prefix. This namespace prevents collision
 
 ---
 
+## §11a Operator Access for Notification Channels
+
+When the notification interface (§10) and secrets (§11) are configured, operators need a canonical path to *receive* the notifications the bot posts. This section prescribes the operator access flow: invite-link convention, channel scope recommendation, operator removal hygiene, and sample message shapes that adapters implement.
+
+### §11a.1 Invite-link convention
+
+The repo owner generates a channel invite link and stores it in the operator registry (§19). The channel itself is admin-controlled and private — the invite link serves as a join-credential, but the channel admin retains removal authority for unauthorized joins.
+
+**Storage:** Add a `Notification-access` column to `.cdd/OPERATORS` (§19). Per-operator values are either the channel invite link, a transport-agnostic URI (`tg+invite://...`, `slack://...`), or the literal value `none` for operators who do not receive notifications.
+
+**Channel creation:** For Telegram, create a private channel via the Telegram client, add the bot as an admin, then generate an invite link via the "Invite Link" option in channel settings. The link format is typically `https://t.me/joinchat/{token}` or `https://t.me/+{token}`. Store this exact link in the operator's `Notification-access` column.
+
+**Security model:** The invite link is a join-credential, not an auth-credential. Leak of the invite link enables joining but does not grant posting permission or admin access. Channel admins see all joins and can remove unauthorized users. Private channels require the invite link to join and do not appear in public search.
+
+### §11a.2 Channel scope
+
+**Recommendation: one channel per repo.** Cross-repo operators use Telegram folders or equivalent client-side organization. Shared channels require filtering on the operator side; per-repo channels allow the bot to reuse standard message shapes without disambiguation.
+
+**Cycle-class scoping** (e.g., spec cycles → channel A, engine cycles → channel B) is permitted but not prescribed. Repos that choose cycle-class scoping must document the routing rules in `.cdd/OPERATORS` or a linked file, since operators need to know which channels to join for their role scope.
+
+**Channel naming convention:** For Telegram private channels, use descriptive names like `cdd-notifications-{project}` or `{project}-cdd`. Public-facing channel names should not include sensitive project details or internal terminology that has meaning only within the organization.
+
+### §11a.3 Operator removal hygiene
+
+When `.cdd/OPERATORS` records a `removed-cycle` for a former operator, the same row's `Notification-access` column must be cleared and the operator must be removed from the notification channel. Removal is a two-step action to prevent incomplete operator offboarding.
+
+**Checklist for operator removal:**
+1. Update `.cdd/OPERATORS`: populate the `removed-cycle` column with the current cycle number
+2. Clear the same row's `Notification-access` column (set to `none` or remove the value)
+3. Remove the operator from the notification channel via the platform's admin interface
+4. Commit the registry change and include the channel removal in the commit message
+
+**Rationale:** Registry-only removal leaves the operator with notification access that outlives their authorization. Channel-only removal without registry update leaves no audit trail of when or why the change occurred. Both steps must complete for clean operator offboarding.
+
+### §11a.4 Sample message shapes
+
+Notification adapters implement these four message shapes. Variables are marked with `{braces}` for template substitution. The shapes are transport-agnostic; adapters render them to platform-specific formatting (Markdown, HTML, plain text).
+
+**cycle-open:**
+```
+Cycle {cycle_number} opened: {issue_title}
+Branch: {branch}
+Dispatched by: {operator_handle}
+```
+
+**beta-verdict:**
+```
+Cycle {cycle_number} β verdict: {verdict}
+Round: {round_number}
+Findings: {finding_count} ({severity_breakdown})
+{top_finding_summary}
+```
+
+**RC/fix-round:**
+```
+Cycle {cycle_number} fix-round {fix_round_number}
+Original cycle: {original_cycle}
+α-handle: {alpha_handle}
+Fix commit: {fix_commit_sha}
+```
+
+**cycle-merge:**
+```
+Cycle {cycle_number} merged
+Final commit: {merge_commit_sha}
+Review rounds: {total_rounds}
+Final grade: {tsc_grade}
+```
+
+**Two-way operator interaction is explicitly out-of-scope-v1.** Send-only notification is the canonical v1 interface. Bots that *receive* operator commands (cycle dispatch via `/dispatch 33`, β-verdict acknowledgment via reactions) require a running service, webhook handlers, and an auth model — a much larger surface than the stateless send-only interface. Any future proposal for two-way interaction must demonstrate that the running-service prerequisites are acceptable for the target environment.
+
+---
+
 ## §12 Cycle-README Template
 
 Every cycle directory — `releases/{version}/{N}/` for versioned releases or `releases/docs/{ISO-date}/{N}/` for rolling-docs releases — must contain the following five files. These files constitute the cycle close-out record and are what CI artifact validation (§9 Layer 1) checks for:
@@ -451,11 +524,11 @@ Create `.cdd/OPERATORS` as a plain-text table:
 
 ```
 # CDD Operator Registry
-# Columns: handle | identity-email | role-scopes-permitted | added-cycle
+# Columns: handle | identity-email | role-scopes-permitted | added-cycle | notification-access
 #
-alpha    | alpha@cdd.cnos    | alpha               | 0
-beta     | beta@cdd.cnos     | beta                | 0
-gamma    | gamma@cdd.cnos    | gamma               | 0
+alpha    | alpha@cdd.cnos    | alpha               | 0           | https://t.me/+AbC123def
+beta     | beta@cdd.cnos     | beta                | 0           | https://t.me/+AbC123def  
+gamma    | gamma@cdd.cnos    | gamma               | 0           | none
 ```
 
 **Columns:**
@@ -466,6 +539,7 @@ gamma    | gamma@cdd.cnos    | gamma               | 0
 | `identity-email` | The canonical git author email for this operator's CDD commits (`{role}@{project}.cdd.cnos` per §7) |
 | `role-scopes-permitted` | Comma-separated list of CDD roles this operator may act as (alpha, beta, gamma, delta, or `*`) |
 | `added-cycle` | Cycle number at which this operator was added to the registry (0 for activation-time entries) |
+| `notification-access` | Channel invite link, transport-agnostic URI, or literal `none` for operators who do not receive notifications |
 
 **CI enforcement:** For the first cycle after activation, CI warns on unregistered operator commits but does not block merge. This grace period lets the activation-time operator complete onboarding without being immediately blocked by the check they just created. From the second cycle onward, an unregistered commit author email causes CI to fail the artifact validation job.
 
