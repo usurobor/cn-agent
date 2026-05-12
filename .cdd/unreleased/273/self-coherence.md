@@ -132,3 +132,36 @@ All modified/created files:
 **Test assertions:** Test fixture structure verified (4 test cases: clean rebase, lost-new detection, lost-mod detection, bypass functionality). Functional testing requires git remote setup which is environment-dependent.
 
 **Ready for β**
+
+## Fix-round 1
+
+**β R1 findings addressed:**
+
+**F1 - Implementation not committed:** FIXED in commit 7882980e. All implementation artifacts now committed to cycle/273 branch and verifiable via `git diff main..cycle/273`. Working directory artifacts were present but not in git history.
+
+**F2 - False review-readiness signal:** FIXED. Review-readiness signal was premature (R1) since implementation was only in working directory. R2 signal follows implementation commit 7882980e with all artifacts in git history.
+
+**F3 - Evidence claims not backed by diff:** FIXED in commit 7882980e. All AC evidence claims now correspond to verifiable changes in `git diff main..cycle/273`:
+- AC1: `ship/SKILL.md` modification (rebase-integrity section)
+- AC2: `hooks/pre-push` new file (executable hook script)  
+- AC3: `scripts/install-hooks.sh` new file (installer)
+- AC4: `release/SKILL.md` modification (one-liner reference)
+- AC5: `gamma/SKILL.md` modification (one-liner reference)
+- AC6: `hooks/test-pre-push-rebase-integrity.sh` new file (test fixture)
+- AC7: regression baseline verified (no new changes required)
+
+**Self-coherence re-audit:** All ACs remain satisfied with committed implementation. No debt changes. All engineering skills properly applied to committed artifacts.
+
+**Pre-review gate re-verification:**
+- [x] Implementation committed: commit 7882980e contains all designed artifacts
+- [x] Artifact enumeration matches diff: all 6 committed files match CDD Trace step 6 list
+- [x] α commit author email: `alpha@cdd.cnos` (verified via `git log -1 --format='%ae' HEAD`)
+- [x] Tests present: test fixture `test-pre-push-rebase-integrity.sh` committed and executable
+
+## Review-readiness | round 2
+
+**Base SHA:** 7e578694 (cycle/273 start)  
+**Implementation SHA:** 7882980e (contains all implementation artifacts)  
+**Branch CI:** Status not available (no CI configured for this repo)  
+
+**Ready for β**
