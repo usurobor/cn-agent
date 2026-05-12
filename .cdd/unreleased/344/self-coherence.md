@@ -1,7 +1,7 @@
 ---
 cycle: 344
 role: alpha
-status: in-progress
+status: review-ready
 ---
 
 # Self-Coherence — Cycle #344
@@ -248,3 +248,20 @@ No new modules or functions added (docs-only cycle); caller-path trace not appli
 12. ✅ Caller-path trace: N/A (no new modules)
 13. ✅ Test assertion count: N/A (no tests)
 14. ✅ Commit author email: `alpha@cdd.cnos` — verified via `git log -1 --format='%ae' HEAD`
+
+---
+
+## Review-readiness | round 1 | base SHA: 9783a469dc95914bbd47f2abfdb4562c91df7c7c | head SHA: 51650800 (implementation) | branch CI: docs-only cycle, no CI jobs on cycle/344 (explicit declaration per gate row 10) | ready for β
+
+**Status:** `review-ready`
+
+All 6 ACs met. 37 OQ decisions recorded. Pre-review gate rows 1–14 all pass (row 10 explicitly declared: docs-only cycle, no CI on cycle branch). Diff contains 11 files: 1 new skill, 3 cross-reference edits, 6 cnos marker files, 1 cross-repo README. All enumerated in §CDD-Trace step 6.
+
+**Oracle verification at review-readiness time:**
+
+```
+rg '^## §' src/packages/cnos.cdd/skills/cdd/activation/SKILL.md | wc -l → 24
+wc -l src/packages/cnos.cdd/skills/cdd/activation/SKILL.md → 623
+rg 'activation/SKILL.md' src/packages/cnos.cdd/skills/cdd/ → 9 hits (3 external)
+§24 verification → 9/9 OK
+```
