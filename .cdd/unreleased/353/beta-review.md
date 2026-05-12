@@ -20,3 +20,29 @@
 | Cross-surface projections updated | yes | Self-coherence reflects implementation state accurately |
 | No witness theater / false closure | yes | Implementation evidence maps directly to oracle-verifiable claims |
 | PR body matches branch files | yes | Issue body matches self-coherence gap/scope analysis |
+
+## §2.0 Issue Contract
+
+### AC Coverage
+| # | AC | In diff? | Status | Notes |
+|---|----|----------|--------|-------|
+| 1 | §5.2.x subsection authored (≥5 prohibited, ≥3 permitted actions) | yes | ✅ COMPLETE | §5.2.1 added with 5 prohibited + 3 categories permitted |
+| 2 | Failure-mode worked example present (≥2 git operations named) | yes | ✅ COMPLETE | "What goes wrong" section with `git add`, `git commit` |
+| 3 | Sub-agent parallelism note (1 paragraph on shared-WT) | yes | ✅ COMPLETE | Paragraph on parallel sub-agents sharing working tree |
+
+### Named Doc Updates
+| Doc / File | In diff? | Status | Notes |
+|------------|----------|--------|-------|
+| cdd/operator/SKILL.md | yes | ✅ PRESENT | §5.2.1 subsection added at lines 301-323 |
+
+### CDD Artifact Contract
+| Artifact | Required? | Present? | Notes |
+|----------|-----------|----------|-------|
+| self-coherence.md | yes | ✅ PRESENT | Complete with gap, mode, ACs, trace, implementation evidence |
+| beta-review.md | yes | ✅ IN PROGRESS | This file (incremental per review skill) |
+
+### Active Skill Consistency
+| Skill | Required by | Loaded? | Applied? | Notes |
+|-------|-------------|---------|----------|-------|
+| eng/write-functional | self-coherence | ✅ yes | ✅ yes | Applied to procedural prose in §5.2.1 |
+| issue/SKILL.md | self-coherence | ✅ yes | ✅ yes | Applied for AC verification oracles |
