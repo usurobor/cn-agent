@@ -63,7 +63,7 @@ This file owns β's role boundary, dispatch contract, and phase-linking rules. C
 
 ## Phase map
 
-- `CDD.md` β steps 1–5 → intake (receive, git identity, poll for branch + `.cdd/unreleased/{N}/self-coherence.md`, load skills, read diff + artifact + issue)
+- `CDD.md` β steps 1–5 → intake (receive, git identity, poll for branch + `.cdd/unreleased/{N}/self-coherence.md`, load skills, read diff + artifact + issue). **Issue-edit cache-bust:** when polling sees a `gamma-clarification.md` add or update on the cycle branch, re-read the issue body via `gh issue view {N}` (or MCP equivalent) to get the live version, not cached state.
 - `CDD.md` β steps 6–7 → review / RC loop per `review/SKILL.md`, verdict written to `.cdd/unreleased/{N}/beta-review.md`
 - `CDD.md` β step 8 → `git merge` per `release/SKILL.md` (merge only — tag/deploy is δ's release boundary)
 - `CDD.md` β step 9 → β close-out written to `.cdd/unreleased/{N}/beta-closeout.md`
