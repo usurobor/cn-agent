@@ -48,3 +48,11 @@
 - AC3 bypass prevention: missing gamma-closeout.md → RC verdict → blocked merge
 
 **Role boundary compliance?** Yes. α modified only review and beta skills as appropriate for enforcement mechanics. No scope creep into unrelated surfaces. Changes enhance existing β review/merge protocols.
+
+## §Debt
+
+**Known debt**: AC4 deferred to separate issue by scope boundary. CN dispatch architecture design is substantial work requiring dedicated issue/design cycle.
+
+**Process observations**: This addresses the meta-problem that prevents CDD self-improvement when agents bypass γ/ε surfaces. The structural approach (impossible at merge time) is more robust than advisory approaches (discouraged at dispatch time) which fail under time pressure.
+
+**Implementation note**: The γ artifact check complements existing CI-green gate (rule 3.10) with protocol-compliance gate (rule 3.11b). Both are binding D-level blockers.
