@@ -55,6 +55,8 @@ The artifact has the following sections:
 ```markdown
 ## Post-Release Assessment — X.Y.Z
 
+**CI status on merge SHA:** green / red / pending — [run URL]
+
 ### 1. Coherence Measurement
 - **Baseline:** PREV — α _, β _, γ _
 - **This release:** X.Y.Z — α _, β _, γ _
@@ -122,6 +124,7 @@ These three fields accumulate per-cycle data so the heuristic constants in `CDD.
   - review rounds > 2
   - mechanical ratio > 20% with ≥ 10 findings
   - avoidable tooling/environmental failure
+  - CI red on merge commit (post-merge)
   - loaded skill failed to prevent a finding
   - none
 - **Root cause:** ...

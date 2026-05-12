@@ -332,6 +332,8 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
   **Configuration-floor clause.** Cycles run under `operator/SKILL.md §5.2` (single-session δ-as-γ via Agent tool) cap the γ axis at **A−** regardless of execution quality, because γ/δ separation is structurally absent. The A− γ floor applies from the cycle's merge forward; it is not retroactive. The configuration must be recorded explicitly in `gamma-closeout.md` (see AC6 of any cycle introducing or running under §5.2). Applying the A− cap is operator-honest discipline: if `gamma-closeout.md` does not declare §5.2, the rubric treats the cycle as §5.1 and the cap does not apply.
 
+  **CI-red cap clause.** Cycles with red CI on the merge commit cap the γ axis at **C** (one band below current floor). Cycles that proceed to close-out without verifying CI cap the γ axis at **B−**. CI is a mechanical gate; failing or skipping it reflects structural γ-axis failure in cycle coordination, not judgment calls.
+
   - ❌ Every release is A+ (grade inflation, no signal)
   - ❌ Score the intent rather than what shipped
   - ❌ Round up because "the team worked hard"
