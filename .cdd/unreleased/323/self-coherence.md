@@ -69,3 +69,29 @@ This is a minimal, localized change that follows existing patterns. No technical
 - No architectural changes
 - No deferred testing or documentation
 - No compatibility concerns
+
+## CDD-Trace
+
+**Step 0 — Observe:** Gap identified during 3.71.0 triad compliance audit (per issue evidence)
+
+**Step 1 — Select:** Issue #323 filed by γ, gap = activation scanner missing canonical inbound surface
+
+**Step 2 — Branch:** `cycle/323` created by γ, α checked out successfully
+
+**Step 3 — Bootstrap:** Not required (small change, no version directory needed)
+
+**Step 4 — Gap:** Named incoherence = `cn activate` blind to `threads/inbox/` (canonical surface)
+
+**Step 5 — Mode:** MCA + Tier 2 skills (go + ux-cli + test)
+
+**Step 6a — Design:** Not required (single function modification, no architecture change)
+
+**Step 6b — Plan:** Not required (trivial implementation, no sequencing complexity)
+
+**Step 6c — Tests:** ✓ Updated `activate_test.go` fixture to include `threads/inbox`
+
+**Step 6d — Code:** ✓ Modified `src/go/internal/activate/activate.go:232` — added `"threads/inbox"` to candidates
+
+**Step 6e — Docs:** Not required (no user-facing documentation changes needed)
+
+**Step 7 — Self-coherence:** ✓ This document
