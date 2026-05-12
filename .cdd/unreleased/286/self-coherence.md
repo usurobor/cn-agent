@@ -49,3 +49,18 @@
 | 12 | operator/SKILL.md δ remains external; γ is bridge | **Met** | Line 319 in operator/SKILL.md: "during in-cycle work, δ does not communicate with α or β; γ is the bridge. δ-to-γ, γ-to-α/β" |
 
 **Summary:** All 12 acceptance criteria fully implemented with concrete code evidence at specified line numbers. Implementation is comprehensive and addresses the structural encapsulation gap identified in the issue.
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?** No. The implementation provides clear, concrete changes to role contracts with explicit line-number evidence. β's review confirms "All 12 acceptance criteria correctly implemented" and "Technical changes are sound and comprehensive." β's findings were protocol gaps (missing α artifact, CI pending), not implementation ambiguity.
+
+**Is every claim backed by evidence in the diff?** Yes. Each AC maps to specific line numbers in the modified files:
+- CDD.md changes span lines 123, 136, 154-160, 261, 280, 282, 368-381, 487
+- gamma/SKILL.md adds lines 467-556 (autonomous coordinator section + silence rule)  
+- alpha/SKILL.md line 118 removes operator-direct language
+- beta/SKILL.md expands Role Rule 1 with operator-refusal clause
+- operator/SKILL.md line 319 adds δ-bridge clarification
+
+**Role boundary adherence:** α implemented the specified structural CDD change without overstepping into γ's coordination domain or β's review domain. Changes are scoped to role contract modification as specified in the issue non-goals.
+
+**Completeness check:** All named artifacts in issue §Related artifacts are updated. No sibling CDD skill files require updates beyond those explicitly listed in the ACs.
