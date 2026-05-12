@@ -28,3 +28,24 @@
 - α and β communicate only with γ via artifact channel  
 - γ pauses for operator only at named decision-points (AC6)
 - Artifact channel and cycle branch are only in-cycle communication surfaces
+
+## §ACs
+
+**AC-by-AC implementation evidence:**
+
+| # | AC | Status | Evidence |
+|---|----|--------|----------|
+| 1 | CDD.md §1.4 Roles table — γ responsibility expansion | **Met** | Line 123 in CDD.md: "spawn α and β sub-sessions, drive them through the cycle via the artifact channel, surface only consolidated state and named decision-points to the operator" |
+| 2 | CDD.md §1.4 Triadic rule — encapsulation rule added | **Met** | Line 136 in CDD.md: "α and β are encapsulated from the operator. γ is the operator's only in-cycle counterparty" |
+| 3 | CDD.md §1.4 Default flow diagram — redrawn | **Met** | Lines 154-160 in CDD.md: Shows operator → γ → {α, β} with γ as only return channel, preserves α↔β isolation |
+| 4 | CDD.md §1.4 γ algorithm Phase 1 step 5 — γ executes dispatch | **Met** | Line 280 in CDD.md: "Spawn α and β sub-sessions with dispatch prompts" + graceful degradation clause for missing spawn mechanism |
+| 5 | CDD.md §1.4 γ algorithm Phase 1 step 6 — γ unblocks autonomously | **Met** | Line 282 in CDD.md: "γ unblocks autonomously via artifact-channel writes (gamma-clarification.md, issue body edits, dispatch-prompt amendments)" |
+| 6 | CDD.md §1.4 Named operator-decision points subsection | **Met** | Lines 368-381 in CDD.md: Explicitly enumerates 7 decision-point categories (selection commit, scope expansion, P0 override, β-approved merge, design-call, conflict-of-interest, process-debt commitment) |
+| 7 | CDD.md §1.4 TLDR-on-demand clause | **Met** | Line 487 in CDD.md: "Operator may request a TLDR from γ at any time; γ produces a consolidated state report" |
+| 8 | CDD.md §Tracking γ-on-transition semantics | **Met** | Line 261 in CDD.md: "For each polling transition γ chooses one of: (a) act autonomously (b) pause for operator (c) ignore" |
+| 9 | gamma/SKILL.md new §2.X γ as autonomous coordinator | **Met** | Lines 467-556 in gamma/SKILL.md: Complete decision tree, operator-facing formats, deferred-question batch, kata |
+| 10 | gamma/SKILL.md §3 silence rule | **Met** | Lines 547-556 in gamma/SKILL.md: "γ does not surface every transition to the operator; γ surfaces only decision-points and consolidated state" with ❌/✅ examples |
+| 11 | alpha/SKILL.md operator-direct references removed | **Met** | Line 118 in alpha/SKILL.md: Changed "surface the dispatch error to γ and refuse to invent a name" (was: "surface to operator") |
+| 12 | operator/SKILL.md δ remains external; γ is bridge | **Met** | Line 319 in operator/SKILL.md: "during in-cycle work, δ does not communicate with α or β; γ is the bridge. δ-to-γ, γ-to-α/β" |
+
+**Summary:** All 12 acceptance criteria fully implemented with concrete code evidence at specified line numbers. Implementation is comprehensive and addresses the structural encapsulation gap identified in the issue.
