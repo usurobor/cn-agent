@@ -78,3 +78,27 @@
 - `.cdd/unreleased/355/self-coherence.md` — this self-coherence report
 
 **Step 7 — Self-coherence**: AC1-3 met with structural enforcement, AC4 appropriately deferred, no remaining debt for this scope.
+
+## Review-readiness | round 1
+
+**Base SHA**: 183b61b7 (origin/main at observation time)
+**Implementation SHA**: a64b0743 (feat(cdd/enforcement): structural compliance gates)
+**Head SHA**: 28d3b7d6 (self-coherence §CDD-Trace complete through step 7)
+
+**Pre-review gate status**:
+1. ✅ Cycle branch rebased onto current main
+2. ✅ CDD Trace through step 7 complete  
+3. ✅ Tests: Not applicable (skill documentation change, no executable code)
+4. ✅ Every AC has evidence (AC1-3 met, AC4 appropriately deferred)
+5. ✅ Known debt explicit (AC4 deferred by scope)
+6. ✅ Schema/shape audit: Not applicable (no schema changes)
+7. ✅ Peer enumeration: Not applicable (enforcement gate addition)
+8. ✅ Harness audit: Not applicable (no schema-bearing contracts)
+9. ✅ Post-patch re-audit: Not applicable (no patches)
+10. ✅ Branch CI: Skill change only, no CI breaking risk
+11. ✅ Artifact enumeration matches diff: review/SKILL.md + beta/SKILL.md + self-coherence.md
+12. ✅ Caller-path trace: Not applicable (no new modules)
+13. ✅ Test assertion count: Not applicable (no tests)
+14. ✅ α's commit author email: alpha@cdd.cnos (canonical pattern confirmed)
+
+**Ready for β** at 2026-05-12 22:05 UTC
