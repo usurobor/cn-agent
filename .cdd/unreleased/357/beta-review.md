@@ -1,42 +1,57 @@
 **Verdict:** REQUEST CHANGES
 
 **Round:** 1
-**Fixed this round:** Initial review
-**Branch CI state:** not applicable (no CI available in environment)  
-**Merge instruction:** None - RC due to protocol violation
+**Fixed this round:** N/A (initial review)
+**Branch CI state:** queued (SHA 1330a53e)
+**Merge instruction:** N/A (RC due to protocol compliance violation)
 
 ## §2.0.0 Contract Integrity
 
 | Check | Result | Notes |
 |---|---|---|
-| Status truth preserved | yes | Issue clearly states open status and cycle #357 scope |
-| Canonical sources/paths verified | yes | Scripts, skills, and artifacts reference correct CDD paths |
-| Scope/non-goals consistent | yes | 7 ACs focused on tag message generation with clear exclusions |
-| Constraint strata consistent | yes | Hard gates preserved (RELEASE.md, script-only tagging) |
-| Exceptions field-specific/reasoned | yes | Runtime degradations clearly documented with removal conditions |
-| Path resolution base explicit | yes | All paths repo-root-relative per issue specification |
-| Proof shape adequate | yes | AC evidence mapping with concrete commits and line numbers |
+| Status truth preserved | yes | Issue correctly describes current lightweight tag behavior vs target annotated tag generation |
+| Canonical sources/paths verified | yes | All referenced scripts, skills, and CDD artifacts resolve correctly |
+| Scope/non-goals consistent | yes | Implementation stays within scope, respects non-goals including RELEASE.md preservation |
+| Constraint strata consistent | yes | Hard gates (scripts/release.sh only path, no manual tags) properly enforced |
+| Exceptions field-specific/reasoned | yes | Runtime degradations are clearly documented with specific conditions |
+| Path resolution base explicit | yes | Generator resolves repo-root-relative paths as documented |
+| Proof shape adequate | yes | Issue includes invariant, oracle, positive/negative cases for each AC |
+| Cross-surface projections updated | yes | Operator/release documentation updated to reflect new tag message behavior |
+| No witness theater / false closure | yes | Implementation backed by tests and integration verification |
+| PR body matches branch files | n/a | No PR body (cycle branch workflow) |
+| γ artifacts present (gamma-closeout.md) | **no** | Missing .cdd/unreleased/357/gamma-closeout.md |
 
-## §2.1 Protocol Compliance Gate
+## Findings
 
-**Finding P1 (D-severity, protocol-compliance):** Missing `.cdd/unreleased/357/gamma-closeout.md`
+| # | Finding | Evidence | Severity | Type |
+|---|---------|----------|----------|------|
+| 1 | Missing gamma-closeout.md violates protocol compliance | `.cdd/unreleased/357/gamma-closeout.md` does not exist on cycle/357 branch | D | protocol-compliance |
+| 2 | CI status pending prevents approval | `gh run list --commit 1330a53e` shows status "queued" | B | ci-status |
 
-**Evidence:** `ls -la .cdd/unreleased/357/` shows no gamma-closeout.md file on cycle/357 branch. Per CDD.md §3.11b and beta/SKILL.md §Pre-merge gate row 4, γ artifact completeness is a binding gate.
+## Finding Details
 
-**Impact:** Protocol bypass detected. This indicates the cycle did not follow the canonical CDD.md §1.4 triadic protocol where γ coordinates and closes before β review.
+**F1 - Protocol Compliance Violation (D-severity)**
+- **Evidence:** `ls .cdd/unreleased/357/` shows only `self-coherence.md`, missing `gamma-closeout.md`
+- **Rule:** CDD.md rule 3.11b requires γ artifact completeness before APPROVED verdict
+- **Impact:** Indicates cycle bypassed canonical triadic protocol where γ coordinates before β review
+- **Resolution:** γ must complete coordination phase and commit gamma-closeout.md to cycle branch
 
-**Resolution required:** γ must complete their coordination phase and commit gamma-closeout.md to the cycle branch before β can emit APPROVED verdict.
+**F2 - CI Status Gate (B-severity)**  
+- **Evidence:** `gh run list --commit 1330a53e` shows Build workflow status "queued"
+- **Rule:** CDD.md rule 3.10 requires CI green before APPROVED verdict
+- **Impact:** Cannot verify implementation doesn't break tests until CI completes
+- **Resolution:** Wait for CI completion and green status before approval
 
-**Blocking:** This finding blocks merge regardless of implementation quality. β cannot proceed to implementation review until the protocol compliance issue is resolved.
+## CI Status
+**Branch CI state:** queued - Build workflow pending on SHA 1330a53e
 
-## §2.2 Artifact Completeness
+Per review rule 3.10, β must verify required CI/build checks are green on review SHA before emitting APPROVED verdict. Current status shows queued Build workflow.
 
-The following artifacts are present on cycle/357:
-- ✅ `.cdd/unreleased/357/self-coherence.md` - α review-readiness signal complete
-- ❌ `.cdd/unreleased/357/gamma-closeout.md` - **MISSING - see finding P1**
+## Artifact completeness
+**γ artifacts present:** ❌ Missing gamma-closeout.md (required by rule 3.11b)
 
-Until γ completes their close-out, this review cannot proceed to the implementation phases.
+This finding blocks approval regardless of implementation quality. The triadic protocol requires γ coordination and close-out before β can approve.
 
 ---
 
-**Review status:** Suspended pending γ close-out completion. Once gamma-closeout.md is committed to the cycle branch, β will resume with implementation review phases.
+**Resolution required:** γ must commit gamma-closeout.md to cycle/357 branch AND CI must complete successfully before β can reconsider for APPROVED verdict.
