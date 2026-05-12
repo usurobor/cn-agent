@@ -1,0 +1,46 @@
+# cdd-artifact-validate.yml — CDD artifact presence validator
+#
+# Drop this file into .github/workflows/ in your tenant repository.
+#
+# What it does:
+#   On every push to cycle/* branches and main, runs scripts/validate-release-gate.sh
+#   to verify that required CDD lifecycle artifacts are present in .cdd/unreleased/.
+#   Fails with a named error message if the script is missing or if artifacts are absent.
+#
+# Customize:
+#   - VALIDATE_MODE: change to "release" for pre-tag gate runs (default: "pre-merge")
+#   - No other edits needed; secret names use the canonical CDD_ namespace.
+#
+# Reference: cdd/activation/SKILL.md §9 Layer 1
+
+name: CDD Artifact Validate
+
+on:
+  push:
+    branches:
+      - 'cycle/**'
+      - main
+
+jobs:
+  artifact-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check validate-release-gate.sh exists
+        run: |
+          if [[ ! -f "scripts/validate-release-gate.sh" ]]; then
+            echo "ERROR: validate-release-gate.sh not found at scripts/validate-release-gate.sh" >&2
+            echo "Add scripts/validate-release-gate.sh to your repository." >&2
+            echo "Reference implementation: cnos scripts/validate-release-gate.sh" >&2
+            exit 1
+          fi
+          echo "scripts/validate-release-gate.sh found"
+
+      - name: Validate CDD artifact presence
+        # Customize: set VALIDATE_MODE=release for pre-tag checks
+        env:
+          VALIDATE_MODE: pre-merge
+        run: |
+          bash scripts/validate-release-gate.sh --mode "$VALIDATE_MODE"
