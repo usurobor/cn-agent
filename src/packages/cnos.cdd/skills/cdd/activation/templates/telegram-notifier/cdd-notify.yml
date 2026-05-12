@@ -1,0 +1,174 @@
+# cdd-notify.yml — CDD Telegram notification workflow (reference implementation)
+#
+# Drop this file into .github/workflows/ in your tenant repository.
+#
+# Required secrets (configure in Settings → Secrets and variables → Actions):
+#   CDD_TELEGRAM_BOT_TOKEN  — Telegram Bot API token (from BotFather)
+#   CDD_TELEGRAM_CHAT_ID    — Target chat or channel ID
+#
+# See telegram-notifier/README.md for bot registration and secret setup walkthrough.
+#
+# This workflow handles all 4 canonical CDD notification events:
+#   cycle-open     — new cycle branch pushed
+#   beta-verdict   — beta-review.md pushed to cycle branch
+#   cycle-rc       — self-coherence fix-round appended after RC
+#   cycle-merge    — cycle branch merged to main
+#
+# Customize: replace secret names only if you renamed them from the canonical
+# CDD_ namespace (not recommended — the namespace prevents collision).
+
+name: CDD Telegram Notifier
+
+on:
+  push:
+    branches:
+      - 'cycle/**'   # catches cycle-open, beta-verdict, cycle-rc events
+      - main         # catches cycle-merge event (post-merge push)
+
+jobs:
+  # ── cycle-open ────────────────────────────────────────────────────────────
+  # Fires on the first push to a new cycle/* branch.
+  # Heuristic: if the branch was just created (no previous commit on this ref),
+  # GitHub sets `github.event.created` to true.
+  notify-cycle-open:
+    if: >
+      startsWith(github.ref, 'refs/heads/cycle/') &&
+      github.event.created == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Send cycle-open notification
+        env:
+          CDD_TELEGRAM_BOT_TOKEN: ${{ secrets.CDD_TELEGRAM_BOT_TOKEN }}
+          CDD_TELEGRAM_CHAT_ID: ${{ secrets.CDD_TELEGRAM_CHAT_ID }}
+          CDD_EVENT: cycle-open
+          # Extract cycle number from branch name (e.g., cycle/344 → 344)
+          CDD_CYCLE_N: ${{ github.ref_name }}
+          CDD_TITLE: ${{ github.event.head_commit.message }}
+        run: |
+          # Trim branch prefix to get bare cycle number
+          export CDD_CYCLE_N="${CDD_CYCLE_N#cycle/}"
+          # Use first line of commit message as title
+          export CDD_TITLE="${CDD_TITLE%%$'\n'*}"
+          bash .github/cdd/notify.sh
+          # Customize: adjust the notify.sh path if you placed it elsewhere
+
+  # ── beta-verdict ──────────────────────────────────────────────────────────
+  # Fires when beta-review.md is pushed to a cycle branch.
+  notify-beta-verdict:
+    if: >
+      startsWith(github.ref, 'refs/heads/cycle/') &&
+      github.event.created != true &&
+      contains(join(github.event.commits.*.added, ','), 'beta-review.md') ||
+      contains(join(github.event.commits.*.modified, ','), 'beta-review.md')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect verdict from beta-review.md
+        id: verdict
+        run: |
+          # Extract verdict line from the most recent beta-review.md
+          # Looks for "APPROVED" or "REQUEST CHANGES" in the file
+          REVIEW_FILE=$(find .cdd/unreleased -name beta-review.md | head -1)
+          if [[ -f "$REVIEW_FILE" ]]; then
+            if grep -qi "APPROVED" "$REVIEW_FILE"; then
+              echo "verdict=APPROVED" >> "$GITHUB_OUTPUT"
+            elif grep -qi "REQUEST.CHANGES\|RC\b" "$REVIEW_FILE"; then
+              echo "verdict=REQUEST_CHANGES" >> "$GITHUB_OUTPUT"
+            else
+              echo "verdict=UNKNOWN" >> "$GITHUB_OUTPUT"
+            fi
+            # Extract round number (looks for "round N" or "R1", "R2", etc.)
+            ROUND=$(grep -oiE 'round\s+[0-9]+|R[0-9]+\b' "$REVIEW_FILE" | tail -1 | tr -d '[:space:]' | grep -oE '[0-9]+' | head -1 || echo "1")
+            echo "round=${ROUND:-1}" >> "$GITHUB_OUTPUT"
+          else
+            echo "verdict=UNKNOWN" >> "$GITHUB_OUTPUT"
+            echo "round=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send beta-verdict notification
+        env:
+          CDD_TELEGRAM_BOT_TOKEN: ${{ secrets.CDD_TELEGRAM_BOT_TOKEN }}
+          CDD_TELEGRAM_CHAT_ID: ${{ secrets.CDD_TELEGRAM_CHAT_ID }}
+          CDD_EVENT: beta-verdict
+          CDD_CYCLE_N: ${{ github.ref_name }}
+          CDD_VERDICT: ${{ steps.verdict.outputs.verdict }}
+          CDD_ROUND: ${{ steps.verdict.outputs.round }}
+          CDD_SHA: ${{ github.sha }}
+        run: |
+          export CDD_CYCLE_N="${CDD_CYCLE_N#cycle/}"
+          bash .github/cdd/notify.sh
+
+  # ── cycle-rc ──────────────────────────────────────────────────────────────
+  # Fires when a fix-round is appended to self-coherence.md after an RC verdict.
+  # Heuristic: self-coherence.md modified (not added) on a cycle branch after
+  # beta-review.md already exists in the cycle dir.
+  notify-cycle-rc:
+    if: >
+      startsWith(github.ref, 'refs/heads/cycle/') &&
+      github.event.created != true &&
+      contains(join(github.event.commits.*.modified, ','), 'self-coherence.md')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if RC condition holds (beta-review.md present with RC verdict)
+        id: rc-check
+        run: |
+          REVIEW_FILE=$(find .cdd/unreleased -name beta-review.md | head -1)
+          if [[ -f "$REVIEW_FILE" ]] && grep -qi "REQUEST.CHANGES\|RC\b" "$REVIEW_FILE"; then
+            echo "is_rc=true" >> "$GITHUB_OUTPUT"
+            ROUND=$(grep -oiE 'round\s+[0-9]+|R[0-9]+\b' "$REVIEW_FILE" | tail -1 | tr -d '[:space:]' | grep -oE '[0-9]+' | head -1 || echo "1")
+            echo "round=${ROUND:-1}" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_rc=false" >> "$GITHUB_OUTPUT"
+            echo "round=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send cycle-rc notification
+        if: steps.rc-check.outputs.is_rc == 'true'
+        env:
+          CDD_TELEGRAM_BOT_TOKEN: ${{ secrets.CDD_TELEGRAM_BOT_TOKEN }}
+          CDD_TELEGRAM_CHAT_ID: ${{ secrets.CDD_TELEGRAM_CHAT_ID }}
+          CDD_EVENT: cycle-rc
+          CDD_CYCLE_N: ${{ github.ref_name }}
+          CDD_ROUND: ${{ steps.rc-check.outputs.round }}
+          CDD_SHA: ${{ github.sha }}
+        run: |
+          export CDD_CYCLE_N="${CDD_CYCLE_N#cycle/}"
+          bash .github/cdd/notify.sh
+
+  # ── cycle-merge ───────────────────────────────────────────────────────────
+  # Fires on push to main when the merge commit message contains "Closes #N"
+  # (the canonical CDD merge commit format per CDD.md §Tracking).
+  notify-cycle-merge:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract cycle number from merge commit message
+        id: merge-info
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          # Extract cycle number from "Closes #N" or "Fixes #N" pattern
+          CYCLE_N=$(echo "$MSG" | grep -oE '(Closes|Fixes)\s+#[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "")
+          if [[ -n "$CYCLE_N" ]]; then
+            echo "cycle_n=${CYCLE_N}" >> "$GITHUB_OUTPUT"
+            echo "is_cycle_merge=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_cycle_merge=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send cycle-merge notification
+        if: steps.merge-info.outputs.is_cycle_merge == 'true'
+        env:
+          CDD_TELEGRAM_BOT_TOKEN: ${{ secrets.CDD_TELEGRAM_BOT_TOKEN }}
+          CDD_TELEGRAM_CHAT_ID: ${{ secrets.CDD_TELEGRAM_CHAT_ID }}
+          CDD_EVENT: cycle-merge
+          CDD_CYCLE_N: ${{ steps.merge-info.outputs.cycle_n }}
+          CDD_SHA: ${{ github.sha }}
+        run: |
+          bash .github/cdd/notify.sh

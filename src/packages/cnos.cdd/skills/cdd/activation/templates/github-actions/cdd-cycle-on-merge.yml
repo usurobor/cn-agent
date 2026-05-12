@@ -1,0 +1,82 @@
+# cdd-cycle-on-merge.yml — CDD post-merge test run + cycle-merge notification
+#
+# Drop this file into .github/workflows/ in your tenant repository.
+#
+# What it does:
+#   On merge to main (push event), runs the project test suite and emits a
+#   cycle-merge notification via the CDD notification adapter (notify.sh).
+#
+# Customize:
+#   1. Replace the "Run project test suite" step with your actual test command.
+#   2. Adjust the notify.sh path if you placed it somewhere other than
+#      .github/cdd/notify.sh (see telegram-notifier/ template for setup).
+#   3. Secret names (CDD_TELEGRAM_BOT_TOKEN, CDD_TELEGRAM_CHAT_ID) use the
+#      canonical CDD_ namespace — rename only if your secrets differ.
+#
+# Reference: cdd/activation/SKILL.md §9 Layer 2, §10.1 cycle-merge event
+
+name: CDD Cycle On Merge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Customize: replace this step with your project's test command.
+      # Examples:
+      #   Go:         go test ./...
+      #   Node/Bun:   bun test
+      #   Python:     pytest
+      #   Make:       make test
+      - name: Run project test suite
+        run: |
+          echo "TODO: replace this line with your test command" >&2
+          echo "Example: go test ./..."
+          exit 0
+          # Remove the lines above and uncomment/add your command:
+          # go test ./...
+
+  notify-merge:
+    needs: test
+    if: always()   # notify even if tests fail, so the cycle record is complete
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract cycle number from merge commit message
+        id: merge-info
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          # CDD merge commits use "Closes #N" or "Fixes #N" (CDD.md §Tracking)
+          CYCLE_N=$(echo "$MSG" | grep -oE '(Closes|Fixes)\s+#[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "")
+          if [[ -n "$CYCLE_N" ]]; then
+            echo "cycle_n=${CYCLE_N}" >> "$GITHUB_OUTPUT"
+            echo "is_cycle_merge=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_cycle_merge=false" >> "$GITHUB_OUTPUT"
+            echo "Merge commit has no 'Closes #N' — skipping cycle-merge notification"
+          fi
+
+      - name: Send cycle-merge notification
+        if: steps.merge-info.outputs.is_cycle_merge == 'true'
+        env:
+          CDD_TELEGRAM_BOT_TOKEN: ${{ secrets.CDD_TELEGRAM_BOT_TOKEN }}
+          CDD_TELEGRAM_CHAT_ID: ${{ secrets.CDD_TELEGRAM_CHAT_ID }}
+          CDD_EVENT: cycle-merge
+          CDD_CYCLE_N: ${{ steps.merge-info.outputs.cycle_n }}
+          CDD_SHA: ${{ github.sha }}
+        run: |
+          # Customize: adjust path if notify.sh is not at .github/cdd/notify.sh
+          if [[ -f ".github/cdd/notify.sh" ]]; then
+            bash .github/cdd/notify.sh
+          else
+            echo "WARNING: .github/cdd/notify.sh not found — skipping notification" >&2
+          fi
