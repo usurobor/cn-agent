@@ -13,3 +13,15 @@
 **Evidence:** v3.66.0 release smoke failed (binary version-pin mismatch). Failure notification arrived in Telegram but no automated or role-prescribed response existed.
 
 **Origin:** v3.66.0 release smoke failure (2026-05-12). Binary version-pin mismatch between compiled Go binary and package index.
+
+## §Skills
+
+**Tier 1 (CDD lifecycle):**
+- `cdd/alpha/SKILL.md` — α role surface and implementation algorithm
+- `cdd/CDD.md` — canonical lifecycle and role contract
+
+**Tier 2 (always-applicable eng):**
+- N/A for docs-only mode
+
+**Tier 3 (issue-specific):**
+- `cnos.core/skills/write/SKILL.md` — coherent writing surface for docs modification
