@@ -12,3 +12,18 @@ Current state: operator-dependent manual detection via post-merge content review
 Target state: pre-push git hook blocks upstream content loss before it reaches remote, with bypass for intentional deletions.
 
 The gap blocks process-integrity (P1): routine CDD cycles risk losing doctrine content silently.
+
+## Skills
+
+**Tier 1:**
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` (canonical lifecycle)
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` (α role surface and algorithm)
+
+**Tier 2:**
+- `src/packages/cnos.eng/skills/eng/tool/SKILL.md` (mechanical script standards)
+- `src/packages/cnos.eng/skills/eng/document/SKILL.md` (documentation verification against source)
+- `src/packages/cnos.eng/skills/eng/test/SKILL.md` (prove invariants from testing)
+- `src/packages/cnos.eng/skills/eng/ship/SKILL.md` (ship code to production/merge)
+
+**Tier 3:**
+- `src/packages/cnos.core/skills/skill/SKILL.md` (skill-program coherence for new eng/ship surface)
