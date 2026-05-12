@@ -60,8 +60,8 @@ jobs:
     if: >
       startsWith(github.ref, 'refs/heads/cycle/') &&
       github.event.created != true &&
-      contains(join(github.event.commits.*.added, ','), 'beta-review.md') ||
-      contains(join(github.event.commits.*.modified, ','), 'beta-review.md')
+      (contains(join(github.event.commits.*.added, ','), 'beta-review.md') ||
+       contains(join(github.event.commits.*.modified, ','), 'beta-review.md'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
