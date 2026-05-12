@@ -20,3 +20,24 @@ date: 2026-05-12
 2. γ PRA polls CI post-merge before close-out
 
 **Mode justification:** docs-only appropriate because this is rule addition to existing skills, not new code surfaces. design-and-build because it requires coordination across 4 skill files with a cohesive verdict-rule + close-out-rule pair.
+
+## §Skills
+
+**Tier 1:** CDD.md (canonical lifecycle), alpha/SKILL.md (α role surface)  
+**Tier 2:** eng/README.md (engineering practices)  
+**Tier 3:** write/SKILL.md (docs authoring discipline)
+
+## §Design
+
+**Not required** — rule addition to existing skill surfaces, not new architecture. The design is explicit in issue ACs: symmetric CI-green gates (β refuses APPROVED on red CI; γ polls post-merge). No impact graph needed for rule additions within established skill boundaries.
+
+## §Plan  
+
+**Required** — 4-file coordination with dependency order:
+
+1. **review/SKILL.md** — add β verdict gate rule (new rule 3.14 or amend existing 3.12)
+2. **gamma/SKILL.md** — add post-merge CI verification step to close-out process  
+3. **post-release/SKILL.md** — add PRA template row + §9.1 trigger amendment
+4. **release/SKILL.md** — add §3.8 grade cap rules for CI violations
+
+Order rationale: review rules establish the pre-merge gate; gamma/post-release establish the post-merge discipline; release establishes grading consequences. All four must be consistent on "required workflow" definition.
