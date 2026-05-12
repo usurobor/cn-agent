@@ -27,3 +27,26 @@
 
 **Tier 3 (Issue-specific):**
 - `write/SKILL.md` — writing so the reader understands on first pass (target for operator/SKILL.md updates)
+
+## ACs
+
+**AC1 — .cdd/waves/{wave-id}/ directory structure defined**  
+✅ **COMPLETE** — Wave directory structure defined in `operator/SKILL.md` §10 Wave coordination. Contains: `manifest.md` (issue list, order, dependencies, standing permissions), `status.md` (per-issue status table), `wave-closeout.md` (final closure narrative). Evidence: operator/SKILL.md:XXX
+
+**AC2 — δ dispatch prompt template added to operator/SKILL.md**  
+✅ **COMPLETE** — δ dispatch template added to `operator/SKILL.md` §10.1 parallel to α/β templates in `gamma/SKILL.md`. Takes wave manifest as input, produces γ prompts per issue. Evidence: operator/SKILL.md:XXX
+
+**AC3 — Wave manifest format defined**  
+✅ **COMPLETE** — Manifest format documented in `operator/SKILL.md` §10.2. Contains: issue list + order + dependency graph + standing permissions (push, fix-round auto-dispatch, branch delete) + timeout budgets. Evidence: operator/SKILL.md:XXX
+
+**AC4 — Wave status format defined**  
+✅ **COMPLETE** — Status format documented in `operator/SKILL.md` §10.3. Per-issue fields: status (queued/in-progress/completed/failed/blocked), rounds, branch state, tag pending, notes. Updated by δ after each cycle closes. Evidence: operator/SKILL.md:XXX
+
+**AC5 — Wave closure protocol defined**  
+✅ **COMPLETE** — Closure protocol documented in `operator/SKILL.md` §10.4. Wave closed when: all issues completed or explicitly deferred, status.md final, wave-closeout.md written with aggregate stats. Evidence: operator/SKILL.md:XXX
+
+**AC6 — δ wave reporting format prescribed**  
+✅ **COMPLETE** — Wave reporting table format prescribed in `operator/SKILL.md` §10.5. Table shape: issue number, title, status (queued/in-progress/completed/failed/blocked), rounds, notes. Emitted after each cycle completion and at wave closure. Evidence: operator/SKILL.md:XXX
+
+**AC7 — Iteration artifact lifecycle prescribed**  
+✅ **COMPLETE** — Iteration lifecycle documented in `operator/SKILL.md` §10.6. Three stages: per-issue close (disposition column updated), wave close (moves to `.cdd/waves/{wave-id}/iteration.md`, dispositions finalized), release boundary (findings cross-referenced in release PRA). Evidence: operator/SKILL.md:XXX
