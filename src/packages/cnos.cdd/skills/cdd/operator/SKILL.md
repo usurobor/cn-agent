@@ -46,7 +46,7 @@ calls:
 3. **Dispatch β** — run β via `claude -p` with the prompt γ produced; β reviews, merges, writes β close-out, and exits.
 4. **Re-dispatch α for fix rounds** (when β returns RC) — run α via `claude -p` with the fix-round re-dispatch prompt (CDD.md §1.6a); α fixes findings, appends fix-round to self-coherence.md, exits.
 5. **Re-dispatch α for close-out** (when γ requests after β merge) — run α via `claude -p` with the close-out re-dispatch prompt (CDD.md §1.6a); α writes alpha-closeout.md, commits to main, exits. **This step is mandatory when γ requests it.** γ cannot complete the closure gate without alpha-closeout.md.
-6. **Gate** — execute external actions: push main, tag, release, branch cleanup. **Do not tag/release before `gamma-closeout.md` exists on main.**
+6. **Gate** — execute external actions: push main, tag, release, branch cleanup. **Do not tag/release before `gamma-closeout.md` exists on main.** After tag push, δ runs `gh run list --branch <tag>` and waits for release workflow completion. Release CI red → δ reports failure, does not declare release done, triggers investigation. Release CI green → δ declares release complete.
 7. **Override** — reassign roles or redirect scope only with an explicit declaration.
 
 δ runs one role at a time. This keeps memory pressure low (single `claude -p` process), gives δ direct visibility into each session, and isolates failures — if α dies, δ retries α without losing γ or β state.
@@ -211,7 +211,8 @@ The triad's work is not complete until it is tagged. Untagged post-cycle patches
 1. Confirm all post-cycle commits are on main (γ PRA, γ skill patches, δ session patches)
 2. Edit VERSION to the new number
 3. Run `scripts/release.sh` — this stamps all manifests, verifies consistency, commits, tags, and pushes in one command
-4. **Branch cleanup** — delete merged cycle branches (`cycle/{N}`) and γ session branches (harness-given `claude/...` or operator-named `gamma/session-{N}` patterns) that were used during the cycle. No orphan γ session branches survive past closure.
+4. **Poll release CI** — after tag push, run `gh run list --branch <tag>` and monitor release workflow completion. δ waits for CI green before declaring release complete. On CI red, δ reports failure and triggers investigation without declaring release done.
+5. **Branch cleanup** — delete merged cycle branches (`cycle/{N}`) and γ session branches (harness-given `claude/...` or operator-named `gamma/session-{N}` patterns) that were used during the cycle. No orphan γ session branches survive past closure.
 
 **Manual tagging is not allowed.** Do not run `git tag` directly. The release script is the only way to tag. It prevents the class of failures where VERSION, cn.json, and package manifests disagree (see DISPATCH-FAILURE-EVIDENCE.md, cycle #84 failure 3).
 
