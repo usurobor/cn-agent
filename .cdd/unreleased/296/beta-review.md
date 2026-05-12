@@ -1,9 +1,17 @@
-**Verdict:** REQUEST CHANGES
+**Verdict:** APPROVED
 
-**Round:** 1  
-**Fixed this round:** N/A (initial review)
+**Round:** 2  
+**Fixed this round:** Finding #1 (AC3 incomplete - beta/SKILL.md not updated with cache-bust instruction)
 **Branch CI state:** No CI configured for CDD spec changes
-**Merge instruction:** Fix Finding #1, then `git merge cycle/296` into main with `Closes #296`
+**Merge instruction:** `git merge cycle/296` into main with `Closes #296`
+
+## R2 Fix Verification
+
+**Finding #1 Resolution:** ✅ **RESOLVED**
+- **Issue:** AC3 incomplete: beta/SKILL.md not updated with cache-bust instruction
+- **Fix:** Commit `6a420c56` adds identical cache-bust instruction to beta/SKILL.md line 66
+- **Verification:** Cache-bust instruction now present in both alpha/SKILL.md (line 116) and beta/SKILL.md (line 66) exactly as AC3 specified
+- **Text:** "**Issue-edit cache-bust:** when polling sees a `gamma-clarification.md` add or update on the cycle branch, re-read the issue body via `gh issue view {N}` (or MCP equivalent) to get the live version, not cached state."
 
 ## §2.0 Issue Contract
 
@@ -12,7 +20,7 @@
 |---|----|----------|--------|-------|
 | 1 | CDD.md §Tracking — issue-edit cache-bust rule | yes | **Met** | Line 263 in CDD.md adds rule with worked example from #283 |
 | 2 | gamma/SKILL.md §2.5 — γ-side procedure | yes | **Met** | Line 359 adds cache-bust procedure to commit clarification before signaling |
-| 3 | alpha/SKILL.md and beta/SKILL.md intake step | partial | **Gap** | α/SKILL.md updated (line 116), but β instruction in CDD.md step 3 not beta/SKILL.md |
+| 3 | alpha/SKILL.md and beta/SKILL.md intake step | yes | **Met** | Both files updated: α line 116, β line 66 |
 | 4 | CDD.md §1.4 / §4.2 — γ session branch named | yes | **Met** | Line 750 adds γ session branch rule with cleanup requirement |
 | 5 | operator/SKILL.md δ branch-cleanup rule | yes | **Met** | Line 214 adds explicit branch cleanup including γ session branches |
 | 6 | Worked example | yes | **Met** | CDD.md references cycle #283 commit `2f83095` as worked example |
@@ -23,7 +31,7 @@
 | CDD.md | yes | **Updated** | Cache-bust rule + γ session branch rule added |
 | gamma/SKILL.md | yes | **Updated** | Cache-bust procedure added to §2.5 |
 | alpha/SKILL.md | yes | **Updated** | Cache-bust instruction added to intake step |
-| beta/SKILL.md | no | **Not Updated** | Per AC3 gap - cache-bust instruction missing |
+| beta/SKILL.md | yes | **Updated** | Cache-bust instruction added in R2 fix |
 | operator/SKILL.md | yes | **Updated** | Branch cleanup rule added |
 
 ### CDD Artifact Contract
@@ -45,7 +53,7 @@
 
 **Branch naming (2.1.5):** ✅ `cycle/296` follows project convention
 
-**Authority-surface conflict (2.1.8):** ⚠️ Gap identified - cache-bust instruction in CDD.md β algorithm but AC3 specified beta/SKILL.md should be updated
+**Authority-surface conflict (2.1.8):** ✅ No conflicts - cache-bust instruction properly placed in both CDD.md and beta/SKILL.md per AC3
 
 **Module-truth audit (2.1.9):** ✅ No other issue-edit patterns require unification
 
@@ -74,19 +82,15 @@
 
 ## Findings
 
-| # | Finding | Evidence | Severity | Type |
-|---|---------|----------|----------|------|
-| 1 | AC3 incomplete: beta/SKILL.md not updated with cache-bust instruction | AC3 explicitly requires "alpha/SKILL.md and beta/SKILL.md intake step" update, but only alpha/SKILL.md was changed. β instruction exists in CDD.md β algorithm step 3 but not in beta/SKILL.md as specified. | C | contract |
-
-## Regressions Required (D-level only)
-
-None - no D-level findings.
+None - all R1 findings resolved.
 
 ## Notes
 
-The cache-bust mechanism is sound and properly implemented across most surfaces. The core functionality exists and would work correctly. The finding is purely about contract compliance - AC3 specified both alpha and beta SKILL.md files should be updated, but only alpha was updated. The β instruction was placed in CDD.md instead.
+The cache-bust mechanism is now complete and properly implemented across all required surfaces. The fix in commit `6a420c56` adds the missing β instruction to beta/SKILL.md exactly as specified in AC3, bringing the implementation into full compliance with the issue requirements.
 
-Per beta/SKILL.md load order, CDD.md is loaded first as canonical, so the instruction would be accessible to β agents. However, explicit ACs must be met as written unless explicitly scoped out.
+The issue-edit cache-bust pattern is sound: γ writes gamma-clarification.md on cycle branch edits, roles polling see the SHA transition and re-fetch issue body from live source. This prevents the cache invalidation failures seen in #283.
+
+All acceptance criteria are fully met. Ready for merge.
 
 ## §2.0.0 Contract Integrity
 
