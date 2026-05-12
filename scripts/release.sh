@@ -98,9 +98,19 @@ if [ -f CHANGELOG.md ]; then
   fi
 fi
 
-# 9. Tag
-git tag "$VERSION"
-echo "→ tagged $VERSION"
+# 9. Generate tag message and create annotated tag
+echo "→ generating tag message..."
+TAG_MESSAGE_FILE=$(mktemp)
+if ! scripts/generate-release-tag-message.sh "$VERSION" > "$TAG_MESSAGE_FILE"; then
+  echo "ERROR: Failed to generate tag message" >&2
+  rm -f "$TAG_MESSAGE_FILE"
+  exit 1
+fi
+
+echo "→ creating annotated tag $VERSION..."
+git tag -a "$VERSION" -F "$TAG_MESSAGE_FILE"
+rm -f "$TAG_MESSAGE_FILE"
+echo "→ tagged $VERSION (annotated)"
 
 # 10. Push
 git push origin main --tags
