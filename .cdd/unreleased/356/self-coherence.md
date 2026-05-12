@@ -59,3 +59,24 @@
 **Known debt**: None. The implementation is complete and self-contained.
 
 **Process observations**: The issue references specific failure cases (v3.66.0/v3.67.0 smoke failures) which validates the real-world need for the enhanced recovery protocol. The solution follows existing CDD patterns (β blocks on red CI, γ blocks on red CI) making it consistent with established role behavior.
+
+## §CDD-Trace
+
+**Step 1 — Issue selection**: Issue #356 selected by wave dispatcher δ for CDD enforcement wave.
+
+**Step 2 — Gap identification**: δ release gate lacks proper CI failure handling — reports but doesn't block or own recovery.
+
+**Step 3 — Active skills loaded**: 
+- Tier 1: CDD.md + alpha/SKILL.md
+- Tier 2: eng/ bundle  
+- Tier 3: operator/SKILL.md (primary modification target)
+
+**Step 4 — Design (not required)**: Single-file modification to existing skill, no design artifact needed.
+
+**Step 5 — Plan (not required)**: Straightforward enhancement to existing §6 Gate step, implementation order self-evident.
+
+**Step 6 — Implementation artifacts**:
+- `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` — enhanced §6 Gate step to block on red CI and own recovery
+- `.cdd/unreleased/356/self-coherence.md` — this self-coherence report
+
+**Step 7 — Self-coherence**: All ACs met, no remaining debt, implementation complete and ready for β review.
