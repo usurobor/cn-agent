@@ -135,3 +135,12 @@ All files in `git diff --stat origin/main..HEAD`:
 12. ✅ Caller-path trace N/A — No new modules/functions added
 13. ✅ Test assertion count N/A — No test runner for docs-only cycle
 14. ✅ α commit author email: `git log -1 --format='%ae' HEAD` → "alpha@cdd.cnos" (canonical form)
+
+## Review-readiness
+
+**Round 1**
+- **Base SHA:** af1abef5076eace2f101eb10c8bc53a7f29e6684 (origin/main at rebase time)
+- **Implementation SHA:** fd6eb2ca0bfd5aee175e08e2f83e1910b607e57b (final implementation commit)
+- **Branch CI:** GREEN at 18:44:30 UTC (success on "α-349: self-coherence §CDD-Trace committed")
+- **Timestamp:** 18:44:30 UTC
+- **Ready for β:** All ACs met, pre-review gate passed, branch ready for review
