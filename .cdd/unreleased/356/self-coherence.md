@@ -22,3 +22,22 @@
 **Tier 3**: Issue-specific skills
 - `cdd/operator/SKILL.md` — δ role implementation (primary surface being modified)
 - `cdd/` parent skill — CDD protocol understanding for contract consistency
+
+## ACs
+
+**AC1**: `operator/SKILL.md` §Gate step 6 amended: δ blocks on red, owns recovery
+✅ **Evidence**: Modified §6 Gate step in `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` at lines 49+ to block until CI green and own recovery on red.
+
+**AC2**: Recovery runbook: at minimum investigate → classify → fix-or-escalate → re-verify  
+✅ **Evidence**: Added 5-step recovery runbook in §6 Gate:
+   1. Investigate release logs to understand the failure
+   2. Classify failure as release-specific vs pre-existing infrastructure
+   3. Fix or escalate — if fixable: fix, re-tag/re-run, poll again; if pre-existing: document, escalate
+   4. Re-verify — poll CI again after fix attempts  
+   5. Operator override — explicit operator acceptance for known pre-existing failures
+
+**AC3**: δ may NOT declare release complete while CI is red
+✅ **Evidence**: Added explicit constraint "The gate does not close until CI is green or operator explicitly accepts the failure" in §6 Gate. Also updated §3.4 step 4 to reference the blocking behavior.
+
+**AC4**: Explicit operator-override escape hatch for known pre-existing failures  
+✅ **Evidence**: Added step 5 in recovery runbook for "Operator override — explicit operator acceptance required for known pre-existing failures (escape hatch for cases like v3.66.0/v3.67.0 smoke failures)"
