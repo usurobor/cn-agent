@@ -259,10 +259,22 @@ jobs:
       - name: Validate every SKILL.md frontmatter
         run: ./tools/validate-skill-frontmatter.sh
 
+  cdd-artifact-check:
+    name: CDD artifact ledger validation (I6)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check CDD artifacts
+        run: src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify --all
+
+      - name: Run test fixtures
+        run: src/packages/cnos.cdd/commands/cdd-verify/test-fixtures.sh
+
   # --- Notification ---
 
   notify:
-    needs: [go, binary-verify, package-verify, package-source-drift, protocol-contract-check, link-check, skill-frontmatter-check]
+    needs: [go, binary-verify, package-verify, package-source-drift, protocol-contract-check, link-check, skill-frontmatter-check, cdd-artifact-check]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -282,7 +294,8 @@ jobs:
             "I1:${{ needs.package-source-drift.result }}" \
             "I2:${{ needs.protocol-contract-check.result }}" \
             "I4:${{ needs.link-check.result }}" \
-            "I5:${{ needs.skill-frontmatter-check.result }}"; do
+            "I5:${{ needs.skill-frontmatter-check.result }}" \
+            "I6:${{ needs.cdd-artifact-check.result }}"; do
             name="${pair%%:*}"
             result="${pair##*:}"
             if [ "$result" != "success" ]; then
