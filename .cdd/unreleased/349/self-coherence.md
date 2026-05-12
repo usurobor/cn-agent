@@ -54,3 +54,22 @@
 - *Positive:* Paragraph is ≤120 words — VERIFIED (108 words counted)
 - *Negative:* No implicit suggestion two-way is on immediate roadmap — VERIFIED
 - *Surface:* src/packages/cnos.cdd/skills/cdd/activation/SKILL.md §11a final paragraph
+
+## §Self-check
+
+**Does α's work push ambiguity onto β?** NO — All claims are explicit and evidence is directly observable in the diff:
+
+- **Positioning decision:** Chose §11a (not §10.5) to sit after §11 Secrets as access-management follows secret-management. Decision is self-contained; β does not need to verify positioning rationale.
+- **Sample table format:** `.cdd/OPERATORS` column addition shows concrete populated values, not abstract descriptions. β can verify format correctness without inferring intent.
+- **Message shape variables:** All 18 variable interpolations use explicit `{snake_case}` syntax with descriptive names. No ambiguous placeholders like `{X}` or `{data}`.
+- **Scope boundaries:** Two-way interaction explicitly marked out-of-scope-v1 with technical prerequisites listed. β review covers what's implemented, not what might be inferred.
+
+**Is every claim backed by evidence in the diff?** YES — No gaps between claims and implementation:
+
+- **"§11a subsection authored"** → Lines 277-356 in activation skill show the complete subsection
+- **"Notification-access column added"** → Lines 527-532, 546 show table format + column description
+- **"Sample message shapes concrete"** → Lines 333-356 show the four required message blocks
+- **"Two-way out-of-scope"** → Lines 358-361 show the explicit statement with technical prerequisites
+- **"Transport-agnostic"** → No Telegram-specific markup in message shapes; variable syntax works for any adapter
+
+**Role boundary clean?** YES — α authored docs-only changes per mode declaration. No β authority assumed (no review-level judgment calls, no release boundary claims). Issue gap closure does not depend on β's implementation assessment.
