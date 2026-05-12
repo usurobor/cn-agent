@@ -23,7 +23,7 @@ fi
 echo ""
 echo "=== Test 2: Incomplete triadic cycle ==="
 set +e
-OUTPUT=$($CDD_VERIFY --unreleased --repo-root "$SCRIPT_DIR/test/fixtures/incomplete-triadic" 2>&1)
+OUTPUT=$($CDD_VERIFY --all --repo-root "$SCRIPT_DIR/test/fixtures/incomplete-triadic" 2>&1)
 EXIT_CODE=$?
 set -e
 if [[ $EXIT_CODE -ne 0 ]] && echo "$OUTPUT" | grep -q "Cycle artifact verification FAILED"; then
