@@ -3,7 +3,7 @@
 **Issue:** #273 — Rebase-collision integrity guard: prevent silent loss of upstream content at integration  
 **Branch:** cycle/273  
 **Verdict:** APPROVED  
-**Merge commit:** [merge SHA recorded post-push]  
+**Merge commit:** 43c5ea6a  
 **β session:** R1 → RC, R2 → RC, R3 → APPROVED
 
 ## Review Context
