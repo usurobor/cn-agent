@@ -140,4 +140,35 @@ None — no D-level findings.
 - **Finding #2 fix:** Wrap the last two `contains()` clauses in parentheses: `(contains(...added..., 'beta-review.md') || contains(...modified..., 'beta-review.md'))` and rejoin with `&&` to the preceding conditions.
 - **Finding #3 fix:** Add one line to `activation/templates/README.md` under the `cdd-artifact-validate.yml` row: "Requires `scripts/validate-release-gate.sh` in your repository (see cnos `scripts/validate-release-gate.sh` for reference)."
 
-*[Phase 1 + Phase 2 complete — Phase 3 verdict appended after incremental commit]*
+---
+
+## Phase 3: Verdict
+
+**Verdict:** REQUEST CHANGES
+
+**Round:** 1
+**Fixed this round:** n/a (round 1)
+**Branch CI state:** provisional (no CI runners available for cycle branches; all mechanical gates verified locally)
+**Merge instruction:** Do not merge until all findings below are fixed on `cycle/344-b`, then re-dispatch β for round 2.
+
+### Required fixes before merge
+
+**Finding #1 (C — contract/honest-claim):** B.AC4 names `cnos:cdd/activation/templates/README.md` as the file that "walks bot registration, secret setup, first activation, end-to-end ≤300 words." The top-level `templates/README.md` currently contains a directory overview (no walkthrough content). Fix: either move the walkthrough content into `templates/README.md` (and update or keep the sub-README), or update the issue AC evidence in self-coherence.md to accurately reflect the structural decision (walkthrough lives in `telegram-notifier/README.md` with a pointer from the top-level README).
+
+The preferred fix is the structural one: the issue AC was written before the two-level README structure was designed. `self-coherence.md §ACs B.AC4` correctly identified what α built; the issue AC wording was under-specified. α should append to `self-coherence.md` with a fix-round note naming the resolution: either confirm that the sub-README satisfies B.AC4 and update the top-level README to include the walkthrough summary prose (≤300 words total), or document the structural decision explicitly.
+
+**Finding #2 (B — mechanical/judgment):** `cdd-notify.yml` `notify-beta-verdict` job `if:` expression evaluates as `(A && B && C) || D` due to `&&`/`||` precedence, firing on main-branch pushes that modify `beta-review.md`. Fix the expression to:
+
+```yaml
+if: >
+  startsWith(github.ref, 'refs/heads/cycle/') &&
+  github.event.created != true &&
+  (contains(join(github.event.commits.*.added, ','), 'beta-review.md') ||
+   contains(join(github.event.commits.*.modified, ','), 'beta-review.md'))
+```
+
+**Finding #3 (A — judgment):** Add the `validate-release-gate.sh` prerequisite to `activation/templates/README.md` under the `cdd-artifact-validate.yml` table row. One sentence is sufficient.
+
+### Closing the search space
+
+No remaining D-level finding was found in the relevant contract. All three findings are correctable without design decisions outside issue scope — no issue deferral required. The implementation is structurally sound: shell syntax valid, YAML valid, event vocabulary matches `activation/SKILL.md §10.1`, no hardcoded tokens, all adapter contract items implemented. Round 2 narrows to the three findings above.
