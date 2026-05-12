@@ -1,0 +1,28 @@
+# Legacy Exception Ledger
+# Format: YAML list of historical artifact gaps that cannot be repaired
+#
+# Each exception requires:
+#   - path: exact file path that is missing
+#   - missing_artifacts: list of missing artifact names
+#   - reason: why this gap exists
+#   - repair_possible: boolean - can this be backfilled?
+#   - follow_up: what action is needed, or "none"
+
+exceptions:
+  - path: ".cdd/unreleased/286/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "historical cycle predating close-out requirement"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/unreleased/294/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "pre-release cycle, no γ coordination occurred"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.74.0/286/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "legacy release layout, artifacts not moved properly"
+    repair_possible: true
+    follow_up: "backfill from git history if evidence exists"

@@ -28,8 +28,9 @@
 #   cn cdd-verify --unreleased                 check only .cdd/unreleased/ directories
 #
 # Optional:
-#   --bundle <path>   override bundle-relative PRA dir (default: docs/gamma/cdd)
-#   --repo-root <p>   override repo root detection (used for testing)
+#   --bundle <path>      override bundle-relative PRA dir (default: docs/gamma/cdd)
+#   --repo-root <p>      override repo root detection (used for testing)
+#   --exceptions <path>  legacy exceptions file (YAML format)
 #
 # Exit 0 if all required checks pass; non-zero on missing canonical artifacts.
 
@@ -43,6 +44,7 @@ ALL_MODE=false
 UNRELEASED_ONLY=false
 BUNDLE_DIR="docs/gamma/cdd"
 REPO_ROOT_OVERRIDE=""
+EXCEPTIONS_FILE=""
 
 usage() {
   cat >&2 <<EOF
@@ -55,8 +57,9 @@ Usage:
   cn cdd-verify --unreleased                 check only .cdd/unreleased/ directories
 
 Options:
-  --bundle <path>     bundle-relative PRA dir (default: docs/gamma/cdd)
-  --repo-root <path>  override repo root (testing)
+  --bundle <path>        bundle-relative PRA dir (default: docs/gamma/cdd)
+  --repo-root <path>     override repo root (testing)
+  --exceptions <path>    legacy exceptions file (YAML format)
 
 Canonical contract enforced (release-scoped):
   - bare git tag X.Y.Z exists
@@ -97,6 +100,7 @@ while [[ $# -gt 0 ]]; do
     --unreleased) UNRELEASED_ONLY=true; shift ;;
     --bundle) BUNDLE_DIR="$2"; shift 2 ;;
     --repo-root) REPO_ROOT_OVERRIDE="$2"; shift 2 ;;
+    --exceptions) EXCEPTIONS_FILE="$2"; shift 2 ;;
     -h|--help) usage ;;
     *) echo "Unknown option: $1" >&2; usage ;;
   esac
@@ -136,6 +140,9 @@ PASS=0
 FAIL=0
 WARN=0
 
+# Legacy exceptions tracking (declare globally)
+declare -A EXCEPTIONS_LOADED
+
 check() {
   local label="$1"
   local result="$2"  # pass|fail|warn
@@ -159,6 +166,49 @@ check() {
     printf " — %s" "$detail"
   fi
   printf "\n"
+}
+
+load_exceptions() {
+  if [[ -n "$EXCEPTIONS_FILE" && -f "$EXCEPTIONS_FILE" ]]; then
+    echo "Loading legacy exceptions from: $EXCEPTIONS_FILE"
+
+    # Simple YAML parsing for our exception format
+    # Expected format:
+    # exceptions:
+    #   - path: ".cdd/unreleased/286/alpha-closeout.md"
+    #     missing_artifacts: ["alpha-closeout.md"]
+    #     reason: "historical cycle predating close-out requirement"
+    #     repair_possible: false
+    #     follow_up: "none"
+
+    while IFS= read -r line; do
+      # Extract path from YAML lines like "  - path: \".cdd/unreleased/286/alpha-closeout.md\""
+      # Handle both quoted and unquoted paths
+      if [[ "$line" =~ ^[[:space:]]*-?[[:space:]]*path:[[:space:]]*\"(.*)\"[[:space:]]*$ ]]; then
+        local path="${BASH_REMATCH[1]}"
+        EXCEPTIONS_LOADED["$path"]=true
+      elif [[ "$line" =~ ^[[:space:]]*-?[[:space:]]*path:[[:space:]]*([^[:space:]].*)$ ]]; then
+        local path="${BASH_REMATCH[1]}"
+        EXCEPTIONS_LOADED["$path"]=true
+      fi
+    done < "$EXCEPTIONS_FILE"
+
+    # Count exceptions (handle unbound variable temporarily)
+    set +u
+    local count=${#EXCEPTIONS_LOADED[@]}
+    set -u
+    if [[ $count -gt 0 ]]; then
+      echo "Loaded $count exception paths"
+    else
+      echo "No exception paths found in file"
+    fi
+  fi
+}
+
+is_exception_backed() {
+  local path="$1"
+  # Check if EXCEPTIONS_LOADED has been initialized and contains the path
+  [[ ${EXCEPTIONS_LOADED[$path]+_} ]]
 }
 
 classify_cycle_type() {
@@ -247,7 +297,12 @@ check_triadic_artifacts() {
       check "$artifact (issue #$issue_num)" pass
       validate_artifact_sections "$artifact_path" "$artifact"
     else
-      check "$artifact (issue #$issue_num)" fail "expected .cdd/unreleased/$issue_num/$artifact"
+      local exception_path=".cdd/unreleased/$issue_num/$artifact"
+      if is_exception_backed "$exception_path"; then
+        check "$artifact (issue #$issue_num)" warn "missing but exception-backed: $exception_path"
+      else
+        check "$artifact (issue #$issue_num)" fail "expected .cdd/unreleased/$issue_num/$artifact"
+      fi
     fi
   done
 }
@@ -339,6 +394,9 @@ validate_artifact_sections() {
 }
 
 # --- Core checks (always) ---
+
+# Load exceptions if provided
+load_exceptions
 
 echo "## Core artifacts"
 
