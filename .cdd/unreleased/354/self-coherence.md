@@ -82,4 +82,28 @@
 
 **Step 7:** Self-coherence = this document 
 
-**Step 7a:** Review-readiness signal = pending (completion of this CDD trace completes step 7a)
+**Step 7a:** Review-readiness signal = this section completion
+
+## Review-readiness | round 1
+
+**Base SHA:** 77a1c024 (cycle branch created from this main commit)  
+**Implementation SHA:** 24c2aaca (last implementation commit before readiness signal)  
+**Branch CI:** Green at 18:27:15 UTC (run 25754090729: completed/success)  
+**Pre-review gate:** Complete
+
+1. ✅ α verifies `origin/cycle/354` is rebased onto current `origin/main`  
+2. ✅ `.cdd/unreleased/354/self-coherence.md` carries CDD Trace through step 7  
+3. ✅ Tests: explicit reason none apply (docs-only mode)  
+4. ✅ Every AC has evidence mapped to specific line changes  
+5. ✅ Known debt: explicit (none)  
+6. ✅ Schema/shape audit: not applicable (no contracts changed)  
+7. ✅ Peer enumeration: complete (role-skills unchanged, lifecycle-skills updated)  
+8. ✅ Harness audit: not applicable (no schema-bearing changes)  
+9. ✅ Post-patch re-audit: complete (docs-only, write skill applied)  
+10. ✅ Branch CI: green on head commit 83c8303d  
+11. ✅ Artifact enumeration: all files in diff explicitly mentioned in CDD Trace step 5  
+12. ✅ Caller-path trace: not applicable (no new modules)  
+13. ✅ Test assertion count: not applicable (docs-only)  
+14. ✅ α commit email: `alpha@cdd.cnos` (canonical pattern)
+
+**Ready for β**
