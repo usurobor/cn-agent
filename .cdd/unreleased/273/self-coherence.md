@@ -78,3 +78,25 @@ Yes. Modified skill surfaces: `ship/`, `release/`, `gamma/` — all three update
 **Installation adoption:** The hook installation is opt-in via `install-hooks.sh` or manual `git config`. Existing clones will not automatically receive the protection until the installer is run. This is per design (AC3 scope) but means the protection is not automatically applied to existing workflows until adoption.
 
 **No CI boundary guard:** Per issue scope, the L7 CI integration boundary guard is explicitly deferred to a separate follow-on issue. The pre-push hook is the L6 mechanism; CI guard (which survives different machines/harnesses) remains unimplemented.
+
+## CDD-Trace
+
+**Step 1: Receive dispatch** — ✅ α configured git identity, checked out cycle/273, subscribed to issue #273
+
+**Step 2: Load skills** — ✅ CDD.md + alpha/SKILL.md (Tier 1), eng/tool + eng/document + eng/test + eng/ship (Tier 2), skill/SKILL.md (Tier 3)
+
+**Step 3: Issue analysis** — ✅ Read issue #273, related artifacts (β #268 close-out finding #5, restoration commits), identified rebase-collision integrity gap
+
+**Step 4: Design** — Not required (mechanical implementation of pre-push hook per γ #268 analysis; no novel architecture decisions)
+
+**Step 5: Plan** — Not required (single implementation sequence: hook script → installer → skill text updates → test fixture → cross-references)
+
+**Step 6: Implementation** — ✅ Artifacts created:
+- `src/packages/cnos.eng/hooks/pre-push` (executable hook script)  
+- `src/packages/cnos.eng/scripts/install-hooks.sh` (installer script)
+- `src/packages/cnos.eng/hooks/test-pre-push-rebase-integrity.sh` (test fixture)
+- `src/packages/cnos.eng/skills/eng/ship/SKILL.md` (rebase-integrity section added)
+- `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` (one-liner reference added)  
+- `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` (one-liner reference added)
+
+**Step 7: Self-coherence** — ✅ This artifact (`.cdd/unreleased/273/self-coherence.md`) carrying the review-readiness signal
