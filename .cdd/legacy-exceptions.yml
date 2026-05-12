@@ -1,0 +1,150 @@
+# Legacy CDD Artifact Exceptions
+# Historical gaps in released cycles that pre-date full artifact enforcement
+# These cycles have partial artifacts but are missing some required files or sections
+
+exceptions:
+  # v3.66.0 - Issue #84
+  - path: ".cdd/releases/3.66.0/84/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.66.0/84/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: "/root/.openclaw/workspace/cnos/.cdd/releases/3.66.0/84/self-coherence.md"
+    missing_sections: ["Gap", "Skills/Mode", "ACs/AC Coverage", "CDD Trace"]
+    reason: "Historical release, pre-dates current self-coherence format"
+    repair_possible: false
+    follow_up: "none"
+
+  # v3.67.0 - Issue #149
+  - path: ".cdd/releases/3.67.0/149/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.67.0/149/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.67.0/149/self-coherence.md"
+    missing_sections: ["Gap", "Skills/Mode", "ACs/AC Coverage", "CDD Trace"]
+    reason: "Historical release, pre-dates current self-coherence format"
+    repair_possible: false
+    follow_up: "none"
+
+  # v3.68.0 - Issue #297
+  - path: ".cdd/releases/3.68.0/297/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.68.0/297/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  # v3.69.0 - Issue #312
+  - path: ".cdd/releases/3.69.0/312/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.69.0/312/beta-closeout.md"
+    missing_artifacts: ["beta-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.69.0/312/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.69.0/312/self-coherence.md"
+    missing_sections: ["Gap", "Skills/Mode", "ACs/AC Coverage", "CDD Trace"]
+    reason: "Historical release, pre-dates current self-coherence format"
+    repair_possible: false
+    follow_up: "none"
+
+  # v3.70.0 - Issue #320
+  - path: ".cdd/releases/3.70.0/320/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.70.0/320/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  # v3.71.0 - Issue #321
+  - path: ".cdd/releases/3.71.0/321/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.71.0/321/beta-closeout.md"
+    missing_artifacts: ["beta-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.71.0/321/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  # v3.72.0 - Issue #324
+  - path: ".cdd/releases/3.72.0/324/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.72.0/324/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.72.0/324/self-coherence.md"
+    missing_sections: ["Gap", "Skills/Mode", "ACs/AC Coverage", "CDD Trace"]
+    reason: "Historical release, pre-dates current self-coherence format"
+    repair_possible: false
+    follow_up: "none"
+
+  # v3.73.0 - Issue #325
+  - path: ".cdd/releases/3.73.0/325/alpha-closeout.md"
+    missing_artifacts: ["alpha-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.73.0/325/gamma-closeout.md"
+    missing_artifacts: ["gamma-closeout.md"]
+    reason: "Historical release, close-out files not created at time of cycle"
+    repair_possible: false
+    follow_up: "none"
+
+  - path: ".cdd/releases/3.73.0/325/self-coherence.md"
+    missing_sections: ["CDD Trace"]
+    reason: "Historical release, pre-dates current self-coherence format"
+    repair_possible: false
+    follow_up: "none"
