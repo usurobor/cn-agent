@@ -97,3 +97,19 @@
 - **"Attempt recording"** → File-based persistence in recordAttempt() with JSON structure
 
 **Role boundary respect:** α implemented the dispatch primitive as specified without expanding into γ orchestration logic or β review automation. The command performs one role invocation per execution, as designed.
+
+## Debt
+
+**Known debt explicitly disclosed:**
+
+1. **Go build verification:** Implementation cannot be compiled/tested in current environment due to missing Go toolchain. Tests are written but unverified. β should verify compilation and test execution.
+
+2. **Claude CLI integration testing:** Claude backend availability and authentication logic cannot be fully tested without live Claude CLI installation. Stub backend provides isolation testing path.
+
+3. **AC8 partial completion:** `gamma/SKILL.md` §2.5 reference not yet added. Next task in sequence.
+
+4. **Branch HEAD tracking:** `getBranchHead()` implementation in dispatcher.go:179-185 uses local HEAD rather than remote branch HEAD. For cycle branches created on remote, this may miss remote-only commits until local fetch/rebase.
+
+5. **Stream-json log parsing:** Claude backend uses `--output-format stream-json --verbose` for observability but does not parse the stream for partial progress detection. Issue #295 live findings suggest this is valuable for interrupted session recovery.
+
+**No loaded skill violations:** All active skills (write, tool, test, ux-cli, go) constraints observed in implementation.
