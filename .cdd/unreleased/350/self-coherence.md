@@ -105,11 +105,40 @@ Yes. The wave primitive extends CDD's existing single-cycle protocol without cha
 
 **Caller verification:** Wave coordination functions called by δ as documented in dispatch template (§10.1) and wave lifecycle (§10.2-§10.6). Integration with existing CDD protocol verified.
 
-**Commit checkpoints:** 5 commits on cycle/350 branch:
+**Commit checkpoints:** 7 commits on cycle/350 branch:
 1. c95be743 — self-coherence §Gap
 2. 0786b426 — self-coherence §Skills  
 3. 47212015 — self-coherence §ACs (planning)
 4. 2f93a2de — implement wave coordination primitive
 5. 35b64ba9 — self-coherence §Self-check + updated ACs with evidence
 6. 8890f4ea — self-coherence §Debt
-7. (this commit) — self-coherence §CDD-Trace
+7. 35e1cb8a — self-coherence §CDD-Trace through step 7
+8. (this commit) — review-readiness signal
+
+## Review-readiness | round 1
+
+**Base SHA:** 4e83c66deede57686b85e3a8a41117d212417468  
+**Implementation SHA:** 35e1cb8a2bbee8e7d6159157062165144bd04796  
+**Branch CI:** in-progress at 17:22:08 UTC — β should wait for green before merge  
+**Timestamp:** 2026-05-12 17:22:08 UTC
+
+**Pre-review gate status:** PASSED
+
+1. ✅ Branch rebased onto current origin/main (no new commits since cycle start)
+2. ✅ CDD Trace through step 7 complete
+3. ✅ Tests: explicit "not applicable" for docs-only cycle  
+4. ✅ Every AC has line-number evidence in operator/SKILL.md
+5. ✅ Known debt: explicit "none" with debt sources examined
+6. ✅ Schema audit: no schema-bearing contracts modified
+7. ✅ Peer enumeration: no sibling skills require update (wave is self-contained)
+8. ✅ Harness audit: no schema-bearing contracts changed
+9. ✅ Post-patch re-audit: no mid-cycle patches required
+10. ⚠️ Branch CI: in-progress at signal time — β must verify green before merge
+11. ✅ Artifact enumeration: all diff files accounted for in CDD-Trace step 6
+12. ✅ Caller verification: wave functions documented with call patterns
+13. ✅ Test assertion count: explicit "not applicable" for docs-only cycle
+14. ✅ Role identity: alpha@cdd.cnos (canonical elision form) verified
+
+**Ready for β review.**
+
+Wave coordination primitive complete. All 7 ACs implemented with concrete evidence. Implementation extends CDD protocol cleanly without breaking existing single-cycle contracts.
