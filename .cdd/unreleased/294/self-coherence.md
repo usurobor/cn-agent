@@ -100,3 +100,29 @@
 - **α scope:** Implementation and artifact generation complete per alpha/SKILL.md algorithm
 - **No β overreach:** Did not make design decisions beyond implementation requirements
 - **No γ overreach:** Did not change coordination process or closure gate semantics
+
+## Debt
+
+**AC4 condition count discrepancy:**
+- **Issue:** AC4 specifies "10-condition closure list" but gamma/SKILL.md §2.10 defines 14 numbered conditions
+- **Resolution:** Implementation follows canonical specification (gamma/SKILL.md) rather than issue description
+- **Impact:** Implementation shows "N of 14 conditions" instead of "N of 10 conditions" as written in AC4
+- **Next action:** γ should verify whether issue AC4 needs correction or if gamma/SKILL.md needs adjustment
+
+**Process deviation - branch creation:**
+- **Issue:** cycle/294 branch does not exist; α cannot create branches per alpha/SKILL.md §2.1
+- **Resolution:** Working on main branch with .cdd/unreleased/294/ artifacts
+- **Impact:** Self-coherence written to main instead of cycle branch during development
+- **Next action:** γ should create cycle/294 branch if needed for β review, or clarify branch management for this cycle
+
+**Legacy branch pattern support:**
+- **Issue:** Implementation includes legacy branch detection for claude/* patterns per AC specifications
+- **Status:** Working as designed - warns about legacy branches until #287 ships canonical cycle/* naming
+- **Impact:** Some cycles may show legacy branch warnings in output
+- **Next action:** No action needed - explicitly deferred in issue until #287 completion
+
+**JSON output format:**
+- **Issue:** Text-only output in v0; JSON format mentioned as deferred in issue scope
+- **Status:** Explicitly deferred per issue scope
+- **Impact:** No programmatic consumption API available yet
+- **Next action:** Future enhancement when downstream consumer identified
