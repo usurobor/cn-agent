@@ -249,3 +249,61 @@ no-token grep) ran and passed. β should verify branch CI state independently be
 artifacts. No existing files modified.
 
 Ready for β.
+
+---
+
+## Fix Round 1 — addressing β findings (round 2 prep)
+
+**β verdict SHA:** e7d995a4 (β review commit)
+**Fix round base SHA:** e7d995a4
+
+### F1 (C — contract/honest-claim) — commit f3b1c72d
+
+**Finding:** B.AC4 names `activation/templates/README.md` as the file containing the
+bot-registration → secret-setup → first-activation walkthrough (≤300 words). The original
+README was 171 words with no walkthrough prose — only a directory overview.
+
+**Fix applied:** Added a "Quick Start — Telegram Notifier" section to
+`activation/templates/README.md` covering all four AC-required steps:
+(1) create bot via BotFather, (2) get chat ID via getUpdates, (3) set
+`CDD_TELEGRAM_BOT_TOKEN` and `CDD_TELEGRAM_CHAT_ID` secrets, (4) copy files
+and wire workflow. Total README word count: 297 (≤300 limit). The
+`telegram-notifier/README.md` remains as the detailed reference walkthrough.
+
+**β re-verify:** `wc -w activation/templates/README.md` → 297 words. Walkthrough
+covers all B.AC4 required steps at the named file path.
+
+### F2 (B — mechanical/judgment) — commit 79ec55e2
+
+**Finding:** `notify-beta-verdict` job `if:` expression evaluated as
+`(A && B && C) || D` due to `&&`/`||` precedence, allowing the
+`contains(...modified...)` clause to fire on any branch including `main`.
+
+**Fix applied:** Added parentheses around the two `contains()` clauses:
+```
+startsWith(github.ref, 'refs/heads/cycle/') &&
+github.event.created != true &&
+(contains(join(github.event.commits.*.added, ','), 'beta-review.md') ||
+ contains(join(github.event.commits.*.modified, ','), 'beta-review.md'))
+```
+Expression now correctly evaluates as `A && B && (C || D)`.
+
+**Mechanical gates re-run after fix:**
+- `bash -n notify.sh` → SYNTAX OK
+- `python3 yaml.safe_load(cdd-notify.yml)` → YAML OK
+
+**β re-verify:** Inspect `cdd-notify.yml` lines 60–65; confirm parentheses present
+and `contains(...modified...)` clause is inside the outer parentheses.
+
+### F3 (A — judgment) — commit f3b1c72d (same commit as F1)
+
+**Finding:** `activation/templates/README.md` did not mention that
+`cdd-artifact-validate.yml` requires `scripts/validate-release-gate.sh` to exist
+in the tenant repository.
+
+**Fix applied:** Updated the `cdd-artifact-validate.yml` table row in
+`activation/templates/README.md` to include the dependency:
+> "requires `scripts/validate-release-gate.sh` in the tenant repository"
+
+**β re-verify:** `grep validate-release-gate activation/templates/README.md`
+→ dependency sentence present in the `cdd-artifact-validate.yml` table row.
