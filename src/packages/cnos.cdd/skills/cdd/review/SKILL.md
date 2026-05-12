@@ -109,9 +109,12 @@ Return to this file for verdict rules and output format.
 3.9. **Specify regression pairs for D-level findings**
   - Every D-level finding includes positive case + negative case.
 
-3.10. **CI / release-gate state**
-  - If merge is requested, verify required CI/build checks are green on branch head.
-  - If checks are missing/stale/red, approval is provisional: "Do not merge until checks finish green."
+3.10. **CI-green gate (binding)**
+  - β must verify required CI/build checks are green on review SHA before emitting verdict APPROVED.
+  - Run `gh run list --branch <review-SHA> --json status,conclusion,workflow_name` (or equivalent) and verify every *required* workflow has `conclusion == "success"`.
+  - If any required workflow is red/pending/missing on review SHA → verdict is RC, finding B-severity, classification `ci-status`.
+  - Document the check in `beta-review.md` §CI status: one-line citation of run + conclusion.
+  - Required workflows determined by GitHub branch protection rules; fallback to "every workflow that runs on cycle branch" if no protection rules configured.
 
 3.11. **Merge instruction is explicit**
   - Names the exact branch and merge action with `Closes #N` in the merge commit.
@@ -247,7 +250,7 @@ Before submitting a review:
 - [ ] Severity assigned to every finding
 - [ ] Type assigned to every finding (mechanical / judgment / contract / honest-claim)
 - [ ] D-level findings include regression test pairs
-- [ ] CI/build checks green, or approval marked provisional
+- [ ] CI/build checks green on review SHA (binding gate per rule 3.10)
 - [ ] Approval explicitly closes the search space
 - [ ] Merge instruction names branch and merge action
 - [ ] Verdict stated first

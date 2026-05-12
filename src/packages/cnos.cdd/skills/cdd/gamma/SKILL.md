@@ -384,6 +384,12 @@ Before close-out, collect (in-version, before release):
 - `.cdd/unreleased/{N}/alpha-closeout.md` (α close-out narrative — obtained via re-dispatch if needed)
 - `.cdd/unreleased/{N}/beta-closeout.md` (β close-out narrative + release evidence)
 
+**Post-merge CI verification (mandatory):** Before authoring `gamma-closeout.md`, γ must verify CI ran green on the merge commit:
+- Run `gh run list --branch main --json status,conclusion,head_sha` filtered to `head_sha == merge-SHA`
+- If pending: delay close-out until run completes
+- If red: log as §9.1 trigger (avoidable tooling failure); cycle's γ-axis grade reflects post-merge failure; consider rollback or follow-on fix-cycle
+- If green: proceed; record run URL in `gamma-closeout.md` §Post-merge verification (mandatory subsection)
+
 `self-coherence.md` and `beta-review.md` carry the in-cycle record (gap/ACs/trace and round-by-round verdicts respectively); the two `*-closeout.md` files are γ's primary triage inputs.
 
 The cycle directory move (`.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/`) is γ's responsibility per §2.6 above — it must happen before the tag, not after. The legacy aggregate paths `.cdd/releases/{X.Y.Z}/{alpha,beta,gamma}/CLOSE-OUT.md` are warn-only (pre-#283 form). See `CDD.md` §5.3a Artifact Location Matrix.
