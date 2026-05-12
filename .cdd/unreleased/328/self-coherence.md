@@ -173,3 +173,39 @@ $ ./src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify --all
 **Commit SHA:** cf746dad (epoch-based enforcement implementation)
 
 **Status:** Fix complete, ready for β re-review
+
+## Fix-round R2
+
+**β Finding:** F2 (B, mechanical) — CI still red. Main artifact validation passes (184 passed, 0 failed, 106 warnings) but the **test fixtures** in `src/packages/cnos.cdd/commands/cdd-verify/test-fixtures.sh` have a bug — "Incomplete triadic cycle test FAILED". The test expectations don't match the new epoch-based enforcement logic.
+
+**Root cause:** Test fixture expected incomplete triadic cycle to fail with missing close-outs, but epoch-based enforcement treats missing close-outs in unreleased cycles as warnings only (expected behavior until cycle complete). Test fixture used unreleased cycle format where strict enforcement doesn't apply.
+
+**Resolution approach:** Realigned test fixture with epoch-based enforcement expectations:
+
+1. **Moved fixture to released version:** Relocated incomplete-triadic fixture from `.cdd/unreleased/200/` to `.cdd/releases/3.75.0/200/`
+2. **Updated test mode:** Changed test script from `--unreleased` to `--all` flag for this fixture
+3. **Applied strict enforcement:** v3.75.0 is post-v3.74.0 epoch, so missing close-outs now produce failures instead of warnings
+
+**Implementation details:**
+- Moved `self-coherence.md` and `beta-review.md` to released cycle directory structure
+- Updated test-fixtures.sh Test 2 to use `--all` flag (line 26)
+- Preserved test logic expecting exit code ≠ 0 and "Cycle artifact verification FAILED"
+
+**Verification:**
+```bash
+$ src/packages/cnos.cdd/commands/cdd-verify/test-fixtures.sh
+Testing CDD artifact checker fixtures...
+=== Test 1: Valid triadic cycle ===
+✅ Valid triadic cycle test PASSED
+=== Test 2: Incomplete triadic cycle ===  
+✅ Incomplete triadic cycle test PASSED (correctly detected missing artifacts)
+=== Test 3: Valid small-change cycle ===
+✅ Valid small-change cycle test PASSED
+🎉 All fixture tests passed!
+```
+
+**Outcome:** Test expectations now align with epoch-based enforcement behavior. Incomplete released cycles fail with missing artifacts (strict enforcement), incomplete unreleased cycles produce warnings (lenient enforcement).
+
+**Commit SHA:** 5024740a (test fixture alignment with epoch-based enforcement)
+
+**Status:** Fix complete, CI should be green, ready for β re-review
