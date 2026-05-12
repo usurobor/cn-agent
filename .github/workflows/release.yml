@@ -240,6 +240,8 @@ jobs:
             STATUS="success"
           fi
           TAG="${{ github.ref_name }}"
-          MSG="$ICON Release $STATUS: ${{ github.repository }}@${TAG}"
+          REPO_URL="https://github.com/${{ github.repository }}"
+          TAG_LINK="[${TAG}](${REPO_URL}/releases/tag/${TAG})"
+          MSG="$ICON Release $STATUS: ${{ github.repository }}@${TAG_LINK}"
           curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TG_CHAT_ID}" -d text="${MSG}" -d disable_notification=true
+            -d chat_id="${TG_CHAT_ID}" -d text="${MSG}" -d parse_mode=Markdown -d disable_notification=true

@@ -298,20 +298,21 @@ jobs:
             STATUS="success"
           fi
           REF="${{ github.head_ref || github.ref_name }}"
-          MSG="$ICON Build $STATUS: ${{ github.repository }}@${REF}"
           REPO_URL="https://github.com/${{ github.repository }}"
+          REF_LINK="[${REF}](${REPO_URL}/tree/${REF})"
           if [ -n "${{ github.event.pull_request.number }}" ]; then
             PR_NUM="${{ github.event.pull_request.number }}"
-            MSG="$MSG (${REPO_URL}/pull/${PR_NUM})"
+            CTX_LINK="[#${PR_NUM}](${REPO_URL}/pull/${PR_NUM})"
           else
-            # For push builds: extract issue/PR number from merge commit, fall back to commit URL
             COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -1)
             ISSUE_NUM=$(echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
             if [ -n "$ISSUE_NUM" ]; then
-              MSG="$MSG (${REPO_URL}/issues/${ISSUE_NUM})"
+              CTX_LINK="[#${ISSUE_NUM}](${REPO_URL}/issues/${ISSUE_NUM})"
             else
-              MSG="$MSG (${REPO_URL}/commit/${{ github.sha }})"
+              SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+              CTX_LINK="[${SHORT_SHA}](${REPO_URL}/commit/${{ github.sha }})"
             fi
           fi
+          MSG="$ICON Build $STATUS: ${{ github.repository }}@${REF_LINK} (${CTX_LINK})"
           curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TG_CHAT_ID}" -d text="${MSG}" -d disable_notification=true
+            -d chat_id="${TG_CHAT_ID}" -d text="${MSG}" -d parse_mode=Markdown -d disable_notification=true
