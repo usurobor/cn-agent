@@ -73,3 +73,15 @@
 - **"Transport-agnostic"** → No Telegram-specific markup in message shapes; variable syntax works for any adapter
 
 **Role boundary clean?** YES — α authored docs-only changes per mode declaration. No β authority assumed (no review-level judgment calls, no release boundary claims). Issue gap closure does not depend on β's implementation assessment.
+
+## §Debt
+
+**No implementation debt identified.** This docs-only cycle adds prescription without runtime obligation. Three potential follow-on surfaces noted but explicitly deferred:
+
+1. **Cross-platform adapter validation:** Message shapes tested against Telegram format assumptions but not validated against Slack, Discord, or email adapters. Acceptable: §11a is transport-agnostic by design; adapter-specific validation belongs in adapter implementation cycles.
+
+2. **Invite-link rotation automation:** §11a.3 prescribes manual operator removal (registry + channel). Automation via Telegram Bot API possible but requires admin-level bot permissions. Acceptable: manual process is operationally simple; automation can be proposed if removal friction proves significant.
+
+3. **Multi-repo notification consolidation:** §11a.2 recommends one channel per repo but doesn't address operators managing 5+ repos. Client-side filtering (Telegram folders) suggested but not prescribed. Acceptable: consolidation strategy depends on operator count and cross-repo patterns not yet observable.
+
+**No loaded skill would have prevented remaining debt.** write/SKILL.md applied correctly for prose clarity. No eng/* skill applies to docs-only cycles.
