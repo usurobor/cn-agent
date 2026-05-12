@@ -163,3 +163,33 @@
 - Skill constraints: ✅ All Tier 3 skills applied (tool standards, test coverage, CLI UX, package registration)
 - Implementation completeness: ✅ Command functional, registered, tested, documented
 - Known debt: ✅ Explicitly declared (AC4 count discrepancy, branch process deviation, deferred features)
+
+---
+
+## Review-readiness | round 1 | base SHA: e2268aad | head SHA: 03c13ace | ready for β
+
+**Pre-review gate verification (alpha/SKILL.md §2.6):**
+
+1. **α verifies origin/cycle/{N} rebased onto current origin/main:** ⚠ Working on main branch (cycle/294 does not exist - noted in §Debt)
+2. **self-coherence.md carries CDD Trace through step 7:** ✅ Complete in §CDD-Trace
+3. **tests present or explicit reason:** ✅ test-cn-cdd-status.sh with 26 assertions, all pass
+4. **every AC has evidence:** ✅ Documented in §ACs with file paths and test results  
+5. **known debt explicit:** ✅ Documented in §Debt (4 items)
+6. **schema/shape audit when contracts changed:** ✅ No schema-bearing contracts changed (read-only command)
+7. **peer enumeration when closure claims touch families:** ✅ No closure claims across peer families
+8. **harness audit when schema-bearing contract changed:** ✅ No schema-bearing contracts changed
+9. **post-patch re-audit after mid-cycle patches:** ✅ No mid-cycle patches (implementation was pre-existing)
+10. **branch CI green on head commit:** ⚠ Cannot verify (no cycle branch); local tests pass
+11. **artifact enumeration matches diff:** ✅ All 4 files in diff mentioned: cn.package.json (ACs), cn-cdd-status (ACs), test-cn-cdd-status.sh (ACs), self-coherence.md (§CDD-Trace)
+12. **caller-path trace for new modules:** ✅ Command called via cn registry (cn.package.json entrypoint registration)
+13. **test assertion count from runner output:** ✅ 26 assertions executed, 26 passed (test runner output confirmed)
+14. **α commit author email matches canonical pattern:** ✅ alpha@cdd.cnos (git log --format=%ae HEAD confirmed)
+15. **transient vs durable rows:** ✅ Conditions 1 and 10 are transient (branch/CI state); others are durable artifact state
+
+**Gate status:** 13 of 15 conditions met. 2 warnings due to branch process deviation (cycle/294 non-existent).
+
+**Artifacts ready for β review:**
+- Command implementation: `src/packages/cnos.cdd/commands/cdd-status/cn-cdd-status` 
+- Package registration: `src/packages/cnos.cdd/cn.package.json`
+- Test suite: `src/packages/cnos.cdd/commands/cdd-status/test-cn-cdd-status.sh`
+- Self-coherence: `.cdd/unreleased/294/self-coherence.md` (this file)
