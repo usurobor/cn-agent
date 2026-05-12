@@ -33,6 +33,10 @@ A release is therefore not just a bundle of outputs. It is a measured coherence 
 
 CDD is a triadic coherence method at development scale.
 
+> **New tenant?** See [`cdd/activation/SKILL.md`](activation/SKILL.md) for the one-time bootstrap sequence
+> that scaffolds the `.cdd/` directory, pins the skill version, configures CI, and verifies activation.
+> Activation is the prescribed entry point before running a first cycle.
+
 ## Invocation model
 
 CDD is invoked as:

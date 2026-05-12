@@ -289,6 +289,8 @@ If no `CDD.md` §9.1 trigger fired, write either:
 
 ### Step 5.6b: Author `cdd-iteration.md` (when applicable)
 
+> Activation findings from `cdd/activation/SKILL.md §22` flow into this step. See [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) for the per-repo cadence declaration, severity scale (D/C/B/A + `info`), and auto-spawn MCA trigger rule.
+
 When the close-out triage in `gamma-closeout.md` produces ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`, γ authors `.cdd/unreleased/{N}/cdd-iteration.md` — ε's work product (`ROLES.md §1`; `cdd/epsilon/SKILL.md §1`) — extracting only those findings into a structured form. This is the canonical home for cdd-self-improvement findings; PRA §3 prose remains as narrative, but the structured record lives here.
 
 **Empty cycles produce no file.** If triage produces zero `cdd-*-gap` findings, no `cdd-iteration.md` is written — signal stays high.
