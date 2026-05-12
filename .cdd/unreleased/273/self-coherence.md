@@ -50,3 +50,21 @@ The gap blocks process-integrity (P1): routine CDD cycles risk losing doctrine c
 
 **AC7:** Regression baseline — CFA and CTB §8.5.2 content remain present  
 ✅ **Evidence:** Verified `docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md` exists and CTB vision §8.5.2 exists in `docs/alpha/ctb/CTB-v4.0.0-VISION.md` line 354. Both silently-lost-then-restored files remain on main after this issue ships.
+
+## Self-check
+
+**Did α's work push ambiguity onto β?**  
+No. All ACs are concretely implemented with verifiable artifacts. The hook script implements the specific detection logic from γ #268 analysis (upstream-added/modified file comparison). Installation patterns are documented with working commands. CDD skill references are minimal one-liners at the specified boundaries. Test fixture verifies behavior with concrete exit codes and output patterns.
+
+**Is every claim backed by evidence in the diff?**  
+Yes. Each AC maps to specific files created or modified:
+- AC1/AC3: `ship/SKILL.md` modifications
+- AC2: `hooks/pre-push` script  
+- AC3: `scripts/install-hooks.sh` installer
+- AC4: `release/SKILL.md` one-liner addition
+- AC5: `gamma/SKILL.md` one-liner addition  
+- AC6: `test-pre-push-rebase-integrity.sh` fixture
+- AC7: verification confirmed by file existence
+
+**Peer enumeration completed?**  
+Yes. Modified skill surfaces: `ship/`, `release/`, `gamma/` — all three updated with consistent cross-references to the new rebase-integrity mechanism. No sibling command/provider peers at this layer. Hook script is standalone mechanical tool following eng/tool pattern.
