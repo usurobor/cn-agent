@@ -74,3 +74,28 @@
 **No blocked surfaces:** All role skills affected by the encapsulation contract change are updated in this cycle. No downstream lifecycle skill drift identified.
 
 **No test debt:** This is a specification/contract change cycle with no runtime code changes. The kata in gamma/SKILL.md provides the behavioral verification path for the new autonomous coordinator surface.
+
+## §CDD-Trace
+
+**CDD Trace through step 7:**
+
+1. **Gap identified:** Issue #286 — operator bottleneck in CDD cycles due to lack of γ autonomy
+2. **ACs defined:** 12 concrete acceptance criteria spanning role contract modifications  
+3. **Skills loaded:** CDD Tier 1 + eng/markdown + eng/git (no Tier 3 per issue spec)
+4. **Design:** Not required — structural CDD change with explicit contract modifications, no ambiguous implementation paths
+5. **Plan:** Not required — single-file edits to 5 role skills with clear AC mapping
+6. **Implementation artifacts:**
+   - `src/packages/cnos.cdd/skills/cdd/CDD.md` — core triadic rule, roles table, γ algorithm, decision-points, TLDR-on-demand
+   - `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` — autonomous coordinator section (§2.X), silence rule (§3)
+   - `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — operator-direct language removed (line 118)
+   - `src/packages/cnos.cdd/skills/cdd/beta/SKILL.md` — Role Rule 1 expanded with operator-refusal clause
+   - `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` — δ-bridge clarification (line 319)
+7. **Self-coherence completed** — this artifact
+
+**Artifact enumeration (diff coverage):** Every file in `git diff --stat origin/main..HEAD` explicitly mentioned above:
+- `.cdd/unreleased/286/` coordination files (β-generated + this self-coherence.md)
+- All 5 modified role skill files under `src/packages/cnos.cdd/skills/cdd/` enumerated with specific changes
+
+**No new modules:** This cycle modifies existing specification files only. No new functions or call-path verification required.
+
+**Ready for review:** Implementation complete, all ACs mapped to evidence, no known debt.
