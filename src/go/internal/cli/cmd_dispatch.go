@@ -2,10 +2,7 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/usurobor/cnos/src/go/internal/dispatch"
 )
@@ -90,96 +87,38 @@ func (c *DispatchCmd) Run(ctx context.Context, inv Invocation) error {
 		return err
 	}
 
-	// Backend selection: --backend flag > CN_DISPATCH_BACKEND env > default "claude"
-	backend := args.Backend
-	if backend == "" {
-		backend = os.Getenv("CN_DISPATCH_BACKEND")
-	}
-	if backend == "" {
-		backend = "claude"
-	}
+	backend := dispatch.ResolveBackend(args.Backend)
 
-	// Validate backend
-	if !isValidBackend(backend) {
+	if !dispatch.IsValidBackend(backend) {
 		err := fmt.Errorf("invalid backend %q (use claude|stub|print)", backend)
 		fmt.Fprintf(inv.Stderr, "✗ %s\n", err)
 		return err
 	}
 
-	// Project name detection
 	project := args.Project
 	if project == "" {
-		project = detectProject(inv.HubPath)
+		project = dispatch.DetectProject(inv.HubPath)
 	}
 
 	dispatcher := &dispatch.Dispatcher{
-		Backend:   backend,
-		Project:   project,
-		HubPath:   inv.HubPath,
-		Stdout:    inv.Stdout,
-		Stderr:    inv.Stderr,
+		Backend: backend,
+		Project: project,
+		HubPath: inv.HubPath,
+		Stdout:  inv.Stdout,
+		Stderr:  inv.Stderr,
 	}
 
 	result, err := dispatcher.Dispatch(ctx, args)
 	if err != nil {
-		// Dispatcher already logged to stderr
 		return err
 	}
 
-	// Emit structured descriptor to stdout
-	resultJSON, _ := json.Marshal(result)
-	fmt.Fprintf(inv.Stdout, "%s\n", resultJSON)
-
-	// Record attempt descriptor to .cdd/unreleased/{N}/dispatch/{attempt_id}.json
-	if err := recordAttempt(inv.HubPath, args.Issue, result); err != nil {
+	if err := dispatch.RecordAttempt(inv.HubPath, args.Issue, result); err != nil {
 		fmt.Fprintf(inv.Stderr, "⚠ Failed to record attempt: %v\n", err)
 	}
 
 	if result.ExitCode != 0 {
 		return fmt.Errorf("dispatch failed with exit code %d", result.ExitCode)
-	}
-
-	return nil
-}
-
-// isValidBackend checks if the backend name is supported
-func isValidBackend(backend string) bool {
-	switch backend {
-	case "claude", "stub", "print":
-		return true
-	default:
-		return false
-	}
-}
-
-// detectProject extracts the project name from the hub path
-// Uses the directory name containing .cn/ as the project name
-func detectProject(hubPath string) string {
-	if hubPath == "" {
-		return "cnos" // fallback
-	}
-	return filepath.Base(hubPath)
-}
-
-// recordAttempt writes the attempt descriptor to the cycle directory
-func recordAttempt(hubPath string, issue int, result *dispatch.Result) error {
-	if issue == 0 {
-		return nil // no issue number provided
-	}
-
-	attemptDir := filepath.Join(hubPath, ".cdd", "unreleased", fmt.Sprintf("%d", issue), "dispatch")
-	if err := os.MkdirAll(attemptDir, 0755); err != nil {
-		return fmt.Errorf("create dispatch directory: %w", err)
-	}
-
-	attemptFile := filepath.Join(attemptDir, result.AttemptID+".json")
-	resultJSON, err := json.MarshalIndent(result, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal result: %w", err)
-	}
-
-	if err := os.WriteFile(attemptFile, resultJSON, 0644); err != nil {
-		return fmt.Errorf("write attempt file: %w", err)
 	}
 
 	return nil

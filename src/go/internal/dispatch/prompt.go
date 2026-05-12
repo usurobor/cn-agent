@@ -40,7 +40,7 @@ Dispatch mode: identity-rotation.
 Perform the bounded role step requested here, write required artifacts to the cycle branch, and return.
 Do not start polling loops or wait for future role updates.
 γ will re-dispatch you if another step is required.`,
-		args.Project,
+		d.Project,
 		d.getAlphaSkillPath(),
 		args.Issue,
 		args.Branch)
@@ -60,7 +60,7 @@ Dispatch mode: identity-rotation.
 Perform the bounded role step requested here, write required artifacts to the cycle branch, and return.
 Do not start polling loops or wait for future role updates.
 γ will re-dispatch you if another step is required.`,
-		args.Project,
+		d.Project,
 		d.getBetaSkillPath(),
 		args.Issue,
 		args.Branch)
