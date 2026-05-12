@@ -68,3 +68,17 @@ Yes. The manifest and status formats are based on actual artifacts in `.cdd/wave
 
 **Are protocol extension points properly bounded?**  
 Yes. The wave primitive extends CDD's existing single-cycle protocol without changing core lifecycle. Wave artifacts live in `.cdd/waves/` (parallel to `.cdd/unreleased/`), δ gains wave dispatch capability while retaining all existing single-cycle authority, and wave closure integrates cleanly with existing release processes.
+
+## Debt
+
+**Known debt:** None.
+
+**Potential debt sources examined:**
+- **Cross-file consistency:** Wave primitive adds to `operator/SKILL.md` only. No sibling files required update.
+- **Contract compatibility:** Wave extends CDD protocol without changing core single-cycle contracts. Existing γ/α/β behavior unchanged.
+- **Empirical validation:** Formats based on actual `.cdd/waves/hardening-2026-05-12/` artifacts and `.cdd/iterations/wave-2026-05-12.md` findings.
+- **Loaded skills compliance:** Implementation follows `write/SKILL.md` principles (front-loaded point, concrete examples, one governing question per section).
+
+**Schema audit:** No schema-bearing types modified. Wave formats are new documentation, not changes to existing parsers.
+
+**Harness implications:** No harness changes required. Wave coordination uses existing git/file operations within CDD's established `.cdd/` directory structure.
