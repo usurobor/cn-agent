@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check, Debt] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace] -->
 
 # Self-Coherence Report — Issue #292
 
@@ -64,3 +64,27 @@
 **Process observations**: This issue exemplifies its own solution - section manifest enables resumption across multiple commits. Meta-pattern: CDD protocol enhancement that immediately applies to its own implementation.
 
 **Implementation note**: The manifest format uses HTML comments to avoid interfering with markdown rendering while providing machine-readable structure.
+
+## CDD-Trace
+
+**Step 1 — Issue selection**: Issue #292 selected by wave dispatcher δ for CDD enforcement wave.
+
+**Step 2 — Gap identification**: Missing resumption protocol for session interruptions during large-file authoring.
+
+**Step 3 — Active skills loaded**: 
+- Tier 1: CDD.md + alpha/SKILL.md
+- Tier 2: eng/ bundle  
+- Tier 3: beta/SKILL.md + gamma/SKILL.md (modification targets)
+
+**Step 4 — Design (not required)**: Protocol enhancement to existing §1.4 rule, no separate design needed.
+
+**Step 5 — Plan (not required)**: Systematic expansion across CDD.md + 3 role skills, implementation order clear.
+
+**Step 6 — Implementation artifacts**:
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` — §1.4 expanded with resumption protocol + section manifest format
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — resumption sub-section with α-specific examples
+- `src/packages/cnos.cdd/skills/cdd/beta/SKILL.md` — resumption sub-section with β-specific examples  
+- `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` — resumption sub-section with γ-specific examples
+- `.cdd/unreleased/292/self-coherence.md` — this self-coherence report (serves as worked example per AC5)
+
+**Step 7 — Self-coherence**: All ACs met with section manifest format demonstrated, resumption protocol complete.
