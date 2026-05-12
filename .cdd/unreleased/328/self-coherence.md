@@ -20,3 +20,28 @@
 - CDD lifecycle rules remaining prose without mechanical enforcement
 
 **Expected behavior:** CI fails on unexcepted missing required artifacts, with clear diagnostics identifying the missing path and expected contract.
+
+## Skills
+
+**Mode:** MCA (Minimal Coherent Action)
+
+**Tier 1 skills (always loaded):**
+- `CDD.md` — canonical CDD lifecycle and artifact contract
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — α role contract and execution detail
+- `src/packages/cnos.cdd/skills/cdd/SKILL.md` — CDD package loader
+
+**Tier 2 skills (general engineering):**  
+- `eng/tool` — shell command behavior, exit codes, diagnostics, local invocation
+- `eng/test` — positive/negative fixtures and CI proof  
+- `eng/ux-cli` — failure messages should tell contributors what artifact is missing and where
+
+**Tier 3 skills (issue-specific):**
+- `cnos.core/skills/design` — separate release-time gate from repo-wide artifact ledger validation
+- `cdd/review` — verify lifecycle/checker coherence and avoid false closure
+
+**Generation constraints applied:**
+- Tool skill: Commands must provide clear exit codes, helpful diagnostics, and support local invocation
+- Test skill: Must include both positive fixtures (complete cycles pass) and negative fixtures (incomplete cycles fail with clear messages)  
+- UX-CLI skill: Error messages must identify the specific missing artifact path and expected contract
+- Design skill: Must distinguish between release-time validation (scripts/validate-release-gate.sh) and repository-wide CI validation (this implementation)
+- Review skill: Checker must validate artifact presence and basic structure, not semantic content truth
