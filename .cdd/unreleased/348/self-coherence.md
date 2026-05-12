@@ -46,3 +46,22 @@
 **AC5: Cross-reference from epsilon/SKILL.md collapse note to the new section**
 - **Status:** Pending implementation  
 - **Evidence:** TBD — will add reference from existing "collapse onto δ permitted" note to new ROLES.md §4
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+No. The hats-vs-actors principle is clearly stated with concrete examples and explicit structural reasoning. β will not need to interpret vague concepts like "actor collapse" — the independence constraint is mechanically derivable and the worked examples provide clear precedent for judging future collapse decisions.
+
+**Is every claim backed by evidence in the diff?**
+
+Yes, with two pending file edits:
+
+- ✅ **ROLES.md §4 principle statement** — diff shows new section with explicit "hats not actors" language 
+- ✅ **Independence as constraint** — diff shows "Independence, not headcount" subsection with structural reasoning
+- ✅ **Worked examples** — diff shows three detailed examples with safety/unsafety reasoning
+- ⚠️ **operator/SKILL.md cross-reference** — pending implementation, will show in diff
+- ⚠️ **epsilon/SKILL.md cross-reference** — pending implementation, will show in diff
+- ✅ **Section renumbering** — diff shows all subsequent ROLES.md sections renumbered (§4→§5, §5→§6, etc.)
+
+The two pending cross-references are implementation artifacts, not design ambiguity. The implementation work is clear and bounded.
