@@ -77,3 +77,23 @@
 **AC9: Dispatch attempt is recorded** ✓
 - **Evidence:** `src/go/internal/cli/cmd_dispatch.go:75-79` calls `recordAttempt()` to write descriptor to `.cdd/unreleased/{N}/dispatch/{attempt_id}.json`
 - **Evidence:** `src/go/internal/cli/cmd_dispatch.go:136-155` implements attempt recording with all AC6 fields
+
+## Self-check
+
+**Did α's work push ambiguity onto β?** No.
+
+- **Command interface:** Clear argument parsing with explicit validation and error messages. β can verify usage via help text.
+- **Backend contract:** All three backends implement the same `Backend` interface with consistent result structure. β can test/verify behavior.
+- **Error handling:** Structured error types (`failure_kind`, `diagnostic`) with specific error categories. β can diagnose failures without guessing.
+- **Worktree safety:** Explicit preflights with actionable error messages. β can verify safety contracts.
+- **Attempt logging:** Complete audit trail in `.cdd/unreleased/{N}/dispatch/` with timestamps, SHAs, exit codes. β can trace dispatch history.
+
+**Is every claim backed by evidence in the diff?** Yes.
+
+- **"Cognitive isolation"** → `claude -p` fresh session documented in backend_claude.go:25-27 + test isolation verification
+- **"Worktree safety"** → Git status/branch/reachability checks in dispatcher.go:123-174 with specific error conditions
+- **"Structured output"** → Complete Result type in types.go:13-35 with JSON emission in cmd_dispatch.go:71-73
+- **"Backend pluggability"** → Interface-based design in types.go:38-48 with three implementations
+- **"Attempt recording"** → File-based persistence in recordAttempt() with JSON structure
+
+**Role boundary respect:** α implemented the dispatch primitive as specified without expanding into γ orchestration logic or β review automation. The command performs one role invocation per execution, as designed.
