@@ -25,11 +25,14 @@ them durably, and produces a system that learns from its own cycles rather
 than repeating the same class of error.
 
 The canonical output artifact is `cdd-iteration.md` (see
-`cdd/post-release/SKILL.md` Step 5.6b). ε writes `cdd-iteration.md` when
-the cycle close-out triage produces at least one finding tagged
-`cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or
-`cdd-metric-gap`. Empty cycles produce no file; the signal stays high only
-when it carries signal.
+`cdd/post-release/SKILL.md` Step 5.6b). ε writes `cdd-iteration.md` on
+every cycle. An empty findings list is itself signal: it declares the cycle
+ran cleanly with no protocol gaps surfaced, removing the ambiguity of a
+missing file (which could mean either a clean cycle or a skipped close-out).
+For cycles that do produce findings tagged `cdd-skill-gap`,
+`cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`, the file
+enumerates those findings with disposition; empty-findings cycles write
+"no protocol-gap findings this cycle."
 
 The MCA discipline governs what ε does with each finding:
 - **MCA available** (skill patch, gate, mechanization) → ship it now as
