@@ -73,3 +73,38 @@
 ## Known Debt
 
 None expected for this documentation addition.
+
+## Implementation Evidence
+
+### AC1 — §5.2.1 subsection authored
+
+- **Status:** ✅ COMPLETE
+- **Evidence:** Added §5.2.1 "Parent-session quiescence during sub-agent runs" to `cdd/operator/SKILL.md` lines 301-323
+- **Prohibited actions:** 5 enumerated (file edits, commits, branch switches, git add/restore, git pull/fetch HEAD updates)  
+- **Permitted actions:** 3 categories enumerated (reads, coordination, external filesystem ops)
+- **Oracle verified:** `rg 'Parent.session quiescence|quiescent'` returns 2 hits
+
+### AC2 — Failure-mode worked example present
+
+- **Status:** ✅ COMPLETE
+- **Evidence:** "What goes wrong when this is violated" section on line 319
+- **Git operations named:** `git add`, `git commit` in corruption sequence
+- **Oracle verified:** `rg 'worked example|when this is violated'` returns 1 hit
+
+### AC3 — Sub-agent parallelism note
+
+- **Status:** ✅ COMPLETE  
+- **Evidence:** "Sub-agent parallelism note" paragraph on line 321
+- **Details:** Names parallel sub-agents share working tree with parent and each other
+- **Oracle verified:** `rg 'parallel sub.agent|concurrent.*sub.agent'` returns 1 hit
+
+## Review-Readiness
+
+**Base SHA:** dc65c7e552414991c3b201513015412c5cf1ac42 (origin/main at cycle creation)
+**Head SHA:** d11ca84b0dddfb0efc0b17d4a12c0d8af96d9ef3 (current cycle/353)
+**Branch:** cycle/353
+**CI Status:** Not applicable (docs-only change, no CI dependencies)
+
+All acceptance criteria have been implemented and verified. The subsection has been added to the correct location in `cdd/operator/SKILL.md` within the §5.2 dispatch configuration section.
+
+**Ready for β review.**
