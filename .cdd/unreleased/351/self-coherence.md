@@ -71,7 +71,7 @@ None discovered during implementation.
 ## Review Readiness
 
 **Base SHA:** b8fc783151b9ed9eafffe5d43062708199e54464 (`origin/main`)
-**Head SHA:** [To be updated after commit]
+**Head SHA:** 51db67b8b0c8e6e17be9545d253342e7b83a5078
 **Branch CI state:** [To be verified after push]
 
 **Ready for β:** All 4 ACs implemented and verified via oracles. Changes affect only docs (no code changes, no version bump required). Self-coherence complete. Branch ready for review.
