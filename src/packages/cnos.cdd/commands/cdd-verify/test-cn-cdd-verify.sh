@@ -110,6 +110,87 @@ write_canonical_closeouts() {
   git -C "$repo" commit -q -m "close-outs $version"
 }
 
+write_cycle_artifacts() {
+  local repo="$1"
+  local version="$2"
+  local cycle="$3"
+  mkdir -p "$repo/.cdd/releases/$version/$cycle"
+
+  # Write 5 hard-gate artifacts with required sections
+  cat > "$repo/.cdd/releases/$version/$cycle/self-coherence.md" <<EOF
+# Self-Coherence — Issue #$cycle
+
+## Gap
+Test gap description
+
+## Mode
+Test mode description
+
+## AC Coverage
+Test AC coverage
+
+## CDD Trace
+Test trace
+
+## Role self-check
+Test self-check
+
+## Known debt
+No debt
+EOF
+
+  cat > "$repo/.cdd/releases/$version/$cycle/beta-review.md" <<EOF
+# Beta Review — Issue #$cycle
+
+## Round 1
+**Verdict:** APPROVED
+**Findings:** None
+EOF
+
+  for artifact in "alpha-closeout" "beta-closeout" "gamma-closeout"; do
+    cat > "$repo/.cdd/releases/$version/$cycle/${artifact}.md" <<EOF
+# ${artifact^} — Issue #$cycle
+
+## Summary
+Test summary
+
+## Findings
+No findings
+EOF
+  done
+
+  git -C "$repo" add ".cdd/releases/$version/$cycle" >/dev/null
+  git -C "$repo" commit -q -m "cycle artifacts $version/$cycle"
+}
+
+write_incomplete_cycle_artifacts() {
+  local repo="$1"
+  local version="$2"
+  local cycle="$3"
+  mkdir -p "$repo/.cdd/releases/$version/$cycle"
+
+  # Write only some artifacts (missing gamma-closeout.md)
+  cat > "$repo/.cdd/releases/$version/$cycle/self-coherence.md" <<EOF
+# Self-Coherence — Issue #$cycle
+
+## Gap
+Test gap
+
+## Mode
+Test mode
+
+## CDD Trace
+Test trace
+EOF
+
+  for artifact in "beta-review" "alpha-closeout" "beta-closeout"; do
+    echo "Test content" > "$repo/.cdd/releases/$version/$cycle/${artifact}.md"
+  done
+
+  git -C "$repo" add ".cdd/releases/$version/$cycle" >/dev/null
+  git -C "$repo" commit -q -m "incomplete cycle artifacts $version/$cycle"
+}
+
 # ----- Test cases -----
 
 echo "## test 1 — canonical contract passes"
@@ -211,6 +292,67 @@ EC=$?
 set -e
 assert_exit "triadic fails without γ close-out" 1 "$EC"
 assert_grep "γ close-out fail" "❌ gamma/CLOSE-OUT.md" "$OUT"
+
+echo ""
+echo "## test 7 — cycle mode complete artifacts pass"
+R="$TMP/cycle_complete"
+make_repo "$R"
+write_changelog "$R" "10.0.0"
+write_canonical_pra "$R" "10.0.0"
+write_cycle_artifacts "$R" "10.0.0" "100"
+git -C "$R" tag "10.0.0"
+OUT="$TMP/cycle_complete.out"
+set +e
+"$VERIFY" --version 10.0.0 --cycle 100 --repo-root "$R" > "$OUT" 2>&1
+EC=$?
+set -e
+assert_exit "cycle mode exits 0 on complete artifacts" 0 "$EC"
+assert_grep "self-coherence pass" "✅ self-coherence.md" "$OUT"
+assert_grep "beta-review pass" "✅ beta-review.md" "$OUT"
+assert_grep "alpha-closeout pass" "✅ alpha-closeout.md" "$OUT"
+assert_grep "beta-closeout pass" "✅ beta-closeout.md" "$OUT"
+assert_grep "gamma-closeout pass" "✅ gamma-closeout.md" "$OUT"
+
+echo ""
+echo "## test 8 — cycle mode missing artifact fails"
+R="$TMP/cycle_incomplete"
+make_repo "$R"
+write_changelog "$R" "10.1.0"
+write_canonical_pra "$R" "10.1.0"
+write_incomplete_cycle_artifacts "$R" "10.1.0" "101"
+git -C "$R" tag "10.1.0"
+OUT="$TMP/cycle_incomplete.out"
+set +e
+"$VERIFY" --version 10.1.0 --cycle 101 --repo-root "$R" > "$OUT" 2>&1
+EC=$?
+set -e
+assert_exit "cycle mode fails with missing artifact" 1 "$EC"
+assert_grep "gamma-closeout missing" "❌ gamma-closeout.md" "$OUT"
+
+echo ""
+echo "## test 9 — cycle mode requires version"
+OUT="$TMP/cycle_no_version.out"
+set +e
+"$VERIFY" --cycle 123 > "$OUT" 2>&1
+EC=$?
+set -e
+assert_exit "cycle mode fails without version" 1 "$EC"
+assert_grep "cycle requires version error" "Error: --cycle requires --version" "$OUT"
+
+echo ""
+echo "## test 10 — cycle mode nonexistent directory fails"
+R="$TMP/cycle_missing_dir"
+make_repo "$R"
+write_changelog "$R" "10.2.0"
+write_canonical_pra "$R" "10.2.0"
+git -C "$R" tag "10.2.0"
+OUT="$TMP/cycle_missing_dir.out"
+set +e
+"$VERIFY" --version 10.2.0 --cycle 999 --repo-root "$R" > "$OUT" 2>&1
+EC=$?
+set -e
+assert_exit "cycle mode fails with missing directory" 1 "$EC"
+assert_grep "missing artifacts" "❌.*expected.*999" "$OUT"
 
 # ----- Summary -----
 

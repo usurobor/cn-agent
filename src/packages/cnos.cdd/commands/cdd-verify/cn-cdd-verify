@@ -6,17 +6,24 @@
 # Canonical paths (release-scoped triadic cycles):
 #   PRA          docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md
 #                CDD package default: docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md
-#   α close-out  .cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md
-#   β close-out  .cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md
-#   γ close-out  .cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md
+#   α close-out  .cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md (legacy)
+#   β close-out  .cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md (legacy)
+#   γ close-out  .cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md (legacy)
 #   tag          bare X.Y.Z (no v prefix)
+#
+# Current cycle-scoped paths (post-#283):
+#   Cycle dir    .cdd/releases/{X.Y.Z}/{N}/
+#   5 hard-gate  self-coherence.md, beta-review.md, alpha-closeout.md,
+#                beta-closeout.md, gamma-closeout.md
+#   Optional     gamma-clarification.md
 #
 # Legacy paths produce warnings, not pass conditions.
 #
 # Usage:
 #   cn cdd-verify --version <ver>              release-scoped cycle (canonical contract)
 #   cn cdd-verify --pr <number>                PR-scoped cycle (no release)
-#   cn cdd-verify --version <ver> --triadic    also check canonical .cdd/ close-outs
+#   cn cdd-verify --version <ver> --triadic    also check legacy .cdd/ close-outs
+#   cn cdd-verify --version <ver> --cycle <N>  check current cycle-scoped artifacts
 #
 # Optional:
 #   --bundle <path>   override bundle-relative PRA dir (default: docs/gamma/cdd)
@@ -28,6 +35,7 @@ set -euo pipefail
 
 VERSION=""
 PR=""
+CYCLE=""
 TRIADIC=false
 BUNDLE_DIR="docs/gamma/cdd"
 REPO_ROOT_OVERRIDE=""
@@ -37,7 +45,8 @@ usage() {
 Usage:
   cn cdd-verify --version <ver>              release-scoped cycle (canonical contract)
   cn cdd-verify --pr <number>                PR-scoped cycle (no release)
-  cn cdd-verify --version <ver> --triadic    include canonical .cdd/ close-out checks
+  cn cdd-verify --version <ver> --triadic    include legacy .cdd/ close-out checks
+  cn cdd-verify --version <ver> --cycle <N>  check current cycle-scoped artifacts
 
 Options:
   --bundle <path>     bundle-relative PRA dir (default: docs/gamma/cdd)
@@ -49,7 +58,16 @@ Canonical contract enforced (release-scoped):
   - canonical PRA exists at <repo>/<bundle>/<X.Y.Z>/POST-RELEASE-ASSESSMENT.md
   - RELEASE.md present (warns if absent)
 
-Triadic adds:
+Cycle mode (--cycle <N>) validates current artifact layout:
+  - .cdd/releases/<X.Y.Z>/<N>/self-coherence.md
+  - .cdd/releases/<X.Y.Z>/<N>/beta-review.md
+  - .cdd/releases/<X.Y.Z>/<N>/alpha-closeout.md
+  - .cdd/releases/<X.Y.Z>/<N>/beta-closeout.md
+  - .cdd/releases/<X.Y.Z>/<N>/gamma-closeout.md
+  - Required sections within each artifact (per role SKILL.md)
+  - Warns on orphaned .cdd/unreleased/<N>/ directories
+
+Triadic (legacy) checks:
   - .cdd/releases/<X.Y.Z>/alpha/CLOSE-OUT.md
   - .cdd/releases/<X.Y.Z>/beta/CLOSE-OUT.md
   - .cdd/releases/<X.Y.Z>/gamma/CLOSE-OUT.md
@@ -67,6 +85,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) VERSION="$2"; shift 2 ;;
     --pr) PR="$2"; shift 2 ;;
+    --cycle) CYCLE="$2"; shift 2 ;;
     --triadic) TRIADIC=true; shift ;;
     --bundle) BUNDLE_DIR="$2"; shift 2 ;;
     --repo-root) REPO_ROOT_OVERRIDE="$2"; shift 2 ;;
@@ -74,6 +93,11 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown option: $1" >&2; usage ;;
   esac
 done
+
+if [[ -n "$CYCLE" && -z "$VERSION" ]]; then
+  echo "Error: --cycle requires --version" >&2
+  usage
+fi
 
 if [[ -z "$VERSION" && -z "$PR" ]]; then
   echo "Error: must specify --version or --pr" >&2
@@ -116,6 +140,63 @@ check() {
     printf " — %s" "$detail"
   fi
   printf "\n"
+}
+
+validate_artifact_sections() {
+  local artifact_path="$1"
+  local artifact_name="$2"
+
+  # Basic section validation - check for key sections based on artifact type
+  case "$artifact_name" in
+    "self-coherence.md")
+      # Required sections: Gap, Mode/Skills, ACs/AC Coverage, Self-check, Debt, CDD-Trace
+      missing_sections=()
+
+      if ! grep -q "^## Gap" "$artifact_path" 2>/dev/null; then
+        missing_sections+=("Gap")
+      fi
+
+      if ! grep -q "^## \(Skills\|Mode\)" "$artifact_path" 2>/dev/null; then
+        missing_sections+=("Skills/Mode")
+      fi
+
+      if ! grep -q "^## \(ACs\|AC Coverage\)" "$artifact_path" 2>/dev/null; then
+        missing_sections+=("ACs/AC Coverage")
+      fi
+
+      if ! grep -q "^## CDD Trace" "$artifact_path" 2>/dev/null; then
+        missing_sections+=("CDD Trace")
+      fi
+
+      if ! grep -qi "^## .*\(self-check\|debt\)" "$artifact_path" 2>/dev/null; then
+        missing_sections+=("Self-check or Debt")
+      fi
+
+      if [[ ${#missing_sections[@]} -gt 0 ]]; then
+        check "$artifact_name sections" fail "missing required sections: ${missing_sections[*]}"
+        return 0
+      fi
+      ;;
+    "beta-review.md")
+      # Check for review-related content (verdict, findings)
+      if ! grep -qi "verdict\|review\|findings\|RC\|approved" "$artifact_path" 2>/dev/null; then
+        check "$artifact_name sections" warn "may be missing review verdict/findings (basic check)"
+        return 0
+      fi
+      ;;
+    "alpha-closeout.md"|"beta-closeout.md"|"gamma-closeout.md")
+      # Basic check for close-out structure
+      if ! grep -qi "summary\|findings\|cycle\|close.*out" "$artifact_path" 2>/dev/null; then
+        check "$artifact_name sections" warn "may be missing close-out structure (basic check)"
+        return 0
+      fi
+      ;;
+    *)
+      return 0  # Unknown artifact type, skip validation
+      ;;
+  esac
+
+  check "$artifact_name sections" pass "basic section validation passed"
 }
 
 # --- Core checks (always) ---
@@ -234,6 +315,62 @@ if [[ "$TRIADIC" == true && -n "$VERSION" ]]; then
     check "γ KATA-VERDICT.md" pass
   else
     check "γ KATA-VERDICT.md" warn "not found (kata may not have run)"
+  fi
+fi
+
+# --- Cycle-scoped canonical artifact checks ---
+
+if [[ -n "$CYCLE" && -n "$VERSION" ]]; then
+  echo ""
+  echo "## Cycle-scoped artifacts (.cdd/releases/$VERSION/$CYCLE/)"
+
+  CYCLE_DIR="$REPO_ROOT/.cdd/releases/$VERSION/$CYCLE"
+
+  # 5 hard-gate artifacts required per CDD §5.3a for current cycle-scoped layout
+  hardgate_files=(
+    "self-coherence.md"
+    "beta-review.md"
+    "alpha-closeout.md"
+    "beta-closeout.md"
+    "gamma-closeout.md"
+  )
+
+  for artifact in "${hardgate_files[@]}"; do
+    artifact_path="$CYCLE_DIR/$artifact"
+    if [[ -f "$artifact_path" ]]; then
+      check "$artifact" pass
+      # Basic section validation for each artifact
+      validate_artifact_sections "$artifact_path" "$artifact"
+    else
+      check "$artifact" fail "expected .cdd/releases/$VERSION/$CYCLE/$artifact"
+    fi
+  done
+
+  # Optional artifacts (warn if missing expected ones based on cycle type)
+  optional_artifacts=(
+    "gamma-clarification.md"
+  )
+
+  for optional in "${optional_artifacts[@]}"; do
+    optional_path="$CYCLE_DIR/$optional"
+    if [[ -f "$optional_path" ]]; then
+      check "$optional (optional)" pass
+    fi
+  done
+
+  # Warn on orphaned .cdd/unreleased/{N}/ directories on main branch
+  if git -C "$REPO_ROOT" branch --show-current 2>/dev/null | grep -q '^main$'; then
+    if [[ -d "$REPO_ROOT/.cdd/unreleased" ]]; then
+      orphaned=$(find "$REPO_ROOT/.cdd/unreleased" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+      if [[ "$orphaned" -gt 0 ]]; then
+        orphan_list=$(find "$REPO_ROOT/.cdd/unreleased" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | xargs -I {} basename {} | tr '\n' ' ')
+        check "Orphaned unreleased directories" warn "found $orphaned directories: $orphan_list"
+      else
+        check "No orphaned unreleased directories" pass
+      fi
+    else
+      check "No orphaned unreleased directories" pass "no .cdd/unreleased directory"
+    fi
   fi
 fi
 
