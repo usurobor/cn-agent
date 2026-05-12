@@ -5,6 +5,38 @@
 **Branch CI state:** [TO BE CHECKED]
 **Merge instruction:** [TO BE DETERMINED]
 
+## §2.0 Issue Contract
+
+### AC Coverage
+| # | AC | In diff? | Status | Notes |
+|---|----|----------|--------|-------|
+| 1 | CDD.md §Tracking — issue-edit cache-bust rule | yes | **Met** | Line 263 in CDD.md adds rule with worked example from #283 |
+| 2 | gamma/SKILL.md §2.5 — γ-side procedure | yes | **Met** | Line 359 adds cache-bust procedure to commit clarification before signaling |
+| 3 | alpha/SKILL.md and beta/SKILL.md intake step | partial | **Gap** | α/SKILL.md updated (line 116), but β instruction in CDD.md step 3 not beta/SKILL.md |
+| 4 | CDD.md §1.4 / §4.2 — γ session branch named | yes | **Met** | Line 750 adds γ session branch rule with cleanup requirement |
+| 5 | operator/SKILL.md δ branch-cleanup rule | yes | **Met** | Line 214 adds explicit branch cleanup including γ session branches |
+| 6 | Worked example | yes | **Met** | CDD.md references cycle #283 commit `2f83095` as worked example |
+
+### Named Doc Updates
+| Doc / File | In diff? | Status | Notes |
+|------------|----------|--------|-------|
+| CDD.md | yes | **Updated** | Cache-bust rule + γ session branch rule added |
+| gamma/SKILL.md | yes | **Updated** | Cache-bust procedure added to §2.5 |
+| alpha/SKILL.md | yes | **Updated** | Cache-bust instruction added to intake step |
+| beta/SKILL.md | no | **Not Updated** | Per AC3 gap - cache-bust instruction missing |
+| operator/SKILL.md | yes | **Updated** | Branch cleanup rule added |
+
+### CDD Artifact Contract
+| Artifact | Required? | Present? | Notes |
+|----------|-----------|----------|-------|
+| self-coherence.md | no | no | Small-change cycle, no α readiness signal needed |
+| gamma-clarification.md | reference | n/a | Referenced as example from #283, not required for this cycle |
+
+### Active Skill Consistency
+| Skill | Required by | Loaded? | Applied? | Notes |
+|-------|-------------|---------|----------|-------|
+| CDD Tier 1 | Issue "Tier 3 skills" section | yes | yes | CDD self-modification within Tier 1 scope |
+
 ## §2.0.0 Contract Integrity
 
 | Check | Result | Notes |
