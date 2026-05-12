@@ -46,3 +46,20 @@
 |-------|-------------|---------|----------|-------|
 | eng/write-functional | self-coherence | ✅ yes | ✅ yes | Applied to procedural prose in §5.2.1 |
 | issue/SKILL.md | self-coherence | ✅ yes | ✅ yes | Applied for AC verification oracles |
+
+## §2.1 Diff and Context Inspection
+
+### 2.1.8 Authority-surface conflict check
+- ✅ **No conflicts found.** New §5.2.1 extends existing §5.2 section without contradicting prior content
+- ✅ **Canonical placement verified.** Added to `cdd/operator/SKILL.md` as specified in AC1 surface requirement
+
+### 2.1.9 Module-truth audit for shared-WT concepts
+- ✅ **Module scan complete.** Reviewed full `cdd/operator/SKILL.md` for related shared-working-tree assumptions
+- ✅ **Consistent with §5.2 framing.** New subsection aligns with existing multi-session vs single-session distinction
+- ✅ **No conflicting guidance.** Other sections (§5.1, §5.3) maintain clear boundaries with new §5.2.1 content
+
+### 2.1.12 Process overhead check
+- ✅ **Failure mode documented with empirical anchor.** References tsc cycle #36 corrupted commit incident
+- ✅ **Clear prevention value.** Prevents fix-round cycles caused by concurrent edits (30+ min cost vs 5-10 min wait cost)
+- ✅ **Target audience identified.** §5.2 operators who need concrete guidance on parent-session behavior
+- ✅ **Not automatable.** Requires human operator discipline; documentation is appropriate solution
