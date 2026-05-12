@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt] -->
 
 # Self-Coherence Report — Issue #292
 
@@ -56,3 +56,11 @@
 - AC5: This file serves as worked example of section manifest pattern
 
 **Role boundary compliance?** Yes. α modified only CDD protocol files as appropriate for self-modification. No scope creep into unrelated surfaces. Changes enhance existing section-by-section discipline with recovery capability.
+
+## Debt
+
+**Known debt**: None for this scope. cn resume CLI implementation explicitly excluded as separate cycle (non-goal).
+
+**Process observations**: This issue exemplifies its own solution - section manifest enables resumption across multiple commits. Meta-pattern: CDD protocol enhancement that immediately applies to its own implementation.
+
+**Implementation note**: The manifest format uses HTML comments to avoid interfering with markdown rendering while providing machine-readable structure.
