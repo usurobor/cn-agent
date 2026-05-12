@@ -253,6 +253,25 @@ No new modules or functions added (docs-only cycle); caller-path trace not appli
 
 ## Review-readiness | round 1 | base SHA: 9783a469dc95914bbd47f2abfdb4562c91df7c7c | head SHA: 51650800 (implementation) | branch CI: docs-only cycle, no CI jobs on cycle/344 (explicit declaration per gate row 10) | ready for β
 
+---
+
+## Fix-round | R1 → R2
+
+**Findings addressed:**
+
+| Finding | Commit | Re-verify scope |
+|---------|--------|-----------------|
+| F1 (D) — post-release/SKILL.md §5.6b: "Empty cycles produce no file" contradicts activation §22 | `ca34cd1b` | §5.6b body: both occurrences replaced with activation §22-consistent text; no remaining "Empty cycles produce no file" in §5.6b |
+| F2 (B) — activation/SKILL.md §14: illustrative template cited `wc -l → 847`; actual file is 623 lines | `54b1d3a2` | §14 table `Example claim` column and `Suggested claims.md structure` block: both now read 623 |
+| F3 (A) — activation/SKILL.md §23 step 18: missing governing section reference | `54b1d3a2` | §23 step 18 now reads `**Populate \`.cdd/iterations/INDEX.md\`** (§3)` — consistent with all other steps |
+
+**Peer enumeration (intra-doc grep, per α/SKILL.md §2.3):**
+- `grep 'Empty cycles produce no file' post-release/SKILL.md` → 0 hits ✅
+- `grep '847' activation/SKILL.md` → 0 hits ✅
+- step 18 pattern confirmed at line 582 ✅
+
+**Re-audit of affected surfaces:** docs-only fix round; no code surfaces affected. §5.6b change is prose-only reconciliation with declared-authoritative source (OQ #35). §14 and §23 changes are template/checklist corrections with no downstream impact.
+
 **Status:** `review-ready`
 
 All 6 ACs met. 37 OQ decisions recorded. Pre-review gate rows 1–14 all pass (row 10 explicitly declared: docs-only cycle, no CI on cycle branch). Diff contains 11 files: 1 new skill, 3 cross-reference edits, 6 cnos marker files, 1 cross-repo README. All enumerated in §CDD-Trace step 6.
