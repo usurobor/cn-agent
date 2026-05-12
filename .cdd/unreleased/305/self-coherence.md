@@ -31,3 +31,46 @@
 - `cnos.core/skills/write` — documentation standards
 
 **Active constraint:** All loaded skills constrain generation. Shell script must follow `eng/tool` standards (set -euo pipefail, prereq checks, NO_COLOR support). Tests must prove invariants per `eng/test` (positive/negative fixtures, oracle-driven). Documentation follows `write` standards (one governing question per file, front-load the point).
+
+## ACs
+
+**AC1: `--cycle` mode added to `cn cdd-verify`**
+- **Invariant:** `cn cdd-verify --version X.Y.Z --cycle N` validates `.cdd/releases/{X.Y.Z}/{N}/` against current artifact layout  
+- **Oracle:** `cn cdd-verify --version 3.61.0 --cycle 283` exits 0 for real completed cycle
+- **Evidence:** Command accepts `--cycle` parameter, validates cycle directory path, produces pass/fail diagnostics
+- **Status:** ⏳ Pending implementation
+
+**AC2: Artifact set completeness is checked**  
+- **Invariant:** Every cycle directory must contain 5 hard-gate artifacts
+- **Oracle:** Command lists present/missing artifacts with diagnostic naming missing file
+- **Evidence:** Validates presence of `self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`
+- **Status:** ⏳ Pending implementation
+
+**AC3: Required sections within artifacts are checked**
+- **Invariant:** Each hard-gate artifact has required sections per role SKILL.md
+- **Oracle:** Command names artifact and missing section 
+- **Evidence:** Section validation logic per CDD role specifications
+- **Status:** ⏳ Pending implementation
+
+**AC4: CHANGELOG row validation**
+- **Invariant:** Released cycle has CHANGELOG row for its version
+- **Oracle:** Command checks CHANGELOG.md for row matching version
+- **Evidence:** CHANGELOG parsing and version lookup
+- **Status:** ⏳ Pending implementation
+
+**AC5: Orphan detection**
+- **Invariant:** `.cdd/unreleased/{N}/` should be empty on main after all cycles released
+- **Oracle:** Command warns on any directories in `.cdd/unreleased/`
+- **Evidence:** Directory enumeration with warning output
+- **Status:** ⏳ Pending implementation
+
+**AC6: Negative fixtures exist**
+- **Invariant:** Fixture set includes invalid example per hard-gate check
+- **Oracle:** Running invalid fixtures produces non-zero exit and names violation
+- **Evidence:** Extended test suite with `--cycle` mode test cases
+- **Status:** ⏳ Pending implementation
+
+**AC7: Documentation updated**
+- **Invariant:** Command help and comments document `--cycle` mode vs `--triadic` legacy
+- **Evidence:** Help output and header comments updated
+- **Status:** ⏳ Pending implementation
