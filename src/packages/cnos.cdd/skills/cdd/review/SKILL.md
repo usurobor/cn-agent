@@ -84,6 +84,7 @@ Return to this file for verdict rules and output format.
   - A — polish
 
 3.3. **All findings must be resolved before merge**
+  - **APPROVED is a conjunction:** `APPROVED` means (a) all issue ACs are met **and** (b) zero findings at any severity remain unresolved. A verdict with unresolved C, B, or A findings is internally contradictory — the Severity table declares all of C/B/A "not merge-ready until fixed." APPROVED+unresolved-finding is not a valid verdict form.
   - There is no "approved with follow-up."
   - D findings block merge. C/B/A findings must be fixed on-branch before merge.
   - Only exception: finding requires a design decision outside issue scope → "deferred by design scope," author files issue before merge.
