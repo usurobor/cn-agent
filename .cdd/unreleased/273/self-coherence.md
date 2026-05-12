@@ -27,3 +27,26 @@ The gap blocks process-integrity (P1): routine CDD cycles risk losing doctrine c
 
 **Tier 3:**
 - `src/packages/cnos.core/skills/skill/SKILL.md` (skill-program coherence for new eng/ship surface)
+
+## ACs
+
+**AC1:** New skill or new section at `src/packages/cnos.eng/skills/eng/ship/SKILL.md` names the rebase-collision integrity failure class  
+✅ **Evidence:** Added "## Rebase-Collision Integrity" section to existing `ship/SKILL.md` defining the problem, solution (pre-push hook), detection method (upstream-added/modified file comparison), false-positive policy (intentional deletion bypass), and references to γ #268 evidence.
+
+**AC2:** Pre-push hook script at canonical path implements the check shape from γ #268  
+✅ **Evidence:** Created executable script at `src/packages/cnos.eng/hooks/pre-push` implementing upstream content loss detection. Script compares `--diff-filter=A` (upstream-added) and `--diff-filter=M` (upstream-modified) files since `merge-base(HEAD, origin/main)`, blocks on `LOST-NEW` or `LOST-MOD` patterns.
+
+**AC3:** Hook installation pattern named  
+✅ **Evidence:** Created `src/packages/cnos.eng/scripts/install-hooks.sh` installer script. Documented in `ship/SKILL.md` with automated setup command `./src/packages/cnos.eng/scripts/install-hooks.sh` and manual alternative `git config core.hooksPath src/packages/cnos.eng/hooks/`. Bypass documented as `ALLOW_CONTENT_LOSS=1 git push`.
+
+**AC4:** `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` references eng/ship rule at merge boundary  
+✅ **Evidence:** Added one-liner in release/SKILL.md §2.6 before push step: "Before any push that follows a rebase, run the eng/ship rebase-integrity gate (see `eng/ship` § Rebase-Collision Integrity)".
+
+**AC5:** `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md §2.6` references eng/ship rule at γ's push boundary  
+✅ **Evidence:** Added one-liner in gamma/SKILL.md §2.6 after "Move cycle directories" step: "Before any push that follows a rebase, run the eng/ship rebase-integrity gate (see `eng/ship` § Rebase-Collision Integrity)".
+
+**AC6:** Test fixture demonstrates three cases  
+✅ **Evidence:** Created `src/packages/cnos.eng/hooks/test-pre-push-rebase-integrity.sh` with test cases: (a) clean rebase passes (exit 0), (b) upstream-added file loss fails with `LOST-NEW: <path>` (exit non-zero), (c) bypass with `ALLOW_CONTENT_LOSS=1` (exit 0). Fixture builds throwaway repos and asserts hook output/exit codes.
+
+**AC7:** Regression baseline — CFA and CTB §8.5.2 content remain present  
+✅ **Evidence:** Verified `docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md` exists and CTB vision §8.5.2 exists in `docs/alpha/ctb/CTB-v4.0.0-VISION.md` line 354. Both silently-lost-then-restored files remain on main after this issue ships.
