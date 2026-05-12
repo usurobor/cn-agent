@@ -127,7 +127,7 @@ The operator's wake-up signals are:
 
 Between these signals, the operator's correct action is nothing.
 
-- ❌ Check the branch every 30 minutes and suggest changes
+- ❌ Check the branch every 30 minutes and suggest changes (role leak into β)
 - ❌ Heartbeat reveals cycle state (tag missing, branches exist) → δ acts on it (observation is not a gate request)
 - ✅ Wait for γ to surface a gate or decision request
 - ✅ Heartbeat reveals cycle state → δ notes it, waits for γ
@@ -465,3 +465,194 @@ Decide whether to override and, if so, execute the protocol.
 
 - Did you route through γ, or did you talk directly to α? (Should route through γ unless γ is unavailable.)
 - Did you declare the override explicitly, or did you quietly adjust scope?
+
+---
+
+## 10. Wave Coordination
+
+**Multi-cycle coordination primitive for sequences of related issues.**
+
+When δ runs a wave (sequence of related cycles), the artifacts, coordination protocol, and dispatch templates below ensure wave state is durable, auditable, and git-committed — not ephemeral like `/tmp` files.
+
+### 10.1. δ Wave Dispatch Template
+
+**Wave dispatch prompt template for δ-as-agent.** Parallel to α/β templates in `gamma/SKILL.md` §2.5. Takes wave manifest as input, produces γ prompts per issue.
+
+```markdown
+# δ Wave Dispatch — {wave-name}
+
+You are δ (operator) for CDD wave coordination.
+
+## Load Order (mandatory)
+
+1. Read `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` — canonical δ algorithm
+2. Read wave manifest at `.cdd/waves/{wave-id}/manifest.md` — issue order, dependencies, permissions
+3. Read wave status at `.cdd/waves/{wave-id}/status.md` — current per-issue state
+
+## Context
+
+- **Wave:** {wave-name}
+- **Wave ID:** {wave-id} 
+- **Repo:** {repo-path}
+- **Issues in scope:** {issue-list}
+
+## Algorithm
+
+1. **Initialize wave directory** — create `.cdd/waves/{wave-id}/` if it doesn't exist
+2. **Update wave status** — write current state to `status.md` (queued → in-progress for next issue)  
+3. **Select next issue** — per manifest order and dependency constraints
+4. **Dispatch γ** — create issue-specific γ prompt using manifest permissions and timeouts
+5. **Monitor cycle** — poll `origin/cycle/{N}` and `.cdd/unreleased/{N}/` for completion
+6. **Update wave status** — mark cycle completed/failed, update rounds, notes
+7. **Repeat or close** — continue with next issue or close wave when complete
+
+## Wave permissions from manifest
+
+- Push to cycle branches: {push-cycles}
+- Push merges to main: {push-main}  
+- Auto-dispatch α fix rounds: {auto-fix} (max {fix-max})
+- Tag/release: {tag-release}
+- Branch delete after merge: {branch-delete}
+
+## Standing instructions
+
+- Update `.cdd/waves/{wave-id}/status.md` after each cycle completion
+- Emit wave status table on operator request  
+- Close wave when all issues completed/deferred per manifest
+- Write `.cdd/waves/{wave-id}/wave-closeout.md` at wave end
+
+Signal completion when wave is closed or blocked.
+```
+
+### 10.2. Wave Manifest Format
+
+**Canonical wave manifest** — `.cdd/waves/{wave-id}/manifest.md`.
+
+Contains issue list, execution order, dependency constraints, standing permissions, timeout budgets.
+
+```markdown
+# Wave: {wave-title}
+
+**Date:** {YYYY-MM-DD}
+**Dispatcher:** {δ-identity}  
+**Repo:** {repo-path}
+
+## Issues (run in order)
+
+| Order | # | Title | ACs | Type | Dependencies |
+|-------|---|-------|-----|------|--------------|
+| 1 | {N1} | {title1} | {ac-count1} | {type1} | — |
+| 2 | {N2} | {title2} | {ac-count2} | {type2} | #{N1} |
+| 3 | {N3} | {title3} | {ac-count3} | {type3} | #{N1}, #{N2} |
+
+## Standing permissions
+
+- Push to cycle branches: {yes|no}
+- Push merges to main: {yes|no}
+- Auto-dispatch α fix rounds on REQUEST CHANGES: {yes|no} (max {N})
+- Tag/release: {yes|no} — write to status.md only
+- Branch delete after merge: {yes|no}
+
+## Timeout budgets
+
+- γ: {N}s ({configuration-note})
+- α: {N}s  
+- β: {N}s
+
+## Dependencies
+
+{per-issue dependency description}
+```
+
+### 10.3. Wave Status Format
+
+**Wave status tracking** — `.cdd/waves/{wave-id}/status.md`.
+
+Per-issue status table updated by δ after each cycle closes.
+
+```markdown
+# Wave Status: {wave-title}
+
+**Last updated:** {timestamp} by δ
+
+| # | Issue | Status | Rounds | Branch | Tag | Notes |
+|---|-------|--------|--------|--------|-----|-------|
+| {N1} | {title1} | {status1} | {rounds1} | {branch-state1} | {tag-state1} | {notes1} |
+| {N2} | {title2} | {status2} | {rounds2} | {branch-state2} | {tag-state2} | {notes2} |
+
+## Status values
+
+- `⬜ queued` — not started
+- `🔄 in-progress` — γ/α/β active
+- `✅ completed` — merged to main
+- `❌ failed` — cycle abandoned
+- `⏸️ blocked` — waiting on dependency
+- `⭕ deferred` — explicitly moved out of wave
+```
+
+### 10.4. Wave Closure Protocol
+
+**Wave completion conditions and closure procedure.**
+
+Wave is closed when:
+1. **All issues completed** or explicitly deferred
+2. **Status.md final** — all entries show terminal state (completed/failed/deferred)  
+3. **Wave-closeout.md written** with aggregate stats and findings
+
+**Closure algorithm:**
+1. **Verify completion** — every manifest issue has terminal status  
+2. **Write wave-closeout.md** — wave summary, aggregate metrics, cross-wave findings
+3. **Finalize status.md** — add wave closure timestamp, mark final
+4. **Signal closure** — wave coordination complete, artifacts durable
+
+### 10.5. δ Wave Reporting Format  
+
+**Wave status table emitted by δ.** Parallel to γ's TLDR (§2.11) but wave-scoped.
+
+| # | Issue | Status | Rounds | Notes |
+|---|-------|--------|--------|-------|
+| {N} | {title} | {status} | {round-count} | {notes} |
+
+**Status icons:**
+- `⬜ queued` — not started  
+- `🔄 in-progress` — cycle active
+- `✅ completed` — merged, tagged
+- `❌ failed` — cycle abandoned
+- `⏸️ blocked` — dependency wait
+- `⭕ deferred` — moved out of wave
+
+**Emit frequency:**
+- After each cycle completion  
+- On operator request
+- At wave closure
+
+### 10.6. Iteration Artifact Lifecycle
+
+**Three-stage lifecycle for wave iteration findings.**
+
+Wave iteration files (like `.cdd/iterations/wave-2026-05-12.md`) track cross-cycle findings and their dispositions through wave execution and into release.
+
+**Stage 1: Per-issue close**
+- Wave iteration file's disposition column updated with issue numbers or commit SHAs
+- Each finding gets: `filed #{N}`, `patched {SHA}`, `deferred`, or `no-action`
+- Updated as each wave issue closes
+
+**Stage 2: Wave close**  
+- Wave iteration file moves to `.cdd/waves/{wave-id}/iteration.md`
+- Dispositions finalized, no further updates
+- Wave-closeout.md cross-references iteration.md
+- Iteration.md becomes part of durable wave record
+
+**Stage 3: Release boundary**
+- Findings that produced MCAs (Major Change Approvals) get cross-referenced in release PRA
+- PRA links back to specific iteration.md findings that drove release changes
+- Creates audit trail from wave findings → MCAs → release notes
+
+**File movement example:**
+```
+.cdd/iterations/wave-2026-05-12.md  
+  ↓ (wave closes)
+.cdd/waves/hardening-2026-05-12/iteration.md
+  ↓ (release time) 
+.cdd/releases/3.60.0/post-release-assessment.md (references iteration findings)
+```
