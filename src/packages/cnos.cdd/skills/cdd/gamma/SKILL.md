@@ -383,6 +383,8 @@ In the sequential dispatch model, β exits after merge. δ runs `scripts/release
 
 2. **Move cycle directories** — per `release/SKILL.md` §2.5a. Move `.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/` for every cycle closed in this release. Include in a commit on main before the tag.
 
+**Before any push that follows a rebase, run the eng/ship rebase-integrity gate** (see `eng/ship` § Rebase-Collision Integrity).
+
 Both must be committed before γ requests the disconnect release from δ (§2.10 step 15 → operator/SKILL.md §3.4).
 
 - ❌ Leave RELEASE.md for δ to write (δ does not author)

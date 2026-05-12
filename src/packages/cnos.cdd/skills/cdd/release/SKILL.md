@@ -216,6 +216,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 2.6. **Commit and signal readiness for δ tag**
   - **Tag naming convention:** use bare version numbers without `v` prefix: `3.15.1`, not `v3.15.1`. This matches VERSION file content, branch naming (`claude/3.15.0-22-...`), and snapshot directory names (`docs/gamma/cdd/3.15.0/`). Consistency across all version surfaces.
   - Commit: `git commit -m "release: X.Y.Z — summary"` (includes VERSION, manifests, CHANGELOG, RELEASE.md)
+  - **Before any push that follows a rebase, run the eng/ship rebase-integrity gate** (see `eng/ship` § Rebase-Collision Integrity)
   - Push: `git push origin main`
   - **β signals "release ready for δ tag"** in `beta-closeout.md` — β does not execute `git tag` or push tags; δ creates the single tag `X.Y.Z` as part of the disconnect release flow (CDD.md Phase 6 step 17).
   - ❌ β pushes tag directly (conflicts with δ tag authority)

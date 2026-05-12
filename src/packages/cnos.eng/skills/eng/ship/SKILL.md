@@ -152,6 +152,58 @@ When deprecating infrastructure (cron jobs, skills, commands, protocols):
 
 From RCA `2026-02-20-pi-peer-sync-disabled`: Pi's `peer-sync-check` was disabled without replacement. Inbound mail broken for 11 days. No alert.
 
+## Rebase-Collision Integrity
+
+**Prevent silent loss of upstream content during integration.**
+
+Rebase operations can silently drop upstream-only content from `main`, leading to manual restoration post-hoc. This failure class was confirmed in γ #268 with two documented instances: COHERENCE-FOR-AGENTS.md and CTB vision §8.5.2.
+
+### The Problem
+
+When a branch rebases onto `main` during integration:
+- Upstream commits may have added new files or content
+- The rebase operation can silently exclude this upstream-only content
+- No existing skill or CI mechanism detects this loss
+- Detection depends on manual post-merge content review
+
+### The Solution: Pre-push Hook
+
+Use a pre-push git hook to catch upstream content loss before it reaches the remote.
+
+**Hook scope:** Fires only when HEAD has been rebased since the last push. Routine fast-forward pushes pass instantly.
+
+**Detection method:** Compare upstream-added files (`--diff-filter=A`) and upstream-modified content since `merge-base(HEAD, origin/main)`. Block on:
+- `LOST-NEW` — upstream-added files missing after rebase
+- `LOST-MOD` — upstream content removed from modified files
+
+**False-positive policy:** Any apparent upstream-content loss blocks the push. Author must either:
+- (a) Prove the deletion was intentional (cite commit/issue authorizing removal) and bypass with `--allow-content-loss` flag
+- (b) Fix the rebase (re-rebase with `--strategy=ort -X theirs`, or switch to `--no-ff` merge)
+
+### Hook Installation
+
+Use the project installer script for automated setup:
+
+```bash
+./src/packages/cnos.eng/scripts/install-hooks.sh
+```
+
+This configures `git config core.hooksPath src/packages/cnos.eng/hooks/` and verifies hook executability.
+
+**Manual installation:** 
+```bash
+git config core.hooksPath src/packages/cnos.eng/hooks/
+```
+
+**Bypass when needed:** 
+```bash
+ALLOW_CONTENT_LOSS=1 git push
+```
+
+### Evidence
+
+From γ #268 close-out analysis and β #268 finding #5 ("Local clone and origin/main were divergent at session start").
+
 ## Principle
 
 **Don't assume features work — test them.** Before shipping, verify the feature actually works. Before using a new feature, verify it's implemented. Assumptions cause stale state, silent failures, and RCAs.
