@@ -272,6 +272,17 @@ No new modules or functions added (docs-only cycle); caller-path trace not appli
 
 **Re-audit of affected surfaces:** docs-only fix round; no code surfaces affected. §5.6b change is prose-only reconciliation with declared-authoritative source (OQ #35). §14 and §23 changes are template/checklist corrections with no downstream impact.
 
+---
+
+## Review-readiness | round 2 | base SHA: 9783a469dc95914bbd47f2abfdb4562c91df7c7c | head SHA: a27224e5 (fix-round) | branch CI: docs-only cycle, no CI jobs on cycle/344 (explicit declaration per gate row 10) | ready for β
+
+**Status:** `review-ready`
+
+All 3 R1 findings fixed. Pre-review gate re-validated for affected rows:
+- Row 1: base SHA `9783a469` confirmed unchanged (origin/main re-fetched)
+- Row 7: peer enumeration re-run — post-release/SKILL.md §5.6b updated; activation/SKILL.md §14 and §23 updated; no other sibling surfaces affected by these prose corrections
+- Row 10: docs-only cycle, no CI (unchanged from R1 declaration)
+
 **Status:** `review-ready`
 
 All 6 ACs met. 37 OQ decisions recorded. Pre-review gate rows 1–14 all pass (row 10 explicitly declared: docs-only cycle, no CI on cycle branch). Diff contains 11 files: 1 new skill, 3 cross-reference edits, 6 cnos marker files, 1 cross-repo README. All enumerated in §CDD-Trace step 6.
