@@ -290,6 +290,8 @@ Three structural consequences follow:
 
 1. **δ=γ collapse.** γ/δ separation is structurally absent: one parent session holds both the selection/scaffolding function (γ) and the external gate authority (δ). The cycle proceeds, but the grading floor in §3.8 of `release/SKILL.md` applies — see §3.8 configuration-floor clause.
 
+For the general principle governing when role collapses are safe, see `ROLES.md §4` (hats-vs-actors: independence as the collapse constraint).
+
 2. **sub-agent return messages are summaries, not full transcripts.** The Agent tool returns a summary message from the sub-agent, not a full conversation transcript. δ-as-γ verifies committed artifacts — specifically `beta-review.md` for β's verdict and `self-coherence.md` for α's review-readiness signal — rather than relying on the sub-agent's return message. This is the protocol invariant that makes §5.2 valid despite the summary-not-transcript limitation: the artifact β commits is canonical; the return message is informational only.
 
 3. **Harness push restrictions surface as branch-name churn under fix-rounds.** Some Claude Code harness environments block updates to existing remote branches (403 on push to a previously-written branch). Under this constraint, a fresh-branch chain (`cycle/{N}` → `cycle/{N}-impl` → `cycle/{N}-impl-r2` → `cycle/{N}-impl-r3` → `cycle/{N}-merged` → `cycle/{N}-final`) is an acceptable workaround. Each link in the chain is a valid cycle branch for that fix-round; the final fast-forward into `main` becomes an external operator action.

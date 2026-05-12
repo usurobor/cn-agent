@@ -156,7 +156,25 @@ splitting a collapsed role into two.
 
 ---
 
-## §4 cdd as the reference instantiation
+## §4 Hats vs actors: roles as behavioral contracts
+
+Roles are behavioral contracts (hats), not entity slots (actors). Any agent can wear multiple hats across cycles. The constraint is which hats cannot be worn simultaneously *within a single cycle* — and the reason is always structural.
+
+**Independence, not headcount.** The constraint that α≠β is not ceremonial separation or bureaucratic headcount. The constraint is independence: review that is not independent of implementation is not review. When β and α are the same actor, β cannot observe α's matter from outside α's frame — the essential property that makes review add information rather than repeat α's internal validation.
+
+**Actor collapse rules are derivable.** Each protocol's collapse rules follow from asking: "which independence guarantees does this collapse destroy?" If the answer is "none that matter for this cycle's risk profile," the collapse is safe.
+
+**Worked examples:**
+
+- **δ=γ collapse (safe).** When the operator *is* the coordinator, collapsing γ onto δ removes a communication hop without removing a judgment gate. δ already holds external boundary authority; adding coordination authority does not compromise the independence of α↔β review. The operator-as-coordinator sees both α and β sides (γ's function) and executes release gates (δ's function) — but does not duplicate α's implementation work or β's review judgment.
+
+- **α=β collapse (never safe).** Collapsing β onto α destroys review independence entirely. α reviewing α's own matter is order-0 observation masquerading as order-1. No cycle complexity or risk profile makes this collapse structural sound — the mechanism by which review adds information is eliminated.
+
+- **ε=δ collapse (safe in small-protocol regimes).** When protocol-iteration volume is low, collapsing ε onto δ does not compromise any independence boundary. δ operates the cycle sequence; ε observes whether the protocol governing those cycles is coherent. The same actor can hold both functions when the ε workload (typically finding-triggered) does not justify separate specialization.
+
+The pattern applies regardless of whether actors are humans, agents, or sessions. The structural property is the independence of observation, not the nature of the observer.
+
+## §5 cdd as the reference instantiation
 
 Coherence-Driven Development (cdd) is the first instantiation of this pattern
 and the reference implementation. It applies the role ladder to software
@@ -178,7 +196,7 @@ read `CDD.md` directly; readers wanting only the generic pattern stay here.
 
 ---
 
-## §5 cdw as the planned sibling
+## §6 cdw as the planned sibling
 
 cdw (coherence-driven writing) is the planned sibling protocol. It applies the
 same role ladder to editorial prose work. cdw will be specified in a separate
@@ -200,7 +218,7 @@ begin cdw work on the basis of this stub.
 
 ---
 
-## §6 Naming convention for new c-d-X protocols
+## §7 Naming convention for new c-d-X protocols
 
 New protocols follow the pattern `c-d-{letter}` where the letter names the
 matter type:
@@ -229,7 +247,7 @@ identities per `operator/SKILL.md`: `alpha@{project}.cdd.cnos` for cdd work,
 
 ---
 
-## §7 Role-name stability
+## §8 Role-name stability
 
 The role names α, β, γ, δ, ε are fixed across all c-d-X instantiations. The
 verbs — produces, reviews, coordinates, operates, iterates — are fixed. Only
@@ -260,7 +278,7 @@ measure the delta.
 
 ---
 
-## §8 Glossary
+## §9 Glossary
 
 **role** — A structural position in the scope-escalation ladder, identified by
 a Greek letter (α through ε). A role is defined by what it observes (its
