@@ -97,6 +97,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 2.4. **CHANGELOG**
   - Add a ledger row matching the format defined in `CHANGELOG.md` § Release Coherence Ledger. That format is canonical — do not reinvent the row shape here.
   - The ledger row includes: Version, C_Σ, α, β, γ, Level, Rounds, and a coherence note. The **Rounds** column records the review-round count for the release's cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`). This is a learning-curve indicator — a rising trend signals process drift, a falling trend signals accumulated context.
+  - **Provisional vs. final scoring rule:** β writes the CHANGELOG TSC row at release commit with `provisional, pending γ PRA` in the level cell (or in a parenthetical next to the level). γ updates the cell to the final value in the same commit as the PRA. This ensures one writer per fact while preserving the release-time ledger entry.
   - Add a detailed section below the ledger: Added / Changed / Fixed, with each commit's impact named and linked to issues.
   - ❌ "Various improvements" (no detail)
   - ❌ Ledger row without engineering level (Level column is required)
@@ -212,15 +213,15 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
   γ declares `docs-only` in the issue mode header (per `issue/SKILL.md` §Mode declaration); the disconnect path is selected at issue-creation time, not retrofitted at merge.
 
-2.6. **Tag and push**
+2.6. **Commit and signal readiness for δ tag**
   - **Tag naming convention:** use bare version numbers without `v` prefix: `3.15.1`, not `v3.15.1`. This matches VERSION file content, branch naming (`claude/3.15.0-22-...`), and snapshot directory names (`docs/gamma/cdd/3.15.0/`). Consistency across all version surfaces.
   - Commit: `git commit -m "release: X.Y.Z — summary"` (includes VERSION, manifests, CHANGELOG, RELEASE.md)
-  - Tag: `git tag X.Y.Z` (lightweight tag, bare version)
-  - Push: `git push origin main && git push origin X.Y.Z`
-  - ❌ Push commit without tag (release CI doesn't trigger)
+  - Push: `git push origin main`
+  - **β signals "release ready for δ tag"** in `beta-closeout.md` — β does not execute `git tag` or push tags; δ creates the single tag `X.Y.Z` as part of the disconnect release flow (CDD.md Phase 6 step 17).
+  - ❌ β pushes tag directly (conflicts with δ tag authority)
   - ❌ Mix `v` prefix and bare versions across tags (`v3.14.6` then `3.14.7`)
-  - ❌ Tag without RELEASE.md (CI auto-generates sparse notes)
-  - ✅ Commit (with RELEASE.md), tag (bare), push in sequence; verify release CI starts
+  - ❌ Commit without RELEASE.md (CI auto-generates sparse notes)
+  - ✅ Commit (with RELEASE.md), push, signal readiness in close-out; δ handles tagging
 
 2.6a. **Delete merged branches**
   - After push, delete remote branches that were merged into this release
