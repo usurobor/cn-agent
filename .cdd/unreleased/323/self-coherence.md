@@ -40,3 +40,21 @@
 **AC3:** Implementation should maintain existing functionality for current surfaces
 - **Evidence:** No existing lines changed in `scanThreads()`, only added `"threads/inbox"` to the list. Preserved existing candidates: `threads/in`, `threads/mail`, `threads/archived`
 - **Status:** ✓ MET
+
+## Self-check
+
+**Did α's work push ambiguity onto β?**
+No. The implementation is a straightforward addition to an existing list. The change is:
+- Localized to one function (`scanThreads`)
+- Self-contained (no ripple effects)
+- Follows existing pattern (same structure as other thread paths)
+
+**Is every claim backed by evidence in the diff?**
+Yes:
+- `src/go/internal/activate/activate.go:232` — added `"threads/inbox"` to candidates slice
+- `src/go/internal/activate/activate_test.go:70` — added `"threads/inbox"` to test fixture
+
+**Implementation follows loaded skills:**
+- **eng/go**: Small package change, no new interfaces, pure addition to existing slice
+- **eng/ux-cli**: Maintains existing output format, adds info where appropriate
+- **eng/test**: Updated test fixture to include new path for coverage
