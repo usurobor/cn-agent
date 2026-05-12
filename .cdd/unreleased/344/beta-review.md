@@ -114,3 +114,66 @@ Note: epsilon/SKILL.md §1 also still says "empty cycles produce no file" — th
 - **Claims.md not present:** The dispatch requires no claims.md for Cycle A (docs-only, no code). The §14 prescription is prospective (for future cycles). β notes F2 as an improvement to the template, not a missing artifact.
 - **§24 verification:** β ran the verification independently; all 9 checks pass.
 - **OQ-Decisions:** 37 entries confirmed; all decisions recorded with rationale where deviating from recommendation.
+
+---
+
+# Beta Review — Round 2
+
+**Verdict:** APPROVED
+
+**Round:** 2
+**Fixed this round:** `ca34cd1b` (F1), `54b1d3a2` (F2 + F3), `ebd2e63f` (bonus: ROLES.md lychee link) closes F1, F2, F3
+**Branch CI state:** docs-only cycle; no CI jobs on `cycle/344` (unchanged from R1 declaration; explicit per pre-review gate row 10)
+**Review-diff base:** `origin/main` @ `9783a469dc95914bbd47f2abfdb4562c91df7c7c` (re-fetched synchronously before this pass; unchanged from R1)
+**Review-diff head:** `origin/cycle/344` @ `ebd2e63fa6d81fc022e206df44c46eee5b0b1d20`
+**β identity verified:** `git config user.email` → `beta@cdd.cnos` ✅
+
+---
+
+## §2.0.0 Contract Integrity (R2 — narrowed to affected surfaces)
+
+R2 scope is restricted to the three fixed surfaces (post-release/SKILL.md §5.6b, activation/SKILL.md §14 and §23 step 18) plus the bonus ROLES.md link fix in CDD.md. All R1 rows that returned `yes` or `n/a` are unchanged.
+
+| Check | Result | Notes |
+|---|---|---|
+| Cross-surface projections updated | yes | post-release/SKILL.md §5.6b now reads "every cycle produces `cdd-iteration.md`; an empty findings list is itself signal" — consistent with activation §22 and OQ #35 decision; "Empty cycles produce no file" removed ✅ |
+| Canonical sources/paths verified | yes | ROLES.md link in CDD.md changed from `/ROLES.md` (root-relative, lychee-incompatible) to `../../../../ROLES.md` (relative, resolves correctly from CDD.md location) ✅ |
+
+---
+
+## §2.0 Issue Contract (R2 — narrowed)
+
+### AC Coverage (R2)
+
+| # | AC | Fix verified | Notes |
+|---|----|-------------|-------|
+| A.AC1 | activation/SKILL.md line count correct | `grep "847" activation/SKILL.md` → 0 hits ✅; §14 now reads `wc -l activation/SKILL.md → 623` ✅ | F2 closed |
+| A.AC5 | §23 step 18 has governing section ref | line 582: `**Populate \`.cdd/iterations/INDEX.md\`** (§3)` — `(§3)` anchor present ✅ | F3 closed |
+| A.AC6 | post-release/SKILL.md §5.6b coherent | `grep "Empty cycles produce no file" post-release/SKILL.md` → 0 hits ✅; replacement text is activation §22-consistent ✅ | F1 closed |
+
+### Named Doc Updates (R2 — fixed surfaces only)
+
+| Doc / File | Fix | Status |
+|------------|-----|--------|
+| `src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` | "Empty cycles produce no file" removed; both paragraphs now point to activation §22 cadence declaration | PASS |
+| `src/packages/cnos.cdd/skills/cdd/activation/SKILL.md §14` | `wc -l → 847` → `wc -l → 623` in table and claims.md structure block | PASS |
+| `src/packages/cnos.cdd/skills/cdd/activation/SKILL.md §23 step 18` | `(§3)` reference added | PASS |
+| `src/packages/cnos.cdd/skills/cdd/CDD.md` | ROLES.md link changed from `/ROLES.md` to `../../../../ROLES.md` | PASS |
+
+---
+
+## Findings (R2)
+
+| # | Finding | Evidence | Severity | Type |
+|---|---------|----------|----------|------|
+| — | No new findings | All R1 findings resolved; no regressions introduced by fix commits | — | — |
+
+## Pre-merge Gate (R2)
+
+| # | Row | Result |
+|---|-----|--------|
+| 1 | Identity truth | `git config user.email` → `beta@cdd.cnos` ✅ (re-asserted from `alpha@cdd.cnos` at session start) |
+| 2 | Canonical-skill freshness | `git fetch --verbose origin main` → up to date; `origin/main` @ `9783a469` — unchanged from R1 base SHA ✅ |
+| 3 | Non-destructive merge-test | `git worktree add /tmp/cnos-merge-344/wt origin/main && git merge --no-ff --no-commit origin/cycle/344` → zero unmerged paths, exit 0; worktree torn down ✅ |
+
+**Merge instruction:** `git merge --no-ff cycle/344` into `main` with `Closes #344`
