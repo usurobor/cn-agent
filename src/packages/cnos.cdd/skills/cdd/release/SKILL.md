@@ -233,6 +233,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 2.7. **Wait for release CI**
   - Release workflow builds binaries (linux-x64, macos-x64, macos-arm64)
   - Wait for completion before deploying
+  - **δ owns release CI polling** per `operator/SKILL.md` §3.4 step 4 — after tag push, δ monitors release workflow completion via `gh run list --branch <tag>`. β waits for δ confirmation.
   - ❌ Deploy while CI still running (stale binary from previous release)
   - ✅ `gh run watch {id} --exit-status` then verify assets attached
 
