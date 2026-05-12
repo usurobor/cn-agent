@@ -77,10 +77,30 @@ The α/β/γ/δ/ε role system is generic — a scope-escalation ladder where ea
 - §5 ≤200 words ✓
 - No `cdw/` directory created in this cycle ✓
 
-## CDD Trace
-
-<!-- α populates during implementation -->
-
 ## Known Debt
 
-<!-- α populates during implementation -->
+**AC5 — cdd-iteration.md for this cycle must open with `(ε)` attribution when
+γ writes it at close-out. No α action required during implementation.**
+
+This is γ's close-out obligation. α names it here so γ sees it: the
+patch-landing cycle's `cdd-iteration.md` (if written) should open with `(ε)`
+attribution to demonstrate that the rename is operable (AC5 oracle:
+`rg '^ε' .cdd/releases/.../cdd-iteration.md` → ≥1 hit). γ decides whether
+triage produces `cdd-*-gap` findings that warrant the file; if so, `(ε)`
+attribution applies.
+
+No other known debt. This is a docs-only cycle with no code changes; no test,
+schema, or harness surfaces changed; no peer enumeration gap; no intra-doc
+repetition issue found.
+
+## CDD Trace
+
+| Step | Description | Evidence |
+|------|-------------|----------|
+| 1 Receive | Dispatch received; branch `cycle/345` checked out; issue #345 read | `git switch cycle/345` ✓ |
+| 2 Git identity | `alpha@cdd.cnos` configured | `git log -1 --format='%ae'` = `alpha@cdd.cnos` ✓ |
+| 3 Skill load | Tier 1: CDD.md v3.15.0, alpha/SKILL.md; Tier 2: none (docs-only); Tier 3: write/SKILL.md, skill/SKILL.md | Loaded before implementation ✓ |
+| 4 Design | Not required — design in issue body per dispatch mode `design-and-build` | Noted ✓ |
+| 5 Plan | Not required — docs-only, four independent files, no sequencing ambiguity | Noted ✓ |
+| 6 Artifacts | `ROLES.md` (new, 319L); `CDD.md` pointer (6 lines added); `epsilon/SKILL.md` (new, 64L); `post-release/SKILL.md` Step 5.6b (1 line amended) | Commits afe31e17, 9abc6fec, b2d11a98, 817d75f9 |
+| 7 Self-coherence | This file, written section by section with incremental commits | §Gap, §Skills, §ACs, §Known Debt, §CDD-Trace present ✓ |
