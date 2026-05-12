@@ -24,3 +24,33 @@
 - src/packages/cnos.core/skills/write/SKILL.md — loaded per dispatch prompt, applied as generation constraint for docs-only prose authoring
 
 **Active constraints:** All sections in §11a authored under write/SKILL.md constraints (front-load the point, one paragraph one move, cut throat-clearing, brevity earned not chopped). Sample message shapes use transport-agnostic variable syntax per AC3 requirement.
+
+## §ACs
+
+**AC1: §11a subsection authored** ✅ **MET**
+- *Invariant:* Every subsection present; each ≥3 sentences except §11a.4 which is sample message blocks — PASS
+- *Oracle:* `rg '^### §11a'` returns 4 hits — VERIFIED (§11a.1, §11a.2, §11a.3, §11a.4)
+- *Positive:* Subsection prose is operative; new tenant can follow §11a end-to-end — VERIFIED
+- *Negative:* No TODO/tbd markers; no fake-but-plausible tokens — VERIFIED
+- *Surface:* src/packages/cnos.cdd/skills/cdd/activation/SKILL.md lines 277-356
+
+**AC2: .cdd/OPERATORS gains Notification-access column** ✅ **MET**  
+- *Invariant:* One new column named `Notification-access`; value is invite link, transport-agnostic URI, or literal `none` — PASS
+- *Oracle:* §19 worked-example table shows row with new column populated — VERIFIED (lines 528-532)
+- *Positive:* Column header explains value space — VERIFIED (line 546: "Channel invite link, transport-agnostic URI, or literal `none`")
+- *Negative:* No row has column missing — PASS (all sample rows populated)
+- *Surface:* src/packages/cnos.cdd/skills/cdd/activation/SKILL.md §19 table format + column description
+
+**AC3: Sample message shapes concrete enough to wire against** ✅ **MET**
+- *Invariant:* Each block names every variable interpolation explicitly — PASS
+- *Oracle:* `rg '\\{[a-z_]+\\}'` returns ≥10 hits inside §11a.4 — VERIFIED (18 hits counted: {cycle_number}, {issue_title}, {branch}, {operator_handle}, {verdict}, {round_number}, {finding_count}, {severity_breakdown}, {top_finding_summary}, {fix_round_number}, {original_cycle}, {alpha_handle}, {fix_commit_sha}, {merge_commit_sha}, {total_rounds}, {tsc_grade} plus 2 more)
+- *Positive:* Reference adapters can implement verbatim — PASS (transport-agnostic variable syntax)
+- *Negative:* No Telegram-specific markup; shapes are transport-agnostic — VERIFIED
+- *Surface:* src/packages/cnos.cdd/skills/cdd/activation/SKILL.md §11a.4 lines 333-356
+
+**AC4: Two-way out-of-scope-v1 explicitly stated** ✅ **MET**
+- *Invariant:* Paragraph names ≥3 technical pre-conditions for two-way — VERIFIED (running service, webhook handlers, auth model)
+- *Oracle:* `rg 'two-way'` returns ≥1 hit in §11a — VERIFIED (1 hit in closing paragraph)
+- *Positive:* Paragraph is ≤120 words — VERIFIED (108 words counted)
+- *Negative:* No implicit suggestion two-way is on immediate roadmap — VERIFIED
+- *Surface:* src/packages/cnos.cdd/skills/cdd/activation/SKILL.md §11a final paragraph
