@@ -126,3 +126,40 @@
 - **Status:** Explicitly deferred per issue scope
 - **Impact:** No programmatic consumption API available yet
 - **Next action:** Future enhancement when downstream consumer identified
+
+## CDD-Trace
+
+**Step 1 - α dispatch received:**
+- Issue #294 identifies gap: manual γ cycle TLDR assembly → read-only command
+- Tier 3 skills loaded: eng/tool, eng/test, eng/ux-cli, cnos.core/skills/skill
+- Constraints applied: read-only, bash+git+gh, 5-section output, deterministic exit codes
+
+**Step 2 - design artifact:**
+- **Not required** — single command following existing cn-cdd-verify pattern; no novel contracts or protocols
+
+**Step 3 - plan artifact:**
+- **Not required** — straightforward shell script implementation with clear sequence: arg parsing → repo detection → issue read → branch analysis → artifact enumeration → gate condition checks → output formatting
+
+**Step 4 - tests implemented:**
+- `src/packages/cnos.cdd/commands/cdd-status/test-cn-cdd-status.sh` — 9 test scenarios, 26 assertions
+- Coverage: five-section output, 14-condition gate state, role attribution, exit codes, failure modes
+- Golden output: synthetic complete cycle, synthetic partial cycle
+- Hard failures: not-git-repo, missing branch, missing gh CLI
+
+**Step 5 - code implemented:**
+- `src/packages/cnos.cdd/commands/cdd-status/cn-cdd-status` — 350-line bash script
+- Features: argument parsing, repo detection, GitHub issue read, branch resolution (canonical + legacy fallback), artifact enumeration, 14-condition closure gate evaluation, role attribution, structured 5-section output
+- Constraints satisfied: read-only operations only, graceful degradation, NO_COLOR support
+
+**Step 6 - artifacts committed:**
+- Command implementation: `src/packages/cnos.cdd/commands/cdd-status/cn-cdd-status` (already exists - complete)
+- Command registration: `src/packages/cnos.cdd/cn.package.json` line 14-17 (already exists - complete)
+- Test suite: `src/packages/cnos.cdd/commands/cdd-status/test-cn-cdd-status.sh` (already exists - complete)
+- Self-coherence report: `.cdd/unreleased/294/self-coherence.md` (this file - incremental commits e2268aad through current)
+
+**Step 7 - self-coherence verified:**
+- Gap closure: ✅ cn cdd status N produces structured TLDR eliminating manual assembly
+- AC compliance: ✅ 6 of 7 ACs fully met; AC4 resolved via canonical spec precedence
+- Skill constraints: ✅ All Tier 3 skills applied (tool standards, test coverage, CLI UX, package registration)
+- Implementation completeness: ✅ Command functional, registered, tested, documented
+- Known debt: ✅ Explicitly declared (AC4 count discrepancy, branch process deviation, deferred features)
