@@ -276,7 +276,7 @@ done
 
 Each transition line becomes a `task-notification` that wakes the session. Run under `Monitor`; emit only on transition. **All cycle-dir artifacts live on `origin/cycle/{N}` — not on `main`** (per `CDD.md` §Tracking). Polling `origin/main` for `.cdd/unreleased/{N}/` is silent for in-flight cycles; γ dereferences the cycle directory on the named branch via `git ls-tree -r origin/cycle/{N} .cdd/unreleased/{N}/` when a transition fires.
 
-Then produce both prompts and return them to δ. δ dispatches each role sequentially — one `claude -p` at a time. γ does not execute dispatch directly; γ produces the prompts and δ routes them.
+Then produce both prompts and return them to δ. δ dispatches each role sequentially using the `cn dispatch` identity-rotation primitive — one role invocation at a time. γ does not execute dispatch directly; γ produces the prompts and δ routes them via the dispatch command.
 
 **γ prompt (δ dispatches γ first):**
 ```text
@@ -307,10 +307,12 @@ Branch: cycle/<N>
 **Dispatch flow:**
 ```text
 δ dispatches γ  → γ reads issue, creates branch, produces α/β prompts, returns to δ
-δ dispatches α  → α implements on cycle/{N}
-δ dispatches β  → β reviews, merges to main
+δ dispatches α  → cn dispatch --role α --branch cycle/{N} → α implements
+δ dispatches β  → cn dispatch --role β --branch cycle/{N} → β reviews, merges to main
 δ holds gates   → push, tag, release, branch cleanup
 ```
+
+**Identity-rotation primitive:** `cn dispatch --role α|β --branch cycle/N` provides cognitive isolation via fresh Claude CLI sessions while preserving branch/artifact continuity. Default backend is Claude CLI (`claude -p`) with stream-json observability. Stub and print backends available for testing and prompt inspection.
 
 Rules:
 - point both roles at the issue, not a paraphrase of the issue
