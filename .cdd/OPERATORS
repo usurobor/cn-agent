@@ -1,0 +1,7 @@
+# CDD Operator Registry — cnos
+# Columns: handle | identity-email | role-scopes-permitted | added-cycle
+# See activation/SKILL.md §19 for column definitions and CI enforcement rules.
+#
+alpha    | alpha@cdd.cnos    | alpha               | 0
+beta     | beta@cdd.cnos     | beta                | 0
+gamma    | gamma@cdd.cnos    | gamma               | 0

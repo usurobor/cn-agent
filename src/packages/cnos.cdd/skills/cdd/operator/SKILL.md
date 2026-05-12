@@ -35,6 +35,10 @@ calls:
 
 δ is not a fourth triad role — δ is not scored on coherence axes. δ owns what agents cannot: external platform actions, session routing, and override authority. The failure mode is **invisible meddling** — the operator adjusts implementation, review, or coordination reasoning without declaring an override, and the triad's coherence record no longer matches what actually happened.
 
+> **First-time operator?** Before running the algorithm below, ensure the repository has been activated under CDD.
+> See [`cdd/activation/SKILL.md`](../activation/SKILL.md) for the one-time bootstrap: `.cdd/` scaffold, version
+> pin, identity convention setup, and the §24 verification command that confirms activation is complete.
+
 ## Algorithm
 
 1. **Dispatch γ** — run γ via `claude -p`; γ reads the issue, creates the cycle branch, and produces α/β prompts.

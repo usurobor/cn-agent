@@ -1,0 +1,4 @@
+rolling-docs
+# cnos uses date-anchored docs-only releases for cdd cycles.
+# Cycles do not receive semantic version tags; releases are identified by cycle number and date.
+# The cnos engine itself is versioned (e.g. 3.74.0) but cdd-skill cycles are rolling-docs cadence.

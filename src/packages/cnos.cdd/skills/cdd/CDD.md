@@ -2,7 +2,7 @@
 
 > cdd is the reference instantiation of the generic role-scope ladder pattern.
 > The pattern (α/β/γ/δ/ε roles, scope-escalation contract, instantiation
-> fields) is documented at [`ROLES.md`](/ROLES.md) at the repo root. cdd does
+> fields) is documented at [`ROLES.md`](../../../../ROLES.md) at the repo root. cdd does
 > not claim to have originated the role structure; it implements it for software
 > development.
 
@@ -32,6 +32,10 @@ A release is therefore not just a bundle of outputs. It is a measured coherence 
 > A change is good not merely when it is implemented, but when it reduces incoherence across the system as a whole.
 
 CDD is a triadic coherence method at development scale.
+
+> **New tenant?** See [`cdd/activation/SKILL.md`](activation/SKILL.md) for the one-time bootstrap sequence
+> that scaffolds the `.cdd/` directory, pins the skill version, configures CI, and verifies activation.
+> Activation is the prescribed entry point before running a first cycle.
 
 ## Invocation model
 

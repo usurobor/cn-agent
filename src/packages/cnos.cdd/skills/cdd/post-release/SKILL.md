@@ -289,9 +289,11 @@ If no `CDD.md` §9.1 trigger fired, write either:
 
 ### Step 5.6b: Author `cdd-iteration.md` (when applicable)
 
+> Activation findings from `cdd/activation/SKILL.md §22` flow into this step. See [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) for the per-repo cadence declaration, severity scale (D/C/B/A + `info`), and auto-spawn MCA trigger rule.
+
 When the close-out triage in `gamma-closeout.md` produces ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`, γ authors `.cdd/unreleased/{N}/cdd-iteration.md` — ε's work product (`ROLES.md §1`; `cdd/epsilon/SKILL.md §1`) — extracting only those findings into a structured form. This is the canonical home for cdd-self-improvement findings; PRA §3 prose remains as narrative, but the structured record lives here.
 
-**Empty cycles produce no file.** If triage produces zero `cdd-*-gap` findings, no `cdd-iteration.md` is written — signal stays high.
+See [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) for the cadence declaration: every cycle produces `cdd-iteration.md`; an empty findings list is itself signal.
 
 **Per-finding shape:**
 
@@ -335,7 +337,7 @@ For docs-only releases, the path uses the §2.5b form: `.cdd/releases/docs/{ISO-
 
 The cross-repo directory persists until the target PR merges; γ may delete it thereafter (the lineage is preserved in the target repo's own `cdd-iteration.md`).
 
-**Why this artifact exists.** Without `cdd-iteration.md`, cdd-self-improvement findings are buried in PRA §3 prose. They cannot be aggregated, the protocol cannot measure its own learning rate, and cross-repo work loses traceability. Making the artifact first-class closes cdd's self-iteration loop with the same discipline cdd applies to system-level cycles. Empty cycles produce no file — the cost is paid only when it carries signal.
+**Why this artifact exists.** Without `cdd-iteration.md`, cdd-self-improvement findings are buried in PRA §3 prose. They cannot be aggregated, the protocol cannot measure its own learning rate, and cross-repo work loses traceability. Making the artifact first-class closes cdd's self-iteration loop with the same discipline cdd applies to system-level cycles. Every cycle produces the file — an empty findings list is itself signal that the cycle ran cleanly.
 
 ### Step 5.7: Production verification
 
