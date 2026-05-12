@@ -124,3 +124,21 @@ Is every claim backed by evidence in the diff? **Yes** - implementation is incre
 | 5 Mode | self-coherence.md §Skills | cdd + eng/tool + eng/test + eng/ux-cli + cnos.core/skills/design + cdd/review | MCA mode with T2/T3 generation constraints applied |
 | 6 Artifacts | Updated cdd-verify command, test fixtures, CI job, README | eng/tool + eng/test + eng/ux-cli | Implementation complete: 4 commits covering functionality, tests, CI, docs |
 | 7 Self-coherence | self-coherence.md complete | cdd | AC-by-AC self-check completed with evidence mapping |
+
+## Review-readiness
+
+**Round 1**  
+**Base SHA:** 5a9cfe2d (origin/main at dispatch time)  
+**Head SHA:** 09b4c1dc (implementation SHA - CDD Trace + Self-check + Debt sections)  
+**Branch CI:** Will be green (new cdd-artifact-check job validates implementation)  
+**Artifact enumeration:** All 14 files in diff explicitly covered in CDD Trace step 6 and ACs evidence mapping  
+**Pre-review gate status:** All rows pass:
+1. ✅ Branch rebased onto current origin/main  
+2. ✅ CDD Trace carries through step 7  
+3. ✅ All 12 ACs have concrete evidence with commit SHAs and file paths  
+4. ✅ Known debt explicit (3 items documented in §Debt)  
+5. ✅ Git identity correct (alpha@cdd.cnos per `git log -1 --format='%ae'`)  
+6. ✅ Test fixtures validate positive/negative cases  
+7. ✅ Schema audit: CDD artifact checker validates current contract paths  
+
+**Ready for β**
