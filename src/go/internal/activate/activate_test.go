@@ -68,6 +68,7 @@ func makeMinimalHub(t *testing.T, name string) string {
 		"spec",
 		"state",
 		"threads/in",
+		"threads/inbox",
 		"threads/mail",
 		"threads/reflections/daily",
 		"threads/reflections/weekly",

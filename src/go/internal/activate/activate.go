@@ -230,6 +230,7 @@ func scanMemory(hubPath string) []string {
 func scanThreads(hubPath string) []string {
 	candidates := []string{
 		"threads/in",
+		"threads/inbox",
 		"threads/mail",
 		"threads/archived",
 	}
