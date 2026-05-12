@@ -148,3 +148,28 @@ grep confirms the 4 event names in `notify.sh` match exactly.
   no tokens
 
 **Known-debt push:** None pushed onto β.
+
+---
+
+## §Debt
+
+1. **cdd-notify.yml heuristics are approximate.** The `beta-verdict` and `cycle-rc` job
+   triggers use `contains(join(...))` to detect modified files — this is a best-effort
+   heuristic; GitHub Actions does not expose per-commit file diff in a structured list
+   for all push cases. In practice, tenants may need to adjust this if their workflow
+   structure differs. This is acceptable for a reference implementation (B.AC3 targets
+   copy-paste starting point, not production-hardened CI).
+
+2. **notify.sh uses python3 for JSON encoding.** The script uses
+   `python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'` to escape the
+   message for JSON. This requires python3 on the runner (available by default on
+   ubuntu-latest). If a tenant needs a pure-bash implementation, they would need to
+   replace this with a different escaping approach.
+
+3. **No automated test of notify.sh against a live Telegram endpoint.** Testing
+   requires real secrets; the templates are reference implementations meant to be
+   validated by the tenant when they configure their secrets (Step 5 in README.md).
+   This is inherent to the template-distribution model.
+
+4. **alpha-closeout.md provisional** — written at review-readiness per `alpha/SKILL.md §2.8`
+   bounded-dispatch fallback; marked `[provisional — pending β outcome]`.
