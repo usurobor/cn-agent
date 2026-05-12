@@ -76,16 +76,53 @@ Cycle mode (--cycle <N>) validates current artifact layout:
   - Required sections within each artifact (per role SKILL.md)
   - Warns on orphaned .cdd/unreleased/<N>/ directories
 
+Repository-wide modes:
+  --all: validates both .cdd/unreleased/ and .cdd/releases/ directories
+    - Scans all issue directories for artifact completeness
+    - Classifies cycles as triadic or small-change
+    - Validates required artifacts per cycle type
+    - Reports summary across all found cycles
+
+  --unreleased: validates only .cdd/unreleased/ directories
+    - Useful for checking active/unmerged cycles
+    - Same classification and validation as --all mode
+    - Faster than --all when only checking current work
+
 Triadic (legacy) checks:
   - .cdd/releases/<X.Y.Z>/alpha/CLOSE-OUT.md
   - .cdd/releases/<X.Y.Z>/beta/CLOSE-OUT.md
   - .cdd/releases/<X.Y.Z>/gamma/CLOSE-OUT.md
   - .cdd/releases/<X.Y.Z>/gamma/KATA-VERDICT.md (warn-only)
 
+Examples:
+  # Check current repo CDD artifact ledger (most common)
+  cn cdd-verify --all
+
+  # Check only active unreleased cycles
+  cn cdd-verify --unreleased
+
+  # Check specific release with cycle details
+  cn cdd-verify --version 3.74.0 --cycle 286
+
+  # Use exception file for known historical gaps
+  cn cdd-verify --all --exceptions .cdd/exceptions.yml
+
+What is validated:
+  - Artifact presence per CDD.md §5.3a Artifact Location Matrix
+  - Basic required sections in each artifact (Gap, Skills, ACs, CDD Trace)
+  - Cycle type classification (triadic vs small-change)
+  - Exception-backed missing artifacts (warns instead of fails)
+
+What is NOT validated:
+  - Semantic truth of artifact contents
+  - Cross-artifact consistency (e.g., ACs match between issue and self-coherence)
+  - Release note freshness (unless implemented separately)
+
 Warnings (not failures):
   - v-prefixed tag exists (legacy)
   - legacy PRA at .cdd/releases/<X.Y.Z>/beta/{POST-RELEASE-ASSESSMENT,ASSESSMENT}.md
   - PR-comment close-out only (canonical close-out missing)
+  - Missing artifacts that are exception-backed
 EOF
   exit 1
 }
