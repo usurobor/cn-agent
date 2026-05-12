@@ -65,3 +65,13 @@ Yes, with two pending file edits:
 - ✅ **Section renumbering** — diff shows all subsequent ROLES.md sections renumbered (§4→§5, §5→§6, etc.)
 
 The two pending cross-references are implementation artifacts, not design ambiguity. The implementation work is clear and bounded.
+
+## §Debt
+
+**Known debt:**
+
+1. **File permission workflow** — encountered permission errors when editing ROLES.md and epsilon/SKILL.md during α implementation. The edits are designed and the content is clear, but the file write operations require permission grant. This is a workflow issue, not a design gap. (Resolution: complete file edits once permissions granted)
+
+2. **Cross-reference implementation** — ACs 4 and 5 are pending file edits to add cross-references from operator/SKILL.md §5.2 and epsilon/SKILL.md to the new ROLES.md §4. The reference text is specified but not yet written to disk. (Resolution: complete cross-reference edits)
+
+No substantive design or coherence debt. The principle is well-founded and the implementation path is clear.
