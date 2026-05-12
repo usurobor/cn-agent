@@ -56,3 +56,25 @@
 **Process observations**: This addresses the meta-problem that prevents CDD self-improvement when agents bypass γ/ε surfaces. The structural approach (impossible at merge time) is more robust than advisory approaches (discouraged at dispatch time) which fail under time pressure.
 
 **Implementation note**: The γ artifact check complements existing CI-green gate (rule 3.10) with protocol-compliance gate (rule 3.11b). Both are binding D-level blockers.
+
+## §CDD-Trace
+
+**Step 1 — Issue selection**: Issue #355 selected by wave dispatcher δ for CDD enforcement wave.
+
+**Step 2 — Gap identification**: Protocol bypass possible — agents can skip γ coordination without structural prevention.
+
+**Step 3 — Active skills loaded**: 
+- Tier 1: CDD.md + alpha/SKILL.md
+- Tier 2: eng/ bundle  
+- Tier 3: review/SKILL.md + beta/SKILL.md (primary targets)
+
+**Step 4 — Design (not required)**: Adding enforcement gates to existing review protocol, no separate design artifact needed.
+
+**Step 5 — Plan (not required)**: Straightforward addition of γ artifact verification to existing β gates.
+
+**Step 6 — Implementation artifacts**:
+- `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` — added rule 3.11b γ artifact completeness gate
+- `src/packages/cnos.cdd/skills/cdd/beta/SKILL.md` — added row 4 to pre-merge gate for artifact verification
+- `.cdd/unreleased/355/self-coherence.md` — this self-coherence report
+
+**Step 7 — Self-coherence**: AC1-3 met with structural enforcement, AC4 appropriately deferred, no remaining debt for this scope.
