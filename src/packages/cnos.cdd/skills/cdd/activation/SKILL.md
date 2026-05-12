@@ -339,7 +339,7 @@ Every cycle produces a `claims.md` at `releases/{version}/{N}/claims.md` (or `re
 
 | Category | What it covers | Example claim |
 |---|---|---|
-| Reproducibility | Measurements quoted in cycle artifacts are reproducible from committed artifacts | `wc -l activation/SKILL.md → 847` (run from repo root at HEAD) |
+| Reproducibility | Measurements quoted in cycle artifacts are reproducible from committed artifacts | `wc -l activation/SKILL.md → 623` (run from repo root at HEAD) |
 | Source-of-truth alignment | Terms used in docs trace to their canonical definitions | `§7 identity form matches operator/SKILL.md §"Git identity" table` |
 | Wiring | Integration points (CI hooks, secrets, adapters) connect as described | `CDD_TELEGRAM_BOT_TOKEN secret present → notifier posts on cycle-open event` |
 
@@ -353,7 +353,7 @@ The manifest is authored by α as part of the cycle close-out artifact set and r
 # Honest-Claim Manifest — Cycle #N
 
 ## Reproducibility claims
-- Claim: `wc -l activation/SKILL.md → 847`
+- Claim: `wc -l activation/SKILL.md → 623`
   Verification: `wc -l src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` at HEAD
 
 ## Source-of-truth alignment claims
@@ -579,7 +579,7 @@ Run these steps in order on a new repo. Each step references the governing secti
 
 17. **Configure close-out SLA override if needed** (§20). If the default 24h SLA is unsuitable, add `close-out-sla: {duration}` to `.cdd/CADENCE`. Verify: `cat .cdd/CADENCE` reflects the override, or confirm 24h default is accepted.
 
-18. **Populate `.cdd/iterations/INDEX.md`** — create if not already present during scaffold. This file indexes cdd-iteration findings across cycles. Verify: `cat .cdd/iterations/INDEX.md` is present (may be empty initially).
+18. **Populate `.cdd/iterations/INDEX.md`** (§3) — create if not already present during scaffold. This file indexes cdd-iteration findings across cycles. Verify: `cat .cdd/iterations/INDEX.md` is present (may be empty initially).
 
 19. **Commit all activation artifacts to `main`** in a single activation commit. Verify: `git log --oneline -1` shows the activation commit; `git diff main~1..main --stat` lists all seven activation marker files.
 
