@@ -38,39 +38,54 @@
 - **Invariant:** `cn cdd-verify --version X.Y.Z --cycle N` validates `.cdd/releases/{X.Y.Z}/{N}/` against current artifact layout  
 - **Oracle:** `cn cdd-verify --version 3.61.0 --cycle 283` exits 0 for real completed cycle
 - **Evidence:** Command accepts `--cycle` parameter, validates cycle directory path, produces pass/fail diagnostics
-- **Status:** ⏳ Pending implementation
+- **Status:** ✅ Complete
 
 **AC2: Artifact set completeness is checked**  
 - **Invariant:** Every cycle directory must contain 5 hard-gate artifacts
 - **Oracle:** Command lists present/missing artifacts with diagnostic naming missing file
 - **Evidence:** Validates presence of `self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`
-- **Status:** ⏳ Pending implementation
+- **Status:** ✅ Complete
 
 **AC3: Required sections within artifacts are checked**
 - **Invariant:** Each hard-gate artifact has required sections per role SKILL.md
 - **Oracle:** Command names artifact and missing section 
 - **Evidence:** Section validation logic per CDD role specifications
-- **Status:** ⏳ Pending implementation
+- **Status:** ✅ Complete
 
 **AC4: CHANGELOG row validation**
 - **Invariant:** Released cycle has CHANGELOG row for its version
 - **Oracle:** Command checks CHANGELOG.md for row matching version
 - **Evidence:** CHANGELOG parsing and version lookup
-- **Status:** ⏳ Pending implementation
+- **Status:** ✅ Complete
 
 **AC5: Orphan detection**
 - **Invariant:** `.cdd/unreleased/{N}/` should be empty on main after all cycles released
 - **Oracle:** Command warns on any directories in `.cdd/unreleased/`
 - **Evidence:** Directory enumeration with warning output
-- **Status:** ⏳ Pending implementation
+- **Status:** ✅ Complete
 
 **AC6: Negative fixtures exist**
 - **Invariant:** Fixture set includes invalid example per hard-gate check
 - **Oracle:** Running invalid fixtures produces non-zero exit and names violation
 - **Evidence:** Extended test suite with `--cycle` mode test cases
-- **Status:** ⏳ Pending implementation
+- **Status:** ✅ Complete
 
 **AC7: Documentation updated**
 - **Invariant:** Command help and comments document `--cycle` mode vs `--triadic` legacy
 - **Evidence:** Help output and header comments updated
-- **Status:** ⏳ Pending implementation
+- **Status:** ✅ Complete
+
+## Self-check
+
+**Did α's work push ambiguity onto β?** No. The implementation provides clear validation with specific error messages, comprehensive test coverage, and follows established shell script patterns. β can verify functionality through the test suite.
+
+**Is every claim backed by evidence in the diff?**
+- ✅ **AC1:** `--cycle` parameter added, validates cycle directory, see `cn-cdd-verify` lines 31, 73, 84-86
+- ✅ **AC2:** Hard-gate artifact validation, see `cn-cdd-verify` lines 283-302  
+- ✅ **AC3:** Section validation implemented, see `validate_artifact_sections` function
+- ✅ **AC4:** CHANGELOG validation already exists in original code
+- ✅ **AC5:** Orphan detection implemented, see lines 320-331
+- ✅ **AC6:** Extended test suite with 4 new test cases, see `test-cn-cdd-verify.sh` lines 117-206
+- ✅ **AC7:** Documentation updated in usage function and header comments
+
+**Role boundaries clean?** Yes. α implemented the feature completely without requiring β to discover missing work. No authoring work deferred to review phase.
