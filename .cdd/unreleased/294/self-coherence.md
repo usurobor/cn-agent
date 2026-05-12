@@ -28,3 +28,47 @@
 - `src/packages/cnos.core/skills/skill/SKILL.md` — package manifest discipline for command registry (discoverable via `cn` registry per existing convention)
 
 **Constraints applied:** Read-only constraint (no commits/pushes/API writes), bash + git + gh CLI only, NO_COLOR support, 5-section structured output, deterministic exit codes, role attribution via git log --format=%an.
+
+## ACs
+
+**AC1: `cn cdd status N` command exists and is registered**
+- ✅ **Evidence:** Command exists at `src/packages/cnos.cdd/commands/cdd-status/cn-cdd-status` (executable)
+- ✅ **Evidence:** Registered in `src/packages/cnos.cdd/cn.package.json` line 14-17 with entrypoint and summary
+- ✅ **Evidence:** `cn cdd status --help` produces usage documentation and exits 1
+- ✅ **Evidence:** Test verified with `src/packages/cnos.cdd/commands/cdd-status/cn-cdd-status 344` (exits 0, prints structured output)
+
+**AC2: Inputs are read read-only from canonical sources**
+- ✅ **Evidence:** Code audit confirms only read-only git operations: `git rev-parse`, `git ls-tree -r --name-only`, `git log --format=%an`
+- ✅ **Evidence:** GitHub API read-only: `gh issue view N --json title,body,state,updatedAt`, `gh api repos/:owner/:repo/commits/SHA/status`
+- ✅ **Evidence:** No write operations in script (grep for commit/push/create/delete confirms zero hits)
+- ✅ **Evidence:** Test demonstrates repo unchanged after run (`git status` identical before/after)
+
+**AC3: Five output sections are always emitted**
+- ✅ **Evidence:** Test output confirms five sections present: "## Issue", "## Branch", "## Artifacts", "## Gate State", "## Next"
+- ✅ **Evidence:** Missing data shows explicit markers "(none found)", "(cannot read - branch not found)", not missing sections
+- ✅ **Evidence:** Verified with cycle 283 (closed), 344 (legacy branch), and synthetic test cases
+
+**AC4: Gate state reports the 10-condition closure list**
+- ⚠ **Evidence:** Implementation shows 14 conditions, not 10 as specified in AC4
+- ⚠ **Canonical reconciliation:** gamma/SKILL.md §2.10 defines 14 numbered conditions (1-14); implementation follows canonical source
+- ✅ **Evidence:** Output shows "Status: N of 14 conditions met" counter as specified pattern
+- ✅ **Evidence:** Each condition shows ✓/✗/⚠ symbols with descriptive text
+
+**AC5: Role attribution is derived from commit author**
+- ✅ **Evidence:** Implementation uses `git log --format='%an' -n 1 "$branch" -- "$file_path"`
+- ✅ **Evidence:** Pattern matching alpha@cdd.*/Alpha* → "(alpha)", beta@cdd.*/Beta* → "(beta)", gamma@cdd.*/Gamma* → "(gamma)", unmatched → "(unknown)"
+- ✅ **Evidence:** Test confirms "self-coherence.md (alpha)", "beta-review.md (beta)" attribution working correctly
+
+**AC6: Hard-failure exit codes only**
+- ✅ **Evidence:** Exit 0 for successful reads including partial state (0 of 14 conditions met)
+- ✅ **Evidence:** Exit 1 only for: not a git repo, invalid cycle number, repo-root override validation failure
+- ✅ **Evidence:** Missing branch/issue/gh CLI handled gracefully with exit 0 + warning messages
+- ✅ **Evidence:** Test suite confirms 26 assertions pass including exit code validation
+
+**AC7: Test fixture covers closed and in-flight cycles**
+- ✅ **Evidence:** `src/packages/cnos.cdd/commands/cdd-status/test-cn-cdd-status.sh` tests 9 scenarios
+- ✅ **Evidence:** Closed cycle simulation (complete artifacts + RELEASE.md)
+- ✅ **Evidence:** In-flight cycle simulation (partial artifacts)
+- ✅ **Evidence:** Hard failure cases (not-git-repo, missing branch, missing gh)
+- ✅ **Evidence:** Legacy branch detection, five-section output, role attribution, help output
+- ✅ **Evidence:** All 26 assertions pass
