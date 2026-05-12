@@ -25,3 +25,20 @@
 
 **Tier 3 (issue-specific):**
 - `cnos.core/skills/write/SKILL.md` — coherent writing surface for docs modification
+
+## §ACs
+
+**AC1:** `operator/SKILL.md` §Gate (step 6) amended: after tag push, δ runs `gh run list --branch <tag>` and waits for release workflow completion
+- **Evidence:** TBD - implementation pending
+
+**AC2:** Release CI red → δ reports failure, does not declare release done, triggers investigation
+- **Evidence:** TBD - implementation pending
+
+**AC3:** Release CI green → δ declares release complete
+- **Evidence:** TBD - implementation pending
+
+**AC4:** Cross-reference from `release/SKILL.md` to the new gate step
+- **Evidence:** TBD - implementation pending
+
+**AC5:** Self-applied on the cycle that lands this patch
+- **Evidence:** Will be self-applied by α in this cycle per cycle protocol
