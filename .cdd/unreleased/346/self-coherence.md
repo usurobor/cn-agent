@@ -32,3 +32,33 @@ harmonizes epsilon §1 with activation §22.
 - No other files modified (only `epsilon/SKILL.md` and this artifact) ✓
 
 Alpha signals **review-ready**.
+
+---
+
+## Fix Round (α, 2026-05-12)
+
+**β finding F1 (C):** `gamma/SKILL.md §2.10 row 14` parenthetical instructed operators that empty-findings cycles produce no `cdd-iteration.md` and skip row 14, directly contradicting `epsilon/SKILL.md §1` and `activation/SKILL.md §22` (unconditional every-cycle production).
+
+**Fix commit:** `ec22426f` — `fix(cdd/346): gamma §2.10 row 14 — update parenthetical per epsilon §1 / activation §22`
+
+**File changed:** `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` §2.10 row 14 — parenthetical replaced.
+
+**β re-verify:**
+- `rg 'produce no file and skip this row' src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` → exit 1 (0 hits)
+- `rg 'still write.*cdd-iteration' src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` → ≥1 hit in §2.10 row 14
+- Row 14 closure gate logic (≥1 findings check for INDEX.md) is unchanged; only the parenthetical was updated.
+
+---
+
+## Round-2 Review-Readiness
+
+| Check | Oracle | Expected |
+|---|---|---|
+| R2-1 | `rg 'produce no file and skip this row' src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` | exit 1 (0 hits) |
+| R2-2 | `rg 'still write.*cdd-iteration' src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` | ≥1 hit |
+| R2-3 | epsilon §1 and activation §22 prescribe every-cycle production | unchanged PASS |
+| R2-4 | gamma §2.10 row 14 parenthetical now consistent with epsilon §1 and activation §22 | PASS |
+| R2-5 | Author email: `alpha@cdd.cnos` | ✓ |
+| R2-6 | No unintended files modified (only `gamma/SKILL.md` and this artifact in fix round) | ✓ |
+
+Alpha signals **R2 review-ready**.
