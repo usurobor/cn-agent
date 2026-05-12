@@ -111,3 +111,18 @@ All four surfaces updated consistently with "required workflow" definition patte
 7. **Self-coherence** — All 5 ACs mapped to evidence; no ambiguity pushed to β; all claims backed by diff
 
 ## Review-readiness | round 1 | base SHA: 27b6520c | head SHA: 3b9fe770 | branch CI: no remote CI configured for cycle branches | ready for β
+
+## Fix-round | round 2 | β R1 → RC (1 finding)
+
+**β R1 verdict:** REQUEST CHANGES  
+**Finding addressed:** F1 (B-severity, contract) — CI-green gate logical gap  
+
+**F1 resolution:** Updated `.github/workflows/build.yml` triggers to include `'cycle/*'` branches alongside `main`. 
+- **Commit SHA:** `6f211798`  
+- **Incoherence fixed:** CI-green gate rule 3.10 was structurally void because no workflows executed on cycle branches  
+- **Implementation:** Push triggers now include `branches: [main, 'cycle/*']` per β recommendation Option 1  
+- **Gate now operative:** Cycle branches will have required CI runs for rule 3.10 to verify  
+
+**Re-verification needed:** β should confirm CI runs on this head commit demonstrate the gate is now operative.
+
+## Review-readiness | round 2 | base SHA: a5865e4e | head SHA: 6f211798 | branch CI: triggered on push | ready for β
