@@ -24,6 +24,8 @@
 #   cn cdd-verify --pr <number>                PR-scoped cycle (no release)
 #   cn cdd-verify --version <ver> --triadic    also check legacy .cdd/ close-outs
 #   cn cdd-verify --version <ver> --cycle <N>  check current cycle-scoped artifacts
+#   cn cdd-verify --all                        repository-wide ledger check (unreleased + released)
+#   cn cdd-verify --unreleased                 check only .cdd/unreleased/ directories
 #
 # Optional:
 #   --bundle <path>   override bundle-relative PRA dir (default: docs/gamma/cdd)
@@ -37,6 +39,8 @@ VERSION=""
 PR=""
 CYCLE=""
 TRIADIC=false
+ALL_MODE=false
+UNRELEASED_ONLY=false
 BUNDLE_DIR="docs/gamma/cdd"
 REPO_ROOT_OVERRIDE=""
 
@@ -47,6 +51,8 @@ Usage:
   cn cdd-verify --pr <number>                PR-scoped cycle (no release)
   cn cdd-verify --version <ver> --triadic    include legacy .cdd/ close-out checks
   cn cdd-verify --version <ver> --cycle <N>  check current cycle-scoped artifacts
+  cn cdd-verify --all                        repository-wide ledger check (unreleased + released)
+  cn cdd-verify --unreleased                 check only .cdd/unreleased/ directories
 
 Options:
   --bundle <path>     bundle-relative PRA dir (default: docs/gamma/cdd)
@@ -87,6 +93,8 @@ while [[ $# -gt 0 ]]; do
     --pr) PR="$2"; shift 2 ;;
     --cycle) CYCLE="$2"; shift 2 ;;
     --triadic) TRIADIC=true; shift ;;
+    --all) ALL_MODE=true; shift ;;
+    --unreleased) UNRELEASED_ONLY=true; shift ;;
     --bundle) BUNDLE_DIR="$2"; shift 2 ;;
     --repo-root) REPO_ROOT_OVERRIDE="$2"; shift 2 ;;
     -h|--help) usage ;;
@@ -99,8 +107,19 @@ if [[ -n "$CYCLE" && -z "$VERSION" ]]; then
   usage
 fi
 
-if [[ -z "$VERSION" && -z "$PR" ]]; then
-  echo "Error: must specify --version or --pr" >&2
+# New validation for all/unreleased modes
+if [[ "$ALL_MODE" == true && ( -n "$VERSION" || -n "$PR" || -n "$CYCLE" || "$TRIADIC" == true ) ]]; then
+  echo "Error: --all cannot be combined with other modes" >&2
+  usage
+fi
+
+if [[ "$UNRELEASED_ONLY" == true && ( -n "$VERSION" || -n "$PR" || -n "$CYCLE" || "$TRIADIC" == true ) ]]; then
+  echo "Error: --unreleased cannot be combined with other modes" >&2
+  usage
+fi
+
+if [[ "$ALL_MODE" == false && "$UNRELEASED_ONLY" == false && -z "$VERSION" && -z "$PR" ]]; then
+  echo "Error: must specify --version, --pr, --all, or --unreleased" >&2
   usage
 fi
 
@@ -140,6 +159,126 @@ check() {
     printf " — %s" "$detail"
   fi
   printf "\n"
+}
+
+classify_cycle_type() {
+  local cycle_dir="$1"
+  # Classify cycle as triadic/substantial or small-change based on artifact presence
+  # Returns: "triadic", "small-change", or "unknown"
+
+  local required_triadic=(
+    "self-coherence.md"
+    "beta-review.md"
+    "alpha-closeout.md"
+    "beta-closeout.md"
+    "gamma-closeout.md"
+  )
+
+  local triadic_count=0
+  for artifact in "${required_triadic[@]}"; do
+    if [[ -f "$cycle_dir/$artifact" ]]; then
+      triadic_count=$((triadic_count + 1))
+    fi
+  done
+
+  # If we have all 5 triadic artifacts, classify as triadic
+  if [[ $triadic_count -eq 5 ]]; then
+    echo "triadic"
+    return
+  fi
+
+  # Check for small-change indicators
+  # Small-change cycles may have only self-coherence.md and alpha-closeout.md
+  # (beta-closeout.md and gamma-closeout.md are "not applicable" per CDD.md §1.2)
+  if [[ -f "$cycle_dir/self-coherence.md" || -f "$cycle_dir/alpha-closeout.md" ]]; then
+    # Further check: if beta-review.md exists, this is likely triadic
+    if [[ -f "$cycle_dir/beta-review.md" ]]; then
+      echo "triadic"  # Has review artifact = triadic
+    else
+      echo "small-change"
+    fi
+  else
+    echo "unknown"
+  fi
+}
+
+check_unreleased_cycle() {
+  local issue_num="$1"
+  local cycle_dir="$REPO_ROOT/.cdd/unreleased/$issue_num"
+
+  if [[ ! -d "$cycle_dir" ]]; then
+    check "Issue #$issue_num directory" fail ".cdd/unreleased/$issue_num not found"
+    return
+  fi
+
+  local cycle_type
+  cycle_type=$(classify_cycle_type "$cycle_dir")
+
+  case "$cycle_type" in
+    "triadic")
+      echo "  Checking triadic cycle #$issue_num"
+      check_triadic_artifacts "$cycle_dir" "$issue_num"
+      ;;
+    "small-change")
+      echo "  Checking small-change cycle #$issue_num"
+      check_small_change_artifacts "$cycle_dir" "$issue_num"
+      ;;
+    "unknown")
+      check "Issue #$issue_num classification" warn "cannot determine cycle type - no recognizable artifacts"
+      ;;
+  esac
+}
+
+check_triadic_artifacts() {
+  local cycle_dir="$1"
+  local issue_num="$2"
+
+  local required_triadic=(
+    "self-coherence.md"
+    "beta-review.md"
+    "alpha-closeout.md"
+    "beta-closeout.md"
+    "gamma-closeout.md"
+  )
+
+  for artifact in "${required_triadic[@]}"; do
+    local artifact_path="$cycle_dir/$artifact"
+    if [[ -f "$artifact_path" ]]; then
+      check "$artifact (issue #$issue_num)" pass
+      validate_artifact_sections "$artifact_path" "$artifact"
+    else
+      check "$artifact (issue #$issue_num)" fail "expected .cdd/unreleased/$issue_num/$artifact"
+    fi
+  done
+}
+
+check_small_change_artifacts() {
+  local cycle_dir="$1"
+  local issue_num="$2"
+
+  # Small-change cycles: self-coherence.md and alpha-closeout.md optional
+  # beta-review.md, beta-closeout.md, gamma-closeout.md not applicable
+
+  if [[ -f "$cycle_dir/self-coherence.md" ]]; then
+    check "self-coherence.md (small-change #$issue_num)" pass
+    validate_artifact_sections "$cycle_dir/self-coherence.md" "self-coherence.md"
+  else
+    check "self-coherence.md (small-change #$issue_num)" warn "optional for small-change cycles"
+  fi
+
+  if [[ -f "$cycle_dir/alpha-closeout.md" ]]; then
+    check "alpha-closeout.md (small-change #$issue_num)" pass
+    validate_artifact_sections "$cycle_dir/alpha-closeout.md" "alpha-closeout.md"
+  else
+    check "alpha-closeout.md (small-change #$issue_num)" warn "optional for small-change cycles"
+  fi
+
+  # These should NOT be present in small-change cycles
+  for artifact in "beta-review.md" "beta-closeout.md" "gamma-closeout.md"; do
+    if [[ -f "$cycle_dir/$artifact" ]]; then
+      check "$artifact (small-change #$issue_num)" warn "unexpected in small-change cycle - may be misclassified"
+    fi
+  done
 }
 
 validate_artifact_sections() {
@@ -371,6 +510,86 @@ if [[ -n "$CYCLE" && -n "$VERSION" ]]; then
     else
       check "No orphaned unreleased directories" pass "no .cdd/unreleased directory"
     fi
+  fi
+fi
+
+# --- Repository-wide ledger checks (--all and --unreleased modes) ---
+
+if [[ "$ALL_MODE" == true || "$UNRELEASED_ONLY" == true ]]; then
+  echo ""
+  echo "## Unreleased cycles (.cdd/unreleased/)"
+
+  if [[ -d "$REPO_ROOT/.cdd/unreleased" ]]; then
+    unreleased_dirs=$(find "$REPO_ROOT/.cdd/unreleased" -mindepth 1 -maxdepth 1 -type d 2>/dev/null || true)
+    if [[ -n "$unreleased_dirs" ]]; then
+      issue_count=0
+      while IFS= read -r dir; do
+        issue_num=$(basename "$dir")
+        if [[ "$issue_num" =~ ^[0-9]+$ ]]; then
+          check_unreleased_cycle "$issue_num"
+          issue_count=$((issue_count + 1))
+        else
+          check "Invalid unreleased directory" warn "non-numeric directory name: $issue_num"
+        fi
+      done <<< "$unreleased_dirs"
+
+      if [[ $issue_count -eq 0 ]]; then
+        check "Unreleased cycles" warn "no valid issue directories found in .cdd/unreleased/"
+      else
+        check "Unreleased cycles scanned" pass "$issue_count issue directories checked"
+      fi
+    else
+      check "Unreleased cycles" pass "no unreleased cycles (.cdd/unreleased/ is empty)"
+    fi
+  else
+    check "Unreleased cycles" pass "no .cdd/unreleased/ directory"
+  fi
+fi
+
+if [[ "$ALL_MODE" == true ]]; then
+  echo ""
+  echo "## Released cycles (.cdd/releases/)"
+
+  if [[ -d "$REPO_ROOT/.cdd/releases" ]]; then
+    # Check all version directories
+    version_dirs=$(find "$REPO_ROOT/.cdd/releases" -mindepth 1 -maxdepth 1 -type d 2>/dev/null || true)
+    if [[ -n "$version_dirs" ]]; then
+      version_count=0
+      total_cycles=0
+      while IFS= read -r version_dir; do
+        version=$(basename "$version_dir")
+        echo "  Checking version $version"
+
+        # Find all cycle directories within this version
+        cycle_dirs=$(find "$version_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null || true)
+        if [[ -n "$cycle_dirs" ]]; then
+          cycle_count=0
+          while IFS= read -r cycle_dir; do
+            issue_num=$(basename "$cycle_dir")
+            if [[ "$issue_num" =~ ^[0-9]+$ ]]; then
+              echo "    Issue #$issue_num"
+              check_triadic_artifacts "$cycle_dir" "$issue_num (v$version)"
+              cycle_count=$((cycle_count + 1))
+              total_cycles=$((total_cycles + 1))
+            else
+              check "Invalid cycle directory" warn "non-numeric directory in $version: $issue_num"
+            fi
+          done <<< "$cycle_dirs"
+
+          check "Version $version cycles" pass "$cycle_count cycles found"
+        else
+          check "Version $version cycles" warn "no cycle directories found"
+        fi
+
+        version_count=$((version_count + 1))
+      done <<< "$version_dirs"
+
+      check "Released versions scanned" pass "$version_count versions, $total_cycles total cycles"
+    else
+      check "Released cycles" pass "no released versions (.cdd/releases/ is empty)"
+    fi
+  else
+    check "Released cycles" pass "no .cdd/releases/ directory"
   fi
 fi
 
