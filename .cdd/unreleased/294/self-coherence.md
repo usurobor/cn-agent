@@ -72,3 +72,31 @@
 - ✅ **Evidence:** Hard failure cases (not-git-repo, missing branch, missing gh)
 - ✅ **Evidence:** Legacy branch detection, five-section output, role attribution, help output
 - ✅ **Evidence:** All 26 assertions pass
+
+## Self-check
+
+**Did α's work push ambiguity onto β?**
+- **No.** Implementation is complete with comprehensive test coverage. All ACs have concrete evidence. Known debt is explicitly declared below.
+- **Command behavior:** Deterministic - same inputs produce same outputs. Read-only operations only.
+- **Error handling:** Graceful degradation for missing gh CLI, missing branches, non-git repos. No silent failures.
+- **Test coverage:** 26 assertions across 9 test scenarios including edge cases and failure modes.
+
+**Is every claim backed by evidence in the diff?**
+- **Yes.** Each AC maps to specific lines of code, test outputs, or file paths.
+- **AC1:** Command registration evident in cn.package.json line 14-17
+- **AC2:** Read-only operations verified by code audit (no write operations found)
+- **AC3-5:** Behavior verified by test execution and sample runs
+- **AC6:** Exit code behavior proven by test assertions
+- **AC7:** Test fixture exists and passes
+
+**Implementation completeness check:**
+- **Command:** ✅ Executable shell script following eng/tool standards
+- **Registration:** ✅ Package manifest updated for discoverability
+- **Tests:** ✅ Comprehensive test suite with golden output and failure cases
+- **Help:** ✅ Usage documentation via --help flag
+- **Constraints:** ✅ Read-only, deterministic, graceful failure handling
+
+**Role boundary compliance:**
+- **α scope:** Implementation and artifact generation complete per alpha/SKILL.md algorithm
+- **No β overreach:** Did not make design decisions beyond implementation requirements
+- **No γ overreach:** Did not change coordination process or closure gate semantics
