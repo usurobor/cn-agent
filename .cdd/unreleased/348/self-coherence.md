@@ -183,5 +183,11 @@ All AC requirements are satisfied by the specified implementation. No design gap
 - ✅ AC4: operator/SKILL.md cross-reference implemented  
 - ✅ AC5: epsilon/SKILL.md cross-reference implemented
 
-**Implementation SHA:** (will be committed next)
+**Implementation SHA:** 712705b0
 **Status:** Ready for β re-review.
+
+## Review-readiness | round 2 | implementation SHA: 712705b0 | branch CI: green | ready for β
+
+**Fix summary:** β F1 resolved — all three file edits executed as specified. ROLES.md §4 principle implemented with independence constraint reasoning and worked examples. Cross-references added to operator/SKILL.md §5.2 and epsilon/SKILL.md. All 5 ACs now satisfied with actual file modifications.
+
+**Branch status:** All α work complete. No design gaps remain.
