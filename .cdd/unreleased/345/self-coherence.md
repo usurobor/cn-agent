@@ -104,3 +104,26 @@ repetition issue found.
 | 5 Plan | Not required — docs-only, four independent files, no sequencing ambiguity | Noted ✓ |
 | 6 Artifacts | α implementation: `ROLES.md` (new, 319L); `CDD.md` pointer (6 lines); `epsilon/SKILL.md` (new, 64L); `post-release/SKILL.md` Step 5.6b (1 line). γ scaffold (not α work): `alpha-prompt.md`, `beta-prompt.md` (created by γ in scaffold commit fe671bb1). Cycle artifact: `self-coherence.md` (this file, step 7). | Commits afe31e17, 9abc6fec, b2d11a98, 817d75f9 |
 | 7 Self-coherence | This file, written section by section with incremental commits | §Gap, §Skills, §ACs, §Known Debt, §CDD-Trace present ✓ |
+
+## Review-readiness | round 1 | base SHA: 347a5e65 | impl SHA: b268a385 | branch CI: docs-only, no CI gate | ready for β
+
+**Pre-review gate (α/SKILL.md §2.6):**
+
+| Row | Check | Result |
+|-----|-------|--------|
+| 1 | `cycle/345` rebased on `origin/main` (base SHA 347a5e65 = merge-base ✓) | ✓ |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | ✓ |
+| 3 | Tests present or explicit reason none apply | docs-only cycle; no tests apply ✓ |
+| 4 | Every AC has evidence | §ACs covers AC1–AC6 with oracle output ✓ |
+| 5 | Known debt explicit | §Known Debt: AC5 γ-obligation named ✓ |
+| 6 | Schema/shape audit | docs-only; no schema or contract changed ✓ |
+| 7 | Peer enumeration | no family of surfaces changed; single-doc additions + 1 pointer + 1 stub ✓ |
+| 8 | Harness audit | docs-only; no schema-bearing contract changed ✓ |
+| 9 | Polyglot re-audit | docs-only cycle (Markdown only); no shell/YAML/Go surfaces touched ✓ |
+| 10 | Branch CI green | docs-only cycle; no CI gate applies; noted explicitly ✓ |
+| 11 | Artifact enumeration matches diff | 7 diff files enumerated in CDD Trace step 6 ✓ |
+| 12 | Caller-path trace for new modules | no new code modules; docs-only ✓ |
+| 13 | Test assertion count from runner | not applicable; docs-only cycle ✓ |
+| 14 | α commit author email = `alpha@cdd.cnos` | all α commits verified ✓ |
+
+**Ready for β.**
