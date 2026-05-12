@@ -41,3 +41,29 @@ date: 2026-05-12
 4. **release/SKILL.md** — add §3.8 grade cap rules for CI violations
 
 Order rationale: review rules establish the pre-merge gate; gamma/post-release establish the post-merge discipline; release establishes grading consequences. All four must be consistent on "required workflow" definition.
+
+## §ACs
+
+**AC1 — β refuses APPROVED on red/pending CI.**
+- *Evidence:* `cnos:src/packages/cnos.cdd/skills/cdd/review/SKILL.md` rule 3.10 replaced with binding CI-green gate
+- *Oracle:* `rg 'CI.*green.*binding|gh run list|ci-status' cnos:src/packages/cnos.cdd/skills/cdd/review/SKILL.md` returns hits in verdict rules
+- *Status:* ✅ MET — rule 3.10 now mandates `gh run list --branch <review-SHA>` check before APPROVED; RC on red/pending CI
+
+**AC2 — γ post-merge CI verification mandatory.**  
+- *Evidence:* `cnos:src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` §2.7 + `cnos:src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md` PRA template
+- *Oracle:* `rg 'Post.*merge.*verification|post.*merge.*CI' cnos:src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md cnos:src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md` returns hits
+- *Status:* ✅ MET — gamma/SKILL.md §2.7 adds mandatory post-merge CI verification before close-out; PRA template carries CI status row
+
+**AC3 — §3.8 grade caps named.**
+- *Evidence:* `cnos:src/packages/cnos.cdd/skills/cdd/release/SKILL.md` §3.8 CI-red cap clause added
+- *Oracle:* `rg 'CI.*red|CI.*verification' cnos:src/packages/cnos.cdd/skills/cdd/release/SKILL.md` returns hit in §3.8 grading section
+- *Status:* ✅ MET — §3.8 CI-red cap clause: red CI = γ axis max C; unverified CI = γ axis max B−
+
+**AC4 — §9.1 trigger amended.**
+- *Evidence:* `cnos:src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md` §4b trigger list updated
+- *Oracle:* `rg 'CI.*red.*merge|post.*merge.*red' cnos:src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md` returns hit in §9.1 list
+- *Status:* ✅ MET — §9.1 trigger list includes "CI red on merge commit (post-merge)"
+
+**AC5 — Self-applied on patch-landing cycle.**
+- *Invariant:* This cycle demonstrates the new discipline in its own β review and γ close-out
+- *Status:* 🔄 PENDING — will be verified when β reviews this branch and γ closes the cycle
