@@ -216,7 +216,12 @@ Package source lives under:
 
 ```
 src/packages/
+├── cnos.cdd/        Coherence-Driven Development (CDD) method and lifecycle skills  
+├── cnos.core/       Core runtime skills and foundational operations
+└── cnos.eng/        Engineering skills for implementation, testing, and toolchain
 ```
+
+Each package contains skills, specifications, and supporting materials for its domain.
 
 cn build assembles those packages into:
 
