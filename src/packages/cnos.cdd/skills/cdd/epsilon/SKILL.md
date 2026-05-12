@@ -69,3 +69,5 @@ is a structural role in the scope-escalation ladder (`ROLES.md §1`), not
 a headcount requirement. The role may collapse onto δ indefinitely in
 small-protocol regimes; the obligation is that ε work happens and is
 attributed, not that it is performed by a distinct person.
+
+See `ROLES.md §4` for the general principle governing role collapse rules.

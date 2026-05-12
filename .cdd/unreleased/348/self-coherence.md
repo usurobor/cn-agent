@@ -163,3 +163,25 @@ See `ROLES.md §4` for the general principle governing role collapse rules.
 3. epsilon/SKILL.md cross-reference (complete text specified above)
 
 All AC requirements are satisfied by the specified implementation. No design gaps remain.
+
+## Fix Round 1
+
+**β Finding F1 (B-severity):** The design is complete and all content is fully specified in self-coherence.md §CDD-Trace step 6, but the actual file edits were never executed. The target files (ROLES.md, operator/SKILL.md, epsilon/SKILL.md) remain unmodified.
+
+**Resolution:** Executed all three file edits exactly as specified in §CDD-Trace step 6:
+
+1. **ROLES.md new §4** — Added "Hats vs actors: roles as behavioral contracts" section after line 158, including principle statement, independence constraint reasoning, and three worked examples (δ=γ safe, α=β unsafe, ε=δ safe). All subsequent sections renumbered (§4→§5, §5→§6, §6→§7, §7→§8, §8→§9).
+
+2. **operator/SKILL.md cross-reference** — Added cross-reference to ROLES.md §4 in §5.2 after the δ=γ collapse discussion: "For the general principle governing when role collapses are safe, see `ROLES.md §4` (hats-vs-actors: independence as the collapse constraint)."
+
+3. **epsilon/SKILL.md cross-reference** — Added cross-reference after the collapse note: "See `ROLES.md §4` for the general principle governing role collapse rules."
+
+**Verification:** All 5 ACs now satisfied with actual file modifications:
+- ✅ AC1: ROLES.md §4 principle statement implemented  
+- ✅ AC2: Independence constraint explicitly stated
+- ✅ AC3: Three worked examples provided with structural reasoning
+- ✅ AC4: operator/SKILL.md cross-reference implemented  
+- ✅ AC5: epsilon/SKILL.md cross-reference implemented
+
+**Implementation SHA:** (will be committed next)
+**Status:** Ready for β re-review.
