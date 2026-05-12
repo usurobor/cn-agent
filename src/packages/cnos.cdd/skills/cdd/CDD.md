@@ -120,7 +120,7 @@ These are operational roles. They are not a claim that every cycle always uses t
 
 | Role | Function | Steps owned | Responsibility | Identity constraint |
 |------|----------|-------------|----------------|---------------------|
-| **γ (Coordinator)** | Orchestrate | 0–2 + 11–13 + cycle-wide | Observe, select, issue creation, **branch creation (`cycle/{N}` from `origin/main`, see §1.4 γ algorithm Phase 1 step 3a)**, dispatch prompts to α and β, unblocking when stuck, cross-agent context, compliance verification, post-release assessment, cycle closure | Must hold full cycle context |
+| **γ (Coordinator)** | Orchestrate | 0–2 + 11–13 + cycle-wide | Observe, select, issue creation, **branch creation (`cycle/{N}` from `origin/main`, see §1.4 γ algorithm Phase 1 step 3a)**, spawn α and β sub-sessions, drive them through the cycle via the artifact channel, surface only consolidated state and named decision-points to the operator, unblocking when stuck, cross-agent context, compliance verification, post-release assessment, cycle closure | Must hold full cycle context |
 | **α (Implementer)** | Produce | 3–7a (uses the branch γ created at step 2) | Check out `cycle/{N}` (never creates), bootstrap, gap, mode, artifacts (tests/code/docs), self-coherence, pre-review readiness, `.cdd/unreleased/{N}/self-coherence.md` review-readiness signal | Must be separate from β |
 | **β (Reviewer + Integrator)** | Judge and integrate | 8–10 | Polls `origin/cycle/{N}` directly (never creates a branch and refuses harness pre-provisioned per-role branches; see `beta/SKILL.md` §1), Review (RC/A decision), merge into main, β close-out | Must be separate from α |
 | **δ (Operator)** | Route and disconnect | gates + 17 | Session routing, external gate execution (tag/release/deploy), post-cycle disconnect release | Owns platform actions agents cannot perform |
@@ -132,6 +132,8 @@ These are operational roles. They are not a claim that every cycle always uses t
 - γ orchestrates the cycle and ensures coherence across handoffs.
 
 The structure is a **dyad plus coordinator**: α and β are two workers that interact through artifacts, isolated from each other. γ coordinates the dyad — sees both sides, does neither.
+
+**Encapsulation rule:** α and β are encapsulated from the operator. γ is the operator's only in-cycle counterparty. α and β do not address the operator directly during a cycle; the artifact channel and γ are their interfaces.
 
 - α cannot see β's review reasoning or conversation state
 - β cannot see α's implementation rationale or conversation state
@@ -150,9 +152,11 @@ When the operator serves as γ (two-agent configuration), δ and γ collapse —
 #### Default flow
 
 ```text
-γ (issue + dispatch) → α (implement + branch + .cdd/unreleased/{N}/self-coherence.md) → β (review) → RC → α (fix) → β (re-review)
-                                                        → A  → β (merge) → α/β close-outs → γ (PRA + triage) → δ (release-boundary preflight) → γ (closure) → δ (tag/release/deploy)
-                       γ (unblocks α or β when stuck)
+δ (operator) → γ (issue + spawn α/β) → α (implement + branch + .cdd/unreleased/{N}/self-coherence.md) → β (review) → RC → α (fix) → β (re-review)
+                                                                              → A  → β (merge) → α/β close-outs → γ (PRA + triage) ← δ (release-boundary preflight) ← γ (closure) ← δ (tag/release/deploy)
+                                     γ (unblocks α or β when stuck)
+                                     ↓ (consolidated state + named decision-points only)
+                                     δ (operator)
 ```
 
 #### Tracking: artifact-driven coordination via `.cdd/unreleased/`
@@ -254,6 +258,8 @@ git fetch --verbose origin cycle/{N} 2>&1 | tee /tmp/cycle-{N}-fetch.log
 
 If the re-probe succeeds (no stderr errors, ref advances or is confirmed unchanged), continue the transition loop. If the re-probe fails, **surface the failure to the operator immediately** — the role cannot autonomously detect cycle progression with a broken transport. Do not silently keep looping. *Derives from #283 β observation #3 / 3.61.0 PRA §4b: β's Monitor polling silently dropped α-branch transitions during round-2 dispatch; suspected `git fetch --quiet` masking auth/network flake.*
 
+**γ-on-transition semantics.** For each polling transition γ chooses one of: (a) act autonomously (artifact channel + spawn-back), (b) pause for operator (decision-point hit), (c) ignore (no-op transition such as γ's own commit). The polling table shape doesn't change.
+
 #### γ algorithm
 
 The compact algorithm is here; `gamma/SKILL.md` expands each phase into executable detail with gates, katas, and selection mechanics. When they diverge on role-local execution detail, the skill governs, provided it does not alter role ownership, lifecycle order, selection rules, dispatch contract, artifact contract, or closure obligations (those remain CDD.md's authority — see `cdd/SKILL.md` Conflict rule).
@@ -271,8 +277,8 @@ The compact algorithm is here; `gamma/SKILL.md` expands each phase into executab
    ```
    Run γ's branch pre-flight (§4.3) before pushing. The branch must exist on `origin` *before* α and β are dispatched — α and β do not create branches and the dispatch prompts name `cycle/{N}` explicitly (§1.4 γ dispatch prompt format). One cycle = one branch = one named target for all polling.
 4. Begin polling the issue and `.cdd/unreleased/{N}/` on `origin/cycle/{N}` immediately — γ must track the full cycle. Run the §Tracking reachability preflight first, then start the transition loop against the single named branch (`git rev-parse origin/cycle/{N}` for head SHA, `git ls-tree -r origin/cycle/{N} .cdd/unreleased/{N}/` for the artifact set). No glob discovery — γ created the branch in step 3a and knows its name.
-5. Write α and β dispatch prompts (see format below). Both prompts include a `Branch: cycle/{N}` line. Both can be dispatched at the same time — β begins polling the issue and `origin/cycle/{N}` and starts intake while α implements.
-6. If α or β is blocked, diagnose and unblock: clarify requirements, resolve ambiguity, provide missing context
+5. Spawn α and β sub-sessions with the dispatch prompts (see format below). Use the harness-provided spawn mechanism (`cn dispatch` or equivalent). Both prompts include a `Branch: cycle/{N}` line. If the spawn mechanism is unavailable, γ surfaces the gap to the operator before proceeding — γ cannot encapsulate α/β without a spawn capability. Both can be spawned at the same time — β begins polling the issue and `origin/cycle/{N}` and starts intake while α implements.
+6. If α or β is blocked, γ unblocks autonomously via artifact-channel writes: `gamma-clarification.md` on the cycle branch, issue body edits, dispatch-prompt amendments to spawned sessions. No operator relay required for normal unblocks.
 
 **Phase 2 — Post-merge support**
 
@@ -358,6 +364,20 @@ Issue: gh issue view <number>
 Parameters: `{project}` is the project name (e.g. `cnos`, `myapp`). Git identity uses `{role}@{project}.cdd.cnos` (e.g. `alpha@tsc.cdd.cnos`; cnos project uses elision `alpha@cdd.cnos` — see `operator/SKILL.md` §Git identity for role actors). `{number}` is the **issue number** for dispatch prompts. The α and β prompts include a `Branch:` line because γ creates `cycle/{N}` from `origin/main` before dispatch (§1.4 γ algorithm Phase 1 step 3a) and α/β `git switch` to it — they do not invent a name and they do not glob to discover it. The γ prompt does not include `Branch:` because γ owns its own session and creates the branch as part of Phase 1.
 
 The prompt names the role, provides parameters, points to the issue, and (for α and β) names the branch. The CDD skill tells each role what to load (§4.4) and what to do (§1.4). γ does not enumerate skills or steps in the prompt — that is the skill's job. If the prompt needs to restate the algorithm, the algorithm is not clear enough — fix the skill.
+
+#### Named operator-decision points
+
+γ pauses for operator and produces a structured report in these cases only:
+
+- **Selection commit** — γ proposes the next MCA from its candidate table
+- **Scope expansion** — γ wants to add ACs mid-cycle
+- **P0 override** — γ believes a fresh issue should preempt the current cycle
+- **β-approved merge confirmation** — high blast radius
+- **Design-call between candidates** — γ cannot resolve from existing artifacts
+- **Conflict-of-interest escalation** — γ believes its own dispatch was structurally wrong
+- **Process-debt commitment** — PRA next-MCA ratification
+
+Outside these, γ acts autonomously. Inside these, γ pauses with a TLDR + options + recommendation.
 
 #### α algorithm
 
@@ -463,6 +483,8 @@ In that case:
 - and any direct-to-main commit still triggers the retro-review rule in §3.7 of the executable skill.
 
 **Operator override:** The operator may reassign any role explicitly. The reassignment must name the target agent and the reason. Implicit role drift (e.g., reviewer starts authoring fixes mid-review) is not permitted — if β requests changes, α executes the fix.
+
+**TLDR-on-demand:** Operator may request a TLDR from γ at any time; γ produces a consolidated state report (issue, branch SHA, last commit per role, open findings, blocked-on-X). Operator does not directly address α or β.
 
 ### 1.6 Coordination model
 
