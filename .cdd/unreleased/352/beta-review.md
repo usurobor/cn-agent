@@ -5,18 +5,20 @@ type: beta-review
 reviewer: beta@cdd.cnos
 date: 2026-05-12
 review_base: a5865e4e8e199513366c84317a66201b85024ca2 (origin/main)
-review_head: 927d2e9bd09bce601d674a6421d0d5ef6d4fe23a (cycle/352)
+review_head: cead63f64b98a2f564c7c87270293e731cd726a7 (cycle/352)
 ---
 
 # β Review — Cycle #352
 
-## Verdict: REQUEST CHANGES
+## Round 1 (R1)
+
+**Verdict:** REQUEST CHANGES
 
 **Round:** R1
 **Verdict:** RC  
 **Blocker:** 1 finding (B-severity), classification `contract`
 
-## §CI Status
+## §CI Status (R1)
 
 **CI check performed:** `gh run list --branch cycle/352 --json status,conclusion,workflowName,headSha`  
 **Result:** `[]` (no CI runs)  
@@ -47,7 +49,7 @@ review_head: 927d2e9bd09bce601d674a6421d0d5ef6d4fe23a (cycle/352)
 
 **Recommendation:** Option 1 (workflow modification) aligns best with the issue intent and provides actual CI verification before merge.
 
-## §Contract Integrity
+## §Contract Integrity (R1)
 
 **Issue ACs:**
 - AC1: ✅ Rule implemented in review/SKILL.md:112-118
@@ -65,7 +67,7 @@ review_head: 927d2e9bd09bce601d674a6421d0d5ef6d4fe23a (cycle/352)
 
 **Mode alignment:** ✅ docs-only, design-and-build matches delivered artifacts
 
-## §Implementation Review  
+## §Implementation Review (R1)
 
 **Structural coherence:** All rule additions follow established patterns and integrate cleanly with existing skill surfaces.
 
@@ -76,10 +78,71 @@ review_head: 927d2e9bd09bce601d674a6421d0d5ef6d4fe23a (cycle/352)
 - ✅ All rule references trace to actual file locations  
 - ✅ CDD Trace step 7 correctly captures artifacts produced
 
-## §Severity Assessment
+## §Severity Assessment (R1)
 
 **F1 severity rationale:** B-severity (significant incoherence, non-blocking to intent but blocking to implementation). The rule additions are structurally correct and achieve the cross-skill coordination specified in the issue. However, the logical gap between rule intent and repository CI configuration creates an operational disconnect that undermines the safety mechanism the cycle is designed to provide.
 
 ---
 
-**Next step:** α addresses F1 per recommended fix options. β R2 follows upon review-readiness signal.
+## Round 2 (R2)
+
+**Verdict:** APPROVED
+
+**Round:** R2  
+**Fixed this round:** commit `6f211798` addresses F1 (CI-green gate logical gap)  
+**Branch CI state:** green  
+**Merge instruction:** `git merge cycle/352` into main with `Closes #352`
+
+## §CI Status (R2)
+
+**CI check performed:** `gh run list --branch cycle/352 --json status,conclusion,workflowName,headSha,url`  
+**Review SHA:** `cead63f64b98a2f564c7c87270293e731cd726a7` (current HEAD)  
+**CI result:** Build workflow conclusion="success", status="completed"  
+**Run URL:** https://github.com/usurobor/cnos/actions/runs/25740619258  
+**Gate status:** ✅ PASS - required workflow green on review SHA
+
+## §F1 Resolution Verification
+
+**F1 (CI-green gate logical gap) — RESOLVED**  
+- **Issue:** Rule 3.10 was structurally void due to no CI on cycle branches
+- **Fix implemented:** Updated `.github/workflows/build.yml:5` to include `'cycle/*'` branches
+- **Evidence of resolution:** CI now runs on cycle branches, as demonstrated by successful Build workflow on current HEAD
+- **Gate operability:** Rule 3.10 is now operative — β can verify required workflows on review SHA
+
+## §AC Verification (Final)
+
+**AC1 — β refuses APPROVED on red/pending CI:** ✅ COMPLETE  
+- Rule 3.10 binding CI-green gate implemented in review/SKILL.md:112-118
+- Self-applied in this review (CI verified green before APPROVED verdict)
+
+**AC2 — γ post-merge CI verification mandatory:** ✅ COMPLETE  
+- gamma/SKILL.md:387-391 adds mandatory post-merge CI verification
+- post-release/SKILL.md:58 adds CI status row to PRA template
+
+**AC3 — §3.8 grade caps named:** ✅ COMPLETE  
+- release/SKILL.md:335 adds CI-red cap clause (γ axis max C for red CI, max B− for unverified)
+
+**AC4 — §9.1 trigger amended:** ✅ COMPLETE  
+- post-release/SKILL.md:127 adds "CI red on merge commit (post-merge)" trigger
+
+**AC5 — Self-applied on patch-landing cycle:** ✅ COMPLETE  
+- β R1 documented CI status (no runs due to F1)
+- β R2 documents CI status with actual green run verification
+- Cycle demonstrates new discipline operative
+
+## §Implementation Review (R2)
+
+**Contract integrity:** ✅ All surfaces consistent with "required workflow" definition pattern  
+**Cross-file coordination:** ✅ 4-file changes maintain coherent CI-green gate discipline  
+**Honest-claim verification:** ✅ All AC claims backed by greppable evidence in diff  
+**Structural coherence:** ✅ Rule additions integrate cleanly with existing skill boundaries
+
+## §Approval Rationale
+
+1. **All findings resolved:** F1 (CI-green gate logical gap) fully addressed
+2. **All ACs met:** 5/5 ACs have greppable evidence and proper implementation  
+3. **CI green on review SHA:** Required workflow passed per rule 3.10 binding gate
+4. **Self-coherent:** Cycle demonstrates its own CI-green gate discipline
+5. **Implementation quality:** Clean integration with existing CDD protocol surfaces
+
+**Search space closure:** No remaining blockers found. The cycle delivers the specified CI-green gates with proper cross-skill coordination, resolves the latent failure mode identified in tsc #36, and demonstrates self-application of the new discipline.
