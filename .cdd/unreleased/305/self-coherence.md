@@ -103,3 +103,27 @@
 4. **No runtime enforcement** — The tool validates after-the-fact but doesn't prevent invalid state during authoring. This is intentional as the tool is designed for post-completion verification.
 
 **If a loaded skill would have prevented remaining debt:** No applicable skill gaps identified. The debt items are either acceptable limitations for v0 or explicitly deferred scope.
+
+## CDD-Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Issue #305 identified gap between existing cdd-verify and current cycle-scoped artifact layout |
+| 1 Select | — | — | Selected gap: extend cdd-verify for current cycle-scoped artifacts |
+| 2 Branch | cycle/305 | cdd | Branch verified against current origin/main |
+| 3 Bootstrap | .cdd/unreleased/305/ | cdd | Version directory created |
+| 4 Gap | .cdd/unreleased/305/self-coherence.md | — | Named incoherence: verifier validates wrong artifact layout |
+| 5 Mode | .cdd/unreleased/305/self-coherence.md | alpha, eng/tool, eng/test, write | Substantial change, shell script extension with test coverage |
+| 6 Artifacts | cn-cdd-verify, test-cn-cdd-verify.sh | eng/tool, eng/test | Extended command with --cycle mode, added 4 test cases, updated documentation |
+| 7 Self-coherence | .cdd/unreleased/305/self-coherence.md | cdd | AC-by-AC check completed, all 7 ACs met with evidence |
+
+**Files in diff:**
+- `src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify` — extended with --cycle mode validation
+- `src/packages/cnos.cdd/commands/cdd-verify/test-cn-cdd-verify.sh` — added 4 new test cases
+- `.cdd/unreleased/305/self-coherence.md` — this self-coherence artifact
+
+**New surfaces added:**
+- `--cycle N` parameter validation
+- `validate_artifact_sections()` function for section checking
+- Orphan directory detection logic
+- Cycle-scoped artifact validation flow
