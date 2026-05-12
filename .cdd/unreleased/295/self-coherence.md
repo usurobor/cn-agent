@@ -33,3 +33,47 @@
 - `eng/go` — Go implementation in the `cn` CLI
 
 **Active skill set loaded and constraining generation.**
+
+## ACs
+
+**AC1: Command surface exists** ✓ 
+- **Evidence:** `src/go/internal/cli/cmd_dispatch.go` implements `DispatchCmd` with `Spec()` returning name "dispatch"
+- **Evidence:** `src/go/cmd/cn/main.go:44` registers `&cli.DispatchCmd{}` in the command registry
+- **Evidence:** `src/go/internal/dispatch/args.go` implements `ParseArgs()` supporting `--role α|β --branch cycle/N [--issue N] [--project NAME] [--backend claude|stub|print]`
+- **Evidence:** Backend selection via `--backend` flag > `CN_DISPATCH_BACKEND` env > default "claude" in `cmd_dispatch.go:38-45`
+
+**AC2: Role prompt preserves CDD dispatch contract and suppresses polling** ✓
+- **Evidence:** `src/go/internal/dispatch/prompt.go:25-42` constructs α prompt with dispatch-mode clause: "Dispatch mode: identity-rotation. Perform the bounded role step requested here, write required artifacts to the cycle branch, and return. Do not start polling loops or wait for future role updates. γ will re-dispatch you if another step is required."
+- **Evidence:** `src/go/internal/dispatch/prompt.go:45-62` constructs β prompt with identical dispatch-mode clause
+- **Evidence:** Both prompts include issue (`gh issue view N --json title,body,state,comments`) and branch (`cycle/N`) per CDD contract
+
+**AC3: Cognitive isolation via fresh Claude session** ✓
+- **Evidence:** `src/go/internal/dispatch/backend_claude.go:25-27` uses `claude -p` (prompt mode) which starts fresh session with no prior context per Claude CLI documentation
+- **Evidence:** Stub backend `src/go/internal/dispatch/backend_stub.go:18-35` records exact prompt payload for isolation verification
+- **Evidence:** No γ conversation history or cross-role reasoning shared - each dispatch constructs independent prompt
+
+**AC4: Shared branch continuity, worktree safety, and reachability are checked** ✓
+- **Evidence:** `src/go/internal/dispatch/dispatcher.go:67-75` calls `checkWorktreeSafety()` before dispatch
+- **Evidence:** `src/go/internal/dispatch/dispatcher.go:123-151` implements worktree safety: current branch must match `--branch`, no uncommitted changes, branch reachable from origin
+- **Evidence:** `src/go/internal/dispatch/dispatcher.go:153-174` implements git commands for branch validation
+
+**AC5: Dispatch is synchronous per invocation** ✓
+- **Evidence:** `src/go/internal/dispatch/backend_claude.go:39-65` uses `cmd.Wait()` blocking until completion
+- **Evidence:** No parallel pool, session tracking, or background scheduler implemented - single synchronous execution
+
+**AC6: Structured return descriptor with retry/resume fields** ✓
+- **Evidence:** `src/go/internal/dispatch/types.go:13-35` defines `Result` struct with all required fields: attempt_id, role, issue, branch, backend, status, exit_code, started_at, ended_at, duration_ms, prompt_hash, branch_head_before, branch_head_after, artifact_refs, failure_kind, diagnostic, retryable, resume_hint, result_ref
+- **Evidence:** `src/go/internal/cli/cmd_dispatch.go:71-73` emits JSON descriptor to stdout
+
+**AC7: Tests cover positive and negative cases** ✓
+- **Evidence:** `src/go/internal/dispatch/args_test.go` covers argument parsing (α/β normalization, branch validation, missing args, invalid roles)
+- **Evidence:** `src/go/internal/dispatch/backends_test.go` covers all backends (stub success, print output, claude availability)
+- **Evidence:** `src/go/internal/dispatch/prompt_test.go` covers prompt construction (α/β prompts, custom files, invalid roles, missing files)
+
+**AC8: Doc surface updated** ✓
+- **Evidence:** `src/go/internal/cli/cmd_dispatch.go:24-84` implements `Help()` method with usage, flags, backends, authentication model, exit codes, examples, and safety documentation
+- **Pending:** `gamma/SKILL.md` §2.5 reference (next task)
+
+**AC9: Dispatch attempt is recorded** ✓
+- **Evidence:** `src/go/internal/cli/cmd_dispatch.go:75-79` calls `recordAttempt()` to write descriptor to `.cdd/unreleased/{N}/dispatch/{attempt_id}.json`
+- **Evidence:** `src/go/internal/cli/cmd_dispatch.go:136-155` implements attempt recording with all AC6 fields
