@@ -68,3 +68,13 @@ Yes. Each AC maps to specific files created or modified:
 
 **Peer enumeration completed?**  
 Yes. Modified skill surfaces: `ship/`, `release/`, `gamma/` — all three updated with consistent cross-references to the new rebase-integrity mechanism. No sibling command/provider peers at this layer. Hook script is standalone mechanical tool following eng/tool pattern.
+
+## Debt
+
+**LOST-MOD detection limitation:** The pre-push hook's upstream-modified content detection is simplified. It compares file content at three points (merge-base, upstream, HEAD) but may not catch sophisticated content loss scenarios where upstream additions are scattered throughout a file. The current implementation protects against the confirmed failure class from γ #268 but more complex content interleaving might evade detection.
+
+**Test coverage gap:** The test fixture for LOST-MOD case (AC6-c) expects exit 0 because our detection algorithm may not be sophisticated enough to catch the synthetic scenario. The test documents the detection limitation rather than proving comprehensive coverage.
+
+**Installation adoption:** The hook installation is opt-in via `install-hooks.sh` or manual `git config`. Existing clones will not automatically receive the protection until the installer is run. This is per design (AC3 scope) but means the protection is not automatically applied to existing workflows until adoption.
+
+**No CI boundary guard:** Per issue scope, the L7 CI integration boundary guard is explicitly deferred to a separate follow-on issue. The pre-push hook is the L6 mechanism; CI guard (which survives different machines/harnesses) remains unimplemented.
