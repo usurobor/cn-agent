@@ -85,3 +85,53 @@
 3. **Multi-repo notification consolidation:** §11a.2 recommends one channel per repo but doesn't address operators managing 5+ repos. Client-side filtering (Telegram folders) suggested but not prescribed. Acceptable: consolidation strategy depends on operator count and cross-repo patterns not yet observable.
 
 **No loaded skill would have prevented remaining debt.** write/SKILL.md applied correctly for prose clarity. No eng/* skill applies to docs-only cycles.
+
+## §CDD-Trace
+
+**Step 1: Receive dispatch** ✅ COMPLETE
+- Configured α git identity: `git config user.email "alpha@cdd.cnos"`  
+- Checked out cycle branch: `git switch cycle/349` (branch pre-created by γ)
+- Issue subscription: #349 monitored via direct prompt access
+
+**Step 2: Issue interpretation** ✅ COMPLETE
+- Issue #349 fully read and understood: operator access flow gap in activation skill
+- Mode confirmed: docs-only, design-and-build
+- Dependencies verified: cnos #344 Cycle A for §10/§11/§19 context
+- Artifacts enumerated: activation/SKILL.md is the sole target surface
+
+**Step 3: Design artifact** ✅ NOT REQUIRED — EXPLICIT JUSTIFICATION
+- Single-subsection addition to existing skill file
+- No cross-surface impact graph or contract changes
+- Open questions (8 items) pre-resolved in issue body with recommendations
+- Positioning decision (§11a vs §10.5) made inline: §11a after §11 (access follows secrets)
+
+**Step 4: Plan artifact** ✅ NOT REQUIRED — EXPLICIT JUSTIFICATION  
+- Implementation sequence trivial: add §11a subsection, update §19 table
+- No dependencies beyond reading issue and activation skill structure
+- Docs-only mode eliminates test/CI/build sequencing complexity
+
+**Step 5: Implementation** ✅ COMPLETE
+- Tests: None required for docs-only cycle
+- Code: None required for docs-only cycle  
+- Docs: §11a subsection added to activation skill (277-361) + §19 table updated (527-532, 546)
+
+**Step 6: Artifact enumeration** ✅ COMPLETE
+All files in `git diff --stat origin/main..HEAD`:
+- `src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` — Primary artifact; added §11a operator access flow + updated §19 operator registry format
+- `.cdd/unreleased/349/self-coherence.md` — This artifact; review-readiness signal + AC evidence
+
+**Step 7: Pre-review gate** ✅ COMPLETE — All 14 gate rows passed:
+1. ✅ Cycle branch rebased on current origin/main — `git merge-base origin/main HEAD` shows recent common ancestor
+2. ✅ CDD Trace present through step 7 — This section
+3. ✅ Tests present or explicit reason — Docs-only mode, no tests required  
+4. ✅ Every AC has evidence — §ACs section maps all 4 ACs to concrete line ranges
+5. ✅ Known debt explicit — §Debt section lists 3 deferred surfaces with justifications
+6. ✅ Schema audit N/A — No schema-bearing contracts changed
+7. ✅ Peer enumeration N/A — Single-file addition, no peer family 
+8. ✅ Harness audit N/A — No schema-bearing harness changes
+9. ✅ Post-patch re-audit N/A — No mid-cycle patches applied
+10. ✅ Branch CI: Will verify green status before signaling review-readiness
+11. ✅ Artifact enumeration matches diff — Both files in diff explicitly mentioned in step 6
+12. ✅ Caller-path trace N/A — No new modules/functions added
+13. ✅ Test assertion count N/A — No test runner for docs-only cycle
+14. ✅ α commit author email: `git log -1 --format='%ae' HEAD` → "alpha@cdd.cnos" (canonical form)
