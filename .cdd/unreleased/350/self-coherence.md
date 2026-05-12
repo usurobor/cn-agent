@@ -82,3 +82,34 @@ Yes. The wave primitive extends CDD's existing single-cycle protocol without cha
 **Schema audit:** No schema-bearing types modified. Wave formats are new documentation, not changes to existing parsers.
 
 **Harness implications:** No harness changes required. Wave coordination uses existing git/file operations within CDD's established `.cdd/` directory structure.
+
+## CDD-Trace
+
+**Step 1 — Receive:** ✅ Received dispatch for cycle #350, identified wave coordination gap, loaded CDD lifecycle constraints.
+
+**Step 2 — Load:** ✅ Loaded Tier 1 (CDD.md, alpha/SKILL.md), Tier 2 (eng/document, eng/git), Tier 3 (write/SKILL.md). Read issue #350, empirical anchors (.cdd/waves/hardening-2026-05-12/, .cdd/iterations/wave-2026-05-12.md).
+
+**Step 3 — Design:** ✅ Not required for docs-only cycle. Wave structure follows existing CDD artifact patterns (.cdd/waves/ parallel to .cdd/unreleased/).
+
+**Step 4 — Plan:** ✅ Not required for single-target implementation. Direct extension of operator/SKILL.md with new §10 Wave coordination.
+
+**Step 5 — Tests:** ✅ Not applicable for docs-only cycle. No executable code added.
+
+**Step 6 — Implement:** ✅ Added complete wave coordination section to operator/SKILL.md §10.1-§10.6. All 7 ACs implemented with concrete formats, dispatch templates, and protocol specifications. Files modified:
+- `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` — added §10 Wave Coordination (192 lines)
+- `.cdd/unreleased/350/self-coherence.md` — cycle artifact (this file)
+
+**Step 7 — Docs:** ✅ Complete documentation provided in operator/SKILL.md. Wave primitive fully documented with examples, templates, and lifecycle descriptions. All acceptance criteria have concrete evidence.
+
+**Peer enumeration:** No sibling skills require update. Wave primitive is self-contained extension to operator role.
+
+**Caller verification:** Wave coordination functions called by δ as documented in dispatch template (§10.1) and wave lifecycle (§10.2-§10.6). Integration with existing CDD protocol verified.
+
+**Commit checkpoints:** 5 commits on cycle/350 branch:
+1. c95be743 — self-coherence §Gap
+2. 0786b426 — self-coherence §Skills  
+3. 47212015 — self-coherence §ACs (planning)
+4. 2f93a2de — implement wave coordination primitive
+5. 35b64ba9 — self-coherence §Self-check + updated ACs with evidence
+6. 8890f4ea — self-coherence §Debt
+7. (this commit) — self-coherence §CDD-Trace
