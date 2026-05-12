@@ -169,6 +169,23 @@ Sizing rule:
 - ❌ "Selected because it felt highest leverage"
 - ✅ "Selected #143 under CDD §3.x; #151 rejected because dependency unresolved; script fix executed immediately instead of becoming the cycle"
 
+### 2.2a. §Peer enumeration at scaffold time
+
+Before authoring §Gap in `self-coherence.md`, γ MUST:
+
+1. **List every file** in the directories named by the issue's impact graph (`ls -la` or `find` per directory).
+2. **Grep for the term / symbol / surface** the cycle proposes to add or change (`rg <term> <directories>`).
+3. **If any match is found**, name it explicitly in §Gap:
+   - "This gap is partially closed by X; this cycle completes it" (additive framing), OR
+   - "X overlaps the proposed surface and must be reconciled in scope" (consolidation framing)
+
+A §Gap that asserts "X does not exist" without grep-evidence is a γ-side honest-claim violation analogous to α's rule 3.13(a) reproducibility constraint.
+
+**Empirical anchor:** tsc cycle #36's §Gap asserted "CI does not invoke `coh --kata` against shipped kata content." `.github/workflows/ci.yml` had a `kata-check` job (added in 344-c) invoking `bash scripts/run-katas.sh` which auto-discovers and runs every kata. The negation was empirically false from the moment it was written. β R1 caught it as binding finding B-1 (RC verdict). The fix-round was avoidable if γ had grep'd `.github/workflows/` before scaffolding. Cost: 1 wasted RC round (Path A consolidation in α R2).
+
+- ❌ "X does not exist" without grep evidence
+- ✅ "X does not exist — confirmed by `rg X directories/` returning no matches"
+
 ### 2.3. Step 2 — Build the issue pack
 
 Use `issue/SKILL.md` as the base contract.
