@@ -9,6 +9,10 @@ parent: cdd
 scope: role-local
 governing_question: How does ε turn cdd-*-gap findings from cycle close-outs
   into durable protocol improvements without accumulating deferred debt?
+triggers:
+  - cdd-iteration
+  - protocol-iteration
+  - epsilon
 ---
 
 # Epsilon
