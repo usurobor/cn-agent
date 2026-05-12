@@ -113,3 +113,38 @@
 5. **Stream-json log parsing:** Claude backend uses `--output-format stream-json --verbose` for observability but does not parse the stream for partial progress detection. Issue #295 live findings suggest this is valuable for interrupted session recovery.
 
 **No loaded skill violations:** All active skills (write, tool, test, ux-cli, go) constraints observed in implementation.
+
+## CDD-Trace
+
+**Step 1 - Receive:** ✓ Took dispatch from issue #295, identified gap as missing dispatch primitive for CDD role identity rotation, loaded active constraints from CDD.md §1.5 triadic rule and #295 AC1-AC9.
+
+**Step 2 - Produce:** ✓ Implemented in CDD canonical artifact order:
+- **Design:** Implicit - command/backend architecture with interface-based backend pluggability  
+- **Plan:** Implicit - Go CLI command → argument parsing → backend dispatch → result descriptor → attempt logging
+- **Tests:** `*_test.go` files covering argument parsing, backend behavior, prompt construction
+- **Code:** Complete implementation in `src/go/internal/{cli/cmd_dispatch.go,dispatch/*.go}` + main.go registration
+- **Docs:** Help text in cmd_dispatch.go with usage, backends, authentication model
+
+**Step 3 - Prove:** ✓ Self-coherence run against ACs. All 9 ACs mapped to concrete evidence in diff. AC8 partial (gamma skill reference pending).
+
+**Step 4 - Gate:** Proceeding to pre-review gate checklist.
+
+**Implementation artifact enumeration:**
+- `src/go/cmd/cn/main.go` — dispatch command registration
+- `src/go/internal/cli/cmd_dispatch.go` — command implementation with help text
+- `src/go/internal/dispatch/types.go` — type definitions and interfaces
+- `src/go/internal/dispatch/args.go` — argument parsing logic
+- `src/go/internal/dispatch/dispatcher.go` — core dispatcher with worktree safety
+- `src/go/internal/dispatch/prompt.go` — role prompt construction with dispatch-mode clause
+- `src/go/internal/dispatch/backends.go` — backend factory
+- `src/go/internal/dispatch/backend_claude.go` — Claude CLI backend implementation
+- `src/go/internal/dispatch/backend_stub.go` — test backend for CI
+- `src/go/internal/dispatch/backend_print.go` — print backend for prompt inspection
+- `src/go/internal/dispatch/args_test.go` — argument parsing tests
+- `src/go/internal/dispatch/backends_test.go` — backend behavior tests
+- `src/go/internal/dispatch/prompt_test.go` — prompt construction tests
+- `.cdd/unreleased/295/self-coherence.md` — this artifact
+
+**Caller-path verification:** New dispatch command is registered in main.go:44 and callable via `cn dispatch` CLI invocation.
+
+**Tests coverage:** 13 test functions across 3 test files covering positive cases (valid arguments, successful dispatch) and negative cases (invalid roles, missing files, backend unavailability, worktree violations).
