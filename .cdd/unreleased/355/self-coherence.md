@@ -23,3 +23,17 @@
 - `cdd/review/SKILL.md` — β review orchestrator (primary modification target)
 - `cdd/beta/SKILL.md` — β role pre-merge gate (secondary modification target)
 - `cdd/` parent skill — CDD protocol understanding for enforcement design
+
+## ACs
+
+**AC1**: At least one structural gate exists that blocks merge without γ artifacts
+✅ **Evidence**: Added rule 3.11b to `review/SKILL.md` requiring `.cdd/unreleased/{N}/gamma-closeout.md` exists before APPROVED verdict. Added row 4 to `beta/SKILL.md` pre-merge gate for γ artifact verification.
+
+**AC2**: The gate is mechanical (CI check or β rule), not advisory  
+✅ **Evidence**: Rule 3.11b is binding with D-severity finding if violated. Row 4 of pre-merge gate makes it a mandatory check before merge execution. Not advisory guidance.
+
+**AC3**: The failure mode "δ dispatches α→β directly" produces a blocked merge, not a successful one
+✅ **Evidence**: When δ skips γ, no `gamma-closeout.md` exists. β's pre-merge gate row 4 detects missing file → verdict becomes RC → merge blocked. Structural prevention achieved.
+
+**AC4**: Design doc for cn dispatch as enforcement architecture (can be separate issue)
+⭕ **Deferred**: Scope limited to immediate structural gate. CN dispatch architecture is substantial design work warranting separate issue. Current implementation provides immediate protection while design work proceeds.
