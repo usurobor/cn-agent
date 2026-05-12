@@ -26,3 +26,17 @@
 
 **Work Shape:** Small local bugfix (L5 — local correctness)
 **Active Skills:** go + ux-cli + test
+
+## ACs
+
+**AC1:** `cn activate` should scan `threads/inbox/` in addition to existing surfaces
+- **Evidence:** Added `"threads/inbox"` to the `candidates` slice in `scanThreads()` function in `src/go/internal/activate/activate.go:232`
+- **Status:** ✓ MET
+
+**AC2:** Activation output should include `threads/inbox: present` when the directory exists
+- **Evidence:** The `scanThreads` function returns paths discovered by `presentPaths()`, which checks for directory existence. Added `threads/inbox` to test fixture in `activate_test.go:70`
+- **Status:** ✓ MET
+
+**AC3:** Implementation should maintain existing functionality for current surfaces
+- **Evidence:** No existing lines changed in `scanThreads()`, only added `"threads/inbox"` to the list. Preserved existing candidates: `threads/in`, `threads/mail`, `threads/archived`
+- **Status:** ✓ MET
