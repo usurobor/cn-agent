@@ -109,3 +109,5 @@ All four surfaces updated consistently with "required workflow" definition patte
    - `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` — §3.8 CI-red grade cap clause added
    - `.cdd/unreleased/352/self-coherence.md` — this file
 7. **Self-coherence** — All 5 ACs mapped to evidence; no ambiguity pushed to β; all claims backed by diff
+
+## Review-readiness | round 1 | base SHA: 27b6520c | head SHA: 3b9fe770 | branch CI: no remote CI configured for cycle branches | ready for β
