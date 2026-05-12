@@ -127,3 +127,31 @@
 - `validate_artifact_sections()` function for section checking
 - Orphan directory detection logic
 - Cycle-scoped artifact validation flow
+
+---
+
+## Review-readiness | round 1
+
+**Base SHA:** 2a509635 (R2: APPROVED - Finding #1 resolved, all ACs met)  
+**Head SHA:** 13bdb93b (α self-coherence §CDD-Trace committed)  
+**Branch CI:** Not applicable (no CI configured for this repo)  
+**Branch rebased:** ✅ cycle/305 rebased onto current origin/main at $(date '+%Y-%m-%d %H:%M:%S UTC')  
+
+**Pre-review gate validation:**
+
+1. ✅ **Branch rebased onto origin/main** — No commits behind main
+2. ✅ **Self-coherence carries CDD Trace through step 7** — Complete trace in §CDD-Trace
+3. ✅ **Tests present** — Extended test suite with 29 assertions (up from 22), 4 new cycle mode test cases
+4. ✅ **Every AC has evidence** — All 7 ACs mapped to concrete evidence in §ACs
+5. ✅ **Known debt explicit** — 4 debt items documented in §Debt, all acceptable for v0
+6. ✅ **Schema audit** — Not applicable (command extension, no schema changes)
+7. ✅ **Peer enumeration** — Not applicable (single command extension)
+8. ✅ **Harness audit** — Not applicable (no schema-bearing contracts changed)
+9. ✅ **Post-patch re-audit** — All languages in diff exercised (shell script + test validation)
+10. ✅ **Branch CI green** — Local tests pass (29 assertions: 29 passed, 0 failed)
+11. ✅ **Artifact enumeration matches diff** — All 3 files in `git diff --stat` listed in CDD Trace step 6
+12. ✅ **Caller-path trace** — New function `validate_artifact_sections` called at cn-cdd-verify:343
+13. ✅ **Test assertion count** — 29 assertions total (from test runner output)
+14. ✅ **Author email canonical** — alpha@cdd.cnos (corrected via rebase --reset-author)
+
+**Ready for β.**
