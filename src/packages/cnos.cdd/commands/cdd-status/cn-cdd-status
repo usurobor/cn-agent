@@ -1,0 +1,350 @@
+#!/usr/bin/env bash
+# cn-cdd-status — single-shot cycle TLDR (read-only γ tooling)
+#
+# Reads the named cycle's state and prints a structured TLDR for operator/γ use.
+# Five output sections: issue / branch / artifacts / gate state / next.
+#
+# Usage:
+#   cn cdd-status <N>         structured TLDR for cycle N
+#   cn cdd-status --help      show usage
+#
+# Inputs (read-only):
+#   - GitHub issue via 'gh issue view N --json'
+#   - Branch state via 'git rev-parse origin/cycle/{N}' (or legacy glob fallback)
+#   - Artifacts via 'git ls-tree -r origin/cycle/{N} .cdd/unreleased/{N}/'
+#   - Role attribution via 'git log --format=%an' for each artifact
+#
+# Exit 0 on successful read; non-zero only on hard failure (not a git repo,
+# issue not found). Missing artifacts/partial state exits 0 with ✗ markers.
+
+set -euo pipefail
+
+CYCLE_NUM=""
+REPO_ROOT_OVERRIDE=""
+
+usage() {
+  cat >&2 <<EOF
+Usage:
+  cn cdd-status <N>         structured TLDR for cycle N
+  cn cdd-status --help      show usage
+
+Outputs five sections:
+  - issue: GitHub issue title, state, last updated
+  - branch: cycle/{N} HEAD SHA, CI status (if detectable)
+  - artifacts: .cdd/unreleased/{N}/ contents with role attribution
+  - gate state: 14-condition closure gate from gamma/SKILL.md §2.10
+  - next: recommended next move based on current state
+
+Exit codes:
+  0    successful read (including partial state with ✗ markers)
+  1    hard failure (not a git repo, issue not found, etc.)
+
+Examples:
+  cn cdd-status 283
+  cn cdd-status 295
+EOF
+  exit 1
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo-root) REPO_ROOT_OVERRIDE="$2"; shift 2 ;;
+    -h|--help) usage ;;
+    -*) echo "Error: unknown option $1" >&2; usage ;;
+    *)
+      if [[ -z "$CYCLE_NUM" ]]; then
+        CYCLE_NUM="$1"
+      else
+        echo "Error: multiple cycle numbers specified" >&2; usage
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$CYCLE_NUM" ]]; then
+  echo "Error: cycle number required" >&2
+  usage
+fi
+
+# Validate cycle number is numeric
+if ! [[ "$CYCLE_NUM" =~ ^[0-9]+$ ]]; then
+  echo "Error: cycle number must be numeric" >&2
+  exit 1
+fi
+
+if [[ -n "$REPO_ROOT_OVERRIDE" ]]; then
+  REPO_ROOT="$REPO_ROOT_OVERRIDE"
+  # Verify it's actually a git repo when overridden
+  if ! git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Error: not in a git repository" >&2
+    exit 1
+  fi
+else
+  REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+    echo "Error: not in a git repository" >&2
+    exit 1
+  }
+fi
+
+cd "$REPO_ROOT"
+
+# Helper to get commit author for role attribution
+get_role_attribution() {
+  local file_path="$1"
+  local branch="$2"
+
+  # Get the author of the most recent commit that touched this file
+  local author
+  author=$(git log --format='%an' -n 1 "$branch" -- "$file_path" 2>/dev/null || echo "")
+
+  case "$author" in
+    [Aa]lpha*) echo "(alpha)" ;;
+    [Bb]eta*) echo "(beta)" ;;
+    [Gg]amma*) echo "(gamma)" ;;
+    alpha@cdd.*) echo "(alpha)" ;;
+    beta@cdd.*) echo "(beta)" ;;
+    gamma@cdd.*) echo "(gamma)" ;;
+    "") echo "(unknown)" ;;
+    *) echo "(unknown)" ;;
+  esac
+}
+
+# Helper to check if condition is met (returns ✓, ✗, or ⚠)
+check_condition() {
+  local condition="$1"
+  local branch="$2"
+  local cycle_num="$3"
+
+  case "$condition" in
+    1) # alpha-closeout.md exists
+      if git ls-tree -r "$branch" ".cdd/unreleased/$cycle_num/alpha-closeout.md" >/dev/null 2>&1; then
+        echo "✓"
+      else
+        echo "✗"
+      fi
+      ;;
+    2) # beta-closeout.md exists
+      if git ls-tree -r "$branch" ".cdd/unreleased/$cycle_num/beta-closeout.md" >/dev/null 2>&1; then
+        echo "✓"
+      else
+        echo "✗"
+      fi
+      ;;
+    3) # γ has written post-release assessment (check main branch for PRA)
+      # This is complex to detect mechanically - we'll mark as warning for now
+      echo "⚠"
+      ;;
+    4) # cycle-iteration trigger assessment
+      echo "⚠"
+      ;;
+    5) # recurring findings assessed
+      echo "⚠"
+      ;;
+    6) # immediate outputs disposition
+      echo "⚠"
+      ;;
+    7) # deferred outputs have issue/owner/first AC
+      echo "⚠"
+      ;;
+    8) # next MCA is named
+      echo "⚠"
+      ;;
+    9) # hub memory updated
+      echo "⚠"
+      ;;
+    10) # merged remote branches cleaned up
+      echo "⚠"
+      ;;
+    11) # RELEASE.md written and committed to main
+      if [[ -f "RELEASE.md" ]]; then
+        echo "✓"
+      else
+        echo "✗"
+      fi
+      ;;
+    12) # cycle directories moved (check if cycle is in releases/)
+      if [[ -d ".cdd/releases" ]]; then
+        # Look for this cycle in any release version directory
+        if find .cdd/releases -name "$cycle_num" -type d | grep -q .; then
+          echo "✓"
+        else
+          echo "✗"
+        fi
+      else
+        echo "✗"
+      fi
+      ;;
+    13) # δ release-boundary preflight
+      echo "⚠"
+      ;;
+    14) # gamma-closeout.md exists (closure declaration artifact)
+      if git ls-tree -r "$branch" ".cdd/unreleased/$cycle_num/gamma-closeout.md" >/dev/null 2>&1; then
+        echo "✓"
+      else
+        echo "✗"
+      fi
+      ;;
+    *) echo "✗" ;;
+  esac
+}
+
+# --- Issue section ---
+echo "## Issue"
+
+if command -v gh &>/dev/null; then
+  ISSUE_JSON=$(gh issue view "$CYCLE_NUM" --json title,body,state,updatedAt 2>/dev/null) || {
+    echo "❌ Issue #$CYCLE_NUM not found or not accessible"
+    ISSUE_JSON=""
+  }
+
+  if [[ -n "$ISSUE_JSON" ]]; then
+    TITLE=$(echo "$ISSUE_JSON" | jq -r '.title')
+    STATE=$(echo "$ISSUE_JSON" | jq -r '.state')
+    UPDATED=$(echo "$ISSUE_JSON" | jq -r '.updatedAt')
+
+    echo "  #$CYCLE_NUM: $TITLE"
+    echo "  State: $STATE"
+    echo "  Updated: $UPDATED"
+  fi
+else
+  echo "⚠️  GitHub CLI not available - cannot read issue"
+fi
+
+# --- Branch section ---
+echo ""
+echo "## Branch"
+
+# Try canonical branch name first
+BRANCH="origin/cycle/$CYCLE_NUM"
+if git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+  HEAD_SHA=$(git rev-parse "$BRANCH")
+  echo "  $BRANCH at $HEAD_SHA"
+
+  # Try to get CI status if available
+  if command -v gh &>/dev/null; then
+    # Get the latest commit on the branch and check its status
+    COMMIT_SHA=$(git rev-parse "$BRANCH")
+    CI_STATUS=$(gh api "repos/:owner/:repo/commits/$COMMIT_SHA/status" --jq '.state' 2>/dev/null || echo "unknown")
+    case "$CI_STATUS" in
+      success) echo "  CI: ✓ passed" ;;
+      pending) echo "  CI: ⏳ pending" ;;
+      failure) echo "  CI: ❌ failed" ;;
+      error) echo "  CI: ⚠️ error" ;;
+      *) echo "  CI: ? $CI_STATUS" ;;
+    esac
+  fi
+else
+  # Fallback to legacy branch pattern search
+  LEGACY_MATCHES=$(git branch -r | grep -E "origin/.*$CYCLE_NUM" | head -5 || true)
+  if [[ -n "$LEGACY_MATCHES" ]]; then
+    echo "  ⚠️  Legacy branch (canonical cycle/$CYCLE_NUM not found):"
+    echo "$LEGACY_MATCHES" | sed 's/^/    /'
+    # Use the first match for further analysis
+    BRANCH=$(echo "$LEGACY_MATCHES" | head -1 | xargs)
+    if git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+      HEAD_SHA=$(git rev-parse "$BRANCH")
+      echo "  Using: $BRANCH at $HEAD_SHA"
+    fi
+  else
+    echo "  ❌ No branch found for cycle $CYCLE_NUM"
+    BRANCH=""
+  fi
+fi
+
+# --- Artifacts section ---
+echo ""
+echo "## Artifacts"
+
+if [[ -n "$BRANCH" ]] && git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+  # List artifacts in .cdd/unreleased/{N}/
+  ARTIFACTS=$(git ls-tree -r --name-only "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/" 2>/dev/null | sort)
+
+  if [[ -n "$ARTIFACTS" ]]; then
+    echo "$ARTIFACTS" | while IFS= read -r artifact; do
+      basename_artifact=$(basename "$artifact")
+      attribution=$(get_role_attribution "$artifact" "$BRANCH")
+      echo "  $basename_artifact $attribution"
+    done
+  else
+    echo "  (none found in .cdd/unreleased/$CYCLE_NUM/)"
+  fi
+else
+  echo "  (cannot read - branch not found)"
+fi
+
+# --- Gate State section ---
+echo ""
+echo "## Gate State"
+
+CONDITIONS=(
+  "alpha-closeout.md exists on main"
+  "beta-closeout.md exists on main"
+  "γ post-release assessment written"
+  "cycle-iteration triggers assessed"
+  "recurring findings assessed for patching"
+  "immediate outputs landed or ruled out"
+  "deferred outputs have issue/owner/first AC"
+  "next MCA named"
+  "hub memory updated"
+  "merged remote branches cleaned"
+  "RELEASE.md written and committed"
+  "cycle directories moved to releases/"
+  "δ release-boundary preflight completed"
+  "gamma-closeout.md exists (closure signal)"
+)
+
+PASSED=0
+TOTAL=14
+
+for i in $(seq 1 14); do
+  if [[ -n "$BRANCH" ]] && git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+    STATUS=$(check_condition "$i" "$BRANCH" "$CYCLE_NUM")
+  else
+    STATUS="✗"
+  fi
+
+  if [[ "$STATUS" == "✓" ]]; then
+    PASSED=$((PASSED + 1))
+  fi
+
+  printf "  %2d. %s %s\n" "$i" "$STATUS" "${CONDITIONS[$((i-1))]}"
+done
+
+echo ""
+echo "  Status: $PASSED of $TOTAL conditions met"
+
+# --- Next section ---
+echo ""
+echo "## Next"
+
+if [[ -z "$BRANCH" ]]; then
+  echo "  ❌ Cannot analyze - no branch found"
+elif [[ "$PASSED" -eq "$TOTAL" ]]; then
+  echo "  ✅ Cycle appears ready for closure (all conditions met)"
+elif [[ "$PASSED" -ge 10 ]]; then
+  echo "  ⚠️  Near completion - review remaining gate conditions"
+elif [[ "$PASSED" -ge 5 ]]; then
+  echo "  ⏳ In progress - focus on missing artifacts and assessments"
+else
+  echo "  🚧 Early stage - need core artifacts (α/β close-outs, assessments)"
+fi
+
+# Check for common next steps based on missing conditions
+if [[ -n "$BRANCH" ]] && git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+  if git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/self-coherence.md" >/dev/null 2>&1; then
+    if ! git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/alpha-closeout.md" >/dev/null 2>&1; then
+      echo "  → Request α close-out re-dispatch"
+    fi
+  fi
+
+  if git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/beta-review.md" >/dev/null 2>&1; then
+    if ! git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/beta-closeout.md" >/dev/null 2>&1; then
+      echo "  → Request β close-out (post-merge)"
+    fi
+  fi
+
+  if [[ "$PASSED" -ge 2 ]] && ! git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/gamma-closeout.md" >/dev/null 2>&1; then
+    echo "  → Ready for γ close-out triage and assessment"
+  fi
+fi
