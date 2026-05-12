@@ -1,9 +1,9 @@
-**Verdict:** [TO BE DETERMINED]
+**Verdict:** REQUEST CHANGES
 
 **Round:** 1  
 **Fixed this round:** N/A (initial review)
-**Branch CI state:** [TO BE CHECKED]
-**Merge instruction:** [TO BE DETERMINED]
+**Branch CI state:** No CI configured for CDD spec changes
+**Merge instruction:** Fix Finding #1, then `git merge cycle/296` into main with `Closes #296`
 
 ## §2.0 Issue Contract
 
@@ -71,6 +71,22 @@
 | Source/artifact/installed boundary preserved | n/a | No build/install changes |
 | Runtime surfaces remain distinct | yes | Skills remain skills - no surface blurring |
 | Degraded paths visible and testable | yes | Cache-bust rule improves visibility of stale cache detection |
+
+## Findings
+
+| # | Finding | Evidence | Severity | Type |
+|---|---------|----------|----------|------|
+| 1 | AC3 incomplete: beta/SKILL.md not updated with cache-bust instruction | AC3 explicitly requires "alpha/SKILL.md and beta/SKILL.md intake step" update, but only alpha/SKILL.md was changed. β instruction exists in CDD.md β algorithm step 3 but not in beta/SKILL.md as specified. | C | contract |
+
+## Regressions Required (D-level only)
+
+None - no D-level findings.
+
+## Notes
+
+The cache-bust mechanism is sound and properly implemented across most surfaces. The core functionality exists and would work correctly. The finding is purely about contract compliance - AC3 specified both alpha and beta SKILL.md files should be updated, but only alpha was updated. The β instruction was placed in CDD.md instead.
+
+Per beta/SKILL.md load order, CDD.md is loaded first as canonical, so the instruction would be accessible to β agents. However, explicit ACs must be met as written unless explicitly scoped out.
 
 ## §2.0.0 Contract Integrity
 
