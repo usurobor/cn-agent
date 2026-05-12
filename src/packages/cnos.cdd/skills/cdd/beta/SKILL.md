@@ -143,6 +143,23 @@ For release-scoped triadic cycles, the β close-out is written to `.cdd/unreleas
 - ❌ "Merge succeeded; someone else can write the β close-out later"
 - ✅ "Review → narrow → merge → release → write `.cdd/unreleased/{N}/beta-closeout.md` in the same β pass, then γ writes the PRA"
 
+## Resumption
+
+When dispatched to an artifact path that already contains a section manifest, β follows the resumption protocol per `CDD.md` §1.4:
+
+1. **Read existing manifest** — identify planned sections and completion state
+2. **Verify completed sections** — confirm existing sections are coherent and complete  
+3. **Continue from next section** — append to the file from the first uncompleted section
+4. **Update manifest on section completion** — add section name to `completed:` list
+
+**β-specific resumption cases:**
+
+- **`.cdd/unreleased/{N}/beta-review.md`** — round appendices when β resumes after session interruption mid-review. Sections: `[Verdict, Contract Integrity, Issue Contract, Diff Context, Architecture, Findings]`. Continue from uncompleted sections.
+- **`.cdd/unreleased/{N}/beta-closeout.md`** — if β resumes close-out writing after merge. Typical sections: `[Review Summary, Implementation Assessment, Technical Review, Process Observations, Release Notes]`.
+- **Multi-round reviews** — each round is an append operation, never restart completed rounds.
+
+**Never restart completed sections.** Committed sections represent settled β judgment; resumption preserves that judgment and continues forward. In multi-round scenarios, append new rounds rather than rewriting the review history.
+
 ## Embedded Kata
 
 ### Scenario

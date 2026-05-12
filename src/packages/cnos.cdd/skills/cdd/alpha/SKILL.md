@@ -338,7 +338,26 @@ Re-read them against HEAD.
 
 ---
 
-## 4. Embedded Kata
+## 4. Resumption
+
+When dispatched to an artifact path that already contains a section manifest, α follows the resumption protocol per `CDD.md` §1.4:
+
+1. **Read existing manifest** — identify planned sections and completion state
+2. **Verify completed sections** — confirm existing sections are coherent and complete  
+3. **Continue from next section** — append to the file from the first uncompleted section
+4. **Update manifest on section completion** — add section name to `completed:` list
+
+**α-specific resumption cases:**
+
+- **`.cdd/unreleased/{N}/self-coherence.md`** — most common case. Sections: `[Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]`. If α resumes mid-self-coherence, read existing sections for context, continue from next uncompleted section.
+- **Fix-round appendices** — when β returns RC and α resumes to fix findings, append fix-round sections to existing `self-coherence.md` without rewriting completed sections.  
+- **`alpha-closeout.md`** — if α is re-dispatched for close-out and finds a partial close-out, read completed sections and continue.
+
+**Never restart completed sections.** Committed sections represent settled α work; resumption preserves that work and continues forward.
+
+---
+
+## 5. Embedded Kata
 
 ### Scenario
 

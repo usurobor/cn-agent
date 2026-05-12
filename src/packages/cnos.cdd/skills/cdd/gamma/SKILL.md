@@ -636,6 +636,23 @@ Rewrite it into a dispatchable γ issue pack.
 - omits non-goals
 - leaves α to infer the invariant
 
+## Resumption
+
+When dispatched to an artifact path that already contains a section manifest, γ follows the resumption protocol per `CDD.md` §1.4:
+
+1. **Read existing manifest** — identify planned sections and completion state
+2. **Verify completed sections** — confirm existing sections are coherent and complete  
+3. **Continue from next section** — append to the file from the first uncompleted section
+4. **Update manifest on section completion** — add section name to `completed:` list
+
+**γ-specific resumption cases:**
+
+- **`.cdd/unreleased/{N}/gamma-closeout.md`** — if γ resumes close-out writing after session interruption. Typical sections: `[Close-out Triage, Trigger Assessment, Cycle Iteration, Deferred Outputs, Next-MCA Commitment]`.
+- **Post-Release Assessment (PRA)** — large PRA documents with section manifests. Continue from uncompleted assessment sections.
+- **Dispatch coordination** — if γ resumes mid-dispatch with partial prompt generation, read completed prompts and continue.
+
+**Never restart completed sections.** Committed sections represent settled γ coordination decisions; resumption preserves those decisions and continues the cycle coordination forward.
+
 ### Kata C — Cycle iteration
 
 #### Scenario

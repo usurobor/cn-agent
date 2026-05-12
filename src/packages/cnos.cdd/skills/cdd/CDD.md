@@ -108,6 +108,32 @@ Any file longer than ~50 lines (close-outs, assessments, design docs, plans) mus
 
 This applies to all roles and all CDD artifact types. It is not repeated in individual role or phase instructions.
 
+#### Section manifest format
+
+First write of any artifact ≥ 50 lines opens with HTML-comment manifest at the top:
+
+```markdown
+<!-- sections: [intake, AC mapping, peer enumeration, known debt, review-readiness] -->
+<!-- completed: [intake, AC mapping] -->
+```
+
+Each section completion updates `completed:` in the same edit that finalizes the section. The manifest preserves section order and tracks completion state.
+
+#### Resumption protocol
+
+When a role is dispatched to an artifact path that already exists with a section manifest, the role:
+
+1. **Reads the manifest** — identifies planned sections and completed sections
+2. **Verifies committed sections** — confirms completed sections exist on disk and are coherent
+3. **Continues from next uncompleted section** — never silently restart a partially-written artifact
+4. **Treats committed sections as authoritative** — do not re-author committed sections unless explicit correction is required
+
+The resumption contract enables session recovery without loss. Any committed section represents settled work; interruption does not require re-authoring from the beginning.
+
+#### Harness integration
+
+The `cn resume` directive (forward-looking) detects partial artifacts via the section manifest and re-spawns the role with a "resume from partial" prompt. Until `cn resume` is implemented, operators re-prompt manually using the manifest as the resumption contract.
+
 ### 1.5 Roles
 
 CDD is triadic at the role level. A substantial cycle needs three distinct functions:
