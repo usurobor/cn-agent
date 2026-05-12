@@ -64,3 +64,13 @@
 **Role boundary adherence:** α implemented the specified structural CDD change without overstepping into γ's coordination domain or β's review domain. Changes are scoped to role contract modification as specified in the issue non-goals.
 
 **Completeness check:** All named artifacts in issue §Related artifacts are updated. No sibling CDD skill files require updates beyond those explicitly listed in the ACs.
+
+## §Debt
+
+**Known debt:** None.
+
+**Harness precondition:** Per issue dependencies, the `cn dispatch` CLI is a separate cycle. The implementation includes graceful degradation in CDD.md AC4: "If the spawn mechanism is unavailable, γ surfaces the gap to the operator before proceeding." This enables the spec changes to land before the CLI exists without violating the encapsulation contract.
+
+**No blocked surfaces:** All role skills affected by the encapsulation contract change are updated in this cycle. No downstream lifecycle skill drift identified.
+
+**No test debt:** This is a specification/contract change cycle with no runtime code changes. The kata in gamma/SKILL.md provides the behavioral verification path for the new autonomous coordinator surface.
