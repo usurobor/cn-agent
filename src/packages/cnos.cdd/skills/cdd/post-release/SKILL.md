@@ -196,7 +196,7 @@ Add a row in the canonical bare-version format. The Level and Rounds columns are
 
 The coherence note describes which incoherence was reduced, not what feature was added. The Level column records the cycle-level engineering level (L5 / L6 / L7) per CDD.md §9.1. The Rounds column records the review-round count for the cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`).
 
-**Scoring sequence:** The CHANGELOG TSC entry written at release time is **provisional** — it is β's release-time score. The post-release assessment is γ's independent score and MAY revise the CHANGELOG entry. If the assessment disagrees with the release-time score, update the CHANGELOG to match the assessment. The assessment governs.
+**Scoring sequence:** The CHANGELOG TSC entry written at release time is **provisional** — it is β's release-time score (marked as `provisional, pending γ PRA` in the level cell per `release/SKILL.md` §2.4). The post-release assessment is γ's independent score and MUST revise the CHANGELOG entry. γ updates the provisional TSC row to the final scoring values in the same commit as the PRA, replacing β's provisional markers with the final assessment. The assessment governs.
 
 ### Step 3: Encoding lag table
 
