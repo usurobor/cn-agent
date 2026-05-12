@@ -334,6 +334,8 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
   **CI-red cap clause.** Cycles with red CI on the merge commit cap the γ axis at **C** (one band below current floor). Cycles that proceed to close-out without verifying CI cap the γ axis at **B−**. CI is a mechanical gate; failing or skipping it reflects structural γ-axis failure in cycle coordination, not judgment calls.
 
+  **False-gap peer-enumeration clause.** Cycles that ship on a false-gap premise (where the §Gap assertion is contradicted by existing surfaces that basic peer-enumeration would have discovered) cap the γ axis at **B** regardless of whether β caught and corrected the false claim. A cycle requiring fix-rounds to reconcile γ's unverified gap framing reflects failure of the peer-enumeration discipline per `gamma/SKILL.md` §2.2a, not implementation or review failure.
+
   - ❌ Every release is A+ (grade inflation, no signal)
   - ❌ Score the intent rather than what shipped
   - ❌ Round up because "the team worked hard"
