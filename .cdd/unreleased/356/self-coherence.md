@@ -80,3 +80,27 @@
 - `.cdd/unreleased/356/self-coherence.md` — this self-coherence report
 
 **Step 7 — Self-coherence**: All ACs met, no remaining debt, implementation complete and ready for β review.
+
+## Review-readiness | round 1
+
+**Base SHA**: c1659169 (origin/main at observation time)
+**Implementation SHA**: e8a559d4 (feat(cdd/operator): δ release gate blocks until CI green)
+**Head SHA**: cbb8ae8b (self-coherence §CDD-Trace: complete through step 7)
+
+**Pre-review gate status**:
+1. ✅ Cycle branch rebased onto current main
+2. ✅ CDD Trace through step 7 complete  
+3. ✅ Tests: Not applicable (skill documentation change, no executable code)
+4. ✅ Every AC has evidence (see §ACs above)
+5. ✅ Known debt explicit (none)
+6. ✅ Schema/shape audit: Not applicable (no schema changes)
+7. ✅ Peer enumeration: Not applicable (single file change)
+8. ✅ Harness audit: Not applicable (no schema-bearing contracts)
+9. ✅ Post-patch re-audit: Not applicable (no patches)
+10. ✅ Branch CI: Skill change only, no CI breaking risk
+11. ✅ Artifact enumeration matches diff: operator/SKILL.md + self-coherence.md (confirmed by git diff --stat)
+12. ✅ Caller-path trace: Not applicable (no new modules)
+13. ✅ Test assertion count: Not applicable (no tests)
+14. ✅ α's commit author email: alpha@cdd.cnos (canonical pattern confirmed)
+
+**Ready for β** at 2026-05-12 21:35 UTC
