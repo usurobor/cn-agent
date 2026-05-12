@@ -41,3 +41,15 @@
 
 **AC4**: Explicit operator-override escape hatch for known pre-existing failures  
 ✅ **Evidence**: Added step 5 in recovery runbook for "Operator override — explicit operator acceptance required for known pre-existing failures (escape hatch for cases like v3.66.0/v3.67.0 smoke failures)"
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?** No. The changes are localized to operator/SKILL.md role contract. Implementation is concrete and self-contained — β can verify that the CI blocking behavior is correctly specified and the recovery runbook is complete.
+
+**Is every claim backed by evidence in the diff?** Yes. All AC claims map to specific text in the modified operator/SKILL.md:
+- AC1 blocking behavior: lines 49-57 in §6 Gate  
+- AC2 recovery runbook: 5-step process in §6 Gate
+- AC3 explicit constraint: "The gate does not close until..." statement
+- AC4 operator override: step 5 in recovery runbook + v3.66.0/v3.67.0 example
+
+**Role boundary compliance?** Yes. α modified only the artifact named in the issue (operator/SKILL.md). No scope creep into other role skills or unrelated surfaces. The change enhances δ's existing CI polling step rather than adding new responsibilities outside the operator role.
