@@ -307,3 +307,28 @@ in the tenant repository.
 
 **β re-verify:** `grep validate-release-gate activation/templates/README.md`
 → dependency sentence present in the `cdd-artifact-validate.yml` table row.
+
+---
+
+## Review-readiness | round 2 | fix SHA: a5281d82 | branch CI: local gates green | ready for β
+
+**Pre-review gate rows (round 2 — incremental):**
+
+| Row | Check | Status |
+|---|---|---|
+| 1 | All three β findings addressed in separate commits on `cycle/344-b` | PASS |
+| 2 | F1: `wc -w activation/templates/README.md` → 297 words (≤300); Quick Start walkthrough covers bot creation, chat ID, secrets, workflow wiring | PASS |
+| 3 | F2: `cdd-notify.yml` `notify-beta-verdict` `if:` expression parenthesized — verified via YAML parse and manual inspection | PASS |
+| 4 | F3: `validate-release-gate.sh` dependency noted in `cdd-artifact-validate.yml` table row of `activation/templates/README.md` | PASS |
+| 5 | `bash -n notify.sh` → SYNTAX OK (re-run after F2 fix) | PASS |
+| 6 | `python3 yaml.safe_load(cdd-notify.yml)` → YAML OK (re-run after F2 fix) | PASS |
+| 7 | No existing-passing content regressed: telegram-notifier/README.md unchanged; notify.sh unchanged; all other template files unchanged | PASS |
+| 8 | Fix-round section in self-coherence.md names each finding, commit SHA, and β re-verify instruction | PASS |
+| 9 | Author email on all fix commits: `alpha@cdd.cnos` | PASS |
+
+**Fix commit summary:**
+- `f3b1c72d` — F1 + F3: activation/templates/README.md (Quick Start + validate-release-gate.sh note)
+- `79ec55e2` — F2: cdd-notify.yml notify-beta-verdict parentheses fix
+- `a5281d82` — self-coherence fix-round section
+
+Ready for β round 2.
