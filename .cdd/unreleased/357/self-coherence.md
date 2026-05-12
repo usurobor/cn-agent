@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check, Debt] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace] -->
 
 # Self-Coherence Report: Issue #357
 
@@ -138,3 +138,49 @@ The implementation provides graceful degradation for all identified edge cases r
 **Resolution path:** Future enhancement to test framework portability, or acceptance that integration testing provides sufficient verification coverage.
 
 **No skill gaps identified:** The loaded skills (cdd/release, cdd/operator, eng/tool, eng/test, eng/document) provided appropriate constraints and guidance for all implementation decisions. No additional skills would have prevented the identified debt.
+
+## CDD-Trace
+
+**Step 1: Gap identification**
+- Issue: #357 
+- Selected gap: Release metadata outside RELEASE.md is absent/manual, causing drift between tag messages and structured release context
+- Mode: design-and-build
+
+**Step 2: Constraints activation** 
+- Tier 1: CDD.md, alpha/SKILL.md
+- Tier 2: eng/*
+- Tier 3: cdd/release, cdd/operator, eng/tool, eng/test, eng/document
+- Active constraints: script-only tagging, RELEASE.md authority preservation, plain text output, deterministic fallback
+
+**Step 3: Design decision**
+- Decision: Single generator script integrated into existing release.sh flow
+- Alternative considered: Separate tag message system outside release script (rejected - violates operator constraint)
+- Justification: Minimal surface area change, preserves existing gates and authorities
+
+**Step 4: Plan execution**
+- Sequence: generator → integration → testing → documentation
+- Critical path: Release script modification must preserve RELEASE.md gate enforcement
+- Dependencies: Generator must handle all fallback scenarios before integration
+
+**Step 5: Test coverage**
+- Generator unit functionality: scripts/generate-release-tag-message.sh 
+- Integration testing: scripts/test-release-tag-integration.sh
+- Edge case coverage: deterministic output, GitHub fallback, wave context, CDD artifact parsing
+- Gate preservation: RELEASE.md authority validation
+
+**Step 6: Implementation artifacts**
+- `scripts/generate-release-tag-message.sh` — core generator (8041bb30)
+- `scripts/release.sh` — modified for annotated tags (312ae75c) 
+- `scripts/test-generate-tag-message.sh` — comprehensive test framework (151e9328)
+- `scripts/test-release-tag-integration.sh` — end-to-end verification (312ae75c)
+- `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` — δ tag guidance (e9f58498)
+- `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` — annotated tag policy (e9f58498)
+
+**Step 7: Coherence verification**
+- All 7 ACs met with concrete evidence
+- Release script creates annotated tags with structured messages 
+- RELEASE.md authority preserved (no workflow changes)
+- Deterministic fallback for missing metadata verified
+- Documentation updated to guide δ without manual tag instructions
+- No technical debt affecting core functionality
+- Self-coherence complete: gap closed, implementation complete, evidence mapped
