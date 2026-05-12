@@ -216,3 +216,36 @@ expected or required. `cdd-notify.yml` and `cdd-cycle-on-merge.yml` both call `n
 §Self-check (82631388), §Debt (1a007688), §CDD-Trace (this commit).
 
 **CDD Trace complete through step 7.**
+
+---
+
+## Review-readiness | round 1 | base SHA: fba356e1 | implementation SHA: 81813964 | branch CI: local gates green at dispatch time | ready for β
+
+**Pre-review gate rows:**
+
+| Row | Check | Status |
+|---|---|---|
+| 1 | cycle/344-b rebased on origin/main (base fba356e1 = merge-base at signal time 2026-05-12) | PASS |
+| 2 | self-coherence.md carries CDD Trace through step 7 | PASS |
+| 3 | Tests: not applicable (template/docs artifacts; no executable code under test) | PASS |
+| 4 | Every AC has evidence (B.AC1–B.AC5 all MET in §ACs) | PASS |
+| 5 | Known debt explicit (§Debt, 4 items) | PASS |
+| 6 | Schema/shape audit: not applicable (no schema-bearing contracts changed) | PASS |
+| 7 | Peer enumeration: completed (event vocabulary matched against §10.1; no existing surfaces modified) | PASS |
+| 8 | Harness audit: not applicable | PASS |
+| 9 | Polyglot re-audit: shell `bash -n` OK; YAML `yaml.safe_load` OK on all 3 YAML files; Markdown word counts checked | PASS |
+| 10 | Branch CI: local gates green; CI on origin/cycle/344-b depends on runner availability | NOTE (see below) |
+| 11 | Artifact enumeration matches diff: 7 files in `git diff --stat origin/main..HEAD`; all named in §CDD-Trace step 6 and §ACs | PASS |
+| 12 | Caller-path trace: template files are tenant-deployed; `notify.sh` called by `cdd-notify.yml` and `cdd-cycle-on-merge.yml`; both documented in §CDD-Trace step 6 | PASS |
+| 13 | Test assertion count: not applicable (no test runner) | PASS |
+| 14 | Author email: `git log -1 --format='%ae' HEAD → alpha@cdd.cnos`; all 7 commits on cycle branch verified | PASS |
+
+**Row 10 note:** No branch CI runners are configured for the cnos repo's cycle branches
+in this environment. All local mechanical gates (bash -n, yaml.safe_load, word counts,
+no-token grep) ran and passed. β should verify branch CI state independently before merge.
+
+**Diff summary:** 7 files, 738 insertions, 0 deletions. All files in new directory
+`src/packages/cnos.cdd/skills/cdd/activation/templates/` plus `.cdd/unreleased/344-b/`
+artifacts. No existing files modified.
+
+Ready for β.
