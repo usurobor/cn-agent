@@ -58,3 +58,14 @@ Yes:
 - **eng/go**: Small package change, no new interfaces, pure addition to existing slice
 - **eng/ux-cli**: Maintains existing output format, adds info where appropriate
 - **eng/test**: Updated test fixture to include new path for coverage
+
+## Debt
+
+**Known debt:** None.
+
+This is a minimal, localized change that follows existing patterns. No technical debt introduced:
+- No new abstractions
+- No additional dependencies
+- No architectural changes
+- No deferred testing or documentation
+- No compatibility concerns
