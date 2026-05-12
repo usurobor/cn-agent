@@ -2,7 +2,7 @@
 
 > cdd is the reference instantiation of the generic role-scope ladder pattern.
 > The pattern (α/β/γ/δ/ε roles, scope-escalation contract, instantiation
-> fields) is documented at [`ROLES.md`](../../../../ROLES.md) at the repo root. cdd does
+> fields) is documented at [`ROLES.md`](../../../../../ROLES.md) at the repo root. cdd does
 > not claim to have originated the role structure; it implements it for software
 > development.
 

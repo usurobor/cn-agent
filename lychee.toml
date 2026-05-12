@@ -32,4 +32,10 @@ exclude = [
     # links because the surrounding markdown is `[text](placeholder)`.
     "file://.*/src/packages/cnos\\.cdd/skills/cdd/issue/\\.{3}$",
     "file://.*/src/packages/cnos\\.cdd/skills/cdd/issue/link$",
+
+    # .cdd/releases/ contains frozen close-out artifacts (beta-review.md,
+    # self-coherence.md, etc.) whose relative links targeted the cycle branch
+    # tree, not the releases directory. These are historical review records,
+    # not living docs.
+    "file://.*/.cdd/releases/.*/activation/SKILL\\.md.*",
 ]
