@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs] -->
+<!-- completed: [Gap, Skills, ACs, Self-check] -->
 
 # Self-Coherence Report: Issue #357
 
@@ -81,3 +81,48 @@
 - ✅ **Oracle:** `rg "git tag -a|git tag .* -m|git tag .* -F"` finds no new manual tagging instructions for delta
 - ✅ **Surface:** Documentation describes generated tag messages through scripts/release.sh only
 - ✅ **Verification:** Operator docs mention "generates structured tag messages" and δ tag inspection commands
+
+## Self-check
+
+**Did α's work push ambiguity onto β?**
+
+No. All implementation decisions are backed by clear evidence:
+- Generator script follows explicit requirements for plain-text output suitable for git tag annotation
+- Release script integration preserves existing RELEASE.md gate and adds tag message generation transparently  
+- Documentation updates explicitly preserve existing authorities and constraints
+- Test coverage demonstrates deterministic behavior under various input conditions
+
+**Is every claim backed by evidence in the diff?**
+
+Yes. Each AC maps to specific evidence:
+- File implementations at specific commits and line numbers
+- Test output demonstrating expected behaviors
+- Documentation changes preserving required constraints
+- Integration tests proving end-to-end functionality
+
+**Are there unstated implementation assumptions?**
+
+Minimal assumptions, all documented:
+- GitHub CLI (`gh`) availability is optional with explicit fallback behavior
+- CDD artifact directory structure follows existing patterns in `.cdd/{unreleased,releases}`
+- Wave manifests use existing format in `.cdd/waves/`
+- Git repository structure remains standard (tags, commits, branches)
+
+**Does the implementation introduce technical debt?**
+
+No significant debt:
+- Generator script is self-contained with clear interfaces
+- Integration preserves existing release script structure and behavior
+- Test framework provides ongoing verification capability
+- Documentation updates maintain existing policy consistency
+
+**Are there unhandled edge cases that β needs to validate?**
+
+Standard edge cases are handled with deterministic fallback:
+- Missing GitHub metadata → "unavailable" markers
+- Missing wave artifacts → standalone grouping  
+- Missing CDD review artifacts → omitted fields
+- Network unavailable → graceful degradation
+- Empty commit ranges → "No issues found" message
+
+The implementation provides graceful degradation for all identified edge cases rather than failing or producing malformed output.
