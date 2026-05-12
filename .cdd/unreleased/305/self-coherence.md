@@ -13,3 +13,21 @@
 **What is expected:** CDD validation should check the current cycle-scoped artifact layout per CDD.md §5.3a Artifact Location Matrix.
 
 **Where they diverge:** The verifier checks `.cdd/releases/{X.Y.Z}/{role}/CLOSE-OUT.md` but current cycles produce `.cdd/releases/{X.Y.Z}/{N}/{artifact-name}.md`.
+
+## Skills
+
+**Tier 1 (Lifecycle):**
+- `CDD.md` — canonical lifecycle and role contract
+- `alpha/SKILL.md` — α role surface  
+- `design/SKILL.md` — not required (single command extension, no design needed)
+- `plan/SKILL.md` — not required (straightforward script extension)
+
+**Tier 2 (Engineering):**
+- `eng/*` bundles per cnos.eng README
+
+**Tier 3 (Issue-specific):**
+- `eng/tool` — shell script standards, command behavior, fail-fast
+- `eng/test` — positive/negative proof, fixtures  
+- `cnos.core/skills/write` — documentation standards
+
+**Active constraint:** All loaded skills constrain generation. Shell script must follow `eng/tool` standards (set -euo pipefail, prereq checks, NO_COLOR support). Tests must prove invariants per `eng/test` (positive/negative fixtures, oracle-driven). Documentation follows `write` standards (one governing question per file, front-load the point).
