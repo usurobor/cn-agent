@@ -12,3 +12,18 @@
 
 **Version:** CDD 3.15.0  
 **Mode:** docs-only, design-and-build
+
+## Skills
+
+**Tier 1 (CDD lifecycle):**
+- `CDD.md` — canonical lifecycle and role contract
+- `alpha/SKILL.md` — α role surface and algorithm
+- `design/SKILL.md` — design artifact requirements (not required for this docs-only cycle)
+- `plan/SKILL.md` — implementation sequencing (not required for this single-target cycle)
+
+**Tier 2 (Engineering always-applicable):**
+- `eng/document` — documentation conventions and structure
+- `eng/git` — commit message and branch conventions
+
+**Tier 3 (Issue-specific):**
+- `write/SKILL.md` — writing so the reader understands on first pass (target for operator/SKILL.md updates)
