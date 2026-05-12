@@ -119,6 +119,13 @@ Return to this file for verdict rules and output format.
 3.11. **Merge instruction is explicit**
   - Names the exact branch and merge action with `Closes #N` in the merge commit.
 
+3.11b. **γ artifact completeness gate (binding)**
+  - β must verify `.cdd/unreleased/{N}/gamma-closeout.md` exists on the cycle branch before emitting verdict APPROVED.
+  - If gamma-closeout.md is missing → verdict is RC, finding D-severity, classification `protocol-compliance`.
+  - **Rationale**: Prevents protocol bypass where δ dispatches α→β directly without γ coordination. Missing γ artifacts indicate the cycle did not follow the canonical CDD.md §1.4 triadic protocol.
+  - **Scope**: This gate applies to all cycles except explicit protocol exemptions documented in the issue (e.g., emergency patches, infrastructure-only changes with operator override).
+  - Document the check in `beta-review.md` §Artifact completeness: citation of gamma-closeout.md presence/absence.
+
 3.12. **Review divergence is a skill gap**
   - When two reviewers diverge, the fix is a patch to the review skill, not "be more careful."
 
@@ -194,6 +201,7 @@ Each round appends a new section.
 | Cross-surface projections updated | yes / no / n/a | |
 | No witness theater / false closure | yes / no / n/a | |
 | PR body matches branch files | yes / no / n/a | |
+| γ artifacts present (gamma-closeout.md) | yes / no / n/a | rule 3.11b compliance |
 
 ## §2.0 Issue Contract
 
