@@ -109,3 +109,42 @@ no non-trivial sequencing beyond that order.
 - Empty `CDD_EVENT` also exits 0 with warning
 
 **Status: MET**
+
+---
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+No. All 5 ACs have concrete evidence mapped to specific file paths and line numbers in
+the diff. The artifacts are purely additive (new directory under `activation/templates/`);
+no existing surfaces were modified.
+
+**Is every claim backed by evidence in the diff?**
+
+- B.AC1: `notify.sh` exists and passes `bash -n`. The 4-event `case` block is present.
+  `cdd-notify.yml` wires all 4 events. Secrets-absent guard is present.
+- B.AC2: `cdd-artifact-validate.yml` has the explicit "not found" error and `exit 1`.
+  Triggers are `cycle/**` and `main`.
+- B.AC3: All YAML uses `${{ secrets.CDD_... }}`. All `# Customize:` blocks mark the
+  only tenant-variable locations.
+- B.AC4: `wc -w README.md → 266` (verified before commit).
+- B.AC5: `case "$EVENT" in` matches all 4 canonical event names from `activation/SKILL.md §10.1`.
+  Unknown-event path exits 0 with warning.
+
+**Peer enumeration:**
+
+The work is a new template directory tree. No existing skill files were modified.
+The only peer concern is the event vocabulary match against `activation/SKILL.md §10.1`:
+grep confirms the 4 event names in `notify.sh` match exactly.
+
+**Harness audit:** Not applicable — no schema-bearing contracts changed.
+
+**Polyglot re-audit:**
+- Shell (`notify.sh`): `bash -n` → SYNTAX OK; no dead captures; all `case` branches used
+- YAML (`cdd-notify.yml`, `cdd-artifact-validate.yml`, `cdd-cycle-on-merge.yml`):
+  `python3 yaml.safe_load` → OK on all three
+- Markdown (`README.md` × 2): word counts checked (266, 171); no broken cross-references;
+  no tokens
+
+**Known-debt push:** None pushed onto β.
