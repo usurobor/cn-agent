@@ -89,3 +89,17 @@
 - ✅ **AC7:** Documentation updated in usage function and header comments
 
 **Role boundaries clean?** Yes. α implemented the feature completely without requiring β to discover missing work. No authoring work deferred to review phase.
+
+## Debt
+
+**Known debt:**
+
+1. **Section validation is basic** — The `validate_artifact_sections` function uses simple grep patterns rather than structured markdown parsing. It catches obvious missing sections but may not validate section content quality or completeness. This is acceptable for v0 as stated in issue scope ("Out of scope: Validating prose quality or content correctness").
+
+2. **No CI integration yet** — The verifier extension is implemented but not yet integrated into CI workflows. This is explicitly deferred per issue scope ("Deferred: CI integration - document path, implement later").
+
+3. **Cross-artifact consistency not validated** — The verifier doesn't check consistency between artifacts (e.g., γ triage references every β finding). This is explicitly out of scope per issue requirements.
+
+4. **No runtime enforcement** — The tool validates after-the-fact but doesn't prevent invalid state during authoring. This is intentional as the tool is designed for post-completion verification.
+
+**If a loaded skill would have prevented remaining debt:** No applicable skill gaps identified. The debt items are either acceptable limitations for v0 or explicitly deferred scope.
