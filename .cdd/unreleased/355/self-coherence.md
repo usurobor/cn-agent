@@ -37,3 +37,14 @@
 
 **AC4**: Design doc for cn dispatch as enforcement architecture (can be separate issue)
 ⭕ **Deferred**: Scope limited to immediate structural gate. CN dispatch architecture is substantial design work warranting separate issue. Current implementation provides immediate protection while design work proceeds.
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?** No. The structural gates are precisely specified with clear enforcement mechanics. β has concrete checks to perform and clear consequences for failure.
+
+**Is every claim backed by evidence in the diff?** Yes. All AC claims map to specific additions in the skill files:
+- AC1 structural gate: rule 3.11b in review/SKILL.md + row 4 in beta/SKILL.md  
+- AC2 mechanical enforcement: D-severity finding specification, binding nature explicit
+- AC3 bypass prevention: missing gamma-closeout.md → RC verdict → blocked merge
+
+**Role boundary compliance?** Yes. α modified only review and beta skills as appropriate for enforcement mechanics. No scope creep into unrelated surfaces. Changes enhance existing β review/merge protocols.
