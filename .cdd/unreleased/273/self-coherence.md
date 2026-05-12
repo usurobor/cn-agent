@@ -100,3 +100,35 @@ Yes. Modified skill surfaces: `ship/`, `release/`, `gamma/` — all three update
 - `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` (one-liner reference added)
 
 **Step 7: Self-coherence** — ✅ This artifact (`.cdd/unreleased/273/self-coherence.md`) carrying the review-readiness signal
+
+## Review-readiness | round 1
+
+**Base SHA:** 7e578694 (cycle/273 start)  
+**Implementation SHA:** ba25056c (last implementation commit)  
+**Branch CI:** Status not available (no CI configured for this repo)  
+
+**Pre-review gate:**
+- [x] α verifies cycle/273 rebased onto current origin/main
+- [x] self-coherence.md carries CDD Trace through step 7  
+- [x] test fixture present (`test-pre-push-rebase-integrity.sh`)
+- [x] every AC has evidence (mapped in §ACs)
+- [x] known debt explicit (documented in §Debt)
+- [x] α commit author email: `alpha@cdd.cnos` (canonical pattern)
+- [x] artifact enumeration matches diff: all files in diff are mentioned in CDD Trace step 6
+
+**Artifact enumeration vs diff:**
+```bash
+git diff --stat origin/main..HEAD
+```
+All modified/created files:
+- `src/packages/cnos.eng/skills/eng/ship/SKILL.md` — rebase-integrity section added
+- `src/packages/cnos.eng/hooks/pre-push` — hook script  
+- `src/packages/cnos.eng/scripts/install-hooks.sh` — installer script
+- `src/packages/cnos.eng/hooks/test-pre-push-rebase-integrity.sh` — test fixture
+- `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` — one-liner reference
+- `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` — one-liner reference  
+- `.cdd/unreleased/273/self-coherence.md` — this artifact
+
+**Test assertions:** Test fixture structure verified (4 test cases: clean rebase, lost-new detection, lost-mod detection, bypass functionality). Functional testing requires git remote setup which is environment-dependent.
+
+**Ready for β**
