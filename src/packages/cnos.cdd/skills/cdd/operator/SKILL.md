@@ -298,6 +298,30 @@ Three structural consequences follow:
 
 **Reference dependencies:** §5.2 dispatch sizing follows `CDD.md §1.6c` (sub-agent dispatch budget heuristic). The harness push restriction that produces branch-name churn is the same constraint that makes the mechanical pre-merge gate (`release/SKILL.md §2.1`) an operator-side action when β cannot push directly (`CDD.md §1.4 β algorithm step 8`).
 
+### 5.2.1 Parent-session quiescence during sub-agent runs
+
+When a sub-agent dispatch is in flight (via the Agent tool), the parent session MUST enter quiescent mode:
+
+**Prohibited during sub-agent runs:**
+- **No file edits** in the working tree
+- **No commits** from the parent session
+- **No branch switches** (`git checkout`, `git switch`)
+- **No `git add` / `git restore --staged`** (index state must remain stable for the sub-agent's view)
+- **No `git pull` / `git fetch` that updates the current branch HEAD**
+
+**Permitted during sub-agent runs:**
+- Reads: `git status`, `git log`, `git diff`, file reads via Read tool, web fetches, GitHub MCP queries
+- Coordination: dispatching additional sub-agents (each gets its own context; isolation is by sub-agent), reading existing branches via `git fetch <branch>` (does not update HEAD)
+- **Filesystem operations on paths outside the repo** (e.g., `/tmp`, drafts)
+
+**When the parent must edit:** dispatch a sub-agent to do the edit, or wait for current sub-agents to complete. The parent is the coordinator, not a fourth concurrent writer.
+
+**What goes wrong when this is violated:** Sub-agent A is running α R1, has read the working tree, is about to `git add` and `git commit`. Parent session edits file X concurrently. Sub-agent's `git add .` picks up parent's edits accidentally. Sub-agent's commit message describes only its intended change but the diff includes parent's edits. Result: corrupted commit, branch must be reset, fix-round required.
+
+**Sub-agent parallelism note:** Multiple sub-agents launched in parallel (via `Agent` tool calls in one parent message) have **isolated contexts** from each other but **share the working tree with the parent and with each other**. Concurrent file edits by parallel sub-agents are also a corruption risk and should be avoided — multi-sub-agent parallelism is for independent reads, not concurrent writes.
+
+**Exception:** When the Agent tool runs with `isolation: "worktree"`, parent-session quiescence is unnecessary (the sub-agent operates on a copy of the repo). Default mode requires quiescence.
+
 ### 5.3 Escalation criteria
 
 Switch from §5.2 to §5.1 (multi-session) when any of the following is true at γ scaffold time:
