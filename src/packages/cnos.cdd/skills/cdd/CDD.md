@@ -210,6 +210,40 @@ GitHub Pull Requests are **not** part of the triadic protocol. PR creation, poll
 
 Roles may add additional files when the cycle warrants it (e.g. `alpha-design.md` if a separate design artifact lives in the cycle dir, `gamma-dispatch.md` if dispatch evidence is large enough to deserve its own file). The filename pattern is `{role}-{purpose}.md` (e.g. `alpha-closeout.md`) for role-owned content, and bare `{purpose}.md` (e.g. `self-coherence.md`) for cycle-shared content where the convention identifies the author.
 
+**Cross-repo proposal lifecycle.** A source repo may submit work to cnos by committing a proposal issue pack plus a small `STATUS` event log. Existing proposal payloads remain `ISSUE.md`; mutable lifecycle state belongs in the adjacent `STATUS` file. Two source-side layouts are first-class:
+
+```text
+.cdd/iterations/proposals/{slug}/
+  ISSUE.md
+  STATUS
+  PATCH.diff        # optional
+
+.cdd/proposals/{target}/{slug}/
+  ISSUE.md
+  STATUS
+  PATCH.diff        # optional
+```
+
+`STATUS` is an append-only event log. The current lifecycle state is the last non-comment event.
+
+```text
+# optional comments allowed
+<event> <date> <refs...> [; <short note>]
+```
+
+Dates use `YYYY-MM-DD`. Event names are the lifecycle state vocabulary:
+
+- `drafted` - source has written the proposal but has not requested target action.
+- `submitted` - source requests target intake. This is the only event required for target intake.
+- `accepted` - target will act substantially as proposed and has a target reference.
+- `modified` - target accepts the gap but changes scope, split, wording, implementation, proof, or patch application materially.
+- `landed` - target work merged or otherwise became target truth.
+- `rejected` - target declines the proposal as target work.
+- `withdrawn` - source retracts the request.
+- `revised` / `corrected` - optional audit events for post-submission revisions or corrections.
+
+Do not rewrite old events after sharing; append a `corrected` event instead. Accepted or modified target issues must include source lineage (source path, source commit when known, disposition, and delta when modified). When target work lands, cnos appends `landed <date> <target-ref> commit=<sha> artifact=<path>` to source `STATUS`, or emits a patch that does so if cnos cannot write to the source repo.
+
 **Coordination loop.**
 
 1. γ files issue #N, dispatches α and β

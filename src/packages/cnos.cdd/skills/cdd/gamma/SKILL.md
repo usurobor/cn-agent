@@ -136,6 +136,17 @@ Before selecting work, read the observation surfaces required by `CDD.md`:
 2. CHANGELOG TSC table
 3. encoding lag table
 4. doctor / status / operational-health surface
+5. **Cross-repo proposal intake** — scan known source repos for active proposal lifecycle files:
+   - `.cdd/iterations/proposals/*/STATUS`
+   - `.cdd/proposals/{target}/*/STATUS`
+
+For each proposal whose last non-comment `STATUS` event is `submitted`, read the adjacent `ISSUE.md` and optional `PATCH.diff`, then check cnos target state for duplicate or already-landed work before selection. Decide one of:
+
+- `accepted` — cnos will act substantially as proposed.
+- `modified` — cnos accepts the governing gap but changes scope, split, wording, implementation, proof, or patch application materially.
+- `rejected` — cnos declines the proposal as target work.
+
+If accepted or modified, create or link a cnos target issue that includes a `## Source Proposal` block with source path, source commit when known, disposition, and delta when modified. Append the decision event to source `STATUS`; if cnos cannot write to the source repo, emit a feedback patch that updates `STATUS`. Once cnos has made a decision, the source proposal must not remain at `submitted`.
 
 Build a candidate table:
 
@@ -402,6 +413,8 @@ Both must be committed before γ requests the disconnect release from δ (§2.10
 Before close-out, collect (in-version, before release):
 - `.cdd/unreleased/{N}/alpha-closeout.md` (α close-out narrative — obtained via re-dispatch if needed)
 - `.cdd/unreleased/{N}/beta-closeout.md` (β close-out narrative + release evidence)
+
+**Cross-repo proposal close-out:** If this cycle accepted or modified a source proposal, γ verifies that the source proposal receives a `landed` event when the target work merges, or that the branch emits a feedback patch containing that event. The `landed` event names the target issue or cycle, landed commit, and artifact path when available. A proposal touched by the cycle may not remain at `accepted` or `modified` after the target work has landed.
 
 **Post-merge CI verification (mandatory):** Before authoring `gamma-closeout.md`, γ must verify CI ran green on the merge commit:
 - Run `gh run list --branch main --json status,conclusion,head_sha` filtered to `head_sha == merge-SHA`
