@@ -1,3 +1,6 @@
+<!-- sections: [gap, skills, ac-evidence, self-check, debt, cdd-trace, review-readiness] -->
+<!-- completed: [gap, skills, ac-evidence, self-check, debt, cdd-trace, review-readiness] -->
+
 # Self-Coherence — Issue #358
 
 ## Gap
