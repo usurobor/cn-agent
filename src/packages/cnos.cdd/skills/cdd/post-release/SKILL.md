@@ -417,6 +417,7 @@ Before committing the assessment, verify mechanically:
 - [ ] §6 CDD Closeout trace present with rows for observe/assess/close steps (incl. step 13a if skill patches landed)
 - [ ] §7 has all 6 fields: Next MCA, Owner, Branch, **First AC**, MCI frozen?, Rationale
 - [ ] §7 Closure evidence: immediate outputs listed with links, deferred outputs with issue/owner
+- [ ] Cross-repo proposal status updated or feedback patch emitted.
 - [ ] CHANGELOG TSC row added or updated to match assessment scores
 - [ ] §8 Hub memory: daily reflection written and pushed to hub repo
 - [ ] §8 Hub memory: at least one adhoc thread updated (or explicit note why none applies)

@@ -249,6 +249,15 @@ Why:
 
 ## Related artifacts
 
+## Source Proposal
+
+- Source:
+- Source commit:
+- Disposition:
+- Delta:
+
+Optional; include only when this target issue comes from a cross-repo source proposal.
+
 ## Non-goals
 
 ## Success / closure condition
@@ -291,6 +300,7 @@ Before filing or dispatching:
 - [ ] New surfaces include operator-visible projections.
 - [ ] CI additions include notification/status implications.
 - [ ] Related artifacts include canonical docs with exact paths.
+- [ ] If the target issue comes from a source proposal, `## Source Proposal` names source path, source commit when known, disposition, and delta when modified.
 - [ ] Examples obey the rules they are demonstrating.
 - [ ] Known gaps are named honestly.
 - [ ] Labels: exactly one kind label and one priority label (load `issue/labels`).
