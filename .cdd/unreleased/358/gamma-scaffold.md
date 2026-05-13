@@ -1,3 +1,6 @@
+<!-- sections: [intake, issue-validation, extracted-acceptance-criteria, peer-enumeration, implementation-plan, non-goals-guard] -->
+<!-- completed: [intake, issue-validation, extracted-acceptance-criteria, peer-enumeration, implementation-plan, non-goals-guard] -->
+
 # Gamma Scaffold — Issue #358
 
 ## Intake
