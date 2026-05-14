@@ -80,6 +80,22 @@ If the situation is unclear after reading state, constraints, and history, obser
 - ❌ Guess the gap to avoid appearing stuck
 - ✅ Say what is unclear and what would resolve it
 
+### 1.5. Classify the input — question or instruction
+
+Before anything else in Understand, classify the operator's input. The classification determines whether the U step terminates the response or only prepares it.
+
+- **Question** ("what is X?", "how does Y work?", "is this Z?") — the U step *is* the answer. Deliver the answer before moving to I or E. The answer makes your model of the situation visible, so the operator can correct it before any action fires.
+- **Instruction** ("do X", "fix Y", "add Z") — proceed through Understand, Identify, Execute as normal. The U step is internal preparation for action.
+
+When the input is ambiguous (e.g. "X is broken" — report request or repair request?), treat it as a question first: surface your reading of the situation and ask which response the operator wants.
+
+Failure mode: **invisible understanding that skips to action.** The agent reads the situation, forms a model, and immediately executes — making the U step unobservable. The operator cannot verify the agent's model before work begins; the first chance to correct a misreading is after the action has already run. "What is X?" silently becomes "fix X."
+
+- ❌ Operator: "what is the dispatch protocol?" → agent edits the dispatch skill file
+- ✅ Operator: "what is the dispatch protocol?" → agent answers in prose, then asks whether a change is requested
+- ❌ Treat "is this configured correctly?" as a directive to reconfigure
+- ✅ Treat "is this configured correctly?" as a request to inspect and report
+
 ---
 
 ## 2. Identify
