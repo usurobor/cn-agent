@@ -4,7 +4,7 @@ issue: "https://github.com/usurobor/cnos/issues/362"
 role: alpha
 manifest:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check, Debt]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace]
 ---
 
 # α self-coherence — #362
@@ -63,3 +63,13 @@ None. The patch closes the named gap; no follow-up cycles are implied by this ch
 Adjacent observations (not debt, for γ's awareness): §1.5 placement is at the end of §1 rather than the top. The content correctly states the ordering ("the U step is the answer. Deliver the answer before moving to I or E"), and the existing §1 intro paragraph ("Read state before acting") frames the whole section consistently, so the trailing position does not undermine the rule. Renumbering §1.1-§1.4 to position the gate first was considered and rejected as larger diff for marginal semantic gain; the γ scope said "small diff to one file."
 
 Provisional close-out fallback: this cycle uses bounded dispatch (§5.2 single-session δ-as-γ per γ scaffold). α will exit after signaling review-readiness; close-out follows via re-dispatch or γ-provisional path per `alpha/SKILL.md` §2.8.
+
+## CDD-Trace
+
+1. **Define** — issue #362 names the gap: `cap/SKILL.md` §UIE has no rule distinguishing questions from instructions; agent skips to action; "what is X?" becomes "fix X."
+2. **Design** — not required. Single-file additive subsection to one skill, no impact graph beyond the file itself; γ scope explicitly said "small diff to one file."
+3. **Plan** — not required. Implementation is one subsection insertion; sequencing is trivial.
+4. **Tests** — not applicable. The artifact is a prose skill that constrains future agent authorship; correctness is verified by reading the new §1.5 against the three ACs, which §ACs above does explicitly.
+5. **Code** — `src/packages/cnos.core/skills/agent/cap/SKILL.md` §1.5 added (commit `925095cd`). One file, +16 lines.
+6. **Docs** — the patched skill *is* the doc. No other doc references §UIE by structural number, so no sibling doc updates needed. Files in diff: `src/packages/cnos.core/skills/agent/cap/SKILL.md` (implementation, mapped in §ACs); `.cdd/unreleased/362/self-coherence.md` (this artifact). Both enumerated.
+7. **Self-coherence** — this file. §Gap → §Skills → §ACs → §Self-check → §Debt → §CDD-Trace → §Review-readiness, each committed incrementally per `alpha/SKILL.md` §2.5.
