@@ -92,6 +92,18 @@ Return to this file for verdict rules and output format.
 3.4. **Verdict before details**
   - Lead with APPROVED / REQUEST CHANGES.
 
+3.4a. **Verdict-shape lint**
+
+  Three invalid verdict shapes — each auto-RC:
+
+  - **`APPROVED` + unresolved findings at any severity** — contradicts 3.3 (all D/C/B/A must be fixed on-branch).
+  - **`APPROVED` + conditional qualifier** — `conditional`, `pending`, `modulo`, `subject to`, `assuming`, `provisional on`, `with follow-up` smuggle in an unresolved finding 3.3 forbids.
+  - **Split verdicts** — two terminal verdicts in one round (e.g. `APPROVED` for scope X, `REQUEST CHANGES` for scope Y). One round, one decision.
+
+  **Recovery**: any conditional or split shape becomes `REQUEST CHANGES`; each named condition is reformatted as a required-fix finding at its severity. The reviewer re-emits a single terminal verdict in the next round once findings clear.
+
+  *Derives from: tsc #53 β@S4 — "APPROVED with 3 unresolved C findings + conditional language." Rules 3.3/3.4 banned the shape implicitly; no explicit lint enumerated the conditional qualifiers or the split-verdict form.*
+
 3.5. **No phantom blockers**
   - Only block on incoherence you can demonstrate.
 
@@ -265,6 +277,7 @@ Before submitting a review:
 - [ ] Approval explicitly closes the search space
 - [ ] Merge instruction names branch and merge action
 - [ ] Verdict stated first
+- [ ] Verdict-shape lint passed (no `APPROVED` + unresolved findings; no conditional qualifier; no split verdict) per rule 3.4a
 
 ---
 
