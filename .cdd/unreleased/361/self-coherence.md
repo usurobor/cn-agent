@@ -80,3 +80,14 @@ Pre-#283 form `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` is warn-only per α §2
 **Caller-path trace (α §2.6 row 12).** N/A — no new module or function. The rule is consumed by β reading `review/SKILL.md` during verdict emission; the checklist entry added in the same diff is the call site.
 
 **Test assertion count (α §2.6 row 13).** N/A — no test surface.
+
+## Review-readiness
+
+**Ready for β.** Implementation complete at `34aa2b90`. All 3 ACs addressed. Self-coherence sections complete. Pre-review gate rows pass:
+
+- Base SHA `56202534` == `origin/main` at dispatch ✅
+- All commits on `cycle/361`, authored as `alpha@cdd.cnos` ✅
+- `.cdd/unreleased/361/self-coherence.md` present with all sections ✅
+- Implementation diff: new §3.4a verdict-shape lint in `review/SKILL.md` ✅
+
+Note: review-readiness written by δ (operator override) after α session timeout. α completed all substantive work; only this signal section was missing.
