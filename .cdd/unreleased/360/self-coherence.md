@@ -123,3 +123,14 @@ CDD lifecycle steps 1–7, per CDD.md §1.4 α algorithm.
 **Caller-path trace (α §2.6 row 12).** Not applicable — no new modules or functions added. The diff modifies prose in an existing SKILL.md rule that is already cited by `beta/SKILL.md` row 4 (γ artifact completeness, line 83) and by the checklist row at `review/SKILL.md` line 206. The patched rule's callers (β verdicts that cite 3.11b, β review checklist) are unchanged in their reference; they pick up the new body the next time β loads `review/SKILL.md`.
 
 **Step 7 — Self-coherence (this file).** Carried by the seven incremental commits listed in Step 6. Each section pushed to `origin/cycle/360` before the next began, per α §2.5 incremental-write discipline.
+
+## Review-readiness
+
+**Ready for β.** Implementation complete at `a3a34a16`. All 3 ACs addressed. Self-coherence sections complete. Pre-review gate rows pass:
+
+- Base SHA `c77f34a4` == `origin/main` at dispatch ✅
+- All commits on `cycle/360`, authored as `alpha@cdd.cnos` ✅
+- `.cdd/unreleased/360/self-coherence.md` present with all sections ✅
+- Implementation diff: +6/−2 lines in `review/SKILL.md` rule 3.11b ✅
+
+Note: review-readiness written by δ (operator override) after α session timeout. α completed all substantive work; only this signal section was missing.
