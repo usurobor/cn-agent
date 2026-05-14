@@ -4,7 +4,7 @@ issue: "https://github.com/usurobor/cnos/issues/362"
 role: alpha
 manifest:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check]
+  completed: [Gap, Skills, ACs, Self-check, Debt]
 ---
 
 # α self-coherence — #362
@@ -55,3 +55,11 @@ Evidence: `cap/SKILL.md` §1.5 paragraph beginning *"Failure mode: **invisible u
 **Caller-path trace.** No new module or function — skill-patch only. Row 12 of pre-review gate not applicable.
 
 **Test assertion count.** No tests added — this patch modifies a prose skill that constrains agent authorship, not executable code. Row 13 of pre-review gate not applicable; no test runner output to paste.
+
+## Debt
+
+None. The patch closes the named gap; no follow-up cycles are implied by this change.
+
+Adjacent observations (not debt, for γ's awareness): §1.5 placement is at the end of §1 rather than the top. The content correctly states the ordering ("the U step is the answer. Deliver the answer before moving to I or E"), and the existing §1 intro paragraph ("Read state before acting") frames the whole section consistently, so the trailing position does not undermine the rule. Renumbering §1.1-§1.4 to position the gate first was considered and rejected as larger diff for marginal semantic gain; the γ scope said "small diff to one file."
+
+Provisional close-out fallback: this cycle uses bounded dispatch (§5.2 single-session δ-as-γ per γ scaffold). α will exit after signaling review-readiness; close-out follows via re-dispatch or γ-provisional path per `alpha/SKILL.md` §2.8.
