@@ -4,7 +4,7 @@ issue: "https://github.com/usurobor/cnos/issues/361"
 role: alpha
 sections:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check, Debt]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace]
 ---
 
 # α Self-coherence — #361
@@ -62,3 +62,21 @@ Single-home rule satisfied: verdict-shape lint is stated once in `review/SKILL.m
 None. The diff is a single-file normative-prose patch with no new module, no schema change, no harness, no test surface, no language tooling. AC1, AC2, AC3 are all met with text-only evidence in the same file. The provisional alpha-closeout fallback (α §2.8) is not invoked: this cycle uses the standard re-dispatch path.
 
 Pre-#283 form `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` is warn-only per α §2.8 and not exercised here.
+
+## §CDD-Trace
+
+| Step | Artifact | This cycle |
+|------|----------|------------|
+| 1 | design | not required — single-file normative-prose patch, no impact graph beyond the file |
+| 2 | coherence contract | §Gap above (issue #361; tsc #53 β@S4 surfaced "APPROVED with 3 unresolved C findings + conditional language") |
+| 3 | plan | not required — one rule block + one checklist line; no sequencing |
+| 4 | tests | not required — normative prose. β consuming 3.4a + the checklist line during verdict emission is the enforcement path |
+| 5 | code | not required — no executable code in the diff |
+| 6 | docs | `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` — added rule 3.4a (Verdict-shape lint, 11 lines) and checklist entry (1 line); +13 lines. `.cdd/unreleased/361/gamma-scaffold.md` — γ scaffold authored before α dispatch. `.cdd/unreleased/361/self-coherence.md` — this file |
+| 7 | self-coherence | this file |
+
+**Artifact enumeration (α §2.6 row 11).** `git diff --stat origin/main..HEAD` lists three files; all three are named at step 6 above.
+
+**Caller-path trace (α §2.6 row 12).** N/A — no new module or function. The rule is consumed by β reading `review/SKILL.md` during verdict emission; the checklist entry added in the same diff is the call site.
+
+**Test assertion count (α §2.6 row 13).** N/A — no test surface.
