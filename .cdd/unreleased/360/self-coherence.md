@@ -6,7 +6,7 @@ date: "2026-05-14"
 base_sha: "c77f34a4"
 sections:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check]
+  completed: [Gap, Skills, ACs, Self-check, Debt]
 ---
 
 # α Self-coherence — #360
@@ -87,5 +87,15 @@ No other occurrences of `3.11b` in the document; the fact has one home.
 
 **Polyglot re-audit (α §2.6 row 9).** The diff touches two surfaces:
 
-- Markdown (`review/SKILL.md`, `self-coherence.md`) — re-read inline; cross-reference check passed (rule 3.11b body coherent with the §Document bullet and with the checklist row at line 204).
+- Markdown (`review/SKILL.md`, `self-coherence.md`) — re-read inline; cross-reference check passed (rule 3.11b body coherent with the §Document bullet and with the checklist row at line 206).
 - No other languages present.
+
+## §Debt
+
+**Known debt at handoff:**
+
+1. **`beta/SKILL.md` pre-merge gate row 4 silent on exemption interaction with 3.11b.** Row 4 (added by #355) says: *"If missing, verdict is RC with D-severity finding, classification protocol-compliance."* It contains no exemption clause. With this cycle's patch, `review/SKILL.md` 3.11b now lets β emit APPROVED on an exempted cycle (e.g. an emergency patch with `## Protocol exemption` in the sub-issue body), but row 4 — read literally — would still RC the same cycle at merge time. The two surfaces disagree under exemption. This disagreement pre-dates #360: row 4 has been silent on exemptions since #355 shipped. **Out of scope for #360** — the issue scope is exemption-discoverability inside 3.11b, not reconciling 3.11b with row 4. Recorded as follow-up: a separate cycle should patch row 4 to either inherit 3.11b's exemption clause or explicitly declare itself non-exempting (which would mean row 4 is the harder gate). Either disposition is γ's call.
+
+2. **No new tests.** The diff is rule-body prose in a SKILL.md; the canonical CDD verification of the rule is β's next review (against this branch, then against subsequent cycles where the rule is invoked). No automated test exists or could be authored for "did the rule body resolve the ambiguity?" — the test is operational (does the next exemption-claiming cycle still produce divergent β verdicts?). Per α §2.6 row 3, this is the "explicit reason none apply" case.
+
+3. **Historical artifacts unchanged.** `.cdd/unreleased/{355,357,359}/` reference rule 3.11b in past-tense audit records (`grep 3.11b .cdd/unreleased/` showed these). These are frozen cycle records, not active authority — they correctly cite 3.11b *as it stood at the time of those cycles*. No backfill is appropriate; the rule's evolution is preserved in `review/SKILL.md` git history, not in re-writing past close-outs.
