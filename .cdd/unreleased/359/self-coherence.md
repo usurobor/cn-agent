@@ -41,7 +41,7 @@ Implementation SHA: `22e9e7eb` (`α-359: clarify §5.2 collapses δ↔γ only �
 
 None. The patch is a contained clarification: two paragraphs at the head of §5.2's "Three structural consequences" list. No deferred work, no partial AC closure, no untouched peers. The pre-existing TSC #49 wave-1 misread was the originating signal and is closed by the new violation-shape paragraph (AC2).
 
-## CDD-Trace
+## CDD Trace
 
 1. **Design** — not required. Issue body, ACs, and the recommended patch are concrete enough to author directly; no impact graph beyond §5.2 itself and no new contract surface. Documented as "not required" per `alpha/SKILL.md §2.2`.
 2. **Coherence contract** — §Gap above names the incoherence ("§5.2 did not state which role-pair the collapse covers") and the originating misread (tsc #49 wave-1, recorded in `.cdd/releases/0.10.0/49/cdd-iteration.md` F1).
