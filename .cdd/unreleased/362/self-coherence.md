@@ -4,7 +4,7 @@ issue: "https://github.com/usurobor/cnos/issues/362"
 role: alpha
 manifest:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
 ---
 
 # α self-coherence — #362
@@ -73,3 +73,27 @@ Provisional close-out fallback: this cycle uses bounded dispatch (§5.2 single-s
 5. **Code** — `src/packages/cnos.core/skills/agent/cap/SKILL.md` §1.5 added (commit `925095cd`). One file, +16 lines.
 6. **Docs** — the patched skill *is* the doc. No other doc references §UIE by structural number, so no sibling doc updates needed. Files in diff: `src/packages/cnos.core/skills/agent/cap/SKILL.md` (implementation, mapped in §ACs); `.cdd/unreleased/362/self-coherence.md` (this artifact). Both enumerated.
 7. **Self-coherence** — this file. §Gap → §Skills → §ACs → §Self-check → §Debt → §CDD-Trace → §Review-readiness, each committed incrementally per `alpha/SKILL.md` §2.5.
+
+## Review-readiness | round 1
+
+- **base SHA:** `cfe143f7` (origin/main at observation time, 2026-05-14T23:19:18Z)
+- **implementation SHA:** `925095cd` (last implementation commit before this readiness signal — SHA-stable per `alpha/SKILL.md` §2.6 implementation-SHA convention)
+- **branch CI:** not configured for prose-only skill patches in this repo; no executable surface changed. β polls `origin/cycle/362` HEAD.
+- **author identity:** all α commits authored as `alpha@cdd.cnos` (verified via `git log origin/main..HEAD --format='%ae'`).
+- **pre-review gate (per `alpha/SKILL.md` §2.6):**
+  1. rebased onto current `origin/main` — yes (merge-base = origin/main HEAD = `cfe143f7`, re-validated 2026-05-14T23:19:18Z)
+  2. CDD Trace through step 7 — yes (§CDD-Trace above)
+  3. tests — N/A, prose skill (CDD-Trace step 4)
+  4. ACs evidence — yes (§ACs maps each to a quoted line)
+  5. known debt explicit — yes (§Debt: "None" with reasoning)
+  6. schema/shape audit — N/A, no contract changed (§Self-check)
+  7. peer enumeration — yes, role-skill peers and lifecycle-skill peers considered separately, neither requires updates (§Self-check)
+  8. harness audit — N/A, no schema-bearing contract changed (§Self-check)
+  9. polyglot re-audit — Markdown only, performed (§Self-check)
+  10. branch CI — N/A as above
+  11. artifact enumeration matches diff — yes (§Self-check + CDD-Trace step 6)
+  12. caller-path trace — N/A, no new module (§Self-check)
+  13. test assertion count — N/A, no tests (§Self-check)
+  14. commit author email matches `alpha@cdd.cnos` — yes (verified above)
+
+Ready for β.
