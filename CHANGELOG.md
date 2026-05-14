@@ -140,6 +140,16 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.75.0 (2026-05-14)
+
+### Changed
+- **cdd/operator:** §5.2 collapse scope clarification — δ↔γ only; γ↔α↔β stays separate per §1.4 (#359).
+- **cdd/review:** Rule 3.11b exemption scope — "documented in the issue" means sub-issue body only; parent comments don't count (#360).
+- **cdd/review:** §3.4a verdict-shape lint — no conditional APPROVEDs, no APPROVED + unresolved findings, no split verdicts (#361).
+
+### Fixed
+- Moved 23 pre-enforcement unreleased cycle directories to `.cdd/releases/pre-enforcement/` to unblock release gate.
+
 ## 3.73.0 (2026-05-01)
 
 ### Changed
