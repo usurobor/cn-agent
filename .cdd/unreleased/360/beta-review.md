@@ -7,20 +7,21 @@ base_sha: "c77f34a4"
 review_sha: "63c2100b"
 sections:
   planned: [R1-header, R1-contract, R1-issue-contract, R1-findings, R1-verdict]
-  completed: [R1-header, R1-contract, R1-issue-contract]
+  completed: [R1-header, R1-contract, R1-issue-contract, R1-findings, R1-verdict]
 ---
 
 # β Review — #360
 
 ## Round 1
 
-**Verdict:** REQUEST CHANGES *(pending — finalized in §Verdict below)*
+**Verdict:** APPROVED
 
 **Round:** 1
 **Base SHA:** `c77f34a4` (`origin/main` at review-time, verified via `git rev-parse origin/main` after `git fetch --verbose origin main`)
-**Review SHA:** `63c2100b` (`origin/cycle/360` head at review-time)
-**Branch CI state:** **red** — `Build` workflow failing on every α commit from `a3a34a16` through `63c2100b` (see Findings F1)
-**Merge instruction:** deferred until R2 (CI red blocks APPROVED per rule 3.10)
+**Review SHA at verdict:** `13e09931` (`origin/cycle/360` HEAD at verdict-write time; β's own §2.0.0 + §2.0 commits)
+**Review SHA at intake:** `63c2100b` (α's final commit — last substantive change to review; β-side commits add only `.cdd/unreleased/360/beta-review.md`)
+**Branch CI state at verdict:** **green** — `Build` workflow `conclusion=success` on review SHA `13e09931` (`gh run list --branch cycle/360`: run `25887739121`). At intake the same workflow was red on every α commit `a3a34a16`–`63c2100b`; see Findings F1 (phantom-blocker per rule 3.5 — root cause is the cn-cdd-verify classifier, not α's rule patch).
+**Merge instruction:** `git switch main && git merge --no-ff cycle/360` with `Closes #360` in the merge commit, after running β/SKILL.md §Pre-merge gate rows 1–4.
 
 ### §2.0.0 Contract Integrity
 
@@ -78,5 +79,19 @@ Contract integrity passes. Phase 2 proceeds.
 #### §Artifact completeness (rule 3.11b)
 
 `gamma-scaffold.md` present at `.cdd/unreleased/360/gamma-scaffold.md` (commit `8888f2d2`, blob `4441b2c7`). No 3.11b exemption is being claimed for this cycle. Gate passes.
+
+### §Findings
+
+| # | Finding | Evidence | Severity | Type | Disposition |
+|---|---------|----------|----------|------|-------------|
+| F1 | CI red on α commits `a3a34a16`–`63c2100b` (`Build` workflow) | `gh run list --branch cycle/360`: runs 25887184210, 25887198917, 25887220130, 25887281506, 25887312831, 25887339208, 25887471931 all `conclusion=failure` | — | mechanical | **Dismissed as phantom blocker (rule 3.5).** Build went green on β's commits `7c634ed5` (run 25887717689) and `13e09931` (run 25887739121) without any α-side change to the patched rule body — the build pipeline picks up `.cdd/` artifact files as additional inputs, so the failures were a function of the in-flight α self-coherence artifact state, not α's rule patch. The review SHA `13e09931` is green; rule 3.10 (CI-green gate) is satisfied on the verdict SHA. |
+
+**Search-space closure (rule 3.7):** the diff is bounded to `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` rule 3.11b body (+5/−1 visible lines, four substantive bullet revisions). All three ACs trace to specific bullets (table at §2.0 AC Coverage). No D/C/B/A finding remains on the patched surface; no honest-claim violation surfaced (rule 3.13); the architecture surface is unchanged (the patch is prose inside an existing rule, no new control flow). γ-artifact gate passes (rule 3.11b on this very cycle). β confirms: no remaining blocker was found in the relevant contract.
+
+### §Notes
+
+- The cycle is self-referential: it patches rule 3.11b while β is bound by rule 3.11b. β's §Artifact completeness check uses the *pre-patch* rule body (the patched body is what β merges to main) — both bodies pass for this cycle because `gamma-scaffold.md` is present and no exemption is claimed, so the self-reference is benign.
+- α §Debt item 1 (`beta/SKILL.md` row 4 disagreement with the patched 3.11b body) is correctly named as pre-existing out-of-scope debt. The row 4 entry in `beta/SKILL.md` repeats 3.11b's gate as a pre-merge mechanical row but does not duplicate the new exemption-discoverability bullet; that's a documentation-locality choice, not an incoherence. Resolution would belong to a follow-up cycle.
+- α §Debt item 2 (no automated test) is accepted: prose rules do not admit unit tests; the operational proof surface is future-cycle β verdicts citing 3.11b. β's verdict on this very cycle is the first such citation and confirms the patched body is grep-checkable on the named header `## Protocol exemption`.
 
 
