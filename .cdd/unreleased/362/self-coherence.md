@@ -4,7 +4,7 @@ issue: "https://github.com/usurobor/cnos/issues/362"
 role: alpha
 manifest:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs]
+  completed: [Gap, Skills, ACs, Self-check]
 ---
 
 # α self-coherence — #362
@@ -37,3 +37,21 @@ Evidence: `cap/SKILL.md` §1.5 — section title is *"Classify the input — que
 **AC3** — the rule names the failure mode it prevents: invisible understanding that skips to action, making the operator unable to verify the agent's model before work begins.
 
 Evidence: `cap/SKILL.md` §1.5 paragraph beginning *"Failure mode: **invisible understanding that skips to action.**"* — names the mode explicitly in bold and explains the mechanism (model forms internally, action fires before operator can verify or correct). Closes with the concrete instantiation: *"'What is X?' silently becomes 'fix X.'"*
+
+## Self-check
+
+**Did α push ambiguity onto β?** No. The patch is one new subsection in one file. Every AC maps to a quoted line in §1.5; β does not need to derive evidence from elsewhere.
+
+**Is every claim backed by diff evidence?** Yes. AC1/AC2/AC3 each quote the exact §1.5 text they rely on. `git diff origin/main..HEAD -- src/packages/cnos.core/skills/agent/cap/SKILL.md` shows the 16-line addition; no other file is touched.
+
+**Peer enumeration.** Skill-class peers were considered. `cap/SKILL.md` is a global agent skill, not a role skill — the contract is a behavioral rule for any agent reading the skill, not a lifecycle hand-off contract. Adjacent agent skills (`reflect`, `coherent`, `CLP` — listed in `cap/SKILL.md` §4) describe distinct concerns (post-hoc interpretation, output verification, pre-publish refinement) and do not duplicate the input-classification rule; none of them encode a question-vs-instruction gate that could drift from this one. Lifecycle skills (`alpha/`, `beta/`, `gamma/`, `review/`, `release/`, `post-release/`, `design/`, `plan/`, `issue/`) do not consume the UIE contract operationally — they constrain role behavior, not agent input handling. Conclusion: no peer surfaces require sibling updates.
+
+**Harness audit.** No schema or runtime contract changed; no harness audit required.
+
+**Post-patch re-audit (polyglot).** The diff is Markdown only. Re-audit: read the inserted §1.5 against the existing §1 structure — numbering continues from §1.4, the `---` separator before §2 remains in place, the ❌/✅ pair format matches surrounding sections (compare §1.2a, §1.4 in the unchanged file). Cross-reference check: the new section is referenced from nowhere else in the file, so no internal link drift. No additional toolchains apply.
+
+**Artifact enumeration matches diff.** `git diff --stat origin/main..HEAD` lists two files: `src/packages/cnos.core/skills/agent/cap/SKILL.md` (the implementation, mapped in §ACs) and `.cdd/unreleased/362/self-coherence.md` (this file, the cycle artifact). Both declared.
+
+**Caller-path trace.** No new module or function — skill-patch only. Row 12 of pre-review gate not applicable.
+
+**Test assertion count.** No tests added — this patch modifies a prose skill that constrains agent authorship, not executable code. Row 13 of pre-review gate not applicable; no test runner output to paste.
