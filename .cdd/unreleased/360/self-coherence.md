@@ -6,7 +6,7 @@ date: "2026-05-14"
 base_sha: "c77f34a4"
 sections:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check, Debt]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace]
 ---
 
 # α Self-coherence — #360
@@ -99,3 +99,27 @@ No other occurrences of `3.11b` in the document; the fact has one home.
 2. **No new tests.** The diff is rule-body prose in a SKILL.md; the canonical CDD verification of the rule is β's next review (against this branch, then against subsequent cycles where the rule is invoked). No automated test exists or could be authored for "did the rule body resolve the ambiguity?" — the test is operational (does the next exemption-claiming cycle still produce divergent β verdicts?). Per α §2.6 row 3, this is the "explicit reason none apply" case.
 
 3. **Historical artifacts unchanged.** `.cdd/unreleased/{355,357,359}/` reference rule 3.11b in past-tense audit records (`grep 3.11b .cdd/unreleased/` showed these). These are frozen cycle records, not active authority — they correctly cite 3.11b *as it stood at the time of those cycles*. No backfill is appropriate; the rule's evolution is preserved in `review/SKILL.md` git history, not in re-writing past close-outs.
+
+## §CDD Trace
+
+CDD lifecycle steps 1–7, per CDD.md §1.4 α algorithm.
+
+**Step 1 — Receive.** Dispatched on `cycle/360`, base SHA `c77f34a4` (`origin/main` at dispatch). γ scaffold present at `.cdd/unreleased/360/gamma-scaffold.md` (commit `8888f2d2`). Issue #360 read in full via `gh issue view 360`; no comments. ACs enumerated: AC1 (sub-issue body as exemption surface), AC2 (parent comment denied), AC3 (two recovery paths).
+
+**Step 2 — Skills.** Tier 1: CDD.md + alpha/SKILL.md + review/SKILL.md (as patch target). Tier 2: none. Tier 3: `cnos.core/skills/write/SKILL.md` (named in dispatch). design/plan explicitly not required — see §Skills above for reasons.
+
+**Step 3 — Design.** Not required: incoherence is named in #360 §Problem; closure shape is in #360 §Acceptance Criteria.
+
+**Step 4 — Plan.** Not required: single Edit to one rule bullet; sequencing trivial.
+
+**Step 5 — Tests.** Not applicable. The diff is rule-body prose. Operational verification is β's next review of an exemption-claiming cycle. See §Debt item 2.
+
+**Step 6 — Implementation artifacts.** Three files in `git diff --stat origin/main..HEAD`:
+
+- `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` (+6 / −2 lines) — rule 3.11b patched. Three bullets changed/added: §Scope tightened to one sentence; §Exemption discoverability added (AC1 + AC2); §Recovery paths added (AC3); §Document bullet extended to require citation of the exempting sub-issue body section. Committed at `a3a34a16`.
+- `.cdd/unreleased/360/self-coherence.md` (+101 lines) — this file. Sections written incrementally: §Gap (`a3a34a16`), §Skills (`ca2af889`), §ACs (`53d30998`), §Self-check (`7139e8d6`), §Debt (`212be76d`), §CDD-Trace (this commit). Manifest in frontmatter `sections.completed` tracks progress.
+- `.cdd/unreleased/360/gamma-scaffold.md` (+45 lines) — γ-authored at commit `8888f2d2`, base of the cycle. Not authored by α; included here for diff-stat enumeration completeness per α §2.6 row 11.
+
+**Caller-path trace (α §2.6 row 12).** Not applicable — no new modules or functions added. The diff modifies prose in an existing SKILL.md rule that is already cited by `beta/SKILL.md` row 4 (γ artifact completeness, line 83) and by the checklist row at `review/SKILL.md` line 206. The patched rule's callers (β verdicts that cite 3.11b, β review checklist) are unchanged in their reference; they pick up the new body the next time β loads `review/SKILL.md`.
+
+**Step 7 — Self-coherence (this file).** Carried by the seven incremental commits listed in Step 6. Each section pushed to `origin/cycle/360` before the next began, per α §2.5 incremental-write discipline.
