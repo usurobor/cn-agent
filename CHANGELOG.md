@@ -140,6 +140,11 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ---
 
+## 3.76.0 (2026-05-14)
+
+### Changed
+- **cap:** §1.5 UIE communication gate — classify input as question or instruction before acting; answer questions before executing (#362).
+
 ## 3.75.0 (2026-05-14)
 
 ### Changed
