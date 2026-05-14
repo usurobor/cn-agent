@@ -123,8 +123,10 @@ Return to this file for verdict rules and output format.
   - β must verify `.cdd/unreleased/{N}/gamma-scaffold.md` exists on the cycle branch before emitting verdict APPROVED.
   - If gamma-scaffold.md is missing → verdict is RC, finding D-severity, classification `protocol-compliance`.
   - **Rationale**: Prevents protocol bypass where δ dispatches α→β directly without γ coordination. Missing γ artifacts indicate the cycle did not follow the canonical CDD.md §1.4 triadic protocol.
-  - **Scope**: This gate applies to all cycles except explicit protocol exemptions documented in the issue (e.g., emergency patches, infrastructure-only changes with operator override).
-  - Document the check in `beta-review.md` §Artifact completeness: citation of gamma-scaffold.md presence/absence.
+  - **Scope**: This gate applies to all cycles except explicit protocol exemptions.
+  - **Exemption discoverability**: An exemption satisfies 3.11b only if it appears in the **sub-issue body** β is reviewing — i.e. the body of the cycle's own issue, or the body of any issue γ links from the dispatch prompt as authority for the cycle. A comment on a parent / master / tracking issue does NOT satisfy exemption discoverability: β reviews the sub-issue β was dispatched against, not the parent tree, and master comments are not part of the cycle's load surface. *Derives from: tsc #49 F2 — four β subagents diverged on a cycle where the exemption lived as a parent-issue comment; β@S1 read 3.11b literally (D-severity RC), β@S2/S3/S4 accepted the master comment (B non-blocker). The rule did not specify which issue body counts, so divergence was structural, not careless.*
+  - **Recovery paths when 3.11b RC fires**: either (a) γ (or δ-as-γ) authors the missing `.cdd/unreleased/{N}/gamma-scaffold.md` on the cycle branch before β re-dispatch, OR (b) γ amends the sub-issue body to add an explicit `## Protocol exemption` section naming the reason (e.g. emergency patch, infrastructure-only change with operator override) and β re-dispatches against the amended body. Path (a) is canonical; path (b) is the escape valve for cycles that legitimately bypass γ scaffolding.
+  - Document the check in `beta-review.md` §Artifact completeness: citation of gamma-scaffold.md presence/absence, and — if a 3.11b exemption is claimed — citation of the sub-issue body section that grants it.
 
 3.12. **Review divergence is a skill gap**
   - When two reviewers diverge, the fix is a patch to the review skill, not "be more careful."
