@@ -1,5 +1,5 @@
 <!-- sections: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness] -->
-<!-- completed: [gap, skills, acs, self-check, debt] -->
+<!-- completed: [gap, skills, acs, self-check, debt, cdd-trace] -->
 
 # Self-Coherence — Issue #359
 
@@ -40,3 +40,13 @@ Implementation SHA: `22e9e7eb` (`α-359: clarify §5.2 collapses δ↔γ only �
 ## Debt
 
 None. The patch is a contained clarification: two paragraphs at the head of §5.2's "Three structural consequences" list. No deferred work, no partial AC closure, no untouched peers. The pre-existing TSC #49 wave-1 misread was the originating signal and is closed by the new violation-shape paragraph (AC2).
+
+## CDD-Trace
+
+1. **Design** — not required. Issue body, ACs, and the recommended patch are concrete enough to author directly; no impact graph beyond §5.2 itself and no new contract surface. Documented as "not required" per `alpha/SKILL.md §2.2`.
+2. **Coherence contract** — §Gap above names the incoherence ("§5.2 did not state which role-pair the collapse covers") and the originating misread (tsc #49 wave-1, recorded in `.cdd/releases/0.10.0/49/cdd-iteration.md` F1).
+3. **Plan** — not required. Single-file edit, three ACs, ordering trivial: write paragraph 1 (scope statement, AC1), write paragraph 2 (violation shape, AC2), re-grep §5.2 references to verify consistency (AC3). Documented as "not required."
+4. **Tests** — not applicable. Skill content is prose-only; no executable surface. The acceptance check is the §ACs evidence in this artifact (text presence + downstream-reference enumeration).
+5. **Code** — not applicable (no executable code touched). The implementation is the docs change in step 6.
+6. **Docs** — `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` patched at §5.2 head (commit `22e9e7eb`, +4 lines). γ artifact `.cdd/unreleased/359/gamma-scaffold.md` (commit `88a573de`, authored by γ, not α). Caller-path trace: not applicable — no new modules or functions, only inline prose added to an existing section. Downstream §5.2 references in `release/SKILL.md §3.8`, `alpha/SKILL.md` (review-readiness fix-round protocol), and `activation/SKILL.md §8` (dispatch declaration) inspected and left coherent (AC3 evidence).
+7. **Self-coherence** — this file. Sections committed incrementally: `f6672240` §Gap, `c7977e21` §Skills, `9b4c71c0` §ACs, `039dcc7a` §Self-check, `057150c1` §Debt, this commit §CDD-Trace. Review-readiness signal follows in a separate commit per `alpha/SKILL.md §2.6` SHA-convention guidance.
