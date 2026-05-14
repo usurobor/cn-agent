@@ -1,5 +1,5 @@
 <!-- sections: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness] -->
-<!-- completed: [gap, skills, acs, self-check, debt, cdd-trace] -->
+<!-- completed: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness] -->
 
 # Self-Coherence — Issue #359
 
@@ -50,3 +50,26 @@ None. The patch is a contained clarification: two paragraphs at the head of §5.
 5. **Code** — not applicable (no executable code touched). The implementation is the docs change in step 6.
 6. **Docs** — `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` patched at §5.2 head (commit `22e9e7eb`, +4 lines). γ artifact `.cdd/unreleased/359/gamma-scaffold.md` (commit `88a573de`, authored by γ, not α). Caller-path trace: not applicable — no new modules or functions, only inline prose added to an existing section. Downstream §5.2 references in `release/SKILL.md §3.8`, `alpha/SKILL.md` (review-readiness fix-round protocol), and `activation/SKILL.md §8` (dispatch declaration) inspected and left coherent (AC3 evidence).
 7. **Self-coherence** — this file. Sections committed incrementally: `f6672240` §Gap, `c7977e21` §Skills, `9b4c71c0` §ACs, `039dcc7a` §Self-check, `057150c1` §Debt, this commit §CDD-Trace. Review-readiness signal follows in a separate commit per `alpha/SKILL.md §2.6` SHA-convention guidance.
+
+## Review-readiness | round 1
+
+- **Implementation SHA:** `22e9e7eb` (`α-359: clarify §5.2 collapses δ↔γ only — γ↔α↔β stays separate`)
+- **Base SHA:** `23e28e45` — equals `origin/main` HEAD observed 2026-05-14 at append time (no rebase needed; cycle branch is rooted on current main)
+- **Branch CI:** green — Build `success` on HEAD `f7f79415` per `gh run list --branch cycle/359` at 2026-05-14 20:12:02Z
+- **Author email:** `alpha@cdd.cnos` on all 8 α commits per `git log --format='%ae' origin/main..HEAD` (γ scaffold commit `88a573de` is `gamma@cdd.cnos`, expected)
+- **Pre-review gate (`alpha/SKILL.md §2.6`):**
+  1. cycle branch rebased on main ✓ (base = current main HEAD)
+  2. CDD Trace through step 7 ✓
+  3. tests N/A — skill content is prose-only ✓ (§ACs documents reason)
+  4. every AC has evidence ✓ (§ACs)
+  5. known debt explicit ✓ ("None" in §Debt)
+  6. schema / shape audit N/A — no contract surface changed ✓
+  7. peer enumeration ✓ (§Self-check — role-skill peers exempt, lifecycle-skill peers exempt with reason)
+  8. harness audit N/A — no schema-bearing contract ✓
+  9. polyglot re-audit ✓ — Markdown-only diff (§Self-check)
+  10. CI green on HEAD ✓
+  11. artifact enumeration matches diff ✓ (§Self-check: 3 files in `git diff --stat`, all accounted for)
+  12. caller-path trace N/A — no new modules ✓
+  13. test assertion count N/A — no tests ✓
+  14. author email matches `alpha@cdd.cnos` ✓
+- **Status:** ready for β.
