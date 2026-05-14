@@ -298,6 +298,10 @@ Use this configuration when the cycle is substantial (see §5.3 escalation crite
 
 When the operator is a Claude Code agent (one parent session), α and β are dispatched as sub-agents using the Agent tool rather than via separate `claude -p` processes. Sub-agents run with fresh context per invocation and are functionally equivalent to `claude -p` for role-isolation purposes (each sub-agent reasons independently, cannot see the parent's conversation state, and cannot see the other sub-agent's conversation state). However, sub-agents inherit MCP scope and filesystem access from the parent session.
 
+**Scope of the collapse.** §5.2 collapses **δ↔γ only**. γ↔α↔β remain structurally separate per `CDD.md §1.4` Triadic rule: γ scaffolds and coordinates in the parent session, α implements in its own sub-agent, β reviews and merges in its own sub-agent. The dyad-plus-coordinator structure is preserved; only the operator (δ) and coordinator (γ) functions fuse into one parent session.
+
+A single sub-agent that performs γ-selection plus α-implementation plus β-review is not §5.2 — it is a §1.4 violation. §5.2 requires three execution contexts: the parent session (γ, also δ), a separate α sub-agent, and a separate β sub-agent. Lumping γ+α+β into one sub-agent breaks role-isolation (α gains access to β's reasoning and vice versa) and is rejected.
+
 Three structural consequences follow:
 
 1. **δ=γ collapse.** γ/δ separation is structurally absent: one parent session holds both the selection/scaffolding function (γ) and the external gate authority (δ). The cycle proceeds, but the grading floor in §3.8 of `release/SKILL.md` applies — see §3.8 configuration-floor clause.
