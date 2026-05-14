@@ -7,7 +7,7 @@ base_sha: "c77f34a4"
 review_sha: "63c2100b"
 sections:
   planned: [R1-header, R1-contract, R1-issue-contract, R1-findings, R1-verdict]
-  completed: [R1-header, R1-contract]
+  completed: [R1-header, R1-contract, R1-issue-contract]
 ---
 
 # β Review — #360
@@ -39,3 +39,44 @@ sections:
 | γ artifacts present (gamma-scaffold.md) | yes | `.cdd/unreleased/360/gamma-scaffold.md` exists at `origin/cycle/360` (blob `4441b2c7`); rule 3.11b compliance — gate passes |
 
 Contract integrity passes. Phase 2 proceeds.
+
+### §2.0 Issue Contract
+
+#### AC Coverage
+
+| # | AC | In diff? | Status | Notes |
+|---|----|----------|--------|-------|
+| 1 | `review/SKILL.md §3.11b` specifies that "documented in the issue" means the **sub-issue body** (or any issue body γ links from the dispatch prompt) | yes | **Met** | `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` rule 3.11b bullet 5 (Exemption discoverability) states: *"An exemption satisfies 3.11b only if it appears in the **sub-issue body** β is reviewing — i.e. the body of the cycle's own issue, or the body of any issue γ links from the dispatch prompt as authority for the cycle."* The γ-linked-authority-issue clause covers the legitimate case where a sub-issue inherits exemption from a named parent doc; the load-surface argument grounds *why*. |
+| 2 | A comment on a master/parent issue does NOT satisfy 3.11b exemption discoverability | yes | **Met** | Same bullet, second sentence: *"A comment on a parent / master / tracking issue does NOT satisfy exemption discoverability: β reviews the sub-issue β was dispatched against, not the parent tree, and master comments are not part of the cycle's load surface."* The denial is grounded (load surface), not bare. *Derives from: tsc #49 F2* citation is embedded inline, fixing rule provenance. |
+| 3 | Recovery paths documented: (a) author missing gamma-scaffold.md before β re-dispatch, OR (b) amend sub-issue body with explicit exemption section | yes | **Met** | Bullet 6 (Recovery paths when 3.11b RC fires): path (a) authors `.cdd/unreleased/{N}/gamma-scaffold.md`; path (b) amends sub-issue body with a `## Protocol exemption` section. Path (a) named as canonical; path (b) as escape valve. The named header (`## Protocol exemption`) makes path (b) grep-checkable — β doesn't need judgment to verify, only a grep. Bullet 7 (Document) extends to require β cite *which* sub-issue body section grants the exemption, completing the audit trail. |
+
+#### Named Doc Updates
+
+| Doc / File | In diff? | Status | Notes |
+|------------|----------|--------|-------|
+| `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` (rule 3.11b body) | yes (+6/−2 in commit `a3a34a16`) | **Updated** | Three substantive bullets changed: §Scope tightened from prose-exemption to "see §Exemption discoverability"; §Exemption discoverability added; §Recovery paths added; §Document bullet extended. Diff is bounded; no other rules touched. |
+
+#### CDD Artifact Contract
+
+| Artifact | Required? | Present? | Notes |
+|----------|-----------|----------|-------|
+| `.cdd/unreleased/360/gamma-scaffold.md` | yes | yes | γ scaffold present (blob `4441b2c7`, commit `8888f2d2`); satisfies rule 3.11b γ artifact completeness gate |
+| `.cdd/unreleased/360/self-coherence.md` | yes | yes | α self-coherence present (blob `209da4b3`); all 6 sections committed (§Gap → §CDD Trace) + §Review-readiness section; manifest in frontmatter matches on-disk content |
+| `.cdd/unreleased/360/beta-review.md` | yes | yes | this file |
+
+#### Active Skill Consistency
+
+| Skill | Required by | Loaded? | Applied? | Notes |
+|-------|-------------|---------|----------|-------|
+| `CDD.md` | β intake | yes | yes | Loaded as canonical lifecycle and role contract |
+| `cdd/beta/SKILL.md` | β intake | yes | yes | Role surface, pre-merge gate, role rules |
+| `cdd/review/SKILL.md` | review phase | yes | yes | Phase 1/2/3 orchestration, verdict rules |
+| `cdd/release/SKILL.md` | release phase | yes | yes | Pre-merge gate row 3 (non-destructive merge-test reference) |
+| `cdd/alpha/SKILL.md` | α dispatch | n/a (β does not load α/γ role skills) | n/a | α §Skills cites α §2.2 (design/plan not required) and α §2.3 (skill-class peers); both visible in α's self-coherence |
+| `cnos.core/skills/write/SKILL.md` | α dispatch (Tier 3) | n/a (named in dispatch to α, not loaded by β) | yes (visible in rule body) | The patched rule body shows write/SKILL.md application: front-loaded point ("An exemption satisfies 3.11b only if it appears in the **sub-issue body**"), specific (not abstract) terms ("sub-issue body β is reviewing", "parent / master / tracking issue"), instance adjacent to abstraction (tsc #49 F2 citation immediately under the divergence claim), structured list for parallel recovery paths |
+
+#### §Artifact completeness (rule 3.11b)
+
+`gamma-scaffold.md` present at `.cdd/unreleased/360/gamma-scaffold.md` (commit `8888f2d2`, blob `4441b2c7`). No 3.11b exemption is being claimed for this cycle. Gate passes.
+
+
