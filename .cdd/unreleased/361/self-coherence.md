@@ -4,7 +4,7 @@ issue: "https://github.com/usurobor/cnos/issues/361"
 role: alpha
 sections:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check]
+  completed: [Gap, Skills, ACs, Self-check, Debt]
 ---
 
 # α Self-coherence — #361
@@ -56,3 +56,9 @@ Single-home rule satisfied: verdict-shape lint is stated once in `review/SKILL.m
 **Intra-doc repetition check (α §2.3).** Within `review/SKILL.md`, verdict-shape facts appear in 3.3 (APPROVED+unresolved invalid), 3.4 (verdict-before-details), 3.4a (lint enumeration), and the checklist. 3.4a explicitly cross-references 3.3 ("contradicts 3.3"); the checklist line cites "rule 3.4a." No drift between sites.
 
 **Write skill compliance.** §3.4a leads with the point ("Three invalid verdict shapes — each auto-RC"), uses specifics (six named qualifier tokens, not "such as"), gives one Recovery paragraph (one fact, one home), cites the deriving incident.
+
+## §Debt
+
+None. The diff is a single-file normative-prose patch with no new module, no schema change, no harness, no test surface, no language tooling. AC1, AC2, AC3 are all met with text-only evidence in the same file. The provisional alpha-closeout fallback (α §2.8) is not invoked: this cycle uses the standard re-dispatch path.
+
+Pre-#283 form `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` is warn-only per α §2.8 and not exercised here.
