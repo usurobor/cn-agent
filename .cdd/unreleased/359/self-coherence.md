@@ -1,5 +1,5 @@
 <!-- sections: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness] -->
-<!-- completed: [gap, skills, acs, self-check] -->
+<!-- completed: [gap, skills, acs, self-check, debt] -->
 
 # Self-Coherence — Issue #359
 
@@ -36,3 +36,7 @@ Implementation SHA: `22e9e7eb` (`α-359: clarify §5.2 collapses δ↔γ only �
 **Polyglot re-audit.** Diff languages: Markdown only (operator/SKILL.md, self-coherence.md, gamma-scaffold.md). Markdown checks: table shape unchanged, no new cross-references introduced (the new paragraphs reference `CDD.md §1.4` which already exists in §5.2's surrounding prose), prose reads coherently with neighboring "Three structural consequences follow" list.
 
 **Artifact enumeration matches diff.** `git diff --stat origin/main..HEAD` lists three files: `operator/SKILL.md` (the patch — AC1/AC2/AC3 evidence), `gamma-scaffold.md` (γ artifact, not authored by α — referenced in CDD-Trace step 6), `self-coherence.md` (this file). All three accounted for.
+
+## Debt
+
+None. The patch is a contained clarification: two paragraphs at the head of §5.2's "Three structural consequences" list. No deferred work, no partial AC closure, no untouched peers. The pre-existing TSC #49 wave-1 misread was the originating signal and is closed by the new violation-shape paragraph (AC2).
