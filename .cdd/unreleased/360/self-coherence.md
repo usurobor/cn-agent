@@ -6,7 +6,7 @@ date: "2026-05-14"
 base_sha: "c77f34a4"
 sections:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs]
+  completed: [Gap, Skills, ACs, Self-check]
 ---
 
 # α Self-coherence — #360
@@ -56,3 +56,36 @@ Not loaded: `design/SKILL.md`, `plan/SKILL.md` — explicitly not required per �
 - Evidence: `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` rule 3.11b, bullet 6 (Recovery paths), commit `a3a34a16`.
 - The bullet names path (a) as canonical (matches CDD §1.4 γ scaffolding) and path (b) as the escape valve. It also names the section header β should grep for (`## Protocol exemption`), which keeps the recovery path mechanically checkable — β does not need judgment to verify path (b) was taken, only a grep.
 - The final §Document bullet was also updated to require β to cite *which sub-issue body section* grants the exemption when one is claimed, so the audit trail is complete on β's side.
+
+## §Self-check
+
+**Did α push ambiguity onto β?** No — the rule body now answers the question that tsc #49 F2 left ambiguous: *which* issue body grants exemption. β does not need to interpret "the issue" anymore; the rule names "sub-issue body β is reviewing" or "any issue body γ links from the dispatch prompt as authority."
+
+**Is every claim backed by evidence in the diff?** Yes. The three ACs each cite a specific bullet in rule 3.11b at commit `a3a34a16`. No claim in §ACs depends on prose outside the diff.
+
+**Peer enumeration — rule-class peers.** Per α §2.3 (skill-class peers as a distinct enumeration class):
+
+- **Role skills** (`alpha/`, `beta/`, `gamma/`, `operator/`): grep for `3.11b` across role skills.
+  - `alpha/SKILL.md` — no mention of 3.11b. α §2.6 pre-review-gate rows 11–14 enumerate α-side authoring gates; β-side gates like 3.11b are out of α-skill scope. **No update needed.**
+  - `beta/SKILL.md` — checked (not loaded in this cycle, per α §2.1 — α does not load β/γ role skills). However, the contract change is in `review/SKILL.md`, which is the lifecycle skill `beta/` calls. By the load-graph, β picks up the patched rule when it loads `review/`. Sibling enforcement surface is `beta/SKILL.md` pre-merge gate row 4 (γ artifact completeness, added by #355). Row 4 contains no exemption clause at all — it has been silent on exemptions since #355 shipped, independent of this patch's wording change. **No `beta/` patch needed for #360**, but the silence between 3.11b's exemption clause and row 4's no-exemption phrasing is pre-existing debt — flagged in §Debt below.
+  - `gamma/SKILL.md` — checked similarly. γ's dispatch-prompt format already names "Issue: gh issue view {N}" pointing at the sub-issue, which is consistent with the patched rule's "sub-issue body" framing. **No `gamma/` patch needed**, but see Debt for a soft follow-up.
+  - `operator/SKILL.md` — not in scope (operator does not emit 3.11b verdicts).
+- **Lifecycle skills** (`review/`, `release/`, `post-release/`, `design/`, `plan/`, `issue/`): grep for `3.11b` across lifecycle skills.
+  - `review/SKILL.md` — patched (this is the rule's home).
+  - `release/SKILL.md` — no mention of 3.11b. Release operates on β-merged state; 3.11b fires before release. **No update needed.**
+  - `post-release/SKILL.md` — no mention of 3.11b. **No update needed.**
+  - `design/SKILL.md`, `plan/SKILL.md`, `issue/SKILL.md` — no mention of 3.11b. **No update needed.**
+
+**Peer enumeration — intra-doc repetition (α §2.3).** grep for `3.11b` in `review/SKILL.md` itself:
+
+- Line 122 — rule definition (patched).
+- Line 206 — checklist row `| γ artifacts present (gamma-scaffold.md) | yes / no / n/a | rule 3.11b compliance |`. This row references 3.11b by number, not by exemption-scope phrasing; it remains correct after the patch because the rule body is the authority and the checklist points to it. **No checklist-row update needed.**
+
+No other occurrences of `3.11b` in the document; the fact has one home.
+
+**Harness audit.** Not applicable — no schema-bearing contract, parser, or runtime shape changed. The diff is rule-body prose.
+
+**Polyglot re-audit (α §2.6 row 9).** The diff touches two surfaces:
+
+- Markdown (`review/SKILL.md`, `self-coherence.md`) — re-read inline; cross-reference check passed (rule 3.11b body coherent with the §Document bullet and with the checklist row at line 204).
+- No other languages present.
