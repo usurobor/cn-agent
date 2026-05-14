@@ -4,7 +4,7 @@ issue: "https://github.com/usurobor/cnos/issues/361"
 role: alpha
 sections:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, ACs]
+  completed: [Gap, Skills, ACs, Self-check]
 ---
 
 # α Self-coherence — #361
@@ -30,3 +30,29 @@ sections:
 | AC1 | review/SKILL.md §3.3/3.4 contains explicit verdict-shape lint rules: `APPROVED` + unresolved findings = invalid; `APPROVED` + "conditional/pending/modulo" qualifier = invalid | met | review/SKILL.md §3.4a bullet 1 (`APPROVED` + unresolved findings at any severity, cross-refs 3.3); §3.4a bullet 2 enumerates the six qualifier tokens `conditional`, `pending`, `modulo`, `subject to`, `assuming`, `provisional on`, `with follow-up` |
 | AC2 | Recovery path documented: conditional becomes RC with conditions as required-fix findings | met | review/SKILL.md §3.4a Recovery paragraph: "any conditional or split shape becomes `REQUEST CHANGES`; each named condition is reformatted as a required-fix finding at its severity. The reviewer re-emits a single terminal verdict in the next round once findings clear." |
 | AC3 | Reviewers must select one terminal verdict per round — no split verdicts | met | review/SKILL.md §3.4a bullet 3 (Split verdicts): "two terminal verdicts in one round … One round, one decision." Plus checklist line: "Verdict-shape lint passed (no `APPROVED` + unresolved findings; no conditional qualifier; no split verdict) per rule 3.4a." |
+
+## §Self-check
+
+**Did α push ambiguity onto β?** No. 3.4a names the three invalid shapes by exact form (`APPROVED` + unresolved findings; `APPROVED` + qualifier from a closed list of seven tokens; two terminal verdicts in one round) and names one recovery path (RC + conditions reformatted as findings + one terminal verdict next round). The checklist line gives β a single mechanical check.
+
+**Is every claim backed by evidence in the diff?**
+
+- "APPROVED + unresolved findings is invalid" — backed by 3.3 (`zero findings at any severity remain unresolved`) which 3.4a cross-references. No new claim, just made explicit.
+- "Conditional qualifiers smuggle in unresolved findings" — backed by 3.3's prohibition: a `pending X` clause names X as unresolved, which 3.3 already forbids.
+- "Split verdicts are invalid" — new constraint, derived from rule 3.4 ("Lead with APPROVED / REQUEST CHANGES" — singular, one decision).
+- Derivation line cites tsc #53 β@S4 as the surfacing incident.
+
+**Peer enumeration (per α §2.3).** The diff modifies one lifecycle skill (`review/`). Peer surfaces searched:
+
+| Surface | Class | Verdict-shape statement? | Action |
+|---------|-------|--------------------------|--------|
+| `review/SKILL.md` | lifecycle (the target) | yes — 3.3, 3.4, 3.4a (new) | updated |
+| `beta/SKILL.md` | role | references "review verdict (RC or A)" structurally; delegates shape to `review/SKILL.md` | no update — authority is at `review/` |
+| `CDD.md` §S6 | canonical | names verdict at the lifecycle level ("RC / A"); does not constrain shape | no update — shape lives in `review/SKILL.md` |
+| `release/`, `post-release/`, `alpha/`, `activation/` | mixed | use `provisional`/`pending` in *release-scoring* and *close-out fallback* contexts, not verdict-shape | no update — different referent (grep confirmed: `release/SKILL.md:100` = CHANGELOG TSC row, `alpha/SKILL.md:296` = closeout fallback) |
+
+Single-home rule satisfied: verdict-shape lint is stated once in `review/SKILL.md` §3.4a; siblings continue to reference review/SKILL.md as authority.
+
+**Intra-doc repetition check (α §2.3).** Within `review/SKILL.md`, verdict-shape facts appear in 3.3 (APPROVED+unresolved invalid), 3.4 (verdict-before-details), 3.4a (lint enumeration), and the checklist. 3.4a explicitly cross-references 3.3 ("contradicts 3.3"); the checklist line cites "rule 3.4a." No drift between sites.
+
+**Write skill compliance.** §3.4a leads with the point ("Three invalid verdict shapes — each auto-RC"), uses specifics (six named qualifier tokens, not "such as"), gives one Recovery paragraph (one fact, one home), cites the deriving incident.
