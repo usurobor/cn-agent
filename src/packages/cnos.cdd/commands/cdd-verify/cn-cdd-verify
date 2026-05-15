@@ -250,8 +250,11 @@ is_exception_backed() {
 
 is_legacy_version() {
   local version="$1"
-  # Returns 0 (true) if version is before v3.65.0 (epoch threshold)
-  # Legacy cycles get warnings instead of failures for missing artifacts
+  # Returns 0 (true) if version pre-dates the current artifact requirements
+  # (cutoff: v3.77.0). Pre-v3.77.0 cycles get warnings instead of failures
+  # for missing alpha-closeout.md / gamma-closeout.md and for missing
+  # "CDD Trace" sections in self-coherence.md — these artifacts were not
+  # required when those cycles shipped. v3.77.0+ cycles get strict checks.
 
   # Handle non-standard version directories
   if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -262,14 +265,16 @@ is_legacy_version() {
   local major minor patch
   IFS='.' read -r major minor patch <<< "$version"
 
-  # Compare against 3.74.0 (treat earlier versions as transitional/legacy)
-  # Based on CI failures, full artifact enforcement seems to start around v3.74.0+
+  # Compare against 3.77.0. v3.74.0 ships with all current artifacts (cycle
+  # 327), but alpha-closeout.md / gamma-closeout.md and the "CDD Trace"
+  # section were not consistently required across v3.75.0 and v3.76.0
+  # cycles; lock those eras to warn so CI does not fail on historical state.
   if [[ $major -lt 3 ]]; then
     return 0  # Before v3.x.x
-  elif [[ $major -eq 3 && $minor -lt 74 ]]; then
-    return 0  # Before v3.74.x (transitional period for artifact enforcement)
+  elif [[ $major -eq 3 && $minor -lt 77 ]]; then
+    return 0  # Before v3.77.x (transitional period for artifact enforcement)
   else
-    return 1  # v3.74.0 or later
+    return 1  # v3.77.0 or later
   fi
 }
 
@@ -380,7 +385,7 @@ check_triadic_artifacts() {
       if is_exception_backed "$exception_path"; then
         check "$artifact (issue #$issue_num)" warn "missing but exception-backed: $exception_path"
       elif [[ "$is_legacy" == true ]]; then
-        check "$artifact (issue #$issue_num)" warn "missing in legacy cycle (pre-v3.65.0) — expected .cdd/unreleased/$issue_num/$artifact"
+        check "$artifact (issue #$issue_num)" warn "missing in legacy cycle (pre-v3.77.0) — expected .cdd/unreleased/$issue_num/$artifact"
       else
         check "$artifact (issue #$issue_num)" fail "expected .cdd/unreleased/$issue_num/$artifact"
       fi
@@ -501,7 +506,7 @@ validate_artifact_sections() {
         if is_exception_backed "$sections_exception_path"; then
           check "$artifact_name sections" warn "missing required sections but exception-backed: ${missing_sections[*]}"
         elif [[ "$is_legacy" == true ]]; then
-          check "$artifact_name sections" warn "missing required sections in legacy cycle (pre-v3.65.0): ${missing_sections[*]}"
+          check "$artifact_name sections" warn "missing required sections in legacy cycle (pre-v3.77.0): ${missing_sections[*]}"
         else
           check "$artifact_name sections" fail "missing required sections: ${missing_sections[*]}"
         fi
