@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface, Non-goals, Closure] -->
-<!-- completed: [Preamble, Q1, Q2, Q3, Q4, Q5] -->
+<!-- completed: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface] -->
 
 # Receipt Validation — Parent-facing Validator Surface
 
@@ -385,5 +385,194 @@ Second, it leaves the validator without a single artifact to validate. `V` is `C
 ### Consequence
 
 Phase 2 (schemas) inherits the receipt's structural commitments — which blocks exist, which fields they carry, which derivation sources feed them. Phase 3 (validator + `derive_receipt`) inherits the function shape and the input set. Phase 5 (γ shrink) inherits the constraint that `gamma-closeout.md` remains one of `derive_receipt`'s required inputs even after γ's role-skill shrinks; γ's coordination-function continues to produce the closeout, even if γ's runtime-supervision-mechanics responsibilities move to the harness.
+
+---
+
+## Validation Interface
+
+This section freezes the parent-facing validation interface at doctrine level. **Schema syntax is Phase 2** — the shapes below are prose plus minimal illustrative examples, not `.cue` definitions. Phase 2 chooses the schema language and pins exact field types; this section commits to which contracts exist, what each carries, and how they compose.
+
+### Input contract — what V reads
+
+`V` reads three references:
+
+```text
+V : ContractRef × ReceiptRef × EvidenceRootRef → ValidationVerdict
+```
+
+- **`ContractRef`** points to the contract the cell was accountable to. The contract is the issue body (acceptance criteria, scope, non-goals, related artifacts, active design constraints) at the SHA committed to in the issue's `## Source of truth` table. The issue body is the authoring substrate; the AC oracles are the executable predicates. The contract is what `V` checks the receipt against; the cycle does not edit the contract.
+
+- **`ReceiptRef`** points to the typed receipt artifact emitted by γ at close-out (§Q5). The receipt carries the `contract` / `production` / `review` / `closure` / `validation` / `boundary` blocks per the illustrative shape in `COHERENCE-CELL.md` §Illustrative Receipt Shape. The receipt is the artifact `V` operates on as primary input.
+
+- **`EvidenceRootRef`** points to the evidence graph — the cycle's `.cdd/` artifacts (the five markdown files per §Q5), the git diff (`origin/main..merge_sha`), the CI run results, and any project-specific evidence sources the contract names. The evidence graph is what `V` consults to verify the receipt's claims. Receipt fields are claims; evidence graph fields are checkable facts.
+
+The input contract is **reference-shaped**, not value-shaped: `V` reads refs that resolve to artifacts at specific SHAs, not inline copies. This matters for two reasons. First, evidence-graph artifacts can be large (review transcripts, full diffs); inlining them into `V`'s call would force a copy of the cycle's content into the call shape. Second, refs preserve reproducibility: the receipt + the refs let any operator re-run `V` against the same inputs the original δ invocation saw.
+
+### Output contract — what V emits
+
+`V` emits a `ValidationVerdict`:
+
+```text
+ValidationVerdict {
+    verdict          : PASS | FAIL | (optionally) WARN
+    failed_predicates: list of predicate references that did not hold
+    warnings         : list of advisory observations
+    provenance       : { validator_identity, validator_version, checked_at, input_refs }
+}
+```
+
+- **`verdict`** is the headline value. `PASS` means every predicate in the contract held against the receipt+evidence. `FAIL` means at least one predicate did not hold. `WARN` (if Phase 2 elects to include it) names contract-defined advisory observations that do not block PASS — Phase 2 may collapse this into `warnings` and emit only `PASS | FAIL` as the verdict enum.
+
+- **`failed_predicates`** is the structured list of predicates that did not hold, with refs back to the contract (which AC, which oracle) and refs into the evidence graph (which artifact/field the predicate read). The list is empty when `verdict == PASS`. The list is non-empty when `verdict == FAIL`. This is what makes `V` discriminative rather than ceremonial — a FAIL verdict carries the structured story of which predicates failed where.
+
+- **`warnings`** carries advisory observations the contract permits without failing PASS — for example, a deferred sub-AC explicitly carried as known debt that the receipt acknowledges in `closure.unresolved_debt`. Phase 2 names the warning catalog; the doctrine commits to the field existing.
+
+- **`provenance`** records who emitted the verdict, against which inputs, at what time. The validator identity is the capability's canonical name; the validator version is the deployed implementation version; `checked_at` is the timestamp of the invocation; `input_refs` echo the three refs above. Provenance lets a future operator re-run `V` deterministically against the same inputs and observe the same verdict — or, if the verdict differs, locate the validator-version drift that caused the divergence.
+
+The output contract is **structured, not free text**. `ValidationVerdict` is a typed object Phase 2 pins; consumers (δ at scope n, `V` at scope n+1, operators, CI) read fields, not prose.
+
+### Invocation contract — when and how V is invoked
+
+The invocation contract is fixed by §Q1 (when) and §Q2 (how), reproduced here as the joint contract for completeness:
+
+**When.** `V` fires authoritatively at the δ boundary, after γ emits the receipt and before δ records the `BoundaryDecision`. γ may invoke `V` as a non-authoritative preflight while drafting the receipt; γ preflight does not populate the receipt's `validation` block and does not authorize δ to skip its own invocation. The receipt's `validation` block is populated only by δ's invocation.
+
+**How.** `V` is a typed predicate exposed as a capability by the `cnos.cdd` package, invoked by δ from within the boundary-action sequence. The operator-facing `cn-cdd-verify` command wraps the same predicate as a separate runtime surface; δ does not invoke `V` through the command shape.
+
+**Composition with BoundaryDecision.** δ reads the `ValidationVerdict` returned by `V` and records a `BoundaryDecision`. The composition rule:
+
+```text
+ValidationVerdict.verdict == PASS
+    → δ may record BoundaryDecision in {accept, release}
+    → δ may also record BoundaryDecision in {reject, repair-dispatch} if boundary-policy
+      reasons orthogonal to V demand it (release freeze, downstream readiness check)
+
+ValidationVerdict.verdict == FAIL
+    → δ may record BoundaryDecision in {reject, repair-dispatch}
+    → δ may record BoundaryDecision == override only as a degraded boundary action,
+      with the override block populated per §Q4. boundary.override != null is the
+      structural signal that downstream consumers MUST detect.
+```
+
+`V` makes acceptance **available** to δ on PASS; `V` does not make acceptance **automatic**. δ holds final gate authority over what crosses the boundary, and the `BoundaryDecision` is what δ records after consulting the verdict.
+
+### ValidationVerdict vs BoundaryDecision — the structural distinction
+
+The two surfaces are independent and must not be fused. The distinction is the load-bearing claim this section commits to:
+
+| Surface | Emitted by | Describes | Lives in receipt block |
+|---|---|---|---|
+| `ValidationVerdict` | `V` (the predicate) | Whether the receipt satisfies the contract+evidence predicates | `validation` |
+| `BoundaryDecision` | δ (the boundary actor) | What δ decided to do with the receipt at the boundary | `boundary` |
+
+The composition rule binds them but does not collapse them. Three explicit constraints follow:
+
+1. **`V` does not record boundary decisions.** `V` emits a verdict — PASS or FAIL — and a structured failure list. `V` does not record "accepted" or "rejected" or "released." Those are δ's. The `validation` block of the receipt is `V`-owned; the `boundary` block is δ-owned.
+
+2. **δ does not rewrite `ValidationVerdict`.** δ may decide to override a FAIL verdict (§Q4), but δ does not rewrite the verdict to PASS. The verdict stays FAIL; the override block carries the degraded boundary action. The two blocks are independent.
+
+3. **PASS-equivalence is the conjunction.** A receipt is PASS-equivalent for downstream consumers iff `validation.verdict == PASS` AND `boundary.override == null` (§Q4). Either condition failing makes the receipt non-PASS-equivalent. Downstream consumers (including the parent scope's `V`) must check both.
+
+This distinction is what keeps the trust grammar honest. If `V` could emit `OVERRIDE-PASS`, δ-side decisions would be reaching back into the validity surface. If δ's `BoundaryDecision` could be `validated`, δ would be conferring validity rather than observing it. Neither happens in the design this section freezes.
+
+### Illustrative example (prose form)
+
+The example below is **illustrative**, not a schema definition. Phase 2 pins the schema syntax (the shape this example sketches is `.cue`-compatible-ish but is not `.cue`). Reading the example: an invocation of `V` produces a `ValidationVerdict` that δ then composes with a `BoundaryDecision`.
+
+Suppose δ invokes `V` for cycle #N at merge SHA `<merge-SHA>` with the issue body at the merge SHA's view of the contract:
+
+```text
+INPUT:
+    contract_ref       = issue:#N @ contract_sha
+    receipt_ref        = .cdd/releases/X.Y.Z/N/receipt.<format> @ merge_sha
+    evidence_root_ref  = .cdd/releases/X.Y.Z/N/  @ merge_sha
+                         + git_diff(origin/main..merge_sha)
+
+V's WORK (illustrative — actual predicate set is contract-derived, not fixed here):
+    - For each AC in the contract, check the oracle against the evidence graph
+    - Check β-actor != α-actor (structural review-independence per
+      COHERENCE-CELL.md §Review-Independence Evidence)
+    - Check verdict-precedes-merge ancestry
+    - Check artifact enumeration matches diff
+    - ... etc, per Phase 3's predicate set
+
+OUTPUT (case PASS):
+    ValidationVerdict {
+        verdict           : PASS
+        failed_predicates : []
+        warnings          : []
+        provenance        : {
+            validator_identity : cdd.validate_receipt
+            validator_version  : <Phase 3 version>
+            checked_at         : <timestamp>
+            input_refs         : { contract_ref, receipt_ref, evidence_root_ref }
+        }
+    }
+
+OUTPUT (case FAIL — illustrative shape, not a real failure):
+    ValidationVerdict {
+        verdict           : FAIL
+        failed_predicates : [
+            {
+                predicate_ref : contract.AC4.oracle
+                evidence_ref  : receipt.review.findings
+                detail        : "AC4 oracle: review carries no finding-disposition rows"
+            },
+        ]
+        warnings          : []
+        provenance        : { ... as above ... }
+    }
+
+δ's COMPOSITION (PASS case):
+    BoundaryDecision { kind: accept, accepted_at: <ts>, release_tag: <future> }
+    Receipt.validation = ValidationVerdict (above)
+    Receipt.boundary   = { delta_actor, accepted: true, override: null, ... }
+
+δ's COMPOSITION (FAIL case, override path):
+    BoundaryDecision { kind: override, ... }
+    Receipt.validation = ValidationVerdict (FAIL, above) — UNCHANGED
+    Receipt.boundary   = {
+        delta_actor,
+        accepted: true,
+        override: {
+            actor                          : delta@cdd.cnos
+            justification                  : <text>
+            original_validation_verdict    : ValidationVerdict (FAIL, above)
+            failed_predicates_overridden   : [ contract.AC4.oracle ]
+            degraded_state                 : true
+            downstream_consumer_detection_rule : "boundary.override != null
+                ⇒ receipt is degraded; PASS-equivalence requires
+                validation.verdict == PASS AND boundary.override == null"
+        }
+    }
+```
+
+The example is **illustrative** in two senses. First, the shape (curly-brace block, indented fields) is prose-tabular, not a schema. Phase 2 chooses whether the schema language is CUE, JSON Schema, TypeScript-types, or something else. Second, the field names are illustrative — `validator_identity`, `failed_predicates_overridden`, etc. — and Phase 2 may rename any of them for consistency with its chosen schema's conventions. The doctrine commitment is the **shape**: three contracts (input, output, invocation), two independent verdict surfaces (`ValidationVerdict`, `BoundaryDecision`), and the composition rule that joins them.
+
+### What Phase 2 chooses
+
+Phase 2 (`receipt.cue` + `contract.cue` design) chooses:
+
+- Schema language (CUE, per `COHERENCE-CELL.md` §Practical Landing Order item 2)
+- Exact field names and field types
+- Cardinality and optionality of fields
+- Validation predicate language (how predicates in `failed_predicates` are referenced and serialized)
+- Whether `WARN` is a third verdict enumerant or a `warnings`-list affair
+- Whether `provenance.input_refs` includes the issue body SHA or a content hash
+
+Phase 2 does **not** change:
+
+- The three-contract shape (input, output, invocation)
+- The `ValidationVerdict`-vs-`BoundaryDecision` distinction
+- The PASS-equivalence biconditional rule (§Q4)
+- The δ-authoritative firing point (§Q1)
+- The capability-not-command framing (§Q2)
+- The receipt-is-parent-facing rule (§Q5)
+
+This is the line between design (this document) and schema (Phase 2). The design freezes the shape; Phase 2 pins the syntax.
+
+### What Phase 3 inherits
+
+Phase 3 (`cn-cdd-verify` refactor) inherits the function signature, the input refs, the output verdict shape, the invocation composition rule, and the override-detection rule. Phase 3 implements `V` and `derive_receipt`; it does not redesign the interface. If Phase 3 finds a missing field in the design — a real consumer pressure the doctrine surface did not anticipate — the right response is to amend this document in a follow-up cycle, not to silently extend the interface in implementation.
 
 ---
