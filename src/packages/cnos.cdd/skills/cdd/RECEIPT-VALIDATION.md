@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface, Non-goals, Closure] -->
-<!-- completed: [Preamble, Q1, Q2, Q3] -->
+<!-- completed: [Preamble, Q1, Q2, Q3, Q4] -->
 
 # Receipt Validation — Parent-facing Validator Surface
 
@@ -245,5 +245,78 @@ This cycle does **not** edit `ROLES.md`. This cycle does **not** edit `epsilon/S
 ### Consequence
 
 Phase 6 has a target. The Phase 6 issue body can cite this section as its design surface, propose the `ROLES.md` patch, propose the `epsilon/SKILL.md` thin, and inherit the rationale for not choosing `cnos.core/doctrine/` or a new package. The doctrine surface (`COHERENCE-CELL.md` §ε as Protocol Evolution) remains the source of truth for what ε *is*; this design surface fixes *where ε lives*.
+
+---
+
+## Q4 — How is an override receipted?
+
+**Chosen position.** An override is a **structured `override:` block inside the receipt's `boundary` block**, populated by δ when δ records a `BoundaryDecision` of `override` against a non-PASS `ValidationVerdict`. The `validation` block of the receipt continues to carry `V`'s original verdict unchanged — override does not rewrite, mask, or replace the `ValidationVerdict`. The presence of a non-null `boundary.override` is the structural signal to every downstream consumer that the receipt closed in degraded state.
+
+### Rationale
+
+The doctrine constraint from `COHERENCE-CELL.md` §Trust Boundary and §δ Boundary Complex is that an override is **a degraded boundary action, not a form of validity**. δ may override a non-PASS verdict; δ may not pronounce a non-PASS verdict valid. The override exists to let δ effect a boundary action when the cell's matter is unavoidably degraded (production deadline, legacy debt, explicitly-tolerated divergence) without lying about the verdict.
+
+The three candidate shapes the predecessor doctrine names trade off three properties:
+
+| Candidate | Inline with receipt? | Single artifact? | Detectable by downstream V? |
+|---|---|---|---|
+| Structured `override:` block inside receipt | Yes | Yes | Yes — field presence |
+| Sibling artifact `override.md` | No | No | Indirectly — requires consumer to check for a sibling file |
+| Degraded-state flag with override metadata block | Yes | Yes | Yes — but the flag and the metadata are two surfaces |
+
+The structured `override:` block wins on all three counts simultaneously. It keeps the override **inline with the receipt** (a receipt that closed under override is one artifact, not a pair to be carried together), **single-artifact** (the receipt is the parent-facing trust surface; degradation is part of it, not a separate document), and **detectable by downstream V** (the parent scope's `V` reads `boundary.override` from the receipt's evidence-graph input directly, with no need to crawl sibling files).
+
+The sibling-artifact framing reintroduces the failure mode `design/SKILL.md` §3.2 names — two places claiming authority over the same fact ("did the cell close under override?"). One downstream consumer might read `override.md` and miss the `validation` block; another might read the `validation` block and miss `override.md`. The structured-block-in-receipt framing keeps the override grammar inside the parent-facing trust surface.
+
+The degraded-state flag with separate metadata block reintroduces a similar split: the flag is one signal, the metadata is another, and downstream consumers can drift between checking the flag and checking the metadata. The structured `override:` block is its own signal — if the field is non-null, the override exists; if the field is null, no override; field presence is the detection rule.
+
+### Required fields
+
+The override block, when populated, carries the following fields. Names are illustrative; Phase 2 pins schema syntax.
+
+| Field | Type | Purpose |
+|---|---|---|
+| `actor` | role-identity ref (e.g., `delta@cdd.cnos`) | δ actor who authored the override |
+| `justification` | free text | Narrative reason for the override — what compelled δ to proceed despite a non-PASS verdict |
+| `original_validation_verdict` | `ValidationVerdict` ref or inline copy | The `V`-emitted verdict the override is overriding. This is `validation.result == FAIL` at minimum; the field carries the structured copy or a ref so the override block stands self-contained |
+| `failed_predicates_overridden` | list of predicate refs | The specific failed predicates from the original verdict the override covers. Naming each is required: a blanket "override all failures" is forbidden because it makes downstream consumers unable to reason about which specific failures were tolerated |
+| `degraded_state` | boolean | Always `true` when override is non-null. Redundant with the field-presence detection rule, but explicit so a downstream consumer reading the field directly observes the degraded property without inferring it |
+| `downstream_consumer_detection_rule` | rule statement | The detection rule itself, included for human readers: "any receipt with `boundary.override != null` is a degraded receipt; PASS-equivalence requires `validation.result == PASS` AND `boundary.override == null`." Phase 3 may elect to fold this into doctrine and omit the per-receipt copy; the doctrine commitment is that the rule exists and is documented somewhere downstream consumers can read |
+
+The minimum guarantee: every override carries `actor`, `justification`, `original_validation_verdict`, `failed_predicates_overridden`, and `degraded_state`. Phase 2 may add fields (expiry, follow-up issue ref, risk note); the design freezes the floor, not the ceiling.
+
+### What override never does
+
+Three things are explicit failure modes if the design or implementation drifts:
+
+1. **Override never rewrites the `ValidationVerdict`.** The `validation` block of the receipt continues to carry `V`'s emitted verdict. `validation.result` stays at FAIL; `validation.failures` stays populated. δ does not edit, redact, or replace `V`'s verdict. The verdict is what `V` saw; the override is what δ did with it. The two are separate fields with separate authors.
+2. **Override never substitutes for PASS in downstream consumers.** A receipt where `validation.result == FAIL` and `boundary.override` is populated is **not equivalent** to a receipt where `validation.result == PASS` and `boundary.override == null`. Downstream `V` at scope n+1 — reading the n-receipt as evidence — must distinguish these two cases. Treating a degraded n-receipt as PASS-equivalent would let degradation propagate silently into the parent scope, which is exactly the failure mode the deep invariant rejects ("a closed cell is trusted because its receipt validates against its contract").
+3. **Override never emits `OVERRIDE-PASS` as a `ValidationVerdict`.** `V` emits PASS, FAIL, and possibly WARN. There is no `OVERRIDE-PASS` value. Override lives in the `BoundaryDecision` shape (an enumerant of what δ decided), not in the `ValidationVerdict` shape (an enumerant of what `V` observed). Fusing them would let δ-side decisions reach back and rewrite `V`-side observations, collapsing the two surfaces the design works to keep separate.
+
+### Downstream-consumer detection rule
+
+The rule, stated precisely so the design and the implementation both inherit it:
+
+```text
+A receipt is degraded ⇔ boundary.override != null.
+A receipt is PASS-equivalent ⇔ validation.result == PASS AND boundary.override == null.
+
+Every downstream consumer of a receipt — including:
+  - the parent scope's V (V at scope n+1)
+  - the parent scope's δ
+  - operators auditing the cycle
+  - cn-cdd-verify when reading a closed cycle
+— MUST check both validation.result and boundary.override before
+treating the receipt as a clean closure. Reading only one of the
+two fields is incorrect.
+```
+
+The biconditional form is load-bearing. A consumer that checks only `validation.result == PASS` and assumes clean closure is incorrect (it misses degraded cells that V did not approve). A consumer that checks only `boundary.override == null` and assumes clean closure is also incorrect (it misses cells where V emitted FAIL but no override exists — which is itself an incomplete-closure state per `COHERENCE-CELL.md` §Receipt Validity: "A missing override block plus a non-PASS V is not a receipt — it is an incomplete closure"). Both fields must be checked together.
+
+The detection rule has a structural consequence: the design commits to **two independent verdict surfaces** (`ValidationVerdict` from `V`, `BoundaryDecision` from δ) rather than collapsing them. The override exists in the `BoundaryDecision` surface; the failed predicates exist in the `ValidationVerdict` surface; the rule above joins them. The next section (§Validation Interface) names both surfaces explicitly.
+
+### Consequence
+
+Phase 2 (schemas) inherits the override block's required fields and the detection rule. Phase 3 (validator implementation) inherits the rule that `V` never emits `OVERRIDE-PASS` and never rewrites its own verdict in response to an override decision. Phase 4 (δ split) inherits the structural prediction that δ's role doctrine names the override path as a degraded boundary action with mandatory receipted fields, not as a discretionary skip-validation lever.
 
 ---
