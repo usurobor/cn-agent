@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface, Non-goals, Closure] -->
-<!-- completed: [Preamble, Q1, Q2, Q3, Q4] -->
+<!-- completed: [Preamble, Q1, Q2, Q3, Q4, Q5] -->
 
 # Receipt Validation — Parent-facing Validator Surface
 
@@ -318,5 +318,72 @@ The detection rule has a structural consequence: the design commits to **two ind
 ### Consequence
 
 Phase 2 (schemas) inherits the override block's required fields and the detection rule. Phase 3 (validator implementation) inherits the rule that `V` never emits `OVERRIDE-PASS` and never rewrites its own verdict in response to an override decision. Phase 4 (δ split) inherits the structural prediction that δ's role doctrine names the override path as a degraded boundary action with mandatory receipted fields, not as a discretionary skip-validation lever.
+
+---
+
+## Q5 — Are role closeouts evidence-graph inputs or parent-facing artifacts?
+
+**Chosen position.** The typed **receipt is the parent-facing artifact** of the closed cell. The five existing per-cycle markdown files (`self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`) **become evidence-graph inputs to `V`** and **receipt-derivation sources** — they continue to exist as the in-cell record, structurally unchanged in their current authoring shape, but the parent scope reads the receipt rather than crawling the five files. The receipt is **computed at γ close-out** from the five files plus the diff plus the issue body.
+
+### Rationale
+
+The doctrine constraint from `COHERENCE-CELL.md` §cn-cdd-verify Target Position is that "the parent-facing trust surface becomes the typed receipt: a single artifact that summarises the cell at the validator's interface" while "the existing per-cycle markdown artifacts continue to exist as evidence-graph inputs the validator reads when scoring." That doctrine fragment fixes the direction. This section names it precisely.
+
+Two reasons make the typed receipt the right parent-facing surface and the markdown files the right evidence-graph inputs.
+
+**1. Parent scopes read receipts, not transcripts.** The recursion equation in `COHERENCE-CELL.md` §Recursion Equation has the accepted receipt at cell n becoming α-level matter at cell n+1. The parent scope reasons over the cell as a typed object — fields, structured failures, explicit override blocks — not over the cell's internal narrative. The five markdown files are narrative artifacts: `beta-review.md` is a round-by-round review transcript; `gamma-closeout.md` is γ's triage narrative; `alpha-closeout.md` is α's cycle observations. Narrative artifacts are the right medium for cell-internal coordination (which they have been since CDD began) and the wrong medium for cross-scope reasoning (which is a typed-object job). Keeping the typed receipt above the markdown layer is what makes the recursion work; collapsing the receipt into "go read these five markdown files" would force every parent scope to re-derive structure from narrative each time.
+
+**2. The five files are exactly what makes a coherent receipt computable.** The receipt's contract block needs the issue body and the AC oracles — `self-coherence.md` already maps these to evidence. The receipt's production block needs α actor and artifact list — `alpha-closeout.md` (and the cycle's git history) carries the α actor identity, and the diff carries the artifact list. The review block needs β verdict, findings, and merge SHA — `beta-review.md` carries the verdict and findings; `beta-closeout.md` carries the merge SHA and final acceptance state. The closure block needs γ triage, unresolved debt, and protocol gap signals — `gamma-closeout.md` carries all of these. The five files are not a coincidence; they correspond to the receipt blocks one-to-one (with α-closeout and β-closeout overlapping production / review respectively because the closeouts narrate what production and review did). Deprecating any of the five would remove a derivation source for one of the receipt's blocks. They stay.
+
+### Per-file roles
+
+The five files, with their named role under this design:
+
+| File | Role under V | Receipt block(s) derived from it | Continues to exist? |
+|---|---|---|---|
+| `self-coherence.md` | Evidence-graph input + receipt-derivation source | `contract` (AC oracle results), `production` (artifact enumeration via CDD Trace step 6), `closure` (known debt rows) | Yes — unchanged in current shape |
+| `beta-review.md` | Receipt-derivation source | `review.verdict`, `review.rounds`, `review.findings`, `review.findings_dispositions` | Yes — unchanged in current shape |
+| `alpha-closeout.md` | Evidence-graph input | `production.alpha_actor` (already in git), α-side cycle observations contributing to `closure.protocol_gap_refs` when patterns surface | Yes — unchanged in current shape |
+| `beta-closeout.md` | Receipt-derivation source | `review.merge_sha`, `review.beta_actor`, `boundary.accepted` (when β's acceptance is the closure point under current CDD; future cycles may relocate this to δ explicitly) | Yes — unchanged in current shape |
+| `gamma-closeout.md` | Receipt-derivation source | `closure.gamma_actor`, `closure.triage_ref`, `closure.unresolved_debt`, `closure.next_commitments`, `closure.protocol_gap_count`, `closure.protocol_gap_refs` | Yes — unchanged in current shape |
+
+None of the five files is **deprecated** by this design. The role-skill instantiation of CDD continues to require the same artifacts in the same shapes. What changes is what crosses the parent boundary: the receipt does; the five files do not (they remain available to V and to operators as the evidence graph, but they are not parent-scope inputs).
+
+### Derivation rule
+
+The receipt is computed at γ close-out, after all five files have landed on `main`:
+
+```text
+γ writes gamma-closeout.md (last of the five cycle artifacts to land)
+γ invokes receipt-derivation:
+    receipt := derive_receipt(
+        contract       := <issue body + AC oracles + active design constraints>,
+        diff           := <git diff origin/main..merge_sha>,
+        self_coherence := <self-coherence.md>,
+        beta_review    := <beta-review.md>,
+        alpha_closeout := <alpha-closeout.md>,
+        beta_closeout  := <beta-closeout.md>,
+        gamma_closeout := <gamma-closeout.md>,
+    )
+γ emits receipt as the typed parent-facing artifact
+γ optionally invokes V on the receipt as non-authoritative preflight (§Q1)
+δ invokes V on the receipt; δ records BoundaryDecision (§Q1)
+```
+
+The derivation function `derive_receipt` is Phase 3 work; the doctrine commits to the existence of this function and to the input set (the five files plus the diff plus the contract). Phase 2 designs the receipt schema; Phase 3 implements the derivation. The contract this cycle freezes is: receipt fields map to evidence in specific files in a documented way; no receipt field is invented out of nothing; every receipt is reproducible from the cycle's `.cdd/` artifacts plus the diff.
+
+The doctrine consequence is that the **receipt is computable, not authored**. `derive_receipt` is a function over evidence, not a free-text artifact γ writes by hand. γ's free-text artifact is `gamma-closeout.md`, which is one of the function's inputs. This separation is what keeps the receipt typed: a typed artifact computed from inputs has a checkable shape; a free-text artifact a role writes has only the shape the role chose at writing time.
+
+### Why not the inverse reading
+
+The Open Question's alternative reading was "closeouts remain parent-facing and the receipt is a thinner summary." That reading is rejected for two reasons.
+
+First, it leaves the parent scope with five markdown files to read as inputs, which is the failure mode the receipt exists to fix. The recursion equation needs an α-input at cell n+1 — a typed object the next-scope α produces matter against. Five markdown files are not a typed input.
+
+Second, it leaves the validator without a single artifact to validate. `V` is `Contract × Receipt × EvidenceGraph → ValidationVerdict`. If the receipt is a thin summary that does not carry the structured fields, `V` collapses into "read all five markdown files and infer structure." That defeats the purpose of having `V` as a typed predicate. The receipt is the parent-facing artifact precisely because `V` consumes it.
+
+### Consequence
+
+Phase 2 (schemas) inherits the receipt's structural commitments — which blocks exist, which fields they carry, which derivation sources feed them. Phase 3 (validator + `derive_receipt`) inherits the function shape and the input set. Phase 5 (γ shrink) inherits the constraint that `gamma-closeout.md` remains one of `derive_receipt`'s required inputs even after γ's role-skill shrinks; γ's coordination-function continues to produce the closeout, even if γ's runtime-supervision-mechanics responsibilities move to the harness.
 
 ---
