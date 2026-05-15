@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface, Non-goals, Closure] -->
-<!-- completed: [Preamble, Q1] -->
+<!-- completed: [Preamble, Q1, Q2] -->
 
 # Receipt Validation — Parent-facing Validator Surface
 
@@ -125,5 +125,79 @@ The "possibly twice" framing is reconciled here as "preflight is permitted; only
 ### Consequence
 
 Phases 2–7 inherit a fixed firing point. Schema design (Phase 2) can assume `V` reads a complete, γ-emitted receipt — not a partial intermediate object. The validator implementation (Phase 3) can be authored as a function invoked by δ, with γ-preflight as a separate non-authoritative call against the same implementation. The δ split (Phase 4) can locate `V` invocation explicitly inside the δ skill's boundary-action sequence. The `CDD.md` rewrite (Phase 7) can name the δ-boundary firing point as the authoritative validation moment.
+
+---
+
+## Q2 — Is V a capability or a command?
+
+**Chosen position.** `V` is a **typed predicate exposed as a capability by the `cnos.cdd` package, invoked by δ from within the boundary-action sequence**. It is not modeled as a freshly-introduced operator command, and it is not modeled as a runtime provider with its own registry. The existing `cn-cdd-verify` command surface continues to exist as the operator-facing invocation path (per `COHERENCE-CELL.md` §cn-cdd-verify Target Position), but δ's role doctrine binds to the capability — not to the command — so that command and capability stay separate runtime surfaces rather than smearing into one.
+
+### Rationale
+
+The doctrine constraint is that `V` is `Contract × Receipt × EvidenceGraph → ValidationVerdict` — a pure predicate. The design question is which runtime surface that predicate is exposed through. `src/packages/cnos.core/skills/design/SKILL.md` §2.5 names four runtime surfaces that must not smear together: skills choose, commands dispatch, orchestrators execute, providers provide capability. The four options the predecessor doctrine names for `V` map cleanly onto three of those surfaces:
+
+| Option (from `COHERENCE-CELL.md` §Open Question 2) | Runtime surface |
+|---|---|
+| Predicate invoked by δ in-skill | Capability (provided to δ-the-skill by the package) |
+| Capability registered in package manifest | Capability |
+| Separate command under `cnos.cdd/commands/` | Command |
+| Provider registered in a registry | Provider |
+
+The capability framing wins on three independent counts.
+
+**1. Substitutability is wrong for command and provider framings.** Per `design/SKILL.md` §3.5 (interfaces belong to consumers), an interface is justified by real substitution pressure. `V` has exactly one canonical implementation per CDD doctrine version — the schemas in `receipt.cue`/`contract.cue` plus the validator that interprets them. There is no consumer-side variation pressure that would justify a provider registry (alternative validator implementations swapping behind a contract). Modeling `V` as a provider would invent substitution that does not exist. Modeling `V` as a registered command would build a runtime registry entry that exists only to be invoked by one caller (δ), with all the registry/help/doctor/status overhead that `design/SKILL.md` §2.7 names. A capability is the surface that matches the doctrine: one predicate, one canonical implementation, invoked by one caller in its boundary-action sequence.
+
+**2. Policy stays above detail.** From `design/SKILL.md` §3.3, policy lives in the kernel/core; details live in packages. δ's boundary policy is "invoke validation before accepting the receipt; gate transmissibility on the verdict; treat override as degraded." That policy is δ-skill doctrine. The implementation — reading the receipt, parsing the contract, walking the evidence graph, computing failed predicates — is package detail. A capability boundary is what keeps those layered. A command boundary would let invocation mechanics (argv parsing, stdout shape, exit-code conventions) leak into δ's policy.
+
+**3. The operator command and the capability are different consumers.** `cn-cdd-verify` exists today as an artifact-presence checker invoked by operators and by CI. Phase 3 refactors it into the implementation of `V`. After Phase 3, two callers exist: operators (and CI) running `cn cdd-verify {N}` to validate a cycle, and δ-the-skill invoking `V` during the boundary-action sequence. The operator-facing invocation is a command — exact-dispatch, argv-driven, stdout/exit-code surfaced. The δ-facing invocation is a capability — function-call shape, structured `ValidationVerdict` return, no argv. Both wrap the same underlying predicate implementation. Modeling `V` itself as a command would force δ to consume it through the operator-facing surface (argv + stdout parsing) when δ has no operator-facing reason to do so. Modeling `V` as a capability and `cn-cdd-verify` as the command keeps the two consumer paths separate per `design/SKILL.md` §3.7.
+
+The reading: **`V` is the capability; `cn-cdd-verify` is the command that wraps the capability for operator/CI consumption.** Phase 3 ships both — refactors `cn-cdd-verify` into the wrapper, exposes the underlying predicate as a capability the `cnos.cdd` package provides, and updates δ-the-skill (Phase 4) to bind to the capability.
+
+### Minimal invocation sketch
+
+The invocation shape at doctrine level — illustrative, not schema-pinned:
+
+```text
+# δ-the-skill invokes V as a capability during boundary actions
+verdict := cdd.validate_receipt(
+    contract:       <ref to issue body + AC oracles>,
+    receipt:        <ref to typed receipt artifact>,
+    evidence_graph: <ref to cycle .cdd/ artifacts + diff>,
+)
+
+# verdict is a typed ValidationVerdict — see §Validation Interface
+if verdict.result == PASS:
+    δ records BoundaryDecision: accept
+elif verdict.result == FAIL and δ chooses override:
+    δ records BoundaryDecision: override (degraded) — see §Q4
+else:
+    δ records BoundaryDecision: reject | repair-dispatch
+```
+
+The capability surface name `cdd.validate_receipt` is illustrative; Phase 3 chooses the actual capability identifier and Phase 2 names the `ContractRef` / `ReceiptRef` / `EvidenceRootRef` types. The doctrine commits to the shape — function call from δ, structured return — not to the syntax.
+
+For comparison, the operator path is the same predicate exposed through the command surface:
+
+```text
+$ cn cdd-verify 367
+# wraps the capability; prints human-readable summary; sets exit code
+```
+
+Both paths reach the same underlying predicate. The two callers (δ-the-skill, operators+CI) consume different runtime surfaces over the same implementation.
+
+### What the design does not commit to
+
+The design does **not** commit to:
+
+- The capability identifier (the Phase 3 implementation chooses)
+- The package manifest format that registers the capability
+- The transport mechanism δ-the-skill uses to invoke the capability (in-process call, MCP, subprocess — Phase 3 chooses)
+- The argv/stdout shape of `cn-cdd-verify` post-refactor (Phase 3 chooses)
+
+The design commits to: `V` is a capability, not a command and not a provider; δ binds to the capability, not to the command; the command continues to exist as a parallel operator-facing surface.
+
+### Consequence
+
+Phase 3 (`cn-cdd-verify` refactor) knows what it is building: a package-provided capability (the predicate) and an operator-facing command (the wrapper). Phase 4 (δ split) knows what δ-the-skill binds to: the capability, named in δ's role doctrine. Phase 6 (ε relocation) is not affected — ε's protocol-iteration role does not consume `V` directly.
 
 ---
