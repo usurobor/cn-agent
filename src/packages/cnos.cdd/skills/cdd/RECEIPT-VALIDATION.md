@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface, Non-goals, Closure] -->
-<!-- completed: [Preamble, Q1, Q2] -->
+<!-- completed: [Preamble, Q1, Q2, Q3] -->
 
 # Receipt Validation — Parent-facing Validator Surface
 
@@ -199,5 +199,51 @@ The design commits to: `V` is a capability, not a command and not a provider; δ
 ### Consequence
 
 Phase 3 (`cn-cdd-verify` refactor) knows what it is building: a package-provided capability (the predicate) and an operator-facing command (the wrapper). Phase 4 (δ split) knows what δ-the-skill binds to: the capability, named in δ's role doctrine. Phase 6 (ε relocation) is not affected — ε's protocol-iteration role does not consume `V` directly.
+
+---
+
+## Q3 — Where does ε relocate?
+
+**Chosen position.** ε relocates to **`ROLES.md`** — the generic role-scope ladder doctrine at the repo root. The CDD-specific instantiation (`src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md`) is rewritten in Phase 6 as a thin pointer to the generic doctrine in `ROLES.md`, retaining only the CDD-instantiation details ε needs (where receipt streams live, what protocol gaps look like in CDD, what `cdd-iteration.md` is). **This cycle names the target; Phase 6 ships the move.**
+
+### Rationale
+
+The doctrine constraint from `COHERENCE-CELL.md` §ε as Protocol Evolution is that ε is outside ordinary cell metabolism. Inside the cell, α produces, β discriminates, γ closes, δ effects the boundary. ε observes the cell from outside, across many cells, and patches the protocol when receipt-stream patterns reveal a structural gap the protocol does not prevent. ε's matter is the protocol itself.
+
+The doctrine consequence is that ε is generic to the role-scope ladder pattern, not specific to CDD. Any ladder instantiation that emits receipts can be observed by an ε that evolves the protocol. CDD is one such instantiation; if `ROLES.md` ever documents another instantiation (e.g., a research-cycle ladder, a product-cycle ladder), each instantiation has its own α/β/γ/δ doing in-cell metabolism and a shared ε that observes receipt streams across instantiations. ε's doctrine therefore belongs at the level where the ladder pattern itself is documented — `ROLES.md` at the repo root.
+
+The three candidates the predecessor doctrine names map to three different authority scopes:
+
+| Candidate | Authority scope | Reading |
+|---|---|---|
+| `ROLES.md` | Generic role-scope ladder | ε is a generic role function of the ladder pattern; instantiations inherit it |
+| `cnos.core/doctrine/` | Core runtime substrate | ε is a core surface that crosses all packages |
+| New `cnos.protocol-iteration` package | Dedicated subsystem | ε is a first-class subsystem with its own package boundary |
+
+`ROLES.md` is chosen for three reasons.
+
+**1. ε is a role function, not a runtime substrate.** Per `COHERENCE-CELL.md` §Structural Prediction, role function (α/β/γ/δ/ε) and runtime substrate are distinct surfaces — fusing them is the surface-smearing the structural prediction guards against. `cnos.core` is the runtime-substrate home (kernel, dispatch, harness primitives). Putting ε under `cnos.core/doctrine/` would smear role doctrine onto the runtime layer. ε is a role; `ROLES.md` is the doctrine home for the role-scope ladder.
+
+**2. A new `cnos.protocol-iteration` package adds boundary without adding substitutability.** Per `design/SKILL.md` §3.10 (prefer package/install cohesion over topic labeling), a new package boundary is justified when there is a real install/use unit to separate. ε's matter is doctrine evolution — patches to skills, schemas, validators, harness contracts. That matter lands across `cnos.cdd`, `cnos.core`, and `cnos.eng` depending on where the protocol gap surfaced. There is no install/use unit "the protocol-iteration runtime" that a separate package would carry. Inventing one would create a package whose only purpose is to host one role's doctrine, which is the false-package-boundary failure `design/SKILL.md` §3.10 names.
+
+**3. `ROLES.md` already owns the generic ladder.** `CDD.md` opens with the pointer to `ROLES.md`: "cdd is the reference instantiation of the generic role-scope ladder pattern. The pattern (α/β/γ/δ/ε roles, scope-escalation contract, instantiation fields) is documented at `ROLES.md` at the repo root." The α/β/γ/δ generic doctrine already lives there. ε's generic doctrine joining it preserves a single home for the ladder pattern and avoids splitting role doctrine across two surfaces.
+
+### What Phase 6 will do
+
+Phase 6 is not authored here; this cycle commits to the target. The expected Phase 6 work, named so subsequent cycles inherit a stable target shape:
+
+1. **Lift ε generic doctrine into `ROLES.md`** — the protocol-evolution function, the "ε observes receipt streams across cells" framing, the "ε is not required in-cycle for cells with no protocol gaps" rule, and the `protocol_gap_count` / `protocol_gap_refs` artifact rule.
+2. **Shrink `cnos.cdd/skills/cdd/epsilon/SKILL.md`** to a CDD-instantiation pointer — what receipt stream ε reads in CDD (the `.cdd/releases/{X.Y.Z}/{N}/` cycle records), what counts as a CDD protocol gap, where `cdd-iteration.md` lives when emitted.
+3. **Remove ordinary-metabolism framing from CDD cycle requirements** — cycle artifacts no longer require an ε-produced `cdd-iteration.md` unconditionally; the receipt's `protocol_gap_count == 0` is the no-gap signal, and `cdd-iteration.md` is required only when `protocol_gap_count > 0` (per `COHERENCE-CELL.md` §ε Artifact Rule, already named in target doctrine).
+
+The Phase 6 surface — `ROLES.md` plus a thinned `epsilon/SKILL.md` — is what this cycle commits to. The Phase 6 implementation is out of scope for #367 by construction.
+
+### What this cycle does not do
+
+This cycle does **not** edit `ROLES.md`. This cycle does **not** edit `epsilon/SKILL.md`. The AC9 surface-containment contract forbids both. Phase 6 is the cycle that ships the move; #367's job is to fix the target so Phase 6 has stable doctrine to refer back to. The relocation is named, not enacted.
+
+### Consequence
+
+Phase 6 has a target. The Phase 6 issue body can cite this section as its design surface, propose the `ROLES.md` patch, propose the `epsilon/SKILL.md` thin, and inherit the rationale for not choosing `cnos.core/doctrine/` or a new package. The doctrine surface (`COHERENCE-CELL.md` §ε as Protocol Evolution) remains the source of truth for what ε *is*; this design surface fixes *where ε lives*.
 
 ---
