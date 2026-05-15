@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface, Non-goals, Closure] -->
-<!-- completed: [Preamble] -->
+<!-- completed: [Preamble, Q1] -->
 
 # Receipt Validation — Parent-facing Validator Surface
 
@@ -65,5 +65,65 @@ The following two fragments from the predecessor are quoted here as the load-bea
 > — `COHERENCE-CELL.md` §Trust Boundary
 
 The first fragment is what makes `V` load-bearing rather than ceremonial. The second fixes the trust grammar: validity is a property of the (contract, evidence, receipt) triple, not a property a role confers. Every position named below is consistent with both fragments.
+
+---
+
+## Q1 — When does V fire?
+
+**Chosen position.** `V`'s authoritative firing point is **δ-boundary validation**, invoked by δ after γ emits the receipt and before δ accepts, rejects, repair-dispatches, overrides, or releases. γ may invoke `V` as a non-authoritative preflight while drafting the receipt, but γ preflight never substitutes for δ boundary validation. The parent scope may not treat the cell as one of its inputs until the δ-boundary invocation produces a `ValidationVerdict` and δ records a `BoundaryDecision`.
+
+### Rationale
+
+The doctrine fixes where authority lives. From `COHERENCE-CELL.md` §Trust Boundary, validity is a property of `(contract, evidence, receipt)`. From §δ Boundary Complex, "δ invokes validation; δ does not embody validation." Together these say: the cell's transmissibility to the parent scope is a property the boundary observes, not a property a role internal to the cell confers. γ closes the cell and emits the receipt; that is γ's biological function. γ does not also issue the verdict that makes the cell transmissible. If γ both produced the receipt and pronounced it valid, the parent scope would be trusting the cell on γ's seniority, which is exactly the trust-by-approval mode the deep invariant rejects.
+
+Putting `V` authoritatively at the δ boundary keeps two facts separate:
+
+1. **Closure** is γ's function. γ fuses contract, matter, and review into a closed-cell record and emits the receipt. The closure record exists once γ has done this, independent of whether `V` returns PASS.
+2. **Transmissibility** is δ's gate. The cell becomes parent-scope matter only when δ has invoked `V`, observed a verdict, and recorded a boundary decision (accept / reject / repair-dispatch / override / release).
+
+A closed cell that has not been δ-validated is in an intermediate state: γ has done γ's work; the parent scope has not yet been handed an input. The receipt is emitted but not yet typed as accepted matter. This is the structural meaning of `closed_cell ≠ accepted_cell` from the cell recursion equation (`COHERENCE-CELL.md` §Recursion Equation).
+
+### γ-preflight posture (non-authoritative)
+
+γ is permitted to invoke `V` while drafting the receipt — running the same validator implementation against the contract, the receipt-in-progress, and the evidence graph as an informational check on whether the receipt γ is about to emit will pass δ-boundary validation. This is a useful affordance: it lets γ catch receipt-shape problems (missing fields, structural-evidence gaps, undisclosed degradation) before signaling closure, without requiring a round-trip through δ to discover them. A γ preflight that returns FAIL is information γ can act on before emitting the receipt.
+
+The strict constraint: **γ preflight is non-authoritative**. Specifically:
+
+- A γ-preflight PASS does not authorize δ to skip its own invocation. δ-boundary validation is not optional even when γ preflight reports PASS.
+- A γ-preflight verdict is not recorded as the cell's `ValidationVerdict`. The validation block of the receipt is populated by δ's invocation, not γ's.
+- A γ-preflight FAIL is information γ uses internally; it does not change the receipt's `validation` block, because that block is δ-owned.
+- If γ omits the preflight entirely, the receipt is still valid for δ to consume. The preflight is permitted, not required.
+
+The reason for asymmetric authority is the same as the reason α≠β within a cell (`COHERENCE-CELL.md` §β Independence as Contagion Firebreak). γ both authoring the receipt and authoritatively validating it would let γ's blind spots in receipt construction pass through validation unchallenged. The δ boundary is structurally outside γ's frame; that is what makes its validation discriminative rather than confirmatory.
+
+This is the position the issue's AC3 asks for: γ preflight may exist, but γ preflight is explicitly non-authoritative, and the authoritative firing point is δ-boundary validation.
+
+### Ordering rule
+
+The parent scope cannot treat a closed cell as one of its inputs until the δ-boundary invocation has produced a verdict and δ has recorded a boundary decision. Operationally:
+
+```text
+γ closes cell                    →   closed_cell exists; receipt drafted
+γ emits receipt                  →   receipt exists; cell is "closed", not "accepted"
+δ invokes V on receipt           →   V emits ValidationVerdict
+δ records BoundaryDecision       →   {accept | reject | repair-dispatch | override | release}
+ACCEPTED                         →   receipt transmissible to parent scope
+```
+
+Three constraints follow from this ordering:
+
+1. **δ invocation is mandatory before parent acceptance.** A receipt that exists on the cycle branch but has not been δ-validated is in the closure-emitted-but-not-accepted intermediate state. The parent scope does not see it as an input.
+2. **γ preflight does not substitute.** No matter how many γ preflights pass, δ has not invoked `V` until δ explicitly does so, and the cell is not transmissible until then.
+3. **The `BoundaryDecision` is the moment of acceptance, not the `ValidationVerdict` alone.** Even when `V` returns PASS, the cell is not transmissible until δ records the boundary decision — because δ holds gate authority over what crosses the boundary, including the authority to reject a PASS receipt for boundary-policy reasons orthogonal to `V`'s predicate (e.g., a release freeze, a transport problem, a downstream-scope readiness check). PASS makes acceptance available to δ; PASS does not make acceptance automatic.
+
+### Why not pre-merge or "possibly twice"
+
+`COHERENCE-CELL.md` §Open Questions framed Q1 as "Pre-merge (δ accept gates the merge) or post-merge (δ accept gates release/tag)? Possibly twice (γ preflight + δ authoritative)." The chosen position is **post-receipt-emission, pre-acceptance** — which is structurally adjacent to the merge boundary in the current CDD cycle (β merges into `main` after APPROVE; γ writes the closeout; δ's boundary actions follow). The placement is fixed relative to the receipt, not relative to the merge: the receipt is what `V` reads, so `V` must fire after the receipt exists.
+
+The "possibly twice" framing is reconciled here as "preflight is permitted; only the second firing is authoritative." Naming both firings as equally authoritative would diffuse authority across γ and δ and reintroduce the trust-by-seniority mode the deep invariant rejects. The single authoritative firing point at the δ boundary is the position this design commits to.
+
+### Consequence
+
+Phases 2–7 inherit a fixed firing point. Schema design (Phase 2) can assume `V` reads a complete, γ-emitted receipt — not a partial intermediate object. The validator implementation (Phase 3) can be authored as a function invoked by δ, with γ-preflight as a separate non-authoritative call against the same implementation. The δ split (Phase 4) can locate `V` invocation explicitly inside the δ skill's boundary-action sequence. The `CDD.md` rewrite (Phase 7) can name the δ-boundary firing point as the authoritative validation moment.
 
 ---
