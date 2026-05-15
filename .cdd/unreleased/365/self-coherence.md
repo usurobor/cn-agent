@@ -8,7 +8,7 @@ manifest:
     - Debt
     - CDD-Trace
     - Review-readiness
-  completed: [Gap, Skills, ACs]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace]
 ---
 
 # Self-Coherence — #365 (I6 CDD artifact validator era-mismatch on v3.75.0/v3.76.0)
@@ -198,3 +198,105 @@ an AC or to the §CDD-Trace step 6 entry below:
 | `.cdd/unreleased/365/self-coherence.md` | this artifact (§Gap..§Review-readiness) |
 | `.cdd/unreleased/365/gamma-scaffold.md` | γ scaffold (not authored by α; included in diff because it was added on this cycle branch) |
 | `.cdd/unreleased/365/alpha-codex-prompt.md`, `beta-codex-prompt.md` | δ dispatch prompts (not authored by α; included on this cycle branch by δ) |
+
+## Self-check
+
+**Did α push ambiguity onto β?** No. The single design call (cutoff
+bump vs. per-artifact era policy) is named in §Gap with rationale tied
+to γ's peer enumeration: failure shape is sharp at one boundary value
+(v3.77.0), so three threshold knobs set to the same value would be
+unjustified complexity. β receives one decision, one justification, and
+one passing test suite that pins the choice.
+
+**Is every claim backed by evidence in the diff?** Yes. Each AC lists
+file + line numbers and (where relevant) the runner-output line that
+confirms the claim. Test-runner output count comes from the live run
+(`ran 39 assertions: 39 passed, 0 failed`), not from manual enumeration
+(α/SKILL.md §2.6 row 13).
+
+**Peer enumeration (α/SKILL.md §2.3):** The change touches the
+classification function in `cn-cdd-verify`. Peer set is _consumers of
+the legacy-warn message_ + _producers of version literals tied to the
+cutoff_:
+
+| Peer | Updated? | Reason |
+|------|----------|--------|
+| `is_legacy_version` (helper) | ✅ updated | cutoff bumped; comment rewritten |
+| `check_triadic_artifacts` legacy-branch warn string | ✅ updated | `(pre-v3.65.0)` → `(pre-v3.77.0)` |
+| `validate_artifact_sections` legacy-branch warn string | ✅ updated | `(pre-v3.65.0)` → `(pre-v3.77.0)` |
+| `validate_unreleased_artifact_sections` | ✅ no change required | unreleased path never calls `is_legacy_version`; sections always warn on missing — verified by reading lines 538–592 |
+| `check_unreleased_triadic_artifacts` | ✅ no change required | unreleased path never receives a version arg; same reasoning as above |
+| `incomplete-triadic` test fixture (was at v3.75.0/200) | ✅ relocated to v3.78.0/200 | now post-cutoff so it continues to drive exit-1 in `test-fixtures.sh` test 2 |
+| `valid-triadic` test fixture (`.cdd/unreleased/100`) | ✅ no change required | unreleased path; era policy does not apply; test 1 still passes |
+| `valid-small-change` fixture (`.cdd/unreleased/300`) | ✅ no change required | unreleased + small-change path; era policy does not apply; test 3 still passes |
+| usage-help example `cn cdd-verify --version 3.74.0 --cycle 286` (line 105) | ✅ intentionally exempt | it is a real historical cycle reference, not the era threshold |
+| help/header comments (lines 9–11, 91–95) referencing "legacy" close-out paths | ✅ intentionally exempt | those are about the `.cdd/releases/{X.Y.Z}/{role}/CLOSE-OUT.md` path-layout legacy, not the era cutoff |
+
+**Harness audit (α/SKILL.md §2.4):** the cutoff is consumed by the
+validator script only. No CI workflow, template, or fixture writer
+encodes the v3.74 or v3.77 literal independently — `grep -rn '3\.74\|3\.77'
+.github/ tools/ src/packages/cnos.cdd/commands/cdd-verify/` returns
+hits only inside the validator + its tests (now updated) and inside
+CHANGELOG row text describing prior release content (descriptive, not
+contractual). Harness surface is clean.
+
+**Polyglot re-audit (α/SKILL.md §2.6 row 9):** diff languages = bash
+(validator + test harness) + Markdown (CHANGELOG row + this artifact).
+
+- **bash** — `bash -n src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify`
+  + `bash -n src/packages/cnos.cdd/commands/cdd-verify/test-cn-cdd-verify.sh`
+  → both return exit 0 (parsed clean). Behavioral re-audit via the test
+  suite: 39/39 assertions pass. No unused captures introduced (the new
+  fixture writers' positional args are all consumed in their heredocs).
+- **Markdown** — table-shape check on `CHANGELOG.md` unchanged columns
+  (8-column `| Version | C_Σ | α | β | γ | Rounds | Level | Coherence
+  note |` preserved; new `## Unreleased` bullet sits above the table
+  and does not interfere with column counts). Cross-references in this
+  artifact's `[[name]]` slots: none — α/SKILL.md style for §Self-check
+  does not require cross-doc citation here.
+
+## Debt
+
+**None known to α at review-readiness time.**
+
+Two operational notes for γ (not α-correctable, not blocking review):
+
+1. **Validator classification of in-flight triadic cycles as
+   "small-change."** While I was writing this self-coherence and before
+   β had committed `beta-review.md`, the validator's
+   `classify_cycle_type` routed `.cdd/unreleased/365/` to the
+   small-change path (because beta-review.md was absent) and ran the
+   strict section validator. This is correct given the classifier's
+   inputs but produces a transient "missing sections" failure on every
+   in-flight α-side self-coherence write before β's first commit. It
+   is not material to this cycle (the failure clears once §ACs +
+   §Self-check + §Debt + §CDD-Trace are written), and it is outside
+   #365's scope (γ's non-goal #2 — "do not change which artifacts are
+   required for the current era"). γ surface for future cycle: route
+   classification via `gamma-scaffold.md` presence as well, so an
+   in-flight triadic cycle is recognized before β has written.
+
+2. **Section-name spelling drift between `alpha/SKILL.md` and the
+   validator.** `alpha/SKILL.md` §2.5 names the self-coherence step-7
+   section `**§CDD-Trace**` (hyphen). The validator's grep
+   (`cn-cdd-verify` line 491) requires `## CDD Trace` (space). v3.76.0
+   cycle 362 used the hyphen form and was flagged by the validator.
+   This cycle uses the validator-compatible `## CDD Trace` (space) so
+   the strict path stays satisfied; the manifest's section slug is
+   `CDD-Trace` (hyphen, alpha/SKILL.md style). Resolving the drift one
+   way or the other is a future surface — not in #365's scope per γ
+   non-goal #2.
+
+## CDD Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | issue #365, run 25905265925, `.cdd/releases/3.75.0/`, `cn-cdd-verify` | cdd | I6 fails 87/426 on every push; failures concentrate on v3.75.0 (126) and v3.76.0 (2); v3.74.0/327 already clean |
+| 1 Select | issue #365, γ scaffold | cdd, alpha | Accepted γ's framing: era-mismatch in `is_legacy_version`; cutoff bump path is in scope; per-artifact era policy is out of scope; γ non-goals respected |
+| 2 Branch | `cycle/365` | cdd, alpha | already on `cycle/365` (γ created from `origin/main@16aaef89`); no rebase required mid-cycle |
+| 3 Bootstrap | `.cdd/unreleased/365/self-coherence.md` (manifest header + sections) | alpha (§2.5 incremental write) | manifest declares 7 sections; §Gap + §Skills landed as commit `42e608e2`, first commit within 25% of dispatch budget per alpha-codex-prompt rule |
+| 4 Gap | §Gap above | cdd | named the validator-era mismatch + selected `cutoff bump` mode with rationale tied to γ's peer enumeration |
+| 5 Mode | §Skills above | cdd, write, eng/tool, eng/test, eng/ship | mode = design-and-build (γ scaffold). Design call settled: cutoff bump (KISS) over per-artifact era policy |
+| 6 Artifacts | `cn-cdd-verify` (cutoff + warn strings + comment), `test-cn-cdd-verify.sh` (3 new tests + 2 fixture writers, 39 total assertions), `test/fixtures/incomplete-triadic/.cdd/releases/3.78.0/200/{self-coherence,beta-review}.md` (rename target — fixture relocated post-cutoff), `CHANGELOG.md` (new `## Unreleased` bullet) | eng/tool, eng/test, eng/ship, write | commits `1b7e77a1` (validator + fixture rename), `722fe414` (boundary tests), `1536a843` (CHANGELOG) |
+| 7 Self-coherence | this artifact §Gap..§Debt | alpha (§2.5 incremental write), test | each section committed separately per α/SKILL.md §2.5 incremental-write discipline; §Gap+§Skills (`42e608e2`), §ACs (`757776ef`), §Self-check+§Debt+§CDD-Trace (this commit) |
+
