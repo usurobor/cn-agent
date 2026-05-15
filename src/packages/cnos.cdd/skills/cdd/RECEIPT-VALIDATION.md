@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface, Non-goals, Closure] -->
-<!-- completed: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface] -->
+<!-- completed: [Preamble, Q1, Q2, Q3, Q4, Q5, Validation Interface, Non-goals, Closure] -->
 
 # Receipt Validation — Parent-facing Validator Surface
 
@@ -576,3 +576,57 @@ This is the line between design (this document) and schema (Phase 2). The design
 Phase 3 (`cn-cdd-verify` refactor) inherits the function signature, the input refs, the output verdict shape, the invocation composition rule, and the override-detection rule. Phase 3 implements `V` and `derive_receipt`; it does not redesign the interface. If Phase 3 finds a missing field in the design — a real consumer pressure the doctrine surface did not anticipate — the right response is to amend this document in a follow-up cycle, not to silently extend the interface in implementation.
 
 ---
+
+## Non-goals
+
+This document is a design surface. Its non-goals are the surfaces it must not edit and the choices it must not make. The AC9 contract in [#367](https://github.com/usurobor/cnos/issues/367) is binding; this section restates the non-goals so they are internal to the document and observable by any reader.
+
+**Files this document does not edit.** The diff for this cycle, before α signals review-readiness, is constrained to exactly:
+
+- `src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md` (new file, status `A`)
+- `.cdd/unreleased/367/*.md` (cycle evidence — `gamma-scaffold.md`, `alpha-codex-prompt.md`, `beta-codex-prompt.md`, `self-coherence.md`, and any β/γ artifacts that land later in the cycle)
+
+The cycle's surface-containment contract specifically forbids:
+
+- Any `.cue` file (Phase 2 work)
+- Any edit under `src/packages/cnos.cdd/commands/cdd-verify/` (Phase 3 work)
+- Any edit to `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` (Phase 4 work)
+- Any edit to `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` (Phase 5 work)
+- Any edit to `src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md` (Phase 6 work)
+- Any edit to `ROLES.md` (Phase 6 work, named target only)
+- Any edit to `src/packages/cnos.cdd/skills/cdd/CDD.md` (Phase 7 work; explicitly out of scope for this cycle by the issue's `## Scope` section)
+- Any edit to `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md` (the predecessor doctrine surface — frozen by this cycle's contract)
+
+**Choices this document does not make.** The design names the contracts; subsequent phases pin the syntax and the implementation:
+
+- Schema language and exact field types for the receipt and contract (Phase 2)
+- The capability identifier and package-manifest binding for `V` (Phase 3)
+- The transport mechanism δ-the-skill uses to invoke the capability (Phase 3)
+- The argv/stdout shape of `cn-cdd-verify` post-refactor (Phase 3)
+- The exact `ROLES.md` text that lifts ε's generic doctrine (Phase 6)
+- Any change to `CDD.md`'s canonical algorithm description (Phase 7)
+
+**Author-discipline non-goals.** The design is intentionally **decisive over exhaustive**. The five Open Questions get single chosen answers; the rationale exists to justify the choice and to anchor future reading, not to enumerate every alternative the design could have made. The reader who wants the full alternative space can read `COHERENCE-CELL.md` §Open Questions; this document commits to one position per question and explains why.
+
+---
+
+## Closure
+
+The design surface is complete when:
+
+1. The five Open Questions seeded by `COHERENCE-CELL.md` §Open Questions have single chosen positions with rationale — `## Q1` through `## Q5` above.
+2. The validation interface is frozen at doctrine level — `## Validation Interface` above, naming input contract, output contract, invocation contract, and the `ValidationVerdict`-vs-`BoundaryDecision` distinction.
+3. The non-goals are restated and observable in the document — `## Non-goals` above, listing the surfaces this cycle does not touch.
+
+Subsequent phases of [#366](https://github.com/usurobor/cnos/issues/366) inherit this document as their input contract:
+
+| Phase | Inherits from this document |
+|---|---|
+| Phase 2 — `receipt.cue` + `contract.cue` | §Validation Interface (output shape, input refs), §Q4 (override fields), §Q5 (receipt blocks and derivation sources) |
+| Phase 3 — `cn-cdd-verify` refactor | §Q1 (firing point), §Q2 (capability framing), §Validation Interface (function signature) |
+| Phase 4 — δ split (`operator/` → `delta/` + harness) | §Q1 (δ owns the authoritative firing), §Q2 (δ binds to capability not command), §Q4 (override is a δ-owned receipt block) |
+| Phase 5 — γ shrink | §Q1 (γ preflight is non-authoritative), §Q5 (`gamma-closeout.md` remains a derivation source even after γ shrinks) |
+| Phase 6 — ε relocation | §Q3 (target is `ROLES.md`; `epsilon/SKILL.md` shrinks to CDD-instantiation pointer) |
+| Phase 7 — `CDD.md` rewrite | §Q1 + §Validation Interface (the rewrite can cite the δ-boundary firing point and the typed receipt as the parent-facing trust surface) |
+
+The doctrine surface (`COHERENCE-CELL.md`) remains the source of truth for *what the cell is*; this design surface fixes *how the cell's receipt is validated and where the validator's interface lives*. When Phase 3 lands and `V` becomes an executable predicate, this document moves from draft design to binding doctrine — at that point, the document's `Binding-status` line in the preamble is updated by the Phase 3 cycle's authoring (not by this cycle), and the design becomes the ratified contract Phases 4–7 satisfy.
