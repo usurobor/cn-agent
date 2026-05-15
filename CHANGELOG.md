@@ -22,6 +22,10 @@ These are intuition-level ratings, not outputs from a running TSC engine (formal
 
 See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICATION.md) for the full historical analysis.
 
+## Unreleased
+
+- **#365** — `cn-cdd-verify` legacy cutoff bumped from `v3.74.0` to `v3.77.0`. Pre-v3.77.0 cycles missing `alpha-closeout.md`, `gamma-closeout.md`, or a `CDD Trace` section in `self-coherence.md` now warn instead of fail. Repairs comment/code drift on `is_legacy_version` (header claimed `v3.65.0`, code compared `v3.74.0`). Closes I6 CI block (87/426 checks failing on every push). v3.77.0+ cycles continue to fail strict.
+
 | Version | C_Σ | α | β | γ | Rounds | Level | Coherence note |
 |---------|-----|---|---|---|--------|-------|----------------|
 | #345 (docs) | A | A | A | A | 1 | — | **Document the generic α/β/γ/δ/ε role-scope ladder as a cnos-level pattern** (#345, merge `9513362a`, docs-only §2.5b). `ROLES.md` at repo root (319L, §§1–8): 5-row role table with canonical verbs (produces/reviews/coordinates/operates/iterates), Bateson/von Foerster ambient prior art with honest-caveat, 6 instantiation fields, cdw as planned-not-shipped (§5 ≤200 words). `epsilon/SKILL.md` stub (64L) gives ε a canonical cdd-side home — cross-references `ROLES.md §1` row 5 and `post-release/SKILL.md` Step 5.6b. `CDD.md` blockquote pointer (6 lines, top of file) disclaims cdd-origin. `post-release/SKILL.md §5.6b` re-attributed to ε: cdd-iteration.md is ε's work product. AC5 self-application: close-out demonstrates attribution rule operational via empty-cycle clause (zero `cdd-*-gap` findings → no file → signal stays high). 1 review round, R1 APPROVED, 0 findings, 4 non-actionable observations. α A (6 ACs met first pass, oracle-grounded self-coherence, AC5 correctly deferred). β A (zero findings, observations precisely categorized, pre-merge gate complete). γ A (design-pre-converged issue pack, AC5 conditional structure correct, empty-cycle clause applied). |
