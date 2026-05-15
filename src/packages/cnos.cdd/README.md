@@ -12,6 +12,7 @@ This package contains two main surfaces:
 
 ### `/skills/` — The Method
 - **`cdd/CDD.md`** — Canonical algorithm spec for development cycles
+- **`cdd/COHERENCE-CELL.md`** — Draft refactor doctrine: the recursive coherence-cell model (contract → α/β/γ cell → receipt → validator → δ boundary → accepted receipt as next-scope matter). Does not replace `CDD.md`; collaboration surface for the planned CDD refactor.
 - **Role skills** — `alpha/`, `beta/`, `gamma/`, `operator/` define triadic responsibilities  
 - **Lifecycle skills** — `issue/`, `review/`, `release/`, `design/`, `plan/` implement phases
 - **Activation** — `activation/SKILL.md` for one-time repository bootstrap
