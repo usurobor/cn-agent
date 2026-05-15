@@ -9,6 +9,11 @@ manifest:
     - R1-artifact-completeness
     - R1-findings
     - R1-verdict
+    - R2-header
+    - R2-CI-status
+    - R2-findings-disposition
+    - R2-pre-merge-gate
+    - R2-verdict
   completed:
     - R1-header
     - R1-contract
@@ -18,6 +23,11 @@ manifest:
     - R1-artifact-completeness
     - R1-findings
     - R1-verdict
+    - R2-header
+    - R2-CI-status
+    - R2-findings-disposition
+    - R2-pre-merge-gate
+    - R2-verdict
 ---
 
 # β Review — #365 (I6 CDD artifact validator era-mismatch on v3.75.0/v3.76.0)
@@ -166,5 +176,60 @@ None at R1.
 **Merge-tree validation (β pre-merge gate row 3):** ran `cn-cdd-verify --all`, `test-cn-cdd-verify.sh`, `test-fixtures.sh` against `origin/main + cycle/365` merge tree in throwaway worktree. All pass. Zero unmerged paths. Worktree torn down. Identity-leak guard: worktree-local `git config --worktree user.{name,email} beta@cdd.cnos` set explicitly per `beta/SKILL.md` pre-merge gate row 1 note.
 
 **Closure-gate awareness (release/SKILL.md §3.8 closure-gate override):** at R1, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md` are not yet on the cycle branch — expected per triadic protocol (they land post-merge). When β re-runs the pre-merge gate after F1 resolves, the close-out artifacts are still expected to be absent at merge time; they are written *post-merge*. The closure gate (per `scripts/validate-release-gate.sh --mode pre-merge` for release-time) is δ's concern, not β's at merge.
+
+---
+
+## Round 2
+
+**Verdict:** APPROVED
+
+**Round:** 2
+**Review base SHA (origin/main):** `16aaef89` (synchronously re-fetched at R2 start; unchanged from R1)
+**Review head SHA (origin/cycle/365):** `c3a48741`
+**Fixed this round:** F1 — stale relative link in `.cdd/releases/3.75.0/360/beta-closeout.md:54`. γ-authored fix `c3a48741` (cherry-pick of `76fb7780`) changed `../../../src/packages/cnos.cdd/skills/cdd/beta/SKILL.md` to `../../../../src/packages/cnos.cdd/skills/cdd/beta/SKILL.md` (one extra `..`). Independence preserved: γ landed the fix (β-recommended path-a), α was correctly not asked to author a fix to a cycle-360 artifact unrelated to α's #365 implementation surface.
+**Branch CI state:** **Build = success** on `c3a48741` (run `25908336816`); all 9 jobs green — I1 ✅, I2 ✅, I4 ✅, I5 ✅, I6 ✅, Go build & test ✅, Binary verification ✅, Package verification ✅, notify ✅. Rule 3.10 (binding CI-green-on-review-SHA) satisfied.
+**Merge instruction:** `git switch main && git merge --no-ff cycle/365 -m "Merge cycle/365 — I6 CDD artifact validator era-mismatch on v3.75.0/v3.76.0\n\nCloses #365"` — executing this round.
+
+## §CI status (R2)
+
+| Workflow | Job | R1 conclusion (`d5561963`) | R2 conclusion (`c3a48741`) |
+|---|---|---|---|
+| Build | Repo link validation (I4) | failure (F1) | **success** |
+| Build | CDD artifact ledger validation (I6) | success | success |
+| Build | Package/source drift (I1) | success | success |
+| Build | Protocol contract schema sync (I2) | success | success |
+| Build | SKILL.md frontmatter validation (I5) | success | success |
+| Build | Go build & test | success | success |
+| Build | Binary verification | success | success |
+| Build | Package verification | success | success |
+| Build | notify | success | success |
+| **Build (overall)** | | **failure** | **success** |
+
+Evidence: `gh run view 25908336816 --json conclusion,jobs` returns `"conclusion": "success"` for all jobs.
+
+## §Findings disposition
+
+| # | R1 finding | R2 disposition | Evidence |
+|---|------------|----------------|----------|
+| F1 | Build red via pre-existing I4 lychee stale link | **RESOLVED** | `c3a48741` ships the one-character path-depth fix (`../../../` → `../../../../`). Mechanical verification: from `.cdd/releases/3.75.0/360/`, four `..` lands at repo root; `src/packages/cnos.cdd/skills/cdd/beta/SKILL.md` exists (read this session, file present). I4 = success on `c3a48741` (run `25908336816`). Build workflow overall = success. Rule 3.10 satisfied. |
+
+N1, N2, N3 from R1 remain non-actionable observations (carried to γ for PRA, not RC conditions).
+
+## §Pre-merge gate (R2)
+
+| # | Row | R2 result |
+|---|-----|-----------|
+| 1 | Identity truth | `git config --get user.email` = `beta@cdd.cnos`, `user.name` = `beta` ✅ |
+| 2 | Canonical-skill freshness | `git fetch --verbose origin main` returns `16aaef89` — unchanged from session-start / R1 snapshot. No re-load required. ✅ |
+| 3 | Non-destructive merge-test | Throwaway worktree at `/tmp/cnos-merge-test-r2/wt` from `origin/main@16aaef89`; `git merge --no-ff --no-commit origin/cycle/365` reports "Automatic merge went well"; 0 unmerged paths; `cn-cdd-verify --all` → `282 passed, 0 failed, 136 warnings (418 total)`; `test-cn-cdd-verify.sh` → `ran 39 assertions: 39 passed, 0 failed`. Worktree torn down (`git worktree remove --force`). Worktree-local `git config --worktree user.{name,email}` set explicitly per row-1 leak guard. ✅ |
+| 4 | γ artifact completeness | `.cdd/unreleased/365/gamma-scaffold.md` present on `origin/cycle/365` at `4fa0bd05` (verified R1; unchanged at R2). ✅ |
+
+All four rows pass. Merge is authorized.
+
+## §Verdict (R2)
+
+**APPROVED.** All 6 ACs met. F1 resolved on `c3a48741`. Build workflow green on review SHA. Pre-merge gate clean. γ artifact present. β independence preserved (γ authored F1 fix; α did not author the fix β judged).
+
+Merging `cycle/365` into `main` per β authority (`CDD.md` §1.4 β step 8, `release/SKILL.md`).
 
 ---
