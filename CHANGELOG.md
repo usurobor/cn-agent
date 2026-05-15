@@ -22,8 +22,9 @@ These are intuition-level ratings, not outputs from a running TSC engine (formal
 
 See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICATION.md) for the full historical analysis.
 
-## Unreleased
+## 3.77.0
 
+- **#364** — COHERENCE-CELL.md draft refactor doctrine
 - **#365** — `cn-cdd-verify` legacy cutoff bumped from `v3.74.0` to `v3.77.0`. Pre-v3.77.0 cycles missing `alpha-closeout.md`, `gamma-closeout.md`, or a `CDD Trace` section in `self-coherence.md` now warn instead of fail. Repairs comment/code drift on `is_legacy_version` (header claimed `v3.65.0`, code compared `v3.74.0`). Closes I6 CI block (87/426 checks failing on every push). v3.77.0+ cycles continue to fail strict.
 
 | Version | C_Σ | α | β | γ | Rounds | Level | Coherence note |
