@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Kernel, Cell Outcomes, Recursion Modes, Scope-Lift, Two-Layer Separation, Non-goals, Closure] -->
-<!-- completed: [Preamble, Kernel, Cell Outcomes, Recursion Modes, Scope-Lift] -->
+<!-- completed: [Preamble, Kernel, Cell Outcomes, Recursion Modes, Scope-Lift, Two-Layer Separation, Non-goals, Closure] -->
 
 # Coherence-Cell Normal Form
 
@@ -319,3 +319,117 @@ Three non-projections, stated to head off conflation:
 - **β has no upward projection.** βₙ's review is part of the closed cell; it does not have a separately typed projection at scope `n+1`. Treating β as having an upward projection would let scope-`n+1` reason over the review independent of the closed cell, which would break the receipt's role as the single typed handoff surface.
 - **γ has no upward projection.** γₙ's receipt is the parent-facing artifact of the closed cell; it is *what carries* projection 1, not a separate projection. Treating γ as having an upward projection distinct from the closed cell would double-count the receipt's role.
 - **Scope-lift is not a single-cell loop.** The scope-`n+1` cell is a new cell with new α, β, γ, δ, ε at scope `n+1`. It is not "the same cell at the next scope"; the scope-`n+1` cell has its own contract, its own matter, its own review, its own receipt, its own verdict, its own decision. The scope-`n` cell projects *into* the scope-`n+1` cell's inputs; it does not *become* the scope-`n+1` cell.
+
+---
+
+## Two-Layer Separation
+
+This document is the **kernel layer**. The kernel layer names the *what* — the substrate-independent recursion algorithm that any instantiation of the role-scope ladder pattern can carry. The kernel does not specify a particular tooling, a particular schema language, a particular invocation surface, or a particular platform. Substrate-specific facts live in the **realization layer**, which expands the kernel on a chosen substrate.
+
+> **Kernel is the *what*. Realization is the *how-on-this-substrate*.**
+
+The split protects two properties simultaneously. The kernel stays portable: a future re-instantiation of the role-scope ladder on a different substrate inherits the kernel without re-derivation. The realization stays expandable: substrate-specific concerns (schema syntax, command-wrapper shape, dispatch mechanism, validator implementation) can evolve without dragging the kernel along, because the kernel does not name them.
+
+### Realization peers
+
+Four realization-layer surfaces expand this kernel on the current substrate. Each is cited here as a realization peer; none of them is edited by this cycle. The kernel is the doctrine; the realization peers are the substrate expansions.
+
+**`RECEIPT-VALIDATION.md` — parent-facing typed-interface design.**
+This is the frozen validation interface for `V` — input contract (what `V` reads as references), output contract (`ValidationVerdict` shape), invocation contract (when and how δ invokes `V`), and the structural distinction between `ValidationVerdict` (V-emitted) and `BoundaryDecision` (δ-recorded). The kernel positions `V` at step 4 and δ at step 5; the receptor design types the interface and resolves the five Open Questions seeded by the predecessor doctrine. Where the kernel commits to "V dereferences evidence from the receipt," the receptor design types the dereferencing as `EvidenceRootRef` and pins the override-detection biconditional.
+
+**`schemas/cdd/` (Phase 2, `#369`, in flight) — typed schemas for receipt, contract, boundary decision.**
+This is the realization peer that types the four cell outcomes (§Cell Outcomes) and the override block. The schema work pins the verdict × action × transmissibility table that the kernel's `(verdict, decision)` preconditions describe at a doctrine level. The kernel and the schemas compose: when the schemas land, the kernel's outcome preconditions become enforceable as typed-field constraints on the receipt's `validation` and `boundary` blocks.
+
+**`cn-cdd-verify` (Phase 3, deferred) — V's command-wrapper implementation.**
+This is the realization peer that implements `V` as an operator-facing command wrapping the predicate the kernel names at step 4. The command surface is the substrate-specific invocation path operators and the harness consume; the predicate (exposed as a capability per the receptor design) is what δ-the-skill consumes. Both paths reach the same underlying predicate. The kernel commits to `V` being a predicate; the realization commits to the command-wrapper shape on this substrate.
+
+**`CDD.md` (Phase 7 rewrite, deferred) — canonical executable algorithm.**
+This is the realization peer that expands the kernel into the operational algorithm CDD runs as a working protocol on this substrate. The kernel pins the five-step closure, the four outcomes, the two recursion modes, and the three scope-lift projections; the operational rewrite expands each into role-specific steps, dispatch sequences, branch mechanics, harness contracts, and concrete artifacts. The kernel is the spine; `CDD.md` rewrite is the body. Until the Phase 7 rewrite lands, `CDD.md` remains the canonical algorithm at its current shape — this cycle does not touch it.
+
+### What lives where
+
+| Concern | Kernel layer (this doc) | Realization layer |
+|---|---|---|
+| Recursion algorithm (five steps, four outcomes, two modes, three projections) | Yes | No (cited; not re-stated) |
+| Substrate-independent role signatures (αₙ.produce, βₙ.review, …) | Yes | No |
+| Validator predicate signature (`V : Contract × Receipt → Verdict`) | Yes | No |
+| Typed schemas (receipt, contract, boundary, override fields) | No | `schemas/cdd/` (Phase 2) |
+| Command-wrapper shape (operator-facing) | No | `cn-cdd-verify` (Phase 3) |
+| Capability binding, transport, dispatch | No | δ skill + harness (Phase 4) |
+| Per-role operational steps (artifact order, branch mechanics, CI gates) | No | `CDD.md` (Phase 7) |
+| Receptor interface freeze (input refs, output verdict shape, invocation rule) | Position-only (positions `V` at step 4, δ at step 5) | `RECEIPT-VALIDATION.md` (Phase 1) |
+
+The table is a guide, not a contract — the realization peers may evolve in ways the kernel does not anticipate. The load-bearing rule is the **direction of dependency**: realization cites kernel; kernel does not cite realization. The kernel sections of this document name no substrate; the §Two-Layer Separation section is where realization peers are cited because this section is in the realization layer of the document itself.
+
+### Why the split is load-bearing
+
+Three failure modes the split prevents:
+
+1. **Operational drift in the kernel.** If kernel sections cite substrate-specific tooling, the kernel becomes substrate-specific. A future re-instantiation (a different ladder pattern, a different platform) cannot inherit the kernel without re-deriving it. The kernel sections of this document name only roles, verdicts, decisions, receipts, evidence, scopes — they do not name any particular tooling.
+2. **Kernel collapse mid-rewrite.** Phase 7 rewrites `CDD.md` into the operational layer expanding this kernel. If the kernel were not stated independently first, Phase 7 would have to derive the kernel mid-rewrite — which is exactly the failure mode the split exists to prevent. The kernel lands first, then the rewrite expands it.
+3. **Schema-kernel disagreement.** Phase 2 types receipt, contract, and boundary decision. If the kernel did not pin the four outcomes and three projections at a doctrine level, the schemas would be choosing the shape rather than typing a doctrine-defined shape. The kernel statement here is the load-bearing claim; the schema work aligns to it.
+
+---
+
+## Non-goals
+
+This cycle's surface-containment contract is binding. The diff for this cycle, before α signals review-readiness, is constrained to exactly:
+
+- `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md` (new file, status `A`)
+- `.cdd/unreleased/370/*.md` (cycle evidence — scaffold, dispatch prompts, self-coherence, role close-outs as they land)
+
+**Files this document does not edit:**
+
+- `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md` — predecessor doctrine; remains the receipt-rule doctrine surface unchanged
+- `src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md` — receptor design; cited as realization peer; unchanged
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` — canonical executable algorithm; Phase 7 rewrite target; unchanged this cycle
+- `schemas/cdd/` — Phase 2 (`#369`), runs in parallel; this cycle adds no schema files
+- `cn-cdd-verify` command — Phase 3, deferred; no edits
+- `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` — Phase 4 (δ split) target; unchanged
+- `src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md` — Phase 5 (γ shrink) target; unchanged
+- `src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md` — Phase 6 (ε relocation) target; unchanged
+- `ROLES.md` — Phase 6 target; unchanged
+- CI workflows, new packages, new tooling
+
+**Choices this document does not make:**
+
+- Schema syntax and exact field types for the receipt and contract (Phase 2)
+- The capability identifier and package-manifest binding for `V` (Phase 3)
+- The transport mechanism δ uses to invoke the capability (Phase 3)
+- The argv/stdout shape of `cn-cdd-verify` post-refactor (Phase 3)
+- The exact δ-skill split between boundary and harness (Phase 4)
+- The exact `ROLES.md` text that lifts ε's generic doctrine (Phase 6)
+- The operational algorithm details — artifact order, branch mechanics, dispatch sequences (Phase 7)
+
+**Author-discipline non-goals:**
+
+- The kernel is **decisive over exhaustive.** Each section commits to one position; rationale exists to anchor the position, not to enumerate every alternative the design could have made. The full alternative space lives in the predecessor doctrine's Open Questions and the receptor design's narrative.
+- The kernel does not preempt the Phase 7 rewrite. The operational realization is `CDD.md`'s job; this document gives Phase 7 a citable spine, not the body.
+- The kernel does not grow to operational length. The target is 200–400 lines; growth past that signals re-derivation of the operational layer mid-cycle.
+
+---
+
+## Closure
+
+The kernel is complete when:
+
+1. The five-step recursion at scope `n` is stated with explicit signatures, including β's matter-only consumption and δ's receipt-and-verdict-only consumption (§Kernel).
+2. The evidence-binding rule is pinned at the kernel level — evidence accumulates during α and β work; γ binds it into the receipt; `V` dereferences from the receipt; β never consumes evidence; δ never re-reads evidence (§Kernel).
+3. The four closed-cell outcomes are pinned with their `(verdict, decision)` preconditions and `invalid` is declared non-terminal (§Cell Outcomes).
+4. The two recursion modes are distinguished — within-scope repair-dispatch at the same scope index, cross-scope accept / degraded / reject at the advancing scope index — and the same recursion operator is named (§Recursion Modes).
+5. The three scope-lift projections are named — closed cell → α-matter; δ decision → β-like discrimination; ε receipt-stream observation → γ-like coordination / evolution — with the projection-not-renaming framing and the β/γ-no-upward-projection clause (§Scope-Lift).
+6. The two-layer separation is declared and the four realization peers are cited (§Two-Layer Separation).
+7. The surface-containment contract is respected: the diff is exactly `{COHERENCE-CELL-NORMAL-FORM.md} ∪ .cdd/unreleased/370/*.md` (§Non-goals).
+
+Subsequent phases of `#366` inherit this document as their input contract:
+
+| Phase | Inherits from this document |
+|---|---|
+| Phase 2 — `receipt.cue` + `contract.cue` (parallel, `#369`) | §Cell Outcomes (four-outcome preconditions); §Kernel (evidence-binding rule); §Scope-Lift (the three projected objects' shapes) |
+| Phase 3 — `cn-cdd-verify` refactor | §Kernel (V's signature, evidence-binding rule); §Cell Outcomes (verdict-decision composition); §Two-Layer Separation (V is capability + command-wrapper) |
+| Phase 4 — δ split | §Kernel (δ's signature, no-evidence consumption); §Cell Outcomes (δ's authoritative composition with the verdict); §Recursion Modes (δ records `repair_dispatch` for within-scope; `accept`/`release`/`override`/`reject` for cross-scope) |
+| Phase 5 — γ shrink | §Kernel (γ's signature; γ binds evidence into the receipt); §Scope-Lift (γₙ has no upward projection — γ is intra-cell) |
+| Phase 6 — ε relocation | §Scope-Lift (εₙ's receipt-stream observation projects as γₙ₊₁-like coordination/evolution); §Kernel (ε is cross-cell, not in the five-step closure) |
+| Phase 7 — `CDD.md` rewrite | §Kernel + §Cell Outcomes + §Recursion Modes + §Scope-Lift (the entire kernel as the spine the operational rewrite expands) |
+
+When Phase 7 lands and rewrites `CDD.md` around this kernel, this document moves from "draft doctrine the operational layer cites" to "doctrine the operational layer satisfies." At that point, this document's status line in the preamble is updated by the Phase 7 cycle's authoring — not by this cycle — and the kernel becomes the ratified contract that the operational realization expands.
