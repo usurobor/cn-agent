@@ -1,0 +1,36 @@
+# Fixture: invalid-fail-no-boundary-decision.yaml
+# Exercises #367 AC3 (δ-authoritative-ordering): a closed cell is not
+# transmissible until δ records a BoundaryDecision. A receipt with V's FAIL
+# verdict but no `boundary_decision` field is in the closure-emitted-but-not-
+# accepted intermediate state — not a valid parent-facing receipt. AC5
+# requires `boundary_decision: #BoundaryDecision`; this fixture omits it and
+# must fail vet for the missing-required-field reason.
+# Covers AC7 row 2.
+# Expected: `! cue vet -c -d '#Receipt' {schemas} fixtures/invalid-fail-no-boundary-decision.yaml`.
+
+validation:
+  verdict: FAIL
+  failed_predicates: ["issue:#369#AC3.oracle"]
+  warnings: []
+  provenance:
+    validator_identity: cdd.validate_receipt
+    validator_version: phase3-pending
+    checked_at: "2026-05-17T10:00:00Z"
+    input_refs:
+      contract_ref: "issue:#369@contract_sha_placeholder"
+      receipt_ref: ".cdd/releases/0.0.0/369/receipt.yaml@merge_sha_placeholder"
+      evidence_root_ref: ".cdd/releases/0.0.0/369/@merge_sha_placeholder"
+
+# MISSING: boundary_decision. A receipt at the parent boundary without a δ
+# decision is not a receipt — it is an incomplete closure.
+
+protocol_gap_count: 0
+protocol_gap_refs: []
+
+evidence_root_ref:  ".cdd/releases/0.0.0/369/"
+self_coherence_ref: ".cdd/releases/0.0.0/369/self-coherence.md"
+beta_review_ref:    ".cdd/releases/0.0.0/369/beta-review.md"
+alpha_closeout_ref: ".cdd/releases/0.0.0/369/alpha-closeout.md"
+beta_closeout_ref:  ".cdd/releases/0.0.0/369/beta-closeout.md"
+gamma_closeout_ref: ".cdd/releases/0.0.0/369/gamma-closeout.md"
+diff_ref:           "git_diff(origin/main..merge_sha_placeholder)"
