@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs] -->
+<!-- completed: [Gap, Skills, ACs, Self-check] -->
 
 # Self-coherence — Cycle #369
 
@@ -175,3 +175,86 @@ All changes land under `schemas/cdd/` (new directory: three `.cue` + README + 4 
 - Fixture validation (lines 146–152): `cue vet -c -d '#Receipt'` with all three CUE files plus `schemas/cdd/fixtures/{fixture}.yaml` — `{fixture}` is the only placeholder, marking the truly varying part per the issue's "literal multi-line form, placeholders only for the truly varying part" constraint.
 
 Phase 3 inherits both invocations directly from the README (the active design constraint in the issue body names this as the authoritative documentation surface).
+
+## §Self-check
+
+Per [`alpha/SKILL.md`](../../../src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md) §2.5: "did α's work push ambiguity onto β? Is every claim backed by evidence in the diff?"
+
+### Did α push ambiguity onto β?
+
+**Schema authoring decisions α made explicitly (so β does not have to re-derive):**
+
+1. **Verdict enum collapsed to `PASS | FAIL`.** `RECEIPT-VALIDATION.md` §Output contract permits a `WARN` value with the explicit note "Phase 2 may collapse this into `warnings` and emit only `PASS | FAIL` as the verdict enum." α took the simpler form. The `warnings: [...string]` field remains on `#ValidationVerdict` for advisory observations. This is named in `boundary_decision.cue:25`. β does not need to relitigate.
+
+2. **CUE package name `cdd`.** All three CUE files declare `package cdd`. This is what lets `receipt.cue` reference `#BoundaryDecision` without an `import` statement. AC3 oracle says "imports / references" — same-package reference satisfies the "references" form. This is consistent with `schemas/skill.cue`'s pattern of single-package-per-subsystem.
+
+3. **`#Receipt` is open (`...`).** Matches `schemas/skill.cue` precedent. The closed form rejected `preflight_only` as "field not allowed" before getting to the missing-`boundary_decision` failure; open form makes the load-bearing AC5 violation the named reason `invalid-gamma-preflight-authoritative.yaml` fails. Open does not weaken hard-gate field requirements — required fields are still required.
+
+4. **`#Override` shape — sub-record of `#BoundaryDecision` (per active design constraint).** `boundary_decision.cue:43–53` defines `#Override`; `#BoundaryDecision:61–80` carries `override?: #Override` and the required-iff constraint pair. α implemented option (a) from the dispatch-pinned defaults; β does not need to choose.
+
+5. **`#ProtocolGapRef.source` enum chosen.** Issue named `source` as enum but did not pin members. α chose `"receipt" | "artifact" | "issue" | "review" | "closeout"` — five values describing **where in the cycle the gap observation came from**. α deliberately did **not** type `source` as the #366 Phase 6 four-class taxonomy (`cdd-skill-gap | cdd-protocol-gap | cdd-tooling-gap | cdd-metric-gap`) because that taxonomy classifies the **gap**, not its **source**. The taxonomy is a Phase 6 concern; v1 types the source surface. If β prefers a different name or set, this is a place where re-derivation effort is small. α flagged it as a debt-class possibility under §Debt.
+
+6. **`schema_id` not encoded as a structural field.** AC2 grep oracle is satisfied by header comments. α did not add `schema_id: "cnos.cdd.receipt.v1"` as a sealed constant field on `#Receipt` because the schema artifact's filename + package + header comment is the canonical ID — no per-instance redundancy is required. Mirrors `schemas/skill.cue`'s pattern (no `schema_id` field there either).
+
+7. **`base_sha` required, `contract_sha` optional.** The issue body says "base_sha (or contract_sha)" — α read this as "either-or with `base_sha` as the always-required pinning of merge-base on `origin/main`; `contract_sha` as the optional pinning of the issue-body SHA when the body is edited mid-cycle."
+
+**Where ambiguity remains (deliberate; β can take the call):**
+
+- The exact field name conventions on `#ValidationVerdict.provenance.input_refs` mirror the illustrative shape in `RECEIPT-VALIDATION.md` §Illustrative Example. β may rename without breaking the schema contract; the issue body did not pin these names.
+- Whether `boundary_decision.actor` should be a typed role identity (e.g. `=~"^delta@[a-z]+\\.cdd\\.cnos$"`) or a free string. α chose `string` — Phase 3's V can encode role-identity policy via `cn-cdd-verify`'s structural reader rather than via CUE regex. β can call for tightening if Phase 3 needs it.
+
+### Is every claim backed by evidence in the diff?
+
+Every AC row in §ACs cites either a file:line ref or a cue vet exit code from the implementation SHA `96ddf4f5`. No claim relies on prose alone:
+
+- AC1 → `test -f` + `cue vet -c=false` exit 0.
+- AC2 → `rg --count` hit counts.
+- AC3 → README line numbers + `receipt.cue:53/60/65` + `boundary_decision.cue:86`.
+- AC4 → enum literal at `boundary_decision.cue:67` + `#Override` at `:43` + four structural rejections each verified via cue vet on three named fixtures and three scratch fixtures.
+- AC5 → 7 separate line refs in `receipt.cue` for required fields; consistency constraint verified via scratch fixture.
+- AC6 → cue vet exit 0 on `valid-receipt.yaml`.
+- AC7 → cue vet exit 1 on each of three invalid fixtures, with cue's error string captured and mapped to the doctrine clause it exercises.
+- AC8 → `git diff --stat` empty for `cdd-verify/`.
+- AC9 → 9-file diff stat in §ACs; absence of prohibited paths verified by inspection of the same stat.
+- AC10 → README line refs for both invocations.
+
+### Peer / harness audit (per alpha/SKILL.md §2.3, §2.4)
+
+**Schema-bearing peers:** none — `schemas/cdd/` is a new subsystem directory. The repo's other schema-bearing subsystem is `schemas/skill.cue`, which is **not** a peer of this work (it types SKILL.md frontmatter; this types CDD receipts). The two subsystems share the layout pattern (CUE owns shape; README owns prose; fixtures live under `schemas/{subsystem}/fixtures/`) but not the shape itself. No sibling-update obligation.
+
+**Receipt-shape harnesses:** none in this cycle. The receipt is not yet emitted by any tool — Phase 3 wires emission via `derive_receipt` and validation via `V`. AC8 enforces zero touch on `cdd-verify/`; AC9 enforces zero touch on any CI workflow.
+
+**Polyglot re-audit (alpha/SKILL.md §2.6 row 9):** diff contains CUE, YAML, Markdown.
+
+- **CUE** — `cue vet -c=false` on all three schemas: exit 0. Both schema-only compile (AC1) and fixture validation (AC6/AC7) exercise the schemas under both vet modes.
+- **YAML** — `python3 -c "import yaml; yaml.safe_load(open(f))"` on each of the four fixture files: all parse cleanly.
+- **Markdown** — README and self-coherence both contain tables; rows balance by visual inspection and by `cue vet` proxy (any oracle row that lies would surface as a failed oracle here). The one apparent awk-level "row mismatch" in self-coherence is a false positive caused by `\|` characters inside inline-code spans within a table cell (AC4 row 3 has the `rg 'accept\|release\|...'` pattern); these escape sequences are valid GitHub-flavored markdown and render correctly. Relative-link cross-references resolve: `../skill.cue` from `schemas/cdd/README.md` → `schemas/skill.cue` exists; `../README.md` → `schemas/README.md` exists; `../../src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md` and `COHERENCE-CELL.md` both exist.
+- **Shell / CI** — diff contains zero shell scripts or workflow files. Nothing to audit.
+
+### Caller-path trace (alpha/SKILL.md §2.6 row 12)
+
+The new modules in this cycle are CUE definitions, not callable functions. The "callers" of these schemas are:
+
+1. `cue vet` itself — invoked by `valid-receipt.yaml` fixture validation (AC6 oracle), the three invalid fixtures (AC7), and the schema-only compile (AC1). Concrete call sites: `schemas/cdd/README.md` §How to run.
+2. The README is itself a non-test caller of every fixture path — each `## Files` table row names a fixture as the doctrinal caller-side entry point.
+3. Phase 3 (`cn-cdd-verify` refactor) will be the wire-level caller. This cycle pins the call interface; the Phase 3 issue (the immediate successor sub-issue under #366) is the caller-of-record once authored.
+
+No "new function never called from main codepath" risk — there is no main codepath this cycle. The schemas are validators-of-data, not validators-themselves; they are called by `cue vet` invocations, not by program code.
+
+### Artifact enumeration matches diff (alpha/SKILL.md §2.6 row 11)
+
+Every file in `git diff --stat origin/main..HEAD` is mentioned by name in this self-coherence file:
+
+| Diff file | Where mentioned |
+|---|---|
+| `.cdd/unreleased/369/self-coherence.md` | this file (itself) — §Gap declares the path; §CDD-Trace step 7 below trails it |
+| `schemas/cdd/README.md` | §Gap "In-scope surfaces"; §ACs AC3/AC10 |
+| `schemas/cdd/boundary_decision.cue` | §Gap "In-scope surfaces"; §ACs AC1/AC2/AC3/AC4 |
+| `schemas/cdd/contract.cue` | §Gap "In-scope surfaces"; §ACs AC1/AC2 |
+| `schemas/cdd/receipt.cue` | §Gap "In-scope surfaces"; §ACs AC1/AC2/AC3/AC5 |
+| `schemas/cdd/fixtures/valid-receipt.yaml` | §Gap "In-scope surfaces"; §ACs AC6 |
+| `schemas/cdd/fixtures/invalid-override-masks-verdict.yaml` | §Gap "In-scope surfaces"; §ACs AC7 row 1 |
+| `schemas/cdd/fixtures/invalid-fail-no-boundary-decision.yaml` | §Gap "In-scope surfaces"; §ACs AC7 row 2 |
+| `schemas/cdd/fixtures/invalid-gamma-preflight-authoritative.yaml` | §Gap "In-scope surfaces"; §ACs AC7 row 3 |
+
+Nine files in diff; nine files enumerated. (The §Debt and §CDD-Trace and §Review-readiness sections of this same file will land in further commits and remain part of the same single file already named.)
