@@ -1,9 +1,9 @@
-<!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check, Debt] -->
+<!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace] -->
 
 # Self-coherence — Cycle #369
 
-## §Gap
+## Gap
 
 **Issue:** [#369 — Phase 2: Add draft CDD contract, receipt, and boundary decision schemas](https://github.com/usurobor/cnos/issues/369).
 
@@ -34,7 +34,7 @@
 
 **Out of scope (per issue §Non-goals):** any change to `cn-cdd-verify/`, `operator/SKILL.md`, `gamma/SKILL.md`, `epsilon/SKILL.md`, `delta/SKILL.md` (must not exist yet), `ROLES.md`, `CDD.md`, `COHERENCE-CELL.md`, `RECEIPT-VALIDATION.md` (sole permitted touch is an optional trailing-pointer; this cycle takes the safe path and omits it).
 
-## §Skills
+## Skills
 
 **Tier 1 (CDD lifecycle):**
 
@@ -56,7 +56,7 @@
 - `src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md` — semantic owner of the interface this cycle types. Schemas reference it via header comment per active design constraint.
 - `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md` — doctrine. Recursive scope-lift framing inherited from §Recursion Equation.
 
-## §ACs
+## ACs
 
 Per-AC evidence. Oracles run on HEAD of `cycle/369` (per [α/SKILL.md §2.6 SHA convention], readiness-signal carries branch HEAD rather than a specific SHA; β polls and uses whatever HEAD it finds).
 
@@ -176,7 +176,7 @@ All changes land under `schemas/cdd/` (new directory: three `.cue` + README + 4 
 
 Phase 3 inherits both invocations directly from the README (the active design constraint in the issue body names this as the authoritative documentation surface).
 
-## §Self-check
+## Self-check
 
 Per [`alpha/SKILL.md`](../../../src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md) §2.5: "did α's work push ambiguity onto β? Is every claim backed by evidence in the diff?"
 
@@ -259,7 +259,7 @@ Every file in `git diff --stat origin/main..HEAD` is mentioned by name in this s
 
 Nine files in diff; nine files enumerated. (The §Debt and §CDD-Trace and §Review-readiness sections of this same file will land in further commits and remain part of the same single file already named.)
 
-## §Debt
+## Debt
 
 **Known debt α leaves explicit for β / Phase 3:**
 
@@ -287,7 +287,7 @@ Nine files in diff; nine files enumerated. (The §Debt and §CDD-Trace and §Rev
 
 **No protocol gaps observed this cycle.** This is α's preflight reading; Phase 6 ε will read the receipt stream once Phase 3 lands and may surface gaps α did not see.
 
-## §CDD-Trace
+## CDD Trace
 
 Per [`alpha/SKILL.md`](../../../src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md) §2.2: trace through CDD canonical artifact order, with explicit "not required" + reason where applicable.
 
