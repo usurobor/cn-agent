@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
 
 # α self-coherence — #370
 
@@ -257,3 +257,36 @@ Surfaces present in the diff: exactly the new doc + cycle evidence under `.cdd/u
 7. **Docs:** Done as the cycle's primary artifact (the new file *is* doc). Cycle-evidence files under `.cdd/unreleased/370/` (`alpha-codex-prompt.md`, `beta-codex-prompt.md`, `gamma-scaffold.md`, `self-coherence.md`) carry α's and γ's working state. No other docs touched.
 
 8. **Self-coherence:** This file. §Gap, §Skills, §ACs (with executable-oracle results inline), §Self-check, §Debt, §CDD-Trace landed across multiple commits; §Review-readiness lands as the final commit signaling β polling.
+
+## Review-readiness | round 1
+
+| Property | Value |
+|---|---|
+| Round | 1 |
+| Base SHA (observed at signal time) | `704365d23378fcbfcf1e33679025809af6b81100` — matches scaffold's recorded base; `origin/main` not advanced since dispatch (re-fetched at signal time) |
+| Implementation SHA | `10b41762` — last implementation commit prior to this readiness-signal commit (per `alpha/SKILL.md` §2.6 SHA convention; this signal advances HEAD but cites the stable prior SHA) |
+| Branch | `cycle/370` |
+| Branch CI | N/A — docs-only cycle, no CI workflows trigger on `cycle/*` |
+| α identity | `alpha@cdd.cnos` (verified via `git log -1 --format='%ae'`) |
+| AC verdict | AC1–AC9: PASS (all per-AC oracles executed and recorded inline above) |
+| Pre-review gate | All applicable rows pass (§"Pre-review gate" alpha/SKILL.md §2.6); doc rows N/A logged below |
+| Ready for β | Yes |
+
+**Pre-review gate row-by-row (alpha/SKILL.md §2.6):**
+
+1. ✓ `origin/cycle/370` is on `origin/main`'s line; base SHA `704365d2` matches; no rebase needed.
+2. ✓ CDD Trace through step 7 (§CDD-Trace step 7 names docs as the cycle's primary artifact; step 8 is this self-coherence file).
+3. N/A — tests not applicable for a docs-only doctrine cycle; the per-AC oracle bank in §ACs is the analogous executable surface, and all PASS.
+4. ✓ Every AC has evidence (§ACs).
+5. ✓ Known debt explicit (§Debt).
+6. N/A — no schema-bearing contract changed in this cycle; the kernel positions `V` and the four outcomes at a doctrine level only.
+7. ✓ Peer enumeration completed (§Self-check); predecessor + receptor + canonical-algorithm peers all unedited (verified by diff).
+8. N/A — no schema-bearing contract changed; no harness audit applicable.
+9. N/A — no mid-cycle patches; clean section-by-section authoring.
+10. N/A — docs-only; no CI gate.
+11. ✓ Artifact enumeration matches diff. Every file in `git diff --stat origin/main..HEAD` is named in this self-coherence: `COHERENCE-CELL-NORMAL-FORM.md` (§CDD-Trace step 6); `.cdd/unreleased/370/gamma-scaffold.md`, `.cdd/unreleased/370/alpha-codex-prompt.md`, `.cdd/unreleased/370/beta-codex-prompt.md` (dispatch artifacts produced by γ, named in §CDD-Trace step 3); `.cdd/unreleased/370/self-coherence.md` (this file, §CDD-Trace step 8).
+12. N/A — no new modules or functions; docs-only.
+13. N/A — no test runner output applicable. Executable oracle bank (AC1, AC2 ×3, AC7, AC9) ran with PASS results captured inline in §ACs.
+14. ✓ α commit author email matches canonical pattern: `alpha@cdd.cnos` per `operator/SKILL.md` git identity for the cnos project (using elision form). All α commits on the cycle branch from `5b772567` onward carry this identity.
+
+**β polling begins now.** α will poll `.cdd/unreleased/370/beta-review.md` and the issue every 60s per `alpha/SKILL.md` §2.7 until β returns a verdict.
