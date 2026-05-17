@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Kernel, Cell Outcomes, Recursion Modes, Scope-Lift, Two-Layer Separation, Non-goals, Closure] -->
-<!-- completed: [Preamble, Kernel] -->
+<!-- completed: [Preamble, Kernel, Cell Outcomes] -->
 
 # Coherence-Cell Normal Form
 
@@ -140,3 +140,52 @@ The closed cell is the kernel's terminal object at scope `n`. Its outcome — wh
 ### What the kernel does not name
 
 The kernel names roles, the validator predicate, artifacts, verdicts, decisions, and scopes. It does not name any particular tooling, platform, dispatch mechanism, schema language, or invocation surface. Those names live in the realization layer (§Two-Layer Separation). The kernel is reusable across any instantiation of the role-scope ladder pattern that emits typed receipts and invokes a parent-facing predicate.
+
+---
+
+## Cell Outcomes
+
+A closed cell at scope `n` terminates in **exactly one of four outcomes**. The outcome is determined by the pair `(verdictₙ, decisionₙ)` — `V`'s emitted verdict and δ's recorded decision. Each outcome has a precondition the kernel pins explicitly; cells with a `(verdict, decision)` pair outside the four preconditions are not terminal and must be re-decided.
+
+### The four outcomes
+
+```text
+accepted := (verdictₙ = PASS)  ∧ (decisionₙ ∈ {accept, release})
+degraded := (verdictₙ ≠ PASS)  ∧ (decisionₙ = override)
+blocked  := (decisionₙ ∈ {reject, repair_dispatch})        — any verdict
+invalid  := (verdictₙ = PASS   ∧ decisionₙ = override)
+          ∨ (verdictₙ ≠ PASS   ∧ decisionₙ ∈ {accept, release})
+```
+
+Each outcome carries a structural meaning:
+
+- **`accepted`** — the cell is clean. `V` returned `PASS`; δ recorded a non-degraded boundary action. The closed cell is transmissible to scope `n+1` as α-matter without qualification. This is the kernel's PASS-equivalent terminal outcome.
+- **`degraded`** — the cell is transmissible under explicit override. `V` returned `FAIL` (or `WARN`); δ chose to proceed anyway by recording `override` with the override block populated. The closed cell is transmissible, but the parent scope's α at scope `n+1` reads degraded matter — the override block is the structural signal that every downstream consumer must detect. Override is a degraded boundary action, not a form of validity.
+- **`blocked`** — the cell does not transmit. δ recorded `reject` (the cell's matter cannot cross the boundary as-is) or `repair_dispatch` (the cell stays open at scope `n` and a child cell at the same scope addresses the failure under a repair contract — see §Recursion Modes). The cell at `n` does not produce α-matter at `n+1` in either case. `reject` closes the cell with no parent-scope projection; `repair_dispatch` keeps the cell open until the child cell's accept lets the parent γₙ re-emit `receiptₙ` and the loop re-fires.
+- **`invalid`** — the cell is malformed at the boundary. δ's decision is inconsistent with `V`'s verdict: either δ recorded `override` against a `PASS` verdict (overriding nothing — there is nothing to override) or δ recorded `accept`/`release` against a non-`PASS` verdict (accepting matter `V` failed without invoking the override path). Both branches indicate δ has misread the verdict or has bypassed the override discipline.
+
+### `invalid` is non-terminal
+
+**`invalid` cells do not close.** When δ's decision falls into the `invalid` precondition, the kernel does not terminate at scope `n`. δ must re-decide — re-read the verdict, choose a consistent decision (`accept`/`release` for `PASS`; `override` with the override block populated for non-`PASS`; or `reject`/`repair_dispatch` for any verdict) — before the cycle can terminate.
+
+The non-terminal status of `invalid` is what keeps the four outcomes well-formed. If `invalid` were terminal, the kernel would have two contradictory exits ("the verdict is `PASS` and δ overrode it" / "the verdict is not `PASS` and δ accepted it") that the parent scope could not reason over. By making `invalid` non-terminal, the kernel forces δ back to a consistent decision and the closed cell that eventually emerges inhabits exactly one of `{accepted, degraded, blocked}`.
+
+The mechanism is δ-internal. δ holds gate authority over what crosses the boundary; an `invalid` pair is δ recognising that the decision it recorded does not match the verdict it observed and recording a corrected decision. No other role re-fires. `V` is not re-invoked unless δ chooses to (the verdict is reproducible — the same inputs produce the same verdict). γ does not re-close (the receipt is already emitted). The re-decision is δ adjusting its `decisionₙ` until the resulting `(verdictₙ, decisionₙ)` pair satisfies one of the three terminal preconditions.
+
+### Alignment with the receptor design
+
+The four-outcome table aligns with `#369` AC4 — the verdict × action × transmissibility table that the receptor's schema work is typing. The kernel pins the *what* (four outcomes; their preconditions; `invalid` non-terminal); the schema work pins the *type* (the enums and field shapes that make these outcomes machine-checkable). The two surfaces are designed to compose: when the schema work lands, the kernel's preconditions become enforceable by the typed schemas, and the kernel's `invalid` non-terminal status becomes a schema-level constraint on the boundary record.
+
+Where this document and the receptor's schema work disagree on the outcome preconditions, the kernel statement here is the load-bearing claim and the schema work aligns to it — not the reverse. The schema is the realization layer typing the kernel; the kernel is the *what* the realization layer types.
+
+### Composition with the recursion modes
+
+The four outcomes interact with the two recursion modes (§Recursion Modes) in a specific way:
+
+- `accepted` → cross-scope projection: the closed cell becomes α-matter at scope `n+1`.
+- `degraded` → cross-scope projection: the closed cell becomes α-matter at scope `n+1` carrying the override block; the parent scope reads degraded matter.
+- `blocked` with `decision = reject` → no projection: the cell terminates at scope `n` with no scope-`n+1` consequence beyond the recorded rejection.
+- `blocked` with `decision = repair_dispatch` → within-scope recursion: the cell stays open at scope `n`; a child cell at scope `n` runs under a repair contract; on child accept, parent γₙ re-emits `receiptₙ` and the kernel re-fires steps 4–5.
+- `invalid` → no projection and no recursion: δ re-decides until the outcome inhabits one of the three terminal cases.
+
+The four outcomes are the kernel's possible exits; the recursion modes are how those exits propagate. The next section names the recursion modes explicitly.
