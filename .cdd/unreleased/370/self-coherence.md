@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace] -->
 
 # α self-coherence — #370
 
@@ -203,3 +203,57 @@ Surfaces present in the diff: exactly the new doc + cycle evidence under `.cdd/u
 **Doc-body restatement of non-goals:** §Non-goals enumerates each prohibited surface with the matching phase reference (Phases 2–7 + predecessor doctrine + receptor design + CI / package boundaries).
 
 **Verdict:** PASS.
+
+## Self-check
+
+**Did α's work push ambiguity onto β?** No. The nine ACs are each mapped to specific evidence in `COHERENCE-CELL-NORMAL-FORM.md` (with section + clause locations) and four ACs are backed by directly executable oracles with captured stdout (AC1, AC2, AC7, AC9). β does not need to re-derive the AC mapping or re-execute the shell oracles to verify them — the prose-evidence sections name exact section anchors and the oracle blocks above are self-contained.
+
+**Is every claim backed by evidence in the diff?**
+- AC1, AC9: backed by `git diff --stat` evidence (`+ COHERENCE-CELL-NORMAL-FORM.md` plus cycle-evidence files only).
+- AC2: backed by literal-token rg counts (`draft doctrine` ×2, `COHERENCE-CELL.md` ×4, `RECEIPT-VALIDATION.md` ×6).
+- AC3–AC6: backed by named §Kernel / §Cell Outcomes / §Recursion Modes / §Scope-Lift sections with verbatim quotes of the load-bearing statements (five-step signatures, evidence-binding rule, four-outcome preconditions, both recursion modes, three projections, projection-not-renaming framing, β/γ-no-upward-projection clause).
+- AC7: backed by the `awk` extraction + word-bounded `rg` substrate scan returning no matches over a 275-line kernel slice with exactly four section headers.
+- AC8: backed by §Two-Layer Separation enumerating four realization peers with explicit bolded headings.
+
+**Peer enumeration.** The peer family at risk of drift is the *predecessor + receptor + canonical algorithm* set (`COHERENCE-CELL.md`, `RECEIPT-VALIDATION.md`, `CDD.md`). The cycle's surface-containment contract leaves all three predecessors unedited (verified by `git diff --stat`). The new file is *additive* — a kernel-layer companion citing the predecessors as load-bearing inputs — and explicitly states "this document does not replace, supersede, or silently override `COHERENCE-CELL.md`." No peer surface drift.
+
+**Sibling / harness audit.** No code, schemas, harness, or CI workflows touched; docs-only. The schema-bearing harness surfaces (`schemas/cdd/`, `cn-cdd-verify`, role skills) are explicitly out-of-scope for this cycle and cited only as labelled realization peers in §Two-Layer Separation — they do not consume kernel statements operationally yet; they will when their respective phases land.
+
+**Substrate-leakage failure mode.** γ-scaffold §"Failure modes" #1 pre-flagged substrate leakage in kernel sections as the primary risk. The kernel-slice scan was re-executed after every section landed; after one false start (a `[#369](https://github.com/...)` URL in §Cell Outcomes that the kernel-slice scan caught immediately on the first run), the URL was replaced with the bare `#369` reference and the scan returned no matches. The mechanism worked as designed.
+
+**Length discipline.** Target was 200–400 lines. Final: 435 lines (kernel slice: 275 lines; preamble + two-layer separation + non-goals + closure: 160 lines). 9% over the upper target. The non-kernel sections carry: predecessor citation framing (AC2), realization-peer enumeration (AC8), non-goals enumeration (AC9), and phase-inheritance table. The kernel slice itself is well within target. Recorded as observation, not debt — see §Debt.
+
+**Role boundary.** α did α's work: produced the kernel-layer doc, mapped ACs to evidence, ran executable oracles, recorded self-coherence. α did not edit predecessor surfaces, did not edit harness, did not anticipate β's triage frame.
+
+## Debt
+
+**Known debt:**
+
+1. **Length: 435 lines vs 200–400 target.** Doc lands 35 lines (9%) over the upper target. The overage lives in non-kernel sections (preamble + two-layer separation + non-goals + closure). The kernel slice alone is 275 lines, well within target. Disposition: observation, not requiring fix — the non-kernel sections carry AC2/AC8/AC9 evidence and the phase-inheritance handoff. β triage may flag for trim if the assessment is that decisive-over-exhaustive discipline drifted; α's reading is that each non-kernel paragraph load-bears.
+
+2. **Predecessor doctrine has a different `## Recursion Equation` formulation than this kernel's §Kernel.** `COHERENCE-CELL.md` §Recursion Equation states `receiptₙ := closed_cellₙ.receipt` as a separate line and treats `γ.close` as fusing `(contract, matter, review)` without naming evidence explicitly. This kernel's §Kernel folds receipt emission into `γₙ.close(contractₙ, matterₙ, reviewₙ, evidenceₙ)` and pins the evidence-binding rule as load-bearing. The two are consistent (the kernel adds the evidence input to the predecessor's three-input close), but the predecessor's surface does not state the evidence-binding rule. This is *deliberate*: the gap is exactly what this cycle exists to close. Disposition: not debt; this is the kernel's contribution. Recorded for β's awareness.
+
+3. **`#369` AC4 and AC3 alignment is cited at doctrine level only.** This kernel commits to the four outcomes and three projections as the *what*; `#369`'s schema work commits to the *type*. The two cycles run in parallel and have not yet reconciled their concrete shapes. If `#369`'s schema work pins outcome preconditions inconsistent with the kernel's, the kernel's statement is the load-bearing claim and `#369` aligns to it — but the actual schema files are not in this diff and cannot be co-verified by this cycle. Disposition: known coordination point with the parallel cycle; not a blocker for this cycle's closure.
+
+4. **No debt under AC1–AC9.** All nine acceptance criteria pass under the per-AC oracles defined by the issue body.
+
+**No deferred sub-ACs.** Every AC the issue body names is fully exercised in this cycle.
+
+## CDD-Trace
+
+1. **Issue:** `#370` — Phase 1.5 of `#366` (coherence-cell executability roadmap). Docs-only doctrine companion. 9 ACs.
+
+2. **Active skills:** Tier 1 (`CDD.md`, `alpha/SKILL.md`); Tier 2 (`write/SKILL.md`); Tier 3 (`design/SKILL.md`, `issue/SKILL.md` — not exercised, `COHERENCE-CELL.md` + `RECEIPT-VALIDATION.md` as source-of-truth reads).
+
+3. **Design:** Issue body + γ-scaffold (`gamma-scaffold.md`) carry design. The γ-scaffold pre-flagged nine failure modes; α's authoring discipline executed against all nine, including section-header conformance to the AC7 awk pattern.
+
+4. **Plan:** Implicit in the dispatch — author the doc section-by-section with one commit per section per `CDD.md` §1.4 large-file authoring rule. Section order: Preamble → Kernel → Cell Outcomes → Recursion Modes → Scope-Lift → Two-Layer Separation → Non-goals → Closure. Manifest at top of file updated after each section landed.
+
+5. **Tests:** Not applicable (docs-only). Acceptance evidence is the per-AC oracle bank in the issue body — executed and recorded inline in §ACs above.
+
+6. **Code:** None. Single new doctrine file:
+   - `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md` (435 lines, status `A`) — the kernel-layer companion this cycle produces. Authored across six commits (one per major section + scaffold). The kernel slice (the four `## Kernel`, `## Cell Outcomes`, `## Recursion Modes`, `## Scope-Lift` sections) is 275 lines. Each section's authoring is verifiable from the per-section commit on `cycle/370`.
+
+7. **Docs:** Done as the cycle's primary artifact (the new file *is* doc). Cycle-evidence files under `.cdd/unreleased/370/` (`alpha-codex-prompt.md`, `beta-codex-prompt.md`, `gamma-scaffold.md`, `self-coherence.md`) carry α's and γ's working state. No other docs touched.
+
+8. **Self-coherence:** This file. §Gap, §Skills, §ACs (with executable-oracle results inline), §Self-check, §Debt, §CDD-Trace landed across multiple commits; §Review-readiness lands as the final commit signaling β polling.
