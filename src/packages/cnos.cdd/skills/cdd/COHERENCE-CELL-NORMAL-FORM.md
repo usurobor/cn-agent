@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Kernel, Cell Outcomes, Recursion Modes, Scope-Lift, Two-Layer Separation, Non-goals, Closure] -->
-<!-- completed: [Preamble, Kernel, Cell Outcomes] -->
+<!-- completed: [Preamble, Kernel, Cell Outcomes, Recursion Modes] -->
 
 # Coherence-Cell Normal Form
 
@@ -189,3 +189,75 @@ The four outcomes interact with the two recursion modes (§Recursion Modes) in a
 - `invalid` → no projection and no recursion: δ re-decides until the outcome inhabits one of the three terminal cases.
 
 The four outcomes are the kernel's possible exits; the recursion modes are how those exits propagate. The next section names the recursion modes explicitly.
+
+---
+
+## Recursion Modes
+
+The kernel's recursion has **two distinct modes**. They share the same recursion operator — the five-step closure at some scope — but differ in how the scope index advances. Conflating them weakens the algorithm: the same closed-cell record carries different meanings depending on which mode it belongs to, and a downstream consumer that cannot tell them apart cannot reason about the cell's position in the recursion.
+
+### Within-scope mode — repair-dispatch (same scope index)
+
+```text
+Precondition:  decisionₙ = repair_dispatch         (outcome: blocked, repair sub-case)
+Behaviour:     cell at scope n stays open
+               a child cell runs at scope n under a repair contract
+               on child accept: parent γₙ re-emits a fresh receiptₙ
+               V re-fires at step 4
+               δ re-decides at step 5
+Scope index:   unchanged — both parent and child operate at scope n
+```
+
+When δ records `repair_dispatch`, the cell at scope `n` does not close. Instead, a child cell at scope `n` runs under a **repair contract** — a contract derived from the failure that triggered the repair-dispatch. The child cell goes through the same five-step closure (steps 1–5) at scope `n`, producing its own child `receipt`, child `verdict`, and child `decision`. When the child cell terminates in `accepted`, the parent γₙ re-emits a fresh `receiptₙ` that incorporates the repaired matter; the kernel's steps 4 (`V`) and 5 (δ) re-fire on the fresh receipt at the parent level; and δ records a new `decisionₙ` over the re-emitted receipt.
+
+Three properties of this mode:
+
+1. **Scope is preserved.** The parent cell is at scope `n` throughout; the child cell is also at scope `n`. The recursion does not advance the scope index. The parent scope (`n+1` and above) sees nothing — there is no cross-scope projection until the parent cell eventually terminates in one of `{accepted, degraded, blocked-reject}`.
+2. **The receipt is parent γ-owned.** The child cell's receipt is the child's parent-facing artifact (which means: the parent cell's γₙ reads it as input alongside the child's verdict and decision). It is not the parent cell's receipt — only γₙ at the parent level re-emits `receiptₙ`, and only after the child cell has accepted. The kernel's step 3 at the parent level re-fires; the child's step 3 produced the child's own receipt, not the parent's.
+3. **The same recursion operator.** The child cell is itself a five-step closed loop at scope `n`. The kernel's recursion operator is not a different operator for within-scope work — it is the same five-step closure, applied at the same scope, against a derived repair contract. The within-scope mode is recursion over a contract, not recursion across scopes.
+
+### Cross-scope mode — accept / degraded (scope index advances)
+
+```text
+Precondition:  decisionₙ ∈ {accept, release}     ∧ verdictₙ = PASS        (outcome: accepted)
+            ∨  decisionₙ = override               ∧ verdictₙ ≠ PASS        (outcome: degraded)
+Behaviour:     cell at scope n closes
+               closed_cellₙ projects as α-matter at scope n+1
+               under degraded outcome, the override block is part of the matter
+Scope index:   advances — parent cell at n+1 operates on the closed_cellₙ projection
+```
+
+When δ records `accept`, `release`, or `override` against the matching verdict, the cell at scope `n` closes terminally. The closed cell — its contract, matter, review, receipt, verdict, decision, and (for degraded outcomes) its override block — projects as α-matter at scope `n+1`. The recursion advances: scope-`n+1` α reads the projected closed cell as input and produces matter against the scope-`n+1` contract. The scope-`n` cell is now one of the scope-`n+1` cell's α-inputs.
+
+Three properties of this mode:
+
+1. **Scope advances.** The recursion operator fires again, but at scope `n+1`, with a new contract, new actors (αₙ₊₁, βₙ₊₁, γₙ₊₁, δₙ₊₁, εₙ₊₁), and the closed cell from scope `n` as one of α-input objects. The scope index is the kernel's witness to the recursion having advanced; the closed cell at `n` is the boundary between the two levels.
+2. **The receipt is the carrier.** The closed cell projects as α-matter via its receipt. The parent scope's α reads the receipt as a typed object — it does not re-read the cell's internal artifacts. This is what makes the recursion well-formed: the parent scope reasons over typed surfaces, not over narrative. Under `accepted`, the receipt is PASS-equivalent; under `degraded`, the receipt's `boundary.override` block is non-null and the parent scope reads degraded matter.
+3. **`reject` is also cross-scope, but with no projection.** When δ records `reject`, the cell closes at scope `n` (it terminates) but does not project — the cell's matter is recorded as rejected at scope `n` with no scope-`n+1` consequence beyond the rejection record itself. Reject is the cross-scope mode's null projection; accepted and degraded are the cross-scope mode's full projection (clean and degraded respectively).
+
+### Same operator, different scope behaviour
+
+The kernel's recursion is a single operator — the five-step closure applied to a contract at some scope. The two modes are how that operator's output relates to the scope index:
+
+- **Within-scope (repair-dispatch):** the operator re-fires at the same scope on a derived contract. The cell stays open at the parent level; the recursion does not advance.
+- **Cross-scope (accept/degraded/reject):** the cell closes at the current scope; the closed cell either projects (accepted/degraded) or does not project (reject) to the next scope.
+
+The two modes are not two different algorithms. They are two propagation rules for the same algorithm, distinguished by `decisionₙ`:
+
+```text
+decisionₙ = repair_dispatch          → within-scope: same n, re-emit, re-fire
+decisionₙ ∈ {accept, release}       → cross-scope: closed_cellₙ → α-matter at n+1
+decisionₙ = override                 → cross-scope: closed_cellₙ → α-matter at n+1 (degraded)
+decisionₙ = reject                   → cross-scope: closed_cellₙ terminates at n, no projection
+```
+
+A downstream consumer reading a closed cell determines the recursion mode by reading `decisionₙ`. The mode is not a separate field; it is the structural consequence of the decision the kernel pins.
+
+### What the recursion does not do
+
+Two non-modes are explicit to head off conflation:
+
+- **Repair-dispatch is not scope-advancing.** A child cell under a repair contract operates at the same scope `n` as its parent. Treating repair-dispatch as `n → n+1` would let the parent γ never re-emit, which would break the kernel's step-3-then-step-4 ordering.
+- **Accept is not same-scope.** A cell that closes with `decision ∈ {accept, release}` projects to scope `n+1`; the scope-`n` actors do not continue to operate on the closed cell. Treating accept as same-scope would let scope-`n` actors mutate matter that has already crossed the boundary, which would break the kernel's typed-handoff property.
+
+The recursion is well-formed only when both modes are named and the two non-modes above are excluded by construction.
