@@ -1,5 +1,5 @@
 <!-- sections: [Preamble, Kernel, Cell Outcomes, Recursion Modes, Scope-Lift, Two-Layer Separation, Non-goals, Closure] -->
-<!-- completed: [Preamble, Kernel, Cell Outcomes, Recursion Modes] -->
+<!-- completed: [Preamble, Kernel, Cell Outcomes, Recursion Modes, Scope-Lift] -->
 
 # Coherence-Cell Normal Form
 
@@ -261,3 +261,61 @@ Two non-modes are explicit to head off conflation:
 - **Accept is not same-scope.** A cell that closes with `decision ∈ {accept, release}` projects to scope `n+1`; the scope-`n` actors do not continue to operate on the closed cell. Treating accept as same-scope would let scope-`n` actors mutate matter that has already crossed the boundary, which would break the kernel's typed-handoff property.
 
 The recursion is well-formed only when both modes are named and the two non-modes above are excluded by construction.
+
+---
+
+## Scope-Lift
+
+The cross-scope recursion mode (§Recursion Modes) advances the scope index from `n` to `n+1`. What carries across that scope boundary is named here as **three projections under scope-lift**. The framing is load-bearing: these are projections of scope-`n` objects onto scope-`n+1` roles, not a flat renaming of roles inside a single cell. The same actor wearing a δ hat at scope `n` and a β hat at scope `n+1` is not "δ becomes β at the next scope" — it is a δ-decision at scope `n` projecting onto β-discrimination at scope `n+1`. The object that projects is the decision (and the closed cell, and the receipt-stream observation); the role at scope `n+1` is the role that receives the projection.
+
+### The three projections
+
+```text
+Projection 1:  closed (αₙ, βₙ, γₙ) cell        →   αₙ₊₁ matter
+Projection 2:  δₙ boundary decision             →   βₙ₊₁-like discrimination
+Projection 3:  εₙ receipt-stream observation    →   γₙ₊₁-like coordination / evolution
+```
+
+Each projection is a typed mapping from a scope-`n` object to a scope-`n+1` role function.
+
+**Projection 1 — the closed cell projects as α-matter.**
+
+The closed cell at scope `n` — the typed object `{contractₙ, matterₙ, reviewₙ, receiptₙ, verdictₙ, decisionₙ}` (and, under degraded outcomes, the override block) — is what scope-`n+1` α reads as one of its α-input objects. The cell is no longer "a project that happened"; it is "a typed input to the next-scope α's production." The receipt is the carrier (§Recursion Modes); the closed cell is what the parent scope reasons over.
+
+**Projection 2 — δ's boundary decision projects as β-like discrimination at the parent scope.**
+
+δₙ's recorded decision — the boundary action that determined whether the cell crossed and how — projects onto scope `n+1` as discrimination input. The scope-`n+1` β does not re-execute δₙ's decision; the scope-`n+1` β reads δₙ's decision as part of the matter it discriminates. δₙ-as-boundary-actor at scope `n` and βₙ₊₁-as-discriminator at scope `n+1` are not the same role; they perform analogous functions at different scopes, and δₙ's decision feeds βₙ₊₁'s work as one of its inputs. The qualifier "β-like" matters: scope-`n+1` β is β at scope `n+1` (a new role, not δₙ renamed), and δₙ's decision is one of the typed objects that β-at-scope-`n+1` discriminates.
+
+**Projection 3 — ε's receipt-stream observation projects as γ-like coordination / evolution at the parent scope.**
+
+εₙ observes the receipt stream across cells at scope `n` and detects protocol gaps — patterns of receipt-stream incoherence that name a missing predicate, a missing artifact, or a missing rule the kernel does not yet enforce. εₙ's observations project onto scope `n+1` as coordination and evolution input: scope-`n+1` γ reads the receipt-stream observation as one of the matters its scope-`n+1` cells will be contracted against, and the protocol-evolution patches εₙ emits become matter for scope-`n+1` α to produce. εₙ-as-protocol-observer at scope `n` and γₙ₊₁-as-coordinator-and-evolver at scope `n+1` are analogous in role function but not identical actors; the projection carries the observation, not the role.
+
+### Projection-not-renaming framing
+
+The framing is explicit:
+
+> **This is a projection under scope-lift. It is not a flat role-renaming inside a single cell. δₙ is not literally βₙ₊₁; εₙ is not literally γₙ₊₁. The scope-`n+1` β and γ are full roles at scope `n+1` performing β-discrimination and γ-coordination over scope-`n+1` matter; what projects from scope `n` is the decision (from δₙ) and the receipt-stream observation (from εₙ) as typed objects scope-`n+1` β and γ consume as part of their work.**
+
+The reason the framing matters: a reader who parses "δₙ → βₙ₊₁" as flat renaming will conclude that δ at scope `n` is the same role as β at scope `n+1`, which would collapse the kernel into a single-cell algorithm operating at one scope with different role labels at different times. That reading erases the scope index, breaks the recursion, and reintroduces the trust-by-seniority mode the predecessor doctrine rejects. The scope-`n+1` cell has its own α, β, γ, δ — and the projection feeds them rather than replacing them.
+
+### β and γ have no upward projection
+
+**βₙ and γₙ have no projection to scope `n+1`.** Their work is intra-scope: β discriminates matter against the contract at scope `n`; γ closes the cell and emits the receipt at scope `n`. Neither βₙ nor γₙ produces an object that crosses to scope `n+1` as a separately typed projection.
+
+What does cross from scope `n` to scope `n+1` carrying βₙ's and γₙ's work is the **closed cell itself** (projection 1) — and the closed cell carries `reviewₙ` (β's record) and `receiptₙ` (γ's record) as components. Scope-`n+1` α reads the closed cell, which means scope-`n+1` α reads the embedded β review record and γ receipt record as part of the closed-cell object. But βₙ and γₙ do not have their own upward projections distinct from the closed cell. Only δ (boundary decision) and ε (receipt-stream observation) have separately typed projections that scope-`n+1` β and γ receive directly.
+
+The asymmetry is structural. β and γ are **intra-cell roles** — they operate inside the cell at scope `n` and their work is fully captured by the closed cell. δ and ε are **boundary-or-cross-cell roles** — δ is the cell's boundary actor (it operates at the membrane between the cell and the parent scope), ε is a cross-cell observer (it operates across the receipt stream of many cells at scope `n`). The boundary-or-cross-cell roles project upward because their work is already at or beyond the cell's boundary; the intra-cell roles do not project upward because their work is *the cell*.
+
+### Alignment with the receptor design
+
+The three-projection structure aligns with `#369` AC3 — the scope-lift projection that the receptor's schema work is typing. The kernel pins the *what* (three projections; the projection-not-renaming framing; β/γ-no-upward-projection); the schema work pins the *type* (the field shapes that carry the projected objects across the boundary). When the schema work lands, the three projections become typed handoffs the parent scope reads as fields on the received closed cell, the received decision, and the received protocol-observation patch.
+
+Where this document and the receptor's schema work disagree on the projection structure, the kernel statement here is the load-bearing claim and the schema work aligns to it — not the reverse.
+
+### What scope-lift does not do
+
+Three non-projections, stated to head off conflation:
+
+- **β has no upward projection.** βₙ's review is part of the closed cell; it does not have a separately typed projection at scope `n+1`. Treating β as having an upward projection would let scope-`n+1` reason over the review independent of the closed cell, which would break the receipt's role as the single typed handoff surface.
+- **γ has no upward projection.** γₙ's receipt is the parent-facing artifact of the closed cell; it is *what carries* projection 1, not a separate projection. Treating γ as having an upward projection distinct from the closed cell would double-count the receipt's role.
+- **Scope-lift is not a single-cell loop.** The scope-`n+1` cell is a new cell with new α, β, γ, δ, ε at scope `n+1`. It is not "the same cell at the next scope"; the scope-`n+1` cell has its own contract, its own matter, its own review, its own receipt, its own verdict, its own decision. The scope-`n` cell projects *into* the scope-`n+1` cell's inputs; it does not *become* the scope-`n+1` cell.
