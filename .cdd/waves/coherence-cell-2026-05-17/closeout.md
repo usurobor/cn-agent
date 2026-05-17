@@ -141,5 +141,5 @@ Out of scope for this wave but on operator's plate:
 | #369 cycle evidence | `.cdd/releases/docs/2026-05-17/369/` |
 | #370 γ PRA | `docs/gamma/cdd/docs/2026-05-17/POST-RELEASE-ASSESSMENT.md` |
 | Operator session reflection | cn-sigma `threads/reflections/daily/20260517.md` |
-| This wave closeout | `docs/operator/cdd/docs/2026-05-17/WAVE-CLOSEOUT.md` |
+| This wave closeout | `.cdd/waves/coherence-cell-2026-05-17/closeout.md` |
 | Wave merge SHAs | #370: `0d9f7498` · #369: `ff54f2a0` · #370 close-out: `00cceda1` · #369 close-out: `bbc65e2c` |
