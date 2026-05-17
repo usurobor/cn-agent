@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt] -->
 
 # Self-coherence — Cycle #369
 
@@ -258,3 +258,88 @@ Every file in `git diff --stat origin/main..HEAD` is mentioned by name in this s
 | `schemas/cdd/fixtures/invalid-gamma-preflight-authoritative.yaml` | §Gap "In-scope surfaces"; §ACs AC7 row 3 |
 
 Nine files in diff; nine files enumerated. (The §Debt and §CDD-Trace and §Review-readiness sections of this same file will land in further commits and remain part of the same single file already named.)
+
+## §Debt
+
+**Known debt α leaves explicit for β / Phase 3:**
+
+1. **`#ProtocolGapRef.source` enum is α-chosen, not doctrine-sourced.** The five-value enum `"receipt" | "artifact" | "issue" | "review" | "closeout"` is α's reading of "where in the cycle a protocol gap observation surfaced." If Phase 6's ε-relocation cycle finds the dimension is wrong (e.g. they want it to be the #366 four-class taxonomy of *what kind of gap*, or a hybrid), this enum will need to shift. Schema-evolution implications: changing the enum is a v1-compatible operation (widening) or a v1-breaking operation (renaming/narrowing); Phase 6 makes the call. Not a hard gate for this cycle. See [§Self-check item 5](#self-check).
+
+2. **No `#EvidenceGraph` schema authored.** Issue body deferred this to Phase 3 explicitly. α typed evidence refs as `string` in `receipt.cue:79–86`. Phase 3 author will build `evidence_graph.cue` and likely tighten the receipt's ref fields to typed refs (e.g. `#EvidenceRootRef` rather than plain `string`). Not a debt of this cycle; named here so the next cycle's α inherits the open question.
+
+3. **`#ValidationVerdict.provenance` field names are illustrative.** The provenance sub-object's field names (`validator_identity`, `validator_version`, `checked_at`, `input_refs`) mirror `RECEIPT-VALIDATION.md` §Illustrative Example. Phase 3 may rename for consistency with its chosen invocation surface. Not a hard gate; α flags it so β does not push back on names that are explicitly subject to Phase 3 choice.
+
+4. **`boundary_decision.actor` typed as `string`, not as a typed role identity.** A regex like `=~"^(alpha|beta|gamma|delta|epsilon)@[a-z]+\\.cdd\\.cnos$"` would tighten this — but the receipt's role-identity policy (which actors may write which decisions; how role pinning interacts with override actor) belongs to V in Phase 3, not to the data schema in Phase 2. α chose the loose form; Phase 3 can add structural reader checks.
+
+5. **The `transmissibility` derivation table is encoded twice — once in `receipt.cue:99–118` and once in `schemas/cdd/README.md` §Scope-Lift Invariant Projection 2.** The schema is the load-bearing version; the README is documentation. If the table ever needs to change, both must move together. α did not add a `[[name]]`-style sync marker because the precedent (`schemas/skill.cue` + `schemas/README.md`) does not use one and the README explicitly names CUE as the structural authority. β can flag if drift-protection is desired.
+
+6. **Polyglot re-audit script (in α's transcript) gave false positives on Markdown table balance and cross-references.** Not a debt of this cycle (no script is being shipped); flagged so a future Tier-2-tooling cycle that automates this re-audit knows the awk-pipe-count approach and naive path-resolution approach both have known limitations.
+
+7. **`base_sha` vs `contract_sha` distinction.** α typed both fields, made `base_sha` required and `contract_sha` optional. Phase 3 may discover that V actually needs both required, or that `contract_sha` should default to `base_sha` when omitted. These are tightenings consistent with v1 compatibility.
+
+**Debt α does NOT carry forward (resolved within this cycle):**
+
+- `cn-cdd-verify` untouched — AC8 PASS.
+- No edits to forbidden doctrine surfaces — AC9 PASS.
+- All four fixtures present and validate per AC6/AC7 — no fixture corpus gap.
+- README documents both cue vet invocations (AC10) — no operator-discovery gap.
+- All three schemas pin v1 (AC2) — no version drift surface.
+
+**No protocol gaps observed this cycle.** This is α's preflight reading; Phase 6 ε will read the receipt stream once Phase 3 lands and may surface gaps α did not see.
+
+## §CDD-Trace
+
+Per [`alpha/SKILL.md`](../../../src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md) §2.2: trace through CDD canonical artifact order, with explicit "not required" + reason where applicable.
+
+### Step 1 — Design artifact
+
+**Not required.** Predecessor cycle [#367](https://github.com/usurobor/cnos/issues/367) shipped [`RECEIPT-VALIDATION.md`](../../../src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md) — the load-bearing design surface this cycle types. No new design artifact authored; this cycle inherits the prior design and pins schema syntax for it. The issue body's `## Scope` and `## Active design constraints` sections function as the per-cycle design freeze (which authoring choices Σ pinned before dispatch, including the five questions α did not need to relitigate).
+
+### Step 2 — Coherence contract (gap statement)
+
+`.cdd/unreleased/369/self-coherence.md` §Gap (above). Issue [#369](https://github.com/usurobor/cnos/issues/369) names the gap (the receptor is named but not typed); this self-coherence file records α's reading of that gap and the surfaces this cycle closes.
+
+### Step 3 — Plan
+
+**Not required.** The work is three CUE files + one README + four YAML fixtures + one self-coherence file. Linear order: schemas (with `boundary_decision` first because the other two depend on its types) → fixtures (valid first, then three invalid) → README → per-AC oracle suite → self-coherence sections. No sequencing surprises; no parallel coordination across packages; no irreversible commits. The issue body's `## Acceptance criteria` set is the de-facto plan-of-record.
+
+### Step 4 — Tests
+
+**Tests are the four fixtures + per-AC oracle suite.** Test corpus:
+
+- [`schemas/cdd/fixtures/valid-receipt.yaml`](../../../schemas/cdd/fixtures/valid-receipt.yaml) — positive case for `#Receipt`.
+- [`schemas/cdd/fixtures/invalid-override-masks-verdict.yaml`](../../../schemas/cdd/fixtures/invalid-override-masks-verdict.yaml) — negative case for the AC4 transmissibility mapping under (FAIL × override).
+- [`schemas/cdd/fixtures/invalid-fail-no-boundary-decision.yaml`](../../../schemas/cdd/fixtures/invalid-fail-no-boundary-decision.yaml) — negative case for the AC5 required-`boundary_decision` rule.
+- [`schemas/cdd/fixtures/invalid-gamma-preflight-authoritative.yaml`](../../../schemas/cdd/fixtures/invalid-gamma-preflight-authoritative.yaml) — negative case for γ-preflight-cannot-substitute-for-δ.
+
+The α-side oracle suite (in §ACs above) covers AC1–AC10 with named cue vet invocations and grep oracles. Additional scratch-fixture coverage of AC4 cases not covered by named fixtures (PASS+override, FAIL+accept, override-no-block, override-on-non-override-action, action=none enum-violation, count-refs-length mismatch) was run in α's transcript and is summarized in §ACs AC4 row notes; scratch fixtures were not committed because the named-three-invalid corpus is the issue's hard-gate requirement.
+
+### Step 5 — Code
+
+**No code in this cycle.** Three CUE schema files: [`schemas/cdd/contract.cue`](../../../schemas/cdd/contract.cue), [`schemas/cdd/boundary_decision.cue`](../../../schemas/cdd/boundary_decision.cue), [`schemas/cdd/receipt.cue`](../../../schemas/cdd/receipt.cue). These are *declarative type definitions*, not executable code. The cycle's mode is **docs + schema, no code, no validator behavior change** (issue body line 5).
+
+### Step 6 — Docs
+
+[`schemas/cdd/README.md`](../../../schemas/cdd/README.md) — single-source prose for the subsystem. Sections: `## Files` (the manifest table); `## Scope-Lift Invariant` with three projection subsections (AC3); `## How to run` with both cue vet invocations (AC10); `## What this directory does NOT do` (surface-containment internal to the document); `## Related issues and surfaces`. CUE files reference the README via the leading `// see schemas/cdd/README.md §Scope-Lift Invariant.` header comment.
+
+### Step 7 — Self-coherence
+
+This file. Carries CDD Trace through Step 7 by definition.
+
+**Diff manifest (from `git diff --stat origin/main..HEAD`):**
+
+- `schemas/cdd/README.md` (new)
+- `schemas/cdd/contract.cue` (new)
+- `schemas/cdd/boundary_decision.cue` (new)
+- `schemas/cdd/receipt.cue` (new)
+- `schemas/cdd/fixtures/valid-receipt.yaml` (new)
+- `schemas/cdd/fixtures/invalid-override-masks-verdict.yaml` (new)
+- `schemas/cdd/fixtures/invalid-fail-no-boundary-decision.yaml` (new)
+- `schemas/cdd/fixtures/invalid-gamma-preflight-authoritative.yaml` (new)
+- `.cdd/unreleased/369/self-coherence.md` (this file)
+
+Nine new files; zero existing files modified.
+
+### Step 8 — Pre-review gate
+
+The 14-row pre-review-gate evaluation lands in [§Review-readiness](#review-readiness) below.
