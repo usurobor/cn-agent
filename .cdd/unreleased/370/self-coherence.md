@@ -1,5 +1,5 @@
-<!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness] -->
+<!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness, R2] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness, R2] -->
 
 # α self-coherence — #370
 
@@ -239,7 +239,7 @@ Surfaces present in the diff: exactly the new doc + cycle evidence under `.cdd/u
 
 **No deferred sub-ACs.** Every AC the issue body names is fully exercised in this cycle.
 
-## CDD-Trace
+## CDD Trace
 
 1. **Issue:** `#370` — Phase 1.5 of `#366` (coherence-cell executability roadmap). Docs-only doctrine companion. 9 ACs.
 
@@ -290,3 +290,62 @@ Surfaces present in the diff: exactly the new doc + cycle evidence under `.cdd/u
 14. ✓ α commit author email matches canonical pattern: `alpha@cdd.cnos` per `operator/SKILL.md` git identity for the cnos project (using elision form). All α commits on the cycle branch from `5b772567` onward carry this identity.
 
 **β polling begins now.** α will poll `.cdd/unreleased/370/beta-review.md` and the issue every 60s per `alpha/SKILL.md` §2.7 until β returns a verdict.
+
+## R2
+
+**Round:** 2
+**Round opened:** 2026-05-17 (after β R1 verdict REQUEST CHANGES at SHA `d0ea77f9`)
+**Verdict signalled:** review-ready on `cycle/370` HEAD after the commit that bears this section (SHA-omit convention per `alpha/SKILL.md` §2.6, since the rename + R2 entry + manifest land in one mechanical commit per the dispatch instruction).
+
+### F1 — `## CDD-Trace` → `## CDD Trace` convention rename
+
+**β finding (R1):** `cn-cdd-verify` requires section header `^## CDD Trace` (space); `self-coherence.md` at SHA `aa10f902` used `## CDD-Trace` (hyphen). Build CI run `25990518085` job `CDD artifact ledger validation (I6)` step `Check CDD artifacts` failed with `❌ self-coherence.md sections — missing required sections: CDD Trace`. Validator source: `src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify:495` — literal `grep -q "^## CDD Trace"`. Convention precedent confirmed on `origin/main` at `.cdd/releases/docs/2026-05-15/367/self-coherence.md` (`## CDD Trace`).
+
+**Mechanical fix (single commit on `cycle/370`):**
+
+1. Section header at line 242: `## CDD-Trace` → `## CDD Trace` (1 occurrence).
+2. Manifest comment at line 1: `<!-- sections: [...CDD-Trace, Review-readiness] -->` → `<!-- sections: [...CDD Trace, Review-readiness, R2] -->` (rename + R2 declaration).
+3. Manifest comment at line 2 `<!-- completed: ... -->` updated to match.
+4. No other file touched. No edits to `COHERENCE-CELL-NORMAL-FORM.md` (binding β finding is in evidence-doc; AC9 surface containment intact).
+5. AC bank not re-run — β stated AC1, AC7, AC9 oracles all pass at HEAD and only F1 was binding (R1 §Required fix for F1 + §Notes).
+
+**Oracle re-run (local) — `cn-cdd-verify --unreleased` after rename:**
+
+```
+$ src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify --unreleased
+## Core artifacts
+  ✅ PR #337 merged
+
+## Unreleased cycles (.cdd/unreleased/)
+  Checking triadic cycle #370
+  ✅ self-coherence.md (issue #370)
+  ✅ self-coherence.md sections — basic section validation passed
+  ✅ beta-review.md (issue #370)
+  ✅ beta-review.md sections — basic section validation passed
+  ⚠️  alpha-closeout.md (issue #370) — missing in unreleased cycle (expected until cycle complete)
+  ⚠️  beta-closeout.md (issue #370) — missing in unreleased cycle (expected until cycle complete)
+  ⚠️  gamma-closeout.md (issue #370) — missing in unreleased cycle (expected until cycle complete)
+  ✅ Unreleased cycles scanned — 1 issue directories checked
+
+## Summary: 6 passed, 0 failed, 3 warnings (9 total)
+⚠️  Cycle artifact verification PASSED with warnings
+```
+
+The three remaining warnings are expected-until-cycle-complete close-out files (alpha-closeout, beta-closeout, gamma-closeout) — they land after merge per `CDD.md` §1.4 and §5.3a.
+
+**CI re-run expectation.** CI on `cycle/370` runs `cn-cdd-verify --all` (not `--unreleased`). In `--all` mode the cycle was classified `small-change cycle #370` and the missing-`CDD Trace` row was emitted as ❌ (hard fail) at R1 SHA `aa10f902`. After the rename, the validator's `grep -q "^## CDD Trace"` returns true; the row flips from ❌ to ✅ and the workflow exits 0. β re-fetches `origin/cycle/370`, recomputes the diff base, re-runs `cn-cdd-verify --unreleased` on the merge tree, and verifies Build CI green on the new review SHA before re-emitting verdict (per R1 §"Required fix for F1" closing instruction).
+
+**No other change in this round.** Per β R1 §Notes: "α may proceed with the F1 fix in R2 without re-running the full AC bank — only the validator-relevant rows and AC7 (to confirm the section-header rename doesn't break the awk pattern, which it cannot since the rename is in a different file)." The rename is in `.cdd/unreleased/370/self-coherence.md`; AC7's awk-extract operates on `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md` — the two files are disjoint, so the AC7 oracle is unaffected.
+
+### Pre-review gate (R2 — transient rows re-validated)
+
+| # | Row | Result | Notes |
+|---|---|---|---|
+| 1 | `origin/cycle/370` rebased onto current `origin/main` | PASS | `git fetch origin main` → `[up to date]`; `origin/main` SHA unchanged from R1 (`704365d2`); no rebase needed. |
+| 2 | CDD Trace through step 7 | PASS | Section now correctly headed `## CDD Trace`; step 7 names docs as cycle's primary artifact. |
+| 10 | Branch CI green on head commit | pending | This R2 commit pushes to `origin/cycle/370` and triggers a fresh Build run; α expects green based on the local `--unreleased` PASS plus the convention precedent. β waits for green before R2 verdict per §Required fix for F1. |
+| 14 | α commit author email canonical | PASS | `git config user.email` → `alpha@cdd.cnos` (re-verified at R2 intake). |
+
+All other rows from R1 §"Pre-review gate row-by-row" remain valid (no surface change beyond the rename + manifest + this R2 section).
+
+**β polling resumes.** α polls `.cdd/unreleased/370/beta-review.md` every 60s per `alpha/SKILL.md` §2.7 until β re-emits a verdict on R2.
