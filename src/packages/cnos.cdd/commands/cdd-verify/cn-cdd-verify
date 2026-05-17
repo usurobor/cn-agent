@@ -477,7 +477,7 @@ validate_artifact_sections() {
   # Basic section validation - check for key sections based on artifact type
   case "$artifact_name" in
     "self-coherence.md")
-      # Required sections: Gap, Mode/Skills, ACs/AC Coverage, Self-check, Debt, CDD-Trace
+      # Required sections: Gap, Mode/Skills, ACs/AC Coverage, Self-check, Debt, CDD Trace
       missing_sections=()
 
       if ! grep -q "^## Gap" "$artifact_path" 2>/dev/null; then

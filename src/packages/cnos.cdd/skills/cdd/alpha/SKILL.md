@@ -214,7 +214,7 @@ Write `.cdd/unreleased/{N}/self-coherence.md` **incrementally, one section at a 
 3. **§ACs** — AC-by-AC check with evidence
 4. **§Self-check** — role self-check: did α's work push ambiguity onto β? Is every claim backed by evidence in the diff?
 5. **§Debt** — known debt
-6. **§CDD-Trace** — CDD Trace through step 7
+6. **§CDD Trace** — CDD Trace through step 7
 
 Minimum contents (across all sections):
 
@@ -349,7 +349,7 @@ When dispatched to an artifact path that already contains a section manifest, α
 
 **α-specific resumption cases:**
 
-- **`.cdd/unreleased/{N}/self-coherence.md`** — most common case. Sections: `[Gap, Skills, ACs, Self-check, Debt, CDD-Trace, Review-readiness]`. If α resumes mid-self-coherence, read existing sections for context, continue from next uncompleted section.
+- **`.cdd/unreleased/{N}/self-coherence.md`** — most common case. Sections: `[Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]`. If α resumes mid-self-coherence, read existing sections for context, continue from next uncompleted section.
 - **Fix-round appendices** — when β returns RC and α resumes to fix findings, append fix-round sections to existing `self-coherence.md` without rewriting completed sections.  
 - **`alpha-closeout.md`** — if α is re-dispatched for close-out and finds a partial close-out, read completed sections and continue.
 
