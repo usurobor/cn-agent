@@ -58,7 +58,7 @@
 
 ## §ACs
 
-Per-AC evidence. Oracles run on HEAD of `cycle/369` at the implementation SHA `96ddf4f5` (the README commit, last implementation commit before this readiness signal — see [α/SKILL.md §2.6 SHA convention]).
+Per-AC evidence. Oracles run on HEAD of `cycle/369` (per [α/SKILL.md §2.6 SHA convention], readiness-signal carries branch HEAD rather than a specific SHA; β polls and uses whatever HEAD it finds).
 
 ### AC1 — Three CUE schemas exist at canonical paths and compile
 
@@ -205,7 +205,7 @@ Per [`alpha/SKILL.md`](../../../src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md)
 
 ### Is every claim backed by evidence in the diff?
 
-Every AC row in §ACs cites either a file:line ref or a cue vet exit code from the implementation SHA `96ddf4f5`. No claim relies on prose alone:
+Every AC row in §ACs cites either a file:line ref or a cue vet exit code from the cycle's HEAD. No claim relies on prose alone:
 
 - AC1 → `test -f` + `cue vet -c=false` exit 0.
 - AC2 → `rg --count` hit counts.
