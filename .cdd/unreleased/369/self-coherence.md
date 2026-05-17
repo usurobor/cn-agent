@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness] -->
 
 # Self-coherence — Cycle #369
 
@@ -342,4 +342,37 @@ Nine new files; zero existing files modified.
 
 ### Step 8 — Pre-review gate
 
-The 14-row pre-review-gate evaluation lands in [§Review-readiness](#review-readiness) below.
+The 14-row pre-review-gate evaluation lands in §Review-readiness below.
+
+## Review-readiness
+
+**Round 1 | base SHA: `704365d23378fcbfcf1e33679025809af6b81100` (`origin/main`) | implementation SHA: `b62b2598` (last implementation commit before this signal, observed at signal time) | branch CI: green at 2026-05-17T12:16:08Z (run `25990584571`, completed `success` on the heading-rename SHA which became HEAD shortly before this signal commit) | ready for β.**
+
+α signals review-readiness on branch HEAD of `origin/cycle/369`. Per [`alpha/SKILL.md`](../../../src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md) §2.6 SHA convention, the SHA of *this* readiness-signal commit is intentionally not pinned — β polls `origin/cycle/369` and uses whatever HEAD it finds. The implementation-SHA reference above (`b62b2598`) is the stable pin α uses to name "the last implementation commit before this signal."
+
+### 14-row pre-review-gate evidence
+
+| # | Row | Evidence | Status |
+|---|---|---|---|
+| 1 | Cycle branch rebased on current `origin/main` | `git merge-base origin/main HEAD` = `git rev-parse origin/main` = `704365d2`; cycle branch is up-to-date with main; no rebase needed | PASS (transient — re-validated at signal time 2026-05-17T12:18:00Z) |
+| 2 | `self-coherence.md` carries CDD Trace through step 7 | §CDD Trace steps 1–8 above; step 7 is this self-coherence file itself | PASS |
+| 3 | Tests present, or explicit reason none apply | Four CUE fixtures under `schemas/cdd/fixtures/` + per-AC oracle suite executed against schemas (§ACs); cycle mode is docs+schema, no executable code to unit-test (§CDD Trace step 5) | PASS |
+| 4 | Every AC has evidence | §ACs AC1–AC10 each with explicit oracle, file:line ref, and result | PASS |
+| 5 | Known debt explicit | §Debt enumerates 7 named debt items (5 forward, 2 about α's transcript) and explicitly carries forward "no debt" claims for AC8/AC9/AC10 | PASS |
+| 6 | Schema / shape audit when contracts changed | NEW schemas this cycle; no pre-existing receipt-shape contract to migrate. Schema authoring is itself the shape audit; §Self-check item 1–7 catalogue α's design decisions | PASS |
+| 7 | Peer enumeration when closure claim touches a family of surfaces | §Self-check peer audit: schema-bearing peers = `schemas/skill.cue` (not a peer — different subsystem); receipt-shape harnesses = none in this cycle (Phase 3 wires harnesses) | PASS — peer set = ∅; reason: no sibling consumes the changed contract this cycle |
+| 8 | Harness audit when schema-bearing contract changed | §Self-check polyglot re-audit covered CUE, YAML, Markdown surfaces; no shell or CI workflow harness in diff (AC9 verified) | PASS |
+| 9 | Post-patch re-audit after any mid-cycle patch | Polyglot re-audit performed in α's transcript before signal; CUE re-validated via `cue vet -c=false` and `cue vet -c -d '#Receipt'` after the path-(a) rebase that rewrote commit authors. The rebase changed commit SHAs but not file contents; oracle outputs unchanged | PASS |
+| 10 | Branch CI green on head commit | Run `25990584571` on rename-commit SHA `ff450f6d` completed `success` at `2026-05-17T12:16:08Z` (= `2026-05-17T12:18:00Z` polling window minus completion lag). The readiness-signal commit (this commit) will retrigger CI on its own SHA; β should wait for the readiness-signal-commit's CI run to also be green before merge per §2.6 "or, if local CI is unavailable, the artifact's review-readiness section says so explicitly and β waits for green before merge" — CI is available, run is green at signal time, β can verify the signal-commit run too | PASS (transient — re-validated at signal time) |
+| 11 | Artifact enumeration matches diff | §Self-check "Artifact enumeration matches diff" table: 9 files in `git diff --stat origin/main..HEAD`, all 9 enumerated by name | PASS |
+| 12 | Caller-path trace for new modules | §Self-check "Caller-path trace": new "modules" here are CUE definitions; their callers are `cue vet` invocations (AC1/AC6/AC7 oracles), the README's `## How to run` section, and Phase 3 of #366. No "new function never called from main codepath" risk because no main codepath in this cycle | PASS |
+| 13 | Test assertion count from runner output | CUE does not emit per-assertion counts; assertion granularity is per-fixture pass/fail. Runner output captured in §ACs AC6/AC7: 1 valid + 3 invalid fixtures = 4 named cases; 6 additional scratch-fixture cases verified at α's transcript (PASS+override, FAIL+accept, override-no-block, override-on-non-override-action, action=none enum-violation, count-refs-length mismatch). Total assertion surface: 10 vet-distinguished cases | PASS — assertion granularity declared explicitly |
+| 14 | α commit author email canonical | `git log --format='%ae' origin/main..HEAD` returns `alpha@cdd.cnos` for all 9 commits; zero non-alpha commits. Initial drift (one §Skills commit landed as gamma@cdd.cnos due to harness-side worktree-config reset) was repaired via path (a) — `git rebase --exec "git commit --amend --author='alpha <alpha@cdd.cnos>' --no-edit"` against the merge-base, followed by `git push --force-with-lease origin cycle/369`. Path (a) was chosen (not path (b)) so the cycle history shows the canonical email from the merge-base forward; no split-form legacy commits remain | PASS — repaired via path (a) before signaling |
+
+### Polling
+
+α now polls `origin/cycle/369` and `.cdd/unreleased/369/beta-review.md` per [`alpha/SKILL.md`](../../../src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md) §2.7. Polling interval: 60 seconds. β response is the next α-side trigger; γ may write coordination notes to `gamma-clarification.md` (issue cache-bust if so).
+
+### Bounded-dispatch close-out note
+
+Per [`alpha/SKILL.md`](../../../src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md) §2.8, in the sequential bounded-dispatch model α exits after signaling review-readiness; close-out is written through a γ-requested re-dispatch of α after β merge. This is the model in effect for this cycle. α will not stay alive to observe β's verdict; the dispatch declares "exit cleanly. γ will dispatch β next."
