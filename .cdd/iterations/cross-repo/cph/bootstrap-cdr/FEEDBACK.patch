@@ -1,0 +1,32 @@
+From: cnos γ (claude/file-cnos-cdr-issue-fi9Ld)
+Date: 2026-05-18
+Subject: Close source proposal — cnos accepted cnos.cdr bootstrap as cnos#376
+
+cnos γ could not write to usurobor/gait-support-paths from this session
+(cross-repo write not authorised in the executing environment). Per
+`cdd/gamma/SKILL.md §"Cross-repo proposal close-out"` option (b), this
+feedback patch is emitted on the cnos side at
+`.cdd/iterations/cross-repo/gait-support-paths/bootstrap-cdr/FEEDBACK.patch`
+for the gait-side γ to apply on receipt.
+
+Apply from the gait-support-paths repository root with:
+
+    git apply FEEDBACK.patch
+
+The patch appends the `accepted` event to the source STATUS ledger so the
+proposal no longer reads as `submitted` after cnos's filing decision
+(constraint: "The proposal STATUS must not remain at `submitted` after your
+filing decision."). The cnos-side mirror at
+`cnos:.cdd/iterations/cross-repo/gait-support-paths/bootstrap-cdr/LINEAGE.md`
+records the bilateral trace.
+
+---
+
+diff --git a/.cdd/iterations/cross-repo/cnos/bootstrap-cdr/STATUS b/.cdd/iterations/cross-repo/cnos/bootstrap-cdr/STATUS
+--- a/.cdd/iterations/cross-repo/cnos/bootstrap-cdr/STATUS
++++ b/.cdd/iterations/cross-repo/cnos/bootstrap-cdr/STATUS
+@@ -5,3 +5,4 @@
+ # Format: <ISO-8601 date> <event> <actor> [target-ref]
+
+ 2026-05-18 submitted gait-support-paths
++2026-05-18 accepted gamma@cnos cnos#376
