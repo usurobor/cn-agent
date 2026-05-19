@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs, self-check, debt]
+  completed: [gap, skills, acs, self-check, debt, cdd-trace]
 -->
 
 # Self-coherence — α #380
@@ -230,3 +230,78 @@ Every test added is necessary for one of the AC oracles; every production file i
 The `Spawn` / `CheckSpawnBinary` helpers are binary-name-parameterized, so adding `--cursor` later is a flag-parsing addition in `cmd_activate.go` plus a `<cursor's interactive-launch shape>` verification — no re-architecting required.
 
 **Branch CI.** Local Go test suite green at HEAD `dd86e283`; full repo CI status to be verified by β against `origin/cycle/380` per pre-review gate row 10. Recorded as a transient row in §Review-readiness, re-validated immediately before the readiness signal.
+
+## CDD Trace
+
+CDD canonical artifact order (CDD.md §5.2):
+
+1. **Design artifact** — not required. Mode is design-and-build per γ scaffold §Mode; design surface is the issue body. The one bounded design call γ delegated (render-capture seam Option A vs B) was resolved by α inline; declared in §Gap and §ACs AC1 implementation notes.
+
+2. **Coherence contract** — `.cdd/unreleased/380/self-coherence.md` §Gap (this file). The named gap (cn activate's hub-side flow stops at stdout; no bridge to interactive REPL) and the closure shape (two new flags + Spawn helper + render-capture seam Option A) are stated.
+
+3. **Plan** — not required. Sequencing is the commit-checkpoint sequence γ scaffolded:
+
+| Step | Surface | Commit |
+|---|---|---|
+| 1 | `cmd_activate.go` — flag defs + help text | `44b9a475` |
+| 2 | `spawn.go` + `spawn_other.go` — Spawn / CheckSpawnBinary helpers | `c28a04ee` |
+| 3 | `cmd_activate.go` — mutual-exclusion + render-capture seam + spawn call | `304eb1df` |
+| 4 | `spawn_test.go` + `cmd_activate_test.go` — flag/argv/missing-binary tests | `20d07860` |
+| 5 | `cmd_activate_test.go` — AC3 bytes-equal default-path oracle | `dd86e283` |
+| 6 | `.cdd/unreleased/380/self-coherence.md` — §Gap..§CDD Trace | `14a6bf55..` (this commit family) |
+
+The first implementation commit (`44b9a475`) landed within the first 25% of the dispatch budget per γ scaffold authoring discipline. No batched end-of-cycle commit.
+
+4. **Tests** — present.
+
+| Test file | Test count | What it proves |
+|---|---|---|
+| `src/go/internal/activate/spawn_test.go` | 7 | AC1 argv shape; AC2 codex argv shape (negative: not `[codex, exec, prompt]`); LookPath failure path; CheckSpawnBinary error message shape for claude/codex; default-hook wiring verifies production `Spawn` routes through `exec.LookPath` |
+| `src/go/internal/cli/cmd_activate_test.go` | 9 | AC3 default no-flag preserved + bytes-equal to direct activate.Run; AC4 mutual exclusion (errors + names both flags + fires before render); AC5 missing-binary for claude/codex (names binary + flag + PATH + fires before render); AC1/AC2 --help documents both flags; unknown-flag rejection |
+| `src/go/internal/activate/activate_test.go` | unchanged | All 3.78.0 / #379 invariants preserved (full suite green) |
+
+```
+$ cd src/go && go test ./internal/activate/... ./internal/cli/...
+ok      github.com/usurobor/cnos/src/go/internal/activate    0.040s
+ok      github.com/usurobor/cnos/src/go/internal/cli         0.019s
+
+$ go test ./...
+ok      github.com/usurobor/cnos/src/go/internal/activate
+ok      github.com/usurobor/cnos/src/go/internal/activation
+ok      github.com/usurobor/cnos/src/go/internal/binupdate
+ok      github.com/usurobor/cnos/src/go/internal/cli
+ok      github.com/usurobor/cnos/src/go/internal/discover
+ok      github.com/usurobor/cnos/src/go/internal/dispatch
+ok      github.com/usurobor/cnos/src/go/internal/doctor
+ok      github.com/usurobor/cnos/src/go/internal/hubinit
+ok      github.com/usurobor/cnos/src/go/internal/hubsetup
+ok      github.com/usurobor/cnos/src/go/internal/hubstatus
+ok      github.com/usurobor/cnos/src/go/internal/pkg
+ok      github.com/usurobor/cnos/src/go/internal/pkgbuild
+ok      github.com/usurobor/cnos/src/go/internal/restore
+```
+
+`go vet ./...` clean.
+
+5. **Code** — `spawn.go` (70 lines), `spawn_other.go` (19 lines), `cmd_activate.go` (modified — 92 lines / +47 / -5).
+
+6. **Docs** — `cn activate --help` text updated in `cmd_activate.go` to document `--claude` and `--codex` with description naming the interactive-spawn behavior, TTY preservation, and PATH requirement. No README / RELEASE.md / skill body edits needed this cycle. Every file in `git diff --stat origin/main..HEAD` (per pre-review gate row 11) is accounted for:
+
+| File | Change | Where named in self-coherence |
+|---|---|---|
+| `.cdd/unreleased/380/gamma-scaffold.md` | A | γ artifact, named in §Gap (base SHA) and §Self-check (target-surface comparison) |
+| `src/go/internal/activate/spawn.go` | A | §ACs AC1 surface |
+| `src/go/internal/activate/spawn_other.go` | A | §Self-check (portability stub justification) |
+| `src/go/internal/activate/spawn_test.go` | A | §ACs AC1 / AC2 oracles; §CDD Trace step 4 |
+| `src/go/internal/cli/cmd_activate.go` | M | §ACs AC1 / AC3 / AC4 surface; §Gap (Option A) |
+| `src/go/internal/cli/cmd_activate_test.go` | A | §ACs AC3 / AC4 / AC5 oracles; §Self-check (surface widening) |
+| `.cdd/unreleased/380/self-coherence.md` | A | this file |
+
+Non-test caller-path trace (pre-review gate row 12): every new exported symbol has a non-test caller.
+
+- `activate.CheckSpawnBinary` — called by `cli/cmd_activate.go` `ActivateCmd.Run` (pre-render gate)
+- `activate.Spawn` — called by `cli/cmd_activate.go` `ActivateCmd.Run` (post-render handover)
+
+Test assertion count from runner output (pre-review gate row 13): 16 new test functions land green (7 in spawn_test.go + 9 in cmd_activate_test.go), enumerated above. Previous-cycle invariants still pass: all activate package tests including #379 ordering, kernel-state, deps-state, latest-reflection, fixture-based smoke.
+
+7. **Self-coherence** — this file. Authored section-by-section per alpha/SKILL.md §2.5 (each section a separate commit + push). Section manifest in HTML-comment header records completion state.
