@@ -1,0 +1,39 @@
+From: cnos γ (claude/file-cnos-cdr-issue-fi9Ld)
+Date: 2026-05-19
+Subject: Close source proposal — cnos accepted agent-activate-skill as cnos#379
+
+cnos γ could not write to usurobor/cn-sigma from this session (cross-repo
+write not authorised in the executing environment; MCP scoped to
+usurobor/cnos only). Per `cdd/gamma/SKILL.md §"Cross-repo proposal close-out"`
+option (b), this feedback patch is emitted on the cnos side at
+`.cdd/iterations/cross-repo/cn-sigma/agent-activate-skill/FEEDBACK.patch`
+for the cn-sigma-side γ to apply on receipt.
+
+Apply from the cn-sigma repository root with:
+
+    git apply FEEDBACK.patch
+
+The patch appends the `accepted` event to the source STATUS ledger so the
+proposal no longer reads as `drafted` after cnos's filing decision. The
+cnos-side mirror at
+`cnos:.cdd/iterations/cross-repo/cn-sigma/agent-activate-skill/LINEAGE.md`
+records the bilateral trace, the cnos issue number (#379), the filing
+disposition (accepted, no delta), and three protocol observations forwarded
+to cnos#377 (cross-repo protocol codification cycle).
+
+Note on event vocabulary: the source `STATUS` initial event reads `drafted`,
+which is not in the cnos-documented 5-event vocabulary
+(`submitted | accepted | modified | rejected | landed`). cnos γ treated
+`drafted` as filing-ready for intake purposes; reconciling or expanding the
+vocabulary is tracked under cnos#377.
+
+---
+
+diff --git a/.cdd/iterations/cross-repo/cnos/agent-activate-skill/STATUS b/.cdd/iterations/cross-repo/cnos/agent-activate-skill/STATUS
+--- a/.cdd/iterations/cross-repo/cnos/agent-activate-skill/STATUS
++++ b/.cdd/iterations/cross-repo/cnos/agent-activate-skill/STATUS
+@@ -10,3 +10,4 @@
+ # in cn-sigma. cnos #377 (open) tracks codification of the hub→repo case.
+
+ 2026-05-19 drafted sigma
++2026-05-19 accepted gamma@cnos cnos#379
