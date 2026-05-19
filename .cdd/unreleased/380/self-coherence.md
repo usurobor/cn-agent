@@ -1,7 +1,7 @@
 <!--
 section-manifest:
-  planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
+  planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness, fix-round-1]
+  completed: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness, fix-round-1]
 -->
 
 # Self-coherence — α #380
@@ -332,3 +332,73 @@ Test assertion count from runner output (pre-review gate row 13): 16 new test fu
 | 14 | α commit author email canonical | ✓ all 11 α commits (range `7a9bc2e7..HEAD` excluding γ's scaffold) authored as `alpha@cdd.cnos` after path-(a) `git rebase --exec 'git commit --amend --reset-author --no-edit' 7a9bc2e7 && git push --force-with-lease`; the worktree config was discovered carrying `gamma@cdd.cnos` from prior session, fixed via `git config --worktree user.email "alpha@cdd.cnos"` before the rebase. Verification: `git log --format='%ae' 7a9bc2e7..HEAD | sort -u` returns the single value `alpha@cdd.cnos`. |
 
 **Ready for β.** All AC1–AC5 oracles pass; surface containment matches the γ scaffold plus two declared widenings (`spawn_other.go` portability stub + `cmd_activate_test.go` for cli-package-level oracles); no non-goals violated; render-capture seam Option A declared and verified.
+
+## Fix-round 1
+
+**Trigger.** β R1 verdict REQUEST CHANGES in `.cdd/unreleased/380/beta-review.md` — one B-severity honest-claim finding (F1).
+
+**Fix-round head SHA:** `91a2cad6` (single fix commit; readiness-signal commit will advance HEAD by one).
+**Cycle head at fix-round signal:** β should poll `origin/cycle/380` for the latest HEAD.
+
+### F1 — §CDD Trace SHAs unreachable from `origin/cycle/380`
+
+**β's finding.** Five SHAs in §CDD Trace step table (`44b9a475`, `c28a04ee`, `304eb1df`, `20d07860`, `dd86e283`) plus the §ACs header reference to `dd86e283` were pre-rebase SHAs from α's local reflog after the path-(a) email-rewrite rebase documented in §Review-readiness row 14. None reachable from `origin/cycle/380`; honest-claim reproducibility (review/SKILL.md rule 3.13(a)) violated.
+
+**Addressed by.** Commit `91a2cad6` "α #380 fix F1 — rewrite §CDD Trace SHAs to current-branch values".
+
+**What was rewritten.** Per α/SKILL.md §2.3 intra-doc repetition discipline, β named 5 SHAs + 1 header reference but the doc carried more occurrences — grepped `44b9a475|c28a04ee|304eb1df|20d07860|dd86e283|14a6bf55` against the file and rewrote every hit (9 occurrences total):
+
+| # | Line | Old SHA (pre-rebase, unreachable) | New SHA (current-branch) | Context |
+|---|---|---|---|---|
+| 1 | 43 | `dd86e283` | `87aa69e9` | §ACs header: "Per-AC oracles run against branch HEAD …" |
+| 2 | 232 | `dd86e283` | `87aa69e9` | §Debt: "Local Go test suite green at HEAD …" |
+| 3 | 246 | `44b9a475` | `1cc80565` | §CDD Trace step 1 row |
+| 4 | 247 | `c28a04ee` | `d4f4e499` | §CDD Trace step 2 row |
+| 5 | 248 | `304eb1df` | `e92a9476` | §CDD Trace step 3 row |
+| 6 | 249 | `20d07860` | `da3dd429` | §CDD Trace step 4 row |
+| 7 | 250 | `dd86e283` | `87aa69e9` | §CDD Trace step 5 row |
+| 8 | 251 | `14a6bf55..` | `808ae8b7..` | §CDD Trace step 6 (self-coherence family start: §Gap commit) |
+| 9 | 253 | `44b9a475` | `1cc80565` | §CDD Trace prose: "The first implementation commit (…) landed within the first 25%" |
+
+β surfaced 6 (rows 1, 3–7); the intra-doc repetition rule (`alpha/SKILL.md` §2.3 — "grep the doc for every occurrence … before claiming the fix is complete"; derives from #266 F3-bis) caught rows 2, 8, 9 in the same commit so this fix-round does not surface an F1-bis.
+
+**Verification for β to re-run.**
+
+```
+$ git log --oneline 319893a4..origin/cycle/380
+# Expect: each new SHA in the table above reachable; old SHAs unreachable.
+
+$ for sha in 44b9a475 c28a04ee 304eb1df 20d07860 dd86e283 14a6bf55; do \
+    echo "=== $sha ==="; git branch -a --contains "$sha" 2>&1; \
+  done
+# Expect: empty / "malformed object name" for each — none reachable from any branch.
+
+$ for sha in 1cc80565 d4f4e499 e92a9476 da3dd429 87aa69e9 808ae8b7; do \
+    echo "=== $sha ==="; git branch -a --contains "$sha" 2>&1 | head -3; \
+  done
+# Expect: each contains "cycle/380" and "remotes/origin/cycle/380".
+
+$ grep -n -E '44b9a475|c28a04ee|304eb1df|20d07860|dd86e283|14a6bf55' \
+    .cdd/unreleased/380/self-coherence.md
+# Expect: no matches.
+```
+
+**No production-code change.** F1 is a self-coherence artifact correction only; no Go diff, no test change, no skill body change. AC1–AC5 evidence is unchanged — the oracles still pass against the renamed SHAs (the underlying commits are identical content, just authored by the canonical `alpha@cdd.cnos` email post-rebase).
+
+### Re-audit against HEAD (α/SKILL.md §3.4)
+
+Re-ran the affected pre-review-gate rows against new HEAD `91a2cad6`:
+
+| Row | State | Notes |
+|---|---|---|
+| 2 CDD Trace through step 7 | ✓ | §CDD Trace step table SHAs now current-branch-reachable |
+| 4 every AC has evidence | ✓ | §ACs header SHA now points to a reachable commit |
+| 9 polyglot re-audit | ✓ | No new languages touched; only Markdown changed |
+| 11 artifact enumeration matches diff | ✓ | `git diff --stat origin/main..HEAD` adds no new files; only `.cdd/unreleased/380/self-coherence.md` modified twice (fix commit + this fix-round append) |
+| 13 honest-claim reproducibility (review/SKILL.md 3.13(a)) | ✓ | β's grep recipe in the verification block above will return empty for old SHAs and confirm reachability for new SHAs |
+
+Other rows (1, 3, 5–8, 10, 12, 14) untouched by this fix and remain as recorded in §Review-readiness.
+
+### Ready for β round 2
+
+F1 fix is one self-coherence-only commit (`91a2cad6`) plus this fix-round append. No code change, no test change. β's expected R2 verdict per beta-review.md "Round budget" note: APPROVE + merge.
