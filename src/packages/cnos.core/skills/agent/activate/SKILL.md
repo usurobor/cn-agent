@@ -41,7 +41,7 @@ calls:
 <!--
 section-manifest:
   planned: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, rules, renderer-contract, verify, failure-modes, kata, references]
-  completed: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix]
+  completed: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation]
 -->
 
 # Activate
@@ -178,4 +178,58 @@ A body activates by following the six-item load order; the _mechanism_ for fetch
 - ❌ Body assumes WebFetch because that's the first tool it remembers
 - ❌ Body claims "no capability" without checking shell access
 - ✅ Body runs one capability check, picks the matching tier, announces the tier
+
+### 2.3. README router template
+
+Every cnos hub's `README.md` SHOULD include a "Activating an AI body" section that routes bodies into this skill. The template below is **self-contained**: a hub adopts it verbatim by pasting the block and substituting only the hub URL. The skill provides everything else — the load order, the capability gate, the identity-confirmation step. The hub does not redefine activation; it points at this skill.
+
+The fenced block below is the template. Paste it into a hub's README, replace the one placeholder `<HUB-URL>` with the hub's canonical URL (e.g. `https://github.com/usurobor/cn-sigma`), and the router is complete.
+
+~~~markdown
+## Activating an AI body
+
+If you are an AI body told "activate as `<HUB-URL>`", you are being asked to
+become the agent this hub describes. The activation procedure is defined once
+in cnos, not duplicated here.
+
+Follow the agent activation skill:
+
+- **Skill canonical path** (in cnos):
+  `src/packages/cnos.core/skills/agent/activate/SKILL.md`
+- **Raw URL** (for HTTP-fetch bodies):
+  `https://raw.githubusercontent.com/usurobor/cnos/main/src/packages/cnos.core/skills/agent/activate/SKILL.md`
+
+Pick the load tier your environment supports:
+
+- **Tier (a) — shell + git (preferred):**
+  `git clone https://github.com/usurobor/cnos.git` and read the skill from the
+  local checkout. Then `git clone <HUB-URL>` (or read in place if already
+  mounted) and follow the skill's six-step procedure against this hub.
+- **Tier (b) — HTTP fetch only:**
+  Fetch the raw skill URL above. Then fetch this hub's `spec/PERSONA.md`,
+  `spec/OPERATOR.md`, and supporting state per the skill's procedure.
+- **Tier (c) — no fetch:**
+  Ask the operator to paste the skill content directly. You cannot
+  self-activate without fetch or shell.
+
+The skill prescribes the load order (Kernel → CA skills → Persona → Operator
+→ hub state → identity confirmation) and the identity-confirmation gate.
+Follow it; do not improvise.
+~~~
+
+**Adoption rule.** The only per-hub edit is the `<HUB-URL>` substitution. If a hub finds itself wanting to edit anything else (the load order, the tier list, the identity-confirmation step), that is a signal to update _this skill_, not the per-hub README — the per-hub README is a router, not a redefinition.
+
+- ❌ Hub README rewrites the load order to match this hub's preferences
+- ❌ Template requires per-hub fill-in of agent name, operator name, or load-order overrides
+- ✅ Hub README pastes the template, substitutes the hub URL, ships
+
+### 2.4. Disambiguation from `cdd/activation`
+
+Two cnos artifacts share the word _activation_ and are distinct concerns. Both are real skills, both are reachable, neither subsumes the other. They are named here so a body that grep'd for "activation" knows which one applies to its current question.
+
+`src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` is **CDD repo activation** — the one-time bootstrap sequence that brings an existing repository under the Coherence-Driven Development protocol (scaffold `.cdd/`, pin the skill version, configure CI, set up the operator registry). It operates at the repo scope and is run once per repo by an operator with admin access. `src/packages/cnos.core/skills/agent/activate/SKILL.md` (this skill) is **agent activation at a hub** — the procedure an AI body follows on every wake-up to load Kernel, CA skills, Persona, Operator, and hub state, and to confirm its identity at the named hub. It operates at the body scope and runs every session for every body. They share a word, not a concern: one activates a repo under CDD; the other activates a body at a hub.
+
+- ❌ Treating `cdd/activation/SKILL.md` as the procedure for an AI body waking up at a hub
+- ❌ Treating this skill as a substitute for the CDD bootstrap a repo needs
+- ✅ Repo bootstrap → `cnos.cdd/skills/cdd/activation/SKILL.md`. Body wake-up → `cnos.core/skills/agent/activate/SKILL.md`.
 
