@@ -3,6 +3,7 @@ package activate
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -315,11 +316,13 @@ func TestDepsState_None(t *testing.T) {
 	}
 }
 
-// --- AC9: Ordered ## Read first section ---
+// --- AC9 / #379: Ordered ## Read first section ---
+// Canonical ordering per cnos.core/skills/agent/activate/SKILL.md §2.1 / §4.1:
+// kernel → ca-skills → persona → operator → hub-state (deps + reflection) → identity.
 
 func TestReadFirstSection_OrderedSigma(t *testing.T) {
 	hub := makeSigmaFixture(t)
-	// Add a daily reflection so latest reflection appears.
+	// Add a daily reflection so the hub-state composite line includes it.
 	mustWrite(t, filepath.Join(hub, "threads", "reflections", "daily", "2026-05-01.md"), "# Reflection\n")
 
 	out, _ := run(t, hub)
@@ -328,26 +331,31 @@ func TestReadFirstSection_OrderedSigma(t *testing.T) {
 	if readFirstIdx < 0 {
 		t.Fatalf("missing ## Read first section:\n%s", out)
 	}
-	// Persona (1.) must come before operator (2.) before kernel (3.)
-	idx1 := strings.Index(out[readFirstIdx:], "spec/PERSONA.md")
-	idx2 := strings.Index(out[readFirstIdx:], "spec/OPERATOR.md")
-	idx3 := strings.Index(out[readFirstIdx:], "doctrine/KERNEL.md")
-	idx4 := strings.Index(out[readFirstIdx:], "deps.json")
-	idx5 := strings.Index(out[readFirstIdx:], "latest reflection")
+	// New canonical order: KERNEL → ca-skills → PERSONA → OPERATOR → deps → reflection → identity.
+	idxKernel := strings.Index(out[readFirstIdx:], "doctrine/KERNEL.md")
+	idxCASkills := strings.Index(out[readFirstIdx:], "(CA skill set)")
+	idxPersona := strings.Index(out[readFirstIdx:], "spec/PERSONA.md")
+	idxOperator := strings.Index(out[readFirstIdx:], "spec/OPERATOR.md")
+	idxDeps := strings.Index(out[readFirstIdx:], "deps.json")
+	idxReflection := strings.Index(out[readFirstIdx:], "latest reflection")
+	idxIdentity := strings.Index(out[readFirstIdx:], "identity confirmation")
 	for name, idx := range map[string]int{
-		"PERSONA.md":  idx1,
-		"OPERATOR.md": idx2,
-		"KERNEL.md":   idx3,
-		"deps.json":   idx4,
-		"reflection":  idx5,
+		"KERNEL.md":     idxKernel,
+		"CA skill set":  idxCASkills,
+		"PERSONA.md":    idxPersona,
+		"OPERATOR.md":   idxOperator,
+		"deps.json":     idxDeps,
+		"reflection":    idxReflection,
+		"identity conf": idxIdentity,
 	} {
 		if idx < 0 {
 			t.Errorf("## Read first missing %s:\n%s", name, out)
 		}
 	}
-	if !(idx1 < idx2 && idx2 < idx3 && idx3 < idx4 && idx4 < idx5) {
-		t.Errorf("## Read first order wrong: PERSONA=%d OPERATOR=%d KERNEL=%d deps=%d reflection=%d",
-			idx1, idx2, idx3, idx4, idx5)
+	if !(idxKernel < idxCASkills && idxCASkills < idxPersona && idxPersona < idxOperator &&
+		idxOperator < idxDeps && idxDeps < idxReflection && idxReflection < idxIdentity) {
+		t.Errorf("## Read first order wrong: KERNEL=%d CA=%d PERSONA=%d OPERATOR=%d deps=%d reflection=%d identity=%d",
+			idxKernel, idxCASkills, idxPersona, idxOperator, idxDeps, idxReflection, idxIdentity)
 	}
 
 	// AC9 negative: must not contain old "inspect files directly" as the only guidance
@@ -364,16 +372,174 @@ func TestReadFirstSection_InitOnlyOrdered(t *testing.T) {
 	if readFirstIdx < 0 {
 		t.Fatalf("missing ## Read first section:\n%s", out)
 	}
-	// Absent entries should still appear in order with "not found" message
-	idx1 := strings.Index(out[readFirstIdx:], "PERSONA.md")
-	idx2 := strings.Index(out[readFirstIdx:], "OPERATOR.md")
-	idx3 := strings.Index(out[readFirstIdx:], "kernel")
-	if idx1 < 0 || idx2 < 0 || idx3 < 0 {
-		t.Errorf("## Read first must list all three layers even when absent:\n%s", out)
+	// Even with absent kernel/persona/operator, the canonical six-token order is preserved.
+	idxKernel := strings.Index(out[readFirstIdx:], "kernel")
+	idxCASkills := strings.Index(out[readFirstIdx:], "(CA skill set)")
+	idxPersona := strings.Index(out[readFirstIdx:], "PERSONA.md")
+	idxOperator := strings.Index(out[readFirstIdx:], "OPERATOR.md")
+	if idxKernel < 0 || idxCASkills < 0 || idxPersona < 0 || idxOperator < 0 {
+		t.Errorf("## Read first must list all four layers even when absent:\n%s", out)
 	}
-	if !(idx1 < idx2 && idx2 < idx3) {
-		t.Errorf("## Read first order wrong for init-only: PERSONA=%d OPERATOR=%d kernel=%d",
-			idx1, idx2, idx3)
+	if !(idxKernel < idxCASkills && idxCASkills < idxPersona && idxPersona < idxOperator) {
+		t.Errorf("## Read first order wrong for init-only: kernel=%d CA=%d PERSONA=%d OPERATOR=%d",
+			idxKernel, idxCASkills, idxPersona, idxOperator)
+	}
+}
+
+// --- #379 AC7: Skill is the source of truth for ## Read first ordering ---
+
+// vendoredActivateSkillPath returns the path inside a hub where the activate
+// skill is expected to live for the renderer to consume it.
+func vendoredActivateSkillPath(hub string) string {
+	return filepath.Join(hub, ".cn", "vendor", "packages", "cnos.core",
+		"skills", "agent", "activate", "SKILL.md")
+}
+
+// writeVendoredActivateSkill writes a minimal activate SKILL.md to the
+// hub's vendored bundle with a §4.1 machine-readable load-order block
+// containing the given (token, label) pairs in order.
+func writeVendoredActivateSkill(t *testing.T, hub string, items [][2]string) {
+	t.Helper()
+	var b strings.Builder
+	b.WriteString("---\nname: activate\nartifact_class: skill\n---\n\n")
+	b.WriteString("# Activate (fixture)\n\n## 4. Renderer contract\n\n")
+	b.WriteString("<!-- read-first-order:begin -->\n")
+	for i, pair := range items {
+		fmt.Fprintf(&b, "%d. %s — %s\n", i+1, pair[0], pair[1])
+	}
+	b.WriteString("<!-- read-first-order:end -->\n")
+	mustWrite(t, vendoredActivateSkillPath(hub), b.String())
+}
+
+// TestSkillIsSourceOfTruthForReadFirstOrder demonstrates AC7: when the
+// activate skill is vendored, editing its §4.1 block changes the renderer's
+// ## Read first emission order. The skill — not in-Go constants — owns
+// the ordering decision.
+func TestSkillIsSourceOfTruthForReadFirstOrder(t *testing.T) {
+	hub := makeSigmaFixture(t)
+	// Add a daily reflection so the hub-state composite line is non-trivial.
+	mustWrite(t, filepath.Join(hub, "threads", "reflections", "daily", "2026-05-01.md"), "# Reflection\n")
+
+	// Phase 1: vendor an activate skill that places kernel BEFORE persona.
+	writeVendoredActivateSkill(t, hub, [][2]string{
+		{"kernel", "Kernel doctrine"},
+		{"persona", "Persona"},
+		{"operator", "Operator"},
+	})
+
+	out1, stderr1 := run(t, hub)
+	if strings.Contains(stderr1, "activate skill not vendored") {
+		t.Fatalf("renderer fell back to built-in ordering despite vendored skill:\nstderr=%s", stderr1)
+	}
+	readFirstIdx1 := strings.Index(out1, "## Read first")
+	if readFirstIdx1 < 0 {
+		t.Fatalf("missing ## Read first section:\n%s", out1)
+	}
+	kIdx1 := strings.Index(out1[readFirstIdx1:], "doctrine/KERNEL.md")
+	pIdx1 := strings.Index(out1[readFirstIdx1:], "spec/PERSONA.md")
+	if kIdx1 < 0 || pIdx1 < 0 {
+		t.Fatalf("phase 1: missing KERNEL.md or PERSONA.md in ## Read first:\n%s", out1)
+	}
+	if !(kIdx1 < pIdx1) {
+		t.Errorf("phase 1: skill ordered kernel BEFORE persona; renderer emitted otherwise (KERNEL=%d PERSONA=%d):\n%s",
+			kIdx1, pIdx1, out1)
+	}
+
+	// Phase 2: edit the vendored skill — swap kernel and persona. The
+	// renderer must pick up the new ordering without code change.
+	writeVendoredActivateSkill(t, hub, [][2]string{
+		{"persona", "Persona"},
+		{"kernel", "Kernel doctrine"},
+		{"operator", "Operator"},
+	})
+
+	out2, stderr2 := run(t, hub)
+	if strings.Contains(stderr2, "activate skill not vendored") {
+		t.Fatalf("phase 2: renderer fell back despite vendored skill:\nstderr=%s", stderr2)
+	}
+	readFirstIdx2 := strings.Index(out2, "## Read first")
+	if readFirstIdx2 < 0 {
+		t.Fatalf("phase 2: missing ## Read first section:\n%s", out2)
+	}
+	kIdx2 := strings.Index(out2[readFirstIdx2:], "doctrine/KERNEL.md")
+	pIdx2 := strings.Index(out2[readFirstIdx2:], "spec/PERSONA.md")
+	if kIdx2 < 0 || pIdx2 < 0 {
+		t.Fatalf("phase 2: missing KERNEL.md or PERSONA.md in ## Read first:\n%s", out2)
+	}
+	if !(pIdx2 < kIdx2) {
+		t.Errorf("phase 2: skill ordered persona BEFORE kernel; renderer emitted otherwise (PERSONA=%d KERNEL=%d):\n%s",
+			pIdx2, kIdx2, out2)
+	}
+
+	// Coherence check: the two outputs must differ in ## Read first ordering.
+	if out1 == out2 {
+		t.Error("renderer produced identical output for two different skill orderings — skill not source of truth")
+	}
+}
+
+// TestSkillFallback_NotVendored confirms that when the activate skill is
+// absent from the vendored bundle, the renderer falls back to the built-in
+// canonical ordering and announces the fallback on stderr. This preserves
+// the manifest-only deps state behavior the prior implementation guaranteed.
+func TestSkillFallback_NotVendored(t *testing.T) {
+	hub := makeInitPlusSetupFixture(t) // manifest-only deps, no vendored bundle
+
+	out, stderr := run(t, hub)
+
+	if !strings.Contains(stderr, "activate skill not vendored") {
+		t.Errorf("expected stderr fallback diagnostic, got: %q", stderr)
+	}
+	// Canonical built-in order must still apply: kernel → ca-skills → persona → operator.
+	readFirstIdx := strings.Index(out, "## Read first")
+	if readFirstIdx < 0 {
+		t.Fatalf("missing ## Read first section:\n%s", out)
+	}
+	idxKernel := strings.Index(out[readFirstIdx:], "kernel")
+	idxCASkills := strings.Index(out[readFirstIdx:], "(CA skill set)")
+	idxPersona := strings.Index(out[readFirstIdx:], "PERSONA.md")
+	if !(idxKernel >= 0 && idxKernel < idxCASkills && idxCASkills < idxPersona) {
+		t.Errorf("fallback ordering wrong: kernel=%d CA=%d PERSONA=%d:\n%s",
+			idxKernel, idxCASkills, idxPersona, out)
+	}
+	// Manifest-only kernel guidance is preserved.
+	if !strings.Contains(out, "run cn deps restore") {
+		t.Errorf("manifest-only fallback must preserve 'run cn deps restore' guidance:\n%s", out)
+	}
+}
+
+// TestParseReadFirstOrderBlock_HappyPath unit-tests the parser directly.
+func TestParseReadFirstOrderBlock_HappyPath(t *testing.T) {
+	content := "preamble\n" +
+		"<!-- read-first-order:begin -->\n" +
+		"1. kernel — Kernel doctrine\n" +
+		"2. ca-skills — CA skill set\n" +
+		"3. persona — Persona\n" +
+		"<!-- read-first-order:end -->\n" +
+		"trailing\n"
+	items, ok := parseReadFirstOrderBlock(content)
+	if !ok {
+		t.Fatal("parser returned !ok")
+	}
+	if len(items) != 3 {
+		t.Fatalf("want 3 items, got %d: %+v", len(items), items)
+	}
+	want := []readFirstItem{
+		{token: "kernel", label: "Kernel doctrine"},
+		{token: "ca-skills", label: "CA skill set"},
+		{token: "persona", label: "Persona"},
+	}
+	for i, w := range want {
+		if items[i] != w {
+			t.Errorf("item[%d]: want %+v got %+v", i, w, items[i])
+		}
+	}
+}
+
+// TestParseReadFirstOrderBlock_NoMarkers returns !ok on a content lacking the
+// begin marker, leaving the caller to choose fallback behavior.
+func TestParseReadFirstOrderBlock_NoMarkers(t *testing.T) {
+	if items, ok := parseReadFirstOrderBlock("nothing structured here\n"); ok {
+		t.Errorf("expected !ok for content without markers, got items=%+v", items)
 	}
 }
 
