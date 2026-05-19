@@ -40,7 +40,7 @@ section-manifest:
 
 ## ACs
 
-Per-AC oracles run against branch HEAD `dd86e283` (last implementation commit before this self-coherence file). AC numbering follows the issue body.
+Per-AC oracles run against branch HEAD `87aa69e9` (last implementation commit before this self-coherence file). AC numbering follows the issue body.
 
 ### AC1 — `--claude` flag spawns claude interactively with the prompt loaded
 
@@ -229,7 +229,7 @@ Every test added is necessary for one of the AC oracles; every production file i
 
 The `Spawn` / `CheckSpawnBinary` helpers are binary-name-parameterized, so adding `--cursor` later is a flag-parsing addition in `cmd_activate.go` plus a `<cursor's interactive-launch shape>` verification — no re-architecting required.
 
-**Branch CI.** Local Go test suite green at HEAD `dd86e283`; full repo CI status to be verified by β against `origin/cycle/380` per pre-review gate row 10. Recorded as a transient row in §Review-readiness, re-validated immediately before the readiness signal.
+**Branch CI.** Local Go test suite green at HEAD `87aa69e9`; full repo CI status to be verified by β against `origin/cycle/380` per pre-review gate row 10. Recorded as a transient row in §Review-readiness, re-validated immediately before the readiness signal.
 
 ## CDD Trace
 
@@ -243,14 +243,14 @@ CDD canonical artifact order (CDD.md §5.2):
 
 | Step | Surface | Commit |
 |---|---|---|
-| 1 | `cmd_activate.go` — flag defs + help text | `44b9a475` |
-| 2 | `spawn.go` + `spawn_other.go` — Spawn / CheckSpawnBinary helpers | `c28a04ee` |
-| 3 | `cmd_activate.go` — mutual-exclusion + render-capture seam + spawn call | `304eb1df` |
-| 4 | `spawn_test.go` + `cmd_activate_test.go` — flag/argv/missing-binary tests | `20d07860` |
-| 5 | `cmd_activate_test.go` — AC3 bytes-equal default-path oracle | `dd86e283` |
-| 6 | `.cdd/unreleased/380/self-coherence.md` — §Gap..§CDD Trace | `14a6bf55..` (this commit family) |
+| 1 | `cmd_activate.go` — flag defs + help text | `1cc80565` |
+| 2 | `spawn.go` + `spawn_other.go` — Spawn / CheckSpawnBinary helpers | `d4f4e499` |
+| 3 | `cmd_activate.go` — mutual-exclusion + render-capture seam + spawn call | `e92a9476` |
+| 4 | `spawn_test.go` + `cmd_activate_test.go` — flag/argv/missing-binary tests | `da3dd429` |
+| 5 | `cmd_activate_test.go` — AC3 bytes-equal default-path oracle | `87aa69e9` |
+| 6 | `.cdd/unreleased/380/self-coherence.md` — §Gap..§CDD Trace | `808ae8b7..` (this commit family) |
 
-The first implementation commit (`44b9a475`) landed within the first 25% of the dispatch budget per γ scaffold authoring discipline. No batched end-of-cycle commit.
+The first implementation commit (`1cc80565`) landed within the first 25% of the dispatch budget per γ scaffold authoring discipline. No batched end-of-cycle commit.
 
 4. **Tests** — present.
 
