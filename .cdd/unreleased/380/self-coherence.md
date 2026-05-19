@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs, self-check, debt, cdd-trace]
+  completed: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
 -->
 
 # Self-coherence — α #380
@@ -305,3 +305,30 @@ Non-test caller-path trace (pre-review gate row 12): every new exported symbol h
 Test assertion count from runner output (pre-review gate row 13): 16 new test functions land green (7 in spawn_test.go + 9 in cmd_activate_test.go), enumerated above. Previous-cycle invariants still pass: all activate package tests including #379 ordering, kernel-state, deps-state, latest-reflection, fixture-based smoke.
 
 7. **Self-coherence** — this file. Authored section-by-section per alpha/SKILL.md §2.5 (each section a separate commit + push). Section manifest in HTML-comment header records completion state.
+
+## Review-readiness
+
+**Round 1.** Implementation SHA: `87aa69e9` (last implementation commit before the self-coherence file family). Branch HEAD will advance with this readiness-signal commit; β should poll `origin/cycle/380` for the latest HEAD.
+
+**Base SHA:** `319893a4ea9de1b89989ef6e6dc44cd3e1cad147` (matches the dispatch base; `origin/main` HEAD at observation time below).
+
+**Pre-review gate (alpha/SKILL.md §2.6) — observation time 2026-05-19:**
+
+| # | Row | State |
+|---|---|---|
+| 1 | cycle branch rebased onto `origin/main` | ✓ `origin/main` = `319893a4`; cycle/380 has zero commits behind `git log cycle/380..origin/main` is empty (re-validated immediately before signal) |
+| 2 | CDD Trace through step 7 | ✓ §CDD Trace |
+| 3 | tests present | ✓ 16 new tests + full pre-existing activate suite green |
+| 4 | every AC has evidence | ✓ §ACs (AC1–AC5) |
+| 5 | known debt explicit | ✓ §Debt |
+| 6 | schema audit when contracts changed | N/A — no schema-bearing contract changed this cycle |
+| 7 | peer enumeration | ✓ §Self-check (flag, binary, renderer, help-text peers) |
+| 8 | harness audit when schema changed | N/A — no schema-bearing contract changed this cycle |
+| 9 | polyglot re-audit | ✓ diff languages: Go (run `go vet ./... && go test ./...` — both green) + Markdown (this file + γ scaffold). No shell, YAML, or non-Go writers of any new contract. |
+| 10 | branch CI green | local Go suite green at HEAD; full CI verification falls to β at merge time (transient row, β to re-validate against `origin/cycle/380` HEAD) |
+| 11 | artifact enumeration matches diff | ✓ §CDD Trace step 6 table accounts for every file in `git diff --stat origin/main..HEAD` |
+| 12 | caller-path trace for new exported symbols | ✓ §CDD Trace step 6 names non-test callers for `activate.Spawn` and `activate.CheckSpawnBinary` (both in `cli/cmd_activate.go ActivateCmd.Run`) |
+| 13 | test assertion count from runner output | ✓ §CDD Trace step 4 — 7 in spawn_test.go, 9 in cmd_activate_test.go, runner output pasted |
+| 14 | α commit author email canonical | ✓ all 11 α commits (range `7a9bc2e7..HEAD` excluding γ's scaffold) authored as `alpha@cdd.cnos` after path-(a) `git rebase --exec 'git commit --amend --reset-author --no-edit' 7a9bc2e7 && git push --force-with-lease`; the worktree config was discovered carrying `gamma@cdd.cnos` from prior session, fixed via `git config --worktree user.email "alpha@cdd.cnos"` before the rebase. Verification: `git log --format='%ae' 7a9bc2e7..HEAD | sort -u` returns the single value `alpha@cdd.cnos`. |
+
+**Ready for β.** All AC1–AC5 oracles pass; surface containment matches the γ scaffold plus two declared widenings (`spawn_other.go` portability stub + `cmd_activate_test.go` for cli-package-level oracles); no non-goals violated; render-capture seam Option A declared and verified.
