@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/usurobor/cnos/src/go/internal/activate"
 )
 
 // makeHub builds a minimal valid hub at t.TempDir() so activate.Run renders
@@ -187,6 +189,42 @@ func TestActivate_HelpFlag_DocumentsClaudeAndCodex(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "interactive") {
 		t.Errorf("--help output must name the interactive-spawn behavior:\n%s", stdout)
+	}
+}
+
+// AC3 (bytes-equal): the default no-flag CLI path must produce stdout
+// byte-identical to a direct activate.Run invocation against the same hub.
+//
+// 3.78.0's cn activate HUB_DIR was a thin wrapper around activate.Run. The
+// cycle/380 refactor adds --claude / --codex handling but the no-flag arm
+// must keep that same property: cmd_activate.Run forwards inv.Stdout to
+// activate.Run unchanged. This test fails if the refactor accidentally
+// routes the default path through a buffer or adds any new bytes to stdout.
+func TestActivate_DefaultNoFlag_BytesEqualToDirectRun(t *testing.T) {
+	hub := makeHub(t)
+
+	var cliStdout, cliStderr bytes.Buffer
+	cmd := &ActivateCmd{}
+	if err := cmd.Run(context.Background(), Invocation{
+		Args:   []string{hub},
+		Stdout: &cliStdout,
+		Stderr: &cliStderr,
+	}); err != nil {
+		t.Fatalf("cli run: %v", err)
+	}
+
+	var directStdout, directStderr bytes.Buffer
+	if err := activate.Run(context.Background(), activate.Options{
+		HubPath: hub,
+		Stdout:  &directStdout,
+		Stderr:  &directStderr,
+	}); err != nil {
+		t.Fatalf("direct run: %v", err)
+	}
+
+	if cliStdout.String() != directStdout.String() {
+		t.Errorf("default no-flag stdout != direct activate.Run stdout — pipe / redirect consumers would regress\n--- cli stdout ---\n%s\n--- direct stdout ---\n%s",
+			cliStdout.String(), directStdout.String())
 	}
 }
 
