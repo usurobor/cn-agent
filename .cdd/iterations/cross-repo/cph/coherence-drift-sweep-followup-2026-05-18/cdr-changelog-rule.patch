@@ -1,0 +1,63 @@
+From: cnos γ acting as cph ε (claude/file-cnos-cdr-issue-fi9Ld)
+Date: 2026-05-19
+Subject: F12 / F3 resolution — tighten CDR.md §"Changelog rule" to empirical-only
+
+ε's disposition on cph wave coherence-drift-sweep-followup-2026-05-18 F12:
+reading (a) adopted (narrow — only empirical research waves warrant CHANGELOG
+entries). No retroactive entries for the two coherence-drift waves.
+
+This patch implements reading (a) in `CDR.md`:
+1. Tightens the rule's predicate from "meaningful research wave" to "empirical
+   research wave (one that produces a REVISE / GO / STOP transition or moves
+   the empirical-state ledger)"
+2. Adds an explicit exclusion clause for coherence-only waves
+
+Rationale: the rule body lists fields that only an empirical wave can fill
+(REVISE/GO/STOP, α/β/γ/C_Σ measurements). Forcing those fields on a coherence
+wave produces a hollow "no-change with reason" + "pending — coh unavailable"
+entry with zero coherence delta on empirical state. The narrow reading
+matches both the field list and the changelog's self-description as a
+coherence-of-empirical-state ledger.
+
+Apply from the cph repository root with:
+
+    git apply cdr-changelog-rule.patch
+
+Per `epsilon/SKILL.md §1`, ε ships MCA-available patches as immediate output;
+this patch is the cph-side immediate output for F3. Bundled here as feedback
+patch because cnos session cannot write to cph; cph γ applies on receipt.
+
+After application, cph γ should close cph#21 AC6 (F12) with a closure comment
+citing this patch's commit SHA and the disposition reasoning in
+`cdd-iteration.md` §F3.
+
+---
+
+diff --git a/CDR.md b/CDR.md
+--- a/CDR.md
++++ b/CDR.md
+@@
+ ## Changelog rule
+
+-Each meaningful research wave gets a [CHANGELOG.md](CHANGELOG.md) entry with:
++Each empirical research wave — one that produces a REVISE / GO / STOP
++transition or moves the empirical-state ledger — gets a
++[CHANGELOG.md](CHANGELOG.md) entry with:
+
+ - empirical state (REVISE / GO / STOP, or no-change with reason)
+ - α / β / γ / C_Σ if measured, or "pending — coh unavailable" if not
+ - bottleneck axis (which of α / β / γ is weakest)
+ - coherence delta (what moved since the prior entry)
+ - what changed (file-level summary, not commit summary)
+ - what remains unproven
+ - next gate (the next condition that must be met)
+
+ The changelog is a coherence ledger, not a release-note style log. It
+ records whether the research project still describes one system, not which
+ features shipped.
++
++Coherence-only waves (drift sweeps, doc reconciliation, protocol-internal
++refactors that do not move empirical state) do not produce CHANGELOG
++entries. Their record lives in `.cdd/waves/<wave>/wave-closeout.md` and
++`.cdd/iterations/`. The CHANGELOG is for empirical transitions; coherence
++work is traced in its own ledger surfaces.
