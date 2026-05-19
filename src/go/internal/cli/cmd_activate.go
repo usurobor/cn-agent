@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -69,20 +70,61 @@ func (c *ActivateCmd) Run(ctx context.Context, inv Invocation) error {
 		}
 	}
 
+	// Mutual exclusion fires before any rendering: an operator who set both
+	// flags gets a clean error without diagnostic noise on stderr from the
+	// renderer's "→ Generating activation prompt …" line.
+	if claudeFlag && codexFlag {
+		fmt.Fprintf(inv.Stderr, "✗ --claude and --codex are mutually exclusive — pass only one\n")
+		return fmt.Errorf("activate: --claude and --codex are mutually exclusive")
+	}
+
 	// Hub resolution: explicit path wins; fall back to cwd discovery.
 	hubPath := inv.HubPath
 	if positionalHub != "" {
 		hubPath = positionalHub
 	}
 
-	_ = claudeFlag
-	_ = codexFlag
+	// Determine the spawn target. When set, this is the binary that will
+	// replace the cn process image after the prompt is rendered.
+	var spawnBinary, spawnFlag string
+	switch {
+	case claudeFlag:
+		spawnBinary, spawnFlag = "claude", "--claude"
+	case codexFlag:
+		spawnBinary, spawnFlag = "codex", "--codex"
+	}
 
-	return activate.Run(ctx, activate.Options{
+	// Missing-binary detection runs before render so the operator who asked
+	// for an interactive spawn but does not have the CLI installed sees the
+	// pre-render error (no wasted render, no confusing diagnostic order).
+	if spawnBinary != "" {
+		if err := activate.CheckSpawnBinary(spawnBinary, spawnFlag); err != nil {
+			fmt.Fprintf(inv.Stderr, "✗ %s\n", err)
+			return err
+		}
+	}
+
+	// Render. The default (no-flag) path writes straight to inv.Stdout —
+	// bytes-equal to the 3.78.0 behavior pipe consumers depend on. The
+	// spawn path captures into a buffer so the rendered prompt can be
+	// handed to claude / codex as the bare-positional argv element.
+	if spawnBinary == "" {
+		return activate.Run(ctx, activate.Options{
+			HubPath: hubPath,
+			Stdout:  inv.Stdout,
+			Stderr:  inv.Stderr,
+		})
+	}
+
+	var buf bytes.Buffer
+	if err := activate.Run(ctx, activate.Options{
 		HubPath: hubPath,
-		Stdout:  inv.Stdout,
+		Stdout:  &buf,
 		Stderr:  inv.Stderr,
-	})
+	}); err != nil {
+		return err
+	}
+	return activate.Spawn(spawnBinary, buf.String())
 }
 
 func isFlag(s string) bool {
