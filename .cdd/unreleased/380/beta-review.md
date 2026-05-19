@@ -1,7 +1,7 @@
 <!--
 section-manifest:
-  planned: [round-1]
-  completed: [round-1]
+  planned: [round-1, round-2]
+  completed: [round-1, round-2]
 -->
 
 # β review — #380
@@ -121,3 +121,103 @@ Per review/SKILL.md rule 3.10 strict reading, any red required workflow is a B-s
 **Confidence on the operator-visible behavior.** β did not verify a live `claude` / `codex` REPL handover (that requires real binaries + interactive terminal; α's §Debt explicitly names this as δ/operator integration smoke). β verified everything observable up to the exec point: argv shape via fake-binary fixture, default-path bytes-equal via cross-version smoke, pre-render ordering via the nonexistent-HUB_DIR trick on both AC4 and AC5 paths. The REPL handover itself is `syscall.Exec`'s contract.
 
 **Round budget.** Target ≤2 rounds per dispatch prompt. F1 is a one-commit cleanup. β expects round 2 to be APPROVE + merge.
+
+## Round 2
+
+**Verdict:** APPROVED
+
+**Round:** 2
+**Review base SHA:** `319893a4ea9de1b89989ef6e6dc44cd3e1cad147` (`origin/main` re-fetched at R2 entry; `git rev-parse origin/main` unchanged from R1; row 2 canonical-skill freshness gate still satisfied)
+**Cycle head SHA:** `d838e7e9dc32203fce705cd2ec1845ee0b898b11` (`origin/cycle/380` review HEAD; advanced from R1 by two α commits: `91a2cad6` F1 fix + `d838e7e9` self-coherence fix-round-1 append)
+**Fixed this round:** `91a2cad6` closes R1 F1 (§CDD Trace SHAs rewritten to current-branch-reachable values; intra-doc repetition rule applied by α — 9 occurrences across 3 sections all updated in one commit). β's R1 grep recipe (`git branch -a --contains` for the six old SHAs) returns empty for all six; the six replacement SHAs (`1cc80565`, `d4f4e499`, `e92a9476`, `da3dd429`, `87aa69e9`, `808ae8b7`) all show `cycle/380` and `remotes/origin/cycle/380` in containment lists. F1 fully addressed.
+**Branch CI state:** unchanged from R1 — `Build` workflow red on cycle/380 HEAD (run `26101860618`); ONLY job failing is `Repo link validation (I4)` (lychee, from `.cdd/releases/docs/2026-05-17/369/self-coherence.md` paths shipped in cycle #369). Same failure mode and same file on `main` HEAD (run `26096372925`). All other 8 jobs green on cycle/380 HEAD, including `Go build & test`, `SKILL.md frontmatter (I5)`, `CDD ledger (I6)`, `Package/source drift (I1)`, `Protocol contract schema sync (I2)`, `Binary verification`, `Package verification`. Pre-existing project state, not introduced or regressed by this cycle (R1 disposition maintained per review/SKILL.md 3.10 judgment-not-strict-reading clause).
+**Merge instruction:** `git checkout main && git pull && git merge --no-ff cycle/380 -m "α #380 cn activate --claude / --codex flags ... Closes #380" && git push origin main`
+
+## §2.0.0 Contract Integrity (R2)
+
+All R1 rows still hold; F1 was a self-coherence artifact correction with no production-code delta. Re-checked the one row F1 touched:
+
+| Check | R2 result | R1 → R2 delta |
+|---|---|---|
+| Status truth preserved | yes | unchanged |
+| Canonical sources/paths verified | yes | unchanged |
+| Scope/non-goals consistent | yes | unchanged |
+| Constraint strata consistent | yes | unchanged |
+| Exceptions field-specific/reasoned | yes | unchanged |
+| Path resolution base explicit | yes | unchanged |
+| Proof shape adequate | yes | unchanged |
+| Cross-surface projections updated | n/a | unchanged |
+| PR body matches branch files | yes | unchanged |
+| γ artifacts present (gamma-scaffold.md) | yes | unchanged |
+
+## §2.0 Issue Contract (R2)
+
+### AC Coverage (R2)
+
+R1 marked all 5 ACs **pass**; F1 was a B-severity self-coherence honest-claim finding, not an AC-coverage finding. β re-ran every AC oracle against R2 HEAD `d838e7e9` and confirms:
+
+| # | AC | R2 verdict | Re-verification evidence |
+|---|----|--------|--------|
+| 1 | `--claude` spawns interactively | **pass** | `cd src/go && go test -count=1 ./internal/activate/... ./internal/cli/...` → both packages green. β-rebuilt `cn` from `d838e7e9` and re-ran fake-binary smoke (`PATH=/tmp/fakebin:$PATH /tmp/cn-380 activate --claude /tmp/fixture-hub-380`): fake `claude` reports `claude argv: 1` and the single positional arg is the rendered prompt verbatim — confirms `syscall.Exec` argv shape `["claude", <prompt>]` (no `-p`, no subcommand). |
+| 2 | `--codex` spawns interactively | **pass** | Same test sweep covers `TestSpawnWith_CodexArgvShape` (explicit `argv[1] != "exec"` + `len(argv) == 2` + `argv[0] == "codex"`) and `TestCheckSpawnBinary_CodexErrorShape`. |
+| 3 | default no-flag bytes-equal | **pass** | β-rebuilt 3.78.0 `cn` from `cafabc8b` worktree (with `-buildvcs=false`); ran both `/tmp/cn-3780` and `/tmp/cn-380` against `/tmp/fixture-hub-380`. Result: `sha256sum /tmp/3780.v2.out /tmp/380.out` → both `b50c6c90a2d00fa502ec12185b440c66d9dec7461b33ac64ce2e342017065584`; `diff` empty; both 1151 bytes. AC3 bytes-equal preserved across the F1 commits (which were docs-only). |
+| 4 | mutual exclusion pre-render | **pass** | β-smoke `/tmp/cn-380 activate --claude --codex /nonexistent/hub`: exit=1; stderr exactly `✗ --claude and --codex are mutually exclusive — pass only one`; no `Hub path not found` and no `Generating activation prompt`. |
+| 5 | missing-binary pre-render | **pass** | β-smoke `PATH=/usr/sbin:/sbin /tmp/cn-380 activate --claude /nonexistent/hub`: exit=1; stderr exactly `✗ claude (requested by --claude) not found in PATH — install it or ensure $PATH includes its directory`; identical shape for `--codex`. No render diagnostics on stderr — LookPath fired first. |
+
+### Named Doc Updates (R2)
+
+Unchanged from R1. `activate.go` and `agent/activate/SKILL.md` remain untouched on the cycle branch (`git diff origin/main..origin/cycle/380 -- src/go/internal/activate/activate.go src/packages/cnos.core/skills/agent/activate/SKILL.md` empty). `cn activate --help` updates land in `cmd_activate.go` and are still oracled by `TestActivate_HelpFlag_DocumentsClaudeAndCodex`.
+
+### CDD Artifact Contract (R2)
+
+| Artifact | R2 state |
+|---|---|
+| `.cdd/unreleased/380/gamma-scaffold.md` | present, unchanged |
+| `.cdd/unreleased/380/self-coherence.md` | present, extended with §Fix-round 1 appendix per α/SKILL.md §3.4 — section-manifest header now lists 8 sections all completed |
+| `.cdd/unreleased/380/beta-review.md` | extended by this R2 section |
+
+### Active Skill Consistency (R2)
+
+Unchanged from R1. α's fix-round 1 narrative explicitly cites and exercises `alpha/SKILL.md` §2.3 intra-doc repetition discipline (caught 3 additional SHA occurrences β did not enumerate by name in R1); §3.4 re-audit-against-HEAD discipline (re-ran affected pre-review-gate rows against new HEAD).
+
+## Honest-claim verification (rule 3.13) R2
+
+| Sub-check | R2 result | Notes |
+|---|---|---|
+| 3.13(a) reproducibility | **yes** (was partial @ R1) | F1 closed: all SHAs cited in §CDD Trace step table, §ACs header, §Debt are reachable from `origin/cycle/380`. β re-ran the grep recipe in `.cdd/unreleased/380/self-coherence.md` §Fix-round 1 verification block — six old SHAs return "malformed object name" / empty; six new SHAs each show containment in `cycle/380 / remotes/origin/cycle/380`. Remaining occurrences of old SHAs in the file are intentional fix-round forensic citations ("old SHA X → new SHA Y") in §Fix-round 1, not stale reproducibility claims. |
+| 3.13(b) source-of-truth alignment | yes | unchanged |
+| 3.13(c) wiring claims | yes | unchanged |
+| 3.13(d) gap claims | yes | unchanged |
+
+## Pre-merge gate (β/SKILL.md §Pre-merge gate)
+
+| Row | State | Evidence |
+|---|---|---|
+| 1 identity truth | ✓ | `git config user.email` → `beta@cdd.cnos`; merge worktree used `--worktree user.email beta-merge-test@local` and was removed after testing — no leak to shared repo config. |
+| 2 canonical-skill freshness | ✓ | `git rev-parse origin/main` → `319893a4` (unchanged from session start; CDD.md / beta/SKILL.md / review/SKILL.md / release/SKILL.md snapshots still current). |
+| 3 non-destructive merge-test | ✓ | Worktree at `/tmp/cnos-merge-380` from `origin/main`; `git merge --no-ff --no-commit origin/cycle/380` → clean ("Automatic merge went well"); 8 paths added/modified as expected. On merge tree: (a) `go test ./...` green across all 13 internal packages; (b) `bash scripts/check-version-consistency.sh` PASS; (c) `bash tools/validate-skill-frontmatter.sh` → 66 SKILL.md validated, no findings; (d) `bash src/packages/cnos.kata/katas/R5-activate/run.sh` → 26 PASS / 1 FAIL (P10 read-first ordering). The single P10 failure is identical-shape on bare `origin/main` worktree (`/tmp/cnos-main-only`) → pre-existing #379-introduced state, not introduced or fixed by this cycle (Option A leaves `activate.go` untouched, so P10 is bytes-identical to main). No new validator regression on merge tree. Worktrees removed post-test. |
+| 4 γ artifact completeness | ✓ | `.cdd/unreleased/380/gamma-scaffold.md` present on `origin/cycle/380` (review/SKILL.md 3.11b satisfied). |
+
+## Findings (R2)
+
+| # | Finding | Evidence | Severity | Type |
+|---|---------|----------|----------|------|
+
+**No new findings.** R1 F1 closed by `91a2cad6`; no new incoherence surfaced on the R1→R2 delta (which is docs-only: F1 fix + fix-round-1 append).
+
+## Regressions Required (D-level only)
+
+None.
+
+## Notes (R2)
+
+**Search-space closure (rule 3.7).** β searched for remaining blockers in: AC oracles (5 of 5 pass), surface containment (matches γ scaffold + 2 declared widenings), pre-render ordering (proven by nonexistent-HUB_DIR trick on both AC4 and AC5 paths), argv shape (exact `[binary, prompt]` verified via fake-binary smoke and `TestSpawnWith_*ArgvShape`), default-path bytes-equality (verified by cross-version smoke against freshly-rebuilt 3.78.0 binary at `cafabc8b`), Tier-2/Tier-3 skill application (`eng/go/SKILL.md` `§2.10` / `§3.10` / `§3.11` evidenced), honest-claim reproducibility (F1 closed), and pre-merge gate (rows 1–4 all ✓). No remaining incoherence in any contract surface this cycle ships.
+
+**Round count.** 2 rounds, target ≤2 met. γ's review-churn cycle-iteration trigger (>2 rounds) not fired. Single-focus Go cycle converged on the planned schedule.
+
+**CI status disposition (review/SKILL.md 3.10).** `Repo link validation (I4)` failure is pre-existing main-state inherited by every cycle (run `26096372925` on `main`; run `26101860618` on `cycle/380` — identical root file: `.cdd/releases/docs/2026-05-17/369/self-coherence.md`). Per the R1 judgment, β does not RC on inherited project-state CI red where the cycle's diff neither introduces nor includes scope to fix the failure. The merge tree was verified non-destructive against the failing validator (identical-shape failure on bare main vs merge); the project-level remediation belongs to a separate cycle. γ post-release assessment should chain this against the #369-introduced state.
+
+**Operator-visible behavior bound.** β verified everything observable up to (and not including) `syscall.Exec`'s process-replacement effect: argv shape, LookPath wiring, mutual-exclusion ordering, error message shape, default-path bytes-equality. The interactive REPL handover with a real `claude` / `codex` binary remains the operator dry-run named in the issue's §Proof plan; falls to δ at integration time.
+
+**Approval explicitly closes the search space (rule 3.7).** No remaining blocker, no remaining incoherence, no deferred finding. Cycle is merge-ready.
+
