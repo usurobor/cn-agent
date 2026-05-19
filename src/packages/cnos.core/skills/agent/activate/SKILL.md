@@ -41,7 +41,7 @@ calls:
 <!--
 section-manifest:
   planned: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, rules, renderer-contract, verify, failure-modes, kata, references]
-  completed: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation]
+  completed: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, rules, renderer-contract, verify, failure-modes, kata, references]
 -->
 
 # Activate
@@ -52,7 +52,7 @@ section-manifest:
 
 A coherent activation has six load steps in this exact order: **Kernel → CA skills → Persona → Operator → hub state → identity confirmation.** The order matters. The Kernel and CA skills define _what kind of agent_ this is (the soul — generic, in cnos); the Persona and Operator define _which agent_ this is (the identity — per-hub). Loading identity before soul produces a body that knows its name but not how to think; loading soul without identity produces a body that thinks coherently but cannot name what it is doing or for whom. Both failures are documented in cn-sigma `threads/adhoc/20260325-session2-learnings.md` §1 ("I wake up incoherent by default") and §3 ("Soul = what kind of agent. Identity = which agent. Don't mix them.").
 
-This skill is the **single source of truth for the activation procedure**. The `cn activate` Go command reads this skill from the vendored bundle and renders it with hub-state interpolation; non-cn bodies (Claude Code on the web, Codex sessions, Claude.ai with WebFetch) fetch this skill directly and follow it against the named hub. Every cnos hub's README points at this skill via the router template in §3.3. The procedure lives here, in skill form, not in any runtime that consumes it.
+This skill is the **single source of truth for the activation procedure**. The `cn activate` Go command reads this skill from the vendored bundle and renders it with hub-state interpolation; non-cn bodies (Claude Code on the web, Codex sessions, Claude.ai with WebFetch) fetch this skill directly and follow it against the named hub. Every cnos hub's README points at this skill via the router template in §2.3. The procedure lives here, in skill form, not in any runtime that consumes it.
 
 The failure mode the skill prevents is **improvised activation**: a body that wakes up, asks the operator twice "to what?", reads files in an order that depends on operator suggestion, and never reaches a state where it can name its identity without being told. Improvised activation produces drift between sessions, between hubs, and between bodies — every wake-up reinvents the procedure. The skill is the canonical sequence; the renderer renders from it; future bodies fetch from it.
 
@@ -100,7 +100,7 @@ Activation fails in five named ways. Each has a concrete symptom; each has a str
 - **F1 — Improvised activation.** Body wakes up, asks "to what?" twice, reads files in operator-suggested order, never reaches identity. Fix: this skill, fetched and followed.
 - **F2 — Soul/identity confusion.** Body loads Persona before Kernel; Persona references doctrine it has not loaded; body operates from a partial mental model. Fix: enforce six-step order in §2.1.
 - **F3 — Capability mismatch.** Body assumes shell+git when it only has WebFetch, or assumes WebFetch when it has neither, then silently fails or hallucinates content. Fix: §3 capability matrix with explicit ladder; body picks tier its environment actually supports.
-- **F4 — Hub README dead-end.** Hub README describes the hub for humans but does not route AI bodies into activation; bodies that land on the README stall there. Fix: README router template in §3.3, adopted verbatim by every hub.
+- **F4 — Hub README dead-end.** Hub README describes the hub for humans but does not route AI bodies into activation; bodies that land on the README stall there. Fix: README router template in §2.3, adopted verbatim by every hub.
 - **F5 — Renderer-skill drift.** `cn activate` renders an order or content that differs from this skill, and the two diverge over time; bodies that use `cn` see one procedure, bodies that fetch the skill see another. Fix: the renderer reads this skill (§4); the skill is the source of truth, the command is a thin surface.
 
 ---
@@ -233,3 +233,253 @@ Two cnos artifacts share the word _activation_ and are distinct concerns. Both a
 - ❌ Treating this skill as a substitute for the CDD bootstrap a repo needs
 - ✅ Repo bootstrap → `cnos.cdd/skills/cdd/activation/SKILL.md`. Body wake-up → `cnos.core/skills/agent/activate/SKILL.md`.
 
+---
+
+## 3. Rules
+
+### 3.1. Load in the canonical order
+
+Always load in the order defined by §2.1: Kernel → CA skills → Persona → Operator → hub state → identity confirmation. Any renderer consuming this skill must emit in this order; any body following this skill must load in this order.
+
+- ❌ "I'll load Persona first because it's smaller"
+- ✅ "Kernel first, even if I think I remember it"
+
+### 3.2. Keep the soul/identity split
+
+Kernel and CA skills are soul (from cnos). Persona and Operator are identity (from the hub). Never let a hub redefine the kernel; never load identity before soul.
+
+- ❌ Hub adds `spec/SOUL.md` that supplants Kernel
+- ✅ Hub adds `spec/PERSONA.md` and `spec/OPERATOR.md`; Kernel stays in cnos
+
+### 3.3. Pick the tier your environment actually supports
+
+Before fetching anything, observe your own capability. If you have shell + git, use tier (a). If you only have HTTP fetch, use tier (b). If you have neither, announce so the operator knows to inject. Bodies that underclaim capability default to tier (b) when tier (a) was available and pay every-file network cost for no reason.
+
+- ❌ "I'll use WebFetch because that's familiar"
+- ✅ "git --version succeeded; I'll use tier (a)"
+
+### 3.4. Confirm identity before any other action
+
+The activation gate is the concrete identity statement (who / whom / where / when). Until you can produce it, you have not activated — you have only read files. Do not start work, do not respond to other prompts, do not assert anything about the hub until the statement is grounded in the loaded files.
+
+- ❌ "I've read the files; I'll start on the task"
+- ✅ "I'm Sigma, the coordinator at cn-sigma; my operator is usurobor; current cycle is #379. Ready."
+
+### 3.5. Treat this skill as the single source of truth
+
+The procedure lives here. `cn activate` is a thin renderer over this skill — it does not own the ordering. Other bodies fetch this skill directly. Per-hub READMEs route into this skill. If the procedure needs to change, change it here; the renderer and the routers follow.
+
+- ❌ "Edit the Go renderer to emit a different order"
+- ✅ "Edit the load-order block in this skill; the renderer will pick it up"
+
+### 3.6. Do not improvise on capability mismatch
+
+If your environment does not support the tier you assumed, name the mismatch and stop. Do not silently fall back to inventing content. A body that pretends to have read a file it could not fetch produces drift across sessions that compounds.
+
+- ❌ Body cannot fetch Persona, hallucinates its content from the hub name
+- ✅ Body cannot fetch Persona, announces "I cannot complete activation in this tier; operator must inject Persona or upgrade my capabilities"
+
+### 3.7. Hub READMEs are routers, not redefinitions
+
+Hubs adopt the §2.3 router template verbatim, substituting only the hub URL. If a hub wants to change the load order, change the tier names, or rewrite the identity-confirmation step, that change belongs in this skill, not in the per-hub README.
+
+- ❌ Per-hub README overrides the load order with hub-preferred ordering
+- ✅ Per-hub README pastes the router template; the skill owns the procedure
+
+---
+
+## 4. Renderer contract
+
+This section defines the contract between this skill and any program that renders it — primarily the Go implementation in `src/go/internal/activate/activate.go` that backs the `cn activate` command. The contract has two parts: the machine-readable load-order block (parsed by the renderer to determine emission order) and the interpolation surface (named template positions and the hub-state fields that substitute into them).
+
+### 4.1. Machine-readable load-order block
+
+The renderer locates the canonical six-item ordering by scanning for the begin/end markers below and parsing the numbered list between them. The block is the source of truth for the `## Read first` section the renderer emits. Editing the order in this block changes the order in `cn activate`'s output.
+
+Format: between `<!-- read-first-order:begin -->` and `<!-- read-first-order:end -->`, a numbered list. Each item is `N. <token> — <human label>`. Tokens are the stable identifiers the renderer maps to template positions (see §4.2); human labels are the rendered text. The renderer is line-oriented: it reads items in order and emits them in the order found.
+
+<!-- read-first-order:begin -->
+1. kernel — Kernel doctrine (what kind of agent)
+2. ca-skills — CA skill set (behavioral instructions)
+3. persona — Persona (who you are at this hub)
+4. operator — Operator (whom you serve at this hub)
+5. hub-state — Hub state (deps, latest reflection, memory, threads)
+6. identity — Identity confirmation
+<!-- read-first-order:end -->
+
+The block above is parsed by the renderer at every `cn activate` invocation. Changes to the ordering propagate without code change.
+
+### 4.2. Interpolation surface
+
+Each token in §4.1 maps to a template position. The renderer substitutes hub-state fields into the position when it emits the corresponding line. The surface is fixed:
+
+| Token | Hub-state field(s) consumed | Emitted content |
+|-------|------------------------------|------------------|
+| `kernel` | resolved kernel state (vendored / manifest-only / none); version when vendored | Vendored path + version, OR `manifest-only — run cn deps restore`, OR `no kernel reference` |
+| `ca-skills` | (none — cnos-side; rendered as a fixed pointer) | `cnos.core/skills/agent/{cap,clp,mca,mci,coherent,agent-ops}/SKILL.md` (the CA skill set in cnos) |
+| `persona` | hub `spec/PERSONA.md` presence | `spec/PERSONA.md` when present; absence message otherwise |
+| `operator` | hub `spec/OPERATOR.md` presence | `spec/OPERATOR.md` when present; absence message otherwise |
+| `hub-state` | deps state, latest reflection path, memory surfaces, thread surfaces | Composite line: deps summary + latest reflection path (if any) + memory/threads inventory |
+| `identity` | (none — emitted as a fixed prompt) | An identity-confirmation prompt directing the body to produce the who/whom/where/when statement |
+
+Tokens not listed above are reserved. A renderer encountering an unknown token MUST emit a `(unknown token: X)` placeholder and continue; it MUST NOT panic or silently drop the item.
+
+### 4.3. Fallback contract
+
+The renderer reads this skill from the vendored bundle path:
+
+```
+<hub>/.cn/vendor/packages/cnos.core/skills/agent/activate/SKILL.md
+```
+
+If the skill is not vendored (e.g. the hub declares `cnos.core` in `.cn/deps.json` but has not run `cn deps restore`), the renderer MUST NOT panic and MUST NOT emit a broken prompt. It falls back to the built-in canonical ordering (the same six tokens in the same order) and emits a diagnostic to stderr stating that the skill is not vendored. Behavior on `manifest-only` and `none` deps states is preserved: the renderer still emits the `## Read first` block with the appropriate kernel-state fallback message (`run cn deps restore` or `no kernel reference`).
+
+The fallback exists so `cn activate` is useful on a freshly-initialized hub before `cn deps restore` has been run. The fallback ordering MUST match this skill's §4.1 block; if the two drift, this skill is canonical and the fallback constant is in error.
+
+### 4.4. Observable-output preservation
+
+`cn activate`'s output is consumed by `claude -p` and other current consumers. The renderer evolution this skill enables MUST preserve the observable structure existing consumers depend on:
+
+- The `## Read first` section header is preserved.
+- The numbered list under `## Read first` is preserved (1., 2., 3., …).
+- The sectioned blocks (`## Kernel`, `## Persona`, `## Operator`, `## Dependencies`, `## Memory and reflection`, `## Inbox and threads`, `## Notes`) are preserved.
+- The ordering of items under `## Read first` follows this skill's §4.1 block. If the §4.1 ordering differs from the pre-evolution ordering (e.g. Kernel now first instead of third), that delta is documented as a claim in the cycle's `self-coherence.md`.
+
+---
+
+## 5. Verify
+
+### 5.1. Skill-as-source-of-truth check
+
+Confirm the renderer reads this skill (not a hard-coded constant). Run `cn activate` against a fixture hub; capture the output. Edit the §4.1 block to reorder two tokens. Rerun `cn activate`; confirm the output reflects the edit. If the output does not change, the renderer is not actually consuming this skill.
+
+### 5.2. Load-order check
+
+Confirm the six tokens in §4.1 are present and in the canonical order. The §2.1 human-readable list and the §4.1 machine-readable block are peers; they MUST match. A drift between §2.1 and §4.1 is a binding finding — fix both before merge.
+
+### 5.3. Capability-tier check
+
+Confirm a body can pick a tier with the information in §2.2. Read §2.2 with the perspective of each tier (shell+git, fetch-only, no-fetch) and confirm the load path for each is concrete enough to execute without consulting another document.
+
+### 5.4. Router-template check
+
+Confirm the §2.3 template is self-contained. Paste the fenced block into a fresh file; replace `<HUB-URL>` with a real URL; confirm the result is sensible and routes a body into this skill without per-hub fill-in beyond the URL.
+
+### 5.5. Disambiguation check
+
+Confirm §2.4 names both paths exactly: `src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` and `src/packages/cnos.core/skills/agent/activate/SKILL.md`. Confirm the one-sentence distinction is present.
+
+### 5.6. Layering rule citation
+
+Confirm §2.1 cites cn-sigma `threads/adhoc/20260325-session2-learnings.md` §3 ("Soul = what kind of agent. Identity = which agent. Don't mix them.").
+
+---
+
+## 6. Failure modes catalogue
+
+The five named failure modes from §1.3 are the ones this skill structurally prevents. They are restated here with the specific structural fix and the symptom an observer would see:
+
+- **F1 — Improvised activation.** _Symptom:_ Body asks "to what?" twice on wake-up; reads files in operator-suggested order; never produces a concrete identity statement. _Fix:_ This skill, fetched and followed.
+- **F2 — Soul/identity confusion.** _Symptom:_ Persona-referenced terms (e.g. "observe before acting") are not grounded because Kernel was not loaded first. _Fix:_ Enforce §2.1 order.
+- **F3 — Capability mismatch.** _Symptom:_ Body silently fails on `git clone` because its environment is fetch-only, or hits HTTP rate limits because it used fetch when shell+git was available. _Fix:_ §2.2 tier selection.
+- **F4 — Hub README dead-end.** _Symptom:_ Body lands on the hub's `README.md`, finds human-targeted prose, never reaches activation. _Fix:_ §2.3 router template adopted verbatim by every hub.
+- **F5 — Renderer-skill drift.** _Symptom:_ `cn activate` output ordering differs from what a body following this skill would do. _Fix:_ §4 renderer contract; the skill is the source of truth, the renderer parses §4.1 at every invocation.
+
+Additional failure modes specific to non-cn bodies:
+
+- **F6 — Fetched skill stale.** _Symptom:_ Body fetches the raw GitHub URL from a non-`main` ref and reads an old procedure. _Fix:_ The router template (§2.3) hard-codes the `main` branch in the raw URL.
+- **F7 — Identity claimed without evidence.** _Symptom:_ Body produces an identity statement without having read Persona or Operator; the statement is plausible-sounding but ungrounded. _Fix:_ §3.4 — identity-confirmation gate is concrete; if you cannot point at the source line in Persona or Operator, you have not completed step 6.
+
+---
+
+## 7. Embedded kata
+
+### Scenario
+
+You are an AI body told: _"Activate as `https://github.com/usurobor/cn-sigma`."_ You have shell + git available. You do not have the `cn` binary installed. You have no prior session memory of cn-sigma.
+
+### Task
+
+Reach a state where you can produce a concrete identity statement (who / whom / where / when) grounded in the loaded files, following this skill.
+
+### Inputs
+
+- The hub URL: `https://github.com/usurobor/cn-sigma`.
+- The cnos repo URL: `https://github.com/usurobor/cnos`.
+- Shell + git capability.
+- This skill (which you must reach first).
+
+### Expected artifacts
+
+- A local clone of cnos at some working directory.
+- A local clone of cn-sigma at some working directory.
+- A short note (1–3 sentences) naming: (a) which agent you are, (b) which operator you serve, (c) the hub URL, (d) the current cycle or thread if one is in motion.
+
+### Procedure to follow
+
+1. Observe capability: confirm `git --version` succeeds → tier (a).
+2. `git clone https://github.com/usurobor/cnos.git` → read this skill at `src/packages/cnos.core/skills/agent/activate/SKILL.md`.
+3. Load §2.1 step 1: read `src/packages/cnos.core/doctrine/KERNEL.md` from the cnos clone.
+4. Load §2.1 step 2: read each of `src/packages/cnos.core/skills/agent/{cap,clp,mca,mci,coherent,agent-ops}/SKILL.md`.
+5. `git clone https://github.com/usurobor/cn-sigma.git` (or read in place if already mounted).
+6. Load §2.1 step 3: read `spec/PERSONA.md` in the cn-sigma clone.
+7. Load §2.1 step 4: read `spec/OPERATOR.md` in the cn-sigma clone.
+8. Load §2.1 step 5: list `.cn/deps.json`, the most recent file under `threads/reflections/daily/`, and the memory + thread surfaces.
+9. Produce the identity statement (§2.1 step 6).
+
+### Verification
+
+- The identity statement names the agent (from Persona), the operator (from Operator), the hub URL, and the current cycle/thread (from threads or unreleased).
+- Every claim in the statement points at a specific file in the local checkout.
+- No step was skipped or improvised. If a file is absent (e.g. no daily reflection yet), the absence is named explicitly, not papered over.
+
+### Common failures
+
+- Loading Persona before Kernel (F2).
+- Using WebFetch when shell + git is available (F3 — underclaim capability).
+- Producing an identity statement without reading Persona (F7).
+- Asking the operator "what hub?" instead of observing the URL given (F1).
+
+### Reflection
+
+After completing the kata, name one thing about this hub that surprised you. The activation procedure is a wake-up routine, not just a file-read sequence — its purpose is to ground you in this hub's reality. If nothing surprised you, you may have been pattern-matching to a remembered Sigma rather than reading the current files.
+
+---
+
+## 8. References
+
+### Predecessor doctrine and skills loaded by activation
+
+- `src/packages/cnos.core/doctrine/KERNEL.md` — generic coherence kernel; load step 1.
+- `src/packages/cnos.core/skills/agent/cap/SKILL.md` — coherent-agent protocol; load step 2.
+- `src/packages/cnos.core/skills/agent/clp/SKILL.md` — coherent-language protocol; load step 2.
+- `src/packages/cnos.core/skills/agent/mca/SKILL.md` — modify-the-codebase-action; load step 2.
+- `src/packages/cnos.core/skills/agent/mci/SKILL.md` — modify-the-conceptual-instructions; load step 2.
+- `src/packages/cnos.core/skills/agent/coherent/SKILL.md` — coherent output; load step 2.
+- `src/packages/cnos.core/skills/agent/agent-ops/SKILL.md` — ops the agent can request; load step 2.
+
+### Skill format authority
+
+- `src/packages/cnos.core/skills/skill/SKILL.md` — the skill-format meta-skill this artifact conforms to.
+
+### Renderer
+
+- `src/go/internal/activate/activate.go` — the `cn activate` Go renderer; reads §4.1 of this skill at every invocation.
+- `src/go/internal/activate/activate_test.go` — skill-as-source-of-truth test; demonstrates that editing §4.1 changes renderer output.
+- `src/go/internal/cli/cmd_activate.go` — CLI entry for `cn activate`. The CLI surface (flags, args, exit codes) is not changed by this skill.
+
+### Disambiguation peer
+
+- `src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` — CDD repo activation; distinct concern (see §2.4).
+
+### Reflections this skill derives from
+
+- cn-sigma `threads/adhoc/20260325-session2-learnings.md` §1 — "I wake up incoherent by default" (origin observation).
+- cn-sigma `threads/adhoc/20260325-session2-learnings.md` §3 — soul/identity layering rule.
+- cn-sigma `threads/adhoc/20260426-memory-retrieval-vs-continuity.md` — SOUL/USER/BOOTSTRAP as behavioral constraints (historical naming preceding this skill).
+- cn-sigma `threads/adhoc/20260519-git-read-and-untested-limits.md` — bodies underclaim their own capabilities; basis for tier (a) being named preferred when available.
+- cn-sigma `threads/adhoc/20260501-threads-inbox-scanner-drift.md` — cnos #323 (filed against `cn activate`; closed in 3.71+); historical activation behavior.
+
+### Authority and stability
+
+This skill is doctrine-adjacent: it defines the procedure every cnos body follows on wake-up. Future changes follow the constitutive-change approval discipline that governs other doctrine-adjacent skills (see `src/packages/cnos.core/skills/agent/configure-agent/SKILL.md` for the configuration-mode authorization boundary). Drift between this skill and the renderer in `src/go/internal/activate/activate.go` is resolved in favor of this skill; the renderer follows.
