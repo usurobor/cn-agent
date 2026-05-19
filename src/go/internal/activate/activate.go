@@ -62,9 +62,127 @@ func Run(_ context.Context, opts Options) error {
 	latest := latestReflection(opts.HubPath)
 	memory := scanMemory(opts.HubPath)
 	threads := scanThreads(opts.HubPath)
+	readFirst, source := loadActivateSkillOrdering(cnDir)
+	if source == sourceFallback {
+		fmt.Fprintf(opts.Stderr, "→ activate skill not vendored at .cn/vendor/packages/cnos.core/skills/agent/activate/SKILL.md; using built-in ordering\n")
+	}
 
-	writePrompt(opts.Stdout, absPath, cfg, kernel, persona, operator, deps, latest, memory, threads)
+	writePrompt(opts.Stdout, absPath, cfg, kernel, persona, operator, deps, latest, memory, threads, readFirst)
 	return nil
+}
+
+// readFirstItem is a parsed entry from the activate skill's machine-readable
+// load-order block (§4.1 of cnos.core/skills/agent/activate/SKILL.md). Tokens
+// drive renderer.renderReadFirstLine; labels are reserved for future use.
+type readFirstItem struct {
+	token string
+	label string
+}
+
+const (
+	sourceSkill    = "skill"
+	sourceFallback = "fallback"
+
+	readFirstOrderBeginMarker = "<!-- read-first-order:begin -->"
+	readFirstOrderEndMarker   = "<!-- read-first-order:end -->"
+)
+
+// loadActivateSkillOrdering reads the activate skill from the vendored bundle
+// and parses its §4.1 machine-readable load-order block. When the skill is
+// absent or the block cannot be parsed, the built-in canonical ordering is
+// returned with source = "fallback". The fallback ordering MUST match the
+// skill's §4.1 block; if they drift, the skill is authoritative.
+func loadActivateSkillOrdering(cnDir string) ([]readFirstItem, string) {
+	skillPath := filepath.Join(cnDir, "vendor", "packages", "cnos.core",
+		"skills", "agent", "activate", "SKILL.md")
+	data, err := os.ReadFile(skillPath)
+	if err != nil {
+		return canonicalReadFirstOrdering(), sourceFallback
+	}
+	items, ok := parseReadFirstOrderBlock(string(data))
+	if !ok {
+		return canonicalReadFirstOrdering(), sourceFallback
+	}
+	return items, sourceSkill
+}
+
+// canonicalReadFirstOrdering is the built-in fallback that mirrors §4.1 of
+// the activate skill. Tokens MUST be kept in sync with the skill; the skill
+// remains authoritative on drift.
+func canonicalReadFirstOrdering() []readFirstItem {
+	return []readFirstItem{
+		{token: "kernel", label: "Kernel doctrine (what kind of agent)"},
+		{token: "ca-skills", label: "CA skill set (behavioral instructions)"},
+		{token: "persona", label: "Persona (who you are at this hub)"},
+		{token: "operator", label: "Operator (whom you serve at this hub)"},
+		{token: "hub-state", label: "Hub state (deps, latest reflection, memory, threads)"},
+		{token: "identity", label: "Identity confirmation"},
+	}
+}
+
+// parseReadFirstOrderBlock scans the skill content for the begin/end markers
+// and parses the numbered list between them. Each line is "N. <token> — <label>"
+// where the separator is an em-dash (U+2014) preceded and followed by a space.
+// An ASCII "--" separator is also accepted to ease editing.
+func parseReadFirstOrderBlock(content string) ([]readFirstItem, bool) {
+	bi := strings.Index(content, readFirstOrderBeginMarker)
+	if bi < 0 {
+		return nil, false
+	}
+	bi += len(readFirstOrderBeginMarker)
+	rel := strings.Index(content[bi:], readFirstOrderEndMarker)
+	if rel < 0 {
+		return nil, false
+	}
+	block := content[bi : bi+rel]
+	var items []readFirstItem
+	for _, raw := range strings.Split(block, "\n") {
+		line := strings.TrimSpace(raw)
+		if line == "" {
+			continue
+		}
+		dot := strings.Index(line, ". ")
+		if dot <= 0 {
+			continue
+		}
+		// Require the prefix to be a positive integer (skip prose lines).
+		if !isAllDigits(line[:dot]) {
+			continue
+		}
+		rest := strings.TrimSpace(line[dot+2:])
+		token, label := splitTokenLabel(rest)
+		if token == "" {
+			continue
+		}
+		items = append(items, readFirstItem{token: token, label: label})
+	}
+	if len(items) == 0 {
+		return nil, false
+	}
+	return items, true
+}
+
+func isAllDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// splitTokenLabel splits "token — label" on the first em-dash or "--" separator.
+// If no separator is found, the whole string becomes the token and label is "".
+func splitTokenLabel(rest string) (string, string) {
+	for _, sep := range []string{" — ", " -- "} {
+		if i := strings.Index(rest, sep); i > 0 {
+			return strings.TrimSpace(rest[:i]), strings.TrimSpace(rest[i+len(sep):])
+		}
+	}
+	return strings.TrimSpace(rest), ""
 }
 
 type hubConfig struct {
@@ -251,6 +369,7 @@ func writePrompt(w io.Writer, absPath string, cfg hubConfig,
 	kernel kernelState, persona, operator string,
 	deps depsState, latest string,
 	memory, threads []string,
+	readFirst []readFirstItem,
 ) {
 	fmt.Fprintf(w, "You are activating a cnos hub.\n\n")
 	fmt.Fprintf(w, "Hub path: %s\n", absPath)
@@ -259,40 +378,12 @@ func writePrompt(w io.Writer, absPath string, cfg hubConfig,
 	}
 	fmt.Fprintln(w)
 
-	// ## Read first — ordered reading path
+	// ## Read first — ordered reading path, sourced from the activate skill
+	// (§4.1 of cnos.core/skills/agent/activate/SKILL.md). The skill is the
+	// source of truth; this section emits in whatever order the skill prescribes.
 	fmt.Fprintf(w, "## Read first\n")
-	if persona != "" {
-		fmt.Fprintf(w, "1. %s\n", persona)
-	} else {
-		fmt.Fprintf(w, "1. spec/PERSONA.md — not found; consider creating one\n")
-	}
-	if operator != "" {
-		fmt.Fprintf(w, "2. %s\n", operator)
-	} else {
-		fmt.Fprintf(w, "2. spec/OPERATOR.md — not found; consider creating one\n")
-	}
-	switch kernel.state {
-	case "vendored":
-		if kernel.version != "" {
-			fmt.Fprintf(w, "3. %s (kernel @%s)\n", kernel.path, kernel.version)
-		} else {
-			fmt.Fprintf(w, "3. %s\n", kernel.path)
-		}
-	case "manifest-only":
-		fmt.Fprintf(w, "3. kernel — dependency manifest declares cnos.core; not restored — run cn deps restore\n")
-	default:
-		fmt.Fprintf(w, "3. kernel — no kernel reference\n")
-	}
-	switch deps.state {
-	case "restored":
-		fmt.Fprintf(w, "4. .cn/deps.json (manifest; %d packages restored)\n", len(deps.packages))
-	case "manifest-only":
-		fmt.Fprintf(w, "4. .cn/deps.json (manifest present; packages not restored — run cn deps restore)\n")
-	default:
-		fmt.Fprintf(w, "4. deps manifest — no dependency manifest\n")
-	}
-	if latest != "" {
-		fmt.Fprintf(w, "5. %s (latest reflection)\n", latest)
+	for i, item := range readFirst {
+		fmt.Fprintf(w, "%d. %s\n", i+1, renderReadFirstLine(item, kernel, persona, operator, deps, latest))
 	}
 	fmt.Fprintln(w)
 
@@ -381,4 +472,56 @@ func writePrompt(w io.Writer, absPath string, cfg hubConfig,
 	fmt.Fprintf(w, "- Secrets (.cn/secrets.env, .env) are not included in this prompt.\n")
 	fmt.Fprintf(w, "- This command generates a prompt only. No model is invoked.\n")
 	fmt.Fprintf(w, "- To activate: cn activate HUB_DIR | claude -p \"Activate this cnos hub using the bootstrap prompt on stdin.\"\n")
+}
+
+// renderReadFirstLine maps a skill token to its rendered line, interpolating
+// hub state. The token vocabulary is fixed by §4.2 of the activate skill.
+// Unknown tokens emit a placeholder rather than panicking — a renderer
+// encountering an unknown token MUST stay live so the rest of the prompt
+// reaches the body (per §4.2 of the skill).
+func renderReadFirstLine(item readFirstItem, kernel kernelState, persona, operator string, deps depsState, latest string) string {
+	switch item.token {
+	case "kernel":
+		switch kernel.state {
+		case "vendored":
+			if kernel.version != "" {
+				return fmt.Sprintf("%s (kernel @%s)", kernel.path, kernel.version)
+			}
+			return kernel.path
+		case "manifest-only":
+			return "kernel — dependency manifest declares cnos.core; not restored — run cn deps restore"
+		default:
+			return "kernel — no kernel reference"
+		}
+	case "ca-skills":
+		return "cnos.core/skills/agent/{cap,clp,mca,mci,coherent,agent-ops}/SKILL.md (CA skill set)"
+	case "persona":
+		if persona != "" {
+			return persona
+		}
+		return "spec/PERSONA.md — not found; consider creating one"
+	case "operator":
+		if operator != "" {
+			return operator
+		}
+		return "spec/OPERATOR.md — not found; consider creating one"
+	case "hub-state":
+		var parts []string
+		switch deps.state {
+		case "restored":
+			parts = append(parts, fmt.Sprintf(".cn/deps.json (manifest; %d packages restored)", len(deps.packages)))
+		case "manifest-only":
+			parts = append(parts, ".cn/deps.json (manifest present; packages not restored — run cn deps restore)")
+		default:
+			parts = append(parts, "deps manifest — no dependency manifest")
+		}
+		if latest != "" {
+			parts = append(parts, fmt.Sprintf("%s (latest reflection)", latest))
+		}
+		return strings.Join(parts, "; ")
+	case "identity":
+		return "identity confirmation — name the agent (from Persona), the operator (from Operator), the hub (URL/path), and the current cycle/thread"
+	default:
+		return fmt.Sprintf("(unknown token: %s)", item.token)
+	}
 }
