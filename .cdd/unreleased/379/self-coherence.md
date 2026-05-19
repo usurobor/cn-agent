@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs]
+  completed: [gap, skills, acs, self-check, debt, cdd-trace]
 -->
 
 # Self-coherence — α #379
@@ -249,3 +249,48 @@ $ git diff --stat origin/main..HEAD
 ```
 
 Five files changed, all expected per γ scaffold failure-mode 10. No edits to `cnos.cdd/skills/cdd/activation/SKILL.md`. No hub README patches. No `cn activate` CLI surface change (`src/go/internal/cli/cmd_activate.go` untouched).
+
+## Self-check
+
+α/SKILL.md §2.5: _"Did α's work push ambiguity onto β? Is every claim backed by evidence in the diff?"_
+
+**Ambiguity pushed onto β: none.** Each AC in §ACs above maps to a concrete oracle and a recorded result inside this artifact. β should not have to re-derive what "skill conforms" or "skill is the source of truth" means — both are made literal: AC2 lists the frontmatter keys present and the body section headings; AC7 names the exact Go function (`loadActivateSkillOrdering`), the exact test (`TestSkillIsSourceOfTruthForReadFirstOrder`), and the exact behavioral assertion (edit fixture skill → renderer output reflects edit). The observable-output delta from the canonical-order change is named explicitly, not left for β to discover.
+
+**Closure-overclaim audit (α/SKILL.md §2.3 peer enumeration).** Two peer classes apply here:
+
+1. **Skill peers under `src/packages/cnos.core/skills/agent/`.** The new artifact slots into the family `{cap, clp, mca, mci, coherent, agent-ops, configure-agent, …}`. The family is not modified — no peer skill gains or loses contract because this is an additive, sibling-class new skill. The disambiguation peer (`cnos.cdd/skills/cdd/activation/SKILL.md`) is cited but not modified, per non-goal.
+
+2. **Renderer peers under `src/go/internal/activate/`.** Files in this package: `activate.go` (modified), `activate_test.go` (modified). Two test-helper fixtures (`makeSigmaFixture`, `makeInitOnlyFixture`, `makeInitPlusSetupFixture`) — neither modified; the new tests use existing fixtures plus a new helper (`writeVendoredActivateSkill`) that does not perturb the existing ones. CLI peer `src/go/internal/cli/cmd_activate.go` — not modified (CLI surface preservation).
+
+**Harness audit (α/SKILL.md §2.4).** Schema-bearing change: the renderer parses a markdown-embedded ordering block from the skill. The "schema" here is the marker-bounded numbered-list format. Producers of the schema: this skill's §4.1 block. Consumers of the schema: `parseReadFirstOrderBlock` in `activate.go`. No non-Go writer (shell, CI, template) writes this schema today; the only writer is hand-authored markdown in this skill. The harness audit is therefore satisfied by §4.1 ↔ `parseReadFirstOrderBlock` ↔ test coverage — all three are in the diff.
+
+**Polyglot re-audit (α/SKILL.md §2.6 row 9).** Diff languages: Go (`activate.go`, `activate_test.go`), Markdown (`SKILL.md`, `self-coherence.md`, `gamma-scaffold.md`).
+
+- Go: `go vet ./internal/activate/...` clean. `go test -race ./internal/activate/...` green. `go test ./...` (all src/go packages) green — no upstream regression.
+- Markdown: SKILL.md authored section-by-section per CDD.md §1.4 large-file authoring rule with HTML-comment manifest; self-coherence.md authored section-by-section per α/SKILL.md §2.5. Tables and fenced code blocks render correctly under standard CommonMark. The `~~~markdown` outer fence in §2.3 was chosen specifically because the inner `\`\`\`` blocks would otherwise terminate the outer fence early.
+
+**Pre-existing-test compatibility.** Two existing tests (`TestReadFirstSection_OrderedSigma`, `TestReadFirstSection_InitOnlyOrdered`) were updated to assert the new canonical ordering. The change is intentional — AC7 displaces the prior hardcoded ordering with the skill's §4.1 ordering. All other existing tests pass without modification: `TestNoIdentityBucket`, `TestKernelState_*`, `TestDepsState_*`, `TestSigmaShapeActivatesCorrectly`, `TestInitOnlyFixture_NoKernelReference`, `TestInitPlusSetupFixture_RestoreGuidance`, `TestResolversRejectLegacyPaths`, `TestLatestReflection_*`, `TestRunPositive_*`, `TestRunNegative_*`. β should re-verify by running the full test suite against the HEAD commit.
+
+## Debt
+
+1. **Hub README router not yet adopted in any hub.** The §2.3 template ships in the skill but no hub README points at it yet. cn-sigma and cn-pi adoption is deferred to per-hub cycles (issue body §Scope: "Implementing the README router in `usurobor/cn-sigma` or `usurobor/cn-pi` (separate per-hub cycles; this cycle ships the skill the routers will point at)"). Closing this cycle does not break any existing path; non-cn bodies that know the skill URL can already fetch and follow it.
+
+2. **Observable-output delta in `cn activate` `## Read first`.** The canonical ordering change (persona/operator/kernel → kernel/CA/persona/operator/hub-state/identity) is intentional and recorded under AC7 above. Current consumers (`claude -p` invocations) that did string-matching against the old ordering will see different content. The structural section headers (`## Read first`, `## Kernel`, etc.) are preserved; consumers parsing by section header are unaffected.
+
+3. **Renderer fallback duplicates the canonical ordering as in-Go constants.** `canonicalReadFirstOrdering` in `activate.go` mirrors the skill's §4.1 block. If the skill's §4.1 is edited but the renderer is not rebuilt (or vice versa), drift is possible. Mitigation: (a) the renderer prefers the vendored skill over the fallback whenever the bundle is present; (b) `TestSkillFallback_NotVendored` asserts the fallback's behavior matches the manifest-only canonical case; (c) the skill's §4.3 names the rule "the fallback ordering MUST match this skill's §4.1 block; if the two drift, this skill is canonical and the fallback constant is in error." A future cycle could compile-embed the skill into the binary (`//go:embed`) to eliminate the duplication entirely.
+
+4. **No `cn doctor` enforcement of activation-invariants.** The skill prescribes the procedure; nothing yet validates that a given hub README contains the router, or that the vendored skill is fresh, or that a body's identity confirmation actually grounds in the loaded files. Deferred per issue body Scope.
+
+5. **`cnos.xyz/activate/<hub>` deferred.** No dynamic URL rendering surface in this cycle. Bodies that want the rendered prompt today fetch the skill directly (tier b) or use `cn activate` locally (tier a + cn binary).
+
+## CDD Trace
+
+CDD canonical artifact order through step 7 (α/SKILL.md §2.2; this cycle's mode is design-and-build per issue body):
+
+1. **Design** — not separately produced (design-and-build mode). Design surface: issue body's Source of Truth table, AC3 load order, AC4 capability matrix, AC7 renderer-interpolation contract. γ's scaffold (`.cdd/unreleased/379/gamma-scaffold.md`) carries the gap, peer enumeration, mode, AC posture, and ten pre-flagged failure modes.
+2. **Coherence contract** — §Gap above names the named incoherence and the closure shape. ACs in §ACs map invariants to evidence.
+3. **Plan** — not separately produced (single-focus deliverable: new skill + renderer evolution; sequencing inferred from the issue body's AC ordering and the seven-commit checkpoints declared in the dispatch prompt).
+4. **Tests** — `src/go/internal/activate/activate_test.go` updated and extended. New tests for AC7: `TestSkillIsSourceOfTruthForReadFirstOrder`, `TestSkillFallback_NotVendored`, `TestParseReadFirstOrderBlock_HappyPath`, `TestParseReadFirstOrderBlock_NoMarkers`. Two existing tests updated for the canonical-ordering change.
+5. **Code** — `src/go/internal/activate/activate.go` evolved: new `loadActivateSkillOrdering`, `canonicalReadFirstOrdering`, `parseReadFirstOrderBlock`, `renderReadFirstLine` functions. `writePrompt` no longer hardcodes ordering.
+6. **Docs / authoring artifact** — `src/packages/cnos.core/skills/agent/activate/SKILL.md` is the new authoring artifact (485 lines). Files in this cycle's diff: `src/packages/cnos.core/skills/agent/activate/SKILL.md`, `src/go/internal/activate/activate.go`, `src/go/internal/activate/activate_test.go`, `.cdd/unreleased/379/gamma-scaffold.md` (γ), `.cdd/unreleased/379/self-coherence.md` (α, this file). Caller-path trace for new functions (α/SKILL.md §2.6 row 12): `loadActivateSkillOrdering` is called from `Run` at `activate.go:64`; `parseReadFirstOrderBlock` is called from `loadActivateSkillOrdering`; `renderReadFirstLine` is called from `writePrompt`; `canonicalReadFirstOrdering` is called from `loadActivateSkillOrdering` (fallback path). All new functions reach the main `Run` codepath; none are orphan.
+7. **Self-coherence** — this file. §Gap / §Skills / §ACs / §Self-check / §Debt / §CDD Trace / §Review-readiness sections written incrementally per α/SKILL.md §2.5.
