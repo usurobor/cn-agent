@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills]
+  completed: [gap, skills, acs]
 -->
 
 # Self-coherence — α #379
@@ -39,3 +39,213 @@ section-manifest:
 - `src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` — cited and disambiguated in SKILL.md §2.4 (AC6). Not modified — non-goal per γ scaffold failure-mode 10.
 - `src/packages/cnos.eng/skills/eng/go/SKILL.md` — renderer evolution (AC7).
 - `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` — form authority. No in-cycle issue-pack reconciliation was required; the issue body remained authoritative throughout.
+
+## ACs
+
+Per-AC oracle results recorded inline. AC numbering follows the issue body.
+
+### AC1 — activate skill exists at canonical path
+
+**Invariant.** `src/packages/cnos.core/skills/agent/activate/SKILL.md` exists, is non-empty, and is ≥200 lines of substantive content.
+
+**Oracle.** `test -f src/packages/cnos.core/skills/agent/activate/SKILL.md && [ -s src/packages/cnos.core/skills/agent/activate/SKILL.md ] && wc -l src/packages/cnos.core/skills/agent/activate/SKILL.md`
+
+**Result.**
+```
+485 src/packages/cnos.core/skills/agent/activate/SKILL.md
+```
+File present at exact path, non-empty, 485 lines (well above 200). Sibling to `agent/{cap,clp,mca,mci,coherent,agent-ops,...}/SKILL.md`. **PASS.**
+
+### AC2 — Skill conforms to skill/SKILL.md format
+
+**Invariant.** Frontmatter contains `name`, `description`, `artifact_class: skill`, `governing_question`, `triggers`, `scope`, `inputs`, `outputs` (plus the skill skill's `kata_surface` requirement). Body follows the Define → Unfold → Rules → Verify progression with an embedded kata surface.
+
+**Oracle.** Frontmatter parsed via awk; required keys grep'd; body section structure inspected.
+
+**Result.**
+```
+=== AC2 oracle: frontmatter keys present ===
+name: activate
+description: Activate an agent identity at a cnos hub. Body-agnostic procedure for loading Kernel + CA skills + Persona + Operator + hub state, in that order, …
+artifact_class: skill
+kata_surface: embedded
+governing_question: How does an AI body, knowing only a hub URL, reach a state where it can name its identity, its operator, and its current orientation without operator improvisation?
+triggers: [activate, activation, bootstrap, self-activation, wake up, cn activate]
+scope: task-local
+inputs: [hub URL or hub path, body capabilities, access to this skill's content]
+outputs: [loaded Kernel + CA skills + Persona + Operator + hub state surveyed + identity named]
+visibility: public
+parent: agent
+requires: [hub URL or hub path, fetch capability or operator injection]
+calls: [KERNEL.md + cap/clp/mca/mci/coherent/agent-ops SKILL.md]
+```
+
+Body sections present in order: `## Core Principle`, `## Algorithm`, `## 1. Define` (§1.1 parts, §1.2 fit, §1.3 failure mode), `## 2. Unfold` (§2.1 load order, §2.2 capability matrix, §2.3 README router template, §2.4 disambiguation), `## 3. Rules` (3.1–3.7 imperative rules with ❌/✅ pairs), `## 4. Renderer contract` (§4.1 machine-readable block, §4.2 interpolation surface, §4.3 fallback, §4.4 observable-output preservation), `## 5. Verify` (5.1–5.6 checks), `## 6. Failure modes catalogue`, `## 7. Embedded kata` (scenario / task / inputs / artifacts / procedure / verification / common failures / reflection — satisfying skill/SKILL.md §2.4 kata surface contract), `## 8. References`. **PASS.**
+
+### AC3 — Skill prescribes the body-agnostic six-item load order
+
+**Invariant.** SKILL.md describes the sequence as (1) Kernel from cnos, (2) CA skills from cnos, (3) Persona from hub, (4) Operator from hub, (5) hub state (deps, latest reflection, memory, threads), (6) identity confirmation. The soul/identity layering rule is cited.
+
+**Oracle.** awk-extract of §2.1 numbered list; awk-extract of §4.1 machine-readable block; grep for layering-rule citation.
+
+**Result — §2.1 ordered list:**
+```
+1. **Kernel from cnos.** …
+2. **CA skills from cnos.** …
+3. **Persona from hub.** …
+4. **Operator from hub.** …
+5. **Hub state.** …
+6. **Identity confirmation.** …
+```
+
+**Result — §4.1 machine-readable block:**
+```
+<!-- read-first-order:begin -->
+1. kernel — Kernel doctrine (what kind of agent)
+2. ca-skills — CA skill set (behavioral instructions)
+3. persona — Persona (who you are at this hub)
+4. operator — Operator (whom you serve at this hub)
+5. hub-state — Hub state (deps, latest reflection, memory, threads)
+6. identity — Identity confirmation
+<!-- read-first-order:end -->
+```
+
+**Result — layering rule citation (§2.1 layering paragraph):**
+> _The layering rule is from cn-sigma `threads/adhoc/20260325-session2-learnings.md` §3: "Soul = what kind of agent. Identity = which agent. Don't mix them."_
+
+Both the human-readable list (§2.1) and the machine-readable block (§4.1) are in the canonical order. §5.2 of the skill names the §2.1/§4.1 coherence rule. **PASS.**
+
+### AC4 — Body-agnostic three-tier capability matrix
+
+**Invariant.** SKILL.md enumerates at least three body-capability tiers, each with its load path. Tier (a) shell + git is named preferred when available. The no-fetch degraded path is named honestly.
+
+**Oracle.** grep for tier labels; inspect §2.2 table rows; confirm preferred-when-available statement.
+
+**Result.**
+```
+§2.2 §157: | (a) shell + git (preferred when available) | Body can execute shell commands and `git clone` | git clone https://github.com/usurobor/cnos.git, then read files from the local checkout | git clone <hub-url> … | One network operation per repo; atomic; later reads are filesystem-fast |
+§2.2 §158: | (b) HTTP fetch only | Body can fetch raw URLs but cannot execute shell | Fetch raw GitHub URLs per file, e.g. https://raw.githubusercontent.com/usurobor/cnos/main/src/packages/cnos.core/doctrine/KERNEL.md | …per-file… | One network operation per file; non-atomic; may hit rate limits |
+§2.2 §159: | (c) no fetch | Body has no shell, no git, no HTTP fetch | The body cannot self-activate. The operator must paste the bootstrap contents into the body's prompt window directly. | The operator must inject. | Operator labor per session; degraded path |
+
+§2.2 §161: **Tier (a) shell + git is preferred when available.** Reasons: atomic / local / inspectable / honest about reality (most modern bodies have shell+git).
+§2.2 §170: **Tier (c) no fetch is the degraded path, named honestly.** A body with no shell, no git, and no HTTP fetch cannot self-activate. Activation in this tier requires the operator to inject the bootstrap content directly…
+```
+
+Three tiers explicit, each names its load path, tier (a) marked preferred with reasons, tier (c) named honestly as degraded with operator-injection requirement. Tier-selection rule states bodies MUST observe their own capability and pick the matching tier. **PASS.**
+
+### AC5 — README router template documented in the skill
+
+**Invariant.** SKILL.md includes a labeled "README router template" section with a fenced markdown block hubs adopt verbatim, requiring only the hub URL substitution.
+
+**Oracle.** grep for heading; inspect fenced block; copy block into /tmp and confirm only one placeholder.
+
+**Result.**
+```
+§2.3 §182: ### 2.3. README router template
+```
+
+The block uses `~~~markdown` fences (so the inner ``` blocks pass through cleanly), is self-contained, and contains exactly one placeholder: `<HUB-URL>`. Paste-test executed:
+
+```sh
+$ awk '/^~~~markdown$/,/^~~~$/' src/packages/cnos.core/skills/agent/activate/SKILL.md | grep -c '<HUB-URL>'
+3   # three occurrences of <HUB-URL>, no other placeholders
+$ awk '/^~~~markdown$/,/^~~~$/' src/packages/cnos.core/skills/agent/activate/SKILL.md | grep -E '<[A-Z_-]+>' | sort -u
+<HUB-URL>
+```
+
+The skill's §2.3 adoption-rule paragraph states explicitly: "The only per-hub edit is the `<HUB-URL>` substitution." The template names tier (a)/(b)/(c) paths in the same order as §2.2. **PASS.**
+
+### AC6 — Naming disambiguation from cdd/activation/SKILL.md
+
+**Invariant.** SKILL.md cites `src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` and `src/packages/cnos.core/skills/agent/activate/SKILL.md`, exact paths, in the same paragraph or section, with a one-sentence distinction.
+
+**Oracle.** `rg` both paths inside the skill; confirm both appear in §2.4 with the one-sentence distinction.
+
+**Result.**
+```
+$ rg 'cnos\.cdd/skills/cdd/activation/SKILL\.md' src/packages/cnos.core/skills/agent/activate/SKILL.md | wc -l
+4
+$ rg 'cnos\.core/skills/agent/activate/SKILL\.md' src/packages/cnos.core/skills/agent/activate/SKILL.md | wc -l
+7
+```
+
+§2.4 paragraph (excerpt):
+> _`src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` is **CDD repo activation** — the one-time bootstrap sequence that brings an existing repository under the Coherence-Driven Development protocol … `src/packages/cnos.core/skills/agent/activate/SKILL.md` (this skill) is **agent activation at a hub** — the procedure an AI body follows on every wake-up to load Kernel, CA skills, Persona, Operator, and hub state, and to confirm its identity at the named hub. … They share a word, not a concern: one activates a repo under CDD; the other activates a body at a hub._
+
+Both paths exact (leaf `activate` for core; leaf `activation` for cdd — the common typo guarded against in γ scaffold failure-mode 5). One-sentence distinction present. **PASS.**
+
+### AC7 — `cn activate` reads the skill instead of hardcoding the procedure
+
+**Invariant.** `src/go/internal/activate/activate.go` `writePrompt` no longer sources its section ordering / "Read first" list from in-Go literals. It reads the activate skill from the vendored bundle and parses §4.1; a fallback preserves manifest-only deps behavior when the skill is not vendored. `activate_test.go` contains a test that demonstrates the skill is the source of truth.
+
+**Oracle.**
+1. `cd src/go && go test ./internal/activate/... -race` → must pass.
+2. Inspect `writePrompt`: confirm no hardcoded ordering literals.
+3. Inspect `activate_test.go`: confirm a test asserts that editing the skill's ordering changes the renderer's output.
+
+**Result — go test:**
+```
+$ cd src/go && go test -race ./internal/activate/...
+ok  	github.com/usurobor/cnos/src/go/internal/activate	1.132s
+
+$ cd src/go && go test ./...   # full src/go package suite — no regression elsewhere
+ok  	github.com/usurobor/cnos/src/go/internal/activate
+ok  	github.com/usurobor/cnos/src/go/internal/activation
+ok  	github.com/usurobor/cnos/src/go/internal/binupdate
+ok  	github.com/usurobor/cnos/src/go/internal/cli
+ok  	github.com/usurobor/cnos/src/go/internal/discover
+ok  	github.com/usurobor/cnos/src/go/internal/dispatch
+ok  	github.com/usurobor/cnos/src/go/internal/doctor
+ok  	github.com/usurobor/cnos/src/go/internal/hubinit
+ok  	github.com/usurobor/cnos/src/go/internal/hubsetup
+ok  	github.com/usurobor/cnos/src/go/internal/hubstatus
+ok  	github.com/usurobor/cnos/src/go/internal/pkg
+ok  	github.com/usurobor/cnos/src/go/internal/pkgbuild
+ok  	github.com/usurobor/cnos/src/go/internal/restore
+
+$ go vet ./internal/activate/...
+(no output — clean)
+```
+
+**Result — writePrompt no longer hardcodes ordering.** The new signature is `writePrompt(w, absPath, cfg, kernel, persona, operator, deps, latest, memory, threads, readFirst []readFirstItem)`. The `## Read first` block is emitted by iterating `readFirst` (parsed from the skill or canonical fallback):
+```go
+fmt.Fprintf(w, "## Read first\n")
+for i, item := range readFirst {
+    fmt.Fprintf(w, "%d. %s\n", i+1, renderReadFirstLine(item, kernel, persona, operator, deps, latest))
+}
+```
+The renderer's `loadActivateSkillOrdering` reads from `<cnDir>/vendor/packages/cnos.core/skills/agent/activate/SKILL.md` and parses §4.1 via `parseReadFirstOrderBlock`. The fallback `canonicalReadFirstOrdering` mirrors §4.1 and is exercised when the skill is not vendored; the skill remains authoritative on drift.
+
+**Result — skill-as-source-of-truth test.** `TestSkillIsSourceOfTruthForReadFirstOrder` in `activate_test.go`:
+- Phase 1: writes a vendored fixture skill with `kernel` before `persona`; runs `Run`; asserts `KERNEL.md < PERSONA.md` in `## Read first`.
+- Phase 2: rewrites the same fixture skill to swap `kernel` and `persona`; reruns `Run`; asserts `PERSONA.md < KERNEL.md`.
+- Coherence assertion: `out1 != out2` (the two skill orderings produce different renderer outputs).
+
+Companion tests: `TestSkillFallback_NotVendored` confirms the manifest-only fallback path emits the canonical ordering, surfaces the stderr diagnostic ("activate skill not vendored"), and preserves `run cn deps restore` guidance. `TestParseReadFirstOrderBlock_HappyPath` / `_NoMarkers` unit-test the parser.
+
+**Result — observable-output deltas (documented per AC7 surface-containment rule).**
+The §4.1 canonical ordering changes the order of items in `cn activate`'s `## Read first` block:
+- **Before:** persona → operator → kernel → deps → latest reflection.
+- **After:** kernel → ca-skills → persona → operator → hub-state (deps + latest reflection composite) → identity confirmation.
+
+Other observable surfaces preserved:
+- `## Read first`, `## Kernel`, `## Persona`, `## Operator`, `## Dependencies`, `## Config summary`, `## Memory and reflection`, `## Inbox and threads`, `## Notes` — all section headers retained in their original order in `writePrompt`.
+- Manifest-only kernel guidance ("dependency manifest declares cnos.core; not restored — run cn deps restore") preserved.
+- Manifest-only deps guidance ("dependency manifest present; packages not restored — run cn deps restore") preserved.
+- `## Notes` claude -p example unchanged.
+- Stderr-only diagnostics preserved; stdout still contains only the prompt.
+
+**PASS.**
+
+### Surface containment
+
+```
+$ git diff --stat origin/main..HEAD
+ .cdd/unreleased/379/gamma-scaffold.md              | 183 ++++++++
+ .cdd/unreleased/379/self-coherence.md              | (this file)
+ src/go/internal/activate/activate.go               | 211 ++++++--
+ src/go/internal/activate/activate_test.go          | 216 ++++++++--
+ src/packages/cnos.core/skills/agent/activate/SKILL.md | 485 +++++++
+```
+
+Five files changed, all expected per γ scaffold failure-mode 10. No edits to `cnos.cdd/skills/cdd/activation/SKILL.md`. No hub README patches. No `cn activate` CLI surface change (`src/go/internal/cli/cmd_activate.go` untouched).
