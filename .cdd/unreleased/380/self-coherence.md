@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs]
+  completed: [gap, skills, acs, self-check]
 -->
 
 # Self-coherence — α #380
@@ -183,3 +183,33 @@ Helper-level test additionally asserts the error mentions `PATH` and `install`. 
 --- PASS: TestActivate_MissingBinary_FiresBeforeRender (0.00s)
 ```
 Same proof shape as AC4 oracle 3: nonexistent HUB_DIR + missing binary. Asserts the missing-binary diagnostic appears AND `Hub path not found` does NOT AND `Generating activation prompt` does NOT — proving LookPath fired before `activate.Run`. **PASS — pre-render ordering proven.**
+
+## Self-check
+
+**Did α's work push ambiguity onto β?** No remaining design ambiguity. The one bounded design call γ delegated (render-capture seam) is declared explicitly in §Gap and §ACs AC1 — α picked Option A, justified, and the resulting diff confirms it (`activate.go` byte-identical to 3.78.0). γ pre-flagged "render-capture seam ambiguity: silent activate.go change" as a binding finding shape; this self-coherence file inoculates against it.
+
+**Surface containment vs γ scaffold §"Target artifacts".** γ named: `spawn.go`, `spawn_test.go`, `cmd_activate.go (M)`, `activate.go (M, only if Option B)`. α deviated minimally:
+
+| Path | γ status | Actual | Justification |
+|---|---|---|---|
+| `src/go/internal/activate/spawn.go` | NEW | NEW | as specified |
+| `src/go/internal/activate/spawn_test.go` | NEW | NEW | as specified |
+| `src/go/internal/cli/cmd_activate.go` | MODIFY | MODIFY | as specified |
+| `src/go/internal/activate/activate.go` | MODIFY only if Option B | unchanged | Option A chosen — predicted γ outcome |
+| `src/go/internal/activate/spawn_other.go` | not enumerated | NEW (build tag `!unix`) | required so the non-unix build still compiles — covers γ scaffold §Risk register row "syscall.Exec Windows portability"; γ said "α adds a stub or build-tag guard if needed → document in self-coherence" |
+| `src/go/internal/cli/cmd_activate_test.go` | not enumerated | NEW | AC3/AC4/AC5 oracles target `cmd_activate.Run`, which lives in `package cli`. Putting these tests in `spawn_test.go` (package `activate`) would create a cyclic import (cli already imports activate). The alternative — running the oracles only via `go run cmd/cn ...` shell smoke — is less reliable than a Go test. Declared as a minor surface widening rather than hidden. |
+
+Every test added is necessary for one of the AC oracles; every production file in the diff is one of the three γ-named surfaces plus the build-tag portability stub.
+
+**Is every claim backed by evidence in the diff?** Yes. AC1/AC2 argv-shape claims: `spawn_test.go` `TestSpawnWith_{Claude,Codex}ArgvShape` records and asserts. AC3 bytes-equal claim: `TestActivate_DefaultNoFlag_BytesEqualToDirectRun` test + smoke comparison vs `cafabc8b` (sha256 recorded). AC4/AC5 pre-render ordering claims: tests use nonexistent HUB_DIR to prove the ordering by absence of the "Hub path not found" diagnostic.
+
+**Peer enumeration (per alpha/SKILL.md §2.3).** Surface family: command-flag pairs in `cn activate` and binaries the spawn helper can target.
+
+- Flag peers in this diff: `--claude`, `--codex`. Both added in the same surface. Both share `Spawn` / `CheckSpawnBinary`; the binary name is the only parameter that differs. No third flag is being added this cycle (`--cursor`, `--aider`, `--auto` are γ scaffold non-goals).
+- Binary peers: claude, codex. Same exec mechanism (`syscall.Exec(<path>, [<name>, <prompt>], env)`); same bare-positional argv shape verified by `claude --help` and `codex --help`. The negative invariant — `argv[1] != "exec"` for codex — is enforced by `TestSpawnWith_CodexArgvShape`.
+- Renderer peers: only one renderer (`activate.Run`). The spawn arm captures into a buffer; the default arm writes to `inv.Stdout`. Both arms call the same `activate.Run` with identical hub-resolution semantics. No second renderer was introduced.
+- Help-text peers: the help block in `cmd_activate.go` is the only operator-visible documentation surface this cycle touches. No README, no skill body changed. No drift class.
+
+**Harness audit (per alpha/SKILL.md §2.4).** No schema-bearing contract changed. The activation prompt format is the same as 3.78.0 (AC3 bytes-equal). No new producer of any JSON shape. No CI workflow emitter, no shell harness, no template added. Harness audit: **not applicable to this cycle's diff.**
+
+**Loaded-skill misses.** None observed in the diff. `eng/go/SKILL.md` §2.10 (test both nominal and degraded paths), §3.10 (argv-based subprocess execution, no shell construction), §3.11 (explicit override precedence), §2.17 (purity boundary — `spawnWith` is pure of side effects given the injected hooks), and §2.7 (defer-immediately resource lifecycles — not exercised because the helper releases no acquired resources; `syscall.Exec` either replaces the process or returns). The build-tag pair (`spawn.go` // `spawn_other.go`) is the standard Go portability pattern (`go/SKILL.md` §2.11 / §3.8 — keep the build boring; standard module layout).
