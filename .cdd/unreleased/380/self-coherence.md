@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap]
+  completed: [gap, skills]
 -->
 
 # Self-coherence — α #380
@@ -20,3 +20,20 @@ section-manifest:
 **Render-capture seam: Option A.** Per γ scaffold §"Render-capture seam (γ design call, surfaced to α at scaffold time)", α picked Option A: the spawn arm captures `activate.Run`'s stdout into a `bytes.Buffer` at the call site in `cmd_activate.go`; the default arm passes `inv.Stdout` straight to `activate.Run` unchanged. Justification: minimum-diff path, no edit to `activate.go`, easier review for β, and the AC3 bytes-equal property holds by construction (no buffer in the default path). The diff confirms: `git diff cafabc8b..HEAD -- src/go/internal/activate/activate.go` is empty.
 
 **Non-goals (held).** No edits to `src/packages/cnos.core/skills/agent/activate/SKILL.md` (body-agnostic skill, non-goal). No `--cursor` / `--aider` / `--auto` flags. No `$CN_DEFAULT_BODY` env-var default. No hub README patches. No macOS/Windows-specific spawning quirks beyond what falls out of `syscall.Exec` portability (handled via build-tagged `spawn_other.go` stub so the no-flag path still compiles on non-unix).
+
+## Skills
+
+**Tier 1 — always-on for α/CDD:**
+
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` — canonical algorithm and role contract. §1.4 commit-checkpoint authoring applied (six commits across the cycle, first commit landed in the first quintile of the dispatch budget — see §CDD Trace step 4); §1.6 sequential bounded dispatch (α exits at review-readiness; close-out is re-dispatched by γ).
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — α role surface. §2.2 artifact order followed (no design artifact needed — design surface is the issue body per design-and-build mode; tests → code → docs structure landed via interleaved checkpoints: flag-defs → spawn helper → wiring → tests → AC3 oracle → self-coherence). §2.3 peer enumeration recorded in §CDD Trace. §2.5 incremental self-coherence — every section in its own commit. §2.6 pre-review gate exercised in §Review-readiness.
+
+**Tier 2 — always-applicable engineering:**
+
+- `src/packages/cnos.eng/skills/eng/go/SKILL.md` — Go authoring discipline. Concrete applications: §2.1 small-package design (kept the new helpers inside `internal/activate`, no new package); §2.2 concrete types and zero-value-safe `Invocation` propagation; §2.3 consumer-owned hook types `execFunc` / `lookPathFunc` declared inside the test-injection seam, not exported as public APIs; §2.5 errors-as-values for `CheckSpawnBinary` (no panics, all expected failures named and wrapped); §2.10 happy and degraded paths tested (LookPath failure, mutual-exclusion, default no-flag, --help, unknown-flag); §3.11 explicit override precedence (positional HUB_DIR > cwd discovery; flag-set > flag-unset; mutual-exclusion fires before render); §2.13 determinism preserved (no map iteration, prompt bytes byte-stable cross-version per AC3 oracle); §3.10 argv-based subprocess execution (`syscall.Exec(path, []string{name, prompt}, env)` — no shell construction).
+- `src/packages/cnos.core/skills/write/SKILL.md` — every α output is a written artifact (always-on per CDD). Applied to commit messages, help text, error diagnostics, and this self-coherence.md.
+
+**Tier 3 — issue-specific (per issue body §Skills to load + γ scaffold §Tier 3 list):**
+
+- `src/packages/cnos.eng/skills/eng/go/SKILL.md` — load-bearing across AC1–AC5 (flag parsing, exec wiring, test seam shape, error wrapping).
+- `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` — form authority. No in-cycle issue-pack reconciliation was required; the issue body remained authoritative throughout. The one γ delegation (render-capture seam Option A vs B) was resolved by α and declared in §Gap and §ACs AC1, not reflected back to the issue body.
