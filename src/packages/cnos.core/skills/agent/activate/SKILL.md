@@ -29,13 +29,13 @@ requires:
   - a hub URL or hub path
   - either shell+git, HTTP fetch, or an operator willing to inject the bootstrap
 calls:
-  - cnos.core/doctrine/KERNEL.md
-  - cnos.core/skills/agent/cap/SKILL.md
-  - cnos.core/skills/agent/clp/SKILL.md
-  - cnos.core/skills/agent/mca/SKILL.md
-  - cnos.core/skills/agent/mci/SKILL.md
-  - cnos.core/skills/agent/coherent/SKILL.md
-  - cnos.core/skills/agent/agent-ops/SKILL.md
+  - ../doctrine/KERNEL.md
+  - agent/cap/SKILL.md
+  - agent/clp/SKILL.md
+  - agent/mca/SKILL.md
+  - agent/mci/SKILL.md
+  - agent/coherent/SKILL.md
+  - agent/agent-ops/SKILL.md
 ---
 
 <!--

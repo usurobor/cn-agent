@@ -271,7 +271,11 @@ else
 fi
 
 # --- P10: read-first ordering ---
-info "P10: ## Read first ordering (PERSONA → OPERATOR → KERNEL → deps → reflection)"
+# Canonical ordering per src/packages/cnos.core/skills/agent/activate/SKILL.md
+# §4.1 (cycle #379 AC3): kernel → ca-skills → persona → operator → hub-state
+# (deps + latest reflection) → identity. The skill is the source of truth;
+# `cn activate`'s renderer parses §4.1 (see activate.go::loadActivateSkillOrdering).
+info "P10: ## Read first ordering (KERNEL → PERSONA → OPERATOR → deps → reflection)"
 READ_BLOCK="$(echo "$SIGMA_OUT" | awk '/^## Read first/{flag=1; next} /^## /{flag=0} flag')"
 if [ -n "$READ_BLOCK" ]; then
   pass "P10: ## Read first section present"
@@ -285,11 +289,13 @@ DEPS_LINE=$(echo "$READ_BLOCK"     | grep -nF "deps.json"   | head -1 | cut -d: 
 REFL_LINE=$(echo "$READ_BLOCK"     | grep -nF "reflection"  | head -1 | cut -d: -f1)
 if [ -n "$PERSONA_LINE" ] && [ -n "$OPERATOR_LINE" ] && [ -n "$KERNEL_LINE" ] \
    && [ -n "$DEPS_LINE" ] && [ -n "$REFL_LINE" ] \
+   && [ "$KERNEL_LINE" -lt "$PERSONA_LINE" ] \
    && [ "$PERSONA_LINE" -lt "$OPERATOR_LINE" ] \
-   && [ "$OPERATOR_LINE" -lt "$KERNEL_LINE" ] \
-   && [ "$KERNEL_LINE" -lt "$DEPS_LINE" ] \
-   && [ "$DEPS_LINE" -lt "$REFL_LINE" ]; then
-  pass "P10: read-first order is persona < operator < kernel < deps < reflection"
+   && [ "$OPERATOR_LINE" -lt "$DEPS_LINE" ] \
+   && [ "$OPERATOR_LINE" -lt "$REFL_LINE" ]; then
+  # deps + reflection share one hub-state line in the new ordering, so the
+  # assertion is operator < {deps, refl}; their relative order is not fixed.
+  pass "P10: read-first order is kernel < persona < operator < {deps, reflection}"
 else
   fail "P10: read-first order incorrect (persona=$PERSONA_LINE operator=$OPERATOR_LINE kernel=$KERNEL_LINE deps=$DEPS_LINE refl=$REFL_LINE)"
 fi

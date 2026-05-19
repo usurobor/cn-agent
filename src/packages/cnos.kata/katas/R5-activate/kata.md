@@ -110,10 +110,17 @@ Run on a hub with no `.cn/deps.json`.
 Run `cn activate HUB_DIR` on a sigma-shape hub with a daily reflection present.
 
 - stdout contains `## Read first` section.
-- In that section, persona appears before operator, operator before kernel,
-  kernel before deps manifest, deps manifest before latest reflection.
-- The order must be: 1) PERSONA.md 2) OPERATOR.md 3) KERNEL.md 4) deps.json
-  5) latest reflection (when present).
+- In that section, the order is:
+  1) Kernel doctrine (KERNEL.md)
+  2) CA skills (cap/clp/mca/mci/coherent/agent-ops)
+  3) Persona (PERSONA.md)
+  4) Operator (OPERATOR.md)
+  5) Hub state — deps manifest + latest reflection (composite line)
+  6) Identity confirmation
+- The canonical source of this order is
+  `src/packages/cnos.core/skills/agent/activate/SKILL.md` §4.1
+  (the renderer parses §4.1; the skill is canonical on drift).
+  The pre-#379 order (persona/operator/kernel/deps/refl) is no longer in force.
 
 ### P11: latest reflection pointer
 
