@@ -125,18 +125,27 @@ func canonicalReadFirstOrdering() []readFirstItem {
 // where the separator is an em-dash (U+2014) preceded and followed by a space.
 // An ASCII "--" separator is also accepted to ease editing.
 func parseReadFirstOrderBlock(content string) ([]readFirstItem, bool) {
-	bi := strings.Index(content, readFirstOrderBeginMarker)
-	if bi < 0 {
+	// Markers must appear on their own line (after whitespace trim). A bare
+	// strings.Index would match a docstring mention like
+	// `<!-- read-first-order:begin -->` inside prose, ahead of the real block.
+	// Scanning line-by-line and requiring TrimSpace(line) == marker makes the
+	// match structural rather than substring-based.
+	lines := strings.Split(content, "\n")
+	begin, end := -1, -1
+	for i, raw := range lines {
+		trimmed := strings.TrimSpace(raw)
+		if begin < 0 && trimmed == readFirstOrderBeginMarker {
+			begin = i
+		} else if begin >= 0 && trimmed == readFirstOrderEndMarker {
+			end = i
+			break
+		}
+	}
+	if begin < 0 || end < 0 {
 		return nil, false
 	}
-	bi += len(readFirstOrderBeginMarker)
-	rel := strings.Index(content[bi:], readFirstOrderEndMarker)
-	if rel < 0 {
-		return nil, false
-	}
-	block := content[bi : bi+rel]
 	var items []readFirstItem
-	for _, raw := range strings.Split(block, "\n") {
+	for _, raw := range lines[begin+1 : end] {
 		line := strings.TrimSpace(raw)
 		if line == "" {
 			continue
