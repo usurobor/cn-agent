@@ -1,0 +1,12 @@
+# Event ledger for cross-repo proposal: cn-sigma/agent-activate-skill (cnos-side mirror)
+# Bundle state (per .cdd/iterations/cross-repo/README.md): open
+# Events (per cdd/gamma/SKILL.md §"Cross-repo proposal close-out"):
+#   submitted | accepted | modified | rejected | landed
+# Format: <ISO-8601 date> <event> <actor> [target-ref]
+#
+# Mirrors source-side ledger at usurobor/cn-sigma:.cdd/iterations/cross-repo/cnos/agent-activate-skill/STATUS.
+# `landed` is recorded when the cycle implementing cnos#379 closes on cnos main.
+
+2026-05-19 submitted sigma cn-sigma@8f153c15e
+2026-05-19 accepted gamma@cnos cnos#379
+2026-05-19 modified gamma@cnos cnos#379 ac4-capability-matrix-foldin@bdda457f5
