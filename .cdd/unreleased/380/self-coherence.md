@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs, self-check]
+  completed: [gap, skills, acs, self-check, debt]
 -->
 
 # Self-coherence — α #380
@@ -213,3 +213,20 @@ Every test added is necessary for one of the AC oracles; every production file i
 **Harness audit (per alpha/SKILL.md §2.4).** No schema-bearing contract changed. The activation prompt format is the same as 3.78.0 (AC3 bytes-equal). No new producer of any JSON shape. No CI workflow emitter, no shell harness, no template added. Harness audit: **not applicable to this cycle's diff.**
 
 **Loaded-skill misses.** None observed in the diff. `eng/go/SKILL.md` §2.10 (test both nominal and degraded paths), §3.10 (argv-based subprocess execution, no shell construction), §3.11 (explicit override precedence), §2.17 (purity boundary — `spawnWith` is pure of side effects given the injected hooks), and §2.7 (defer-immediately resource lifecycles — not exercised because the helper releases no acquired resources; `syscall.Exec` either replaces the process or returns). The build-tag pair (`spawn.go` // `spawn_other.go`) is the standard Go portability pattern (`go/SKILL.md` §2.11 / §3.8 — keep the build boring; standard module layout).
+
+## Debt
+
+**Manual interactive smoke not part of the test suite.** The issue body §Proof plan names a behavioral verification: a fresh operator running `cn activate --claude cn-sigma` lands in a live `claude` REPL with Sigma activated within one command. That is a δ / operator integration smoke against real `claude` and `codex` binaries; it cannot be encoded as a Go unit test because syscall.Exec replaces the process. The test surface verifies everything observable up to (and not including) the actual REPL handover: argv shape, LookPath wiring, mutual-exclusion ordering, error message shape, default-path preservation. The REPL handover itself is `syscall.Exec`'s contract.
+
+**Non-unix platforms emit unsupported-platform error on `--claude` / `--codex`.** `spawn_other.go` returns "<flag> spawn is not supported on this platform" for `CheckSpawnBinary` on non-unix builds. The no-flag default path remains functional everywhere. Issue §Non-goals excludes "macOS/Windows-specific spawning quirks beyond what falls out of syscall.Exec portability"; the stub is what falls out for free.
+
+**Deferred (named in issue body, not addressed this cycle).**
+
+- `--auto` body-detection flag — issue §Deferred, "explicit today; auto-pick later if friction emerges."
+- `$CN_DEFAULT_BODY` env-var default — issue §Deferred.
+- `--cursor` / `--aider` / other AI CLI flags — issue §Out-of-scope, "extensible later via the same Spawn helper; not in this cycle."
+- README router template patch — issue §Out-of-scope, "addresses non-cn bodies; --claude / --codex is the cn-installed path."
+
+The `Spawn` / `CheckSpawnBinary` helpers are binary-name-parameterized, so adding `--cursor` later is a flag-parsing addition in `cmd_activate.go` plus a `<cursor's interactive-launch shape>` verification — no re-architecting required.
+
+**Branch CI.** Local Go test suite green at HEAD `dd86e283`; full repo CI status to be verified by β against `origin/cycle/380` per pre-review gate row 10. Recorded as a transient row in §Review-readiness, re-validated immediately before the readiness signal.
