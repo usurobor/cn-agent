@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs, self-check, debt, cdd-trace]
+  completed: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
 -->
 
 # Self-coherence — α #379
@@ -294,3 +294,41 @@ CDD canonical artifact order through step 7 (α/SKILL.md §2.2; this cycle's mod
 5. **Code** — `src/go/internal/activate/activate.go` evolved: new `loadActivateSkillOrdering`, `canonicalReadFirstOrdering`, `parseReadFirstOrderBlock`, `renderReadFirstLine` functions. `writePrompt` no longer hardcodes ordering.
 6. **Docs / authoring artifact** — `src/packages/cnos.core/skills/agent/activate/SKILL.md` is the new authoring artifact (485 lines). Files in this cycle's diff: `src/packages/cnos.core/skills/agent/activate/SKILL.md`, `src/go/internal/activate/activate.go`, `src/go/internal/activate/activate_test.go`, `.cdd/unreleased/379/gamma-scaffold.md` (γ), `.cdd/unreleased/379/self-coherence.md` (α, this file). Caller-path trace for new functions (α/SKILL.md §2.6 row 12): `loadActivateSkillOrdering` is called from `Run` at `activate.go:64`; `parseReadFirstOrderBlock` is called from `loadActivateSkillOrdering`; `renderReadFirstLine` is called from `writePrompt`; `canonicalReadFirstOrdering` is called from `loadActivateSkillOrdering` (fallback path). All new functions reach the main `Run` codepath; none are orphan.
 7. **Self-coherence** — this file. §Gap / §Skills / §ACs / §Self-check / §Debt / §CDD Trace / §Review-readiness sections written incrementally per α/SKILL.md §2.5.
+
+## Review-readiness
+
+**Round 1 — α → β.**
+
+**Implementation SHA (last commit before this review-readiness commit):** `7a9d1bd51fe473075c8cc91684e81e172e132c78` (`α #379 — self-coherence.md §Self-check + §Debt + §CDD Trace`). HEAD will advance by exactly this commit when the §Review-readiness section lands; per α/SKILL.md §2.6 SHA convention, naming the implementation SHA avoids the recursive self-stale of naming HEAD-at-write-time.
+
+**Base SHA:** `7a7f7152af649ea93cebe5f909fbf1397d809547` (current `origin/main` HEAD). Verified rebased — `git merge-base origin/main HEAD == origin/main`.
+
+**Branch CI:** local CI is not configured for this repo (no `.github/workflows/` covering the Go package as a required check at branch-push time, and no `cn` orchestrator hook for cycle CI). Per α/SKILL.md §2.6 row 10 escape hatch: this section says so explicitly so β waits for green-equivalent (β runs `go test ./...` locally before merge) instead of blocking on absent CI.
+
+**Pre-review gate (α/SKILL.md §2.6) row-by-row:**
+
+1. **Cycle branch rebased onto current `origin/main`** — verified `git fetch origin main && git merge-base origin/main HEAD == origin/main`. (Transient row; re-validated immediately before signaling.)
+2. **`self-coherence.md` carries CDD Trace through step 7** — §CDD Trace above lists steps 1–7 with concrete evidence.
+3. **Tests present** — 29 tests in `src/go/internal/activate/activate_test.go`; new tests `TestSkillIsSourceOfTruthForReadFirstOrder`, `TestSkillFallback_NotVendored`, `TestParseReadFirstOrderBlock_HappyPath`, `TestParseReadFirstOrderBlock_NoMarkers` cover AC7's source-of-truth invariant, fallback path, and parser.
+4. **Every AC has evidence** — §ACs above maps AC1–AC7 to specific oracle commands and recorded results.
+5. **Known debt is explicit** — §Debt enumerates five items.
+6. **Schema / shape audit completed** — §Self-check harness audit names the schema (marker-bounded numbered-list ordering block), producers (skill §4.1), consumers (`parseReadFirstOrderBlock`), and confirms no non-Go writer of this schema exists.
+7. **Peer enumeration completed** — §Self-check closure-overclaim audit covers skill peers (sibling skills under `agent/`) and renderer peers (files under `internal/activate/`).
+8. **Harness audit completed** — see row 6 above.
+9. **Post-patch re-audit / polyglot** — §Self-check polyglot re-audit covers Go (`go vet` + `go test -race` + full `src/go` package suite) and Markdown (CommonMark fence selection, section-by-section authoring).
+10. **Branch CI green** — see Branch CI note above; β runs `go test ./...` locally before merge.
+11. **Artifact enumeration matches diff** — see §ACs Surface containment block. Five files in the diff; each named in this artifact (`SKILL.md`, `activate.go`, `activate_test.go`, `gamma-scaffold.md` produced by γ, `self-coherence.md` being authored).
+12. **Caller-path trace for new modules** — §CDD Trace step 6 names every new function and its non-test caller (`loadActivateSkillOrdering` ← `Run`; `parseReadFirstOrderBlock` / `canonicalReadFirstOrdering` ← `loadActivateSkillOrdering`; `renderReadFirstLine` ← `writePrompt`).
+13. **Test assertion count from runner output** — `go test ./internal/activate/... -v` runner output:
+    ```
+    PASS: 29 tests
+    ok  	github.com/usurobor/cnos/src/go/internal/activate	0.059s
+    ```
+    Twenty-nine tests pass; no `--- FAIL` lines.
+14. **α's commit author email matches canonical pattern** — `git log --format='%ae' origin/main..HEAD | sort -u` shows `alpha@cdd.cnos` (α's six commits) and `gamma@cdd.cnos` (γ's scaffold commit, preserved). Worktree `.git/config.worktree` initially carried γ's identity from session start (since this worktree was the one γ used to push the scaffold); the first three α commits inherited it. α/SKILL.md §2.6 row 14 path (a) was executed before signaling: `git config --worktree user.email "alpha@cdd.cnos" && git rebase ad9c03f9 --exec 'git commit --amend --reset-author --no-edit' && git push --force-with-lease origin cycle/379` — this rewrote the six α commits with the canonical alpha email; γ's scaffold commit at `ad9c03f9` was the rebase base and was not amended, preserving γ's authorship. The force-push landed cleanly; subsequent two commits (§Gap and §Skills self-coherence sections; §ACs through §CDD Trace section) used the corrected worktree config and were authored as α from the start.
+
+**ready for β.**
+
+β receives the branch with all seven ACs evidenced. The skill is at the canonical path with ≥200 lines, conforms to the skill skill, prescribes the six-item load order with the layering-rule citation, defines the three-tier capability matrix with tier (a) preferred, contains the README router template under its labeled heading with a self-contained fenced block, disambiguates from cdd/activation with both paths cited exactly, and is read by `cn activate`'s evolved renderer with a test that demonstrates skill-driven output and a fallback test that demonstrates manifest-only behavior preservation.
+
+The cycle branch is `cycle/379`. β should poll `origin/cycle/379` for review and respond in `.cdd/unreleased/379/beta-review.md`. α will continue polling for β findings; if review-changes are returned, α will append a fix-round section to this file naming each finding addressed and the commit SHA that addressed it.
