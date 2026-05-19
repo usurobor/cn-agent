@@ -543,6 +543,62 @@ func TestParseReadFirstOrderBlock_NoMarkers(t *testing.T) {
 	}
 }
 
+// TestParseReadFirstOrderBlock_IgnoresDocstringMention locks in cnos#381:
+// the parser must skip docstring mentions of the markers (e.g. backtick-wrapped
+// references in prose that describe the format) and match only markers that
+// appear on their own line. The shipped 3.79.0 SKILL.md describes the format
+// using literal backticked markers in §4.1 prose before the real block; a
+// substring-based parser would match the docstring mention first, then fail
+// to parse the prose between marks as a numbered list, and fall back even
+// though the real block is present and well-formed.
+func TestParseReadFirstOrderBlock_IgnoresDocstringMention(t *testing.T) {
+	content := "## §4.1 Read-first load order (machine-readable)\n" +
+		"\n" +
+		"Format: between `<!-- read-first-order:begin -->` and `<!-- read-first-order:end -->`, a numbered list.\n" +
+		"\n" +
+		"<!-- read-first-order:begin -->\n" +
+		"1. kernel — Kernel doctrine\n" +
+		"2. ca-skills — CA skill set\n" +
+		"3. persona — Persona\n" +
+		"<!-- read-first-order:end -->\n" +
+		"\n" +
+		"Trailing prose with another `<!-- read-first-order:begin -->` mention.\n"
+	items, ok := parseReadFirstOrderBlock(content)
+	if !ok {
+		t.Fatal("parser returned !ok; must find the real block past the docstring mention")
+	}
+	if len(items) != 3 {
+		t.Fatalf("want 3 items from the real block, got %d: %+v", len(items), items)
+	}
+	want := []readFirstItem{
+		{token: "kernel", label: "Kernel doctrine"},
+		{token: "ca-skills", label: "CA skill set"},
+		{token: "persona", label: "Persona"},
+	}
+	for i, w := range want {
+		if items[i] != w {
+			t.Errorf("item[%d]: want %+v got %+v", i, w, items[i])
+		}
+	}
+}
+
+// TestParseReadFirstOrderBlock_IndentedMarker confirms that whitespace on the
+// marker line is tolerated (TrimSpace path), so blocks indented inside a list
+// item or quote still match.
+func TestParseReadFirstOrderBlock_IndentedMarker(t *testing.T) {
+	content := "preamble\n" +
+		"   <!-- read-first-order:begin -->\n" +
+		"1. kernel — Kernel doctrine\n" +
+		"   <!-- read-first-order:end -->\n"
+	items, ok := parseReadFirstOrderBlock(content)
+	if !ok {
+		t.Fatal("parser returned !ok for indented markers")
+	}
+	if len(items) != 1 || items[0].token != "kernel" {
+		t.Errorf("want one item with token kernel, got %+v", items)
+	}
+}
+
 // --- AC10: Latest reflection pointer ---
 
 func TestLatestReflection_Present(t *testing.T) {
