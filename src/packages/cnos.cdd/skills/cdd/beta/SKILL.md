@@ -143,6 +143,23 @@ For release-scoped triadic cycles, the β close-out is written to `.cdd/unreleas
 - ❌ "Merge succeeded; someone else can write the β close-out later"
 - ✅ "Review → narrow → merge → release → write `.cdd/unreleased/{N}/beta-closeout.md` in the same β pass, then γ writes the PRA"
 
+### 6. Anchor oracle evidence on code, not doc
+
+When evaluating an AC oracle, β re-greps the implementation surface *first*, then verifies that any cited doc, comment, or string literal matches what the code actually emits. Doc-first evaluation produces an honest-looking pass when the doc has drifted from the implementation. The doc is hypothesis; the code is evidence.
+
+**6a. Widen brittle oracle regexes β-side.** Dispatcher-prompt regexes are authored before α writes the code; they cannot anticipate every literal shape α emits (single-line vs multi-line conditionals, escape quirks, alternative spellings). When the prompt's regex misses a real literal the code does emit, β widens the regex β-side and records both the prompt regex and the widened regex in the review verdict. β does not request α to re-shape the implementation to fit a brittle dispatcher regex.
+
+**6b. Surface name-overpromise as a finding class.** Function names, variable names, and string literals can encode promises (richer behavior, specific outputs, distinguishing flags) that the implementation does not fulfill. When a name asserts a behavior the code does not deliver, β flags it as a name-overpromise finding. The fix is either rename to match (cosmetic narrowing) or implement what the name promises (substantive widening); the choice is α's, but β must surface that the choice is being made.
+
+Empirical anchor: cph#21 coherence-drift-sweep-followup wave (2026-05-18) surfaced both corollaries — F7 (`quality_flag="short"`) was missed in the precursor wave by anchoring on doc, then caught in followup R1 by code-first re-grep; F10 (`extract_shape` named but only marking persistence) joined F7 as a same-class name-overpromise. Codifying the discipline here removes future per-wave manifest restatement.
+
+- ❌ "AC1 oracle grep matched the doc — approving"
+- ❌ "The dispatcher prompt's regex didn't match α's multi-line conditional — α should rewrite to a single-line form"
+- ❌ "`extract_shape` returns nothing structural but the doc says it does — minor"
+- ✅ "Re-grepped code first; doc matches code-emitted set; AC1 oracle passes"
+- ✅ "Dispatcher regex missed multi-line literal; β widened β-side and recorded both forms in the verdict"
+- ✅ "`extract_shape` name promises behavior the code does not deliver — flagged as name-overpromise; α decides rename-or-implement"
+
 ## Resumption
 
 When dispatched to an artifact path that already contains a section manifest, β follows the resumption protocol per `CDD.md` §1.4:
