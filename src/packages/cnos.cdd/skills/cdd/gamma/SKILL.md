@@ -136,17 +136,7 @@ Before selecting work, read the observation surfaces required by `CDD.md`:
 2. CHANGELOG TSC table
 3. encoding lag table
 4. doctor / status / operational-health surface
-5. **Cross-repo proposal intake** — scan known source repos for active proposal lifecycle files:
-   - `.cdd/iterations/proposals/*/STATUS`
-   - `.cdd/proposals/{target}/*/STATUS`
-
-For each proposal whose last non-comment `STATUS` event is `submitted`, read the adjacent `ISSUE.md` and optional `PATCH.diff`, then check cnos target state for duplicate or already-landed work before selection. Decide one of:
-
-- `accepted` — cnos will act substantially as proposed.
-- `modified` — cnos accepts the governing gap but changes scope, split, wording, implementation, proof, or patch application materially.
-- `rejected` — cnos declines the proposal as target work.
-
-If accepted or modified, create or link a cnos target issue that includes a `## Source Proposal` block with source path, source commit when known, disposition, and delta when modified. Append the decision event to source `STATUS`; if cnos cannot write to the source repo, emit a feedback patch that updates `STATUS`. Once cnos has made a decision, the source proposal must not remain at `submitted`.
+5. **Cross-repo proposal intake** — scan known source repos at `.cdd/iterations/cross-repo/cnos/*/STATUS` (the source-side path naming cnos as counterpart) for the last non-comment event = `submitted` (or `drafted` with source-delegated filing-authority per `cdd/cross-repo/SKILL.md §2.3.3`). For each candidate, read the adjacent `ISSUE.md` and optional `PATCH.diff`, check cnos target state for duplicate or already-landed work, decide `accepted` / `modified` / `rejected`, file a target issue with the `## Source Proposal` block from `cdd/issue/SKILL.md`, and emit the disposition event to source STATUS (direct push or `FEEDBACK.patch`). After the filing decision, source STATUS must not remain at `submitted` or `drafted`. The protocol details (canonical path, full 8-event vocabulary, transition graph, bundle file set, LINEAGE schema, feedback-patch format) live in `cdd/cross-repo/SKILL.md` — that skill is the canonical surface for cross-repo coordination.
 
 Build a candidate table:
 
@@ -440,7 +430,7 @@ Before close-out, collect (in-version, before release):
 - `.cdd/unreleased/{N}/alpha-closeout.md` (α close-out narrative — obtained via re-dispatch if needed)
 - `.cdd/unreleased/{N}/beta-closeout.md` (β close-out narrative + release evidence)
 
-**Cross-repo proposal close-out:** If this cycle accepted or modified a source proposal, γ verifies that the source proposal receives a `landed` event when the target work merges, or that the branch emits a feedback patch containing that event. The `landed` event names the target issue or cycle, landed commit, and artifact path when available. A proposal touched by the cycle may not remain at `accepted` or `modified` after the target work has landed.
+**Cross-repo proposal close-out:** If this cycle accepted or modified a source proposal, γ emits the `landed` event to source STATUS when the target work merges (direct push or feedback patch). For master/sub-shaped proposals, a per-sub `landed` row fires per sub merge and a terminal master-close row fires when the master closes — see `cdd/cross-repo/SKILL.md §"STATUS state machine"` master/sub rule. A proposal touched by the cycle may not remain at `accepted` or `modified` after the target work has landed.
 
 **Post-merge CI verification (mandatory):** Before authoring `gamma-closeout.md`, γ must verify CI ran green on the merge commit:
 - Run `gh run list --branch main --json status,conclusion,head_sha` filtered to `head_sha == merge-SHA`

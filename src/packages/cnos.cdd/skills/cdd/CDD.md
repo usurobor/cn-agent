@@ -210,19 +210,17 @@ GitHub Pull Requests are **not** part of the triadic protocol. PR creation, poll
 
 Roles may add additional files when the cycle warrants it (e.g. `alpha-design.md` if a separate design artifact lives in the cycle dir, `gamma-dispatch.md` if dispatch evidence is large enough to deserve its own file). The filename pattern is `{role}-{purpose}.md` (e.g. `alpha-closeout.md`) for role-owned content, and bare `{purpose}.md` (e.g. `self-coherence.md`) for cycle-shared content where the convention identifies the author.
 
-**Cross-repo proposal lifecycle.** A source repo may submit work to cnos by committing a proposal issue pack plus a small `STATUS` event log. Existing proposal payloads remain `ISSUE.md`; mutable lifecycle state belongs in the adjacent `STATUS` file. Two source-side layouts are first-class:
+**Cross-repo proposal lifecycle.** A source repo may submit work to cnos by committing a proposal issue pack plus a small `STATUS` event log. Existing proposal payloads remain `ISSUE.md`; mutable lifecycle state belongs in the adjacent `STATUS` file. The canonical source-side layout is:
 
 ```text
-.cdd/iterations/proposals/{slug}/
+{source-repo}:.cdd/iterations/cross-repo/cnos/{slug}/
   ISSUE.md
   STATUS
   PATCH.diff        # optional
-
-.cdd/proposals/{target}/{slug}/
-  ISSUE.md
-  STATUS
-  PATCH.diff        # optional
+  LINEAGE.md        # source-side trace
 ```
+
+The matching cnos-side mirror lives at `cnos:.cdd/iterations/cross-repo/{source-repo}/{slug}/`. The path is direction-agnostic — outbound iteration traces and bilateral iterations live at `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/` on whichever side carries the bundle. See `cdd/cross-repo/SKILL.md` for the full protocol surface (directional cases, bundle file set per case, LINEAGE schema, feedback-patch format, bundle archival rule, hat-collapse attribution).
 
 `STATUS` is an append-only event log. The current lifecycle state is the last non-comment event.
 
@@ -233,16 +231,16 @@ Roles may add additional files when the cycle warrants it (e.g. `alpha-design.md
 
 Dates use `YYYY-MM-DD`. Event names are the lifecycle state vocabulary:
 
-- `drafted` - source has written the proposal but has not requested target action.
-- `submitted` - source requests target intake. This is the only event required for target intake.
-- `accepted` - target will act substantially as proposed and has a target reference.
-- `modified` - target accepts the gap but changes scope, split, wording, implementation, proof, or patch application materially.
-- `landed` - target work merged or otherwise became target truth.
-- `rejected` - target declines the proposal as target work.
-- `withdrawn` - source retracts the request.
-- `revised` / `corrected` - optional audit events for post-submission revisions or corrections.
+- `drafted` — source has written the proposal but has not requested target action.
+- `submitted` — source requests target intake. This is the only event required for target intake.
+- `accepted` — target will act substantially as proposed and has a target reference.
+- `modified` — target accepts the gap but changes scope, split, wording, implementation, proof, or patch application materially.
+- `landed` — target work merged or otherwise became target truth.
+- `rejected` — target declines the proposal as target work.
+- `withdrawn` — source retracts the request.
+- `revised` / `corrected` — optional audit events for post-submission revisions or corrections.
 
-Do not rewrite old events after sharing; append a `corrected` event instead. Accepted or modified target issues must include source lineage (source path, source commit when known, disposition, and delta when modified). When target work lands, cnos appends `landed <date> <target-ref> commit=<sha> artifact=<path>` to source `STATUS`, or emits a patch that does so if cnos cannot write to the source repo.
+The transition graph, emitter-per-event rules, master/sub `landed` rule (per-sub events + terminal master-close event), bundle-state phase mapping (`open | converging | closed`), and `drafted → accepted` direct-acceptance permission (when the source delegates filing-authority to the target without an intermediate `submitted` event) are codified in `cdd/cross-repo/SKILL.md §"STATUS state machine"`. Do not rewrite old events after sharing; append a `corrected` event instead. Accepted or modified target issues must include source lineage (source path, source commit when known, disposition, and delta when modified). When target work lands, cnos appends `landed <date> <target-ref> commit=<sha> artifact=<path>` to source `STATUS`, or emits a `FEEDBACK.patch` that does so if cnos cannot write to the source repo (per `cdd/cross-repo/SKILL.md §"Feedback-patch format"`).
 
 **Coordination loop.**
 
