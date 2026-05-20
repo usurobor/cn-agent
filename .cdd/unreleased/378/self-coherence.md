@@ -75,7 +75,7 @@ Parallel α-side gap: `alpha/SKILL.md` §2.6 pre-review gate had no row for γ-s
 - `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md`
 - `.cdd/unreleased/378/*.md`
 
-**Evidence:** `git diff --stat origin/main..HEAD` at HEAD `f56afd2d` (post-rebase implementation SHA; pre-rebase was `561c19af`) shows only the three SKILL files. The γ-scaffold and self-coherence commits add only `.cdd/unreleased/378/*.md`. No CI workflows, no validators, no `cdd/CDD.md` edit.
+**Evidence:** `git diff --stat origin/main..HEAD` at HEAD `64c96317` (current implementation SHA; rebase chain: pre-R1.1 `561c19af` → post-R1.1 `f56afd2d` → post-R1.2 `64c96317` — see §Fix-round R1.1 and §Fix-round R1.2) shows only the three SKILL files. The γ-scaffold and self-coherence commits add only `.cdd/unreleased/378/*.md`. No CI workflows, no validators, no `cdd/CDD.md` edit.
 
 **Status:** PASS.
 
@@ -102,23 +102,23 @@ None outright. Two acknowledged constraints (not debt):
 |---|---|---|---|---|
 | 0 | Observe | γ | δ-as-γ | wave manifest read; issue #378 read via `mcp__github__issue_read` |
 | 1 | Select | γ | δ-as-γ | issue #378 selected per wave manifest queue |
-| 2 | Branch | γ | δ-as-γ | `cycle/378` created from `origin/main` SHA `c9017153`; pushed to `origin/cycle/378`; rebased onto `origin/main:dd5a36d9` mid-cycle (see §Fix-round R1.1) |
+| 2 | Branch | γ | δ-as-γ | `cycle/378` created from `origin/main` SHA `c9017153`; pushed to `origin/cycle/378`; rebased onto `origin/main:dd5a36d9` (R1.1); rebased again onto `origin/main:8e118320` after parallel cycle #375 merged (R1.2) |
 | 3 | Bootstrap | α | δ-as-α | git identity `alpha@cdd.cnos` set; `.cdd/unreleased/378/` created |
-| 3a | γ-scaffold | γ | δ-as-γ | `.cdd/unreleased/378/gamma-scaffold.md` at `26303a3d` (post-rebase; pre-rebase `66d02c8a`) — γ-side artifact present per `gamma/SKILL.md` §2.5 step 3a + #375 preventive — even though wave-manifest also serves under §5.2, the per-cycle scaffold is authored as belt-and-suspenders per wave invariant #3 |
+| 3a | γ-scaffold | γ | δ-as-γ | `.cdd/unreleased/378/gamma-scaffold.md` at `f5ab0e35` (current; chain `66d02c8a→26303a3d→f5ab0e35`) — γ-side artifact present per `gamma/SKILL.md` §2.5 step 3a + #375 preventive — even though wave-manifest also serves under §5.2, the per-cycle scaffold is authored as belt-and-suspenders per wave invariant #3 |
 | 4 | Gap + ACs | α | δ-as-α | §Gap above; AC1–AC4 mapped above |
 | 5 | Mode | α | δ-as-α | §5.2 wave-mode under γ+α+β-on-δ collapse (named §Gap, §Debt) |
-| 6 | Artifacts | α | δ-as-α | three SKILL files patched at `f56afd2d` (post-rebase; pre-rebase `561c19af`): `review/SKILL.md` L141–143, `alpha/SKILL.md` L255–259 (row 15), `operator/SKILL.md` L319 |
+| 6 | Artifacts | α | δ-as-α | three SKILL files patched at `64c96317` (current; chain `561c19af→f56afd2d→64c96317`): `review/SKILL.md` L141–143, `alpha/SKILL.md` L255–259 (row 15), `operator/SKILL.md` L319 |
 | 7 | Self-coherence | α | δ-as-α | this file |
 
 ## §Review-readiness
 
 **Round:** 1
-**Implementation SHA:** `f56afd2d` (post-rebase implementation commit; pre-rebase `561c19af` — see §Fix-round R1.1)
-**Base SHA at observation:** `dd5a36d9` (origin/main at current observation, after mid-cycle advance from `c9017153`; cycle/378 rebased onto `dd5a36d9` per §Fix-round R1.1)
+**Implementation SHA:** `64c96317` (current; rebase chain `561c19af→f56afd2d→64c96317` — see §Fix-round R1.1 and §Fix-round R1.2)
+**Base SHA at observation:** `8e118320` (origin/main current; advance chain `c9017153→dd5a36d9→8e118320`; cycle/378 rebased twice — R1.1 onto `dd5a36d9`, R1.2 onto `8e118320` after parallel cycle #375 merged)
 **Branch CI:** N/A (skill-patch, docs-only disconnect class per wave manifest §wave-level invariants 1; no CI workflows triggered by these paths)
 
 **§2.6 row 15 outcome (the row this cycle adds):**
-- `γ-artifact at canonical §5.1 path` — `.cdd/unreleased/378/gamma-scaffold.md` present at `origin/cycle/378:26303a3d` (post-rebase; pre-rebase `66d02c8a`); verifiable via `git ls-tree -r origin/cycle/378 .cdd/unreleased/378/gamma-scaffold.md`
+- `γ-artifact at canonical §5.1 path` — `.cdd/unreleased/378/gamma-scaffold.md` present at `origin/cycle/378:f5ab0e35` (current; chain `66d02c8a→26303a3d→f5ab0e35`); verifiable via `git ls-tree -r origin/cycle/378 .cdd/unreleased/378/gamma-scaffold.md`
 - AND `wave-manifest serves under §5.2 (wave-id: 2026-05-19-protocol-hygiene; discoverability: master-tracking-link)` — the wave manifest at `.cdd/waves/2026-05-19-protocol-hygiene/manifest.md` exists on `origin/main` and lists #378 in the `## Issues` table (path (b) per the new clause).
 - Both halves hold; rule 3.11b satisfied via either configuration.
 
@@ -152,4 +152,28 @@ Not a β-RC fix-round — α-internal pre-handoff state update per `alpha/SKILL.
 **Post-restamp implementation SHA** for §Review-readiness: this fix-round section is itself committed *after* re-stamping; the post-rebase implementation SHA `f56afd2d` (the SKILL-file edit commit) remains the stable "implementation SHA" per `alpha/SKILL.md` §2.6 SHA convention (last implementation commit before the readiness-signal commit). The self-coherence commit that lands this §Fix-round R1.1 section is the readiness-signal commit; β reads HEAD via polling.
 
 **β handoff.** Re-signaled. Branch HEAD post-restamp: see the commit that lands this fix-round section.
+
+## §Fix-round R1.2 — second mid-cycle rebase (α-internal, parallel cycle #375 merge)
+
+Not a β-RC fix-round — α-internal pre-handoff state update per `alpha/SKILL.md` §2.6 row 1.
+
+**Trigger.** Between R1.1 commit and β handoff prep, `origin/main` advanced again — parallel cycle #375 (the orthogonal axis of this wave per wave manifest) closed and merged: commits `7ef98eb4` (γ-375), `c4d29344` (α-375 patching `gamma/SKILL.md` §2.5 Step 3b), `feebd45c` (β-375 APPROVED + close-outs), `8e118320` (merge). Surfaced by `git diff --stat origin/main..HEAD` showing unrelated `.cdd/unreleased/375/` and `gamma/SKILL.md` entries.
+
+**Action.** `git rebase origin/main` (clean; no file-level conflict — #375 touched `gamma/SKILL.md` §2.5 Step 3b only, which this cycle does not touch; this cycle's `alpha/SKILL.md` and `operator/SKILL.md` changes do not overlap with #375); `git push --force-with-lease origin cycle/378`.
+
+**Cross-cycle coordination note.** Wave manifest §wave-level invariants 4 anticipates this case: "If two cycles touch the same file, β raises a cross-cycle finding at review and γ coordinates merge order." No file-level overlap occurred (cycle #375 patched `gamma/SKILL.md`; cycle #378 patched `review/SKILL.md`, `alpha/SKILL.md`, `operator/SKILL.md`), so this is the no-conflict path — α rebases and the merge order is mechanical (#375 first, #378 second).
+
+**SHA rewrite map** (R1.1 SHAs → R1.2 SHAs):
+- γ-scaffold: `26303a3d → f5ab0e35`
+- α impl:    `f56afd2d → 64c96317`
+- α self-coh:`7e64a673 → 23903ab4`
+- α R1.1:    `80b51d59 → fe22da53`
+
+**Re-stamping.** Live citation sites updated (sites that point at *current* state — implementation SHA, base SHA, γ-scaffold presence, AC4 evidence, CDD Trace rows). The §Fix-round R1.1 narrative retains its R1.1-era SHAs verbatim because that section describes the R1.1 event as it occurred (`66d02c8a→26303a3d`, etc. are accurate as descriptions of *what happened during R1.1*, even though those R1.1 post-rebase SHAs no longer exist on the branch after R1.2). This preserves the audit narrative without overloading R1.1's voice with R1.2's SHAs.
+
+**Post-restamp grep verification** (run before β handoff): `grep -n 'c9017153\|66d02c8a\|561c19af\|453144aa\|dd5a36d9\|26303a3d\|f56afd2d\|7e64a673\|80b51d59' .cdd/unreleased/378/*.md` returns only sites accompanied by chain-cross-reference annotations (e.g. "chain `66d02c8a→26303a3d→f5ab0e35`") or sites inside §Fix-round R1.1's R1.1-event description — no bare claims to invalidated SHAs at the live-state surface.
+
+**Cycle resilience observation.** Two mid-cycle rebases (R1.1 single-commit advance, R1.2 four-commit advance from parallel cycle) is within the wave's expected behavior — three parallel skill-patch cycles dispatched concurrently per the wave manifest means rebase churn is a structural feature of §5.2 wave-mode, not a friction signal. The §2.6 row 1 + §2.3 intra-doc + §2.6 SHA-citations-across-rebase chain handles this cleanly; no protocol gap surfaced.
+
+**β handoff.** Re-signaled. Branch HEAD post-R1.2: see the commit that lands this fix-round section.
 
