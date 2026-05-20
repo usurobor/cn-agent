@@ -109,6 +109,7 @@ CA-CONDUCT.md:108 and ca-conduct/SKILL.md:116 reference mci as on-demand use ("w
 | 7. Produce — docs | `activate/SKILL.md` §8 References updated. `cap/SKILL.md` self-documents absorbed and non-absorbed content. This self-coherence.md is the primary branch artifact. | ✓ |
 
 **Files in `git diff --stat origin/main..HEAD`** (as required by pre-review gate row 11):
+- `.cdd/unreleased/385/gamma-scaffold.md` — γ-artifact (not α-authored; present as γ created the cycle branch) ✓
 - `.cdd/unreleased/385/self-coherence.md` — this file ✓
 - `src/packages/cnos.core/skills/agent/activate/SKILL.md` — AC1+AC4 ✓
 - `src/packages/cnos.core/skills/agent/cap/SKILL.md` — AC2+AC9 ✓
