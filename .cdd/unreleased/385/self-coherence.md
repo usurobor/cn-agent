@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness] -->
 
 # Self-Coherence — Cycle #385
 
@@ -126,3 +126,25 @@ CA-CONDUCT.md:108 and ca-conduct/SKILL.md:116 reference mci as on-demand use ("w
 All 12 changed files mentioned in §ACs or this trace. Pre-review gate row 11 satisfied.
 
 **Caller-path trace for new content (row 12):** cap/SKILL.md §4-§6 content is activation-loaded (called by activate/SKILL.md step 2, which is fetched by any body following the skill). The non-test caller is `activate/SKILL.md §2.1 step 2` referencing `agent/cap/SKILL.md`. ✓
+
+## §Review-readiness | round 1 | implementation SHA: `3b6ab480` | branch CI: local tests green at 2026-05-20 | ready for β
+
+**Pre-review gate:**
+
+| Row | Check | Status |
+|-----|-------|--------|
+| 1 | cycle/385 rebased onto current origin/main | ✓ — 0 commits behind main at 2026-05-20 (base SHA: 35df4198) |
+| 2 | self-coherence.md carries CDD Trace through step 7 | ✓ |
+| 3 | tests present | ✓ — `go test ./...` 13 packages pass; `validate-skill-frontmatter.sh` 67 files pass |
+| 4 | every AC has evidence | ✓ — §ACs above |
+| 5 | known debt explicit | ✓ — §Debt above |
+| 6 | schema/shape audit | ✓ — activate.go ca-skills string; no schema-bearing type changes |
+| 7 | peer enumeration | ✓ — 5 sites in activate/SKILL.md; 4 standalone frontmatter files; 3 Go/test files |
+| 8 | harness audit | ✓ — renderer + kata fixture + pkgbuild updated |
+| 9 | post-patch re-audit (polyglot) | ✓ — Go: `go test -race`, `go build`; Markdown: frontmatter validation; no shell/YAML surfaces touched |
+| 10 | branch CI green | local: `go test -race ./internal/activate/... ./internal/pkgbuild/...` pass; `go build ./...` pass; CI state at push time |
+| 11 | artifact enumeration matches diff | ✓ — all 13 files in diff listed in §CDD Trace |
+| 12 | caller-path trace | ✓ — activate/SKILL.md §2.1 step 2 calls cap/SKILL.md |
+| 13 | test assertion count from runner | go test output: 13 packages ok (see §ACs row AC5/AC6 for specific packages) |
+| 14 | commit author email | ✓ — `alpha@cdd.cnos` on all cycle commits |
+| 15 | γ-artifact at canonical §5.1 path | ✓ — `origin/cycle/385:.cdd/unreleased/385/gamma-scaffold.md` present |
