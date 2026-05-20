@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt] -->
 
 # Self-Coherence — Cycle #385
 
@@ -69,3 +69,29 @@ CA-CONDUCT.md:108 and ca-conduct/SKILL.md:116 reference mci as on-demand use ("w
 
 **AC9 — cap/SKILL.md §7 Boundary rewritten:**
 §7 (was §4) now states: CAP owns activation-loaded rules (§1-§6). CLP remains separately loaded. mca/mci/coherent remain on-disk for on-demand load. agent-ops removed from adjacent-skill mention (runtime-specific, not behavioral). ✓
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?** No. Every AC has concrete evidence (grep output, test pass/fail, file existence check). The absorption boundary in cap/SKILL.md explicitly names what was absorbed and what remains in each standalone file — β can verify any absorption claim by reading the named section of the standalone skill. The non-absorbed content note in cap §4/§5/§6 is the boundary document.
+
+**Is every claim backed by evidence in the diff?**
+- AC1: calls: frontmatter is in the diff; §2.1 step 2 list is in the diff.
+- AC2: cap/SKILL.md §4/§5/§6 are in the diff; non-absorbed notes name the standalone files.
+- AC3: mca/mci/coherent/agent-ops frontmatter `activation_status:` fields are in the diff.
+- AC4: The five changed sites in activate/SKILL.md are in the diff; grep confirms 0 remaining hits.
+- AC5: AGENTS.md deletion is in the diff; pkgbuild diffs show comment and test removal.
+- AC6: activate.go line 506 is in the diff; tests pass.
+- AC7: kata.md line 115 is in the diff.
+- AC8: No changes required to CA-CONDUCT.md or ca-conduct/SKILL.md; frontmatter validation passes.
+- AC9: cap/SKILL.md §7 is in the diff.
+
+**Peer enumeration:** The family of 6-skill references was enumerated before coding (per gamma-scaffold §Peer enumeration). All 5 sites in activate/SKILL.md were changed. No calls: reference to mca/mci/coherent/agent-ops exists in cnos.core/cnos.eng/cnos.cdd (verified by grep during AC3). ✓
+
+**Harness audit:** The Go renderer (activate.go) was updated. The kata fixture (kata.md) was updated. The pkgbuild build.go comment and test were updated. No other harness surfaces write the ca-skills string. ✓
+
+## §Debt
+
+- **Hub-side downstream cleanup is out of scope** (explicit per gamma-scaffold §Scope boundary). cn-sigma's RULES.md, spec/AGENTS.md, spec/TOOLS.md, spec/HEARTBEAT.md cleanup is a separate per-hub issue downstream of this cnos change.
+- **cap/SKILL.md section number shift (§4→§7 for Boundary):** Existing prose in other skills that references "cap §4" by number will now point at MCA rules instead of the Boundary section. A grep found no external prose references to "cap §4" in the current codebase, so no live cross-references are broken. The shift is tracked here as minor debt for completeness.
+- **Provisional close-out:** α writes `alpha-closeout.md` at review-readiness time per §2.8 fallback, explicitly marked `[provisional — pending β outcome]`.
+- γ-artifact: `gamma-scaffold.md` present at canonical §5.1 path `origin/cycle/385:.cdd/unreleased/385/gamma-scaffold.md`. ✓
