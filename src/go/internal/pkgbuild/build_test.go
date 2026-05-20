@@ -425,14 +425,13 @@ func TestDerivePacklistIncludesContentClasses(t *testing.T) {
 
 // TestDerivePacklistIncludesRootFiles: non-dotfile entries at the
 // package root ship — README/LICENSE for projects that follow
-// convention, AGENTS.md/HEARTBEAT.md/TOOLS.md for cnos.core, lib.sh
-// for cnos.kata. All are exercised together so the test breaks if
-// the rule ever tightens without a migration for the load-bearing
-// root files that exist today.
+// convention, lib.sh for cnos.kata. All are exercised together so
+// the test breaks if the rule ever tightens without a migration for
+// the load-bearing root files that exist today.
 func TestDerivePacklistIncludesRootFiles(t *testing.T) {
 	pkgDir := t.TempDir()
 	writeManifest(t, pkgDir, "test.pkg", "1.0.0")
-	for _, name := range []string{"README.md", "LICENSE", "AGENTS.md", "lib.sh"} {
+	for _, name := range []string{"README.md", "LICENSE", "lib.sh"} {
 		mustWrite(t, filepath.Join(pkgDir, name), name+"\n")
 	}
 
@@ -441,7 +440,7 @@ func TestDerivePacklistIncludesRootFiles(t *testing.T) {
 		t.Fatalf("derive: %v", err)
 	}
 
-	for _, want := range []string{"README.md", "LICENSE", "AGENTS.md", "lib.sh"} {
+	for _, want := range []string{"README.md", "LICENSE", "lib.sh"} {
 		if !slices.Contains(got, want) {
 			t.Errorf("missing %q in packlist: %v", want, got)
 		}
