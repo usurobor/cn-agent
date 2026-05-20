@@ -1,5 +1,5 @@
 <!-- sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness] -->
-<!-- completed: [Gap, Skills, ACs, Self-check, Debt] -->
+<!-- completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace] -->
 
 # Self-Coherence — Cycle #385
 
@@ -95,3 +95,33 @@ CA-CONDUCT.md:108 and ca-conduct/SKILL.md:116 reference mci as on-demand use ("w
 - **cap/SKILL.md section number shift (§4→§7 for Boundary):** Existing prose in other skills that references "cap §4" by number will now point at MCA rules instead of the Boundary section. A grep found no external prose references to "cap §4" in the current codebase, so no live cross-references are broken. The shift is tracked here as minor debt for completeness.
 - **Provisional close-out:** α writes `alpha-closeout.md` at review-readiness time per §2.8 fallback, explicitly marked `[provisional — pending β outcome]`.
 - γ-artifact: `gamma-scaffold.md` present at canonical §5.1 path `origin/cycle/385:.cdd/unreleased/385/gamma-scaffold.md`. ✓
+
+## §CDD Trace
+
+| Step | Description | Status |
+|------|-------------|--------|
+| 1. Receive | Issue #385 read; gamma-scaffold.md loaded; active skill set explicit (Tier 1: CDD.md + alpha/SKILL.md; Tier 3: write, skill, go) | ✓ |
+| 2. Produce — design | Design is issue body (CLP r2 converged); no separate DESIGN.md required | ✓ |
+| 3. Produce — coherence contract | self-coherence.md §Gap written first | ✓ |
+| 4. Produce — plan | Not required; AC sequence is direct; implementation sequencing is trivial | ✓ |
+| 5. Produce — tests | Go tests: `go test ./...` → all 13 packages pass. `validate-skill-frontmatter.sh` → 67 SKILL.md validated, no findings. | ✓ |
+| 6. Produce — code | Files changed: `activate/SKILL.md`, `cap/SKILL.md`, `mca/SKILL.md`, `mci/SKILL.md`, `coherent/SKILL.md`, `agent-ops/SKILL.md`, `AGENTS.md` (deleted), `activate.go`, `kata.md`, `build.go`, `build_test.go`. All callers of new/changed interfaces verified. | ✓ |
+| 7. Produce — docs | `activate/SKILL.md` §8 References updated. `cap/SKILL.md` self-documents absorbed and non-absorbed content. This self-coherence.md is the primary branch artifact. | ✓ |
+
+**Files in `git diff --stat origin/main..HEAD`** (as required by pre-review gate row 11):
+- `.cdd/unreleased/385/self-coherence.md` — this file ✓
+- `src/packages/cnos.core/skills/agent/activate/SKILL.md` — AC1+AC4 ✓
+- `src/packages/cnos.core/skills/agent/cap/SKILL.md` — AC2+AC9 ✓
+- `src/packages/cnos.core/skills/agent/mca/SKILL.md` — AC3 ✓
+- `src/packages/cnos.core/skills/agent/mci/SKILL.md` — AC3 ✓
+- `src/packages/cnos.core/skills/agent/coherent/SKILL.md` — AC3 ✓
+- `src/packages/cnos.core/skills/agent/agent-ops/SKILL.md` — AC3 ✓
+- `src/packages/cnos.core/AGENTS.md` — AC5 (deleted) ✓
+- `src/go/internal/activate/activate.go` — AC6 ✓
+- `src/packages/cnos.kata/katas/R5-activate/kata.md` — AC7 ✓
+- `src/go/internal/pkgbuild/build.go` — AC5 ✓
+- `src/go/internal/pkgbuild/build_test.go` — AC5 ✓
+
+All 12 changed files mentioned in §ACs or this trace. Pre-review gate row 11 satisfied.
+
+**Caller-path trace for new content (row 12):** cap/SKILL.md §4-§6 content is activation-loaded (called by activate/SKILL.md step 2, which is fetched by any body following the skill). The non-test caller is `activate/SKILL.md §2.1 step 2` referencing `agent/cap/SKILL.md`. ✓
