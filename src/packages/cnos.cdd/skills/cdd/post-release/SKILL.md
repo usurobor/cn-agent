@@ -333,12 +333,7 @@ If `no-patch`:
 
 For docs-only releases, the path uses the §2.5b form: `.cdd/releases/docs/{ISO-date}/{N}/cdd-iteration.md`.
 
-**Cross-repo trace.** If any finding's disposition is `patch-landed` with a `Cross-repo` target, γ also creates `.cdd/iterations/cross-repo/{target-repo}/{slug}/` containing:
-
-- the bundle deliverables (patch series, issue body, PR body, apply notes)
-- a `LINEAGE.md` mapping each deliverable to its source cycle(s) and the target repo's PR
-
-The cross-repo directory persists until the target PR merges; γ may delete it thereafter (the lineage is preserved in the target repo's own `cdd-iteration.md`).
+**Cross-repo trace.** If any finding's disposition is `patch-landed` with a `Cross-repo` target, γ creates a cross-repo bundle at the canonical path `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/` per `cdd/cross-repo/SKILL.md`. For an outbound iteration trace (case b), the bundle file set is `LINEAGE.md` with per-patch confirmation; for a bilateral iteration (case c), the bundle additionally carries `cdd-iteration.md` and one feedback patch per outbound destination patch. Archival follows `cdd/cross-repo/SKILL.md §"Bundle archival rule"` — the source-side (cnos-side, for outbound) bundle may be archived once the counterpart-side mirror confirms receipt; target-side mirrors are preserved indefinitely.
 
 **Why this artifact exists.** Without `cdd-iteration.md`, cdd-self-improvement findings are buried in PRA §3 prose. They cannot be aggregated, the protocol cannot measure its own learning rate, and cross-repo work loses traceability. Making the artifact first-class closes cdd's self-iteration loop with the same discipline cdd applies to system-level cycles. Every cycle produces the file — an empty findings list is itself signal that the cycle ran cleanly.
 
