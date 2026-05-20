@@ -174,6 +174,94 @@ Roles are behavioral contracts (hats), not entity slots (actors). Any agent can 
 
 The pattern applies regardless of whether actors are humans, agents, or sessions. The structural property is the independence of observation, not the nature of the observer.
 
+## §4a Persona, operator, protocol, project, receipt — the five-layer enforcement chain
+
+A protocol that operates on real work needs more than role definitions. It needs a chain of artifacts that together determines (i) what kind of agent does the work, (ii) what the agent refuses to do, (iii) what counts as valid work in the domain, (iv) what concrete gates apply for this project, and (v) what evidence must exist before the work is transmissible to a parent scope.
+
+The role ladder (§1) defines the abstract grammar (α/β/γ/δ/ε); the enforcement chain instantiates the grammar at a specific operating point.
+
+| Layer | Question | Canonical home |
+|---|---|---|
+| **1. Persona** | What kind of mind is this agent? | `<hub>/spec/PERSONA.md` |
+| **2. Operator contract** | What does this agent refuse to do? | `<hub>/spec/OPERATOR.md` |
+| **3. Protocol overlay** | What counts as valid work in this domain? | `cnos.<protocol>/skills/<protocol>/` |
+| **4. Project binding** | What concrete gates apply for this project? | `<project>/.<protocol>/` or `<project>/<protocol>/` |
+| **5. Receipt / validator** | What evidence makes the work transmissible? | per-protocol receipt schema; V dereferences |
+
+These five layers map onto a four-question grouping that names the boundaries:
+
+- **Who** — persona + operator contract (layers 1–2)
+- **What** — protocol overlay (layer 3)
+- **Where** — project binding (layer 4)
+- **How** — receipt + validator (layer 5)
+
+A persona hub is not the protocol package, and the protocol package is not the project binding. Conflating any two layers produces drift: persona that smuggles project-specific data paths becomes unreusable across projects; protocol overlay that bakes in one project's gates produces a protocol that can only operate on that project; project binding that carries reusable role doctrine traps that doctrine inside the project.
+
+### §4a.1 Discipline profile (required persona section)
+
+The persona's `## Discipline` section is the standing artifact that encodes the agent's loss function. It is **not** equivalent to a task-prompt instruction ("be careful," "verify before claiming"). Task prompts are weak — they may or may not be loaded, may or may not be remembered. The discipline profile is a standing characteristic of the agent that survives prompt-to-prompt context churn and that the operator contract, protocol overlay, and receipt validator can each reference.
+
+Required fields:
+
+```markdown
+## Discipline
+
+Primary virtue: <what this agent optimises for>
+Primary error: <the failure mode this agent must structurally resist>
+Default tempo: <fast / slow / variable, and the constraint>
+Claim/artifact boundary: <when this agent advances vs holds>
+Refusal conditions: <conditions that force "deferred" / "blocked" / "rejected" instead of any output>
+Receipt requirements: <what the agent's receipts must carry>
+```
+
+### §4a.2 Loss-function distinction
+
+The deepest distinction across instantiations is not the role grammar — α/β/γ/δ/ε are the same shape everywhere. It is the loss function that the discipline profile encodes:
+
+- **Engineering protocols (CDS):** optimise for *artifact improvement under repairable feedback*. Primary failure mode is the stalled loop — no working artifact ships, the system does not improve. Engineering has a strong immediate-feedback surface (compilers, tests, schemas, CI) that produces fast correction, so the discipline can support shipping bounded artifacts and repairing them.
+- **Research protocols (CDR):** optimise for *truth-preserving claim transmission under uncertainty*. Primary failure mode is overclaim — a claim becomes stronger than its evidence; false knowledge propagates; the system believes something it did not measure. Research often lacks an immediate truth-check (a fabricated or overstated claim may look coherent for a long time), so the discipline must be more conservative at the claim boundary.
+
+The same kernel runs both. The discipline profile is what makes one agent action-biased under repairable feedback and another epistemically conservative under irreparable claim transmission.
+
+**Mode-switching one agent across discipline regimes is not safe.** Engineering "ship-and-repair" cadence leaks into research evidence discipline; research caution leaks into engineering cadence. The dispatch boundary — the operator routes work to the persona whose discipline matches the work — is the safe form of switching.
+
+### §4a.3 Receipts enforce discipline mechanically
+
+The receipt schema makes the discipline profile mechanically checkable. V (the validator, from the coherence-cell normal form) reads the receipt and verifies that the discipline-required evidence is present. This is the difference between "the agent says it was careful" and "the receipt cannot validate without the evidence the discipline requires."
+
+A CDS (engineering) receipt requires, at minimum:
+
+```
+artifact_refs:    paths of changed files
+test_refs:        test results
+ci_refs:          CI results
+diff_ref:         the cycle's diff
+debt_refs:        explicit follow-up obligations
+```
+
+A CDR (research) receipt requires, at minimum:
+
+```
+claim_refs:       which claims this receipt asserts
+data_refs:        dataset / mount / manifest / checksum
+method_refs:      script paths + commit SHA
+result_refs:      output file paths
+claim_status:     observed | computed | inferred | hypothesized | indeterminate
+limitations:      explicit caveats
+reproduction:     β re-ran, command + output match
+```
+
+V's job is to reject receipts that fail the schema. Discipline becomes mechanical: "no `data_refs`" → V rejects research receipt; "no `test_refs`" → V rejects engineering receipt. The persona's `## Discipline` section names the loss function; the receipt schema makes it enforceable.
+
+### §4a.4 Worked example — Sigma (engineering) and Rho (research)
+
+Two persona hubs, one shared role grammar, two different discipline profiles:
+
+- **`cn-sigma`** — engineering persona. Plays δ for CDS cycles. Discipline: action-biased; ship bounded artifacts; use tests/CI/review as the correction surface; record debt rather than blocking on perfection.
+- **`cn-rho`** — research persona. Plays δ for CDR cycles. Discipline: epistemically conservative; no data → no empirical claim; every number cites its producing command; preserve negative and indeterminate findings; refuse rather than fill evidential gaps with plausible prose.
+
+Both hubs load the same generic kernel (`cnos.cdd`'s coherence-cell normal form). They differ in which protocol overlay they load (`cnos.cds` vs `cnos.cdr`) and in their discipline profile. When a repo needs both kinds of work — Sigma ships a measurement tool, Rho runs it under a data gate and writes the field report — the dispatch boundary mediates: the operator routes each unit of work to the persona whose discipline matches it; the repo carries the handoff via commits, scripts, receipts, and reports.
+
 ## §5 cdd as the reference instantiation
 
 Coherence-Driven Development (cdd) is the first instantiation of this pattern
