@@ -40,9 +40,11 @@ Bundles carry one of three phases, mapped to the canonical STATUS state machine
 
 | Phase | STATUS event (cases a, c with proposal-shape) | Derivation for cases b, c, d |
 |---|---|---|
-| `open` | `submitted` (or `drafted` synonym, normalized to `submitted` in the mirror) | Patches in flight (b); ε deliverables pending (c); operator-pending drafts (d) |
+| `open` | `drafted` or `submitted` | Patches in flight (b); ε deliverables pending (c); operator-pending drafts with `Disposition: drafted (operator-pending)` (d) |
 | `converging` | `accepted` or `modified` (no terminal `landed` yet; may carry partial per-sub `landed` rows) | (n/a for b/c/d) |
-| `closed` | terminal `landed` (1:1) or master-close `landed` (master/sub) or `rejected` | All patches confirmed landed (b); both sides land + iteration recorded (c); operator effects application (d) |
+| `closed` | terminal `landed` (1:1) or master-close `landed` (master/sub) or `rejected` or `withdrawn` | All patches confirmed landed (b); both sides land + iteration recorded (c); operator effects application (d) |
+
+Audit events (`revised`, `corrected`) do not change phase — they record post-hoc corrections without re-opening or re-closing the bundle.
 
 A bundle is closed when its terminal phase condition is met. Case (d) bundles
 typically archive on `closed`.

@@ -165,77 +165,108 @@ This path resolves the historical collision between "intake scan" and "outbound 
 
 A STATUS ledger applies to cases (a) and (c) when the case carries proposal-shaped lifecycle. Cases (b) and (d) do not carry STATUS (case b's trace is patch-confirmation in LINEAGE; case d's disposition is recorded in LINEAGE).
 
-#### 2.3.1. Event vocabulary
+The STATUS vocabulary is **canonical in `CDD.md` §"Cross-repo proposal lifecycle"** (lines 234–243). This section codifies the transition graph, emitter rules, master/sub landed rule, and bundle-state phase mapping that CDD.md's vocabulary list does not enumerate.
+
+#### 2.3.1. Event vocabulary (per CDD.md)
+
+Eight events:
 
 | Event | Meaning |
 |---|---|
-| `submitted` | Source γ emits the proposal as ready for the target's intake. Target sees this in its intake scan. |
-| `accepted` | Target γ accepts the proposal substantially as proposed and files a target issue. |
-| `modified` | Target γ accepts the governing gap but changes scope, split, wording, implementation, proof, or patch application materially. The target issue's `## Source Proposal` block carries a `Delta` field. May also fire post-`accepted` to record a refinement (e.g. issue body edited to fold in upstream changes). |
-| `rejected` | Target γ declines the proposal. The target issue is not filed. Terminal. |
-| `landed` | Target work has merged. Terminal for 1:1; per-sub + master-close for master/sub (see §2.3.5). |
+| `drafted` | Source has written the proposal but has not requested target action. Pre-intake. |
+| `submitted` | Source requests target intake. This is the only event required for target intake. |
+| `accepted` | Target γ will act substantially as proposed and has filed a target reference. |
+| `modified` | Target γ accepts the governing gap but changes scope, split, wording, implementation, proof, or patch application materially. The target issue's `## Source Proposal` block carries a `Delta` field. May also fire post-`accepted` to record a refinement (e.g. issue body edit folding in upstream changes). |
+| `landed` | Target work merged or otherwise became target truth. For 1:1 — one event. For master/sub — one per sub merge + one terminal master-close (see §2.3.4). |
+| `rejected` | Target γ declines the proposal. Terminal. |
+| `withdrawn` | Source retracts the request. Terminal. |
+| `revised` / `corrected` | Optional audit events for post-submission revisions or corrections. Do not rewrite old events after sharing — append a `corrected` event instead. |
 
-#### 2.3.2. `drafted` reconciliation
-
-The agent-hub source-posture case (a CDD source repo that is not itself CDD-activated as a tenant; example: `cn-sigma`) may use `drafted` in source STATUS to mean "filing-ready". The cnos vocabulary is five events; `drafted` is **recognized as a synonym for `submitted`** in source-posture cases. The cnos-side mirror STATUS normalizes `drafted` → `submitted` so the mirror's vocabulary is canonical.
-
-- ❌ Add `drafted` as a sixth event to the cnos vocabulary.
-- ✅ Recognize `drafted` as filing-ready for intake purposes; mirror it as `submitted` in the cnos-side STATUS.
-
-#### 2.3.3. Transition graph
+#### 2.3.2. Transition graph
 
 ```
-                          ┌────────────┐
-                          │  (start)   │
-                          └─────┬──────┘
-                                │ source γ emits
-                                │ (or `drafted` recognized as submitted-equivalent)
-                                ▼
-                          ┌────────────┐
-                          │  submitted │
-                          └─────┬──────┘
-                                │ target γ disposition
-              ┌─────────────────┼─────────────────┐
-              ▼                 ▼                 ▼
-        ┌──────────┐      ┌──────────┐      ┌──────────┐
-        │ accepted │◀────▶│ modified │      │ rejected │
-        └─────┬────┘      └─────┬────┘      └──────────┘
-              │                 │             (terminal)
-              │  target work    │
-              │  merges         │
-              └────────┬────────┘
-                       │
+                ┌──────────────┐
+                │   (start)    │
+                └──────┬───────┘
+                       │ source role
+                       │ authors bundle
                        ▼
-                 ┌──────────┐
-                 │  landed  │
-                 └──────────┘
-                  (terminal)
+                ┌──────────────┐  source retracts
+                │   drafted    │──────────────────┐
+                └──────┬───────┘                  │
+                       │                          │
+                       │ source γ                 │
+                       │ requests intake          │
+                       ▼                          │
+                ┌──────────────┐                  │
+                │  submitted   │──────────────────┤
+                └──────┬───────┘                  │
+                       │                          │
+                       │ target γ                 │
+                       │ disposition              │
+       ┌───────────────┼──────────────────┐       │
+       ▼               ▼                  ▼       │
+  ┌─────────┐    ┌──────────┐       ┌──────────┐  │
+  │accepted │◀──▶│ modified │       │ rejected │  │
+  └────┬────┘    └────┬─────┘       └──────────┘  │
+       │              │              (terminal)   │
+       │              │                           │
+       │ target       │                           ▼
+       │ work         │                     ┌──────────┐
+       │ merges       │                     │withdrawn │
+       └──────┬───────┘                     └──────────┘
+              │                              (terminal)
+              ▼
+         ┌────────┐
+         │ landed │
+         └────────┘
+          (terminal — per §2.3.4 master/sub)
+
+  *  → revised | corrected   (optional audit events; do not change state;
+                              may fire from any non-terminal state)
 ```
 
 Legal transitions:
-- `(start) → submitted`
-- `submitted → accepted | modified | rejected`
-- `accepted → modified` (post-filing refinement; e.g. issue body edit folding in upstream changes — Delta updated)
+- `(start) → drafted | submitted` (source authors directly into either state)
+- `drafted → submitted` (source γ requests intake)
+- `drafted → accepted | modified | rejected` (permitted when source explicitly delegates filing-authority to target without intermediate `submitted` — see §2.3.3 below)
+- `drafted → withdrawn`
+- `submitted → accepted | modified | rejected | withdrawn`
+- `accepted → modified` (post-filing refinement; Delta updated)
 - `modified → modified` (further refinement)
 - `accepted → landed`
 - `modified → landed`
+- `* → revised | corrected` (any non-terminal state may emit an audit event without changing lifecycle state)
 
-Illegal:
+Illegal transitions:
 - `rejected → *` (terminal)
-- `landed → *` (terminal)
+- `landed → *` (terminal — for 1:1; master/sub permits multiple `landed` rows per §2.3.4)
+- `withdrawn → *` (terminal)
 - `submitted → landed` (must pass through `accepted` or `modified`)
 - `modified → accepted` (cannot un-modify once delta is recorded)
+
+#### 2.3.3. `drafted → accepted` (direct acceptance from drafted state)
+
+The cn-sigma/agent-activate-skill anchor shows `drafted sigma → accepted gamma@cnos` without an intermediate `submitted` event. CDD.md says `submitted` is "the only event required for target intake" — implying intake without `submitted` is unusual but not impossible. The protocol permits `drafted → accepted` (or `modified` / `rejected`) when:
+
+1. The source explicitly delegates filing-authority to the target (e.g. an agent hub authoring a proposal whose first reader is expected to act, not approve-then-act).
+2. The target γ records the delegation in the cnos-side LINEAGE's `## Source` or `## Target` section.
+
+The mirror STATUS may carry the original `drafted` event; the cnos-side mirror does not retroactively insert a `submitted` event the source did not emit.
 
 #### 2.3.4. Emitters per event
 
 | Event | Emitter | Write target |
 |---|---|---|
-| `submitted` / `drafted`-equivalent | source γ (or source role authoring the bundle) | source-side STATUS at filing time |
+| `drafted` | source role (γ or other) authoring the bundle | source-side STATUS at authoring time |
+| `submitted` | source γ | source-side STATUS when source γ requests target intake |
 | `accepted` / `modified` / `rejected` | target γ | source-side STATUS via direct push if cross-repo write is authorized; otherwise via `FEEDBACK.patch` for source γ to apply |
 | `landed` (1:1) | target γ | source-side STATUS (and cnos-side mirror STATUS) when the cycle implementing the target issue merges to target main |
 | `landed` (master/sub) | target γ per §2.3.5 | source-side STATUS (one row per sub merge + one terminal master-close row) |
+| `withdrawn` | source γ | source-side STATUS when source retracts the request |
+| `revised` / `corrected` | event-originator (source or target as relevant) | source-side STATUS; optional audit-only — does not change lifecycle state |
 
-Constraint: **after the target γ's filing decision, source STATUS must not remain at `submitted`** (or `drafted`-equivalent). The decision must be recorded — directly or via feedback patch — within the same target session that made the decision.
+Constraint: **after the target γ's filing decision, source STATUS must not remain at `submitted`** (or at `drafted` once target γ has taken action on a delegated `drafted → accepted` path). The decision must be recorded — directly or via feedback patch — within the same target session that made the decision.
 
 #### 2.3.5. Master/sub rule for `landed`
 
@@ -263,9 +294,11 @@ For 1:1 proposals (case a.1): one `landed` event total. No separate master-close
 
 | Bundle phase | STATUS event(s) | Meaning |
 |---|---|---|
-| `open` | `submitted` (or `drafted`) | Filed; no target disposition yet. |
+| `open` | `drafted` or `submitted` (or initial state) | Filed; no target disposition yet. Both pre-intake (`drafted`) and intake-requested (`submitted`) sit here. |
 | `converging` | `accepted` or `modified` (no terminal `landed` yet; may carry partial per-sub `landed` rows) | Target accepted; work in flight. |
-| `closed` | terminal `landed` (1:1) **or** master-close `landed` (master/sub) **or** `rejected` | No further work expected. |
+| `closed` | terminal `landed` (1:1) **or** master-close `landed` (master/sub) **or** `rejected` **or** `withdrawn` | No further work expected. |
+
+Audit events (`revised`, `corrected`) do not change the bundle's phase — they record post-hoc corrections to earlier events without re-opening or re-closing the bundle.
 
 For cases (b), (c), (d) — which carry no STATUS — the bundle-state phase is derived from LINEAGE state:
 
@@ -273,7 +306,7 @@ For cases (b), (c), (d) — which carry no STATUS — the bundle-state phase is 
 |---|---|
 | (b) outbound | `open` while patches are in flight; `closed` when all patches confirmed landed in the target's per-patch table. |
 | (c) bilateral | `open` while ε deliverables (cnos-side and counterpart-side) are pending; `closed` when both sides land their respective patches and the iteration record is committed in each repo's `cdd-iteration.md`. |
-| (d) operator-pending | `drafted` (LINEAGE.md `Disposition: drafted (operator-pending)`) until the operator effects the application; then `closed`. The case-d disposition is a recognized phase synonym for `open` for inventory purposes. |
+| (d) operator-pending | `drafted (operator-pending)` (LINEAGE.md `Disposition` field) until the operator effects the application; then `closed`. This is a phase-name synonym for `open` for inventory purposes — case (d) bundles report as `open` in bundle-state inventories until their application gate fires. |
 
 ### 2.5. Bundle file set per case
 
@@ -455,7 +488,7 @@ When a single actor plays γ in repo A and ε (or another role) in repo B during
 
 These are observed shapes that the protocol covers explicitly. New edge cases discovered in future cycles are added here.
 
-- **`drafted` as `submitted` synonym** — agent-hub source repos may emit `drafted` in source STATUS. Treated as filing-ready; normalized to `submitted` in the cnos-side mirror (per §2.3.2). Empirical anchor: `cn-sigma/agent-activate-skill`.
+- **`drafted → accepted` direct acceptance** — agent-hub source repos may author a bundle in `drafted` state and delegate filing-authority to the target, who acts on the bundle without an intermediate `submitted` event. The transition is legal (per §2.3.3) when the cnos-side LINEAGE records the delegation in `## Source` or `## Target`. Empirical anchor: `cn-sigma/agent-activate-skill` (source `drafted sigma cn-tau@8f153c15e` → target `accepted gamma@cnos cnos#379`).
 
 - **Repository rename mid-coordination** — when a source repo is renamed (e.g. `gait-support-paths` → `cph` on 2026-05-18), the cnos-side mirror's path is updated to the new name; the pre-rename mirror is preserved as an archived audit artifact. The LINEAGE.md `## Repository rename event` section names the rename and its consequences. Empirical anchor: `cph/bootstrap-cdr` (with archived pre-rename mirror at `gait-support-paths/bootstrap-cdr`).
 
@@ -483,10 +516,10 @@ These are observed shapes that the protocol covers explicitly. New edge cases di
 - ❌ `.cdd/proposals/{target}/{slug}/` or `.cdd/iterations/proposals/{slug}/`.
 - ✅ `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/`.
 
-### 3.3. After filing decision, source STATUS must not remain at `submitted`
+### 3.3. After filing decision, source STATUS must not remain at `submitted` or `drafted`
 
 - ❌ File the target issue, then forget to emit the `accepted` event to source STATUS (directly or via FEEDBACK.patch).
-- ✅ Emit the disposition event in the same session that made the decision.
+- ✅ Emit the disposition event in the same session that made the decision. (For `drafted → accepted` direct acceptance per §2.3.3, the same constraint applies — source STATUS must not remain at `drafted` after target γ acts.)
 
 ### 3.4. Emit `landed` per master/sub rule
 
@@ -580,13 +613,13 @@ cnos γ is dispatched on a new cycle. While running the intake scan in `gamma/SK
 
 1. **Case identification.** Source is cn-tau; substantive target work would happen in cnos. This is case (a) inbound. Single proposal; sub-shape is (a.1) unless the proposal body declares master/sub.
 
-2. **`drafted` reconciliation.** Per §2.3.2, `drafted` is recognized as `submitted`-equivalent in the cn-tau source-posture (agent hub). Filing-ready.
+2. **`drafted` reading.** Per §2.3.1, `drafted` is a distinct first-class event meaning "source has written the proposal but has not requested target action". The cn-tau STATUS at `drafted` means filing-authority has not yet been requested by source γ — γ checks whether the source posture (agent hub) is delegating filing-authority. If yes, γ proceeds via §2.3.3 `drafted → accepted` direct-acceptance and records the delegation in LINEAGE. If no, γ asks the source γ to emit `submitted` first.
 
 3. **Disposition.** γ reads `ISSUE.md` and decides; let's say `accepted`. The cnos-side target issue is filed with a `## Source Proposal` block citing cn-tau path + commit + disposition.
 
 4. **Bundle staging.** Cnos-side bundle at `cnos:.cdd/iterations/cross-repo/cn-tau/agent-trace-hook/`:
    - `LINEAGE.md` — case (a.1) schema: `## Source`, `## Target`, `## Bilateral trace`. Names the case in the first paragraph.
-   - `STATUS` — mirror of source STATUS, with `drafted` normalized to `submitted` plus the new `accepted gamma@cnos cnos#<new-issue#>` row.
+   - `STATUS` — mirror of source STATUS, preserving the `drafted` event (do not retroactively insert `submitted`) and appending the new `accepted gamma@cnos cnos#<new-issue#>` row per §2.3.3 direct-acceptance.
    - `FEEDBACK.patch` — required if cnos session cannot write to cn-tau. Header + apply command + unified diff against source STATUS appending the `accepted` event.
 
 5. **STATUS update.** Source STATUS must not remain at `submitted`/`drafted` post-decision. Either direct push to cn-tau (if authorized) or `FEEDBACK.patch` for cn-tau γ to apply.

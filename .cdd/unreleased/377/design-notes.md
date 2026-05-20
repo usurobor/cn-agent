@@ -51,84 +51,68 @@ Case (d) is **structurally degenerate** relative to (a)–(c) — it carries no 
 
 ### 2.1. Event vocabulary
 
-Five canonical events:
+**β R1 binding finding B-1 correction:** `CDD.md` §"Cross-repo proposal lifecycle" (lines 234–243) ships an 8-event vocabulary, not the 5 enumerated in the issue body. The issue's "5 events" was an under-read of CDD.md. Per `cdd/SKILL.md` §"Conflict rule", CDD.md governs on artifact contract; the new skill aligns with CDD.md's canonical vocabulary.
+
+Eight canonical events (per `CDD.md`):
 
 | Event | Meaning |
 |---|---|
-| `submitted` | Source repo's γ (or another role) emits the proposal as ready for the target's intake. Target sees this in its intake scan. |
-| `accepted` | Target's γ accepts the proposal substantially as proposed and files a target issue. |
-| `modified` | Target's γ accepts the governing gap but changes scope, split, wording, implementation, proof, or patch application materially. Filed with a `Delta` field in the target issue's `## Source Proposal` block. |
-| `rejected` | Target's γ declines the proposal. The target issue is not filed. |
-| `landed` | Target work has merged. For 1:1 — one event per merge. For master/sub — one event per sub merge, plus one terminal `landed` event when the master closes; see §2.5. |
+| `drafted` | Source has written the proposal but has not requested target action. Pre-intake. |
+| `submitted` | Source requests target intake. Only event required for target intake. |
+| `accepted` | Target γ will act substantially as proposed and has filed a target reference. |
+| `modified` | Target γ accepts the governing gap but changes scope, split, wording, implementation, proof, or patch application materially. Filed with a `Delta` field in the target issue's `## Source Proposal` block. |
+| `landed` | Target work merged or otherwise became target truth. For 1:1 — one event. For master/sub — per-sub + master-close; see §2.5. |
+| `rejected` | Target γ declines the proposal. Terminal. |
+| `withdrawn` | Source retracts the request. Terminal. |
+| `revised` / `corrected` | Optional audit events for post-submission revisions or corrections. Do not change lifecycle state. |
 
-### 2.2. `drafted` reconciliation
+### 2.2. `drafted → accepted` direct acceptance (replaces prior reconciliation)
 
-The `cn-sigma/agent-activate-skill` STATUS opens with `2026-05-19 drafted sigma cn-sigma@8f153c15e` — `drafted` is not in the canonical 5-event vocabulary above. Two options:
+**β R1 correction:** `drafted` is **not a synonym for `submitted`** — it is a distinct first-class event in CDD.md's vocabulary. The cn-sigma anchor's `drafted sigma → accepted gamma@cnos` transition is a **direct-acceptance** path permitted when the source delegates filing-authority to the target without an intermediate `submitted` event.
 
-- **(i) expand vocabulary to 6 events** — add `drafted` as a pre-`submitted` event meaning "authored, not yet emitted to target's intake".
-- **(ii) name `drafted` as a synonym for `submitted` in source-posture cases** — accept that an agent hub (cn-sigma, not a CDD-activated tenant repo) may use `drafted` to mean "filing-ready".
+The skill permits the `drafted → accepted | modified | rejected` transition when:
+1. The source explicitly delegates filing-authority to the target (e.g. agent hub where the first reader is expected to act, not approve-then-act).
+2. The target γ records the delegation in the cnos-side LINEAGE's `## Source` or `## Target` section.
 
-**Decision: (ii)** — keep the vocabulary at five events per the issue's non-goal "Do NOT add a new bundle-state phase or STATUS event. Work with the existing five events + three phases; the work is reconciliation, not extension." `drafted` is named as a recognized synonym for `submitted` in source-posture cases (agent hubs, dormant branches, draft-only artifacts). The target's intake scan treats `drafted` as `submitted`-equivalent for the purpose of triage.
+The cnos-side mirror **preserves** the original `drafted` event (does not retroactively insert `submitted`).
 
-A target γ that finds `drafted` in source STATUS treats it as filing-ready and proceeds to `accepted | modified | rejected`. The target's STATUS mirror **normalizes** `drafted` to `submitted` so the mirror's vocabulary is canonical, but the source STATUS may retain `drafted`.
+This matches the cn-sigma/agent-activate-skill anchor exactly without forcing a vocabulary collapse.
 
-### 2.3. Transition graph
+### 2.3. Transition graph (corrected R2)
 
-```
-                          ┌────────────┐
-                          │  (start)   │
-                          └─────┬──────┘
-                                │
-              source γ emits    │
-              (or `drafted`     │
-              recognized        │
-              equivalent)       ▼
-                          ┌────────────┐
-                          │  submitted │
-                          └─────┬──────┘
-                                │
-                  target γ      │
-                  triage        │
-              ┌─────────────────┼─────────────────┐
-              │                 │                 │
-              ▼                 ▼                 ▼
-        ┌──────────┐      ┌──────────┐      ┌──────────┐
-        │ accepted │      │ modified │      │ rejected │
-        └─────┬────┘      └─────┬────┘      └──────────┘
-              │                 │              (terminal)
-              │                 │
-              │  target work    │
-              │  merges         │
-              └────────┬────────┘
-                       │
-                       ▼
-                 ┌──────────┐
-                 │  landed  │
-                 └──────────┘
-                  (terminal)
-```
+Legal transitions:
 
-Legal transitions only:
-
-- `(start) → submitted`
-- `submitted → accepted | modified | rejected`
+- `(start) → drafted | submitted`
+- `drafted → submitted` (source γ requests intake)
+- `drafted → accepted | modified | rejected` (direct acceptance from drafted; permitted with LINEAGE-recorded delegation per §2.2)
+- `drafted → withdrawn`
+- `submitted → accepted | modified | rejected | withdrawn`
+- `accepted → modified` (post-filing refinement)
+- `modified → modified` (further refinement)
 - `accepted → landed`
 - `modified → landed`
+- `* → revised | corrected` (audit events; do not change state)
 
 Illegal:
 - `rejected → *` (terminal)
-- `landed → *` (terminal)
+- `landed → *` (terminal — 1:1; master/sub permits multiple per-sub events + master-close)
+- `withdrawn → *` (terminal)
 - `submitted → landed` (must pass through accepted/modified)
-- `accepted → modified` (the disposition is decided once at intake; re-disposition requires a new proposal)
+- `modified → accepted` (cannot un-modify once delta is recorded)
 
-### 2.4. Emitters per event
+The R1 form omitted `drafted`, `withdrawn`, and `revised/corrected`, and incorrectly marked `accepted → modified` as illegal; R2 corrects all three.
+
+### 2.4. Emitters per event (corrected R2)
 
 | Event | Emitter | Notes |
 |---|---|---|
-| `submitted` (or `drafted` synonym) | source γ (or source role authoring the bundle) | Writes to source-side STATUS at filing time. |
-| `accepted` / `modified` / `rejected` | target γ | Writes to source-side STATUS via direct push if cross-repo write is authorized, or via `FEEDBACK.patch` if not. Constraint: after target γ's filing decision, source STATUS must not remain at `submitted`. |
+| `drafted` | source role authoring the bundle | Writes to source-side STATUS at authoring time (pre-intake). |
+| `submitted` | source γ | Writes to source-side STATUS when source requests target intake. |
+| `accepted` / `modified` / `rejected` | target γ | Writes to source-side STATUS via direct push if cross-repo write is authorized, or via `FEEDBACK.patch` if not. Constraint: after target γ's filing decision, source STATUS must not remain at `submitted` or `drafted`. |
 | `landed` (1:1) | target γ | Writes when the cycle implementing the target issue merges to target main. |
 | `landed` (master/sub) | target γ per §2.5 below | One event per sub merge + one terminal master-closure event. |
+| `withdrawn` | source γ | Writes when source retracts the request. Terminal. |
+| `revised` / `corrected` | event-originator (source or target as relevant) | Audit-only; does not change lifecycle state. |
 
 The cnos-side **mirror** STATUS (at `cnos:.cdd/iterations/cross-repo/{source-repo}/{slug}/STATUS`) is target γ's record; it mirrors the source STATUS but may carry mirror-only annotations (e.g. `landed` events when the source-side cannot be written from the cycle session).
 
@@ -156,43 +140,20 @@ The `.cdd/iterations/cross-repo/README.md` defines three bundle-state phases: `o
 
 A bundle in `converging` may carry partial `landed` events (per-sub) without transitioning to `closed`; transition fires only on terminal `landed` or `rejected`.
 
-### 2.7. Retroactive validation
+### 2.7. Retroactive validation (corrected R2)
 
-| Anchor | STATUS observed | Compliance | Notes |
+| Anchor | STATUS observed | Compliance under R2 vocabulary | Notes |
 |---|---|---|---|
-| `tsc/cdd-supercycle` | (no STATUS file; LINEAGE-only outbound trace) | Case (b) — outbound; STATUS lives in source-side bundle. Compliant by exemption. | Outbound case § 3.5 below: STATUS lives source-side. |
-| `cph/bootstrap-cdr` | `submitted gait` → `accepted gamma@cnos cnos#376` | Compliant. Per-sub `landed` rows to be appended as cnos.cdr v0.1 wave subs close. |  |
-| `gait-support-paths/bootstrap-cdr` | (historical mirror; STATUS at `cph/bootstrap-cdr` is the canonical post-rename home) | Compliant. Pre-rename mirror preserved as audit artifact only. | Per `cph/bootstrap-cdr/LINEAGE.md` repository rename event. |
-| `cn-sigma/agent-activate-skill` | `drafted sigma` → `accepted gamma@cnos cnos#379` → `modified gamma@cnos cnos#379 ac4-...` → `landed gamma@cnos cnos#379 a3bf7892 3.78.0` | **drafted** synonym applied (§2.2 reconciliation); transitions follow §2.3 except shows `accepted → modified → landed`. **Contradicts §2.3 illegal `accepted → modified`.** | See §2.3a below for resolution. |
-| `cph/coherence-drift-sweep-followup-2026-05-18` | (no STATUS — case (c) bilateral; iteration content + patch trace, not proposal lifecycle) | Compliant by case-classification. | Case (c) has no STATUS state machine; it has a separate phase machine — see §3.4. |
-| `cn-rho/bootstrap-2026-05-19` | (no STATUS; LINEAGE-only with disposition `drafted (operator-pending)`) | Compliant by case-classification. Case (d.1). | Case (d) has no STATUS state machine; LINEAGE carries disposition. |
+| `tsc/cdd-supercycle` | (no STATUS file; LINEAGE-only outbound trace) | Case (b) — outbound; STATUS lives in source-side bundle. Compliant by exemption. | Outbound case §3.5 below. |
+| `cph/bootstrap-cdr` | `submitted cph` → `accepted gamma@cnos cnos#376` | Compliant. Per-sub `landed` rows to be appended as cnos.cdr v0.1 wave subs close. | Master/sub master-close pending. |
+| `gait-support-paths/bootstrap-cdr` | (historical mirror; STATUS at `cph/bootstrap-cdr` is the canonical post-rename home) | Compliant. Pre-rename mirror preserved as audit artifact. | Per `cph/bootstrap-cdr/LINEAGE.md` repository rename event. |
+| `cn-sigma/agent-activate-skill` | `drafted sigma cn-sigma@8f153c15e` → `accepted gamma@cnos cnos#379` → `modified gamma@cnos cnos#379 ac4-...` → `landed gamma@cnos cnos#379 a3bf7892 3.78.0` | **Compliant under R2 graph.** `drafted → accepted` is the direct-acceptance path (§2.2 R2); `accepted → modified` is post-filing refinement (R2 graph); `modified → landed` is terminal. All four transitions are legal. | Resolves the R1 contradiction. |
+| `cph/coherence-drift-sweep-followup-2026-05-18` | (no STATUS — case (c) bilateral) | Compliant by case-classification. | Case (c) has no proposal-lifecycle STATUS; bundle-state derived from LINEAGE. |
+| `cn-rho/bootstrap-2026-05-19` | (no STATUS; LINEAGE `Disposition: drafted (operator-pending)`) | Compliant. Case (d.1). | Case (d) has no STATUS state machine. |
 | `cn-sigma/discipline-section-2026-05-19` | (no STATUS; LINEAGE-only) | Compliant. Case (d.2). |  |
 | `cph/issue-32-tightening-2026-05-19` | (no STATUS; LINEAGE-only) | Compliant. Case (d.3). |  |
 
-### 2.3a. Reconciling `accepted → modified` (cn-sigma/agent-activate-skill)
-
-The cn-sigma anchor STATUS shows:
-```
-2026-05-19 submitted sigma cn-sigma@8f153c15e   (drafted-normalized)
-2026-05-19 accepted gamma@cnos cnos#379
-2026-05-19 modified gamma@cnos cnos#379 ac4-capability-matrix-foldin@bdda457f5
-2026-05-19 landed gamma@cnos cnos#379 a3bf7892 3.78.0
-```
-
-Two readings:
-
-**Reading A:** `accepted → modified` is a legal transition recording **post-filing refinement** of the disposition. The proposal was first accepted; then the issue body was edited to fold in upstream refinements; the second event records the delta. The transition graph in §2.3 should permit `accepted → modified`.
-
-**Reading B:** The `modified` event here is documenting a Delta against the originally-accepted body, not changing the disposition. The transition is `accepted → accepted` with a delta annotation; the protocol vocabulary should permit a `delta` event instead of overloading `modified`.
-
-**Decision: Reading A.** Permit `accepted → modified` as a legal transition, with the semantic "disposition refined after initial acceptance; Delta field of the target issue's Source Proposal block is updated to match". This:
-- preserves the 5-event vocabulary (no new `delta` event needed; honors the issue's non-goal "Do NOT add a new STATUS event");
-- matches the observed practice in cn-sigma/agent-activate-skill;
-- does not break the terminal `landed` invariant — the chain still ends at `landed`.
-
-Updated transition graph: `accepted → modified` is legal (and `modified → modified` if further refinement occurs); `modified → accepted` is **not** legal (cannot un-modify once delta is recorded).
-
-The skill's STATUS state machine §2.3 graph is updated accordingly.
+**Zero contradictions under R2 vocabulary.** The R1 contradictions (cn-sigma `drafted` and `accepted → modified`) were both side-effects of the R1 5-event under-read; the R2 8-event alignment with CDD.md resolves both natively without adding new events or vocabulary.
 
 ## 3. Bundle file set per directional case
 

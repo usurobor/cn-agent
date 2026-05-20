@@ -196,4 +196,50 @@ Next: β-collapsed-on-α self-review (beta-review.md) verifying AC1–AC6 with p
 
 ## Fix rounds
 
-None yet. β verdict pending.
+### R1 → RC (β R1, 2 binding findings)
+
+β R1 issued REQUEST CHANGES with two binding findings:
+
+- **B-1.** STATUS vocabulary in `cdd/cross-repo/SKILL.md` enumerated 5 events; `CDD.md` §"Cross-repo proposal lifecycle" lines 234–243 ships an 8-event vocabulary. Per `cdd/SKILL.md` §"Conflict rule", CDD.md governs on artifact contract. The 5-event count in the issue body was an under-read of CDD.md.
+- **B-2.** Legacy paths `.cdd/iterations/proposals/{slug}/` and `.cdd/proposals/{target}/{slug}/` were named as first-class in `CDD.md` lines 215–225. The new skill ❌-marked them; same-cycle contradiction with the canonical source.
+
+### R2 fix
+
+α R2 applied the following corrections:
+
+1. **`CDD.md` §"Cross-repo proposal lifecycle"** updated to name the canonical source-side path as `{source-repo}:.cdd/iterations/cross-repo/cnos/{slug}/` (matching the cnos-side mirror shape) and cross-reference `cdd/cross-repo/SKILL.md` as the canonical surface for the protocol mechanics (transitions, emitters, master/sub, archival). Legacy first-class layouts removed.
+
+2. **`cdd/cross-repo/SKILL.md §2.3.1`** vocabulary expanded from 5 to 8 events: `drafted | submitted | accepted | modified | landed | rejected | withdrawn | revised/corrected`, verbatim with CDD.md meanings.
+
+3. **`cdd/cross-repo/SKILL.md §2.3.2`** transition graph rebuilt to include `drafted`, `withdrawn`, audit events, and the `accepted → modified` post-filing-refinement transition observed in cn-sigma.
+
+4. **`cdd/cross-repo/SKILL.md §2.3.3`** added: `drafted → accepted` direct-acceptance path (replaces the R1 `drafted`-as-`submitted`-synonym), permitted when source delegates filing-authority via LINEAGE record.
+
+5. **`cdd/cross-repo/SKILL.md §2.3.4`** emitters table extended with `drafted` (source role), `withdrawn` (source γ), `revised/corrected` (event-originator).
+
+6. **`cdd/cross-repo/SKILL.md §2.4`** bundle-state phase mapping updated: `open` includes both `drafted` and `submitted`; `closed` includes `withdrawn`. Audit events do not change phase.
+
+7. **`cdd/cross-repo/SKILL.md §2.10`** known edge case "drafted as synonym" replaced with "drafted → accepted direct acceptance" (cn-sigma anchor).
+
+8. **`cdd/cross-repo/SKILL.md §3.3`** rule expanded: source STATUS must not remain at `submitted` OR `drafted` post-decision.
+
+9. **`cdd/cross-repo/SKILL.md`** kata reasoning step 2 + step 4 STATUS handling updated to reflect direct-acceptance.
+
+10. **`.cdd/iterations/cross-repo/README.md`** phase-mapping table updated to include `drafted` in `open` and `withdrawn` in `closed`; audit-events note added.
+
+11. **`.cdd/unreleased/377/design-notes.md`** §2.1, §2.2, §2.3, §2.4, §2.7 updated to reflect R2 vocabulary; §2.3a (R1 reconciliation discussion) removed since R2 transition graph permits `accepted → modified` natively.
+
+The wave manifest invariant 1 path "src/packages/cnos.cdd/skills/cdd/" includes CDD.md, so the CDD.md update is within wave scope. Cross-cycle impact: none — #375 touches gamma §2.5, #378 touches review/alpha/operator skills; this cycle's CDD.md update touches only the cross-repo lifecycle section (lines 213–245).
+
+### Re-running AC oracles after R2 fix
+
+| AC | Result after R2 |
+|---|---|
+| AC1 | PASS (unchanged; frontmatter + 3 references) |
+| AC2 | **PASS** — 8-event vocabulary matches CDD.md canonical source; transition graph + emitters + master/sub rule all present |
+| AC3 | PASS — retroactive validation now zero contradictions including cn-sigma anchor |
+| AC4 | **PASS** — CDD.md updated to canonical path; legacy paths removed (now appear only as ❌ deprecation examples in the new skill) |
+| AC5 | PASS (unchanged) |
+| AC6 | PASS — references now ≥3 (gamma:2 + post-release:1); `issue/SKILL.md` still unchanged; CDD.md cross-references the new skill |
+
+α R2 review-ready. Pending β R2.
