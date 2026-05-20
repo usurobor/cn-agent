@@ -158,7 +158,7 @@ func DiscoverPackages(repoRoot string) ([]DiscoveredPackage, error) {
 //   - cn.package.json (required; missing is an error)
 //   - every non-dotfile directly under pkgDir (conventional project
 //     docs and small root-level scripts: README*, LICENSE*,
-//     AGENTS.md, HEARTBEAT.md, lib.sh, etc.)
+//     HEARTBEAT.md, lib.sh, etc.)
 //   - every directory listed in pkgtypes.ContentClasses that exists
 //     and is non-empty, plus all files and subdirectories under it
 //
@@ -180,7 +180,7 @@ func DiscoverPackages(repoRoot string) ([]DiscoveredPackage, error) {
 // Note on AC3 of issue #262: the spec proposed a stricter root
 // allowlist (README*/LICENSE* only) plus .gitignore honoring. Those
 // slices are deferred: existing first-party packages carry
-// load-bearing root files (cnos.core/AGENTS.md, cnos.kata/lib.sh)
+// load-bearing root files (cnos.kata/lib.sh)
 // that a stricter rule would drop and break, and .gitignore parsing
 // needs a separate design pass. This implementation still enforces
 // the core issue intent — no unrecognized subdirectory at the root

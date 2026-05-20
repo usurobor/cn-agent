@@ -201,20 +201,176 @@ Each action creates new data. Each insight sharpens the model. New gaps may appe
 
 ---
 
-## 4. Boundary to Adjacent Skills
+## 4. MCA rules
 
-CAP chooses the response path. Adjacent skills do the domain work:
+**Minimum Coherent Action — the smallest intervention that solves the problem.**
 
-- **reflect** — interprets what happened after the fact
-- **coherent** — verifies that outputs align with sources
-- **CLP** — refines artifacts before publishing
-- **design / review / writing / configure-agent** — domain skills CAP may delegate into
+"Minimum" refers to scope, not speed. A workaround is small but not coherent — it patches without solving.
 
-CAP does not replace these. It decides which one to invoke and why.
+Failure mode: confusing fast with coherent. Picking the quick fix that requires repeated intervention instead of the one-time fix at the root.
+
+### 4.1. Scope — smallest intervention that solves
+
+- **Solve, don't patch.** A patch makes the symptom go away temporarily; a solve makes the problem not recur.
+  - ❌ "Restart the service" → ✅ "Fix the memory leak"
+- **One action, one problem.** Don't bundle unrelated fixes.
+  - ❌ "Fix sync and also refactor the CLI" → ✅ "Fix sync"
+- **Prefer structural over behavioral.** Structural changes the system; behavioral requires humans to remember.
+  - ❌ "Remember to run cn update" → ✅ "cn sync runs cn update"
+
+### 4.2. Act — do it or surface it
+
+- **If you can do it, do it.** Don't ask permission for obvious MCAs.
+  - ❌ "Should I file the P1?" → ✅ File the P1
+  - ❌ "Want me to fix it?" → ✅ Fix it
+- **If you can't do it, surface it.** Write it to output so someone else can pick it up.
+  - ❌ Sit on the insight → ✅ File the issue, send the message
+
+### 4.3. Quick test
+
+Before acting, ask:
+1. Is this the cause or a symptom?
+2. Will this solve it permanently?
+3. Is there a smaller intervention that still solves?
+
+If any answer is "no" — dig deeper.
+
+*The root-finding sequence (ask "why" until you hit cause; distinguish symptom from cause; check if the fix is repeatable) remains in `mca/SKILL.md` for on-demand detail.*
 
 ---
 
-## 5. Failure Modes
+## 5. MCI rules
+
+**Minimum Coherent Insight — the smallest learning that changes future behavior.**
+
+Not a vague takeaway — a specific lesson that, once known, prevents the same mistake or enables a new capability.
+
+Failure mode: confusing feelings with insights. "That was hard" is not an insight. "Verify assumptions before acting" is.
+
+### 5.1. Identify — extract the transferable lesson
+
+- **Ask "what would I tell past-me?"**
+  - ❌ "I learned a lot" → ✅ "Check the return type before calling"
+  - ❌ "That was tricky" → ✅ "Config files are loaded before env vars"
+- **Distinguish observation from insight.** Observation: what happened. Insight: what it means for the future.
+  - ❌ "The deploy failed" → ✅ "Always run migrations before deploy"
+- **Make it transferable.** Would this help someone else in a similar situation?
+  - ❌ "I should have checked" → ✅ "Validate inputs at system boundaries"
+
+### 5.2. Capture — write it down or lose it
+
+- **Capture immediately.** Insights decay fast.
+  - ❌ "Will write it up later" → ✅ Write it now
+- **State as imperative when possible.**
+  - ❌ "I realized X is important" → ✅ "Always do X"
+  - ❌ "It turns out Y matters" → ✅ "Check Y first"
+- **Include the trigger.** What situation does this apply to?
+  - ❌ "Validate inputs" → ✅ "Validate inputs at system boundaries"
+  - ❌ "Test edge cases" → ✅ "Test edge cases when parsing user input"
+
+### 5.3. Migrate — insights flow to where they'll be used
+
+- **Daily → Weekly → Skill.** Same insight appearing multiple times? Migrate it up.
+  - ❌ Same lesson in 4 daily threads → ✅ Add to relevant skill
+- **Choose the right home.** Where would future-you look for this?
+  - ❌ Buried in a daily thread → ✅ In the skill for that task
+- **Delete after migrating.** Don't duplicate insights across locations.
+  - ❌ Copy to skill, keep in daily → ✅ Move to skill, mark done in daily
+
+*The specificity/generality scope rules and the MCI vs MCA comparison table remain in `mci/SKILL.md` for on-demand detail.*
+
+---
+
+## 6. Coherent output
+
+**Every part of the output aligns with every other part, and the whole aligns with its sources.**
+
+### 6.1. Identify the parts
+
+- **Claims** — what the output asserts
+- **Sources** — what the output derives from
+- **Dependencies** — what parts rely on other parts
+
+Failure modes:
+- Internal incoherence: parts contradict each other
+- External incoherence: output contradicts source
+- Orphan: part exists without connection to the whole
+
+- ❌ Output exists in isolation
+- ✅ Output traces to inputs; parts trace to each other
+
+### 6.2. Coherence levels
+
+- **L0** — output internally consistent (no contradictions)
+- **L1** — output consistent with direct sources (code ↔ spec)
+- **L2** — output consistent with transitive sources (spec ↔ upstream spec)
+
+- ❌ "Code matches spec" but spec contradicts architecture
+- ✅ Check full chain: code → spec → architecture → principles
+
+### 6.3. Verification
+
+- **Top-down:** does output satisfy its sources?
+- **Bottom-up:** are all parts accounted for in the whole?
+- **Cross-check:** do related parts agree?
+
+Coherence is not correctness. Coherence: parts align with each other. Correctness: parts do the right thing. Coherence is necessary but not sufficient.
+
+- ❌ Only check that code compiles
+- ✅ Check code ↔ tests ↔ docs ↔ spec all align
+
+### 6.4. Rules
+
+- **State terms before producing.** What sources constrain this output? What must align with what?
+  - ❌ Start writing without knowing what success looks like
+  - ✅ "This implements PLAN.md §3; must match fn signature in spec"
+- **Trace every claim.** If you can't point to a source, don't include it.
+  - ❌ "The agent supports 5 commands" (from memory)
+  - ✅ "5 commands per PROTOCOL.md §2.1" (verified)
+- **Resolve contradictions immediately.** Don't ship incoherence; fix or escalate.
+  - ❌ "Spec says X, code does Y — I'll note it for later"
+  - ✅ "Contradiction found — blocking until resolved"
+- **Update all related parts.** Change propagates; coherence requires completeness.
+  - ❌ Change function signature, leave callers broken
+  - ✅ Change signature → update callers → update tests → update docs
+- **Make alignment verifiable.** Reader should be able to check coherence.
+  - ❌ "This matches the spec" (which spec? where?)
+  - ✅ "Implements AGENT-RUNTIME.md §4.2 — see fn signature line 42"
+- **Orphans are bugs.** Every part connects to the whole.
+  - ❌ Dead code, unused imports, orphan docs
+  - ✅ Remove or connect; no dangling parts
+
+### 6.5. Pre-ship checklist
+
+Before shipping:
+
+- [ ] Terms stated — sources and constraints named
+- [ ] Internal consistency — no contradictions between parts
+- [ ] External alignment — output traces to sources
+- [ ] Propagation complete — all related parts updated
+- [ ] Verification path clear — reader can check alignment
+
+*The Coherence Modes table (CLP vs CAP — when to use which) and the Anti-Patterns table remain in `coherent/SKILL.md` for on-demand reference.*
+
+---
+
+## 7. Boundary to Adjacent Skills
+
+CAP owns the activation-loaded behavioral rules: UIE (§1–§3), MCA operational rules (§4), MCI operational rules (§5), and coherent-output basics (§6).
+
+Adjacent skills CAP may delegate into:
+
+- **reflect** — interprets what happened after the fact
+- **CLP** — refines artifacts before publishing (coherent-language protocol; separately loaded at activation)
+- **design / review / writing / configure-agent** — domain skills CAP may delegate into
+
+The standalone skills `mca`, `mci`, and `coherent` remain on-disk for path/prose citation and on-demand load. They are not loaded at activation. Their full scope detail, comparison tables, and anti-pattern catalogues are available on-demand but are not part of the activation-loaded rule set.
+
+CAP does not include `agent-ops` in its adjacent-skill set. `agent-ops` describes the OCaml-era daemon contract and is runtime-specific, not behavioral.
+
+---
+
+## 8. Failure Modes
 
 CAP fails through:
 
@@ -226,7 +382,7 @@ CAP fails through:
 
 ---
 
-## 6. Output Shape
+## 9. Output Shape
 
 A CAP pass should produce:
 
@@ -248,7 +404,7 @@ This format is not mandatory for every decision. Use it when the situation is am
 
 ---
 
-## 7. Kata
+## 10. Kata
 
 ### Scenario: ambiguous bug report
 

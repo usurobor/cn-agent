@@ -503,7 +503,7 @@ func renderReadFirstLine(item readFirstItem, kernel kernelState, persona, operat
 			return "kernel — no kernel reference"
 		}
 	case "ca-skills":
-		return "cnos.core/skills/agent/{cap,clp,mca,mci,coherent,agent-ops}/SKILL.md (CA skill set)"
+		return "cnos.core/skills/agent/{cap,clp}/SKILL.md (CA skill set)"
 	case "persona":
 		if persona != "" {
 			return persona

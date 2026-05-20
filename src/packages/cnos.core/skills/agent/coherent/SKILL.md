@@ -4,6 +4,7 @@ description: Produce outputs where internal consistency and external alignment a
 governing_question: How does an agent produce work whose parts align with each other and trace back to their sources?
 triggers: [coherence, alignment, incoherence, gap, drift]
 scope: task-local
+activation_status: on-demand — not activation-loaded since cycle/385. Core coherent-output rules (parts/sources/dependencies, L0-L2 levels, verification rules, checklist) are absorbed into cap/SKILL.md. Load this file on-demand for the Coherence Modes table and Anti-Patterns table.
 ---
 
 # Coherent

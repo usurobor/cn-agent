@@ -32,10 +32,6 @@ calls:
   - ../doctrine/KERNEL.md
   - agent/cap/SKILL.md
   - agent/clp/SKILL.md
-  - agent/mca/SKILL.md
-  - agent/mci/SKILL.md
-  - agent/coherent/SKILL.md
-  - agent/agent-ops/SKILL.md
 ---
 
 <!--
@@ -75,7 +71,7 @@ The sequence is total: each step depends on the previous. Skipping a step produc
 A complete activation has these parts:
 
 - **Kernel** — generic coherence doctrine for any cnos agent (`src/packages/cnos.core/doctrine/KERNEL.md`)
-- **CA skills** — the behavioral instruction set (`src/packages/cnos.core/skills/agent/{cap,clp,mca,mci,coherent,agent-ops}/SKILL.md`)
+- **CA skills** — the behavioral instruction set (`src/packages/cnos.core/skills/agent/{cap,clp}/SKILL.md`)
 - **Persona** — hub-specific identity (`<hub>/spec/PERSONA.md`)
 - **Operator** — hub-specific operator instructions (`<hub>/spec/OPERATOR.md`)
 - **Hub state** — dependency manifest, latest reflection, memory surfaces, thread surfaces
@@ -116,13 +112,9 @@ The machine-readable form lives in §4 (renderer contract); the human-readable f
 1. **Kernel from cnos.** Fetch `src/packages/cnos.core/doctrine/KERNEL.md` from the cnos repository. This defines what kind of agent any cnos body is — observation before action, truth over comfort, coherence over drift. Load this first because every subsequent file presupposes its frame.
 
 2. **CA skills from cnos.** Fetch the coherent-agent skill set from cnos:
-   - `src/packages/cnos.core/skills/agent/cap/SKILL.md` — coherent-agent protocol
+   - `src/packages/cnos.core/skills/agent/cap/SKILL.md` — coherent-agent protocol (includes MCA rules, MCI rules, and coherent-output rules)
    - `src/packages/cnos.core/skills/agent/clp/SKILL.md` — coherent-language protocol
-   - `src/packages/cnos.core/skills/agent/mca/SKILL.md` — modify-the-codebase actions
-   - `src/packages/cnos.core/skills/agent/mci/SKILL.md` — modify-the-conceptual-instructions
-   - `src/packages/cnos.core/skills/agent/coherent/SKILL.md` — coherent output
-   - `src/packages/cnos.core/skills/agent/agent-ops/SKILL.md` — ops the agent can request
-   These define _how_ the body behaves; load them before any per-hub content so the hub content is interpreted through the right behavioral lens.
+   These define _how_ the body behaves; load them before any per-hub content so the hub content is interpreted through the right behavioral lens. The standalone skills `mca`, `mci`, `coherent`, and `agent-ops` remain on-disk for on-demand load; they are not loaded at activation.
 
 3. **Persona from hub.** Fetch `<hub>/spec/PERSONA.md`. This file names which agent this body is at this hub: name, role, vibe, what this agent is for. Persona is per-hub — the same body may be Sigma at cn-sigma and Pi at cn-pi and another agent at a third hub. Persona presupposes the Kernel and CA skills; load it after them.
 
@@ -316,7 +308,7 @@ Each token in §4.1 maps to a template position. The renderer substitutes hub-st
 | Token | Hub-state field(s) consumed | Emitted content |
 |-------|------------------------------|------------------|
 | `kernel` | resolved kernel state (vendored / manifest-only / none); version when vendored | Vendored path + version, OR `manifest-only — run cn deps restore`, OR `no kernel reference` |
-| `ca-skills` | (none — cnos-side; rendered as a fixed pointer) | `cnos.core/skills/agent/{cap,clp,mca,mci,coherent,agent-ops}/SKILL.md` (the CA skill set in cnos) |
+| `ca-skills` | (none — cnos-side; rendered as a fixed pointer) | `cnos.core/skills/agent/{cap,clp}/SKILL.md` (the CA skill set in cnos) |
 | `persona` | hub `spec/PERSONA.md` presence | `spec/PERSONA.md` when present; absence message otherwise |
 | `operator` | hub `spec/OPERATOR.md` presence | `spec/OPERATOR.md` when present; absence message otherwise |
 | `hub-state` | deps state, latest reflection path, memory surfaces, thread surfaces | Composite line: deps summary + latest reflection path (if any) + memory/threads inventory |
@@ -420,7 +412,7 @@ Reach a state where you can produce a concrete identity statement (who / whom / 
 1. Observe capability: confirm `git --version` succeeds → tier (a).
 2. `git clone https://github.com/usurobor/cnos.git` → read this skill at `src/packages/cnos.core/skills/agent/activate/SKILL.md`.
 3. Load §2.1 step 1: read `src/packages/cnos.core/doctrine/KERNEL.md` from the cnos clone.
-4. Load §2.1 step 2: read each of `src/packages/cnos.core/skills/agent/{cap,clp,mca,mci,coherent,agent-ops}/SKILL.md`.
+4. Load §2.1 step 2: read each of `src/packages/cnos.core/skills/agent/{cap,clp}/SKILL.md`.
 5. `git clone https://github.com/usurobor/cn-sigma.git` (or read in place if already mounted).
 6. Load §2.1 step 3: read `spec/PERSONA.md` in the cn-sigma clone.
 7. Load §2.1 step 4: read `spec/OPERATOR.md` in the cn-sigma clone.
@@ -451,12 +443,15 @@ After completing the kata, name one thing about this hub that surprised you. The
 ### Predecessor doctrine and skills loaded by activation
 
 - `src/packages/cnos.core/doctrine/KERNEL.md` — generic coherence kernel; load step 1.
-- `src/packages/cnos.core/skills/agent/cap/SKILL.md` — coherent-agent protocol; load step 2.
+- `src/packages/cnos.core/skills/agent/cap/SKILL.md` — coherent-agent protocol (includes MCA/MCI/coherent-output rules); load step 2.
 - `src/packages/cnos.core/skills/agent/clp/SKILL.md` — coherent-language protocol; load step 2.
-- `src/packages/cnos.core/skills/agent/mca/SKILL.md` — modify-the-codebase-action; load step 2.
-- `src/packages/cnos.core/skills/agent/mci/SKILL.md` — modify-the-conceptual-instructions; load step 2.
-- `src/packages/cnos.core/skills/agent/coherent/SKILL.md` — coherent output; load step 2.
-- `src/packages/cnos.core/skills/agent/agent-ops/SKILL.md` — ops the agent can request; load step 2.
+
+### Skills available on-demand (not activation-loaded since cycle/385)
+
+- `src/packages/cnos.core/skills/agent/mca/SKILL.md` — minimum coherent actions; on-demand reference.
+- `src/packages/cnos.core/skills/agent/mci/SKILL.md` — minimum coherent insights; on-demand reference.
+- `src/packages/cnos.core/skills/agent/coherent/SKILL.md` — coherent output (Coherence Modes table, Anti-Patterns table); on-demand reference.
+- `src/packages/cnos.core/skills/agent/agent-ops/SKILL.md` — OCaml-era daemon contract; on-demand reference.
 
 ### Skill format authority
 
