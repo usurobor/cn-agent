@@ -75,7 +75,7 @@ Parallel α-side gap: `alpha/SKILL.md` §2.6 pre-review gate had no row for γ-s
 - `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md`
 - `.cdd/unreleased/378/*.md`
 
-**Evidence:** `git diff --stat origin/main..HEAD` at HEAD `561c19af` shows only the three SKILL files. The γ-scaffold and self-coherence commits add only `.cdd/unreleased/378/*.md`. No CI workflows, no validators, no `cdd/CDD.md` edit.
+**Evidence:** `git diff --stat origin/main..HEAD` at HEAD `f56afd2d` (post-rebase implementation SHA; pre-rebase was `561c19af`) shows only the three SKILL files. The γ-scaffold and self-coherence commits add only `.cdd/unreleased/378/*.md`. No CI workflows, no validators, no `cdd/CDD.md` edit.
 
 **Status:** PASS.
 
@@ -102,24 +102,54 @@ None outright. Two acknowledged constraints (not debt):
 |---|---|---|---|---|
 | 0 | Observe | γ | δ-as-γ | wave manifest read; issue #378 read via `mcp__github__issue_read` |
 | 1 | Select | γ | δ-as-γ | issue #378 selected per wave manifest queue |
-| 2 | Branch | γ | δ-as-γ | `cycle/378` created from `origin/main` SHA `c9017153`; pushed to `origin/cycle/378` |
+| 2 | Branch | γ | δ-as-γ | `cycle/378` created from `origin/main` SHA `c9017153`; pushed to `origin/cycle/378`; rebased onto `origin/main:dd5a36d9` mid-cycle (see §Fix-round R1.1) |
 | 3 | Bootstrap | α | δ-as-α | git identity `alpha@cdd.cnos` set; `.cdd/unreleased/378/` created |
-| 3a | γ-scaffold | γ | δ-as-γ | `.cdd/unreleased/378/gamma-scaffold.md` at `66d02c8a` (γ-side artifact present per `gamma/SKILL.md` §2.5 step 3a + #375 preventive — even though wave-manifest also serves under §5.2, the per-cycle scaffold is authored as belt-and-suspenders per wave invariant #3) |
+| 3a | γ-scaffold | γ | δ-as-γ | `.cdd/unreleased/378/gamma-scaffold.md` at `26303a3d` (post-rebase; pre-rebase `66d02c8a`) — γ-side artifact present per `gamma/SKILL.md` §2.5 step 3a + #375 preventive — even though wave-manifest also serves under §5.2, the per-cycle scaffold is authored as belt-and-suspenders per wave invariant #3 |
 | 4 | Gap + ACs | α | δ-as-α | §Gap above; AC1–AC4 mapped above |
 | 5 | Mode | α | δ-as-α | §5.2 wave-mode under γ+α+β-on-δ collapse (named §Gap, §Debt) |
-| 6 | Artifacts | α | δ-as-α | three SKILL files patched at `561c19af`: `review/SKILL.md` L141–143, `alpha/SKILL.md` L255–259 (row 15), `operator/SKILL.md` L319 |
+| 6 | Artifacts | α | δ-as-α | three SKILL files patched at `f56afd2d` (post-rebase; pre-rebase `561c19af`): `review/SKILL.md` L141–143, `alpha/SKILL.md` L255–259 (row 15), `operator/SKILL.md` L319 |
 | 7 | Self-coherence | α | δ-as-α | this file |
 
 ## §Review-readiness
 
 **Round:** 1
-**Implementation SHA:** `561c19af` (last α implementation commit, per §2.6 row 14 SHA convention)
-**Base SHA at observation:** `c9017153` (origin/main at branch creation); current origin/main same (no drift observed; `git fetch origin main && git rev-parse origin/main`)
+**Implementation SHA:** `f56afd2d` (post-rebase implementation commit; pre-rebase `561c19af` — see §Fix-round R1.1)
+**Base SHA at observation:** `dd5a36d9` (origin/main at current observation, after mid-cycle advance from `c9017153`; cycle/378 rebased onto `dd5a36d9` per §Fix-round R1.1)
 **Branch CI:** N/A (skill-patch, docs-only disconnect class per wave manifest §wave-level invariants 1; no CI workflows triggered by these paths)
 
 **§2.6 row 15 outcome (the row this cycle adds):**
-- `γ-artifact at canonical §5.1 path` — `.cdd/unreleased/378/gamma-scaffold.md` present at `origin/cycle/378:66d02c8a` (verifiable via `git ls-tree -r origin/cycle/378 .cdd/unreleased/378/gamma-scaffold.md`)
+- `γ-artifact at canonical §5.1 path` — `.cdd/unreleased/378/gamma-scaffold.md` present at `origin/cycle/378:26303a3d` (post-rebase; pre-rebase `66d02c8a`); verifiable via `git ls-tree -r origin/cycle/378 .cdd/unreleased/378/gamma-scaffold.md`
 - AND `wave-manifest serves under §5.2 (wave-id: 2026-05-19-protocol-hygiene; discoverability: master-tracking-link)` — the wave manifest at `.cdd/waves/2026-05-19-protocol-hygiene/manifest.md` exists on `origin/main` and lists #378 in the `## Issues` table (path (b) per the new clause).
 - Both halves hold; rule 3.11b satisfied via either configuration.
 
 Ready for β (collapsed-on-δ).
+
+## §Fix-round R1.1 — mid-cycle rebase (α-internal, pre-β-handoff)
+
+Not a β-RC fix-round — α-internal pre-handoff state update per `alpha/SKILL.md` §2.6 row 1 (transient row: cycle branch rebased onto current `origin/main`). Surfaced by α's `git diff --stat origin/main..HEAD` check between implementation commit and β handoff.
+
+**Trigger.** Between branch creation (`c9017153`, T0) and β handoff prep (T1), `origin/main` advanced by one commit: `dd5a36d9 chore: ignore .claude/{settings.local.json,worktrees/}`. Surfaced by `git diff origin/main..HEAD --stat` showing an unexpected `-4 lines` entry for `.gitignore` that no commit on `cycle/378` had authored.
+
+**Action.** `git rebase origin/main` (clean, no conflicts); `git push --force-with-lease origin cycle/378` (lease-checked because cycle/378 is the only branch carrying the work).
+
+**SHA rewrite map** (pre-rebase → post-rebase):
+- γ-scaffold commit: `66d02c8a → 26303a3d`
+- α implementation commit: `561c19af → f56afd2d`
+- α self-coherence commit (this file's first revision): `453144aa → 7e64a673`
+
+**Re-stamping (per `alpha/SKILL.md` §2.6 SHA-citations-across-rebase paragraph, path (ii) reactive resolution applying §2.3 intra-doc rule).** Grep target: `c9017153|66d02c8a|561c19af|453144aa` across `.cdd/unreleased/378/*.md`. 5 sites found and re-stamped:
+- `gamma-scaffold.md:9` — branch creation SHA preserved (it is the historical fact of branch creation, not a current pointer); appended cross-reference to this §Fix-round R1.1 section so readers know about the rebase.
+- `self-coherence.md:78` — AC4 evidence: `561c19af → f56afd2d` (post-rebase); pre-rebase value preserved as cross-reference.
+- `self-coherence.md:105` — CDD Trace step 2: branch-creation SHA `c9017153` preserved as historical fact; rebase target `dd5a36d9` appended.
+- `self-coherence.md:107` — CDD Trace step 3a: γ-scaffold SHA `66d02c8a → 26303a3d`; pre-rebase preserved.
+- `self-coherence.md:110` — CDD Trace step 6: implementation SHA `561c19af → f56afd2d`; pre-rebase preserved.
+- `self-coherence.md:116` — §Review-readiness Implementation SHA: `561c19af → f56afd2d`; pre-rebase preserved.
+- `self-coherence.md:117` — §Review-readiness Base SHA: `c9017153 → dd5a36d9`.
+- `self-coherence.md:121` — §Review-readiness row 15 outcome: γ-scaffold SHA `66d02c8a → 26303a3d`; pre-rebase preserved.
+
+**Post-restamp grep verification** (run before β handoff): `grep -n 'c9017153\|66d02c8a\|561c19af\|453144aa' .cdd/unreleased/378/*.md` returns only sites where the pre-rebase SHA is preserved as historical cross-reference (each accompanied by "post-rebase" / "pre-rebase" annotation per §2.3 intra-doc-repetition discipline) — no bare claims to invalidated SHAs.
+
+**Post-restamp implementation SHA** for §Review-readiness: this fix-round section is itself committed *after* re-stamping; the post-rebase implementation SHA `f56afd2d` (the SKILL-file edit commit) remains the stable "implementation SHA" per `alpha/SKILL.md` §2.6 SHA convention (last implementation commit before the readiness-signal commit). The self-coherence commit that lands this §Fix-round R1.1 section is the readiness-signal commit; β reads HEAD via polling.
+
+**β handoff.** Re-signaled. Branch HEAD post-restamp: see the commit that lands this fix-round section.
+

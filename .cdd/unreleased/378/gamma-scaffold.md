@@ -6,7 +6,7 @@
 
 **Mode:** §5.2 wave-mode (δ-as-agent for the wave; γ=δ collapse permitted per wave manifest §5.2 + `operator/SKILL.md` §5.2). For this single skill-patch cycle, γ+α+β are further collapsed onto δ — `α ≠ β within a session is structurally compromised` per `operator/SKILL.md` §5.2 scope clause. This is acknowledged in each artifact (`self-coherence.md`, `beta-review.md`) and accepted only because (a) wave manifest precedent permits it for skill-patch class, (b) cycle scope is bounded (three additive skill-text edits, no logic change), and (c) the β-collapsed-on-δ self-review applies the AC1–AC4 oracle mechanically.
 
-**Branch:** `cycle/378` (created from `origin/main` at SHA `c90171537ff5926afe33010d8f87abb49b1b975b`; pushed to `origin/cycle/378`)
+**Branch:** `cycle/378` (created from `origin/main` at SHA `c90171537ff5926afe33010d8f87abb49b1b975b`; pushed to `origin/cycle/378`; later rebased onto `origin/main` at `dd5a36d9` mid-cycle when `origin/main` advanced — see `self-coherence.md §Fix-round R1.1` for the rebase trace)
 
 ## Surfaces touched
 
