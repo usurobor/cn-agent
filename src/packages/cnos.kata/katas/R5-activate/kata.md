@@ -112,7 +112,7 @@ Run `cn activate HUB_DIR` on a sigma-shape hub with a daily reflection present.
 - stdout contains `## Read first` section.
 - In that section, the order is:
   1) Kernel doctrine (KERNEL.md)
-  2) CA skills (cap/clp/mca/mci/coherent/agent-ops)
+  2) CA skills (cap/clp)
   3) Persona (PERSONA.md)
   4) Operator (OPERATOR.md)
   5) Hub state — deps manifest + latest reflection (composite line)
