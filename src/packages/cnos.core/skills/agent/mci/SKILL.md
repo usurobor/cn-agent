@@ -4,6 +4,7 @@ description: Identify and capture Minimum Coherent Insights — the smallest lea
 governing_question: How does the agent extract a single insight that prevents the next instance of the same mistake?
 triggers: [MCI, model update, learn, reflect, trace, note]
 scope: task-local
+activation_status: on-demand — not activation-loaded since cycle/385. Core MCI rules (transferable-lesson tests, capture/imperative/trigger, migrate flow) are absorbed into cap/SKILL.md. Load this file on-demand for scope/specificity detail.
 ---
 
 # MCI

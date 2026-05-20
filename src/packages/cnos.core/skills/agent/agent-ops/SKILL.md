@@ -4,6 +4,7 @@ description: Operations an agent can request via state/output.md.
 governing_question: How does the agent declare an op on output.md so the harness can route and execute it?
 triggers: [ops, status, doctor, hub, maintenance]
 scope: task-local
+activation_status: on-demand — not activation-loaded since cycle/385. Describes the OCaml-era daemon contract (src/ocaml/cmd/cn_agent.ml, src/ocaml/lib/cn_lib.ml). Not load-bearing for the current Go activation path (src/go/internal/activate/activate.go). Kept for the planned cn agent runtime per README. Load on-demand only.
 ---
 
 # Agent Ops

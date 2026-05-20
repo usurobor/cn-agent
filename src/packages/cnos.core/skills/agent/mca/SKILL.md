@@ -4,6 +4,7 @@ description: Identify and take Minimum Coherent Actions — the smallest interve
 governing_question: How does the agent take the smallest action that closes the actual incoherence rather than its symptom?
 triggers: [MCA, act, system change, fix, build, ship]
 scope: task-local
+activation_status: on-demand — not activation-loaded since cycle/385. Core MCA rules (scope/act/quick-test) are absorbed into cap/SKILL.md. Load this file on-demand for root-finding detail.
 ---
 
 # MCA
