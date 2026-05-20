@@ -268,6 +268,32 @@ The branch must exist on `origin` before dispatch. α and β never create branch
 
 #### Step 3b — Subscribe and dispatch α and β
 
+##### Pre-dispatch γ scaffold check (binding gate)
+
+**Binding rule.** γ MUST NOT proceed to α dispatch (the prompt-production + δ-routing flow below) until `.cdd/unreleased/{N}/gamma-scaffold.md` exists on `origin/cycle/{N}`. This is a gate, not advisory prose: if the artifact is absent at the moment γ is about to produce the α prompt, γ authors it first, commits and pushes it to `cycle/{N}`, and only then continues to α dispatch.
+
+The scaffold names: the issue, the mode (substantial / small-change / immediate-output, and §5.2 wave-mode if applicable), the surfaces γ expects α to touch, the AC oracle approach, the empirical anchor (when the cycle's framing names one — per §2.2a), and the expected diff scope. γ writes it from the issue body and the candidate-table evidence γ already accumulated in §2.1–§2.4; it is not new analysis, it is the executable rendering of what γ already decided at selection time.
+
+**Dual of `review/SKILL.md` rule 3.11b.** This check is the γ-side dual of rule 3.11b, which is binding on β: when `.cdd/unreleased/{N}/gamma-scaffold.md` is missing on the cycle branch at review time and no `## Protocol exemption` exists in the sub-issue body, β must return REQUEST CHANGES (D-severity, `protocol-compliance`). β-side enforcement guarantees the artifact exists by merge time but only via post-hoc detection — the round-trip cost is paid once *per RC round* at review time. γ-side pre-dispatch enforcement pays the same cost once *per cycle* at scaffold time, before α and β load context. The two gates are symmetric; together they guarantee scaffold presence without either side leaning on the other.
+
+**Empirical anchor — cycle #369.** This gate is added because cycle #369 paid the asymmetric cost: β R1 fired rule 3.11b as D1 against α's review-ready signal (missing `gamma-scaffold.md`); γ recovered via path (a) at commit `227d2373` ("γ-369: scaffold — recovery path (a) for β R1 D1 (rule 3.11b)"); β R2 returned APPROVED at `4e179db6`; cycle merged at `ff54f2a0`. The cycle was materially review-ready at R1 (all 10 ACs met; contract integrity 10/11 rows yes) — the one "no" row was the missing scaffold. Without this γ-side gate, every γ cycle pays this round-trip whenever γ forgets the scaffold pre-dispatch; with it, the cost is paid once at scaffold-time and rule 3.11b's binding RC becomes the dual-redundant safety net rather than the routine first detector.
+
+**Procedure.**
+
+```bash
+# Pre-dispatch γ scaffold check — run BEFORE producing the α prompt.
+git fetch --quiet origin cycle/<N>
+if ! git ls-tree -r --name-only origin/cycle/<N> .cdd/unreleased/<N>/gamma-scaffold.md 2>/dev/null | grep -q .; then
+  echo "pre-dispatch fail: .cdd/unreleased/<N>/gamma-scaffold.md missing on origin/cycle/<N>" >&2
+  # γ authors the scaffold here, commits, pushes — then re-runs the check.
+  exit 1
+fi
+```
+
+**Protocol exemption.** When the cycle is a documented exemption (e.g. emergency patch, infrastructure-only change with operator override), γ may skip authoring the scaffold *only if* the sub-issue body carries an explicit `## Protocol exemption` section naming the reason. This is the same exemption surface rule 3.11b honors (per `review/SKILL.md` §3.11b "Exemption discoverability"); γ does not invent a separate γ-side exemption channel.
+
+---
+
 Immediately begin polling the issue and `origin/cycle/{N}` (see `CDD.md` §Tracking for query forms and the wake-up mechanism) — do not ask, just do it. γ must track the full cycle: issue activity, `origin/cycle/{N}` head SHA, α's `.cdd/unreleased/{N}/self-coherence.md` updates, β's `.cdd/unreleased/{N}/beta-review.md` verdicts, and branch CI status. Start polling before dispatching.
 
 **Polling requires a query, a wake-up mechanism, and a reachability probe.** Picking a query form (`gh issue`, `git fetch`, `git ls-tree`) without confirming a wake-up form (`Monitor` stdout-as-notification or shell-wake-on-loop-exit) is silent — the loop runs but γ never reacts. Verify both before dispatch. If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, surface the gap to the operator before dispatching α and β; γ cannot autonomously coordinate without a wake-up contract.
