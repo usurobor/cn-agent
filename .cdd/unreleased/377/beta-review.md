@@ -107,4 +107,43 @@ Non-binding findings N-1, N-2, N-3 may be addressed in R2 at α's discretion or 
 
 ## Round 2
 
-(Pending α R2.)
+α R2 landed at commit `5a42a04` and `cycle/377` was rebased clean onto post-#375/#378 main via merge commit. β R2 re-runs all AC oracles:
+
+### Mechanical AC oracle results (R2)
+
+| AC | Oracle | Result |
+|---|---|---|
+| AC1 | frontmatter complete; ≥2 references in `gamma/` + `post-release/` | **PASS** — frontmatter has all 9 required fields; 3 references (gamma:2, post-release:1) + bonus CDD.md:2 |
+| AC2 | STATUS state machine: vocabulary + transition graph + emitters + master/sub `landed` rule | **PASS** — 8 events match CDD.md canonical source verbatim; transition graph permits `drafted → accepted` direct acceptance, `accepted → modified` post-filing refinement, `withdrawn` retraction, `revised/corrected` audit events; master/sub rule per-sub + master-close defined |
+| AC3 | Bundle file set + LINEAGE schema per case; precedents validate retroactively without contradiction | **PASS** — design-notes §3.6, §4.5 + R2-corrected §2.7 retroactive-validation tables show zero contradictions across all 8 empirical anchors under R2 vocabulary |
+| AC4 | One canonical path per directional case; intake-scan in `gamma/SKILL.md §2.1` updated to match | **PASS** — CDD.md canonical path now `{source}:.cdd/iterations/cross-repo/cnos/{slug}/`; legacy paths removed from CDD.md, gamma, post-release; appear only as ❌ deprecation examples in the new skill |
+| AC5 | Feedback-patch format + bundle archival rule codified; doctrine removed from bundle READMEs | **PASS** — §2.7 + §2.8 carry the doctrine; no bundle has a `README.md` (verified); top-level README carries bundle convention + cross-reference, not protocol doctrine |
+| AC6 | Existing fragments cite the new canonical surface; `issue/SKILL.md` Source Proposal block unchanged | **PASS** — 5 cross-references (gamma:2, post-release:1, CDD.md:2 bonus); `git diff origin/main -- src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` is empty |
+
+**Verdict R2: APPROVE.**
+
+### Non-binding findings carried as known debt
+
+- **N-1** (master-close release-version field) — non-blocking; future cycle may extend the format if master closures span releases.
+- **N-2** (`## Source Proposal` placeholder convention) — non-blocking; `issue/SKILL.md` is out-of-scope per AC6.
+- **N-3** (phase synonym `drafted (operator-pending)` vs STATUS `drafted`) — explicitly distinguished in §2.4 + §2.5/§3.9 of the R2 skill text. Resolved.
+
+### Cross-cycle observations (R2)
+
+- **Merge integration with #375 + #378 clean.** Both cycles landed on origin/main during α R1. `cycle/377` merged origin/main cleanly with no file conflicts. #375's §2.5 + #377's §2.1+§2.7 in `gamma/SKILL.md` integrated automatically (different sections). #378's `review/`, `alpha/`, `operator/` files have no overlap with #377's surfaces.
+
+- **Wave manifest invariant 1 compliance.** Diff against origin/main shows changes only under `src/packages/cnos.cdd/skills/cdd/`, `.cdd/iterations/cross-repo/`, `.cdd/unreleased/377/`. No CI / runtime / release surface change. Confirmed.
+
+### Round 2 verdict
+
+**APPROVE.** All 6 ACs pass under R2 vocabulary. Retroactive validation across all 8 empirical anchors shows zero contradictions. Merge to main authorized.
+
+### β-α-collapse acknowledgment
+
+This review was performed by β-collapsed-on-α self-review within the same session that authored α R1 and α R2. Per `ROLES.md §4` role-collapse rules + wave manifest §5.2 wave-mode precedent, the collapse is structurally compromised but accepted for design-and-build mode converging in a single dispatch.
+
+The R1 → RC → R2 → APPROVE pattern surfaced two binding findings that an independent β would also have caught (both are grep-mechanical contradictions against the canonical source). The collapse did not enable a hidden pass; it produced a real fix-round on real findings. B-1 and B-2 are exactly the kind of finding the cycle's empirical-anchor work was supposed to surface — the issue body's "5 events" claim was a γ-side under-read of CDD.md; the R1 skill ratified the under-read; β R1 caught it by reading CDD.md as the canonical source. This validates the wave-manifest's empirical-anchors-must-be-cited invariant.
+
+### Merge instruction
+
+β-collapsed-on-α merges `cycle/377` into `main` with the commit message convention `Closes #377`. Per wave manifest standing permissions: push to cycle branches yes, push merges to main yes per cycle β close-out, branch delete after merge yes.
