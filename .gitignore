@@ -28,6 +28,10 @@ Thumbs.db
 *.pem
 *.key
 
+# Claude Code local config + harness scratch
+.claude/settings.local.json
+.claude/worktrees/
+
 # Build artifacts
 # dist/ is cn build + release output (tarballs, index.json, checksums.txt, per-target cn-* binaries).
 # Never committed — see docs/alpha/package-system/DESIGN-266-dist-out-of-git.md.
