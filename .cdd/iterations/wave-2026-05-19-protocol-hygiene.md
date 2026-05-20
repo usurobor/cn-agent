@@ -141,3 +141,148 @@ After this wave's three cycles close (375, 378, 377), ε returns to this file an
 Until then, the launch-side iteration (this file as committed) is sufficient to dispatch the wave.
 
 Filed by ε on 2026-05-19.
+
+---
+
+# ε iteration — close-side (Wave 2026-05-19 Protocol Hygiene)
+
+**Wave closed:** 2026-05-19 (same day as launch; all three cycles ran clean)
+**ε actor:** same as launch-side (cnos γ acting as ε per role-collapse; user-delegated)
+**Closure timing:** ~28 minutes from dispatch to all three merges (375 first at ~10 min; 378 at ~22 min; 377 last at ~28 min)
+
+## §7 Per-cycle close summary
+
+| Cycle | Merge SHA | Branch tip | ACs | Rounds | β findings | Notes |
+|---|---|---|---|---|---|---|
+| 375 | `8e118320` | `feebd45c` | 4/4 PASS | R1 APPROVE | none | One rebase onto `dd5a36d9` (gitignore chore) absorbed clean |
+| 378 | `9651e8c5` | `1b32c257` | 4/4 PASS | R1 APPROVE | none | Two α-internal rebases (`dd5a36d9` + cycle/375 `8e118320`) absorbed clean with SHA-citation re-stamping per `alpha/SKILL.md` §2.6 |
+| 377 | `b838166b` | `8589f5ef` | 6/6 PASS | R1 RC → R2 APPROVE | 2 binding (R1) | β R1 caught grep-mechanical drift against `CDD.md` canonical source (8-event vocabulary + legacy paths); R2 aligned all surfaces |
+
+Wave totals: 14/14 ACs PASS; one fix-round across the wave (377 R1 → R2); zero cross-cycle merge conflicts at the file-level (375 touched `gamma/SKILL.md §2.5`, 377 touched `gamma/SKILL.md §2.1+§2.7` + new `cdd/cross-repo/SKILL.md`, 378 touched `review/`+`alpha/`+`operator/` — orthogonal axes as wave manifest predicted).
+
+## §8 Wave-level findings
+
+### F5: δ-axis tooling-gap — origin branch delete returns HTTP 403
+
+**Source:** all three cycles' close-out reports (recurring pattern).
+
+**Class:** `cdd-tooling-gap` (harness/proxy; not in repo scope).
+
+**Trigger:** avoidable-tooling failure per `gamma/SKILL.md` §2.8 trigger table.
+
+**Description:** After each cycle merged to main, the δ-as-agent attempted `git push origin --delete cycle/{N}` (and the `:cycle/{N}` refspec form). The local proxy (`127.0.0.1:<port>`) returned HTTP 403 on all three attempts. Local branch deletion was also blocked while the worktree remained locked. Result: `origin/cycle/375` still points at `feebd45c`; `origin/cycle/378` still points at `1b32c257`; `origin/cycle/377` still points at `8589f5ef` (per the agent reports). Wave manifest §"Branch deletion after merge: yes" was operationally false.
+
+**Root cause:** Local-proxy permission policy. The proxy permits push to existing refs (merge to main works) but denies delete (`-> --delete` and `:refspec` forms both 403). Same proxy class as the gait-support-paths git access blocker named in the bootstrap-cdr session (operator-level harness restriction).
+
+**Disposition:** `no-patch` (harness-level; not in cdd-skill scope). Surface to operator as a recurring tooling gap. Three stale `origin/cycle/*` branches persist as audit residue; operator may delete via web UI when convenient.
+
+**Reason:** A `no-patch` decision per CDD §13a requires justification: the gap is real and observable, but the fix is harness-side (the local-proxy permission policy needs to be updated to allow refs/heads/cycle/* delete after merge). cdd doctrine cannot patch around a proxy permission. Recurrence trigger: if the same restriction blocks any future cycle's *merge* (not just cleanup), the trigger escalates to `cdd-protocol-gap` and a different disposition path opens. For now, deletion blockage is non-blocking.
+
+### F6: β-α-collapse on skill-patch class — pattern empirically validated
+
+**Source:** all three cycles ran β-α-collapse-on-δ-as-agent (single session for γ+α+β); all three produced PASS-class verdicts with text-level grep gates serving as the β oracle.
+
+**Class:** not a gap; a positive validation of the wave-manifest precedent (`breadth-2026-05-12`).
+
+**Trigger:** `gamma/SKILL.md` §2.8 process-gap reflection.
+
+**Description:** The wave manifest's pre-stated configuration was "γ+α+β-collapsed-on-δ for skill-patch class" with explicit β-α-collapse acknowledgment in each cycle's receipt. The pattern worked: 13/14 ACs PASS R1; one R1→R2 fix-round on cycle 377 where β R1's grep gate did fire and surface drift (β R1 caught 8-event-vocabulary misalignment with CDD.md canonical source). The β oracle being grep-mechanical against the canonical source — rather than relying on independent observer judgment — is what made the collapse safe.
+
+**Disposition:** `next-MCA`. The pattern is now empirically anchored across 5+ cycles (this wave's 3 + `breadth-2026-05-12`'s 5+). Worth codifying as a named operating point in `operator/SKILL.md` §5.2 or as a new `beta/SKILL.md` clause: "β-α-collapse-on-δ is permitted for skill-patch class cycles when (a) the β oracle is grep-mechanical against a canonical source, (b) the collapse is acknowledged in the receipt, (c) the diff scope is bounded under the issue's AC4 no-CI/runtime/release invariant or equivalent."
+
+**Issue filed:** none yet. Suggest folding into Phase 5 (γ shrink) or filing standalone after one more wave validates the predicate. The codification can wait one cycle; the discipline is already working.
+
+**First AC for the eventual MCA:** `operator/SKILL.md` §5.2 (or `beta/SKILL.md`) names the β-α-collapse-on-δ pattern with the three predicates above; the wave manifest's standing-permission language can shrink to "γ+α+β-collapsed-on-δ per [skill] §X.Y" rather than re-deriving the predicate per wave.
+
+### F7: α-internal rebase discipline scales
+
+**Source:** cycle 378's α absorbed two clean mid-cycle rebases (onto `dd5a36d9` gitignore + onto cycle/375 merge at `8e118320`) per `alpha/SKILL.md` §2.6 SHA-citation discipline + §2.3 intra-doc consistency rules.
+
+**Class:** not a gap; positive validation of existing α discipline.
+
+**Trigger:** `gamma/SKILL.md` §2.8 process-gap reflection.
+
+**Description:** Mid-cycle rebases are increasingly common in wave-mode operation (parallel cycles land on main while α is still authoring). Cycle 378's α handled the two rebases as transient state changes per §2.6 row 1, re-stamped 8 SHA citation sites, and re-pushed without surfacing as β findings. The existing rules scale.
+
+**Disposition:** `drop` (one-off positive observation; no patch needed). Recorded for posterity.
+
+### F8: Auto-close via "Closes #N" in merge commit message
+
+**Source:** cycle 377's merge commit `b838166b` carried `Closes #377` and auto-closed the issue.
+
+**Class:** not a gap; standard GitHub feature.
+
+**Disposition:** `drop` with a positive note — explicit `Closes #N` in the cycle's merge commit removes one operator post-merge step. Worth mentioning in `release/SKILL.md` or `beta/SKILL.md` §"merge discipline" as an optional convention; not pressing.
+
+### F9: 8-event STATUS vocabulary — cycle 377 expanded the protocol
+
+**Source:** cycle 377's β R1 finding + R2 patch.
+
+**Class:** `cdd-protocol-gap` (resolved within the cycle).
+
+**Trigger:** β R1 grep against `CDD.md` canonical source.
+
+**Description:** Cycle 377's α R1 used the 5-event vocabulary (`submitted | accepted | modified | rejected | landed`) that the launch-side iteration named. β R1 grep-checked against `CDD.md` and found the canonical surface already defines an 8-event lifecycle. α R2 aligned the new `cdd/cross-repo/SKILL.md` + gamma + post-release surfaces to the 8-event vocabulary. The wider vocabulary subsumes the "drafted" event that cn-sigma's bundle used (no longer a vocabulary gap).
+
+**Disposition:** `patch-landed` (in cycle 377; merged at `b838166b`). The cn-sigma "drafted" event is now properly hosted in the canonical vocabulary; F1 from launch-side (which folded into 377's design surface) is fully resolved.
+
+**Affects:** all future cross-repo bundles use the 8-event vocabulary from the new canonical skill; STATUS files in existing bundles (cn-sigma/agent-activate-skill, cph/bootstrap-cdr) may carry "drafted" or other legacy event names as historical record without protocol violation.
+
+## §9 Disposition of launch-side findings
+
+### F1 (Phase 3 V signature drift) — closed
+
+`patch-landed` at launch-side via #366 body update. No further action.
+
+### F2 (Phase 2.5 missing) — partially closed
+
+`patch-landed` (substance) at launch-side via #366 body insertion. `next-MCA` (action) for the Phase 2.5 dispatch cycle. **Architecture-choice decision (a) vs (b) recommended in this session's L7 design TLDR as option (a) split into `schemas/cdd/` + `schemas/cds/` + `schemas/cdr/`.** Cycle 377's `cdd/cross-repo/SKILL.md` validates that the directional-case + named-typed-fields approach scales — the same reasoning supports option (a) for schemas. Phase 2.5 dispatch awaits operator.
+
+### F3 (ε wave-launch surface undocumented) — empirically anchored, still next-MCA
+
+This wave provided the empirical evidence F3 named as a prerequisite. The pattern works:
+
+- Launch-side iteration → wave manifest + dispatch prompts + per-cycle γ prompts
+- δ dispatches γ-as-agent per cycle
+- γ (collapsed on α/β) runs the cycle to merge
+- Close-side iteration consolidates per-cycle findings
+
+The artifact set used here (`.cdd/waves/<id>/{manifest,status,dispatch-prompts}.md` + `.cdd/iterations/wave-<id>.md` with launch-side and close-side sections) is the proposed codification. Cycle 377's `cdd/cross-repo/SKILL.md` documented some of this in the bilateral-iteration case (case (c)); the ε wave-launch surface is the same shape applied to in-repo waves.
+
+**Disposition:** `next-MCA`. Codification can fold into Phase 6 (ε upscope, per #366) or a small standalone `epsilon/SKILL.md §1.5` patch. The empirical evidence is now sufficient for either path. **First AC:** `epsilon/SKILL.md` names ε's wave-launch role, the artifact set, the chain (ε produces wave plan → δ dispatches γ per cycle → γ runs α/β), and cites this wave as the empirical anchor.
+
+### F4 (roadmap drift class) — empirically anchored, still next-MCA
+
+The wave reinforced F4 through cycle 377 itself: β R1 caught vocabulary drift (5-event in α's draft vs 8-event in CDD.md canonical). The β-side grep gate caught it; the discipline isn't novel but the surface (β vs ε) for catching cross-cycle drift varies. F4's specific proposal — "ε runs a roadmap-coherence check during wave-launch" — is one option; another is "β grep-checks every patched skill text against the canonical doctrine paths" which the cycle 377 process empirically demonstrated.
+
+**Disposition:** `next-MCA`. The fix surface (ε pre-wave-launch vs β per-cycle) is now a decision-class that overlaps with F6 (β-α-collapse codification) and F3 (ε wave-launch codification). Suggest folding all three into Phase 6 design as a coordinated patch: ε's wave-launch role + β's canonical-source grep gate + the protocol-drift check at the wave boundary all live in one place.
+
+## §10 INDEX update
+
+Update `cnos:.cdd/iterations/INDEX.md` close-side row:
+
+```markdown
+| Cycle | Issue | Date | Findings | Patches | MCAs | No-patch | Path |
+|-------|-------|------|----------|---------|------|----------|------|
+| wave-2026-05-19-protocol-hygiene | n/a (wave) | 2026-05-19 | 9 | 4 | 4 | 1 | .cdd/iterations/wave-2026-05-19-protocol-hygiene.md |
+```
+
+Wave totals: 9 findings (F1–F9). 4 patch-landed (F1, F2 substance, F8 drop counted as informal-patch, F9 within-cycle); 4 next-MCAs (F2 action, F3, F4, F6); 1 no-patch (F5).
+
+## §11 Wave closure
+
+This wave is **closed** as of 2026-05-19. The three cycles merged; all 14 ACs passed; 9 ε findings dispositioned; INDEX row written.
+
+The next ε-class work item is the Phase 2.5 dispatch (architecture-choice decision required) per F2 — that's a Wave 1 candidate, not a Wave 2 follow-on. Phase 6 patch consolidating F3/F4/F6 is the natural next ε surface but is gated by Phase 4/5 ordering on #366.
+
+## §12 Operator queue (post-wave)
+
+In suggested order:
+
+1. **Decide architecture choice (a) vs (b)** for Phase 2.5 + cnos#376 AC7 (decision-class shared; pick once, apply twice). Recommendation: (a) per the L7 design TLDR earlier in this session.
+2. **Dispatch Phase 2.5 cycle** once (a)/(b) is picked.
+3. **Clean up the three stale `origin/cycle/{375,378,377}` branches** (web UI or unblocked CLI) — cosmetic; F5 carried as `no-patch`.
+4. **Execute Sigma task** (cn-rho repo + cn-sigma discipline patch + cph#32 comment) — independent of Phase 2.5; can ship anytime.
+5. **Decide Phase 6 ε upscope shape** when the cycle queue clears Phase 4/5 — consolidate F3 + F4 + F6 into that patch.
+
+Filed by ε on 2026-05-19 (close-side).
