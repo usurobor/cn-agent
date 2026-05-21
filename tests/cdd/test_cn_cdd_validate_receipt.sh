@@ -16,7 +16,30 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-V="$REPO_ROOT/src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify"
+# cycle/392 (cnos#392): V is implemented in Go under
+# src/packages/cnos.cdd/commands/cdd-verify/ and exposed as the kernel-tier
+# `cn cdd-verify` subcommand. The bash predecessor cn-cdd-verify and the
+# Python predecessor cn-cdd-validate-receipt are both removed.
+#
+# Build the cn binary into a known location (no install dependency) and
+# point V at the noun-verb dispatch form `cn cdd verify` (the canonical
+# `cn` dispatcher convention per src/go/internal/cli/dispatch.go).
+#
+# Operators can override the cn binary path via CN_BIN.
+CN_BIN="${CN_BIN:-}"
+if [ -z "$CN_BIN" ]; then
+  CN_BIN="$REPO_ROOT/.cdd-cache/cn-test"
+  mkdir -p "$(dirname "$CN_BIN")"
+  ( cd "$REPO_ROOT" && go build -o "$CN_BIN" ./src/go/cmd/cn ) >&2 || {
+    echo "FATAL: could not build cn binary for tests" >&2
+    exit 2
+  }
+fi
+
+# V is the command-line prefix for invoking V. Bash expands `"${V[@]}"`
+# into the cn binary path followed by the noun-verb args. All call sites
+# below quote `"${V[@]}"` so a path containing spaces is safe.
+V=("$CN_BIN" cdd verify)
 
 PASS_CT=0
 FAIL_CT=0
@@ -40,7 +63,7 @@ ac_fail() {
 run_v() {
   local out err rc tmpdir
   tmpdir="$(mktemp -d)"
-  "$V" "$@" > "$tmpdir/out" 2> "$tmpdir/err"
+  "${V[@]}" "$@" > "$tmpdir/out" 2> "$tmpdir/err"
   rc=$?
   echo "RC=$rc"
   echo "OUT<<<"
@@ -71,7 +94,7 @@ echo "  V : Contract × Receipt → ValidationVerdict (no separate evidence inpu
 echo "=================================================================="
 
 # Receipt-only invocation works (refs are bound into the receipt).
-out=$("$V" --receipt schemas/cdd/fixtures/valid-generic-receipt.yaml --structural-only --json 2>&1)
+out=$("${V[@]}" --receipt schemas/cdd/fixtures/valid-generic-receipt.yaml --structural-only --json 2>&1)
 rc=$?
 assert_exit "AC1.a receipt-only invocation succeeds" 0 $rc
 assert_contains "AC1.b ValidationVerdict emitted" '"result"' "$out"
@@ -97,7 +120,7 @@ protocol_gap_count: 0
 protocol_gap_refs: []
 evidence_refs: {}
 EOF
-out=$("$V" --receipt "$tmpfile" --structural-only 2>&1)
+out=$("${V[@]}" --receipt "$tmpfile" --structural-only 2>&1)
 rc=$?
 rm -f "$tmpfile"
 assert_exit "AC1.d missing protocol_id rejected" 1 $rc
@@ -110,23 +133,23 @@ echo "  CDS receipt → schemas/cds/  |  CDR receipt → schemas/cdr/  |  generi
 echo "=================================================================="
 
 # Generic receipt PASSes against schemas/cdd/.
-out=$("$V" --receipt schemas/cdd/fixtures/valid-generic-receipt.yaml --structural-only 2>&1)
+out=$("${V[@]}" --receipt schemas/cdd/fixtures/valid-generic-receipt.yaml --structural-only 2>&1)
 rc=$?
 assert_exit "AC2.a generic receipt PASSes against #Receipt" 0 $rc
 
 # CDS receipt PASSes against schemas/cds/.
-out=$("$V" --receipt schemas/cds/fixtures/valid-receipt.yaml 2>&1)
+out=$("${V[@]}" --receipt schemas/cds/fixtures/valid-receipt.yaml 2>&1)
 rc=$?
 assert_exit "AC2.b CDS receipt PASSes against #CDSReceipt" 0 $rc
 
 # CDR receipt PASSes against schemas/cdr/.
-out=$("$V" --receipt schemas/cdr/fixtures/valid-cdr-receipt.yaml --structural-only 2>&1)
+out=$("${V[@]}" --receipt schemas/cdr/fixtures/valid-cdr-receipt.yaml --structural-only 2>&1)
 rc=$?
 assert_exit "AC2.c CDR receipt PASSes against #CDRReceipt" 0 $rc
 
 # Mismatched protocol_id (declares cds but missing CDS-required keys) FAILs
 # with diagnostic naming the missing fields.
-out=$("$V" --receipt schemas/cds/fixtures/counterfeit-mismatched-protocol-id.yaml --structural-only 2>&1)
+out=$("${V[@]}" --receipt schemas/cds/fixtures/counterfeit-mismatched-protocol-id.yaml --structural-only 2>&1)
 rc=$?
 assert_exit "AC2.d mismatched protocol_id FAILs" 1 $rc
 assert_contains "AC2.e diagnostic names missing keys" "missing required CDS evidence_refs keys" "$out"
@@ -136,7 +159,7 @@ echo "=================================================================="
 echo "AC3 — V rejects missing boundary_decision"
 echo "=================================================================="
 
-out=$("$V" --receipt schemas/cdd/fixtures/invalid-fail-no-boundary-decision.yaml --structural-only 2>&1)
+out=$("${V[@]}" --receipt schemas/cdd/fixtures/invalid-fail-no-boundary-decision.yaml --structural-only 2>&1)
 rc=$?
 assert_exit "AC3.a missing boundary_decision FAILs" 1 $rc
 assert_contains "AC3.b diagnostic mentions boundary_decision" "boundary_decision" "$out"
@@ -146,7 +169,7 @@ echo "=================================================================="
 echo "AC4 — V rejects γ-preflight as authoritative"
 echo "=================================================================="
 
-out=$("$V" --receipt schemas/cdd/fixtures/invalid-gamma-preflight-authoritative.yaml --structural-only 2>&1)
+out=$("${V[@]}" --receipt schemas/cdd/fixtures/invalid-gamma-preflight-authoritative.yaml --structural-only 2>&1)
 rc=$?
 assert_exit "AC4.a γ-preflight-only FAILs" 1 $rc
 # CUE rejects the missing boundary_decision (same structural rule); the
@@ -158,14 +181,14 @@ echo "=================================================================="
 echo "AC5 — ValidationVerdict ≠ BoundaryDecision (override does not rewrite)"
 echo "=================================================================="
 
-out=$("$V" --receipt schemas/cdd/fixtures/invalid-override-masks-verdict.yaml --structural-only 2>&1)
+out=$("${V[@]}" --receipt schemas/cdd/fixtures/invalid-override-masks-verdict.yaml --structural-only 2>&1)
 rc=$?
 assert_exit "AC5.a override-masks-verdict FAILs" 1 $rc
 assert_contains "AC5.b CUE flags transmissibility mismatch" "transmissibility" "$out"
 
 # C3 rule independently catches the deeper case: outer validation.verdict
 # was rewritten while override block kept the original.
-out=$("$V" --receipt schemas/cds/fixtures/counterfeit-override-rewrite.yaml --structural-only 2>&1)
+out=$("${V[@]}" --receipt schemas/cds/fixtures/counterfeit-override-rewrite.yaml --structural-only 2>&1)
 rc=$?
 assert_exit "AC5.c override-rewrites-verdict FAILs" 1 $rc
 assert_contains "AC5.d C3 names the rewrite signal" "counterfeit.override_does_not_rewrite" "$out"
@@ -177,12 +200,12 @@ echo "  V dereferences refs through the receipt; non-existent paths FAIL."
 echo "=================================================================="
 
 # Valid CDS receipt with real on-disk closure-record refs → PASS.
-out=$("$V" --receipt schemas/cds/fixtures/valid-receipt.yaml 2>&1)
+out=$("${V[@]}" --receipt schemas/cds/fixtures/valid-receipt.yaml 2>&1)
 rc=$?
 assert_exit "AC6.a valid CDS receipt dereferences PASSes" 0 $rc
 
 # Counterfeit-evidence-missing → FAIL (paths point at nonexistent files).
-out=$("$V" --receipt schemas/cds/fixtures/counterfeit-evidence-missing.yaml 2>&1)
+out=$("${V[@]}" --receipt schemas/cds/fixtures/counterfeit-evidence-missing.yaml 2>&1)
 rc=$?
 assert_exit "AC6.b evidence-missing FAILs" 1 $rc
 assert_contains "AC6.c diagnostic names unresolved ref" "counterfeit.evidence_ref_unresolved" "$out"
@@ -192,7 +215,7 @@ echo "=================================================================="
 echo "AC7 — ValidationVerdict JSON structure"
 echo "=================================================================="
 
-json_out=$("$V" --receipt schemas/cds/fixtures/valid-receipt.yaml --json)
+json_out=$("${V[@]}" --receipt schemas/cds/fixtures/valid-receipt.yaml --json)
 rc=$?
 assert_exit "AC7.a --json invocation succeeds" 0 $rc
 echo "$json_out" | jq . > /dev/null 2>&1
@@ -225,19 +248,19 @@ echo "  C1 actor-separation | C2 verdict-precedes-merge | C3 override-rewrite"
 echo "=================================================================="
 
 # C1 — actor collision.
-out=$("$V" --receipt schemas/cds/fixtures/counterfeit-actor-collision.yaml 2>&1)
+out=$("${V[@]}" --receipt schemas/cds/fixtures/counterfeit-actor-collision.yaml 2>&1)
 rc=$?
 assert_exit "AC8.a C1 actor-collision FAILs" 1 $rc
 assert_contains "AC8.b diagnostic names C1" "counterfeit.actor_separation" "$out"
 
 # C2 — merge predates β verdict.
-out=$("$V" --receipt schemas/cds/fixtures/counterfeit-merge-precedes-verdict.yaml 2>&1)
+out=$("${V[@]}" --receipt schemas/cds/fixtures/counterfeit-merge-precedes-verdict.yaml 2>&1)
 rc=$?
 assert_exit "AC8.c C2 merge-precedes-verdict FAILs" 1 $rc
 assert_contains "AC8.d diagnostic names C2" "counterfeit.verdict_precedes_merge" "$out"
 
 # C3 — override rewrites verdict.
-out=$("$V" --receipt schemas/cds/fixtures/counterfeit-override-rewrite.yaml --structural-only 2>&1)
+out=$("${V[@]}" --receipt schemas/cds/fixtures/counterfeit-override-rewrite.yaml --structural-only 2>&1)
 rc=$?
 assert_exit "AC8.e C3 override-rewrite FAILs" 1 $rc
 assert_contains "AC8.f diagnostic names C3" "counterfeit.override_does_not_rewrite" "$out"
@@ -248,7 +271,7 @@ echo "Backward compatibility — existing cn-cdd-verify modes still work"
 echo "=================================================================="
 
 # --unreleased mode still drives the legacy artifact-presence checker.
-out=$("$V" --unreleased 2>&1)
+out=$("${V[@]}" --unreleased 2>&1)
 rc=$?
 # Exit 0 OR 1 acceptable (cycles may have warnings/missing artifacts); the
 # check is that --unreleased does NOT fall through to V dispatch.

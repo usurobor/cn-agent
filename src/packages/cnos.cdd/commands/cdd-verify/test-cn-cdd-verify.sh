@@ -12,7 +12,17 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VERIFY="$SCRIPT_DIR/cn-cdd-verify"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
+
+# cycle/392: cdd-verify is now the cn kernel subcommand; invoke via the
+# built cn binary using the canonical noun-verb form `cn cdd verify`.
+CN_BIN="${CN_BIN:-}"
+if [ -z "$CN_BIN" ]; then
+  CN_BIN="$REPO_ROOT/.cdd-cache/cn-test"
+  mkdir -p "$(dirname "$CN_BIN")"
+  ( cd "$REPO_ROOT" && go build -o "$CN_BIN" ./src/go/cmd/cn ) >&2
+fi
+VERIFY=("$CN_BIN" cdd verify)
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -201,7 +211,7 @@ write_canonical_pra "$R" "9.0.0"
 git -C "$R" tag "9.0.0"
 OUT="$TMP/canonical.out"
 set +e
-"$VERIFY" --version 9.0.0 --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 9.0.0 --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "exits 0 on canonical contract" 0 "$EC"
@@ -219,7 +229,7 @@ git -C "$R" tag "9.1.0"
 git -C "$R" tag "v9.1.0"
 OUT="$TMP/legacy_tag.out"
 set +e
-"$VERIFY" --version 9.1.0 --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 9.1.0 --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "exits 0 with v-tag warning" 0 "$EC"
@@ -234,7 +244,7 @@ write_legacy_pra "$R" "9.2.0"
 git -C "$R" tag "9.2.0"
 OUT="$TMP/legacy_pra_only.out"
 set +e
-"$VERIFY" --version 9.2.0 --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 9.2.0 --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "fails when only legacy PRA exists" 1 "$EC"
@@ -250,7 +260,7 @@ write_canonical_pra "$R" "9.3.0"
 git -C "$R" tag "v9.3.0"
 OUT="$TMP/v_only.out"
 set +e
-"$VERIFY" --version 9.3.0 --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 9.3.0 --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "fails when bare tag absent" 1 "$EC"
@@ -266,7 +276,7 @@ write_canonical_closeouts "$R" "9.4.0"
 git -C "$R" tag "9.4.0"
 OUT="$TMP/triadic_canon.out"
 set +e
-"$VERIFY" --version 9.4.0 --triadic --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 9.4.0 --triadic --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "triadic exits 0 on canonical close-outs" 0 "$EC"
@@ -287,7 +297,7 @@ git -C "$R" add .cdd >/dev/null && git -C "$R" commit -q -m "partial close-outs"
 git -C "$R" tag "9.5.0"
 OUT="$TMP/triadic_no_gamma.out"
 set +e
-"$VERIFY" --version 9.5.0 --triadic --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 9.5.0 --triadic --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "triadic fails without γ close-out" 1 "$EC"
@@ -303,7 +313,7 @@ write_cycle_artifacts "$R" "10.0.0" "100"
 git -C "$R" tag "10.0.0"
 OUT="$TMP/cycle_complete.out"
 set +e
-"$VERIFY" --version 10.0.0 --cycle 100 --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 10.0.0 --cycle 100 --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "cycle mode exits 0 on complete artifacts" 0 "$EC"
@@ -323,7 +333,7 @@ write_incomplete_cycle_artifacts "$R" "10.1.0" "101"
 git -C "$R" tag "10.1.0"
 OUT="$TMP/cycle_incomplete.out"
 set +e
-"$VERIFY" --version 10.1.0 --cycle 101 --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 10.1.0 --cycle 101 --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "cycle mode fails with missing artifact" 1 "$EC"
@@ -333,7 +343,7 @@ echo ""
 echo "## test 9 — cycle mode requires version"
 OUT="$TMP/cycle_no_version.out"
 set +e
-"$VERIFY" --cycle 123 > "$OUT" 2>&1
+"${VERIFY[@]}" --cycle 123 > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "cycle mode fails without version" 1 "$EC"
@@ -348,7 +358,7 @@ write_canonical_pra "$R" "10.2.0"
 git -C "$R" tag "10.2.0"
 OUT="$TMP/cycle_missing_dir.out"
 set +e
-"$VERIFY" --version 10.2.0 --cycle 999 --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --version 10.2.0 --cycle 999 --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "cycle mode fails with missing directory" 1 "$EC"
@@ -451,7 +461,7 @@ make_repo "$R"
 write_legacy_partial_cycle "$R" "3.75.0" "375"
 OUT="$TMP/era_v3_75.out"
 set +e
-"$VERIFY" --all --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --all --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "v3.75.0 missing close-outs exits 0" 0 "$EC"
@@ -466,7 +476,7 @@ make_repo "$R"
 write_no_cdd_trace_cycle "$R" "3.76.0" "376"
 OUT="$TMP/era_v3_76.out"
 set +e
-"$VERIFY" --all --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --all --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "v3.76.0 missing CDD Trace exits 0" 0 "$EC"
@@ -480,7 +490,7 @@ make_repo "$R"
 write_legacy_partial_cycle "$R" "3.77.0" "377"
 OUT="$TMP/era_v3_77.out"
 set +e
-"$VERIFY" --all --repo-root "$R" > "$OUT" 2>&1
+"${VERIFY[@]}" --all --repo-root "$R" > "$OUT" 2>&1
 EC=$?
 set -e
 assert_exit "v3.77.0 missing close-outs exits 1" 1 "$EC"

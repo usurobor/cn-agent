@@ -24,6 +24,7 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ## 3.81.0
 
+- **#392** — Phase 3 remediation v2: V (Contract × Receipt → ValidationVerdict) ported from Python to Go and exposed as the `cn cdd-verify` kernel subcommand. Go source under `src/packages/cnos.cdd/commands/cdd-verify/` (new module joined into the build via a repo-root `go.work`); kernel-tier command wrapper at `src/go/internal/cli/cmd_cdd_verify.go`. Bash `cn-cdd-verify` and Python `cn-cdd-validate-receipt` removed. `schemas/cdd/validation_verdict.schema.json` unchanged. 37/37 oracle sub-checks pass; 5/5 counterfeit fixtures rejected with named diagnostics. Supersedes cnos#391 (closed as rescoped).
 - **#385** — Activation soul collapsed from 6 CA skills to 2 (cap + clp). `agent/activate/SKILL.md §2.1 step 2` now lists cap and clp only; `calls:` frontmatter drops mca, mci, coherent, agent-ops. `cap/SKILL.md` gains three new sections (§4 MCA, §5 MCI, §6 Coherent output) absorbing the operational rules from the four removed skills, with explicit non-absorbed boundary notes. mca/mci/coherent/agent-ops receive `activation_status: on-demand` frontmatter. `cnos.core/AGENTS.md` deleted; pkgbuild updated. `activate.go:506` returns the 2-skill path. R5-activate kata P10 fixture updated. All 9 ACs met; 0 β findings; 1 review round (APPROVED R1).
 
 ## 3.80.0
