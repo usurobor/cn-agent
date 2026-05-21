@@ -20,11 +20,14 @@
 
 ## Merge SHA
 
-(To be filled in by ε post-merge per the cycle conventions.)
+- cycle/396 tip: `bd3bd4d8711432862889b750dc078c41c344c64c`
+- merge commit on main: `00a604ba` (`Merge cycle/396: empirical-anchor cph mapping (Sub 4 of #376)`)
+- ε INDEX-row commit: `afd7feb1`
 
 ## Branch cleanup
 
-(To be filled in by ε post-merge — attempt delete; expect 403; note.)
+- Attempted `git push origin --delete cycle/396` post-merge.
+- Returned HTTP 403 as expected per δ contract; branch remains on origin (harmless).
 
 ## Signed off
 
