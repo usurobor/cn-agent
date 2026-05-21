@@ -360,14 +360,14 @@ Tier 3 skills: src/packages/cnos.core/skills/write/SKILL.md, <additional issue-s
 
 The 7 axes are the **implementation contract** — the architectural shape the cycle ships, distinct from the behavioral ACs the cycle satisfies. Behavioral ACs test what the implementation *does*; the implementation contract pins what the implementation *is* (language, location, integration shape).
 
-**γ's obligation.** γ writes the contract values per repo conventions or escalates to δ for ratification before dispatch. **γ MUST NOT dispatch with empty / "TBD" rows.** If γ doesn't know a value, γ asks δ — the inward-membrane function (`operator/SKILL.md` §3a "δ as inward membrane: implementation-contract enrichment at dispatch") exists exactly for this enrichment. δ fills the row per repo conventions, or — if the row is genuinely undecidable (e.g. the language choice is itself part of the cycle's design question, not its execution shape) — blocks dispatch and escalates to operator-as-human.
+**γ's obligation.** γ writes the contract values per repo conventions or escalates to δ for ratification before dispatch. **γ MUST NOT dispatch with empty / "TBD" rows.** If γ doesn't know a value, γ asks δ — the inward-membrane function (`delta/SKILL.md` §2 "Inward membrane — γ contract → α-ready dispatch") exists exactly for this enrichment. δ fills the row per repo conventions, or — if the row is genuinely undecidable (e.g. the language choice is itself part of the cycle's design question, not its execution shape) — blocks dispatch and escalates to operator-as-human.
 
 If γ's escalation to δ produces a mid-cycle contract change (rare; usually a row was unpinned at dispatch and γ + δ resolved it during α's run), γ logs the resolved row in `.cdd/unreleased/{N}/gamma-clarification.md` so the contract trail is auditable.
 
 **The mesh.** This template is the γ-side surface of a four-role mesh:
 
 - γ template:    this section (the 7-axis `## Implementation contract` block in the α prompt)
-- δ enrichment:  `operator/SKILL.md` §3a "δ as inward membrane"
+- δ enrichment:  `delta/SKILL.md` §2 "Inward membrane — γ contract → α-ready dispatch"
                  (δ reviews γ's dispatch prompt; fills unpopulated rows; blocks if undecidable)
 - α constraint:  `alpha/SKILL.md` §3.6 "Implementation contract is δ's, not α's"
                  (α MUST NOT improvise; α surfaces unpinned rows before coding)
