@@ -34,6 +34,7 @@ calls:
   - issue/SKILL.md
   - post-release/SKILL.md
   - operator/SKILL.md
+  - harness/SKILL.md
 ---
 
 # Gamma
@@ -62,7 +63,7 @@ When acting as γ:
 2. load this file as the γ role surface
 3. load `issue/SKILL.md`
 4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics) and step 13a skill/spec patches
-5. load `operator/SKILL.md` — δ owns dispatch execution (routes γ/α/β prompts to `claude -p` sessions one at a time) and outward gate policy (the doctrinal frame for the disconnect release at §3.4); `release-effector/SKILL.md` owns the mechanics of the disconnect release itself (`scripts/release.sh`, post-push CI polling, the CI-red recovery runbook, branch deletes). δ's actions are git-observable (tags, branch state). If δ is unavailable, γ may execute gates directly.
+5. load `operator/SKILL.md` — δ owns dispatch execution (routes γ/α/β prompts to harness-dispatched sessions one at a time) and outward gate policy (the doctrinal frame for the disconnect release at §3.4). Dispatch mechanics (invocation shell, observability flags, worktree management, identity write) live in `harness/SKILL.md`; δ honors that contract, γ references it when authoring prompts that name the observable-output flag. `release-effector/SKILL.md` owns the mechanics of the disconnect release itself (`scripts/release.sh`, post-push CI polling, the CI-red recovery runbook, branch deletes). δ's actions are git-observable (tags, branch state). If δ is unavailable, γ may execute gates directly.
 6. load other lifecycle sub-skills only when the selected gap requires them
 
 **Canonical-skill staleness check before each γ phase change.** Before transitioning from one CDD phase to another (intake → dispatch, dispatch → close-out triage, close-out triage → PRA, PRA → closure), γ runs `git fetch --verbose origin main && git rev-parse origin/main`. If `origin/main` HEAD has advanced beyond the SHA at which the canonical CDD/role skills were loaded, **re-load** `CDD.md`, this file, and the lifecycle sub-skill governing the next phase, then re-evaluate the next phase's plan against the updated canonical surfaces before proceeding. This is the parallel of `beta/SKILL.md`'s pre-merge gate row 2; it catches the same class of failure on the γ-axis (canonical-skill snapshot drift across release boundaries — cycle #301 §9.1 trigger 1: γ proposed an out-of-spec option (b) merge-by-γ because σ's `4a0f678` "merge is β authority" had landed mid-cycle and was not in γ's session-loaded `gamma/SKILL.md`).
@@ -399,7 +400,7 @@ Branch: cycle/<N>
 δ holds gates   → push, tag, release, branch cleanup
 ```
 
-**Identity-rotation primitive:** `cn dispatch --role α|β --branch cycle/N` provides cognitive isolation via fresh Claude CLI sessions while preserving branch/artifact continuity. Default backend is Claude CLI (`claude -p`) with stream-json observability. Stub and print backends available for testing and prompt inspection.
+**Identity-rotation primitive:** `cn dispatch --role α|β --branch cycle/N` provides cognitive isolation via fresh Claude CLI sessions while preserving branch/artifact continuity. Default backend is Claude CLI (`claude -p`) with stream-json observability. Stub and print backends available for testing and prompt inspection. The dispatch mechanics, observability contract, and per-worktree identity discipline are codified in `harness/SKILL.md` (§1, §2, §3).
 
 Rules:
 - point both roles at the issue, not a paraphrase of the issue
