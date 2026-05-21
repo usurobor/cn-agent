@@ -220,3 +220,36 @@ The narration is faithful to the script. **PASS.**
 All 7 ACs pass mechanically. Implementation contract conformance verified row-by-row. β/δ boundary intact. scripts/release.sh unchanged. Disconnect-release semantics preserved (doctrinal frame in operator/SKILL.md §3.4/§3.5; mechanics in release-effector). Cross-references updated across 8 skill files.
 
 **Ready for β review.**
+
+---
+
+## Post-merge addendum (after merging origin/main with cycle/397 Phase 4a landing)
+
+When the merge to main was attempted, `origin/main` had advanced — cycle/397 (Phase 4a, delta/SKILL.md extraction) landed between this cycle's start and merge time. Following CDD canonical-skill staleness discipline (gamma/SKILL.md §Load Order), the merge was performed with explicit conflict resolution:
+
+**Conflict 1 — operator/SKILL.md algorithm step 6+7 (line 49):**
+- HEAD: my collapsed step 6 (mechanics live in release-effector) + unchanged step 7
+- origin/main: cycle/397's full inline runbook step 6 + step 7 with delta/SKILL.md override-doctrine pointer
+- Resolution: my collapsed step 6 (Phase 4c IS the extraction; cycle/397's inline-runbook step 6 was placeholder waiting for Phase 4c) + cycle/397's step 7 (override delegates to delta/SKILL.md). Combined: both Phase 4a and Phase 4c improvements landed.
+
+**Conflict 2 — operator/SKILL.md §3.5 mid-cycle gate actions (line 237):**
+- HEAD: cross-refs release-effector for mid-cycle gate actions
+- origin/main: adds delta/SKILL.md §1.4 role-policy framing
+- Resolution: combined — release-effector for mechanics + delta/SKILL.md §1.4 for role-policy.
+
+**Auto-merged §3.4:** The §3.4 area auto-merged: cycle/397's role-policy callout pointing at delta/SKILL.md §1.1 + my mechanics callout pointing at release-effector. Both landed. Stale "runbook below ... Phase 4c relocates" sentence cleaned up to reflect that Phase 4c IS happening.
+
+**delta/SKILL.md updated:** Lines 81, 88, 89, 94 (§1.1 table + role-policy paragraph), 173 (§2.2 landing note), 316/323 (§6 cross-references), 336/338/340 (§7 Phase status) all updated to reflect Phase 4c LANDED (not pending). Mechanics-location column in §1.1 table for Tag-push and Branch-delete rows now points at release-effector/SKILL.md.
+
+**Post-merge AC verification:**
+- AC1: PASS — release-effector/SKILL.md present, frontmatter parses.
+- AC2: PASS — `grep -cE "scripts/release.sh|tag creation|branch cleanup|release CI" operator/SKILL.md` = 0.
+- AC3: PASS — tag policy + CDD §5.3a citation preserved.
+- AC4: PASS — §3.4 doctrinal frame retained in operator; mechanics extracted to release-effector; no content lost; delta/SKILL.md role-policy authority added (Phase 4a) without conflict.
+- AC5: PASS — release/SKILL.md substantive content untouched.
+- AC6: PASS — 9 skill files now cross-reference release-effector (added delta/SKILL.md via post-merge update).
+- AC7: PASS — `git diff origin/main -- scripts/` = 0 lines.
+
+**Cycle/397 non-interference:** Cycle/397's delta/SKILL.md landing is preserved verbatim except for citations to "Phase 4c pending" which are updated to "Phase 4c landed" / mechanics-pointer-to-release-effector. The two-sided membrane doctrine (delta/SKILL.md §1 outward + §2 inward), override semantics (§3), V-composition (§4), and δ-as-role boundary constraints (§5) are untouched. The Phase 4 trio relationship is now correctly stated: Phase 4a (delta/SKILL.md) + Phase 4c (release-effector/SKILL.md) landed; Phase 4b (harness substrate) remains pending.
+
+**Β reconfirmation (β-collapsed):** Post-merge AC1–AC7 all PASS. No additional findings. Ready for final merge to main.

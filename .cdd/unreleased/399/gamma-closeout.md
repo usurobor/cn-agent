@@ -73,3 +73,21 @@ This cycle ran under operator/SKILL.md §5.2 (single-session δ-as-γ via Agent 
 ## Closure declaration
 
 **Cycle/399 closed.** All closure-gate rows verified above. Ready for merge to main.
+
+---
+
+## Post-merge addendum (cycle/397 Phase 4a interaction)
+
+When cycle/399 reached merge time, cycle/397 (Phase 4a, delta/SKILL.md extraction) had already landed on origin/main. The merge was performed with explicit conflict resolution:
+
+- 2 conflicts in operator/SKILL.md (algorithm step 6+7; §3.5 mid-cycle gate-actions). Both resolved to combine Phase 4a's role-policy delegation (→ delta/SKILL.md) with Phase 4c's mechanics extraction (→ release-effector/SKILL.md).
+- delta/SKILL.md (just landed via cycle/397) was post-merge-updated to reflect Phase 4c LANDED status (not pending). Citations to "Phase 4c relocates" → "Phase 4c landed via cycle/399". The mechanics-location column in delta/SKILL.md §1.1 was updated to point Tag-push and Branch-delete rows at release-effector/SKILL.md instead of operator/SKILL.md §3.4.
+- 9 skill files now reference release-effector (previously 8 — delta/SKILL.md added via post-merge update).
+- Post-merge AC1–AC7 all re-verified PASS.
+
+**Phase 4 status updated:**
+- Phase 4a (delta/SKILL.md): LANDED via cycle/397.
+- Phase 4b (harness substrate): still pending.
+- Phase 4c (release-effector): LANDED this cycle.
+
+**Phase 5 (γ shrink) gating:** still blocked. Two of three Phase 4 surfaces are clean (4a + 4c); Phase 4b (harness substrate) is required before Phase 5 unblocks.
