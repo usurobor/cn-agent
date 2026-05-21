@@ -1,0 +1,9 @@
+{
+  "schema": "cn.package.v1",
+  "name": "cnos.cdr",
+  "version": "0.1.0",
+  "kind": "package",
+  "engines": {
+    "cnos": ">=3.81.0"
+  }
+}
