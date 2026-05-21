@@ -13,23 +13,25 @@ triggers:
 
 # Epsilon (research ε)
 
-> **This is a CDR-specific extension of the generic cnos.cdd ε doctrine.** The
-> kernel grammar (ε-as-protocol-reviewer in the scope ladder, the MCA
-> discipline, the ε=δ collapse rule for small-protocol regimes) is
-> inherited by reference from
-> [`cnos.cdd/skills/cdd/epsilon/SKILL.md`](../../../../cnos.cdd/skills/cdd/epsilon/SKILL.md).
-> Only the **trigger classes** (research-failure classes per
-> [`CDR.md`](../CDR.md) Field 5, not engineering-failure classes) and the
-> **output-artifact location** (the CDR-iteration artifact under the
-> project binding's wave surface) diverge for the research loss function
-> per
+> **This is the CDR-specific instantiation of the generic ε doctrine declared in
+> [`ROLES.md §4b`](../../../../../../ROLES.md).** The kernel grammar —
+> ε-as-protocol-reviewer in the scope ladder, the watched receipt fields
+> (`protocol_gap_count`, `protocol_gap_refs`), the gap-class instantiation
+> pattern (`{protocol}-{axis}-gap`), the iteration-artifact rule (required
+> only when `protocol_gap_count > 0`), the MCA discipline (ship-now /
+> next-MCA / no-patch), and the ε=δ collapse rule for small-protocol
+> regimes — is inherited by reference. Only the **trigger classes**
+> (research-failure classes per [`CDR.md`](../CDR.md) Field 5, not
+> engineering-failure classes) and the **output-artifact location** (the
+> CDR-iteration artifact under the project binding's wave surface) diverge
+> for the research loss function per
 > [`ROLES.md §4a.2`](../../../../../../ROLES.md#4a2-loss-function-distinction).
 
 ## §1 ε's CDR-side scope
 
 ε's domain in CDR is **protocol-iteration**: the work of observing whether the CDR protocol is itself coherent — whether it selects the right research gaps, closes them with correctly-calibrated typed receipts, and produces a research-claim transmission discipline that learns from its own waves rather than repeating the same overclaim class.
 
-The canonical output artifact is the **CDR-iteration record** (the research analogue of `cdd-iteration.md`). Following the engineering ε's convention, the artifact is written on every wave; an empty findings list is itself signal, declaring the wave ran cleanly with no protocol gaps surfaced (and removing the ambiguity of a missing file). The artifact's concrete location is project-binding-dependent (typically `<project>/.cdr/waves/{wave-id}/cdr-iteration.md` or an equivalent under the project's wave surface); the protocol-overlay layer declares the artifact's existence and shape, not its file path.
+The canonical output artifact is the **CDR-iteration record** (the research analogue of `cdd-iteration.md`). Per the inherited cadence rule ([`ROLES.md §4b.4`](../../../../../../ROLES.md)), the artifact is required only when the wave's receipt has `protocol_gap_count > 0` — i.e. when the wave produced ≥1 finding tagged with one of the `cdr-*-gap` classes below. The receipt's `protocol_gap_count == 0` is the no-gap signal; no iteration file is required when the wave ran cleanly. The artifact's concrete location is project-binding-dependent (typically `<project>/.cdr/waves/{wave-id}/cdr-iteration.md` or an equivalent under the project's wave surface); the protocol-overlay layer declares the artifact's existence and shape, not its file path.
 
 For waves that produce findings, the trigger classes the artifact enumerates are CDR-specific (per [`CDR.md §"Field 5"`](../CDR.md)):
 
