@@ -262,6 +262,91 @@ Two persona hubs, one shared role grammar, two different discipline profiles:
 
 Both hubs load the same generic kernel (`cnos.cdd`'s coherence-cell normal form). They differ in which protocol overlay they load (`cnos.cds` vs `cnos.cdr`) and in their discipline profile. When a repo needs both kinds of work — Sigma ships a measurement tool, Rho runs it under a data gate and writes the field report — the dispatch boundary mediates: the operator routes each unit of work to the persona whose discipline matches it; the repo carries the handoff via commits, scripts, receipts, and reports.
 
+## §4b Generic ε — the protocol-iteration role
+
+§§1–4a declare α/β/γ/δ as the four roles that do *ordinary cell metabolism*: α produces matter, β reviews, γ coordinates the loop, δ operates the cycle sequence and effects the parent-scope boundary. §4b declares ε — the protocol-iteration role — separately, because ε's matter is different in kind from the matter the other four roles act on.
+
+This section is the **generic ε doctrine**. Each c-d-X instantiation (cdd, cdr, cds, future cdw / cda / …) declares a CDD/CDR/CDS-specific ε surface that inherits the kernel grammar below by reference. Instantiations may extend the gap class taxonomy and bind the iteration artifact to a protocol-specific path; they do not re-declare the watched fields, the relationship to δ, or the MCA discipline.
+
+### §4b.1 What ε observes
+
+ε observes **the receipt streams emitted by closed coherence cells across many cycles**. Inside a single cell, α/β/γ/δ do ordinary metabolism and γ closes the cell with a parent-facing receipt. ε reads receipts from outside the cell, across cells, and asks whether the *protocol governing those cells* is itself coherent — whether it selects the right gaps, closes them durably, and produces a system that learns from its own cycles rather than repeating the same class of error.
+
+ε's matter is **the protocol itself**. Where α produces code or prose or analysis, ε produces protocol patches: skill edits, schema refinements, validator additions, harness-contract clarifications. The patch lands wherever the gap surfaces; ε is not bound to a single package.
+
+The structural property that distinguishes ε from δ: δ operates the *sequence* of cycles (selects which gap to close next, dispatches, releases) and is therefore inside the cycle-level frame. ε operates *across* sequences (reads receipts longitudinally, observes whether the protocol is improving) and is therefore outside any single cycle's frame. The order-of-observation distinction from §2 is what makes ε work add information δ could not have produced alone.
+
+### §4b.2 Watched receipt fields
+
+Every cell emits a parent-facing receipt (`schemas/cdd/receipt.cue#Receipt` is the generic kernel; domain extensions in `schemas/cdr/`, `schemas/cds/` unify against it). The receipt carries two fields ε reads on every cycle:
+
+```cue
+protocol_gap_count: int & >=0
+protocol_gap_refs:  [...#ProtocolGapRef]
+// consistency: protocol_gap_count == len(protocol_gap_refs)
+```
+
+`#ProtocolGapRef` is the typed structured reference to one protocol gap observed during the cycle (id, source — one of `receipt | artifact | issue | review | closeout` — and ref). The two fields together make "no protocol gaps this cycle" a positive signal carried by every receipt — not an absence inferred from missing artifacts. When `protocol_gap_count == 0`, the cycle ran cleanly with no protocol-iteration findings. When `protocol_gap_count > 0`, the receipt's `protocol_gap_refs` is the typed index into the iteration artifact (§4b.4) where the findings are dispositioned.
+
+The consistency constraint (`count == len(refs)`) is structurally enforced by the schema; authors asserting drifted values fail `cue vet`. This makes the ε signal mechanically checkable at the receipt boundary — ε does not depend on prose-level audit to discover whether the cycle surfaced findings.
+
+### §4b.3 Gap class taxonomy (instantiation pattern)
+
+Each instantiation declares its own gap classes named to its loss function. The naming pattern is `{protocol}-{axis}-gap` where the axis names the protocol-internal surface the gap touches. The generic doctrine does **not** mandate a specific class count or axis set — it mandates that classes are named in the instantiation, typed against the instantiation's loss function, and that ε reads `protocol_gap_refs` typed against the instantiation's class set.
+
+Reference instantiations:
+
+- **cdd (engineering, repairable-feedback regime per §4a.2):** `cdd-skill-gap` (procedural skill underspecified or wrong), `cdd-protocol-gap` (CDD doctrine itself drifted), `cdd-tooling-gap` (tooling absent, wrong, or unavailable), `cdd-metric-gap` (measurement missing or wrong). See [`src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md`](src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md).
+- **cdr (research, truth-preserving regime per §4a.2):** `cdr-data-gate-gap`, `cdr-overclaim-gap`, `cdr-reproduction-gap`, `cdr-citation-gap`, `cdr-oracle-ambiguity-gap`, `cdr-construct-drift-gap`. The class set is wider than cdd because research-discipline failure modes are wider; the principle is the same. See [`src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md`](src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md).
+- **cds, cdw, cda, future:** each instantiation declares its own class names against its discipline profile (§4a.2). The class set must be enumerable, the names stable across cycles, and each class oracle-defined (β can mechanically decide whether a finding fits the class).
+
+A protocol that declares no gap classes has no machinery for protocol-iteration. The receipt's `protocol_gap_count` would have nowhere to type its `protocol_gap_refs` against; ε's matter (the protocol) would be invisible. The gap class declaration is therefore a Field-5-equivalent obligation: a protocol that instantiates the role ladder must declare its gap classes before live cycles run.
+
+### §4b.4 Iteration artifact and cadence rule
+
+For each instantiation, ε produces an **iteration artifact** when the cycle's receipt has `protocol_gap_count > 0`. The artifact dispositions each finding (per the per-finding shape declared by the instantiation) and is the durable record of what was found and what was done.
+
+The artifact is **conditional**: required only when `protocol_gap_count > 0`. When the receipt records zero gaps, no iteration artifact is required; the receipt itself is the always-present record of *whether* an artifact is required, and its absence is unambiguous (no findings, no file). This resolves a class of survivorship-bias ambiguity that obtains when the iteration file's absence could mean either "clean cycle" or "skipped close-out": with the watched-field invariant, the receipt commits to one reading.
+
+Each instantiation declares the artifact's name and path. References:
+
+- **cdd:** `cdd-iteration.md` at `.cdd/unreleased/{N}/cdd-iteration.md` (in-cycle) → `.cdd/releases/{X.Y.Z}/{N}/cdd-iteration.md` (after release); aggregator at `.cdd/iterations/INDEX.md`. The cadence rule is declared in [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b`](src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md). See [`cnos.cdd/skills/cdd/epsilon/SKILL.md`](src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md).
+- **cdr:** project-binding-dependent path (typically `<project>/.cdr/waves/{wave-id}/cdr-iteration.md`); the protocol-overlay declares existence and shape, the project binding declares path. See [`cnos.cdr/skills/cdr/epsilon/SKILL.md`](src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md).
+
+The generic doctrine does not mandate a fixed path. Single-binding instantiations (cdd in cnos itself) may bind to a fixed path; multi-binding instantiations (cdr over many possible project repos) leave the path to the project binding. Both are valid; the protocol-overlay layer declares the artifact's existence and per-finding shape.
+
+### §4b.5 MCA discipline
+
+For each finding ε dispositions one of three branches:
+
+- **Ship now (MCA available)** — a skill patch, schema refinement, gate, or mechanization exists that closes the gap durably. Ship it as an immediate output in the same session ε surfaces the finding. This is the preferred branch when a patch is available.
+- **Next-MCA (pattern real, no MCA yet)** — the gap is structural but the patch is non-trivial. File a protocol MCI (a tracked issue) and link the finding to its eventual MCA. The instantiation's iteration aggregator (cdd's `.cdd/iterations/INDEX.md`; cdr's project-binding equivalent) carries the row.
+- **No-patch (one-off, no pattern)** — the finding is real but does not generalize; no protocol patch would prevent it without overreach. Disposition explicitly and note the drop. "No-patch" is not the default; it requires a justification (per CDD §13a for the cdd instantiation, and equivalent in other instantiations).
+
+Silence — a finding without a disposition — is the failure mode this discipline is designed to prevent. A protocol where findings accumulate without dispositioning is a protocol that has lost the loop; that is the system-level signal ε's existence is meant to catch.
+
+### §4b.6 ε's relationship to δ (collapse rule)
+
+ε and δ are often the same actor in small-protocol regimes — one active operator running a handful of cycles per week or per cadence unit. Protocol-iteration volume does not justify dedicated specialization at that scale. The operator (δ) naturally accumulates the longitudinal view ε requires and performs ε work as part of cycle close-out triage.
+
+Separation becomes warranted when protocol-iteration volume justifies dedicated attention: when the iteration artifact is written on most cycles with non-empty findings, when the iteration aggregator accumulates faster than one actor can triage, or when the operator's operational load (δ) crowds out the reflective work (ε). At that point, ε may be a distinct actor — a second agent or a dedicated human — who reads receipts across cycles and drives protocol patches independently.
+
+The structural argument (per §4 hats-vs-actors): collapsing ε onto δ in small-protocol regimes does not destroy any independence boundary. δ operates the cycle sequence; ε observes whether the protocol governing those cycles is coherent. The same actor can hold both functions when the workload does not justify separate specialization. The collapse is one of the *safe* collapses (§4); contrast α=β (never safe).
+
+ε is therefore a **structural role** in the scope-escalation ladder (§1 row 5), not a headcount requirement. The obligation is that ε work happens and is attributed, not that ε is performed by a distinct person.
+
+### §4b.7 Instantiation declaration (what an instantiation must declare)
+
+A protocol that instantiates the role ladder must declare, per §3 Field 5 + this section:
+
+1. **The instantiation's gap class names** — enumerable, stable across cycles, oracle-defined (β can mechanically decide class membership). Examples: cdd's four classes, cdr's six classes.
+2. **The location of receipt streams ε reads** — where closed-cell receipts land for the instantiation. cdd: `.cdd/releases/{X.Y.Z}/{N}/`. cdr: project-binding-dependent wave surface.
+3. **The iteration artifact name and per-finding shape** — what ε writes when `protocol_gap_count > 0`. cdd: `cdd-iteration.md` per the per-finding shape in `cdd/post-release/SKILL.md §5.6b`. cdr: `cdr-iteration` artifact per `cnos.cdr/skills/cdr/epsilon/SKILL.md`.
+4. **The iteration aggregator location** — the INDEX-like record that maintains the cross-cycle view. cdd: `.cdd/iterations/INDEX.md`. cdr: project-binding equivalent.
+5. **The cadence rule** — when the iteration artifact is required. The generic rule is "when `protocol_gap_count > 0`"; instantiations may tighten (require more often) but should not loosen.
+
+An instantiation that omits any of these five declarations has ε's role-letter named in its grammar but no operational machinery for protocol-iteration. The role is invoked but not grounded.
+
 ## §5 cdd as the reference instantiation
 
 Coherence-Driven Development (cdd) is the first instantiation of this pattern

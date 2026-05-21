@@ -294,9 +294,11 @@ If no `CDD.md` §9.1 trigger fired, write either:
 
 > Activation findings from `cdd/activation/SKILL.md §22` flow into this step. See [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) for the per-repo cadence declaration, severity scale (D/C/B/A + `info`), and auto-spawn MCA trigger rule.
 
-When the close-out triage in `gamma-closeout.md` produces ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`, γ authors `.cdd/unreleased/{N}/cdd-iteration.md` — ε's work product (`ROLES.md §1`; `cdd/epsilon/SKILL.md §1`) — extracting only those findings into a structured form. This is the canonical home for cdd-self-improvement findings; PRA §3 prose remains as narrative, but the structured record lives here.
+**Cadence rule:** `cdd-iteration.md` is **required only when the cycle's receipt has `protocol_gap_count > 0`** — i.e. when the close-out triage in `gamma-closeout.md` produces ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`. This is the inherited generic rule (see [`ROLES.md §4b.4`](../../../../../../ROLES.md) and [`cdd/epsilon/SKILL.md §1`](../epsilon/SKILL.md)). The receipt's `protocol_gap_count == 0` is the no-gap signal; no iteration file is required when the cycle ran cleanly. Backward compatibility: existing empty-findings `cdd-iteration.md` files (written under the prior every-cycle rule) remain valid artifacts — the rule is "required when `> 0`", not "forbidden when `== 0`".
 
-See [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) for the cadence declaration: every cycle produces `cdd-iteration.md`; an empty findings list is itself signal.
+When the cadence rule fires (`protocol_gap_count > 0`), γ authors `.cdd/unreleased/{N}/cdd-iteration.md` — ε's work product (`ROLES.md §4b`; `cdd/epsilon/SKILL.md §1`) — extracting those findings into a structured form. This is the canonical home for cdd-self-improvement findings; PRA §3 prose remains as narrative, but the structured record lives here.
+
+See [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) for the severity scale (D/C/B/A + `info`) and the sliding-window auto-spawn MCA trigger that apply to findings within the iteration file.
 
 **Per-finding shape:**
 
@@ -406,7 +408,7 @@ Before committing the assessment, verify mechanically:
 - [ ] §4 mechanical ratio: if >20% AND total findings ≥ 10, a process issue is **filed and referenced** (not just noted). Below 10 findings, note the ratio but no filing required.
 - [ ] §4a CDD self-coherence: α/β/γ scored, weakest axis named, action stated (or "none" if all ≥3)
 - [ ] If any `CDD.md` §9.1 trigger fired, §4b Cycle Iteration exists with trigger, root cause, disposition, and evidence.
-- [ ] If close-out triage produced ≥1 finding tagged `cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`, `.cdd/unreleased/{N}/cdd-iteration.md` exists (Step 5.6b) **and** `.cdd/iterations/INDEX.md` has a new row for cycle N. If patch landed cross-repo, `.cdd/iterations/cross-repo/{target}/{slug}/` exists with `LINEAGE.md`.
+- [ ] If the cycle's receipt has `protocol_gap_count > 0` (≥1 finding tagged `cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`), `.cdd/unreleased/{N}/cdd-iteration.md` exists (Step 5.6b) **and** `.cdd/iterations/INDEX.md` has a new row for cycle N. If patch landed cross-repo, `.cdd/iterations/cross-repo/{target}/{slug}/` exists with `LINEAGE.md`. If `protocol_gap_count == 0`, no iteration file is required (per [`ROLES.md §4b.4`](../../../../../../ROLES.md)).
 - [ ] §3/§4 skill patches: if §3 identifies a recurring failure mode or skill gap, the patch is **in this commit** (not deferred) and synced across all affected surfaces: canonical source under `src/packages/`, package-visible loader entrypoint if affected, human-facing pointer/readme surfaces if they expose the changed rule.
 - [ ] §5.7 has production verification scenario (or explicit deferral with commitment)
 - [ ] §6 CDD Closeout trace present with rows for observe/assess/close steps (incl. step 13a if skill patches landed)
