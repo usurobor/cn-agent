@@ -172,7 +172,7 @@ Behavior-only ACs ("does V validate? does the parser accept the new shape?") are
 
 - α owns the constraint half (`alpha/SKILL.md` §3.6 "Implementation contract is δ's, not α's" — α MUST NOT improvise; α surfaces unpinned rows to γ/δ before coding).
 - γ owns the template half (`gamma/SKILL.md` §2.5 Step 3b — γ writes the 7-axis `## Implementation contract` section into the α prompt; γ MUST NOT dispatch with empty rows).
-- δ owns the enrichment half (`operator/SKILL.md` §3a "δ as inward membrane: implementation-contract enrichment at dispatch" — δ reviews γ's dispatch prompt, fills unpopulated rows per repo conventions, blocks dispatch if a row is genuinely undecidable).
+- δ owns the enrichment half (`delta/SKILL.md` §2 "Inward membrane — γ contract → α-ready dispatch" — δ reviews γ's dispatch prompt, fills unpopulated rows per repo conventions, blocks dispatch if a row is genuinely undecidable).
 - β owns the verification half (this rule).
 
 The four surfaces form one coherent mesh; this rule is β's role-side enforcement of the doctrine cnos#393 makes explicit.

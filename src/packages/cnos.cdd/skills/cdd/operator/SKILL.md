@@ -57,7 +57,7 @@ calls:
      5. **Operator override** — explicit operator acceptance required for known pre-existing failures (escape hatch for cases like v3.66.0/v3.67.0 smoke failures)
    
    **The gate does not close until CI is green or operator explicitly accepts the failure.**
-7. **Override** — reassign roles or redirect scope only with an explicit declaration.
+7. **Override** — reassign roles or redirect scope only with an explicit declaration. The override doctrine (override is a degraded boundary action, never rewrites V's verdict, requires a structured override block when proceeding against a non-PASS verdict) lives in [`delta/SKILL.md`](../delta/SKILL.md) §3; this step is operator-as-coordinator routing the override declaration through the cycle.
 
 δ runs one role at a time. This keeps memory pressure low (single process per role), gives δ direct visibility into each session via the observability stream (`harness/SKILL.md` §2), and isolates failures — if α dies, δ retries α without losing γ or β state.
 
@@ -119,16 +119,18 @@ The polling loop mechanics (issue-activity poller, multi-branch poller with reac
 
 ## 3. Gate
 
-### 3.1. External actions the operator holds
+> **δ-as-role boundary policy lives in [`delta/SKILL.md`](../delta/SKILL.md).** This section retains the **release-effector mechanics** that `operator/SKILL.md` is authoritative for (the `scripts/release.sh` invocation, the CI-polling commands, the branch-cleanup runbook). The role-policy that governs *whether* and *when* these mechanics fire — δ as sole tag-author, gate-fires-on-request-not-observation, the BoundaryDecision enumerants, the override-as-degraded-action doctrine, the verdict-vs-decision distinction — lives in `delta/SKILL.md` §1 "Outward membrane" and §3 "Override." Dispatch-coordinator mechanics (the `claude -p` / `cn dispatch` invocation, observability flags, worktree management, identity discipline) live in [`harness/SKILL.md`](../harness/SKILL.md) per Phase 4b of cnos#366. Phase 4c of cnos#366 will further separate the release-effector mechanics; until then, those mechanics live here.
 
-These actions require platform permissions agents may lack:
+### 3.1. External actions the operator executes on δ-the-role's authority
+
+The actions in this table require platform permissions agents may lack. **δ-as-role authorises** these actions per [`delta/SKILL.md`](../delta/SKILL.md) §1.1; operator-as-coordinator dispatches them on request from γ, β, or α-via-γ:
 
 | Action | Trigger | Who requests |
 |--------|---------|-------------|
 | Pre-merge gate validation | Before authorizing β merge, run `scripts/validate-release-gate.sh --mode pre-merge` to verify cycle artifacts exist and are well-formed. See `CDD.md` §5.3b and `gamma/SKILL.md` §2.10. | γ |
 | Push β-approved merge to main | β runs `git merge` — δ only pushes when β cannot execute the push directly (env/auth constraint). This is execution of β's integration authority, not δ approval. | β or γ |
 | Release-boundary preflight | After β merge + close-outs + γ PRA, δ verifies merge commit, release artifacts, tag/deploy preconditions, and platform readiness. Proceed / request changes / override. See CDD §1.4 Phase 5a. | γ |
-| Tag push + release | After δ preflight confirms and γ closes the cycle. **δ is sole tag-author** — β does not tag; only δ creates tags per cycle | γ |
+| Tag push + release | After δ preflight confirms and γ closes the cycle. **δ is sole tag-author** — β does not tag; only δ creates tags per cycle (role-policy: `delta/SKILL.md` §1.1) | γ |
 | Branch delete | Cycle closed, merged branches | γ |
 | Issue filing on external repos | Cross-project dependency | γ |
 | Force push | Rebase required with env constraints | α via γ |
@@ -136,16 +138,16 @@ These actions require platform permissions agents may lack:
 
 ### 3.2. Execute on request, not on observation
 
-Gate actions fire when a role requests them, not when δ notices they're needed. Observing that a tag isn't pushed or a branch exists is not a gate trigger — γ's explicit request is.
+Gate actions fire when a role requests them, not when δ notices they're needed. Observing that a tag isn't pushed or a branch exists is not a gate trigger — γ's explicit request is. (Role-policy framing: [`delta/SKILL.md`](../delta/SKILL.md) §1.2.)
 
 - ❌ Heartbeat shows tag not pushed → δ pushes it (role leak: δ decided the gate, not γ)
 - ❌ "β asked me to push the merge but I think we should wait for one more review"
 - ✅ γ requests tag push → δ pushes it and confirms
-- ✅ If you disagree with a gate request, declare an override (§4)
+- ✅ If you disagree with a gate request, declare an override per [`delta/SKILL.md`](../delta/SKILL.md) §3
 
 ### 3.3. Report completion
 
-After executing a gate action, confirm to the requesting role that the action completed.
+After executing a gate action, confirm to the requesting role that the action completed. (Role-policy framing: [`delta/SKILL.md`](../delta/SKILL.md) §1.3.)
 
 - ❌ Execute silently and assume the triad will notice
 - ✅ "Tag pushed: `git push origin 3.59.0` — confirmed on remote"
@@ -154,7 +156,7 @@ After executing a gate action, confirm to the requesting role that the action co
 
 After all post-cycle work lands on main (γ's PRA + skill patches, δ's own session patches), δ cuts the release. This is not optional — the release is how δ disconnects the triad's output into a distributable, tagged whole.
 
-The triad's work is not complete until it is tagged. Untagged post-cycle patches on main are an open boundary — the triad's output is still entangled with whatever comes next. The tag is the disconnection point.
+> **Role-policy** (the triad's work is not complete until tagged; untagged post-cycle patches on main are an open boundary; δ is sole tag-author; δ blocks release completion until CI is green and owns recovery on red) **lives in [`delta/SKILL.md`](../delta/SKILL.md) §1.1.** The runbook below is the dispatch-coordinator mechanics for executing on δ-the-role's authority. Phase 4c of cnos#366 relocates the runbook to a release-effector substrate; until then it lives here.
 
 **Algorithm:**
 1. Confirm all post-cycle commits are on main (γ PRA, γ skill patches, δ session patches)
@@ -183,100 +185,21 @@ scripts/release.sh 3.67.0
 
 The disconnect tag (§3.4) is git-observable. γ and all future agents can see it. No separate completion signal is needed — the tag appearing on main IS the proof that all gate actions completed and the cycle is disconnected.
 
-For mid-cycle gate actions (tag push before the disconnect, branch cleanup), confirm completion to the requesting role per §3.3. But the disconnect tag itself needs no announcement — it speaks for itself.
+For mid-cycle gate actions (tag push before the disconnect, branch cleanup), confirm completion to the requesting role per §3.3. But the disconnect tag itself needs no announcement — it speaks for itself. (Role-policy framing: [`delta/SKILL.md`](../delta/SKILL.md) §1.4.)
 
 ---
 
 ## 3a. δ as inward membrane: implementation-contract enrichment at dispatch
 
-`COHERENCE-CELL-NORMAL-FORM.md` names δ as the cell's boundary — the actor that receives the receipt and verdict and records a boundary decision (`accept`, `release`, `override`, `reject`, `repair_dispatch`). That is the **outward-facing membrane**: receipt + V verdict → parent-scope boundary decision. §3 above ("Gate") describes this surface.
-
-δ is also a **two-sided membrane.** The complementary face is **inward**: γ's protocol-level contract (gap, ACs, oracle, evidence) → α-ready dispatch enriched with the implementation-contract axes α needs to execute coherently without improvising.
-
-```text
-δ as two-sided membrane:
-
-  outward:  receipt + V verdict → parent-scope boundary decision   (§3 above)
-  inward:   γ contract → α-ready dispatch                           (this section)
-            (implementation-contract enrichment happens here)
-```
-
-**The inward function — what δ does.** γ writes the protocol-level contract per `gamma/SKILL.md` §2.5 Step 3b, including the `## Implementation contract` section enumerating the 7 axes:
-
-1. Language
-2. CLI integration target
-3. Package scoping
-4. Existing-binary disposition
-5. Runtime dependencies
-6. JSON/wire contract preservation
-7. Backward-compat invariant
-
-γ populates the rows from repo conventions and the issue body. **At dispatch time, δ reviews γ's dispatch prompt before routing it to α and ensures every row is populated.** If γ left a row unpopulated or marked "TBD," δ has two paths:
-
-- **(a) Fill the row** per repo conventions (e.g. "this repo is Go-native, row 1 = Go"; "this repo uses the `cn` subcommand pattern for protocol-level commands, row 2 = `cn` subcommand"). Log the enrichment in the cycle's artifact channel (`.cdd/unreleased/{N}/gamma-clarification.md`, or a δ-specific channel if Phase 4 of cnos#366 has carved one) so the contract trail is auditable.
-- **(b) Block dispatch and escalate to operator-as-human** if the row is genuinely undecidable — typically because the choice is part of the cycle's design question, not its execution shape, or because the row's value would commit the repo to a convention that hasn't been settled.
-
-**Why this is δ's surface, not γ's alone.** γ writes what the cycle is *for* (gap, ACs, oracle, evidence). δ writes what the cycle's output is *shaped like* (language, package path, integration target, dependency footprint). The two contracts are distinct: γ's is protocol-level; δ's is implementation-level. γ knows the protocol; δ knows the repo's standing conventions. Mixing them produced cnos#389 (α improvised language because γ's prompt didn't name one and δ didn't catch the omission) and cnos#391 (α improvised package scoping and binary disposition for the same reason). cnos#392 was the first cycle where δ pinned the implementation contract at dispatch; the cycle succeeded specifically because of it.
-
-**The mesh — four role-side surfaces around the doctrine.** This section is the δ side of a four-surface mesh that cnos#393 ships:
-
-- γ template:     `gamma/SKILL.md` §2.5 Step 3b
-                  (the 7-axis `## Implementation contract (required for α prompt)` block;
-                   γ MUST NOT dispatch with empty rows)
-- δ enrichment:   this section
-                  (inward-membrane function; δ reviews γ's prompt; fills or escalates)
-- α constraint:   `alpha/SKILL.md` §3.6
-                  ("Implementation contract is δ's, not α's"; α MUST NOT improvise;
-                   α surfaces unpinned rows before coding)
-- β verification: `beta/SKILL.md` §Role Rules Rule 7
-                  ("Implementation-contract coherence"; β verifies the diff conforms
-                   to every pinned axis before APPROVE; non-conformance → REQUEST CHANGES,
-                   severity D, classification `implementation-contract`)
-
-Each surface is locally self-justifying via the empirical anchors below; the mesh is for **discoverability** (a future role session loading any one finds the others), not for circular justification.
-
-**Phase 4 (δ split) — relocation target.** This section is a **design-prerequisite anchor** for Phase 4 of cnos#366 (δ split: `operator/SKILL.md` → `delta/SKILL.md` + harness substrate + release driver). When Phase 4 lands, this section moves to `delta/SKILL.md` as part of the membrane-policy surface; the two-sided framing (outward §3 + inward §3a) becomes the membrane's core doctrine. The two-sided framing is the design input cnos#366 Phase 4 absorbs; the relocation itself happens in Phase 4's cycle, not in cnos#393. Until Phase 4 lands, `operator/SKILL.md` carries both faces.
-
-**Empirical anchor.** cnos#389 (Python-not-Go) and cnos#391 (wrong package scoping + separate binary) are the failure-mode evidence that motivates this section. In both cycles γ's dispatch prompt under-specified the implementation contract; δ did not catch the omission at routing time; α improvised; β's behavior-only AC oracles APPROVE-d without catching the drift. cnos#392 was the first cycle where δ pinned the 7-axis contract at dispatch as an ad-hoc operator action; the cycle succeeded specifically because of it (the `cdd-iteration.md` F1–F4 forecast the four patches cnos#393 ships). cnos#393 (this patch) makes the inward function doctrine; Phase 4 of cnos#366 implements δ-inward in `delta/SKILL.md`.
-
-- ❌ δ routes γ's α prompt with rows blank — "α can figure it out"
-- ❌ δ fills rows by guessing — no consultation with γ on intent, no anchor in repo conventions
-- ❌ δ enriches but does not log the change, leaving the contract trail invisible
-- ✅ δ reviews γ's `## Implementation contract` section row-by-row; enriches per repo conventions; logs in `gamma-clarification.md`; escalates the row to operator-as-human if undecidable
-- ✅ δ blocks dispatch (does not route the α prompt) until every row is populated or explicitly escalated
+**Relocated to [`delta/SKILL.md`](../delta/SKILL.md) §2 "Inward membrane" as Phase 4a of cnos#366** (cycle/397). The δ-inward-membrane doctrine — the 7 implementation-contract axes, δ's review-before-routing duty, the fill-or-escalate paths, the four-surface mesh (γ template / δ enrichment / α constraint / β verification), the cnos#389/#391/#392/#393 empirical anchors — lives there. The two-sided framing (outward + inward) and the override semantics are unified in `delta/SKILL.md`. This section's redirect is intentional: `operator/SKILL.md` retains operator-as-coordinator + harness mechanics; the role-skill content lives in `delta/SKILL.md`.
 
 ---
 
 ## 4. Override
 
-### 4.1. When to override
+**Relocated to [`delta/SKILL.md`](../delta/SKILL.md) §3 "Override — degraded boundary action" as Phase 4a of cnos#366** (cycle/397). Override is a degraded boundary action (never a form of validity, never rewrites V's `ValidationVerdict`) per the cnos#367 freeze in `RECEIPT-VALIDATION.md` §Q4 — that role-doctrine is unified with the δ role-skill in `delta/SKILL.md`. The dispatch-coordinator side ("when α/β/γ ask for an override decision, where does it land?") fires through the algorithm step 7 above; the doctrine that constrains δ's override decision lives in the role-skill.
 
-The operator may override any triad decision when:
-
-- The triad's direction conflicts with project priorities the triad cannot see
-- A role is stuck in a loop and γ's unblocking hasn't resolved it
-- External constraints force a scope change (e.g. deadline, dependency shift)
-- Safety or security requires immediate action
-
-### 4.2. Override protocol
-
-Per CDD §1.4: the reassignment must name the target agent and the reason. No implicit drift.
-
-State:
-1. What you are overriding (role assignment, scope, priority, decision)
-2. Why (the information or constraint the triad didn't have)
-3. What the new state is
-
-- ❌ Edit the issue quietly and let α discover the change
-- ✅ "Override: descoping AC4–AC5 from this cycle. Reason: timeline constraint for release by Friday. New scope: AC1–AC3 only. γ to update the issue."
-
-### 4.3. Do not use override for taste
-
-Override is for information asymmetry or hard constraints, not preference.
-
-- ❌ "I think the implementation should use a different approach" → that's α's job
-- ❌ "The review was too harsh" → that's β's judgment
-- ✅ "The API we're building against is being deprecated next week" → information the triad needs
+For the embedded override kata (Kata B — "α stuck on AC3 due to undocumented API change"), see §9 of this file. The kata exercises operator-as-coordinator's request-handling; the doctrine constraining δ's decision is in `delta/SKILL.md` §3.
 
 ---
 
@@ -388,7 +311,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 
 When a dispatched session SIGTERMs, hits a timeout, or crashes before committing, δ runs the worktree inspection + decision-tree recovery procedure codified in `harness/SKILL.md` §6 (Timeout recovery). The procedure is mechanics; the doctrine surfaces that depend on it stay here:
 
-- **Override declaration.** If δ commits work on behalf of an agent, this is an implicit override; δ declares it per §4 above with the standard shape ("Override: operator-identity commit for cycle #N. Reason: …"). The mechanics record entry lives in `self-coherence.md §Debt` per harness §6.4.
+- **Override declaration.** If δ commits work on behalf of an agent, this is an implicit override; δ declares it per [`delta/SKILL.md`](../delta/SKILL.md) §3 with the standard shape ("Override: operator-identity commit for cycle #N. Reason: …"). The mechanics record entry lives in `self-coherence.md §Debt` per harness §6.4.
 - **Grade implication.** A cycle with operator-identity recovery commits is a cycle with operator override; per `release/SKILL.md §3.8`, the γ-axis grade reflects the override.
 - **Prevention.** The recovery procedure is the failure path; the prevention path is a correctly-sized dispatch budget per `CDD.md` §1.6c. Record budget/AC count in PRA telemetry (`post-release/SKILL.md` §4) so the heuristic refines.
 
