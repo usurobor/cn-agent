@@ -23,7 +23,7 @@ inputs:
   - wave or project context
 outputs:
   - canonical CDR contract loaded
-  - active role overlay loaded (when shipped)
+  - active role overlay loaded
   - required sub-skills selected
 requires:
   - CDR applies (research-class matter, not engineering-class)
@@ -33,7 +33,7 @@ calls:
   - alpha/SKILL.md
   - beta/SKILL.md
   - gamma/SKILL.md
-  - delta/SKILL.md
+  - operator/SKILL.md
   - epsilon/SKILL.md
 ---
 
@@ -41,17 +41,17 @@ calls:
 
 ## Load order
 
-This skill is the package-visible loader entrypoint for CDR. External dispatch enters through `cdr` only — internal sub-skill triggers (`alpha`, `beta`, `gamma`, `delta`, `epsilon`) are advisory and are used only after `cdr` and the active role overlay have been loaded.
+This skill is the package-visible loader entrypoint for CDR. External dispatch enters through `cdr` only — internal sub-skill triggers (`alpha`, `beta`, `gamma`, `operator`, `epsilon`) are advisory and are used only after `cdr` and the active role overlay have been loaded.
 
 When CDR applies (the matter is research-class — claim transmission under uncertainty — not engineering-class — artifact improvement under repairable feedback):
 
 1. Load [`CDR.md`](CDR.md) in this directory as the canonical instantiation contract. CDR.md declares the six fields per `ROLES.md §3`: matter type, review oracle, γ close-out artifact, δ cadence, ε iteration cadence, actor collapse rule.
-2. Load the role overlay for the active role (forthcoming — Sub 3 of [cnos#376](https://github.com/usurobor/cnos/issues/376)):
-   - α: `alpha/SKILL.md`
-   - β: `beta/SKILL.md`
-   - γ: `gamma/SKILL.md`
-   - δ: `delta/SKILL.md`
-   - ε: `epsilon/SKILL.md`
+2. Load the role overlay for the active role:
+   - α: [`alpha/SKILL.md`](alpha/SKILL.md)
+   - β: [`beta/SKILL.md`](beta/SKILL.md)
+   - γ: [`gamma/SKILL.md`](gamma/SKILL.md)
+   - δ: [`operator/SKILL.md`](operator/SKILL.md)
+   - ε: [`epsilon/SKILL.md`](epsilon/SKILL.md)
 3. Load Tier 2 (process / role-local) and Tier 3 (lifecycle / kata) skills as directed by the role overlay and the wave shape.
 4. Read the project binding's `.cdr/` directory (the canonical exemplar is [`usurobor/cph:.cdr/`](https://github.com/usurobor/cph)) for project-specific gates, datasets, policy.
 
@@ -65,7 +65,7 @@ When CDR applies (the matter is research-class — claim transmission under unce
 - the empirical-anchor citation (`§"Empirical anchor"`)
 - the actor-collapse floor (Field 6)
 
-Per-role overlays (when shipped under Sub 3) may add:
+Per-role overlays may add:
 
 - evidence requirements specific to the role's matter type
 - role-local gates and procedural detail
@@ -80,15 +80,15 @@ Per-role overlays may **not** redefine:
 - the actor-collapse floor (α=β is always prohibited for research claims)
 - closeout obligations already named in `CDR.md`
 
-## Role overlays (forthcoming — Sub 3 of cnos#376)
+## Role overlays
 
-- `alpha/` — α role: research-claim, hypothesis, method, dataset, analysis, report production
-- `beta/` — β role: review against falsifiability + diagnostic-oracle + reproduction-from-clean + citation-integrity + data-policy-compliance + claim/evidence-alignment
-- `gamma/` — γ role: wave coordination, typed `#CDRReceipt` close-out
-- `delta/` — δ role: gap selection, wave dispatch, gate-transition-shaped cadence
-- `epsilon/` — ε role: receipt-stream review over protocol gaps; protocol patches
+- [`alpha/`](alpha/SKILL.md) — α role: research-claim, hypothesis, method, dataset, analysis, report production; discipline against overclaim.
+- [`beta/`](beta/SKILL.md) — β role: review against falsifiability + diagnostic-oracle + reproduction-from-clean + citation-integrity + data-policy-compliance + claim/evidence-alignment; verdict in the typed `#CDRReceipt`.
+- [`gamma/`](gamma/SKILL.md) — γ role: wave coordination, typed `#CDRReceipt` close-out, triage of protocol-gap findings to ε.
+- [`operator/`](operator/SKILL.md) — δ role: gap selection, wave dispatch, gate-transition-shaped cadence, data-mounted gate enforcement. (The directory is named `operator/` to mirror the engineering doctrine's `cnos.cdd/skills/cdd/operator/SKILL.md` exemplar; the role itself is δ per `CDR.md` Field 4.)
+- [`epsilon/`](epsilon/SKILL.md) — ε role: receipt-stream review over protocol gaps; protocol patches via the CDR-iteration artifact.
 
-Until Sub 3 ships these files, CDR runs against `CDR.md` alone with role discipline supplied by the persona hub (e.g. [`cn-rho/spec/`](https://github.com/usurobor/cn-rho)) and the project binding (e.g. [`usurobor/cph:.cdr/`](https://github.com/usurobor/cph)).
+Each role overlay is a CDR-specific extension of the corresponding `cnos.cdd/skills/cdd/<role>/SKILL.md` generic doctrine. The kernel grammar (role-cell shape, algorithm structure, independence rules, resumption protocol) is inherited by reference; the discipline profile and matter type diverge for the research loss function per `ROLES.md §4a.2`.
 
 ## Cross-protocol relationship
 
@@ -100,7 +100,7 @@ CDR shares the role-cell kernel with [`cnos.cdd`](../../../cnos.cdd/) (engineeri
 
 If this file and [`CDR.md`](CDR.md) disagree, `CDR.md` governs.
 
-If a role overlay (when shipped) and `CDR.md` disagree on field meanings, the architectural-choice declaration, the persona/protocol/project boundary, or the actor-collapse floor, `CDR.md` governs.
+If a role overlay and `CDR.md` disagree on field meanings, the architectural-choice declaration, the persona/protocol/project boundary, or the actor-collapse floor, `CDR.md` governs.
 
 If a role overlay adds execution detail, gates, or evidence requirements for a CDR field **without** changing that field's meaning, the role overlay governs for that local execution detail.
 
