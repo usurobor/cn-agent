@@ -352,7 +352,7 @@ The 7 axes form the **implementation contract** — the architectural shape the 
 The mesh of role-side surfaces around this rule:
 
 - γ writes the contract values at dispatch (`gamma/SKILL.md` §2.5 Step 3b `## Implementation contract (required for α prompt)` template — enumerates the 7 axes; γ MUST NOT dispatch with empty rows).
-- δ ratifies and enriches if γ under-specified (`operator/SKILL.md` §3a "δ as inward membrane: implementation-contract enrichment at dispatch" — δ is two-sided; the inward face is exactly this enrichment).
+- δ ratifies and enriches if γ under-specified (`delta/SKILL.md` §2 "Inward membrane — γ contract → α-ready dispatch" — δ is two-sided; the inward face is exactly this enrichment).
 - β verifies α's implementation conforms before APPROVE (`beta/SKILL.md` §Role Rules Rule 7 "Implementation-contract coherence" — non-conformance → REQUEST CHANGES, severity D, classification `implementation-contract`).
 
 α's surface is the constraint half: read the `## Implementation contract` section in the dispatch prompt; treat every row as a binding pin α cannot relax. If a row is empty or "TBD," that is a γ/δ scaffold gap, not α latitude — surface via the artifact channel (`.cdd/unreleased/{N}/` on the cycle branch) before any implementation commit.
