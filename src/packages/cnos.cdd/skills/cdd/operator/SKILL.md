@@ -25,6 +25,7 @@ requires:
   - γ has produced dispatch prompts
 calls:
   - gamma/SKILL.md
+  - harness/SKILL.md
 ---
 
 # Operator (δ)
@@ -41,11 +42,11 @@ calls:
 
 ## Algorithm
 
-1. **Dispatch γ** — run γ via `claude -p`; γ reads the issue, creates the cycle branch, and produces α/β prompts.
-2. **Dispatch α** — run α via `claude -p` with the prompt γ produced; α implements on the cycle branch and exits after signaling review-readiness.
-3. **Dispatch β** — run β via `claude -p` with the prompt γ produced; β reviews, merges, writes β close-out, and exits.
-4. **Re-dispatch α for fix rounds** (when β returns RC) — run α via `claude -p` with the fix-round re-dispatch prompt (CDD.md §1.6a); α fixes findings, appends fix-round to self-coherence.md, exits.
-5. **Re-dispatch α for close-out** (when γ requests after β merge) — run α via `claude -p` with the close-out re-dispatch prompt (CDD.md §1.6a); α writes alpha-closeout.md, commits to main, exits. **This step is mandatory when γ requests it.** γ cannot complete the closure gate without alpha-closeout.md.
+1. **Dispatch γ** — δ dispatches γ via the harness; γ reads the issue, creates the cycle branch, and produces α/β prompts. See `harness/SKILL.md` §1 for invocation mechanics.
+2. **Dispatch α** — δ dispatches α via the harness with the prompt γ produced; α implements on the cycle branch and exits after signaling review-readiness.
+3. **Dispatch β** — δ dispatches β via the harness with the prompt γ produced; β reviews, merges, writes β close-out, and exits.
+4. **Re-dispatch α for fix rounds** (when β returns RC) — δ dispatches α via the harness with the fix-round re-dispatch prompt (CDD.md §1.6a); α fixes findings, appends fix-round to self-coherence.md, exits.
+5. **Re-dispatch α for close-out** (when γ requests after β merge) — δ dispatches α via the harness with the close-out re-dispatch prompt (CDD.md §1.6a); α writes alpha-closeout.md, commits to main, exits. **This step is mandatory when γ requests it.** γ cannot complete the closure gate without alpha-closeout.md.
 6. **Gate** — execute external actions: push main, tag, release, branch cleanup. **Do not tag/release before `gamma-closeout.md` exists on main.** After tag push, δ runs `gh run list --branch <tag>` and waits for release workflow completion. **δ blocks release completion until CI is green and owns recovery on red:**
    - **CI Green** → δ declares release complete  
    - **CI Red** → δ owns the failure and executes recovery runbook:
@@ -58,34 +59,13 @@ calls:
    **The gate does not close until CI is green or operator explicitly accepts the failure.**
 7. **Override** — reassign roles or redirect scope only with an explicit declaration.
 
-δ runs one role at a time. This keeps memory pressure low (single `claude -p` process), gives δ direct visibility into each session, and isolates failures — if α dies, δ retries α without losing γ or β state.
+δ runs one role at a time. This keeps memory pressure low (single process per role), gives δ direct visibility into each session via the observability stream (`harness/SKILL.md` §2), and isolates failures — if α dies, δ retries α without losing γ or β state.
 
 ---
 
 ## Git identity for role actors
 
-Every CDD role actor configures a git identity in the form `{role}@{project}.cdd.cnos` before making any commits on the cycle branch. DNS domains read broad-to-narrow right-to-left: `cnos` is the origin repository where the cdd protocol is defined and versioned, `cdd` is the protocol namespace inside cnos, and `{project}` is the tenant project running the protocol. The role name is the local part. This form makes the protocol's origin repo visible in every commit trailer and leaves namespace room for sibling protocols (`cnav`, `cnobs`) under the same cnos root.
-
-**Special case — cnos itself.** When the project running the cycle is the cnos repo, the literal form would be `{role}@cnos.cdd.cnos` (redundant `cnos`). The canonical elision is `{role}@cdd.cnos`, which reads as "the cdd protocol at cnos." Existing cnos commit trailers already use this form; the redundancy adds no information.
-
-| Role | Project | Canonical identity | Notes |
-|------|---------|-------------------|-------|
-| alpha | tsc | `alpha@tsc.cdd.cnos` | tsc project actor |
-| beta | cnos | `beta@cdd.cnos` | cnos actor — elision form (see above) |
-| gamma | acme | `gamma@acme.cdd.cnos` | hypothetical third project |
-| beta | * | `beta@cdd.{project}` | **(deprecated)** — cycle #287 form; cycle #343 cutover |
-
-Set identity before the first commit of each dispatch session:
-
-```bash
-# general form (non-cnos projects):
-git config user.name "{role}"
-git config user.email "{role}@{project}.cdd.cnos"
-
-# cnos project (elision form):
-git config user.name "{role}"
-git config user.email "{role}@cdd.cnos"
-```
+The canonical identity form (`{role}@{project}.cdd.cnos`, with the `{role}@cdd.cnos` elision for the cnos project) and the worktree-aware identity-write discipline live in `harness/SKILL.md` §3 "Git identity for role actors." δ ensures each role-actor's identity is set per that contract before any commits land on the cycle branch.
 
 ---
 
@@ -93,28 +73,16 @@ git config user.email "{role}@cdd.cnos"
 
 ### 1.1. Dispatch γ first
 
-δ dispatches γ via `claude -p`. γ reads the issue, creates the cycle branch, and returns α/β prompts to δ. γ does not execute dispatch — δ does.
-
-```bash
-cat /tmp/gamma-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --verbose --model <model>
-```
+δ dispatches γ. γ reads the issue, creates the cycle branch, and returns α/β prompts to δ. γ does not execute dispatch — δ does.
 
 ### 1.2. Dispatch α and β sequentially
 
-δ dispatches α, waits for completion, then dispatches β. One `claude -p` at a time.
+δ dispatches α, waits for completion, then dispatches β. One role at a time.
 
-```bash
-# α — implements
-cat /tmp/alpha-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --verbose --permission-mode acceptEdits --model <model>
-
-# β — reviews (needs Bash for git/gh read-only commands)
-cat /tmp/beta-prompt.md | claude -p --allowedTools "Read,Write,Bash" --output-format stream-json --verbose --permission-mode acceptEdits --model <model>
-```
-
-Note: `--output-format stream-json --verbose` is required for all dispatches — without it, δ cannot monitor agent output in real time. (`--verbose` is mandatory when combining `--output-format stream-json` with `-p`; without it, `claude` exits with an error.) `--permission-mode acceptEdits` is required because `claude -p` as a fresh session hits the trust dialog. Without it, agents cannot write files. β gets Bash because it needs `git diff`, `gh issue view`, etc. — role boundaries are enforced by beta/SKILL.md, not tool scoping.
+The invocation shell, observability flags, and permission-mode requirement are codified in `harness/SKILL.md` §1 (Dispatch invocation) and §2 (Dispatch observability contract). δ honors that contract; this section names the routing discipline.
 
 - ❌ Rewrite the prompt to add constraints or context γ didn't include
-- ✅ Deliver the prompt verbatim to the `claude -p` session
+- ✅ Deliver the prompt verbatim to the dispatched session (harness contract)
 - ❌ Run α and β concurrently or nest them inside γ's session
 - ✅ Run one role at a time, inspect artifacts between dispatches
 - ✅ Name the agent-to-role mapping before delivering prompts
@@ -143,37 +111,9 @@ Between these signals, the operator's correct action is nothing.
 
 ### 2.2. Subscribe to the issue
 
-Poll the issue for activity using the same transition-only pattern as the triad (CDD §1.4). δ polls less frequently — the wake-up signals are coarser (gate requests, not per-commit state).
+Poll the issue and cycle branches for activity using the same transition-only pattern as the triad (CDD §1.4). δ polls less frequently than γ — the wake-up signals are coarser (gate requests, not per-commit state). 5-minute interval is sufficient for δ; γ owns the tight loop.
 
-```bash
-prev=""; while true; do
-  cur="$(cd /path/to/repo && git fetch --quiet origin && gh issue view <N> --json comments --jq '.comments | length')"
-  if [ "$cur" != "$prev" ]; then echo "issue-activity: comments=$cur"; prev="$cur"; fi
-  sleep 300
-done
-```
-
-Run under `Monitor` or equivalent. 5-minute interval is sufficient for δ — γ owns the tight loop. Supplement with branch + `.cdd/unreleased/` polling once cycles are active. Canonical cycle branches are `origin/cycle/{N}` (per `CDD.md` §4.2, since #287). The pre-#287 `'origin/claude/*'` glob is **warn-only / retrospective** — retained for tracking historical cycles whose branches predate the rule, never as a discovery surface for new cycles:
-
-```bash
-prev_branches=""; declare -A prev_head
-while true; do
-  cd /path/to/repo && git fetch --quiet origin
-  # Canonical: cycle/{N} branches (γ creates these per CDD.md §1.4 γ algorithm Phase 1 step 3a).
-  cur_branches="$(git branch -r --list 'origin/cycle/*' 2>/dev/null | sed 's| ||g' | sort)"
-  comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
-  # Per-branch head SHA — cycle artifacts live on cycle branches, not on main.
-  for b in $cur_branches; do
-    cur_head="$(git rev-parse "$b" 2>/dev/null)"
-    [ "$cur_head" != "${prev_head[$b]:-}" ] && [ -n "$cur_head" ] && echo "branch-update: $b → $cur_head"
-    prev_head[$b]="$cur_head"
-  done
-  prev_branches="$cur_branches"
-  sleep 300
-done
-# To track legacy branches retrospectively, swap the glob to 'origin/claude/*'
-# (warn-only — pre-#287 cycles only). Do not use for new cycles.
-```
+The polling loop mechanics (issue-activity poller, multi-branch poller with reachability re-probe) live in `harness/SKILL.md` §5 (Polling and wake-up). δ uses those forms under `Monitor` or equivalent. Canonical cycle branches are `origin/cycle/{N}` (per `CDD.md` §4.2, since #287); the pre-#287 `'origin/claude/*'` glob is warn-only / retrospective per harness §5.3.
 
 ---
 
@@ -346,17 +286,17 @@ CDD defines two valid dispatch configurations. Choose one before dispatching; re
 
 ### 5.1 Canonical multi-session dispatch
 
-One `claude -p` process per role; each has an independent auth context and no shared memory. This is the model described in §1.2 above.
+One dispatched process per role (via the harness — see `harness/SKILL.md` §1); each has an independent auth context and no shared memory. This is the model described in §1.2 above.
 
 - γ/δ separation is structurally present: the operator (δ) selects and scaffolds; γ coordinates; α and β are separate processes with no access to each other's reasoning or conversation state.
-- Sub-agent returns do not apply — each `claude -p` session exits cleanly; the operator reads committed artifacts.
+- Sub-agent returns do not apply — each dispatched session exits cleanly; the operator reads committed artifacts.
 - Branch names are stable: `cycle/{N}` persists through all fix rounds because each role session checks it out fresh.
 
 Use this configuration when the cycle is substantial (see §5.3 escalation criteria).
 
 ### 5.2 Single-session δ-as-γ via Agent tool (Claude Code activation)
 
-When the operator is a Claude Code agent (one parent session), α and β are dispatched as sub-agents using the Agent tool rather than via separate `claude -p` processes. Sub-agents run with fresh context per invocation and are functionally equivalent to `claude -p` for role-isolation purposes (each sub-agent reasons independently, cannot see the parent's conversation state, and cannot see the other sub-agent's conversation state). However, sub-agents inherit MCP scope and filesystem access from the parent session.
+When the operator is a Claude Code agent (one parent session), α and β are dispatched as sub-agents using the Agent tool rather than via separate harness processes. Sub-agents run with fresh context per invocation and are functionally equivalent to a fresh dispatched session for role-isolation purposes (each sub-agent reasons independently, cannot see the parent's conversation state, and cannot see the other sub-agent's conversation state). However, sub-agents inherit MCP scope and filesystem access from the parent session.
 
 **Scope of the collapse.** §5.2 collapses **δ↔γ only**. γ↔α↔β remain structurally separate per `CDD.md §1.4` Triadic rule: γ scaffolds and coordinates in the parent session, α implements in its own sub-agent, β reviews and merges in its own sub-agent. The dyad-plus-coordinator structure is preserved; only the operator (δ) and coordinator (γ) functions fuse into one parent session.
 
@@ -400,7 +340,7 @@ When a sub-agent dispatch is in flight (via the Agent tool), the parent session 
 
 **Sub-agent parallelism note:** Multiple sub-agents launched in parallel (via `Agent` tool calls in one parent message) have **isolated contexts** from each other but **share the working tree with the parent and with each other**. Concurrent file edits by parallel sub-agents are also a corruption risk and should be avoided — multi-sub-agent parallelism is for independent reads, not concurrent writes.
 
-**Exception:** When the Agent tool runs with `isolation: "worktree"`, parent-session quiescence is unnecessary (the sub-agent operates on a copy of the repo). Default mode requires quiescence.
+**Exception:** When the Agent tool runs with filesystem-isolation mode (the sub-agent operates on a copy of the repo, e.g. the Claude Code Agent tool's `isolation` parameter set to the per-agent-copy mode), parent-session quiescence is unnecessary. Default mode requires quiescence.
 
 ### 5.3 Escalation criteria
 
@@ -430,11 +370,11 @@ These are role boundaries. Crossing them without an override declaration breaks 
 
 | Phase | Operator action | Wait for |
 |-------|----------------|----------|
-| γ dispatch | Run γ via `claude -p`; γ creates branch, returns α/β prompts | γ completion |
-| α dispatch | Run α via `claude -p` with γ's prompt | α completion (exits after review-readiness) |
-| β dispatch | Run β via `claude -p` with γ's prompt | β completion (merge + β close-out) |
-| α fix-round re-dispatch | Run α via `claude -p` with fix-round prompt (CDD.md §1.6a) when β returns RC | α completion (exits after fix-round) |
-| α close-out re-dispatch | Run α via `claude -p` with close-out prompt (CDD.md §1.6a) when γ requests | α completion (alpha-closeout.md on main) |
+| γ dispatch | Dispatch γ via the harness (see `harness/SKILL.md` §1); γ creates branch, returns α/β prompts | γ completion |
+| α dispatch | Dispatch α via the harness with γ's prompt | α completion (exits after review-readiness) |
+| β dispatch | Dispatch β via the harness with γ's prompt | β completion (merge + β close-out) |
+| α fix-round re-dispatch | Dispatch α via the harness with fix-round prompt (CDD.md §1.6a) when β returns RC | α completion (exits after fix-round) |
+| α close-out re-dispatch | Dispatch α via the harness with close-out prompt (CDD.md §1.6a) when γ requests | α completion (alpha-closeout.md on main) |
 | Release prep | γ writes RELEASE.md, moves cycle dirs; δ holds until complete | γ request |
 | δ preflight | Verify merge commit, release artifacts, tag preconditions | γ preflight request |
 | Closure | Gate: do not tag before `gamma-closeout.md` exists on main | γ closure declaration (gamma-closeout.md) |
@@ -446,55 +386,11 @@ These are role boundaries. Crossing them without an override declaration breaks 
 
 ## 8. Timeout recovery
 
-### §timeout-recovery — What to do when an agent session terminates before committing
+When a dispatched session SIGTERMs, hits a timeout, or crashes before committing, δ runs the worktree inspection + decision-tree recovery procedure codified in `harness/SKILL.md` §6 (Timeout recovery). The procedure is mechanics; the doctrine surfaces that depend on it stay here:
 
-An agent dispatched via `claude -p` may be SIGTERM'd by the OS, hit the session timeout, or crash without committing its in-progress work. This section is the executable recovery procedure.
-
-#### 7.1 Inspect the worktree
-
-Run these commands in the repo root to assess what the agent produced before it died:
-
-```bash
-# 1. What is staged or modified but not committed?
-git status --short
-
-# 2. What files were written during the session?
-#    Replace $session_start with the approximate session start time.
-find . -newer /tmp/session-start-sentinel -not -path './.git/*' | sort
-
-# 3. Did the agent stash anything?
-git stash list
-
-# 4. What is the diff against main?
-git diff origin/main..HEAD
-git diff HEAD   # staged + unstaged against last commit
-```
-
-To create the sentinel file before dispatching, run `touch /tmp/session-start-sentinel` immediately before `claude -p`.
-
-#### 7.2 Decision tree
-
-After inspecting the worktree, choose one path:
-
-| Situation | Action |
-|---|---|
-| Work is committed — agent wrote one or more commits before SIGTERM | Normal recovery: the agent left durable checkpoints. Read `origin/cycle/{N}` to see what landed. No further action needed unless the cycle is incomplete. |
-| Work is staged / unstaged but not committed | Commit under agent identity: `git config user.name "Alpha" && git config user.email "alpha@cdd.cnos"`, then `git add <files> && git commit -m "<msg>"`. Preserve the agent's intent; do not rewrite scope. |
-| Work exists only as new/modified files (never staged) | Same as above — stage and commit under agent identity with a commit message that names the recovery context (e.g., `"recovery(338): α partial work — committed by operator after SIGTERM"`). |
-| Nothing useful recovered — session started but produced no artifact content | Declare a failed dispatch. File the failure in the cycle's self-coherence.md §Debt. Re-dispatch α with a fresh budget per §1.6c(a). The override is operator-identity if re-dispatch is not available. |
-| Stash exists | Inspect with `git stash show -p`. Pop and commit if the content is relevant: `git stash pop && git add <files> && git commit`. |
-
-**Agent-identity vs operator-identity commit:** Prefer committing under the agent's canonical identity (`alpha@cdd.cnos`) to preserve the role-identity-is-git-observable property (`CDD.md §1.4`). If the agent's identity cannot be confirmed, commit under operator identity but declare this as an override in `self-coherence.md §Debt` with the operator-override cross-reference to §4.
-
-#### 7.3 Override declaration
-
-If the operator commits work on behalf of an agent, this is an implicit override. Declare it per §4:
-
-> Override: operator-identity commit for cycle #N. Reason: α session SIGTERM'd before committing. Committed staged/unstaged work under operator identity at `<SHA>`. Grade implication: per `release/SKILL.md §3.8`, a cycle with operator override has γ < A.
-
-#### 7.4 Prevention (dispatch side)
-
-The recovery procedure is the failure path. The prevention path is a correctly-sized dispatch budget and commit-checkpoint instruction per `CDD.md §1.6c`. If this recovery section is being exercised, the dispatch that spawned the agent did not satisfy §1.6c — record the actual budget and AC count in the PRA telemetry fields (`post-release/SKILL.md §4`: `dispatch_seconds_budget`, `dispatch_seconds_actual`, `commit_count_at_termination`) so the heuristic can be refined.
+- **Override declaration.** If δ commits work on behalf of an agent, this is an implicit override; δ declares it per §4 above with the standard shape ("Override: operator-identity commit for cycle #N. Reason: …"). The mechanics record entry lives in `self-coherence.md §Debt` per harness §6.4.
+- **Grade implication.** A cycle with operator-identity recovery commits is a cycle with operator override; per `release/SKILL.md §3.8`, the γ-axis grade reflects the override.
+- **Prevention.** The recovery procedure is the failure path; the prevention path is a correctly-sized dispatch budget per `CDD.md` §1.6c. Record budget/AC count in PRA telemetry (`post-release/SKILL.md` §4) so the heuristic refines.
 
 ---
 
