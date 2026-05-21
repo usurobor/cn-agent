@@ -46,6 +46,15 @@ BUNDLE_DIR="docs/gamma/cdd"
 REPO_ROOT_OVERRIDE=""
 EXCEPTIONS_FILE=""
 
+# --- V (Contract × Receipt → ValidationVerdict) mode flags (Phase 3 / #389) ---
+# When --receipt is set, cn-cdd-verify dispatches to the sibling Python helper
+# cn-cdd-validate-receipt and exits with the helper's verdict.  All other flags
+# below this point continue to drive the legacy artifact-presence checker.
+RECEIPT_PATH=""
+CONTRACT_PATH=""
+JSON_OUTPUT=false
+STRUCTURAL_ONLY=false
+
 usage() {
   cat >&2 <<EOF
 Usage:
@@ -55,11 +64,19 @@ Usage:
   cn cdd-verify --version <ver> --cycle <N>  check current cycle-scoped artifacts
   cn cdd-verify --all                        repository-wide ledger check (unreleased + released)
   cn cdd-verify --unreleased                 check only .cdd/unreleased/ directories
+  cn cdd-verify --receipt <path>             V verdict (Contract × Receipt → ValidationVerdict)
+  cn cdd-verify --receipt <path> --json      emit JSON verdict (machine-consumable by δ)
+  cn cdd-verify --receipt <path> --contract <p>  V with explicit contract path
 
 Options:
   --bundle <path>        bundle-relative PRA dir (default: docs/gamma/cdd)
   --repo-root <path>     override repo root (testing)
   --exceptions <path>    legacy exceptions file (YAML format)
+  --receipt <path>       dispatch into V validator (Phase 3 of #366)
+  --contract <path>      V's contract ref (optional; warns if missing)
+  --json                 emit V verdict as JSON instead of prose
+  --structural-only      skip filesystem-dereference rules (C1/C2/C4); useful
+                         for shape-demonstrating fixtures with placeholder paths
 
 Canonical contract enforced (release-scoped):
   - bare git tag X.Y.Z exists
@@ -138,10 +155,55 @@ while [[ $# -gt 0 ]]; do
     --bundle) BUNDLE_DIR="$2"; shift 2 ;;
     --repo-root) REPO_ROOT_OVERRIDE="$2"; shift 2 ;;
     --exceptions) EXCEPTIONS_FILE="$2"; shift 2 ;;
+    --receipt) RECEIPT_PATH="$2"; shift 2 ;;
+    --contract) CONTRACT_PATH="$2"; shift 2 ;;
+    --json) JSON_OUTPUT=true; shift ;;
+    --structural-only) STRUCTURAL_ONLY=true; shift ;;
     -h|--help) usage ;;
     *) echo "Unknown option: $1" >&2; usage ;;
   esac
 done
+
+# --- V dispatch (Phase 3 / #389) ---------------------------------------------
+# If --receipt was passed, dispatch into cn-cdd-validate-receipt.  This is the
+# V invocation path: existing artifact-presence modes are left untouched.
+if [[ -n "$RECEIPT_PATH" ]]; then
+  # Disallow combining --receipt with the legacy artifact-presence modes; their
+  # exit-code semantics differ (V exits 1 on FAIL; ledger exits non-zero on
+  # missing artifacts) and mixing them would muddle δ-consumer parsing.
+  if [[ -n "$VERSION" || -n "$PR" || -n "$CYCLE" || "$TRIADIC" == true || \
+        "$ALL_MODE" == true || "$UNRELEASED_ONLY" == true ]]; then
+    echo "Error: --receipt cannot be combined with --version/--pr/--cycle/--all/--unreleased/--triadic" >&2
+    usage
+  fi
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  V_BIN="$SCRIPT_DIR/cn-cdd-validate-receipt"
+  if [[ ! -x "$V_BIN" ]]; then
+    echo "Error: V helper not found or not executable: $V_BIN" >&2
+    exit 2
+  fi
+  V_ARGS=("$RECEIPT_PATH")
+  if [[ -n "$CONTRACT_PATH" ]]; then
+    V_ARGS+=("--contract" "$CONTRACT_PATH")
+  fi
+  if [[ "$JSON_OUTPUT" == true ]]; then
+    V_ARGS+=("--json")
+  fi
+  if [[ "$STRUCTURAL_ONLY" == true ]]; then
+    V_ARGS+=("--structural-only")
+  fi
+  if [[ -n "$REPO_ROOT_OVERRIDE" ]]; then
+    V_ARGS+=("--repo-root" "$REPO_ROOT_OVERRIDE")
+  fi
+  exec "$V_BIN" "${V_ARGS[@]}"
+fi
+
+# Sanity: --contract, --json, or --structural-only without --receipt is a usage error.
+if [[ -n "$CONTRACT_PATH" || "$JSON_OUTPUT" == true || "$STRUCTURAL_ONLY" == true ]]; then
+  echo "Error: --contract, --json, and --structural-only require --receipt" >&2
+  usage
+fi
+# --- End V dispatch ----------------------------------------------------------
 
 if [[ -n "$CYCLE" && -z "$VERSION" ]]; then
   echo "Error: --cycle requires --version" >&2

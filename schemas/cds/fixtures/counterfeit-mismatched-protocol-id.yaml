@@ -1,0 +1,42 @@
+# Fixture: schemas/cds/fixtures/counterfeit-mismatched-protocol-id.yaml
+# Exercises #389 AC2 (multi-protocol dispatch correctness) and Rule C5
+# (counterfeit.protocol_id_mismatch):
+# protocol_id declares cnos.cdd.cds.receipt.v1, but the receipt omits the
+# CDS-required evidence_refs keys (only `evidence_root` is declared).  V's
+# rule C5 catches this with a friendly diagnostic naming the missing keys;
+# CUE's structural validation independently fails too.
+#
+# Expected: `cn cdd-verify --receipt schemas/cds/fixtures/counterfeit-mismatched-protocol-id.yaml --structural-only` exits 1 (FAIL).
+
+protocol_id: "cnos.cdd.cds.receipt.v1"
+
+mode: collapsed
+
+validation:
+  verdict: PASS
+  failed_predicates: []
+  warnings: []
+  provenance:
+    validator_identity: cdd.validate_receipt
+    validator_version: phase3-pending
+    checked_at: "2026-05-21T10:00:00Z"
+    input_refs:
+      contract_ref: "issue:#389@contract_sha_placeholder"
+      receipt_ref: "schemas/cds/fixtures/counterfeit-mismatched-protocol-id.yaml"
+      evidence_root_ref: "schemas/cds/fixtures/"
+
+boundary_decision:
+  actor: "delta@cdd.cnos"
+  action: accept
+  decided_at: "2026-05-21T10:05:00Z"
+
+transmissibility: accepted
+
+protocol_gap_count: 0
+protocol_gap_refs: []
+
+# Declares cds.receipt.v1 but is missing the CDS-required keys
+# (self_coherence, beta_review, alpha_closeout, beta_closeout, gamma_closeout, diff).
+# Only evidence_root is provided.
+evidence_refs:
+  evidence_root: "schemas/cds/fixtures/"

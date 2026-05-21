@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cnos.cdd.validation_verdict.v1",
+  "title": "ValidationVerdict",
+  "description": "V's emitted verdict. See src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md §Validation Interface and schemas/cdd/boundary_decision.cue #ValidationVerdict. This JSON Schema types V's machine-readable JSON output (delta-side consumers parse this). The receipt's stored `validation.verdict` block (typed by the CUE #ValidationVerdict) is a structurally compatible subset; V's JSON adds richer failed_predicates entries.",
+  "type": "object",
+  "required": ["result", "failed_predicates", "warnings", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "result": {
+      "description": "Headline V verdict. PASS = every contract+evidence predicate held. FAIL = at least one did not hold.",
+      "enum": ["PASS", "FAIL"]
+    },
+    "failed_predicates": {
+      "description": "Structured list of predicates that did not hold. Empty iff result == PASS.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["predicate", "diagnostic"],
+        "additionalProperties": false,
+        "properties": {
+          "predicate": {
+            "description": "V-internal predicate ID (e.g. 'cue.structural_vet', 'counterfeit.actor_separation', 'counterfeit.verdict_precedes_merge', 'counterfeit.override_does_not_rewrite', 'counterfeit.evidence_ref_unresolved', 'counterfeit.protocol_id_mismatch').",
+            "type": "string"
+          },
+          "evidence_ref": {
+            "description": "Optional pointer into the receipt or evidence graph naming where the predicate failed.",
+            "type": "string"
+          },
+          "diagnostic": {
+            "description": "Human-readable diagnostic. For CUE failures, the verbatim cue vet stderr line. For counterfeit-rule failures, a templated message naming the rule and the offending value.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "warnings": {
+      "description": "Advisory observations the contract permits without failing PASS.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "provenance": {
+      "description": "Who emitted the verdict, against which inputs, at what time. Per RECEIPT-VALIDATION.md §Output contract.",
+      "type": "object",
+      "required": ["validator_identity", "validator_version", "checked_at", "input_refs"],
+      "additionalProperties": false,
+      "properties": {
+        "validator_identity": {
+          "description": "Canonical capability name. Pinned to 'cnos.cdd.validate_receipt' per RECEIPT-VALIDATION.md illustrative example.",
+          "type": "string"
+        },
+        "validator_version": {
+          "description": "Deployed validator-implementation version. e.g. 'phase3.0'.",
+          "type": "string"
+        },
+        "checked_at": {
+          "description": "Timestamp of the V invocation (ISO 8601).",
+          "type": "string"
+        },
+        "input_refs": {
+          "type": "object",
+          "required": ["receipt_ref"],
+          "additionalProperties": false,
+          "properties": {
+            "contract_ref": { "type": "string" },
+            "receipt_ref": { "type": "string" },
+            "evidence_root_ref": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
