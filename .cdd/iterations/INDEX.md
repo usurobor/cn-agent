@@ -30,3 +30,4 @@ See `cdd/post-release/SKILL.md` Step 5.6b for the per-finding shape and the aggr
 | 396 | #396 | 2026-05-21 | 0 | 0 | 0 | 0 | .cdd/unreleased/396/cdd-iteration.md |
 | 398 | #398 | 2026-05-21 | 2 | 0 | 2 | 0 | .cdd/unreleased/398/cdd-iteration.md |
 | 399 | #399 | 2026-05-21 | 0 | 0 | 0 | 0 | .cdd/unreleased/399/cdd-iteration.md |
+| 400 | #400 | 2026-05-21 | 0 | 2 | 1 | 0 | .cdd/unreleased/400/cdd-iteration.md |
