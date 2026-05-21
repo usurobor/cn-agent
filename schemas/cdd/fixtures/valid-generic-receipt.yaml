@@ -1,0 +1,45 @@
+# Fixture: valid-generic-receipt.yaml
+# Demonstrates that #Receipt (the generic kernel schema) validates a receipt
+# without any CDS- or CDR-specific evidence-ref keys. The generic schema
+# only requires that `evidence_refs` is a map of #EvidenceRef values; it
+# does not require any specific named keys.
+#
+# This fixture is the proof-of-genericity: a receipt for a hypothetical
+# minimal protocol (say, an early `cdw` cycle or a stub protocol used in
+# bootstrap) can validate against `#Receipt` directly without declaring CDS
+# closure records or CDR claim/data/method/result refs.
+#
+# Covers AC2 (generic schema carries no CDS-specific names) and AC5 (one
+# generic fixture present under schemas/cdd/fixtures/).
+#
+# Expected: `cue vet -c -d '#Receipt' schemas/cdd/contract.cue schemas/cdd/boundary_decision.cue schemas/cdd/receipt.cue schemas/cdd/fixtures/valid-generic-receipt.yaml` exits 0.
+
+protocol_id: "cnos.cdd.generic.receipt.v1"
+
+validation:
+  verdict: PASS
+  failed_predicates: []
+  warnings: []
+  provenance:
+    validator_identity: cdd.validate_receipt
+    validator_version: phase3-pending
+    checked_at: "2026-05-21T10:00:00Z"
+    input_refs:
+      contract_ref: "issue:#388@contract_sha_placeholder"
+      receipt_ref: ".cdd/unreleased/388/receipt.yaml@merge_sha_placeholder"
+      evidence_root_ref: ".cdd/unreleased/388/@merge_sha_placeholder"
+
+boundary_decision:
+  actor: "delta@cdd.cnos"
+  action: accept
+  decided_at: "2026-05-21T10:05:00Z"
+
+transmissibility: accepted
+
+protocol_gap_count: 0
+protocol_gap_refs: []
+
+# A generic receipt may declare any evidence-ref keys (or none). The CDS and
+# CDR protocol overlays decide which keys their receipts must declare; the
+# generic kernel only types the values.
+evidence_refs: {}

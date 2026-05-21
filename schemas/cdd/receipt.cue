@@ -18,9 +18,32 @@
 // (See schemas/cdd/README.md §Scope-Lift Invariant for the projection and
 // COHERENCE-CELL.md §Recursion Equation for the underlying doctrine.)
 //
+// **Generic kernel (cycle/388 Phase 2.5 split).** This file types the
+// generic recursive-cell shape only. Domain-specific evidence-ref
+// requirements (CDS closure records, CDR claim/data/method/result refs)
+// live in schemas/cds/ and schemas/cdr/, which import this package and
+// extend #Receipt via CUE unification. See schemas/cdd/README.md
+// §"Architectural choice" for the decision record.
+//
 // v1 is the *schema-artifact* version, not a CDD protocol version.
 
 package cdd
+
+// #EvidenceRef is the typed primitive every evidence reference unifies to.
+// It is a string today (path/SHA/URI). Phase 3's V dereferences these refs
+// against the evidence graph. Domain packages constrain `evidence_refs` to
+// require specific named keys (e.g. CDS requires `self_coherence`, `diff`;
+// CDR requires `claim`, `data`, `method`, `result`); the generic shape only
+// requires that each entry in `evidence_refs` is an #EvidenceRefValue.
+#EvidenceRef: string
+
+// #EvidenceRefValue is the value type of any `evidence_refs` map entry —
+// either a single #EvidenceRef (the CDS shape: one closure record per key)
+// or a list of #EvidenceRef (the CDR shape: many claims/data/methods per
+// key). This union is the generic "typed-open" primitive that lets domain
+// packages decide cardinality per key while keeping the value-type closed
+// to #EvidenceRef.
+#EvidenceRefValue: #EvidenceRef | [...#EvidenceRef]
 
 // #ProtocolGapRef is one entry in the ε signal — a structured reference to
 // a protocol gap surfaced during the cycle. ε's matter is the protocol
@@ -47,7 +70,20 @@ package cdd
 // verdict × action → transmissibility table structurally. Authors cannot
 // relitigate the table: a fixture asserting transmissibility: accepted on
 // a non-PASS verdict (or PASS + override) fails vet.
+//
+// Domain extensions (schemas/cds/#CDSReceipt, schemas/cdr/#CDRReceipt)
+// unify against this definition to add their required `evidence_refs` keys
+// and pin their `protocol_id` value. The generic schema only requires that
+// `evidence_refs` is a typed map; the domain schemas decide which keys.
 #Receipt: {
+	// Dispatch key. Pinned by domain extensions to a stable identifier
+	// (e.g. "cnos.cdd.cds.receipt.v1", "cnos.cdd.cdr.receipt.v1"); Phase 3's
+	// V reads this field and routes validation to the matching schema
+	// package. A receipt without a `protocol_id` cannot be dispatched
+	// mechanically; required at the generic layer so the dispatch primitive
+	// is structural, not conventional.
+	protocol_id: string
+
 	// V's emitted verdict — δ records this block from V's return; never
 	// rewrites it (RECEIPT-VALIDATION.md §Q4).
 	validation: #ValidationVerdict
@@ -56,7 +92,7 @@ package cdd
 	// is the structural signal that no δ-authoritative validation has been
 	// invoked yet; such a receipt is in the closure-emitted-but-not-accepted
 	// intermediate state (RECEIPT-VALIDATION.md §Q1 ordering rule) and is
-	// not a valid receipt at parent scope. AC5 enforces.
+	// not a valid receipt at parent scope. AC5 (#369) enforces.
 	boundary_decision: #BoundaryDecision
 
 	// Derived: the parent-scope-observable trust property. The structural
@@ -67,28 +103,28 @@ package cdd
 	// ε protocol-iteration signal. Required in v1 so Phase 6 reads it
 	// without forcing a v2 bump. A receipt with no observed protocol gaps
 	// sets protocol_gap_count: 0 and protocol_gap_refs: []. The consistency
-	// constraint below ties count and refs length together (AC5).
+	// constraint below ties count and refs length together (AC5 of #369).
 	protocol_gap_count: int & >=0
 	protocol_gap_refs: [...#ProtocolGapRef]
 	// consistency: count == len(refs). Authors asserting drifted values fail vet.
 	protocol_gap_count: len(protocol_gap_refs)
 
-	// Evidence references — typed strings. Required so Phase 3's V has a
-	// pinned input set. The graph schema itself is deferred to Phase 3
-	// (#366 roadmap); this cycle types refs only.
-	evidence_root_ref:  string
-	self_coherence_ref: string
-	beta_review_ref:    string
-	alpha_closeout_ref: string
-	beta_closeout_ref:  string
-	gamma_closeout_ref: string
-	diff_ref:           string
-	ci_refs?: [...string]
+	// Evidence references — typed open primitive. Required so Phase 3's V
+	// has a pinned input set; the *keys* required are decided by the
+	// domain protocol overlay (schemas/cds/, schemas/cdr/). The generic
+	// schema only types the values: every entry in `evidence_refs` is an
+	// #EvidenceRefValue (either a single #EvidenceRef or a list of them).
+	// A generic-only receipt may declare any keys (or none); a CDS
+	// receipt must declare the CDS-required keys (`self_coherence`,
+	// `beta_review`, `alpha_closeout`, `beta_closeout`, `gamma_closeout`,
+	// `diff`, optional `ci`); a CDR receipt must declare the CDR-required
+	// keys (`claim`, `data`, `method`, `result`).
+	evidence_refs: [string]: #EvidenceRefValue
 
-	// Transmissibility derivation. The six valid rows from the AC4 table are
-	// encoded as explicit if-branches; the two invalid rows (PASS+override,
-	// non-PASS+accept/release) leave transmissibility unifying to _|_ so
-	// vet rejects.
+	// Transmissibility derivation. The six valid rows from the AC4 (#369)
+	// table are encoded as explicit if-branches; the two invalid rows
+	// (PASS+override, non-PASS+accept/release) leave transmissibility
+	// unifying to _|_ so vet rejects.
 	//
 	// | verdict | action                     | transmissibility   |
 	// |---------|----------------------------|---------------------|

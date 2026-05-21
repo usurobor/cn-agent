@@ -1,0 +1,63 @@
+# Fixture: schemas/cdr/fixtures/valid-cdr-receipt.yaml
+# Demonstrates a minimal CDR (research) receipt validating against
+# #CDRReceipt. Field shape derived from ROLES.md §4a.3 CDR sketch and the
+# empirical anchor in usurobor/cph (a research repo with .cdr/waves/...
+# /receipt.md artifacts).
+#
+# The receipt asserts an observed claim (data-backed), so claim_status is
+# "observed" and a reproduction record is populated (β re-ran the
+# producing command and the output matched). evidence_refs is populated
+# with the four required CDR keys (claim, data, method, result).
+#
+# Covers AC4 and AC5 of #388.
+# Expected: `cue vet -c -d '#CDRReceipt' schemas/cdr/receipt.cue schemas/cdr/fixtures/valid-cdr-receipt.yaml` exits 0.
+
+protocol_id: "cnos.cdd.cdr.receipt.v1"
+
+validation:
+  verdict: PASS
+  failed_predicates: []
+  warnings: []
+  provenance:
+    validator_identity: cdr.validate_receipt
+    validator_version: phase3-pending
+    checked_at: "2026-05-21T10:00:00Z"
+    input_refs:
+      contract_ref: "issue:#cph-N@contract_sha_placeholder"
+      receipt_ref: ".cdr/waves/wave-2026-05-21/receipt.md@merge_sha_placeholder"
+      evidence_root_ref: ".cdr/waves/wave-2026-05-21/@merge_sha_placeholder"
+
+boundary_decision:
+  actor: "rho@cdr.cnos"
+  action: accept
+  decided_at: "2026-05-21T10:05:00Z"
+
+transmissibility: accepted
+
+protocol_gap_count: 0
+protocol_gap_refs: []
+
+evidence_refs:
+  claim:
+    - ".cdr/waves/wave-2026-05-21/claims.md#C1"
+    - ".cdr/waves/wave-2026-05-21/claims.md#C2"
+  data:
+    - "data/mount/manifest.json@sha256:abc123placeholder"
+    - "data/source/dataset.csv@sha256:def456placeholder"
+  method:
+    - "scripts/analyze.py@commit_sha_placeholder"
+  result:
+    - ".cdr/waves/wave-2026-05-21/results/table-1.csv"
+    - ".cdr/waves/wave-2026-05-21/results/figure-1.png"
+
+claim_status: observed
+
+limitations:
+  - "Sample size n=12; statistical power for effect-size estimation is limited."
+  - "Data collected under a single environmental condition; generalizability untested."
+
+reproduction:
+  reviewer_rerun: true
+  command: "python scripts/analyze.py --input data/source/dataset.csv --output results/"
+  output_match: true
+  notes: "β rerun on 2026-05-21 reproduced table-1.csv and figure-1.png exactly (byte-identical)."
