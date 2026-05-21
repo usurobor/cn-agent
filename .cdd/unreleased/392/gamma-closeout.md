@@ -3,8 +3,8 @@
 **Actor:** δ-as-agent (γ+α+β-collapsed-on-δ mode for cycle/392)
 **Issue:** cnos#392
 **Branch:** `cycle/392`
-**Merge SHA:** (to be filled by ε post-merge)
-**Wall time:** (to be filled at report-back)
+**Merge SHA:** `c74c862b6a703dd3c839945397240fa038fc4103`
+**Cycle/392 tip SHA:** `feb6508bd6f834286b5fd251f278415a4e043de9`
 
 ## Summary
 
@@ -34,7 +34,7 @@ The cycle was dispatched with a δ-as-architect implementation-contract block �
 
 ## Branch cleanup
 
-Attempted `git push origin --delete cycle/392`: (filled at report-back time; 403 expected per cnos branch-protection policy on cycle/* branches).
+Attempted `git push origin --delete cycle/392`: **403 Forbidden** (per cnos branch-protection policy on `cycle/*` branches). Expected. Origin branch persists; this is intentional — cycle/392 lives in history.
 
 ## Self-rating
 
