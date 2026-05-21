@@ -27,7 +27,7 @@ outputs:
   - override declarations with structured override block when proceeding against non-PASS verdict
 requires:
   - active CDD cycle exists with a closed cell at scope n (receipt + verdict materialised)
-  - or: active γ dispatch prompt awaiting δ's pre-routing enrichment
+  - "or: active γ dispatch prompt awaiting δ's pre-routing enrichment"
 calls:
   - RECEIPT-VALIDATION.md
   - COHERENCE-CELL-NORMAL-FORM.md
@@ -56,9 +56,9 @@ calls:
 
 `COHERENCE-CELL-NORMAL-FORM.md` (CCNF) names δ at step 5 of the kernel — δ reads the receipt and V's verdict and records a `BoundaryDecision`. `RECEIPT-VALIDATION.md` freezes the typed interface: V emits a `ValidationVerdict`; δ emits a `BoundaryDecision`; the two surfaces are independent and compose by an explicit rule (§4 below). The δ-inward function is the complementary face — the dispatch-time enrichment that pins the implementation-contract axes γ's protocol-level contract leaves unpinned.
 
-**δ-the-role lives here.** δ-as-actor in a running CDD cycle (γ=δ collapse cases, dispatch coordination, harness operations, release-script mechanics) lives in [`operator/SKILL.md`](../operator/SKILL.md). The two surfaces are deliberately separate: the role-skill is portable (any role-scope ladder instantiation per `ROLES.md` can carry it); the operator skill is the substrate-specific coordinator + harness expansion on the current substrate (per CCNF §Two-Layer Separation: kernel is the *what*, realization is the *how-on-this-substrate*).
+**δ-the-role lives here.** δ-as-actor in a running CDD cycle (γ=δ collapse cases, dispatch coordination, gate routing) lives in [`operator/SKILL.md`](../operator/SKILL.md); the harness substrate (dispatch invocation, observability, identity, polling, timeout recovery) lives in [`harness/SKILL.md`](../harness/SKILL.md) (Phase 4b of cnos#366, landed at cnos#398); release-effector mechanics live in [`release-effector/SKILL.md`](../release-effector/SKILL.md) (Phase 4c of cnos#366, landed at cnos#399). The four surfaces are deliberately separate: the role-skill is portable (any role-scope ladder instantiation per `ROLES.md` can carry it); the substrate skills are the substrate-specific realizations on the current substrate (per CCNF §Two-Layer Separation: kernel is the *what*, realization is the *how-on-this-substrate*).
 
-> **First-time operator?** The dispatch-coordination layer (γ=δ collapse, single-session vs multi-session, harness quiescence, timeout recovery) is in [`operator/SKILL.md`](../operator/SKILL.md). δ-the-role's authority and policy live here.
+> **First-time operator?** The dispatch-coordination layer (γ=δ collapse, single-session vs multi-session, harness quiescence, timeout recovery) is in [`operator/SKILL.md`](../operator/SKILL.md) (coordination) + [`harness/SKILL.md`](../harness/SKILL.md) (mechanics). δ-the-role's authority and policy live here.
 
 ---
 
@@ -78,7 +78,7 @@ ACCEPTED                         →   receipt transmissible to parent scope
 
 ### 1.1. External actions δ-the-role authorises
 
-δ-as-role holds **authority** for the platform actions that cross the boundary. The mechanics of executing these actions live in the operator-as-coordinator surface ([`operator/SKILL.md`](../operator/SKILL.md) §3 — `claude -p` dispatch, gate-action confirmation protocol) and in the release-effector surface ([`release-effector/SKILL.md`](../release-effector/SKILL.md) — `scripts/release.sh` invocation, post-push CI polling, recovery runbook, branch deletes; landed via Phase 4c of cnos#366, cycle/399). Phase 4b will further separate harness mechanics from operator-as-coordinator. The authority-naming surface lives here:
+δ-as-role holds **authority** for the platform actions that cross the boundary. The mechanics of executing these actions live in three companion surfaces: [`operator/SKILL.md`](../operator/SKILL.md) §3 (gate-action confirmation protocol, request-vs-observation discipline); [`harness/SKILL.md`](../harness/SKILL.md) (dispatch invocation, observability, identity, polling, timeout recovery — landed via Phase 4b of cnos#366, cycle/398); [`release-effector/SKILL.md`](../release-effector/SKILL.md) (`scripts/release.sh` invocation, post-push CI polling, recovery runbook, branch deletes — landed via Phase 4c of cnos#366, cycle/399). The authority-naming surface lives here:
 
 | Action | Authority | Mechanics location |
 |--------|-----------|--------|
@@ -170,7 +170,7 @@ Each surface is locally self-justifying via the empirical anchors below; the mes
 
 ### 2.2. Phase 4a landing note
 
-This section has landed here as Phase 4a of cnos#366. The precursor (cnos#393) anchored the δ-inward-membrane content at `operator/SKILL.md` §3a as a design-prerequisite for Phase 4; this cycle relocates the substance to `delta/SKILL.md` (its membrane-policy home) and reduces the operator-side anchor to a cross-reference. The two-sided framing (outward §1 + inward §2 of this file) is the membrane's core doctrine. **Release-effector mechanics landed in [`release-effector/SKILL.md`](../release-effector/SKILL.md) via Phase 4c of cnos#366 (cycle/399).** Harness mechanics (Phase 4b) remain in `operator/SKILL.md` until that cycle relocates them.
+This section has landed here as Phase 4a of cnos#366. The precursor (cnos#393) anchored the δ-inward-membrane content at `operator/SKILL.md` §3a as a design-prerequisite for Phase 4; this cycle relocates the substance to `delta/SKILL.md` (its membrane-policy home) and reduces the operator-side anchor to a cross-reference. The two-sided framing (outward §1 + inward §2 of this file) is the membrane's core doctrine. **Phase 4b — harness substrate** landed in [`harness/SKILL.md`](../harness/SKILL.md) via cnos#398 (cycle/398). **Phase 4c — release-effector mechanics** landed in [`release-effector/SKILL.md`](../release-effector/SKILL.md) via cnos#399 (cycle/399). **Phase 5 — γ shrink** landed at cnos#400 (cycle/400), reducing `gamma/SKILL.md` to coordination + closure + triage.
 
 ### 2.3. Empirical anchor
 
@@ -313,7 +313,8 @@ These are role boundaries at the role-skill level (CCNF kernel surface). For the
 
 ## 6. Cross-references and relationships
 
-- [`operator/SKILL.md`](../operator/SKILL.md) — δ-as-actor coordinator + harness mechanics surface. Dispatch loop, γ=δ collapse rules, wait discipline, dispatch configurations, timeout recovery, embedded kata, wave coordination. Phase 4b will further separate harness mechanics into its own substrate surface; until then, harness mechanics stay in `operator/SKILL.md`. (Release-effector mechanics already separated — see next bullet.)
+- [`operator/SKILL.md`](../operator/SKILL.md) — δ-as-actor coordinator surface. Dispatch loop, γ=δ collapse rules, wait discipline, dispatch configurations doctrine, embedded kata, wave coordination. Cross-references `harness/SKILL.md` for dispatch / observability / polling / identity / timeout-recovery mechanics; cross-references `release-effector/SKILL.md` for release mechanics.
+- [`harness/SKILL.md`](../harness/SKILL.md) — Phase 4b substrate: dispatch invocation (`claude -p` / `cn dispatch`), JSONL observability contract, worktree management, per-actor git identity (worktree-local under `extensions.worktreeConfig`), polling and wake-up forms (Monitor-wrapped transition loops, reachability re-probes), branch-retry mechanics, timeout recovery. Landed via cnos#398.
 - [`release-effector/SKILL.md`](../release-effector/SKILL.md) — δ-side release mechanics: `scripts/release.sh` invocation, bare-X.Y.Z tag policy, post-push CI polling, CI-red recovery runbook, branch deletes. Landed via Phase 4c of cnos#366 (cycle/399). δ-as-role authority for the release boundary is named in §1.1 above; mechanics live in release-effector.
 - [`RECEIPT-VALIDATION.md`](../RECEIPT-VALIDATION.md) — frozen typed-interface design for V, the verdict-vs-decision distinction, and the override field shape (§Q4). Binding once Phase 3 of cnos#366 lands V as a working predicate.
 - [`COHERENCE-CELL-NORMAL-FORM.md`](../COHERENCE-CELL-NORMAL-FORM.md) — kernel doctrine. δ's signature at step 5 (no evidence); the four cell outcomes; the two recursion modes; the three scope-lift projections.
@@ -334,8 +335,10 @@ This file (`delta/SKILL.md`) is Phase 4a of cnos#366. It carries:
 - Composition with V (§4)
 - δ-as-role boundary constraints (§5)
 
-**Phase 4b — harness substrate (pending).** The harness mechanics currently living in `operator/SKILL.md` (parent-session quiescence under sub-agent runs, branch-name churn under harness push restrictions, dispatch configurations §5, timeout recovery §8) are slated to relocate into a harness substrate surface in a subsequent cycle.
+**Phase 4b — harness substrate (landed).** Dispatch invocation shells and observability contract, per-actor git identity with worktree-aware writes, parallel-α worktree pre-creation, polling and wake-up forms, branch-retry under push restrictions, and timeout recovery — previously authored as inline shell prose in the δ-coordinator surface — have landed in [`harness/SKILL.md`](../harness/SKILL.md) as Phase 4b of cnos#366 (cycle/398).
 
 **Phase 4c — release-effector mechanics (landed).** The release-effector mechanics formerly living in `operator/SKILL.md` §3.4 (the single-command release script invocation, post-push CI polling, the recovery runbook, branch deletes, manual-tag prohibition) have landed in [`release-effector/SKILL.md`](../release-effector/SKILL.md) as Phase 4c of cnos#366 (cycle/399). The β-side authoring stays in `release/SKILL.md` (§2.4 CHANGELOG, §2.5 RELEASE.md, §2.5a cycle-dir move, pre-release validators); release-effector handles the δ-side mechanics only.
 
-Until Phase 4b ships, harness mechanics remain in `operator/SKILL.md`. δ-as-role's authority over those actions is named in §1.1 above; release-effector mechanics live in `release-effector/SKILL.md`; harness mechanics live in `operator/SKILL.md`.
+**Phase 5 — γ shrink (landed).** `gamma/SKILL.md` reduced to coordination + closure + triage doctrine; runtime supervision mechanics (polling shell, dispatch invocation shells, branch pre-flight bash) now cross-reference `harness/SKILL.md` and `release-effector/SKILL.md` rather than restating. Landed via cnos#400 (cycle/400).
+
+All three substrate surfaces are now landed. δ-as-role's authority over the platform actions is named in §1.1 above; the harness substrate lives in `harness/SKILL.md`; release-effector mechanics live in `release-effector/SKILL.md`; operator-as-coordinator routing discipline (gate-action confirmation, request-vs-observation) lives in `operator/SKILL.md` §3.
