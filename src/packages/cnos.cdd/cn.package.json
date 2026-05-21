@@ -7,10 +7,6 @@
     "cnos": "3.81.0"
   },
   "commands": {
-    "cdd-verify": {
-      "entrypoint": "commands/cdd-verify/cn-cdd-verify",
-      "summary": "Verify CDD cycle artifact completeness (\u03b3 runs at cycle-close)"
-    },
     "cdd-status": {
       "entrypoint": "commands/cdd-status/cn-cdd-status",
       "summary": "Single-shot cycle TLDR (read-only \u03b3 tooling)"

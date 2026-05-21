@@ -1,66 +1,103 @@
-# CDD Artifact Checker
+# CDD Verify (`cn cdd-verify`)
 
-`cn-cdd-verify` validates CDD cycle artifact completeness against the canonical contract declared in `src/packages/cnos.cdd/skills/cdd/CDD.md` §5.3a (Artifact Location Matrix).
+V (Contract × Receipt → ValidationVerdict) + the legacy CDD artifact-presence ledger, implemented in Go and exposed as the `cn cdd-verify` kernel subcommand.
 
-## Quick Start
+This directory ports cnos#389's Python design source to Go (cnos#392). The previous `cn-cdd-validate-receipt` (Python) and `cn-cdd-verify` (bash) scripts that lived here are removed; the Go source compiles into the cn binary via the repo-root `go.work` workspace.
+
+## Invocation
+
+Canonical noun-verb form (matches `cn` dispatcher convention):
 
 ```bash
-# Check the entire repository CDD artifact ledger
-src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify --all
+# V receipt validation
+cn cdd verify --receipt schemas/cds/fixtures/valid-receipt.yaml
+cn cdd verify --receipt path/to/receipt.yaml --json
+cn cdd verify --receipt path/to/receipt.yaml --structural-only
 
-# Check only unreleased/active cycles  
-src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify --unreleased
-
-# Check specific release version
-src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify --version 3.74.0
+# Legacy artifact-presence ledger
+cn cdd verify --all                          # entire repository CDD ledger
+cn cdd verify --unreleased                   # only .cdd/unreleased/ cycles
+cn cdd verify --version 3.81.0               # one release
+cn cdd verify --version 3.81.0 --cycle 392   # one cycle
+cn cdd verify --pr 392                       # PR-scoped cycle
 ```
+
+The hyphenated form `cn cdd-verify` is intercepted as a group listing by the `cn` dispatcher (per `src/go/internal/cli/dispatch.go` lines 54–69); the canonical form is `cn cdd verify`.
 
 ## Modes
 
-- **Repository-wide validation** (`--all`, `--unreleased`): Scans directories for CDD cycles and validates artifact completeness
-- **Single version validation** (`--version`): Checks canonical release artifacts for one version  
-- **Cycle-specific validation** (`--version X --cycle N`): Validates current artifact layout for one cycle
-- **Legacy validation** (`--version X --triadic`): Also checks pre-#283 close-out paths
+| Flag | Effect |
+|---|---|
+| `--receipt <path>` | V verdict (Contract × Receipt → ValidationVerdict). Exit 0 PASS, 1 FAIL, 2 V-error. |
+| `--receipt <path> --json` | Emit ValidationVerdict as JSON conforming to `schemas/cdd/validation_verdict.schema.json`. |
+| `--receipt <path> --structural-only` | Skip filesystem-dereference rules (C1/C2/C4). |
+| `--receipt <path> --contract <p>` | Optional contract reference recorded in provenance. |
+| `--all` | Repository-wide ledger (unreleased + released). |
+| `--unreleased` | Only `.cdd/unreleased/` cycles. |
+| `--version X` | One release. |
+| `--version X --cycle N` | One cycle (current artifact layout). |
+| `--version X --triadic` | Include legacy `.cdd/` close-out checks. |
+| `--pr N` | PR-scoped cycle. |
+| `--bundle <path>` | Override PRA bundle dir (default `docs/gamma/cdd`). |
+| `--exceptions <path>` | Load YAML exceptions for missing-artifact warnings. |
+| `--repo-root <path>` | Override repo root detection (used in tests). |
 
-## Cycle Classification
+## Counterfeit-receipt rules (V receipt mode)
 
-The checker automatically classifies cycles based on artifact presence:
+| Rule | Predicate | Scope | Trigger |
+|---|---|---|---|
+| C1 | `counterfeit.actor_separation` | CDS | α and β closeouts authored by same actor (without `mode: collapsed`). |
+| C2 | `counterfeit.verdict_precedes_merge` | CDS | β closeout commit time postdates `boundary_decision.decided_at` (action ∈ {accept, release}, without `mode: collapsed`). |
+| C3 | `counterfeit.override_does_not_rewrite` | all | `boundary_decision.override.original_validation_verdict.verdict` ≠ `validation.verdict`. |
+| C4 | `counterfeit.evidence_ref_unresolved` | all | `evidence_refs.*` path-like values don't resolve under repo root. |
+| C5 | `counterfeit.protocol_id_mismatch` | CDS / CDR | `protocol_id` declares CDS/CDR but required keys missing in `evidence_refs`. |
 
-- **Triadic cycles**: Have `beta-review.md` → requires all 5 artifacts (`self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`)
-- **Small-change cycles**: No `beta-review.md` → optional artifacts per CDD.md §1.2 collapse rules
-- **Unknown cycles**: No recognizable artifacts → warning
+Plus structural validation via `cue vet -c -d <#Definition> <schemas/...>` for the declared `protocol_id`.
 
-## Exception Handling
+## Source layout
 
-Historical gaps that cannot be repaired can be documented in a YAML exceptions file:
-
-```bash  
-cn-cdd-verify --all --exceptions .cdd/exceptions.yml
 ```
-
-Exception format:
-```yaml
-exceptions:
-  - path: ".cdd/unreleased/286/alpha-closeout.md"
-    missing_artifacts: ["alpha-closeout.md"]
-    reason: "historical cycle predating close-out requirement"
-    repair_possible: false
-    follow_up: "none"
+cddverify.go    — top-level Validate orchestrator + emit_verdict
+verdict.go      — ValidationVerdict struct types (matches JSON schema)
+dispatch.go     — protocol_id → schema-package dispatch table
+counterfeit.go  — C1–C5 counterfeit rules
+parse.go        — Receipt type, ParseReceiptJSON (pure), ReadReceipt (IO wrapper)
+cuevet.go       — adapter: `cue vet` subprocess
+git.go          — adapter: `git log` / `git rev-parse` subprocess
+ledger.go       — legacy artifact-presence ledger (--all/--unreleased/etc.)
+run.go          — argv parsing, Run dispatcher (V mode vs ledger mode)
+cddverify_test.go — table-driven unit tests
 ```
 
 ## Testing
 
-Run the test fixtures to verify behavior:
-
 ```bash
-src/packages/cnos.cdd/commands/cdd-verify/test-fixtures.sh
+go test ./src/packages/cnos.cdd/commands/cdd-verify/...
+bash tests/cdd/test_cn_cdd_validate_receipt.sh   # 37-check AC oracle
 ```
 
-## CI Integration
+## Exit codes
 
-This checker runs automatically in CI as job `I6: CDD artifact ledger validation` on every push and pull request.
+| Code | Meaning |
+|---|---|
+| `0` | PASS — all predicates held / all required artifacts present (warnings allowed). |
+| `1` | FAIL — at least one predicate failed / at least one required artifact missing. |
+| `2` | V itself errored (receipt not found, `cue` missing, internal error). |
 
-## Exit Codes
+## Migrating from the predecessors
 
-- `0`: All required checks pass (warnings allowed)
-- `1`: One or more required artifacts missing (unless exception-backed)
+| Predecessor | Disposition |
+|---|---|
+| `cn-cdd-validate-receipt` (Python) | Removed. All semantics ported to Go. |
+| `cn-cdd-verify` (bash) | Removed. Operator surface now `cn cdd verify`. |
+
+## References
+
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` §5.3a — Artifact Location Matrix
+- `src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md` — V's validation contract
+- `src/packages/cnos.eng/skills/eng/go/SKILL.md` — binding doctrine for this Go code
+- `schemas/cdd/validation_verdict.schema.json` — stable JSON-schema contract
+- `docs/gamma/essays/CCNF-AND-TYPED-TRUST.md` §3 — CUE/V split design source
+- cnos#389 — Python predecessor (merged at 993d7f93)
+- cnos#391 — closed as rescoped (this issue supersedes)
+- cnos#392 — this cycle

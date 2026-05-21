@@ -41,6 +41,7 @@ func main() {
 	reg.Register(&cli.UpdateCmd{Version: version, Commit: commit})
 	reg.Register(&cli.ActivateCmd{})
 	reg.Register(&cli.DispatchCmd{})
+	reg.Register(&cli.CddVerifyCmd{})
 
 	// Discover hub: walk up from cwd to find .cn/.
 	hubPath := discoverHub()
@@ -105,7 +106,13 @@ func main() {
 
 	inv := makeInvocation(hubPath, args)
 	if err := cmd.Run(ctx, inv); err != nil {
-		// The command already printed user-facing output to stderr.
+		// cdd-verify encodes V's three-way exit code (0/1/2) via a typed
+		// error so we can propagate the same status code to the operator.
+		// See src/go/internal/cli/cmd_cdd_verify.go.
+		if e, ok := err.(*cli.CddVerifyExit); ok {
+			os.Exit(e.Code)
+		}
+		// Other commands already printed user-facing output to stderr.
 		os.Exit(1)
 	}
 }

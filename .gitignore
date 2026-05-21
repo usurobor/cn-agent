@@ -43,6 +43,9 @@ coverage/
 # Peer sync cache
 .peer-cache/
 
+# Test harness build cache (tests/cdd/test_cn_cdd_validate_receipt.sh)
+.cdd-cache/
+
 # OCaml/Dune build output
 _build/
 
