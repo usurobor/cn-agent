@@ -47,11 +47,18 @@ The receipt-authoring discipline can be a small γ-skill; everything else lives 
 
 ## §Branch cleanup attempt note
 
-After merge, branch deletion attempted; result captured below.
+After merge, branch deletion attempted; result as expected per harness pattern:
 
 ```
-[FILL IN AT MERGE TIME — typically 403 per harness pattern]
+$ git push origin --delete cycle/389
+error: RPC failed; HTTP 403 curl 22 The requested URL returned error: 403
+fatal: the remote end hung up unexpectedly
+Everything up-to-date
 ```
+
+403 is the documented harness pattern (recorded across multiple recent cycles; see wave-2026-05-19 ε iteration F5 for the canonical reference). Branch remains on remote until repo permissions allow delete.
+
+cycle SHA: `aa4dbd0a` · merge SHA: `993d7f93` · cnos#366 Phase 3 close-out comment posted at https://github.com/usurobor/cnos/issues/366#issuecomment-4505895497
 
 ## §Closure
-γ closeout complete. Cycle #389 is ready to merge.
+γ closeout complete. Cycle #389 merged.
