@@ -32,7 +32,7 @@ calls: []
 
 **Coherent release: every version bump is a measured coherence delta with a complete audit trail.**
 
-β owns: review approval outcome, `git merge` into main, and β close-out. **δ owns tag/release/deploy** (the release boundary — `scripts/release.sh`, binary publication, deployment). γ owns `RELEASE.md` authoring, cycle-directory movement, and the post-release assessment. β does not tag, push tags, bump versions for release, or cut the disconnect release. See `CDD.md` §1.4 β algorithm, γ algorithm Phase 5a, and `operator/SKILL.md` §3.4.
+β owns: review approval outcome, `git merge` into main, and β close-out. **δ owns tag/release/deploy** (the release boundary — `scripts/release.sh`, binary publication, deployment). γ owns `RELEASE.md` authoring, cycle-directory movement, and the post-release assessment. β does not tag, push tags, bump versions for release, or cut the disconnect release. See `CDD.md` §1.4 β algorithm, γ algorithm Phase 5a, `operator/SKILL.md` §3.4 (doctrinal frame), and `release-effector/SKILL.md` (mechanics).
 
 Canonical artifact locations (β close-out path, RELEASE.md, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix). All tags are bare `X.Y.Z`; `v`-prefixed tags are legacy and warn-only.
 
@@ -235,7 +235,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 2.7. **Wait for release CI**
   - Release workflow builds binaries (linux-x64, macos-x64, macos-arm64)
   - Wait for completion before deploying
-  - **δ owns release CI polling** per `operator/SKILL.md` §3.4 step 4 — after tag push, δ monitors release workflow completion via `gh run list --branch <tag>`. β waits for δ confirmation.
+  - **δ owns release CI polling** per `release-effector/SKILL.md` §3 — after tag push, δ monitors release workflow completion via `gh run list --branch <tag>`. β waits for δ confirmation.
   - ❌ Deploy while CI still running (stale binary from previous release)
   - ✅ `gh run watch {id} --exit-status` then verify assets attached
 

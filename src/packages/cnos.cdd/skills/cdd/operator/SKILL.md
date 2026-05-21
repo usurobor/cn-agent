@@ -46,16 +46,7 @@ calls:
 3. **Dispatch β** — run β via `claude -p` with the prompt γ produced; β reviews, merges, writes β close-out, and exits.
 4. **Re-dispatch α for fix rounds** (when β returns RC) — run α via `claude -p` with the fix-round re-dispatch prompt (CDD.md §1.6a); α fixes findings, appends fix-round to self-coherence.md, exits.
 5. **Re-dispatch α for close-out** (when γ requests after β merge) — run α via `claude -p` with the close-out re-dispatch prompt (CDD.md §1.6a); α writes alpha-closeout.md, commits to main, exits. **This step is mandatory when γ requests it.** γ cannot complete the closure gate without alpha-closeout.md.
-6. **Gate** — execute external actions: push main, tag, release, branch cleanup. **Do not tag/release before `gamma-closeout.md` exists on main.** After tag push, δ runs `gh run list --branch <tag>` and waits for release workflow completion. **δ blocks release completion until CI is green and owns recovery on red:**
-   - **CI Green** → δ declares release complete  
-   - **CI Red** → δ owns the failure and executes recovery runbook:
-     1. **Investigate** release logs to understand the failure
-     2. **Classify** failure as release-specific vs pre-existing infrastructure  
-     3. **Fix or escalate** — if fixable: fix, re-tag/re-run, poll again; if pre-existing: document, escalate to operator, do NOT declare release complete
-     4. **Re-verify** — poll CI again after fix attempts
-     5. **Operator override** — explicit operator acceptance required for known pre-existing failures (escape hatch for cases like v3.66.0/v3.67.0 smoke failures)
-   
-   **The gate does not close until CI is green or operator explicitly accepts the failure.**
+6. **Gate** — execute external actions: push main, tag, release, branch deletes. **Do not tag/release before `gamma-closeout.md` exists on main.** Disconnect-release mechanics live in [`release-effector/SKILL.md`](../release-effector/SKILL.md); see §3.4 below for the doctrinal frame. **δ blocks release completion until CI is green** (or operator explicitly accepts a known pre-existing failure per the release-effector recovery runbook).
 7. **Override** — reassign roles or redirect scope only with an explicit declaration.
 
 δ runs one role at a time. This keeps memory pressure low (single `claude -p` process), gives δ direct visibility into each session, and isolates failures — if α dies, δ retries α without losing γ or β state.
@@ -212,38 +203,22 @@ After executing a gate action, confirm to the requesting role that the action co
 
 ### 3.4. Cut the release — disconnect the triad's final state
 
-After all post-cycle work lands on main (γ's PRA + skill patches, δ's own session patches), δ cuts the release. This is not optional — the release is how δ disconnects the triad's output into a distributable, tagged whole.
+After all post-cycle work lands on main (γ's PRA + skill patches, δ's own session patches), δ cuts the release. **This is not optional** — the release is how δ disconnects the triad's output into a distributable, tagged whole.
 
 The triad's work is not complete until it is tagged. Untagged post-cycle patches on main are an open boundary — the triad's output is still entangled with whatever comes next. The tag is the disconnection point.
 
-**Algorithm:**
-1. Confirm all post-cycle commits are on main (γ PRA, γ skill patches, δ session patches)
-2. Edit VERSION to the new number
-3. Run `scripts/release.sh` — this stamps all manifests, verifies consistency, generates structured tag messages, commits, creates annotated tags, and pushes in one command
-4. **Poll release CI** — after tag push, run `gh run list --branch <tag>` and monitor release workflow completion. **δ blocks until CI is green, owns recovery on red** (see §6 Gate for full recovery runbook). δ may NOT declare release complete while CI is red. Requires CI green or explicit operator override.
-5. **Branch cleanup** — delete merged cycle branches (`cycle/{N}`) and γ session branches (harness-given `claude/...` or operator-named `gamma/session-{N}` patterns) that were used during the cycle. No orphan γ session branches survive past closure.
+**The mechanics live in [`release-effector/SKILL.md`](../release-effector/SKILL.md).** That skill owns: the single-command release script invocation, the bare-`X.Y.Z` tag policy (per CDD §5.3a), post-push CI polling, the CI-red recovery runbook, and merged-cycle-branch deletes. The script-as-only-path discipline (no manual `git tag`) is its rule, not this section's.
 
-**Manual tagging is not allowed.** Do not run `git tag` directly. The release script is the only way to tag. It prevents the class of failures where VERSION, cn.json, and package manifests disagree (see DISPATCH-FAILURE-EVIDENCE.md, cycle #84 failure 3).
+Two gate-rules δ enforces from this surface (the policy-level claims; mechanics in the effector skill):
 
-**Tag message generation:** The release script automatically generates structured annotated tag messages that include issue metadata, wave context when present, and CDD review artifacts when available. The generated message is deterministically derived from git history, GitHub metadata, and CDD artifacts. δ can inspect the tag message content after tagging using `git show <version>` or `git for-each-ref refs/tags/<version> --format='%(contents)'`.
-
-```bash
-# Edit VERSION, then:
-scripts/release.sh
-# Or pass version directly:
-scripts/release.sh 3.67.0
-```
-
-- ❌ `git tag 3.67.0 && git push --tags` (skips stamp, skips consistency check)
-- ❌ γ's skill patches sit on main untagged across multiple cycles
-- ❌ δ defers release "because there are no consumers" (the tag is structural, not consumer-driven)
-- ✅ `scripts/release.sh 3.67.0` — stamps, verifies, commits, tags, pushes
+- **Do not tag/release before `gamma-closeout.md` exists on main.**
+- **δ blocks release completion until CI is green** (or operator explicitly accepts a known pre-existing failure per the release-effector recovery runbook).
 
 ### 3.5. The tag is the signal
 
 The disconnect tag (§3.4) is git-observable. γ and all future agents can see it. No separate completion signal is needed — the tag appearing on main IS the proof that all gate actions completed and the cycle is disconnected.
 
-For mid-cycle gate actions (tag push before the disconnect, branch cleanup), confirm completion to the requesting role per §3.3. But the disconnect tag itself needs no announcement — it speaks for itself.
+For mid-cycle gate actions (per [`release-effector/SKILL.md`](../release-effector/SKILL.md) — pre-disconnect tag pushes, merged-branch deletes), confirm completion to the requesting role per §3.3. But the disconnect tag itself needs no announcement — it speaks for itself.
 
 ---
 
@@ -438,7 +413,7 @@ These are role boundaries. Crossing them without an override declaration breaks 
 | Release prep | γ writes RELEASE.md, moves cycle dirs; δ holds until complete | γ request |
 | δ preflight | Verify merge commit, release artifacts, tag preconditions | γ preflight request |
 | Closure | Gate: do not tag before `gamma-closeout.md` exists on main | γ closure declaration (gamma-closeout.md) |
-| Disconnect | Cut the release — `scripts/release.sh` after γ closure declaration | γ close-out + δ session patches on main |
+| Disconnect | Cut the release — see [`release-effector/SKILL.md`](../release-effector/SKILL.md) | γ close-out + δ session patches on main |
 | Post-release | Execute deferred operator actions from γ close-out | γ deferred-output list |
 | Inter-cycle | Nothing until next γ dispatch | γ next-cycle selection |
 
@@ -517,7 +492,7 @@ Execute the operator role through the full cycle.
 3. Wait
 4. When β requests merge: execute merge
 5. When γ requests tag push: execute tag push
-6. When γ declares closure: execute branch cleanup
+6. When γ declares closure: cut the release per [`release-effector/SKILL.md`](../release-effector/SKILL.md)
 7. Execute any deferred operator actions from γ's close-out
 
 #### Common failures

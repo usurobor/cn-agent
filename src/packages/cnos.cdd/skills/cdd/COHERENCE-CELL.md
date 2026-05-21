@@ -251,7 +251,7 @@ Once the substrate is named explicitly, δ's role doctrine shrinks to its actual
 
 Release is a boundary action, not a role's process. Tagging the version, pushing the tag, publishing the GitHub release, deploying — these are irreversible effector actions on a platform δ has authority over but does not own. The release driver is the substrate that executes those actions on δ's authorisation; δ holds the boundary policy that decides when to authorise.
 
-Today, `release/SKILL.md` and `operator/SKILL.md` both carry pieces of this. The refactor target is to name release as boundary effection and to relocate the mechanics (`scripts/release.sh`, CI polling, tag-message generation, branch cleanup) to the substrate where they belong. δ's role doctrine then states the *policy*: when is the release authorised, what gates must pass, what override is allowed. Not the *mechanics*.
+As of cnos#399 (Phase 4c of cnos#366), `release-effector/SKILL.md` is the substrate that executes the mechanics (`scripts/release.sh`, post-push CI polling, tag-message generation, CI-red recovery runbook, branch cleanup); `release/SKILL.md` retains β-side authoring (RELEASE.md, CHANGELOG, version decision, cycle-dir move, pre-release validator); `operator/SKILL.md` (Phase 4a's relocation target: `delta/SKILL.md`) carries the δ-policy frame — when is the release authorised, what gates must pass, what override is allowed. The structural intent is satisfied: role doctrine states policy; the effector substrate executes mechanics.
 
 This is the same structural prediction as *δ Boundary Complex*, applied to one specific class of boundary action.
 

@@ -62,7 +62,7 @@ When acting as γ:
 2. load this file as the γ role surface
 3. load `issue/SKILL.md`
 4. load `post-release/SKILL.md` — γ owns the PRA (cycle-level assessment of α, β, and cycle economics) and step 13a skill/spec patches
-5. load `operator/SKILL.md` — δ owns dispatch execution (routes γ/α/β prompts to `claude -p` sessions one at a time), release-phase gate execution (tag push, branch cleanup, release CI), and the disconnect release (§3.4). δ's actions are git-observable (tags, branch state). If δ is unavailable, γ may execute gates directly.
+5. load `operator/SKILL.md` — δ owns dispatch execution (routes γ/α/β prompts to `claude -p` sessions one at a time) and outward gate policy (the doctrinal frame for the disconnect release at §3.4); `release-effector/SKILL.md` owns the mechanics of the disconnect release itself (`scripts/release.sh`, post-push CI polling, the CI-red recovery runbook, branch deletes). δ's actions are git-observable (tags, branch state). If δ is unavailable, γ may execute gates directly.
 6. load other lifecycle sub-skills only when the selected gap requires them
 
 **Canonical-skill staleness check before each γ phase change.** Before transitioning from one CDD phase to another (intake → dispatch, dispatch → close-out triage, close-out triage → PRA, PRA → closure), γ runs `git fetch --verbose origin main && git rev-parse origin/main`. If `origin/main` HEAD has advanced beyond the SHA at which the canonical CDD/role skills were loaded, **re-load** `CDD.md`, this file, and the lifecycle sub-skill governing the next phase, then re-evaluate the next phase's plan against the updated canonical surfaces before proceeding. This is the parallel of `beta/SKILL.md`'s pre-merge gate row 2; it catches the same class of failure on the γ-axis (canonical-skill snapshot drift across release boundaries — cycle #301 §9.1 trigger 1: γ proposed an out-of-spec option (b) merge-by-γ because σ's `4a0f678` "merge is β authority" had landed mid-cycle and was not in γ's session-loaded `gamma/SKILL.md`).
@@ -86,7 +86,7 @@ It expands those steps into executable checks, evidence, and gates.
 - Steps 9–10 → close-out triage (`§2.7`)
 - Steps 11–13 → cycle iteration and process patching (`§2.8–§2.9`)
 - Steps 14–16 → hub memory, branch cleanup, closure declaration (`§2.10`)
-- Step 17 → δ disconnect release (`operator/SKILL.md` §3.4) — δ's step, not γ's
+- Step 17 → δ disconnect release (`release-effector/SKILL.md` mechanics; `operator/SKILL.md` §3.4 doctrinal frame) — δ's step, not γ's
 
 ---
 
@@ -447,7 +447,7 @@ Allowed transfer unit: **artifact facts**, not hidden role state.
 
 ### 2.6. Steps 6–7 — Prepare release artifacts before δ tags
 
-In the sequential dispatch model, β exits after merge. δ runs `scripts/release.sh` (stamp + tag) but does not author artifacts. γ owns two release-preparation steps that must land on main **before** γ requests the tag from δ:
+In the sequential dispatch model, β exits after merge. δ runs `scripts/release.sh` per `release-effector/SKILL.md` (stamp + tag) but does not author artifacts. γ owns two release-preparation steps that must land on main **before** γ requests the tag from δ:
 
 1. **Write `RELEASE.md`** — per `release/SKILL.md` §2.5. This is the GitHub release body. Write it at repo root, committed to main. Without it, release CI auto-generates sparse notes.
 
@@ -455,7 +455,7 @@ In the sequential dispatch model, β exits after merge. δ runs `scripts/release
 
 **Before any push that follows a rebase, run the eng/ship rebase-integrity gate** (see `eng/ship` § Rebase-Collision Integrity).
 
-Both must be committed before γ requests the disconnect release from δ (§2.10 step 15 → operator/SKILL.md §3.4).
+Both must be committed before γ requests the disconnect release from δ (§2.10 step 15 → `release-effector/SKILL.md`; `operator/SKILL.md` §3.4 carries the doctrinal frame).
 
 - ❌ Leave RELEASE.md for δ to write (δ does not author)
 - ❌ Leave unreleased directories for "later" (they lose version association)
@@ -556,7 +556,7 @@ Do not declare the cycle closed until all of the following are true:
 10. merged remote branches are cleaned up
 11. `RELEASE.md` is written and committed to main (§2.6)
 12. cycle directories moved from `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/` and committed to main (§2.6)
-13. δ release-boundary preflight was requested and returned Proceed (§4.1a S10, `operator/SKILL.md` §3.4)
+13. δ release-boundary preflight was requested and returned Proceed (§4.1a S10, `operator/SKILL.md` §3.4 doctrinal frame; `release-effector/SKILL.md` mechanics)
 14. if the close-out triage produced ≥1 finding tagged `cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`, `.cdd/unreleased/{N}/cdd-iteration.md` exists with each finding structured per `post-release/SKILL.md` Step 5.6b, **and** `.cdd/iterations/INDEX.md` has a row for cycle N. If any finding shipped to a different repo, `.cdd/iterations/cross-repo/{target}/{slug}/` exists with bundle + `LINEAGE.md`. (Empty-findings cycles — no `cdd-*-gap` findings — still write `cdd-iteration.md` per `epsilon/SKILL.md §1` and `activation/SKILL.md §22`, but the INDEX row is optional for cycles with no findings. The closure gate checks INDEX.md only when findings ≥1.)
 
 Then:

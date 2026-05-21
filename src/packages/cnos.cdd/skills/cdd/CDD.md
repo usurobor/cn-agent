@@ -393,7 +393,7 @@ Outcomes:
 
 **Phase 6 — Disconnect (δ)**
 
-19. δ lands any remaining δ session patches, then cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. The tag is git-observable: γ and all future agents can see it. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4. This is not optional. **Nothing is committed to main between the closure declaration and the disconnect tag except δ's own patches.**
+19. δ lands any remaining δ session patches, then cuts the disconnect release: bump version, tag, push. The tag is the coherence boundary — it crystallizes the triad's output into an inspectable, immutable whole. The tag is git-observable: γ and all future agents can see it. Without it, the cycle's output bleeds into the next cycle with no named edge. See `operator/SKILL.md` §3.4 (doctrinal frame) and `release-effector/SKILL.md` (mechanics). This is not optional. **Nothing is committed to main between the closure declaration and the disconnect tag except δ's own patches.**
 
 #### γ dispatch prompt format
 
@@ -1180,7 +1180,7 @@ This checklist catches the failure modes that motivated #325. Any reviewer (β, 
 |---|---|---|---|
 | F1 | Missing `alpha-closeout.md` | `.cdd/unreleased/{N}/alpha-closeout.md` exists on main | §5.3b; `gamma/SKILL.md` §2.10 row 1 |
 | F2 | Missing `beta-closeout.md` | `.cdd/unreleased/{N}/beta-closeout.md` exists on main | §5.3b; `gamma/SKILL.md` §2.10 row 2 |
-| F3 | Missing `gamma-closeout.md` before δ tag | `.cdd/unreleased/{N}/gamma-closeout.md` exists on main before δ runs `scripts/release.sh` | §5.3b; `operator/SKILL.md` §3.4 |
+| F3 | Missing `gamma-closeout.md` before δ tag | `.cdd/unreleased/{N}/gamma-closeout.md` exists on main before δ runs `scripts/release.sh` | §5.3b; `operator/SKILL.md` §3.4 (doctrinal frame); `release-effector/SKILL.md` (mechanics) |
 | F4 | Stale `.cdd/unreleased/{N}/` after release | `git ls-tree -r origin/main .cdd/unreleased/ --name-only` returns empty (or only in-progress cycles) after tag | `release/SKILL.md` §2.5a; `gamma/SKILL.md` §2.6 + §2.10 row 12 |
 | F5 | Missing `RELEASE.md` before tag | `RELEASE.md` exists at repo root, committed in or before the release commit | `release/SKILL.md` §3.7; `gamma/SKILL.md` §2.6; §5.3b |
 | F6 | δ tag before γ closure declaration | `gamma-closeout.md` exists before δ runs release script | §5.3b; §4.1a state S12 requires S11 (γ closing) complete |

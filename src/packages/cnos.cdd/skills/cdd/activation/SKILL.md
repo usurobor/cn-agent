@@ -595,7 +595,7 @@ mixed
 
 **Tagging discipline per cadence:**
 
-- `versioned`: every cycle that ships a release receives a semantic version tag at merge (e.g., `git tag 3.74.0`). Tagging is a δ action executed via `scripts/release.sh` per `operator/SKILL.md §3.4`; manual `git tag` is not allowed.
+- `versioned`: every cycle that ships a release receives a semantic version tag at merge (e.g., `git tag 3.74.0`). Tagging is a δ action executed via `scripts/release.sh` per `release-effector/SKILL.md` (doctrinal frame at `operator/SKILL.md §3.4`); manual `git tag` is not allowed.
 - `rolling-docs`: cycles do not receive version tags. The date anchor in the directory name is the release identifier. Tagging a rolling-docs cycle would create a misleading "release" artifact with no version semantics.
 - `mixed`: tag versioned cycles; do not tag rolling-docs cycles. γ-closeout records the cadence type for each cycle in the TSC Grades section so the close-out record is self-explanatory.
 
