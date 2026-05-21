@@ -340,6 +340,49 @@ Tier 3 skills: src/packages/cnos.core/skills/write/SKILL.md, <additional issue-s
 
 `write/SKILL.md` is always included — every α output is a written artifact.
 
+##### Implementation contract section (required for α prompt)
+
+γ MUST include a `## Implementation contract` section in the α prompt (and reference it from the β prompt) enumerating the 7 architectural axes that pin the cycle's shape:
+
+````markdown
+## Implementation contract (pinned by δ; α MUST NOT improvise)
+
+| Axis | Pinned value |
+|---|---|
+| Language | <Go ; Python ; TypeScript ; Markdown ; ...> |
+| CLI integration target | <`cn` subcommand ; standalone binary ; library only ; N/A> |
+| Package scoping | <e.g. `src/go/internal/cdd/...` ; `src/packages/<pkg>/...` ; N/A> |
+| Existing-binary disposition | <preserve ; replace ; deprecate ; N/A> |
+| Runtime dependencies | <list or "None"> |
+| JSON/wire contract preservation | <preserve as-is ; explicit shape change with migration ; N/A> |
+| Backward-compat invariant | <e.g. "existing rules preserved; new content additive" ; "breaking change documented in §Migration"> |
+````
+
+The 7 axes are the **implementation contract** — the architectural shape the cycle ships, distinct from the behavioral ACs the cycle satisfies. Behavioral ACs test what the implementation *does*; the implementation contract pins what the implementation *is* (language, location, integration shape).
+
+**γ's obligation.** γ writes the contract values per repo conventions or escalates to δ for ratification before dispatch. **γ MUST NOT dispatch with empty / "TBD" rows.** If γ doesn't know a value, γ asks δ — the inward-membrane function (`operator/SKILL.md` §3a "δ as inward membrane: implementation-contract enrichment at dispatch") exists exactly for this enrichment. δ fills the row per repo conventions, or — if the row is genuinely undecidable (e.g. the language choice is itself part of the cycle's design question, not its execution shape) — blocks dispatch and escalates to operator-as-human.
+
+If γ's escalation to δ produces a mid-cycle contract change (rare; usually a row was unpinned at dispatch and γ + δ resolved it during α's run), γ logs the resolved row in `.cdd/unreleased/{N}/gamma-clarification.md` so the contract trail is auditable.
+
+**The mesh.** This template is the γ-side surface of a four-role mesh:
+
+- γ template:    this section (the 7-axis `## Implementation contract` block in the α prompt)
+- δ enrichment:  `operator/SKILL.md` §3a "δ as inward membrane"
+                 (δ reviews γ's dispatch prompt; fills unpopulated rows; blocks if undecidable)
+- α constraint:  `alpha/SKILL.md` §3.6 "Implementation contract is δ's, not α's"
+                 (α MUST NOT improvise; α surfaces unpinned rows before coding)
+- β verification: `beta/SKILL.md` §Role Rules Rule 7 "Implementation-contract coherence"
+                 (β verifies the diff conforms to every pinned axis before APPROVE;
+                  non-conformance → REQUEST CHANGES, severity D, classification
+                  `implementation-contract`)
+
+**Empirical anchor.** cnos#389 (Python-not-Go) and cnos#391 (wrong package scoping + separate binary) both shipped wrong-shape implementations because γ's dispatch prompt under-specified the architectural contract and α improvised. In both cycles β's behavior-only AC oracles APPROVE-d without catching the drift. cnos#392 was the first cycle where δ pinned the contract at dispatch as an ad-hoc operator action; the cycle succeeded specifically because of it. cnos#393 (this template addition) makes the contract a first-class γ obligation — a future cycle whose γ skips this section fails the γ-side pre-dispatch scaffold check (see "Pre-dispatch γ scaffold check (binding gate)" above; the scaffold MUST surface the implementation contract).
+
+- ❌ Dispatch with rows left empty or marked "TBD"
+- ❌ Dispatch with implicit conventions ("everyone knows we use Go")
+- ❌ γ silently re-pins a row mid-cycle without logging in `gamma-clarification.md`
+- ✅ Every row populated explicitly at dispatch; δ enrichment recorded if γ escalated; mid-cycle changes logged in `gamma-clarification.md`
+
 **β prompt (γ produces, δ dispatches):**
 ```text
 You are β. Project: <project>.

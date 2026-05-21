@@ -343,6 +343,28 @@ Re-read them against HEAD.
 α may respond to β findings.
 α does not rewrite β's judgment frame or release process.
 
+### 3.6. Implementation contract is δ's, not α's
+
+α MUST NOT change the implementation-contract axes pinned by δ at dispatch time: language, CLI integration target, package scoping, runtime dependencies, existing-binary disposition, JSON/wire contract preservation, backward-compat invariants. If any of these is unpinned in the dispatch prompt's `## Implementation contract` section, α MUST surface to γ/δ before coding; α MUST NOT improvise.
+
+The 7 axes form the **implementation contract** — the architectural shape the cycle ships, distinct from the behavioral ACs the cycle satisfies. Behavioral ACs ("does V validate? does the parser accept the new shape?") test what the implementation *does*; the implementation contract pins what the implementation *is* (language, location, integration shape). The two are independent; a behaviorally-correct implementation can still violate the contract by shipping in the wrong language, at the wrong package path, or as a separate binary instead of a `cn` subcommand.
+
+The mesh of role-side surfaces around this rule:
+
+- γ writes the contract values at dispatch (`gamma/SKILL.md` §2.5 Step 3b `## Implementation contract (required for α prompt)` template — enumerates the 7 axes; γ MUST NOT dispatch with empty rows).
+- δ ratifies and enriches if γ under-specified (`operator/SKILL.md` §3a "δ as inward membrane: implementation-contract enrichment at dispatch" — δ is two-sided; the inward face is exactly this enrichment).
+- β verifies α's implementation conforms before APPROVE (`beta/SKILL.md` §Role Rules Rule 7 "Implementation-contract coherence" — non-conformance → REQUEST CHANGES, severity D, classification `implementation-contract`).
+
+α's surface is the constraint half: read the `## Implementation contract` section in the dispatch prompt; treat every row as a binding pin α cannot relax. If a row is empty or "TBD," that is a γ/δ scaffold gap, not α latitude — surface via the artifact channel (`.cdd/unreleased/{N}/` on the cycle branch) before any implementation commit.
+
+**Empirical anchor.** cnos#389 (Python-not-Go): α implemented V in Python despite cnos being Go-native. The α SKILL did not name "language" as a δ-pinned axis; α had room to improvise. cnos#391 (wrong package scoping + separate binary): α placed the Go port in a separate binary at the wrong package path; α improvised on package scoping and CLI integration. In both cycles β's behavior-only AC oracles APPROVE-d without catching the implementation-contract drift; cnos#392 was the first cycle where δ pinned the contract at dispatch as an ad-hoc operator action, and the cycle succeeded specifically because of it. cnos#393 makes that ad-hoc operator action doctrine; this rule is α's role-side enforcement.
+
+- ❌ "The dispatch didn't say which package to use; I'll pick `pkg/foo/`"
+- ❌ "Python's faster for this; I'll switch from Go (the dispatch said Go but didn't justify it)"
+- ❌ "The dispatch said `cn` subcommand but a standalone binary is simpler; I'll ship that and note it in self-coherence"
+- ✅ "Implementation contract row 3 (package scoping) is unpinned; surfacing to γ via the artifact channel before coding"
+- ✅ "Every row in `## Implementation contract` is populated; proceeding with the implementation; every diff hunk maps to one or more pinned rows"
+
 ---
 
 ## 4. Resumption

@@ -160,6 +160,31 @@ Empirical anchor: cph#21 coherence-drift-sweep-followup wave (2026-05-18) surfac
 - ✅ "Dispatcher regex missed multi-line literal; β widened β-side and recorded both forms in the verdict"
 - ✅ "`extract_shape` name promises behavior the code does not deliver — flagged as name-overpromise; α decides rename-or-implement"
 
+### 7. Implementation-contract coherence
+
+Before APPROVE, β verifies the cycle's implementation conforms to the **implementation contract** pinned at dispatch (the 7 axes in `gamma/SKILL.md` §2.5 Step 3b `## Implementation contract (required for α prompt)` template: language, CLI integration target, package scoping, runtime dependencies, existing-binary disposition, JSON/wire contract preservation, backward-compat invariants).
+
+Behavior-only ACs ("does V validate? does the parser accept the new shape?") are necessary but not sufficient for APPROVE. Implementation-contract conformance is a binding gate parallel to Rule 6's code-first oracle anchoring: where Rule 6 prevents doc-vs-code drift, Rule 7 prevents behavior-vs-shape drift. A behaviorally-correct implementation can still violate the contract by shipping in the wrong language, at the wrong package path, or as a separate binary instead of a `cn` subcommand.
+
+**Verification procedure.** For each axis pinned in the dispatch prompt's `## Implementation contract` section, β confirms the diff conforms. The diff hunks must map onto the pinned rows: language matches row 1, package paths match row 3, CLI integration matches row 2, etc. If the diff diverges from any pinned axis without an explicit γ clarification (`.cdd/unreleased/{N}/gamma-clarification.md` updating the contract row mid-cycle), the verdict is REQUEST CHANGES with a D-severity finding classified `implementation-contract`.
+
+**Surface boundaries.**
+
+- α owns the constraint half (`alpha/SKILL.md` §3.6 "Implementation contract is δ's, not α's" — α MUST NOT improvise; α surfaces unpinned rows to γ/δ before coding).
+- γ owns the template half (`gamma/SKILL.md` §2.5 Step 3b — γ writes the 7-axis `## Implementation contract` section into the α prompt; γ MUST NOT dispatch with empty rows).
+- δ owns the enrichment half (`operator/SKILL.md` §3a "δ as inward membrane: implementation-contract enrichment at dispatch" — δ reviews γ's dispatch prompt, fills unpopulated rows per repo conventions, blocks dispatch if a row is genuinely undecidable).
+- β owns the verification half (this rule).
+
+The four surfaces form one coherent mesh; this rule is β's role-side enforcement of the doctrine cnos#393 makes explicit.
+
+**Empirical anchor.** cnos#389 R1 (Python-not-Go) and cnos#391 R1 (wrong package scoping + separate binary) both APPROVE-d on behavior-only AC oracles. Neither caught the implementation-contract drift, even though it was visible in the diff at review time. cnos#392 was the first cycle where δ pinned the contract at dispatch; the cycle succeeded specifically because the contract was pinned. Rule 7 makes the implementation-contract surface a first-class review gate so a future cycle's β cannot APPROVE on behavior-only oracles when the diff drifts from the contract.
+
+- ❌ "AC oracles passed; APPROVE." (without checking the 7 axes against the diff)
+- ❌ "Implementation works; the package path is a minor detail; merge and file a follow-up."
+- ❌ "The language drifted from Go to Python but the tests pass — close enough."
+- ✅ "AC oracles pass; implementation contract row 1 (language=Go) confirmed; row 3 (package scoping = `src/go/internal/cdd/...`) confirmed; rows 2/4/5/6/7 confirmed; APPROVE."
+- ✅ "AC oracles pass but row 1 (language) drifted to Python; RC with D-severity finding, classification `implementation-contract`."
+
 ## Resumption
 
 When dispatched to an artifact path that already contains a section manifest, β follows the resumption protocol per `CDD.md` §1.4:
