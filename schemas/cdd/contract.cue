@@ -30,7 +30,8 @@ package cdd
 	branch: string
 
 	// base_sha: the merge-base on origin/main from which the cycle branched.
-	// The receipt's diff_ref resolves to git_diff(base_sha..merge_sha).
+	// A CDS receipt's `evidence_refs.diff` (per schemas/cds/) resolves to
+	// `git_diff(base_sha..merge_sha)`.
 	base_sha: string
 
 	// contract_sha: optional pin of the issue-body SHA the contract is read
