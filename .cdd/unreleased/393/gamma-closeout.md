@@ -19,7 +19,7 @@ cnos#366 Phase 4 body now absorbs cnos#393 as a design input and names δ as exp
 
 | Finding | Source | Type | Disposition | Artifact / commit |
 |---|---|---|---|---|
-| M1 — "This cycle is the patch" (closes #392 cdd-iteration F1–F4) | β close-out F0 + cdd-iteration | meta / drop | drop (the patches ARE the action) | `a49de338` (4-patch commit) |
+| M1 — "This cycle is the patch" (closes #392 cdd-iteration F1–F4) | β close-out F0 + cdd-iteration | meta / drop | drop (the patches ARE the action) | `fdc55950` (4-patch commit) |
 | P1 — 4-surface mesh as reusable doctrine-shipping shape | cdd-iteration | pattern / informational | drop (not formal enough to ship as γ rule yet; useful as template) | (informational only) |
 | P2 — Meta-cycle: shipping rule + self-applying it | cdd-iteration | pattern / informational | drop (the cycle is the witness) | (informational only) |
 | P3 — Phase-N design-prerequisite-anchor pattern | cdd-iteration | pattern / informational | drop (already named in cnos#366 Phase 4 body) | cnos#366 body update |
