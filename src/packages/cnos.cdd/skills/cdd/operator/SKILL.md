@@ -247,6 +247,66 @@ For mid-cycle gate actions (tag push before the disconnect, branch cleanup), con
 
 ---
 
+## 3a. δ as inward membrane: implementation-contract enrichment at dispatch
+
+`COHERENCE-CELL-NORMAL-FORM.md` names δ as the cell's boundary — the actor that receives the receipt and verdict and records a boundary decision (`accept`, `release`, `override`, `reject`, `repair_dispatch`). That is the **outward-facing membrane**: receipt + V verdict → parent-scope boundary decision. §3 above ("Gate") describes this surface.
+
+δ is also a **two-sided membrane.** The complementary face is **inward**: γ's protocol-level contract (gap, ACs, oracle, evidence) → α-ready dispatch enriched with the implementation-contract axes α needs to execute coherently without improvising.
+
+```text
+δ as two-sided membrane:
+
+  outward:  receipt + V verdict → parent-scope boundary decision   (§3 above)
+  inward:   γ contract → α-ready dispatch                           (this section)
+            (implementation-contract enrichment happens here)
+```
+
+**The inward function — what δ does.** γ writes the protocol-level contract per `gamma/SKILL.md` §2.5 Step 3b, including the `## Implementation contract` section enumerating the 7 axes:
+
+1. Language
+2. CLI integration target
+3. Package scoping
+4. Existing-binary disposition
+5. Runtime dependencies
+6. JSON/wire contract preservation
+7. Backward-compat invariant
+
+γ populates the rows from repo conventions and the issue body. **At dispatch time, δ reviews γ's dispatch prompt before routing it to α and ensures every row is populated.** If γ left a row unpopulated or marked "TBD," δ has two paths:
+
+- **(a) Fill the row** per repo conventions (e.g. "this repo is Go-native, row 1 = Go"; "this repo uses the `cn` subcommand pattern for protocol-level commands, row 2 = `cn` subcommand"). Log the enrichment in the cycle's artifact channel (`.cdd/unreleased/{N}/gamma-clarification.md`, or a δ-specific channel if Phase 4 of cnos#366 has carved one) so the contract trail is auditable.
+- **(b) Block dispatch and escalate to operator-as-human** if the row is genuinely undecidable — typically because the choice is part of the cycle's design question, not its execution shape, or because the row's value would commit the repo to a convention that hasn't been settled.
+
+**Why this is δ's surface, not γ's alone.** γ writes what the cycle is *for* (gap, ACs, oracle, evidence). δ writes what the cycle's output is *shaped like* (language, package path, integration target, dependency footprint). The two contracts are distinct: γ's is protocol-level; δ's is implementation-level. γ knows the protocol; δ knows the repo's standing conventions. Mixing them produced cnos#389 (α improvised language because γ's prompt didn't name one and δ didn't catch the omission) and cnos#391 (α improvised package scoping and binary disposition for the same reason). cnos#392 was the first cycle where δ pinned the implementation contract at dispatch; the cycle succeeded specifically because of it.
+
+**The mesh — four role-side surfaces around the doctrine.** This section is the δ side of a four-surface mesh that cnos#393 ships:
+
+- γ template:     `gamma/SKILL.md` §2.5 Step 3b
+                  (the 7-axis `## Implementation contract (required for α prompt)` block;
+                   γ MUST NOT dispatch with empty rows)
+- δ enrichment:   this section
+                  (inward-membrane function; δ reviews γ's prompt; fills or escalates)
+- α constraint:   `alpha/SKILL.md` §3.6
+                  ("Implementation contract is δ's, not α's"; α MUST NOT improvise;
+                   α surfaces unpinned rows before coding)
+- β verification: `beta/SKILL.md` §Role Rules Rule 7
+                  ("Implementation-contract coherence"; β verifies the diff conforms
+                   to every pinned axis before APPROVE; non-conformance → REQUEST CHANGES,
+                   severity D, classification `implementation-contract`)
+
+Each surface is locally self-justifying via the empirical anchors below; the mesh is for **discoverability** (a future role session loading any one finds the others), not for circular justification.
+
+**Phase 4 (δ split) — relocation target.** This section is a **design-prerequisite anchor** for Phase 4 of cnos#366 (δ split: `operator/SKILL.md` → `delta/SKILL.md` + harness substrate + release driver). When Phase 4 lands, this section moves to `delta/SKILL.md` as part of the membrane-policy surface; the two-sided framing (outward §3 + inward §3a) becomes the membrane's core doctrine. The two-sided framing is the design input cnos#366 Phase 4 absorbs; the relocation itself happens in Phase 4's cycle, not in cnos#393. Until Phase 4 lands, `operator/SKILL.md` carries both faces.
+
+**Empirical anchor.** cnos#389 (Python-not-Go) and cnos#391 (wrong package scoping + separate binary) are the failure-mode evidence that motivates this section. In both cycles γ's dispatch prompt under-specified the implementation contract; δ did not catch the omission at routing time; α improvised; β's behavior-only AC oracles APPROVE-d without catching the drift. cnos#392 was the first cycle where δ pinned the 7-axis contract at dispatch as an ad-hoc operator action; the cycle succeeded specifically because of it (the `cdd-iteration.md` F1–F4 forecast the four patches cnos#393 ships). cnos#393 (this patch) makes the inward function doctrine; Phase 4 of cnos#366 implements δ-inward in `delta/SKILL.md`.
+
+- ❌ δ routes γ's α prompt with rows blank — "α can figure it out"
+- ❌ δ fills rows by guessing — no consultation with γ on intent, no anchor in repo conventions
+- ❌ δ enriches but does not log the change, leaving the contract trail invisible
+- ✅ δ reviews γ's `## Implementation contract` section row-by-row; enriches per repo conventions; logs in `gamma-clarification.md`; escalates the row to operator-as-human if undecidable
+- ✅ δ blocks dispatch (does not route the α prompt) until every row is populated or explicitly escalated
+
+---
+
 ## 4. Override
 
 ### 4.1. When to override
