@@ -1,0 +1,75 @@
+# Fixture: schemas/cds/fixtures/counterfeit-override-rewrite.yaml
+# Exercises #389 AC8 / Rule C3 (counterfeit.override_does_not_rewrite):
+# The receipt's `validation.verdict` is PASS, but
+# `boundary_decision.override.original_validation_verdict.verdict` is FAIL —
+# i.e., a counterfeit author tried to rewrite the V verdict from FAIL to PASS
+# while leaving the override block in place. V's rule C3 catches this
+# inconsistency.
+#
+# This is a STRUCTURAL counterfeit — invariants are violated at the receipt
+# level, independent of any actor/timestamp evidence. The fixture demonstrates
+# that V's check is non-redundant with CUE's transmissibility-table derivation
+# (CUE would catch override→PASS via the table; C3 catches the deeper
+# inconsistency that the original verdict in the override block was rewritten).
+#
+# `mode: collapsed` makes C1 and C2 emit warnings rather than fail, so the
+# only failed_predicate is C3.
+#
+# Expected: `cn cdd-verify --receipt schemas/cds/fixtures/counterfeit-override-rewrite.yaml --structural-only` exits 1 (FAIL).
+
+protocol_id: "cnos.cdd.cds.receipt.v1"
+
+mode: collapsed
+
+validation:
+  verdict: PASS
+  failed_predicates: []
+  warnings: []
+  provenance:
+    validator_identity: cdd.validate_receipt
+    validator_version: phase3-pending
+    checked_at: "2026-05-21T10:00:00Z"
+    input_refs:
+      contract_ref: "issue:#389@contract_sha_placeholder"
+      receipt_ref: "schemas/cds/fixtures/counterfeit-override-rewrite.yaml"
+      evidence_root_ref: "schemas/cds/fixtures/_closure_records/counterfeit-override-rewrite/"
+
+boundary_decision:
+  actor: "delta@cdd.cnos"
+  # Note: with verdict=PASS and action=override, CUE's transmissibility table
+  # already rejects (PASS×override → INVALID). C3 catches the deeper signal:
+  # override.original_validation_verdict says FAIL, but the receipt's
+  # outer validation.verdict was rewritten to PASS.
+  action: override
+  decided_at: "2026-05-21T10:05:00Z"
+  override:
+    actor: "delta@cdd.cnos"
+    justification: "deliberately-counterfeit fixture; original verdict was FAIL but outer validation.verdict was rewritten to PASS"
+    original_validation_verdict:
+      verdict: FAIL
+      failed_predicates: ["issue:#389#AC8.oracle"]
+      warnings: []
+      provenance:
+        validator_identity: cdd.validate_receipt
+        validator_version: phase3-pending
+        checked_at: "2026-05-21T10:00:00Z"
+        input_refs:
+          contract_ref: "issue:#389@contract_sha_placeholder"
+          receipt_ref: "schemas/cds/fixtures/counterfeit-override-rewrite.yaml"
+          evidence_root_ref: "schemas/cds/fixtures/_closure_records/counterfeit-override-rewrite/"
+    failed_predicates_overridden: ["issue:#389#AC8.oracle"]
+    degraded_state: true
+
+transmissibility: accepted
+
+protocol_gap_count: 0
+protocol_gap_refs: []
+
+evidence_refs:
+  evidence_root:  "schemas/cds/fixtures/_closure_records/counterfeit-override-rewrite/"
+  self_coherence: "schemas/cds/fixtures/_closure_records/counterfeit-override-rewrite/self-coherence.md"
+  beta_review:    "schemas/cds/fixtures/_closure_records/counterfeit-override-rewrite/beta-review.md"
+  alpha_closeout: "schemas/cds/fixtures/_closure_records/counterfeit-override-rewrite/alpha-closeout.md"
+  beta_closeout:  "schemas/cds/fixtures/_closure_records/counterfeit-override-rewrite/beta-closeout.md"
+  gamma_closeout: "schemas/cds/fixtures/_closure_records/counterfeit-override-rewrite/gamma-closeout.md"
+  diff:           "git_diff(origin/main..HEAD)"

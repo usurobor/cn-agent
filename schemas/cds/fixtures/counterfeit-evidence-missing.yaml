@@ -1,0 +1,47 @@
+# Fixture: schemas/cds/fixtures/counterfeit-evidence-missing.yaml
+# Exercises #389 AC6 / Rule C4 (counterfeit.evidence_ref_unresolved):
+# evidence_refs points at filesystem paths that DO NOT exist; V's C4 rule
+# flags each unresolved ref.
+#
+# Distinct from the placeholder-strings case (e.g. "@merge_sha_placeholder")
+# which V's PLACEHOLDER_PATTERNS filter excludes from dereference. The paths
+# here look like real filesystem paths but point at nonexistent files —
+# the counterfeit signal.
+#
+# Expected: `cn cdd-verify --receipt schemas/cds/fixtures/counterfeit-evidence-missing.yaml` exits 1 (FAIL).
+
+protocol_id: "cnos.cdd.cds.receipt.v1"
+
+mode: collapsed  # so C1/C2 do not fire on unresolvable files
+
+validation:
+  verdict: PASS
+  failed_predicates: []
+  warnings: []
+  provenance:
+    validator_identity: cdd.validate_receipt
+    validator_version: phase3-pending
+    checked_at: "2026-05-21T10:00:00Z"
+    input_refs:
+      contract_ref: "issue:#389@contract_sha_placeholder"
+      receipt_ref: "schemas/cds/fixtures/counterfeit-evidence-missing.yaml"
+      evidence_root_ref: ".cdd/releases/nonexistent-version/000/"
+
+boundary_decision:
+  actor: "delta@cdd.cnos"
+  action: accept
+  decided_at: "2026-05-21T10:05:00Z"
+
+transmissibility: accepted
+
+protocol_gap_count: 0
+protocol_gap_refs: []
+
+evidence_refs:
+  evidence_root:  ".cdd/releases/nonexistent-version/000/"
+  self_coherence: ".cdd/releases/nonexistent-version/000/self-coherence.md"
+  beta_review:    ".cdd/releases/nonexistent-version/000/beta-review.md"
+  alpha_closeout: ".cdd/releases/nonexistent-version/000/alpha-closeout.md"
+  beta_closeout:  ".cdd/releases/nonexistent-version/000/beta-closeout.md"
+  gamma_closeout: ".cdd/releases/nonexistent-version/000/gamma-closeout.md"
+  diff:           "git_diff(origin/main..HEAD)"

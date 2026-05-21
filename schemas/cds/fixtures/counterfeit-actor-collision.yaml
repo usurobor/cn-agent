@@ -1,0 +1,46 @@
+# Fixture: schemas/cds/fixtures/counterfeit-actor-collision.yaml
+# Exercises #389 AC8 / Rule C1 (counterfeit.actor_separation):
+# Both alpha_closeout and beta_closeout declare the same actor
+# (`Actor: same-actor@example`); V should FAIL with the
+# counterfeit.actor_separation diagnostic.
+#
+# The receipt deliberately omits `mode: collapsed` — without that
+# acknowledgment, the actor collision is a hard counterfeit signal.
+# (A real collapsed-mode receipt would declare mode and pass with a warning;
+# this fixture has no such acknowledgment.)
+#
+# Expected: `cn cdd-verify --receipt schemas/cds/fixtures/counterfeit-actor-collision.yaml` exits 1 (FAIL).
+
+protocol_id: "cnos.cdd.cds.receipt.v1"
+
+validation:
+  verdict: PASS
+  failed_predicates: []
+  warnings: []
+  provenance:
+    validator_identity: cdd.validate_receipt
+    validator_version: phase3-pending
+    checked_at: "2026-05-21T10:00:00Z"
+    input_refs:
+      contract_ref: "issue:#389@contract_sha_placeholder"
+      receipt_ref: "schemas/cds/fixtures/counterfeit-actor-collision.yaml"
+      evidence_root_ref: "schemas/cds/fixtures/_closure_records/counterfeit-actor-collision/"
+
+boundary_decision:
+  actor: "delta@cdd.cnos"
+  action: accept
+  decided_at: "2026-05-21T10:05:00Z"
+
+transmissibility: accepted
+
+protocol_gap_count: 0
+protocol_gap_refs: []
+
+evidence_refs:
+  evidence_root:  "schemas/cds/fixtures/_closure_records/counterfeit-actor-collision/"
+  self_coherence: "schemas/cds/fixtures/_closure_records/counterfeit-actor-collision/self-coherence.md"
+  beta_review:    "schemas/cds/fixtures/_closure_records/counterfeit-actor-collision/beta-review.md"
+  alpha_closeout: "schemas/cds/fixtures/_closure_records/counterfeit-actor-collision/alpha-closeout.md"
+  beta_closeout:  "schemas/cds/fixtures/_closure_records/counterfeit-actor-collision/beta-closeout.md"
+  gamma_closeout: "schemas/cds/fixtures/_closure_records/counterfeit-actor-collision/gamma-closeout.md"
+  diff:           "git_diff(origin/main..HEAD)"

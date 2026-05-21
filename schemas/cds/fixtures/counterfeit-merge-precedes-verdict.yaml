@@ -1,0 +1,46 @@
+# Fixture: schemas/cds/fixtures/counterfeit-merge-precedes-verdict.yaml
+# Exercises #389 AC8 / Rule C2 (counterfeit.verdict_precedes_merge):
+# The receipt declares boundary_decision.decided_at deep in the past
+# (2024-01-01) while the referenced beta_closeout.md is freshly committed
+# (cycle/389 commit time, 2026-05-21+).  V's rule C2 detects T_β > T_δ and
+# fails the receipt.
+#
+# Distinct α/β actors so C1 does not fire; receipt does NOT declare
+# `mode: collapsed` so the C2 violation is a hard FAIL.
+#
+# Expected: `cn cdd-verify --receipt schemas/cds/fixtures/counterfeit-merge-precedes-verdict.yaml` exits 1 (FAIL).
+
+protocol_id: "cnos.cdd.cds.receipt.v1"
+
+validation:
+  verdict: PASS
+  failed_predicates: []
+  warnings: []
+  provenance:
+    validator_identity: cdd.validate_receipt
+    validator_version: phase3-pending
+    checked_at: "2024-01-01T10:00:00Z"
+    input_refs:
+      contract_ref: "issue:#389@contract_sha_placeholder"
+      receipt_ref: "schemas/cds/fixtures/counterfeit-merge-precedes-verdict.yaml"
+      evidence_root_ref: "schemas/cds/fixtures/_closure_records/counterfeit-merge-precedes-verdict/"
+
+boundary_decision:
+  actor: "delta@cdd.cnos"
+  action: accept
+  # T_δ is well before the cycle/389 commit time of beta_closeout.md → C2 FAIL.
+  decided_at: "2024-01-01T10:05:00Z"
+
+transmissibility: accepted
+
+protocol_gap_count: 0
+protocol_gap_refs: []
+
+evidence_refs:
+  evidence_root:  "schemas/cds/fixtures/_closure_records/counterfeit-merge-precedes-verdict/"
+  self_coherence: "schemas/cds/fixtures/_closure_records/counterfeit-merge-precedes-verdict/self-coherence.md"
+  beta_review:    "schemas/cds/fixtures/_closure_records/counterfeit-merge-precedes-verdict/beta-review.md"
+  alpha_closeout: "schemas/cds/fixtures/_closure_records/counterfeit-merge-precedes-verdict/alpha-closeout.md"
+  beta_closeout:  "schemas/cds/fixtures/_closure_records/counterfeit-merge-precedes-verdict/beta-closeout.md"
+  gamma_closeout: "schemas/cds/fixtures/_closure_records/counterfeit-merge-precedes-verdict/gamma-closeout.md"
+  diff:           "git_diff(origin/main..HEAD)"
