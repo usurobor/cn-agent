@@ -2815,6 +2815,289 @@ the v0.1 cdd cite-points above are the temporary v0.1 home.
 
 ---
 
+## Closure
+
+**Closure** is the final cycle state — the structural transition from
+"merged + released" to "cycle complete." A cycle that has merged matter
+and crossed the release boundary has not yet *closed* in the CDS sense
+— closure requires that **immediate outputs** are executed, **deferred
+outputs** are committed, and (when triggered) cycle-iteration artifacts
+are written. The Closure rule below names the conjunction; γ declares
+closure in `gamma-closeout.md` only after the conjunction holds.
+
+Closure is the discipline that prevents the "stopped, not closed"
+failure mode — a cycle whose matter ships but whose downstream
+coherence work (skill patches, hub-memory updates, next-cycle handoff,
+process learning) trails into next sessions and accumulates as
+process debt. The §Closure rule is structurally the same rule
+§Gate F10 (unresolved triage) catches at the gate; F10 is the
+release-time mechanical realization of the Closure rule's "no
+unresolved triage" precondition.
+
+### Immediate outputs
+
+Outputs executed **in the same session** as the PRA / `gamma-closeout.md`
+commit. Immediate outputs close the per-cycle learning loop before the
+cycle records itself as closed; deferring them into the next cycle is
+structurally a `cds-protocol-gap` (silence is not a disposition; the
+§Closure rule does not fire on a cycle whose immediate outputs are
+"noted for next cycle").
+
+The seven canonical immediate-output classes:
+
+- **Changelog corrections.** Any TSC ledger row drift between β's
+  release-time provisional scores and γ's PRA-time final scores;
+  any missing Level / Rounds column entry; any provisional marker
+  still present after γ's PRA. The change lands in the same commit
+  as the PRA per the provisional-vs-final scoring rule
+  (`release/SKILL.md §2.4` v0.1 overlay).
+- **Missing documentation.** Documentation surfaces that describe
+  current behaviour but lagged the cycle's behaviour change. Updated
+  in the same commit as the PRA (per §Artifact contract → §Supporting
+  rules: "update docs before release" — when documentation lag is
+  caught at closure rather than at merge, the immediate output is
+  the patch that closes the lag).
+- **Skill / process micro-patches.** Patches to cdd or cds skills
+  whose under-specification caused a finding this cycle. Micro-patches
+  are landed when the gap is clear; larger patches become next-MCA
+  rows in §Deferred outputs. The micro-patch is synced across the
+  canonical source (`src/packages/`), any package-visible loader
+  entrypoint (`SKILL.md`), and any human-facing pointer surface that
+  exposes the changed rule (per `post-release/SKILL.md §5` Step 5).
+- **Skill patches from cycle iteration.** When §Assessment → §Cycle
+  iteration triggers fired and the disposition is `patch landed now`,
+  the patch lands in the same commit as the PRA (per CDD §13a's
+  same-commit rule). A `patch landed now` disposition with the patch
+  deferred to a separate commit is structurally a `next-MCA`
+  disposition mis-labelled.
+- **Issue filing.** Any next-MCA whose first-AC is concrete enough
+  to file as a GitHub issue is filed in the same session, with the
+  filed issue number recorded in §Deferred outputs below. An MCA
+  named in the PRA without a filed issue is structurally a deferred
+  output without commitment (and fires F10 if it lacks disposition).
+- **Lag-table updates.** The encoding-lag table at the PRA's §2 is
+  populated with every open design / process issue, with current
+  lag levels (none / low / growing / stale); shipped-this-release
+  issues drop off; new converged-but-unimplemented designs are
+  added. The lag-table update happens in the PRA commit, not in a
+  separate session.
+- **Hub-memory writes.** Daily reflection (the operational state
+  the next session loads to orient) and adhoc-thread updates (which
+  ongoing thread(s) this release advances). Hub memory is external
+  to the repo; the PRA records the path + commit-sha + unavailable-reason
+  per §Assessment → §PRA contents §8. Skipping hub memory creates
+  a compaction gap that the next session cannot recover from.
+
+### Deferred outputs
+
+Outputs **committed** to a downstream cycle. Deferred outputs are not
+deferred decisions — they are decisions made this cycle with execution
+scheduled for the named downstream surface. The commitment is structural:
+a deferred output must carry a downstream identity (issue number,
+owner, branch) and a per-cycle first-AC.
+
+The five canonical deferred-output fields:
+
+- **Next-MCA issue number.** The specific GitHub issue number that
+  encodes the next master coherence action. If the issue does not yet
+  exist, filing it is an immediate output (per §Immediate outputs
+  above); the §Deferred outputs row carries the filed-now issue
+  number.
+- **Owner.** The role-or-persona that owns the next-MCA's execution.
+  Typically `γ-the-operator` for cycle-coordination MCAs;
+  `cds-skill-owner` for skill patches; a named persona hub for
+  persona-class work. An MCA without an owner is structurally an
+  un-dispatched cycle (no one runs it).
+- **Target branch name.** The cycle/{N} branch name the next-MCA's
+  α will work on. `cycle/{N}` per §Development lifecycle → §Branch
+  rule (where N is the next-MCA's issue number). A deferred output
+  with `pending branch creation` is acceptable when the next-MCA's
+  γ has not yet created the branch — γ creates the branch at the
+  next cycle's Step 2.
+- **First AC.** The concrete first acceptance criterion that ships
+  in the next-MCA. The first-AC is what the next cycle's α binds
+  against at intake; a next-MCA with an under-specified first-AC
+  fires the §Selection function's "issue-quality gate" at the next
+  cycle's bootstrap step.
+- **MCI freeze / resume state.** The state of the §Selection function
+  MCI freeze flag after this cycle (frozen / resumed / no-change).
+  `Frozen` means the next substantial MCA must come from the stale
+  set (per the §MCI freeze check rule). `Resumed` means implementation
+  has caught up to the design frontier. `No-change` means the prior
+  state continues.
+
+### Closure rule
+
+A cycle closes **only when all three conjuncts hold**:
+
+1. **Immediate outputs executed** — every item in §Immediate outputs
+   above has either landed in this cycle's commits or been explicitly
+   ruled out with rationale. "Noted for next cycle" without a filed
+   next-MCA row is not "ruled out."
+2. **Deferred outputs committed** — every §Deferred outputs field
+   is populated; the next-MCA issue exists; the owner is named; the
+   target branch name is declared (or `pending branch creation` with
+   the next cycle's γ named); the first-AC is concrete; the MCI
+   freeze state is declared.
+3. **Cycle iteration present if triggered** — if any §Assessment →
+   §Cycle iteration triggers fired, the PRA's §4b Cycle Iteration
+   section is authored and `cdd-iteration.md` (or `cds-iteration.md`
+   post-rename) exists at the canonical path with each finding
+   structured per §Field 5's per-finding shape, and
+   `.cdd/iterations/INDEX.md` has a row for cycle N. The cnos#401
+   cadence rule applies: required only when `protocol_gap_count > 0`;
+   courtesy empty-findings stub permitted when count is 0.
+
+When all three conjuncts hold, γ writes `gamma-closeout.md` with the
+**closure declaration** — the explicit statement *"Cycle #N closed.
+Next: #M."* This is γ's last commit on the cycle's surfaces;
+the closure-declaration commit's SHA on `main` is the structural
+signal that the cycle has crossed from "released" to "closed." δ's
+disconnect-release tag appearing on `main` after the closure-declaration
+commit is the **observable proof** that all gate actions completed
+and the cycle is fully closed.
+
+A cycle that has stopped without closing (matter shipped; releases
+tagged; but immediate outputs unexecuted, deferred outputs uncommitted,
+or cycle-iteration absent under triggered conditions) is **structurally
+in-flight** until the conjunction holds. The next cycle's γ inherits
+the unfinished close-out work as immediate outputs of the next
+cycle — but the deferred-output cost compounds: the lag-table grows;
+the next-MCA handoff is unanchored; ε's receipt-stream review surfaces
+the closure gap as a `cds-protocol-gap` finding.
+
+### Operational realization
+
+The immediate outputs, deferred outputs, and closure rule above are
+CDS's canonical closure statement. The v0.1 operational overlay — the
+per-output execution mechanics, the closure-gate row-by-row check,
+the closure-declaration authoring procedure, the next-MCA filing
+workflow, the hub-memory write sequence — lives in the existing cdd
+role/runtime skills as the temporary v0.1 overlay until the v1 CDS-side
+role rewrite:
+
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.10`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — γ's closure gate (the 14-row row-by-row check that realizes the
+  §Closure rule conjunction); the closure-declaration commit
+  ("Cycle #N closed. Next: #M.") that signals structural closure.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.7`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — close-out triage; the four-disposition shape that realizes the
+  "every finding gets a disposition" precondition of §Closure rule
+  conjunct 1.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.8`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — cycle-iteration-trigger enforcement; the three-state shape (patch
+  landed / next MCA / no-patch) that realizes §Closure rule conjunct 3.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §3.6`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — "Land immediate process fixes in the same cycle when possible";
+  the discipline that makes §Immediate outputs structural rather than
+  optional.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §3.7`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — "Do not close the cycle with unresolved triage"; the §Closure
+  rule conjunct 1 enforcement at gate-check time (also fires §Gate
+  F10).
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §6`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — Decide next move (next-MCA issue / owner / branch / first AC /
+  MCI freeze); the §Deferred outputs authoring procedure.
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §7`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — Hub memory write (daily reflection + adhoc thread); the
+  immediate-output execution that prevents the compaction-gap
+  failure mode.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{gamma,post-release,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Retro-packaging
+
+**Retro-packaging** is the exception path for matter that landed
+directly on `main` outside the canonical cycle/{N} branch model.
+The direct-to-main exception covers the case where a change shipped
+without a cycle branch (typically: emergency patches; tiny
+operator-class fixes; matter that landed before the canonical
+cycle/{N} model was in force). The exception's structural cost is
+**lost cycle-shape evidence** — there is no cycle directory, no
+self-coherence, no β review record at the canonical paths. Retro-packaging
+re-creates the shape after the fact, preserving the §Frozen snapshot
+rule while acknowledging the structural gap.
+
+Retro-packaging is **rare** (default rule: every substantial change
+opens a cycle/{N} branch per §Development lifecycle → §Branch rule),
+and the structural cost is recorded explicitly — the retro-packaged
+cycle's PRA carries a `<C` configuration-floor cap on γ (per
+`release/SKILL.md §3.8` v0.1 overlay) reflecting the absence of
+cycle-shape evidence. Retro-packaging is not a way to escape the
+cycle/{N} discipline; it is a way to honour the §Frozen snapshot
+rule for matter that already shipped.
+
+### Direct-to-main exception
+
+When matter landed on `main` without a cycle branch, γ executes
+retro-packaging as a docs-only release per `release/SKILL.md §2.5b`
+v0.1 overlay. The retro-packaged cycle creates three artifacts that
+re-establish the cycle-shape evidence:
+
+- **Retro-snapshot in version directory** — γ creates the
+  `docs/{tier}/{bundle}/{X.Y.Z}/` version directory (or
+  `docs/{tier}/{bundle}/docs/{ISO-date}/` for docs-only releases per
+  the `release/SKILL.md §2.5b` form). The snapshot directory carries
+  a `README.md` snapshot manifest naming the deliverables and the
+  retro-packaging context (the merge commit SHA of the matter being
+  packaged; the rationale for the direct-to-main path).
+- **Self-coherence covering the change** — γ authors a retroactive
+  `self-coherence.md` at `.cdd/releases/{X.Y.Z}/{N}/self-coherence.md`
+  (or `.cdd/releases/docs/{ISO-date}/{N}/self-coherence.md` for
+  docs-only). The retroactive self-coherence is **structurally
+  honest**: it names the gap (the matter shipped without a cycle
+  branch); records the ACs the matter satisfies (with evidence binding
+  to the merge commit); names the contract the matter binds against
+  retroactively. The `[retroactive]` marker is mandatory in the
+  self-coherence's §Mode section.
+- **Version-history entry** — γ adds a CHANGELOG TSC ledger row at
+  the canonical bare-version format (per `release/SKILL.md §2.4`
+  v0.1 overlay) with honest scoring. The γ-axis score reflects the
+  retro-packaging cost (configuration-floor cap at C+ per
+  `release/SKILL.md §3.8`'s "score the release, not the intent"
+  discipline; the canonical example is `usurobor/tsc` cycle 27 at
+  α B / β C+ / γ C / C_Σ C+). The coherence note records the
+  retro-packaging rationale.
+
+The retro-packaged cycle's PRA carries an explicit §Retro-packaging
+note in §3 Process Learning naming **why** the direct-to-main path was
+taken (operator-class emergency; pre-cycle-model historical matter;
+operational-substrate fix) and **what** prevents recurrence (a tooling
+patch that catches direct-to-main commits; an operator-skill patch
+that names the cycle/{N} discipline; an explicit acceptance that the
+direct-to-main path is allowed for the specific class of matter).
+
+### Operational realization
+
+The direct-to-main exception above is CDS's canonical retro-packaging
+statement. The v0.1 operational overlay — the docs-only disconnect
+mechanics, the retroactive `self-coherence.md` authoring procedure,
+the CHANGELOG honest-grading workflow under retro conditions, the
+configuration-floor cap mechanics — lives in the existing cdd
+role/runtime skills as the temporary v0.1 overlay until the v1
+CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/release/SKILL.md §2.5b`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — docs-only disconnect (no tag); the operational form that retro-packaged
+  cycles use (`.cdd/releases/docs/{ISO-date}/{N}/` cycle-dir move;
+  `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md` PRA
+  path).
+- [`cnos.cdd/skills/cdd/release/SKILL.md §3.8`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — configuration-floor clause; the C+ / C / `<C` cap mechanics that
+  apply to retro-packaged cycles whose γ-axis lacks cycle-shape
+  evidence; the "score the release, not the intent" discipline that
+  ensures the retro-packaging cost is recorded honestly.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{release,gamma,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
 ## Empirical anchor
 
 CDS's empirical anchor is [`usurobor/cnos`](https://github.com/usurobor/cnos)
