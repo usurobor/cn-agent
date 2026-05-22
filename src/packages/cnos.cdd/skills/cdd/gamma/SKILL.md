@@ -197,75 +197,13 @@ Mechanical check (run before producing the α prompt): `git ls-tree -r --name-on
 
 γ polls the issue and `origin/cycle/{N}` to react to α/β commits, β verdicts, and CI status. **Mechanics: `harness/SKILL.md` §5.4** (single-named-branch transition loop, `Monitor`-wrapped, reachability re-probe per `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Polling primitives"). γ's invariant: **polling requires a query, a wake-up mechanism, and a reachability probe.** If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, γ surfaces the gap to operator before dispatch. Cycle-dir artifacts live on `origin/cycle/{N}` (not on `main`) until release-time move; polling `main` for in-flight cycle dirs is silent.
 
-##### Dispatch prompts
+##### Dispatch prompts + implementation contract → cnos.handoff
 
-γ produces the prompts and δ routes them via `cn dispatch` (the identity-rotation primitive) — one role at a time. γ does not execute dispatch; γ produces prompts. δ dispatches γ → α → β sequentially per `operator/SKILL.md` Algorithm + `harness/SKILL.md` §1.
+γ produces the dispatch prompts (γ / α / β) and δ routes them via `cn dispatch`. γ does not execute dispatch; γ produces prompts. The α prompt MUST carry the 7-axis `## Implementation contract` block γ injects per the wire-format template — γ MUST NOT dispatch with empty / "TBD" rows.
 
-**γ prompt (δ dispatches γ first):**
-```text
-You are γ. Project: <project>.
-Load src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md and follow its load order.
-Issue: gh issue view <N> --json title,body,state,comments
-```
+**Canonical wire format lives at [`cnos.handoff/skills/handoff/dispatch/SKILL.md`](../../../../cnos.handoff/skills/handoff/dispatch/SKILL.md)** (Sub 3 of [cnos#404](https://github.com/usurobor/cnos/issues/404), shipped under [cnos#417](https://github.com/usurobor/cnos/issues/417)). That skill owns the γ / α / β prompt templates, the 7-axis implementation-contract schema (Language; CLI integration target; Package scoping; Existing-binary disposition; Runtime dependencies; JSON/wire contract preservation; Backward-compat invariant), the prompt rules (issue reference shape, explicit `Branch:` line, `--json` convention, do-not-restate-the-algorithm, do-not-smuggle-constraints), the δ-as-inward-membrane enrichment doctrine, and the four-surface mesh declaration (γ template ↔ δ enrichment ↔ α constraint ↔ β verification).
 
-**α prompt (γ produces, δ dispatches):**
-```text
-You are α. Project: <project>.
-Load src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md and follow its load order.
-Issue: gh issue view <N> --json title,body,state,comments
-Branch: cycle/<N>
-Tier 3 skills: src/packages/cnos.core/skills/write/SKILL.md, <additional issue-specific skills>
-```
-
-`write/SKILL.md` is always included — every α output is a written artifact.
-
-##### Implementation contract section (required for α prompt)
-
-γ MUST include a `## Implementation contract` section in the α prompt (and reference it from the β prompt) enumerating the 7 architectural axes that pin the cycle's shape:
-
-````markdown
-## Implementation contract (pinned by δ; α MUST NOT improvise)
-
-| Axis | Pinned value |
-|---|---|
-| Language | <Go ; Python ; TypeScript ; Markdown ; ...> |
-| CLI integration target | <`cn` subcommand ; standalone binary ; library only ; N/A> |
-| Package scoping | <e.g. `src/go/internal/cdd/...` ; `src/packages/<pkg>/...` ; N/A> |
-| Existing-binary disposition | <preserve ; replace ; deprecate ; N/A> |
-| Runtime dependencies | <list or "None"> |
-| JSON/wire contract preservation | <preserve as-is ; explicit shape change with migration ; N/A> |
-| Backward-compat invariant | <e.g. "existing rules preserved; new content additive" ; "breaking change documented in §Migration"> |
-````
-
-The 7 axes are the **implementation contract** — the architectural shape the cycle ships, distinct from the behavioral ACs the cycle satisfies. Behavioral ACs test what the implementation *does*; the implementation contract pins what the implementation *is* (language, location, integration shape).
-
-**γ's obligation.** γ writes the contract values per repo conventions or escalates to δ. **γ MUST NOT dispatch with empty / "TBD" rows.** If γ doesn't know a value, γ asks δ — the inward-membrane function (`delta/SKILL.md` §2) exists for this enrichment. δ fills the row per conventions or, if genuinely undecidable, blocks dispatch and escalates to operator-as-human. Mid-cycle contract changes are logged in `.cdd/unreleased/{N}/gamma-clarification.md`.
-
-**The mesh** (4-surface, discoverable from any one): γ template (this section) ↔ δ enrichment (`delta/SKILL.md` §2) ↔ α constraint (`alpha/SKILL.md` §3.6 — no improvising; surface unpinned rows) ↔ β verification (`beta/SKILL.md` §Role Rules Rule 7 — verify diff conforms to every pinned axis; non-conformance → RC, severity D, classification `implementation-contract`).
-
-**Empirical anchor.** cnos#389 (Python-not-Go) and cnos#391 (wrong package scoping + separate binary) both shipped wrong-shape implementations because γ under-specified and α improvised; β's behavior-only AC oracles APPROVE-d without catching the drift. cnos#392 was the first cycle where δ pinned the contract at dispatch ad-hoc; cnos#393 made the template a first-class γ obligation, enforced via the §2.5 scaffold check.
-
-- ❌ Dispatch with rows empty / "TBD" / implicit conventions ("everyone knows we use Go")
-- ❌ γ silently re-pins a row mid-cycle without logging in `gamma-clarification.md`
-- ✅ Every row populated explicitly; δ enrichment recorded; mid-cycle changes logged
-
-**β prompt (γ produces, δ dispatches):**
-```text
-You are β. Project: <project>.
-Load src/packages/cnos.cdd/skills/cdd/beta/SKILL.md and follow its load order.
-Issue: gh issue view <N> --json title,body,state,comments
-Branch: cycle/<N>
-```
-
-##### Prompt rules
-
-- point both roles at the issue, not a paraphrase of the issue
-- include the explicit `Branch: cycle/<N>` line so α and β never have to invent or glob-discover the branch
-- always use `--json title,body,state,comments` with `gh issue view` (bare `gh issue view` hits deprecated GraphQL fields)
-- do not restate the algorithm in the prompt
-- do not smuggle missing constraints into chat prose; fix the issue instead
-- β begins reviewing the cycle branch once α signals review-readiness; the β skill handles that protocol
-- β receives artifact surfaces, not α's hidden implementation rationale
+γ's role-local obligation here: **author** the dispatch prompts at the wire-format shape; **inject** the `## Implementation contract` section into the α prompt with every row populated; **escalate** to δ when a row's value is unclear; **log** any mid-cycle re-pin in `.cdd/unreleased/{N}/gamma-clarification.md` before signaling the change. The doctrine lives at handoff; the role-local procedure (γ authors the prompts during scaffold; δ reviews before routing) lives here as cycle-lifecycle coordination.
 
 Tooling and observability flags (`--allowedTools`, `--output-format stream-json --verbose`, `--permission-mode acceptEdits`) live in `harness/SKILL.md` §1–§2; γ does not restate them here.
 

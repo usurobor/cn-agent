@@ -164,7 +164,7 @@ Empirical anchor: cph#21 coherence-drift-sweep-followup wave (2026-05-18) surfac
 
 ### 7. Implementation-contract coherence
 
-Before APPROVE, β verifies the cycle's implementation conforms to the **implementation contract** pinned at dispatch (the 7 axes in `gamma/SKILL.md` §2.5 Step 3b `## Implementation contract (required for α prompt)` template: language, CLI integration target, package scoping, runtime dependencies, existing-binary disposition, JSON/wire contract preservation, backward-compat invariants).
+Before APPROVE, β verifies the cycle's implementation conforms to the **implementation contract** pinned at dispatch (the 7 axes in the `## Implementation contract (required for α prompt)` template: language, CLI integration target, package scoping, runtime dependencies, existing-binary disposition, JSON/wire contract preservation, backward-compat invariants). The canonical wire-format and schema live at [`cnos.handoff/skills/handoff/dispatch/SKILL.md`](../../../../cnos.handoff/skills/handoff/dispatch/SKILL.md); the role-side γ-template realization is at `gamma/SKILL.md` §2.5.
 
 Behavior-only ACs ("does V validate? does the parser accept the new shape?") are necessary but not sufficient for APPROVE. Implementation-contract conformance is a binding gate parallel to Rule 6's code-first oracle anchoring: where Rule 6 prevents doc-vs-code drift, Rule 7 prevents behavior-vs-shape drift. A behaviorally-correct implementation can still violate the contract by shipping in the wrong language, at the wrong package path, or as a separate binary instead of a `cn` subcommand.
 
@@ -173,11 +173,11 @@ Behavior-only ACs ("does V validate? does the parser accept the new shape?") are
 **Surface boundaries.**
 
 - α owns the constraint half (`alpha/SKILL.md` §3.6 "Implementation contract is δ's, not α's" — α MUST NOT improvise; α surfaces unpinned rows to γ/δ before coding).
-- γ owns the template half (`gamma/SKILL.md` §2.5 Step 3b — γ writes the 7-axis `## Implementation contract` section into the α prompt; γ MUST NOT dispatch with empty rows).
-- δ owns the enrichment half (`delta/SKILL.md` §2 "Inward membrane — γ contract → α-ready dispatch" — δ reviews γ's dispatch prompt, fills unpopulated rows per repo conventions, blocks dispatch if a row is genuinely undecidable).
+- γ owns the template half (`gamma/SKILL.md` §2.5 — γ writes the 7-axis `## Implementation contract` section into the α prompt; γ MUST NOT dispatch with empty rows).
+- δ owns the enrichment half (`delta/SKILL.md` §2 — δ reviews γ's dispatch prompt, fills unpopulated rows per repo conventions, blocks dispatch if a row is genuinely undecidable).
 - β owns the verification half (this rule).
 
-The four surfaces form one coherent mesh; this rule is β's role-side enforcement of the doctrine cnos#393 makes explicit.
+The four surfaces form one coherent mesh; canonical wire-format + schema + mesh declaration live at [`cnos.handoff/skills/handoff/dispatch/SKILL.md`](../../../../cnos.handoff/skills/handoff/dispatch/SKILL.md) §3.1 (Sub 3 of [cnos#404](https://github.com/usurobor/cnos/issues/404)). This rule is β's role-side enforcement of the doctrine cnos#393 codifies and cnos#417 extracts.
 
 **Empirical anchor.** cnos#389 R1 (Python-not-Go) and cnos#391 R1 (wrong package scoping + separate binary) both APPROVE-d on behavior-only AC oracles. Neither caught the implementation-contract drift, even though it was visible in the diff at review time. cnos#392 was the first cycle where δ pinned the contract at dispatch; the cycle succeeded specifically because the contract was pinned. Rule 7 makes the implementation-contract surface a first-class review gate so a future cycle's β cannot APPROVE on behavior-only oracles when the diff drifts from the contract.
 

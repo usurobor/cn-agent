@@ -168,7 +168,7 @@ For mid-cycle gate actions (per [`release-effector/SKILL.md`](../release-effecto
 
 ## 3a. δ as inward membrane: implementation-contract enrichment at dispatch
 
-**Relocated to [`delta/SKILL.md`](../delta/SKILL.md) §2 "Inward membrane" as Phase 4a of cnos#366** (cycle/397). The δ-inward-membrane doctrine — the 7 implementation-contract axes, δ's review-before-routing duty, the fill-or-escalate paths, the four-surface mesh (γ template / δ enrichment / α constraint / β verification), the cnos#389/#391/#392/#393 empirical anchors — lives there. The two-sided framing (outward + inward) and the override semantics are unified in `delta/SKILL.md`. This section's redirect is intentional: `operator/SKILL.md` retains operator-as-coordinator + harness mechanics; the role-skill content lives in `delta/SKILL.md`.
+**Canonical doctrine lives at [`cnos.handoff/skills/handoff/dispatch/SKILL.md`](../../../../cnos.handoff/skills/handoff/dispatch/SKILL.md) §"δ as inward membrane"** (Sub 3 of [cnos#404](https://github.com/usurobor/cnos/issues/404), shipped under [cnos#417](https://github.com/usurobor/cnos/issues/417)). That skill owns the 7 implementation-contract axes, δ's review-before-routing duty, the fill-or-escalate paths, the four-surface mesh (γ template / δ enrichment / α constraint / β verification), and the cnos#389/#391/#392/#393 empirical anchors. The role-local realization continues to live at [`delta/SKILL.md`](../delta/SKILL.md) §2 (the inward-membrane half of δ's two-sided framing; outward half at §1; override at §3). `operator/SKILL.md` retains operator-as-coordinator + harness mechanics only; the doctrine lives at handoff and the role-local pointer lives in `delta/SKILL.md`.
 
 ---
 
