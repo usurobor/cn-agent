@@ -71,7 +71,10 @@ no single cycle could surface.
 `.cdd/releases/{X.Y.Z}/{N}/cdd-iteration.md` at release time (per
 `release/SKILL.md §2.5a`). For docs-only releases, the path uses the §2.5b
 form: `.cdd/releases/docs/{ISO-date}/{N}/cdd-iteration.md`. The per-finding
-shape is declared in [`post-release/SKILL.md §5.6b`](../post-release/SKILL.md).
+shape is canonical at
+[`cnos.handoff/skills/handoff/receipt-stream/SKILL.md §1`](../../../../cnos.handoff/skills/handoff/receipt-stream/SKILL.md);
+the cdd-side runbook applies the rule at cycle close-out per
+[`post-release/SKILL.md §5.6b`](../post-release/SKILL.md) (pointer).
 
 **Cadence rule:** `cdd-iteration.md` is **required only when the cycle's
 receipt has `protocol_gap_count > 0`** — i.e. when the close-out triage
@@ -81,9 +84,11 @@ produced ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`,
 when the cycle ran cleanly. This is the inherited rule from
 [`ROLES.md §4b.4`](../../../../../../ROLES.md) — the receipt is the
 always-present record of *whether* an iteration file is required; the file is
-the conditional record of *what was found*. See
-[`post-release/SKILL.md §5.6b`](../post-release/SKILL.md) for the authoring
-procedure.
+the conditional record of *what was found*. The canonical wire-format home
+for the cadence rule + per-finding shape + aggregator-update procedure is
+[`cnos.handoff/skills/handoff/receipt-stream/SKILL.md`](../../../../cnos.handoff/skills/handoff/receipt-stream/SKILL.md);
+[`post-release/SKILL.md §5.6b`](../post-release/SKILL.md) is the cdd-side
+runbook (now a pointer to the canonical home).
 
 Backward compatibility: existing empty-findings `cdd-iteration.md` files
 (written under the prior every-cycle rule) remain valid artifacts. They are
@@ -91,7 +96,10 @@ no longer *required* under the new rule but are not invalid; future cycles
 with `protocol_gap_count == 0` may simply omit the file.
 
 **Aggregator:** `.cdd/iterations/INDEX.md` carries one row per cycle that
-produced an iteration artifact (per `post-release/SKILL.md §5.6b`).
+produced an iteration artifact. The row format (eight pipe-separated columns:
+Cycle / Issue / Date / Findings / Patches / MCAs / No-patch / Path) and the
+per-row update procedure are canonical at
+[`cnos.handoff/skills/handoff/receipt-stream/SKILL.md §2`](../../../../cnos.handoff/skills/handoff/receipt-stream/SKILL.md).
 
 **Cross-repo trace:** when a finding's disposition is `patch-landed` against
 a different repo, ε also writes a cross-repo bundle at
@@ -130,8 +138,13 @@ The role-collapse is one of the *safe* collapses
 - [`ROLES.md §4b`](../../../../../../ROLES.md) — generic ε doctrine; the
   authoritative source for the watched-fields invariant, the MCA discipline,
   and the ε=δ collapse rule.
-- [`post-release/SKILL.md §5.6b`](../post-release/SKILL.md) — `cdd-iteration.md`
-  authoring procedure, per-finding shape, aggregator update.
+- [`cnos.handoff/skills/handoff/receipt-stream/SKILL.md`](../../../../cnos.handoff/skills/handoff/receipt-stream/SKILL.md) —
+  canonical wire-format for the per-finding shape, INDEX.md aggregator-update
+  procedure, cadence rule, finding-disposition vocabulary, and cross-repo
+  trace bundle invariant. Migrated from `post-release/SKILL.md §5.6b` in Sub 5
+  of [cnos#404](https://github.com/usurobor/cnos/issues/404).
+- [`post-release/SKILL.md §5.6b`](../post-release/SKILL.md) — cdd-side
+  runbook (pointer); applies the receipt-stream rule at cycle close-out.
 - [`activation/SKILL.md §22`](../activation/SKILL.md) — per-repo cadence
   declaration, severity scale (D/C/B/A + `info`), auto-spawn MCA trigger.
 - [`cnos.handoff/skills/handoff/cross-repo/SKILL.md`](../../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md) — cross-repo iteration

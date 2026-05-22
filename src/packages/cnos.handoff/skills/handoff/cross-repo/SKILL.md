@@ -338,7 +338,7 @@ Required files on the cnos side:
 | File | Required? | Purpose |
 |---|---|---|
 | `LINEAGE.md` | yes | Bilateral trace + hat-collapse acknowledgment + per-patch trace per destination repo |
-| `cdd-iteration.md` | yes | The ε work product when the bilateral iteration carries ε output (per `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` and `cnos.cdd/skills/cdd/epsilon/SKILL.md §1`) |
+| `cdd-iteration.md` | yes | The ε work product when the bilateral iteration carries ε output (per `cnos.handoff/skills/handoff/receipt-stream/SKILL.md` for the canonical per-finding shape + aggregator rules; `cnos.cdd/skills/cdd/epsilon/SKILL.md §1` for ε's CDD-side role-local authority on gap-class instantiation) |
 | `<patch>.patch` | one per outbound patch | Feedback patches for the counterpart repo to apply, named descriptively |
 
 #### Case (d) — Operator-pending
@@ -588,7 +588,8 @@ Consumer protocol skills cite this skill for cross-repo doctrine. If you find cr
 
 - `cnos.cdd/skills/cdd/gamma/SKILL.md §2.1` — cross-repo proposal intake (consumer): references this skill for case (a) directional rules.
 - `cnos.cdd/skills/cdd/gamma/SKILL.md §2.7` — cross-repo proposal close-out (consumer): references this skill for `landed` emitter and master/sub rule.
-- `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` — cross-repo trace (consumer): references this skill for case (b) outbound bundle file set and §2.8 archival.
+- [`cnos.handoff/skills/handoff/receipt-stream/SKILL.md §6`](../receipt-stream/SKILL.md) — canonical wire-format home for the cross-repo trace trigger (the `patch-landed` + `Cross-repo` disposition that fires the bundle). References this skill for case (b) outbound bundle file set and §2.8 archival.
+- `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` — cdd-side runbook (pointer); applies the receipt-stream rule at cycle close-out.
 - `cnos.cdd/skills/cdd/issue/SKILL.md` minimal output pattern `## Source Proposal` block (consumer) — target-side issue-body integration; stays in `issue/`.
 - `.cdd/iterations/cross-repo/README.md` — bundle convention; references this skill for the canonical state machine.
 - `cnos.cdd/skills/cdd/epsilon/SKILL.md §1` — ε's `cdd-iteration.md` work product; relates to case (c) bilateral bundle file set §2.5.

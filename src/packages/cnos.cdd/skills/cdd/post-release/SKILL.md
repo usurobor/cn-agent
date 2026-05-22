@@ -292,52 +292,9 @@ If no `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Cycle iteration trigger
 
 ### Step 5.6b: Author `cdd-iteration.md` (when applicable)
 
-> Activation findings from `cdd/activation/SKILL.md §22` flow into this step. See [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) for the per-repo cadence declaration, severity scale (D/C/B/A + `info`), and auto-spawn MCA trigger rule.
+Receipt-stream doctrine (the per-finding shape inside `cdd-iteration.md`, the `.cdd/iterations/INDEX.md` aggregator row format + update procedure, the cadence rule, the courtesy empty-findings stub rule, and the cross-repo trace bundle invariant) is canonical at [`cnos.handoff/skills/handoff/receipt-stream/SKILL.md`](../../../../cnos.handoff/skills/handoff/receipt-stream/SKILL.md) — migrated from this section in Sub 5 of [cnos#404](https://github.com/usurobor/cnos/issues/404) ([cnos#419](https://github.com/usurobor/cnos/issues/419)).
 
-**Cadence rule:** `cdd-iteration.md` is **required only when the cycle's receipt has `protocol_gap_count > 0`** — i.e. when the close-out triage in `gamma-closeout.md` produces ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`, `cdd-tooling-gap`, or `cdd-metric-gap`. This is the inherited generic rule (see [`ROLES.md §4b.4`](../../../../../../ROLES.md) and [`cdd/epsilon/SKILL.md §1`](../epsilon/SKILL.md)). The receipt's `protocol_gap_count == 0` is the no-gap signal; no iteration file is required when the cycle ran cleanly. Backward compatibility: existing empty-findings `cdd-iteration.md` files (written under the prior every-cycle rule) remain valid artifacts — the rule is "required when `> 0`", not "forbidden when `== 0`".
-
-When the cadence rule fires (`protocol_gap_count > 0`), γ authors `.cdd/unreleased/{N}/cdd-iteration.md` — ε's work product (`ROLES.md §4b`; `cdd/epsilon/SKILL.md §1`) — extracting those findings into a structured form. This is the canonical home for cdd-self-improvement findings; PRA §3 prose remains as narrative, but the structured record lives here.
-
-See [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) for the severity scale (D/C/B/A + `info`) and the sliding-window auto-spawn MCA trigger that apply to findings within the iteration file.
-
-**Per-finding shape:**
-
-```markdown
-### F1: <title>
-
-- **Source:** α-closeout / β-review / γ-triage / PRA §3 / PRA §4b — name the artifact and section
-- **Class:** `cdd-skill-gap` | `cdd-protocol-gap` | `cdd-tooling-gap` | `cdd-metric-gap`
-- **Trigger:** §9.1 trigger N | "γ process-gap check" | "review pattern across cycles"
-- **Description:** one paragraph
-- **Root cause:** one paragraph
-- **Disposition:** `patch-landed` | `next-MCA` | `no-patch`
-
-If `patch-landed`:
-- **Patch:** `<commit-sha>` or `<file-path>`
-- **Affects:** `<cdd skill file or section>` (e.g. `cdd/review/SKILL.md` §3.13)
-- **Cross-repo:** `<target-repo>` PR `#NN` if patch landed in a different repo than this cycle (otherwise omit)
-
-If `next-MCA`:
-- **Issue filed:** `<repo>` `#NN`
-- **First AC:** ...
-
-If `no-patch`:
-- **Reason:** required justification per `cnos.cds/skills/cds/CDS.md` §"Closure" → §"Closure rule"
-```
-
-**Aggregator update.** After writing `cdd-iteration.md`, γ updates `.cdd/iterations/INDEX.md` with one row:
-
-```markdown
-| Cycle | Issue | Date | Findings | Patches | MCAs | No-patch | Path |
-|-------|-------|------|----------|---------|------|----------|------|
-| {N}   | #N    | YYYY-MM-DD | M | P | A | Z | .cdd/releases/{X.Y.Z}/{N}/cdd-iteration.md |
-```
-
-For docs-only releases, the path uses the §2.5b form: `.cdd/releases/docs/{ISO-date}/{N}/cdd-iteration.md`.
-
-**Cross-repo trace.** If any finding's disposition is `patch-landed` with a `Cross-repo` target, γ creates a cross-repo bundle at the canonical path `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/` per [`cnos.handoff/skills/handoff/cross-repo/SKILL.md`](../../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md). For an outbound iteration trace (case b), the bundle file set is `LINEAGE.md` with per-patch confirmation; for a bilateral iteration (case c), the bundle additionally carries `cdd-iteration.md` and one feedback patch per outbound destination patch. Archival follows [`cnos.handoff/skills/handoff/cross-repo/SKILL.md §"Bundle archival rule"`](../../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md) — the source-side (cnos-side, for outbound) bundle may be archived once the counterpart-side mirror confirms receipt; target-side mirrors are preserved indefinitely.
-
-**Why this artifact exists.** Without `cdd-iteration.md`, cdd-self-improvement findings are buried in PRA §3 prose. They cannot be aggregated, the protocol cannot measure its own learning rate, and cross-repo work loses traceability. Making the artifact first-class closes cdd's self-iteration loop with the same discipline cdd applies to system-level cycles. Every cycle produces the file — an empty findings list is itself signal that the cycle ran cleanly.
+post-release/SKILL.md applies the rule at cycle close-out: when the cycle's receipt has `protocol_gap_count > 0`, γ writes `.cdd/unreleased/{N}/cdd-iteration.md` per the canonical per-finding shape in [`receipt-stream/SKILL.md §1`](../../../../cnos.handoff/skills/handoff/receipt-stream/SKILL.md) and appends one row to `.cdd/iterations/INDEX.md` per the row format in [`receipt-stream/SKILL.md §2`](../../../../cnos.handoff/skills/handoff/receipt-stream/SKILL.md). When `protocol_gap_count == 0`, a courtesy empty-findings stub is permitted (cycle/401 convention) but not required. Activation findings from [`cdd/activation/SKILL.md §22`](../activation/SKILL.md#22-cdd-iteration-cadence) (per-repo cadence declaration, D/C/B/A + `info` severity scale, sliding-window auto-spawn MCA trigger) flow into this step; ε's role-local authority on the gap-class instantiation (`cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`) is at [`cdd/epsilon/SKILL.md §1`](../epsilon/SKILL.md).
 
 ### Step 5.7: Production verification
 
