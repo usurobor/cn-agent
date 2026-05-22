@@ -215,6 +215,8 @@ When γ (or δ) pushes spec changes to `origin/main` while α/β sessions are in
 - **When to propagate:** Changes to `CDD.md`, role skill files (`alpha/`, `beta/`, `gamma/`, `operator/`, `delta/`, `harness/`, `release-effector/`), `release/SKILL.md`, or `review/SKILL.md` landing on `main` while in-flight.
 - **When not to propagate:** Changes outside the CDD package, doc-only, or issues/threads.
 
+**Canonical wire-format home at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md §2.6`](../../../../cnos.handoff/skills/handoff/mid-flight/SKILL.md)** (Sub 4 of [cnos#404](https://github.com/usurobor/cnos/issues/404) / cnos#418). The wire-format invariant ("γ writes a coordination note when spec changes land on origin/main mid-flight; cycle branch is the substrate") lives at cnos.handoff; the consumer-specific file list above (which cdd skill files trigger propagation) is the CDD-side realization.
+
 *Derives from #301 §9.1: γ proposed an out-of-spec merge because σ's `4a0f678` ("merge is β authority") landed mid-cycle outside γ's loaded snapshot. The reactive fix is the staleness check in Load Order; this is the proactive side.*
 
 #### Step 5 — Unblock
@@ -228,7 +230,7 @@ When α or β is blocked, γ may: clarify requirement wording / add missing arti
 - ❌ "β said this design is shaky; just rewrite the parser like this"
 - ✅ "The issue omitted invariant X; γ adds it to the issue and points α back to the updated artifact"
 
-**Issue-edit cache-bust procedure.** When γ edits an issue body mid-cycle, γ commits a `gamma-clarification.md` entry on the cycle branch *before* signaling the edit. The cycle-branch transition is the signal; γ does not need to chat-relay. The clarification names: date, edit summary, and which ACs / non-goals / constraints / artifacts changed.
+**Issue-edit cache-bust procedure.** When γ edits an issue body mid-cycle, γ commits a `gamma-clarification.md` entry on the cycle branch *before* signaling the edit. The cycle-branch transition is the signal; γ does not need to chat-relay. The clarification names: date, edit summary, and which ACs / non-goals / constraints / artifacts changed. **Canonical wire-format home at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../../../../cnos.handoff/skills/handoff/mid-flight/SKILL.md)** (Sub 4 of [cnos#404](https://github.com/usurobor/cnos/issues/404) / cnos#418); this section retains the role-local procedure citation.
 
 ### 2.6. Steps 6–7 — Prepare release artifacts before δ tags
 
