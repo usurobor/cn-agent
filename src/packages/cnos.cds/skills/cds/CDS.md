@@ -1,5 +1,5 @@
-<!-- sections: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, empirical-anchor, related-documents, non-goals] -->
-<!-- completed: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, empirical-anchor, related-documents, non-goals] -->
+<!-- sections: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, mechanical-vs-judgment, review-clp, gate, assessment, closure, retro-packaging, large-file, empirical-anchor, related-documents, non-goals] -->
+<!-- completed: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, mechanical-vs-judgment, review-clp, gate, assessment, closure, retro-packaging, large-file, empirical-anchor, related-documents, non-goals] -->
 
 # Coherence-Driven Software (CDS)
 
@@ -1952,6 +1952,1303 @@ the v0.1 cdd cite-points above are the temporary v0.1 home.
 
 ---
 
+## Mechanical vs judgment
+
+CDS distinguishes between two classes of cycle-coherence check:
+**mechanical axes** that tools can enforce structurally (a script returns
+pass / fail; no human judgment required) and **judgment axes** that
+require an independent reviewer's frame (the failure mode is not visible
+to the author at production time; only an outside observer can call it).
+The boundary matters because conflating the two produces both directions
+of incoherence: mechanizing a judgment axis ships a check that misses
+the real failure mode; relying on judgment for a mechanical axis lets
+tool-detectable errors accumulate as review debt.
+
+The class boundary is **CDS doctrine**, not implementation discretion.
+Field 6 (actor collapse rule) names α=β as never permitted for substantive
+software work; the deeper reason is that the judgment axes below require
+an outside frame the producer cannot supply. The mechanical axes are
+configurable as project-binding CI; the judgment axes are configurable
+only as oracle quality, not as tool quality.
+
+### Mechanical axes
+
+Tool-enforceable; the project binding wires a mechanical check that the
+cycle either passes or fails. β verifies the check ran; β does not
+re-derive the verdict.
+
+- **Branch naming** — `cycle/{N}` canonical per §Development lifecycle →
+  §Branch rule. A pre-flight grep / shell-test on the branch name
+  (regex `^cycle/[0-9]+$`) is the mechanical oracle. Legacy shapes are
+  warn-only at the same surface.
+- **Version-directory presence** — for substantial release-shipping
+  cycles, `docs/{tier}/{bundle}/{X.Y.Z}/` exists at the bootstrap step
+  (Step 3 of §Step table) with a `README.md` snapshot manifest and the
+  per-deliverable stubs. A shell directory-existence check is the
+  mechanical oracle.
+- **AC accounting** — every AC named in the issue body resolves to an
+  evidence row in `self-coherence.md §ACs` before β review intake. The
+  count of AC headings in the issue body must equal the count of AC
+  evidence rows in `self-coherence.md`; mismatched count is a mechanical
+  finding β surfaces. The oracle is a grep + count.
+- **Stale-cross-reference detection** — links and `§`-anchors in the
+  cycle's touched files resolve. A mechanical link-checker (e.g. the
+  pre-commit hook implied by §Field 2's "no regressions" oracle on
+  documentation surfaces) catches dead references. The oracle is the
+  link-checker's exit code.
+- **Gate checks** — the closure-gate row-by-row checks per §Gate →
+  §Closure verification checklist below (F1–F10). Each F-row is a
+  mechanical predicate: file exists / file absent at canonical path.
+  `scripts/validate-release-gate.sh --mode pre-merge` is the v0.1
+  realization of the gate-check oracle.
+
+### Judgment axes
+
+Non-mechanical; require an independent reviewer's frame. The producer
+cannot self-verify these axes at production time — the failure mode is
+structurally invisible from the production side. β verifies through
+reading, not through running.
+
+- **Real incoherence** — the cycle's §Gap names a coherence-class
+  failure the cycle actually closes. A cycle may pass every mechanical
+  check while shipping matter that closes no real gap (cycle-for-its-own-sake;
+  the no-gap-case judgment from §Selection function). β's judgment
+  question: does the merged artifact reduce a coherence delta that was
+  named honestly, or does it close a manufactured gap?
+- **MCA vs MCI** — the cycle's mode declaration distinguishes between
+  shipping an MCA (Master Coherence Action; the gap closes durably this
+  cycle) and recording an MCI (Master Coherence Issue; the gap is named
+  for a future cycle). The boundary is judgment: an MCA that ships
+  surface-only is structurally an MCI mis-labelled. β's judgment
+  question: does the matter ship the durability the mode claims?
+- **Scoring soundness** — the α/β/γ scores assigned at PRA time per the
+  §Field 4 cadence's release artifact. The numeric grade is mechanical;
+  the soundness of the grade against what shipped is judgment. β's
+  judgment question: do the scores reflect the cycle's actual coherence
+  delta, or are they inflated / deflated against an external reference?
+- **Review convergence** — when to call review "done" versus "iterate
+  another round." The verdict-shape lint (per `review/SKILL.md §3.4a`
+  v0.1 overlay) catches mechanical convergence-failure (no `APPROVED`
+  with unresolved findings); the substantive convergence question is
+  whether one more round would surface incoherence the current set
+  missed. β's judgment question: has the review's evidence depth
+  matched the cycle's claim strength (per `review/SKILL.md §3.8` v0.1
+  overlay)?
+- **Design coherence** — whether the cycle's design choices fit the
+  surrounding system's invariant / volatile / boundary decomposition
+  (the design artifact's structural shape, per `cnos.core/skills/design/SKILL.md`
+  v0.1 overlay). A mechanically passing diff may still ship a design
+  decision that misshapes the codebase's structure. β's judgment
+  question: does the design honour the invariants the surrounding
+  system depends on?
+- **When to stop iterating** — the cycle-iteration trigger thresholds
+  (review rounds > 2; mechanical ratio > 20%; per §Assessment →
+  §Cycle iteration triggers below) are mechanical; the judgment of
+  whether iterating one more round is structurally productive (versus
+  signalling a `cds-skill-gap` or `cds-protocol-gap`) is not.
+  γ's judgment question: does the cycle's iteration profile reveal a
+  protocol gap, or is the cycle on a healthy trajectory?
+
+### Class invariants
+
+- A mechanical axis that requires human judgment to interpret its
+  output is mis-classified — the oracle is incomplete. The fix is
+  tooling, not judgment instruction.
+- A judgment axis that two reviewers consistently disagree on is a
+  `cds-skill-gap` per §Field 5 — the review-skill is under-specified
+  for the class of judgment. The fix is a skill patch (per
+  `review/SKILL.md §3.12` v0.1 overlay: "review divergence is a skill
+  gap"), not "be more careful."
+- A finding can carry both classes (e.g. a stale path is a mechanical
+  finding; the design coherence the stale path obscures is a judgment
+  finding). The finding taxonomy in `review/SKILL.md` (mechanical /
+  judgment / contract / honest-claim) permits both classes on a single
+  finding row.
+- Mechanical findings reaching review are **process bugs**. If >20% of
+  findings in a cycle are mechanical, the §Assessment → §Cycle
+  iteration triggers fires (Trigger 2: mechanical overload); the
+  cycle's process learning fires a `cds-tooling-gap` per §Field 5.
+
+### Operational realization
+
+The mechanical/judgment axis taxonomy above is CDS's canonical statement
+of where tools may enforce and where independent judgment is required.
+The v0.1 operational overlay — the specific mechanical-check scripts
+that realize each axis, the per-finding mechanical-vs-judgment
+disposition workflow β runs at review time, the divergence-as-skill-gap
+mechanics γ runs at PRA time — lives in the existing cdd role/runtime
+skills as the temporary v0.1 overlay until the v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/review/SKILL.md §"Finding Taxonomy"`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — the mechanical / judgment / contract / honest-claim taxonomy β
+  applies at review time; the rule that mechanical findings > 20% are
+  process bugs.
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.12`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — "review divergence is a skill gap" (judgment-axis divergence as
+  `cds-skill-gap` signal).
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.13`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — honest-claim verification (a/b/c/d sub-checks); the boundary between
+  mechanical-claim verification (grep-checkable: rule 3.13c wiring
+  claims) and judgment-claim verification (rule 3.13b source-of-truth
+  alignment, rule 3.13d gap claims) that lives along the mechanical /
+  judgment axis-class boundary.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §3.9`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — managerial-residue sweep (the binding γ check before any γ-skill
+  patch); the judgment-axis enforcement that catches "be more careful"
+  recommendations and rejects them.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{review,gamma,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Review CLP
+
+CDS's review surface uses a **Closed-Loop Predicate (CLP)** form — a
+contract whose three parts (TERMS, POINTER, EXIT) make the review's
+scope, evidence frame, and termination condition explicit before β reads
+a single line of diff. The CLP form is software-class — research-class
+CDR uses a different review CLP shape because the loss function differs
+(engineering review terminates on contract-coherence + execution-pass;
+research review terminates on claim-evidence alignment under uncertainty).
+
+The CLP is paired with the **reviewer ask list** — the structured output
+β emits at the end of each review round. The CLP names what β reads;
+the ask list names what β returns.
+
+### CLP form
+
+Every β review round opens with a CLP statement that pins three fields
+before evidence reading begins:
+
+- **TERMS** — the contract β reads against. Concretely: the issue body's
+  AC set; the implementation-contract axes pinned by δ at dispatch
+  (per §Field 4 inward-membrane discipline; per
+  [cnos#393](https://github.com/usurobor/cnos/issues/393) Rule 7);
+  the non-goals enumerated in the issue body; the loaded-skill set the
+  cycle's α declared in the §Mode section of `self-coherence.md`.
+  TERMS is the **closed surface** β reviews against — findings that
+  reach beyond TERMS are out-of-scope and are filed as separate issues,
+  not as findings on this round.
+- **POINTER** — the evidence surface β reads. Concretely: the cycle
+  branch's diff against `origin/main`; the cycle directory's artifact
+  set (`self-coherence.md`, prior `beta-review.md` rounds if any,
+  `gamma-scaffold.md`, `gamma-clarification.md` if mid-flight pinning
+  fired); the CI status on review-SHA; the loaded skills' content; any
+  cross-referenced canonical surfaces the cycle touches. POINTER names
+  the **evidence frame** — claims grounded outside POINTER are
+  phantom-blocker findings (rejected per `review/SKILL.md §3.5` v0.1
+  overlay).
+- **EXIT** — the termination condition. Concretely: every AC has an
+  evidence row resolving to PASS or named as a binding finding; every
+  implementation-contract axis pinned by δ resolves to coherent or
+  drift-flagged; β emits a **single terminal verdict** per round
+  (`APPROVED` or `REQUEST CHANGES`); split verdicts and conditional
+  qualifiers are forbidden (per `review/SKILL.md §3.4a` v0.1 overlay).
+  EXIT names the **shape** of the round's verdict — a round that
+  produces matter outside the EXIT shape is structurally invalid and
+  is re-emitted.
+
+The CLP is stated explicitly in `beta-review.md` per round (the round
+header carries the TERMS / POINTER / EXIT triple). Stating the CLP is
+not a ceremony — it is the contract β binds against. A review that
+reads without a stated CLP is structurally a re-derivation of the
+contract from the diff, not a verification of the diff against a
+declared contract; β cannot detect drift from a contract β did not
+state.
+
+### Reviewer ask list
+
+The ask list is β's structured output per round, written into
+`beta-review.md` alongside the per-AC evidence rows and the findings
+table. The list carries six fields, in this order:
+
+- **α/β/γ scores (per-axis)** — the round's α / β / γ grade per the
+  rubric in `release/SKILL.md §3.8` v0.1 overlay (A / A- / B+ / B / C+ /
+  C / `<C`). The provisional scores are written here; γ finalises them
+  at PRA time per the provisional-vs-final scoring rule
+  (`release/SKILL.md §2.4`).
+- **Weakest-axis diagnosis** — α, β, or γ named explicitly as the
+  weakest axis for this round, with one-paragraph rationale citing the
+  finding(s) that lowered the axis. The weakest-axis signal is what
+  §Selection function reads at the next cycle's observation step
+  (selection rule "Weakest-axis rule").
+- **Concrete patch suggestions** — for each binding finding (D / C),
+  a named patch path: a file + line range + the substantive change the
+  fix requires. The patch suggestion is structural, not a code snippet
+  — α produces the code; β names the gap. "Be more careful" is
+  rejected per `review/SKILL.md §3.12` v0.1 overlay (review divergence
+  is a skill gap, not a careful-reading exhortation).
+- **Iterate-or-converge verdict** — `iterate` (RC with named fix
+  rounds) or `converge` (APPROVED + merge instruction). The verdict
+  carries the round number so subsequent rounds can chain
+  (`Round 2 of 2`). A `converge` verdict closes the search space per
+  `review/SKILL.md §3.7` v0.1 overlay; an `iterate` verdict names the
+  next-round entry condition (which findings, in which file, with
+  which oracle).
+- **Configuration-floor flags** — if the cycle ran under
+  configuration-floor conditions (`operator/SKILL.md §5.2` single-session
+  δ-as-γ; β-α-collapse-on-δ from §Field 6), the floor caps applied
+  this round (γ ≤ A-, β ≤ A- under collapse; γ ≤ A- under §5.2;
+  γ ≤ C under CI-red; γ ≤ B- under CI-skip; γ ≤ B under false-gap
+  peer-enumeration). The flag carries the rule clause that fired
+  (`release/SKILL.md §3.8` configuration-floor / CI-red / false-gap
+  clause).
+- **Empirical-anchor cite (optional)** — when a finding's pattern
+  reproduces a known empirical-anchor cycle's failure mode, β cites
+  the anchor (e.g. cnos#391 for wrong-shape γ implementation;
+  cnos-tsc supercycle for honest-claim drift). The cite is structural
+  signal for ε's receipt-stream review (per §Field 5 cadence) —
+  recurring anchor citations across multiple cycles surface as
+  `cds-skill-gap` patterns.
+
+### Operational realization
+
+The CLP form and the reviewer ask list above are CDS's canonical
+review-surface statement. The v0.1 operational overlay — the per-phase
+β procedure (Phase 1 contract integrity, Phase 2 implementation review,
+Phase 3 verdict), the finding taxonomy (mechanical / judgment / contract
+/ honest-claim) β tags each finding with, the severity rubric (D / C /
+B / A) β assigns, the per-round output template, the merge mechanics
+β executes on `converge`, the post-merge close-out authoring β runs —
+lives in the existing cdd role/runtime skills as the temporary v0.1
+overlay until the v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/review/SKILL.md`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — the review orchestrator; the three-phase procedure
+  (`review/contract/SKILL.md`, `review/issue-contract/SKILL.md`,
+  `review/diff-context/SKILL.md`, `review/architecture/SKILL.md`); the
+  verdict rules (3.1–3.13); the §Output Format template; the §Checklist.
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.4a`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — verdict-shape lint (`APPROVED` + unresolved findings; conditional
+  qualifier; split verdicts); the recovery path that reformats
+  conditions as required-fix findings.
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.10`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — CI-green gate (β verifies required CI workflows green on review-SHA
+  before emitting APPROVED).
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.11b`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — γ-artifact-completeness gate (β verifies `gamma-scaffold.md` exists
+  on cycle branch before APPROVED).
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.13`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — honest-claim verification (a/b/c/d sub-checks for reproducibility,
+  source-of-truth alignment, wiring claims, gap claims).
+- [`cnos.cdd/skills/cdd/beta/SKILL.md`](../../../cnos.cdd/skills/cdd/beta/SKILL.md)
+  — β role contract; pre-merge gate; merge mechanics; β close-out
+  authoring.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{review,beta,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Gate
+
+The **gate** is the release-boundary check that protects a cycle's
+transition from "merged" to "tagged + released." A cycle that merges
+matter into `main` but bypasses the gate ships unreleased — the trust
+boundary on which downstream consumers depend (per the CCNF kernel's
+Scope-Lift Invariant: a closed cycle projects as α-matter at the parent
+scope only after the boundary effection records the boundary decision)
+has not been crossed. The gate names the **preconditions** that must be
+true before the release-effector mechanics run, and the **closure
+verification checklist** — the F1–F10 failure modes the gate catches.
+
+The gate is δ-owned (δ runs the release-boundary preflight per §Field 4
+outward-membrane discipline) but γ-prepared (γ stages the artifacts the
+gate verifies per §Step 12 of §Step table). The actor split matters:
+γ cannot self-verify the gate, because γ produced the matter γ is
+gating; δ verifies as an outside frame.
+
+### Release-readiness preconditions
+
+Before δ runs the release-effector mechanics, **every** precondition
+below must be observable on `origin/main`:
+
+- **Merge commit present.** β's `git merge` into `main` with `Closes #N`
+  has landed; the merge commit's SHA is recoverable; CI ran green on the
+  merge commit (per Field 2's "no regressions" oracle on adjacent
+  surfaces).
+- **CI green on merge SHA.** Required CI workflows have
+  `conclusion == "success"` on the merge commit's SHA. A red or pending
+  required workflow blocks the gate; the recovery is the release-effector
+  CI-red runbook (per `release-effector/SKILL.md` v0.1 overlay).
+- **`RELEASE.md` committed to `main`.** The GitHub release body lives at
+  the repo root, included in the release commit. Missing RELEASE.md
+  triggers F5 (below) and the gate blocks.
+- **Cycle directories moved.** Every `.cdd/unreleased/{N}/` for cycles
+  closed in this release has been moved to `.cdd/releases/{X.Y.Z}/{N}/`
+  and the move is part of the release commit (per §Artifact contract
+  → §Location matrix). Stale `.cdd/unreleased/{N}/` after the release
+  triggers F4 and the gate blocks.
+- **All close-outs present.** `alpha-closeout.md`, `beta-closeout.md`,
+  `gamma-closeout.md` all live at the canonical paths on `main`. Missing
+  any close-out triggers F1 / F2 / F3 respectively.
+- **PRA committed.** The `POST-RELEASE-ASSESSMENT.md` exists at the
+  canonical version-directory path (`docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`).
+  Missing PRA triggers F8.
+- **Cycle iteration artifact present when triggered.** If the cycle's
+  receipt has `protocol_gap_count > 0`, `.cdd/unreleased/{N}/cdd-iteration.md`
+  (or `cds-iteration.md` post-rename) exists with each finding
+  structured per §Field 5's per-finding shape, and
+  `.cdd/iterations/INDEX.md` has a row for cycle N. Missing iteration
+  artifact under triggered conditions fires F9. The courtesy empty-findings
+  stub per cnos#401 cadence rule is permitted when count is 0.
+- **No unresolved triage.** Every finding from `alpha-closeout.md`,
+  `beta-closeout.md`, and the PRA carries a disposition (immediate MCA
+  / project MCI / agent MCI / drop). Unresolved triage triggers F10.
+- **γ closure declaration on `main`.** `gamma-closeout.md` is the
+  closure-declaration artifact; its commit hash on `main` is the
+  signal that γ has declared closure. δ does **not** tag before this
+  signal (per the operator/SKILL.md §3.4 doctrine; per F6).
+
+The preconditions are conjunctive: all must hold simultaneously.
+A preflight that finds any precondition false returns "Request changes"
+(δ routes the gap back to γ); a preflight that finds all preconditions
+true returns "Proceed" (δ runs the release-effector mechanics); δ may
+override per the override doctrine (§Field 4 boundary decision) with
+the override block recorded on the receipt.
+
+### Closure verification checklist
+
+The 10 failure modes below — F1 through F10 — are the gate's named
+checks. Each F-row is a mechanical predicate (file exists / file absent
+at canonical path; commit ordering; field present) whose oracle is the
+gate-check script (`scripts/validate-release-gate.sh --mode pre-merge`
+in the v0.1 realization). The F-anchors are **stable cross-reference
+targets**: cdd skill files (and post-#403, the CDS-side role overlays)
+cite the F-anchors when naming which closure-gate row a finding maps
+to; Sub 6 of cnos#403 re-points the citations from
+`gamma/SKILL.md §2.10` / `release/SKILL.md` at these anchors.
+
+#### F1: Missing α close-out
+
+`.cdd/unreleased/{N}/alpha-closeout.md` does not exist on `origin/main`
+at gate-check time. α's role-local findings record is absent; γ cannot
+complete the close-out triage (per §Closure below); the cycle's α-axis
+signal is unrecorded.
+
+**Recovery:** γ requests δ to re-dispatch α via the close-out prompt
+(per `cnos.cdd/skills/cdd/CDD.md §1.6a` v0.1 overlay). The provisional
+fallback (α writes `[provisional]` at review-readiness; pre-merge gate
+accepts the form) is acceptable for non-tagged docs-only cycles but
+not for tagged releases — full close-out via δ re-dispatch is the
+normative path. F7 is the related anchor for the re-dispatch mechanism.
+
+#### F2: Missing β close-out
+
+`.cdd/unreleased/{N}/beta-closeout.md` does not exist on `origin/main`
+at gate-check time. β's review-context and merge-evidence record is
+absent; γ cannot complete the close-out triage; the cycle's β-axis
+signal is unrecorded.
+
+**Recovery:** γ requests δ to re-dispatch β for close-out authoring.
+β authors `beta-closeout.md` in the same session as the merge commit
+under the canonical path; re-dispatch is the exception, not the rule.
+
+#### F3: Missing γ close-out (no closure declaration)
+
+`.cdd/unreleased/{N}/gamma-closeout.md` does not exist on `origin/main`
+at gate-check time. γ has not declared closure; the cycle has not closed
+in the structural sense (it has only stopped). δ MUST NOT tag before
+γ closure declaration.
+
+**Recovery:** γ runs the closure gate (§Closure → §Closure rule below);
+if every row passes, γ writes `gamma-closeout.md` with the closure
+declaration ("Cycle #N closed. Next: #M.") and commits to main. If
+any closure-gate row fails, γ remediates the underlying gap (re-dispatch
+α/β; author missing artifact) before re-running the gate.
+
+#### F4: Stale `.cdd/unreleased/{N}/` after release
+
+The per-cycle directory at `.cdd/unreleased/{N}/` still exists on
+`origin/main` after the release commit. The cycle-directory move
+(`.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/`) was skipped or
+landed after the release commit (instead of in it). The cycle loses
+its version association; the §Frozen snapshot rule (§Artifact contract)
+is structurally broken.
+
+**Recovery:** γ moves the directory in a follow-up commit on `main`
+referenced from the PRA; the corrective commit cites F4 explicitly.
+For future cycles, γ executes the move **before** requesting δ tag,
+per `release/SKILL.md §2.5a` v0.1 overlay.
+
+#### F5: Missing `RELEASE.md`
+
+`RELEASE.md` does not exist at the repo root in the release commit.
+The GitHub release CI workflow falls back to auto-generated sparse
+notes (commit titles only); the coherence-delta framing the release
+body is supposed to carry (per `release/SKILL.md §2.5` v0.1 overlay)
+is lost; the release ships under-described.
+
+**Recovery:** γ authors `RELEASE.md` per the format spec
+(§Outcome / §Why it matters / §Fixed / §Added / §Changed / §Removed /
+§Validation / §Known Issues) and commits to `main` **before** requesting
+δ tag. The release body is overwritten via `gh release edit` if the
+tag has already pushed; the F5 finding is recorded in the cycle's
+`gamma-closeout.md`.
+
+#### F6: δ tag ordering violation
+
+δ pushed a tag (`X.Y.Z`) before `gamma-closeout.md` existed on `main`.
+The release boundary fired before γ declared closure; the cycle's
+structural closure (per §Field 4 outward-membrane discipline) is
+inverted — δ recorded the boundary decision before the cycle was
+ready to cross the boundary. F6 is the most-severe gate violation
+because it cannot be reversed cleanly (a pushed tag is git-observable
+to every downstream consumer).
+
+**Recovery:** δ does not delete the tag (force-deletion of pushed tags
+breaks every downstream `cn update` consumer). Instead, γ writes the
+missing `gamma-closeout.md` immediately, files an F6 finding in
+`cdd-iteration.md` per §Field 5's per-finding shape, and the override
+block on the cycle's receipt records `transmissibility: degraded` per
+the structural override rule (per `schemas/cdd/receipt.cue`). The
+debt-cycle that closes the override (per §Field 4 cadence triggers)
+re-establishes the structural ordering for future cycles.
+
+#### F7: Missing α close-out re-dispatch mechanism
+
+The cycle's actor configuration cannot re-dispatch α post-merge (e.g.
+sequential-bounded-dispatch terminated α's session at review-readiness;
+operator-class agents have no re-dispatch primitive available). F1
+(missing α close-out) cannot be remediated by re-dispatch because the
+re-dispatch mechanism itself is absent. F7 is the **meta-finding**
+that F1 is structurally un-remediable at this actor configuration.
+
+**Recovery:** γ accepts the provisional fallback (α writes `[provisional]`
+close-out at review-readiness; the pre-merge gate accepts the form
+per §Ownership matrix); the cycle is marked as carrying a provisional
+close-out in `gamma-closeout.md`; the next cycle's α-axis signal carries
+the provisional flag. For tagged release cycles, F7 forces a
+configuration-change cycle that lands re-dispatch primitives before
+the next release.
+
+#### F8: Missing PRA
+
+`POST-RELEASE-ASSESSMENT.md` does not exist at the canonical
+version-directory path
+(`docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). The cycle
+has no measured coherence delta; the encoding-lag-table update is
+missing; the next cycle's §Selection function has no PRA to read at
+its "Assessment-commitment default" rule. The §Closure rule cannot
+fire because §Immediate outputs cannot resolve without the PRA's
+process-learning section.
+
+**Recovery:** γ authors the PRA per §Assessment → §PRA contents below;
+the PRA commit precedes the closure declaration. For docs-only releases,
+the PRA lives at `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md`
+per the `release/SKILL.md §2.5b` v0.1 overlay form; the canonical path
+shape is unchanged.
+
+#### F9: Missing `cdd-iteration.md` when triggers fired
+
+The cycle's receipt has `protocol_gap_count > 0` (≥1 finding tagged
+`cds-skill-gap` / `cds-protocol-gap` / `cds-tooling-gap` /
+`cds-metric-gap`; or the pre-rename `cdd-*-gap` taxonomy for legacy
+cycles), but `.cdd/unreleased/{N}/cdd-iteration.md` is absent or
+`.cdd/iterations/INDEX.md` has no row for cycle N. ε's per-cycle
+protocol-iteration artifact (per §Field 5 cadence) is missing under
+triggered conditions; the protocol cannot measure its own learning
+rate.
+
+**Recovery:** γ authors `cdd-iteration.md` (or `cds-iteration.md`
+post-rename) per §Field 5's per-finding shape; the aggregator
+`.cdd/iterations/INDEX.md` row is appended in the same commit; if
+any finding's disposition is `patch-landed` with a cross-repo target,
+the cross-repo bundle at `.cdd/iterations/cross-repo/{counterpart}/{slug}/`
+is created. The cnos#401 courtesy empty-findings stub is **not** a
+remedy for F9 — F9 fires only when triggers fired (count > 0); the
+stub applies only when count is 0.
+
+#### F10: Unresolved triage
+
+A finding from `alpha-closeout.md`, `beta-closeout.md`, or the PRA
+carries no disposition (no `immediate MCA` / `project MCI` / `agent MCI`
+/ `drop` row in γ's triage table). Silence is not a disposition per
+`gamma/SKILL.md §3.7` v0.1 overlay; the cycle has unowned coherence
+gaps at closure time.
+
+**Recovery:** γ adds a disposition row for every finding before
+writing `gamma-closeout.md`. "Drop" is a valid disposition only when
+explicit and reasoned — the drop row carries the finding ID and a
+one-sentence rationale. A `noted for next cycle` row that does not
+file an issue is structurally a `drop` row mis-labelled and fires
+F10 on re-check.
+
+### Operational realization
+
+The release-readiness preconditions and the F1–F10 closure verification
+checklist above are CDS's canonical gate statement. The v0.1 operational
+overlay — the row-by-row gate-check script, the per-precondition
+verification command sequence, the δ release-boundary preflight
+procedure, the F-anchor recovery runbooks, the merged-branch deletion
+mechanics — lives in the existing cdd role/runtime skills as the
+temporary v0.1 overlay until the v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/release/SKILL.md`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — the release-readiness-check procedure (§2.1); the version-decision
+  procedure (§2.2); the release-commit + tag-push sequence (§2.6); the
+  CI-wait + deploy + validate sequence (§2.7–§2.9); the
+  configuration-floor clause (§3.8) that ties closure-gate failures to
+  the C_Σ override.
+- [`cnos.cdd/skills/cdd/release/SKILL.md §2.5a`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — cycle-directory move (`.cdd/unreleased/{N}/` →
+  `.cdd/releases/{X.Y.Z}/{N}/`); the F4 mechanical realization.
+- [`cnos.cdd/skills/cdd/release/SKILL.md §2.5b`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — docs-only disconnect (no tag); the docs-only release path that
+  shares F1–F10 verification but bypasses the tag-ordering F6 check.
+- [`cnos.cdd/skills/cdd/release/SKILL.md §3.8`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — closure-gate override (forces `C_Σ` to `<C` when any close-out
+  artifact is absent at merge time); the F1 / F2 / F3 mechanical
+  realization. Verified by `scripts/validate-release-gate.sh --mode
+  pre-merge` per cnos#339 AC1.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.10`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — γ's closure gate; the 14-row row-by-row check (rows 1–14) that
+  realizes F1–F10 across the cycle's closure preconditions; the
+  closure-declaration commit that signals F3 PASS.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.6–§2.9`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — γ's release-preparation steps (`RELEASE.md` author per F5; cycle-directory
+  move per F4; close-out triage per F10; PRA author per F8;
+  cycle-iteration trigger assessment per F9).
+- [`cnos.cdd/skills/cdd/operator/SKILL.md §3`](../../../cnos.cdd/skills/cdd/operator/SKILL.md)
+  — δ-as-operator gate doctrine; "Do not tag/release before
+  `gamma-closeout.md` exists on main" (F6); "δ blocks release completion
+  until CI is green or operator explicitly accepts a known pre-existing
+  failure"; the gate-action-on-request-not-observation rule.
+- [`cnos.cdd/skills/cdd/operator/SKILL.md §3.1`](../../../cnos.cdd/skills/cdd/operator/SKILL.md)
+  — the external-actions table (pre-merge gate validation, push merge,
+  release-boundary preflight, tag push + release, branch delete,
+  issue filing on external repos, force push, auth refresh).
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{release,gamma,delta,operator,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Assessment
+
+The **post-release assessment (PRA)** is γ's per-cycle observation
+artifact at the canonical version-directory path
+(`docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). One PRA
+per release; no exceptions. The PRA measures what the release actually
+shipped against what the cycle's contract claimed, records the
+encoding-lag table, runs the cycle-iteration trigger check, and
+commits the next-move concretely. The PRA feeds §Selection function's
+"Assessment-commitment default" rule at the next cycle's observation
+step; a release without a PRA is structurally a release without a
+next-cycle handoff.
+
+The PRA is **γ-owned**, not β-owned, by structural argument: the PRA
+measures β's review quality, and β assessing β's own review quality
+is the self-grading problem the role separation is designed to avoid
+(per §Field 6 actor collapse rule). γ holds the cycle-level observational
+authority — γ sees both α's matter and β's review, but γ does not
+author either. γ writes the PRA after β's merge and β close-out have
+landed.
+
+### PRA contents
+
+The PRA carries seven canonical sections plus the trace + hub memory
+row. Each section is required; explicit "not applicable" with rationale
+is permitted only on sections that name themselves as conditional. The
+section vocabulary below is the canonical CDS shape; the per-section
+authoring detail (what each field measures, what the table cells
+contain) lives in the v0.1 operational overlay.
+
+- **§1 Coherence Measurement** — baseline (previous release's α / β /
+  γ scores from the CHANGELOG TSC table); this release's α / β / γ
+  scores; the **coherence delta** (which axes improved / held /
+  regressed and why); the coherence-contract-closed verdict (was the
+  cycle's named gap actually closed? if not, what remains?). This
+  section anchors the §Selection function's weakest-axis rule for the
+  next cycle.
+- **§2 Encoding Lag** — the cross-cycle backlog of converged-but-not-shipped
+  design commitments. Every open design issue and every open process
+  issue appears as a row (Issue / Title / Type / Design / Impl / Lag).
+  Lag levels: `none` (shipped this or prior release), `low`
+  (implementation in progress), `growing` (design converged, no
+  implementation started), `stale` (design aging without implementation
+  plan). The **MCI/MCA balance decision** (balanced / freeze MCI /
+  resume MCI) is mandatory; every release states the balance with
+  rationale.
+- **§3 Process Learning** — three questions: what went wrong, what
+  went right, what skill patches are needed. Active skill re-evaluation:
+  for each review finding, would the loaded skills (as written) have
+  prevented it? Underspecified → patch the skill (§Step 5 of the v0.1
+  procedure); application gap → note it. Explicit CDS-improvement
+  disposition is mandatory: patch landed (description + commit) OR
+  no-patch-needed (justification per the three valid justifications:
+  application gaps with adequate spec, zero findings, or environmental
+  failure with no spec-level fix).
+- **§4 Review Quality** — review-rounds-per-cycle counts (target ≤1
+  docs, ≤2 code); superseded cycles count (target 0); finding-class
+  breakdown (mechanical / wiring / honest-claim / judgment / contract);
+  mechanical-ratio (threshold 20% with ≥10 findings — fires §Cycle
+  iteration triggers Trigger 2); honest-claim ratio (target <30%; high
+  ratio means α docs drifting from artifacts). Section §4 closes the
+  loop on β's per-cycle review-axis signal.
+- **§4a CDS Self-Coherence** — CDS-axis scoring of the cycle itself:
+  CDS α (artifact integrity — required artifacts present? bootstrap /
+  frozen snapshot complete?); CDS β (surface agreement — canonical doc,
+  executable skill, cycle artifacts, changelog, and assessment agree?
+  authority conflicts or stale references?); CDS γ (cycle economics —
+  review rounds within target? mechanical ratio under threshold?
+  immediate outputs executed?). Weakest-axis named; action stated
+  (patch skill / patch doc / automate check / none).
+- **§5 Production Verification** — a concrete executable scenario that
+  demonstrates the new capability (or blocked failure mode) in a real
+  environment. "CI passes" is not production verification — it is
+  build verification. If the change is structural (L7), the scenario
+  demonstrates the boundary move, not just a single path. Result:
+  pass / fail / deferred (with commitment to when/how).
+- **§7 Next Move** — the concrete next-cycle commitment: next MCA
+  issue number, owner, target branch name, first AC to close, MCI
+  freeze/resume state, rationale. This is the §Closure → §Deferred
+  outputs surface; the PRA's §7 is what the next cycle's §Selection
+  function reads at "Assessment-commitment default" time. Closure
+  evidence: immediate outputs executed (with links/commits); deferred
+  outputs committed (issue # / owner / branch / first AC / freeze
+  state per outpost).
+
+Two additional rows are part of the PRA's structural surface:
+
+- **§4b Cycle Iteration** — the §9.1 trigger assessment (see §Cycle
+  iteration triggers below). Required when any trigger fired; permitted
+  as "No §9.1 trigger fired" when none did.
+- **§8 Hub Memory** — the operational state the next session loads to
+  orient (daily reflection path + commit SHA; adhoc thread(s) updated
+  + commit SHA). Hub memory is external to the repo but the PRA records
+  the path / commit-sha / unavailable-reason; verifiers do not inspect
+  the external hub directly.
+
+### Cycle iteration triggers
+
+A §9.1 trigger is a per-cycle process-learning signal that the cycle's
+protocol substrate (its skills, its tooling, its operator configuration)
+needs patching. When a trigger fires, the PRA's §4b Cycle Iteration
+section is mandatory; γ records the trigger, the root cause, the
+disposition (patch landed / next MCA / no-patch with reason), and the
+evidence (commit / issue / note). The four canonical triggers below
+are the **§9.1 anchor set** — citing skill files (and post-#403, the
+CDS-side role overlays) reference them by trigger number; Sub 6 of
+cnos#403 re-points the `CDD.md §9.1` citations at this section's
+anchors.
+
+1. **Review churn — review rounds > 2.** The cycle required more than
+   two rounds of β review before merge. Signal: the contract was
+   under-specified (the issue body's ACs were ambiguous), or the AC
+   oracle was insufficient, or α's skill was under-specified for the
+   matter class. Disposition: γ patches the issue-quality gate (per
+   `gamma/SKILL.md §2.4` v0.1 overlay) when the gap is clear, or
+   files a next-MCA naming the specific gap.
+
+2. **Mechanical ratio > 20% (with ≥10 findings).** Mechanical-class
+   findings (per the §Mechanical vs judgment axis-class above) exceed
+   20% of total findings on a single cycle, and total findings ≥10
+   (the floor prevents noise on small cycles). Signal: tooling-class
+   gap — a check that should be in CI is being run by β manually; a
+   pre-commit hook is missing; a mechanical validator does not exist
+   for the surface class. Disposition: γ files a `cds-tooling-gap`
+   per §Field 5, with concrete next-MCA naming the missing check
+   (validator name, input surface, oracle).
+
+3. **Avoidable tooling / environmental failure.** The cycle was
+   blocked by a tooling or environment failure that a CDS tooling
+   artifact could have prevented (e.g. the harness's polling
+   `git fetch` reliability re-probe per §Coordination surfaces →
+   §Polling primitives; the dispatch timeout budget per `CDD.md §1.6c`
+   v0.1 overlay; a missing CI workflow that the cycle's δ-pinned
+   contract required). Signal: `cds-tooling-gap`. Disposition: γ patches
+   the tooling guard now when the fix is clear (shell snippet, hook,
+   config change), files a next-MCA when the fix requires design.
+
+4. **Loaded skill failed to prevent a finding.** A finding surfaced
+   despite the relevant skill being loaded; the skill's procedure did
+   not catch the class of error. Signal: `cds-skill-gap` — the
+   skill's procedure is under-specified for the failure-mode
+   geometry. Disposition: γ patches the skill in the same commit as
+   the PRA (per CDD §13a's "patch in the same commit" rule) when the
+   patch is clear; otherwise files a concrete next-MCA naming the
+   specific skill, the specific procedure step, and the failure-mode
+   geometry the skill missed.
+
+Each fired trigger must end in exactly one of three states: **patch
+landed now**, **concrete next MCA committed**, or **explicit no-patch
+decision with reason**. Silence is not a disposition; "noted for next
+cycle" is structurally a `next-MCA` row mis-labelled (and fires F10
+of §Gate's closure verification checklist on re-check).
+
+The four-trigger set is intentionally narrow. Two additional patterns
+are valid signals but are routed differently:
+
+- **CI red on merge commit (post-merge)** — appears as a §4 Review
+  Quality observation (per the post-release/SKILL.md §4b row) and as
+  a §Gate F-anchor recovery path (red on merge SHA fires the gate's
+  CI-green precondition). The CI-red configuration-floor cap
+  (γ ≤ C per `release/SKILL.md §3.8`) fires regardless of whether a
+  §9.1 trigger fires.
+- **AC oracle ambiguity recurrence across cycles** — signal that
+  emerges from ε's receipt-stream review (§Field 5), not from a single
+  cycle's PRA. The PRA records the per-cycle observation; ε aggregates
+  across cycles to detect recurrence.
+
+### Friction log
+
+The PRA carries a **friction log** entry for each non-trigger
+process-friction observation γ surfaces during cycle close-out. The
+friction log is the prose-shaped record that feeds the next cycle's
+§Selection function (stale-backlog re-evaluation rule) and ε's
+receipt-stream review.
+
+Each friction-log row carries four fields:
+
+- **Root cause classification** — what kind of friction this is:
+  process (cycle-coordination friction; γ-axis signal); skill
+  (the loaded skill set did not cover the case; α-axis or β-axis
+  signal); tooling (a mechanical check is missing or wrong;
+  γ-axis signal); environmental (sandbox, network, identity wiring;
+  out-of-system signal); contract (the issue body's contract was
+  ambiguous; γ-axis signal).
+- **Skill impact** — which skill(s) the friction implicates, named
+  by path (e.g. `cnos.cdd/skills/cdd/gamma/SKILL.md §2.5`). A
+  friction-log row that names no skill is structurally an environmental
+  finding mis-classified; environmental findings explicitly carry
+  "no skill" with a rationale.
+- **MCA (next master coherence action)** — the concrete next step:
+  issue # (filed or to-be-filed); owner; first AC. If the friction
+  does not warrant an MCA (one-off; environmental with no spec-level
+  fix), the row carries "no MCA" with rationale.
+- **Disposition** — the same four-state shape as cycle-iteration
+  triggers (patch landed / next MCA / no-patch / drop). The friction
+  log is structurally lighter than §4b — it surfaces below-threshold
+  observations that did not trip a §9.1 trigger but still warrant
+  γ's attention.
+
+### Engineering levels
+
+The PRA records the cycle-level **engineering level** (L5 / L6 / L7)
+per the canonical framework at
+[`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/gamma/ENGINEERING-LEVELS.md).
+The Level column appears in the CHANGELOG TSC ledger row (per
+§Artifact contract → §Ownership matrix); the PRA names the level and
+its rationale.
+
+The three levels (cited from `ENGINEERING-LEVELS.md`):
+
+- **L5 — Local Correctness.** The cycle ships matter that is locally
+  correct: the implementation produces the right output for the named
+  inputs; the test suite passes; the contract's ACs are met. L5 is
+  the floor for any CDS cycle — a cycle that does not reach L5 has
+  not shipped.
+- **L6 — System-Safe Execution.** The cycle ships matter that is
+  safe-to-execute in the surrounding system: no regressions on
+  adjacent surfaces; documented behaviours preserved; CI green on
+  merge commit; the implementation-contract axes pinned by δ at
+  dispatch are honoured. L6 is the floor for any tagged release —
+  a sub-L6 cycle ships as `<C` per `release/SKILL.md §3.8`
+  configuration-floor.
+- **L7 — System-Shaping Leverage.** The cycle ships matter that
+  changes the surrounding system's structure — boundary moves, new
+  invariants pinned, deprecated surfaces removed, architectural
+  decompositions revised. L7 is the level of substantial design
+  cycles (per the §Selection function's maximum-leverage rule); L7
+  cycles' PRAs carry an L7 essay in `docs/gamma/essays/` when the
+  structural change is large enough to warrant standalone
+  rationale-record.
+
+The PRA's Level row names the level and a one-paragraph rationale
+citing the structural reach of the cycle. Score-the-release-not-the-intent
+applies: an L7-intended cycle that ships only L5 matter records L5
+with rationale.
+
+### Operational realization
+
+The PRA contents, the four §9.1 cycle-iteration triggers, the friction
+log, and the L5/L6/L7 framework above are CDS's canonical assessment
+statement. The v0.1 operational overlay — the per-section authoring
+procedure, the scoring rubric and geometric-mean computation, the
+encoding-lag-table population workflow, the MCI/MCA balance decision
+procedure, the hub-memory write sequence — lives in the existing cdd
+role/runtime skills as the temporary v0.1 overlay until the v1 CDS-side
+role rewrite:
+
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — the PRA procedure (Steps 1–7); the output-template (§1 Coherence
+  Measurement through §8 Hub Memory); the pre-publish gate (the
+  mechanical checklist that two agents independently verifying the
+  same template must produce the same list of missing fields).
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — CDD self-coherence scoring (CDS α / β / γ axes); the weakest-axis
+  action selection.
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6a`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — §9.1 cycle-iteration per-trigger authoring (name trigger / root
+  cause / disposition / evidence).
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — `cdd-iteration.md` (or `cds-iteration.md` post-rename) authoring;
+  the per-finding shape; the aggregator update; the cross-repo trace
+  rule.
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.7`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — production-verification scenario authoring; the executable-not-hypothetical
+  discipline.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.7`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — close-out triage; the four-disposition shape (immediate MCA /
+  project MCI / agent MCI / drop); the post-merge CI-verification
+  precondition.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.8`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — cycle-iteration-trigger enforcement (per-trigger γ action; closure
+  rule); the four-trigger table that realizes the §9.1 triggers
+  operationally.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.9`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — independent γ process-gap check (even when no §9.1 trigger fired,
+  γ asks the four questions; states why-not in one sentence when no
+  patch is needed).
+- [`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/gamma/ENGINEERING-LEVELS.md)
+  — the L5 / L6 / L7 framework cited above; the per-level definitions,
+  typical behaviors, strengths, limits, and signals.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{post-release,gamma,assessment,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Closure
+
+**Closure** is the final cycle state — the structural transition from
+"merged + released" to "cycle complete." A cycle that has merged matter
+and crossed the release boundary has not yet *closed* in the CDS sense
+— closure requires that **immediate outputs** are executed, **deferred
+outputs** are committed, and (when triggered) cycle-iteration artifacts
+are written. The Closure rule below names the conjunction; γ declares
+closure in `gamma-closeout.md` only after the conjunction holds.
+
+Closure is the discipline that prevents the "stopped, not closed"
+failure mode — a cycle whose matter ships but whose downstream
+coherence work (skill patches, hub-memory updates, next-cycle handoff,
+process learning) trails into next sessions and accumulates as
+process debt. The §Closure rule is structurally the same rule
+§Gate F10 (unresolved triage) catches at the gate; F10 is the
+release-time mechanical realization of the Closure rule's "no
+unresolved triage" precondition.
+
+### Immediate outputs
+
+Outputs executed **in the same session** as the PRA / `gamma-closeout.md`
+commit. Immediate outputs close the per-cycle learning loop before the
+cycle records itself as closed; deferring them into the next cycle is
+structurally a `cds-protocol-gap` (silence is not a disposition; the
+§Closure rule does not fire on a cycle whose immediate outputs are
+"noted for next cycle").
+
+The seven canonical immediate-output classes:
+
+- **Changelog corrections.** Any TSC ledger row drift between β's
+  release-time provisional scores and γ's PRA-time final scores;
+  any missing Level / Rounds column entry; any provisional marker
+  still present after γ's PRA. The change lands in the same commit
+  as the PRA per the provisional-vs-final scoring rule
+  (`release/SKILL.md §2.4` v0.1 overlay).
+- **Missing documentation.** Documentation surfaces that describe
+  current behaviour but lagged the cycle's behaviour change. Updated
+  in the same commit as the PRA (per §Artifact contract → §Supporting
+  rules: "update docs before release" — when documentation lag is
+  caught at closure rather than at merge, the immediate output is
+  the patch that closes the lag).
+- **Skill / process micro-patches.** Patches to cdd or cds skills
+  whose under-specification caused a finding this cycle. Micro-patches
+  are landed when the gap is clear; larger patches become next-MCA
+  rows in §Deferred outputs. The micro-patch is synced across the
+  canonical source (`src/packages/`), any package-visible loader
+  entrypoint (`SKILL.md`), and any human-facing pointer surface that
+  exposes the changed rule (per `post-release/SKILL.md §5` Step 5).
+- **Skill patches from cycle iteration.** When §Assessment → §Cycle
+  iteration triggers fired and the disposition is `patch landed now`,
+  the patch lands in the same commit as the PRA (per CDD §13a's
+  same-commit rule). A `patch landed now` disposition with the patch
+  deferred to a separate commit is structurally a `next-MCA`
+  disposition mis-labelled.
+- **Issue filing.** Any next-MCA whose first-AC is concrete enough
+  to file as a GitHub issue is filed in the same session, with the
+  filed issue number recorded in §Deferred outputs below. An MCA
+  named in the PRA without a filed issue is structurally a deferred
+  output without commitment (and fires F10 if it lacks disposition).
+- **Lag-table updates.** The encoding-lag table at the PRA's §2 is
+  populated with every open design / process issue, with current
+  lag levels (none / low / growing / stale); shipped-this-release
+  issues drop off; new converged-but-unimplemented designs are
+  added. The lag-table update happens in the PRA commit, not in a
+  separate session.
+- **Hub-memory writes.** Daily reflection (the operational state
+  the next session loads to orient) and adhoc-thread updates (which
+  ongoing thread(s) this release advances). Hub memory is external
+  to the repo; the PRA records the path + commit-sha + unavailable-reason
+  per §Assessment → §PRA contents §8. Skipping hub memory creates
+  a compaction gap that the next session cannot recover from.
+
+### Deferred outputs
+
+Outputs **committed** to a downstream cycle. Deferred outputs are not
+deferred decisions — they are decisions made this cycle with execution
+scheduled for the named downstream surface. The commitment is structural:
+a deferred output must carry a downstream identity (issue number,
+owner, branch) and a per-cycle first-AC.
+
+The five canonical deferred-output fields:
+
+- **Next-MCA issue number.** The specific GitHub issue number that
+  encodes the next master coherence action. If the issue does not yet
+  exist, filing it is an immediate output (per §Immediate outputs
+  above); the §Deferred outputs row carries the filed-now issue
+  number.
+- **Owner.** The role-or-persona that owns the next-MCA's execution.
+  Typically `γ-the-operator` for cycle-coordination MCAs;
+  `cds-skill-owner` for skill patches; a named persona hub for
+  persona-class work. An MCA without an owner is structurally an
+  un-dispatched cycle (no one runs it).
+- **Target branch name.** The cycle/{N} branch name the next-MCA's
+  α will work on. `cycle/{N}` per §Development lifecycle → §Branch
+  rule (where N is the next-MCA's issue number). A deferred output
+  with `pending branch creation` is acceptable when the next-MCA's
+  γ has not yet created the branch — γ creates the branch at the
+  next cycle's Step 2.
+- **First AC.** The concrete first acceptance criterion that ships
+  in the next-MCA. The first-AC is what the next cycle's α binds
+  against at intake; a next-MCA with an under-specified first-AC
+  fires the §Selection function's "issue-quality gate" at the next
+  cycle's bootstrap step.
+- **MCI freeze / resume state.** The state of the §Selection function
+  MCI freeze flag after this cycle (frozen / resumed / no-change).
+  `Frozen` means the next substantial MCA must come from the stale
+  set (per the §MCI freeze check rule). `Resumed` means implementation
+  has caught up to the design frontier. `No-change` means the prior
+  state continues.
+
+### Closure rule
+
+A cycle closes **only when all three conjuncts hold**:
+
+1. **Immediate outputs executed** — every item in §Immediate outputs
+   above has either landed in this cycle's commits or been explicitly
+   ruled out with rationale. "Noted for next cycle" without a filed
+   next-MCA row is not "ruled out."
+2. **Deferred outputs committed** — every §Deferred outputs field
+   is populated; the next-MCA issue exists; the owner is named; the
+   target branch name is declared (or `pending branch creation` with
+   the next cycle's γ named); the first-AC is concrete; the MCI
+   freeze state is declared.
+3. **Cycle iteration present if triggered** — if any §Assessment →
+   §Cycle iteration triggers fired, the PRA's §4b Cycle Iteration
+   section is authored and `cdd-iteration.md` (or `cds-iteration.md`
+   post-rename) exists at the canonical path with each finding
+   structured per §Field 5's per-finding shape, and
+   `.cdd/iterations/INDEX.md` has a row for cycle N. The cnos#401
+   cadence rule applies: required only when `protocol_gap_count > 0`;
+   courtesy empty-findings stub permitted when count is 0.
+
+When all three conjuncts hold, γ writes `gamma-closeout.md` with the
+**closure declaration** — the explicit statement *"Cycle #N closed.
+Next: #M."* This is γ's last commit on the cycle's surfaces;
+the closure-declaration commit's SHA on `main` is the structural
+signal that the cycle has crossed from "released" to "closed." δ's
+disconnect-release tag appearing on `main` after the closure-declaration
+commit is the **observable proof** that all gate actions completed
+and the cycle is fully closed.
+
+A cycle that has stopped without closing (matter shipped; releases
+tagged; but immediate outputs unexecuted, deferred outputs uncommitted,
+or cycle-iteration absent under triggered conditions) is **structurally
+in-flight** until the conjunction holds. The next cycle's γ inherits
+the unfinished close-out work as immediate outputs of the next
+cycle — but the deferred-output cost compounds: the lag-table grows;
+the next-MCA handoff is unanchored; ε's receipt-stream review surfaces
+the closure gap as a `cds-protocol-gap` finding.
+
+### Operational realization
+
+The immediate outputs, deferred outputs, and closure rule above are
+CDS's canonical closure statement. The v0.1 operational overlay — the
+per-output execution mechanics, the closure-gate row-by-row check,
+the closure-declaration authoring procedure, the next-MCA filing
+workflow, the hub-memory write sequence — lives in the existing cdd
+role/runtime skills as the temporary v0.1 overlay until the v1 CDS-side
+role rewrite:
+
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.10`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — γ's closure gate (the 14-row row-by-row check that realizes the
+  §Closure rule conjunction); the closure-declaration commit
+  ("Cycle #N closed. Next: #M.") that signals structural closure.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.7`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — close-out triage; the four-disposition shape that realizes the
+  "every finding gets a disposition" precondition of §Closure rule
+  conjunct 1.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.8`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — cycle-iteration-trigger enforcement; the three-state shape (patch
+  landed / next MCA / no-patch) that realizes §Closure rule conjunct 3.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §3.6`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — "Land immediate process fixes in the same cycle when possible";
+  the discipline that makes §Immediate outputs structural rather than
+  optional.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §3.7`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — "Do not close the cycle with unresolved triage"; the §Closure
+  rule conjunct 1 enforcement at gate-check time (also fires §Gate
+  F10).
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §6`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — Decide next move (next-MCA issue / owner / branch / first AC /
+  MCI freeze); the §Deferred outputs authoring procedure.
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §7`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — Hub memory write (daily reflection + adhoc thread); the
+  immediate-output execution that prevents the compaction-gap
+  failure mode.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{gamma,post-release,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Retro-packaging
+
+**Retro-packaging** is the exception path for matter that landed
+directly on `main` outside the canonical cycle/{N} branch model.
+The direct-to-main exception covers the case where a change shipped
+without a cycle branch (typically: emergency patches; tiny
+operator-class fixes; matter that landed before the canonical
+cycle/{N} model was in force). The exception's structural cost is
+**lost cycle-shape evidence** — there is no cycle directory, no
+self-coherence, no β review record at the canonical paths. Retro-packaging
+re-creates the shape after the fact, preserving the §Frozen snapshot
+rule while acknowledging the structural gap.
+
+Retro-packaging is **rare** (default rule: every substantial change
+opens a cycle/{N} branch per §Development lifecycle → §Branch rule),
+and the structural cost is recorded explicitly — the retro-packaged
+cycle's PRA carries a `<C` configuration-floor cap on γ (per
+`release/SKILL.md §3.8` v0.1 overlay) reflecting the absence of
+cycle-shape evidence. Retro-packaging is not a way to escape the
+cycle/{N} discipline; it is a way to honour the §Frozen snapshot
+rule for matter that already shipped.
+
+### Direct-to-main exception
+
+When matter landed on `main` without a cycle branch, γ executes
+retro-packaging as a docs-only release per `release/SKILL.md §2.5b`
+v0.1 overlay. The retro-packaged cycle creates three artifacts that
+re-establish the cycle-shape evidence:
+
+- **Retro-snapshot in version directory** — γ creates the
+  `docs/{tier}/{bundle}/{X.Y.Z}/` version directory (or
+  `docs/{tier}/{bundle}/docs/{ISO-date}/` for docs-only releases per
+  the `release/SKILL.md §2.5b` form). The snapshot directory carries
+  a `README.md` snapshot manifest naming the deliverables and the
+  retro-packaging context (the merge commit SHA of the matter being
+  packaged; the rationale for the direct-to-main path).
+- **Self-coherence covering the change** — γ authors a retroactive
+  `self-coherence.md` at `.cdd/releases/{X.Y.Z}/{N}/self-coherence.md`
+  (or `.cdd/releases/docs/{ISO-date}/{N}/self-coherence.md` for
+  docs-only). The retroactive self-coherence is **structurally
+  honest**: it names the gap (the matter shipped without a cycle
+  branch); records the ACs the matter satisfies (with evidence binding
+  to the merge commit); names the contract the matter binds against
+  retroactively. The `[retroactive]` marker is mandatory in the
+  self-coherence's §Mode section.
+- **Version-history entry** — γ adds a CHANGELOG TSC ledger row at
+  the canonical bare-version format (per `release/SKILL.md §2.4`
+  v0.1 overlay) with honest scoring. The γ-axis score reflects the
+  retro-packaging cost (configuration-floor cap at C+ per
+  `release/SKILL.md §3.8`'s "score the release, not the intent"
+  discipline; the canonical example is `usurobor/tsc` cycle 27 at
+  α B / β C+ / γ C / C_Σ C+). The coherence note records the
+  retro-packaging rationale.
+
+The retro-packaged cycle's PRA carries an explicit §Retro-packaging
+note in §3 Process Learning naming **why** the direct-to-main path was
+taken (operator-class emergency; pre-cycle-model historical matter;
+operational-substrate fix) and **what** prevents recurrence (a tooling
+patch that catches direct-to-main commits; an operator-skill patch
+that names the cycle/{N} discipline; an explicit acceptance that the
+direct-to-main path is allowed for the specific class of matter).
+
+### Operational realization
+
+The direct-to-main exception above is CDS's canonical retro-packaging
+statement. The v0.1 operational overlay — the docs-only disconnect
+mechanics, the retroactive `self-coherence.md` authoring procedure,
+the CHANGELOG honest-grading workflow under retro conditions, the
+configuration-floor cap mechanics — lives in the existing cdd
+role/runtime skills as the temporary v0.1 overlay until the v1
+CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/release/SKILL.md §2.5b`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — docs-only disconnect (no tag); the operational form that retro-packaged
+  cycles use (`.cdd/releases/docs/{ISO-date}/{N}/` cycle-dir move;
+  `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md` PRA
+  path).
+- [`cnos.cdd/skills/cdd/release/SKILL.md §3.8`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — configuration-floor clause; the C+ / C / `<C` cap mechanics that
+  apply to retro-packaged cycles whose γ-axis lacks cycle-shape
+  evidence; the "score the release, not the intent" discipline that
+  ensures the retro-packaging cost is recorded honestly.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{release,gamma,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Large-file authoring rule
+
+CDS authoring discipline imposes a **section-by-section write rule**
+for files larger than 50 lines. The rule's failure mode is the
+session-end / stream-timeout / context-truncation gap: a generation
+that produces a single 1000-line write loses everything if the session
+terminates mid-stream. Section-by-section writing with a manifest
+header lets the next session resume from the last committed section
+without rebuilding the entire file in memory.
+
+The rule is self-referential — `CDS.md` itself (this document) follows
+the rule, with the section-manifest header at lines 1–2 carrying both
+the `sections:` list (the canonical section ordering) and the
+`completed:` list (which sections have been fully written to disk).
+The Sub 5 (this cycle) write process incrementally appended the 8 new
+top-level sections per the resumption protocol below; the post-Sub-5
+header reflects the full canonical section set.
+
+### File-size threshold
+
+Files **larger than 50 lines** of authored content (excluding the
+manifest header and trailing whitespace) trigger the section-by-section
+rule. Below the threshold, single-write authoring is acceptable; above
+it, the structural cost of single-write authoring (lost work on
+session termination; context-window overflow during generation;
+review-comment locality failures) outweighs the convenience.
+
+The 50-line floor is the canonical empirical threshold (the cnos
+cycle history shows session-termination at 60–80 line generations as
+a recurring `cds-tooling-gap`). Project bindings may impose a stricter
+floor (some downstream repos use 30 lines for safety); the floor is
+**only** raised via project-binding policy, never lowered.
+
+### Section-manifest HTML-comment header
+
+Files subject to the rule open with two HTML comment lines:
+
+```html
+<!-- sections: [section-id-1, section-id-2, section-id-3, …] -->
+<!-- completed: [section-id-1, section-id-2] -->
+```
+
+The two lists are typed pairs:
+
+- **`sections:`** — the canonical ordering of section identifiers
+  the file commits to author. The identifiers are slugs (kebab-case,
+  lowercase) of the section headings, not the heading text itself.
+  The list is the file's structural contract: a section that does
+  not appear in `sections:` cannot be authored under the file's
+  contract; a section in `sections:` that has no corresponding
+  `## ` heading in the file's body is incomplete.
+
+- **`completed:`** — the prefix of `sections:` that has been fully
+  written to disk. A section appears in `completed:` only when its
+  prose-body is finished and the next section's heading exists
+  immediately after. Partial sections do not appear in `completed:`.
+
+The two lists' relationship is structural: `completed:` is a prefix
+of `sections:` for files under canonical write; `completed:` may be
+empty (no sections completed yet); `completed:` may equal `sections:`
+(file is complete). A `completed:` list that is not a prefix of
+`sections:` signals a manifest-protocol violation (e.g. a section
+landed out of order; the file was edited outside the canonical
+write process).
+
+### Resumption protocol
+
+When a session resumes work on a file under the rule, the resumption
+protocol below runs as α's first action on the file:
+
+1. **Read the manifest header** (lines 1–2). Parse `sections:` and
+   `completed:`.
+2. **Compute the next section.** The next section to author is the
+   first element of `sections:` that is not in `completed:`.
+3. **Verify the file body** — every section identifier in `completed:`
+   has a corresponding `## ` heading in the file body, in the order
+   given by `sections:`. If any verification fails, surface the
+   manifest-protocol violation before authoring the next section.
+4. **Author the next section.** Write the section's prose-body
+   immediately before the next-section anchor (or at the file's
+   end if the next section is the last in `sections:`).
+5. **Commit the section.** Each section gets its own commit (per the
+   incremental-write discipline; cnos cycles routinely show
+   per-section α commits on `cycle/{N}` branches). The commit
+   message names the section authored.
+6. **Update `completed:`** in the manifest header. Append the
+   just-authored section identifier to the `completed:` list. The
+   manifest update is part of the section's commit.
+
+A session that terminates mid-section (the section's prose-body is
+partially written; the section identifier does not yet appear in
+`completed:`) is recoverable: the next session reads the manifest,
+computes the next section (which is the partially-written one,
+because it does not appear in `completed:`), reads what exists on the
+branch for that section, and continues authoring from the last
+written paragraph. The branch becomes the recovery surface; the
+manifest is the index.
+
+### Anti-patterns
+
+- **Single-write authoring of a 200-line section.** The session-end
+  failure mode dominates; one terminated session loses the whole
+  section. The fix is splitting the section into smaller pieces or
+  committing partial writes (with the partial state visible in a
+  `<!-- WIP: paragraph 3 of 7 -->` note inside the section's body).
+- **Out-of-order section authoring.** `sections:` declares the
+  canonical ordering; authoring section 5 before section 3 violates
+  the manifest's prefix invariant on `completed:`. The fix is
+  honouring the declared order, or amending the manifest to declare
+  the new ordering before authoring.
+- **Manifest header omitted.** A file > 50 lines without a manifest
+  header is structurally not under the rule's protection — the
+  next session has no resumption index. The fix is adding the
+  manifest header in the next commit; the file's prior commit
+  history reconstructs the inferred `completed:` list.
+- **Mismatched `sections:` and body headings.** A `sections:` entry
+  with no corresponding `## ` heading in the body, or a `## `
+  heading with no `sections:` entry, signals manifest drift. The
+  fix is reconciling the two; the reconciliation is its own commit.
+
+### Operational realization
+
+The 50-line threshold, the section-manifest header, the resumption
+protocol, and the anti-patterns above are CDS's canonical large-file
+authoring rule. The rule is **self-referential**: its operational
+realization is its own usage pattern. Every file in `cnos.cds`,
+`cnos.cdd`, and `cnos.cdr` that exceeds the 50-line threshold follows
+the rule; this `CDS.md` document is the canonical exemplar (Sub 2,
+Sub 3, Sub 4, and Sub 5 of cnos#403 incrementally authored the
+sections via the resumption protocol, with each sub's manifest update
+landing in the sub's α commits).
+
+The v0.1 operational overlay — the per-file resumption-protocol
+script, the manifest-validator that enforces the prefix invariant,
+the integration with γ's branch pre-flight that checks for manifest
+drift before α dispatch — does **not** yet exist as a separate skill
+file; the rule lives in this section's body as the canonical
+statement. A future cycle may extract the operational overlay into
+`cnos.cdd/skills/cdd/large-file/SKILL.md` (or the CDS-side equivalent)
+once the rule has accumulated enough cycle history to warrant a
+dedicated skill; until then, the rule's authority is this section.
+
+The self-referential operational-realization pointer is therefore
+this section itself — the file you are reading is the operational
+exemplar. Cross-references from other skills (when they cite the
+rule) cite `CDS.md §Large-file authoring rule`; the citation resolves
+to this section's body, which is both the canonical statement and
+the operational realization.
+
+---
+
 ## Empirical anchor
 
 CDS's empirical anchor is [`usurobor/cnos`](https://github.com/usurobor/cnos)
@@ -2174,6 +3471,14 @@ Inherits, cites, or extends:
 
 ## Non-goals
 
+CDS's non-goals partition into two scopes: **sub-level non-goals** that
+scope the cnos#403 wave's authoring sub-cycles (Subs 2–5; this document's
+authoring discipline) and **software-cycle non-goals** that apply to
+every CDS cycle as protocol-level doctrine (the engineering-loss-function
+discipline's structural anti-patterns).
+
+### Sub-level non-goals (Subs 2–5 authoring scope discipline)
+
 This document does **not**:
 
 - Migrate any software-lifecycle content from CDD.md — that is cnos#403
@@ -2220,3 +3525,38 @@ This document does **not**:
   other as a sibling, but the comparison-curating job belongs in
   generic-substrate documentation (`ROLES.md §4a.2` already names the
   loss-function distinction).
+
+### Software-cycle non-goals
+
+CDS as a protocol does **not**:
+
+- Do NOT optimize primarily for speed. The engineering loss function is
+  artifact improvement under repairable feedback, not throughput; a
+  cycle that ships fast but ships incoherent matter has not improved
+  the artifact. The §Selection function's effort-adjusted tie-break
+  prefers smaller cycles among candidates of equal leverage and axis
+  effect, but speed is a tie-break term, not a primary objective.
+- Do NOT treat issue queues as self-justifying. An open issue does not
+  prove a coherence gap exists; the §Selection function's stale-backlog
+  re-evaluation rule explicitly requires re-evaluating whether stale
+  issues remain real gaps before selecting them as next-MCAs. A queue
+  whose age is its own justification is structural debt.
+- Do NOT reduce review to local diff reading. β's review CLP names
+  TERMS / POINTER / EXIT scopes that extend beyond the diff (the issue
+  body's ACs, the implementation-contract axes pinned by δ, the
+  loaded-skill set, cross-referenced canonical surfaces). A review that
+  reads only the diff misses the contract-coherence and honest-claim
+  classes the broader CLP catches.
+- Do NOT treat release as "tag and hope". The §Gate's release-readiness
+  preconditions are mechanical preconditions, not aspirational targets;
+  the F1–F10 closure verification checklist catches the failure modes
+  the "tag and hope" pattern produces. A release that skips the gate
+  ships unreleased in the CCNF kernel sense — the boundary effection
+  did not happen even though the tag pushed.
+- Do NOT confuse a shipped feature with a closed coherence cycle. A
+  feature that merged into main is structurally **stopped**, not
+  **closed**, until the §Closure rule's three-conjunct condition holds
+  (immediate outputs executed; deferred outputs committed; cycle
+  iteration present if triggered). Closure is the transition from
+  released to closed; conflating "released" with "closed" is the
+  structural failure mode the §Closure rule prevents.
