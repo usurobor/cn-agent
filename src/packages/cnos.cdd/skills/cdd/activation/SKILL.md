@@ -88,7 +88,7 @@ Create the following tree. Each entry below is the path relative to repo root an
   proposals/           # design proposals and architectural decision records
 ```
 
-The `releases/` and `unreleased/` trees are populated by γ during cycle dispatch (`CDD.md §1.4` γ algorithm Phase 1). The operator does not pre-create cycle directories; γ owns that. The remaining files listed above — `CDD-VERSION`, `DISPATCH`, `CADENCE`, `OPERATORS`, `MCAs/INDEX.md`, `skills/README.md`, `iterations/cross-repo/README.md` — are activation artifacts that the operator creates during this bootstrap sequence. The `proposals/` directory starts empty.
+The `releases/` and `unreleased/` trees are populated by γ during cycle dispatch (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Steps 0–3). The operator does not pre-create cycle directories; γ owns that. The remaining files listed above — `CDD-VERSION`, `DISPATCH`, `CADENCE`, `OPERATORS`, `MCAs/INDEX.md`, `skills/README.md`, `iterations/cross-repo/README.md` — are activation artifacts that the operator creates during this bootstrap sequence. The `proposals/` directory starts empty.
 
 ---
 
@@ -130,7 +130,7 @@ On GitHub, create labels via `gh label create <name> --color <hex> --description
 
 All CDD cycle branches follow the naming pattern `cycle/{N}` where `{N}` is a monotonically increasing positive integer. This convention makes cycle branches discoverable by tooling (`git branch -r --list 'origin/cycle/*'`), prevents namespace collisions, and makes the association between a branch and its issue number legible at a glance. The number `{N}` is the issue number of the governing issue, not a sequence counter separate from the issue tracker.
 
-γ allocates `{N}` at dispatch time by reading the governing issue number. γ creates the branch as `cycle/{N}` from the current `origin/main` HEAD. α and β check out this branch but never create or rename it. The operator (δ) creates no branches either — branch creation is a γ action per `CDD.md §1.4 γ algorithm Phase 1 step 3a`. If a fix round requires a new branch due to harness push restrictions (per `operator/SKILL.md §5.2` consequence 3), γ manages the chain naming.
+γ allocates `{N}` at dispatch time by reading the governing issue number. γ creates the branch as `cycle/{N}` from the current `origin/main` HEAD. α and β check out this branch but never create or rename it. The operator (δ) creates no branches either — branch creation is a γ action per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch rule" (Step 2 in the §"Step table"). If a fix round requires a new branch due to harness push restrictions (per `operator/SKILL.md §5.2` consequence 3), γ manages the chain naming.
 
 Branch protection rules for `main` should be set before activation is complete. At minimum: require pull request review before merging, require status checks to pass (CI from §9), and disallow force-push. These protections enforce that every merge to `main` has passed β review and CI validation — the mechanical guarantees that CDD's coherence claims rest on.
 
@@ -154,7 +154,7 @@ git config user.name "{role}"
 git config user.email "{role}@cdd.cnos"
 ```
 
-This must be run at the start of each dispatch session — the identity is not globally persisted. If an operator dispatches without setting the identity, commits will carry the wrong author email and the role-identity-is-git-observable property (`CDD.md §1.4`) will be violated. The pre-review gate in `alpha/SKILL.md §2.6 row 14` requires α to verify its commit author email before signaling review-readiness; CI may additionally check commit author emails against the operator registry (§19) on subsequent cycles.
+This must be run at the start of each dispatch session — the identity is not globally persisted. If an operator dispatches without setting the identity, commits will carry the wrong author email and the role-identity-is-git-observable property (`operator/SKILL.md` §"Git identity for role actors") will be violated. The pre-review gate in `alpha/SKILL.md §2.6 row 14` requires α to verify its commit author email before signaling review-readiness; CI may additionally check commit author emails against the operator registry (§19) on subsequent cycles.
 
 ---
 

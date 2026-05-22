@@ -28,15 +28,15 @@ calls: []
 
 # Post-Release Assessment
 
-This module implements CDD steps 11–13: post-release observation, γ-owned assessment (PRA), and close-out / closure evidence. After every release, assess what shipped, what the system looks like now, and what to do next. This is CDD §9 (Assessment) and §10 (Closure) executed as a concrete procedure.
+This module implements CDS lifecycle Steps 11–13 (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table"): post-release observation, γ-owned assessment (PRA), and close-out / closure evidence. After every release, assess what shipped, what the system looks like now, and what to do next. This is `cnos.cds/skills/cds/CDS.md` §"Assessment" and §"Closure" executed as a concrete procedure.
 
-Canonical artifact locations (PRA path, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix). Tags are bare `X.Y.Z` everywhere; `v`-prefixed tags are legacy and warn-only.
+Canonical artifact locations (PRA path, close-out paths, snapshot dirs, tag policy) are defined in `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix". Tags are bare `X.Y.Z` everywhere; `v`-prefixed tags are legacy and warn-only.
 
 ## Who
 
 **γ owns the post-release assessment.** The PRA is a cycle-level observation artifact — it measures α's implementation, β's review quality, and the cycle's economics. β assessing its own review quality is a self-grading problem that weakens the independence CDD exists to provide. γ holds the cycle-level observational authority that the assessment requires.
 
-**β owns `git merge` into main and the β close-out.** β's close-out captures the review context and merge evidence. **δ owns tag/release/deploy** (the release boundary per `CDD.md` §1.4 β algorithm, `operator/SKILL.md` §3.4 doctrinal frame, and `release-effector/SKILL.md` mechanics). The PRA is a separate artifact written by γ after β's merge and close-out are complete.
+**β owns `git merge` into main and the β close-out.** β's close-out captures the review context and merge evidence. **δ owns tag/release/deploy** (the release boundary per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Steps 9–10, `operator/SKILL.md` §3.4 doctrinal frame, and `release-effector/SKILL.md` mechanics). The PRA is a separate artifact written by γ after β's merge and close-out are complete.
 
 **Handoff:** β completes release + β close-out → γ reads both close-outs (α + β) + the shipped artifacts → γ writes the PRA. If γ's session ends before the assessment is complete, the assessment is the first task of its next session.
 
@@ -92,11 +92,11 @@ The artifact has the following sections:
 | Cycle | `dispatch_seconds_budget` | `dispatch_seconds_actual` | `commit_count_at_termination` |
 |-------|--------------------------|--------------------------|-------------------------------|
 
-- `dispatch_seconds_budget` — the timeout budget set in the dispatch prompt (per `CDD.md §1.6c(a)`)
+- `dispatch_seconds_budget` — the timeout budget set in the dispatch prompt (per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule"; heuristic constants in `operator/SKILL.md` §5.2)
 - `dispatch_seconds_actual` — wall-clock seconds from dispatch start to agent exit (SIGTERM or clean)
 - `commit_count_at_termination` — number of commits α pushed to the cycle branch before session end
 
-These three fields accumulate per-cycle data so the heuristic constants in `CDD.md §1.6c(a)` (`120s × ac_count` docs floor, `180s × ac_count` code floor) can be tightened from informed-guess to empirically-validated after sufficient cycles. If `commit_count_at_termination = 0` and `dispatch_seconds_actual < dispatch_seconds_budget`, the agent was SIGTERM'd without checkpointing — consult `operator/SKILL.md §timeout-recovery`.
+These three fields accumulate per-cycle data so the heuristic constants in `operator/SKILL.md` §5.2 (`120s × ac_count` docs floor, `180s × ac_count` code floor; the v0.1 overlay of `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule") can be tightened from informed-guess to empirically-validated after sufficient cycles. If `commit_count_at_termination = 0` and `dispatch_seconds_actual < dispatch_seconds_budget`, the agent was SIGTERM'd without checkpointing — consult `operator/SKILL.md §timeout-recovery`.
 
 **Finding-class breakdown** (across cycles in this release):
 
@@ -120,7 +120,7 @@ These three fields accumulate per-cycle data so the heuristic constants in `CDD.
 - **Action:** none / patch skill / patch doc / automate check
 
 ### 4b. Cycle Iteration
-- **Triggered by** (per CDD.md §9.1 thresholds):
+- **Triggered by** (per `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Cycle iteration triggers"):
   - review rounds > 2
   - mechanical ratio > 20% with ≥ 10 findings
   - avoidable tooling/environmental failure
@@ -164,7 +164,7 @@ If no invariants document exists, omit this section.
 **MCI frozen until shipped?** yes / no
 **Rationale:** ...
 
-**Closure evidence (CDD §10):**
+**Closure evidence (`cnos.cds/skills/cds/CDS.md` §"Closure"):**
 - Immediate outputs executed: yes / no
   - (list each with link/commit)
 - Deferred outputs committed: yes / no
@@ -191,13 +191,13 @@ Rules:
 
 ### Step 2: Update CHANGELOG TSC table
 
-Add a row in the canonical bare-version format. The Level and Rounds columns are required (per CDD.md §9.1 and `release/SKILL.md` §2.4):
+Add a row in the canonical bare-version format. The Level and Rounds columns are required (per `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Cycle iteration triggers" and `release/SKILL.md` §2.4):
 
 ```
 | X.Y.Z | C_Σ | α | β | γ | Level | Rounds | Coherence note |
 ```
 
-The coherence note describes which incoherence was reduced, not what feature was added. The Level column records the cycle-level engineering level (L5 / L6 / L7) per CDD.md §9.1. The Rounds column records the review-round count for the cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`).
+The coherence note describes which incoherence was reduced, not what feature was added. The Level column records the cycle-level engineering level (L5 / L6 / L7) per `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Engineering levels". The Rounds column records the review-round count for the cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`).
 
 **Scoring sequence:** The CHANGELOG TSC entry written at release time is **provisional** — it is β's release-time score (marked as `provisional, pending γ PRA` in the level cell per `release/SKILL.md` §2.4). The post-release assessment is γ's independent score and MUST revise the CHANGELOG entry. γ updates the provisional TSC row to the final scoring values in the same commit as the PRA, replacing β's provisional markers with the final assessment. The assessment governs.
 
@@ -246,14 +246,14 @@ For every triadic cycle in this release, record:
 3. **Finding taxonomy** — tag each review finding as `mechanical` (automatable: stale cross-refs, missing scope items, wrong branch name) or `judgment` (design coherence, architecture trade-offs).
 4. **Mechanical ratio** — mechanical findings / total findings. If >20% AND total findings ≥ 10, file an issue to add the missing pre-flight check. Below 10 findings the ratio is noise — note it but don't file.
 
-This step closes the loop from CDD §9 (Assessment). The review quality section in the output template must be filled.
+This step closes the loop from `cnos.cds/skills/cds/CDS.md` §"Assessment". The review quality section in the output template must be filled.
 
 ### Step 5.6: CDD self-coherence
 
 Did this cycle itself follow CDD coherently? Score each axis 1–4. The branch-level SELF-COHERENCE.md uses the template at `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md`; this assessment-level check uses the same triadic axes:
 
 - **CDD α (artifact integrity):** required artifacts present? Bootstrap/frozen snapshot complete? Self-coherence present?
-- **CDD β (surface agreement):** canonical doc, executable skill, `.cdd/unreleased/{N}/` cycle artifacts (per the canonical filename set in `CDD.md` §Tracking), changelog, and assessment agree? Authority conflicts or stale references?
+- **CDD β (surface agreement):** canonical doc, executable skill, `.cdd/unreleased/{N}/` cycle artifacts (per the canonical filename set in `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Cycle-state evidence"), changelog, and assessment agree? Authority conflicts or stale references?
 - **CDD γ (cycle economics):** review rounds within target? Superseded PRs low? Mechanical ratio under threshold? Immediate outputs executed, deferred outputs committed?
 
 ```markdown
@@ -275,7 +275,7 @@ If no axis scores below 3, write "no action" and move on.
 
 ### Step 5.6a: Cycle iteration
 
-If any `CDD.md` §9.1 trigger fired, this section is mandatory.
+If any `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Cycle iteration triggers" trigger fired, this section is mandatory.
 
 For each fired trigger:
 1. name the trigger
@@ -286,8 +286,8 @@ For each fired trigger:
    - no patch with explicit reason
 4. link the evidence (commit / issue / note)
 
-If no `CDD.md` §9.1 trigger fired, write either:
-- `No §9.1 trigger fired`, or
+If no `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Cycle iteration triggers" trigger fired, write either:
+- `No §"Cycle iteration triggers" trigger fired`, or
 - the independent γ process-gap result if step 13 still found something worth patching.
 
 ### Step 5.6b: Author `cdd-iteration.md` (when applicable)
@@ -322,7 +322,7 @@ If `next-MCA`:
 - **First AC:** ...
 
 If `no-patch`:
-- **Reason:** required justification per CDD §13a
+- **Reason:** required justification per `cnos.cds/skills/cds/CDS.md` §"Closure" → §"Closure rule"
 ```
 
 **Aggregator update.** After writing `cdd-iteration.md`, γ updates `.cdd/iterations/INDEX.md` with one row:
@@ -407,7 +407,7 @@ Before committing the assessment, verify mechanically:
 - [ ] §4 has all fields: cycles, review rounds, superseded cycles, finding breakdown, mechanical ratio, action
 - [ ] §4 mechanical ratio: if >20% AND total findings ≥ 10, a process issue is **filed and referenced** (not just noted). Below 10 findings, note the ratio but no filing required.
 - [ ] §4a CDD self-coherence: α/β/γ scored, weakest axis named, action stated (or "none" if all ≥3)
-- [ ] If any `CDD.md` §9.1 trigger fired, §4b Cycle Iteration exists with trigger, root cause, disposition, and evidence.
+- [ ] If any `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Cycle iteration triggers" trigger fired, §4b Cycle Iteration exists with trigger, root cause, disposition, and evidence.
 - [ ] If the cycle's receipt has `protocol_gap_count > 0` (≥1 finding tagged `cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`), `.cdd/unreleased/{N}/cdd-iteration.md` exists (Step 5.6b) **and** `.cdd/iterations/INDEX.md` has a new row for cycle N. If patch landed cross-repo, `.cdd/iterations/cross-repo/{target}/{slug}/` exists with `LINEAGE.md`. If `protocol_gap_count == 0`, no iteration file is required (per [`ROLES.md §4b.4`](../../../../../../ROLES.md)).
 - [ ] §3/§4 skill patches: if §3 identifies a recurring failure mode or skill gap, the patch is **in this commit** (not deferred) and synced across all affected surfaces: canonical source under `src/packages/`, package-visible loader entrypoint if affected, human-facing pointer/readme surfaces if they expose the changed rule.
 - [ ] §5.7 has production verification scenario (or explicit deferral with commitment)
@@ -418,7 +418,7 @@ Before committing the assessment, verify mechanically:
 - [ ] CHANGELOG TSC row added or updated to match assessment scores
 - [ ] §8 Hub memory: daily reflection written and pushed to hub repo
 - [ ] §8 Hub memory: at least one adhoc thread updated (or explicit note why none applies)
-- [ ] If the triadic protocol is active, `.cdd/unreleased/{N}/gamma-closeout.md` (in-version) or `.cdd/releases/{X.Y.Z}/{N}/gamma-closeout.md` (post-release) exists and reflects α close-out, β close-out, γ triage, and final cycle status. (Legacy aggregate `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` is warn-only per `CDD.md` §5.3a; do not require it.)
+- [ ] If the triadic protocol is active, `.cdd/unreleased/{N}/gamma-closeout.md` (in-version) or `.cdd/releases/{X.Y.Z}/{N}/gamma-closeout.md` (post-release) exists and reflects α close-out, β close-out, γ triage, and final cycle status. (Legacy aggregate `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` is warn-only per `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix"; do not require it.)
 
 This gate is mechanical. Two agents checking the same template must find the same missing fields.
 
@@ -453,7 +453,7 @@ No new design docs until backlog reduced below threshold.
 ### Process Learning
 Wrong: Review missed CAA.md (§2.0 gate not followed). Fixed with structural table format.
 Right: Three-agent review loop caught complementary gaps.
-Skill patches: review §2.0 gate (committed), CDD §7.6 output format (committed).
+Skill patches: review §2.0 gate (committed), CDS §Assessment output format (committed).
 
 ### Next Move
 Next MCA: #62 — Runtime Contract v2
@@ -465,7 +465,7 @@ Rationale: Vertical self-model is foundation for #73, #65, #59.
 
 Immediate fixes (executed this session):
 - review §2.0 structural gate (eeca922)
-- CDD §7.6 output format (64634fb)
+- CDS §Assessment output format (64634fb)
 ```
 
 ---

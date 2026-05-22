@@ -61,15 +61,15 @@ When acting as γ:
 
 **Canonical-skill staleness check before each γ phase change.** Before transitioning from one CDD phase to another (intake → dispatch, dispatch → close-out triage, close-out triage → PRA, PRA → closure), γ runs `git fetch --verbose origin main && git rev-parse origin/main`. If `origin/main` HEAD has advanced beyond the SHA at which canonical CDD/role skills were loaded, **re-load** `CDD.md`, this file, and the lifecycle sub-skill governing the next phase, then re-evaluate the next phase's plan against the updated canonical surfaces. This is the parallel of `beta/SKILL.md`'s pre-merge gate row 2 on the γ-axis; it catches canonical-skill snapshot drift across release boundaries (cycle #301 §9.1 trigger 1: γ proposed an out-of-spec merge option because σ's `4a0f678` "merge is β authority" had landed mid-cycle and was not in γ's session-loaded `gamma/SKILL.md`).
 
-Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix).
+Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix".
 
-`CDD.md` is the only canonical source for: the ordered γ lifecycle (`CDD.md` §1.4, steps 1–16; step 17 is δ's) and selection rule order (`CDD.md` §3). This file does **not** redefine that algorithm — it expands those steps into executable checks, evidence, and gates.
+`cnos.cds/skills/cds/CDS.md` is the canonical source for: the ordered γ lifecycle (§"Development lifecycle" → §"Step table" — γ owns Steps 0–3 and Steps 9–13; Step 8 is β's; Steps 9–10 are δ's release-gate authority; Step 10's tag mechanics are δ's via `release-effector/SKILL.md`) and selection rule order (§"Selection function"). This file does **not** redefine that algorithm — it expands those steps into executable checks, evidence, and gates.
 
 ## Step map
 
 - Step 1 → git identity (`harness/SKILL.md` §3), Step 2a → observe + candidates (`§2.1`), Step 2b → select + size (`§2.2`)
 - Step 3 → issue pack + quality gate (`§2.3–§2.4`)
-- Step 3a → create cycle branch (`§2.5` — `cycle/{N}` from `origin/main`, γ-owned pre-flight per `CDD.md` §4.3)
+- Step 3a → create cycle branch (`§2.5` — `cycle/{N}` from `origin/main`, γ-owned pre-flight per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch pre-flight")
 - Steps 3b–6 → dispatch + unblocking (`§2.5`)
 - Steps 7–8 → release-prep artifacts (`§2.6`)
 - Steps 9–10 → close-out triage (`§2.7`)
@@ -111,22 +111,22 @@ Read the observation surfaces required by `CDD.md`:
 Build a candidate table:
 
 ```md
-| Candidate | Source | Rule clause that nominates it | Dependency | Size | Decision |
-|-----------|--------|-------------------------------|------------|------|----------|
-| #NN ...   | lag    | CDD §3.x                      | ...        | ...  | ...      |
+| Candidate | Source | Rule clause that nominates it             | Dependency | Size | Decision |
+|-----------|--------|-------------------------------------------|------------|------|----------|
+| #NN ...   | lag    | CDS §Selection function → §X              | ...        | ...  | ...      |
 ```
 
 - ❌ "I remember issue #143 felt important"
-- ✅ "Candidate table shows #143 is selected under CDD §3.x for a named reason"
+- ✅ "Candidate table shows #143 is selected under `cnos.cds/skills/cds/CDS.md` §"Selection function" §X.x for a named reason"
 
-### 2.2. Step 1b — Select by `CDD.md`, then size the intervention
+### 2.2. Step 1b — Select by CDS §Selection function, then size the intervention
 
-Apply `CDD.md` §3 in order. Required output: selected gap / decisive `CDD.md` rule-clause / rejected alternatives when non-obvious / intervention size (immediate output / small change / substantial cycle).
+Apply `cnos.cds/skills/cds/CDS.md` §"Selection function" in order (P0 override → operational-infrastructure override → assessment-commitment default → stale-backlog re-evaluation → MCI freeze check → weakest-axis rule → maximum-leverage rule → dependency order → effort-adjusted tie-break → no-gap case). Required output: selected gap / decisive `cnos.cds/skills/cds/CDS.md` §"Selection function" rule-clause / rejected alternatives when non-obvious / intervention size (immediate output / small change / substantial cycle).
 
 Sizing rule: immediate-output → execute now + continue observation; small-change → route to small-change path; blocked → name the blocking dependency before dispatch.
 
 - ❌ "Selected because it felt highest leverage"
-- ✅ "Selected #143 under CDD §3.x; #151 rejected because dependency unresolved"
+- ✅ "Selected #143 under `cnos.cds/skills/cds/CDS.md` §"Selection function" → §"Maximum-leverage rule"; #151 rejected because dependency unresolved"
 
 ### 2.2a. Peer enumeration at scaffold time
 
@@ -171,9 +171,9 @@ Do not compensate for a weak issue by making the prompt longer. Fix the issue in
 
 #### Step 3a — Create the cycle branch
 
-After the issue passes the quality gate (§2.4) and **before** dispatching α/β, γ creates `cycle/{N}` from `origin/main`. The branch is the canonical coordination surface (`CDD.md` §Tracking + §4.2); a single named target replaces the pre-#287 model where α opened the branch.
+After the issue passes the quality gate (§2.4) and **before** dispatching α/β, γ creates `cycle/{N}` from `origin/main`. The branch is the canonical coordination surface (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" + §"Development lifecycle" → §"Branch rule"); a single named target replaces the pre-#287 model where α opened the branch.
 
-**γ-owned branch pre-flight (`CDD.md` §4.3):** `origin/cycle/{N}` does not yet exist (fail loud — one cycle = one branch); no stalled `.cdd/unreleased/{N}/` on `origin/main` (would indicate a previous cycle for `{N}` did not complete its release-time move per `release/SKILL.md` §2.5a); the issue's scope is declared in the body; base SHA known (`git rev-parse origin/main`); issue is open. Mechanics (the `git fetch` + `rev-parse --verify` + `ls-tree` + `switch -c` + `push -u` sequence) follow `CDD.md` §4.3 directly; γ does not restate them here.
+**γ-owned branch pre-flight (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch pre-flight"):** `origin/cycle/{N}` does not yet exist (fail loud — one cycle = one branch); no stalled `.cdd/unreleased/{N}/` on `origin/main` (would indicate a previous cycle for `{N}` did not complete its release-time move per `release/SKILL.md` §2.5a); the issue's scope is declared in the body; base SHA known (`git rev-parse origin/main`); issue is open. Mechanics (the `git fetch` + `rev-parse --verify` + `ls-tree` + `switch -c` + `push -u` sequence) follow `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch pre-flight" directly; γ does not restate them here.
 
 The branch must exist on `origin` before dispatch. α and β never create branches; their prompts include a `Branch: cycle/<N>` line and they `git switch` to it.
 
@@ -195,7 +195,7 @@ Mechanical check (run before producing the α prompt): `git ls-tree -r --name-on
 
 ##### Polling cross-reference
 
-γ polls the issue and `origin/cycle/{N}` to react to α/β commits, β verdicts, and CI status. **Mechanics: `harness/SKILL.md` §5.4** (single-named-branch transition loop, `Monitor`-wrapped, reachability re-probe per `CDD.md §Tracking`). γ's invariant: **polling requires a query, a wake-up mechanism, and a reachability probe.** If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, γ surfaces the gap to operator before dispatch. Cycle-dir artifacts live on `origin/cycle/{N}` (not on `main`) until release-time move; polling `main` for in-flight cycle dirs is silent.
+γ polls the issue and `origin/cycle/{N}` to react to α/β commits, β verdicts, and CI status. **Mechanics: `harness/SKILL.md` §5.4** (single-named-branch transition loop, `Monitor`-wrapped, reachability re-probe per `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Polling primitives"). γ's invariant: **polling requires a query, a wake-up mechanism, and a reachability probe.** If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, γ surfaces the gap to operator before dispatch. Cycle-dir artifacts live on `origin/cycle/{N}` (not on `main`) until release-time move; polling `main` for in-flight cycle dirs is silent.
 
 ##### Dispatch prompts
 
@@ -310,21 +310,21 @@ Both must be committed before γ requests the disconnect release from δ (§2.10
 
 ### 2.7. Steps 8–9 — Triage close-outs explicitly
 
-**Collecting close-outs in sequential bounded dispatch (`CDD.md` §1.6).** β exits after writing `beta-closeout.md`; α already exited after signaling review-readiness. γ obtains both close-outs before triaging:
+**Collecting close-outs in sequential bounded dispatch (`cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule").** β exits after writing `beta-closeout.md`; α already exited after signaling review-readiness. γ obtains both close-outs before triaging:
 
 1. **β close-out**: verify `.cdd/unreleased/{N}/beta-closeout.md` on main; if missing, request δ to re-dispatch β.
-2. **α close-out**: verify `.cdd/unreleased/{N}/alpha-closeout.md` on main; if missing, request δ to re-dispatch α via the close-out prompt (`CDD.md` §1.6a). **γ must explicitly request this re-dispatch.**
+2. **α close-out**: verify `.cdd/unreleased/{N}/alpha-closeout.md` on main; if missing, request δ to re-dispatch α via the close-out prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in `operator/SKILL.md` §5.2 v0.1 overlay). **γ must explicitly request this re-dispatch.**
 
 **Cross-repo proposal close-out.** If this cycle accepted or modified a source proposal, γ emits the `landed` event to source STATUS at merge. Per `cdd/cross-repo/SKILL.md §"STATUS state machine"` master/sub rule: per-sub `landed` per merge, terminal master-close when the master closes. A proposal touched by the cycle may not remain at `accepted` / `modified` after target work lands.
 
 **Post-merge CI verification (mandatory).** Before authoring `gamma-closeout.md`, γ verifies CI ran green on the merge commit (`gh run list --branch main --json status,conclusion,head_sha` filtered to merge SHA). Pending → delay close-out. Red → log as §9.1 trigger (avoidable tooling failure); γ-axis grade reflects; consider rollback or follow-on fix-cycle. Green → record run URL in `gamma-closeout.md` §Post-merge verification.
 
-`self-coherence.md` + `beta-review.md` carry the in-cycle record; the two `*-closeout.md` files are γ's primary triage inputs. The cycle-directory move (`.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/`) is γ's per §2.6 — before the tag, not after (`CDD.md` §5.3a).
+`self-coherence.md` + `beta-review.md` carry the in-cycle record; the two `*-closeout.md` files are γ's primary triage inputs. The cycle-directory move (`.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/`) is γ's per §2.6 — before the tag, not after (`cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix").
 
 Then write the post-release assessment per `post-release/SKILL.md` at `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (CDD package: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). The PRA is γ's — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
 
 γ triages every finding from both close-outs + the PRA using CAP:
-1. **Immediate MCA available** → ship now (γ lands the skill/spec patch per CDD §5.3 row 12a; if delegated, name delegate + deadline)
+1. **Immediate MCA available** → ship now (γ lands the skill/spec patch per `cnos.cds/skills/cds/CDS.md` §"Closure" → §"Immediate outputs"; if delegated, name delegate + deadline)
 2. **Project MCI** → file / update project issue or `.cdd/` artifact
 3. **Agent MCI** → update hub / adhoc thread
 4. **One-off** → drop explicitly
@@ -357,7 +357,7 @@ Each fired trigger must end in one of three states:
 
 ### 2.9. Step 13 — Run the independent γ process-gap check
 
-Even if no `CDD.md` §9.1 trigger fired, γ must still ask:
+Even if no `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Cycle iteration triggers" trigger fired, γ must still ask:
 - Did this cycle reveal a recurring friction?
 - Was any gate too weak or too vague?
 - Did a role skill fail to prevent a predictable error?
@@ -393,7 +393,7 @@ Do not declare the cycle closed until all of the following are true:
 14. if the cycle's receipt has `protocol_gap_count > 0` (≥1 finding tagged `cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`), `.cdd/unreleased/{N}/cdd-iteration.md` exists with each finding structured per `post-release/SKILL.md` Step 5.6b, **and** `.cdd/iterations/INDEX.md` has a row for cycle N. If any finding shipped to a different repo, `.cdd/iterations/cross-repo/{target}/{slug}/` exists with bundle + `LINEAGE.md`. If `protocol_gap_count == 0`, no iteration file is required (per [`ROLES.md §4b.4`](../../../../../../ROLES.md), [`epsilon/SKILL.md §1`](../epsilon/SKILL.md), and [`activation/SKILL.md §22`](../activation/SKILL.md)); the INDEX row is also not required for empty-findings cycles.
 
 Then:
-- write `.cdd/unreleased/{N}/gamma-closeout.md`. Contains: cycle summary, close-out triage table, §9.1 trigger assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA. **`gamma-closeout.md` is the closure declaration artifact. δ must not tag/release until it exists on main.** See `CDD.md` §5.3b ownership matrix.
+- write `.cdd/unreleased/{N}/gamma-closeout.md`. Contains: cycle summary, close-out triage table, §"Cycle iteration triggers" assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, and next MCA. **`gamma-closeout.md` is the closure declaration artifact. δ must not tag/release until it exists on main.** See `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix".
 - update hub memory
 - delete merged remote branches (mechanics: `release-effector/SKILL.md` §5)
 - state closure explicitly: *"Cycle #N closed. Next: #M."* This is γ's last commit. δ will cut the disconnect release (step 17) — the tag appearing on main is the observable proof the cycle is fully closed.
@@ -496,4 +496,4 @@ Per `COHERENCE-CELL.md §γ and δ Managerial-Residue Sweep`: any γ verb that d
 
 ## Resumption
 
-When dispatched to an artifact path that already contains a section manifest, γ follows `CDD.md` §1.4 resumption: (1) read existing manifest, (2) verify completed sections are coherent and complete, (3) continue from the first uncompleted section, (4) update manifest on each completion. γ-specific resumption cases: `gamma-closeout.md` (sections `[Close-out Triage, Trigger Assessment, Cycle Iteration, Deferred Outputs, Next-MCA Commitment]`); PRA (large multi-section); dispatch coordination (mid-prompt-generation resume). **Never restart completed sections** — they encode settled γ coordination decisions.
+When dispatched to an artifact path that already contains a section manifest, γ follows `cnos.cds/skills/cds/CDS.md` §"Large-file authoring rule" → §"Resumption protocol": (1) read existing manifest, (2) verify completed sections are coherent and complete, (3) continue from the first uncompleted section, (4) update manifest on each completion. γ-specific resumption cases: `gamma-closeout.md` (sections `[Close-out Triage, Trigger Assessment, Cycle Iteration, Deferred Outputs, Next-MCA Commitment]`); PRA (large multi-section); dispatch coordination (mid-prompt-generation resume). **Never restart completed sections** — they encode settled γ coordination decisions.

@@ -55,7 +55,7 @@ jobs:
         id: merge-info
         run: |
           MSG="${{ github.event.head_commit.message }}"
-          # CDD merge commits use "Closes #N" or "Fixes #N" (CDD.md §Tracking)
+          # CDD merge commits use "Closes #N" or "Fixes #N" (cnos.cds/skills/cds/CDS.md §"Coordination surfaces")
           CYCLE_N=$(echo "$MSG" | grep -oE '(Closes|Fixes)\s+#[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "")
           if [[ -n "$CYCLE_N" ]]; then
             echo "cycle_n=${CYCLE_N}" >> "$GITHUB_OUTPUT"

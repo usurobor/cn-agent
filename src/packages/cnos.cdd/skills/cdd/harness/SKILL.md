@@ -213,7 +213,7 @@ Every CDD role actor configures a git identity in the form `{role}@{project}.cdd
 git config --get extensions.worktreeConfig
 ```
 
-If this returns `true`, **every subsequent identity write MUST use the `--worktree` flag from the first command, not from a recovery commit.** A plain `git config user.email X` without `--worktree`, when `extensions.worktreeConfig=true`, writes to the *shared* `.git/config`. The immediate `git config --get user.email` returns X — but any subsequent process (a sibling worktree's command, a hook, an unrelated tool) that writes to the shared layer overwrites the value. The next commit-time read returns the overwriting role's identity. Role-identity-is-git-observable (`CDD.md` §1.4, `review/SKILL.md` §Review identity, `beta/SKILL.md` Pre-merge gate Row 1) is then silently violated; the audit trail records a different actor than the role contract names.
+If this returns `true`, **every subsequent identity write MUST use the `--worktree` flag from the first command, not from a recovery commit.** A plain `git config user.email X` without `--worktree`, when `extensions.worktreeConfig=true`, writes to the *shared* `.git/config`. The immediate `git config --get user.email` returns X — but any subsequent process (a sibling worktree's command, a hook, an unrelated tool) that writes to the shared layer overwrites the value. The next commit-time read returns the overwriting role's identity. Role-identity-is-git-observable (`operator/SKILL.md` §"Git identity for role actors", `review/SKILL.md` §Review identity, `beta/SKILL.md` Pre-merge gate Row 1) is then silently violated; the audit trail records a different actor than the role contract names.
 
 ```bash
 # Step 1 — check the layered-config flag at session start
@@ -313,7 +313,7 @@ After α exits and β merges:
 git worktree remove /path/to/<project>-cycle-<N>
 ```
 
-The cycle branch on `origin` remains until β's post-merge delete per `CDD.md` §1.4 phase 5b step 17 — branch lifecycle is not coupled to worktree lifecycle.
+The cycle branch on `origin` remains until β's post-merge delete per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 8 (β review + merge) closure step — branch lifecycle is not coupled to worktree lifecycle.
 
 ### 4.5. Cross-references
 
@@ -376,13 +376,13 @@ Run under `Monitor` or equivalent. 5-minute interval is sufficient for δ — γ
 
 ### 5.3. Cycle branch polling
 
-Canonical cycle branches are `origin/cycle/{N}` (per `CDD.md` §4.2, since #287). The pre-#287 `'origin/claude/*'` glob is **warn-only / retrospective** — retained for tracking historical cycles whose branches predate the rule, never as a discovery surface for new cycles.
+Canonical cycle branches are `origin/cycle/{N}` (per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch rule", since #287). The pre-#287 `'origin/claude/*'` glob is **warn-only / retrospective** — retained for tracking historical cycles whose branches predate the rule, never as a discovery surface for new cycles.
 
 ```bash
 prev_branches=""; declare -A prev_head
 while true; do
   cd /path/to/repo && git fetch --quiet origin
-  # Canonical: cycle/{N} branches (γ creates these per CDD.md §1.4 γ algorithm Phase 1 step 3a).
+  # Canonical: cycle/{N} branches (γ creates these per cnos.cds/skills/cds/CDS.md §"Development lifecycle" → §"Branch rule" / §"Step table" Step 2).
   cur_branches="$(git branch -r --list 'origin/cycle/*' 2>/dev/null | sed 's| ||g' | sort)"
   comm -13 <(echo "$prev_branches") <(echo "$cur_branches") | sed 's/^/new-branch: /'
   # Per-branch head SHA — cycle artifacts live on cycle branches, not on main.
@@ -419,7 +419,7 @@ while true; do
     empty_iters=0
   else
     empty_iters=$((empty_iters + 1))
-    # CDD.md §Tracking git fetch reliability rule: every 10 empty iterations, do a synchronous re-probe.
+    # cnos.cds/skills/cds/CDS.md §"Coordination surfaces" → §"Polling primitives" git fetch reliability rule: every 10 empty iterations, do a synchronous re-probe.
     if [ "$empty_iters" -ge 10 ]; then
       git fetch --verbose origin cycle/<N> 2>&1 | tee /tmp/cycle-<N>-fetch.log >&2 || \
         echo "reachability-fail: cycle/<N> — surface to operator"
@@ -471,7 +471,7 @@ To create the sentinel, run `touch /tmp/session-start-sentinel` immediately befo
 | Work is committed — agent wrote one or more commits before SIGTERM | Normal recovery: the agent left durable checkpoints. Read `origin/cycle/{N}`. No further action unless the cycle is incomplete. |
 | Work is staged / unstaged but not committed | Commit under agent identity per §3 (`git config user.name "Alpha" && git config user.email "alpha@cdd.cnos"`, with `--worktree` if §3.2 applies), then `git add <files> && git commit -m "<msg>"`. Preserve the agent's intent; do not rewrite scope. |
 | Work exists only as new/modified files (never staged) | Same as above — stage and commit under agent identity with a message naming the recovery context (e.g., `"recovery(338): α partial work — committed by operator after SIGTERM"`). |
-| Nothing useful recovered — session started but produced no artifact content | Declare a failed dispatch. File the failure in `self-coherence.md §Debt`. Re-dispatch α with a fresh budget per `CDD.md` §1.6c(a). |
+| Nothing useful recovered — session started but produced no artifact content | Declare a failed dispatch. File the failure in `self-coherence.md §Debt`. Re-dispatch α with a fresh budget per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule" (heuristic constants in `operator/SKILL.md` §5.2). |
 | Stash exists | `git stash show -p` to inspect; pop and commit if relevant: `git stash pop && git add <files> && git commit`. |
 
 **Agent-identity vs operator-identity commit.** Prefer committing under the agent's canonical identity (`alpha@cdd.cnos`) to preserve the role-identity-is-git-observable property. If the agent's identity cannot be confirmed, commit under operator identity but declare this as an override in `self-coherence.md §Debt` with the override cross-reference to `operator/SKILL.md` §4.
@@ -484,7 +484,7 @@ If the operator commits work on behalf of an agent, this is an implicit override
 
 ### 6.5. Prevention
 
-The recovery procedure is the failure path. The prevention path is a correctly-sized dispatch budget and commit-checkpoint instruction per `CDD.md` §1.6c. If this section is being exercised, the dispatch that spawned the agent did not satisfy §1.6c — record the actual budget and AC count in the PRA telemetry fields (`post-release/SKILL.md` §4: `dispatch_seconds_budget`, `dispatch_seconds_actual`, `commit_count_at_termination`) so the heuristic can be refined.
+The recovery procedure is the failure path. The prevention path is a correctly-sized dispatch budget and commit-checkpoint instruction per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule" (heuristic constants in `operator/SKILL.md` §5.2). If this section is being exercised, the dispatch that spawned the agent did not satisfy the budget contract — record the actual budget and AC count in the PRA telemetry fields (`post-release/SKILL.md` §4: `dispatch_seconds_budget`, `dispatch_seconds_actual`, `commit_count_at_termination`) so the heuristic can be refined.
 
 ---
 
