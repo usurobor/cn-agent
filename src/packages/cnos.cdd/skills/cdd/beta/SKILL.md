@@ -65,7 +65,7 @@ This file owns β's role boundary, dispatch contract, and phase-linking rules. C
 
 β's work composes Step 8 of the `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" (β review-and-merge) plus the β close-out artifact named in §"Artifact contract" → §"Ownership matrix". The intra-Step-8 sub-stages below are β-local execution detail.
 
-- **β intake** → receive, git identity, poll for branch + `.cdd/unreleased/{N}/self-coherence.md`, load skills, read diff + artifact + issue. **Issue-edit cache-bust:** when polling sees a `gamma-clarification.md` add or update on the cycle branch, re-read the issue body via `gh issue view {N}` (or MCP equivalent) to get the live version, not cached state.
+- **β intake** → receive, git identity, poll for branch + `.cdd/unreleased/{N}/self-coherence.md`, load skills, read diff + artifact + issue. **Issue-edit cache-bust:** when polling sees a `gamma-clarification.md` add or update on the cycle branch, re-read the issue body via `gh issue view {N}` (or MCP equivalent) to get the live version, not cached state. Canonical wire-format at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../../../../cnos.handoff/skills/handoff/mid-flight/SKILL.md); the channel substrate at [`cnos.handoff/skills/handoff/artifact-channel/SKILL.md`](../../../../cnos.handoff/skills/handoff/artifact-channel/SKILL.md).
 - **β review / RC loop** → per `review/SKILL.md`, verdict written to `.cdd/unreleased/{N}/beta-review.md`
 - **β merge** → `git merge` per `release/SKILL.md` (merge only — tag/deploy is δ's release boundary)
 - **β close-out** → written to `.cdd/unreleased/{N}/beta-closeout.md`

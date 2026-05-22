@@ -1425,6 +1425,17 @@ when γ under-specifies and α improvises.
 the clarification artifact; the file is part of the cycle directory and
 travels with the cycle through release.
 
+**Wire-format canonical home.** The wire-format invariant for the
+mid-flight rescue mechanism (file path, authoring role, reader role,
+trigger conditions, cache-bust function, resumption protocol,
+spec-staleness propagation) lives at
+[`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../../../cnos.handoff/skills/handoff/mid-flight/SKILL.md),
+landed under Sub 4 of [cnos#404](https://github.com/usurobor/cnos/issues/404)
+(cnos#418). This section retains the v0.1 software-cycle operational
+realization (the `gh issue edit` + `git commit` + `git push` shell
+sequence γ runs at clarification time; the polling-primitive mapping);
+the wire-format invariants are owned at cnos.handoff and cited from here.
+
 ### Cross-repo proposals
 
 Cycles that originate work in one repo and land it in another use the
@@ -1576,6 +1587,19 @@ of that field.
 
 Operational realization stays in the cdd role/runtime skills as the v0.1
 overlay until the v1 CDS-side role rewrite.
+
+**Wire-format canonical home.** The channel wire-format invariants
+(channel-directory path pattern `.cdd/unreleased/{N}/`; per-role write
+ownership pattern; sequential α→β→γ rule with γ-scaffold cycle-start
+exception; frozen-snapshot rule on merge; release-time directory move)
+live at
+[`cnos.handoff/skills/handoff/artifact-channel/SKILL.md`](../../../cnos.handoff/skills/handoff/artifact-channel/SKILL.md),
+landed under Sub 4 of [cnos#404](https://github.com/usurobor/cnos/issues/404)
+(cnos#418). This section retains the CDS-specific per-artifact contract
+(the Location matrix's specific filename set; the Ownership matrix's
+per-role artifact assignment with verification gates; the 13-stage
+Ordered flow); the channel-shape wire-format invariants are owned at
+cnos.handoff and cited from here.
 
 ### Terminology
 

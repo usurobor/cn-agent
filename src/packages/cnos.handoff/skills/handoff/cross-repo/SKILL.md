@@ -501,6 +501,8 @@ These are observed shapes that the protocol covers explicitly. New edge cases di
 
 - **Target-repo-doesn't-exist (case d.1)** — drafts staged for an operator-scaffolded repo. The bundle carries the prospective files (e.g. `PERSONA.md`, `OPERATOR.md`). Empirical anchor: `cn-rho/bootstrap-2026-05-19`.
 
+- **Issue-edit cache-bust on post-filing refinement** — when a `modified` event fires post-`accepted` because the target γ folds an upstream change into the target issue body's `## Source Proposal` block (or any other Delta-bearing edit), the same write may need to propagate to an in-flight role on the target's cycle branch. The canonical mechanism is the `gamma-clarification.md` rescue at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../mid-flight/SKILL.md) — γ commits a clarification entry to `.cdd/unreleased/{N}/` on `cycle/{N}` *before* running the `gh issue edit` that records the Delta. The cycle-branch SHA transition is the polling role's cache-bust signal; relying on the GitHub issue mtime alone is unreliable for MCP-cached intake. Empirical anchor: `cn-sigma/agent-activate-skill` (post-filing refinement folded in 7 minutes after filing); the cnos-side practice of the cache-bust channel is anchored at cnos#391.
+
 ---
 
 ## 3. Rules

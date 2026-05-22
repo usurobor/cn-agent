@@ -66,13 +66,13 @@ In scope:
 - The 7-axis implementation-contract schema (Language; CLI integration target; Package scoping; Existing-binary disposition; Runtime dependencies; JSON/wire contract preservation; Backward-compat invariant) and the `## Implementation contract` markdown template γ injects into the α prompt.
 - δ as inward membrane: the review-before-routing duty, the fill-or-escalate paths, the cycle-channel logging of enrichments.
 - The four-surface mesh (γ template / δ enrichment / α constraint / β verification) declaration.
-- Mid-flight contract re-pinning via `gamma-clarification.md` (the cycle-channel hand-off into the mid-flight rescue mechanism whose canonical home lands with Sub 4 of cnos#404).
+- Mid-flight contract re-pinning via `gamma-clarification.md` (the cycle-channel hand-off into the mid-flight rescue mechanism whose canonical home is [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../mid-flight/SKILL.md), landed under Sub 4 of cnos#404 / cnos#418).
 
 Out of scope:
 
 - γ-owned branch pre-flight mechanics (creating `cycle/{N}` from `origin/main`; `gamma-scaffold.md` presence gate; polling). These are cycle-lifecycle, not wire-format; canonical at `cnos.cdd/skills/cdd/gamma/SKILL.md §2.5` + `cnos.cds/skills/cds/CDS.md §"Development lifecycle"`.
-- The mid-flight `gamma-clarification.md` mechanism itself (the cache-bust semantics; the in-flight α/β polling protocol). Cited from this skill; canonical home pending Sub 4 of cnos#404 (`cnos.handoff/skills/handoff/mid-flight/SKILL.md`).
-- The `.cdd/unreleased/{N}/` artifact-channel rules (per-role write ownership; frozen-snapshot rule on merge). Cited from this skill; canonical home pending Sub 4 of cnos#404 (`cnos.handoff/skills/handoff/artifact-channel/SKILL.md`).
+- The mid-flight `gamma-clarification.md` mechanism itself (the cache-bust semantics; the in-flight α/β polling protocol). Cited from this skill; canonical home at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../mid-flight/SKILL.md) (Sub 4 of cnos#404 / cnos#418).
+- The `.cdd/unreleased/{N}/` artifact-channel rules (per-role write ownership; frozen-snapshot rule on merge). Cited from this skill; canonical home at [`cnos.handoff/skills/handoff/artifact-channel/SKILL.md`](../artifact-channel/SKILL.md) (Sub 4 of cnos#404 / cnos#418).
 - The harness substrate (dispatch invocation mechanics; observability flags; identity rotation; timeout recovery). Lives in `cnos.cdd/skills/cdd/harness/SKILL.md` per Phase 4b of cnos#366.
 - δ's outward membrane (BoundaryDecision on receipt + V verdict) and override authority. Lives in `cnos.cdd/skills/cdd/delta/SKILL.md §1, §3`; out of scope for the dispatch wire-format.
 - CCNF-O orchestration grammar (how cells compose into cycles/waves/roadmaps). Track A of cnos#405.
@@ -185,7 +185,7 @@ Tooling and observability flags (`--allowedTools`, `--output-format stream-json 
 
 The 7 axes are the **implementation contract** — the architectural shape the cycle ships, distinct from the behavioral ACs the cycle satisfies. Behavioral ACs test what the implementation *does*; the implementation contract pins what the implementation *is* (language, location, integration shape). The two are independent — a behaviorally-correct implementation can still violate the contract by shipping in the wrong language, at the wrong package path, or as a separate binary instead of a `cn` subcommand.
 
-**γ's obligation.** γ writes the contract values per repo conventions or escalates to δ. **γ MUST NOT dispatch with empty / "TBD" rows.** If γ doesn't know a value, γ asks δ — the inward-membrane function (§3 below) exists for this enrichment. δ fills the row per conventions or, if genuinely undecidable, blocks dispatch and escalates to operator-as-human. Mid-cycle contract changes are logged in `.cdd/unreleased/{N}/gamma-clarification.md` (the mid-flight rescue channel; canonical home pending Sub 4 of cnos#404).
+**γ's obligation.** γ writes the contract values per repo conventions or escalates to δ. **γ MUST NOT dispatch with empty / "TBD" rows.** If γ doesn't know a value, γ asks δ — the inward-membrane function (§3 below) exists for this enrichment. δ fills the row per conventions or, if genuinely undecidable, blocks dispatch and escalates to operator-as-human. Mid-cycle contract changes are logged in `.cdd/unreleased/{N}/gamma-clarification.md` (the mid-flight rescue channel; canonical home at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../mid-flight/SKILL.md)).
 
 - ❌ Dispatch with rows empty / "TBD" / implicit conventions ("everyone knows we use Go").
 - ❌ γ silently re-pins a row mid-cycle without logging in `gamma-clarification.md`.
@@ -198,7 +198,7 @@ When γ (or δ) pushes spec changes to `origin/main` while α/β sessions are in
 - **Identity-rotation mode (`cn dispatch` / `claude -p`):** Not applicable — each role invocation loads skills fresh from the filesystem; the next dispatch picks them up.
 - **Long-lived polling sessions (legacy):** γ writes a coordination note to `.cdd/unreleased/{N}/gamma-coordination.md` on `cycle/{N}` naming the spec change and affected skill path; or surfaces via the dispatch channel.
 
-The list of *which* skill files trigger propagation (CDD.md, role skill files, release/SKILL.md, review/SKILL.md when they land on `main` while a cycle is in-flight) is consumer-side — it is named in `cnos.cdd/skills/cdd/gamma/SKILL.md §2.5 → "Spec-staleness propagation"` and is CDD-specific. Sub 4 of cnos#404 (`cnos.handoff/skills/handoff/mid-flight/SKILL.md`) absorbs the wire-format invariant ("γ writes a coordination note when spec changes mid-flight") into the mid-flight rescue skill; the consumer-specific file list stays in cdd-gamma.
+The list of *which* skill files trigger propagation (CDD.md, role skill files, release/SKILL.md, review/SKILL.md when they land on `main` while a cycle is in-flight) is consumer-side — it is named in `cnos.cdd/skills/cdd/gamma/SKILL.md §2.5 → "Spec-staleness propagation"` and is CDD-specific. The wire-format invariant ("γ writes a coordination note when spec changes mid-flight") lives in [`cnos.handoff/skills/handoff/mid-flight/SKILL.md §2.6`](../mid-flight/SKILL.md) (Sub 4 of cnos#404 / cnos#418); the consumer-specific file list stays in cdd-gamma.
 
 Derives from cnos#301 §9.1: γ proposed an out-of-spec merge because σ's `4a0f678` ("merge is β authority") landed mid-cycle outside γ's loaded snapshot. The reactive fix is the staleness check in γ's Load Order; this is the proactive side.
 
@@ -255,7 +255,7 @@ When γ needs to change a pinned axis after α has started coding, γ writes an 
 
 α and β polling sessions detect the `gamma-clarification.md` write as a wake-up event and re-read the issue body via `gh issue view` (cache-bust) before continuing. β's Rule 7 verification treats a `gamma-clarification.md`-logged re-pin as authoritative; an un-logged silent re-pin is a contract violation regardless of the new value.
 
-The mid-flight rescue mechanism — file path; authoring role; reader role; trigger conditions; cache-bust semantics — has its canonical home pending Sub 4 of cnos#404 (`cnos.handoff/skills/handoff/mid-flight/SKILL.md`). This skill cites it; Sub 4 owns it.
+The mid-flight rescue mechanism — file path; authoring role; reader role; trigger conditions; cache-bust semantics — has its canonical home at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../mid-flight/SKILL.md) (Sub 4 of cnos#404 / cnos#418). This skill cites it; mid-flight owns it.
 
 ---
 
@@ -302,7 +302,7 @@ Consumer role-skills cite this skill for the dispatch-prompt template, the 7-axi
 The dispatch + implementation-contract doctrine has empirical anchors across the cnos#388–#412 wave:
 
 - **[cnos#389](https://github.com/usurobor/cnos/issues/389)** — Python-not-Go. α implemented V in Python despite cnos being Go-native. γ's prompt did not name "language" as a pinned axis; δ did not catch the omission at routing; α improvised; β APPROVE-d on behavior-only AC oracles. The diff drifted from the (implicit) architectural shape; the cycle merged in the wrong language.
-- **[cnos#391](https://github.com/usurobor/cnos/issues/391)** — wrong package scoping + separate binary. α placed the Go port in a separate binary at the wrong package path. γ's prompt under-specified package scoping and CLI integration target; δ did not catch the omission; α improvised on both axes. cnos#391 is also the empirical anchor for the **mid-flight rescue mechanism** (the `gamma-clarification.md` mechanism crystallized here as a γ→in-flight-α channel; canonical home pending Sub 4 of cnos#404).
+- **[cnos#391](https://github.com/usurobor/cnos/issues/391)** — wrong package scoping + separate binary. α placed the Go port in a separate binary at the wrong package path. γ's prompt under-specified package scoping and CLI integration target; δ did not catch the omission; α improvised on both axes. cnos#391 is also the empirical anchor for the **mid-flight rescue mechanism** (the `gamma-clarification.md` mechanism crystallized here as a γ→in-flight-α channel; canonical home at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../mid-flight/SKILL.md), landed under Sub 4 of cnos#404 / cnos#418).
 - **[cnos#392](https://github.com/usurobor/cnos/issues/392)** — recovery cycle. First cycle where δ pinned the 7-axis implementation contract at dispatch as an ad-hoc operator action. The cycle succeeded specifically because of it; the `cdd-iteration.md` F1–F4 forecast the four patches cnos#393 ships.
 - **[cnos#393](https://github.com/usurobor/cnos/issues/393)** — codification. Made the `## Implementation contract` block a first-class γ obligation in the dispatch prompt; made δ-as-inward-membrane doctrine; declared the four-surface mesh (γ template / δ enrichment / α constraint / β verification). This skill is the cnos.handoff-resident extraction of that doctrine.
 - **[cnos#397](https://github.com/usurobor/cnos/issues/397)** — Phase 4a of cnos#366. Relocated the δ-inward-membrane substance from `operator/SKILL.md §3a` to `delta/SKILL.md §2`; unified the two-sided membrane framing (outward §1 + inward §2) and the override semantics in one role-skill home.
@@ -341,8 +341,8 @@ The dispatch + implementation-contract doctrine has empirical anchors across the
 
 - `cnos.handoff/skills/handoff/HANDOFF.md` — package contract; this skill is one sub-surface.
 - `cnos.handoff/skills/handoff/cross-repo/SKILL.md` — Sub 2 / cnos#416 (landed). Cross-repo coordination wire-format; structural precedent for this skill's frontmatter shape.
-- `cnos.handoff/skills/handoff/mid-flight/SKILL.md` — Sub 4 of cnos#404 (forthcoming). The `gamma-clarification.md` rescue mechanism; this skill cites it for mid-cycle re-pinning.
-- `cnos.handoff/skills/handoff/artifact-channel/SKILL.md` — Sub 4 of cnos#404 (forthcoming). The `.cdd/unreleased/{N}/` per-role write ownership; this skill cites it as the channel `gamma-clarification.md` lives on.
+- `cnos.handoff/skills/handoff/mid-flight/SKILL.md` — Sub 4 of cnos#404 (landed under cnos#418). The `gamma-clarification.md` rescue mechanism; this skill cites it for mid-cycle re-pinning.
+- `cnos.handoff/skills/handoff/artifact-channel/SKILL.md` — Sub 4 of cnos#404 (landed under cnos#418). The `.cdd/unreleased/{N}/` per-role write ownership; this skill cites it as the channel `gamma-clarification.md` lives on.
 - `cnos.handoff/skills/handoff/receipt-stream/SKILL.md` — Sub 5 of cnos#404 (forthcoming). The cross-cycle `cdd-iteration.md` aggregator; this skill cites it for empirical-anchor receipt-stream context.
 - `cnos.cdd/skills/cdd/gamma/SKILL.md` — γ role-skill; γ's coordination loop (selection, branch pre-flight, scaffold gate, polling, unblock) lives here; cites this skill for the dispatch-prompt template and the implementation-contract injection rule.
 - `cnos.cdd/skills/cdd/alpha/SKILL.md §3.6` — α constraint; cites this skill for the schema and authority.
@@ -359,8 +359,8 @@ The dispatch + implementation-contract doctrine has empirical anchors across the
 ## 8. Non-goals
 
 - This skill does NOT own role-local procedure. γ's coordination loop (selection, branch pre-flight, scaffold gate, polling, unblock), α's intake, β's review protocol, δ's outward membrane (BoundaryDecision on receipt + V verdict), and δ's override authority all live in the consumer role-skills under `cnos.cdd/skills/cdd/`.
-- This skill does NOT own the mid-flight rescue mechanism. The `gamma-clarification.md` cache-bust semantics, the in-flight α/β polling protocol, and the file's reader/authoring rules belong to Sub 4 of cnos#404 (`cnos.handoff/skills/handoff/mid-flight/SKILL.md`). This skill cites the mechanism for contract re-pinning; the mechanism itself is Sub 4's territory.
-- This skill does NOT own the artifact-channel rules. The `.cdd/unreleased/{N}/` per-role write ownership, the sequential α→β→γ flow, and the frozen-snapshot rule on merge belong to Sub 4 of cnos#404 (`cnos.handoff/skills/handoff/artifact-channel/SKILL.md`). This skill cites the channel as the place `gamma-clarification.md` lives.
+- This skill does NOT own the mid-flight rescue mechanism. The `gamma-clarification.md` cache-bust semantics, the in-flight α/β polling protocol, and the file's reader/authoring rules live at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../mid-flight/SKILL.md) (Sub 4 of cnos#404 / cnos#418). This skill cites the mechanism for contract re-pinning; mid-flight owns the mechanism.
+- This skill does NOT own the artifact-channel rules. The `.cdd/unreleased/{N}/` per-role write ownership, the sequential α→β→γ flow, and the frozen-snapshot rule on merge live at [`cnos.handoff/skills/handoff/artifact-channel/SKILL.md`](../artifact-channel/SKILL.md) (Sub 4 of cnos#404 / cnos#418). This skill cites the channel as the place `gamma-clarification.md` lives.
 - This skill does NOT own CCNF-O orchestration. How cycles compose into waves, roadmaps, gates, and joins is Track A of cnos#405; the dispatch wire-format transports work *within* a cycle (γ → α/β), not *across* cycles.
 - This skill does NOT own runtime execution. The dispatch invocation primitive (`cn dispatch`, `claude -p`), observability flags, identity rotation, and timeout recovery live in `cnos.cdd/skills/cdd/harness/SKILL.md`. This skill is the prompt; harness is the runtime that routes the prompt.
 - This skill does NOT type the 7-axis implementation contract into a CUE schema. Whether to lift the Markdown table into `schemas/handoff/implementation-contract.cue` is deferred; if a future cycle pressures the type-lift, the Markdown template references the schema by `$ref` then.
