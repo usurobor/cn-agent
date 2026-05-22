@@ -32,9 +32,9 @@ calls: []
 
 **Coherent release: every version bump is a measured coherence delta with a complete audit trail.**
 
-β owns: review approval outcome, `git merge` into main, and β close-out. **δ owns tag/release/deploy** (the release boundary — `scripts/release.sh`, binary publication, deployment). γ owns `RELEASE.md` authoring, cycle-directory movement, and the post-release assessment. β does not tag, push tags, bump versions for release, or cut the disconnect release. See `CDD.md` §1.4 β algorithm, γ algorithm Phase 5a, `operator/SKILL.md` §3.4 (doctrinal frame), and `release-effector/SKILL.md` (mechanics).
+β owns: review approval outcome, `git merge` into main, and β close-out. **δ owns tag/release/deploy** (the release boundary — `scripts/release.sh`, binary publication, deployment). γ owns `RELEASE.md` authoring, cycle-directory movement, and the post-release assessment. β does not tag, push tags, bump versions for release, or cut the disconnect release. See `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" (Step 8 β review/merge; Steps 9–13 γ-and-δ release sequence), `operator/SKILL.md` §3.4 (doctrinal frame), and `release-effector/SKILL.md` (mechanics).
 
-Canonical artifact locations (β close-out path, RELEASE.md, snapshot dirs, tag policy) are defined in `CDD.md` §5.3a (Artifact Location Matrix). All tags are bare `X.Y.Z`; `v`-prefixed tags are legacy and warn-only.
+Canonical artifact locations (β close-out path, RELEASE.md, snapshot dirs, tag policy) are defined in `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix". All tags are bare `X.Y.Z`; `v`-prefixed tags are legacy and warn-only.
 
 A release has parts: readiness check, version decision, changelog, release notes, tag, binaries, deployment, validation. Coherence = each part completed and each artifact matches the others (version in code = tag = changelog = binary = deployed agent). The released system is validated, not merely published.
 
@@ -170,7 +170,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
       mv "$dir" .cdd/releases/X.Y.Z/
     done
     ```
-  - Each `.cdd/releases/{X.Y.Z}/{N}/` directory carries the same role-prefixed files that lived in `.cdd/unreleased/{N}/` during the cycle (`self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, plus any cycle-specific extras) per CDD.md §Tracking + §5.3a.
+  - Each `.cdd/releases/{X.Y.Z}/{N}/` directory carries the same role-prefixed files that lived in `.cdd/unreleased/{N}/` during the cycle (`self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, plus any cycle-specific extras) per `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" + §"Artifact contract" → §"Location matrix".
   - Include the moves in the release commit
   - `.cdd/unreleased/` should be empty after the release commit
   - ❌ Leave cycle directories in `unreleased/` after tagging (lose the version association)
@@ -219,7 +219,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - Commit: `git commit -m "release: X.Y.Z — summary"` (includes VERSION, manifests, CHANGELOG, RELEASE.md)
   - **Before any push that follows a rebase, run the eng/ship rebase-integrity gate** (see `eng/ship` § Rebase-Collision Integrity)
   - Push: `git push origin main`
-  - **β signals "release ready for δ tag"** in `beta-closeout.md` — β does not execute `git tag` or push tags; δ creates the single annotated tag `X.Y.Z` with generated message as part of the disconnect release flow (CDD.md Phase 6 step 17). RELEASE.md remains the GitHub release body authority; generated tag messages are additive.
+  - **β signals "release ready for δ tag"** in `beta-closeout.md` — β does not execute `git tag` or push tags; δ creates the single annotated tag `X.Y.Z` with generated message as part of the disconnect release flow (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 10 — δ release). RELEASE.md remains the GitHub release body authority; generated tag messages are additive.
   - ❌ β pushes tag directly (conflicts with δ tag authority)
   - ❌ Mix `v` prefix and bare versions across tags (`v3.14.6` then `3.14.7`)
   - ❌ Commit without RELEASE.md (CI auto-generates sparse notes)
@@ -261,7 +261,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
     - decision: released version X.Y.Z
   - If the triadic protocol is active, β also writes:
     - release evidence in `.cdd/unreleased/{N}/beta-closeout.md`
-    - β close-out narrative in `.cdd/unreleased/{N}/beta-closeout.md` for γ to read (separate from `beta-review.md`, which carries the round-by-round verdicts; see `CDD.md` §Tracking canonical filename table)
+    - β close-out narrative in `.cdd/unreleased/{N}/beta-closeout.md` for γ to read (separate from `beta-review.md`, which carries the round-by-round verdicts; see `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Cycle-state evidence")
   - γ writes the post-release assessment after β's release and close-out are complete
   - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/self-coherence.md` — it carries the trace through step 7a; β records the review verdict in `.cdd/unreleased/{N}/beta-review.md` (steps 8–9) and the close-out + release evidence in `.cdd/unreleased/{N}/beta-closeout.md` (step 10).
 
@@ -297,7 +297,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
 3.6. **If CI fails post-tag, amend don't re-tag**
   - `git commit --amend --no-edit && git tag -d X.Y.Z && git tag X.Y.Z && git push --force origin main X.Y.Z`
-  - Tags are **bare** (`X.Y.Z`, never `vX.Y.Z`) — see §2.6 and CDD.md §5.3a
+  - Tags are **bare** (`X.Y.Z`, never `vX.Y.Z`) — see §2.6 and `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix"
   - Keeps a clean single tag, single release commit
   - ❌ `git tag -d vX.Y.Z && git tag -a vX.Y.Z && git push --force --tags` (mixes legacy v-prefix; force-pushes all tags)
   - ❌ `3.9.1`, `3.9.1-fix`, `3.9.1-fix2` (proliferating tags)
@@ -325,7 +325,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   | **C**   | 2.0 | partial-protocol release with multiple drift items |
   | **< C** | < 2 | re-open and remediate; do not close |
 
-  **Closure-gate override (fires before geometric-mean computation).** If any artifact required by `gamma/SKILL.md` §2.10 closure gate (per `CDD.md` §5.3b ownership matrix) is absent from the cycle's `.cdd/unreleased/{N}/` directory at merge time — specifically any of `alpha-closeout.md`, `beta-closeout.md`, or `gamma-closeout.md` for a triadic cycle — then `C_Σ` is forced to `<C` regardless of per-axis math. Cycle disposition is "open and remediate"; the geometric mean is not computed. This override is verified mechanically by `scripts/validate-release-gate.sh --mode pre-merge` (see AC1, issue #339). The math below applies only after the closure gate passes.
+  **Closure-gate override (fires before geometric-mean computation).** If any artifact required by `gamma/SKILL.md` §2.10 closure gate (per `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix") is absent from the cycle's `.cdd/unreleased/{N}/` directory at merge time — specifically any of `alpha-closeout.md`, `beta-closeout.md`, or `gamma-closeout.md` for a triadic cycle — then `C_Σ` is forced to `<C` regardless of per-axis math. Cycle disposition is "open and remediate"; the geometric mean is not computed. This override is verified mechanically by `scripts/validate-release-gate.sh --mode pre-merge` (see AC1, issue #339). The math below applies only after the closure gate passes.
 
   **Letter normalization (`<C` and `C−`).** The rubric table uses `<C` as the grade label. Prior CHANGELOG, PRA, and alpha-closeout artifacts for cycles #331, #333, and #334 used `C−` for the same disposition. These are the same grade: `C−` is the operator-visible projection of `<C`. Both mean "open and remediate; do not close." Authors may use either form; the CHANGELOG column uses `<C` for rubric fidelity and `C−` is accepted as equivalent in prose artifacts.
 

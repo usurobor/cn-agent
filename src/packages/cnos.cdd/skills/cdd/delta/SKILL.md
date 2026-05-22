@@ -82,9 +82,9 @@ ACCEPTED                         →   receipt transmissible to parent scope
 
 | Action | Authority | Mechanics location |
 |--------|-----------|--------|
-| Pre-merge gate validation | δ authorises; γ requests via `scripts/validate-release-gate.sh --mode pre-merge` (`CDD.md` §5.3b + `gamma/SKILL.md` §2.10) | `operator/SKILL.md` §3.1 |
+| Pre-merge gate validation | δ authorises; γ requests via `scripts/validate-release-gate.sh --mode pre-merge` (`cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" + `gamma/SKILL.md` §2.10) | `operator/SKILL.md` §3.1 |
 | Push β-approved merge to main | δ executes on β's behalf when env/auth blocks β; this is execution of β's integration authority, not δ approval | `operator/SKILL.md` §3.1 |
-| Release-boundary preflight | δ verifies merge commit, release artifacts, tag/deploy preconditions, platform readiness; decision is proceed / request changes / override (CDD §1.4 Phase 5a) | `operator/SKILL.md` §3.1 |
+| Release-boundary preflight | δ verifies merge commit, release artifacts, tag/deploy preconditions, platform readiness; decision is proceed / request changes / override (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 9 — δ gate) | `operator/SKILL.md` §3.1 |
 | Tag push + release | **δ is sole tag-author** — β does not tag; only δ creates tags per cycle | `release-effector/SKILL.md` |
 | Branch delete | After cycle closure and merge | `release-effector/SKILL.md` §5 |
 | Issue filing on external repos | Cross-project dependency | `operator/SKILL.md` §3.1 |
@@ -234,7 +234,7 @@ Override is **for information asymmetry or hard constraints, not preference**.
 
 ### 3.4. Override protocol
 
-Per `CDD.md` §1.4: the reassignment must name the target agent and the reason. No implicit drift.
+Per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule" and `operator/SKILL.md` §3.4 (override protocol): the reassignment must name the target agent and the reason. No implicit drift.
 
 State:
 

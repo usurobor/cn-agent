@@ -27,7 +27,7 @@ outputs:
 requires:
   - δ has read operator/SKILL.md §3 (outward gate policy)
   - γ has shipped RELEASE.md and the cycle-dir moves per release/SKILL.md §2.5–§2.5a (or scripts/release.sh will perform the moves)
-  - gamma-closeout.md exists on main (per CDD.md §5.3b)
+  - gamma-closeout.md exists on main (per cnos.cds/skills/cds/CDS.md §"Artifact contract" → §"Frozen snapshot rule")
   - β has signaled "release ready for δ tag" in beta-closeout.md (per release/SKILL.md §2.6)
 calls:
   - release/SKILL.md
@@ -52,8 +52,8 @@ Before δ runs `scripts/release.sh`, all of the following must be true on `main`
 
 | Precondition | Owner | Verified where |
 |---|---|---|
-| `gamma-closeout.md` exists on main | γ | `CDD.md` §5.3b ownership matrix; `gamma/SKILL.md` §2.10 closure gate |
-| `RELEASE.md` exists at repo root | γ | `release/SKILL.md` §2.5; `CDD.md` §5.3b |
+| `gamma-closeout.md` exists on main | γ | `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10 closure gate |
+| `RELEASE.md` exists at repo root | γ | `release/SKILL.md` §2.5; `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" |
 | Cycle directories moved (or ready to move via the script) | γ | `release/SKILL.md` §2.5a |
 | VERSION decided (semver bump) | γ + β | `release/SKILL.md` §2.2 |
 | β signaled "release ready for δ tag" in `beta-closeout.md` | β | `release/SKILL.md` §2.6 |
@@ -104,7 +104,7 @@ After the script returns, monitor release CI per §3 below.
 
 ## 2. Tag policy (bare X.Y.Z, no v-prefix)
 
-**All tags are bare `X.Y.Z`.** Canonical reference: `CDD.md` §5.3a Artifact Location Matrix — *"Tags are bare `X.Y.Z` everywhere (VERSION file, git tag, branch name version segment, CHANGELOG row, RELEASE.md, snapshot directory). `v`-prefixed tags are legacy and warn-only."*
+**All tags are bare `X.Y.Z`.** Canonical reference: `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix" — *"Tags are bare `X.Y.Z` everywhere (VERSION file, git tag, branch-name version segment, CHANGELOG row, RELEASE.md, snapshot directory). `v`-prefixed tags are legacy and warn-only."*
 
 The bare-version convention applies to every surface in the chain:
 
@@ -127,7 +127,7 @@ git for-each-ref refs/tags/<version> --format='%(contents)'
 
 **One tag per release.** Per `release/SKILL.md` §3.6: if CI fails post-tag, amend the release commit, delete-and-recreate the same bare-version tag, force-push. Do NOT proliferate `3.9.1`, `3.9.1-fix`, `3.9.1-fix2`.
 
-- ❌ `v3.67.0` (legacy v-prefix; warn-only per CDD §5.3a)
+- ❌ `v3.67.0` (legacy v-prefix; warn-only per `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix")
 - ❌ Lightweight tag (`git tag $VERSION` without `-a` or `-F`) — loses the structured message
 - ❌ Tag proliferation across CI-red retries
 - ✅ One bare `3.67.0` annotated tag, amended until CI green
@@ -190,7 +190,7 @@ When release CI reports red, δ owns the recovery. The runbook is mandatory; dec
 After the release is declared complete (CI green or accepted override), δ deletes merged cycle branches. This is mechanical cleanup, not judgment — if it's merged into main, it's dead.
 
 **Targets:**
-- Cycle branches: `cycle/{N}` (post-#287 canonical form per `CDD.md` §4.2)
+- Cycle branches: `cycle/{N}` (post-#287 canonical form per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch rule")
 - γ session branches: harness-given `claude/...` or operator-named `gamma/session-{N}` patterns
 - Any other branches merged into main during this release
 
@@ -224,13 +224,13 @@ git push origin --delete cycle/399
 
 These are the hard rules δ enforces from the release-effector surface. Each maps to a precondition or a discipline failure mode evidenced by prior cycles.
 
-1. **Do not tag/release before `gamma-closeout.md` exists on main.** γ closure declaration gates the tag. (`CDD.md` §5.3b; `gamma/SKILL.md` §2.10. The doctrinal frame lives in `operator/SKILL.md` §3.4.)
+1. **Do not tag/release before `gamma-closeout.md` exists on main.** γ closure declaration gates the tag. (`cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10. The doctrinal frame lives in `operator/SKILL.md` §3.4.)
 2. **Manual `git tag` is not allowed.** `scripts/release.sh` is the only way to tag a release.
 3. **One tag per release.** Per `release/SKILL.md` §3.6: amend the release commit and reuse the same bare-version tag on CI-red retry. Do not proliferate `3.9.1-fix`, `3.9.1-fix2`.
 4. **Annotated tags only.** Generated message via `scripts/generate-release-tag-message.sh`. Lightweight tags lose the structured metadata.
 5. **δ blocks release completion until CI is green** (or operator explicitly accepts a known pre-existing failure per §4 step 5).
 6. **The tag is the signal.** No separate completion announcement is needed for the disconnect tag itself — the tag appearing on main IS proof that all gate actions completed. Mid-cycle gate actions (per `operator/SKILL.md` §3.3) still require explicit completion confirmations; the disconnect tag does not. (The doctrinal claim lives in `operator/SKILL.md` §3.5; the mechanical fact that the tag is what δ pushes lives here.)
-7. **No mixing v-prefixed and bare tags.** Bare `X.Y.Z` only, per CDD §5.3a.
+7. **No mixing v-prefixed and bare tags.** Bare `X.Y.Z` only, per `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix".
 8. **The release is structural, not consumer-driven.** Untagged post-cycle patches on main are an open boundary; δ does not defer release because "no one is downstream right now." (The doctrinal claim lives in `operator/SKILL.md` §3.4.)
 
 ---
@@ -283,8 +283,8 @@ These are intentionally out of scope. Crossing them is a role-boundary violation
 - `release/SKILL.md` §2.7 (release CI polling — β-side text says δ owns this per release-effector §3)
 - `release/SKILL.md` §3.6 (amend-don't-re-tag — invoked by §4 step 3 above)
 - `release/SKILL.md` §3.8 (TSC scoring — γ/β; release-effector does not score)
-- `CDD.md` §5.3a (Artifact Location Matrix — canonical tag policy)
-- `CDD.md` §5.3b (Role/artifact ownership matrix — gamma-closeout.md gates tag)
+- `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix" (canonical tag policy)
+- `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" (gamma-closeout.md gates tag)
 - `gamma/SKILL.md` §2.10 (γ closure gate — verifies preconditions above)
 - `gamma/SKILL.md` §2 release-prep (γ writes RELEASE.md + moves cycle dirs before requesting δ disconnect)
 - `scripts/release.sh` (the script — δ does not reimplement)

@@ -1,5 +1,10 @@
 # CDS Extraction Map — v0.1
 
+> **Status:** Sub 6 ([cnos#411](https://github.com/usurobor/cnos/issues/411))
+> complete — `CDD.md` "pending cds extraction" markers replaced with CDS
+> pointers; cross-references in 11 cdd skill files + 2 YAML templates
+> re-pointed at CDS canonical homes (AC1–AC9 PASS).
+
 **Version:** 0.1 (Sub 1 of [cnos#403](https://github.com/usurobor/cnos/issues/403); shipped under [cnos#406](https://github.com/usurobor/cnos/issues/406))
 **Date:** 2026-05-22
 **Placement:** `src/packages/cnos.cds/docs/extraction-map.md`

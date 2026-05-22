@@ -165,9 +165,9 @@ This path resolves the historical collision between "intake scan" and "outbound 
 
 A STATUS ledger applies to cases (a) and (c) when the case carries proposal-shaped lifecycle. Cases (b) and (d) do not carry STATUS (case b's trace is patch-confirmation in LINEAGE; case d's disposition is recorded in LINEAGE).
 
-The STATUS vocabulary is **canonical in `CDD.md` §"Cross-repo proposal lifecycle"** (lines 234–243). This section codifies the transition graph, emitter rules, master/sub landed rule, and bundle-state phase mapping that CDD.md's vocabulary list does not enumerate.
+The STATUS vocabulary is **canonical in `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Cross-repo proposals"**. This section codifies the transition graph, emitter rules, master/sub landed rule, and bundle-state phase mapping that the CDS vocabulary list does not enumerate.
 
-#### 2.3.1. Event vocabulary (per CDD.md)
+#### 2.3.1. Event vocabulary (per CDS §"Coordination surfaces" → §"Cross-repo proposals")
 
 Eight events:
 
@@ -247,7 +247,7 @@ Illegal transitions:
 
 #### 2.3.3. `drafted → accepted` (direct acceptance from drafted state)
 
-The cn-sigma/agent-activate-skill anchor shows `drafted sigma → accepted gamma@cnos` without an intermediate `submitted` event. CDD.md says `submitted` is "the only event required for target intake" — implying intake without `submitted` is unusual but not impossible. The protocol permits `drafted → accepted` (or `modified` / `rejected`) when:
+The cn-sigma/agent-activate-skill anchor shows `drafted sigma → accepted gamma@cnos` without an intermediate `submitted` event. `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Cross-repo proposals" says `submitted` is "the only event required for target intake" — implying intake without `submitted` is unusual but not impossible. The protocol permits `drafted → accepted` (or `modified` / `rejected`) when:
 
 1. The source explicitly delegates filing-authority to the target (e.g. an agent hub authoring a proposal whose first reader is expected to act, not approve-then-act).
 2. The target γ records the delegation in the cnos-side LINEAGE's `## Source` or `## Target` section.

@@ -120,7 +120,7 @@ Identify what governs before proposing what changes.
 4.1. **Enumerate downstream consumers**
   - What reads, renders, or acts on the artifact you're changing?
   - ❌ Update CDD skill, forget post-release template consumes the new metrics
-  - ✅ "CDD §11.11 defines metrics → post-release template must render them → review skill must tag findings by type"
+  - ✅ "`cnos.cds/skills/cds/CDS.md` §"Assessment" → §"PRA contents" defines metrics → post-release template must render them → review skill must tag findings by type"
   - ✅ "Adding a new FSM state → check: protocol interface, doctor checks, status output, packed context renderer, tests"
 
 4.2. **Enumerate upstream producers**
@@ -136,12 +136,12 @@ Identify what governs before proposing what changes.
 4.4. **Name authority relationships**
   - If two artifacts carry the same information, which governs?
   - ❌ Both skill and canonical doc have the rule, unclear which wins
-  - ✅ "CDD.md is the normative source for the lifecycle algorithm. Role skills (alpha/, beta/, gamma/) expand execution detail for their role. Each fact lives in exactly one place — skills do not restate canonical rules, they add role-local detail that CDD.md does not cover."
+  - ✅ "`cnos.cds/skills/cds/CDS.md` is the normative source for the software-cycle lifecycle algorithm (CDD.md owns the generic CCNF kernel). Role skills (alpha/, beta/, gamma/) expand execution detail for their role. Each fact lives in exactly one place — skills do not restate canonical rules, they add role-local detail that CDS.md does not cover."
 
 4.5. **Trace rule changes through all embeddings**
   - When you add a rule, find every artifact that embeds, templates, or implements that rule
-  - ❌ Add review quality metrics to CDD, forget post-release template still has old 4-section output
-  - ✅ "New metric added to CDD §11.11 → check: post-release template (SKILL.md), post-release procedure (Step 5.5), review skill taxonomy (§5.1), self-coherence report format"
+  - ❌ Add review quality metrics to CDS, forget post-release template still has old 4-section output
+  - ✅ "New metric added to `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"PRA contents" → check: post-release template (SKILL.md), post-release procedure (Step 5.5), review skill taxonomy (§5.1), self-coherence report format"
 
 ---
 

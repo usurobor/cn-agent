@@ -45,8 +45,8 @@ calls:
 1. **Dispatch γ** — δ dispatches γ via the harness; γ reads the issue, creates the cycle branch, and produces α/β prompts. See `harness/SKILL.md` §1 for invocation mechanics.
 2. **Dispatch α** — δ dispatches α via the harness with the prompt γ produced; α implements on the cycle branch and exits after signaling review-readiness.
 3. **Dispatch β** — δ dispatches β via the harness with the prompt γ produced; β reviews, merges, writes β close-out, and exits.
-4. **Re-dispatch α for fix rounds** (when β returns RC) — δ dispatches α via the harness with the fix-round re-dispatch prompt (CDD.md §1.6a); α fixes findings, appends fix-round to self-coherence.md, exits.
-5. **Re-dispatch α for close-out** (when γ requests after β merge) — δ dispatches α via the harness with the close-out re-dispatch prompt (CDD.md §1.6a); α writes alpha-closeout.md, commits to main, exits. **This step is mandatory when γ requests it.** γ cannot complete the closure gate without alpha-closeout.md.
+4. **Re-dispatch α for fix rounds** (when β returns RC) — δ dispatches α via the harness with the fix-round re-dispatch prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in §5.2 of this file); α fixes findings, appends fix-round to self-coherence.md, exits.
+5. **Re-dispatch α for close-out** (when γ requests after β merge) — δ dispatches α via the harness with the close-out re-dispatch prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in §5.2 of this file); α writes alpha-closeout.md, commits to main, exits. **This step is mandatory when γ requests it.** γ cannot complete the closure gate without alpha-closeout.md.
 6. **Gate** — execute external actions: push main, tag, release, branch deletes. **Do not tag/release before `gamma-closeout.md` exists on main.** Disconnect-release mechanics live in [`release-effector/SKILL.md`](../release-effector/SKILL.md) (Phase 4c of cnos#366, cycle/399); see §3.4 below for the doctrinal frame. **δ blocks release completion until CI is green** (or operator explicitly accepts a known pre-existing failure per the release-effector recovery runbook).
 7. **Override** — reassign roles or redirect scope only with an explicit declaration. The override doctrine (override is a degraded boundary action, never rewrites V's verdict, requires a structured override block when proceeding against a non-PASS verdict) lives in [`delta/SKILL.md`](../delta/SKILL.md) §3; this step is operator-as-coordinator routing the override declaration through the cycle.
 
@@ -102,9 +102,9 @@ Between these signals, the operator's correct action is nothing.
 
 ### 2.2. Subscribe to the issue
 
-Poll the issue and cycle branches for activity using the same transition-only pattern as the triad (CDD §1.4). δ polls less frequently than γ — the wake-up signals are coarser (gate requests, not per-commit state). 5-minute interval is sufficient for δ; γ owns the tight loop.
+Poll the issue and cycle branches for activity using the same transition-only pattern as the triad (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Polling primitives"). δ polls less frequently than γ — the wake-up signals are coarser (gate requests, not per-commit state). 5-minute interval is sufficient for δ; γ owns the tight loop.
 
-The polling loop mechanics (issue-activity poller, multi-branch poller with reachability re-probe) live in `harness/SKILL.md` §5 (Polling and wake-up). δ uses those forms under `Monitor` or equivalent. Canonical cycle branches are `origin/cycle/{N}` (per `CDD.md` §4.2, since #287); the pre-#287 `'origin/claude/*'` glob is warn-only / retrospective per harness §5.3.
+The polling loop mechanics (issue-activity poller, multi-branch poller with reachability re-probe) live in `harness/SKILL.md` §5 (Polling and wake-up). δ uses those forms under `Monitor` or equivalent. Canonical cycle branches are `origin/cycle/{N}` (per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch rule", since #287); the pre-#287 `'origin/claude/*'` glob is warn-only / retrospective per harness §5.3.
 
 ---
 
@@ -118,9 +118,9 @@ The actions in this table require platform permissions agents may lack. **δ-as-
 
 | Action | Trigger | Who requests |
 |--------|---------|-------------|
-| Pre-merge gate validation | Before authorizing β merge, run `scripts/validate-release-gate.sh --mode pre-merge` to verify cycle artifacts exist and are well-formed. See `CDD.md` §5.3b and `gamma/SKILL.md` §2.10. | γ |
+| Pre-merge gate validation | Before authorizing β merge, run `scripts/validate-release-gate.sh --mode pre-merge` to verify cycle artifacts exist and are well-formed. See `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" and `gamma/SKILL.md` §2.10. | γ |
 | Push β-approved merge to main | β runs `git merge` — δ only pushes when β cannot execute the push directly (env/auth constraint). This is execution of β's integration authority, not δ approval. | β or γ |
-| Release-boundary preflight | After β merge + close-outs + γ PRA, δ verifies merge commit, release artifacts, tag/deploy preconditions, and platform readiness. Proceed / request changes / override. See CDD §1.4 Phase 5a. | γ |
+| Release-boundary preflight | After β merge + close-outs + γ PRA, δ verifies merge commit, release artifacts, tag/deploy preconditions, and platform readiness. Proceed / request changes / override. See `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 9 (δ gate). | γ |
 | Tag push + release | After δ preflight confirms and γ closes the cycle. **δ is sole tag-author** — β does not tag; only δ creates tags per cycle (role-policy: `delta/SKILL.md` §1.1) | γ |
 | Branch delete | Cycle closed, merged branches | γ |
 | Issue filing on external repos | Cross-project dependency | γ |
@@ -151,7 +151,7 @@ After all post-cycle work lands on main (γ's PRA + skill patches, δ's own sess
 
 The triad's work is not complete until it is tagged. Untagged post-cycle patches on main are an open boundary — the triad's output is still entangled with whatever comes next. The tag is the disconnection point.
 
-That skill owns: the single-command release script invocation, the bare-`X.Y.Z` tag policy (per CDD §5.3a), post-push CI polling, the CI-red recovery runbook, and merged-cycle-branch deletes. The script-as-only-path discipline (no manual `git tag`) is its rule, not this section's.
+That skill owns: the single-command release script invocation, the bare-`X.Y.Z` tag policy (per `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix"), post-push CI polling, the CI-red recovery runbook, and merged-cycle-branch deletes. The script-as-only-path discipline (no manual `git tag`) is its rule, not this section's.
 
 Two gate-rules δ enforces from this surface (the policy-level claims; mechanics in the effector skill):
 
@@ -198,9 +198,9 @@ Use this configuration when the cycle is substantial (see §5.3 escalation crite
 
 When the operator is a Claude Code agent (one parent session), α and β are dispatched as sub-agents using the Agent tool rather than via separate harness processes. Sub-agents run with fresh context per invocation and are functionally equivalent to a fresh dispatched session for role-isolation purposes (each sub-agent reasons independently, cannot see the parent's conversation state, and cannot see the other sub-agent's conversation state). However, sub-agents inherit MCP scope and filesystem access from the parent session.
 
-**Scope of the collapse.** §5.2 collapses **δ↔γ only**. γ↔α↔β remain structurally separate per `CDD.md §1.4` Triadic rule: γ scaffolds and coordinates in the parent session, α implements in its own sub-agent, β reviews and merges in its own sub-agent. The dyad-plus-coordinator structure is preserved; only the operator (δ) and coordinator (γ) functions fuse into one parent session.
+**Scope of the collapse.** §5.2 collapses **δ↔γ only**. γ↔α↔β remain structurally separate per the triadic rule (`cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule"): γ scaffolds and coordinates in the parent session, α implements in its own sub-agent, β reviews and merges in its own sub-agent. The dyad-plus-coordinator structure is preserved; only the operator (δ) and coordinator (γ) functions fuse into one parent session.
 
-A single sub-agent that performs γ-selection plus α-implementation plus β-review is not §5.2 — it is a §1.4 violation. §5.2 requires three execution contexts: the parent session (γ, also δ), a separate α sub-agent, and a separate β sub-agent. Lumping γ+α+β into one sub-agent breaks role-isolation (α gains access to β's reasoning and vice versa) and is rejected.
+A single sub-agent that performs γ-selection plus α-implementation plus β-review is not §5.2 — it is a triadic-rule violation (`cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule"). §5.2 requires three execution contexts: the parent session (γ, also δ), a separate α sub-agent, and a separate β sub-agent. Lumping γ+α+β into one sub-agent breaks role-isolation (α gains access to β's reasoning and vice versa) and is rejected.
 
 Three structural consequences follow:
 
@@ -214,7 +214,7 @@ For the general principle governing when role collapses are safe, see `ROLES.md 
 
 **Empirical anchors:** The cnos-tsc supercycle (cycles 24–26, close-outs at `usurobor/tsc:.cdd/releases/{0.5.0,0.6.0,0.7.0}/{24,25,26}/gamma-closeout.md`) ran under §5.2 end-to-end; tsc cycle 26 γ-closeout explicitly records "operator (δ = γ in this two-agent configuration)." Tsc cycle #32 (close-out at `usurobor/tsc:.cdd/releases/docs/2026-05-09/32/gamma-closeout.md`) ran §5.2 and produced a five-link branch trail (`cycle/32` → `cycle/32-impl` → `cycle/32-impl-r2` → `cycle/32-merged` → `cycle/32-final`) due to harness push restrictions; that trail is the source observation for consequence (3) above.
 
-**Reference dependencies:** §5.2 dispatch sizing follows `CDD.md §1.6c` (sub-agent dispatch budget heuristic). The harness push restriction that produces branch-name churn is the same constraint that makes the mechanical pre-merge gate (`release/SKILL.md §2.1`) an operator-side action when β cannot push directly (`CDD.md §1.4 β algorithm step 8`).
+**Reference dependencies:** §5.2 dispatch sizing follows `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule" (sequential bounded dispatch model; sub-agent dispatch budget heuristic). The harness push restriction that produces branch-name churn is the same constraint that makes the mechanical pre-merge gate (`release/SKILL.md §2.1`) an operator-side action when β cannot push directly (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 8 — β review and merge).
 
 **Wave-manifest as γ-artifact-of-record (rule 3.11b discoverability under §5.2 wave-mode).** When §5.2 is run as a *wave* — a sequence of related cycles under one wave manifest per §10 Wave Coordination — the canonical γ-artifact-of-record for every sub of the wave is the wave manifest at `.cdd/waves/{wave-id}/manifest.md`, *not* a per-sub `.cdd/unreleased/{N}/gamma-scaffold.md`. The wave manifest carries every γ-artifact duty: γ=δ collapse declaration (or equivalent wave-mode exemption text), pinned file-paths forward-reference contract, standing permissions, timeout budgets, dispatch order, and per-issue scope. β's binding rule 3.11b gate (`review/SKILL.md` §3.11b "Exemption discoverability") recognizes this configuration provided the sub-issue ↔ wave-manifest **discoverability link** is auditable: either (a) the sub-issue body cites the wave by id (e.g. names `.cdd/waves/{wave-id}/manifest.md` or the wave title in a `## Wave` / `## Source` / `## Related` section), OR (b) the master tracking issue named by the wave manifest links to the sub-issue (e.g. GitHub sub-issue relations, wave-tracking comment thread, or an explicit `Issues:` table in the manifest itself naming the sub). Wave authors (δ-as-wave-planner, γ-as-wave-dispatcher) ensure at least one of (a)/(b) holds *before* dispatching any sub of the wave. The manifest template at §10.2 includes the `## Issues` table; populating that table with sub-issue links discharges path (b) by construction. *Derives from: cph cdr-refactor wave 2026-05-18 (master `usurobor/cph#11`; subs `cph#12, #13, #14, #15`) — four-of-four sub-uniform §5.2 with zero per-sub gamma-scaffold; three distinct β substantive-read justifications across four subs of the same wave-manifest-as-γ-artifact configuration. Without explicit recognition of this convention at the operator layer (this clause) and the review layer (rule 3.11b clause (ii)) and the alpha pre-review-gate layer (§2.6 row 15), β must re-derive the substantive read per sub and α cannot pre-empt the gate. Wave-iteration consolidation: `usurobor/cph:.cdd/iterations/wave-2026-05-18.md` Finding F1.*
 
@@ -273,8 +273,8 @@ These are role boundaries. Crossing them without an override declaration breaks 
 | γ dispatch | Dispatch γ via the harness (see `harness/SKILL.md` §1); γ creates branch, returns α/β prompts | γ completion |
 | α dispatch | Dispatch α via the harness with γ's prompt | α completion (exits after review-readiness) |
 | β dispatch | Dispatch β via the harness with γ's prompt | β completion (merge + β close-out) |
-| α fix-round re-dispatch | Dispatch α via the harness with fix-round prompt (CDD.md §1.6a) when β returns RC | α completion (exits after fix-round) |
-| α close-out re-dispatch | Dispatch α via the harness with close-out prompt (CDD.md §1.6a) when γ requests | α completion (alpha-closeout.md on main) |
+| α fix-round re-dispatch | Dispatch α via the harness with fix-round prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in §5.2 of this file) when β returns RC | α completion (exits after fix-round) |
+| α close-out re-dispatch | Dispatch α via the harness with close-out prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in §5.2 of this file) when γ requests | α completion (alpha-closeout.md on main) |
 | Release prep | γ writes RELEASE.md, moves cycle dirs; δ holds until complete | γ request |
 | δ preflight | Verify merge commit, release artifacts, tag preconditions | γ preflight request |
 | Closure | Gate: do not tag before `gamma-closeout.md` exists on main | γ closure declaration (gamma-closeout.md) |
@@ -290,7 +290,7 @@ When a dispatched session SIGTERMs, hits a timeout, or crashes before committing
 
 - **Override declaration.** If δ commits work on behalf of an agent, this is an implicit override; δ declares it per [`delta/SKILL.md`](../delta/SKILL.md) §3 with the standard shape ("Override: operator-identity commit for cycle #N. Reason: …"). The mechanics record entry lives in `self-coherence.md §Debt` per harness §6.4.
 - **Grade implication.** A cycle with operator-identity recovery commits is a cycle with operator override; per `release/SKILL.md §3.8`, the γ-axis grade reflects the override.
-- **Prevention.** The recovery procedure is the failure path; the prevention path is a correctly-sized dispatch budget per `CDD.md` §1.6c. Record budget/AC count in PRA telemetry (`post-release/SKILL.md` §4) so the heuristic refines.
+- **Prevention.** The recovery procedure is the failure path; the prevention path is a correctly-sized dispatch budget per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule" (heuristic constants in this file's §5.2). Record budget/AC count in PRA telemetry (`post-release/SKILL.md` §4) so the heuristic refines.
 
 ---
 

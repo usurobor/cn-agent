@@ -142,7 +142,7 @@ jobs:
 
   # ── cycle-merge ───────────────────────────────────────────────────────────
   # Fires on push to main when the merge commit message contains "Closes #N"
-  # (the canonical CDD merge commit format per CDD.md §Tracking).
+  # (the canonical CDD merge commit format per cnos.cds/skills/cds/CDS.md §"Coordination surfaces").
   notify-cycle-merge:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
