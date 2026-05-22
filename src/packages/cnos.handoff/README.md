@@ -14,41 +14,41 @@ Handoff doctrine is **substrate-independent for the message; substrate-specific 
 
 ## Package Structure
 
-This package is a **v0.1 skeleton**. The doctrine surface (`HANDOFF.md`) and the per-surface sub-skills (`cross-repo/`, `dispatch/`, `mid-flight/`, `artifact-channel/`, `receipt-stream/`) are forthcoming sub-deliverables of [cnos#404](https://github.com/usurobor/cnos/issues/404), executed by Subs 2–5. This Sub 1 ([cnos#415](https://github.com/usurobor/cnos/issues/415)) ships the package boundary, the loader skill, and the extraction map; no content is migrated in this cycle.
+This package is **v0.1 complete**. The doctrine surface (`HANDOFF.md`) and all five per-surface sub-skills (`cross-repo/`, `dispatch/`, `mid-flight/`, `artifact-channel/`, `receipt-stream/`) are landed under [cnos#404](https://github.com/usurobor/cnos/issues/404). The wave bootstrapped under Sub 1 ([cnos#415](https://github.com/usurobor/cnos/issues/415)), migrated content under Subs 2–5 ([cnos#416](https://github.com/usurobor/cnos/issues/416), [cnos#417](https://github.com/usurobor/cnos/issues/417), [cnos#418](https://github.com/usurobor/cnos/issues/418), [cnos#419](https://github.com/usurobor/cnos/issues/419)), and closed via the Sub 6 cross-reference sweep ([cnos#420](https://github.com/usurobor/cnos/issues/420)) on 2026-05-22.
 
 ### `/skills/handoff/` — The Method
 
-- **`SKILL.md`** — Loader skill. Names `HANDOFF.md` and the forthcoming per-surface sub-skill files as advisory targets; declares the load order and the cross-protocol relationship. Shipped by [cnos#415](https://github.com/usurobor/cnos/issues/415) (Sub 1 of [cnos#404](https://github.com/usurobor/cnos/issues/404)) — this sub. Does not call `HANDOFF.md` substantively yet (Subs 2–5 land the substance).
-- **`HANDOFF.md`** — Canonical instantiation contract for the handoff wire format. Will declare: directional cases (intra-cycle / inter-cycle / inter-activation / inter-repo); the artifact families per case; the typed schema(s) (if any are lifted from Markdown into `schemas/handoff/`); the consumer protocol (how a CDD/CDS/CDR/future-c-d-X package binds the wire format to its substrate). **Pending Subs 2–5 of [cnos#404](https://github.com/usurobor/cnos/issues/404).** This file is intentionally absent from the v0.1 skeleton; the `skills/handoff/` directory is tracked via `.gitkeep`.
+- **`SKILL.md`** — Loader skill. Names `HANDOFF.md` and the five canonical per-surface sub-skill files; declares the load order and the cross-protocol relationship. Shipped by [cnos#415](https://github.com/usurobor/cnos/issues/415) (Sub 1); tightened to v0.1-complete state by [cnos#420](https://github.com/usurobor/cnos/issues/420) (Sub 6).
+- **`HANDOFF.md`** — Canonical instantiation contract for the handoff wire format. Declares: the package contract (what cnos.handoff owns vs does not own); the five Landed sub-surfaces with their migration provenance; the related-documents and non-goals.
 
 ### `/docs/` — The Extraction Plan
 
-- **`extraction-map.md`** — Names, for every handoff-class surface currently resident in `cnos.cdd` (or already migrated into `cnos.cds` per the [cnos#403](https://github.com/usurobor/cnos/issues/403) wave), the planned `cnos.handoff` destination and the sub-issue of [cnos#404](https://github.com/usurobor/cnos/issues/404) that will execute the migration. **The load-bearing artifact of Sub 1.** Subs 2–6 dispatch against this map. Six required surface families are covered; additional surfaces discovered during authoring are recorded as additional rows.
+- **`extraction-map.md`** — Surface-by-surface migration map for every handoff-class surface that was resident in `cnos.cdd` (or already in `cnos.cds` per the [cnos#403](https://github.com/usurobor/cnos/issues/403) wave) at the source pin. Subs 2–6 of [cnos#404](https://github.com/usurobor/cnos/issues/404) dispatched against this map; every row carries a "Status" field declaring the v0.1 outcome (migrated / deferred-by-design / complete). Authored under Sub 1 ([cnos#415](https://github.com/usurobor/cnos/issues/415)); finalised under Sub 6 ([cnos#420](https://github.com/usurobor/cnos/issues/420)).
 
-### Forthcoming surfaces
+### Surfaces (v0.1 Landed)
 
-- **`skills/handoff/HANDOFF.md`** — the canonical wire-format contract. Shipped by Sub 2 or Sub 3 of [cnos#404](https://github.com/usurobor/cnos/issues/404) (the sub that lands the first substantive content decides the file's authoring order; the loader names it as the canonical home regardless).
-- **`skills/handoff/cross-repo/SKILL.md`** — cross-repo state machine, bundle file sets per directional case, LINEAGE schemas, feedback-patch format, bundle archival rule, hat-collapse attribution. Shipped by Sub 2 of [cnos#404](https://github.com/usurobor/cnos/issues/404); migrates from `cnos.cdd/skills/cdd/cross-repo/SKILL.md` (644 lines; the primary surface this package absorbs).
-- **`skills/handoff/dispatch/SKILL.md`** — dispatch-prompt template (operator → α/β/γ/δ); implementation-contract 7-axes schema; δ-as-inward-membrane enrichment doctrine. **Landed via Sub 3 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — [cnos#417](https://github.com/usurobor/cnos/issues/417).** Synthesized from `cnos.cdd/skills/cdd/gamma/SKILL.md §2.5` + `cnos.cdd/skills/cdd/operator/SKILL.md §3a` + `cnos.cdd/skills/cdd/delta/SKILL.md §2`.
+- **`skills/handoff/cross-repo/SKILL.md`** — cross-repo state machine, bundle file sets per directional case, LINEAGE schemas, feedback-patch format, bundle archival rule, hat-collapse attribution. **Landed via Sub 2 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — [cnos#416](https://github.com/usurobor/cnos/issues/416).** Migrated wholesale from `cnos.cdd/skills/cdd/cross-repo/SKILL.md` (644 lines); a 28-line compatibility pointer remains at the old path for backward compatibility.
+- **`skills/handoff/dispatch/SKILL.md`** — dispatch-prompt template (operator → α/β/γ/δ); implementation-contract 7-axes schema; δ-as-inward-membrane enrichment doctrine. **Landed via Sub 3 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — [cnos#417](https://github.com/usurobor/cnos/issues/417).** Synthesized from `cnos.cdd/skills/cdd/gamma/SKILL.md §2.5` + `cnos.cdd/skills/cdd/operator/SKILL.md §3a` + `cnos.cdd/skills/cdd/delta/SKILL.md §2` (consumer-side role-skill realizations remain at those paths).
 - **`skills/handoff/mid-flight/SKILL.md`** — `gamma-clarification.md` mechanism for intra-cycle re-pinning of axis values; empirically anchored at [cnos#391](https://github.com/usurobor/cnos/issues/391). **Landed via Sub 4 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — [cnos#418](https://github.com/usurobor/cnos/issues/418).** v0.1 software-cycle operational realization remains at `cnos.cds/skills/cds/CDS.md §"Coordination surfaces" → "Mid-flight clarification"`.
 - **`skills/handoff/artifact-channel/SKILL.md`** — intra-cycle α→β→γ sequential handoff rules over `.cdd/unreleased/{N}/`; per-role write ownership; frozen-snapshot rule; release-time directory move. **Landed via Sub 4 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — [cnos#418](https://github.com/usurobor/cnos/issues/418).** Wire-format invariants live here; the CDS-specific per-artifact contract (filenames, ownership matrix, 13-stage ordered flow) remains canonical at `cnos.cds/skills/cds/CDS.md §"Artifact contract"`.
-- **`skills/handoff/receipt-stream/SKILL.md`** — cross-cycle `cdd-iteration.md` receipt-stream + `.cdd/iterations/INDEX.md` aggregator; ε reader feed. **Landed via Sub 5 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — [cnos#419](https://github.com/usurobor/cnos/issues/419).** Migrated from `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` (now a pointer).
+- **`skills/handoff/receipt-stream/SKILL.md`** — cross-cycle `cdd-iteration.md` receipt-stream + `.cdd/iterations/INDEX.md` aggregator; ε reader feed. **Landed via Sub 5 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — [cnos#419](https://github.com/usurobor/cnos/issues/419).** Migrated from `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` (now a pointer to this skill).
 
 ## Quick Start
 
 **New to cnos.handoff?** Start with:
 
-1. [`docs/extraction-map.md`](docs/extraction-map.md) — Read the extraction map first. It names where each handoff-class surface currently in `cnos.cdd` (or in `cnos.cds` post-#411) will live once Subs 2–5 of [cnos#404](https://github.com/usurobor/cnos/issues/404) land.
+1. [`skills/handoff/HANDOFF.md`](skills/handoff/HANDOFF.md) — The canonical package contract: what cnos.handoff owns, what it does not own, and the five Landed sub-surfaces with their migration provenance.
 2. [`skills/handoff/SKILL.md`](skills/handoff/SKILL.md) — The loader skill; declares the load order and the cross-protocol relationship with `cnos.cdd` (kernel), `cnos.cds` (software realization), and `cnos.cdr` (research realization).
-3. [`../cnos.cdd/skills/cdd/cross-repo/SKILL.md`](../cnos.cdd/skills/cdd/cross-repo/SKILL.md) — The 644-line primary extraction candidate. Reading this surface today gives the clearest picture of what `cnos.handoff` will own once Sub 2 lands the move.
-4. [`skills/handoff/dispatch/SKILL.md`](skills/handoff/dispatch/SKILL.md) — the dispatch-prompt template + 7-axis implementation-contract schema + δ-as-inward-membrane doctrine, landed under Sub 3 / [cnos#417](https://github.com/usurobor/cnos/issues/417). Consumer-side role-skill realizations live at `../cnos.cdd/skills/cdd/{gamma,operator,delta,alpha,beta}/SKILL.md`.
-5. [cnos#404](https://github.com/usurobor/cnos/issues/404) — parent tracker; rationale for the extraction; consumer enumeration; design-skill citations.
+3. [`skills/handoff/cross-repo/SKILL.md`](skills/handoff/cross-repo/SKILL.md) — Cross-repo state machine + bundles + LINEAGE schemas + feedback-patch format + archival + hat-collapse attribution. The largest of the five sub-surfaces (644 lines); the primary surface this package absorbed.
+4. [`skills/handoff/dispatch/SKILL.md`](skills/handoff/dispatch/SKILL.md) — the dispatch-prompt template + 7-axis implementation-contract schema + δ-as-inward-membrane doctrine. Consumer-side role-skill realizations live at `../cnos.cdd/skills/cdd/{gamma,operator,delta,alpha,beta}/SKILL.md`.
+5. [`docs/extraction-map.md`](docs/extraction-map.md) — Per-surface migration map with v0.1-complete status; reading order useful for archaeological context on what moved from where.
+6. [cnos#404](https://github.com/usurobor/cnos/issues/404) — parent tracker (closed 2026-05-22); rationale for the extraction; consumer enumeration; design-skill citations.
 
 **Looking for the cycle-lifecycle kernel?** See [`../cnos.cdd/`](../cnos.cdd/) — CCNF (Coherence Cell Normal Form) and the generic recursive coherence-cell algorithm.
 
-**Looking for the software realization?** See [`../cnos.cds/`](../cnos.cds/) — the software-development binding of CCNF; current consumer of handoff doctrine via `cnos.cdd/skills/cdd/cross-repo/SKILL.md` (until Sub 2 of [cnos#404](https://github.com/usurobor/cnos/issues/404) moves it here).
+**Looking for the software realization?** See [`../cnos.cds/`](../cnos.cds/) — the software-development binding of CCNF; consumer of handoff doctrine via `cnos.handoff/skills/handoff/`.
 
-**Looking for the research realization?** See [`../cnos.cdr/`](../cnos.cdr/) — the research binding; the original cross-package consumer of `cdd/cross-repo/SKILL.md` (the empirical anchor that proved handoff doctrine was already a separable boundary).
+**Looking for the research realization?** See [`../cnos.cdr/`](../cnos.cdr/) — the research binding; the original cross-package consumer of cross-repo doctrine (the empirical anchor that proved handoff doctrine was already a separable boundary; now cites `cnos.handoff/skills/handoff/cross-repo/SKILL.md` as canonical).
 
 ## Cross-protocol relationship
 
@@ -60,17 +60,18 @@ This package is a **v0.1 skeleton**. The doctrine surface (`HANDOFF.md`) and the
 
 ## Status
 
-**v0.1 — package skeleton + extraction map.** This Sub 1 of [cnos#404](https://github.com/usurobor/cnos/issues/404) (executed under [cnos#415](https://github.com/usurobor/cnos/issues/415)) ships:
+**v0.1 complete — cnos#404 wave closed 2026-05-22.** All five v0.1 sub-skills landed; cross-reference sweep complete; tracker closed via [cnos#420](https://github.com/usurobor/cnos/issues/420). The wave shipped, in order:
 
-- `cn.package.json` (schema `cn.package.v1`; name `cnos.handoff`; version `0.1.0`; kind `package`; engines `cnos >= 3.81.0`),
-- `README.md` (this file),
-- `skills/handoff/SKILL.md` (loader, advisory; calls forthcoming sub-skills),
-- `skills/handoff/.gitkeep` (placeholder for the empty directory; `HANDOFF.md` is intentionally absent in v0.1),
-- `docs/extraction-map.md` (the migration plan Subs 2–6 dispatch against).
+- `cn.package.json` (schema `cn.package.v1`; name `cnos.handoff`; version `0.1.0`; kind `package`; engines `cnos >= 3.81.0`), `README.md`, `skills/handoff/SKILL.md` (loader), `docs/extraction-map.md` — Sub 1 / [cnos#415](https://github.com/usurobor/cnos/issues/415);
+- `skills/handoff/HANDOFF.md` (the canonical package contract) + `skills/handoff/cross-repo/SKILL.md` (the 644-line wholesale move; compatibility pointer left at `cnos.cdd/skills/cdd/cross-repo/SKILL.md`) — Sub 2 / [cnos#416](https://github.com/usurobor/cnos/issues/416);
+- `skills/handoff/dispatch/SKILL.md` (synthesised from three cdd-side sources; consumer-side pointers in cdd role skills) — Sub 3 / [cnos#417](https://github.com/usurobor/cnos/issues/417);
+- `skills/handoff/mid-flight/SKILL.md` + `skills/handoff/artifact-channel/SKILL.md` (mid-flight rescue mechanism + intra-cycle artifact channel; cds-side per-artifact contract preserved) — Sub 4 / [cnos#418](https://github.com/usurobor/cnos/issues/418);
+- `skills/handoff/receipt-stream/SKILL.md` (cdd-iteration.md receipt-stream + INDEX.md aggregator; `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` now a pointer) — Sub 5 / [cnos#419](https://github.com/usurobor/cnos/issues/419);
+- final cross-reference cleanup + v0.1-complete tightening of loader / HANDOFF.md / README.md / extraction-map.md — Sub 6 / [cnos#420](https://github.com/usurobor/cnos/issues/420) (this cycle).
 
-`HANDOFF.md` (the canonical wire-format contract), the per-surface sub-skills (`cross-repo/`, `dispatch/`, `mid-flight/`, `artifact-channel/`, `receipt-stream/`), the cross-reference sweep in cdd / cds / cdr (Sub 6), and any schemas lifted into `schemas/handoff/` are in flight under [cnos#404](https://github.com/usurobor/cnos/issues/404). The package is loadable and discoverable by cnos package-discovery (per `pkg.ContentClasses` filesystem-presence convention); commands are not declared in this version.
+No schemas were lifted into `schemas/handoff/` during the v0.1 wave (deferred per Sub 3 / Q2 ruling — markdown 7-axis schema preserved as-is). The package is loadable and discoverable by cnos package-discovery (per `pkg.ContentClasses` filesystem-presence convention); commands are not declared in this version.
 
-Until Subs 2–5 land, the handoff-class surfaces remain resident at their current canonical homes — most in `cnos.cdd`, some already in `cnos.cds` per the [cnos#403](https://github.com/usurobor/cnos/issues/403) wave closure. The extraction map names how each surface will resolve.
+With the cnos#404 wave closed, the cnos#405 Track A (CCNF-O orchestration grammar) gate is satisfied and Track B1 (TSC report attachment) may proceed.
 
 ## License
 

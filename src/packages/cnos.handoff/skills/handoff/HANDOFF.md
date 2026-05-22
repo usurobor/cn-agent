@@ -2,8 +2,8 @@
 
 cnos.handoff is the package that owns **wire formats and handoff doctrine** for work / state / messages moving between coherence cells, agents, roles, repos, and packages.
 
-**Version:** 0.1 (Subs 2–5 of cnos#404)
-**Status:** Draft — package contract + five substantive sub-surfaces (cross-repo doctrine; dispatch + implementation-contract; mid-flight rescue; artifact-channel rules; receipt-stream + INDEX.md aggregator). All five v0.1 sub-skills landed; Sub 6 (cross-reference cleanup + close tracker) remains.
+**Version:** 0.1 (Subs 1–6 of cnos#404; wave closed 2026-05-22 via cnos#420)
+**Status:** v0.1 complete — package contract + five substantive sub-surfaces (cross-repo doctrine; dispatch + implementation-contract; mid-flight rescue; artifact-channel rules; receipt-stream + INDEX.md aggregator) all landed; cross-reference sweep complete; cnos#404 tracker closed.
 
 ---
 
