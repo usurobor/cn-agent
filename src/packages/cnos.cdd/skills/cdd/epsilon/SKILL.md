@@ -96,7 +96,7 @@ produced an iteration artifact (per `post-release/SKILL.md §5.6b`).
 **Cross-repo trace:** when a finding's disposition is `patch-landed` against
 a different repo, ε also writes a cross-repo bundle at
 `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/` per
-[`cross-repo/SKILL.md`](../cross-repo/SKILL.md).
+[`cnos.handoff/skills/handoff/cross-repo/SKILL.md`](../../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md).
 
 ## §2 ε's relationship to δ in CDD
 
@@ -134,7 +134,7 @@ The role-collapse is one of the *safe* collapses
   authoring procedure, per-finding shape, aggregator update.
 - [`activation/SKILL.md §22`](../activation/SKILL.md) — per-repo cadence
   declaration, severity scale (D/C/B/A + `info`), auto-spawn MCA trigger.
-- [`cross-repo/SKILL.md`](../cross-repo/SKILL.md) — cross-repo iteration
+- [`cnos.handoff/skills/handoff/cross-repo/SKILL.md`](../../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md) — cross-repo iteration
   bundle structure.
 - [`COHERENCE-CELL.md`](../COHERENCE-CELL.md) §"ε as Protocol Evolution" and
   §"ε Artifact Rule" — the cell-doctrinal grounding for ε's role.

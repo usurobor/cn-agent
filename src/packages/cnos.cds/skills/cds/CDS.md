@@ -811,7 +811,7 @@ folded here from extraction-map row 1's §Inputs cross-cut):
   health probe (build state, CI state, deploy state, runtime contracts).
 - **Cross-repo proposal intake** — scan `.cdd/iterations/cross-repo/{target}/*/STATUS`
   for `submitted` (or `drafted` with source-delegated filing-authority per
-  `cnos.cdd/skills/cdd/cross-repo/SKILL.md §2.3.3`) proposals; each
+  `cnos.handoff/skills/handoff/cross-repo/SKILL.md §2.3.3`) proposals; each
   candidate is a potential gap.
 
 Operational mechanics (the `gh`/`MCP`/`git` queries that read each surface,
@@ -951,7 +951,7 @@ skills as the temporary v0.1 overlay until the v1 CDS-side role rewrite:
 - [`cnos.cdd/skills/cdd/alpha/SKILL.md §2.1`](../../../cnos.cdd/skills/cdd/alpha/SKILL.md)
   — dispatch-intake: how α reads the selected candidate's issue + active
   skills, the receipt α gives the selection function.
-- [`cnos.cdd/skills/cdd/cross-repo/SKILL.md`](../../../cnos.cdd/skills/cdd/cross-repo/SKILL.md)
+- [`cnos.handoff/skills/handoff/cross-repo/SKILL.md`](../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md)
   — the cross-repo proposal STATUS state machine that feeds the
   cross-repo-intake input surface.
 
@@ -1503,17 +1503,17 @@ direction-agnostic — outbound iteration traces and bilateral iterations
 live at `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/` on
 whichever side carries the bundle.
 
-**Operational realization location is open.** The current operational
-home for the cross-repo proposal lifecycle is
-`cnos.cdd/skills/cdd/cross-repo/SKILL.md`. Whether the skill stays in
-`cnos.cdd` as a generic substrate (the cross-repo coordination mechanism
-is arguably kernel-level — it coordinates proposals across any c-d-X
-realization) or moves into `cnos.cds` (the proposal lifecycle is
-software-class in practice — it coordinates software-cycle proposals) is
-**open per [cnos#404](https://github.com/usurobor/cnos/issues/404)** —
-the broader handoff/coordination extraction tracker that owns the
-longer-term cross-repo question. CDS.md cites the skill from its current
-location; Sub 4 of cnos#403 does NOT relocate it.
+**Operational realization location.** The canonical home for the
+cross-repo proposal lifecycle is
+[`cnos.handoff/skills/handoff/cross-repo/SKILL.md`](../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md),
+landed by Sub 2 of [cnos#404](https://github.com/usurobor/cnos/issues/404)
+(cnos#416). The skill was relocated from its v0.1 home at
+`cnos.cdd/skills/cdd/cross-repo/SKILL.md` (where a compatibility pointer
+remains for backward compatibility) because the cross-repo coordination
+mechanism is wire-format / handoff-class — it coordinates proposals
+across any c-d-X realization — and cnos.handoff is the canonical owner
+of that surface class. CDS binds and consumes the STATUS state machine
+declared there; it does not own the vocabulary.
 
 ### Operational realization
 
@@ -1537,14 +1537,16 @@ as the temporary v0.1 overlay until the v1 CDS-side role rewrite:
   — γ's coordination loop across the cycle branch: dispatch, polling
   cross-reference (citing `harness/SKILL.md §5.4`), the
   `gamma-clarification.md` issue-edit cache-bust procedure.
-- [`cnos.cdd/skills/cdd/cross-repo/SKILL.md §2.3`](../../../cnos.cdd/skills/cdd/cross-repo/SKILL.md)
+- [`cnos.handoff/skills/handoff/cross-repo/SKILL.md §2.3`](../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md)
   — STATUS state machine: 8-event vocabulary (codified above), full
   transition graph (codified above), emitter-per-event rules, master/sub
   `landed` rule, bundle-state phase mapping, direct-acceptance
-  (`drafted → accepted`) path. The skill's current home is
-  `cnos.cdd/skills/cdd/cross-repo/`; long-term home is open per
-  [cnos#404](https://github.com/usurobor/cnos/issues/404).
-- [`cnos.cdd/skills/cdd/cross-repo/SKILL.md §2.1`](../../../cnos.cdd/skills/cdd/cross-repo/SKILL.md)
+  (`drafted → accepted`) path. The skill's canonical home is
+  `cnos.handoff/skills/handoff/cross-repo/` per Sub 2 of
+  [cnos#404](https://github.com/usurobor/cnos/issues/404) (cnos#416); a
+  compatibility pointer remains at `cnos.cdd/skills/cdd/cross-repo/` for
+  backward compatibility.
+- [`cnos.handoff/skills/handoff/cross-repo/SKILL.md §2.1`](../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md)
   — Directional cases (1:1; master/sub; inbound; outbound) and the
   bundle file set per case.
 

@@ -106,7 +106,7 @@ Read the observation surfaces required by `CDD.md`:
 2. CHANGELOG TSC table.
 3. Encoding lag table.
 4. Doctor / status / operational-health surface.
-5. **Cross-repo proposal intake** — scan `.cdd/iterations/cross-repo/cnos/*/STATUS` for the last non-comment event = `submitted` (or `drafted` with source-delegated filing-authority per `cdd/cross-repo/SKILL.md §2.3.3`). For each candidate, read the adjacent `ISSUE.md` + optional `PATCH.diff`, check cnos target state for duplicate / already-landed work, decide `accepted` / `modified` / `rejected`, file a target issue with the `## Source Proposal` block from `cdd/issue/SKILL.md`, and emit the disposition event to source STATUS. Protocol details (8-event vocabulary, transition graph, bundle file set, LINEAGE schema, feedback-patch format) live in `cdd/cross-repo/SKILL.md`.
+5. **Cross-repo proposal intake** — scan `.cdd/iterations/cross-repo/cnos/*/STATUS` for the last non-comment event = `submitted` (or `drafted` with source-delegated filing-authority per [`cnos.handoff/skills/handoff/cross-repo/SKILL.md §2.3.3`](../../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md)). For each candidate, read the adjacent `ISSUE.md` + optional `PATCH.diff`, check cnos target state for duplicate / already-landed work, decide `accepted` / `modified` / `rejected`, file a target issue with the `## Source Proposal` block from `cdd/issue/SKILL.md`, and emit the disposition event to source STATUS. Protocol details (8-event vocabulary, transition graph, bundle file set, LINEAGE schema, feedback-patch format) live in [`cnos.handoff/skills/handoff/cross-repo/SKILL.md`](../../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md).
 
 Build a candidate table:
 
@@ -315,7 +315,7 @@ Both must be committed before γ requests the disconnect release from δ (§2.10
 1. **β close-out**: verify `.cdd/unreleased/{N}/beta-closeout.md` on main; if missing, request δ to re-dispatch β.
 2. **α close-out**: verify `.cdd/unreleased/{N}/alpha-closeout.md` on main; if missing, request δ to re-dispatch α via the close-out prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in `operator/SKILL.md` §5.2 v0.1 overlay). **γ must explicitly request this re-dispatch.**
 
-**Cross-repo proposal close-out.** If this cycle accepted or modified a source proposal, γ emits the `landed` event to source STATUS at merge. Per `cdd/cross-repo/SKILL.md §"STATUS state machine"` master/sub rule: per-sub `landed` per merge, terminal master-close when the master closes. A proposal touched by the cycle may not remain at `accepted` / `modified` after target work lands.
+**Cross-repo proposal close-out.** If this cycle accepted or modified a source proposal, γ emits the `landed` event to source STATUS at merge. Per [`cnos.handoff/skills/handoff/cross-repo/SKILL.md §"STATUS state machine"`](../../../../cnos.handoff/skills/handoff/cross-repo/SKILL.md) master/sub rule: per-sub `landed` per merge, terminal master-close when the master closes. A proposal touched by the cycle may not remain at `accepted` / `modified` after target work lands.
 
 **Post-merge CI verification (mandatory).** Before authoring `gamma-closeout.md`, γ verifies CI ran green on the merge commit (`gh run list --branch main --json status,conclusion,head_sha` filtered to merge SHA). Pending → delay close-out. Red → log as §9.1 trigger (avoidable tooling failure); γ-axis grade reflects; consider rollback or follow-on fix-cycle. Green → record run URL in `gamma-closeout.md` §Post-merge verification.
 
