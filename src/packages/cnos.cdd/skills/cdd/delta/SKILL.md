@@ -19,7 +19,7 @@ scope: role-local
 inputs:
   - typed receipt emitted by γ at close-out (RECEIPT-VALIDATION.md §Validation Interface)
   - ValidationVerdict emitted by V (RECEIPT-VALIDATION.md §Output contract)
-  - γ-authored dispatch prompts containing the `## Implementation contract` section (gamma/SKILL.md §2.5 Step 3b)
+  - γ-authored dispatch prompts containing the `## Implementation contract` section (wire-format at cnos.handoff/skills/handoff/dispatch/SKILL.md; γ-side authoring at gamma/SKILL.md §2.5)
   - repo conventions (language, package scoping, integration-target, etc. — for inward enrichment)
 outputs:
   - BoundaryDecision recorded against (receipt, verdict) — one of {accept, release, override, reject, repair_dispatch}
@@ -140,47 +140,21 @@ The `(PASS, override)` and `(non-PASS, accept/release)` pairs are **invalid** pe
 
 ## 2. Inward membrane — γ contract → α-ready dispatch (implementation-contract enrichment)
 
-The inward face of δ runs at dispatch time, before α is routed. γ writes the protocol-level contract (gap, ACs, oracle, evidence) per `gamma/SKILL.md` §2.5 Step 3b. γ also writes the `## Implementation contract` section enumerating the 7 architectural axes:
+The inward face of δ runs at dispatch time, before α is routed. γ writes the protocol-level contract (gap, ACs, oracle, evidence). γ also writes the 7-axis `## Implementation contract` section into the α prompt. **δ reviews that section before routing**, fills any unpopulated row per repo conventions (logging the enrichment in `.cdd/unreleased/{N}/gamma-clarification.md`), or blocks dispatch and escalates to operator-as-human when a row is genuinely undecidable. **Implementation-contract decisions belong to δ; α MUST NOT improvise.**
 
-1. Language
-2. CLI integration target
-3. Package scoping
-4. Existing-binary disposition
-5. Runtime dependencies
-6. JSON/wire contract preservation
-7. Backward-compat invariant
+**Canonical doctrine lives at [`cnos.handoff/skills/handoff/dispatch/SKILL.md`](../../../../cnos.handoff/skills/handoff/dispatch/SKILL.md)** (Sub 3 of [cnos#404](https://github.com/usurobor/cnos/issues/404), shipped under [cnos#417](https://github.com/usurobor/cnos/issues/417)). That skill owns:
 
-γ populates the rows from repo conventions and the issue body. **At dispatch time, δ reviews γ's dispatch prompt before routing it to α and ensures every row is populated.** If γ left a row unpopulated or marked "TBD," δ has two paths:
+- the 7 architectural axes (Language; CLI integration target; Package scoping; Existing-binary disposition; Runtime dependencies; JSON/wire contract preservation; Backward-compat invariant);
+- the dispatch-prompt template γ injects the contract block into;
+- the δ review-before-routing duty and the fill-or-escalate paths;
+- the four-surface mesh (γ template / δ enrichment / α constraint / β verification);
+- the cnos#389/#391/#392/#393 empirical anchors.
 
-- **(a) Fill the row** per repo conventions (e.g. "this repo is Go-native, row 1 = Go"; "this repo uses the `cn` subcommand pattern for protocol-level commands, row 2 = `cn` subcommand"). Log the enrichment in the cycle's artifact channel (`.cdd/unreleased/{N}/gamma-clarification.md`, or a δ-specific channel if a later phase of cnos#366 has carved one) so the contract trail is auditable.
-- **(b) Block dispatch and escalate to operator-as-human** if the row is genuinely undecidable — typically because the choice is part of the cycle's design question, not its execution shape, or because the row's value would commit the repo to a convention that hasn't been settled.
+δ's role-local realization here: δ is the actor that performs the inward review at routing time. The doctrine — what δ is responsible for, why δ holds this authority rather than γ alone, how the contract distributes across γ/α/β — lives at the canonical handoff path. The two-sided framing of δ (outward §1 + inward §2) remains the membrane's core; this section is the inward half, with doctrine sourced from cnos.handoff and execution executed here.
 
-**Why this is δ's surface, not γ's alone.** γ writes what the cycle is *for* (gap, ACs, oracle, evidence). δ writes what the cycle's output is *shaped like* (language, package path, integration target, dependency footprint). The two contracts are distinct: γ's is protocol-level; δ's is implementation-level. γ knows the protocol; δ knows the repo's standing conventions. Mixing them produced cnos#389 (α improvised language because γ's prompt didn't name one and δ didn't catch the omission) and cnos#391 (α improvised package scoping and binary disposition for the same reason). cnos#392 was the first cycle where δ pinned the implementation contract at dispatch; the cycle succeeded specifically because of it.
+### 2.1. Phase 4a / Sub 3 landing note
 
-### 2.1. The four-surface mesh
-
-This section is the δ side of a four-surface mesh that cnos#393 shipped and Phase 4a (this cycle) extracts into its dedicated role-skill home:
-
-- **γ template:** [`gamma/SKILL.md`](../gamma/SKILL.md) §2.5 Step 3b — the 7-axis `## Implementation contract (required for α prompt)` block; γ MUST NOT dispatch with empty rows.
-- **δ enrichment:** this section — inward-membrane function; δ reviews γ's prompt; fills or escalates.
-- **α constraint:** [`alpha/SKILL.md`](../alpha/SKILL.md) §3.6 — "Implementation contract is δ's, not α's"; α MUST NOT improvise; α surfaces unpinned rows before coding.
-- **β verification:** [`beta/SKILL.md`](../beta/SKILL.md) §Role Rules Rule 7 — "Implementation-contract coherence"; β verifies the diff conforms to every pinned axis before APPROVE; non-conformance → REQUEST CHANGES, severity D, classification `implementation-contract`.
-
-Each surface is locally self-justifying via the empirical anchors below; the mesh is for **discoverability** (a future role session loading any one finds the others), not for circular justification.
-
-### 2.2. Phase 4a landing note
-
-This section has landed here as Phase 4a of cnos#366. The precursor (cnos#393) anchored the δ-inward-membrane content at `operator/SKILL.md` §3a as a design-prerequisite for Phase 4; this cycle relocates the substance to `delta/SKILL.md` (its membrane-policy home) and reduces the operator-side anchor to a cross-reference. The two-sided framing (outward §1 + inward §2 of this file) is the membrane's core doctrine. **Phase 4b — harness substrate** landed in [`harness/SKILL.md`](../harness/SKILL.md) via cnos#398 (cycle/398). **Phase 4c — release-effector mechanics** landed in [`release-effector/SKILL.md`](../release-effector/SKILL.md) via cnos#399 (cycle/399). **Phase 5 — γ shrink** landed at cnos#400 (cycle/400), reducing `gamma/SKILL.md` to coordination + closure + triage.
-
-### 2.3. Empirical anchor
-
-cnos#389 (Python-not-Go) and cnos#391 (wrong package scoping + separate binary) are the failure-mode evidence that motivates this section. In both cycles γ's dispatch prompt under-specified the implementation contract; δ did not catch the omission at routing time; α improvised; β's behavior-only AC oracles APPROVE-d without catching the drift. cnos#392 was the first cycle where δ pinned the 7-axis contract at dispatch as an ad-hoc operator action; the cycle succeeded specifically because of it (the `cdd-iteration.md` F1–F4 forecast the four patches cnos#393 ships). cnos#393 made the inward function doctrine; cnos#397 (this cycle) implements δ-inward in `delta/SKILL.md`.
-
-- ❌ δ routes γ's α prompt with rows blank — "α can figure it out"
-- ❌ δ fills rows by guessing — no consultation with γ on intent, no anchor in repo conventions
-- ❌ δ enriches but does not log the change, leaving the contract trail invisible
-- ✅ δ reviews γ's `## Implementation contract` section row-by-row; enriches per repo conventions; logs in `gamma-clarification.md`; escalates the row to operator-as-human if undecidable
-- ✅ δ blocks dispatch (does not route the α prompt) until every row is populated or explicitly escalated
+The inward-membrane substance landed as Phase 4a of cnos#366 (cycle/397) in this file; **Sub 3 of cnos#404 (cycle/417) extracts the doctrine into [`cnos.handoff/skills/handoff/dispatch/SKILL.md`](../../../../cnos.handoff/skills/handoff/dispatch/SKILL.md)** alongside the dispatch-prompt template and the four-surface mesh declaration. This section is now a pointer; the role-local realization (δ-as-actor at routing time) stays here. **Phase 4b — harness substrate** landed in [`harness/SKILL.md`](../harness/SKILL.md) via cnos#398 (cycle/398). **Phase 4c — release-effector mechanics** landed in [`release-effector/SKILL.md`](../release-effector/SKILL.md) via cnos#399 (cycle/399). **Phase 5 — γ shrink** landed at cnos#400 (cycle/400). The complete two-sided framing (outward §1 + inward §2 of this file) is preserved; the doctrine for §2 is sourced from handoff.
 
 ---
 
@@ -319,9 +293,10 @@ These are role boundaries at the role-skill level (CCNF kernel surface). For the
 - [`RECEIPT-VALIDATION.md`](../RECEIPT-VALIDATION.md) — frozen typed-interface design for V, the verdict-vs-decision distinction, and the override field shape (§Q4). Binding once Phase 3 of cnos#366 lands V as a working predicate.
 - [`COHERENCE-CELL-NORMAL-FORM.md`](../COHERENCE-CELL-NORMAL-FORM.md) — kernel doctrine. δ's signature at step 5 (no evidence); the four cell outcomes; the two recursion modes; the three scope-lift projections.
 - [`COHERENCE-CELL.md`](../COHERENCE-CELL.md) — predecessor doctrine. δ Boundary Complex; trust grammar; the prediction of the δ split this cycle implements.
-- [`gamma/SKILL.md`](../gamma/SKILL.md) §2.5 Step 3b — γ-template side of the implementation-contract mesh.
-- [`alpha/SKILL.md`](../alpha/SKILL.md) §3.6 — α-constraint side of the implementation-contract mesh.
-- [`beta/SKILL.md`](../beta/SKILL.md) §Role Rules Rule 7 — β-verification side of the implementation-contract mesh.
+- [`cnos.handoff/skills/handoff/dispatch/SKILL.md`](../../../../cnos.handoff/skills/handoff/dispatch/SKILL.md) — canonical wire-format + 7-axis implementation-contract schema + δ-as-inward-membrane doctrine + four-surface mesh declaration. Sub 3 of [cnos#404](https://github.com/usurobor/cnos/issues/404), shipped under [cnos#417](https://github.com/usurobor/cnos/issues/417); the role-side surfaces below are its consumer-side realizations.
+- [`gamma/SKILL.md`](../gamma/SKILL.md) §2.5 — γ-template side of the implementation-contract mesh (consumer realization).
+- [`alpha/SKILL.md`](../alpha/SKILL.md) §3.6 — α-constraint side of the implementation-contract mesh (consumer realization).
+- [`beta/SKILL.md`](../beta/SKILL.md) §Role Rules Rule 7 — β-verification side of the implementation-contract mesh (consumer realization).
 - [`release/SKILL.md`](../release/SKILL.md) and [`post-release/SKILL.md`](../post-release/SKILL.md) — β-side release authoring (RELEASE.md, CHANGELOG, version decision) and γ-side post-release assessment; release-effector cross-references both as upstream context for the δ-side mechanics it executes.
 
 ---
