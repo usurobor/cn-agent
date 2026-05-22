@@ -22,12 +22,11 @@ inputs:
   - active role
   - cycle or wave context
 outputs:
-  - canonical CDS contract loaded (when CDS.md lands at Sub 2)
+  - canonical CDS contract loaded (CDS.md)
   - active role overlay loaded (when role overlays land at Subs 3–5)
   - required sub-skills selected
 requires:
   - CDS applies (software-class matter, not research-class)
-  - extraction map exists (this Sub 1) until CDS.md lands (Sub 2)
 calls:
   - CDS.md
   - alpha/SKILL.md
@@ -43,11 +42,11 @@ calls:
 
 This skill is the package-visible loader entrypoint for CDS. External dispatch enters through `cds` only — internal sub-skill triggers (`alpha`, `beta`, `gamma`, `delta`, `epsilon`) are advisory and are used only after `cds` and the active role overlay have been loaded.
 
-**v0.1 status.** `CDS.md` is **not yet present** in this directory — it is the deliverable of Sub 2 of [cnos#403](https://github.com/usurobor/cnos/issues/403). The per-role overlays (`alpha/SKILL.md`, `beta/SKILL.md`, `gamma/SKILL.md`, `delta/SKILL.md`, `epsilon/SKILL.md`) are deliverables of Subs 3–5 of the same tracker. Until those surfaces land, this loader names the forthcoming files in `calls:` as **advisory targets**, mirroring the [`cnos.cdr` Sub 1 precedent](../../../cnos.cdr/skills/cdr/SKILL.md) where the loader was shipped before the role overlays. Readers who arrive at this loader before Sub 2 lands should consult [`docs/extraction-map.md`](../../docs/extraction-map.md) for the v0.1 surface mapping: every software-lifecycle surface currently resident in [`cnos.cdd/skills/cdd/CDD.md` §"Software-specific realization — pending cds extraction"](../../../cnos.cdd/skills/cdd/CDD.md) is named with its planned CDS destination and the migration sub-issue.
+**v0.1 status.** `CDS.md` is shipped in this directory by Sub 2 of [cnos#403](https://github.com/usurobor/cnos/issues/403) and is loaded as Step 1 below. The per-role overlays (`alpha/SKILL.md`, `beta/SKILL.md`, `gamma/SKILL.md`, `delta/SKILL.md`, `epsilon/SKILL.md`) remain deliverables of Subs 3–5 of the same tracker; until those surfaces land, this loader names the forthcoming overlay files in `calls:` as **advisory targets**, mirroring the [`cnos.cdr` Sub 1 precedent](../../../cnos.cdr/skills/cdr/SKILL.md). Readers who need the surface mapping for migrating lifecycle/artifacts/review/gate content should consult [`docs/extraction-map.md`](../../docs/extraction-map.md): every software-lifecycle surface currently resident in [`cnos.cdd/skills/cdd/CDD.md` §"Software-specific realization — pending cds extraction"](../../../cnos.cdd/skills/cdd/CDD.md) is named with its planned CDS destination and the migration sub-issue.
 
 When CDS applies (the matter is software-class — artifact improvement under repairable feedback — not research-class — claim transmission under uncertainty):
 
-1. Load [`CDS.md`](CDS.md) in this directory as the canonical instantiation contract. CDS.md will declare the six fields per `ROLES.md §3`: matter type, review oracle, γ close-out artifact, δ cadence, ε iteration cadence, actor collapse rule. **Pending Sub 2 of [cnos#403](https://github.com/usurobor/cnos/issues/403); until then, see [`docs/extraction-map.md`](../../docs/extraction-map.md).**
+1. Load [`CDS.md`](CDS.md) in this directory as the canonical instantiation contract. CDS.md declares the six fields per [`ROLES.md §3`](../../../../../ROLES.md): matter type, review oracle, γ close-out artifact, δ cadence, ε iteration cadence, actor collapse rule. It also records the architectural-choice inheritance from [cnos#388](https://github.com/usurobor/cnos/issues/388), the persona/protocol/project boundary per [`ROLES.md §4a`](../../../../../ROLES.md), and the empirical-anchor citation to `usurobor/cnos` itself.
 2. Load the role overlay for the active role:
    - α: [`alpha/SKILL.md`](alpha/SKILL.md)
    - β: [`beta/SKILL.md`](beta/SKILL.md)
@@ -61,13 +60,13 @@ When CDS applies (the matter is software-class — artifact improvement under re
 
 ## Rule
 
-[`CDS.md`](CDS.md), once shipped by Sub 2, will be the only normative source for:
+[`CDS.md`](CDS.md) is the only normative source for:
 
 - the six instantiation-contract fields (`§"Six-field instantiation contract"`)
-- the architectural-choice inheritance from cnos#388 (`§"Architecture choice"`)
+- the architectural-choice inheritance from [cnos#388](https://github.com/usurobor/cnos/issues/388) (`§"Architecture choice"`)
 - the persona/protocol/project boundary (`§"Persona, Protocol, Project"`)
-- the empirical-anchor citation (`§"Empirical anchor"`)
-- the actor-collapse floor (Field 6)
+- the empirical-anchor citation to `usurobor/cnos` (`§"Empirical anchor"`)
+- the actor-collapse floor (Field 6 — including the α=β prohibition for substantive software work and the β-α-collapse-on-δ permission for skill/docs-class cycles per the breadth-2026-05-12 wave manifest precedent)
 
 Per-role overlays may add:
 
@@ -106,7 +105,7 @@ CDD owns the **generic recursive kernel.** CDS owns the **software-specific life
 
 ## Conflict rule
 
-If this file and [`CDS.md`](CDS.md) disagree (once Sub 2 lands `CDS.md`), `CDS.md` governs.
+If this file and [`CDS.md`](CDS.md) disagree, `CDS.md` governs.
 
 If a role overlay and `CDS.md` disagree on field meanings, the architectural-choice declaration, the persona/protocol/project boundary, or the actor-collapse floor, `CDS.md` governs.
 
@@ -118,4 +117,4 @@ If `CDS.md` and `cnos.cdd` (CCNF kernel) disagree on the kernel grammar (role-ce
 
 ## v0.1 caveat
 
-Until Sub 2 of [cnos#403](https://github.com/usurobor/cnos/issues/403) lands `CDS.md`, this loader's `calls:` frontmatter and the "Load order" steps above name **forthcoming** files. The advisory nature is the cdr-Sub-1 precedent: a loader can be shipped before its callee surfaces exist as long as the cross-reference to the planned destination is unambiguous. See [`docs/extraction-map.md`](../../docs/extraction-map.md) for the planned destinations.
+`CDS.md` is shipped (Sub 2 of [cnos#403](https://github.com/usurobor/cnos/issues/403); cycle/407). The role-overlay files named in this loader's `calls:` frontmatter and Step 2 of "Load order" above remain **forthcoming** until Subs 3–5 land. The advisory nature is the cdr-Sub-1 precedent: a loader can name overlay surfaces before they exist as long as the cross-reference to the planned destination is unambiguous. See [`docs/extraction-map.md`](../../docs/extraction-map.md) for the surface-by-surface migration plan Subs 3–5 dispatch against.
