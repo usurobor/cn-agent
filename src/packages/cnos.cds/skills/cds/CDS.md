@@ -3098,6 +3098,157 @@ the v0.1 cdd cite-points above are the temporary v0.1 home.
 
 ---
 
+## Large-file authoring rule
+
+CDS authoring discipline imposes a **section-by-section write rule**
+for files larger than 50 lines. The rule's failure mode is the
+session-end / stream-timeout / context-truncation gap: a generation
+that produces a single 1000-line write loses everything if the session
+terminates mid-stream. Section-by-section writing with a manifest
+header lets the next session resume from the last committed section
+without rebuilding the entire file in memory.
+
+The rule is self-referential — `CDS.md` itself (this document) follows
+the rule, with the section-manifest header at lines 1–2 carrying both
+the `sections:` list (the canonical section ordering) and the
+`completed:` list (which sections have been fully written to disk).
+The Sub 5 (this cycle) write process incrementally appended the 8 new
+top-level sections per the resumption protocol below; the post-Sub-5
+header reflects the full canonical section set.
+
+### File-size threshold
+
+Files **larger than 50 lines** of authored content (excluding the
+manifest header and trailing whitespace) trigger the section-by-section
+rule. Below the threshold, single-write authoring is acceptable; above
+it, the structural cost of single-write authoring (lost work on
+session termination; context-window overflow during generation;
+review-comment locality failures) outweighs the convenience.
+
+The 50-line floor is the canonical empirical threshold (the cnos
+cycle history shows session-termination at 60–80 line generations as
+a recurring `cds-tooling-gap`). Project bindings may impose a stricter
+floor (some downstream repos use 30 lines for safety); the floor is
+**only** raised via project-binding policy, never lowered.
+
+### Section-manifest HTML-comment header
+
+Files subject to the rule open with two HTML comment lines:
+
+```html
+<!-- sections: [section-id-1, section-id-2, section-id-3, …] -->
+<!-- completed: [section-id-1, section-id-2] -->
+```
+
+The two lists are typed pairs:
+
+- **`sections:`** — the canonical ordering of section identifiers
+  the file commits to author. The identifiers are slugs (kebab-case,
+  lowercase) of the section headings, not the heading text itself.
+  The list is the file's structural contract: a section that does
+  not appear in `sections:` cannot be authored under the file's
+  contract; a section in `sections:` that has no corresponding
+  `## ` heading in the file's body is incomplete.
+
+- **`completed:`** — the prefix of `sections:` that has been fully
+  written to disk. A section appears in `completed:` only when its
+  prose-body is finished and the next section's heading exists
+  immediately after. Partial sections do not appear in `completed:`.
+
+The two lists' relationship is structural: `completed:` is a prefix
+of `sections:` for files under canonical write; `completed:` may be
+empty (no sections completed yet); `completed:` may equal `sections:`
+(file is complete). A `completed:` list that is not a prefix of
+`sections:` signals a manifest-protocol violation (e.g. a section
+landed out of order; the file was edited outside the canonical
+write process).
+
+### Resumption protocol
+
+When a session resumes work on a file under the rule, the resumption
+protocol below runs as α's first action on the file:
+
+1. **Read the manifest header** (lines 1–2). Parse `sections:` and
+   `completed:`.
+2. **Compute the next section.** The next section to author is the
+   first element of `sections:` that is not in `completed:`.
+3. **Verify the file body** — every section identifier in `completed:`
+   has a corresponding `## ` heading in the file body, in the order
+   given by `sections:`. If any verification fails, surface the
+   manifest-protocol violation before authoring the next section.
+4. **Author the next section.** Write the section's prose-body
+   immediately before the next-section anchor (or at the file's
+   end if the next section is the last in `sections:`).
+5. **Commit the section.** Each section gets its own commit (per the
+   incremental-write discipline; cnos cycles routinely show
+   per-section α commits on `cycle/{N}` branches). The commit
+   message names the section authored.
+6. **Update `completed:`** in the manifest header. Append the
+   just-authored section identifier to the `completed:` list. The
+   manifest update is part of the section's commit.
+
+A session that terminates mid-section (the section's prose-body is
+partially written; the section identifier does not yet appear in
+`completed:`) is recoverable: the next session reads the manifest,
+computes the next section (which is the partially-written one,
+because it does not appear in `completed:`), reads what exists on the
+branch for that section, and continues authoring from the last
+written paragraph. The branch becomes the recovery surface; the
+manifest is the index.
+
+### Anti-patterns
+
+- **Single-write authoring of a 200-line section.** The session-end
+  failure mode dominates; one terminated session loses the whole
+  section. The fix is splitting the section into smaller pieces or
+  committing partial writes (with the partial state visible in a
+  `<!-- WIP: paragraph 3 of 7 -->` note inside the section's body).
+- **Out-of-order section authoring.** `sections:` declares the
+  canonical ordering; authoring section 5 before section 3 violates
+  the manifest's prefix invariant on `completed:`. The fix is
+  honouring the declared order, or amending the manifest to declare
+  the new ordering before authoring.
+- **Manifest header omitted.** A file > 50 lines without a manifest
+  header is structurally not under the rule's protection — the
+  next session has no resumption index. The fix is adding the
+  manifest header in the next commit; the file's prior commit
+  history reconstructs the inferred `completed:` list.
+- **Mismatched `sections:` and body headings.** A `sections:` entry
+  with no corresponding `## ` heading in the body, or a `## `
+  heading with no `sections:` entry, signals manifest drift. The
+  fix is reconciling the two; the reconciliation is its own commit.
+
+### Operational realization
+
+The 50-line threshold, the section-manifest header, the resumption
+protocol, and the anti-patterns above are CDS's canonical large-file
+authoring rule. The rule is **self-referential**: its operational
+realization is its own usage pattern. Every file in `cnos.cds`,
+`cnos.cdd`, and `cnos.cdr` that exceeds the 50-line threshold follows
+the rule; this `CDS.md` document is the canonical exemplar (Sub 2,
+Sub 3, Sub 4, and Sub 5 of cnos#403 incrementally authored the
+sections via the resumption protocol, with each sub's manifest update
+landing in the sub's α commits).
+
+The v0.1 operational overlay — the per-file resumption-protocol
+script, the manifest-validator that enforces the prefix invariant,
+the integration with γ's branch pre-flight that checks for manifest
+drift before α dispatch — does **not** yet exist as a separate skill
+file; the rule lives in this section's body as the canonical
+statement. A future cycle may extract the operational overlay into
+`cnos.cdd/skills/cdd/large-file/SKILL.md` (or the CDS-side equivalent)
+once the rule has accumulated enough cycle history to warrant a
+dedicated skill; until then, the rule's authority is this section.
+
+The self-referential operational-realization pointer is therefore
+this section itself — the file you are reading is the operational
+exemplar. Cross-references from other skills (when they cite the
+rule) cite `CDS.md §Large-file authoring rule`; the citation resolves
+to this section's body, which is both the canonical statement and
+the operational realization.
+
+---
+
 ## Empirical anchor
 
 CDS's empirical anchor is [`usurobor/cnos`](https://github.com/usurobor/cnos)
@@ -3320,6 +3471,14 @@ Inherits, cites, or extends:
 
 ## Non-goals
 
+CDS's non-goals partition into two scopes: **sub-level non-goals** that
+scope the cnos#403 wave's authoring sub-cycles (Subs 2–5; this document's
+authoring discipline) and **software-cycle non-goals** that apply to
+every CDS cycle as protocol-level doctrine (the engineering-loss-function
+discipline's structural anti-patterns).
+
+### Sub-level non-goals (Subs 2–5 authoring scope discipline)
+
 This document does **not**:
 
 - Migrate any software-lifecycle content from CDD.md — that is cnos#403
@@ -3366,3 +3525,38 @@ This document does **not**:
   other as a sibling, but the comparison-curating job belongs in
   generic-substrate documentation (`ROLES.md §4a.2` already names the
   loss-function distinction).
+
+### Software-cycle non-goals
+
+CDS as a protocol does **not**:
+
+- Do NOT optimize primarily for speed. The engineering loss function is
+  artifact improvement under repairable feedback, not throughput; a
+  cycle that ships fast but ships incoherent matter has not improved
+  the artifact. The §Selection function's effort-adjusted tie-break
+  prefers smaller cycles among candidates of equal leverage and axis
+  effect, but speed is a tie-break term, not a primary objective.
+- Do NOT treat issue queues as self-justifying. An open issue does not
+  prove a coherence gap exists; the §Selection function's stale-backlog
+  re-evaluation rule explicitly requires re-evaluating whether stale
+  issues remain real gaps before selecting them as next-MCAs. A queue
+  whose age is its own justification is structural debt.
+- Do NOT reduce review to local diff reading. β's review CLP names
+  TERMS / POINTER / EXIT scopes that extend beyond the diff (the issue
+  body's ACs, the implementation-contract axes pinned by δ, the
+  loaded-skill set, cross-referenced canonical surfaces). A review that
+  reads only the diff misses the contract-coherence and honest-claim
+  classes the broader CLP catches.
+- Do NOT treat release as "tag and hope". The §Gate's release-readiness
+  preconditions are mechanical preconditions, not aspirational targets;
+  the F1–F10 closure verification checklist catches the failure modes
+  the "tag and hope" pattern produces. A release that skips the gate
+  ships unreleased in the CCNF kernel sense — the boundary effection
+  did not happen even though the tag pushed.
+- Do NOT confuse a shipped feature with a closed coherence cycle. A
+  feature that merged into main is structurally **stopped**, not
+  **closed**, until the §Closure rule's three-conjunct condition holds
+  (immediate outputs executed; deferred outputs committed; cycle
+  iteration present if triggered). Closure is the transition from
+  released to closed; conflating "released" with "closed" is the
+  structural failure mode the §Closure rule prevents.
