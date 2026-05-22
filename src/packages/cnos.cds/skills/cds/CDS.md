@@ -2528,6 +2528,293 @@ the v0.1 cdd cite-points above are the temporary v0.1 home.
 
 ---
 
+## Assessment
+
+The **post-release assessment (PRA)** is γ's per-cycle observation
+artifact at the canonical version-directory path
+(`docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). One PRA
+per release; no exceptions. The PRA measures what the release actually
+shipped against what the cycle's contract claimed, records the
+encoding-lag table, runs the cycle-iteration trigger check, and
+commits the next-move concretely. The PRA feeds §Selection function's
+"Assessment-commitment default" rule at the next cycle's observation
+step; a release without a PRA is structurally a release without a
+next-cycle handoff.
+
+The PRA is **γ-owned**, not β-owned, by structural argument: the PRA
+measures β's review quality, and β assessing β's own review quality
+is the self-grading problem the role separation is designed to avoid
+(per §Field 6 actor collapse rule). γ holds the cycle-level observational
+authority — γ sees both α's matter and β's review, but γ does not
+author either. γ writes the PRA after β's merge and β close-out have
+landed.
+
+### PRA contents
+
+The PRA carries seven canonical sections plus the trace + hub memory
+row. Each section is required; explicit "not applicable" with rationale
+is permitted only on sections that name themselves as conditional. The
+section vocabulary below is the canonical CDS shape; the per-section
+authoring detail (what each field measures, what the table cells
+contain) lives in the v0.1 operational overlay.
+
+- **§1 Coherence Measurement** — baseline (previous release's α / β /
+  γ scores from the CHANGELOG TSC table); this release's α / β / γ
+  scores; the **coherence delta** (which axes improved / held /
+  regressed and why); the coherence-contract-closed verdict (was the
+  cycle's named gap actually closed? if not, what remains?). This
+  section anchors the §Selection function's weakest-axis rule for the
+  next cycle.
+- **§2 Encoding Lag** — the cross-cycle backlog of converged-but-not-shipped
+  design commitments. Every open design issue and every open process
+  issue appears as a row (Issue / Title / Type / Design / Impl / Lag).
+  Lag levels: `none` (shipped this or prior release), `low`
+  (implementation in progress), `growing` (design converged, no
+  implementation started), `stale` (design aging without implementation
+  plan). The **MCI/MCA balance decision** (balanced / freeze MCI /
+  resume MCI) is mandatory; every release states the balance with
+  rationale.
+- **§3 Process Learning** — three questions: what went wrong, what
+  went right, what skill patches are needed. Active skill re-evaluation:
+  for each review finding, would the loaded skills (as written) have
+  prevented it? Underspecified → patch the skill (§Step 5 of the v0.1
+  procedure); application gap → note it. Explicit CDS-improvement
+  disposition is mandatory: patch landed (description + commit) OR
+  no-patch-needed (justification per the three valid justifications:
+  application gaps with adequate spec, zero findings, or environmental
+  failure with no spec-level fix).
+- **§4 Review Quality** — review-rounds-per-cycle counts (target ≤1
+  docs, ≤2 code); superseded cycles count (target 0); finding-class
+  breakdown (mechanical / wiring / honest-claim / judgment / contract);
+  mechanical-ratio (threshold 20% with ≥10 findings — fires §Cycle
+  iteration triggers Trigger 2); honest-claim ratio (target <30%; high
+  ratio means α docs drifting from artifacts). Section §4 closes the
+  loop on β's per-cycle review-axis signal.
+- **§4a CDS Self-Coherence** — CDS-axis scoring of the cycle itself:
+  CDS α (artifact integrity — required artifacts present? bootstrap /
+  frozen snapshot complete?); CDS β (surface agreement — canonical doc,
+  executable skill, cycle artifacts, changelog, and assessment agree?
+  authority conflicts or stale references?); CDS γ (cycle economics —
+  review rounds within target? mechanical ratio under threshold?
+  immediate outputs executed?). Weakest-axis named; action stated
+  (patch skill / patch doc / automate check / none).
+- **§5 Production Verification** — a concrete executable scenario that
+  demonstrates the new capability (or blocked failure mode) in a real
+  environment. "CI passes" is not production verification — it is
+  build verification. If the change is structural (L7), the scenario
+  demonstrates the boundary move, not just a single path. Result:
+  pass / fail / deferred (with commitment to when/how).
+- **§7 Next Move** — the concrete next-cycle commitment: next MCA
+  issue number, owner, target branch name, first AC to close, MCI
+  freeze/resume state, rationale. This is the §Closure → §Deferred
+  outputs surface; the PRA's §7 is what the next cycle's §Selection
+  function reads at "Assessment-commitment default" time. Closure
+  evidence: immediate outputs executed (with links/commits); deferred
+  outputs committed (issue # / owner / branch / first AC / freeze
+  state per outpost).
+
+Two additional rows are part of the PRA's structural surface:
+
+- **§4b Cycle Iteration** — the §9.1 trigger assessment (see §Cycle
+  iteration triggers below). Required when any trigger fired; permitted
+  as "No §9.1 trigger fired" when none did.
+- **§8 Hub Memory** — the operational state the next session loads to
+  orient (daily reflection path + commit SHA; adhoc thread(s) updated
+  + commit SHA). Hub memory is external to the repo but the PRA records
+  the path / commit-sha / unavailable-reason; verifiers do not inspect
+  the external hub directly.
+
+### Cycle iteration triggers
+
+A §9.1 trigger is a per-cycle process-learning signal that the cycle's
+protocol substrate (its skills, its tooling, its operator configuration)
+needs patching. When a trigger fires, the PRA's §4b Cycle Iteration
+section is mandatory; γ records the trigger, the root cause, the
+disposition (patch landed / next MCA / no-patch with reason), and the
+evidence (commit / issue / note). The four canonical triggers below
+are the **§9.1 anchor set** — citing skill files (and post-#403, the
+CDS-side role overlays) reference them by trigger number; Sub 6 of
+cnos#403 re-points the `CDD.md §9.1` citations at this section's
+anchors.
+
+1. **Review churn — review rounds > 2.** The cycle required more than
+   two rounds of β review before merge. Signal: the contract was
+   under-specified (the issue body's ACs were ambiguous), or the AC
+   oracle was insufficient, or α's skill was under-specified for the
+   matter class. Disposition: γ patches the issue-quality gate (per
+   `gamma/SKILL.md §2.4` v0.1 overlay) when the gap is clear, or
+   files a next-MCA naming the specific gap.
+
+2. **Mechanical ratio > 20% (with ≥10 findings).** Mechanical-class
+   findings (per the §Mechanical vs judgment axis-class above) exceed
+   20% of total findings on a single cycle, and total findings ≥10
+   (the floor prevents noise on small cycles). Signal: tooling-class
+   gap — a check that should be in CI is being run by β manually; a
+   pre-commit hook is missing; a mechanical validator does not exist
+   for the surface class. Disposition: γ files a `cds-tooling-gap`
+   per §Field 5, with concrete next-MCA naming the missing check
+   (validator name, input surface, oracle).
+
+3. **Avoidable tooling / environmental failure.** The cycle was
+   blocked by a tooling or environment failure that a CDS tooling
+   artifact could have prevented (e.g. the harness's polling
+   `git fetch` reliability re-probe per §Coordination surfaces →
+   §Polling primitives; the dispatch timeout budget per `CDD.md §1.6c`
+   v0.1 overlay; a missing CI workflow that the cycle's δ-pinned
+   contract required). Signal: `cds-tooling-gap`. Disposition: γ patches
+   the tooling guard now when the fix is clear (shell snippet, hook,
+   config change), files a next-MCA when the fix requires design.
+
+4. **Loaded skill failed to prevent a finding.** A finding surfaced
+   despite the relevant skill being loaded; the skill's procedure did
+   not catch the class of error. Signal: `cds-skill-gap` — the
+   skill's procedure is under-specified for the failure-mode
+   geometry. Disposition: γ patches the skill in the same commit as
+   the PRA (per CDD §13a's "patch in the same commit" rule) when the
+   patch is clear; otherwise files a concrete next-MCA naming the
+   specific skill, the specific procedure step, and the failure-mode
+   geometry the skill missed.
+
+Each fired trigger must end in exactly one of three states: **patch
+landed now**, **concrete next MCA committed**, or **explicit no-patch
+decision with reason**. Silence is not a disposition; "noted for next
+cycle" is structurally a `next-MCA` row mis-labelled (and fires F10
+of §Gate's closure verification checklist on re-check).
+
+The four-trigger set is intentionally narrow. Two additional patterns
+are valid signals but are routed differently:
+
+- **CI red on merge commit (post-merge)** — appears as a §4 Review
+  Quality observation (per the post-release/SKILL.md §4b row) and as
+  a §Gate F-anchor recovery path (red on merge SHA fires the gate's
+  CI-green precondition). The CI-red configuration-floor cap
+  (γ ≤ C per `release/SKILL.md §3.8`) fires regardless of whether a
+  §9.1 trigger fires.
+- **AC oracle ambiguity recurrence across cycles** — signal that
+  emerges from ε's receipt-stream review (§Field 5), not from a single
+  cycle's PRA. The PRA records the per-cycle observation; ε aggregates
+  across cycles to detect recurrence.
+
+### Friction log
+
+The PRA carries a **friction log** entry for each non-trigger
+process-friction observation γ surfaces during cycle close-out. The
+friction log is the prose-shaped record that feeds the next cycle's
+§Selection function (stale-backlog re-evaluation rule) and ε's
+receipt-stream review.
+
+Each friction-log row carries four fields:
+
+- **Root cause classification** — what kind of friction this is:
+  process (cycle-coordination friction; γ-axis signal); skill
+  (the loaded skill set did not cover the case; α-axis or β-axis
+  signal); tooling (a mechanical check is missing or wrong;
+  γ-axis signal); environmental (sandbox, network, identity wiring;
+  out-of-system signal); contract (the issue body's contract was
+  ambiguous; γ-axis signal).
+- **Skill impact** — which skill(s) the friction implicates, named
+  by path (e.g. `cnos.cdd/skills/cdd/gamma/SKILL.md §2.5`). A
+  friction-log row that names no skill is structurally an environmental
+  finding mis-classified; environmental findings explicitly carry
+  "no skill" with a rationale.
+- **MCA (next master coherence action)** — the concrete next step:
+  issue # (filed or to-be-filed); owner; first AC. If the friction
+  does not warrant an MCA (one-off; environmental with no spec-level
+  fix), the row carries "no MCA" with rationale.
+- **Disposition** — the same four-state shape as cycle-iteration
+  triggers (patch landed / next MCA / no-patch / drop). The friction
+  log is structurally lighter than §4b — it surfaces below-threshold
+  observations that did not trip a §9.1 trigger but still warrant
+  γ's attention.
+
+### Engineering levels
+
+The PRA records the cycle-level **engineering level** (L5 / L6 / L7)
+per the canonical framework at
+[`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/gamma/ENGINEERING-LEVELS.md).
+The Level column appears in the CHANGELOG TSC ledger row (per
+§Artifact contract → §Ownership matrix); the PRA names the level and
+its rationale.
+
+The three levels (cited from `ENGINEERING-LEVELS.md`):
+
+- **L5 — Local Correctness.** The cycle ships matter that is locally
+  correct: the implementation produces the right output for the named
+  inputs; the test suite passes; the contract's ACs are met. L5 is
+  the floor for any CDS cycle — a cycle that does not reach L5 has
+  not shipped.
+- **L6 — System-Safe Execution.** The cycle ships matter that is
+  safe-to-execute in the surrounding system: no regressions on
+  adjacent surfaces; documented behaviours preserved; CI green on
+  merge commit; the implementation-contract axes pinned by δ at
+  dispatch are honoured. L6 is the floor for any tagged release —
+  a sub-L6 cycle ships as `<C` per `release/SKILL.md §3.8`
+  configuration-floor.
+- **L7 — System-Shaping Leverage.** The cycle ships matter that
+  changes the surrounding system's structure — boundary moves, new
+  invariants pinned, deprecated surfaces removed, architectural
+  decompositions revised. L7 is the level of substantial design
+  cycles (per the §Selection function's maximum-leverage rule); L7
+  cycles' PRAs carry an L7 essay in `docs/gamma/essays/` when the
+  structural change is large enough to warrant standalone
+  rationale-record.
+
+The PRA's Level row names the level and a one-paragraph rationale
+citing the structural reach of the cycle. Score-the-release-not-the-intent
+applies: an L7-intended cycle that ships only L5 matter records L5
+with rationale.
+
+### Operational realization
+
+The PRA contents, the four §9.1 cycle-iteration triggers, the friction
+log, and the L5/L6/L7 framework above are CDS's canonical assessment
+statement. The v0.1 operational overlay — the per-section authoring
+procedure, the scoring rubric and geometric-mean computation, the
+encoding-lag-table population workflow, the MCI/MCA balance decision
+procedure, the hub-memory write sequence — lives in the existing cdd
+role/runtime skills as the temporary v0.1 overlay until the v1 CDS-side
+role rewrite:
+
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — the PRA procedure (Steps 1–7); the output-template (§1 Coherence
+  Measurement through §8 Hub Memory); the pre-publish gate (the
+  mechanical checklist that two agents independently verifying the
+  same template must produce the same list of missing fields).
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — CDD self-coherence scoring (CDS α / β / γ axes); the weakest-axis
+  action selection.
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6a`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — §9.1 cycle-iteration per-trigger authoring (name trigger / root
+  cause / disposition / evidence).
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — `cdd-iteration.md` (or `cds-iteration.md` post-rename) authoring;
+  the per-finding shape; the aggregator update; the cross-repo trace
+  rule.
+- [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.7`](../../../cnos.cdd/skills/cdd/post-release/SKILL.md)
+  — production-verification scenario authoring; the executable-not-hypothetical
+  discipline.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.7`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — close-out triage; the four-disposition shape (immediate MCA /
+  project MCI / agent MCI / drop); the post-merge CI-verification
+  precondition.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.8`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — cycle-iteration-trigger enforcement (per-trigger γ action; closure
+  rule); the four-trigger table that realizes the §9.1 triggers
+  operationally.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.9`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — independent γ process-gap check (even when no §9.1 trigger fired,
+  γ asks the four questions; states why-not in one sentence when no
+  patch is needed).
+- [`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/gamma/ENGINEERING-LEVELS.md)
+  — the L5 / L6 / L7 framework cited above; the per-level definitions,
+  typical behaviors, strengths, limits, and signals.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{post-release,gamma,assessment,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
 ## Empirical anchor
 
 CDS's empirical anchor is [`usurobor/cnos`](https://github.com/usurobor/cnos)
