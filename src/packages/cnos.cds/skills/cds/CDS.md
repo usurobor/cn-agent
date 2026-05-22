@@ -1,5 +1,5 @@
-<!-- sections: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, empirical-anchor, related-documents, non-goals] -->
-<!-- completed: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, empirical-anchor, related-documents, non-goals] -->
+<!-- sections: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, empirical-anchor, related-documents, non-goals] -->
+<!-- completed: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, empirical-anchor, related-documents, non-goals] -->
 
 # Coherence-Driven Software (CDS)
 
@@ -12,10 +12,11 @@
 > deployments — under the engineering loss function (artifact improvement
 > under repairable feedback).
 
-**Version:** 0.1 (Subs 2–3 of [cnos#403](https://github.com/usurobor/cnos/issues/403))
+**Version:** 0.1 (Subs 2–4 of [cnos#403](https://github.com/usurobor/cnos/issues/403))
 **Status:** Draft — instantiation contract (Sub 2) + §Selection function and
-§Development lifecycle (Sub 3 / cnos#408, B-lite extract). Subs 4–5 (artifacts,
-review, gate, assessment, closure, retro-packaging, non-goals, mechanical,
+§Development lifecycle (Sub 3 / cnos#408) + §Coordination surfaces and
+§Artifact contract (Sub 4 / cnos#409, B-lite extracts). Sub 5 (review,
+gate, assessment, closure, retro-packaging, non-goals, mechanical,
 large-file), CDD.md marker cleanup (Sub 6), and empirical-anchor doc (Sub 7)
 are downstream.
 **Date:** 2026-05-22
@@ -1223,6 +1224,730 @@ v1 CDS-side role rewrite:
 
 When the v1 CDS-side role overlays land (post-#403 wave), the operational
 realization moves into `cnos.cds/skills/cds/{gamma,alpha,beta,delta,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Coordination surfaces
+
+CDS coordination is artifact-driven on repo-native surfaces. The same three
+surfaces that the engineering substrate already carries — GitHub Issues,
+git branches, and per-cycle directories on the cycle branch — serve as the
+coordination surfaces for α, β, γ, and δ. GitHub Pull Requests are **not**
+part of the CDS coordination protocol: every action a PR records can be
+expressed as a write to a file in the per-cycle directory plus a branch
+commit; issues remain (gap-naming); branches remain (isolation); PRs add
+ceremony without value for the artifact-driven model. This section names
+the four canonical sub-surfaces — cycle-state evidence, polling primitives,
+mid-flight clarification, and cross-repo proposals — and what each one
+binds.
+
+The section is paired with §Artifact contract below: §Coordination surfaces
+names *where the cycle state is observed and emitted*; §Artifact contract
+names *what the cycle artifacts contain and where they freeze*. The two
+sections together specify the in-cycle coordination model that γ, α, and β
+operate inside.
+
+Operational realization stays in the cdd runtime/role skills as the v0.1
+overlay until the v1 CDS-side role rewrite.
+
+### Cycle-state evidence
+
+Three observable surfaces carry the cycle state during in-version work:
+
+- **Issue activity.** The cycle's GitHub issue is the gap-naming surface
+  and the operator-facing audit log. γ files; α/β/γ subscribe. State
+  observed: comments (operator-class clarifications, β verdicts when
+  posted as comments), label changes, issue body edits (cache-busted via
+  §Mid-flight clarification below).
+- **Cycle branch state.** The canonical cycle branch is `origin/cycle/{N}`
+  per §Development lifecycle → §Branch rule. The branch's head SHA and
+  the per-file blob SHAs under the cycle directory carry the in-cycle
+  state — α's commits (review-ready signal, fix-round appendices), β's
+  commits (review verdicts, merge commit), γ's commits (scaffold,
+  clarifications, close-out triage). All role artifacts live on the
+  cycle branch; `main` is the merge target only, never the in-cycle
+  coordination surface.
+- **Cycle directory state.** The per-cycle directory at
+  `.cdd/unreleased/{N}/` (or `.cds/unreleased/{N}/` post-re-rooting; see
+  the re-rooting note below) carries the role-distinguished-by-filename
+  artifact set: `self-coherence.md`, `beta-review.md`, `alpha-closeout.md`,
+  `beta-closeout.md`, `gamma-closeout.md`, `cdd-iteration.md` (or
+  `cds-iteration.md` post-rename), and any cycle-local additions
+  (`gamma-scaffold.md`, `gamma-clarification.md`, etc.). File additions
+  and blob-SHA transitions are the in-cycle progress signal.
+
+**The three surfaces are observed transitionally.** Roles read each
+surface synchronously at session start (the baseline pull) and then poll
+for transitions (the wake-up loop) — see §Polling primitives below for the
+mechanics that prevent the polling-looks-healthy-but-truth-is-stale
+failure mode.
+
+**Cycle directory naming — planned re-rooting (documented, not performed).**
+The current project binding at `usurobor/cnos` carries per-cycle
+directories under `.cdd/unreleased/{N}/`. The destination naming under the
+post-#403-wave project binding is `<project>/.cds/unreleased/{N}/` —
+software-class cycles belong under `.cds/`, not under `.cdd/`. The
+filesystem rename is **out of scope for this section's authoring
+cycle**; it is itself a separate post-#403 coordination problem (it must
+coordinate with all in-flight cycle directories on `origin/main`, with
+the `cn cdd verify` schema paths, and with the historical
+`.cdd/releases/{X.Y.Z}/{N}/` directories that hold post-release moved
+artifacts). Until the rename lands, every path in this section and in
+§Artifact contract below uses the current `.cdd/` form and notes the
+destination form once. Subsequent paths in the same context read
+`.cdd/`-form-now / `.cds/`-form-after.
+
+### Polling primitives
+
+Polling has three parts, all mandatory: (a) the **query** that detects new
+state, (b) the **wake-up mechanism** that returns control to the role's
+session on transition, and (c) **reachability verification** that the
+chosen query form works in the current environment. Polling without a
+wake-up is silent — the loop runs but the role never reacts. Polling with
+an unreachable query is silent in the same way — the loop runs, returns
+empty or errors, and the role assumes nothing has happened.
+
+**Query forms — pick whichever is reachable in the environment.**
+Different environments expose different surfaces; the query form is
+discovered at session start by reachability preflight (below).
+
+| Surface | `gh` form (shell envs) | MCP form (MCP-only envs) | git form (clone-aware envs) |
+|---|---|---|---|
+| Issue comments | `gh issue view {N} --comments` | `mcp__github__issue_read` method=`get_comments` | — |
+| Cycle branch existence (γ pre-flight) | — | — | `git fetch --quiet origin cycle/{N} && git rev-parse --verify origin/cycle/{N}` |
+| Cycle branch head SHA | — | — | `git fetch --quiet origin cycle/{N} && git rev-parse origin/cycle/{N}` (compare to prior, emit on change) |
+| Cycle directory state | — | — | `git fetch --quiet origin cycle/{N} && git ls-tree -r origin/cycle/{N} .cdd/unreleased/{N}/` (compare blob SHAs; emit on add or change) |
+
+γ owns the tight loop on a single named branch (per §Development lifecycle
+→ §Branch rule, one cycle = one branch = one named target); polling
+`origin/main` for in-flight cycle dirs is silent — the files live on
+`origin/cycle/{N}` until the release-time move per §Artifact contract →
+§Location matrix.
+
+**Wake-up mechanism — name it explicitly in the role's session.** Polling
+is only effective if the loop's transition produces a notification that
+wakes the role. Each environment has its own form:
+
+- **`Monitor` (Claude Code on the web):** wrap polling in a transition-loop
+  whose stdout lines deliver as `task-notification` system messages.
+  Transition-only emission is mandatory (emitting on every iteration
+  floods the session's context budget).
+- **Shell wake hook (custom harness):** the loop's exit signals the
+  session. Verify the harness contract before relying on it.
+
+If neither a `Monitor`-equivalent nor a shell-wake harness exists, the
+role cannot autonomously detect cycle progression — the gap is surfaced
+to the operator before dispatch.
+
+**Reachability preflight — run before committing to a query form.** Query
+forms are not interchangeable: `gh` requires shell + `gh auth`; MCP tools
+cannot run inside `Monitor` or background shell loops; `git fetch`
+requires network access to the remote from the execution environment;
+direct `api.github.com` access may be blocked by sandbox network policy.
+Before starting a polling loop, the role probes the chosen query form
+once synchronously and confirms it returns real data. If it fails, the
+role falls back to the next available form. If no form is reachable, the
+role surfaces the gap to the operator before proceeding — it does not
+silently assume polling is working.
+
+**Transition-only emission is mandatory.** A loop that emits on every
+poll fills the session with `task-notification` blocks and consumes
+context budget. The loop computes `cur != prev`, emits only on
+transition, then updates `prev := cur` and sleeps.
+
+**Synchronous baseline pull is a precondition of transition-only polling.**
+Transition-only emission is correct on its own terms (avoid context
+flood) but has a structural blind spot: the loop's first iteration sets
+`prev` to the empty string and silently absorbs whatever already exists.
+State that exists *before* the polling loop's first iteration will never
+surface as an event. Every transition-only polling loop must therefore be
+paired with a synchronous initial-state pull of the same surface
+immediately when the role's session starts — the synchronous channel
+owns the past, the polling channel owns the future. For the `cycle/{N}`
+model, the baseline pull is per-cycle: `git rev-parse --verify
+origin/cycle/{N}` to confirm the branch exists, `git rev-parse
+origin/cycle/{N}` for the head SHA, `git ls-tree -r origin/cycle/{N}
+.cdd/unreleased/{N}/` for the cycle artifact set, and the gh/MCP form
+for issue activity. Reading `.cdd/unreleased/` from `origin/main` only
+surfaces cycles that have already merged; in-flight cycles live on
+`origin/cycle/{N}` and will be invisible to a `main`-only baseline.
+
+**`git fetch` reliability is an explicit dependency.** The `git fetch
+--quiet` form silently swallows transport flake (DNS hiccup, proxy 502,
+expired token, transient 4xx) — fetch returns 0, the local ref does not
+advance, and the per-iteration comparison sees `cur == prev` and emits
+nothing. The transition loop then drops every commit landing during the
+flake window. **Mitigation:** after **N successive empty iterations**
+(canonical N = 10, ≈ 10 minutes at 60s interval), the loop does a
+synchronous reachability re-probe with explicit stderr capture (`git
+fetch --verbose ...` with stderr to a log). If the re-probe succeeds,
+the transition loop continues. If it fails, the role surfaces the failure
+to the operator immediately — silently looping with a broken transport
+is the failure mode the rule catches.
+
+**Single named branch — no globs for new cycles.** Polling targets
+`origin/cycle/{N}` directly. There is no glob discovery step for new
+cycles — γ tells α and β the branch name in the dispatch prompt. The
+legacy glob `'origin/claude/*'` is retained only for retrospective
+tracking of historical cycles whose branches predate the `cycle/{N}`
+rule (§Development lifecycle → §Branch rule "Legacy shapes"); it must
+not be used as a discovery surface for new cycles.
+
+### Mid-flight clarification
+
+When γ edits the cycle's issue body mid-cycle (because α surfaced an
+ambiguity, because δ refined an axis, because operator clarified a
+non-goal), γ writes a `gamma-clarification.md` entry to
+`.cdd/unreleased/{N}/` on the cycle branch *before* signaling the edit.
+The entry names: date, edit summary, and which ACs / non-goals /
+constraints / artifacts changed.
+
+**The cycle-branch SHA transition is the cache-bust signal.** Roles
+polling the cycle branch (per §Polling primitives) see the SHA advance;
+their next intake re-fetches the issue body from the live source rather
+than trusting cached state. The signal is the cycle-branch SHA transition,
+not the GitHub issue mtime — which may be invisible to MCP-cached
+issue reads.
+
+**Empirical anchor — cnos#391.** Wrong-shape implementation (wrong
+package scoping + a separate-binary axis γ did not pin at dispatch);
+γ recovered by editing the issue body to pin the missing axes and
+committing `gamma-clarification.md` to the cycle branch; α picked up
+the cache-bust via cycle-branch polling and re-shaped the implementation.
+The cycle was rescued mid-flight without abandoning the branch. The
+empirical-anchor doctrine cited at §Field 4 (δ cadence) — δ-as-architect
+per cnos#393 — names this rescue path as the structural escape valve
+when γ under-specifies and α improvises.
+
+**γ MUST NOT silently re-pin a contract axis without logging in
+`gamma-clarification.md`.** Mid-cycle contract changes are recorded in
+the clarification artifact; the file is part of the cycle directory and
+travels with the cycle through release.
+
+### Cross-repo proposals
+
+Cycles that originate work in one repo and land it in another use the
+cross-repo proposal lifecycle. The proposal carries an event log
+(`STATUS`) whose vocabulary tracks the proposal across the
+source-target handshake. The same vocabulary applies to inbound
+proposals (an upstream agent hub proposing work to cnos), outbound
+proposals (cnos proposing work to a downstream repo), and bilateral
+iterations.
+
+**Eight events constitute the canonical vocabulary:**
+
+| Event | Meaning |
+|---|---|
+| `drafted` | Source has written the proposal but has not requested target action. Pre-intake. |
+| `submitted` | Source requests target intake. This is the only event required for target intake. |
+| `accepted` | Target γ will act substantially as proposed and has filed a target reference. |
+| `modified` | Target γ accepts the governing gap but changes scope, split, wording, implementation, proof, or patch application materially. Carries a `Delta` field in the target issue's `## Source Proposal` block. May fire post-`accepted` to record a refinement. |
+| `landed` | Target work merged or otherwise became target truth. For 1:1 proposals: one event total. For master/sub: one per sub merge + one terminal master-close event. |
+| `rejected` | Target γ declines the proposal. Terminal. |
+| `withdrawn` | Source retracts the request. Terminal. |
+| `revised` / `corrected` | Optional audit events for post-submission revisions or corrections. Append; do not rewrite history. May fire from any non-terminal state without changing lifecycle state. |
+
+**The STATUS state machine** (canonical transition graph):
+
+- `(start) → drafted | submitted` (source authors directly into either state)
+- `drafted → submitted` (source γ requests intake)
+- `drafted → accepted | modified | rejected` (permitted when source
+  explicitly delegates filing-authority to target without intermediate
+  `submitted` — the agent-hub direct-acceptance path)
+- `drafted → withdrawn`
+- `submitted → accepted | modified | rejected | withdrawn`
+- `accepted → modified` (post-filing refinement; Delta updated)
+- `modified → modified` (further refinement)
+- `accepted → landed` and `modified → landed` (target work merges)
+- `* → revised | corrected` (audit-only; lifecycle state unchanged)
+
+**Illegal transitions:** `rejected → *` (terminal); `landed → *` (terminal
+for 1:1; master/sub permits multiple `landed` rows per the master/sub
+rule); `withdrawn → *` (terminal); `submitted → landed` (must pass
+through `accepted` or `modified`); `modified → accepted` (cannot un-modify
+once Delta is recorded).
+
+**Bundle-state phases** (`open | converging | closed`) derive from
+STATUS: `open` ↔ `drafted` or `submitted`; `converging` ↔ `accepted`
+or `modified` without terminal `landed`; `closed` ↔ terminal `landed`
+(1:1 or master-close) or `rejected` or `withdrawn`. Audit events
+(`revised`, `corrected`) do not change the bundle phase.
+
+**Master/sub rule for `landed`:** for master/sub-shaped proposals
+(a parent issue with N sub-issues), one `landed` event fires per sub
+merge plus one terminal master-close event when the master issue closes.
+A wave with 4 subs across 3 releases produces 5 `landed` rows: 4 per-sub
++ 1 master-close. For 1:1 proposals: one `landed` event total; no
+separate master-close.
+
+**Filing-decision rule:** after the target γ's filing decision, source
+STATUS MUST NOT remain at `submitted` (or at `drafted` once target γ
+has taken action on a delegated direct-acceptance path). The decision
+is recorded — directly or via `FEEDBACK.patch` — within the same target
+session that made the decision.
+
+**Bundle layout** (canonical source-side path):
+
+```text
+{source-repo}:.cdd/iterations/cross-repo/cnos/{slug}/
+  ISSUE.md
+  STATUS
+  PATCH.diff        # optional
+  LINEAGE.md        # source-side trace
+```
+
+The matching cnos-side mirror lives at
+`cnos:.cdd/iterations/cross-repo/{source-repo}/{slug}/`. The path is
+direction-agnostic — outbound iteration traces and bilateral iterations
+live at `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/` on
+whichever side carries the bundle.
+
+**Operational realization location is open.** The current operational
+home for the cross-repo proposal lifecycle is
+`cnos.cdd/skills/cdd/cross-repo/SKILL.md`. Whether the skill stays in
+`cnos.cdd` as a generic substrate (the cross-repo coordination mechanism
+is arguably kernel-level — it coordinates proposals across any c-d-X
+realization) or moves into `cnos.cds` (the proposal lifecycle is
+software-class in practice — it coordinates software-cycle proposals) is
+**open per [cnos#404](https://github.com/usurobor/cnos/issues/404)** —
+the broader handoff/coordination extraction tracker that owns the
+longer-term cross-repo question. CDS.md cites the skill from its current
+location; Sub 4 of cnos#403 does NOT relocate it.
+
+### Operational realization
+
+The three observation surfaces, the polling primitives, the mid-flight
+clarification protocol, and the cross-repo proposal lifecycle above are
+CDS's canonical coordination-surfaces statement. The v0.1 operational
+overlay — the shell snippets that realize each polling query, the
+Monitor-wrapped transition loops, the `gh issue edit` + `commit` +
+`push` sequence that γ runs at mid-flight clarification time, the
+per-event STATUS-write sequence that source and target γs run across
+the proposal lifecycle — lives in the existing cdd role/runtime skills
+as the temporary v0.1 overlay until the v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/harness/SKILL.md §5.4`](../../../cnos.cdd/skills/cdd/harness/SKILL.md)
+  — Single-named-branch polling under `Monitor` (the transition loop
+  with baseline sync + reachability re-probe at N=10 empty iterations).
+- [`cnos.cdd/skills/cdd/harness/SKILL.md §5.1–§5.5`](../../../cnos.cdd/skills/cdd/harness/SKILL.md)
+  — Polling and wake-up: δ's wake-up signals, issue activity polling,
+  cycle branch polling, reachability probe.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.5`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — γ's coordination loop across the cycle branch: dispatch, polling
+  cross-reference (citing `harness/SKILL.md §5.4`), the
+  `gamma-clarification.md` issue-edit cache-bust procedure.
+- [`cnos.cdd/skills/cdd/cross-repo/SKILL.md §2.3`](../../../cnos.cdd/skills/cdd/cross-repo/SKILL.md)
+  — STATUS state machine: 8-event vocabulary (codified above), full
+  transition graph (codified above), emitter-per-event rules, master/sub
+  `landed` rule, bundle-state phase mapping, direct-acceptance
+  (`drafted → accepted`) path. The skill's current home is
+  `cnos.cdd/skills/cdd/cross-repo/`; long-term home is open per
+  [cnos#404](https://github.com/usurobor/cnos/issues/404).
+- [`cnos.cdd/skills/cdd/cross-repo/SKILL.md §2.1`](../../../cnos.cdd/skills/cdd/cross-repo/SKILL.md)
+  — Directional cases (1:1; master/sub; inbound; outbound) and the
+  bundle file set per case.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{gamma,alpha,beta,harness,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Artifact contract
+
+CDS is artifact-driven. Every substantial cycle must produce inspectable
+artifacts at canonical paths with named owners and verification gates.
+This section names the canonical artifact contract for CDS: the
+terminology, the bootstrap rule, the ordered artifact flow across the
+cycle, the per-step manifest, the canonical paths (the Location Matrix),
+the role/artifact ownership matrix, the CDS Trace format, the supporting
+rules, and the frozen-snapshot rule.
+
+The section is paired with §Coordination surfaces above and with §Field 3
+(γ close-out artifact). §Coordination surfaces names *where the cycle
+state is observed*; §Artifact contract names *what each cycle artifact
+contains, who owns it, where it lives, and when it freezes*. §Field 3
+names the close-out artifact set as part of the six-field instantiation
+contract; §Artifact contract here is the canonical operational realization
+of that field.
+
+Operational realization stays in the cdd role/runtime skills as the v0.1
+overlay until the v1 CDS-side role rewrite.
+
+### Terminology
+
+Four terms are used precisely across §Artifact contract and the
+downstream sections (§Field 3, §Field 5, §Coordination surfaces):
+
+- **Post-release** — the umbrella phase after release. Covers lifecycle
+  Steps 11–13 of §Development lifecycle → §Step table (observe, assess,
+  close).
+- **Assessment** (a.k.a. post-release assessment, PRA) — the γ-owned
+  repo artifact at the canonical path declared in §Location matrix
+  below. One PRA per release.
+- **Close-out** — a role-local findings record written by α, β, and γ at
+  the canonical paths in §Location matrix. Close-outs feed γ's PRA and
+  γ's close-out triage. They are not a substitute for the PRA.
+- **Closure** — the final cycle state: PRA committed, all close-outs on
+  main, immediate outputs executed, deferred outputs committed, hub
+  memory updated. γ declares closure in `gamma-closeout.md`.
+
+### Bootstrap
+
+A CDS cycle bootstraps in two phases, both before α begins:
+
+1. **γ scaffold + issue contract load.** γ authors `gamma-scaffold.md`
+   on the cycle branch naming: the issue, the mode (substantial /
+   small-change / immediate-output), the wave (if applicable per the
+   wave-manifest pattern), the surfaces γ expects α to touch, the AC
+   oracle approach, the empirical anchor (when framed), and the
+   expected diff scope. The scaffold is the executable rendering of
+   what γ already decided at selection time, not new analysis.
+2. **Branch creation.** γ creates `cycle/{N}` from `origin/main` per
+   §Development lifecycle → §Branch rule and runs the §Branch pre-flight
+   gate before publishing the branch.
+
+For substantial release-shipping cycles, α opens the cycle by creating a
+**version directory** for the bundle that will receive the frozen
+snapshot:
+
+```text
+docs/{tier}/{bundle}/{X.Y.Z}/
+```
+
+Each version directory contains a `README.md` snapshot manifest and one
+stub per declared deliverable. Artifacts outside version directories
+(e.g. files in `.cdd/unreleased/{N}/`, navigation updates) are not
+required as bootstrap stubs. Small-change cycles may skip the version
+directory; the exemption is recorded in the cycle's close-out per
+§Field 6 (small-change collapse rule).
+
+**Pre-dispatch γ scaffold check (binding gate).** γ MUST NOT proceed to
+α dispatch until `gamma-scaffold.md` exists on `origin/cycle/{N}`. If
+absent when γ is about to produce the α prompt, γ authors it first,
+commits and pushes it to the cycle branch, then continues. The scaffold
+makes the cycle's intent legible to α and to β before any matter is
+produced.
+
+### Ordered flow
+
+A CDS cycle produces artifacts in a canonical 13-stage order. Each stage
+has a single owner, a required output, and a stage-specific format spec
+(per §Manifest below):
+
+1. **design** — α authors the design artifact (when required by mode);
+   names the invariant/volatile/boundary decomposition.
+2. **contract** — α authors the coherence contract: gap, mode, active
+   skills, ACs with oracle approach, known debt.
+3. **plan** — α authors the implementation plan (when sequencing is
+   non-trivial); names the order in which surfaces will be touched.
+4. **tests** — α writes the tests that encode the ACs (or names "no
+   tests required" with rationale).
+5. **code** — α produces the implementation diff.
+6. **docs** — α updates the doc surfaces affected by the implementation.
+7. **self-coherence** — α audits the work against ACs and the triad;
+   writes `self-coherence.md` to completion.
+8. **review** — β runs the review CLP (terms / pointer / exit); writes
+   `beta-review.md`; emits A / RC / NO-GO verdict per round.
+9. **gate** — δ verifies release-readiness preconditions before tagging;
+   records boundary decision (Proceed / Request changes / Override).
+10. **release** — δ runs the release-effector mechanics (tag, build,
+    deploy); release artifacts land on main.
+11. **observe** — γ confirms runtime matches design; CI green; runtime
+    probe passes.
+12. **assess** — γ authors the PRA at the canonical version-directory
+    path.
+13. **close** — γ executes immediate outputs; commits deferred outputs;
+    writes `gamma-closeout.md`; declares closure.
+
+The stages compose with the 14-step (0–13) lifecycle table in
+§Development lifecycle → §Step table: Steps 0–3 are pre-α γ work
+(observe, select, branch, bootstrap); Steps 4–7 are α's stages 1–7 here;
+Step 8 is β's stage 8; Steps 9–10 are δ's stages 9–10; Step 11 is γ's
+stage 11; Step 12 is γ's stage 12; Step 13 is γ's stage 13.
+
+### Manifest
+
+For substantial changes, each artifact stage has a manifest row naming
+the artifact, the role (α/β/γ/δ), the format spec, the canonical owner
+location, and the required-or-conditional flag. The manifest is the
+master reference for all stage attributes; the per-stage operational
+detail (what to write, what skill to load, what the row looks like in
+the file) lives in the cdd role skills as the v0.1 overlay.
+
+The manifest below is the canonical CDS shape (transposed from the
+pre-#402 CDD §5.3 with software-engineering vocabulary preserved):
+
+| Stage | Phase | Role | Required output | Format spec | Required |
+|---|---|---|---|---|---|
+| design | build | α | design artifact OR explicit "not required" | `design/SKILL.md §3.1` | substantial only |
+| contract | build | α | named incoherence + AC oracle | `self-coherence.md §Gap` + `§Mode` + `§ACs` | always |
+| plan | build | α | sequencing artifact OR explicit "not required" | `docs/gamma/cdd/PLAN-TEMPLATE.md` | L7 / cycle-sized |
+| tests | build | α | test files OR explicit reason none apply | diff | always |
+| code | build | α | implementation diff OR "docs/process only" | diff | always |
+| docs | build | α | changed canonical docs / specs / READMEs | diff | when docs affected |
+| self-coherence | build | α | review-readiness signal complete | `self-coherence.md` carrying CDS Trace through stage 7 | substantial only |
+| review | review | β | verdict + findings (round-by-round) | `review/SKILL.md` output format | always |
+| gate | release | δ | release-readiness preflight verdict | `docs/gamma/cdd/GATE-TEMPLATE.md` | always |
+| release | release | δ | tag + release notes + version-snapshot | `release-effector/SKILL.md` | always |
+| observe | close | γ | post-release observation result | `post-release/SKILL.md` | always |
+| assess | close | γ | `POST-RELEASE-ASSESSMENT.md` | `post-release/SKILL.md` output template | always |
+| close | close | γ | immediate outputs + deferred committed + closure declaration | `gamma-closeout.md` | always |
+
+**Manifest rules:**
+
+- "Not required" is valid only when stated explicitly.
+- An omitted stage with no explicit note is incomplete, not implicit.
+- Small-change mode may collapse stages "design"–"self-coherence" into
+  commit-message evidence; the same distinctions still apply.
+- Skills loaded shape generation; record the skill that shaped each
+  artifact in the §Trace format below.
+
+### Location matrix
+
+Every named artifact has exactly one canonical location. Verifiers
+(e.g. `cn cdd-verify`, the forthcoming `cn cds-verify`) enforce these
+paths as canonical and treat any other location as legacy/warn-only.
+
+**Path notation.** Paths below use the current `.cdd/`-rooted form
+(`.cdd/unreleased/{N}/`, `.cdd/releases/{X.Y.Z}/{N}/`). The destination
+naming under the post-#403-wave project binding is the `.cds/`-rooted
+form (`.cds/unreleased/{N}/`, `.cds/releases/{X.Y.Z}/{N}/`). The
+**`.cdd/` → `.cds/` re-rooting is documented here as planned, not
+performed** — the filesystem migration is its own separate post-#403
+cycle (it must coordinate with all in-flight cycle directories, with
+`cn cdd verify` schema paths, and with the historical
+`.cdd/releases/{X.Y.Z}/{N}/` post-release directories). Until the
+rename lands, every path in this section uses the `.cdd/` form.
+
+| Artifact | Canonical repo location | CDS package default | Noncanonical / legacy / scratch |
+|---|---|---|---|
+| Version snapshot directory | `docs/{tier}/{bundle}/{X.Y.Z}/` | `docs/gamma/cdd/{X.Y.Z}/` | `.cdd/releases/{X.Y.Z}/` is **not** the frozen snapshot — it is triadic protocol/scratch space |
+| POST-RELEASE-ASSESSMENT.md (PRA) | `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `.cdd/releases/{X.Y.Z}/beta/POST-RELEASE-ASSESSMENT.md` and `.cdd/releases/{X.Y.Z}/beta/ASSESSMENT.md` are legacy/warn-only |
+| α self-coherence (primary branch artifact) | `.cdd/unreleased/{N}/self-coherence.md` (in-version), moved to `.cdd/releases/{X.Y.Z}/{N}/self-coherence.md` at release | same | none — required for every substantial cycle |
+| β review record | `.cdd/unreleased/{N}/beta-review.md` (in-version), moved to `.cdd/releases/{X.Y.Z}/{N}/beta-review.md` at release | same | none — required for every substantial cycle |
+| α close-out | `.cdd/unreleased/{N}/alpha-closeout.md` (in-version), moved at release | same | `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` (legacy aggregate form) is warn-only |
+| β close-out | `.cdd/unreleased/{N}/beta-closeout.md` (in-version), moved at release | same | `.cdd/releases/{X.Y.Z}/beta/CLOSE-OUT.md` (legacy aggregate form) is warn-only |
+| γ close-out | `.cdd/unreleased/{N}/gamma-closeout.md` (in-version), moved at release | same | `.cdd/releases/{X.Y.Z}/gamma/CLOSE-OUT.md` (legacy aggregate form) is warn-only |
+| cdd-iteration (per-cycle) | `.cdd/unreleased/{N}/cdd-iteration.md` (in-version), moved at release | same | none — required when `protocol_gap_count > 0`; courtesy stub permitted when count is 0 (per cnos#401 cadence rule cited in §Field 3 and §Field 5) |
+| cdd-iteration aggregator | `.cdd/iterations/INDEX.md` (root, persistent) | same | one row per cycle that produced a `cdd-iteration.md`; γ updates at close |
+| cross-repo trace | `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/` | same | persistent until target PR merges; LINEAGE.md preserved in the target repo's `cdd-iteration.md` |
+| γ kata verdict (optional) | `.cdd/releases/{X.Y.Z}/gamma/KATA-VERDICT.md` when kata is available | same | warn-only when kata unavailable |
+| CHANGELOG ledger row | `CHANGELOG.md` (Release Coherence Ledger) — Version, C_Σ, α, β, γ, Level, coherence note | same | none |
+| RELEASE.md | `RELEASE.md` at repo root, included in the release commit | same | CI auto-generated body is not an acceptable substitute |
+| Hub memory | external agent-hub state (not a repo artifact) | external agent-hub state | the PRA records path / commit-sha / unavailable-reason; verifiers do not inspect the external hub directly |
+
+**Path rules:**
+
+- `.cdd/unreleased/{N}/` (destination: `.cds/unreleased/{N}/`) is the
+  per-cycle coordination directory, keyed by issue number. Files inside
+  are role-distinguished by **filename**, not by directory.
+- `.cdd/releases/{X.Y.Z}/{N}/` (destination: `.cds/releases/{X.Y.Z}/{N}/`)
+  holds the moved-at-release form of each cycle's coordination directory.
+  Multiple cycle directories may live under one release directory when
+  several issues ship in the same release.
+- `.cdd/` (destination: `.cds/`) is triadic protocol space and role-local
+  close-out evidence storage. It is **not** the canonical frozen
+  post-release snapshot. The frozen snapshot lives under
+  `docs/{tier}/{bundle}/{X.Y.Z}/`.
+- Tags are bare `X.Y.Z` everywhere (VERSION file, git tag, branch-name
+  version segment, CHANGELOG row, RELEASE.md, snapshot directory).
+  `v`-prefixed tags are legacy and warn-only.
+- All substantial cycles use the in-version cycle-directory
+  artifact-exchange surface. GitHub Pull Requests are not used for
+  CDS coordination (see §Coordination surfaces above).
+
+### Ownership matrix
+
+Every required cycle artifact has one owner, one verification gate, and
+one consequence if missing. γ's closure gate (`gamma/SKILL.md §2.10` in
+the v0.1 overlay) checks every row marked "Required before γ closure."
+
+| Artifact | Owner | Written when | Verified by | Required before | Missing means |
+|---|---|---|---|---|---|
+| `self-coherence.md` | α | During α session, incrementally; review-readiness section last | β at review intake | β review | β waits; no review until review-readiness present |
+| `beta-review.md` | β | During β review session, incrementally per round | γ at close-out triage | γ closure | γ cannot triage; requests β re-dispatch |
+| `alpha-closeout.md` | α (re-dispatched after merge) | After β merge, via δ re-dispatch. **Provisional fallback:** α may write a provisional close-out at review-readiness (marked `[provisional]`); the pre-merge gate accepts this form. Full close-out via δ re-dispatch remains the normative path for tagged releases. | γ before PRA; γ closure gate; pre-merge gate (provisional accepted) | γ closure | γ closure gate blocks; γ requests δ to re-dispatch α |
+| `beta-closeout.md` | β | Before β exits (same β session as merge) | γ before PRA; γ closure gate | γ closure | γ closure gate blocks; γ requests β re-dispatch |
+| `gamma-closeout.md` | γ | After all closure gate rows pass | δ before tag/release (implicit: tag requires γ closure declaration, which is `gamma-closeout.md`) | δ tag/release | δ must not tag; γ has not declared closure |
+| `cdd-iteration.md` | γ (with ε review) | Same session as `gamma-closeout.md`; required when `protocol_gap_count > 0`; courtesy stub permitted when count is 0 (per cnos#401) | γ closure gate; aggregator update (`.cdd/iterations/INDEX.md`) | γ closure | γ closure gate blocks; if `cdd-*-gap` findings exist, the artifact must exist before closure |
+| `.cdd/iterations/INDEX.md` row | γ | Same session as `cdd-iteration.md` | γ closure gate | γ closure | γ closure gate blocks if `cdd-iteration.md` was written but INDEX.md was not updated |
+| `RELEASE.md` | γ | Before requesting δ tag/release; committed to main in release commit | δ at release-boundary preflight | δ tag/release | δ must not tag; CI auto-generates sparse notes |
+| `.cdd/releases/{X.Y.Z}/{N}/` (the cycle-dir move) | γ (at release) | Before γ requests δ tag; included in release commit | γ closure gate; δ preflight | δ tag/release | Stale unreleased dir; γ closure gate blocks until moved |
+| POST-RELEASE-ASSESSMENT.md (PRA) | γ | After β merge + close-outs | γ closure gate; δ at release-boundary preflight | γ closure | γ closure gate blocks |
+
+**Ownership rules:**
+
+- `gamma-closeout.md` is the closure declaration artifact. δ's obligation
+  to not tag before closure is satisfied when `gamma-closeout.md` exists
+  and the closure-declaration commit is on main.
+- For small-change cycles, `beta-closeout.md` and `gamma-closeout.md` may
+  not apply per the small-change collapse rule (cited from §Field 6);
+  `alpha-closeout.md`, `RELEASE.md`, and the cycle-directory move remain
+  required.
+- The cnos#401 cadence rule applies to the iteration artifact: required
+  when `protocol_gap_count > 0`; courtesy stub permitted when count is 0
+  for traceability (cited in §Field 3 and §Field 5).
+
+### Trace format
+
+Every substantial cycle must carry a lightweight execution trace named
+the **CDS Trace** (renamed from the pre-extraction "CDD Trace"; the
+format itself is verbatim — the rename reflects that the trace is
+software-cycle-specific). The trace uses lifecycle step numbers from
+§Development lifecycle → §Step table, not section numbers.
+
+For stages design → release (0–10), the trace lives in the primary
+branch artifact. For stages observe → close (11–13), closure lives in
+the post-release assessment.
+
+The **primary branch artifact** is the artifact that owns the named
+incoherence, mode, active skills, and acceptance criteria. For triadic
+cycles this is `.cdd/unreleased/{N}/self-coherence.md`. For
+governance/process work, the governing doc being changed may carry the
+trace inline. When a separate design artifact exists, the design
+artifact carries the trace and `self-coherence.md` references it.
+
+**Required format:**
+
+```markdown
+## CDS Trace
+| Step | Artifact | Skills loaded | Decision |
+|------|----------|---------------|----------|
+| 0 Observe | — | — | Observation inputs read; selected signal |
+| 1 Select | — | — | Selected gap |
+| 2 Branch | branch | cds | Branch created / verified against §Branch rule / §Branch pre-flight |
+| 3 Bootstrap | version dir | cds | Bootstrap stubs created or explicit small-change exemption |
+| 4 Gap | primary artifact | — | Named incoherence / coherence contract |
+| 5 Mode | primary artifact | skill1, skill2 | Work shape, level (if used), mode, active skills |
+| 6 Artifacts | design / plan / tests / docs | — | Artifact progress or explicit "not required" |
+| 7 Self-coherence | `.cdd/unreleased/{N}/self-coherence.md` | cds | AC-by-AC self-check completed |
+| 7a Pre-review | `.cdd/unreleased/{N}/self-coherence.md` | cds | Pre-review gate passed; review-readiness signaled |
+| 8 Review | `.cdd/unreleased/{N}/beta-review.md` | review | CLP review result |
+| 9 Gate | `.cdd/unreleased/{N}/beta-review.md` or release surface | release | Release-readiness decision |
+| 10 Release | release surface | release | Tag / changelog / release decision |
+```
+
+**Trace rules:**
+
+- One row per completed lifecycle step.
+- The Step column carries both the number and the name for readability.
+- "Skills loaded" is required when skills shaped generation or
+  lifecycle execution.
+- If a lifecycle skill is used later (review, release, writing,
+  post-release), record it when it becomes active.
+- Missing rows mean the stage is not yet evidenced.
+- Contradictory rows are findings.
+
+### Supporting rules
+
+The following supporting rules govern the artifact contract; each is the
+condensed CDS-side form of the pre-#402 CDD §5.5 supporting rules
+(verbatim move with engineering-loss-function framing preserved):
+
+- **One source of truth per fact.** A given fact lives in exactly one
+  canonical surface; downstream surfaces cite, not duplicate.
+- **Derive, do not duplicate.** Derived content (CHANGELOG rows from
+  release commits, INDEX.md aggregator rows from per-cycle iteration
+  artifacts) is generated, not hand-authored at the derivation site.
+- **Update docs before release.** Documentation surfaces that describe
+  current behaviour are updated in the same cycle as the behaviour
+  change; documentation lag is a `cds-protocol-gap` per §Field 5.
+- **Write tests before or alongside the code they validate.** The order
+  is producer-discipline (α): the test surface and the code surface
+  land in the same cycle, with tests authored before or alongside
+  code, never after.
+- **Build-sync source asset changes before commit.** Build-generated
+  artifacts (compiled binaries, generated docs, schema-derived outputs)
+  are regenerated from source before commit; the commit's state is
+  internally consistent.
+- **Enumerate affected files before implementation begins.** α names
+  the surface set the cycle will touch in the contract (Stage 2) before
+  producing matter; surfaces discovered mid-cycle are recorded in
+  `gamma-clarification.md` per §Coordination surfaces → §Mid-flight
+  clarification.
+- **Every AC must map to evidence before review.** β's review intake
+  requires per-AC oracle evidence to be present in
+  `self-coherence.md §ACs`; ACs without oracles are RC findings.
+- **All review findings must be resolved before merge.** The author
+  fixes every finding (A/B/C/D) on the branch before merge. No
+  "approved with follow-up." The only exception is a finding that
+  requires a design decision outside the issue's scope, which the
+  reviewer explicitly names as "deferred by design scope" and the
+  author files as an issue before merge.
+
+### Frozen snapshot rule
+
+After release, version directories are frozen by repository policy.
+Once a release ships:
+
+- The version-snapshot directory at `docs/{tier}/{bundle}/{X.Y.Z}/`
+  is read-only by convention.
+- The moved cycle directory at `.cdd/releases/{X.Y.Z}/{N}/` (destination:
+  `.cds/releases/{X.Y.Z}/{N}/` post-re-rooting) is read-only by
+  convention.
+- The PRA at `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`
+  is read-only by convention.
+- The CHANGELOG row for the release is read-only by convention.
+
+**Only path-reference repairs are allowed after freeze:** markdown
+links and backtick paths may be updated to fix stale references. No
+semantic content may change. A finding that the frozen content is wrong
+is a `cds-protocol-gap` per §Field 5 and is closed by a follow-up cycle
+that authors a corrective artifact at a new path (or marks the frozen
+artifact's defect in the next cycle's PRA), not by editing the frozen
+content directly.
+
+The frozen-snapshot rule is the CDS-side realization of the CCNF kernel
+scope-lift invariant: once a cycle has projected as α-matter at the
+parent scope (the release), the cycle's local-scope artifacts are
+witnesses, not editable matter. Subsequent corrections happen at
+scope `n+1`, not by rewriting scope `n`.
+
+### Operational realization
+
+The terminology, bootstrap rule, ordered flow, manifest, location
+matrix, ownership matrix, CDS Trace format, supporting rules, and
+frozen-snapshot rule above are CDS's canonical artifact-contract
+statement. The v0.1 operational overlay — the per-artifact authoring
+mechanics, the closure-gate row-by-row check sequence, the
+release-time directory-move command sequence, the
+`scripts/validate-release-gate.sh --mode pre-merge` mechanical check —
+lives in the existing cdd role/runtime skills as the temporary v0.1
+overlay until the v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/release/SKILL.md §2.5a`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — Release-time cycle-directory move (`.cdd/unreleased/{N}/` →
+  `.cdd/releases/{X.Y.Z}/{N}/`); the operational realization of the
+  §Location matrix release-time-move column and the §Frozen snapshot
+  rule lock-in moment.
+- [`cnos.cdd/skills/cdd/release/SKILL.md §3.8`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
+  — Configuration-floor caps tied to actor configuration (cited from
+  §Field 6 actor collapse rule); the closure-gate override that forces
+  `C_Σ` to `<C` when required artifacts are absent.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.10`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — γ's closure gate (the row-by-row check of every "Required before
+  γ closure" entry in §Ownership matrix above).
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.6–§2.9`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — γ's release-preparation steps (`RELEASE.md` author, cycle-directory
+  move, close-out triage, PRA author, cycle-iteration trigger
+  assessment).
+- [`cnos.cdd/skills/cdd/alpha/SKILL.md §2.6`](../../../cnos.cdd/skills/cdd/alpha/SKILL.md)
+  — α's pre-review gate (the readiness signal in `self-coherence.md`;
+  the CDS Trace through Stage 7; AC-to-evidence binding; branch CI
+  green on head commit).
+- [`cnos.cdd/skills/cdd/beta/SKILL.md`](../../../cnos.cdd/skills/cdd/beta/SKILL.md)
+  — β's review CLP, pre-merge gate, merge mechanics, β close-out
+  authoring.
+- [`cnos.cdd/skills/cdd/release-effector/SKILL.md`](../../../cnos.cdd/skills/cdd/release-effector/SKILL.md)
+  — Tag policy (bare `X.Y.Z`); release-time mechanics; the operational
+  realization of §Location matrix's tag-format rule and the
+  `gamma-closeout.md gates tag` ownership-matrix row.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into
+`cnos.cds/skills/cds/{gamma,alpha,beta,release,release-effector,…}/SKILL.md`;
 the v0.1 cdd cite-points above are the temporary v0.1 home.
 
 ---
