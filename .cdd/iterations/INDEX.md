@@ -2,7 +2,7 @@
 
 This file aggregates all `cdd-iteration.md` records from cycles that produced `cdd-*-gap` findings. One row per cycle. Initialized by cycle #335.
 
-See `cdd/post-release/SKILL.md` Step 5.6b for the per-finding shape and the aggregator update procedure.
+See `cnos.handoff/skills/handoff/receipt-stream/SKILL.md` for the canonical per-finding shape, INDEX row format, cadence rule, and aggregator-update procedure. The cdd-side runbook applies the rule at cycle close-out per `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` (pointer).
 
 | Cycle | Issue | Date | Findings | Patches | MCAs | No-patch | Path |
 |-------|-------|------|----------|---------|------|----------|------|
@@ -47,3 +47,4 @@ See `cdd/post-release/SKILL.md` Step 5.6b for the per-finding shape and the aggr
 | 417 | #417 | 2026-05-22 | 0 | 0 | 0 | 0 | .cdd/unreleased/417/cdd-iteration.md |
 | 418 | #418 | 2026-05-22 | 0 | 0 | 0 | 0 | .cdd/unreleased/418/cdd-iteration.md |
 | 419 | #419 | 2026-05-22 | 0 | 0 | 0 | 0 | .cdd/unreleased/419/cdd-iteration.md |
+| 420 | #420 | 2026-05-22 | 0 | 0 | 0 | 0 | .cdd/unreleased/420/cdd-iteration.md |

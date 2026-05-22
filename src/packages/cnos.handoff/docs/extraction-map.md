@@ -1,12 +1,14 @@
 # cnos.handoff Extraction Map — v0.1
 
-**Version:** 0.1 (Sub 1 of [cnos#404](https://github.com/usurobor/cnos/issues/404); shipped under [cnos#415](https://github.com/usurobor/cnos/issues/415))
+> **Wave complete (2026-05-22)**: all surfaces migrated; v0.1 complete; cnos#404 closed via [cnos#420](https://github.com/usurobor/cnos/issues/420). The six per-surface rows below (§1–§6) plus the two discovered surfaces (§7 deferred-by-design, §8 folded into mid-flight) plus the §9 close-out row all carry "Status: v0.1 ..." declarations. This document is now an archival migration record; future cycles cite the canonical `cnos.handoff/skills/handoff/<area>/SKILL.md` paths directly.
+
+**Version:** 0.1 (Subs 1–6 of [cnos#404](https://github.com/usurobor/cnos/issues/404); shipped under [cnos#415](https://github.com/usurobor/cnos/issues/415) and finalized under [cnos#420](https://github.com/usurobor/cnos/issues/420))
 **Date:** 2026-05-22
 **Placement:** `src/packages/cnos.handoff/docs/extraction-map.md`
-**Audience:** δ operators dispatching Subs 2–6 of [cnos#404](https://github.com/usurobor/cnos/issues/404); reviewers verifying that every handoff-class surface in `cnos.cdd` (and the handoff-class surfaces that migrated into `cnos.cds` during the [cnos#403](https://github.com/usurobor/cnos/issues/403) wave) has a named `cnos.handoff` destination and a named migration sub.
-**Scope:** A surface-by-surface migration plan from handoff-class doctrine currently resident in `cnos.cdd` (and in `cnos.cds` per [cnos#411](https://github.com/usurobor/cnos/issues/411)) onto its planned `cnos.handoff` canonical home, with the migration sub-issue named for each surface.
+**Audience:** historical reference for the migration provenance of each handoff-class surface; readers tracking which cnos.cdd / cnos.cds section moved to which cnos.handoff sub-skill.
+**Scope:** A surface-by-surface migration record from handoff-class doctrine that was resident in `cnos.cdd` (and in `cnos.cds` per [cnos#411](https://github.com/usurobor/cnos/issues/411)) at the source pin, mapped onto the now-canonical `cnos.handoff` home, with the migration sub-issue named for each surface.
 
-> This document is a **mapping table + commentary**, not a re-statement of CDD / CDS / CDR doctrine. It does not embed source prose; citations carry the source path and the section marker at which the content currently resides. Subs 2–5 of [cnos#404](https://github.com/usurobor/cnos/issues/404) execute the migration against this map; Sub 6 re-points cross-references in cdd / cds / cdr to the new cnos.handoff canonical homes and closes the tracker.
+> This document is a **mapping table + commentary**, not a re-statement of CDD / CDS / CDR doctrine. It does not embed source prose; citations carry the source path and the section marker at which the content currently resides. Subs 2–5 of [cnos#404](https://github.com/usurobor/cnos/issues/404) executed the migration against this map; Sub 6 ([cnos#420](https://github.com/usurobor/cnos/issues/420)) repointed cross-references in cdd / cds / cdr to the new cnos.handoff canonical homes and closed the tracker.
 
 ---
 
@@ -197,6 +199,8 @@ Each row's note column uses one of:
 
 ## 7. Polling primitives (§Polling) — Sub 5 or deferred (boundary contested)
 
+**Status: v0.1 deferred-by-design.** Per the Sub 5 / cnos#419 decision (and Q4 resolution in §11), polling primitives were not absorbed into cnos.handoff during the v0.1 wave. Canonical doctrine remains at `cnos.cds/skills/cds/CDS.md §"Coordination surfaces" → "Polling primitives"` (post-#411); operational realization at `cnos.cdd/skills/cdd/harness/SKILL.md §5.4`. Re-evaluate when a non-CDD/CDS consumer (CDR or future c-d-X) needs the primitives.
+
 **Source family:** [`cnos.cdd/skills/cdd/harness/SKILL.md §5.4`](../../cnos.cdd/skills/cdd/harness/SKILL.md) (single-named-branch transition loop; `Monitor`-wrapped polling; reachability re-probe; transition-only emission). Post-`cnos#411` canonical doctrine is in [`cnos.cds/skills/cds/CDS.md §"Coordination surfaces" → "Polling primitives"`](../../cnos.cds/skills/cds/CDS.md); operational realization remains in `cnos.cdd/skills/cdd/harness/SKILL.md §5.4`.
 **Source content:** Polling query forms (gh / MCP / git); wake-up mechanism; reachability preflight; transition-only emission discipline; synchronous baseline pull; `git fetch` reliability re-probe.
 **Migration sub:** Sub 5 of [cnos#404](https://github.com/usurobor/cnos/issues/404) (or deferred to a post-#404 cycle).
@@ -226,19 +230,21 @@ Each row's note column uses one of:
 
 ## 9. Cross-reference cleanup + close tracker (§Cleanup) — Sub 6
 
+**Status: v0.1 complete; cnos#404 wave closed 2026-05-22.** Landed via [cnos#420](https://github.com/usurobor/cnos/issues/420) (Sub 6 of [cnos#404](https://github.com/usurobor/cnos/issues/404)). The residual citation sweep across cnos.cdd / cnos.cdr / cnos.cds confirmed that all canonical-home statements correctly name `cnos.handoff/skills/handoff/<area>/SKILL.md`; old-path cites that remain are uniformly framed as "consumer-side", "role-side realization", "pointer", or "runbook (pointer to canonical home)" — the cdd-side surfaces correctly self-describe as consumers of the new canonical doctrine. The 28-line compatibility stub at `cnos.cdd/skills/cdd/cross-repo/SKILL.md` is preserved for backward compatibility (Sub 6 D6 decision; see Sub 6's gamma-closeout). The `.cdd/iterations/INDEX.md` header was re-pointed from `cdd/post-release/SKILL.md` to `cnos.handoff/skills/handoff/receipt-stream/SKILL.md` as the canonical wire-format home. Historical post-release-assessment documents under `docs/gamma/cdd/docs/2026-05-*/` were left untouched (immutable archival records of past cycles). cnos.cdr was not modified (no residual cites discovered).
+
 **Source family:** N/A — this is the cleanup sub, not an extraction sub.
 **Source content:** All cross-references in `cnos.cdd/`, `cnos.cdr/`, `cnos.cds/`, and `docs/gamma/` essays that cite handoff-class surfaces. Per-citation update: cite the new `cnos.handoff/skills/handoff/<area>/SKILL.md` canonical home rather than the pre-migration cdd / cds path.
-**Migration sub:** Sub 6 of [cnos#404](https://github.com/usurobor/cnos/issues/404).
+**Migration sub:** Sub 6 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — closed via [cnos#420](https://github.com/usurobor/cnos/issues/420).
 **Destination commitment:** N/A — Sub 6 modifies citations in cdd / cdr / cds / docs; does not author new cnos.handoff surfaces.
 
 | Source (path + §-anchor) | Destination (path under cnos.handoff/) | Sub | Note |
 |---|---|---|---|
-| All `cross-repo/SKILL.md` cites in `cnos.cdr/skills/cdr/*.md`, `cnos.cds/skills/cds/CDS.md`, `cnos.cdd/skills/cdd/{gamma,post-release,issue}/SKILL.md` | (cites re-pointed at `cnos.handoff/skills/handoff/cross-repo/SKILL.md`) | Sub 6 | Mechanical sweep after Sub 2 lands. |
-| All `gamma/SKILL.md §2.5` dispatch-prompt cites in `cnos.cdd/skills/cdd/{alpha,beta,operator,delta,harness}/SKILL.md` | (cites re-pointed at `cnos.handoff/skills/handoff/dispatch/SKILL.md`) | Sub 6 | Mechanical sweep after Sub 3 lands. |
-| All `delta/SKILL.md §2` implementation-contract cites in `cnos.cdd/skills/cdd/{alpha,beta,gamma,operator}/SKILL.md` | (cites re-pointed at `cnos.handoff/skills/handoff/dispatch/SKILL.md §"Implementation contract"`) | Sub 6 | Mechanical sweep after Sub 3 lands. |
-| All `gamma-clarification.md` cites in `cnos.cdd/`, `cnos.cds/`, `cnos.cdr/` | (cites re-pointed at `cnos.handoff/skills/handoff/mid-flight/SKILL.md`) | Sub 6 | Mechanical sweep after Sub 4 lands. |
-| All `post-release/SKILL.md §5.6b` cites + INDEX.md format cites | (cites re-pointed at `cnos.handoff/skills/handoff/receipt-stream/SKILL.md`) | Sub 6 | Mechanical sweep after Sub 5 lands. |
-| Close [cnos#404](https://github.com/usurobor/cnos/issues/404) — name the wave complete; cite the six Subs (1–6) and their landed commits | (close tracker comment + STATUS update) | Sub 6 | Wave closeout artifact. |
+| All `cross-repo/SKILL.md` cites in `cnos.cdr/skills/cdr/*.md`, `cnos.cds/skills/cds/CDS.md`, `cnos.cdd/skills/cdd/{gamma,post-release,issue}/SKILL.md` | (cites re-pointed at `cnos.handoff/skills/handoff/cross-repo/SKILL.md`) | Sub 6 | **Status: v0.1 complete.** Re-pointed at the point of migration (Sub 2 / cnos#416 repaired canonical cites in cdd consumers; Sub 6 / cnos#420 verified no old-path-as-canonical residuals remain). |
+| All `gamma/SKILL.md §2.5` dispatch-prompt cites in `cnos.cdd/skills/cdd/{alpha,beta,operator,delta,harness}/SKILL.md` | (cites re-pointed at `cnos.handoff/skills/handoff/dispatch/SKILL.md`) | Sub 6 | **Status: v0.1 complete.** Re-pointed at the point of migration (Sub 3 / cnos#417); Sub 6 verified consumer-side cites are framed as role-skill realizations of the canonical wire-format home. |
+| All `delta/SKILL.md §2` implementation-contract cites in `cnos.cdd/skills/cdd/{alpha,beta,gamma,operator}/SKILL.md` | (cites re-pointed at `cnos.handoff/skills/handoff/dispatch/SKILL.md §"Implementation contract"`) | Sub 6 | **Status: v0.1 complete.** Re-pointed at the point of migration (Sub 3 / cnos#417); δ-inward-membrane doctrine cited as canonical at the new wire-format home. |
+| All `gamma-clarification.md` cites in `cnos.cdd/`, `cnos.cds/`, `cnos.cdr/` | (cites re-pointed at `cnos.handoff/skills/handoff/mid-flight/SKILL.md`) | Sub 6 | **Status: v0.1 complete.** Re-pointed at the point of migration (Sub 4 / cnos#418); cdd-side consumer cites name the wire-format home as canonical. |
+| All `post-release/SKILL.md §5.6b` cites + INDEX.md format cites | (cites re-pointed at `cnos.handoff/skills/handoff/receipt-stream/SKILL.md`) | Sub 6 | **Status: v0.1 complete.** Re-pointed at the point of migration (Sub 5 / cnos#419); Sub 6 additionally re-pointed the `.cdd/iterations/INDEX.md` header line to the canonical wire-format home. |
+| Close [cnos#404](https://github.com/usurobor/cnos/issues/404) — name the wave complete; cite the six Subs (1–6) and their landed commits | (close tracker comment + STATUS update) | Sub 6 | **Status: v0.1 complete.** Wave closeout artifact emitted via merge commit `Closes #420; Closes #404`; tracker auto-closes via the parent-reference. |
 
 ---
 
@@ -258,23 +264,23 @@ The six required surface families per [cnos#415](https://github.com/usurobor/cno
 | (additional) Spec-staleness propagation (Sub 4 folded) | §8 |
 | Sub 6 — cross-reference cleanup + close tracker | §9 |
 
-Mechanical check: `grep -c "^## " src/packages/cnos.handoff/docs/extraction-map.md` returns ≥ 6 (currently 10 `##` headings under §0–§10 in this file).
+Mechanical check: `grep -c "^## " src/packages/cnos.handoff/docs/extraction-map.md` returns ≥ 6 (currently 11 `##` headings under §0–§11 in this file).
 
-Sub 6 of [cnos#404](https://github.com/usurobor/cnos/issues/404) will, on completion of Subs 2–5, sweep all handoff-class citations in cdd / cdr / cds / docs against this map: each citation either resolves (content migrated to the named cnos.handoff destination) or updates (citation re-pointed at the cnos.handoff surface named above). No citation is silently dropped.
+Sub 6 of [cnos#404](https://github.com/usurobor/cnos/issues/404) — closed via [cnos#420](https://github.com/usurobor/cnos/issues/420) on 2026-05-22 — completed the citation sweep across cdd / cdr / cds / docs against this map: every citation either resolves (content migrated to the named cnos.handoff destination) or updates (citation re-pointed at the cnos.handoff surface named above). No citation was silently dropped. Verified: cnos.cdd consumer skills correctly self-describe as consumers of the new canonical wire-format home; the 28-line compatibility stub at `cnos.cdd/skills/cdd/cross-repo/SKILL.md` is preserved for backward compatibility; the `.cdd/iterations/INDEX.md` header was re-pointed to the canonical receipt-stream home; historical post-release-assessment documents (immutable archival records) were not edited.
 
 ## 11. Open questions
 
-These are noted for the operator dispatching Subs 2–6 against this map; none are blockers for Sub 1.
+These were noted for the operator dispatching Subs 2–6 against this map; all are resolved as of 2026-05-22 (cnos#404 wave closed via cnos#420).
 
-- **Q1 (Sub 2 scope).** Does Sub 2 move `cross-repo/SKILL.md` wholesale (644 lines as one file), or split into `cross-repo/{status,bundles,lineage,feedback,archival}/SKILL.md` sub-files? Recommendation: wholesale for v0.1; consider splitting if a post-#404 cycle reveals which sub-surfaces churn independently.
-- **Q2 (Sub 3 schema lift).** Does Sub 3 lift the implementation-contract 7-axes table to a typed schema at `schemas/handoff/implementation-contract.cue`, or keep as Markdown table? Recommendation: defer to Sub 3 dispatch; if B-lite, leave as Markdown.
-- **Q3 (Sub 4 unification).** Does Sub 4 unify mid-flight + artifact-channel into one `skills/handoff/intra-cycle/SKILL.md`, or keep them split? Recommendation: split per the per-mechanism cohesion; mid-flight is asynchronous γ→in-flight-α; artifact-channel is sequential α→β→γ. Different rates of fire.
-- **Q4 (Sub 5 polling absorption).** Does Sub 5 absorb `harness/SKILL.md §5.4` polling primitives, or leave as cnos.cdd runtime substrate? Recommendation: leave for v0.1; re-evaluate when CDR or future c-d-X needs the primitives.
-- **Q5 (Sub 4 + Sub 5 cds-source rows).** The rows in §4 and §5 above marked migration-semantics-undecided each have a recommended choice (move / mirror / cite-only) in the row's note column; the dispatching δ for each sub makes the final call per row. The recommendation is not a pre-commitment.
-- **Q6 (Sub 6 scope of sweep).** Sub 6's citation sweep covers cnos.cdd / cnos.cdr / cnos.cds skill files. Does it also cover `docs/gamma/essays/*.md` and `docs/gamma/cdd/RATIONALE.md`? Recommendation: yes — any essay that cites a handoff-class surface by old path becomes stale; the sweep should be exhaustive.
-- **Q7 (HANDOFF.md authoring sub).** Sub 2 is the largest extraction (cross-repo wholesale); should Sub 2 also land `HANDOFF.md` (the canonical wire-format contract), or should `HANDOFF.md` wait for Sub 3 (dispatch — which is the first surface to span multiple sub-skills and benefits from a shared contract)? Recommendation: Sub 3 lands `HANDOFF.md` because it is the first sub that needs a cross-sub-skill consensus on directional cases. Sub 2 leaves `HANDOFF.md` empty (or absent); Sub 3 lands it.
+- **Q1 (Sub 2 scope).** Does Sub 2 move `cross-repo/SKILL.md` wholesale (644 lines as one file), or split into `cross-repo/{status,bundles,lineage,feedback,archival}/SKILL.md` sub-files? **Resolved (Sub 2 / cnos#416):** wholesale move accepted; splitting deferred to a post-#404 cycle if consumer pressure reveals which sub-surfaces churn independently.
+- **Q2 (Sub 3 schema lift).** Does Sub 3 lift the implementation-contract 7-axes table to a typed schema at `schemas/handoff/implementation-contract.cue`, or keep as Markdown table? **Resolved (Sub 3 / cnos#417):** Markdown preserved for v0.1; schemas/handoff/ deferred. Sub 5 / cnos#419 applied the same Q2 precedent to the per-finding shape and INDEX row format.
+- **Q3 (Sub 4 unification).** Does Sub 4 unify mid-flight + artifact-channel into one `skills/handoff/intra-cycle/SKILL.md`, or keep them split? **Resolved (Sub 4 / cnos#418):** split. Mid-flight is asynchronous γ→in-flight-α; artifact-channel is sequential α→β→γ; different rates of fire.
+- **Q4 (Sub 5 polling absorption).** Does Sub 5 absorb `harness/SKILL.md §5.4` polling primitives, or leave as cnos.cdd runtime substrate? **Resolved (Sub 5 / cnos#419):** not absorbed in v0.1; deferred per §7 row. Re-evaluate when a non-CDD/CDS consumer (CDR or future c-d-X) needs the primitives.
+- **Q5 (Sub 4 + Sub 5 cds-source rows).** Migration-semantics-undecided rows. **Resolved (Subs 4 and 5):** per-row recommendation accepted; wire-format invariants moved to cnos.handoff; consumer-specific per-artifact realizations stayed in cnos.cds.
+- **Q6 (Sub 6 scope of sweep).** Sub 6's citation sweep covers cnos.cdd / cnos.cdr / cnos.cds skill files. Does it also cover `docs/gamma/essays/*.md` and `docs/gamma/cdd/RATIONALE.md`? **Resolved (Sub 6 / cnos#420):** scope clarified to cover live citation surfaces (cdd / cdr / cds / handoff skill files + the `.cdd/iterations/INDEX.md` header). Historical post-release-assessment documents under `docs/gamma/cdd/docs/2026-05-*/` were explicitly excluded — they are immutable archival records of past cycles that describe what was true at the cycle's pin, not current canonical citations. `docs/gamma/essays/*.md` audited: no old-path-as-canonical residuals found.
+- **Q7 (HANDOFF.md authoring sub).** Sub 2 is the largest extraction (cross-repo wholesale); should Sub 2 also land `HANDOFF.md`, or should `HANDOFF.md` wait for Sub 3? **Resolved (Sub 2 / cnos#416):** HANDOFF.md landed under Sub 2 (recommendation revised at dispatch); cross-repo's substantive doctrine provided the first-pass directional-case taxonomy that the later subs (3–5) refined.
 
-These are migration-coordination questions, not destination-uncertainty questions. The destinations named in the per-surface tables above are stable commitments for Subs 2–6; the open questions are about *how* the migration executes (one file vs split; schema lift vs Markdown; combine vs separate; sweep scope), not *where* the canonical home lands.
+All seven open questions resolved during the wave; the destinations named in the per-surface tables above are stable. No carried-forward open questions to a post-#404 cycle aside from the deferred-by-design polling absorption (Q4 / §7) and the cross-repo file-split exploration (Q1).
 
 ---
 
