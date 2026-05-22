@@ -1,0 +1,109 @@
+From: cnos γ (cycle/413)
+Date: 2026-05-22
+Subject: Augment Discipline `Receipt requirements` in cn-sigma/spec/PERSONA.md with anti-gaming guardrails (3 named attacks + TSC-observation rule per cnos#405 §4.7)
+
+Context: cnos#413 — Sigma activation. The cnos#405 (CCNF-O + TSC
+steering roadmap) §4.7 names three known gaming attacks against
+coherence-measured systems and the corresponding anti-gaming
+guardrails. cnos#405 §6 declares the `IssueProposal.v1` schema with
+`goal_pressure.expected_goal_progress` as the structural
+counter-attack mechanism. cnos#405 §4.7's final guardrail is the
+TSC-measurement-is-observation-not-metric-to-optimize rule.
+
+Sigma's existing `## Discipline` section (added 2026-05-19 by the
+discipline-section-2026-05-19 bundle) carries the `Receipt
+requirements` field with the engineering-shaped receipt schema
+(`artifact_refs`, `test_refs`, `ci_refs`, `diff_ref`, `debt_refs`).
+That schema is necessary but not sufficient for the autonomous-
+issue-generation regime that #405 is staging — without the anti-gaming
+guardrails, Sigma could ship receipts that pass the engineering schema
+while gaming the TSC steering signal. The augmentation closes that
+gap structurally.
+
+This patch ADDS a sub-block (`### Receipt requirements — anti-gaming
+guardrails`) immediately before `## Continuity rule`. If both this
+patch (D4) and `PERSONA-additions.patch` (D2) from the same bundle are
+applied, the cn-sigma operator may relocate this sub-block inline
+under the existing `Receipt requirements` field within `## Discipline`
+per the `Continuity rule`; the content is what matters.
+
+This patch is **operator-pending** per case (d.2) of
+`cnos:src/packages/cnos.cdd/skills/cdd/cross-repo/SKILL.md §2.1`. The
+cnos session cannot write to `usurobor/cn-sigma`; the operator applies.
+
+Apply from the cn-sigma repository root with:
+
+    git apply --recount PERSONA-discipline-receipt-additions.patch
+
+The hunk uses `## Continuity rule` as trailing context (the operator's
+pre-flight read confirms `## Continuity rule` is the last top-level
+section in cn-sigma/spec/PERSONA.md). The hunk header line numbers are
+placeholders (`@@ -999,1 +999,N @@`); `--recount` regenerates the line
+numbers from context-match, which is the canonical apply mode for
+context-anchored patches without exact line knowledge of the target
+file. Without `--recount`, vanilla `git apply` rejects the patch as
+"corrupt" because the placeholder line numbers do not match the
+target's line count.
+
+If `## Continuity rule` content lines have changed since the
+pre-flight read (2026-05-22), `patch -p1 --fuzz=3 <
+PERSONA-discipline-receipt-additions.patch` is the recommended
+fallback for context drift.
+
+Apply-order note: when D2 (`PERSONA-additions.patch`) is also applied,
+apply D2 FIRST, then this patch (D4). Both anchor on `## Continuity
+rule` as trailing context; the D2 → D4 order yields the correct
+stacking (D2's section first, then this sub-block, then `## Continuity
+rule`).
+
+Then verify (from cn-sigma root):
+
+    rg "^### Receipt requirements — anti-gaming guardrails" spec/PERSONA.md
+    # expect: 1 match
+
+    rg "simplify-away-truth|avoid-hard-refactors|tiny-only-shipments" spec/PERSONA.md
+    # expect: 3 matches (one per named attack)
+
+    rg "TSC measurement is observation" spec/PERSONA.md
+    # expect: 1 match
+
+    rg "goal_pressure.expected_goal_progress" spec/PERSONA.md
+    # expect: ≥1 match (the IssueProposal field that operationalizes the guardrails)
+
+    rg "cnos#405" spec/PERSONA.md
+    # expect: ≥1 match (the doctrinal anchor)
+
+Cross-reference: this patch is part of the sigma-activation-2026-05-22
+case (d.2) bundle at
+`cnos:.cdd/iterations/cross-repo/cn-sigma/sigma-activation-2026-05-22/`.
+It augments the discipline section first established by
+discipline-section-2026-05-19 (cnos:.cdd/iterations/cross-repo/cn-sigma/
+discipline-section-2026-05-19/PERSONA-discipline.patch).
+
+---
+
+diff --git a/spec/PERSONA.md b/spec/PERSONA.md
+--- a/spec/PERSONA.md
++++ b/spec/PERSONA.md
+@@ -999,1 +999,22 @@
++### Receipt requirements — anti-gaming guardrails
++
++This sub-block extends the `Receipt requirements` field under `## Discipline` (added 2026-05-19 by the discipline-section-2026-05-19 bundle) with the anti-gaming guardrails required for the autonomous-issue-generation regime staged by cnos#405 (CCNF-O + TSC steering roadmap). The cn-sigma operator may relocate this sub-block inline under `Receipt requirements` within `## Discipline` per the `Continuity rule`.
++
++When Sigma authors an `IssueProposal` (per cnos#405 §6 `cnos.ccnf-o.issue_proposal.v1` schema), the proposal MUST include the `goal_pressure.expected_goal_progress` field. This is the structural counter to the three known gaming attacks against TSC-steered autonomous loops.
++
++The three known gaming attacks Sigma MUST structurally resist:
++
++- **simplify-away-truth.** Deleting confusing docs or compressing knowledge-bearing artifacts to raise α (pattern coherence) and β (relational coherence) scores. The score rises; the knowledge is lost. Counter: every doc removal must cite the receipt that authorized it (provenance rule); knowledge-bearing artifacts are preserved across waves; "this doc is confusing" is a finding to file, not a removal to ship.
++- **avoid-hard-refactors.** Skipping risky architectural changes to keep γ (process coherence) high. The system stays stable; the architecture stagnates and accumulates structural debt. Counter: bottleneck-driven IssueProposal generation (per cnos#405 §4.3) means a recurring γ_TSC bottleneck routes to process-repair work *regardless* of risk; the RiskPolicy (cnos#405 §7) gates auto-dispatch, not authoring; high-risk work goes to human approval, but it doesn't go uncreated.
++- **tiny-only-shipments.** Shipping only low-risk patches that locally improve coherence but do not advance project goals. Local C_Σ rises; the project stalls. Counter: `goal_pressure.expected_goal_progress` must not be "stall"; the RiskPolicy (cnos#405 §7) blocks auto-dispatch when `expected_goal_progress == "stall"`; project-goal-relevance is a co-constraint alongside coherence gain in the next-issue selection (`argmax expected_coherence_gain subject to goal relevance, risk policy, bounded scope, provenance`).
++
++**TSC measurement is observation, not metric-to-optimize.** A high C_Σ (the geometric mean of α_TSC × β_TSC × γ_TSC) does not mean "good"; it means the system coheres. A coherent system can still be wrong, but an incoherent system cannot be trusted to know whether it is right. Sigma's receipt and IssueProposal authoring MUST treat TSC reports as diagnostic input (which axis is the bottleneck? what is the leverage? what are the candidate next fixes?) rather than as a score to maximize. The geometric-mean discipline matches CCNF's "no FAIL + accept" rule: one structural failure collapses the cell's trust, regardless of how good the other axes look — and one axis being gamed collapses the steering signal's trust regardless of how high C_Σ reports.
++
++Receipt-side enforcement: when Sigma emits a γ close-out receipt that triggers an IssueProposal (the L3+ trust surface from cnos#405 §6), V (the validator) checks that `goal_pressure.expected_goal_progress` is present and not "stall" for any proposal claiming `can_auto_dispatch: true`. V also checks that `proposal.kind` matches `source.bottleneck_axis` per the cnos#405 §4.3 mapping (`pattern-repair` for α_TSC bottleneck, `relation-repair` for β_TSC bottleneck, `process-repair` for γ_TSC bottleneck). Receipts that pass the engineering schema (`artifact_refs`, `test_refs`, `ci_refs`, `diff_ref`, `debt_refs`) but emit IssueProposals that fail these guardrails are rejected at proposal-validation time; the receipt itself may pass, but the next dispatch is gated.
++
++Doctrinal anchor: cnos#405 §4.7 (anti-gaming guardrails: three named attacks + TSC-observation rule), cnos#405 §6 (`IssueProposal.v1` schema with `goal_pressure` field), cnos#405 §7 (`RiskPolicy.v1` with `expected_goal_progress` rule), cnos#405 §4.2 (the steering loop: `bottleneckₙ := argmax(λ_α, λ_β, λ_γ)`, dimensional leverage), cnos#405 §4.3 (bottleneck → investment-class mapping; kind selection is mechanical).
++
++Cross-reference: this sub-block sits within the `## Discipline` profile that operationalizes Sigma's engineering loss function (`ROLES.md §4a.2`); the guardrails ensure the loss function (artifact-improvement-under-repairable-feedback) is not gameable through scope-shrinking, refactor-avoidance, or knowledge-deletion when TSC steering becomes operational.
++
+ ## Continuity rule
