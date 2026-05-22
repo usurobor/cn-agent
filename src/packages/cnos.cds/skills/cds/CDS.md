@@ -1,5 +1,5 @@
-<!-- sections: [preamble, architecture-choice, persona-protocol-project, six-field-contract, empirical-anchor, related-documents, non-goals] -->
-<!-- completed: [preamble, architecture-choice, persona-protocol-project, six-field-contract, empirical-anchor, related-documents, non-goals] -->
+<!-- sections: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, empirical-anchor, related-documents, non-goals] -->
+<!-- completed: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, empirical-anchor, related-documents, non-goals] -->
 
 # Coherence-Driven Software (CDS)
 
@@ -12,10 +12,12 @@
 > deployments — under the engineering loss function (artifact improvement
 > under repairable feedback).
 
-**Version:** 0.1 (Sub 2 of [cnos#403](https://github.com/usurobor/cnos/issues/403))
-**Status:** Draft — instantiation contract only. Lifecycle migration (Subs
-3–5), CDD.md marker cleanup (Sub 6), and empirical-anchor doc (Sub 7) are
-downstream.
+**Version:** 0.1 (Subs 2–3 of [cnos#403](https://github.com/usurobor/cnos/issues/403))
+**Status:** Draft — instantiation contract (Sub 2) + §Selection function and
+§Development lifecycle (Sub 3 / cnos#408, B-lite extract). Subs 4–5 (artifacts,
+review, gate, assessment, closure, retro-packaging, non-goals, mechanical,
+large-file), CDD.md marker cleanup (Sub 6), and empirical-anchor doc (Sub 7)
+are downstream.
 **Date:** 2026-05-22
 **Placement:** `src/packages/cnos.cds/skills/cds/`
 **Audience:** Engineering operators, engineering reviewers, project
@@ -770,6 +772,458 @@ dispatch model — the sequential bounded dispatch mechanism, the
 re-dispatch prompt forms (initial / patch / full-review), the initial
 dispatch sizing rules, the commit-checkpoint discipline. Field 6 owns
 the actor-shape taxonomy; Sub 3 owns the per-shape operational detail.
+
+---
+
+## Selection function
+
+CDS selection is coherence-driven. The next substantial engineering gap is
+selected by the following function, in order. Each rule names the
+circumstance that fires it, the action it requires, and the relationship to
+the surrounding rules; collectively they discriminate which candidate cycle
+δ dispatches next. The function is the canonical content for **what δ
+selects** (paired with §Field 4 "δ cadence", which names **when δ runs**).
+
+The 10 rules below are the canonical statements. Operational realization —
+the per-rule mechanics γ runs at observation time (read CHANGELOG TSC table,
+read encoding lag table, read doctor/status, read last PRA, build the
+candidate table, name the decisive clause) — is the v0.1 overlay in
+[`cnos.cdd/skills/cdd/gamma/SKILL.md`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+§2.1–§2.2 until the v1 role rewrite (Subs 3+ of a post-#403 wave) lands a
+CDS-side `gamma/SKILL.md`. The CDS-side `selection/SKILL.md` thin overlay
+(if present) delegates mechanics to the cdd `gamma/SKILL.md` surface.
+
+### Inputs to selection
+
+The selection function reads four observation surfaces (per
+[`cnos.cdd/skills/cdd/gamma/SKILL.md §2.1`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md);
+folded here from extraction-map row 1's §Inputs cross-cut):
+
+- **Last post-release assessment (PRA)** — read first. The prior cycle's
+  next-MCA commitment, deferred outputs, cycle-iteration findings, MCI
+  freeze state. Binding, not optional.
+- **CHANGELOG TSC table** — the technical-state-of-the-codebase signal
+  recorded at each release.
+- **Encoding lag table** — the cross-cycle backlog of gaps that have
+  been named but not closed.
+- **Doctor / status / operational-health surface** — the substrate-level
+  health probe (build state, CI state, deploy state, runtime contracts).
+- **Cross-repo proposal intake** — scan `.cdd/iterations/cross-repo/{target}/*/STATUS`
+  for `submitted` (or `drafted` with source-delegated filing-authority per
+  `cnos.cdd/skills/cdd/cross-repo/SKILL.md §2.3.3`) proposals; each
+  candidate is a potential gap.
+
+Operational mechanics (the `gh`/`MCP`/`git` queries that read each surface,
+the candidate-table format) stay in the cdd `gamma/SKILL.md` v0.1 overlay.
+
+### P0 override
+
+If doctor/status shows a P0 bug — crash, data loss, silent failure, or
+analogous safety-class incoherence — that is the gap. No further selection
+logic applies until it is addressed.
+
+**New-vs-known rule.** If the P0 was already visible when the last
+assessment was written and the assessment committed a different next MCA,
+the assessment decision governs unless the P0 has escalated (e.g. is now
+causing active data loss or blocking all development). A known P0 that was
+weighed and deferred is not an override — it is a prioritized backlog item.
+
+### Operational-infrastructure override
+
+If core operational paths are broken, fix them before feature work.
+Examples: self-update broken; logging absent; health checks missing;
+deployment path incoherent; system cannot observe or maintain itself. These
+are not "nice to have" — they are preconditions for coherent engineering
+work; subsequent cycles depend on the operational substrate to be running.
+
+**Sizing rule.** Before selecting infrastructure debt as a full cycle, ask
+whether the fix is cycle-sized or immediate-output-sized. If the fix is
+executable in minutes (a script, a hook, a one-line config change), execute
+it as an immediate output (per §Closure once Sub 5 lands; or per the
+operational v0.1 overlay until then) and continue to the next selection
+rule. Only select infrastructure debt as the cycle gap when the fix requires
+design, multiple files, tests, or review.
+
+### Assessment-commitment default
+
+If the last PRA named a next MCA and no stronger override fires, that MCA is
+selected by default. Observation may override it, but the override must be
+stated explicitly — the prior assessment was authored under more recent
+context than this cycle's observation, and silently abandoning a committed
+next-MCA is incoherence between cycles.
+
+### Stale-backlog re-evaluation
+
+If P0 / operational / assessment-commitment produce no actionable candidate
+(P0s exist but have no clear fix path, the PRA doesn't commit a next MCA, no
+operational debt), re-evaluate stale issues before selecting new work:
+
+- For each stale issue: is it still a real gap, or has the system moved
+  past it?
+- **Descope** issues that are no longer coherence gaps (close with
+  rationale).
+- **Consolidate** issues that overlap or could be addressed by one MCA.
+- **Commit** the stale issue with the clearest fix path as the next MCA.
+- If no stale issue has a clear fix path either, enter observation mode
+  (no-gap case, below).
+
+Stale backlog accumulating across multiple cycles without re-evaluation is
+itself an incoherence.
+
+### MCI freeze check
+
+If the lag table contains stale issues (Master Coherence Issues that have
+been open across multiple cycles), the next substantial MCA must come from
+the stale set. New design work is **frozen** until at least one stale item
+ships. The freeze prevents the lag table from monotonically growing while
+δ-the-operator's attention is captured by newer-feeling work.
+
+### Weakest-axis rule
+
+If no stronger rule decides selection, choose work that addresses the
+weakest current axis:
+
+- **α** → structural / consistency work (the artifact-production discipline
+  has a gap a future cycle's α will inherit).
+- **β** → alignment / integration work (the review-oracle discipline has a
+  gap that lets matter through without binding on a contract).
+- **γ** → process / evolution work (the cycle-coordination discipline has a
+  gap that produces friction across cycles).
+
+The axis health signal is the receipt-stream view ε reads (§Field 5);
+weakest-axis is what longitudinal observation discriminates.
+
+### Maximum-leverage rule
+
+Among candidates that address the weakest axis, choose the one that moves
+the most lag entries. "Leverage" here is the count of downstream gaps a
+candidate's closure unblocks; high-leverage candidates produce coherence
+delta across multiple lag rows, low-leverage candidates close one row.
+
+### Dependency order
+
+If candidate A blocks candidate B blocks candidate C, choose A regardless
+of local excitement or presentation value. Dependency-order is the lattice
+the candidate table is sorted against; the topological prefix is
+non-negotiable.
+
+### Effort-adjusted tie-break
+
+Between candidates with equal leverage and axis effect, choose the smaller
+one. Ship sooner, observe sooner, correct sooner — the engineering loss
+function (artifact improvement under repairable feedback) rewards shorter
+cycles when other axes are tied.
+
+### No-gap case
+
+If:
+
+- no P0 exists;
+- no operational-infrastructure override exists;
+- no stale lag item exists;
+- no prior assessment commitment forces a next MCA;
+- axes are healthy or tied;
+
+then **do not start a new substantial cycle.** Remain in observation, or
+choose a small-change path (immediate output executed inline; no new cycle
+opened). The no-gap case is the structural permission to *not* dispatch —
+the function does not always produce a candidate, and forcing one when no
+coherence gap exists is itself incoherence (cycle-for-cycle's-sake).
+
+### Operational realization
+
+The 10 rules above are CDS's canonical selection-function statement. The
+v0.1 operational overlay — how γ reads each input surface, builds the
+candidate table, applies the rules in order, names the decisive clause,
+sizes the intervention, and dispatches — lives in the existing cdd role
+skills as the temporary v0.1 overlay until the v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.1`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — Step 1a: observe and build candidates (the four observation surfaces,
+  the candidate-table format).
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.2`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — Step 1b: select by rule order, name the decisive clause, size the
+  intervention (immediate-output / small-change / substantial-cycle).
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.2a`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — peer enumeration at scaffold time (the §Gap honest-claim discipline
+  that gates a selected candidate before issue authoring).
+- [`cnos.cdd/skills/cdd/alpha/SKILL.md §2.1`](../../../cnos.cdd/skills/cdd/alpha/SKILL.md)
+  — dispatch-intake: how α reads the selected candidate's issue + active
+  skills, the receipt α gives the selection function.
+- [`cnos.cdd/skills/cdd/cross-repo/SKILL.md`](../../../cnos.cdd/skills/cdd/cross-repo/SKILL.md)
+  — the cross-repo proposal STATUS state machine that feeds the
+  cross-repo-intake input surface.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{gamma,alpha,…}/SKILL.md`; the
+v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Development lifecycle
+
+CDS owns the full arc from observation back to observation. The lifecycle
+discriminates **when** each role acts on a cycle (paired with §Field 4
+"δ cadence", which names **what triggers** each cycle, and §Selection
+function above, which names **what** δ selects). The lifecycle is the
+canonical content for the engineering-cycle structure.
+
+This section names the canonical 0–13 step list, the S0–S12 state machine
+that the steps compose into under sequential bounded dispatch, the branch
+rule (`cycle/{N}` canonical), the γ-owned branch pre-flight, and the skill
+loading tier structure. Operational realization stays in the cdd role/runtime
+skills as the v0.1 overlay until the v1 CDS-side role rewrite.
+
+### Step table
+
+A complete CDS cycle composes 14 ordered steps. Each step has a single
+owner (the role that produces the step's required output), an inputs set
+(the prior steps' outputs the step reads), and a required output (the
+artifact or state change the step lands before the next step fires).
+
+| # | Step | Owner | Purpose | Required output |
+|---|------|-------|---------|-----------------|
+| 0 | Observe | γ | Read current coherence state | Selection inputs read |
+| 1 | Select | γ | Choose the next gap by §Selection function | Named selected gap + decisive rule clause |
+| 2 | Branch | γ | Create the cycle branch (`cycle/{N}` from `origin/main`, §Branch rule + §Branch pre-flight) | `origin/cycle/{N}` exists |
+| 3 | Bootstrap | γ | Author `gamma-scaffold.md` + issue pack | Issue #N with ACs + scaffold on `cycle/{N}` |
+| 4 | Gap | α | Name the incoherence precisely | `self-coherence.md §Gap` (the coherence contract) |
+| 5 | Mode | α | Choose MCA/MCI and active skills | Mode declaration + Tier 1/2/3 skill set |
+| 6 | Artifacts | α | Produce in artifact order: design → contract → plan → tests → code → docs | Aligned implementation artifacts on `cycle/{N}` |
+| 7 | Self-coherence | α | α audits own work against ACs and the triad | `self-coherence.md` complete through §CDD Trace |
+| 8 | Review | β | β review CLP — verdict A / RC / NO-GO | `beta-review.md` round verdict; merge on A |
+| 9 | Gate | δ | Verify release-readiness; record boundary decision | δ preflight verdict (Proceed / RC / Override) |
+| 10 | Release | δ | Tag, publish, deploy (release-effector mechanics) | Release artifacts exist; tag on main |
+| 11 | Observe | γ | Confirm runtime matches design | Observation result (CI green; runtime probe) |
+| 12 | Assess | γ | Author the PRA (post-release assessment) | `POST-RELEASE-ASSESSMENT.md` |
+| 13 | Close | γ | Execute immediate outputs; commit deferred outputs; declare closure | `gamma-closeout.md`; closure declaration |
+
+Step 13 feeds back to Step 0 of the next cycle. The lifecycle is the loop
+the CCNF kernel's recursion modes (`COHERENCE-CELL-NORMAL-FORM.md §Recursion
+Modes`) realize on the engineering substrate; cross-scope accept advances
+the scope index; within-scope repair-dispatch (a fix round in Step 8) keeps
+the cell open at scope `n`.
+
+### State machine
+
+The states below are the canonical state machine for a substantial triadic
+cycle under the **sequential bounded dispatch model** (the dispatch model
+named in §Field 6 actor-collapse-rule and detailed in the v0.1 overlay at
+[`cnos.cdd/skills/cdd/CDD.md §1.6`](../../../cnos.cdd/skills/cdd/CDD.md)).
+Each state has one owner, required inputs, required outputs, a next state,
+and a failure / retry path.
+
+| State | Owner | Required inputs | Required outputs | Next state | Failure / retry |
+|---|---|---|---|---|---|
+| **S0: Observed** | γ | CHANGELOG TSC, lag table, doctor/status, last PRA | Named selected gap + decisive §Selection clause | S1 | Re-observe if no clear gap (no-gap case) |
+| **S1: Issue filed** | γ | Selected gap; issue-quality gate passed | Issue #N with ACs, Tier 3 skills, non-goals, related artifacts | S2 | Fix issue until quality gate passes |
+| **S2: Branch created** | γ | Issue #N open; `origin/cycle/{N}` does not exist | `origin/cycle/{N}` exists; pre-flight passed | S3 | Pre-flight fail → fix and retry |
+| **S3: α dispatched** | δ | α prompt (from γ); `origin/cycle/{N}` exists | α session running | S4 | α session fails → re-dispatch α |
+| **S4: α implementing** | α | Branch, issue, active skills loaded | Code, tests, docs on `cycle/{N}` | S5 | Blocker → γ unblocks; RC from β → re-dispatch α for fix round (within-scope repair) |
+| **S5: α signaled review-ready** | α | Pre-review gate passed (`alpha/SKILL.md §2.6`) | `self-coherence.md` review-readiness section on `cycle/{N}` | S6 | Gate fails → fix and re-signal |
+| **S6: β reviewing** | β | `self-coherence.md` review-readiness, diff, CI green | `beta-review.md` round verdict (RC or A) | RC → S4; A → S7 | β blocked → γ unblocks |
+| **S7: β merged** | β | Approved verdict; pre-merge gate passed (`beta/SKILL.md §"Pre-merge gate"`) | Merge commit on main with `Closes #N`; `beta-closeout.md` | S8 | Merge conflict → β resolves in throwaway worktree |
+| **S8: α close-out** | α (re-dispatched) | `beta-review.md` (approved); merged state | `alpha-closeout.md` on main | S9 | Re-dispatch unavailable → provisional close-out at review-readiness (declared as debt) |
+| **S9: γ triaging** | γ | `alpha-closeout.md`, `beta-closeout.md`, `RELEASE.md` | PRA at canonical path; γ close-out triage; skill patches landed | S10 | Missing close-out → request re-dispatch; missing RELEASE.md → γ writes it |
+| **S10: δ release-boundary preflight** | δ | PRA present; RELEASE.md present; `.cdd/unreleased/{N}/` not yet moved; merge on main | Proceed / Request changes / Override | Proceed → S11; RC → route to β/α/override | δ blocks → γ routes change |
+| **S11: γ closing** | γ | δ preflight passed; closure gate rows pass (`gamma/SKILL.md §2.10`) | `gamma-closeout.md`; cycle-dir move to `.cdd/releases/{X.Y.Z}/{N}/`; closure declaration | S12 | Missing artifact → obtain before closing |
+| **S12: δ disconnect** | δ | γ closure declaration; `gamma-closeout.md` exists on main | Tag + release commit; branch cleanup | S0 (next cycle) | Script fails → fix and retry |
+
+The state machine maps onto the 0–13 step table as follows: Steps 0–3
+compose S0–S3 (γ-owned setup); Steps 4–7 compose S4–S5 (α implementation
+and review-ready signal); Step 8 composes S6–S7 (β review and merge); Step
+9–10 compose S8–S10 (close-out collection and δ preflight); Steps 11–12
+compose S9 + S11 (γ triage, PRA, closure declaration); Step 10's release
+mechanics compose S12 (δ disconnect). The step table is the canonical
+ordering; the state machine is the canonical ownership-and-transition shape.
+
+### Branch rule
+
+Every substantial CDS cycle is developed on its own dedicated branch. No
+substantial CDS work is performed directly on `main`.
+
+**Canonical branch format:**
+
+```text
+cycle/{N}
+```
+
+where `{N}` is the issue number. One cycle = one branch = one named target
+for all polling. The cycle branch is the canonical coordination surface
+during the cycle (§"Coordination surfaces" pending Sub 4; currently sourced
+from `cnos.cdd/skills/cdd/CDD.md §Tracking` v0.1 overlay).
+
+**Ownership.** γ creates `cycle/{N}` from `origin/main` **before** dispatch
+(Step 2 of §"Step table"). α and β **never** create branches — they `git
+switch cycle/{N}` from the name in their dispatch prompt and refuse to
+invent or accept any other name. This is the role-side enforcement of the
+single-named-target rule.
+
+**γ session branch.** γ's session is on a separate γ session branch
+(harness-given as `claude/...` or operator-named as `gamma/session-{N}`);
+this branch is γ's pre-publication drafting surface for work that cannot
+land directly on `cycle/{N}`. **Default rule:** γ commits cycle artifacts
+directly to `cycle/{N}`. The session branch is for genuine drafts only
+(e.g. PRA work-in-progress that requires γ-only review before publication).
+Any γ-session-branch commit must merge into `cycle/{N}` or `main` by closure
+declaration time, or be discarded. No orphan γ session branches survive
+past closure.
+
+**Legacy shapes — warn-only.** Pre-#287 shapes (`{agent}/{version}-{issue}-{scope}`,
+`{agent}/{issue}-{scope}`, `claude/{slug}-{rand}`) are warn-only — verifiers
+may flag them; nothing else changes. Frozen historical branches under those
+shapes are not retroactively renamed. Polling glob `'origin/claude/*'` is
+retained only for retrospective tracking and is not a discovery surface for
+new cycles.
+
+### Branch pre-flight
+
+γ runs branch pre-flight **before** creating `cycle/{N}` (Step 2 of the
+step table). Verify:
+
+- `origin/cycle/{N}` does not yet exist (`git rev-parse --verify
+  origin/cycle/{N}` returns non-zero — fail loud if the branch already
+  exists, since one cycle = one branch);
+- no stalled `.cdd/unreleased/{N}/` directory exists on `origin/main`
+  (would indicate a previous cycle for `{N}` did not complete its
+  release-time move per the §Artifacts location-matrix rule, pending
+  Sub 4 — currently sourced from
+  [`cnos.cdd/skills/cdd/release/SKILL.md §2.5a`](../../../cnos.cdd/skills/cdd/release/SKILL.md));
+- the issue's intended scope is declared in the issue body before the
+  branch is created;
+- base SHA is known (`git rev-parse origin/main`);
+- the issue is open.
+
+The pre-flight is γ-owned because γ creates the branch. α's pre-review
+gate retains its own row (verify that `origin/cycle/{N}` is rebased onto
+current `origin/main` at review-readiness time —
+[`cnos.cdd/skills/cdd/alpha/SKILL.md §2.6 row 1`](../../../cnos.cdd/skills/cdd/alpha/SKILL.md)),
+but α does not create the branch and does not own pre-flight at branch
+creation.
+
+### Skill loading tiers
+
+Skills are loaded in tiers. For substantial cycles, all applicable tiers
+are mandatory. The tier structure is **executable**: every role can answer
+"did I load what this tier requires?" without ambiguity.
+
+**Tier 1a — CDS authority (always loaded by every role).**
+
+- This file — `CDS.md` (the canonical instantiation contract).
+- The kernel — [`cnos.cdd/skills/cdd/CDD.md`](../../../cnos.cdd/skills/cdd/CDD.md)
+  (the CCNF spine; loaded as cited reference, not re-restated).
+- The loader entrypoint — [`SKILL.md`](SKILL.md).
+- The current role skill (when v1 lands): `alpha/SKILL.md`, `beta/SKILL.md`,
+  or `gamma/SKILL.md` under `cnos.cds/skills/cds/`. Until v1 lands, the
+  cdd-side role skills serve as the v0.1 overlay
+  ([`cnos.cdd/skills/cdd/{alpha,beta,gamma}/SKILL.md`](../../../cnos.cdd/skills/cdd/)).
+
+Tier 1a is loaded unconditionally. Roles do **not** load peer role skills.
+
+**Tier 1b — Lifecycle phase skills (load per current phase or work shape).**
+
+The lifecycle sub-skills under `cnos.cdd/skills/cdd/` (until Sub 5 of #403
+migrates them to `cnos.cds`):
+
+- `issue/SKILL.md` — when interpreting issue ACs or quality;
+- `design/SKILL.md` — when producing or judging design-required work;
+- `plan/SKILL.md` — when implementation sequencing is non-trivial;
+- `review/SKILL.md` — when reviewing;
+- `release/SKILL.md` — when merging / tagging / deploying;
+- `post-release/SKILL.md` — when assessing or closing.
+
+Load by phase. Roles that operate across multiple phases load the matching
+set.
+
+**Tier 1c — β closure bundle (always loaded by β).**
+
+β always loads:
+
+- `review/SKILL.md`;
+- `release/SKILL.md`.
+
+γ always loads `post-release/SKILL.md` because γ owns the PRA (see §Field 5
+ε iteration cadence, §Field 3 close-out artifact set).
+
+**Tier 2 — General engineering (load the applicable bundle).**
+
+Pick the engineering-substrate bundle for the work shape from
+[`src/packages/cnos.eng/skills/eng/README.md`](../../../../cnos.eng/skills/eng/README.md):
+coding / review / design / runtime-and-platform / tooling / writing.
+
+The engineering package README is the source of truth for which bundle
+covers which work shape and which skills it includes. CDS does not
+enumerate language- or platform-specific bundles here — that surface lives
+in the engineering package and changes independently of the CDS protocol.
+
+The skill that owns skill-program / frontmatter coherence is
+[`cnos.core/skills/skill/SKILL.md`](../../../../cnos.core/skills/skill/SKILL.md)
+(load when authoring or modifying skills). The skill that owns
+architecture / design reasoning is
+[`cnos.core/skills/design/SKILL.md`](../../../../cnos.core/skills/design/SKILL.md)
+(load when reviewing or producing architecture-level decisions).
+
+**Tier 3 — Issue-specific (named per issue).**
+
+Skills that depend on what the cycle's work touches. The issue's
+`## Skills to load` (or equivalent) section names these. Examples: a
+language skill (`eng/{language}`); a domain skill (`eng/ux-cli`,
+`eng/performance-reliability`, `eng/tool`); an architecture skill
+(`eng/evolve`, `eng/write-functional`); a skill-authoring skill
+(`cnos.core/skills/skill`).
+
+γ names only Tier 3 in issues. Tier 1 and Tier 2 are mandatory and not
+repeated in the issue body.
+
+**Read each `SKILL.md` file before beginning any work step.** Naming a
+skill without reading it is not loading it. Loaded skills are **hard
+generation constraints** — not post-hoc review checklists.
+
+When in doubt about mode (MCA vs MCI), apply CAP: if the answer is already
+in the system, cite it (MCA) — don't reinvent it (MCI). If two paths close
+the same gap, take the lighter one unless the heavier one buys durability
+the lighter one cannot.
+
+Review (Step 8) checks whether the implementation is consistent with all
+loaded tiers. Findings that a loaded skill would have prevented are
+process debt (an §Field 5 ε-class `cds-skill-gap` signal).
+
+### Operational realization
+
+The step table, state machine, branch rule, pre-flight, and tier structure
+above are CDS's canonical lifecycle statement. The v0.1 operational overlay
+— how each role executes each step's mechanics, how the dispatch model
+wires roles together across the state machine, how the branch pre-flight
+runs in shell, how each tier is loaded by the harness — lives in the
+existing cdd role/runtime skills as the temporary v0.1 overlay until the
+v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — γ algorithm across Steps 0–3 + 11–13 (observation, selection, issue
+  pack, branch creation, scaffold, dispatch coordination, close-out
+  triage, PRA, cycle iteration, closure declaration).
+- [`cnos.cdd/skills/cdd/alpha/SKILL.md`](../../../cnos.cdd/skills/cdd/alpha/SKILL.md)
+  — α algorithm across Steps 4–7 (intake, artifact-order production,
+  self-coherence, pre-review gate, review-ready signal) + Step 8's α-side
+  fix-round mechanics + Step 9's α close-out re-dispatch.
+- [`cnos.cdd/skills/cdd/beta/SKILL.md`](../../../cnos.cdd/skills/cdd/beta/SKILL.md)
+  — β role contract across Step 8 (review CLP, pre-merge gate, merge,
+  β close-out).
+- [`cnos.cdd/skills/cdd/delta/SKILL.md`](../../../cnos.cdd/skills/cdd/delta/SKILL.md)
+  — δ role contract across Steps 9 + 12 (release-boundary preflight,
+  disconnect release).
+- [`cnos.cdd/skills/cdd/harness/SKILL.md`](../../../cnos.cdd/skills/cdd/harness/SKILL.md)
+  — runtime-substrate mechanics (dispatch, polling, branch creation
+  shell, session lifecycle, identity wiring).
+- [`cnos.cdd/skills/cdd/release-effector/SKILL.md`](../../../cnos.cdd/skills/cdd/release-effector/SKILL.md)
+  — tag / release / deploy mechanics δ invokes at Step 10 / S12.
+- [`cnos.cdd/skills/cdd/operator/SKILL.md`](../../../cnos.cdd/skills/cdd/operator/SKILL.md)
+  — δ-the-operator's session-routing and re-dispatch contract (the
+  identity-rotation primitive at S3 / S6 / S8).
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{gamma,alpha,beta,delta,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
 
 ---
 

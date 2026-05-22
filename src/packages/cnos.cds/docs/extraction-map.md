@@ -59,6 +59,7 @@ Every "pending cds extraction" marker in [`cnos.cdd/skills/cdd/CDD.md`](../../cn
 **Source family:** [`CDD.md`](../../cnos.cdd/skills/cdd/CDD.md) §"Software-specific realization" bullet "Selection function (§Selection)" (line 127 at source pin).
 **Source content:** P0 override, operational-infrastructure override, assessment-commitment default, stale-backlog re-evaluation, MCI freeze check, weakest-axis rule, maximum-leverage rule, dependency order, effort-adjusted tie-break, no-gap case. Operational realization currently in `gamma/SKILL.md`.
 **Migration sub:** Sub 3 of [cnos#403](https://github.com/usurobor/cnos/issues/403).
+**Status:** **v0.1 migrated; canonical at [`CDS.md §"Selection function"`](../skills/cds/CDS.md).** Landed via [cnos#408](https://github.com/usurobor/cnos/issues/408) (Sub 3, B-lite thin extract). The 10 named rules + the §Inputs cross-cut now live as canonical content in `CDS.md`; the v0.1 operational overlay continues to live in `cnos.cdd/skills/cdd/gamma/SKILL.md §2.1–§2.2` (cited from `CDS.md §"Selection function" → "Operational realization"`) until the v1 CDS-side role rewrite.
 
 | Source (CDD.md §-anchor or family) | Destination (path under cnos.cds/) | Sub | Note |
 |---|---|---|---|
@@ -81,6 +82,7 @@ Every "pending cds extraction" marker in [`cnos.cdd/skills/cdd/CDD.md`](../../cn
 **Source family:** [`CDD.md`](../../cnos.cdd/skills/cdd/CDD.md) §"Software-specific realization" bullet "Development lifecycle (§Lifecycle)" (line 128 at source pin).
 **Source content:** the 0–13 step table; the lifecycle state machine S0–S12; the branch rule (`cycle/{N}` canonical, γ creates from `origin/main` before dispatch); branch pre-flight; skill loading tier structure (1a CDD authority, 1b lifecycle phase skills, 1c β closure bundle, 2 general engineering, 3 issue-specific). Operational realization in `gamma/SKILL.md`, `alpha/SKILL.md`, `beta/SKILL.md`.
 **Migration sub:** Sub 3 of [cnos#403](https://github.com/usurobor/cnos/issues/403).
+**Status:** **v0.1 migrated; canonical at [`CDS.md §"Development lifecycle"`](../skills/cds/CDS.md).** Landed via [cnos#408](https://github.com/usurobor/cnos/issues/408) (Sub 3, B-lite thin extract). The 0–13 step table, the S0–S12 state machine, the `cycle/{N}` branch rule, the γ-owned branch pre-flight, and the tier-1a/1b/1c/2/3 skill loading structure now live as canonical content in `CDS.md`. The §Roles cross-cut content (triadic rule, dyad-plus-coordinator, dispatch model, dispatch-prompt formats) named in this row's table remains **pending** — it cross-cuts the Roles family (extraction-map §2 row "§Roles — …") whose deep-role-rewrite is deferred per the B-lite scope ruling; the v0.1 operational overlay for the role-side mechanics continues to live in `cnos.cdd/skills/cdd/{gamma,alpha,beta,delta}/SKILL.md` + `harness/SKILL.md` + `operator/SKILL.md` (cited from `CDS.md §"Development lifecycle" → "Operational realization"`) until the v1 CDS-side role rewrite.
 
 | Source (CDD.md §-anchor or family) | Destination (path under cnos.cds/) | Sub | Note |
 |---|---|---|---|
