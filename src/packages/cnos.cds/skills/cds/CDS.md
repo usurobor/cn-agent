@@ -1,5 +1,5 @@
-<!-- sections: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, empirical-anchor, related-documents, non-goals] -->
-<!-- completed: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, empirical-anchor, related-documents, non-goals] -->
+<!-- sections: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, mechanical-vs-judgment, review-clp, gate, assessment, closure, retro-packaging, large-file, empirical-anchor, related-documents, non-goals] -->
+<!-- completed: [preamble, architecture-choice, persona-protocol-project, six-field-contract, selection-function, development-lifecycle, coordination-surfaces, artifact-contract, mechanical-vs-judgment, review-clp, gate, assessment, closure, retro-packaging, large-file, empirical-anchor, related-documents, non-goals] -->
 
 # Coherence-Driven Software (CDS)
 
@@ -1948,6 +1948,297 @@ overlay until the v1 CDS-side role rewrite:
 When the v1 CDS-side role overlays land (post-#403 wave), the operational
 realization moves into
 `cnos.cds/skills/cds/{gamma,alpha,beta,release,release-effector,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Mechanical vs judgment
+
+CDS distinguishes between two classes of cycle-coherence check:
+**mechanical axes** that tools can enforce structurally (a script returns
+pass / fail; no human judgment required) and **judgment axes** that
+require an independent reviewer's frame (the failure mode is not visible
+to the author at production time; only an outside observer can call it).
+The boundary matters because conflating the two produces both directions
+of incoherence: mechanizing a judgment axis ships a check that misses
+the real failure mode; relying on judgment for a mechanical axis lets
+tool-detectable errors accumulate as review debt.
+
+The class boundary is **CDS doctrine**, not implementation discretion.
+Field 6 (actor collapse rule) names α=β as never permitted for substantive
+software work; the deeper reason is that the judgment axes below require
+an outside frame the producer cannot supply. The mechanical axes are
+configurable as project-binding CI; the judgment axes are configurable
+only as oracle quality, not as tool quality.
+
+### Mechanical axes
+
+Tool-enforceable; the project binding wires a mechanical check that the
+cycle either passes or fails. β verifies the check ran; β does not
+re-derive the verdict.
+
+- **Branch naming** — `cycle/{N}` canonical per §Development lifecycle →
+  §Branch rule. A pre-flight grep / shell-test on the branch name
+  (regex `^cycle/[0-9]+$`) is the mechanical oracle. Legacy shapes are
+  warn-only at the same surface.
+- **Version-directory presence** — for substantial release-shipping
+  cycles, `docs/{tier}/{bundle}/{X.Y.Z}/` exists at the bootstrap step
+  (Step 3 of §Step table) with a `README.md` snapshot manifest and the
+  per-deliverable stubs. A shell directory-existence check is the
+  mechanical oracle.
+- **AC accounting** — every AC named in the issue body resolves to an
+  evidence row in `self-coherence.md §ACs` before β review intake. The
+  count of AC headings in the issue body must equal the count of AC
+  evidence rows in `self-coherence.md`; mismatched count is a mechanical
+  finding β surfaces. The oracle is a grep + count.
+- **Stale-cross-reference detection** — links and `§`-anchors in the
+  cycle's touched files resolve. A mechanical link-checker (e.g. the
+  pre-commit hook implied by §Field 2's "no regressions" oracle on
+  documentation surfaces) catches dead references. The oracle is the
+  link-checker's exit code.
+- **Gate checks** — the closure-gate row-by-row checks per §Gate →
+  §Closure verification checklist below (F1–F10). Each F-row is a
+  mechanical predicate: file exists / file absent at canonical path.
+  `scripts/validate-release-gate.sh --mode pre-merge` is the v0.1
+  realization of the gate-check oracle.
+
+### Judgment axes
+
+Non-mechanical; require an independent reviewer's frame. The producer
+cannot self-verify these axes at production time — the failure mode is
+structurally invisible from the production side. β verifies through
+reading, not through running.
+
+- **Real incoherence** — the cycle's §Gap names a coherence-class
+  failure the cycle actually closes. A cycle may pass every mechanical
+  check while shipping matter that closes no real gap (cycle-for-its-own-sake;
+  the no-gap-case judgment from §Selection function). β's judgment
+  question: does the merged artifact reduce a coherence delta that was
+  named honestly, or does it close a manufactured gap?
+- **MCA vs MCI** — the cycle's mode declaration distinguishes between
+  shipping an MCA (Master Coherence Action; the gap closes durably this
+  cycle) and recording an MCI (Master Coherence Issue; the gap is named
+  for a future cycle). The boundary is judgment: an MCA that ships
+  surface-only is structurally an MCI mis-labelled. β's judgment
+  question: does the matter ship the durability the mode claims?
+- **Scoring soundness** — the α/β/γ scores assigned at PRA time per the
+  §Field 4 cadence's release artifact. The numeric grade is mechanical;
+  the soundness of the grade against what shipped is judgment. β's
+  judgment question: do the scores reflect the cycle's actual coherence
+  delta, or are they inflated / deflated against an external reference?
+- **Review convergence** — when to call review "done" versus "iterate
+  another round." The verdict-shape lint (per `review/SKILL.md §3.4a`
+  v0.1 overlay) catches mechanical convergence-failure (no `APPROVED`
+  with unresolved findings); the substantive convergence question is
+  whether one more round would surface incoherence the current set
+  missed. β's judgment question: has the review's evidence depth
+  matched the cycle's claim strength (per `review/SKILL.md §3.8` v0.1
+  overlay)?
+- **Design coherence** — whether the cycle's design choices fit the
+  surrounding system's invariant / volatile / boundary decomposition
+  (the design artifact's structural shape, per `cnos.core/skills/design/SKILL.md`
+  v0.1 overlay). A mechanically passing diff may still ship a design
+  decision that misshapes the codebase's structure. β's judgment
+  question: does the design honour the invariants the surrounding
+  system depends on?
+- **When to stop iterating** — the cycle-iteration trigger thresholds
+  (review rounds > 2; mechanical ratio > 20%; per §Assessment →
+  §Cycle iteration triggers below) are mechanical; the judgment of
+  whether iterating one more round is structurally productive (versus
+  signalling a `cds-skill-gap` or `cds-protocol-gap`) is not.
+  γ's judgment question: does the cycle's iteration profile reveal a
+  protocol gap, or is the cycle on a healthy trajectory?
+
+### Class invariants
+
+- A mechanical axis that requires human judgment to interpret its
+  output is mis-classified — the oracle is incomplete. The fix is
+  tooling, not judgment instruction.
+- A judgment axis that two reviewers consistently disagree on is a
+  `cds-skill-gap` per §Field 5 — the review-skill is under-specified
+  for the class of judgment. The fix is a skill patch (per
+  `review/SKILL.md §3.12` v0.1 overlay: "review divergence is a skill
+  gap"), not "be more careful."
+- A finding can carry both classes (e.g. a stale path is a mechanical
+  finding; the design coherence the stale path obscures is a judgment
+  finding). The finding taxonomy in `review/SKILL.md` (mechanical /
+  judgment / contract / honest-claim) permits both classes on a single
+  finding row.
+- Mechanical findings reaching review are **process bugs**. If >20% of
+  findings in a cycle are mechanical, the §Assessment → §Cycle
+  iteration triggers fires (Trigger 2: mechanical overload); the
+  cycle's process learning fires a `cds-tooling-gap` per §Field 5.
+
+### Operational realization
+
+The mechanical/judgment axis taxonomy above is CDS's canonical statement
+of where tools may enforce and where independent judgment is required.
+The v0.1 operational overlay — the specific mechanical-check scripts
+that realize each axis, the per-finding mechanical-vs-judgment
+disposition workflow β runs at review time, the divergence-as-skill-gap
+mechanics γ runs at PRA time — lives in the existing cdd role/runtime
+skills as the temporary v0.1 overlay until the v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/review/SKILL.md §"Finding Taxonomy"`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — the mechanical / judgment / contract / honest-claim taxonomy β
+  applies at review time; the rule that mechanical findings > 20% are
+  process bugs.
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.12`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — "review divergence is a skill gap" (judgment-axis divergence as
+  `cds-skill-gap` signal).
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.13`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — honest-claim verification (a/b/c/d sub-checks); the boundary between
+  mechanical-claim verification (grep-checkable: rule 3.13c wiring
+  claims) and judgment-claim verification (rule 3.13b source-of-truth
+  alignment, rule 3.13d gap claims) that lives along the mechanical /
+  judgment axis-class boundary.
+- [`cnos.cdd/skills/cdd/gamma/SKILL.md §3.9`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
+  — managerial-residue sweep (the binding γ check before any γ-skill
+  patch); the judgment-axis enforcement that catches "be more careful"
+  recommendations and rejects them.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{review,gamma,…}/SKILL.md`;
+the v0.1 cdd cite-points above are the temporary v0.1 home.
+
+---
+
+## Review CLP
+
+CDS's review surface uses a **Closed-Loop Predicate (CLP)** form — a
+contract whose three parts (TERMS, POINTER, EXIT) make the review's
+scope, evidence frame, and termination condition explicit before β reads
+a single line of diff. The CLP form is software-class — research-class
+CDR uses a different review CLP shape because the loss function differs
+(engineering review terminates on contract-coherence + execution-pass;
+research review terminates on claim-evidence alignment under uncertainty).
+
+The CLP is paired with the **reviewer ask list** — the structured output
+β emits at the end of each review round. The CLP names what β reads;
+the ask list names what β returns.
+
+### CLP form
+
+Every β review round opens with a CLP statement that pins three fields
+before evidence reading begins:
+
+- **TERMS** — the contract β reads against. Concretely: the issue body's
+  AC set; the implementation-contract axes pinned by δ at dispatch
+  (per §Field 4 inward-membrane discipline; per
+  [cnos#393](https://github.com/usurobor/cnos/issues/393) Rule 7);
+  the non-goals enumerated in the issue body; the loaded-skill set the
+  cycle's α declared in the §Mode section of `self-coherence.md`.
+  TERMS is the **closed surface** β reviews against — findings that
+  reach beyond TERMS are out-of-scope and are filed as separate issues,
+  not as findings on this round.
+- **POINTER** — the evidence surface β reads. Concretely: the cycle
+  branch's diff against `origin/main`; the cycle directory's artifact
+  set (`self-coherence.md`, prior `beta-review.md` rounds if any,
+  `gamma-scaffold.md`, `gamma-clarification.md` if mid-flight pinning
+  fired); the CI status on review-SHA; the loaded skills' content; any
+  cross-referenced canonical surfaces the cycle touches. POINTER names
+  the **evidence frame** — claims grounded outside POINTER are
+  phantom-blocker findings (rejected per `review/SKILL.md §3.5` v0.1
+  overlay).
+- **EXIT** — the termination condition. Concretely: every AC has an
+  evidence row resolving to PASS or named as a binding finding; every
+  implementation-contract axis pinned by δ resolves to coherent or
+  drift-flagged; β emits a **single terminal verdict** per round
+  (`APPROVED` or `REQUEST CHANGES`); split verdicts and conditional
+  qualifiers are forbidden (per `review/SKILL.md §3.4a` v0.1 overlay).
+  EXIT names the **shape** of the round's verdict — a round that
+  produces matter outside the EXIT shape is structurally invalid and
+  is re-emitted.
+
+The CLP is stated explicitly in `beta-review.md` per round (the round
+header carries the TERMS / POINTER / EXIT triple). Stating the CLP is
+not a ceremony — it is the contract β binds against. A review that
+reads without a stated CLP is structurally a re-derivation of the
+contract from the diff, not a verification of the diff against a
+declared contract; β cannot detect drift from a contract β did not
+state.
+
+### Reviewer ask list
+
+The ask list is β's structured output per round, written into
+`beta-review.md` alongside the per-AC evidence rows and the findings
+table. The list carries six fields, in this order:
+
+- **α/β/γ scores (per-axis)** — the round's α / β / γ grade per the
+  rubric in `release/SKILL.md §3.8` v0.1 overlay (A / A- / B+ / B / C+ /
+  C / `<C`). The provisional scores are written here; γ finalises them
+  at PRA time per the provisional-vs-final scoring rule
+  (`release/SKILL.md §2.4`).
+- **Weakest-axis diagnosis** — α, β, or γ named explicitly as the
+  weakest axis for this round, with one-paragraph rationale citing the
+  finding(s) that lowered the axis. The weakest-axis signal is what
+  §Selection function reads at the next cycle's observation step
+  (selection rule "Weakest-axis rule").
+- **Concrete patch suggestions** — for each binding finding (D / C),
+  a named patch path: a file + line range + the substantive change the
+  fix requires. The patch suggestion is structural, not a code snippet
+  — α produces the code; β names the gap. "Be more careful" is
+  rejected per `review/SKILL.md §3.12` v0.1 overlay (review divergence
+  is a skill gap, not a careful-reading exhortation).
+- **Iterate-or-converge verdict** — `iterate` (RC with named fix
+  rounds) or `converge` (APPROVED + merge instruction). The verdict
+  carries the round number so subsequent rounds can chain
+  (`Round 2 of 2`). A `converge` verdict closes the search space per
+  `review/SKILL.md §3.7` v0.1 overlay; an `iterate` verdict names the
+  next-round entry condition (which findings, in which file, with
+  which oracle).
+- **Configuration-floor flags** — if the cycle ran under
+  configuration-floor conditions (`operator/SKILL.md §5.2` single-session
+  δ-as-γ; β-α-collapse-on-δ from §Field 6), the floor caps applied
+  this round (γ ≤ A-, β ≤ A- under collapse; γ ≤ A- under §5.2;
+  γ ≤ C under CI-red; γ ≤ B- under CI-skip; γ ≤ B under false-gap
+  peer-enumeration). The flag carries the rule clause that fired
+  (`release/SKILL.md §3.8` configuration-floor / CI-red / false-gap
+  clause).
+- **Empirical-anchor cite (optional)** — when a finding's pattern
+  reproduces a known empirical-anchor cycle's failure mode, β cites
+  the anchor (e.g. cnos#391 for wrong-shape γ implementation;
+  cnos-tsc supercycle for honest-claim drift). The cite is structural
+  signal for ε's receipt-stream review (per §Field 5 cadence) —
+  recurring anchor citations across multiple cycles surface as
+  `cds-skill-gap` patterns.
+
+### Operational realization
+
+The CLP form and the reviewer ask list above are CDS's canonical
+review-surface statement. The v0.1 operational overlay — the per-phase
+β procedure (Phase 1 contract integrity, Phase 2 implementation review,
+Phase 3 verdict), the finding taxonomy (mechanical / judgment / contract
+/ honest-claim) β tags each finding with, the severity rubric (D / C /
+B / A) β assigns, the per-round output template, the merge mechanics
+β executes on `converge`, the post-merge close-out authoring β runs —
+lives in the existing cdd role/runtime skills as the temporary v0.1
+overlay until the v1 CDS-side role rewrite:
+
+- [`cnos.cdd/skills/cdd/review/SKILL.md`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — the review orchestrator; the three-phase procedure
+  (`review/contract/SKILL.md`, `review/issue-contract/SKILL.md`,
+  `review/diff-context/SKILL.md`, `review/architecture/SKILL.md`); the
+  verdict rules (3.1–3.13); the §Output Format template; the §Checklist.
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.4a`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — verdict-shape lint (`APPROVED` + unresolved findings; conditional
+  qualifier; split verdicts); the recovery path that reformats
+  conditions as required-fix findings.
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.10`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — CI-green gate (β verifies required CI workflows green on review-SHA
+  before emitting APPROVED).
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.11b`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — γ-artifact-completeness gate (β verifies `gamma-scaffold.md` exists
+  on cycle branch before APPROVED).
+- [`cnos.cdd/skills/cdd/review/SKILL.md §3.13`](../../../cnos.cdd/skills/cdd/review/SKILL.md)
+  — honest-claim verification (a/b/c/d sub-checks for reproducibility,
+  source-of-truth alignment, wiring claims, gap claims).
+- [`cnos.cdd/skills/cdd/beta/SKILL.md`](../../../cnos.cdd/skills/cdd/beta/SKILL.md)
+  — β role contract; pre-merge gate; merge mechanics; β close-out
+  authoring.
+
+When the v1 CDS-side role overlays land (post-#403 wave), the operational
+realization moves into `cnos.cds/skills/cds/{review,beta,…}/SKILL.md`;
 the v0.1 cdd cite-points above are the temporary v0.1 home.
 
 ---
