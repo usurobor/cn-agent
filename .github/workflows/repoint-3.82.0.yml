@@ -1,0 +1,58 @@
+# One-shot remote-runner workflow — repoint the 3.82.0 tag.
+#
+# Doctrine: docs/gamma/essays/BOX-AND-THE-RUNNER.md
+# Skill:    src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §8 (Remote-runner delegation)
+# Receipt:  .cdd/unreleased/425/remote-runner-receipt-3.82.0.md
+# Issue:    https://github.com/usurobor/cnos/issues/425
+#
+# Purpose: force-move the 3.82.0 tag from its prior commit to fd1d654e
+# (the cycle-422 post-v3.82.0 release-hygiene merge — the commit whose
+# root RELEASE.md is the canonical v3.82.0 body). The retarget causes
+# .github/workflows/release.yml to re-publish the GH release with the
+# correct body. After the tag move, this workflow self-deletes by
+# removing its own file in the final step, per §8.3 of delta/SKILL.md
+# (one-shot workflows self-delete so the latent-execution authority
+# closes after the run).
+#
+# Authority: GITHUB_TOKEN with contents: write — scoped to usurobor/cnos.
+# Trigger:   push to main on this workflow's own path (so it fires only
+#            when the cycle/425 merge lands, by which point the doctrine
+#            is also on main per §8.2 authoring-order rule).
+# Acceptor:  Operator inspects https://github.com/usurobor/cnos/releases/tag/3.82.0;
+#            body must match .cdd/releases/3.82.0/RELEASE.md.
+
+name: One-shot — repoint 3.82.0 tag
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repoint-3.82.0.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repoint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name "cnos-remote-runner[bot]"
+          git config user.email "cnos-remote-runner@cnos.local"
+
+      - name: Force-move 3.82.0 tag to fd1d654e
+        run: |
+          git tag -f 3.82.0 fd1d654e
+          git push --force origin 3.82.0
+
+      - name: Self-delete the workflow file
+        run: |
+          git rm .github/workflows/repoint-3.82.0.yml
+          git commit -m "release: remove one-shot repoint-3.82.0 workflow (cnos#425)"
+          git push origin main
