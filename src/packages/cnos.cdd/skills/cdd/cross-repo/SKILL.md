@@ -6,6 +6,9 @@ visibility: internal
 parent: cdd
 status: moved
 canonical: cnos.handoff/skills/handoff/cross-repo/SKILL.md
+triggers:
+  - cross-repo-moved
+  - handoff-extracted
 ---
 
 # Cross-repo doctrine — moved
