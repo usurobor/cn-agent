@@ -24,18 +24,12 @@ See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICA
 
 ## 3.82.0
 
-**CCNF package-architecture baseline.** Coherence delta: the cnos protocol crosses a stable architecture boundary. CDD is the compact CCNF kernel; CDS, CDR, and cnos.handoff are v0.1-complete peer packages around it; V (`cn cdd verify`) is executable; domain evidence has homes. Full release notes at [`.cdd/releases/3.82.0/RELEASE.md`](.cdd/releases/3.82.0/RELEASE.md).
+**Package architecture stabilized.** CDS, CDR, and cnos.handoff reach v0.1 alongside the compact CCNF kernel. CDS and CDR READMEs replace "v0.1 skeleton" / "in flight" framing with current status. CCNF kernel (`CDD.md`) byte-identical to 3.81.0. See [`.cdd/releases/3.82.0/RELEASE.md`](.cdd/releases/3.82.0/RELEASE.md) for the full ledger.
 
-- **#403 (closed via #411)** — CDS v0.1 — Coherence-Driven Software. Seven-sub wave (#406 skeleton + extraction map / #407 CDS.md six-field instantiation contract / #408 §Selection + §Lifecycle / #409 §Coordination + §Artifact / #410 §Mechanical + §Review + §Gate + §Closure + §Assessment + §Retro + §Non-goals + §Large-file / #411 CDD.md pending-cds-marker sweep / #412 empirical-anchor-cdd.md). Per-role overlays deferred to v1.
-- **#404 (closed via #420)** — cnos.handoff v0.1 — inter-agent / inter-activation / inter-repo wire-format doctrine. Six-sub wave (#415 skeleton + extraction map / #416 cross-repo doctrine 644-line wholesale move / #417 dispatch + 7-axis implementation-contract + δ-inward-membrane / #418 mid-flight rescue + artifact-channel / #419 cdd-iteration receipt-stream + INDEX.md aggregator / #420 cross-reference sweep + v0.1-complete tightening).
-- **#376 (closed)** — CDR v0.1 — Coherence-Driven Research. Four-sub wave (#390 CDR.md six-field instantiation contract / #394 package skeleton + loader / #395 five role overlays / #396 empirical-anchor-cph.md).
-- **#414** — `docs/gamma/essays/DECREASING-INCOHERENCE.md` — steering essay; per-shipment artifact contract for measuring coherence delta direction.
-- **#413** — Sigma activation bundle staged at `cnos:.cdd/iterations/cross-repo/cn-sigma/sigma-activation-2026-05-22/`; operator-applied to `cn-sigma` main (PERSONA.md + OPERATOR.md additions per the Continuity rule).
-- **#405 (open; not executed)** — CCNF-O + TSC steering roadmap. Track A1 (#421) shipped the survey doc at `docs/gamma/design/ccnf-o-track-a1-survey.md` with five pinned decisions (name = CCNF-O; 20-surface inventory; six universal higher-level forms; Track B1 parallel-dispatchable; package = `cnos.ccnf-o`). Tracks A2–A6 + B1–B6 deliberately deferred — see Stop condition in `.cdd/releases/3.82.0/RELEASE.md`.
-- **#422 (this release)** — Release-hygiene cycle. `cnos.cds/README.md` + `cnos.cdr/README.md` rewritten v0.1-complete (was "skeleton" / "in flight"); `VERSION` 3.81.0 → 3.82.0; `RELEASE.md` authored. CCNF kernel untouched; no new schemas; no skill content changes.
-- **#423** — P0 build-fix on top of #422: `cnos.cdd/skills/cdd/cross-repo/SKILL.md` (cnos#416 compatibility stub) was missing `triggers:` in frontmatter, failing `TestValidate_RealCorpus_NoEmptyTriggers`. Added `triggers: [cross-repo-moved, handoff-extracted]` (no collision with the live canonical's five triggers). +3 frontmatter lines; body verbatim; full `go test ./...` green. Binding `cdd-skill-gap` finding recorded for next-MCA (dispatch briefs must enumerate activation-validator requirements for stub files, OR validator should exempt `artifact_class: pointer`).
-
-**Stop condition:** After v3.82.0 tag, pause protocol evolution. Next phase = field application of CDS/CDR + handoff/memory-return testing. Do NOT dispatch #405 Tracks A2 / B1 until field-evidence pause produces concrete signal.
+- **#403** (subs #406–#412) — **CDS v0.1**. `cnos.cds` package + CDS.md six-field instantiation contract + operational sub-area overlays + extraction map + empirical anchor. Per-role overlays deferred to v1.
+- **#404** (subs #415–#420) — **cnos.handoff v0.1**. Wire-format doctrine for inter-agent / inter-activation / inter-repo handoff. Five sub-skills.
+- **#414 / #424 / #425** — Three design essays (`DECREASING-INCOHERENCE`, `CELL-OF-CELLS`, `BOX-AND-THE-RUNNER`). `BOX-AND-THE-RUNNER` codifies remote-runner delegation as a δ-class effect surface; `delta/SKILL.md §8` pins the 6-field receipt convention.
+- **#422 / #423** — Release-hygiene + P0 build-fix: READMEs rewritten v0.1-complete; `VERSION` 3.81.0 → 3.82.0; compat-stub triggers added to fix activation-validator test.
 
 ## 3.81.0
 
