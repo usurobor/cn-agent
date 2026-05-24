@@ -9,11 +9,13 @@
 
 ## What is cnos?
 
-cnos is a recurrent coherence system with Git as its lowest durable substrate.
+cnos is a Git-native coherence operating system.
 
-A coherent system preserves an inspectable relation across cycles. In cnos, that relation is carried by doctrine, repositories, commits, threads, packages, runtime receipts, traces, releases, and agents.
+It turns fallible human+AI work into recursive, receipt-bearing cells: bounded units that receive a message, produce matter, undergo independent review, close into a receipt, validate at a boundary, and feed the next coherent move. Git provides the durable substrate; CN provides the protocol conventions; `cn` provides the CLI/runtime body; CDD/CDS/CDR/handoff provide the package architecture for software, research, and cross-agent coordination.
 
-Git gives the durable substrate: identity, memory, history, forks, refs, and commits. CN adds the protocol conventions. cn provides the current CLI and the target runtime body. CTB is the emerging language/checker layer for composing coherent agents.
+The goal is not task completion. The goal is a measured path of decreasing incoherence.
+
+Underneath, cnos models systems as recursive cells of triadic cells: messages descend, receipts ascend, validation gates transmission, coherence measurement asks whether the many remain one, and remaining incoherence becomes the next bounded contract. See [Cell of Cells](./docs/gamma/essays/CELL-OF-CELLS.md) and [Decreasing Incoherence](./docs/gamma/essays/DECREASING-INCOHERENCE.md) for the full system model.
 
 ## Layers
 
@@ -216,9 +218,14 @@ Package source lives under:
 
 ```
 src/packages/
-├── cnos.cdd/        Coherence-Driven Development (CDD) method and lifecycle skills  
+├── cnos.cdd/        Coherence-Driven Development — the generic CCNF cell kernel
+├── cnos.cds/        CDD for software — software realization of the kernel
+├── cnos.cdr/        CDD for research — research realization of the kernel
+├── cnos.handoff/    Transport doctrine — messages/receipts across repos, roles, and agents
 ├── cnos.core/       Core runtime skills and foundational operations
-└── cnos.eng/        Engineering skills for implementation, testing, and toolchain
+├── cnos.eng/        Engineering skills for implementation, testing, and toolchain
+├── cnos.kata/       Runtime verification kata
+└── cnos.cdd.kata/   CDD-method verification kata
 ```
 
 Each package contains skills, specifications, and supporting materials for its domain.
