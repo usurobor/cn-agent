@@ -317,3 +317,56 @@ This file (`delta/SKILL.md`) is Phase 4a of cnos#366. It carries:
 **Phase 5 — γ shrink (landed).** `gamma/SKILL.md` reduced to coordination + closure + triage doctrine; runtime supervision mechanics (polling shell, dispatch invocation shells, branch pre-flight bash) now cross-reference `harness/SKILL.md` and `release-effector/SKILL.md` rather than restating. Landed via cnos#400 (cycle/400).
 
 All three substrate surfaces are now landed. δ-as-role's authority over the platform actions is named in §1.1 above; the harness substrate lives in `harness/SKILL.md`; release-effector mechanics live in `release-effector/SKILL.md`; operator-as-coordinator routing discipline (gate-action confirmation, request-vs-observation) lives in `operator/SKILL.md` §3.
+
+---
+
+## 8. Remote-runner delegation — δ-class effect surface
+
+Canonical doctrine: [`docs/gamma/essays/BOX-AND-THE-RUNNER.md`](../../../../../../docs/gamma/essays/BOX-AND-THE-RUNNER.md) (cnos#425, this section's authoring cycle). Landed alongside this section under the doctrine-before-first-use rule: the essay, this skill section, the first workflow artifact, and the first instantiated receipt all land in the same commit-set; the workflow's push trigger only fires post-merge, by which point the doctrine governs.
+
+**δ-class rule:** Any artifact an agent commits that, when present on its branch, causes another body to execute is a δ-class effect surface. δ holds authority over its authoring, not just over the receipt that closes the cell containing it.
+
+The pattern covers, at minimum: `.github/workflows/*.yml` files; deploy hooks; extension manifests with execution permissions; scheduled-job definitions; webhook handlers; MCP server registrations; release-effector invocation scripts the agent authors rather than invokes. The class is **artifacts that cause another body to execute** — the local-shell case is one body; remote runners, deploy hooks, third-party services, and host-process extensions are other bodies. δ's authority extends to every body the agent's writes can reach, not just the body the harness can see.
+
+The reason the rule sits in δ-as-role rather than in α-as-producer is that the effect crosses a boundary the producer cannot validate by itself. α writes the YAML; α cannot inspect the runner that will execute it. β reviews the YAML; β cannot replay the future run. Only δ-as-role, whose signature is the boundary decision, can name what authority the runner has, where it runs, and who may accept the result. The 6-field receipt is δ's surface for recording that naming.
+
+### 8.1. Required output: the 6-field remote-runner receipt
+
+When δ-as-role approves the authoring of any remote-runner-triggering artifact, δ requires a receipt with six fields (per `BOX-AND-THE-RUNNER.md §"The 6-field receipt convention"`):
+
+| Field | Content |
+|---|---|
+| 1. Who asked | Operator session + directive, or upstream-cell receipt ref. Agent-initiated remote-runner moves without an upstream request are forbidden. |
+| 2. What runs | The actual commands the remote body will execute, at command granularity (not "publishes release" — list `git tag -f X Y`, `git push --force origin X`, etc.). |
+| 3. Where it runs | The execution environment (`ubuntu-latest` on GitHub Actions; a self-hosted runner; a third-party service). |
+| 4. What authority | The token, scopes, secrets, and credentials the runner has access to (`GITHUB_TOKEN` with `contents: write`; deploy keys; cloud OIDC roles). |
+| 5. Evidence | The artifact that proves the run happened (workflow run URL; release URL; deployment ID). May be a post-run-fillable placeholder authored before the run, with the *shape* of the evidence named in advance. |
+| 6. Who may accept | The actor (operator or named cell) authorized to declare the remote run a success, with the acceptance criterion. |
+
+Receipt path: `.cdd/unreleased/{N}/remote-runner-receipt-{handle}.md` for the issue cycle that authors the artifact. The receipt moves with the cycle into the release directory at cycle close.
+
+### 8.2. Authoring-order rule
+
+The receipt and the doctrine citation must land **with or before** the artifact that will trigger execution. There must be no window in which a remote-runner-triggering artifact exists on a branch that can reach an executing runner without the accompanying receipt also existing on that branch. For push-triggered workflows, the artifact and the receipt commit together; for branch-protected workflows whose dispatch is gated, the receipt may pre-land but the artifact must not pre-land alone.
+
+Concretely, when γ dispatches a cycle that will author a remote-runner artifact, δ at the inward membrane (§2) pins this discipline into the implementation contract: the dispatch-prompt names the receipt as a required artifact, and α-side closure is incomplete without it. β verifies presence + 6-field completeness at R1 review.
+
+### 8.3. One-shot workflows self-delete
+
+When the remote-runner artifact is one-shot (a release-fix workflow; a single migration job; an infrastructure repair), the artifact MUST contain a final step that deletes itself from the repository after the work completes (`git rm` + `git commit` + `git push`). This is boundary discipline applied to the effect surface itself: the artifact does not persist beyond its declared single use, so the latent-execution authority closes after the run rather than remaining open. Persistent workflows (regularly-scheduled jobs, ongoing CI) do not self-delete; they are declared persistent at authoring time and the receipt's "Who may accept" field names the actor that owns the ongoing schedule.
+
+### 8.4. Composition with the existing outward membrane (§1)
+
+The remote-runner receipt is one piece of evidence inside the cell's full receipt at close-out. V (per §4) validates the cycle receipt; the remote-runner sub-receipt is a typed evidence ref V dereferences when the cycle's matter includes a remote-runner-triggering artifact. δ records the BoundaryDecision against V's verdict per §1.5 as normal; the override block (§3) is populated if δ accepts the cycle despite a non-PASS verdict on the remote-runner receipt (e.g. the post-run evidence is missing and the acceptor has not yet declared acceptance).
+
+The remote-runner receipt does **not** replace V or the BoundaryDecision — it is the surface that makes the *authoring* of the effect artifact legible. The cycle-level V/δ wall still gates whether the cycle as a whole closes accepted, degraded, blocked, or invalid.
+
+### 8.5. What this is not
+
+- **Not a security policy.** The receipt is a legibility discipline; it does not prevent a malicious agent from forging fields. Security boundaries (token scoping, branch protection, required reviews) are orthogonal mechanisms enforced by the substrate, not by this skill.
+- **Not retroactive.** A receipt authored after the remote run happened is a degraded closure; the gap is recorded as a finding and the override block (§3) is populated. Authoring the artifact first and the receipt second is a process gap ε should aggregate.
+- **Not a substitute for the release-effector runbook.** The release-effector (`release-effector/SKILL.md`) governs locally-invoked release moves with release-boundary authority; the remote-runner rule governs runner-invoked moves on any boundary. The two surfaces overlap for any release-fix that uses a remote runner (cnos#425 is the first such case); the receipt cites both skills as governing.
+
+### 8.6. First use
+
+cnos#425 is the first cycle to author a remote-runner artifact under this doctrine. The artifact is `.github/workflows/repoint-3.82.0.yml` (one-shot; self-deleting); the receipt is `.cdd/unreleased/425/remote-runner-receipt-3.82.0.md` (6 fields filled, evidence as post-run-fillable placeholder); the effect is force-moving the `3.82.0` tag to `fd1d654e` so `release.yml` publishes the GH release with the correct root `RELEASE.md` body. The doctrine + skill section + workflow + receipt land in the same commit-set per §8.2; the post-merge push triggers the workflow under doctrine.
