@@ -17,12 +17,11 @@ on:
         required: false
         type: string
 
-permissions:
-  contents: write
-
 jobs:
   build:
     if: ${{ !inputs.smoke-only }}
+    permissions:
+      contents: read
     strategy:
       matrix:
         include:
@@ -91,6 +90,8 @@ jobs:
   publish:
     needs: build
     if: ${{ !inputs.smoke-only }}
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
@@ -166,6 +167,8 @@ jobs:
   smoke:
     needs: publish
     if: ${{ always() && (needs.publish.result == 'success' || inputs.smoke-only) }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -211,6 +214,8 @@ jobs:
   notify:
     needs: [build, publish, smoke]
     if: always()
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Telegram notification
