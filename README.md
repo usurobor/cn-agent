@@ -96,7 +96,7 @@ The shipped Go binary provides the kernel CLI path.
 | cn build | Assemble packages from source. Use --check for CI. |
 | cn update | Self-update with SHA-256 verification and atomic install. |
 
-Today, you can create a hub, install cognitive packages, inspect hub state, and build packages.
+Today, you can create a hub, install cognitive packages, inspect hub state, build packages, and activate a hub by pointing a capable model at it through either chat-hosted or CLI/workspace activation.
 
 ### Not shipped yet
 
@@ -161,24 +161,44 @@ cn setup installs cognitive packages into:
 
 After setup, the hub has package content and dependency state, but the full agent runtime is still planned.
 
-### Activate the agent
+### Activate an agent
 
-`cn setup` prepares the hub. The hub becomes an active coherent agent when a
-capable model is pointed at it as working context.
+`cn setup` prepares a hub. Activation is the step where a capable model loads that hub as an identity and becomes the active reasoning body.
 
-Current path:
+The canonical procedure lives in [`cnos.core/skills/agent/activate/SKILL.md`](./src/packages/cnos.core/skills/agent/activate/SKILL.md). It always loads, in order:
 
-1. Open Claude UI or Claude Code CLI with the hub directory as context.
-2. Ask the model to read the hub identity, skills, memory, config, and threads.
-3. Work from the hub. The model is the active reasoning body; the hub is the
-   durable identity and memory.
+```text
+Kernel → CA skills → Persona → Operator → hub state → identity confirmation
+```
 
-Example (substitute your hub directory for `HUB_DIR`):
+The procedure is body-agnostic: it works whether the body has shell+git, HTTP fetch only, or needs operator-injected text. There are two common ways to activate.
+
+#### 1. Chat / hosted activation
+
+Use this when the model is in a hosted chat surface — Claude, ChatGPT, or another model with WebFetch or pasted context. Give it the hub URL and the activation-skill URL:
+
+```text
+Activate as https://github.com/usurobor/cn-sigma.
+First read:
+https://raw.githubusercontent.com/usurobor/cnos/main/src/packages/cnos.core/skills/agent/activate/SKILL.md
+Then follow that skill against the cn-sigma hub. Load Kernel, CA skills,
+Persona, Operator, and hub state, and confirm identity before any other work.
+```
+
+If the model cannot fetch URLs, paste the activation skill and hub files manually. A body with no shell, no git, and no HTTP fetch cannot self-activate.
+
+#### 2. CLI / workspace activation
+
+Use this when the model has shell and git access — Claude Code CLI, Codex CLI, or another shell-capable coding agent.
 
 ```sh
-cd HUB_DIR
-claude -p "Read this hub's identity, skills, memory, and threads. Introduce yourself and summarize current state."
+git clone https://github.com/usurobor/cnos.git
+git clone https://github.com/usurobor/cn-sigma.git
+cd cn-sigma
+claude -p "Read ../cnos/src/packages/cnos.core/skills/agent/activate/SKILL.md, then activate against this hub. Load Kernel, CA skills, Persona, Operator, and hub state, and confirm identity before any other work."
 ```
+
+The CLI path is preferred when available: it reads the hub and the cnos skill bundle from consistent local checkouts.
 
 The full `cn agent` runtime (daemon, scheduler) is planned and not shipped yet.
 
