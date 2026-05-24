@@ -57,3 +57,4 @@ See `cnos.handoff/skills/handoff/receipt-stream/SKILL.md` for the canonical per-
 | 427 | #427 | 2026-05-24 | 1 | 0 | 1 | 0 | .cdd/unreleased/427/cdd-iteration.md |
 | 428 | #428 | 2026-05-24 | 0 | 0 | 0 | 0 | .cdd/unreleased/428/cdd-iteration.md |
 | 429 | #429 | 2026-05-24 | 3 | 1 | 1 | 1 | .cdd/unreleased/429/cdd-iteration.md |
+| 430 | #430 | 2026-05-24 | 0 | 2 | 0 | 0 | .cdd/unreleased/430/cdd-iteration.md |
