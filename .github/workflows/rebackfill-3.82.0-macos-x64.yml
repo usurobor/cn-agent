@@ -1,0 +1,190 @@
+# One-shot remote-runner workflow — correct the 3.82.0 macos-x64 asset.
+#
+# Doctrine: docs/gamma/essays/BOX-AND-THE-RUNNER.md
+# Skill:    src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §8
+# Issue:    https://github.com/usurobor/cnos/issues/430 (cnos#429 F3 fix)
+#
+# The first backfill (cnos#429) attached a cn-macos-x64 asset that was
+# actually an arm64 binary, because macos-latest is now Apple Silicon and
+# both macOS matrix legs built native arm64. This rebuilds all four
+# binaries with explicit GOOS/GOARCH (macos-x64 cross-compiled amd64 on the
+# arm64 runner), regenerates checksums.txt, and re-uploads every asset
+# (delete-then-upload) so the release is internally consistent.
+#
+# Trigger:  push to main on this workflow's own path.
+# Authority: GITHUB_TOKEN, contents: write (publish job only).
+# Self-deletes after publish per delta/SKILL.md §8.3.
+
+name: One-shot — rebackfill 3.82.0 macos-x64
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rebackfill-3.82.0-macos-x64.yml'
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            goos: linux
+            goarch: amd64
+            native: true
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+            goos: linux
+            goarch: arm64
+            native: true
+          - os: macos-14
+            target: macos-arm64
+            goos: darwin
+            goarch: arm64
+            native: true
+          - os: macos-14
+            target: macos-x64
+            goos: darwin
+            goarch: amd64
+            native: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '3.82.0'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: src/go/go.sum
+
+      - name: Build binary (version-stamped 3.82.0)
+        working-directory: src/go
+        run: |
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            go build -ldflags "-X main.version=3.82.0" -o cn ./cmd/cn
+
+      - name: Verify binary arch
+        working-directory: src/go
+        run: file cn
+
+      - name: Test
+        if: matrix.native
+        working-directory: src/go
+        run: go test ./...
+
+      - name: Package binary
+        run: |
+          mkdir -p dist
+          cp src/go/cn dist/cn-${{ matrix.target }}
+          chmod +x dist/cn-${{ matrix.target }}
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "release-ci"
+          git config --global user.email "release-ci@cnos.local"
+
+      - name: Tier 1 verification (shipped binary)
+        if: matrix.native
+        run: |
+          cp dist/cn-${{ matrix.target }} cn
+          export PATH="$PWD:$PATH"
+          scripts/kata/run-all.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cn-${{ matrix.target }}
+          path: dist/cn-${{ matrix.target }}
+
+  publish:
+    needs: build
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '3.82.0'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          rm -f checksums.txt
+          for dir in cn-*; do
+            [ -d "$dir" ] || continue
+            for bin in "$dir"/cn-*; do
+              [ -f "$bin" ] || continue
+              sha256sum "$bin" | sed "s|$dir/||" >> checksums.txt
+            done
+          done
+          echo "--- checksums.txt ---"
+          cat checksums.txt
+
+      - name: Re-upload assets to 3.82.0 release (body untouched)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          REPO="usurobor/cnos"
+          TAG="3.82.0"
+          api="https://api.github.com/repos/$REPO"
+          uploads="https://uploads.github.com/repos/$REPO"
+
+          REL_ID=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$api/releases/tags/$TAG" | jq -r '.id')
+          [ -n "$REL_ID" ] && [ "$REL_ID" != "null" ] || { echo "FAIL: no release for $TAG"; exit 1; }
+
+          existing=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$api/releases/$REL_ID/assets")
+
+          upload_one() {
+            f="$1"; name="$(basename "$f")"
+            old=$(echo "$existing" | jq -r --arg n "$name" '.[] | select(.name==$n) | .id')
+            if [ -n "$old" ] && [ "$old" != "null" ]; then
+              echo "deleting existing asset $name ($old)"
+              curl -fsSL -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
+                "$api/releases/assets/$old" || true
+            fi
+            echo "uploading $name"
+            curl -fsSL -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$f" \
+              "$uploads/releases/$REL_ID/assets?name=$name" >/dev/null
+          }
+
+          for bin in artifacts/*/cn-*; do
+            [ -f "$bin" ] || continue
+            upload_one "$bin"
+          done
+          upload_one artifacts/checksums.txt
+
+          echo "--- final asset list ---"
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$api/releases/$REL_ID/assets" | jq -r '.[].name'
+
+      - name: Self-delete this workflow
+        run: |
+          git fetch origin main
+          git checkout main
+          git config user.name "cnos-remote-runner[bot]"
+          git config user.email "cnos-remote-runner@cnos.local"
+          git rm .github/workflows/rebackfill-3.82.0-macos-x64.yml
+          git commit -m "release: remove one-shot rebackfill-3.82.0-macos-x64 workflow (cnos#430)"
+          git push origin main

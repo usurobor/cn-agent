@@ -27,12 +27,30 @@ jobs:
         include:
           - os: ubuntu-latest
             target: linux-x64
+            goos: linux
+            goarch: amd64
+            native: true
           - os: ubuntu-24.04-arm
             target: linux-arm64
-          - os: macos-latest
-            target: macos-x64
+            goos: linux
+            goarch: arm64
+            native: true
           - os: macos-14
             target: macos-arm64
+            goos: darwin
+            goarch: arm64
+            native: true
+          # macos-latest is now Apple Silicon (arm64), so a native build
+          # there produces an arm64 binary mislabeled "x64" (cnos#429 F3).
+          # Cross-compile the Intel (amd64) binary on the arm64 runner
+          # instead — cn is pure-stdlib with no cgo, so cross-compilation
+          # is safe. The amd64 binary cannot execute on the arm64 runner,
+          # so its native test + Tier-1 kata are skipped (native: false).
+          - os: macos-14
+            target: macos-x64
+            goos: darwin
+            goarch: amd64
+            native: false
 
     runs-on: ${{ matrix.os }}
 
@@ -54,10 +72,15 @@ jobs:
         # against the released package index.
         working-directory: src/go
         run: |
-          go build -ldflags "-X main.version=${{ github.ref_name }}" \
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            go build -ldflags "-X main.version=${{ github.ref_name }}" \
             -o cn ./cmd/cn
 
       - name: Test
+        # Native legs only — the cross-compiled amd64 binary cannot run
+        # on the arm64 runner. Logic is covered by the same-arch (linux-x64)
+        # and same-OS (macos-arm64) legs.
+        if: matrix.native
         working-directory: src/go
         run: go test ./... -v
 
@@ -76,6 +99,9 @@ jobs:
         # Prove the packaged binary works end-to-end before uploading.
         # If any check fails, the matrix position fails, the `publish`
         # job's `needs: build` gate fails, and no artifacts are published.
+        # Native legs only — skipped for the cross-compiled macos-x64
+        # binary, which cannot execute on the arm64 runner.
+        if: matrix.native
         run: |
           cp dist/cn-${{ matrix.target }} cn
           export PATH="$PWD:$PATH"
