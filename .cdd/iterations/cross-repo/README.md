@@ -53,6 +53,7 @@ typically archive on `closed`.
 
 - `cn-rho/` — operator-pending bootstrap drafts for the planned `usurobor/cn-rho` research persona hub (case d.1)
 - `cn-sigma/agent-activate-skill/` — inbound proposal, 1:1 (case a.1) → cnos#379
+- `cn-sigma/agent-gh-deployment/` — inbound proposal, master tracker (case a) → cnos#431
 - `cn-sigma/discipline-section-2026-05-19/` — operator-pending feedback patch for cn-sigma persona file (case d.2)
 - `cph/bootstrap-cdr/` — inbound proposal, master+sub (case a.2) → cnos#376 + subs (post-rename canonical; pre-rename mirror at `gait-support-paths/bootstrap-cdr/`)
 - `cph/coherence-drift-sweep-followup-2026-05-18/` — bilateral iteration with hat-collapse (case c)

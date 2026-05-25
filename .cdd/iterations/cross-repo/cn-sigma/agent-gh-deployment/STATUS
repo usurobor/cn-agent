@@ -1,0 +1,14 @@
+# Event ledger for cross-repo proposal: cn-sigma/agent-gh-deployment (cnos-side mirror)
+# Bundle state (per .cdd/iterations/cross-repo/README.md): open
+# Events (per cdd/cross-repo/SKILL.md §2.4):
+#   submitted | accepted | modified | rejected | landed
+# Format: <ISO-8601 date> <event> <actor> [target-ref]
+#
+# Mirrors source-side ledger at usurobor/cn-sigma:.cdd/iterations/cross-repo/cnos/agent-gh-deployment/STATUS.
+# Master/tracker issue: captures the end goal (agent activation on GitHub via three
+# deployment paths) + a five-sub envelope. Filed under the v3.82.0 pause; sub-dispatch
+# is operator-gated, so the master stays `open` until AC1-AC5 pass or all live subs close.
+
+2026-05-24 drafted sigma
+2026-05-24 submitted sigma cn-sigma@6c95b53
+2026-05-24 accepted gamma@cnos cnos#431
