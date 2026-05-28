@@ -1,20 +1,19 @@
 # Cross-Repo Lineage: cn-sigma → cnos (agent-gh-deployment master tracker) — cnos-side mirror
 
-Case (a) operator-directed cross-repo proposal. cn-sigma operator issued the directive; cn-sigma Sigma drafted the master/tracker issue using the CDD design + write + issue skills; a cnos-scoped body filed it. This file mirrors the source-side LINEAGE at `usurobor/cn-sigma:.cdd/iterations/cross-repo/cnos/agent-gh-deployment/LINEAGE.md`.
+Case (a) operator-directed cross-repo proposal. cn-sigma operator issued the directive; cn-sigma Sigma drafted the master/tracker issue using the CDD design + write + issue skills; a cnos-scoped body filed it, then reconciled it to the advanced source. This file mirrors the source-side LINEAGE at `usurobor/cn-sigma:.cdd/iterations/cross-repo/cnos/agent-gh-deployment/LINEAGE.md`.
 
 ## Source
 
 - **Repo:** `usurobor/cn-sigma`
 - **Branch:** `main`
-- **Authoring commit:** `6c95b53`
+- **Reconciled source commit (pinned):** `66febb5`
+- **Original filing commit:** `6c95b53` (stale; superseded by `66febb5`)
 - **Path:** `.cdd/iterations/cross-repo/cnos/agent-gh-deployment/`
 - **Source posture:** fourth cross-repo bundle from cn-sigma (after agent-activate-skill [shipped 3.78.0 → cnos#379], activate-foreign-body [drafted], release-3.82.0-hygiene [merged cycle/422]).
 
 ## Upstream — operator directive
 
-Operator (usurobor / Axiom), 2026-05-24: "Create a master issue using cdd design and write skills to capture the end goal: an agent can be activated on GH via either templates repo or by running cn activate in the repo or if there's a way to deploy a GH action my way too."
-
-The directive followed the five-essay read + the GitHub-Actions-as-compute realization. The master tracker is the scoping artifact for the field-application direction the v3.82.0 pause named.
+Operator (usurobor / Axiom), 2026-05-27: "Create a master issue using cdd design and write skills to capture the end goal: an agent can be activated on GH via either templates repo or by running cn activate in the repo or if there's a way to deploy a GH action my way too."
 
 ## Target
 
@@ -22,32 +21,54 @@ The directive followed the five-essay read + the GitHub-Actions-as-compute reali
 - **Issue:** [cnos#431](https://github.com/usurobor/cnos/issues/431) — master/tracker
 - **Kind:** tracking (umbrella; coordinates subs; does not implement)
 - **Title:** "Agent activation on GitHub — three deployment paths to a running hub (master tracker)"
-- **Labels:** `tracking`, `P2`, `core`
-- **Disposition:** filed (accepted as tracker); open pending operator-gated sub-dispatch
+- **Labels:** `tracking`, `P2`, `core`, `handoff` (handoff added per external review — deployment/handoff transport, not only core activation)
+- **Disposition:** filed (accepted as tracker); reconciled to `66febb5`; open pending operator-gated sub-dispatch
+- **Reviewer brief:** `BRIEF.md` (in this bundle) — self-contained problem/solution statement for external review
 - **Canonical path on cnos main:** `.cdd/iterations/cross-repo/cn-sigma/agent-gh-deployment/`
 
-## Proposed sub-issues (envelope, not binding)
+## Post-filing drift + reconciliation
 
-- Sub A — `cn-hub-template` repository
-- Sub B — `cn activate` deploy-mode
-- Sub C — deployable GH Action / reusable workflow (6-field receipt by construction)
-- Sub D — `cn sync` / `cn agent` Go runtime surface (or documented stub) — the load-bearing dependency
-- Sub E — end-to-end field test (mechanical success oracle from the operator realization)
+cnos#431 was filed from `cn-sigma@6c95b53`. The source bundle then advanced: it added `BRIEF.md` (reviewer-facing statement), incorporated **seven precision edits** at `66febb5`, and added the `handoff` label. The cnos copy was stale until this reconciliation. Five reconciliation steps, all completed 2026-05-28:
+
+1. Replace cnos#431 body with current source `ISSUE.md` (66febb5). ✓
+2. Add the `handoff` label. ✓ (via one-shot label-create workflow — GITHUB_TOKEN `issues:write`)
+3. Add a reviewer-brief reference to `BRIEF.md` in the issue body. ✓
+4. Refresh this cnos-side mirror (ISSUE.md, BRIEF.md, LINEAGE.md, STATUS). ✓
+5. Pin the reconciled source SHA (`66febb5`) here. ✓
+
+No substantive redesign — the tracker shape was already correct; only the cnos copy was stale.
+
+## External review (2026-05-27) — the seven precision edits
+
+A third party reviewed `BRIEF.md` + `ISSUE.md` and accepted the bundle directionally as the right master/tracker shape, with seven edits incorporated pre-`66febb5` (each verified against cnos primary sources, esp. `docs/beta/guides/AUTOMATION.md`):
+
+1. **`cn sync` vs `cn agent`** — sync = transport-only tick; `cn agent` (oneshot) = full reasoning wake (`maintain_once` + `drain_queue`, already includes maintenance). Removed the `cn sync → process → cn agent` sequencing; Sub D owns the exact command; Sub D renamed accordingly.
+2. **Stub vs full-fidelity** — Sub A/Sub C MAY ship stub/transport wake today; MUST NOT claim full agent wake until Sub D ships the Go `cn agent` oneshot surface.
+3. **Scheduled-workflow liveness** — public dormant repos get scheduled workflows auto-disabled (~60 days inactivity); `workflow_dispatch` manual wake required; liveness is part of the field test.
+4. **6-field receipt explicit in ACs** — AC3 lists all six fields (who/what/where/credentials/evidence/who-accepts).
+5. **Auth separation** — `GITHUB_TOKEN` (own-repo write only) vs model API key (model call only); no peer-write credential in the base case.
+6. **"repo is the agent" framing** — "the repo is the agent at rest; the runner is the agent awake."
+7. **Sub A → Sub C ordering** — Sub A ships a stub workflow first; Sub C later adopts/replaces it as the canonical reusable form. Avoids the A-waits-C-waits-D circular stall.
+
+The review validated the α≠β firebreak: the reviewer (no authoring stake) caught the `cn sync`/`cn agent` conflation Sigma had glossed.
+
+## Preserved runtime framing (do not regress)
+
+- `cn sync` = transport-only tick (peer fetch / inbox materialize / outbox flush / projection update).
+- `cn agent` (oneshot) = full reasoning wake (maintenance + bounded queue drain that calls the model, then exit).
+- The exact runner command is owned by **Sub D**; no fixed `cn sync && cn agent` sequence (it would double-sync).
 
 ## Pause interaction
 
-Filed under the v3.82.0 protocol-evolution pause. The tracker scopes the field-application direction the pause named; it does NOT lift the pause. Sub-dispatch is operator-gated and incremental. Deployment infra is field-enabling (not theory-expanding), so the operator may authorize subs as field needs surface — but no sub dispatches without explicit authorization.
+Filed and reconciled under the v3.82.0 protocol-evolution pause. The tracker scopes the field-application direction the pause named; it does NOT lift the pause. Sub-dispatch is operator-gated and incremental. No sub dispatches without explicit authorization.
 
 ## Bilateral trace
 
 1. **File:** cnos files the master tracker — done, cnos#431; ISSUE.md is the body. ✓
-2. **Mirror:** cnos creates this `cn-sigma/agent-gh-deployment/` mirror (LINEAGE + STATUS + ISSUE.md audit copy). ✓
-3. **Sub envelope:** the five proposed subs are filed incrementally per the wave dispatch shape, each on operator authorization. (pending)
+2. **Reconcile:** body + labels + mirror reconciled to `cn-sigma@66febb5`. ✓ (2026-05-28)
+3. **Sub envelope:** the five proposed subs file incrementally per the wave dispatch shape, each on operator authorization. (pending)
 4. **Close:** master closes when AC1-AC5 pass or all live subs close with deferred subs named as tracked debt. (pending)
 
-## Notes
+## Convergence
 
-- This is a tracker — it does not implement. The subs carry the implementation; they dispatch under the pause's operator-gate.
-- Sub D (the `cn sync`/`cn agent` runtime surface) is the load-bearing dependency. Subs A and C can ship stub-mode (wake mechanics, no agent step) pre-v4; full-fidelity deployment waits on the runtime port (v4.0.0 Phase 5).
-- The 6-field remote-runner receipt (`BOX-AND-THE-RUNNER`) is a hard constraint on every workflow artifact the subs ship — built in by construction, not retrofitted.
-- Fourth cn-sigma → cnos cross-repo proposal; same convention as the prior three.
+After reconciliation: converge. #431 remains open as the master tracker. **No sub dispatches until the reconciled cnos issue body is the one implementers read** — which it now is.

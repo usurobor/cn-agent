@@ -1,6 +1,6 @@
 # Agent activation on GitHub — three deployment paths to a running hub (master tracker)
 
-Labels: `tracking`, `P2`, `core`
+Labels: `tracking`, `P2`, `core`, `handoff`
 
 Priority: P2 — Enabling capability for the post-v3.82.0 field-application phase. Not blocking (the pause gates sub-dispatch), but it is the scoping envelope for "deploy a cnos agent to GitHub," which is the named next direction.
 
@@ -21,7 +21,7 @@ This is a **master/tracker issue**. It captures the end goal and the sub-issue e
 What exists:
 - **`cn activate`** (cnos 3.78.0+, `src/go/internal/activate/`) renders the bootstrap prompt from hub state. Assumes a local clone + the `cn` binary present.
 - **`agent/activate/SKILL.md`** is the single source of truth for the activation procedure (six-step load order; three-tier capability matrix). README router template (§2.3) routes a body that has *already landed* on a hub.
-- **Three design essays** name the architecture: `GitHub Actions as CN compute` (the operator realization at `cn-sigma:threads/adhoc/20260524-github-actions-as-cn-compute.md`), `BOX-AND-THE-RUNNER.md` (remote-runner delegation as an effect surface + the 6-field receipt), `FIDONET-AND-CNOS.md` (store-and-forward wake model).
+- **Three design essays** name the architecture: `GitHub Actions as CN compute` (the operator realization at `cn-sigma:threads/adhoc/20260527-github-actions-as-cn-compute.md`), `BOX-AND-THE-RUNNER.md` (remote-runner delegation as an effect surface + the 6-field receipt), `FIDONET-AND-CNOS.md` (store-and-forward wake model).
 
 What is expected:
 - A new GitHub user can stand up a running agent hub through one of three documented, canonical paths, each routing into the same `agent/activate/SKILL.md` procedure.
@@ -62,7 +62,7 @@ Where they diverge:
 | Claim / surface | Canonical source | Status |
 |---|---|---|
 | Activation procedure | `cnos:src/packages/cnos.core/skills/agent/activate/SKILL.md` | Shipped 3.78.0+; the procedure all three paths route into |
-| GitHub-Actions-as-compute realization | `cn-sigma:threads/adhoc/20260524-github-actions-as-cn-compute.md` | Operator realization; the compute-projection face |
+| GitHub-Actions-as-compute realization | `cn-sigma:threads/adhoc/20260527-github-actions-as-cn-compute.md` | Operator realization; the compute-projection face |
 | Remote-runner governance + 6-field receipt | `cnos:docs/gamma/essays/BOX-AND-THE-RUNNER.md` + `cnos:src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §8` | DRAFT v0.1.0 essay; delta skill rule shipped |
 | Store-and-forward wake model | `cnos:docs/gamma/essays/FIDONET-AND-CNOS.md` | v1.0.0 |
 | Hub-as-cell + substrate | `cnos:docs/gamma/essays/CELL-OF-CELLS.md` §16.6, §18.5 | DRAFT v0.2.0 |
@@ -75,9 +75,9 @@ Where they diverge:
 
 - **The activation skill is the single source of truth.** All three paths route into `agent/activate/SKILL.md`; none redefines the procedure (per its §2.3 adoption rule: hubs are routers, not redefinitions). A template's README is the §2.3 router verbatim; a deploy-mode `cn activate` renders the same six-step order; the GH Action runs the same procedure in the runner.
 - **Every wake workflow is a remote-runner delegation** (`BOX-AND-THE-RUNNER`). Any artifact a path ships that causes a runner to execute (`cn-wake.yml`, a published action) MUST carry the 6-field receipt convention by construction. A template that ships an ungoverned workflow is distributing ungoverned effect surfaces — the failure the essay's "what not to celebrate" section names.
-- **Store-and-forward, read-peers/write-self** (`FIDONET`). The default `GITHUB_TOKEN` (contents:write, own-repo-scoped) suffices for basic social operation; no peer write access. The deploy paths must not require cross-repo credentials for the base case.
-- **Model credentials are the irreducible friction floor.** `cn agent` calls the model; the runner needs the operator's API key in repo secrets. No path can pre-fill this. The template can name the secret; the operator must provide it.
-- **Runtime dependency.** Paths 1-2 (template, `cn activate`) partially work today (scaffold + prompt render). Path 3's full wake loop (`cn sync` → process → `cn agent`) is gated on the Go runtime port (v4.0.0 Phase 5). Sub D either ships that surface or documents a stub-mode wake (checkout → activate-render → push, no agent step) that proves the mechanics pre-v4.
+- **Store-and-forward, read-peers/write-self** (`FIDONET`). Two credentials, kept distinct: **`GITHUB_TOKEN`** (own-repo write only — commits/pushes/PRs within the agent's own repo; never peer write) and the **model API key** (model-call authority only). No peer-write credential exists in the base case — that is what makes read-peers/write-self enforceable, not aspirational. Private peer reads, if ever needed, are a separate optional credential, never part of the base install.
+- **Model credentials are the irreducible friction floor.** The full reasoning wake calls the model; the runner needs the operator's API key in repo secrets. No path can pre-fill this. The template can name the secret; the operator must provide it.
+- **Runtime dependency, stated precisely.** Per `cnos:docs/beta/guides/AUTOMATION.md`: `cn sync` is the **transport-only tick** (peer fetch / inbox materialize / outbox flush / projection update); `cn agent` (oneshot) is the **full reasoning wake** (one maintenance cycle + bounded queue drain that calls the model, then exit — `cn agent` already includes maintenance, so `cn sync && cn agent` would double-sync). Do NOT specify a fixed `cn sync && cn agent` sequence; the exact runner command is owned by Sub D. Paths 1-2 partially work today (scaffold + prompt render). The full reasoning wake is gated on the Go runtime port (v4.0.0 Phase 5). Sub A and Sub C MAY ship a **stub/transport wake** today (checkout → activate-render → receipt/push, no model step); they MUST NOT claim full agent wake until Sub D ships the Go `cn agent` oneshot surface.
 - **Pause posture.** This tracker is authored under operator direction during the v3.82.0 pause. The pause permits *scoping* the field-application direction; it gates *dispatch* of the implementation subs. Each sub dispatches only on explicit operator authorization (the pause directive's "field evidence gates next theory expansion" applies; deployment infra is field-enabling, not theory-expanding, so the operator may authorize subs incrementally as field needs surface).
 
 ---
@@ -106,18 +106,18 @@ Per `cdd/issue/SKILL.md` master+subs and `cn-sigma:spec/OPERATOR.md` "Wave dispa
 
 ### Sub A — `cn-hub-template` repository
 "Use this template" → a new hub carrying: `.cn/` skeleton, `spec/PERSONA.md` + `spec/OPERATOR.md` stubs, the §2.3 README router verbatim, a `.github/workflows/cn-wake.yml` workflow, and the 6-field remote-runner receipt accompanying that workflow. One click + persona/operator fill + model-key secret = activatable hub.
-Mode: design-and-build. Depends on: Sub C (the workflow it ships) OR ships a stub workflow first.
+Mode: design-and-build. **Intended sequence:** Sub A ships first with a *stub/transport* workflow (wake mechanics only); Sub C later replaces/adopts that stub as the canonical reusable workflow/action. This avoids the circular stall where A waits on C waits on D. Sub A is not blocked on Sub C.
 
 ### Sub B — `cn activate` deploy-mode
 Extend `cn activate` from prompt-render to optional scaffold/wire: `cn activate --init <hub-dir>` materializes the hub skeleton + router + workflow in a cloned/new repo. Consumes the activate-foreign-body §2.5 materialization (where clones land when cwd ≠ hub).
 Mode: design-and-build. Depends on: activate-foreign-body bundle landing (currently drafted, pause-gated).
 
 ### Sub C — Deployable GitHub Action / reusable workflow
-A `cnos:.github/workflows/cn-wake.yml` reusable workflow (`workflow_call`) hubs reference in three lines, OR a published `usurobor/cn-action@v1` composite action. Carries the 6-field receipt by construction. Triggers: `workflow_dispatch` + `schedule` (per FIDONET poll model); later `repository_dispatch` for peer-waking.
-Mode: design-and-build. Depends on: Sub D (the `cn sync`/`cn agent` surface it invokes) OR ships stub-mode (wake mechanics only).
+A `cnos:.github/workflows/cn-wake.yml` reusable workflow (`workflow_call`) hubs reference in three lines, OR a published `usurobor/cn-action@v1` composite action. **Adopts/replaces Sub A's stub workflow as the canonical reusable form.** Carries the 6-field receipt by construction. Triggers: `workflow_dispatch` (manual wake; also the liveness fallback for dormant repos) + `schedule` (per FIDONET poll model); later `repository_dispatch` for peer-waking.
+Mode: design-and-build. Ships stub/transport-fidelity until Sub D lands the Go runtime; MUST NOT claim full agent wake before Sub D.
 
-### Sub D — `cn sync` / `cn agent` Go runtime surface (or documented stub)
-The wake loop's runtime dependency. Either port the OCaml-era `cn sync` (peer fetch / inbox materialize / outbox flush / projection update) + `cn agent` (oneshot scheduler / maintain_once / drain_queue) to Go (v4.0.0 Phase 5 work), OR document a stub-mode wake that proves checkout → activate-render → push without the agent step.
+### Sub D — Go wake runtime surface: `cn sync` transport tick + `cn agent` oneshot scheduler
+The wake loop's runtime dependency, the load-bearing one. Port two distinct surfaces to Go (v4.0.0 Phase 5): `cn sync` = transport-only tick (peer fetch / inbox materialize / outbox flush / projection update); `cn agent` (oneshot) = full reasoning wake (`maintain_once` + `drain_queue` → `process_one` up to `oneshot_drain_limit`, then exit). Per `cnos:docs/beta/guides/AUTOMATION.md`, `cn agent` already includes maintenance — the workflow runs one or the other, not a fixed `cn sync && cn agent` sequence. Sub D owns the exact runner command. Until Sub D lands, the documented stub wake (checkout → activate-render → receipt/push, no model step) is the only honest claim.
 Mode: explore → design-and-build. This is the load-bearing dependency; Subs A and C ship full-fidelity only after this.
 
 ### Sub E — End-to-end field test
@@ -137,7 +137,7 @@ Each of {template repo, `cn activate` deploy-mode, deployable GH Action} is a ca
 No path redefines the activation procedure; each routes into `agent/activate/SKILL.md`. Oracle: diff each path's activation logic against the skill — zero procedure divergence (only the *mechanism* of reaching the skill differs).
 
 ### AC3 — Effect-surface governance is built in
-Every workflow artifact a path ships carries the 6-field remote-runner receipt (`BOX-AND-THE-RUNNER`). Oracle: each shipped `*.yml` that causes runner execution has an accompanying receipt; no ungoverned effect surface ships.
+Every workflow artifact a path ships carries the 6-field remote-runner receipt (`BOX-AND-THE-RUNNER`) naming: (1) who authorized it; (2) what it runs; (3) where it runs; (4) with what credentials/permissions; (5) what evidence returns; (6) who may accept the result. Oracle: each shipped `*.yml` that causes runner execution has an accompanying receipt with all six fields present; no ungoverned effect surface ships.
 
 ### AC4 — Base case needs no peer write access
 The default `GITHUB_TOKEN` (own-repo, contents:write) suffices for a hub to wake, process its own inbox, and push its own state. Oracle: a hub activated via any path runs a full wake cycle with no cross-repo credentials.
