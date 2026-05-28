@@ -3,78 +3,46 @@
 [![Build](https://github.com/usurobor/cnos/actions/workflows/build.yml/badge.svg)](https://github.com/usurobor/cnos/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
-**cnos gives AI agents a Git-native home.**
+cnos gives AI agents a Git-native home.
 
-An agent hub is a Git repository that can hold identity, skills, memory, tasks, messages, and evidence. A model can enter that hub, read its state, do bounded work, write results back, and leave a trail that humans and other agents can inspect.
+A cnos hub is a repo an agent can wake into, read, write, remember through, and use to coordinate with humans and other agents. Git stores the durable state. `cn` prepares and checks the hub. A model such as Claude or GPT acts as the temporary reasoning body.
 
-The short version:
+The goal is simple: agents should not just do tasks. They should leave receipts, evidence, decisions, and memory that make the whole system more coherent over time.
 
-```text
-Git repo       durable agent home
-cn             CLI that creates and manages hubs
-packages       skills and protocols an agent can load
-threads        messages, tasks, and work history
-receipts       evidence that work actually happened
-```
+## Why cnos exists
 
-The goal is simple: make agent work less ephemeral, less hand-wavy, and easier to review.
+AI agents are useful, but agent work often fails in predictable ways.
 
-## Why this exists
+| Common failure | cnos answer |
+|---|---|
+| It sounds done, but is not done. | Work closes with receipts that can be checked against a contract. |
+| It claims evidence it did not produce. | Receipts point to files, commits, logs, and other durable evidence. |
+| It reviews itself. | Production and review are separated in the protocol. |
+| It forgets why a decision was made. | Threads, close-outs, and commits leave a durable trail in Git. |
+| It fixes one local thing and breaks the larger system. | Work is measured against the coherence of the whole project. |
+| It creates follow-up work without grounding. | Follow-up issues should come from receipts, findings, and measured gaps. |
+| It learns nothing from repeated failure. | Repeated failures become protocol or package improvements. |
 
-AI agents fail in familiar ways. cnos pairs each failure with a Git-backed answer:
-
-```text
-they sound done but are not done           →  work closes with a receipt against a contract
-they claim evidence they did not produce   →  evidence lives in files and commits
-they forget why a decision was made        →  close-outs leave a trail in the repo
-they generate follow-up work ungrounded    →  next moves cite the receipt they came from
-they learn nothing from repeated failure   →  repeated gaps surface in the receipt stream
-```
-
-The repo is the durable object. The model is the temporary reasoning body.
+cnos turns agent work from one-off task execution into a traceable path of decreasing incoherence.
 
 ## Try it
 
-### 1. Install `cn`
+Install `cn`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | sh
 ```
 
-Or build from source:
-
-```sh
-git clone https://github.com/usurobor/cnos.git
-cd cnos/src/go
-go build -o cn ./cmd/cn
-```
-
-Requirements:
-
-```text
-Unix-like OS
-Git
-Go 1.22+ if building from source
-curl if using install.sh
-```
-
-### 2. Create a hub
+Create a hub:
 
 ```sh
 cn init my-agent
-cd <hub-dir>
+cd my-agent
 cn setup
 cn doctor
-cn status
 ```
 
-`cn setup` installs cognitive packages into:
-
-```text
-.cn/vendor/packages/
-```
-
-At this point you have a prepared hub. The full autonomous `cn agent` runtime is still planned, but the hub can already be activated by a capable model.
+Then activate the hub in a model body.
 
 ## Activate an agent
 
@@ -86,40 +54,27 @@ The canonical procedure lives at [`cnos.core/skills/agent/activate/SKILL.md`](./
 Kernel → CA skills → Persona → Operator → hub state → identity confirmation
 ```
 
-There are two common activation paths.
+### Activate in hosted chat
 
-### Option A — hosted chat
-
-Use this for Claude, ChatGPT, or another hosted model with WebFetch or pasted context.
-
-Paste:
+Use Claude, ChatGPT, or another hosted model with fetch/paste access. Give it the hub URL and ask it to follow the activation skill.
 
 ```text
-Activate as https://github.com/usurobor/cn-sigma.
-
-First read:
+Activate as this hub: <hub-url>
+First read the cnos activation skill:
 https://raw.githubusercontent.com/usurobor/cnos/main/src/packages/cnos.core/skills/agent/activate/SKILL.md
-
-Then follow that skill against the cn-sigma hub.
-Load Kernel, CA skills, Persona, Operator, hub state, and confirm identity before doing any other work.
+Then load the hub identity, operator contract, skills, memory, and current state.
+Confirm who you are before doing any work.
 ```
 
 If the model cannot fetch URLs, paste the activation skill and hub files manually.
 
-### Option B — CLI / workspace
+### Activate in CLI / workspace
 
-Use this for Claude Code CLI, Codex CLI, or another agent body with shell and Git access.
+Use Claude Code, Codex CLI, or another local coding agent with filesystem access. From inside the hub directory:
 
 ```sh
-git clone https://github.com/usurobor/cnos.git
-git clone https://github.com/usurobor/cn-sigma.git
-
-cd cn-sigma
-
-claude -p "Read ../cnos/src/packages/cnos.core/skills/agent/activate/SKILL.md, then activate against this hub. Load Kernel, CA skills, Persona, Operator, hub state, and confirm identity before doing any other work."
+claude -p "Read this hub and activate from its identity, operator contract, skills, memory, and current state. Confirm who you are before doing any work."
 ```
-
-The CLI path is best when available because the model can read local files directly.
 
 ## What ships today
 
@@ -153,7 +108,7 @@ package command discovery and dispatch
 CTB enforcement
 ```
 
-## How cnos is organized
+## How the project is organized
 
 ```text
 cnos/
@@ -179,58 +134,9 @@ The current package set:
 | `cnos.kata` | Runtime verification kata. |
 | `cnos.cdd.kata` | CDD-method verification kata. |
 
-`cn build` assembles packages into:
-
-```text
-dist/packages/
-```
-
-`cn setup` installs them into a hub under:
-
-```text
-.cn/vendor/packages/
-```
-
-## Core idea
-
-cnos treats work as a small loop:
-
-```text
-receive a message
-do bounded work
-review it
-write a receipt
-validate the result
-use the result to choose the next move
-```
-
-In project docs this is called a **coherence cell**.
-
-You do not need to understand the full theory to try cnos. The practical idea is:
-
-```text
-make every important piece of agent work leave inspectable evidence
-```
-
-## GitHub-hosted agents
-
-A future cnos hub can run without a long-lived server:
-
-```text
-GitHub repo      durable agent home
-GitHub Actions   wake compute
-cn sync          peer/message transport
-cn agent         one-shot reasoning loop
-model API/CLI    temporary reasoning body
-```
-
-The agent wakes, pulls peers, runs the `cn` loop, writes messages or receipts, pushes its repo, and sleeps.
-
-This is planned work. The current Go binary prepares the hub and package state; the full `cn sync` / `cn agent` wake loop is still part of the runtime roadmap.
+`cn build` produces tarballs under `dist/packages/`; `cn setup` installs them into a hub at `.cn/vendor/packages/`.
 
 ## Read more
-
-Start here:
 
 | Question | Link |
 | --- | --- |
@@ -245,11 +151,7 @@ Start here:
 | What is CDR? | [CDR package](./src/packages/cnos.cdr/README.md) |
 | What is handoff? | [Handoff package](./src/packages/cnos.handoff/README.md) |
 
-Full docs index:
-
-```text
-docs/README.md
-```
+Full docs index: [`docs/README.md`](./docs/README.md).
 
 ## Contributing
 
