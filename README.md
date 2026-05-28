@@ -3,125 +3,45 @@
 [![Build](https://github.com/usurobor/cnos/actions/workflows/build.yml/badge.svg)](https://github.com/usurobor/cnos/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
-> Status: cnos is under active construction and transitioning toward v4.
-> The Go rewrite is in progress. This README separates what ships today from
-> the doctrine, protocol, runtime, and language targets that guide the work.
+**cnos gives AI agents a Git-native home.**
 
-## What is cnos?
+An agent hub is a Git repository that can hold identity, skills, memory, tasks, messages, and evidence. A model can enter that hub, read its state, do bounded work, write results back, and leave a trail that humans and other agents can inspect.
 
-cnos is a Git-native coherence operating system.
+The short version:
 
-It turns fallible human+AI work into recursive, receipt-bearing cells: bounded units that receive a message, produce matter, undergo independent review, close into a receipt, validate at a boundary, and feed the next coherent move. Git provides the durable substrate; CN provides the protocol conventions; `cn` provides the CLI/runtime body; CDD/CDS/CDR/handoff provide the package architecture for software, research, and cross-agent coordination.
-
-The goal is not task completion. The goal is a measured path of decreasing incoherence.
-
-Underneath, cnos models systems as recursive cells of triadic cells: messages descend, receipts ascend, validation gates transmission, coherence measurement asks whether the many remain one, and remaining incoherence becomes the next bounded contract. See [Cell of Cells](./docs/gamma/essays/CELL-OF-CELLS.md) and [Decreasing Incoherence](./docs/gamma/essays/DECREASING-INCOHERENCE.md) for the full system model.
-
-## Layers
-
-```
-Recurrent coherence system
-├─ doctrine          first principles, conduct, standing, judgment, inheritance
-├─ Git substrate     durable identity, history, refs, forks, commits
-├─ CN protocol       repo conventions, threads, messages, signatures
-├─ cn CLI today      init, setup, status, doctor, build, update
-├─ cn runtime target governed typed ops, receipts, bounded execution
-├─ coherent agents   sense, compare, choose, act/learn, review
-└─ CTB draft         triadic composition + witnessed close-out language/checker
+```text
+Git repo       durable agent home
+cn             CLI that creates and manages hubs
+packages       skills and protocols an agent can load
+threads        messages, tasks, and work history
+receipts       evidence that work actually happened
 ```
 
-## Coherent agents
+The goal is simple: make agent work less ephemeral, less hand-wavy, and easier to review.
 
-A coherent agent preserves the boundary it acts on.
+## Why this exists
 
-An agent begins at the edge between its model and the observable environment. When another agent enters, that edge becomes shared. The conduct rule is: do not close a local gap by opening a larger shared one.
+AI agents fail in familiar ways. cnos pairs each failure with a Git-backed answer:
 
-Coherent agency leaves an inspectable surface. Claims remain attached to evidence. Verdicts name the contract they judge. Requests for repair name the gap they saw. When no move preserves every affected boundary, judgment names the boundary protected, the boundary breached, and the debt not called closure.
+```text
+they sound done but are not done           →  work closes with a receipt against a contract
+they claim evidence they did not produce   →  evidence lives in files and commits
+they forget why a decision was made        →  close-outs leave a trail in the repo
+they generate follow-up work ungrounded    →  next moves cite the receipt they came from
+they learn nothing from repeated failure   →  repeated gaps surface in the receipt stream
+```
 
-The core operations are:
+The repo is the durable object. The model is the temporary reasoning body.
 
-| Operation | Role |
-| --- | --- |
-| MCP | Form the best current picture of boundaries, evidence, constraints, and available moves. |
-| CAP | Make the atomic move: act on the world through MCA or update the model through MCI. |
-| CLP | Review the result, inspect α/β/γ, patch the weakest axis, and stop before taste becomes false work. |
-| CDD | Apply the same boundary-preserving review discipline to cnos itself. |
+## Try it
 
-The agent's direct I/O is pure text. A narrow agent, or skill, may behave like a pure function. Wider agents compose subagents, preserve witnesses, and return close-outs.
-
-The target runtime routes side effects through cn: Git, network, file I/O, typed operations, receipts, and bounded execution. The shipped Go binary does not yet include the full agent runtime.
-
-## Network model
-
-Agents connect through Git. Each agent has a hub: a repository that stores identity, state, threads, packages, and history. Agents communicate by exchanging refs and thread files. A forge may host the repo, but the forge is not the protocol.
-
-| Concept | Meaning |
-| --- | --- |
-| Hub | A Git repo that holds an agent's identity, state, config, threads, and installed packages. |
-| Peer | Another agent hub listed in repo state. |
-| Thread | A markdown work or conversation surface with frontmatter and history. |
-| Doctrine | The always-on conduct layer: coherence, standing, judgment, inheritance, and review law. |
-| CN | The Git-native protocol conventions for hubs, threads, packages, messages, and signatures. |
-| cn | The current CLI and target runtime body. |
-| Agent | A boundary-preserving articulation of coherence that senses, compares, acts or learns, reviews, and leaves inspectable evidence surfaces. |
-| Skill | A narrow agent, usually callable as a bounded task behavior. |
-| CTB | Draft language/checker layer for triadic agent composition and witnessed close-outs. |
-
-## Why Git?
-
-For agents, a repo is durable identity. It can be cloned, forked, audited, and moved.
-
-For humans, a repo makes agent work inspectable. Decisions can become commits. Collaborations can become merges. Failures can leave evidence instead of vanishing behind a platform boundary.
-
-For the network, Git keeps the protocol small. No central server owns the memory. No platform is the canonical surface. The durable object is the repo.
-
-## Current state
-
-cnos is moving from a v3 prototype into a modular Go service for v4.
-
-### What ships today
-
-The shipped Go binary provides the kernel CLI path.
-
-| Command | Purpose |
-| --- | --- |
-| cn help | Show available commands. |
-| cn init [name] | Create a new agent hub. |
-| cn setup | Install cognitive packages and write the dependency manifest. |
-| cn deps list | List installed package dependencies. |
-| cn deps restore | Restore package dependencies. |
-| cn deps doctor | Check dependency state. |
-| cn status | Show hub state. |
-| cn doctor | Check hub health. |
-| cn build | Assemble packages from source. Use --check for CI. |
-| cn update | Self-update with SHA-256 verification and atomic install. |
-
-Today, you can create a hub, install cognitive packages, inspect hub state, build packages, and activate a hub by pointing a capable model at it through either chat-hosted or CLI/workspace activation.
-
-### Not shipped yet
-
-The Go binary does not yet include:
-
-- the full agent runtime;
-- the daemon or scheduler;
-- CN Shell execution;
-- thread queue processing;
-- inbox/outbox operations;
-- peer sync;
-- package command discovery and dispatch;
-- Telegram integration;
-- CTB v0.2 enforcement;
-- ctb-check.
-
-## Install
-
-### Release binary
+### 1. Install `cn`
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | sh
 ```
 
-### From source
+Or build from source:
 
 ```sh
 git clone https://github.com/usurobor/cnos.git
@@ -131,238 +51,228 @@ go build -o cn ./cmd/cn
 
 Requirements:
 
-- Unix-like OS;
-- Git;
-- Go 1.22+ for source builds;
-- curl for the install script.
+```text
+Unix-like OS
+Git
+Go 1.22+ if building from source
+curl if using install.sh
+```
 
-## Quick start
+### 2. Create a hub
 
 ```sh
-# Create a hub.
 cn init my-agent
-
-# Enter the hub directory printed by cn init.
 cd <hub-dir>
-
-# Install cognitive packages.
 cn setup
-
-# Check the hub.
 cn doctor
 cn status
 ```
 
-cn setup installs cognitive packages into:
+`cn setup` installs cognitive packages into:
 
-```
+```text
 .cn/vendor/packages/
 ```
 
-After setup, the hub has package content and dependency state, but the full agent runtime is still planned.
+At this point you have a prepared hub. The full autonomous `cn agent` runtime is still planned, but the hub can already be activated by a capable model.
 
-### Activate an agent
+## Activate an agent
 
-`cn setup` prepares a hub. Activation is the step where a capable model loads that hub as an identity and becomes the active reasoning body.
+Activation means a model reads a hub and becomes the active reasoning body for that hub.
 
-The canonical procedure lives in [`cnos.core/skills/agent/activate/SKILL.md`](./src/packages/cnos.core/skills/agent/activate/SKILL.md). It always loads, in order:
+The canonical procedure lives at [`cnos.core/skills/agent/activate/SKILL.md`](./src/packages/cnos.core/skills/agent/activate/SKILL.md). It loads, in order:
 
 ```text
 Kernel → CA skills → Persona → Operator → hub state → identity confirmation
 ```
 
-The procedure is body-agnostic: it works whether the body has shell+git, HTTP fetch only, or needs operator-injected text. There are two common ways to activate.
+There are two common activation paths.
 
-#### 1. Chat / hosted activation
+### Option A — hosted chat
 
-Use this when the model is in a hosted chat surface — Claude, ChatGPT, or another model with WebFetch or pasted context. Give it the hub URL and the activation-skill URL:
+Use this for Claude, ChatGPT, or another hosted model with WebFetch or pasted context.
+
+Paste:
 
 ```text
 Activate as https://github.com/usurobor/cn-sigma.
+
 First read:
 https://raw.githubusercontent.com/usurobor/cnos/main/src/packages/cnos.core/skills/agent/activate/SKILL.md
-Then follow that skill against the cn-sigma hub. Load Kernel, CA skills,
-Persona, Operator, and hub state, and confirm identity before any other work.
+
+Then follow that skill against the cn-sigma hub.
+Load Kernel, CA skills, Persona, Operator, hub state, and confirm identity before doing any other work.
 ```
 
-If the model cannot fetch URLs, paste the activation skill and hub files manually. A body with no shell, no git, and no HTTP fetch cannot self-activate.
+If the model cannot fetch URLs, paste the activation skill and hub files manually.
 
-#### 2. CLI / workspace activation
+### Option B — CLI / workspace
 
-Use this when the model has shell and git access — Claude Code CLI, Codex CLI, or another shell-capable coding agent.
+Use this for Claude Code CLI, Codex CLI, or another agent body with shell and Git access.
 
 ```sh
 git clone https://github.com/usurobor/cnos.git
 git clone https://github.com/usurobor/cn-sigma.git
+
 cd cn-sigma
-claude -p "Read ../cnos/src/packages/cnos.core/skills/agent/activate/SKILL.md, then activate against this hub. Load Kernel, CA skills, Persona, Operator, and hub state, and confirm identity before any other work."
+
+claude -p "Read ../cnos/src/packages/cnos.core/skills/agent/activate/SKILL.md, then activate against this hub. Load Kernel, CA skills, Persona, Operator, hub state, and confirm identity before doing any other work."
 ```
 
-The CLI path is preferred when available: it reads the hub and the cnos skill bundle from consistent local checkouts.
+The CLI path is best when available because the model can read local files directly.
 
-The full `cn agent` runtime (daemon, scheduler) is planned and not shipped yet.
+## What ships today
 
-## Roadmap to v4
+The Go `cn` binary currently supports the hub and package-management path:
 
-Each phase should ship a working binary.
+| Command | Purpose |
+| --- | --- |
+| `cn help` | Show available commands. |
+| `cn init [name]` | Create a new agent hub. |
+| `cn setup` | Install cognitive packages and write dependency state. |
+| `cn deps list` | List installed package dependencies. |
+| `cn deps restore` | Restore package dependencies. |
+| `cn deps doctor` | Check dependency state. |
+| `cn status` | Show hub state. |
+| `cn doctor` | Check hub health. |
+| `cn build` | Assemble packages from source. Use `--check` for CI. |
+| `cn update` | Self-update with SHA-256 verification and atomic install. |
 
-| Phase | Target | Status |
-| --- | --- | --- |
-| 1 | CLI skeleton and modular dispatch | complete |
-| 2 | Core commands: help, init, status, doctor | complete |
-| 3 | Build commands: deps, build, setup, update | complete |
-| 4 | Package command discovery and dispatch | next |
-| 5 | Agent runtime: scheduler, CN Shell, threads, peers | planned |
+The shipped Go binary does **not** yet include the full agent runtime.
 
-Design references:
+Planned runtime work includes:
 
-- [Go kernel commands](./docs/alpha/agent-runtime/GO-KERNEL-COMMANDS.md)
-- [Architectural invariants](./docs/alpha/architecture/INVARIANTS.md)
-- [Agent runtime](./docs/alpha/agent-runtime/AGENT-RUNTIME.md)
-
-## Repository map
-
+```text
+cn agent
+daemon / scheduler
+thread queue processing
+inbox / outbox sync
+peer sync
+CN Shell execution
+package command discovery and dispatch
+CTB enforcement
 ```
+
+## How cnos is organized
+
+```text
 cnos/
-├── src/
-│   ├── go/               active Go CLI source
-│   ├── packages/         cognitive packages and skills
-│   └── ocaml/            legacy runtime, retained until Phase 5 deletion
-├── docs/                 doctrine, protocol, runtime, architecture, CTB, process
-├── dist/                 built packages and binaries
-├── scripts/              build and release scripts
-└── test/                 tests
+├── src/go/        Go CLI source
+├── src/packages/  cognitive packages and skills
+├── src/ocaml/     legacy runtime, retained during the Go rewrite
+├── docs/          doctrine, protocol, runtime, architecture, essays
+├── dist/          built packages and binaries
+├── scripts/       build and release scripts
+└── test/          tests
 ```
 
-Package source lives under:
+The current package set:
 
-```
-src/packages/
-├── cnos.cdd/        Coherence-Driven Development — the generic CCNF cell kernel
-├── cnos.cds/        CDD for software — software realization of the kernel
-├── cnos.cdr/        CDD for research — research realization of the kernel
-├── cnos.handoff/    Transport doctrine — messages/receipts across repos, roles, and agents
-├── cnos.core/       Core runtime skills and foundational operations
-├── cnos.eng/        Engineering skills for implementation, testing, and toolchain
-├── cnos.kata/       Runtime verification kata
-└── cnos.cdd.kata/   CDD-method verification kata
-```
+| Package | What it owns |
+| --- | --- |
+| `cnos.core` | Core skills and foundational operations. |
+| `cnos.cdd` | The generic recursive cell protocol. |
+| `cnos.cds` | Software work: code, tests, branches, CI, releases. |
+| `cnos.cdr` | Research work: claims, data, methods, reports, review. |
+| `cnos.handoff` | Messages and receipts between agents, repos, roles, and packages. |
+| `cnos.eng` | Engineering skills for implementation and testing. |
+| `cnos.kata` | Runtime verification kata. |
+| `cnos.cdd.kata` | CDD-method verification kata. |
 
-Each package contains skills, specifications, and supporting materials for its domain.
+`cn build` assembles packages into:
 
-cn build assembles those packages into:
-
-```
+```text
 dist/packages/
 ```
 
-cn setup installs built packages into a hub under:
+`cn setup` installs them into a hub under:
 
-```
+```text
 .cn/vendor/packages/
 ```
 
-## Agent hub shape
+## Core idea
 
-A hub created by cn init and prepared by cn setup has this target shape:
+cnos treats work as a small loop:
 
-```
-hub/
-├── .cn/
-│   ├── config.json
-│   ├── deps.json
-│   └── vendor/packages/
-├── spec/
-│   ├── SOUL.md
-│   └── USER.md
-├── threads/
-│   ├── in/
-│   ├── mail/
-│   ├── doing/
-│   ├── archived/
-│   ├── adhoc/
-│   └── reflections/
-└── state/
-    ├── peers.md
-    └── queue/
+```text
+receive a message
+do bounded work
+review it
+write a receipt
+validate the result
+use the result to choose the next move
 ```
 
-Secrets belong in uncommitted secret surfaces, not in Git history.
+In project docs this is called a **coherence cell**.
 
-## Further reading
+You do not need to understand the full theory to try cnos. The practical idea is:
 
-cnos is documented in layers. Start with the thesis, then follow doctrine, protocol, runtime, CTB, or TSC depending on the question.
+```text
+make every important piece of agent work leave inspectable evidence
+```
 
-Full index:
+## GitHub-hosted agents
 
-- [docs/README.md](./docs/README.md)
+A future cnos hub can run without a long-lived server:
 
-### System frame
+```text
+GitHub repo      durable agent home
+GitHub Actions   wake compute
+cn sync          peer/message transport
+cn agent         one-shot reasoning loop
+model API/CLI    temporary reasoning body
+```
 
-- [Thesis](./docs/THESIS.md) — cnos as a recurrent coherence system.
-- [Coherence System](./docs/alpha/essays/COHERENCE-SYSTEM.md) — coherence as the primary system principle.
-- [Foundations](./docs/alpha/essays/FOUNDATIONS.md) — doctrine and coherence loop.
-- [Manifesto](./docs/alpha/essays/MANIFESTO.md) — human+AI commons, auditability, forkability, sovereignty.
+The agent wakes, pulls peers, runs the `cn` loop, writes messages or receipts, pushes its repo, and sleeps.
 
-### Agent doctrine
+This is planned work. The current Go binary prepares the hub and package state; the full `cn sync` / `cn agent` wake loop is still part of the runtime roadmap.
 
-- [Doctrine README](./docs/alpha/doctrine/README.md) — reading order and composition of the doctrine essays.
-- [Coherence for Agents](./docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) — shared boundaries and inspectable relation.
-- [Ethics for Agents](./docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) — affected standing under asymmetry.
-- [Judgment for Agents](./docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) — boundary selection under forced loss.
-- [Inheritance for Agents](./docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) — named failure modes inherited as contestable constraints.
+## Read more
 
-### CN protocol and Git substrate
+Start here:
 
-- [Whitepaper](./docs/alpha/protocol/WHITEPAPER.md) — CN protocol and Git substrate.
-- [Protocol](./docs/alpha/protocol/PROTOCOL.md) — protocol states and message surfaces.
-- [Security model](./docs/alpha/security/SECURITY-MODEL.md) — trust, sandboxing, signatures, and capability boundaries.
+| Question | Link |
+| --- | --- |
+| What is the big idea? | [docs/THESIS.md](./docs/THESIS.md) |
+| How does the Git-native protocol work? | [CN whitepaper](./docs/alpha/protocol/WHITEPAPER.md) |
+| What is the target runtime? | [Agent runtime](./docs/alpha/agent-runtime/AGENT-RUNTIME.md) |
+| How do agents activate? | [Activate skill](./src/packages/cnos.core/skills/agent/activate/SKILL.md) |
+| What is the recursive cell model? | [Cell of Cells](./docs/gamma/essays/CELL-OF-CELLS.md) |
+| Why "decreasing incoherence"? | [Decreasing Incoherence](./docs/gamma/essays/DECREASING-INCOHERENCE.md) |
+| What is CDD? | [CDD kernel](./src/packages/cnos.cdd/skills/cdd/CDD.md) |
+| What is CDS? | [CDS package](./src/packages/cnos.cds/README.md) |
+| What is CDR? | [CDR package](./src/packages/cnos.cdr/README.md) |
+| What is handoff? | [Handoff package](./src/packages/cnos.handoff/README.md) |
 
-### Agent architecture and runtime
+Full docs index:
 
-- [CAA](./docs/alpha/agent-runtime/CAA.md) — coherent agent architecture.
-- [Agent Runtime](./docs/alpha/agent-runtime/AGENT-RUNTIME.md) — target runtime body, CN Shell, typed ops, receipts, bounded execution.
-- [Architecture](./docs/beta/architecture/ARCHITECTURE.md) — how doctrine, specs, runtime, packages, traces, releases, and agents relate.
-- [CDD](./docs/gamma/cdd/CDD.md) — coherence-driven development process.
-- [Engineering levels](./docs/gamma/ENGINEERING-LEVELS.md) — L5/L6/L7 rubric.
-- [Changelog](./CHANGELOG.md) — release coherence ledger.
-
-### CTB language layer
-
-- [CTB README](./docs/alpha/ctb/README.md) — CTB document map and authority rules.
-- [CTB language spec v0.1](./docs/alpha/ctb/LANGUAGE-SPEC.md) — current skill-module baseline.
-- [CTB language spec v0.2 draft](./docs/alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md) — draft agent-module and composition target.
-- [CTB semantics notes](./docs/alpha/ctb/SEMANTICS-NOTES.md) — triadic carrier and agent-composition rationale.
-- [CTB vision](./docs/alpha/ctb/CTB-v4.0.0-VISION.md) — strategic vision and roadmap.
-
-Status: CTB v0.2 and ctb-check are draft targets. The shipped runtime does not yet enforce CTB v0.2 witness or composition obligations.
-
-### TSC upstream foundation
-
-CTB's triadic carrier and witness discipline are grounded in the separate TSC repository:
-
-- [TSC repository](https://github.com/usurobor/tsc)
-- [C≡ spec](https://github.com/usurobor/tsc/blob/main/spec/c-equiv.md) — term algebra, tri(·,·,·), equivalence, normal forms, α/β/γ evaluators.
-- [TSC Core](https://github.com/usurobor/tsc/blob/main/spec/tsc-core.md) — dimensional coherence scores, aggregate C_Σ, confidence intervals, independence, composition bounds.
-- [TSC Operational](https://github.com/usurobor/tsc/blob/main/spec/tsc-oper.md) — witnesses, floors, verification controller, verdict logic, provenance bundles.
+```text
+docs/README.md
+```
 
 ## Contributing
-
-Fork, branch, make changes, run tests, and submit a pull request.
 
 ```sh
 go test ./...
 ```
 
-Commit style: `type: short description`
+Fork, branch, make a focused change, run tests, and submit a pull request.
 
-Common types: feat fix docs chore refactor test
+Common commit types:
+
+```text
+feat
+fix
+docs
+chore
+refactor
+test
+```
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Support
-
-cnos is open source.
 
 - Individuals: [GitHub Sponsors](https://github.com/sponsors/usurobor)
 - Organizations: [Sustainability](./docs/beta/SUSTAINABILITY.md)
