@@ -1,0 +1,53 @@
+# One-shot remote-runner workflow — create the `handoff` label + apply to cnos#431.
+#
+# Doctrine: docs/gamma/essays/BOX-AND-THE-RUNNER.md
+# Skill:    src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §8
+#
+# Reconciliation action 2 for cnos#431: the source bundle added a `handoff`
+# label post-filing; cnos has no such label and no MCP label-create tool, and
+# label creation needs `issues:write` (the ADMIN_PAT only carries Administration
+# scope). This run creates the label and applies it via the workflow GITHUB_TOKEN,
+# then self-deletes.
+#
+# Trigger:   push to main on this workflow's own path.
+# Authority: GITHUB_TOKEN — issues: write (label) + contents: write (self-delete).
+# Acceptor:  Operator confirms cnos#431 carries tracking/P2/core/handoff.
+
+name: One-shot — add handoff label
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/add-handoff-label.yml'
+
+permissions:
+  issues: write
+  contents: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create handoff label + apply to #431
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create handoff \
+            --color C5DEF5 \
+            --description "Cross-agent handoff / wire-format transport (cnos.handoff)" \
+            --force --repo usurobor/cnos
+          gh issue edit 431 --add-label handoff --repo usurobor/cnos
+          echo "--- labels on #431 ---"
+          gh issue view 431 --repo usurobor/cnos --json labels --jq '.labels[].name'
+
+      - name: Self-delete this workflow
+        run: |
+          git config user.name "cnos-remote-runner[bot]"
+          git config user.email "cnos-remote-runner@cnos.local"
+          git rm .github/workflows/add-handoff-label.yml
+          git commit -m "chore: remove one-shot add-handoff-label workflow (cnos#431)"
+          git push origin main
