@@ -59,7 +59,7 @@ Kernel → CA skills → Persona → Operator → hub state → identity confirm
 Use Claude, ChatGPT, or another hosted model with fetch/paste access. Give it the hub URL and ask it to follow the activation skill.
 
 ```text
-Activate as this hub: <hub-url>
+Activate as this hub: {hub-url}
 First read the cnos activation skill:
 https://raw.githubusercontent.com/usurobor/cnos/main/src/packages/cnos.core/skills/agent/activate/SKILL.md
 Then load the hub identity, operator contract, skills, memory, and current state.
