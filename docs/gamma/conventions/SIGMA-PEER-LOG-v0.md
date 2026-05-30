@@ -19,17 +19,23 @@ This is a **field convention**, not the canonical CN mail protocol. The canonica
 
 ## §1 The two artifacts
 
-| File | Single writer | Direction |
+| Surface | Single writer | Direction |
 |---|---|---|
-| `{foreign-hub}:.cn-{persona}/log.md` | Sigma at that foreign hub | foreign → home |
+| `{foreign-hub}:.cn-{persona}/logs/YYYYMMDD.md` | Sigma at that foreign hub | foreign → home |
 | `cn-{persona}:threads/peers/{peer}.md` | Sigma at home | home → foreign |
 
-Both files are single-writer, append-only, plain markdown. Routing is implicit in the file path. No third "mailbox" file or table.
+Both surfaces are single-writer, append-only, plain markdown. Routing is implicit in the path.
+
+The foreign side **shards per day** as the default form. Each day's activations append to that day's file; a new day creates a new file. The directory `.cn-{persona}/logs/` carries a `README.md` describing the convention; per-day files carry only entries. The cursor (a Git commit SHA, see §3) spans the directory naturally — no per-file cursor is needed.
+
+The home side is a **single file per peer** (`cn-{persona}:threads/peers/{peer}.md`). Home-to-foreign volume is low; sharding has no economy.
+
+This asymmetry is deliberate: the side that grows is sharded, the side that doesn't isn't.
 
 For Sigma's three current activations:
 
-- `cnos:.cn-sigma/log.md` ← Sigma-at-cnos writes
-- `bumpt:.cn-sigma/log.md` ← Sigma-at-bumpt (bump-sigma) writes
+- `cnos:.cn-sigma/logs/YYYYMMDD.md` ← Sigma-at-cnos writes
+- `bumpt:.cn-sigma/logs/YYYYMMDD.md` ← Sigma-at-bumpt (bump-sigma) writes
 - `cn-sigma:threads/peers/cnos.md` ← Sigma-at-home writes
 - `cn-sigma:threads/peers/bumpt.md` ← Sigma-at-home writes
 
@@ -38,12 +44,12 @@ For Sigma's three current activations:
 On activation, in order:
 
 1. Pull `cn-sigma` and the current peer repo.
-2. Read peer's `.cn-sigma/log.md` from `last_read_foreign_log` (in `cn-sigma:state/peers.md`) to peer HEAD.
-3. Read `cn-sigma:threads/peers/{peer}.md` for directives from home (foreign Sigma scans its own log for the last `Read home directives through cn-sigma@{sha}` entry to find its own cursor).
+2. Read peer's `.cn-sigma/logs/` from `last_read_foreign_log` (in `cn-sigma:state/peers.md`) to peer HEAD — walk the directory; any file changed since the cursor is in range.
+3. Read `cn-sigma:threads/peers/{peer}.md` for directives from home (foreign Sigma scans its own logs for the last `Read home directives through cn-sigma@{sha}` entry to find its own cursor).
 4. Do the work.
-5. Append to the local writer-owned log:
+5. Append to the local writer-owned surface:
    - at home, append to `threads/peers/{peer}.md`;
-   - at the peer, append to `.cn-sigma/log.md`.
+   - at the peer, append to `.cn-sigma/logs/YYYYMMDD.md` (today's file; create it if it doesn't exist yet).
 6. Commit and push.
 7. Home Sigma updates `last_read_foreign_log` in `state/peers.md`.
 8. Foreign Sigma records home-read cursor inline: `## YYYY-MM-DD — Read home directives through cn-sigma@{sha}`.
@@ -55,9 +61,9 @@ Cursors answer "what's new since I last looked?" Each side keeps one number — 
 | Direction | Cursor location | Written by |
 |---|---|---|
 | home reads foreign | `cn-sigma:state/peers.md` → `last_read_foreign_log: <sha>` per peer | home Sigma |
-| foreign reads home | `<foreign>:.cn-sigma/log.md` → dated entry `Read home directives through cn-sigma@<sha>` | foreign Sigma |
+| foreign reads home | `<foreign>:.cn-sigma/logs/YYYYMMDD.md` → dated entry `Read home directives through cn-sigma@<sha>` | foreign Sigma |
 
-Each side stores its cursor in its **own** file. The two-artifact rule holds: no third "cursor table." Each cursor is a Git commit SHA — Git already addresses "the state of a file at a point in time."
+Each side stores its cursor in its **own** surface. Each cursor is a Git commit SHA — Git already addresses "the state of the tree at a point in time," which is why the cursor still works when the foreign side is a directory of per-day files.
 
 On next activation, each side reads from its cursor forward to the other side's HEAD — only what's new. The cursor advances when the reader records "I've consumed up through here." Idempotent re-activation: if a wake crashes before commit, the cursor hasn't advanced, and the next wake re-reads the same range.
 
@@ -71,7 +77,7 @@ The cursor also serves as an implicit receipt. When home sees the foreign cursor
 Body. Free-form markdown. Blank line at end.
 ```
 
-No YAML frontmatter per entry. No `entry_id`. No envelope. The H2 header is the entry boundary; the file's Git history is the trace.
+No YAML frontmatter per entry. No `entry_id`. No envelope. The H2 header is the entry boundary; the file's Git history is the trace. Multiple entries land in the same `YYYYMMDD.md` if multiple activations happen on the same day.
 
 ## §5 Trust boundary
 
@@ -93,7 +99,7 @@ No YAML frontmatter per entry. No `entry_id`. No envelope. The H2 header is the 
 
 ## §7 Single-writer caveat
 
-Single-writer is **logical**, not physical. If concurrent activations race on the same foreign log, the first repair is sharding (`.cn-sigma/log/YYYY-MM-DD.md`), not signatures. Do not prebuild.
+Single-writer is **logical**, not physical. Per-day sharding (`.cn-sigma/logs/YYYYMMDD.md`) is the v0 default and handles the common case (one activation per persona per day, or several activations on the same day appended sequentially). If concurrent activations on the same day still race, the next shard is per-activation or per-hour. Signatures come later under volume/adversarial pressure (`docs/alpha/protocol/WHITEPAPER.md` v1).
 
 ## §8 Origin and evolution
 
