@@ -32,20 +32,20 @@ This convention covers **activations**. Peer↔peer comms is a different design 
 | Surface | Single writer | Direction |
 |---|---|---|
 | `{activation-repo}:.cn-{persona}/logs/YYYYMMDD.md` | Sigma at that activation | foreign → home |
-| `cn-{persona}:activations/{name}.md` | Sigma at home | home → foreign |
+| `cn-{persona}:threads/activations/{activation}/YYYYMMDD.md` | Sigma at home | home → foreign |
 
 Both surfaces are single-writer, append-only, plain markdown. Routing is implicit in the path.
 
-The foreign side **shards per day** as the default form. Each day's activations append to that day's file; a new day creates a new file. A `README.md` at `.cn-{persona}/logs/` describes the convention; per-day files carry only entries. The cursor (a Git commit SHA, see §3) spans the directory naturally — no per-file cursor is needed.
+**Both directions are date-sharded. The stream owner differs, but the stream shape is symmetric.** Each side has a per-activation directory of per-day files; the cursor (a Git commit SHA, see §3) spans each directory naturally — no per-file cursor is needed. Sharding is the v0 default not because of volume but because each activation is a long-lived narrative channel, and durable channels are smaller, more mergeable, and more readable when split by day.
 
-The home side is **one file per activation, top-level** (`cn-{persona}:activations/{name}.md`, alongside `cn-{persona}:state/activations.md`). Home-to-foreign volume is low; sharding has no economy. Top-level placement matches the registry's elevation and signals these are persona-self comms, not work threads. Putting them under `threads/` (alongside `adhoc/`, `mail/`, `reflections/`) would conflate work-conversation threads with persona-internal self-bookkeeping; activations earn their own top-level zone.
+The home-to-foreign side stays under `threads/` because these *are* threads — append-only narrative channels — not registry state. The registry is `state/activations.md` (routing, cursors, durable machine-ish state); the conversation per activation is a thread under `threads/activations/{activation}/`. Mixing them would conflate state with conversation; separating them keeps the ontology clean. A top-level `activations/` directory would be justified later only if an activation becomes a multi-surface object (`activations/cnos/{log,state,receipts,directives}/…`); at v0, one date-sharded thread per activation is simpler.
 
 For Sigma's current activations:
 
 - `cnos:.cn-sigma/logs/YYYYMMDD.md` ← Sigma-at-cnos writes
 - `bumpt:.cn-sigma/logs/YYYYMMDD.md` ← Sigma-at-bumpt (bump-sigma) writes
-- `cn-sigma:activations/cnos.md` ← Sigma-at-home writes
-- `cn-sigma:activations/bumpt.md` ← Sigma-at-home writes
+- `cn-sigma:threads/activations/cnos/YYYYMMDD.md` ← Sigma-at-home writes
+- `cn-sigma:threads/activations/bumpt/YYYYMMDD.md` ← Sigma-at-home writes
 
 ## §2 The activation loop
 
@@ -53,11 +53,11 @@ On activation, in order:
 
 1. Pull `cn-{persona}` and the current activation repo.
 2. Read activation's `.cn-{persona}/logs/` from `last_read_foreign_log` (in `cn-{persona}:state/activations.md`) to activation-repo HEAD — walk the directory; any file changed since the cursor is in range.
-3. Read `cn-{persona}:activations/{name}.md` for directives from home (foreign Sigma scans its own logs for the last `Read home directives through cn-{persona}@{sha}` entry to find its own cursor).
+3. Read `cn-{persona}:threads/activations/{activation}/` for directives from home — walk the directory from the foreign-side cursor (foreign Sigma scans its own logs for the last `Read home directives through cn-{persona}@{sha}` entry to find that cursor) forward to cn-{persona} HEAD.
 4. Do the work.
-5. Append to the local writer-owned surface:
-   - at home, append to `activations/{name}.md`;
-   - at the activation, append to `.cn-{persona}/logs/YYYYMMDD.md` (today's file; create it if it doesn't exist yet).
+5. Append to the local writer-owned surface (create today's file if it doesn't exist yet):
+   - at home, append to `threads/activations/{activation}/YYYYMMDD.md`;
+   - at the activation, append to `.cn-{persona}/logs/YYYYMMDD.md`.
 6. Commit and push.
 7. Home Sigma updates `last_read_foreign_log` in `state/activations.md`.
 8. Foreign Sigma records home-read cursor inline: `## YYYY-MM-DD — Read home directives through cn-{persona}@{sha}`.
@@ -71,7 +71,7 @@ Cursors answer "what's new since I last looked?" Each side keeps one number — 
 | home reads foreign | `cn-{persona}:state/activations.md` → `last_read_foreign_log: <sha>` per activation | home Sigma |
 | foreign reads home | `<activation>:.cn-{persona}/logs/YYYYMMDD.md` → dated entry `Read home directives through cn-{persona}@<sha>` | foreign Sigma |
 
-Each side stores its cursor in its **own** surface. Each cursor is a Git commit SHA — Git already addresses "the state of the tree at a point in time," which is why the cursor still works when the foreign side is a directory of per-day files.
+Each side stores its cursor in its **own** surface. Each cursor is a Git commit SHA — Git already addresses "the state of the tree at a point in time," which is why the cursor still works when either side is a directory of per-day files. The same SHA-as-cursor mechanism applies symmetrically on both directions.
 
 On next activation, each side reads from its cursor forward to the other side's HEAD — only what's new. The cursor advances when the reader records "I've consumed up through here." Idempotent re-activation: if a wake crashes before commit, the cursor hasn't advanced, and the next wake re-reads the same range.
 
@@ -108,7 +108,7 @@ No YAML frontmatter per entry. No `entry_id`. No envelope. The H2 header is the 
 
 ## §7 Single-writer caveat
 
-Single-writer is **logical**, not physical. Per-day sharding (`.cn-{persona}/logs/YYYYMMDD.md`) is the v0 default and handles the common case (one activation per day, or several activations on the same day appended sequentially). If concurrent activations on the same day still race, the next shard is per-activation or per-hour. Signatures come later under volume/adversarial pressure (`docs/alpha/protocol/WHITEPAPER.md` v1).
+Single-writer is **logical**, not physical. Per-day sharding (both directions: foreign `.cn-{persona}/logs/YYYYMMDD.md`, home `threads/activations/{activation}/YYYYMMDD.md`) is the v0 default and handles the common case (one activation per day, or several appended sequentially in the same day's file). If concurrent activations on the same day still race, the next shard is per-activation-hour or per-activation-session. Signatures come later under volume/adversarial pressure (`docs/alpha/protocol/WHITEPAPER.md` v1).
 
 ## §8 Origin and evolution
 
