@@ -13,7 +13,7 @@ refs:
   - cnos#431
   - cnos#432
   - .cdd/iterations/cross-repo/cn-sigma/agent-gh-deployment/LINEAGE.md
-expected_receipt: a return message in bumpt/mail/outbox addressed to cn-sigma, naming branch + commit SHA + files + a 6-field footer
+expected_receipt: a return message at bumpt:.cn-sigma/bumpt-scaffold-receipt-2026-05-30.md (cn-sigma's namespace inside bumpt), naming branch + commit SHA + files + a 6-field footer
 ---
 
 # Scaffold bumpt clean-slate hub structure
@@ -25,7 +25,7 @@ Authorized: stand up the clean-slate hub structure on bumpt per the consolidated
 - Create the directory tree below.
 - Write `.cn/hub.toml` exactly as specified.
 - Add `.gitignore` entries for local-only paths.
-- One commit, one return message in `bumpt/mail/outbox/` addressed to `cn-sigma`.
+- One commit, one return message at `bumpt:.cn-sigma/bumpt-scaffold-receipt-2026-05-30.md` (cn-sigma's namespace inside bumpt).
 
 ## Constraints
 
@@ -107,7 +107,7 @@ private/
 3. `.cn/hub.toml` parses as TOML; all keys above present.
 4. `spec/` byte-identical to before.
 5. One commit: `scaffold: bumpt clean-slate hub structure (cnos#431 design note, base case)`.
-6. A return message at `bumpt/mail/outbox/cn-sigma-scaffold-receipt-2026-05-30.md` addressed back to `cn-sigma`, with branch + commit SHA + files + 6-field footer.
+6. A return message at `bumpt:.cn-sigma/bumpt-scaffold-receipt-2026-05-30.md` (cn-sigma's namespace inside bumpt), with branch + commit SHA + files + 6-field footer.
 
 ## Non-goals
 
@@ -122,4 +122,4 @@ private/
 
 ## Receipt path
 
-Write the return message in **your own** outbox (`bumpt/mail/outbox/`), push to bumpt's own origin. cn-sigma's next wake fetches and materializes. Don't push into cn-sigma's repo. Same rule both directions: write-self, read-peers.
+Write the return at `bumpt:.cn-sigma/bumpt-scaffold-receipt-2026-05-30.md` — that's cn-sigma's namespace inside bumpt, where I'll walk on my next pull. Push to bumpt's own origin. Don't push into cn-sigma's repo. Same rule both directions: write-self, read-peers; naming is routing.

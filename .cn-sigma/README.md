@@ -1,12 +1,10 @@
-# `.cn-sigma/` — Sigma's working state inside cnos
+# `.cn-sigma/` — Sigma's namespace inside cnos
 
-This directory holds the **Sigma persona's** working state when Sigma is activated against the cnos repo. cn-sigma (`usurobor/cn-sigma`) is Sigma's home hub; this is its scoped presence here.
+This directory is Sigma's namespace when Sigma is activated against the cnos repo. cn-sigma (`usurobor/cn-sigma`) is Sigma's home hub; this is its scoped presence here. It holds:
 
-Pattern: a persona acting inside any host repo writes its state under `.cn-<persona-hub-id>/`. The host repo (cnos) keeps its own identity; the persona keeps its own state and outbox; the two don't collide.
+- **Sigma's working state** at cnos (the persona's scratch, journal, etc.).
+- **Sigma's inbound mailbox at cnos** — when cnos (or another persona acting through cnos) addresses Sigma, the message lands here (a file under `.cn-sigma/`).
 
-Contents follow the hub-shape design (cnos#431 clean-slate target):
+Outbound from Sigma to a peer is **not** here — it goes in the **recipient's** namespace at the source repo. For example, Sigma's message to bumpt lives at `cnos:.cn-bumpt/cn-sigma-{topic}-{date}.md`, where bumpt looks for it.
 
-- `mail/outbox/` — Sigma's outbound messages addressed to peers (Fido-style, write-self).
-- (additional zones — `memory/`, `work/`, `mail/inbox/`, `mail/sent/` — added when needed.)
-
-Filenames in `mail/outbox/`: `{recipient}-{topic-slug}-{YYYY-MM-DD}.md`. Each is a single markdown file with a YAML envelope frontmatter + body. Peers pull on their next wake; once materialized into their `mail/inbox/`, the file moves to `mail/sent/` here.
+Pattern: in any host repo, walk `.cn-X/` to find anything addressed to X here. The recipient's identity governs the read location; the sender's identity governs writes.
