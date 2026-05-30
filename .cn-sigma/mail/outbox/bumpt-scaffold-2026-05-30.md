@@ -1,19 +1,19 @@
 ---
 schema: cn.message.v1
-id: 2026-05-30-bumpt-scaffold-001@cnos
-from: cnos
+id: 2026-05-30-bumpt-scaffold-001@cn-sigma
+from: cn-sigma
 to: bumpt
 subject: scaffold bumpt clean-slate hub structure (cnos#431 base case)
 issued_at: 2026-05-30T00:00:00Z
 visibility: public
-authority: operator-via-github (@usurobor) acting through cnos
+authority: operator-via-github (@usurobor) → Sigma persona at cn-sigma
 key_id: null            # base case; signing is layered (cnos#431)
 signature: null
 refs:
   - cnos#431
   - cnos#432
   - .cdd/iterations/cross-repo/cn-sigma/agent-gh-deployment/LINEAGE.md
-expected_receipt: a return message in bumpt/mail/outbox addressed to cnos, naming branch + commit SHA + files + a 6-field footer
+expected_receipt: a return message in bumpt/mail/outbox addressed to cn-sigma, naming branch + commit SHA + files + a 6-field footer
 ---
 
 # Scaffold bumpt clean-slate hub structure
@@ -25,7 +25,7 @@ Authorized: stand up the clean-slate hub structure on bumpt per the consolidated
 - Create the directory tree below.
 - Write `.cn/hub.toml` exactly as specified.
 - Add `.gitignore` entries for local-only paths.
-- One commit, one return message in `bumpt/mail/outbox/` addressed to `cnos`.
+- One commit, one return message in `bumpt/mail/outbox/` addressed to `cn-sigma`.
 
 ## Constraints
 
@@ -107,7 +107,7 @@ private/
 3. `.cn/hub.toml` parses as TOML; all keys above present.
 4. `spec/` byte-identical to before.
 5. One commit: `scaffold: bumpt clean-slate hub structure (cnos#431 design note, base case)`.
-6. A return message at `bumpt/mail/outbox/cnos-scaffold-receipt-2026-05-30.md` addressed back to `cnos`, with branch + commit SHA + files + 6-field footer.
+6. A return message at `bumpt/mail/outbox/cn-sigma-scaffold-receipt-2026-05-30.md` addressed back to `cn-sigma`, with branch + commit SHA + files + 6-field footer.
 
 ## Non-goals
 
@@ -122,4 +122,4 @@ private/
 
 ## Receipt path
 
-Write the return message in **your own** outbox (`bumpt/mail/outbox/`), push to bumpt's own origin. cnos's next wake fetches and materializes. Don't push into cnos. Same rule both directions: write-self, read-peers.
+Write the return message in **your own** outbox (`bumpt/mail/outbox/`), push to bumpt's own origin. cn-sigma's next wake fetches and materializes. Don't push into cn-sigma's repo. Same rule both directions: write-self, read-peers.
