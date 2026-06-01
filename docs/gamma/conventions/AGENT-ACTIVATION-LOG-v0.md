@@ -48,6 +48,8 @@ Sigma is the first adopter. Its current instantiation is:
 - `cn-sigma:threads/activations/cnos/YYYYMMDD.md` ← Sigma-at-home writes
 - `cn-sigma:threads/activations/bumpt/YYYYMMDD.md` ← Sigma-at-home writes
 
+Both sides read each other's `main` HEAD. Channel artifacts (logs, registry, spec) live on `main` by convention; work-in-progress on feature branches is invisible to the channel until merged. See §5 Branch discipline for the full statement.
+
 ## §2 The activation loop
 
 On activation, in order:
@@ -94,6 +96,14 @@ No YAML frontmatter per entry. No `entry_id`. No envelope. The H2 header is the 
 - **Repo push permission** — GitHub does the authentication via deployed token.
 - **Git history** — `git log <file>` answers "did I send this?" with author + commit SHA.
 - **Good enough until** volume forces real signing.
+
+### Branch discipline
+
+The channel reads the activation repo's default branch (`main`). Hub-state surfaces (`.cn-{agent}/logs/`, `state/`, `spec/`) are main-only by convention. Project work on feature branches is invisible to home until merged; merging is the act that makes hub state visible to the channel.
+
+This is a clarification of v0 — not an addition to its trust mechanics. It makes explicit what was already implicit: every cursor in the convention is a Git commit SHA on `main`; every log file the next activation walks is the state at `main` HEAD.
+
+The collision case bump-sigma surfaced 2026-06-01: at a fresh project hub where dev work lives on feature branches by default, hub state can be invisible to home until the feature branch merges. The discipline says: keep hub state on `main`; merge to make it channel-visible.
 
 ## §6 What is deferred at v0
 
