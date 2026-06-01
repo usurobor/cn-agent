@@ -2,32 +2,30 @@
 # auth in a GH Actions context and confirms the action can read the repo and
 # produce a minimal model-generated output.
 #
-# Triggers:
-#   - push to main on this workflow's own path (auto-fires on first add)
-#   - workflow_dispatch (manual re-runs from Actions UI)
+# Trigger: opening an issue whose title contains "claude-test". The action's
+# v1.0 does not yet support workflow_dispatch (per docs/custom-automations.md
+# "coming soon"); the issues-event path is what works today and matches the
+# cnos#432 wake-trigger pattern.
 #
 # Authority: CLAUDE_CODE_OAUTH_TOKEN (operator's Claude Pro/Max subscription
 # token, generated via `claude setup-token`, stored as a repo secret).
-#
-# Read-only test: no commits, no writes. If this run completes with a model
-# output in the job log, we've verified end-to-end auth + invocation.
 #
 # Pre-cnos#434 / cnos#432 / cnos#431 substrate test — not the deployed wake.
 
 name: claude-test
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/claude-test.yml'
-  workflow_dispatch:
+  issues:
+    types: [opened]
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
   test:
+    if: contains(github.event.issue.title, 'claude-test')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,5 +36,4 @@ jobs:
           prompt: |
             Read the project README.md.
             Write a single concise paragraph (3-5 sentences) summarizing
-            what cnos is and what the agent activation log convention does.
-            That summary is your only output.
+            what cnos is. Post your summary as a comment on this issue.
