@@ -63,7 +63,7 @@ On activation, in order:
    - at the activation, append to `.cn-{agent}/logs/YYYYMMDD.md`.
 6. Commit and push.
 7. The home agent updates `last_read_foreign_log` in `state/activations.md`.
-8. The activation records the home-read cursor inline: `## YYYY-MM-DD — Read home directives through cn-{agent}@{sha}`.
+8. The activation records the home-read cursor inline; the entry header carries the wake's full UTC timestamp (e.g., `## 2026-06-01T22:41:09Z — Read home directives through cn-{agent}@{sha}`).
 
 ## §3 Cursor model
 
@@ -83,12 +83,14 @@ The cursor also serves as an implicit receipt. When home sees the activation-sid
 ## §4 Entry format
 
 ```
-## YYYY-MM-DD — short subject
+## YYYY-MM-DDTHH:MM:SSZ — short subject
 
 Body. Free-form markdown. Blank line at end.
 ```
 
-No YAML frontmatter per entry. No `entry_id`. No envelope. The H2 header is the entry boundary; the file's Git history is the trace. Multiple entries land in the same `YYYYMMDD.md` if multiple activations happen on the same day.
+The entry header is a full UTC timestamp (ISO 8601 extended, second precision) plus a short subject. Files are date-sharded (`YYYYMMDD.md`); entries within a file are timestamp-tagged in the header so multiple wakes on the same day are uniquely identifiable and chronologically ordered without inspecting Git history.
+
+No YAML frontmatter per entry. No `entry_id`. No envelope. The H2 header is the entry boundary; the timestamp is the entry's identity within the day; the file's Git history is the trace. Multiple entries land in the same `YYYYMMDD.md` when multiple wakes happen on the same day — each entry's H2 timestamp distinguishes them.
 
 ## §5 Trust boundary
 

@@ -82,7 +82,12 @@ jobs:
             4. Do the work the directives call for. If nothing
                actionable, write a no-op heartbeat per §3.6.
             5. Append today's entry to .cn-sigma/logs/$(date -u +%Y%m%d).md
-               using the convention §4 entry format.
+               (date-sharded file) using the convention §4 entry format.
+               The entry's H2 header carries the wake's full UTC
+               timestamp:
+               `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — <short subject>`
+               so multiple wakes on the same day are uniquely identifiable
+               within the file.
             6. End with the new cursor pin:
                `Read home directives through cn-sigma@<new-sha>.`
 

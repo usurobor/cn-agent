@@ -144,7 +144,7 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 1. **Verify precondition.** This hub's URL must be registered in home's `state/activations.md`. If not, append `deferred to operator: foreign-activation inaugural attach requires home registration at <hub-url>` to the body's working scratchpad and stop. Do not self-register; do not initialize `.cn-{agent}/logs/`. Home must register first.
 2. **Initialize writer-surface.** Create `.cn-{agent}/logs/` if it does not exist. (For first ever attach, this is the directory creation.)
 3. **Read all of home's thread.** Walk `cn-{agent}:threads/activations/{name}/` from start to home HEAD. The thread may be empty; that's a valid signal — there are no inbound directives yet.
-4. **Write inaugural entry.** Append today's entry to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` per the convention's §4 entry format. Body of the entry: name the inaugural binding (e.g., "Inaugural attach at <hub> as Sigma-at-{name}. Walked home thread; no prior directives.").
+4. **Write inaugural entry.** Append today's entry to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` per the convention's §4 entry format. The H2 header carries the wake's full UTC timestamp: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — Inaugural attach at <hub> as Sigma-at-{name}`. Body: name the inaugural binding (e.g., "Walked home thread; no prior directives.").
 5. **Pin inaugural cursor.** End the entry with `Read home directives through cn-{agent}@<sha>.` where `<sha>` is home `main` HEAD as observed in step 3.
 6. **Commit and push** to local hub's `main`.
 
@@ -152,7 +152,7 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 1. **Verify precondition.** This activation must be registered in `state/activations.md`. If `state/activations.md` does not yet name this activation, the registration step is operator-driven — append `deferred to operator: home inaugural attach for activation <name> requires registry entry` and stop.
 2. **Initialize writer-surface.** Create `threads/activations/{name}/` if it does not exist.
 3. **Read all of activation's foreign log.** Clone the activation's hub read-only; walk `.cn-{agent}/logs/` from start to hub HEAD. May be empty.
-4. **Write inaugural entry.** Append to `threads/activations/{name}/$(date -u +%Y%m%d).md`. Body: name the inaugural binding from home's side.
+4. **Write inaugural entry.** Append to `threads/activations/{name}/$(date -u +%Y%m%d).md`. The H2 header carries the wake's full UTC timestamp per convention §4. Body: name the inaugural binding from home's side.
 5. **Advance cursor.** Set `last_read_foreign_log: <sha>` in `state/activations.md` for this activation, where `<sha>` is hub `main` HEAD as observed in step 3.
 6. **Commit and push** to home's `main`.
 
@@ -165,7 +165,7 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 2. **Walk home thread forward.** Read `cn-{agent}:threads/activations/{name}/` from `<sha>` to home `main` HEAD. The walk may span multiple per-day files (one per day since the cursor); read in chronological order.
 3. **Process inbound.** For each directive: apply per standing posture (read from agent's spec and from prior log entries). If a directive is genuinely ambiguous, append `deferred to operator: <reason>` to today's entry and proceed with what is clear. Do not guess on substantive calls.
 4. **Do the work.** Execute what directives + posture call for. If nothing actionable, the entry is a no-op-wake heartbeat (see A5 fix in §1.3).
-5. **Append today's entry.** Add to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` (create today's file if not present). Free-form markdown per convention §4.
+5. **Append today's entry.** Add to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` (create today's file if not present). The H2 header carries the wake's full UTC timestamp: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — <short subject>`. Free-form markdown per convention §4.
 6. **Pin new cursor.** End the entry with `Read home directives through cn-{agent}@<new-sha>.` where `<new-sha>` is home `main` HEAD as observed in step 2.
 7. **Commit and push** to local hub's `main`.
 
@@ -174,7 +174,7 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 2. **Walk activation's foreign log forward.** Clone the hub read-only; read `.cn-{agent}/logs/` from `<sha>` to hub `main` HEAD. May span multiple per-day files.
 3. **Process inbound.** Read each entry; understand what the activation reported, what it ACK'd, what cursors it pinned (the cursor line is an implicit ACK of the directive at that SHA).
 4. **Do the work.** Author home-side response: directives, intake notes, registry updates. The work depends on what the activation surfaced.
-5. **Append today's entry.** Add to `threads/activations/{name}/$(date -u +%Y%m%d).md`.
+5. **Append today's entry.** Add to `threads/activations/{name}/$(date -u +%Y%m%d).md`. H2 header per §4 with the wake's UTC timestamp.
 6. **Advance cursor.** Update `last_read_foreign_log: <new-sha>` in `state/activations.md` to the hub HEAD observed in step 2.
 7. **Commit and push** to home's `main`.
 
