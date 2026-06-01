@@ -1,0 +1,99 @@
+# Wake workflow for Sigma-at-cnos.
+#
+# Trigger: opening an issue whose title contains "claude-wake".
+# Authority: CLAUDE_CODE_OAUTH_TOKEN (operator's Claude Pro/Max subscription
+# token, generated via `claude setup-token`, stored as a repo secret).
+#
+# Substrate: anthropics/claude-code-action@v1 — auth path verified
+# end-to-end in cnos#435..#438; OIDC permission + token format both
+# pinned in commits a42b3d35 and round-4 green (cnos#438).
+#
+# Composition: "Activate and attach as <agent-home-url>" — invokes the
+# two peer skills in cnos.core/skills/agent/{activate,attach}/SKILL.md.
+# The activate skill loads identity (Kernel + CA + Persona + Operator +
+# state + identity confirmation). The attach skill detects mode from
+# PWD origin (foreign-activation here — cnos is registered in
+# cn-sigma:state/activations.md), detects attached state, and executes
+# the foreign-activation follow-up sync procedure (§2.4 of attach
+# skill).
+#
+# Future: scheduled cron once 2-3 manually-triggered wakes produce
+# coherent entries. Initial cadence operator-driven.
+
+name: claude-wake
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  wake:
+    if: contains(github.event.issue.title, 'claude-wake')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Activate and attach as https://github.com/usurobor/cn-sigma.
+
+            ## Activate
+
+            Follow src/packages/cnos.core/skills/agent/activate/SKILL.md
+            in this repository.
+
+            The hub URL is https://github.com/usurobor/cn-sigma. You will
+            need to clone cn-sigma to read its spec/PERSONA.md,
+            spec/OPERATOR.md, and state/. Tier-(a) shell+git is available.
+
+            Complete all six load steps including identity confirmation
+            (§2.1 step 6) before proceeding to attach.
+
+            ## Attach
+
+            Follow src/packages/cnos.core/skills/agent/attach/SKILL.md
+            in this repository.
+
+            Detect mode per §2.1: this repository's PWD origin is
+            https://github.com/usurobor/cnos, which is registered in
+            cn-sigma's state/activations.md as the 'cnos' activation.
+            Mode = foreign-activation.
+
+            Detect attached state per §2.2: grep .cn-sigma/logs/ for the
+            cursor-line pattern `Read home directives through
+            cn-sigma@<sha>.` It exists. Attached state = attached.
+
+            Execute the foreign-activation follow-up sync procedure
+            per §2.4:
+            1. Locate prior cursor.
+            2. Walk cn-sigma:threads/activations/cnos/ from that SHA to
+               cn-sigma main HEAD.
+            3. Process inbound directives per the standing posture
+               (v3.82.0 pause holds; field convention iteration allowed;
+               append-only on logs).
+            4. Do the work the directives call for. If nothing
+               actionable, write a no-op heartbeat per §3.6.
+            5. Append today's entry to .cn-sigma/logs/$(date -u +%Y%m%d).md
+               using the convention §4 entry format.
+            6. End with the new cursor pin:
+               `Read home directives through cn-sigma@<new-sha>.`
+
+            ## Push
+
+            Commit and push to cnos main per attach skill §3.7. Use the
+            commit message pattern:
+            `sigma activation log: <short summary> (cn-sigma@<sha>)`.
+
+            If anything is ambiguous — mode unclear, cursor parse
+            failure, registration check fails, directive interpretation
+            ambiguous — append `deferred to operator: <reason>` to your
+            scratchpad or to today's entry and stop. Do not guess
+            (attach skill §3.8).
