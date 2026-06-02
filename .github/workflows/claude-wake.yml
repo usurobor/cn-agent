@@ -26,9 +26,15 @@ on:
   issues:
     types: [opened]
   schedule:
-    # Every 30 minutes UTC. GH Actions cron is best-effort under load;
-    # actual cadence may drift to 45-60 min during cluster congestion.
-    - cron: '*/30 * * * *'
+    # Every 30 minutes at :13 and :43 (off-peak minutes). GH Actions
+    # docs explicitly mark schedules as best-effort; under high load,
+    # slots at :00 and :30 are routinely DROPPED (not just delayed).
+    # See https://github.com/orgs/community/discussions/156282 and
+    # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+    # — community + official guidance is "avoid :00; use random-ish
+    # minutes." 13,43 keeps the 30-min cadence while sidestepping the
+    # high-load slots that were dropping our runs.
+    - cron: '13,43 * * * *'
 
 permissions:
   contents: write
