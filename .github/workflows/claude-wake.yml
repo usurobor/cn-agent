@@ -26,9 +26,9 @@ on:
   issues:
     types: [opened]
   schedule:
-    # Every 15 minutes UTC. GH Actions cron is best-effort under load;
-    # actual cadence may drift to 30-60 min during cluster congestion.
-    - cron: '*/15 * * * *'
+    # Hourly UTC. GH Actions cron is best-effort under load; actual
+    # cadence may drift to 60-90 min during cluster congestion.
+    - cron: '0 * * * *'
 
 permissions:
   contents: write
