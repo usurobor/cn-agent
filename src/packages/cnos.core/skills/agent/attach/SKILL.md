@@ -130,7 +130,7 @@ Within home and foreign-activation modes, the body is either attached (has prior
 
 The per-mode detection differs because the writer-surfaces differ. Home writes a thread per activation, so attached state is per-activation (some activations may be attached, others may be inaugural — handle each independently in step 3). Foreign-activation writes a single log surface in the local hub, so attached state is global to this body.
 
-The cursor lives in the entry's YAML frontmatter as `cursor_out: <agent>@<sha>` (convention §4). The most recent entry's `cursor_out` (most recent file in `.cn-{agent}/logs/`, last H2 entry in that file) is the active cursor; earlier ones are historical.
+The cursor lives in the entry's YAML frontmatter as `cursor_out: <agent>@<sha>` (convention §4). Scan **bottom-up** to find it: most recent file in `.cn-{agent}/logs/`, last H2 entry in that file, its `cursor_out` value. That's the active cursor; earlier entries are historical. Bottom-up scan finds it in O(1) — do not parse every entry from the top.
 
 - ❌ Body checks if `.cn-{agent}/logs/` directory exists (existence ≠ attached; empty dir is not-attached)
 - ❌ Body greps for any content in the dir (content ≠ cursor; speculative content from earlier failures is not a cursor)

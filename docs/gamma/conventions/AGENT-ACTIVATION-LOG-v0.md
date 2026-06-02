@@ -76,6 +76,8 @@ Cursors answer "what's new since I last looked?" Each side keeps one number — 
 
 Each side stores its cursor in its **own** surface. Each cursor is a Git commit SHA — Git already addresses "the state of the tree at a point in time," which is why the cursor still works when either side is a directory of per-day files. The same SHA-as-cursor mechanism applies symmetrically on both directions.
 
+**Read direction is asymmetric by purpose.** Cursor extraction from own writer-surface is **bottom-up** (most recent entry first) — the latest entry's `cursor_out` is the active cursor; scanning from the bottom of the most recent file finds it in O(1) without parsing every entry. Processing inbound directives from the reader-surface during sync is **forward-chronological** (earliest first) — directives accumulate causally; the first directive's response sets context for later directives. Same file, two read patterns, both correct for their purpose.
+
 On next activation, each side reads from its cursor forward to the other side's HEAD — only what's new. The cursor advances when the reader records "I've consumed up through here." Idempotent re-activation: if a wake crashes before commit, the cursor hasn't advanced, and the next wake re-reads the same range.
 
 The cursor also serves as an implicit receipt. When home sees the activation-side cursor match the commit SHA where it wrote a directive, that's the ACK — no separate receipt-message needed.
