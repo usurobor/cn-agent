@@ -25,12 +25,24 @@ name: claude-wake
 on:
   issues:
     types: [opened]
+  schedule:
+    # Every 15 minutes UTC. GH Actions cron is best-effort under load;
+    # actual cadence may drift to 30-60 min during cluster congestion.
+    - cron: '*/15 * * * *'
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
   id-token: write
+
+# Serialize wakes — never run two in parallel. Concurrent wakes would
+# race on the channel surface (.cn-sigma/logs/) and produce duplicate
+# entries or push conflicts. cancel-in-progress: false queues the new
+# trigger behind any in-flight wake.
+concurrency:
+  group: claude-wake
+  cancel-in-progress: false
 
 jobs:
   wake:
