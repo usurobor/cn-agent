@@ -72,7 +72,7 @@ A complete attach has these parts:
 - **Writer-surface** — this body's own surface; the only place this body writes.
 - **Cursor** — a Git commit SHA on the reader-surface marking how far this body has read.
 - **Inbound directives** — content on the reader-surface since the cursor; what this body must read on this wake.
-- **Today's entry** — what this body appends to its writer-surface on this wake, ending with the cursor pin.
+- **Today's entry** — what this body appends to its writer-surface on this wake, carrying the cursor in its frontmatter (`cursor_out`).
 
 - ❌ "I'll write an entry and figure out the cursor later" (cursor without read = drift)
 - ✅ "I read the directives from cursor to HEAD; the entry I write reflects them and pins the new cursor"
@@ -91,8 +91,8 @@ The cursor is the only state that crosses wakes. Identity is reloaded every wake
 Attach fails in five named ways. Each has a structural fix in §2.
 
 - **A1 — Silent self-registration.** Body lands at a hub not registered in home's `state/activations.md`, assumes the registration is its own responsibility, writes a `.cn-{agent}/logs/` entry, and silently establishes a channel home does not know about. Fix: §2.4 requires deferring to operator when preconditions are missing — never self-register.
-- **A2 — Cursor without read.** Body writes a cursor pin without walking the reader-surface from the prior cursor to current HEAD. The cursor advances but the directives go unread. Fix: §2.5 procedure for follow-up sync makes the walk mandatory before the cursor pin.
-- **A3 — Read without cursor advance.** Body walks the reader-surface but forgets to pin the new cursor. The next wake re-reads the same window — wasteful but not corrupting. Fix: §2.5 makes the cursor pin the last line of the entry; missing it is observable on review.
+- **A2 — Cursor without read.** Body writes `cursor_out` in the entry's frontmatter without walking the reader-surface from prior cursor to current HEAD. The cursor advances but the directives go unread. Fix: §2.5 procedure for follow-up sync makes the walk mandatory before writing `cursor_out`.
+- **A3 — Read without cursor advance.** Body walks the reader-surface but forgets to set `cursor_out` (or sets it equal to `cursor_in` when it should advance). The next wake re-reads the same window — wasteful but not corrupting. Fix: §2.5 makes `cursor_out` required in every entry's frontmatter; missing or stale `cursor_out` is observable on review.
 - **A4 — Wrong mode.** Body misdetects its environment (e.g., assumes home when at a foreign hub), reads/writes the wrong surfaces. Fix: §2.1 detection rule is explicit (compare `pwd` origin to registered URLs); ambiguous cases defer to operator.
 - **A5 — Speculative entry on empty reader-surface.** Body finds the reader-surface empty (no prior directives from home), invents work to do, writes an entry that doesn't reflect the channel. Fix: §2.5 no-op-wake policy — when there's nothing on the reader side and no posture-aligned work, write a brief "no-op wake — channel heartbeat" entry, not speculative content.
 
@@ -125,16 +125,16 @@ Within home and foreign-activation modes, the body is either attached (has prior
 | Mode | Detection |
 |------|-----------|
 | **home** | for each registered activation: does `threads/activations/{name}/` contain any prior entry? Per-activation, not global. |
-| **foreign-activation** | does `.cn-{agent}/logs/` contain any file with a line matching `Read home directives through cn-{agent}@<sha>.`? |
+| **foreign-activation** | does `.cn-{agent}/logs/` contain any entry whose frontmatter declares `cursor_out: <agent>@<sha>`? |
 | **ephemeral** | always not-attached (no persistence across wakes) |
 
 The per-mode detection differs because the writer-surfaces differ. Home writes a thread per activation, so attached state is per-activation (some activations may be attached, others may be inaugural — handle each independently in step 3). Foreign-activation writes a single log surface in the local hub, so attached state is global to this body.
 
-The cursor-line pattern in foreign-activation mode is the convention's §3 marker: `Read home directives through cn-{agent}@<sha>.` That literal phrase, including the punctuation, is the cursor. The most recent occurrence across all files in `.cn-{agent}/logs/` is the active cursor; earlier ones are historical.
+The cursor lives in the entry's YAML frontmatter as `cursor_out: <agent>@<sha>` (convention §4). The most recent entry's `cursor_out` (most recent file in `.cn-{agent}/logs/`, last H2 entry in that file) is the active cursor; earlier ones are historical.
 
 - ❌ Body checks if `.cn-{agent}/logs/` directory exists (existence ≠ attached; empty dir is not-attached)
 - ❌ Body greps for any content in the dir (content ≠ cursor; speculative content from earlier failures is not a cursor)
-- ✅ Body greps for the literal cursor-line pattern; if found anywhere, attached; else not-attached
+- ✅ Body greps for `cursor_out:` in `.cn-{agent}/logs/`; if any entry has it, attached; else not-attached
 
 ### 2.3. Inaugural attach procedure
 
@@ -145,7 +145,7 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 2. **Initialize writer-surface.** Create `.cn-{agent}/logs/` if it does not exist. (For first ever attach, this is the directory creation.)
 3. **Read all of home's thread.** Walk `cn-{agent}:threads/activations/{name}/` from start to home HEAD. The thread may be empty; that's a valid signal — there are no inbound directives yet.
 4. **Write inaugural entry.** Append today's entry to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` per the convention's §4 entry format. The H2 header carries the wake's full UTC timestamp: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — Inaugural attach at <hub> as Sigma-at-{name}`. Body: name the inaugural binding (e.g., "Walked home thread; no prior directives.").
-5. **Pin inaugural cursor.** End the entry with `Read home directives through cn-{agent}@<sha>.` where `<sha>` is home `main` HEAD as observed in step 3.
+5. **Pin inaugural cursor.** Set `cursor_in: <agent>@<sha>` and `cursor_out: <agent>@<sha>` in the entry's frontmatter, both equal to home `main` HEAD as observed in step 3. Set `class: inaugural`.
 6. **Commit and push** to local hub's `main`.
 
 **Home inaugural attach (per activation):**
@@ -161,18 +161,18 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attached state = attached).
 
 **Foreign-activation sync:**
-1. **Locate prior cursor.** Find the most recent file in `.cn-{agent}/logs/` containing `Read home directives through cn-{agent}@<sha>.` Extract `<sha>`. This is the prior cursor.
+1. **Locate prior cursor.** Find the most recent entry in `.cn-{agent}/logs/` (most recent file, last H2 entry within it). Read `cursor_out: <agent>@<sha>` from its frontmatter. This `<sha>` is the prior cursor.
 2. **Walk home thread forward.** Read `cn-{agent}:threads/activations/{name}/` from `<sha>` to home `main` HEAD. The walk may span multiple per-day files (one per day since the cursor); read in chronological order.
 3. **Process inbound.** For each directive: apply per standing posture (read from agent's spec and from prior log entries). If a directive is genuinely ambiguous, append `deferred to operator: <reason>` to today's entry and proceed with what is clear. Do not guess on substantive calls.
 4. **Do the work.** Execute what directives + posture call for. If nothing actionable, the entry is a no-op-wake heartbeat (see A5 fix in §1.3).
 5. **Append today's entry.** Add to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` (create today's file if not present). The H2 header carries the wake's full UTC timestamp: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — <short subject>`. Free-form markdown per convention §4.
-6. **Pin new cursor.** End the entry with `Read home directives through cn-{agent}@<new-sha>.` where `<new-sha>` is home `main` HEAD as observed in step 2.
+6. **Pin new cursor.** Set `cursor_in: <agent>@<prior-sha>` and `cursor_out: <agent>@<new-sha>` in the entry's frontmatter. `<new-sha>` is home `main` HEAD as observed in step 2; equal to `<prior-sha>` if the walk found nothing (heartbeat case). Set `class: substantive` if work was done, `heartbeat` if no-op.
 7. **Commit and push** to local hub's `main`.
 
 **Home sync (per registered activation):**
 1. **Locate prior cursor.** Read `last_read_foreign_log: <sha>` from `state/activations.md` for this activation.
 2. **Walk activation's foreign log forward.** Clone the hub read-only; read `.cn-{agent}/logs/` from `<sha>` to hub `main` HEAD. May span multiple per-day files.
-3. **Process inbound.** Read each entry; understand what the activation reported, what it ACK'd, what cursors it pinned (the cursor line is an implicit ACK of the directive at that SHA).
+3. **Process inbound.** Read each entry; understand what the activation reported, what it ACK'd, what `cursor_out` it set (the cursor in frontmatter is an implicit ACK of the directive at that SHA).
 4. **Do the work.** Author home-side response: directives, intake notes, registry updates. The work depends on what the activation surfaced.
 5. **Append today's entry.** Add to `threads/activations/{name}/$(date -u +%Y%m%d).md`. H2 header per §4 with the wake's UTC timestamp.
 6. **Advance cursor.** Update `last_read_foreign_log: <new-sha>` in `state/activations.md` to the hub HEAD observed in step 2.
@@ -230,12 +230,12 @@ If a foreign-activation inaugural attach finds the hub unregistered in home's `s
 - ❌ "I'll write an entry; home will figure it out"
 - ✅ "Hub not registered; deferred to operator; no writer-surface initialization"
 
-### 3.5. Cursor pin is the last line of every entry
+### 3.5. Cursor lives in entry frontmatter
 
-Every follow-up sync entry ends with `Read home directives through cn-{agent}@<sha>.` (foreign side) or implies cursor advance via `last_read_foreign_log` (home side). Entries without the cursor pin are observable on review and indicate A3 (read without cursor advance).
+Every entry's YAML frontmatter declares `cursor_in` and `cursor_out` (foreign side). Home side declares the same plus advances `last_read_foreign_log` in `state/activations.md`. Entries without `cursor_out` in frontmatter are malformed; A3 (read without cursor advance) is observable as `cursor_in == cursor_out` when there were unread commits to process.
 
-- ❌ Entry ends with body content; cursor implied
-- ✅ Entry ends with the literal cursor-pin line
+- ❌ Entry body mentions a cursor in prose only; frontmatter missing
+- ✅ Frontmatter declares both `cursor_in` and `cursor_out` explicitly
 
 ### 3.6. No-op wake writes a heartbeat, not silence
 
@@ -268,7 +268,7 @@ Confirm the body runs `git -C $PWD remote get-url origin` and compares against h
 
 ### 4.2. Attached-state check
 
-Confirm the writer-surface grep procedure for both home (per-activation thread directory) and foreign-activation (`.cn-{agent}/logs/` for cursor line). Confirm the literal cursor-line pattern is named exactly.
+Confirm the writer-surface grep procedure for both home (per-activation thread directory) and foreign-activation (`.cn-{agent}/logs/` for `cursor_out:` in entry frontmatter). Confirm the frontmatter field name is exact.
 
 ### 4.3. Procedure-completeness check
 
@@ -290,13 +290,13 @@ The five named failure modes from §1.3 plus three implementation-level ones:
 
 - **A1 — Silent self-registration.** _Symptom:_ Foreign activation appears in `.cn-{agent}/logs/` without `state/activations.md` registration. _Fix:_ §3.4 + §2.3 precondition.
 - **A2 — Cursor without read.** _Symptom:_ Cursor pin in entry but no evidence of having walked the reader surface from prior cursor. _Fix:_ §2.4 follow-up sync requires the walk.
-- **A3 — Read without cursor advance.** _Symptom:_ Entry has content reflecting reader-surface but no cursor pin. Next wake re-reads same window. _Fix:_ §3.5 cursor pin is the last line.
+- **A3 — Read without cursor advance.** _Symptom:_ Entry body reflects reader-surface walk but frontmatter has `cursor_out == cursor_in`. Next wake re-reads same window. _Fix:_ §3.5 — `cursor_out` must reflect the actual HEAD observed during the walk.
 - **A4 — Wrong mode.** _Symptom:_ Body writes to home's `threads/activations/` when activated at a foreign hub. _Fix:_ §3.2 mandatory mode detection.
 - **A5 — Speculative entry on empty reader-surface.** _Symptom:_ Body invents work; entry doesn't ground in inbound directives. _Fix:_ §3.6 no-op heartbeat policy.
 
 Implementation-level:
 
-- **A6 — Cursor parse error.** _Symptom:_ Body finds a malformed cursor line (typo, partial match) and either crashes or misreads. _Fix:_ exact-match against the canonical pattern; if no exact match, treat as not-attached and defer to operator.
+- **A6 — Cursor parse error.** _Symptom:_ Body finds malformed YAML frontmatter (typo, partial match, missing `cursor_out`) and either crashes or misreads. _Fix:_ strict YAML parse of frontmatter block; if no valid `cursor_out`, treat as not-attached and defer to operator.
 - **A7 — Concurrent wake collision.** _Symptom:_ Two wakes write to the same `YYYYMMDD.md` and one's push is rejected. _Fix:_ append-only with rebase-on-push; if rebase fails, defer to operator (the convention's §7 single-writer caveat covers this).
 - **A8 — Stale clone for read.** _Symptom:_ Body uses an old clone of home and reads stale directives. _Fix:_ `git fetch + git log origin/main` immediately before the walk; cursor compared against `origin/main` HEAD, not local HEAD.
 

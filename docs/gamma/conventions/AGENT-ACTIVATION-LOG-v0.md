@@ -63,7 +63,7 @@ On activation, in order:
    - at the activation, append to `.cn-{agent}/logs/YYYYMMDD.md`.
 6. Commit and push.
 7. The home agent updates `last_read_foreign_log` in `state/activations.md`.
-8. The activation records the home-read cursor inline; the entry header carries the wake's full UTC timestamp (e.g., `## 2026-06-01T22:41:09Z — Read home directives through cn-{agent}@{sha}`).
+8. The activation records the home-read cursor in the entry's frontmatter (`cursor_out: cn-{agent}@<sha>`); the H2 header carries the wake's full UTC timestamp.
 
 ## §3 Cursor model
 
@@ -72,7 +72,7 @@ Cursors answer "what's new since I last looked?" Each side keeps one number — 
 | Direction | Cursor location | Written by |
 |---|---|---|
 | home reads foreign | `cn-{agent}:state/activations.md` → `last_read_foreign_log: <sha>` per activation | the agent at home |
-| foreign reads home | `<activation>:.cn-{agent}/logs/YYYYMMDD.md` → dated entry `Read home directives through cn-{agent}@<sha>` | the agent at that activation |
+| foreign reads home | `<activation>:.cn-{agent}/logs/YYYYMMDD.md` → entry frontmatter `cursor_out: <agent>@<sha>` (most recent entry's value) | the agent at that activation |
 
 Each side stores its cursor in its **own** surface. Each cursor is a Git commit SHA — Git already addresses "the state of the tree at a point in time," which is why the cursor still works when either side is a directory of per-day files. The same SHA-as-cursor mechanism applies symmetrically on both directions.
 
@@ -85,12 +85,30 @@ The cursor also serves as an implicit receipt. When home sees the activation-sid
 ```
 ## YYYY-MM-DDTHH:MM:SSZ — short subject
 
+---
+at: <hub-name>
+mode: home | foreign-activation | ephemeral
+cursor_in: <agent>@<sha>
+cursor_out: <agent>@<sha>
+class: substantive | heartbeat | inaugural | directive-out
+---
+
 Body. Free-form markdown. Blank line at end.
 ```
 
-The entry header is a full UTC timestamp (ISO 8601 extended, second precision) plus a short subject. Files are date-sharded (`YYYYMMDD.md`); entries within a file are timestamp-tagged in the header so multiple wakes on the same day are uniquely identifiable and chronologically ordered without inspecting Git history.
+The entry header is a full UTC timestamp (ISO 8601 extended, second precision) plus a short subject. Files are date-sharded (`YYYYMMDD.md`); entry H2 timestamps make multiple wakes on the same day uniquely identifiable and chronologically ordered without inspecting Git history.
 
-No YAML frontmatter per entry. No `entry_id`. No envelope. The H2 header is the entry boundary; the timestamp is the entry's identity within the day; the file's Git history is the trace. Multiple entries land in the same `YYYYMMDD.md` when multiple wakes happen on the same day — each entry's H2 timestamp distinguishes them.
+Frontmatter is YAML, five required fields:
+
+- **at:** the hub this entry was written from (e.g., `cnos`, `bumpt`, `cn-sigma`). Disambiguates which body authored when reading across hubs.
+- **mode:** the attach mode this wake operated in. `home` = home reading foreign logs; `foreign-activation` = body at a registered hub reading home's thread; `ephemeral` = no persistent channel.
+- **cursor_in:** the other-side cursor SHA at start of this wake (where the read began).
+- **cursor_out:** the other-side cursor SHA at end of this wake. Equal to `cursor_in` when no advance (heartbeat, directive-out, etc.).
+- **class:** entry type — `substantive` (real walk with work done), `heartbeat` (no-op cursor advance), `inaugural` (first attach), `directive-out` (outbound directive, no walk).
+
+Body author and timestamp come from Git metadata (`git log <file>`); no need to duplicate in frontmatter.
+
+Multiple entries within a single `YYYYMMDD.md` are bottom-appended in chronological order. Cursor extraction reads `cursor_out` from the most recent (last) entry's frontmatter.
 
 ## §5 Trust boundary
 

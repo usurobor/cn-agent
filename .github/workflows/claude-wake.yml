@@ -83,13 +83,17 @@ jobs:
                actionable, write a no-op heartbeat per §3.6.
             5. Append today's entry to .cn-sigma/logs/$(date -u +%Y%m%d).md
                (date-sharded file) using the convention §4 entry format.
-               The entry's H2 header carries the wake's full UTC
-               timestamp:
-               `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — <short subject>`
-               so multiple wakes on the same day are uniquely identifiable
-               within the file.
-            6. End with the new cursor pin:
-               `Read home directives through cn-sigma@<new-sha>.`
+               H2 header: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — <short subject>`.
+               Required YAML frontmatter block immediately after the H2:
+                 at: cnos
+                 mode: foreign-activation
+                 cursor_in: cn-sigma@<prior-sha>
+                 cursor_out: cn-sigma@<new-sha>
+                 class: substantive | heartbeat
+               Where <new-sha> is cn-sigma main HEAD at intake; equal to
+               <prior-sha> if the walk found nothing (heartbeat case).
+               Class is `substantive` when work was done, `heartbeat`
+               for no-op wakes.
 
             ## Push
 
