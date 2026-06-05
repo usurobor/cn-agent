@@ -18,7 +18,21 @@ A minimal two-artifact, single-writer, append-only convention for cross-activati
 
 This is a **field convention** for the topology we have: one agent identity across multiple bodies, one operator owning all push permissions. The whitepaper v1 elaborations (signed + entry-IDed + union-merged) and cnos#150 (ref-based packets) solve problems for a different topology — adversarial routing, distrusted operators, cross-organization peer comms. Evolve toward those elaborations only when the actual topology forces it; do not pre-build for hypothetical adversaries. See [WHITEPAPER.md](../../alpha/protocol/WHITEPAPER.md) and [MESSAGE-PACKET-TRANSPORT.md](../../alpha/protocol/MESSAGE-PACKET-TRANSPORT.md) for what those elaborations look like when needed.
 
-## §0 Agents, activations, and peers
+## §0 Writer Locality invariant
+
+**Writer locality (hard).** Every body writes only to its own repo. Cross-repo communication is exclusively read-direction. No body ever pushes, comments, or dispatches with payload to another body's repo.
+
+Consequences:
+- Foreign hubs write to `{hub}:.cn-{agent}/logs/` only.
+- Home writes to `cn-{agent}:threads/activations/{name}/` and `cn-{agent}:threads/reflections/` only.
+- No cross-repo PR comments. No cross-repo `repository_dispatch` with payload. No PATs at foreign hubs for write.
+- Notification flows back via pull: home reads, home decides what to surface.
+
+**Single writer per surface** (§6 Trust boundary) is a derived consequence of this invariant: writer locality is the topology; single-writer-per-surface is the file-level enforcement of that topology. A body that would violate writer locality necessarily violates single-writer-per-surface — but the invariant named here is architectural, not file-level.
+
+This invariant prevents a class of design pressure that recurs when notification or relay flows are considered: the instinct is "push notification cross-repo," but writer locality forecloses that direction entirely. Notification flows via pull — home reads the foreign log, home decides what to surface.
+
+## §1 Agents, activations, and peers
 
 A clear conceptual distinction:
 
@@ -28,7 +42,7 @@ A clear conceptual distinction:
 
 This convention covers **activations of one agent identity**. Peer↔peer comms is a different design problem (different identity, separate trust boundary, different lifecycle); deferred until the first peer registers.
 
-## §1 The two artifacts
+## §2 The two artifacts
 
 | Surface | Single writer | Direction |
 |---|---|---|
@@ -37,7 +51,7 @@ This convention covers **activations of one agent identity**. Peer↔peer comms 
 
 Both surfaces are single-writer, append-only, plain markdown. Routing is implicit in the path.
 
-**Both directions are date-sharded. The stream owner differs, but the stream shape is symmetric.** Each side has a per-activation directory of per-day files; the cursor (a Git commit SHA, see §3) spans each directory naturally — no per-file cursor is needed. Sharding is the v0 default not because of volume but because each activation is a long-lived narrative channel, and durable channels are smaller, more mergeable, and more readable when split by day.
+**Both directions are date-sharded. The stream owner differs, but the stream shape is symmetric.** Each side has a per-activation directory of per-day files; the cursor (a Git commit SHA, see §4) spans each directory naturally — no per-file cursor is needed. Sharding is the v0 default not because of volume but because each activation is a long-lived narrative channel, and durable channels are smaller, more mergeable, and more readable when split by day.
 
 The home-to-foreign side stays under `threads/` because these *are* threads — append-only narrative channels — not registry state. The registry is `state/activations.md` (routing, cursors, durable machine-ish state); the conversation per activation is a thread under `threads/activations/{activation}/`. Mixing them would conflate state with conversation; separating them keeps the ontology clean. A top-level `activations/` directory would be justified later only if an activation becomes a multi-surface object (`activations/cnos/{log,state,receipts,directives}/…`); at v0, one date-sharded thread per activation is simpler.
 
@@ -48,9 +62,9 @@ Sigma is the first adopter. Its current instantiation is:
 - `cn-sigma:threads/activations/cnos/YYYYMMDD.md` ← Sigma-at-home writes
 - `cn-sigma:threads/activations/bumpt/YYYYMMDD.md` ← Sigma-at-home writes
 
-Both sides read each other's `main` HEAD. Channel artifacts (logs, registry, spec) live on `main` by convention; work-in-progress on feature branches is invisible to the channel until merged. See §5 Branch discipline for the full statement.
+Both sides read each other's `main` HEAD. Channel artifacts (logs, registry, spec) live on `main` by convention; work-in-progress on feature branches is invisible to the channel until merged. See §6 Branch discipline for the full statement.
 
-## §2 The activation loop
+## §3 The activation loop
 
 On activation, in order:
 
@@ -65,7 +79,7 @@ On activation, in order:
 7. The home agent updates `last_read_foreign_log` in `state/activations.md`.
 8. The activation records the home-read cursor in the entry's frontmatter (`cursor_out: cn-{agent}@<sha>`); the H2 header carries the wake's full UTC timestamp.
 
-## §3 Cursor model
+## §4 Cursor model
 
 Cursors answer "what's new since I last looked?" Each side keeps one number — a Git commit SHA — marking how far it has read the other side's stream.
 
@@ -82,7 +96,7 @@ On next activation, each side reads from its cursor forward to the other side's 
 
 The cursor also serves as an implicit receipt. When home sees the activation-side cursor match the commit SHA where it wrote a directive, that's the ACK — no separate receipt-message needed.
 
-## §4 Entry format
+## §5 Entry format
 
 ```
 ## YYYY-MM-DDTHH:MM:SSZ — short subject
@@ -112,9 +126,9 @@ Body author and timestamp come from Git metadata (`git log <file>`); no need to 
 
 Multiple entries within a single `YYYYMMDD.md` are bottom-appended in chronological order. Cursor extraction reads `cursor_out` from the most recent (last) entry's frontmatter.
 
-## §5 Trust boundary
+## §6 Trust boundary
 
-- **Single writer per file** — home writes only the home thread; each activation writes only its own local log.
+- **Single writer per file** — home writes only the home thread; each activation writes only its own local log. This is the file-level enforcement of the §0 Writer Locality invariant.
 - **Repo push permission** — GitHub does the authentication via deployed token.
 - **Git history** — `git log <file>` answers "did I send this?" with author + commit SHA.
 - **Good enough until** volume forces real signing.
@@ -127,7 +141,7 @@ This is a clarification of v0 — not an addition to its trust mechanics. It mak
 
 The collision case bump-sigma surfaced 2026-06-01: at a fresh project hub where dev work lives on feature branches by default, hub state can be invisible to home until the feature branch merges. The discipline says: keep hub state on `main`; merge to make it channel-visible.
 
-## §6 What is deferred at v0
+## §7 What is deferred at v0
 
 | Deferred | Why deferred at v0 |
 |---|---|
@@ -139,18 +153,18 @@ The collision case bump-sigma surfaced 2026-06-01: at a fresh project hub where 
 | Ref-based packets (cnos#150) | Future evolution at higher volume and adversarial routing. |
 | Peer↔peer convention | Different agent identities mean a separate trust boundary; design when the first peer lands. |
 
-## §7 Single-writer caveat
+## §8 Single-writer caveat
 
 Single-writer is **logical**, not physical. Per-day sharding (both directions: foreign `.cn-{agent}/logs/YYYYMMDD.md`, home `threads/activations/{activation}/YYYYMMDD.md`) is the v0 default and handles the common case (one activation per day, or several appended sequentially in the same day's file). If concurrent activations on the same day still race, the next shard is per-activation-hour or per-activation-session. Signatures belong to a different topology — adversarial routing, distrusted operators — not to a more-volume version of this one (`docs/alpha/protocol/WHITEPAPER.md` v1).
 
-## §8 Origin and evolution
+## §9 Origin and evolution
 
 - **Origin:** `cn-sigma:spec/OPERATOR.md` § Activation logs (commit `7d8edc0`, 2026-05-30). Sigma is the first adopter; predecessor "Sigma peer log v0" (`89404dd`) was renamed to reflect the activations/peers conceptual split.
 - **Generalization:** The Sigma-specific `SIGMA-ACTIVATION-LOG-v0.md` name is superseded by this agent-level convention. The mechanics are unchanged; the scope is now any agent identity with a home hub and foreign activations.
 - **Field writeup:** `cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md` (rationale + open questions).
 - **Different-topology elaborations:** [WHITEPAPER.md](../../alpha/protocol/WHITEPAPER.md) v1 (signed envelopes, entry IDs, union merge) and [MESSAGE-PACKET-TRANSPORT.md](../../alpha/protocol/MESSAGE-PACKET-TRANSPORT.md) (cnos#150, ref-based packets) solve problems for topologies v0 does not have (adversarial routing, distrusted operators, cross-organization peer comms). They are not the next version of v0; they are the right tools when the topology changes. Cross-reference: `cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md § Reframe 2026-06-01` for the full topology argument.
 
-## §9 Naming
+## §10 Naming
 
 The canonical name is **Agent Activation Log Convention v0**.
 
