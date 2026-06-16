@@ -7,7 +7,7 @@ scope: cross-activation continuity for one agent identity operating across multi
 related:
   - cn-sigma:spec/OPERATOR.md § Activation logs
   - cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md
-  - cn-sigma:state/activations.md
+  - cn-sigma:.cn-sigma/state/activations.md
   - docs/alpha/protocol/WHITEPAPER.md
   - docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md (cnos#150)
 ---
@@ -61,8 +61,8 @@ Sigma is the first adopter. Its current instantiation is:
 
 - `cnos:.cn-sigma/logs/YYYYMMDD.md` ← Sigma-at-cnos writes
 - `bumpt:.cn-sigma/logs/YYYYMMDD.md` ← Sigma-at-bumpt (bump-sigma) writes
-- `cn-sigma:threads/activations/cnos/YYYYMMDD.md` ← Sigma-at-home writes
-- `cn-sigma:threads/activations/bumpt/YYYYMMDD.md` ← Sigma-at-home writes
+- `cn-sigma:.cn-sigma/threads/activations/cnos/YYYYMMDD.md` ← Sigma-at-home writes
+- `cn-sigma:.cn-sigma/threads/activations/bumpt/YYYYMMDD.md` ← Sigma-at-home writes
 
 Both sides read each other's `main` HEAD. Channel artifacts (logs, registry, spec) live on `main` by convention; work-in-progress on feature branches is invisible to the channel until merged. See §6 Branch discipline for the full statement.
 
