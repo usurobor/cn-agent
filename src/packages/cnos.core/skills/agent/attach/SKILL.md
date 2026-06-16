@@ -66,7 +66,7 @@ The four-step shape is total. Skipping detection (steps 1–2) produces the fail
 
 A complete attach has these parts:
 
-- **Mode** — which channel surface applies here (home / foreign-activation / ephemeral).
+- **Mode** — which channel surface applies here (home / foreign-activation / ephemeral). Within foreign-activation: Tier 1a (substrate repo, has local agent identity files) vs Tier 1b (pure-product hub, identity from canonical). Channel surfaces are the same for both; shape is recorded in the entry's frontmatter.
 - **Attached state** — whether prior cursor evidence exists in the body's writer-surface.
 - **Reader-surface** — the other side's surface this body reads.
 - **Writer-surface** — this body's own surface; the only place this body writes.
@@ -107,16 +107,30 @@ The body's environment determines which channel surface applies. Detection is `p
 | Mode | Detected when | Reader-surface | Writer-surface |
 |------|---------------|----------------|----------------|
 | **home** | `git -C $PWD remote get-url origin` matches the agent's home URL | each registered activation's `.cn-{agent}/logs/` (clone each hub read-only) | `threads/activations/{name}/YYYYMMDD.md` per activation in the home repo |
-| **foreign-activation** | `pwd` origin matches a hub registered in home's `state/activations.md` | home's `threads/activations/{name}/` for this activation (clone home read-only) | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
+| **foreign-activation (Tier 1a — substrate repo)** | `pwd` origin matches a registered hub AND identity-pair complete (PERSONA.md + OPERATOR.md both present at containerized or legacy root path per `activate/SKILL.md §2.5`) | home's `threads/activations/{name}/` for this activation | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
+| **foreign-activation (Tier 1b — pure-product hub)** | `pwd` origin matches a registered hub AND no identity files present (neither complete pair) | home's `threads/activations/{name}/` for this activation | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
+| **degraded (mode_ambiguous)** | `pwd` origin matches a registered hub AND identity files are partially present or cross-path (per `activate/SKILL.md §2.5`) | N/A — do not attach | emit degraded receipt → stdout; no `.cn-{agent}/logs/` write |
 | **ephemeral** | neither: no matching `pwd` origin (web session, container, ad-hoc) | spec + operator-passed context (no Git surface) | activation receipt → stdout, no commit |
 
 The detection requires reading home's `state/activations.md` once to know which hub URLs are registered. The activated agent already has home cloned (per the activate skill's tier-(a) procedure); the registry lookup is a single file read.
+
+**Foreign-activation sub-branch (Tier 1a vs 1b).** Within foreign-activation mode the channel surfaces (reader and writer) are the same regardless of hub shape — both Tier 1a and Tier 1b write to `.cn-{agent}/logs/` in the foreign hub and read from home's `threads/activations/{name}/`. The shape difference affects only how identity was loaded (handled by `activate/SKILL.md §2.5`, not this skill). The body records the activate-detected shape in the entry's frontmatter via two named fields:
+
+```yaml
+identity_shape: tier-1a | tier-1b
+identity_source: local-containerized | local-legacy | canonical-home
+```
+
+**Degraded mode (mode_ambiguous).** If `activate/SKILL.md §2.5` detected `mode_ambiguous` (partial or cross-path identity files), attach MUST NOT write a normal entry as if activation succeeded. Instead, emit a degraded receipt to stdout (following the ephemeral procedure from §2.5) with `class: degraded` and `degraded_reason: mode_ambiguous`. No `.cn-{agent}/logs/` write. Defer to operator.
 
 If `pwd` origin matches neither home nor a registered activation, the mode is ephemeral. Ephemeral is a real mode, not an error: it covers web sessions, containers, and ad-hoc bodies that have no persistent channel surface.
 
 - ❌ Body assumes home because it cloned cn-sigma during activate (clone ≠ origin)
 - ❌ Body assumes foreign-activation because cn-sigma is in its hub list (working dir matters, not what's been cloned)
+- ❌ Body treats Tier 1b (no local spec) as ephemeral just because there's no local PERSONA.md — if origin matches a registered hub, it's foreign-activation
+- ❌ Body at `mode_ambiguous` hub writes a normal attach entry as if activation succeeded — degraded state must not produce a normal channel entry
 - ✅ Body runs `git -C $PWD remote get-url origin`, compares to home URL and registered activation URLs, picks the match
+- ✅ Body with `mode_ambiguous` activate result emits a degraded receipt to stdout and stops; does not initialize `.cn-{agent}/logs/`
 
 ### 2.2. Attached-state detection
 
@@ -310,7 +324,7 @@ Implementation-level:
 
 ### Peer skill
 
-- `agent/activate/SKILL.md` — identity load (Kernel + CA + Persona + Operator + state + identity confirmation). Attach requires activate to have completed first.
+- `agent/activate/SKILL.md` — identity load (Kernel + CA + Persona + Operator + state + identity confirmation). Attach requires activate to have completed first. §2.5 defines the Tier 1a/1b foreign-body shape detection; the shape detected there is what the body records in today's attach entry.
 
 ### Composition pattern
 

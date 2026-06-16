@@ -36,8 +36,8 @@ calls:
 
 <!--
 section-manifest:
-  planned: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, rules, renderer-contract, verify, failure-modes, kata, references]
-  completed: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, rules, renderer-contract, verify, failure-modes, kata, references]
+  planned: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, unfold-foreign-body-shape, rules, renderer-contract, verify, failure-modes, kata, references]
+  completed: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, unfold-foreign-body-shape, rules, renderer-contract, verify, failure-modes, kata, references]
 -->
 
 # Activate
@@ -56,7 +56,7 @@ The failure mode the skill prevents is **improvised activation**: a body that wa
 
 1. **Resolve capability** — determine which load tier the body's environment supports (shell + git, HTTP fetch only, or no fetch). See §3 capability matrix.
 2. **Load soul** — fetch and read the Kernel doctrine from cnos, then the CA skill set from cnos. These define what kind of agent this is, independent of which hub.
-3. **Load identity** — fetch and read the hub's `spec/PERSONA.md` and `spec/OPERATOR.md`. These define which agent this is and whom it serves at this hub.
+3. **Load identity** — detect the foreign-body shape (§2.5): check for `spec/PERSONA.md` + `spec/OPERATOR.md` at the hub root and under `.cn-{agent}/` (containerized path). If present, load from the hub directly (Tier 1a — substrate repo); if absent, load Persona + Operator from canonical cn-sigma (Tier 1b — pure-product hub). Load any local product spec for project binding only.
 4. **Survey hub state** — list the hub's dependency manifest, the latest daily reflection, the memory surfaces (reflections, adhoc), and the thread surfaces (in, inbox, mail, archived). The hub state is observable evidence, not narrative — read enough of it to know what is currently in motion.
 5. **Confirm identity** — produce a short statement naming (a) which agent (from Persona), (b) which operator (from Operator), (c) which hub (path or URL), (d) the current cycle or thread if one is in motion (from threads or unreleased). The body is activated when this statement is concrete and grounded in the loaded files.
 
@@ -227,6 +227,63 @@ Two cnos artifacts share the word _activation_ and are distinct concerns. Both a
 
 ---
 
+
+### 2.5. Foreign-body shape and path detection
+
+At a foreign hub, **before** loading Persona and Operator (§2.1 step 3), the body must detect which foreign-body shape it is at. Two shapes exist; detection is a path-presence check:
+
+| Shape | Detection | Identity load procedure |
+|-------|-----------|------------------------|
+| **Tier 1a — substrate repo** | `spec/PERSONA.md` AND `spec/OPERATOR.md` found at the foreign hub (legacy root OR containerized path) | Load Persona + Operator from the hub's local files |
+| **Tier 1b — pure-product hub** | `spec/PERSONA.md` and `spec/OPERATOR.md` both absent at the foreign hub | Load Persona + Operator from cn-sigma canonical; load local product spec for project binding only |
+
+**Identity-pair resolver (complete-pair semantics).** Agent identity at a foreign hub requires _both_ Persona and Operator — neither alone is sufficient. Agent files may be at the legacy root _or_ in a containerized namespace under `.cn-{agent}/`. Check both complete pairs before concluding shape:
+
+
+
+Resolution order:
+
+| Condition | Shape | identity_source |
+|---|---|---|
+| containerized_pair both present | Tier 1a | local-containerized |
+| legacy_pair both present | Tier 1a (migration flag) | local-legacy |
+| neither pair present (all four absent) | Tier 1b | canonical-home |
+| any other combination (one present, cross-path, etc.) | degraded | mode_ambiguous |
+
+Explicit degraded cases:
+- PERSONA.md present, OPERATOR.md missing (either path) → 
+- OPERATOR.md present, PERSONA.md missing (either path) → 
+- PERSONA.md at legacy root, OPERATOR.md under `.cn-{agent}/` (cross-path) → `mode_ambiguous`
+- PERSONA.md under `.cn-{agent}/`, OPERATOR.md at legacy root (cross-path) → `mode_ambiguous`
+
+On `mode_ambiguous`: do not load identity. Stop activation. Emit degraded receipt with `degraded_reason: mode_ambiguous` and defer to operator. See F8 (shape mismatch).
+
+The complete-pair check makes this skill forward-compatible with hub containerization (cnos#448): when a hub migrates its agent files from root to `.cn-{agent}/`, the activate skill resolves the containerized pair without operator re-instruction — and the transition state (one file migrated, one not) is caught as `mode_ambiguous` rather than silently misclassified.
+
+**Tier 1b load procedure (pure-product hub).** When the foreign hub carries no local agent identity files (neither pair present):
+
+1. Load Persona from cn-sigma canonical using the same resolver applied to cn-sigma:
+   - Preferred: `cn-sigma:.cn-sigma/spec/PERSONA.md` (containerized path)
+   - Legacy fallback: `cn-sigma:spec/PERSONA.md` (root-level path)
+   Both must be checked as a complete pair — if cn-sigma is in transition, treat as  for the canonical-home load too.
+2. Load Operator from cn-sigma canonical using the same resolver:
+   - Preferred: `cn-sigma:.cn-sigma/spec/OPERATOR.md`
+   - Legacy fallback: `cn-sigma:spec/OPERATOR.md`
+3. Check for a local product spec: if `spec/PROJECT.md` or an equivalent product file (e.g., `BUMP-000` at bumpt) is present at the foreign hub, load it for project-binding context. A product spec names what this hub builds; it does not redefine the agent's soul or identity.
+4. The body's identity is the canonical cn-sigma identity, now oriented to the foreign hub's product context.
+
+This resolver for canonical-home load ensures PR #455 survives cnos#448 (which migrates cn-sigma's spec/ under `.cn-sigma/`): Tier 1b activation checks the containerized path first, then falls back to legacy — and always as a complete pair, never one file alone.
+
+**README convention at Tier 1b hubs.** At a pure-product hub, the hub's `README.md` "Activating an AI body" section is the canonical activation entry point. The absence of local `spec/PERSONA.md` is expected; the README router template (§2.3) routes bodies to this skill which handles the Tier 1b case.
+
+- ❌ Body finds no `spec/PERSONA.md` at a foreign hub, concludes it cannot activate
+- ❌ Body checks only the legacy root path and misses containerized agent files
+- ❌ Body finds PERSONA.md alone; classifies hub as Tier 1a without checking OPERATOR.md — silently misclassifies mixed state
+- ✅ Body checks both complete pairs (containerized then legacy); resolves shape only when both files of the pair are present
+- ✅ Tier 1b canonical-home load applies the same complete-pair resolver to cn-sigma (containerized preferred, legacy fallback)
+
+---
+
 ## 3. Rules
 
 ### 3.1. Load in the canonical order
@@ -277,6 +334,14 @@ Hubs adopt the §2.3 router template verbatim, substituting only the hub URL. If
 
 - ❌ Per-hub README overrides the load order with hub-preferred ordering
 - ✅ Per-hub README pastes the router template; the skill owns the procedure
+
+### 3.8. Detect foreign-body shape before loading identity
+
+Before loading Persona and Operator at a foreign hub, run the two-path presence check (§2.5). Detect the shape (Tier 1a vs 1b) _observably_ — by checking whether the files exist — not by recalling what shape you expect the hub to be.
+
+- ❌ "I remember this hub has a PERSONA.md; I'll load it directly"
+- ❌ Body checks only legacy root and misses the containerized `.cn-{agent}/` path
+- ✅ Body checks legacy root, then containerized path, picks the shape its observation supports
 
 ---
 
@@ -361,7 +426,11 @@ Confirm the §2.3 template is self-contained. Paste the fenced block into a fres
 
 Confirm §2.4 names both paths exactly: `src/packages/cnos.cdd/skills/cdd/activation/SKILL.md` and `src/packages/cnos.core/skills/agent/activate/SKILL.md`. Confirm the one-sentence distinction is present.
 
-### 5.6. Layering rule citation
+### 5.6. Foreign-body shape detection check
+
+Confirm §2.5 names both paths for Tier 1a detection (legacy root and containerized `.cn-{agent}/`). Confirm the Tier 1b procedure names both canonical files (Persona + Operator from cn-sigma). Confirm the README convention for Tier 1b hubs is stated.
+
+### 5.7. Layering rule citation
 
 Confirm §2.1 cites cn-sigma `threads/adhoc/20260325-session2-learnings.md` §3 ("Soul = what kind of agent. Identity = which agent. Don't mix them.").
 
@@ -381,6 +450,8 @@ Additional failure modes specific to non-cn bodies:
 
 - **F6 — Fetched skill stale.** _Symptom:_ Body fetches the raw GitHub URL from a non-`main` ref and reads an old procedure. _Fix:_ The router template (§2.3) hard-codes the `main` branch in the raw URL.
 - **F7 — Identity claimed without evidence.** _Symptom:_ Body produces an identity statement without having read Persona or Operator; the statement is plausible-sounding but ungrounded. _Fix:_ §3.4 — identity-confirmation gate is concrete; if you cannot point at the source line in Persona or Operator, you have not completed step 6.
+- **F8 — Shape mismatch.** _Symptom:_ Body at a Tier 1b hub (pure-product, no local spec files) tries to load `spec/PERSONA.md` locally, fails silently or hallucinates, then activates with an ungrounded identity. _Fix:_ §2.5 two-path detection — check both paths observably; if both absent, Tier 1b procedure.
+- **F9 — Containerized path miss.** _Symptom:_ Body checks only the legacy root for `spec/PERSONA.md`, finds nothing (hub has migrated to `.cn-{agent}/`), concludes Tier 1b, and loads from canonical cn-sigma — wrong: the hub is Tier 1a but containerized. _Fix:_ §2.5 and §3.8 — always check both legacy root and `.cn-{agent}/` path before concluding absence.
 
 ---
 
@@ -474,6 +545,12 @@ After completing the kata, name one thing about this hub that surprised you. The
 - cn-sigma `threads/adhoc/20260426-memory-retrieval-vs-continuity.md` — SOUL/USER/BOOTSTRAP as behavioral constraints (historical naming preceding this skill).
 - cn-sigma `threads/adhoc/20260519-git-read-and-untested-limits.md` — bodies underclaim their own capabilities; basis for tier (a) being named preferred when available.
 - cn-sigma `threads/adhoc/20260501-threads-inbox-scanner-drift.md` — cnos #323 (filed against `cn activate`; closed in 3.71+); historical activation behavior.
+
+### Empirical evidence for Tier 1a/1b and path shapes
+
+- bumpt `69ee1ce` "Remove misplaced Sigma apparatus" + `697795c` "Rewrite README as the project's face" — established the Tier 1b (pure-product-hub) shape in production; activate was loading from canonical at cn-sigma before this skill named the pattern.
+- cnos#446 — defines and formalizes both shapes; adds the two-path detection for forward-compatibility with containerization.
+- cnos#448 — will migrate cn-sigma agent files to `.cn-sigma/` containerized path; the §2.5 detection handles the new path without skill change.
 
 ### Authority and stability
 
