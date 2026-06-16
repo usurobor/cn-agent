@@ -32,6 +32,8 @@ Consequences:
 
 This invariant prevents a class of design pressure that recurs when notification or relay flows are considered: the instinct is "push notification cross-repo," but writer locality forecloses that direction entirely. Notification flows via pull — home reads the foreign log, home decides what to surface.
 
+**Same-repo terminal-report carve-out.** A body writing to an issue, PR, workflow report, or other notify surface inside its own repo is not a Writer Locality violation. Same-repo terminal reports are the preferred operator-visible notify surface. The forbidden case is writing into another repo's surfaces: cross-repo comments, cross-repo dispatch payloads, or cross-repo pushes.
+
 ## §1 Agents, activations, and peers
 
 A clear conceptual distinction:
