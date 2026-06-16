@@ -237,27 +237,50 @@ At a foreign hub, **before** loading Persona and Operator (§2.1 step 3), the bo
 | **Tier 1a — substrate repo** | `spec/PERSONA.md` AND `spec/OPERATOR.md` found at the foreign hub (legacy root OR containerized path) | Load Persona + Operator from the hub's local files |
 | **Tier 1b — pure-product hub** | `spec/PERSONA.md` and `spec/OPERATOR.md` both absent at the foreign hub | Load Persona + Operator from cn-sigma canonical; load local product spec for project binding only |
 
-**Path detection (Tier 1a — two sub-paths).** Agent files at a foreign hub may be at the legacy root _or_ in a containerized namespace under `.cn-{agent}/`. Check both before concluding absence:
+**Identity-pair resolver (complete-pair semantics).** Agent identity at a foreign hub requires _both_ Persona and Operator — neither alone is sufficient. Agent files may be at the legacy root _or_ in a containerized namespace under `.cn-{agent}/`. Check both complete pairs before concluding shape:
 
-1. **Legacy root path:** `spec/PERSONA.md` (e.g., `https://raw.githubusercontent.com/<hub>/main/spec/PERSONA.md`)
-2. **Containerized path:** `.cn-{agent}/spec/PERSONA.md` (e.g., `https://raw.githubusercontent.com/<hub>/main/.cn-sigma/spec/PERSONA.md`, where `{agent}` is the activating agent's name)
 
-If _either_ path yields a valid file, the hub is Tier 1a; use the path that resolves. If _neither_ path yields a file, the hub is Tier 1b.
 
-The two-path check makes this skill forward-compatible with hub containerization (cnos#448): when a hub migrates its agent files from root to `.cn-{agent}/`, the activate skill resolves the new path without operator re-instruction.
+Resolution order:
 
-**Tier 1b load procedure (pure-product hub).** When the foreign hub carries no local agent identity files:
+| Condition | Shape | identity_source |
+|---|---|---|
+| containerized_pair both present | Tier 1a | local-containerized |
+| legacy_pair both present | Tier 1a (migration flag) | local-legacy |
+| neither pair present (all four absent) | Tier 1b | canonical-home |
+| any other combination (one present, cross-path, etc.) | degraded | mode_ambiguous |
 
-1. Load Persona from cn-sigma canonical: `cn-sigma/spec/PERSONA.md` (via the body's capability tier — shell+git, fetch, or operator-inject).
-2. Load Operator from cn-sigma canonical: `cn-sigma/spec/OPERATOR.md`.
+Explicit degraded cases:
+- PERSONA.md present, OPERATOR.md missing (either path) → 
+- OPERATOR.md present, PERSONA.md missing (either path) → 
+- PERSONA.md at legacy root, OPERATOR.md under `.cn-{agent}/` (cross-path) → `mode_ambiguous`
+- PERSONA.md under `.cn-{agent}/`, OPERATOR.md at legacy root (cross-path) → `mode_ambiguous`
+
+On `mode_ambiguous`: do not load identity. Stop activation. Emit degraded receipt with `degraded_reason: mode_ambiguous` and defer to operator. See F8 (shape mismatch).
+
+The complete-pair check makes this skill forward-compatible with hub containerization (cnos#448): when a hub migrates its agent files from root to `.cn-{agent}/`, the activate skill resolves the containerized pair without operator re-instruction — and the transition state (one file migrated, one not) is caught as `mode_ambiguous` rather than silently misclassified.
+
+**Tier 1b load procedure (pure-product hub).** When the foreign hub carries no local agent identity files (neither pair present):
+
+1. Load Persona from cn-sigma canonical using the same resolver applied to cn-sigma:
+   - Preferred: `cn-sigma:.cn-sigma/spec/PERSONA.md` (containerized path)
+   - Legacy fallback: `cn-sigma:spec/PERSONA.md` (root-level path)
+   Both must be checked as a complete pair — if cn-sigma is in transition, treat as  for the canonical-home load too.
+2. Load Operator from cn-sigma canonical using the same resolver:
+   - Preferred: `cn-sigma:.cn-sigma/spec/OPERATOR.md`
+   - Legacy fallback: `cn-sigma:spec/OPERATOR.md`
 3. Check for a local product spec: if `spec/PROJECT.md` or an equivalent product file (e.g., `BUMP-000` at bumpt) is present at the foreign hub, load it for project-binding context. A product spec names what this hub builds; it does not redefine the agent's soul or identity.
 4. The body's identity is the canonical cn-sigma identity, now oriented to the foreign hub's product context.
+
+This resolver for canonical-home load ensures PR #455 survives cnos#448 (which migrates cn-sigma's spec/ under `.cn-sigma/`): Tier 1b activation checks the containerized path first, then falls back to legacy — and always as a complete pair, never one file alone.
 
 **README convention at Tier 1b hubs.** At a pure-product hub, the hub's `README.md` "Activating an AI body" section is the canonical activation entry point. The absence of local `spec/PERSONA.md` is expected; the README router template (§2.3) routes bodies to this skill which handles the Tier 1b case.
 
 - ❌ Body finds no `spec/PERSONA.md` at a foreign hub, concludes it cannot activate
 - ❌ Body checks only the legacy root path and misses containerized agent files
-- ✅ Body checks legacy root AND `.cn-{agent}/` path; if both absent, loads identity from canonical cn-sigma
+- ❌ Body finds PERSONA.md alone; classifies hub as Tier 1a without checking OPERATOR.md — silently misclassifies mixed state
+- ✅ Body checks both complete pairs (containerized then legacy); resolves shape only when both files of the pair are present
+- ✅ Tier 1b canonical-home load applies the same complete-pair resolver to cn-sigma (containerized preferred, legacy fallback)
 
 ---
 
