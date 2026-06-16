@@ -66,7 +66,7 @@ The four-step shape is total. Skipping detection (steps 1–2) produces the fail
 
 A complete attach has these parts:
 
-- **Mode** — which channel surface applies here (home / foreign-activation / ephemeral).
+- **Mode** — which channel surface applies here (home / foreign-activation / ephemeral). Within foreign-activation: Tier 1a (substrate repo, has local agent identity files) vs Tier 1b (pure-product hub, identity from canonical). Channel surfaces are the same for both; shape is recorded in the entry's frontmatter.
 - **Attached state** — whether prior cursor evidence exists in the body's writer-surface.
 - **Reader-surface** — the other side's surface this body reads.
 - **Writer-surface** — this body's own surface; the only place this body writes.
@@ -107,15 +107,19 @@ The body's environment determines which channel surface applies. Detection is `p
 | Mode | Detected when | Reader-surface | Writer-surface |
 |------|---------------|----------------|----------------|
 | **home** | `git -C $PWD remote get-url origin` matches the agent's home URL | each registered activation's `.cn-{agent}/logs/` (clone each hub read-only) | `threads/activations/{name}/YYYYMMDD.md` per activation in the home repo |
-| **foreign-activation** | `pwd` origin matches a hub registered in home's `state/activations.md` | home's `threads/activations/{name}/` for this activation (clone home read-only) | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
+| **foreign-activation (Tier 1a — substrate repo)** | `pwd` origin matches a registered hub AND `spec/PERSONA.md` present at that hub (legacy root or `.cn-{agent}/`) | home's `threads/activations/{name}/` for this activation | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
+| **foreign-activation (Tier 1b — pure-product hub)** | `pwd` origin matches a registered hub AND `spec/PERSONA.md` absent (both legacy root and `.cn-{agent}/`) | home's `threads/activations/{name}/` for this activation | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
 | **ephemeral** | neither: no matching `pwd` origin (web session, container, ad-hoc) | spec + operator-passed context (no Git surface) | activation receipt → stdout, no commit |
 
 The detection requires reading home's `state/activations.md` once to know which hub URLs are registered. The activated agent already has home cloned (per the activate skill's tier-(a) procedure); the registry lookup is a single file read.
+
+**Foreign-activation sub-branch (Tier 1a vs 1b).** Within foreign-activation mode the channel surfaces (reader and writer) are the same regardless of hub shape — both Tier 1a and Tier 1b write to `.cn-{agent}/logs/` in the foreign hub and read from home's `threads/activations/{name}/`. The shape difference affects only how identity was loaded (handled by `activate/SKILL.md §2.5`, not this skill). The body records the shape in the entry's frontmatter for traceability; attach procedure is otherwise identical.
 
 If `pwd` origin matches neither home nor a registered activation, the mode is ephemeral. Ephemeral is a real mode, not an error: it covers web sessions, containers, and ad-hoc bodies that have no persistent channel surface.
 
 - ❌ Body assumes home because it cloned cn-sigma during activate (clone ≠ origin)
 - ❌ Body assumes foreign-activation because cn-sigma is in its hub list (working dir matters, not what's been cloned)
+- ❌ Body treats Tier 1b (no local spec) as ephemeral just because there's no local PERSONA.md — if origin matches a registered hub, it's foreign-activation
 - ✅ Body runs `git -C $PWD remote get-url origin`, compares to home URL and registered activation URLs, picks the match
 
 ### 2.2. Attached-state detection
@@ -310,7 +314,7 @@ Implementation-level:
 
 ### Peer skill
 
-- `agent/activate/SKILL.md` — identity load (Kernel + CA + Persona + Operator + state + identity confirmation). Attach requires activate to have completed first.
+- `agent/activate/SKILL.md` — identity load (Kernel + CA + Persona + Operator + state + identity confirmation). Attach requires activate to have completed first. §2.5 defines the Tier 1a/1b foreign-body shape detection; the shape detected there is what the body records in today's attach entry.
 
 ### Composition pattern
 
