@@ -5,8 +5,8 @@ version: v0
 date: 2026-05-30
 scope: cross-activation continuity for one agent identity operating across multiple hubs/bodies
 related:
-  - cn-sigma:spec/OPERATOR.md § Activation logs
-  - cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md
+  - cn-sigma:.cn-sigma/spec/OPERATOR.md § Activation logs
+  - cn-sigma:.cn-sigma/threads/adhoc/20260530-sigma-activation-log-v0.md
   - cn-sigma:.cn-sigma/state/activations.md
   - docs/alpha/protocol/WHITEPAPER.md
   - docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md (cnos#150)
@@ -137,7 +137,7 @@ Multiple entries within a single `YYYYMMDD.md` are bottom-appended in chronologi
 
 ### Branch discipline
 
-The channel reads the activation repo's default branch (`main`). Hub-state surfaces (`.cn-{agent}/logs/`, `state/`, `spec/`) are main-only by convention. Project work on feature branches is invisible to home until merged; merging is the act that makes hub state visible to the channel.
+The channel reads the activation repo's default branch (`main`). Hub-state surfaces (`.cn-{agent}/logs/`, `.cn-{agent}/state/`, `.cn-{agent}/spec/`) are main-only by convention. Project work on feature branches is invisible to home until merged; merging is the act that makes hub state visible to the channel.
 
 This is a clarification of v0 — not an addition to its trust mechanics. It makes explicit what was already implicit: every cursor in the convention is a Git commit SHA on `main`; every log file the next activation walks is the state at `main` HEAD.
 
