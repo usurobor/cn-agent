@@ -90,7 +90,7 @@ The cursor is the only state that crosses wakes. Identity is reloaded every wake
 
 Attach fails in five named ways. Each has a structural fix in §2.
 
-- **A1 — Silent self-registration.** Body lands at a hub not registered in home's `state/activations.md`, assumes the registration is its own responsibility, writes a `.cn-{agent}/logs/` entry, and silently establishes a channel home does not know about. Fix: §2.4 requires deferring to operator when preconditions are missing — never self-register.
+- **A1 — Silent self-registration.** Body lands at a hub not registered in home's `.cn-{agent}/state/activations.md`, assumes the registration is its own responsibility, writes a `.cn-{agent}/logs/` entry, and silently establishes a channel home does not know about. Fix: §2.4 requires deferring to operator when preconditions are missing — never self-register.
 - **A2 — Cursor without read.** Body writes `cursor_out` in the entry's frontmatter without walking the reader-surface from prior cursor to current HEAD. The cursor advances but the directives go unread. Fix: §2.5 procedure for follow-up sync makes the walk mandatory before writing `cursor_out`.
 - **A3 — Read without cursor advance.** Body walks the reader-surface but forgets to set `cursor_out` (or sets it equal to `cursor_in` when it should advance). The next wake re-reads the same window — wasteful but not corrupting. Fix: §2.5 makes `cursor_out` required in every entry's frontmatter; missing or stale `cursor_out` is observable on review.
 - **A4 — Wrong mode.** Body misdetects its environment (e.g., assumes home when at a foreign hub), reads/writes the wrong surfaces. Fix: §2.1 detection rule is explicit (compare `pwd` origin to registered URLs); ambiguous cases defer to operator.
@@ -106,15 +106,15 @@ The body's environment determines which channel surface applies. Detection is `p
 
 | Mode | Detected when | Reader-surface | Writer-surface |
 |------|---------------|----------------|----------------|
-| **home** | `git -C $PWD remote get-url origin` matches the agent's home URL | each registered activation's `.cn-{agent}/logs/` (clone each hub read-only) | `threads/activations/{name}/YYYYMMDD.md` per activation in the home repo |
-| **foreign-activation (Tier 1a — substrate repo)** | `pwd` origin matches a registered hub AND identity-pair complete (PERSONA.md + OPERATOR.md both present at containerized or legacy root path per `activate/SKILL.md §2.5`) | home's `threads/activations/{name}/` for this activation | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
-| **foreign-activation (Tier 1b — pure-product hub)** | `pwd` origin matches a registered hub AND no identity files present (neither complete pair) | home's `threads/activations/{name}/` for this activation | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
+| **home** | `git -C $PWD remote get-url origin` matches the agent's home URL | each registered activation's `.cn-{agent}/logs/` (clone each hub read-only) | `.cn-{agent}/threads/activations/{name}/YYYYMMDD.md` per activation in the home repo |
+| **foreign-activation (Tier 1a — substrate repo)** | `pwd` origin matches a registered hub AND identity-pair complete (PERSONA.md + OPERATOR.md both present at containerized or legacy root path per `activate/SKILL.md §2.5`) | home's `.cn-{agent}/threads/activations/{name}/` for this activation | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
+| **foreign-activation (Tier 1b — pure-product hub)** | `pwd` origin matches a registered hub AND no identity files present (neither complete pair) | home's `.cn-{agent}/threads/activations/{name}/` for this activation | `.cn-{agent}/logs/YYYYMMDD.md` in this hub |
 | **degraded (mode_ambiguous)** | `pwd` origin matches a registered hub AND identity files are partially present or cross-path (per `activate/SKILL.md §2.5`) | N/A — do not attach | emit degraded receipt → stdout; no `.cn-{agent}/logs/` write |
 | **ephemeral** | neither: no matching `pwd` origin (web session, container, ad-hoc) | spec + operator-passed context (no Git surface) | activation receipt → stdout, no commit |
 
-The detection requires reading home's `state/activations.md` once to know which hub URLs are registered. The activated agent already has home cloned (per the activate skill's tier-(a) procedure); the registry lookup is a single file read.
+The detection requires reading home's `.cn-{agent}/state/activations.md` once to know which hub URLs are registered. The activated agent already has home cloned (per the activate skill's tier-(a) procedure); the registry lookup is a single file read.
 
-**Foreign-activation sub-branch (Tier 1a vs 1b).** Within foreign-activation mode the channel surfaces (reader and writer) are the same regardless of hub shape — both Tier 1a and Tier 1b write to `.cn-{agent}/logs/` in the foreign hub and read from home's `threads/activations/{name}/`. The shape difference affects only how identity was loaded (handled by `activate/SKILL.md §2.5`, not this skill). The body records the activate-detected shape in the entry's frontmatter via two named fields:
+**Foreign-activation sub-branch (Tier 1a vs 1b).** Within foreign-activation mode the channel surfaces (reader and writer) are the same regardless of hub shape — both Tier 1a and Tier 1b write to `.cn-{agent}/logs/` in the foreign hub and read from home's `.cn-{agent}/threads/activations/{name}/`. The shape difference affects only how identity was loaded (handled by `activate/SKILL.md §2.5`, not this skill). The body records the activate-detected shape in the entry's frontmatter via two named fields:
 
 ```yaml
 identity_shape: tier-1a | tier-1b
@@ -138,7 +138,7 @@ Within home and foreign-activation modes, the body is either attached (has prior
 
 | Mode | Detection |
 |------|-----------|
-| **home** | for each registered activation: does `threads/activations/{name}/` contain any prior entry? Per-activation, not global. |
+| **home** | for each registered activation: does `.cn-{agent}/threads/activations/{name}/` contain any prior entry? Per-activation, not global. |
 | **foreign-activation** | does `.cn-{agent}/logs/` contain any entry whose frontmatter declares `cursor_out: <agent>@<sha>`? |
 | **ephemeral** | always not-attached (no persistence across wakes) |
 
@@ -155,19 +155,19 @@ The cursor lives in the entry's YAML frontmatter as `cursor_out: <agent>@<sha>` 
 Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attached state = not attached).
 
 **Foreign-activation inaugural attach:**
-1. **Verify precondition.** This hub's URL must be registered in home's `state/activations.md`. If not, append `deferred to operator: foreign-activation inaugural attach requires home registration at <hub-url>` to the body's working scratchpad and stop. Do not self-register; do not initialize `.cn-{agent}/logs/`. Home must register first.
+1. **Verify precondition.** This hub's URL must be registered in home's `.cn-{agent}/state/activations.md`. If not, append `deferred to operator: foreign-activation inaugural attach requires home registration at <hub-url>` to the body's working scratchpad and stop. Do not self-register; do not initialize `.cn-{agent}/logs/`. Home must register first.
 2. **Initialize writer-surface.** Create `.cn-{agent}/logs/` if it does not exist. (For first ever attach, this is the directory creation.)
-3. **Read all of home's thread.** Walk `cn-{agent}:threads/activations/{name}/` from start to home HEAD. The thread may be empty; that's a valid signal — there are no inbound directives yet.
+3. **Read all of home's thread.** Walk `cn-{agent}:.cn-{agent}/threads/activations/{name}/` from start to home HEAD. The thread may be empty; that's a valid signal — there are no inbound directives yet.
 4. **Write inaugural entry.** Append today's entry to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` per the convention's §4 entry format. The H2 header carries the wake's full UTC timestamp: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — Inaugural attach at <hub> as Sigma-at-{name}`. Body: name the inaugural binding (e.g., "Walked home thread; no prior directives.").
 5. **Pin inaugural cursor.** Set `cursor_in: <agent>@<sha>` and `cursor_out: <agent>@<sha>` in the entry's frontmatter, both equal to home `main` HEAD as observed in step 3. Set `class: inaugural`.
 6. **Commit and push** to local hub's `main`.
 
 **Home inaugural attach (per activation):**
-1. **Verify precondition.** This activation must be registered in `state/activations.md`. If `state/activations.md` does not yet name this activation, the registration step is operator-driven — append `deferred to operator: home inaugural attach for activation <name> requires registry entry` and stop.
-2. **Initialize writer-surface.** Create `threads/activations/{name}/` if it does not exist.
+1. **Verify precondition.** This activation must be registered in `.cn-{agent}/state/activations.md`. If `.cn-{agent}/state/activations.md` does not yet name this activation, the registration step is operator-driven — append `deferred to operator: home inaugural attach for activation <name> requires registry entry` and stop.
+2. **Initialize writer-surface.** Create `.cn-{agent}/threads/activations/{name}/` if it does not exist.
 3. **Read all of activation's foreign log.** Clone the activation's hub read-only; walk `.cn-{agent}/logs/` from start to hub HEAD. May be empty.
-4. **Write inaugural entry.** Append to `threads/activations/{name}/$(date -u +%Y%m%d).md`. The H2 header carries the wake's full UTC timestamp per convention §4. Body: name the inaugural binding from home's side.
-5. **Advance cursor.** Set `last_read_foreign_log: <sha>` in `state/activations.md` for this activation, where `<sha>` is hub `main` HEAD as observed in step 3.
+4. **Write inaugural entry.** Append to `.cn-{agent}/threads/activations/{name}/$(date -u +%Y%m%d).md`. The H2 header carries the wake's full UTC timestamp per convention §4. Body: name the inaugural binding from home's side.
+5. **Advance cursor.** Set `last_read_foreign_log: <sha>` in `.cn-{agent}/state/activations.md` for this activation, where `<sha>` is hub `main` HEAD as observed in step 3.
 6. **Commit and push** to home's `main`.
 
 ### 2.4. Follow-up sync procedure
@@ -176,7 +176,7 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 
 **Foreign-activation sync:**
 1. **Locate prior cursor.** Find the most recent entry in `.cn-{agent}/logs/` (most recent file, last H2 entry within it). Read `cursor_out: <agent>@<sha>` from its frontmatter. This `<sha>` is the prior cursor.
-2. **Walk home thread forward.** Read `cn-{agent}:threads/activations/{name}/` from `<sha>` to home `main` HEAD. The walk may span multiple per-day files (one per day since the cursor); read in chronological order.
+2. **Walk home thread forward.** Read `cn-{agent}:.cn-{agent}/threads/activations/{name}/` from `<sha>` to home `main` HEAD. The walk may span multiple per-day files (one per day since the cursor); read in chronological order.
 3. **Process inbound.** For each directive: apply per standing posture (read from agent's spec and from prior log entries). If a directive is genuinely ambiguous, append `deferred to operator: <reason>` to today's entry and proceed with what is clear. Do not guess on substantive calls.
 4. **Do the work.** Execute what directives + posture call for. If nothing actionable, the entry is a no-op-wake heartbeat (see A5 fix in §1.3).
 5. **Append today's entry.** Add to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` (create today's file if not present). The H2 header carries the wake's full UTC timestamp: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — <short subject>`. Free-form markdown per convention §4.
@@ -184,12 +184,12 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 7. **Commit and push** to local hub's `main`.
 
 **Home sync (per registered activation):**
-1. **Locate prior cursor.** Read `last_read_foreign_log: <sha>` from `state/activations.md` for this activation.
+1. **Locate prior cursor.** Read `last_read_foreign_log: <sha>` from `.cn-{agent}/state/activations.md` for this activation.
 2. **Walk activation's foreign log forward.** Clone the hub read-only; read `.cn-{agent}/logs/` from `<sha>` to hub `main` HEAD. May span multiple per-day files.
 3. **Process inbound.** Read each entry; understand what the activation reported, what it ACK'd, what `cursor_out` it set (the cursor in frontmatter is an implicit ACK of the directive at that SHA).
 4. **Do the work.** Author home-side response: directives, intake notes, registry updates. The work depends on what the activation surfaced.
-5. **Append today's entry.** Add to `threads/activations/{name}/$(date -u +%Y%m%d).md`. H2 header per §4 with the wake's UTC timestamp.
-6. **Advance cursor.** Update `last_read_foreign_log: <new-sha>` in `state/activations.md` to the hub HEAD observed in step 2.
+5. **Append today's entry.** Add to `.cn-{agent}/threads/activations/{name}/$(date -u +%Y%m%d).md`. H2 header per §4 with the wake's UTC timestamp.
+6. **Advance cursor.** Update `last_read_foreign_log: <new-sha>` in `.cn-{agent}/state/activations.md` to the hub HEAD observed in step 2.
 7. **Commit and push** to home's `main`.
 
 ### 2.5. Ephemeral attach procedure
@@ -239,14 +239,14 @@ Inaugural attach and follow-up sync are different procedures. Run the detection 
 
 ### 3.4. Never self-register
 
-If a foreign-activation inaugural attach finds the hub unregistered in home's `state/activations.md`, stop with `deferred to operator`. Do not write a `.cn-{agent}/logs/` entry; do not modify home's registry from the foreign side. Registration is a home-side concern owned by the operator.
+If a foreign-activation inaugural attach finds the hub unregistered in home's `.cn-{agent}/state/activations.md`, stop with `deferred to operator`. Do not write a `.cn-{agent}/logs/` entry; do not modify home's registry from the foreign side. Registration is a home-side concern owned by the operator.
 
 - ❌ "I'll write an entry; home will figure it out"
 - ✅ "Hub not registered; deferred to operator; no writer-surface initialization"
 
 ### 3.5. Cursor lives in entry frontmatter
 
-Every entry's YAML frontmatter declares `cursor_in` and `cursor_out` (foreign side). Home side declares the same plus advances `last_read_foreign_log` in `state/activations.md`. Entries without `cursor_out` in frontmatter are malformed; A3 (read without cursor advance) is observable as `cursor_in == cursor_out` when there were unread commits to process.
+Every entry's YAML frontmatter declares `cursor_in` and `cursor_out` (foreign side). Home side declares the same plus advances `last_read_foreign_log` in `.cn-{agent}/state/activations.md`. Entries without `cursor_out` in frontmatter are malformed; A3 (read without cursor advance) is observable as `cursor_in == cursor_out` when there were unread commits to process.
 
 - ❌ Entry body mentions a cursor in prose only; frontmatter missing
 - ✅ Frontmatter declares both `cursor_in` and `cursor_out` explicitly
@@ -302,10 +302,10 @@ Run the foreign-activation inaugural procedure (§2.3) against a fresh hub. Conf
 
 The five named failure modes from §1.3 plus three implementation-level ones:
 
-- **A1 — Silent self-registration.** _Symptom:_ Foreign activation appears in `.cn-{agent}/logs/` without `state/activations.md` registration. _Fix:_ §3.4 + §2.3 precondition.
+- **A1 — Silent self-registration.** _Symptom:_ Foreign activation appears in `.cn-{agent}/logs/` without `.cn-{agent}/state/activations.md` registration. _Fix:_ §3.4 + §2.3 precondition.
 - **A2 — Cursor without read.** _Symptom:_ Cursor pin in entry but no evidence of having walked the reader surface from prior cursor. _Fix:_ §2.4 follow-up sync requires the walk.
 - **A3 — Read without cursor advance.** _Symptom:_ Entry body reflects reader-surface walk but frontmatter has `cursor_out == cursor_in`. Next wake re-reads same window. _Fix:_ §3.5 — `cursor_out` must reflect the actual HEAD observed during the walk.
-- **A4 — Wrong mode.** _Symptom:_ Body writes to home's `threads/activations/` when activated at a foreign hub. _Fix:_ §3.2 mandatory mode detection.
+- **A4 — Wrong mode.** _Symptom:_ Body writes to home's `.cn-{agent}/threads/activations/` when activated at a foreign hub. _Fix:_ §3.2 mandatory mode detection.
 - **A5 — Speculative entry on empty reader-surface.** _Symptom:_ Body invents work; entry doesn't ground in inbound directives. _Fix:_ §3.6 no-op heartbeat policy.
 
 Implementation-level:
