@@ -3,7 +3,7 @@
 <!--
 section-manifest:
   planned: [Gap, Skills, AC1-impl, AC2-impl, AC3-impl, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, AC1-impl, AC2-impl, AC3-impl, ACs]
+  completed: [Gap, Skills, AC1-impl, AC2-impl, AC3-impl, ACs, Self-check, Debt, CDD-Trace]
 -->
 
 ## Gap
@@ -183,5 +183,97 @@ Each AC is verified against the actual diff (β SKILL Rule 6: code is evidence).
 - Manifest `relationship_to_substrate` carries the AC7 prose section: names the existing wake as substrate-named and owned by no package, notes the collapsed admin/dispatch boundary in the existing wake, declares this declaration as the package-owned replacement, names Sub 3 of cnos#467 (`cn wake install`) as the cutover point, names the rendered artifact (`.github/workflows/cnos-agent-admin.yml`), states "cnos#470 (this cycle) does NOT touch claude-wake.yml — the cutover happens at Sub 3 or later", and references AC7's byte-identical invariant.
 - Mechanical proof of the byte-identical invariant: `git diff origin/main..HEAD -- .github/workflows/claude-wake.yml | wc -l` returns 0 at HEAD `2c7b1437` (the implementation SHA; re-validated immediately before this AC evidence block).
 - Scope discipline mechanical proof: `git diff --name-only origin/main..HEAD | grep -vE '^(src/packages/cnos\.core/|\.cdd/unreleased/470/)' | wc -l` returns 0. The cycle touches only `src/packages/cnos.core/` (new files) and `.cdd/unreleased/470/` (γ-scaffold + α self-coherence). Nothing under `.github/` is touched.
+
+## Self-check
+
+α-side role self-check per α SKILL §1.3 and §3.2 ("do not outsource authoring work to β"). Each question answered against the diff at HEAD `2c7b1437`.
+
+**Q1. Did α's work push ambiguity onto β?** No.
+
+- Form choice acknowledged explicitly in §Gap (γ-pinned `orchestrators/agent-admin/`; α verified the form is structurally valid by reading `daily-review/orchestrator.json` and noting siblings + schemas are independent); no override claimed, no ambiguity left to β about which file path to expect.
+- Manifest schema declared as the first field of the JSON (`"schema": "cn.wake-provider.v1"`); β has no question about which version contract to validate against.
+- AC1 contract skill is the single source of truth for the schema; AC2 manifest is one instance; AC1 §2.1/§2.2 give β the required/optional field list to verify against.
+- Behavioral design call (the `cycle-complete` value in `class_taxonomy`) is recorded explicitly with reasoning in the manifest (`class_taxonomy_notes`); β does not need to infer whether the 5-value taxonomy is intentional vs forward-overreach.
+- Substrate-agnostic carve-out hits enumerated above in §ACs AC2 evidence with per-line justification; β can re-run the grep and verify each hit against the carve-out without re-deriving the analysis.
+
+**Q2. Is every claim backed by evidence in the diff?** Yes.
+
+- Each AC's evidence block names file paths + line ranges OR jq queries OR grep regexes (each reproducible mechanically); no claims rely on α's narrative without diff-pointer backing.
+- Implementation SHA cited per α SKILL §2.6 "SHA convention for readiness signal" convention: §ACs header cites `2c7b1437` (last implementation commit before self-coherence's §ACs commit). The §Review-readiness section below will cite the implementation SHA, not the readiness-signal commit's own HEAD (prevents the recursive self-stale pattern from #301 F3).
+
+**Q3. Peer enumeration (α SKILL §2.3).** The change touches a small family. Enumerated:
+
+- **Wake-provider declaration peers** at the form level: `cnos.core/orchestrators/agent-admin/wake-provider.json` is the *first* instance of this contract; the second will be `cnos.cdd/orchestrators/cdd-dispatch/wake-provider.json` in Sub 4 of cnos#467 — explicitly out of scope for this cycle per dispatch prompt §"Refusal conditions". The contract skill §5 + §2.6 explicitly names Sub 4 as the downstream consumer; β can verify forward-compat by reading §2.6's 6-step authoring procedure against the eventual Sub 4 manifest.
+- **Skill-class peers** (role-skill change ripples — α SKILL §2.3 mandatory class): the AC1 skill is doctrine-adjacent (per §7) but it does NOT change any role skill (α/β/γ/δ/operator). It does NOT change any lifecycle skill (review/release/post-release/design/plan/issue). It establishes a *new* contract skill in the `cnos.core/skills/agent/` family; the only siblings whose authority surface it could touch are `activate/`, `attach/`, `label-doctrine/` (all CITED but UNMODIFIED), `cap/`, `clp/`, `ca-conduct/`, `cbp/`, etc. (none of which describe wake-provider mechanics). No skill-class peer needs updating to remain coherent with this addition; the wake-provider skill is additive.
+- **Sigma-admin boundary peers** (cnos#468 §4): the manifest's allowed/disallowed surfaces and the prompt's enumerated responsibilities both conform to the boundary at cnos#468 §4.1 (Sigma may apply labels, refine issues, report status) / §4.2 (Sigma may not define labels, execute cells, own queue). No edits to `label-doctrine/SKILL.md` needed; the boundary is being instantiated, not amended.
+- **Intra-doc repetition** (α SKILL §2.3): the AC7 carve-out reference appears in 2 manifest fields (`superseded_substrate_artifact` + `relationship_to_substrate`) and 1 prompt section (§"Cross-references" — no, the AC7 reference is only in the manifest). Spot-checked: both manifest sites name the same path (`.github/workflows/claude-wake.yml`); both name Sub 3 as cutover; both name cnos#467 as the architecture. No drift.
+
+**Q4. Harness audit (α SKILL §2.4) — schema-bearing changes.** This cycle introduces a new schema (`cn.wake-provider.v1`). Enumeration:
+
+- **Producers of `cn.wake-provider.v1`:** today only `cnos.core/orchestrators/agent-admin/wake-provider.json`. Future producers: `cnos.cdd/orchestrators/cdd-dispatch/wake-provider.json` (Sub 4); future per-package dispatch wake providers in cnos.cdr, cnos.cdw. The contract skill (AC1) is the canonical schema definition; each future producer authors against it.
+- **Consumers of `cn.wake-provider.v1`:** today none (Sub 3 renderer is the first consumer; not yet implemented per dispatch prompt §"Refusal conditions"). The AC1 contract skill §2.1, §2.2, §2.4, §2.5 give the renderer everything it needs to dispatch by schema, validate required fields, inline the prompt template, and emit substrate-specific encoding.
+- **Non-primary-language writers:** none — no shell harness emits this schema, no CI workflow templates it, no test fixtures exist yet. The schema's first instance (the agent-admin manifest) and the contract skill are co-authored in this cycle; no harness drift possible.
+- **Generated defaults:** none — the renderer rejects malformed declarations per §3.5 rather than defaulting silently, by contract.
+
+**Q5. Post-patch re-audit (α SKILL §2.6 row 9, polyglot).** Languages in the diff: JSON + Markdown.
+
+- **JSON validity:** `jq . src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json > /dev/null` exit 0 (re-validated at HEAD `2c7b1437`).
+- **JSON contract conformance:** all 12 required AC1 fields present (jq query in AC2 evidence above).
+- **Markdown structural validity:** all `[link](path)` references in `prompt.md` resolve to actual files in this checkout (verified by inspection: `../../skills/agent/activate/SKILL.md` from `orchestrators/agent-admin/prompt.md` resolves to `cnos.core/skills/agent/activate/SKILL.md` ✓; same for attach, label-doctrine, wake-provider, AGENT-ACTIVATION-LOG-v0).
+- **Markdown grep / oracle re-run:** all AC oracle greps re-executed and reported in §ACs above.
+- **AC oracle re-run:** all 7 AC oracles re-run mechanically; all pass.
+
+**Q6. Self-coherence consistency.** The implementation conforms to the γ scaffold's expected touched surfaces table (5 files: AC1 skill, AC2 manifest, AC3 prompt, self-coherence, gamma-scaffold — α did NOT create the optional README; the manifest's `cross_references` object + the prompt's §"Cross-references" section carry the cross-references in two grep-able places, making a separate README redundant for AC6 evidence). The optional README was marked optional per the γ scaffold; α's call is to omit it because the manifest + prompt fields carry the AC6 evidence directly.
+
+## Debt
+
+**Known debt declared at HEAD `2c7b1437` (the implementation SHA):**
+
+1. **`cycle-complete` class is contract-only at this sub.** The `output_contract.class_taxonomy` declares `cycle-complete` as the 5th value, but the prompt template does NOT yet enumerate the cycle-complete behavior (when to emit, what fields to populate, what to read from `.cdd/unreleased/{N}/`). This is intentional — per the manifest's `class_taxonomy_notes`, the cycle-complete wiring lands in Sub 6 of cnos#467 as a prompt-template extension. β should verify the design call is recorded (it is, in `class_taxonomy_notes`) and that the manifest schema does not need a v2 bump when Sub 6 adds the behavior (it does not; the value is already declared).
+
+2. **`cnos.cdd/skills/cdd/CDD.md` not loaded (canonical CDD.md may not exist).** Per α SKILL §"Load Order", the canonical CDD.md is Tier 1 — but inspection of `src/packages/cnos.cdd/skills/cdd/` shows the role skills (`alpha/`, `beta/`, `gamma/`, etc.) and lifecycle subskills exist with no top-level `CDD.md`. α treated the canonical lifecycle contract as expressed in `alpha/SKILL.md` itself + `cnos.cds/skills/cds/CDS.md` (the redirect target in `alpha/SKILL.md` §"Load Order"). The dispatch prompt §"Skills to load" lists `cnos.cdd/skills/cdd/CDD.md` with "if present; else skip — it may not exist". α verified absence; no debt to the cycle. This is recorded for β's audit.
+
+3. **Sub 3 renderer not yet authored.** The Sub 3 renderer (`cn wake install`) does not yet exist — explicitly out of scope per dispatch prompt §"Refusal conditions". The AC2 manifest is therefore unconsumed at merge time; "Sub 3 renderer can consume this declaration" is a *proof plan* invariant (cnos#470 §"Proof plan") deferred to Sub 3 verification. β cannot verify Sub 3 consumption today; β CAN verify that the AC1 contract skill is sufficiently concrete for the renderer to dispatch by `schema`, validate required fields, and inline the prompt template (per AC1 §2.6 + the §2.5 split table). This is the proof-plan invariant's α-side surface for this cycle.
+
+4. **Optional `README.md` not created.** γ scaffold marked the optional README as "optional; for AC6 cross-refs + AC7 relationship section if you prefer them separated from the manifest." α chose to carry the AC6 cross-references in the manifest's `cross_references` object + the prompt's §"Cross-references" section, and the AC7 relationship in the manifest's `superseded_substrate_artifact` + `relationship_to_substrate` fields. Both surfaces are grep-able. Adding a separate README would duplicate information already present in two grep-able places; α's call is omission, per `alpha/SKILL.md` §1.1 "do not write documentation files unless explicitly required."
+
+5. **No cn-side fixtures or smoke for the manifest.** No Go test fixtures, no shell harness, no `cn-cdd-verify`-style validator for the new schema. This is per the pinned axis "CLI integration target = None for this sub"; the validator + fixtures land with Sub 3.
+
+No other known debt. All cycle ACs (AC1-AC7) pass per §ACs evidence.
+
+## CDD Trace
+
+Per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" (canonical 0–7 ordering for α-role rows).
+
+| Step | Artifact | Skills loaded | Decision / evidence |
+|------|----------|--------------|---------------------|
+| **0 Observe** | (γ scaffold + issue body) | (γ-role; not α's step but cited for trace continuity) | γ observed: cnos#467 master tracker landed; Sub 1 (cnos#468) merged; Sub 2 needs the agent-admin wake provider declaration. Bootstrap exception applies — pre-dispatch δ/channel path; α/β spawned via Agent tool. |
+| **1 Select** | (cnos#470 issue body) | (γ-role) | γ selected: cnos#470 as Sub 2 (`agent-admin/wake-provider`); P1 priority gating Sub 3. |
+| **2 Branch** | `cycle/470` from `origin/main` at `c0048bef` | (γ-role) | γ created `cycle/470`. α verified on dispatch (`git switch cycle/470`); branch tracking confirmed. |
+| **3 Scaffold** | `.cdd/unreleased/470/gamma-scaffold.md` (SHA `88b31a77`) | (γ-role) | γ wrote scaffold with form-choice pin, implementation contract axes, AC mapping table, α/β dispatch prompts. α read in full at dispatch intake. |
+| **4 Gap** | `self-coherence.md §Gap` (commit `fc75307b`) | `alpha/SKILL.md` (Tier 1) | α named the gap: cnos.core has no wake provider declaration; substrate-bound `claude-wake.yml` collapses admin/dispatch. Mode = `design-and-build`. Form choice = γ-pinned `orchestrators/agent-admin/` accepted (no structural override; `daily-review/orchestrator.json` confirms sibling shapes valid). |
+| **5 Mode** | `self-coherence.md §Skills` (commit `c81de2de`) | `alpha/SKILL.md`, `issue/SKILL.md`, `design/SKILL.md`, `cnos.core/skills/agent/{activate,attach,label-doctrine,skill,wake-provider}/SKILL.md` (Tier 3), `AGENT-ACTIVATION-LOG-v0.md` | α loaded Tier 1 lifecycle + Tier 3 issue-specific skills. `plan/SKILL.md` explicitly NOT loaded (3-file dependency-ordered cycle; α SKILL §2.2 "not required with concrete justification"). |
+| **6 Artifacts** | `cnos.core/skills/agent/wake-provider/SKILL.md` (commit `61588ca0`); `cnos.core/orchestrators/agent-admin/wake-provider.json` (commit `4c8f30c8`); `cnos.core/orchestrators/agent-admin/prompt.md` (commit `2c7b1437`) | `design/SKILL.md` for the contract design + impact graph; `skill/SKILL.md` for frontmatter conformance; `wake-provider/SKILL.md` (self) for manifest conformance | α produced in dependency order: AC1 contract skill (defines the schema) → AC2 manifest (instantiates the schema) → AC3 prompt template (referenced by the manifest's `prompt_template` field). Artifact enumeration matches diff per α SKILL §2.6 row 11 (every file in `git diff --stat origin/main..HEAD` mentioned in this trace + §ACs). |
+| **7 Self-coherence** | `self-coherence.md` (commits `fc75307b`, `c81de2de`, `14634d90`, and this commit) | (this skill) | α wrote incrementally per §2.5: §Gap → §Skills → §ACs → (this commit: §Self-check, §Debt, §CDD Trace). §Review-readiness will be the final separate commit per §2.7. |
+
+**Caller-path trace for new modules (α SKILL §2.6 row 12):** Two new "modules" added (AC1 contract skill + AC2 manifest). Callers:
+
+- AC1 contract skill (`wake-provider/SKILL.md`): called by AC2 manifest as the schema authority (manifest's `schema: "cn.wake-provider.v1"` is the contract's schema name); called by future Sub 4 cnos.cdd dispatch wake provider as the design template (§5 names Sub 4 explicitly as downstream consumer); called by future Sub 3 renderer as the validation source (§2.1 required fields + §2.2 optional fields). The contract skill is the foundational artifact — its callers are the manifest (this cycle), future packages (downstream), and the future renderer (downstream).
+- AC2 manifest (`agent-admin/wake-provider.json`): called by future Sub 3 renderer (`cn wake install agent-admin --agent {agent}`) as the input to substrate emission. Not yet called this cycle (renderer is Sub 3, out of scope). This is declared as known debt #3 in §Debt above.
+
+**Test assertion count (α SKILL §2.6 row 13):** No tests added; static content (skill + manifest + prompt) is verified by AC oracles (grep / jq / mechanical gates). Per α SKILL §2.6 row 3 "tests are present, or explicit reason none apply" — the explicit reason: this cycle's artifacts are static data + markdown; the verifiers are the AC oracle greps + the JSON parser + the manifest field validation, all mechanical and recorded in §ACs above. No runtime to test; no behavior to assert beyond the structural contracts the manifest declares.
+
+**Implementation-contract conformance (α SKILL §3.6).** Each of the 7 axes from the dispatch prompt:
+
+| Axis | Compliance |
+|------|-----------|
+| Language | Only `.md` + `.json` files created. No `.go`, no `.sh`, no `.yml`. ✓ |
+| CLI integration target | No edits to `src/go/`; no edits to `cnos.core/cn.package.json`'s `commands` map (verified: `git diff --name-only origin/main..HEAD | grep -E 'src/go/|cn.package.json'` returns empty). ✓ |
+| Package scoping | Only `src/packages/cnos.core/` touched (3 new files) + `.cdd/unreleased/470/` (γ scaffold + α self-coherence). ✓ |
+| Existing-binary disposition | N/A — no binaries touched. ✓ |
+| Runtime dependencies | None — static data + markdown. Manifest parses with `jq` (standard tooling). ✓ |
+| JSON/wire contract | Manifest declares `"schema": "cn.wake-provider.v1"` as the FIRST key (`jq -r 'keys_unsorted[0]'` returns `schema`). AC1 contract skill is the canonical schema definition. ✓ |
+| Backward compat | `git diff origin/main..HEAD -- .github/workflows/claude-wake.yml | wc -l` returns 0. ✓ |
+
 
 
