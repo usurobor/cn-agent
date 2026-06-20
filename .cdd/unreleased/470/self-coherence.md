@@ -3,7 +3,7 @@
 <!--
 section-manifest:
   planned: [Gap, Skills, AC1-impl, AC2-impl, AC3-impl, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap]
+  completed: [Gap, Skills]
 -->
 
 ## Gap
@@ -29,3 +29,41 @@ section-manifest:
 | Runtime dependencies | None — static data + markdown | manifest is parseable JSON; prompt is markdown |
 | JSON/wire contract | Manifest declares `"schema": "cn.wake-provider.v1"` as the first field | wake-provider.json first key = `schema` |
 | Backward compat | `.github/workflows/claude-wake.yml` MUST remain byte-identical on `cycle/470` | verified by `git diff origin/main..HEAD -- .github/workflows/claude-wake.yml \| wc -l` MUST return 0 |
+
+## Skills
+
+**Tier 1 (lifecycle):**
+
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` (α role; §2.5 incremental self-coherence; §2.6 pre-review gate rows 1–15; §3.6 implementation-contract is δ's not α's)
+- `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` (to verify ACs are independently testable; AC oracle/surface re-read)
+- `src/packages/cnos.cdd/skills/cdd/design/SKILL.md` (this is design-and-build mode; loaded before authoring the manifest schema and prompt template; impact graph traced — see CDD Trace step 4)
+
+Note: `src/packages/cnos.cdd/skills/cdd/CDD.md` is referenced by `alpha/SKILL.md` §"Load Order" Tier 1; absent from this checkout (only `alpha/`, `beta/`, `gamma/`, `delta/`, `issue/`, `design/`, `review/`, `release/`, ... role/lifecycle subskills exist). α treats the canonical lifecycle contract as expressed in `alpha/SKILL.md` itself + `cnos.cds/skills/cds/CDS.md` (CDS canonical artifact order / lifecycle step table) per the redirect in `alpha/SKILL.md` §"Load Order".
+
+**Tier 3 (issue-specific):**
+
+- `src/packages/cnos.core/skills/agent/activate/SKILL.md` (the prompt template α authors directs the wake to invoke this; §2.1 six-item load order; identity-confirmation gate)
+- `src/packages/cnos.core/skills/agent/attach/SKILL.md` (same; §2.4 follow-up sync procedure; §2.5 ephemeral attach for ephemeral mode; AGENT-ACTIVATION-LOG-v0 cursor mechanics)
+- `src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md` (cnos#468 merged predecessor; the prompt cites it for label-application discipline; §4.1 Sigma may; §4.2 Sigma may not; the manifest's allowed/disallowed surfaces conform to the boundary at §4)
+- `src/packages/cnos.core/skills/skill/SKILL.md` (skill-format meta-skill; AC1's contract skill conforms; §1.0 artifact_class; §3.1 frontmatter requirements)
+- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` (terminal-report shape AC4 names; §5 entry format; `class:` taxonomy `heartbeat / substantive / inaugural / directive-out`; per AC4 prose the cycle-complete class will be wired in Sub 6 but α enumerates all five at the contract level)
+
+**Package-shape reference (read for shape, not modified):**
+
+- `src/packages/cnos.core/cn.package.json` (existing package shape; AC2 manifest does NOT register a new command in the `commands` map per pinned axis)
+- `src/packages/cnos.core/orchestrators/daily-review/orchestrator.json` (existing sibling orchestrator shape; confirms `orchestrators/{name}/` is not constrained to a single file; new sibling `wake-provider.json` is valid)
+- `src/packages/cnos.core/commands/{daily,weekly,save}/` (existing command shape; α did NOT use this form — γ pinned `orchestrators/agent-admin/`)
+- `.github/workflows/claude-wake.yml` (existing wake the provider supersedes at Sub 3 cutover; READ ONLY — AC7 invariant)
+
+**γ scaffold (read for context):**
+
+- `.cdd/unreleased/470/gamma-scaffold.md` (full form-choice rationale, expected touched surfaces, AC mapping table with mechanical gate block, implementation contract pin)
+
+**Skills explicitly NOT loaded (and why):**
+
+- `cnos.cdd/skills/cdd/beta/SKILL.md` — β role; α does not load β skills (alpha/SKILL.md §2.1 "do not load β or γ role skills")
+- `cnos.cdd/skills/cdd/gamma/SKILL.md` — γ role; same
+- `cnos.cdd/skills/cdd/delta/SKILL.md` — δ role; same; also explicitly out of scope for Sub 2 (Sub 5 territory)
+- `cnos.cdd/skills/cdd/plan/SKILL.md` — implementation sequencing is non-trivial only across many files; this cycle creates 3 files with clear dependency order (AC1 contract skill → AC2 manifest → AC3 prompt template); plan declared "not required" per α/SKILL.md §2.2 with this justification
+- Tier 2 `eng/*` — no eng-language-specific work; manifest is JSON + skill/prompt are markdown; no Go/Python/shell
+
