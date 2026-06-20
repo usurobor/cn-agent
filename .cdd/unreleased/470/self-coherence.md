@@ -323,6 +323,70 @@ Per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" (c
 
 α exits per sequential bounded dispatch (per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule"); δ runs β. α will be re-dispatched by δ after β merges for `alpha-closeout.md`.
 
+## R2 fix
+
+**Round:** R2 (fix round responding to β's R1 verdict REQUEST CHANGES).
+
+**β R1 finding addressed:** F1 (severity D; correctness / honest-claim / wiring-claim — β-review.md §"Binding findings" → F1, β review commit `4332c483`).
+
+**β's F1 finding (brief quote):** *"The AC3 prompt template at `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` contains two broken relative-path links to the canonical channel-log convention. Both occurrences use 6 `..` segments where only 5 are correct ... L28 ... L114 ... The prompt lives at `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` — 5 levels deep from repo root. Correct relative path is `../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` (5 `..` segments). The 6-segment form escapes the repo root by one directory."*
+
+**The fix (two-line edit):**
+
+- `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` L28: link target changed from `../../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` (6 `..`) to `../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` (5 `..`).
+- `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` L114: identical change.
+- No other file touched in the fix commit. Diffstat: `1 file changed, 2 insertions(+), 2 deletions(-)`.
+
+**Fix commit SHA:** `b6bad619` (`α-470 R2: F1 fix — correct relative-link path in prompt.md L28+L114 (6→5 .. segments to AGENT-ACTIVATION-LOG-v0.md)`).
+
+**Honest correction to §Self-check Q5 (β-classification wiring-claim, review/SKILL.md §3.13c).**
+
+At R1 signal time, §Self-check Q5 claimed: *"all `[link](path)` references in `prompt.md` resolve to actual files in this checkout (verified by inspection ... same for attach, label-doctrine, wake-provider, AGENT-ACTIVATION-LOG-v0)."* **That claim was false** for the AGENT-ACTIVATION-LOG-v0 link. The 6-segment form `../../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` looked like a valid relative path on visual inspection (the pattern is structurally similar to the 2-segment skill-sibling links that I had actually tested), but it escapes the repo root by one directory and does not resolve. β confirmed this via the I4 CI link-validation gate (lychee reports +1 error vs main, localized to exactly this file). I did not mechanically `ls` the resolved path before claiming "all links resolve" — the wiring claim was eyeballed, not grep-verified. This is precisely the discipline failure review/SKILL.md §3.13c is shaped to catch.
+
+**Discipline learning recorded:** Wiring claims of the form "X resolves to Y" / "X references Y" / "X is wired to Y" MUST be backed by a mechanical oracle (filesystem `ls`, `git grep`, `jq` query) re-run at signal time, not by visual pattern-match against other links in the same file. The 4 sibling-skill links I tested all had 2 `..` segments and resolved by inspection; I extrapolated incorrectly to the 6-segment AGENT-ACTIVATION-LOG-v0 link rather than running the same `ls` test on it. Future α-side polyglot-row Q5 entries will list each link tested with its `ls`-result, not aggregate "all links resolve" without per-link proof.
+
+**R2 mechanical re-verification of all R1 gates (every previously-passing gate re-confirmed at R2 head):**
+
+- **AC1 (contract skill):** unchanged; file `src/packages/cnos.core/skills/agent/wake-provider/SKILL.md` not touched by R2 fix. Still pass per R1 §ACs evidence.
+- **AC2 (manifest):** unchanged; file `src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json` not touched by R2 fix. Still pass per R1 §ACs evidence.
+- **AC3 (prompt template):** the textual oracles (activate/attach grep, MUST NOT execute grep, defer grep, label-doctrine grep, responsibilities grep) are unchanged — the fix changed only the link target inside an existing prose surface; the surrounding text and counts are byte-stable. The previously-broken link is now fixed: `cd src/packages/cnos.core/orchestrators/agent-admin/ && ls ../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` returns the file (no error); `grep -nE '\(\.\./\.\./\.\./\.\./\.\./docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0\.md\)' prompt.md` returns 2 hits at L28 and L114; `grep -cE '\(\.\./\.\./\.\./\.\./\.\./\.\./' prompt.md` returns 0 (no 6-segment forms remain).
+- **AC4 (input + output contracts):** unchanged — manifest and AC4 prose untouched. Still pass.
+- **AC5 (allowed + disallowed surfaces):** unchanged — manifest enumeration untouched. Still pass.
+- **AC6 (cross-references):** the AGENT-ACTIVATION-LOG-v0 citation count is unchanged (same number of textual references; only the link target hop count changed); per-line cross-references list at prompt.md §"Cross-references" still names the convention. Still pass.
+- **AC7 (claude-wake.yml byte-identical invariant):** mechanical proof re-run at R2 head: `git diff origin/main HEAD -- .github/workflows/claude-wake.yml | wc -l` returns `0`. Md5 unchanged. ✓
+- **Scope discipline mechanical proof:** `git diff --name-only origin/main HEAD | grep -vE '^(src/packages/cnos\.core/|\.cdd/unreleased/470/)' | wc -l` returns `0`. ✓
+- **Substrate-agnostic mechanical proof:** the substrate-agnostic grep count on the two manifest/prompt files is unchanged by the R2 fix (the fix did not add or remove any of the `github|workflow|yaml|GITHUB_TOKEN|claude-code-action|runs-on` token occurrences — only a hop count in one URI). All 9 hits enumerated in R1 §ACs AC2 evidence remain audited carve-outs. ✓
+- **β R1 expected positive case:** `cd src/packages/cnos.core/orchestrators/agent-admin/ && ls ../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` resolves successfully; CI I4 lychee on PR #471's R2 head should now report 39 errors (matching main's baseline), not 40 — β R2 to confirm.
+- **β R1 expected negative case (the bug that was fixed):** the 6-segment form no longer exists in `prompt.md`; `grep -cE '\(\.\./\.\./\.\./\.\./\.\./\.\./' prompt.md` returns `0`.
+
+**Files touched in R2 (cumulative this round before this signal commit):**
+
+- `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` (the F1 fix; commit `b6bad619`).
+- `.cdd/unreleased/470/self-coherence.md` (this §R2 fix section; signal commit follows).
+
+No other file touched. Scope discipline maintained per the cycle's pinned axes.
+
+**Implementation SHA (R2):** `b6bad619` (the F1 fix commit; per α SKILL §2.6 "SHA convention for readiness signal" — implementation SHA is stable because the readiness-signal commit comes after it).
+
+## Review-readiness (R2) — ready for β at implementation SHA b6bad619
+
+**Round:** R2.
+
+**Cycle branch:** `cycle/470`.
+
+**Base:** `origin/main` at SHA `c0048befb89c9b4aa083dd5fdb5c6c5547966ab9` (unchanged from R1; no rebase in R2).
+
+**Implementation SHA:** `b6bad619` (the R2 F1 fix commit).
+
+**β R1 finding F1:** resolved per §R2 fix above. Verified by both `grep` (2 hits with 5 `..` segments at L28/L114; 0 hits with 6 `..` segments anywhere in `prompt.md`) and filesystem `ls` (the resolved path `cd src/packages/cnos.core/orchestrators/agent-admin/ && ls ../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` returns the file).
+
+**All R1 pre-review gate rows still pass at R2 head** (re-verified above in the R2 mechanical re-verification block).
+
+**γ artifact discoverability** (β SKILL §3.11b): unchanged from R1 — γ-scaffold at canonical `.cdd/unreleased/470/gamma-scaffold.md`.
+
+**Ready for β R2.** Per pre-dispatch δ/channel bootstrap exception (see §Gap "Bootstrap exception context"), α does not spawn β; δ re-dispatches β for R2 verification after this signal commit lands on `cycle/470`.
+
+
 
 
 
