@@ -1,0 +1,112 @@
+{
+  "schema": "cn.wake-provider.v1",
+  "name": "agent-admin",
+  "package": "cnos.core",
+  "role": "admin",
+  "admin_only": true,
+  "description": "The cnos.core agent-admin wake. Per-install agent (e.g. sigma) activates + attaches to the channel, reads inbound directives from the home thread, applies labels when authorized, creates/refines issues when authorized, reports status. Admin-only: never executes cells. Cell-shaped directives defer to the relevant protocol package's dispatch wake (or surface to the operator if no dispatch wake is installed for that protocol).",
+  "responsibilities": [
+    "activate per cnos.core/skills/agent/activate (Kernel + CA skills + Persona + Operator + hub state + identity confirmation)",
+    "attach per cnos.core/skills/agent/attach (mode detection, attached-state detection, follow-up sync or inaugural attach as appropriate)",
+    "channel sync: read home thread from prior cursor to home HEAD; process inbound directives per standing posture",
+    "status reporting: append today's channel log entry per docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md; advance cursor",
+    "issue creation/refinement: create or refine cnos issues when the operator's directive or standing posture authorizes it",
+    "label application: apply status:* labels per operator authorization; apply protocol:{id} labels when the issue body unambiguously names a single protocol; ask the operator when ambiguous; never define new labels (per cnos.core/skills/agent/label-doctrine §4)",
+    "directive routing: classify inbound directives as admin (handle inline) or cell-shaped (defer per defer_path.cell_shaped_directive)",
+    "off-role refusal: when a directive falls outside the admin role, name the misroute in the channel entry and defer per defer_path.off_role_directive"
+  ],
+  "input_contract": {
+    "triggers": [
+      "schedule",
+      "issues_opened_title_match"
+    ],
+    "trigger_descriptions": {
+      "schedule": "Periodic firings on a cron-like schedule; substrate-specific encoding (e.g. multiple staggered hourly slots) is the renderer's responsibility. The wake does not claim from a queue; it processes whatever inbound state exists at firing time.",
+      "issues_opened_title_match": "Optional: trigger on issue-open events whose title matches a configured pattern (today: 'claude-wake'). Used for operator-driven manual wakes; coexists with schedule."
+    },
+    "inbound": "home thread (cn-{agent}:.cn-{agent}/threads/activations/{this-hub}/) + open issues in this repo (read-only access for triage); not a queue claim — the admin wake does NOT claim from dispatch:cell + protocol:{P} + status:todo queue, which is per-package dispatch wakes' job per cnos#467 + cnos#454"
+  },
+  "output_contract": {
+    "channel_log_convention": "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md",
+    "writer_surface": ".cn-{agent}/logs/YYYYMMDD.md (per the convention's §2; today's file in the current hub)",
+    "class_taxonomy": [
+      "heartbeat",
+      "substantive",
+      "inaugural",
+      "directive-out",
+      "cycle-complete"
+    ],
+    "class_taxonomy_notes": "The five values track the AGENT-ACTIVATION-LOG-v0 convention §5 entry format. The 'cycle-complete' value is reserved for Sub 6 of cnos#467 (admin wake reads .cdd/unreleased/{N}/ after a protocol cycle merges and writes a structured cycle-complete entry); it is enumerated here so the contract is forward-compatible and the Sub 6 wiring is a prompt-template extension, not a manifest schema change.",
+    "cursor_advance": true,
+    "cursor_field": "cursor_out (entry frontmatter); 'agent@<sha>' where <sha> is the home thread HEAD observed during this wake; equal to cursor_in when no advance (heartbeat case)"
+  },
+  "allowed_surfaces": [
+    ".cn-{agent}/logs/ (writer-locality: only the current hub's per-agent log directory)",
+    ".cn-{agent}/state/ (subject to per-installation policy; e.g. cursor advancement for home-side syncs)",
+    "issue comments (on issues in this repo; admin-tone comments only — never implementation work)",
+    "pull request comments (same constraint)",
+    "label application (status:* per operator authorization; protocol:{id} per cnos#468 label-doctrine §4.1; dispatch:cell when an issue clearly meets the cell criteria per the same)",
+    "issue creation (when operator-authorized or standing-posture-aligned; issue refinement same constraint)"
+  ],
+  "disallowed_surfaces": [
+    "cell_execution",
+    ".github/workflows/ (substrate is rendered, not hand-edited — the wake never modifies its own carrier or other wake artifacts)",
+    "code files outside .cn-{agent}/ and .cdd/ (cell-shaped work belongs to dispatch wakes; admin wake is read-only on code)",
+    "test files outside .cn-{agent}/ and .cdd/ (same)",
+    "documentation files outside .cn-{agent}/ and .cdd/ (same; admin wake may read any doc but writes only to channel surfaces)",
+    "branch protection rules (operator-owned; admin wake never modifies)",
+    "repository settings (operator-owned; admin wake never modifies)",
+    "label definition (admin wake APPLIES labels per cnos#468 §4.1 but never DEFINES new labels per cnos#468 §4.2)",
+    "other agents' .cn-{other}/ surfaces (writer-locality per AGENT-ACTIVATION-LOG-v0 §0)"
+  ],
+  "defer_path": {
+    "cell_shaped_directive": "Defer to the relevant protocol:{P} dispatch wake if installed in this repo (e.g. cnos.cdd's cdd-dispatch wake for protocol:cdd cells). If no dispatch wake for the protocol is installed, surface to operator via the channel log entry: name the directive, name the missing dispatch wake, name the cycle the operator should install (e.g. 'cn wake install cdd-dispatch'). The admin wake MUST NOT execute the cell inline under any circumstance — doing so collapses the agent-admin / dispatch boundary that cnos#467 establishes.",
+    "off_role_directive": "When a directive falls outside the admin role (e.g. a code-change request, a renderer invocation, a release-cut), the admin wake appends a 'directive-out' or 'substantive' channel entry naming the misroute and the appropriate role/wake/operator action; the admin wake does NOT attempt the work. The channel entry is the operator's signal to re-route.",
+    "ambiguous_directive": "When the directive's role is ambiguous (could be admin or could be cell-shaped), defer to operator per cnos.core/skills/agent/attach §3.8 ('defer to operator on ambiguity, do not guess'); the channel entry names the ambiguity and the candidate interpretations."
+  },
+  "prompt_template": "prompt.md",
+  "agent_variable": {
+    "name": "agent",
+    "default": null,
+    "description": "Per-install agent identity binding. Substituted by the renderer at install time using the value the operator passes (e.g. 'cn wake install agent-admin --agent sigma' yields agent=sigma, and the prompt's '{agent}' placeholder resolves to 'sigma'; the prompt's 'cn-{agent}' placeholder resolves to 'cn-sigma' for the home URL). Required; no default — operators must pick the agent."
+  },
+  "permission_intent": [
+    "contents.write",
+    "issues.write",
+    "pull_requests.write",
+    "id_token.write"
+  ],
+  "permission_intent_notes": "Logical permissions; the renderer maps to the substrate-specific encoding (today: GitHub Actions 'permissions:' YAML block). contents.write for log/state file commits; issues.write for label application + issue creation/refinement + issue comments; pull_requests.write for PR comments (admin only — never PR merges or code changes); id_token.write for OIDC-based authentication when the substrate requires it.",
+  "concurrency_intent": {
+    "serialize": true,
+    "group": "agent-admin-{agent}",
+    "notes": "Channel-surface writes (.cn-{agent}/logs/) MUST be serialized to prevent race conditions. The renderer maps to substrate-specific concurrency encoding (today: GitHub Actions 'concurrency:' block with cancel-in-progress: false)."
+  },
+  "superseded_substrate_artifact": ".github/workflows/claude-wake.yml",
+  "relationship_to_substrate": "An existing hand-written substrate-bound wake at .github/workflows/claude-wake.yml currently runs the channel sync (activate + attach) for Sigma-at-cnos. That wake is substrate-named, owned by no package, and collapses the admin/dispatch boundary when cell-shaped directives arrive (it has no explicit defer-path). This wake-provider declaration is the package-owned replacement; once Sub 3 of cnos#467 (cn wake install) renders this declaration into the substrate, the rendered artifact (.github/workflows/cnos-agent-admin.yml) supersedes claude-wake.yml and the latter is retired. cnos#470 (this cycle) does NOT touch claude-wake.yml — the cutover happens at Sub 3 or later. AC7 of cnos#470 makes the byte-identical invariant on .github/workflows/claude-wake.yml binding for this cycle.",
+  "cross_references": {
+    "architecture": [
+      "cnos#467 (master tracker — agent/wake-orchestration; foundational architecture for package-owned wake providers)"
+    ],
+    "predecessors": [
+      "cnos#468 (Sub 1 — label doctrine; merged at c0048bef; consumed by this wake's prompt for label-application discipline)"
+    ],
+    "consumed_skills": [
+      "src/packages/cnos.core/skills/agent/activate/SKILL.md (identity load; six-item load order; identity-confirmation gate)",
+      "src/packages/cnos.core/skills/agent/attach/SKILL.md (channel sync; mode detection; follow-up sync vs inaugural attach; ephemeral mode)",
+      "src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md (label control plane; Sigma admin boundary §4.1 / §4.2)",
+      "src/packages/cnos.core/skills/agent/wake-provider/SKILL.md (this manifest's governing contract)"
+    ],
+    "consumed_conventions": [
+      "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; cursor mechanics §4; entry format §5; class taxonomy)"
+    ],
+    "adjacent_operator_doctrine": [
+      "cn-sigma:.cn-sigma/spec/OPERATOR.md §\"CDD role assignment\" (Sigma admin boundary; what Sigma may / may not do)"
+    ],
+    "downstream_consumers": [
+      "cnos#450 (Sub 3 — cn wake install renderer; consumes this manifest)",
+      "cnos#467 Sub 4 (cnos.cdd dispatch wake provider; pattern-copies from this form, declares role: dispatch)",
+      "cnos#467 Sub 6 (cycle-complete artifact reading; extends this wake's class_taxonomy + prompt with cycle-complete behavior)"
+    ]
+  }
+}
