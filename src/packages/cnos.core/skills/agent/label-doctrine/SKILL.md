@@ -55,8 +55,8 @@ Every open issue carries **exactly one** `status:*` label. The label names where
 | `status:ready` | spec'd; ACs converged; awaiting operator authorization | `status:todo`, `status:backlog` |
 | `status:todo` | operator-authorized; dispatch wake may claim | `status:in-progress` |
 | `status:in-progress` | claimed by a dispatch wake; cycle running | `status:review`, `status:blocked` |
-| `status:review` | implementation complete; awaiting β verdict | `status:changes`, closed |
-| `status:changes` | β requested changes; γ to repair the prompt and re-dispatch | `status:ready`, `status:todo` |
+| `status:review` | cell complete; awaiting external/operator review of the receipt/result | `status:changes`, closed |
+| `status:changes` | external review requested changes; issue must be revised before re-dispatch | `status:ready`, `status:todo` |
 | `status:blocked` | gated on external input (operator, infra, external authority) | `status:ready`, `status:todo` |
 
 Closed issue = done. There is no `status:done` (closing the issue is the terminal state).
@@ -77,7 +77,7 @@ Every `dispatch:cell` issue carries **exactly one** `protocol:{id}` label. The q
 
 | Qualifier | Owner | What its presence asserts |
 |---|---|---|
-| `protocol:cdd` | `cnos.cdd` | runtime = CDD γ/α/β triad; cell runs the standard CDD cycle |
+| `protocol:cdd` | `cnos.cdd` | runtime = CDD cycle (per cnos.cdd's spec) |
 | `protocol:cdr` | `cnos.cdr` | runtime = CDR research-cell shape (per cnos.cdr's spec) |
 | `protocol:cdw` | `cnos.cdw` (when the package exists) | runtime = CDW writing-cell shape (per cnos.cdw's spec) |
 | `protocol:{name}` | future package | each future protocol package registers its own qualifier at install |
@@ -191,7 +191,10 @@ The skill format:
 
 - **Cross-layer label creation.** A package creates a label it does not own (e.g., cnos.cdd creates `status:todo`). _Fix:_ per-package install commands create only labels in the package's owned set; `cn install` checks ownership before write.
 - **Missing protocol qualifier.** A `dispatch:cell` issue without `protocol:{id}`. _Fix:_ dispatch wakes reject the issue with `degraded_reason: dispatch_protocol_missing` and a repair-instruction comment (per cnos#454 AC9).
-- **Cross-protocol claim attempt.** A wake owning `{P}` tries to claim a cell labeled `protocol:{Q}` where `Q ≠ P`. _Fix:_ wake silently skips (the matching wake will claim on its sweep); not a drift event.
+- **Cross-protocol mismatch.** A wake owning `{P}` encounters a cell labeled `protocol:{Q}` where `Q ≠ P`. The handling differs by the wake's entry path:
+  - **Scheduled sweep:** the wake passes over the cell silently (it is not eligible under the wake's selector). The matching wake claims it on its own sweep. Not a drift event.
+  - **Attempted claim / event-targeted dispatch** (e.g., the wake was invoked on this specific issue via a label-trigger or explicit dispatch handle and discovers the protocol mismatch at claim-time): the wake **rejects** the claim and **reports** `degraded_reason: dispatch_protocol_mismatch` with a comment naming the mismatch (per cnos#454 AC9 drift-handling catalogue). This is a drift event.
+  The distinction matters because a sweep over a heterogeneous queue is expected behavior, but a targeted claim attempt landing on a wrong-protocol cell signals upstream label drift or a misrouted trigger and must surface for repair.
 - **Sigma defines new label.** Sigma adds a label not declared by any package's doctrine. _Fix:_ this is a Sigma-admin boundary violation; new labels must originate from a package's doctrine update + manifest change.
 - **Lifecycle skip.** An issue moves from `status:ready` directly to `status:in-progress` without `status:todo`. _Fix:_ dispatch wakes require `status:todo` for claim; transition discipline is enforced by the dispatch protocol (cnos#454 AC4 + AC7).
 

@@ -33,14 +33,14 @@
     },
     {
       "name": "status:review",
-      "description": "Implementation complete; awaiting β verdict.",
+      "description": "Cell complete; awaiting external/operator review of the receipt/result.",
       "color": "5319e7",
       "owner": "cnos.core",
       "group": "lifecycle"
     },
     {
       "name": "status:changes",
-      "description": "β requested changes; γ to repair the prompt and re-dispatch.",
+      "description": "External review requested changes; issue must be revised before re-dispatch.",
       "color": "d93f0b",
       "owner": "cnos.core",
       "group": "lifecycle"
