@@ -120,3 +120,106 @@ Not applicable for R1 (verdict is REQUEST CHANGES). On R2 APPROVE (post-F1 fix),
 - All other AC oracles, pre-merge gate rows, and implementation-contract axes pass.
 - Pre-existing tooling/CI red on main (I4 other 39 errors; I5 frontmatter; I6 cn-cdd-verify missing) is NOT this cycle's regression — recorded as note, not finding.
 - α appends fix-round to `self-coherence.md` and re-signals review-readiness; δ re-dispatches β for R2.
+
+---
+
+## R2 (2026-06-20 23:57 UTC — base origin/main: `c0048befb89c9b4aa083dd5fdb5c6c5547966ab9` — head origin/cycle/470: `9c5d01f560814f3ec8069f4bedd04ee5f62f8538` — implementation SHA: `b6bad619820119dfcaf42371278724ead37b5b5d`)
+
+### Verdict: APPROVED
+
+R1 F1 is mechanically resolved. The two-line link fix at `prompt.md` L28+L114 (6→5 `..` segments) is exactly what β requested; no other surface touched in R2; all R1-passing gates re-confirmed; α's honest correction to §Self-check Q5 acknowledges the rule 3.13c (wiring-claim) discipline failure explicitly. CI's I4 lychee error count on the merge tree (PR #471 `pull/471/merge` SHA `48914a9e`) is 39 — exactly main's baseline; the new error attributable to F1 at R1 is gone.
+
+### F1 resolution (point-by-point)
+
+| β R1 ask | α R2 evidence | β R2 verification |
+|---|---|---|
+| Replace 6-segment path at `prompt.md` L28 with 5-segment form | commit `b6bad619` diff shows L28 edited | `grep -nE '\(\.\./\.\./\.\./\.\./\.\./docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0\.md\)' prompt.md` returns hit at line 28 ✓ |
+| Replace 6-segment path at `prompt.md` L114 with 5-segment form | commit `b6bad619` diff shows L114 edited | same grep returns hit at line 114 ✓ |
+| Zero 6-segment occurrences remain in `prompt.md` | α §R2 fix claims and shows diff | `grep -cE '\(\.\./\.\./\.\./\.\./\.\./\.\./' prompt.md` returns `0` ✓ |
+| Positive regression case: `ls ../../../../../docs/.../AGENT-ACTIVATION-LOG-v0.md` from prompt dir resolves | claimed in §R2 fix | `cd src/packages/cnos.core/orchestrators/agent-admin/ && ls ../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` returns the file (exit 0) ✓ |
+| Negative regression case: 6-segment form does NOT resolve (the bug) | claimed in §R2 fix | `cd src/packages/cnos.core/orchestrators/agent-admin/ && ls ../../../../../../docs/...` returns `No such file or directory` (exit 2) ✓ |
+| CI I4 error count drops from 40 to 39 (matches main baseline) | α §R2 fix asks β R2 to confirm | PR #471 R2-head merge-checkout `pull/471/merge` SHA `48914a9e` job `82525695526` summary reports `🚫 Errors: 39`; no `prompt.md` / `AGENT-ACTIVATION-LOG-v0` line anywhere in the I4 log ✓ |
+| Honest correction to §Self-check Q5 (R1 secondary, rule 3.13c) | §R2 fix carries explicit "**That claim was false**" paragraph + discipline learning record ("wiring claims of the form 'X resolves to Y' MUST be backed by a mechanical oracle (filesystem `ls`, `git grep`, `jq` query) re-run at signal time, not by visual pattern-match against other links in the same file") | language is honest, names the failure as a 3.13c violation, and pre-commits the corrective discipline for future α-side polyglot-row Q5 entries (per-link `ls`-result, not aggregate "all links resolve" claim). β accepts as a clean rule 3.13c remediation. ✓ |
+
+All seven asks satisfied. F1 closes.
+
+### Pre-merge gate (β SKILL §"Pre-merge gate") re-run at R2
+
+| Row | Result | Notes (R2) |
+|---|---|---|
+| 1 (Identity truth) | pass | `git config --get user.email` returns `beta@cdd.cnos`; `git config --get user.name` returns `beta`; merge-test worktree set with `git config --worktree user.email beta-merge-test@cdd.cnos` |
+| 2 (Canonical-skill freshness) | pass | `git fetch --verbose origin main` returns `c0048befb89c9b4aa083dd5fdb5c6c5547966ab9` — unchanged from R1 session-start snapshot; no spec drift; no skill re-load required |
+| 3 (Non-destructive merge-test) | pass | `git worktree add /tmp/cnos-merge-470-r2/wt origin/main && git merge --no-ff --no-commit origin/cycle/470` completed cleanly; zero unmerged paths; 6 files staged (same as R1 + the additional R2 self-coherence.md/beta-review.md updates). Validators re-run on merge tree: (a) `jq` parses `wake-provider.json` and reports `schema` first key with value `cn.wake-provider.v1`; (b) AC7 mechanical `git diff origin/main HEAD -- .github/workflows/claude-wake.yml \| wc -l` = `0`; md5 unchanged (`adec219817399709ae5462eaeadc2d67`); (c) scope mechanical `git diff --name-only origin/main HEAD \| grep -vE '^(src/packages/cnos\\.core/\|\\.cdd/unreleased/470/)' \| wc -l` = `0`; (d) substrate-agnostic mechanical `grep -ciE 'github\|workflow\|yaml\|GITHUB_TOKEN\|claude-code-action\|runs-on'` = `4 + 5 = 9` (unchanged from R1; R2 fix did not add/remove any of those tokens); (e) AC3 text invariants: `activate\|attach` = `14`, `MUST NOT execute` = `3`, `defer\|dispatch wake` = `13`, `label-doctrine\|cnos#468` = `6` (all match R1). Worktree torn down. |
+| 4 (γ artifact completeness) | pass | `ls .cdd/unreleased/470/gamma-scaffold.md` returns 43330-byte file; β SKILL §3.11b satisfied |
+
+### AC coverage re-confirmation at R2 head
+
+| AC | R1 status | R2 status | Notes |
+|----|-----------|-----------|-------|
+| AC1 — wake-provider contract skill | pass | pass | file unchanged in R2 (commit `61588ca0` from R1 still HEAD-ward); SKILL.md exists, frontmatter conforms |
+| AC2 — agent-admin manifest | pass | pass | file unchanged in R2; `jq -r 'keys_unsorted[0]'` = `schema`; `jq -e '.schema == "cn.wake-provider.v1"'` = true; all 12 AC1-required fields present |
+| AC3 — prompt template admin-only | pass (text); F1 fixed | pass | textual oracles unchanged (R2 fix changed only the `(target)` portion of two markdown link tuples; the surrounding prose `[label]` text + everything else is byte-stable). F1's broken link is now fixed: `ls` resolves; 0 six-segment forms remain |
+| AC4 — input + output contracts | pass | pass | manifest untouched; `class_taxonomy` still length 5 with all expected values; `inaugural` admission widening from R1 preserved |
+| AC5 — allowed + disallowed surfaces | pass | pass | manifest untouched; `disallowed_surfaces` still contains `cell_execution` literal; surface counts unchanged |
+| AC6 — cross-references | pass | pass | manifest `cross_references` keys unchanged (`adjacent_operator_doctrine`, `architecture`, `consumed_conventions`, `consumed_skills`, `downstream_consumers`, `predecessors`). Citation text is present in both surfaces; the AGENT-ACTIVATION-LOG-v0 *link target* — the R1 defect — is now correct |
+| AC7 — claude-wake.yml byte-identical | pass | pass | `git diff origin/main HEAD -- .github/workflows/claude-wake.yml \| wc -l` = `0`; md5 unchanged (`adec219817399709ae5462eaeadc2d67`) |
+
+All 7 ACs pass on R2 head. The R2 fix is link-only and surgical; no oracle that previously passed could regress.
+
+### Implementation-contract coherence (β SKILL Rule 7) re-confirmation
+
+| Axis | R1 status | R2 status | R2 evidence |
+|------|-----------|-----------|-------------|
+| Language | pass | pass | `git diff --name-only origin/main origin/cycle/470 \| awk -F. '{print $NF}' \| sort \| uniq -c` returns `1 json` + `5 md`; zero `.go`/`.sh`/`.yml`/`.py` |
+| CLI integration target = None | pass | pass | `git diff --name-only origin/main origin/cycle/470 \| grep -E 'src/go/\|cn.package.json'` returns empty |
+| Package scoping | pass | pass | `git diff --name-only origin/main origin/cycle/470 \| grep -vE '^(src/packages/cnos\\.core/\|\\.cdd/unreleased/470/)' \| wc -l` = `0` |
+| Existing-binary disposition | pass | pass | N/A — no binary changes |
+| Runtime dependencies | pass | pass | declaration is static data + markdown; no runtime added |
+| JSON/wire contract | pass | pass | `schema` first key, value `cn.wake-provider.v1` (unchanged) |
+| Backward compat | pass | pass | `claude-wake.yml` byte-identical (md5 unchanged) |
+
+No axis regressed; all 7 still conform to γ-pinned implementation contract.
+
+### CI status (rule 3.10)
+
+R2-head PR #471 check_runs (workflow runs `27887705849` and `27887706377`):
+
+| Check | R2 conclusion | Notes |
+|---|---|---|
+| Go build & test | success | ✓ |
+| Package verification | success | ✓ |
+| Binary verification | success | ✓ |
+| Package/source drift (I1) | success | ✓ |
+| Protocol contract schema sync (I2) | success | ✓ |
+| Repo link validation (I4) | failure | 39 errors — **matches main baseline exactly**; R1's +1 new error (F1) is gone (verified by absence of `prompt.md` / `AGENT-ACTIVATION-LOG-v0` line in the I4 log). Pre-existing main red, not a cycle regression. |
+| SKILL.md frontmatter validation (I5) | failure | Pre-existing main red (53 findings on main; new wake-provider/SKILL.md is NOT among them — verified in R1 §Notes). Not a cycle regression. |
+| CDD artifact ledger validation (I6) | failure | Pre-existing main red (`cn-cdd-verify` binary missing on main and merge tree). Not a cycle regression. |
+
+I4/I5/I6 are red on main itself; this cycle's only fresh red at R1 (the +1 I4 error from F1) is resolved at R2. Per rule 3.10, the binding gate is "every *required* workflow has `conclusion == "success"`" — no branch protection rules pin I4/I5/I6 as required, and the documented red on main does not block merge per R1's β reading (preserved at R2). CI gate satisfied for the cycle-introduced surface; pre-existing main red is recorded for γ closeout / future iteration but not a binding R2 finding.
+
+### γ artifact completeness gate (rule 3.11b)
+
+`git ls-tree -r origin/cycle/470 .cdd/unreleased/470/gamma-scaffold.md` returns `100644 blob 0be2415214eb17a9b82ccd23a32c3ca1db2cac3a` (unchanged from R1). β SKILL §"Pre-merge gate" row 4 + review/SKILL.md §3.11b satisfied via §5.1 canonical scaffold path.
+
+### New findings in R2
+
+None. The R2 diff is exactly the two-line edit β R1 requested plus the §R2 fix prose in `self-coherence.md`. No new surface introduced; no opportunity for new defects.
+
+### α's R2 discipline note (recorded for γ closeout, not a finding)
+
+α's §R2 fix includes an honest §Self-check Q5 correction *and* a forward-looking discipline learning: "wiring claims of the form 'X resolves to Y' / 'X references Y' / 'X is wired to Y' MUST be backed by a mechanical oracle (filesystem `ls`, `git grep`, `jq` query) re-run at signal time, not by visual pattern-match against other links in the same file ... Future α-side polyglot-row Q5 entries will list each link tested with its `ls`-result, not aggregate 'all links resolve' without per-link proof." This is exactly the right corrective response to a rule 3.13c failure: name the failure, name the failure mode (visual-pattern-match extrapolation instead of per-link mechanical test), and pre-commit the corrective discipline. β records this for γ closeout's CDD-process learning column.
+
+### Merge instruction
+
+Approved at head `9c5d01f560814f3ec8069f4bedd04ee5f62f8538`; merging via branch-direct merge-commit (preserves α/β commit history per CDD doctrine; `--no-ff` semantically equivalent to PR-mediated `merge` method, which preserves the history of the 4 cycle/470 commits intact under one merge commit on main).
+
+Command: `git fetch origin && git switch main && git pull --ff-only && git merge --no-ff origin/cycle/470 -m "Merge pull request #471 from usurobor/cycle/470 — agent-admin wake-provider (admin-only, no cell execution)" && git push origin main`.
+
+### Round summary
+
+- **R2 verdict: APPROVED.**
+- F1 mechanically resolved: 2 `..`-segment edits at L28+L114 (6→5); positive regression case (`ls` resolves) ✓; negative regression case (broken form fails) ✓; CI I4 drops 40→39 (matches main baseline) ✓.
+- α's R2 secondary deliverable — honest correction to §Self-check Q5 — names the rule 3.13c failure explicitly and pre-commits forward-looking discipline. Clean remediation.
+- All 7 ACs re-confirmed pass at R2 head; all 7 Rule 7 axes re-confirmed pass; all 4 pre-merge gate rows re-confirmed pass.
+- Zero new findings.
+- β merges `origin/cycle/470 → main` via branch-direct merge-commit; writes `beta-closeout.md`; releases dispatch back to δ for α-closeout + γ-closeout per cycle execution mode bootstrap exception.
