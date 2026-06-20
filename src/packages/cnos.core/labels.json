@@ -1,0 +1,63 @@
+{
+  "schema": "cn.labels.v1",
+  "owner": "cnos.core",
+  "doctrine": "src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md",
+  "labels": [
+    {
+      "name": "status:backlog",
+      "description": "Well-formed scope but not yet refined to dispatch readiness.",
+      "color": "ededed",
+      "owner": "cnos.core",
+      "group": "lifecycle"
+    },
+    {
+      "name": "status:ready",
+      "description": "Spec'd; ACs converged; awaiting operator authorization.",
+      "color": "c2e0c6",
+      "owner": "cnos.core",
+      "group": "lifecycle"
+    },
+    {
+      "name": "status:todo",
+      "description": "Operator-authorized; dispatch wake may claim.",
+      "color": "0e8a16",
+      "owner": "cnos.core",
+      "group": "lifecycle"
+    },
+    {
+      "name": "status:in-progress",
+      "description": "Claimed by a dispatch wake; cycle running.",
+      "color": "fbca04",
+      "owner": "cnos.core",
+      "group": "lifecycle"
+    },
+    {
+      "name": "status:review",
+      "description": "Implementation complete; awaiting β verdict.",
+      "color": "5319e7",
+      "owner": "cnos.core",
+      "group": "lifecycle"
+    },
+    {
+      "name": "status:changes",
+      "description": "β requested changes; γ to repair the prompt and re-dispatch.",
+      "color": "d93f0b",
+      "owner": "cnos.core",
+      "group": "lifecycle"
+    },
+    {
+      "name": "status:blocked",
+      "description": "Gated on external input (operator, infra, external authority).",
+      "color": "b60205",
+      "owner": "cnos.core",
+      "group": "lifecycle"
+    },
+    {
+      "name": "dispatch:cell",
+      "description": "This issue is an executable implementation cell. Eligible to be claimed by a dispatch wake when paired with status:todo and a matching protocol:{id}.",
+      "color": "1d76db",
+      "owner": "cnos.core",
+      "group": "dispatchability"
+    }
+  ]
+}
