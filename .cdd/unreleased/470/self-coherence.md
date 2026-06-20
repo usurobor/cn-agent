@@ -3,7 +3,7 @@
 <!--
 section-manifest:
   planned: [Gap, Skills, AC1-impl, AC2-impl, AC3-impl, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
-  completed: [Gap, Skills, AC1-impl, AC2-impl, AC3-impl, ACs, Self-check, Debt, CDD-Trace]
+  completed: [Gap, Skills, AC1-impl, AC2-impl, AC3-impl, ACs, Self-check, Debt, CDD-Trace, Review-readiness]
 -->
 
 ## Gap
@@ -274,6 +274,55 @@ Per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" (c
 | Runtime dependencies | None — static data + markdown. Manifest parses with `jq` (standard tooling). ✓ |
 | JSON/wire contract | Manifest declares `"schema": "cn.wake-provider.v1"` as the FIRST key (`jq -r 'keys_unsorted[0]'` returns `schema`). AC1 contract skill is the canonical schema definition. ✓ |
 | Backward compat | `git diff origin/main..HEAD -- .github/workflows/claude-wake.yml | wc -l` returns 0. ✓ |
+
+## Review-readiness
+
+**Round:** R1.
+
+**Cycle branch:** `cycle/470`.
+
+**Base:** `origin/main` at SHA `c0048befb89c9b4aa083dd5fdb5c6c5547966ab9` (re-validated at signal time via `git fetch origin main && git rev-parse origin/main`; matches γ-scaffold-time base, no drift, no rebase needed).
+
+**Implementation SHA:** `0f503a59` (the last commit before this §Review-readiness commit; per α SKILL §2.6 "SHA convention for readiness signal" — implementation SHA is stable because the readiness-signal commit comes after it).
+
+**γ artifact location (α SKILL §2.6 row 15):** γ-artifact at canonical §5.1 path. Verified: `git ls-tree -r origin/cycle/470 .cdd/unreleased/470/gamma-scaffold.md` returns `100644 blob 0be24152... .cdd/unreleased/470/gamma-scaffold.md`. β's §3.11b discoverability gate is satisfied by canonical-path presence.
+
+**Pre-review gate (α SKILL §2.6 rows 1–15):**
+
+| Row | Description | Result |
+|---|---|---|
+| 1 | Cycle branch rebased onto current origin/main | pass (base SHA = current origin/main SHA = `c0048bef`; no drift) |
+| 2 | self-coherence carries CDD Trace through step 7 | pass (§CDD Trace above; steps 0–7) |
+| 3 | tests present, or explicit reason none apply | pass (explicit reason in §CDD Trace "Test assertion count" paragraph: static data + markdown; verifiers are AC oracle greps + jq + manifest field validation) |
+| 4 | every AC has evidence | pass (§ACs — AC1–AC7 each have a re-grepped evidence block) |
+| 5 | known debt explicit | pass (§Debt — 5 items declared with cycle-rationale for each) |
+| 6 | schema / shape audit | pass (§Self-check Q4 harness audit — schema `cn.wake-provider.v1` enumerated producers + consumers + harness; no non-primary-language writers exist; no generated defaults) |
+| 7 | peer enumeration | pass (§Self-check Q3 — wake-provider declaration peers, skill-class peers, Sigma-admin boundary peers, intra-doc repetition all enumerated) |
+| 8 | harness audit (same as row 6 for this cycle) | pass |
+| 9 | polyglot re-audit | pass (§Self-check Q5 — JSON validity + JSON contract conformance + Markdown structural validity + Markdown grep + AC oracle re-run) |
+| 10 | branch CI green on head commit | n/a — no CI configured for `.md` + `.json`-only changes; local mechanical gates (jq + grep) all pass; β can re-run on its worktree per pre-merge gate row 3 |
+| 11 | artifact enumeration matches diff | pass (§CDD Trace step 6 enumerates: AC1 skill, AC2 manifest, AC3 prompt; §ACs enumerates: gamma-scaffold (γ artifact), self-coherence (α artifact); every file in `git diff --stat origin/main..HEAD` named in this self-coherence) |
+| 12 | caller-path trace for new modules | pass (§CDD Trace "Caller-path trace" — AC1 contract skill callers + AC2 manifest callers traced; known debt #3 declares the renderer-callsite is deferred to Sub 3) |
+| 13 | test assertion count from runner output | n/a — no test runner (per row 3) |
+| 14 | α's commit author email matches canonical pattern | pass (all 7 α commits — `fc75307b`, `c81de2de`, `61588ca0`, `4c8f30c8`, `2c7b1437`, `14634d90`, `0f503a59` — show `alpha@cdd.cnos` per `git log --format='%h %ae' origin/main..HEAD`) |
+| 15 | γ-side artifact presence at rule-3.11b surface | pass (γ-scaffold at canonical §5.1 path `.cdd/unreleased/470/gamma-scaffold.md`; β's §3.11b gate satisfied by canonical-path presence) |
+
+**Final mechanical gates (γ scaffold §"AC mapping" → "Mechanical gate" block):**
+
+- AC7 mechanical proof: `git diff origin/main..HEAD -- .github/workflows/claude-wake.yml | wc -l` returns `0`. ✓
+- Substrate-agnostic mechanical proof: `grep -ciE 'github|workflow|yaml|GITHUB_TOKEN|claude-code-action|runs-on' src/packages/cnos.core/orchestrators/agent-admin/*.json src/packages/cnos.core/orchestrators/agent-admin/*.md` returns `5 + 4 = 9` hits; all 9 audited in §ACs AC2 evidence as legitimate carve-outs (AC5 mandatory `.github/workflows/` enumeration in disallowed_surfaces; AC7 `superseded_substrate_artifact` + `relationship_to_substrate` fields; descriptive renderer-mapping prose in `permission_intent_notes` + `concurrency_intent.notes`; GitHub issue URLs for cross-reference; agent hub URLs for activate invocation). The γ-scaffold's carve-out clause admits these.
+- Scope discipline mechanical proof: `git diff --name-only origin/main..HEAD | grep -vE '^(src/packages/cnos\.core/|\.cdd/unreleased/470/)' | wc -l` returns `0`. ✓
+
+**Implementation-contract coherence (β SKILL Rule 7):** All 7 axes pass per §CDD Trace "Implementation-contract conformance" table.
+
+**Refusal conditions check (α SKILL §"Refusal conditions"):** None triggered. The cycle did not require editing `.github/workflows/claude-wake.yml`, implementing `cn wake install`, implementing dispatch claim protocol, authoring CDD dispatch wake (Sub 4), or extending δ (Sub 5). All pinned implementation-contract axes were satisfiable from this scope. All 7 ACs were satisfiable from the pinned form. No `gamma-clarification.md` filed; none needed.
+
+**Behavioral design call recorded in self-coherence (dispatch prompt §"Refusal conditions" — behavioral gap handling):** The `cycle-complete` value enumerated in `output_contract.class_taxonomy` (per cnos#467 Sub 6 forward-compatibility). Recorded in §Debt #1 with reasoning: the value is declared at this contract level so Sub 6's wiring is a prompt-template extension, not a manifest schema bump. β should verify the design call is consistent with the contract skill (it is — AC1 §2.1 `output_contract.class_taxonomy` is `array of allowed class: values`, no enumeration constraint).
+
+**Ready for β.**
+
+α exits per sequential bounded dispatch (per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule"); δ runs β. α will be re-dispatched by δ after β merges for `alpha-closeout.md`.
+
 
 
 
