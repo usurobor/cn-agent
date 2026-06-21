@@ -304,7 +304,21 @@ No blocking debt. All friction items have α-side mitigations + α-side oracle r
 - §ACs → `ad76c8f9`
 - §Self-check + §Debt → `1cae3271`
 - §CDD Trace → (this commit)
-- §Review-readiness → (next commit)
+- §Review-readiness → (this commit)
+
+## Review-readiness | round 1 | base SHA: `fcc5cdb9a533ad86e67524bcf05a33d2b4592e8a` (origin/main) | implementation SHA: `7162c32a` (last code commit; `α-476: CI golden-diff workflow (AC6 + AC2 negative smoke + AC7 + AC8 audits)`) | branch CI: not run locally (no `gh run` access in α's sandbox; the `.github/workflows/install-wake-golden.yml` job will fire on this push and β verifies green at merge time per α SKILL §2.6 row 10) | γ-artifact: at canonical §5.1 path (`.cdd/unreleased/476/gamma-scaffold.md` present on `origin/cycle/476` at blob `a7bc263757...`) | ready for β
+
+**Round 1 summary:**
+- All 8 ACs evidenced per per-row tables in §ACs.
+- All 6 mechanical gates from γ scaffold §"Mechanical gate" pass.
+- All 15 α SKILL §2.6 pre-review-gate rows pass (rows 1, 9, 14, 15 explicitly proved above; rows 2-8 and 11-13 covered by §Self-check + §ACs).
+- 6 friction items routed to γ closeout (F1-F6 in §Debt; none blocking).
+- No `gamma-clarification.md` filed.
+- No form-pin or render-target-pin override; γ pins accepted as-is.
+- Branch CI workflow `install-wake-golden.yml` will fire on this push (paths trigger on `commands/install-wake/**` + `orchestrators/**` + the workflow itself).
+
+α exits per sequential bounded dispatch (`cnos.cds/skills/cds/CDS.md` §"Field 6"); δ dispatches β.
+
 
 
 
