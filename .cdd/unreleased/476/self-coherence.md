@@ -282,5 +282,30 @@ The cleaner long-term fix: split AC8 into two oracles:
 
 No blocking debt. All friction items have α-side mitigations + α-side oracle re-runs that prove the cycle's ACs are met. γ closeout friction-log items F1–F6 above. No `gamma-clarification.md` filed; no pinned axis appears unsatisfiable.
 
+## §CDD Trace
+
+| Step | Description | Evidence |
+|---|---|---|
+| 0 | δ dispatch received (bootstrap path; γ-interface acting as δ) | dispatch prompt mirrored from `gamma-scaffold.md` §"α dispatch prompt" |
+| 1 | γ identity configured | `git config --get user.email` returned `alpha@cdd.cnos` |
+| 2 | Switched to cycle branch `cycle/476` (γ-created at `417541ad` from `origin/main@fcc5cdb9`) | `git switch cycle/476`; no branch creation by α |
+| 3 | Skills loaded (Tier 1: CDD.md, alpha/SKILL.md; lifecycle: issue, design; Tier 3: wake-provider/SKILL.md + reference manifest + prompt + label-doctrine + cn.package.json + sibling commands + discover.go + claude-wake.yml + AGENT-ACTIVATION-LOG; γ scaffold; issue body; master tracker) | §Skills section |
+| 4 | §Gap declared (issue, mode `design-and-build`, form-pin acknowledged, render-target-pin acknowledged) | §Gap section; committed at `42e59a6e` |
+| 5 | §Skills declared | committed at `5f836072` |
+| 6 | Implementation produced + ACs proved | renderer at `src/packages/cnos.core/commands/install-wake/cn-install-wake`; `cn.package.json` entry; golden at `src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml`; CI workflow at `.github/workflows/install-wake-golden.yml`; committed at `2b1c125e` + `7162c32a`. Called by: `cn install-wake <name>` via Go-side `discover.ScanPackageCommands` (no Go change needed); direct invocation from CI workflow. Mechanical gates run + pass (§ACs "Mechanical gate summary"). Each new artifact mentioned in §Self-check artifact-enumeration table. |
+| 7 | §ACs + §Self-check + §Debt written with per-X tables (claim-class verification per γ injection) | committed at `ad76c8f9` + `1cae3271`. AC2 / AC3 / AC4 / AC5 / AC6 / AC7 / AC8 each have per-row evidence tables; aggregated claims forbidden, none used. |
+
+**Implementation SHA (per α SKILL §2.6 "SHA convention for readiness signal" — last implementation commit, not the readiness-signal commit's own SHA):** `7162c32a` (`α-476: CI golden-diff workflow (AC6 + AC2 negative smoke + AC7 + AC8 audits)`).
+
+**Self-coherence section commit SHAs (incremental discipline per α SKILL §2.5):**
+- §Gap → `42e59a6e`
+- §Skills → `5f836072`
+- (implementation commits 2b1c125e + 7162c32a)
+- §ACs → `ad76c8f9`
+- §Self-check + §Debt → `1cae3271`
+- §CDD Trace → (this commit)
+- §Review-readiness → (next commit)
+
+
 
 
