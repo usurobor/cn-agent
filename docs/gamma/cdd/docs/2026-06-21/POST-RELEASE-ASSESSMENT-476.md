@@ -29,14 +29,14 @@
 | (to be filed; Sub 4) | cnos.cdd dispatch wake provider (parallels cycle/470's Sub 2 shape; `role: dispatch`) | feature | named by cnos#467 + cycle/470's AC1 §1.2 + §5; consumer-side validator (the renderer) now exists per cycle/476 | not started; wave's next gating cycle; **blocking dependency on Sub 3 now resolved** | new (this cycle); needs issue-pack filing |
 | (to be filed; Sub 5) | δ wake-invoked mode skill + dispatch-prompt template (consumes the cnos#472-extension filed by this cycle) | feature/process | sketched by cycle/470 friction notes F-α-1..5; **mechanical-injection requirement added by cnos#472-extension this cycle (cycle/476)** | not started; blocked on Sub 4 (parallel provider needed for testing dispatch-path discipline) | new (this cycle); blocked-on-precursor |
 | (to be filed; Sub 6) | cycle-complete artifact reading | feature | partially typed in cycle/470's `class_taxonomy.cycle-complete` value | not started; blocked on Sub 5 | new (this cycle); blocked-on-precursor |
-| **cnos#TBD-1** (filed by this cycle, pending GitHub MCP re-authorization) | agent/dispatch-prompt: mechanical scaffold injection for CI-step verification (extends cnos#472) | process / cdd-skill-gap | empirical case study converged (cycle/476's 3-round class-trap recurrence); design surfaces named (γ scaffold template + α SKILL) | not started; folds into the next CI-touching cycle's design+patch | new (this cycle); P1 |
-| **cnos#TBD-2** (filed by this cycle, pending GitHub MCP re-authorization) | wake-cutover/agent-admin: retire claude-wake.yml, activate rendered cnos-agent-admin.yml | chore (operator-visible activation) | converged (cycle/476 `--out` flag + golden + 4 mechanical ACs) | not started; can ship in a single PR without orchestration agents | new (this cycle); P2 |
-| [cnos#472](https://github.com/usurobor/cnos/issues/472) | dispatch-prompt template should auto-inject claim-class verification (Sub 5 feedstock from cycle/470) | process | sketched (per-class verification table); **now extended by cnos#TBD-1 with mechanical-injection requirement** | not started; folds into Sub 5 + cnos#TBD-1 | cycle/470 origin; cnos#476 extension |
+| **[cnos#478](https://github.com/usurobor/cnos/issues/478)** (filed by this cycle) | agent/dispatch-prompt: mechanical scaffold injection for CI-step verification (extends cnos#472) | process / cdd-skill-gap | empirical case study converged (cycle/476's 3-round class-trap recurrence); design surfaces named (γ scaffold template + α SKILL) | not started; folds into the next CI-touching cycle's design+patch | new (this cycle); P1 |
+| **[cnos#479](https://github.com/usurobor/cnos/issues/479)** (filed by this cycle) | wake-cutover/agent-admin: retire claude-wake.yml, activate rendered cnos-agent-admin.yml | chore (operator-visible activation) | converged (cycle/476 `--out` flag + golden + 4 mechanical ACs) | not started; can ship in a single PR without orchestration agents | new (this cycle); P2 |
+| [cnos#472](https://github.com/usurobor/cnos/issues/472) | dispatch-prompt template should auto-inject claim-class verification (Sub 5 feedstock from cycle/470) | process | sketched (per-class verification table); **now extended by [cnos#478](https://github.com/usurobor/cnos/issues/478) with mechanical-injection requirement** | not started; folds into Sub 5 + [cnos#478](https://github.com/usurobor/cnos/issues/478) | cycle/470 origin; cnos#476 extension |
 | [cnos#473](https://github.com/usurobor/cnos/issues/473) | base-doctor: cn-cdd-verify + cue absent on main | tooling | trivial | not started; still open | cycle/470 origin; cycle/476 inherits same baseline |
 | [cnos#474](https://github.com/usurobor/cnos/issues/474) | canonical CDD.md at cnos.cdd/skills/cdd/CDD.md absent | process | two options sketched | not started; still open | cycle/470 origin; cycle/476 inherits |
 | [cnos#475](https://github.com/usurobor/cnos/issues/475) | base CI red on main: I4 + I5 + I6 | tooling | enumerated | not started; still open | cycle/470 origin; cycle/476 inherits (third successive cycle observing) |
 
-**MCI/MCA balance:** Balanced. cycle/476 closed one wave phase (Sub 3 of cnos#467) AND filed the mechanical-extension of cnos#472 with empirical case rationale. The two new follow-ups (cnos#TBD-1 + cnos#TBD-2) are both designed-and-bounded (cnos#TBD-1: 2 surface patches with the 3-column table byte-liftable from α's R3 audit; cnos#TBD-2: 1 PR, 4 mechanical ACs). The wave's design front (cnos#467 master) is converged-and-shipping; the implementation front advances at Sub 4 next. No MCI freeze required.
+**MCI/MCA balance:** Balanced. cycle/476 closed one wave phase (Sub 3 of cnos#467) AND filed the mechanical-extension of cnos#472 with empirical case rationale. The two new follow-ups ([cnos#478](https://github.com/usurobor/cnos/issues/478) + [cnos#479](https://github.com/usurobor/cnos/issues/479)) are both designed-and-bounded ([cnos#478](https://github.com/usurobor/cnos/issues/478): 2 surface patches with the 3-column table byte-liftable from α's R3 audit; [cnos#479](https://github.com/usurobor/cnos/issues/479): 1 PR, 4 mechanical ACs). The wave's design front (cnos#467 master) is converged-and-shipping; the implementation front advances at Sub 4 next. No MCI freeze required.
 
 ---
 
@@ -163,7 +163,7 @@ Both findings are mechanical/wiring/honest-claim all at once — both textbook �
 |------|----------|--------------|----------|
 | 11 Observe | β-closeout.md + α-closeout.md on main; cycle/476 merged at `35380b3d`; CI on merge SHA (pre-existing main red baseline; cycle/476 contribution = 0 regression; new `install-wake-golden.yml` workflow green at R3) | post-release | runtime/design alignment result: renderer + golden + CI guard ship clean; production activation deferred to cutover-A; class-trap recurrence is the cycle's signature finding |
 | 12 Assess | this PRA at `docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT-476.md`; cycle artifacts at `.cdd/releases/docs/2026-06-21/476/` per `release/SKILL.md §2.5b` | post-release; gamma/SKILL.md §2.7; release/SKILL.md §2.5b | assessment completed; docs-only disconnect via §2.5b; per-cycle suffix on PRA filename preserves disambiguation with cycle/470's same-day PRA |
-| 13 Close | cnos#472-extension + cutover-A filed (pending GitHub MCP re-authorization); gamma-closeout.md authored + committed at `bd0c31a1`; cycle artifacts moved to archive; PRA committed | post-release; gamma/SKILL.md §2.10 | cycle closed; deferred outputs committed (Sub 4 next; cnos#472-extension as process-iteration MCA; cutover-A as operator-visible activation) |
+| 13 Close | [cnos#478](https://github.com/usurobor/cnos/issues/478) (cnos#472-extension) + [cnos#479](https://github.com/usurobor/cnos/issues/479) (cutover-A) filed; gamma-closeout.md authored + committed at `471f07cd`; cycle artifacts moved to archive at `adde4e8f`; PRA committed at `adde4e8f` | post-release; gamma/SKILL.md §2.10 | cycle closed; deferred outputs committed (Sub 4 next; cnos#478 as process-iteration MCA; cnos#479 as operator-visible activation) |
 
 ### 6a. Invariants Check
 
@@ -198,17 +198,17 @@ All cycle-touched invariants preserved or tightened; none revised. The cycle's n
 - Immediate outputs executed: **no** (rationale: scaffold + SKILL amendments belong inside the cnos#472-extension cycle, where they travel with cycle/476's empirical class-trap recurrence as the design rationale; γ-side preemptive patch would split the rationale)
 - Deferred outputs committed: **yes**
   - cnos#467 Sub 4 (cnos.cdd dispatch wake provider) — to be filed as a sub-issue at next γ observation cycle; first AC = parallel-structure rendering
-  - **cnos#TBD-1** (filed by this cycle, pending GitHub MCP re-auth) — cnos#472 mechanical-injection extension — P1; parent cnos#472
-  - **cnos#TBD-2** (filed by this cycle, pending GitHub MCP re-auth) — cutover-A: activate cnos-agent-admin.yml, retire claude-wake.yml — P2; cross-ref cnos#467 + cnos#470 + cnos#476
+  - **[cnos#478](https://github.com/usurobor/cnos/issues/478)** (filed by this cycle) — cnos#472 mechanical-injection extension — P1; parent cnos#472
+  - **[cnos#479](https://github.com/usurobor/cnos/issues/479)** (filed by this cycle) — cutover-A: activate cnos-agent-admin.yml, retire claude-wake.yml — P2; cross-ref cnos#467 + cnos#470 + cnos#476
   - [cnos#473](https://github.com/usurobor/cnos/issues/473) — base-doctor (still open from cycle/470)
   - [cnos#474](https://github.com/usurobor/cnos/issues/474) — canonical CDD.md absent (still open from cycle/470)
   - [cnos#475](https://github.com/usurobor/cnos/issues/475) — base CI red baseline (still open from cycle/470; third successive cycle inheriting)
 
 **Immediate fixes** (executed in this session):
 - gamma-closeout.md authored + committed (`bd0c31a1`)
-- 2 follow-up issues drafted in gamma-closeout body; GitHub MCP token was expired during this session, so the issues are **pending re-authorization** — γ recorded full title/labels/body/cross-references in `.cdd/releases/docs/2026-06-21/476/gamma-closeout.md §"Follow-up issues filed"` so the operator can file them via the same MCP path once re-auth completes (or γ retries on next session). Issue numbers will be amended into the closeout's triage table at that time.
-- archive move via `git mv` (preserves history; commit pending in same set as PRA)
-- this PRA at `docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT-476.md` (commit pending in same set as archive move)
+- 2 follow-up issues filed via `mcp__github__issue_write` method=create: [cnos#478](https://github.com/usurobor/cnos/issues/478) (cnos#472-extension mechanical-injection) + [cnos#479](https://github.com/usurobor/cnos/issues/479) (cutover-A). GitHub MCP token was transiently expired mid-session; both issues filed after re-auth succeeded; closeout's triage table + this PRA carry the actual issue numbers.
+- archive move via `git mv` (preserves history; committed in the same set as the PRA at `adde4e8f`)
+- this PRA at `docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT-476.md` (committed at `adde4e8f`; this commit you are reading is the post-PRA amendment that swaps `TBD-1` / `TBD-2` placeholders for actual `[cnos#478]` / `[cnos#479]` references after the MCP re-authorized and the issues filed cleanly)
 
 ---
 
@@ -241,7 +241,7 @@ This section captures cycle/476's structural recommendation for the cnos#472-ext
 
 **Byte-liftable template:** α's R3 bash-e audit table at `.cdd/releases/docs/2026-06-21/476/self-coherence.md §R3 fix §"Bash -e semantics audit table (every `run:` block in `install-wake-golden.yml`)"` (9 rows; columns: # / Step name / Line range / Command substitutions or pipelines / Guarded? / bash-e exit on intended-success input / Notes).
 
-**Filed as:** cnos#TBD-1 (pending GitHub MCP re-authorization; full body in `.cdd/releases/docs/2026-06-21/476/gamma-closeout.md §"Follow-up issues filed"`).
+**Filed as:** [cnos#478](https://github.com/usurobor/cnos/issues/478) (full body in `.cdd/releases/docs/2026-06-21/476/gamma-closeout.md §"Follow-up issues filed"`).
 
 ### Recommendation (secondary): cutover-A operator-visible follow-up
 
@@ -249,7 +249,7 @@ This section captures cycle/476's structural recommendation for the cnos#472-ext
 
 **Recommendation:** file the cutover-A follow-up as a P2 issue (1 PR; 4 mechanical ACs; no orchestration agents needed). cnos#476's `--out` flag is the cutover hook; the golden + CI guard are the byte-identity assertions.
 
-**Filed as:** cnos#TBD-2 (pending GitHub MCP re-authorization; full body in `.cdd/releases/docs/2026-06-21/476/gamma-closeout.md §"Follow-up issues filed"`).
+**Filed as:** [cnos#479](https://github.com/usurobor/cnos/issues/479) (full body in `.cdd/releases/docs/2026-06-21/476/gamma-closeout.md §"Follow-up issues filed"`).
 
 ---
 
