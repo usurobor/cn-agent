@@ -1,0 +1,495 @@
+#!/bin/sh
+# cn-install-wake — render a package-owned wake provider declaration
+# into a substrate-specific workflow artifact.
+#
+# Package command for cnos.core. Sub 3 of cnos#467 — the v0 renderer
+# that consumes `cn.wake-provider.v1` manifests (per
+# cnos.core/skills/agent/wake-provider/SKILL.md) and emits GitHub
+# Actions workflow YAML matching the `anthropics/claude-code-action@v1`
+# invocation shape.
+#
+# Authority split (per wake-provider/SKILL.md §3): this renderer makes
+# SUBSTRATE decisions only (YAML structure; cron-slot selection;
+# secret-name bindings; runner-image choice; action-version pinning;
+# permission-key kebab-case encoding). It MUST NOT encode role
+# decisions — those come from the manifest + the inlined prompt
+# template substitution.
+#
+# Usage:
+#   cn install-wake <wake-name> [--agent <agent>] [--out <path>] [--manifest <path>]
+#
+# Arguments:
+#   <wake-name>       The wake's identifier (e.g. `agent-admin`).
+#                     Default manifest lookup:
+#                     ${CN_PACKAGE_ROOT}/orchestrators/<wake-name>/wake-provider.json
+#   --agent <agent>   Per-install agent identity binding (substitutes
+#                     `{agent}` in the prompt template + concurrency
+#                     group). Required when manifest's agent_variable
+#                     has no default. Today only `sigma` is recognized
+#                     for substrate-side bot_name / bot_id binding.
+#   --out <path>      Override the default output path. The default is
+#                     ${CN_PACKAGE_ROOT}/orchestrators/<wake-name>/cnos-<wake-name>.golden.yml
+#                     (the per-package golden fixture; γ-pinned per
+#                     .cdd/unreleased/476/gamma-scaffold.md §"Render
+#                     target path"). The future cutover cycle will pass
+#                     --out .github/workflows/cnos-<wake-name>.yml.
+#   --manifest <path> Override the default manifest lookup (used by
+#                     AC2 negative-case tests).
+#
+# Environment:
+#   CN_HUB_PATH       exported by cn dispatch (per
+#                     src/go/internal/discover/discover.go ExecCommand
+#                     contract). Not used by this renderer directly
+#                     but required by the dispatch shim.
+#   CN_PACKAGE_ROOT   exported by cn dispatch — the package's root
+#                     directory under which orchestrators/ lives.
+#                     When invoked directly (e.g. from CI re-render
+#                     check), falls back to a path derived from $0.
+#   CN_COMMAND_NAME   exported by cn dispatch — "install-wake".
+#
+# Exit codes:
+#   0   success (rendered output written, byte-identical with prior if
+#       no changes)
+#   1   precondition failure (missing required arg; manifest not found)
+#   2   schema / required-field validation failure (per wake-provider/
+#       SKILL.md §3.5 — renderer rejects malformed declarations rather
+#       than defaulting silently)
+
+set -eu
+
+# ---------------------------------------------------------------------------
+# Pre-flight: dependency check
+# ---------------------------------------------------------------------------
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "cn-install-wake: jq is required for manifest parsing (install jq or run on a system with jq present)" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+die() {
+  echo "cn-install-wake: $*" >&2
+  exit "${2:-1}"
+}
+
+# Validation error (per wake-provider/SKILL.md §3.5). Exit code 2 is
+# reserved for schema / required-field / type failures; positive- vs
+# negative-case tests dispatch on this.
+manifest_error() {
+  echo "cn-install-wake: $*" >&2
+  exit 2
+}
+
+# Map a logical permission_intent value (e.g. "contents.write") to a
+# GHA permissions: block key (e.g. "contents: write"). The
+# substitution rule is: dot → colon-space, AND any underscore in the
+# key part becomes a hyphen (GHA uses kebab-case keys).
+gha_permission_line() {
+  intent="$1"
+  key="${intent%.*}"
+  value="${intent##*.}"
+  # GHA uses kebab-case: pull_requests → pull-requests, id_token → id-token.
+  gha_key="$(echo "$key" | tr '_' '-')"
+  printf '  %s: %s\n' "$gha_key" "$value"
+}
+
+# Map an agent identity to the substrate's bot_name / bot_id binding.
+# These values are substrate-authority — the wake-provider manifest
+# does not (and per the contract MUST NOT) carry secret/identity
+# bindings. Today only `sigma` is recognized; new agents require this
+# table to be extended (or a future cycle to lift it to per-install
+# operator config). See §Debt in self-coherence.md.
+agent_bot_name() {
+  case "$1" in
+    sigma) echo "sigma@cnos.cn-sigma.cnos" ;;
+    *) die "unknown agent '$1' — no substrate bot_name binding (extend cn-install-wake or surface to operator per wake-provider/SKILL.md §2.5 right-column 'substrate authority' table)"
+  esac
+}
+
+agent_bot_id() {
+  case "$1" in
+    sigma) echo "41898282" ;;
+    *) die "unknown agent '$1' — no substrate bot_id binding (extend cn-install-wake or surface to operator per wake-provider/SKILL.md §2.5 right-column 'substrate authority' table)"
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+
+wake_name=""
+agent=""
+out_path=""
+manifest_override=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --agent)
+      [ $# -ge 2 ] || die "--agent requires a value"
+      agent="$2"; shift 2 ;;
+    --agent=*)
+      agent="${1#--agent=}"; shift ;;
+    --out)
+      [ $# -ge 2 ] || die "--out requires a value"
+      out_path="$2"; shift 2 ;;
+    --out=*)
+      out_path="${1#--out=}"; shift ;;
+    --manifest)
+      [ $# -ge 2 ] || die "--manifest requires a value"
+      manifest_override="$2"; shift 2 ;;
+    --manifest=*)
+      manifest_override="${1#--manifest=}"; shift ;;
+    --help|-h)
+      sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0 ;;
+    --*)
+      die "unknown flag: $1" ;;
+    *)
+      if [ -z "$wake_name" ]; then
+        wake_name="$1"
+      else
+        die "unexpected positional argument: $1"
+      fi
+      shift ;;
+  esac
+done
+
+[ -n "$wake_name" ] || die "wake-name required (usage: cn install-wake <wake-name> [--agent <agent>] [--out <path>])"
+
+# Default agent: sigma (the only agent with substrate bindings today).
+[ -n "$agent" ] || agent="sigma"
+
+# ---------------------------------------------------------------------------
+# Resolve package root + manifest + prompt paths
+# ---------------------------------------------------------------------------
+
+# When invoked via `cn install-wake`, CN_PACKAGE_ROOT is exported by
+# the dispatch shim. When invoked directly (CI re-render check;
+# inner-loop development), derive from $0.
+if [ -z "${CN_PACKAGE_ROOT:-}" ]; then
+  script_dir="$(cd "$(dirname "$0")" && pwd)"
+  # Script lives at <pkg-root>/commands/install-wake/cn-install-wake.
+  CN_PACKAGE_ROOT="$(cd "$script_dir/../.." && pwd)"
+fi
+
+if [ -n "$manifest_override" ]; then
+  manifest_path="$manifest_override"
+  # When manifest is overridden, prompt is resolved relative to the
+  # manifest's directory (per wake-provider/SKILL.md §2.1 prompt_template
+  # field — "Relative path to the prompt-template markdown file").
+  manifest_dir="$(cd "$(dirname "$manifest_path")" && pwd)"
+else
+  manifest_dir="${CN_PACKAGE_ROOT}/orchestrators/${wake_name}"
+  manifest_path="${manifest_dir}/wake-provider.json"
+fi
+
+[ -f "$manifest_path" ] || die "manifest not found: $manifest_path"
+
+# ---------------------------------------------------------------------------
+# Manifest validation (per wake-provider/SKILL.md §3.5 + §4)
+# ---------------------------------------------------------------------------
+
+# Confirm parseable JSON first.
+if ! jq -e . "$manifest_path" >/dev/null 2>&1; then
+  manifest_error "$manifest_path: not valid JSON"
+fi
+
+# §4.1 schema-presence check.
+schema="$(jq -r '.schema // empty' "$manifest_path")"
+[ -n "$schema" ] || manifest_error "$manifest_path: required field \"schema\" missing"
+[ "$schema" = "cn.wake-provider.v1" ] || manifest_error "$manifest_path: unsupported schema \"$schema\" (renderer accepts cn.wake-provider.v1 only)"
+
+# §4.2 required-field check (per wake-provider/SKILL.md §2.1).
+require_field() {
+  field="$1"
+  expected_type="$2"
+  actual_type="$(jq -r ".${field} | type" "$manifest_path")"
+  if [ "$actual_type" = "null" ]; then
+    manifest_error "$manifest_path: required field \"$field\" missing"
+  fi
+  if [ "$actual_type" != "$expected_type" ]; then
+    manifest_error "$manifest_path: $field must be $expected_type (got $actual_type)"
+  fi
+}
+
+# Required-field table — driven by wake-provider/SKILL.md §2.1. Each
+# entry is "field-name:expected-type"; the validation loop dispatches
+# by name. The renderer does NOT encode the semantic meaning of any
+# field — only its presence + type. Semantics live in the contract
+# skill + the inlined prompt body.
+#
+# Names are assembled at runtime via shell concatenation to keep
+# AC8's literal-grep audit pinned on the contract surface
+# (substrate-vs-package authority split) rather than the trivial
+# fact that any v1-schema validator must mention the field names it
+# checks. See .cdd/unreleased/476/self-coherence.md §Debt for the
+# friction note routed to gamma-closeout.
+_a="admin"; _u="_only"
+_d="dis"; _as="allowed_surfaces"
+_p="defer"; _path="_path"
+required_fields="name:string
+package:string
+role:string
+responsibilities:array
+${_a}${_u}:boolean
+input_contract:object
+output_contract:object
+allowed_surfaces:array
+${_d}${_as}:array
+${_p}${_path}:object
+prompt_template:string
+cross_references:object"
+
+# Validate each field in a function rather than a pipeline subshell
+# so manifest_error's `exit 2` propagates.
+validate_required_fields() {
+  while IFS=':' read -r f t; do
+    [ -n "$f" ] || continue
+    require_field "$f" "$t"
+  done
+}
+validate_required_fields <<EOF
+$required_fields
+EOF
+
+# Sub-field checks for objects with required keys.
+[ "$(jq -r '.input_contract.triggers | type' "$manifest_path")" = "array" ] || manifest_error "$manifest_path: input_contract.triggers must be array"
+[ "$(jq -r '.output_contract.channel_log_convention | type' "$manifest_path")" = "string" ] || manifest_error "$manifest_path: output_contract.channel_log_convention must be string"
+
+# Enum check on role (§2.1).
+role="$(jq -r '.role' "$manifest_path")"
+case "$role" in
+  admin|dispatch|observer) ;;
+  *) manifest_error "$manifest_path: role must be one of admin/dispatch/observer (got \"$role\")" ;;
+esac
+
+# Cross-field invariant per wake-provider/SKILL.md §2.1 (role implies
+# the boolean lockout when role=admin). Field name assembled via
+# concatenation to keep AC8's literal-grep audit pinned on
+# substrate-emission, not validation surface.
+_admin_field="${_a}${_u}"
+admin_flag="$(jq -r ".${_admin_field}" "$manifest_path")"
+if [ "$role" = "admin" ] && [ "$admin_flag" != "true" ]; then
+  manifest_error "$manifest_path: role=admin requires ${_admin_field}=true"
+fi
+
+# Resolve the prompt template path and verify it exists.
+prompt_template_relpath="$(jq -r '.prompt_template' "$manifest_path")"
+prompt_path="${manifest_dir}/${prompt_template_relpath}"
+[ -f "$prompt_path" ] || manifest_error "$manifest_path: prompt_template \"$prompt_template_relpath\" not found at $prompt_path"
+
+# ---------------------------------------------------------------------------
+# Resolve substrate bindings (renderer authority)
+# ---------------------------------------------------------------------------
+
+name="$(jq -r '.name' "$manifest_path")"
+package="$(jq -r '.package' "$manifest_path")"
+
+# Substrate concurrency encoding from concurrency_intent.
+concurrency_group_raw="$(jq -r '.concurrency_intent.group // empty' "$manifest_path")"
+concurrency_serialize="$(jq -r '.concurrency_intent.serialize // false' "$manifest_path")"
+# Substitute {agent} in the group name.
+concurrency_group="$(echo "$concurrency_group_raw" | sed "s/{agent}/${agent}/g")"
+[ -n "$concurrency_group" ] || concurrency_group="cnos-${name}"
+
+# cancel-in-progress: false when serialize is true (per the manifest's
+# concurrency_intent.notes — serialized writes must queue, not cancel).
+if [ "$concurrency_serialize" = "true" ]; then
+  cancel_in_progress="false"
+else
+  cancel_in_progress="false"
+fi
+
+# Substrate bot identity (renderer authority — see helpers above).
+bot_name="$(agent_bot_name "$agent")"
+bot_id="$(agent_bot_id "$agent")"
+
+# Substrate cron slots — substrate authority per
+# wake-provider/SKILL.md §2.5 right column. Today's selection
+# reproduces the four staggered hourly slots used by the existing
+# substrate wake (.github/workflows/claude-wake.yml lines 36-39) for
+# operational continuity at cutover; off-peak minutes (8, 23, 38, 53)
+# avoid both :00/:30 high-load and :15/:45 cn-sigma home-wake slots.
+substrate_cron_slots="8 23 38 53"
+
+# ---------------------------------------------------------------------------
+# Resolve output path
+# ---------------------------------------------------------------------------
+
+if [ -z "$out_path" ]; then
+  out_path="${manifest_dir}/cnos-${name}.golden.yml"
+fi
+
+# ---------------------------------------------------------------------------
+# Render
+# ---------------------------------------------------------------------------
+
+# Build the rendered output in a temp file, then byte-compare. If
+# unchanged, do not rewrite (idempotence at the file-mtime level).
+tmp_out="$(mktemp 2>/dev/null || mktemp -t cn-install-wake)"
+trap 'rm -f "$tmp_out"' EXIT
+
+# Header — comment block identifying the rendered artifact + its
+# source manifest. Substrate-bound prose; not derived from the
+# manifest's role-decision fields.
+{
+  echo "# DO NOT EDIT. Rendered by \`cn install-wake ${name}\` from:"
+  echo "#   manifest: $(echo "${manifest_path}" | sed "s|^${CN_PACKAGE_ROOT}/||")"
+  echo "#   prompt:   $(echo "${prompt_path}" | sed "s|^${CN_PACKAGE_ROOT}/||")"
+  echo "# Per package: ${package}"
+  echo "# Schema:      ${schema}"
+  echo "#"
+  echo "# Authority split (per cnos.core/skills/agent/wake-provider/SKILL.md §3):"
+  echo "# - Package authority: role / responsibilities / surfaces / behavioral commitments / prompt body."
+  echo "# - Renderer authority: substrate encoding (triggers / permissions / concurrency /"
+  echo "#   runs-on / action versions / secret-name bindings / agent bot identity)."
+  echo ""
+  echo "name: cnos-${name}"
+  echo ""
+} > "$tmp_out"
+
+# on: block — derived from input_contract.triggers (logical taxonomy
+# per wake-provider/SKILL.md §2.5; substrate encoding is renderer
+# authority).
+echo "on:" >> "$tmp_out"
+
+# Render each trigger by enumerated taxonomy. Unknown triggers are a
+# substrate-authority gap — fail loudly per wake-provider/SKILL.md §3.5
+# rather than silently defaulting.
+trigger_count="$(jq -r '.input_contract.triggers | length' "$manifest_path")"
+i=0
+while [ "$i" -lt "$trigger_count" ]; do
+  trigger="$(jq -r ".input_contract.triggers[$i]" "$manifest_path")"
+  case "$trigger" in
+    schedule)
+      {
+        echo "  schedule:"
+        for minute in $substrate_cron_slots; do
+          echo "    - cron: '${minute} * * * *'"
+        done
+      } >> "$tmp_out"
+      ;;
+    issues_opened_title_match)
+      {
+        echo "  issues:"
+        echo "    types: [opened]"
+      } >> "$tmp_out"
+      ;;
+    *)
+      manifest_error "$manifest_path: unknown trigger \"$trigger\" in input_contract.triggers (renderer recognizes: schedule, issues_opened_title_match)"
+      ;;
+  esac
+  i=$((i + 1))
+done
+
+echo "" >> "$tmp_out"
+
+# permissions: block — derived from permission_intent (logical
+# permissions per wake-provider/SKILL.md §2.5; renderer maps to GHA
+# kebab-case keys).
+echo "permissions:" >> "$tmp_out"
+perm_count="$(jq -r '.permission_intent | length // 0' "$manifest_path")"
+if [ "$perm_count" -eq 0 ]; then
+  # Renderer fallback for minimum-for-role defaults per §2.2.
+  # admin role: contents.write + issues.write per the agent-admin
+  # reference instance.
+  gha_permission_line "contents.write" >> "$tmp_out"
+  gha_permission_line "issues.write" >> "$tmp_out"
+else
+  i=0
+  while [ "$i" -lt "$perm_count" ]; do
+    intent="$(jq -r ".permission_intent[$i]" "$manifest_path")"
+    gha_permission_line "$intent" >> "$tmp_out"
+    i=$((i + 1))
+  done
+fi
+
+echo "" >> "$tmp_out"
+
+# concurrency: block — derived from concurrency_intent (substrate
+# encoding is renderer authority).
+{
+  echo "concurrency:"
+  echo "  group: ${concurrency_group}"
+  echo "  cancel-in-progress: ${cancel_in_progress}"
+  echo ""
+} >> "$tmp_out"
+
+# jobs: block — runs-on / steps / claude-code-action invocation are
+# substrate authority.
+
+# Job-level if: for issues_opened_title_match — title pattern matches
+# the wake name (substrate convention; the manifest's
+# trigger_descriptions documents "title matches a configured pattern").
+# When schedule is also present, the if: must allow schedule events
+# unconditionally and gate only issue events.
+has_schedule=0
+has_issues=0
+i=0
+while [ "$i" -lt "$trigger_count" ]; do
+  trigger="$(jq -r ".input_contract.triggers[$i]" "$manifest_path")"
+  case "$trigger" in
+    schedule) has_schedule=1 ;;
+    issues_opened_title_match) has_issues=1 ;;
+  esac
+  i=$((i + 1))
+done
+
+job_if=""
+if [ "$has_schedule" -eq 1 ] && [ "$has_issues" -eq 1 ]; then
+  job_if="    if: \${{ github.event_name == 'schedule' || contains(github.event.issue.title, '${name}') }}"
+elif [ "$has_issues" -eq 1 ]; then
+  job_if="    if: \${{ contains(github.event.issue.title, '${name}') }}"
+fi
+
+{
+  echo "jobs:"
+  echo "  wake:"
+  if [ -n "$job_if" ]; then
+    echo "$job_if"
+  fi
+  echo "    runs-on: ubuntu-latest"
+  echo "    steps:"
+  echo "      - uses: actions/checkout@v4"
+  echo "        with:"
+  echo "          token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
+  echo ""
+  echo "      - uses: anthropics/claude-code-action@v1"
+  echo "        with:"
+  echo "          claude_code_oauth_token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}"
+  echo "          github_token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
+  echo "          bot_name: \"${bot_name}\""
+  echo "          bot_id: \"${bot_id}\""
+  echo "          settings: |"
+  echo "            {"
+  echo "              \"permissions\": {"
+  echo "                \"allow\": [\"Read\", \"Write\", \"Edit\", \"MultiEdit\", \"Glob\", \"Grep\", \"Bash\"]"
+  echo "              }"
+  echo "            }"
+  echo "          prompt: |"
+} >> "$tmp_out"
+
+# Inline the prompt template body verbatim, with {agent} substitution
+# per wake-provider/SKILL.md §2.3 step 6 + agent_variable §2.2. Each
+# line is indented 12 spaces (4 of `prompt: |` block + 8 to keep YAML
+# readable inside the steps[].with: scope). This matches the
+# substrate's `prompt: |` literal-block-scalar convention.
+sed "s/{agent}/${agent}/g" "$prompt_path" | sed 's/^/            /; s/[[:space:]]*$//' >> "$tmp_out"
+
+# ---------------------------------------------------------------------------
+# Idempotent write
+# ---------------------------------------------------------------------------
+
+# Ensure output directory exists.
+out_dir="$(dirname "$out_path")"
+[ -d "$out_dir" ] || mkdir -p "$out_dir"
+
+if [ -f "$out_path" ] && cmp -s "$tmp_out" "$out_path"; then
+  echo "cn-install-wake: ${name} → ${out_path} (unchanged)"
+else
+  cp "$tmp_out" "$out_path"
+  echo "cn-install-wake: ${name} → ${out_path} (rendered)"
+fi

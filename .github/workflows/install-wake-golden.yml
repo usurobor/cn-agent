@@ -1,0 +1,145 @@
+name: install-wake golden
+
+# Re-renders every package-owned wake provider declaration and verifies
+# the committed golden fixture matches byte-for-byte. Drift between the
+# committed golden and a fresh render indicates one of:
+#   - the renderer changed but the golden was not re-committed,
+#   - the wake-provider manifest changed but the golden was not re-rendered,
+#   - the prompt template changed but the golden was not re-rendered,
+#   - the renderer introduced non-determinism (timestamp, environment leak).
+#
+# Owned by Sub 3 of cnos#467 (cn-wake-install; cnos#476). The "golden
+# fixture + CI re-render" mechanism is AC6 of cnos#476.
+
+on:
+  push:
+    branches: [main, 'cycle/*']
+    paths:
+      - 'src/packages/cnos.core/commands/install-wake/**'
+      - 'src/packages/cnos.core/orchestrators/**'
+      - '.github/workflows/install-wake-golden.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/packages/cnos.core/commands/install-wake/**'
+      - 'src/packages/cnos.core/orchestrators/**'
+      - '.github/workflows/install-wake-golden.yml'
+
+jobs:
+  golden-diff:
+    name: Re-render + diff per-package goldens
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify jq present
+        # jq is installed by default on ubuntu-latest runners; assert
+        # before invoking so failures surface as a precise prerequisite
+        # error rather than a renderer crash.
+        run: jq --version
+
+      - name: Re-render agent-admin wake (cnos.core)
+        run: |
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake agent-admin
+
+      - name: Verify golden unchanged
+        # `git diff --exit-code` returns non-zero if any tracked file
+        # has changed in the working tree after the re-render. The
+        # only file the renderer writes (with default --out) is
+        # src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml
+        # — drift on this file is a real finding.
+        run: |
+          if ! git diff --exit-code -- src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml; then
+            echo "::error::Golden drift detected. Re-run \`cn install-wake agent-admin\` locally and commit the result."
+            exit 1
+          fi
+          echo "Golden matches re-render: clean."
+
+      - name: Verify idempotence (second render is a no-op)
+        # AC6's idempotence invariant: two consecutive renders produce
+        # byte-identical output. Hash before/after; diff exits 0.
+        run: |
+          sha_before=$(sha256sum src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml | cut -d' ' -f1)
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake agent-admin
+          sha_after=$(sha256sum src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml | cut -d' ' -f1)
+          if [ "$sha_before" != "$sha_after" ]; then
+            echo "::error::Renderer is non-deterministic. Two consecutive renders produced different output."
+            echo "before: $sha_before"
+            echo "after:  $sha_after"
+            exit 1
+          fi
+          echo "Idempotence verified: $sha_before"
+
+      - name: Verify YAML parses
+        # AC3 oracle. Use python3 + PyYAML (preinstalled on
+        # ubuntu-latest) rather than pulling in a YAML CLI.
+        run: |
+          python3 -c "import yaml; yaml.safe_load(open('src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml'))"
+          echo "YAML parses."
+
+      - name: Verify substrate structural shape
+        # AC3 oracle: rendered workflow has on:, permissions:,
+        # concurrency:, jobs:, anthropics/claude-code-action@v1.
+        run: |
+          set -eu
+          f=src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml
+          for needle in '^on:' '^permissions:' '^concurrency:' '^jobs:' 'anthropics/claude-code-action@v1'; do
+            if ! grep -qE "$needle" "$f"; then
+              echo "::error::Missing required substrate shape: $needle"
+              exit 1
+            fi
+          done
+          echo "Substrate shape OK."
+
+      - name: AC2 negative-case smoke (malformed manifest is rejected)
+        run: |
+          set -eu
+          set -o pipefail
+          tmp=$(mktemp -d)
+          mkdir -p "$tmp/orchestrators/test-wake"
+          echo '{"name": "test-wake"}' > "$tmp/orchestrators/test-wake/wake-provider.json"
+          echo "" > "$tmp/orchestrators/test-wake/prompt.md"
+          if ./src/packages/cnos.core/commands/install-wake/cn-install-wake test-wake \
+              --manifest "$tmp/orchestrators/test-wake/wake-provider.json" 2>&1 | tee /tmp/neg.log; then
+            echo "::error::Renderer accepted malformed manifest (schema missing); expected exit 2 per wake-provider/SKILL.md §3.5."
+            exit 1
+          fi
+          if ! grep -q 'required field "schema"' /tmp/neg.log; then
+            echo "::error::Renderer rejected malformed manifest but error message did not name the missing field."
+            cat /tmp/neg.log
+            exit 1
+          fi
+          echo "AC2 negative case rejected with precise error."
+          rm -rf "$tmp"
+
+      - name: AC8 renderer-side authority audit
+        # The renderer source MUST NOT encode role decisions; those
+        # come from the manifest + the inlined prompt body.
+        #
+        # Note on `|| true`: GitHub Actions invokes `run:` blocks under
+        # `/usr/bin/bash -e {0}`, so a command substitution that exits
+        # non-zero terminates the step before the `if` check fires.
+        # `grep -c` returns exit 1 when the count is zero (POSIX), which
+        # is the intended-success path here (we WANT zero leaks). The
+        # `|| true` makes the substitution exit-0-safe while preserving
+        # the count for diagnostics; the substantive check is the
+        # `[ "$n" != "0" ]` guard below, which still fires on real leaks.
+        run: |
+          n=$(grep -ciE 'admin.only|disallowed_surfaces|defer.path|cell_execution' src/packages/cnos.core/commands/install-wake/cn-install-wake || true)
+          if [ "$n" != "0" ]; then
+            echo "::error::Renderer source leaks role-decision strings (AC8). Count: $n"
+            grep -niE 'admin.only|disallowed_surfaces|defer.path|cell_execution' src/packages/cnos.core/commands/install-wake/cn-install-wake
+            exit 1
+          fi
+          echo "AC8 renderer-side: 0 role-decision leaks."
+
+      - name: AC7 claude-wake.yml unchanged
+        # Sub 3 MUST NOT touch the existing production wake. Cutover
+        # is a separate cycle.
+        run: |
+          n=$(git diff --name-only origin/main HEAD -- .github/workflows/claude-wake.yml | wc -l)
+          if [ "$n" != "0" ]; then
+            echo "::error::.github/workflows/claude-wake.yml was modified on this branch. AC7 forbids this in Sub 3."
+            exit 1
+          fi
+          echo "AC7: claude-wake.yml byte-identical."
