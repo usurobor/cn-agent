@@ -18,6 +18,10 @@
     "save": {
       "entrypoint": "commands/save/cn-save",
       "summary": "Commit + push"
+    },
+    "install-wake": {
+      "entrypoint": "commands/install-wake/cn-install-wake",
+      "summary": "Render a package-owned wake into the substrate"
     }
   }
 }
