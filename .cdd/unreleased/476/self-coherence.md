@@ -54,3 +54,103 @@
 
 **Master tracker:** cnos#467 §"Foundational architecture — package-owned wake providers (authoritative)" + wave-level AC4 — already absorbed via Sub 2 (#470) merge state and γ scaffold's distillation.
 
+## §ACs
+
+Implementation SHA: `7162c32a` (head of cycle/476 after the renderer + golden + CI commits; before this self-coherence section).
+
+All eight ACs mapped to mechanical evidence below. Per the binding claim-class verification rule injected by γ (per cnos#472 friction / PRA F-α-1): every "all X" claim is backed by a per-X table; no aggregated claims.
+
+### Per-AC oracle table
+
+| AC | Oracle | Observed result |
+|---|---|---|
+| AC1 (form pin + rationale) | γ scaffold §"Form choice" exists; α's §Gap acknowledges or records override | γ pin = shell at `commands/install-wake/cn-install-wake`; α **accepts** (no override). §Gap lines `Form-choice acknowledgment` enumerate the four structural reasons no override applies. |
+| AC2 (consume `cn.wake-provider.v1`; reject malformed) | Positive: `cn install-wake agent-admin` exits 0. Negative: schema missing → exit 2; `admin_only` as string → exit 2; bad schema value → exit 2; malformed JSON → exit 2; missing manifest → exit 1. | All six oracles ran (table below). |
+| AC3 (renders to syntactically valid GHA workflow at γ-pinned path) | YAML parses via `python3 -c "import yaml; yaml.safe_load(...)"`; structural greps for `^on:`, `^permissions:`, `^concurrency:`, `^jobs:`, `anthropics/claude-code-action@v1` all ≥ 1 | All 5 structural greps return ≥ 1 (table below). YAML parses (keys: `['name', True, 'permissions', 'concurrency', 'jobs']`; `True` is the YAML 1.1 alias for `on:` — same shape as `claude-wake.yml`). |
+| AC4 (rendered prompt block carries admin-only boundary verbatim) | `grep -c "MUST NOT execute cells under any circumstance" golden.yml` ≥ 1; `grep -cE 'cell_execution|disallowed_surfaces|cell execution'` ≥ 1; prompt char count 95-105% of original | "MUST NOT execute cells under any circumstance" → 1 hit; "cell execution" / "disallowed" terms in rendered ≥ 1. **The 95–105% char-count oracle from the issue body is brittle as written when applied to the whole rendered file** (golden 14477 chars vs prompt 11872; ratio 1.22 — exceeds 1.05 because YAML literal-block-scalar inlining adds 12-space indentation × ~129 prompt lines ≈ +1548 chars, plus the YAML header + substrate encoding ≈ +1050 chars). β-side widened oracle (run by α and recorded here): extract the `prompt: |` block from the golden, strip the 12-space prefix, compare char count to `prompt.md`. Result: original 11776 chars; extracted 11752 chars; **ratio 0.998 (well within 95–105%)**. Line count 129 = 129. The only line-by-line difference is the `{agent}` → `sigma` substitution at L3 (cn-{agent}, {agent}-hub-list references) — expected per `agent_variable` substitution in `wake-provider/SKILL.md §2.3` step 6. Substantive truncation check: `grep -c "Wake termination" golden.yml` = 1 (the last `##` heading of `prompt.md` is present). |
+| AC5 (triggers + permissions match manifest) | Per-trigger oracle: for each trigger in `input_contract.triggers`, grep golden for substrate encoding. Per-permission oracle: for each `permission_intent` entry, grep golden for the GHA encoding. No extra triggers or permissions beyond what manifest authorizes. | Per-trigger table + per-permission table below; both 0 MISSING. |
+| AC6 (golden + idempotence + CI) | golden file exists; `cn install-wake agent-admin` twice → same `sha256sum`; CI workflow re-renders + diffs | golden file exists (path: `src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml`, 14465 bytes); two consecutive renders both report "(unchanged)"; sha256 stable; CI workflow `.github/workflows/install-wake-golden.yml` carries golden-diff step, idempotence step, AC2 negative-smoke step, AC3 YAML+structural step, AC7+AC8 audit steps |
+| AC7 (`claude-wake.yml` byte-identical) | `git diff origin/main..HEAD -- .github/workflows/claude-wake.yml \| wc -l` = 0 | 0 (confirmed) |
+| AC8 (package-vs-renderer authority split preserved) | Renderer side: `grep -ciE 'admin.only\|disallowed_surfaces\|defer.path\|cell_execution' cn-install-wake` = 0. Package side: same grep on Sub 2 manifest + prompt — count must equal #470 baseline (no enlargement). | Renderer-side: 0. Package-side: 0 (declarations byte-identical with origin/main; gate 2 above confirms 0 diff lines on those files). |
+
+### AC2 per-case oracle table
+
+| Test case | Command | Expected | Observed |
+|---|---|---|---|
+| Positive | `cn install-wake agent-admin` (default path) | exit 0 + golden rendered | exit 0; golden at `src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml` |
+| Positive (`--out`) | `... agent-admin --out /tmp/test-out.yml` | exit 0 + output at /tmp/test-out.yml + byte-identical to default-path golden | exit 0; `diff /tmp/test-out.yml golden` = empty |
+| Negative: schema missing | `... --manifest <json without "schema">` | exit 2 + stderr names `required field "schema"` | exit 2; stderr `required field "schema" missing` |
+| Negative: `admin_only` as string | `... --manifest <json with "admin_only": "true">` | exit 2 + stderr names `admin_only must be boolean` | exit 2; stderr `admin_only must be boolean (got string)` |
+| Negative: bad schema value | `... --manifest <json with "schema": "cn.wake-provider.v999">` | exit 2 + stderr names unsupported schema | exit 2; stderr `unsupported schema "cn.wake-provider.v999" (renderer accepts cn.wake-provider.v1 only)` |
+| Negative: malformed JSON | `... --manifest <invalid json>` | exit 2 + stderr names "not valid JSON" | exit 2; stderr `not valid JSON` |
+| Negative: missing required field `defer_path` | `... --manifest <missing defer_path>` | exit 2 + stderr names field | exit 2; stderr `required field "defer_path" missing` |
+| Negative: manifest file does not exist | `cn install-wake nonexistent-wake` | exit 1 + stderr names path | exit 1; stderr `manifest not found: ...` |
+
+### AC3 per-grep oracle table (substrate structural validity)
+
+| Required marker | grep pattern | Count |
+|---|---|---|
+| `name:` field | `^name:` | 1 |
+| `on:` block | `^on:` | 1 |
+| `permissions:` block | `^permissions:` | 1 |
+| `concurrency:` block | `^concurrency:` | 1 |
+| `jobs:` block | `^jobs:` | 1 |
+| `claude-code-action@v1` step | `anthropics/claude-code-action@v1` | 1 |
+| `actions/checkout@v4` step | `actions/checkout@v4` | 1 |
+| YAML parses | `python3 -c "import yaml; yaml.safe_load(...)"` | exit 0 |
+
+### AC4 per-grep oracle table (prompt body inlined verbatim)
+
+| Marker | Source (prompt.md) | Rendered (golden.yml) |
+|---|---|---|
+| "MUST NOT execute cells under any circumstance" | present (L43) | present (1 hit) |
+| "Cell execution" (heading "Admin-only boundary") | present | present |
+| "cell-shaped directive" (lowercase prose) | present (multiple) | present (multiple) |
+| "disallowed surfaces" heading | present (## Disallowed surfaces) | present |
+| "Defer-path" headings (2x) | present | present |
+| "## Wake termination" heading (last heading) | present | present (no silent truncation) |
+| `{agent}` → `sigma` substitution | source: `cn-{agent}`, `as \`sigma\`` | rendered: `cn-sigma`, `as \`sigma\`` (table row for activation URL: source has `https://github.com/usurobor/cn-{agent}` → rendered `https://github.com/usurobor/cn-sigma`) |
+
+### AC5 per-trigger oracle table
+
+| Manifest trigger (`input_contract.triggers[i]`) | Substrate encoding required | Rendered evidence |
+|---|---|---|
+| `schedule` | `on.schedule` block with cron entries | `grep -c "^  schedule:" golden.yml` = 1; cron entries `'8 * * * *'`, `'23 * * * *'`, `'38 * * * *'`, `'53 * * * *'` all present |
+| `issues_opened_title_match` | `on.issues.types: [opened]` + title-match `if:` conditional | `grep -c "^  issues:" golden.yml` = 1; `types: [opened]` present; `contains(github.event.issue.title, 'agent-admin')` present in `if:` |
+
+No extra trigger surface (only `schedule` and `issues` keys under `on:`); per the manifest's 2-element `triggers` array.
+
+### AC5 per-permission oracle table
+
+| Manifest permission_intent[i] | GHA permissions: key | Rendered evidence |
+|---|---|---|
+| `contents.write` | `contents: write` | present (golden L24) |
+| `issues.write` | `issues: write` | present (golden L25) |
+| `pull_requests.write` | `pull-requests: write` (kebab-case) | present (golden L26) |
+| `id_token.write` | `id-token: write` (kebab-case) | present (golden L27) |
+
+No permission in rendered `permissions:` block is absent from manifest's `permission_intent`. Block contents (4 keys) match manifest's 4-element array exactly.
+
+### AC6 per-render idempotence oracle table
+
+| Render # | sha256sum of golden | exit |
+|---|---|---|
+| 1 (initial) | `a912dd97d520b8660e4a53c2f306dad7e657b0c216bbc94f31e2958fdbd01c47` | 0 |
+| 2 (immediate re-render) | `a912dd97d520b8660e4a53c2f306dad7e657b0c216bbc94f31e2958fdbd01c47` | 0 |
+| Diff between 1 and 2 | (none) | `diff` exit 0 |
+| 3 (after `--out /tmp/test-out.yml` + diff) | (default-path unchanged) | 0 |
+
+The renderer reports `(unchanged)` on the 2nd render rather than re-writing the file, so file-mtime is preserved as well as byte content.
+
+### Mechanical gate summary (all from γ scaffold §"Mechanical gate")
+
+| Gate | Command | Required | Observed |
+|---|---|---|---|
+| AC7 invariant | `git diff --name-only origin/main..HEAD -- .github/workflows/claude-wake.yml \| wc -l` | 0 | 0 |
+| Sub 2 declaration unchanged | `git diff --name-only origin/main..HEAD -- .../wake-provider.json .../prompt.md \| wc -l` | 0 | 0 |
+| Scope discipline (corrected regex — γ scaffold regex is brittle; see §Debt F1) | `git diff --name-only origin/main..HEAD \| grep -vE '^(src/packages/cnos\.core/(commands/install-wake/.*\|orchestrators/agent-admin/cnos-agent-admin\.golden\.yml\|cn\.package\.json)\|\.cdd/unreleased/476/.*\|\.github/workflows/install-wake-golden\.yml)$' \| wc -l` | 0 | 0 |
+| AC6 idempotence | two renders + `diff /tmp/r1.sum /tmp/r2.sum` | exit 0 | exit 0 |
+| AC8 renderer-side | `grep -ciE 'admin.only\|disallowed_surfaces\|defer.path\|cell_execution' cn-install-wake` | 0 | 0 |
+| AC8 package-side (Sub 2 baseline) | `git diff --name-only origin/main..HEAD -- .../wake-provider.json .../prompt.md \| wc -l` (declaration byte-identical → carve-out baseline preserved by construction) | 0 | 0 |
+
+
