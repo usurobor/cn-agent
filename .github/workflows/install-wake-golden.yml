@@ -94,6 +94,7 @@ jobs:
       - name: AC2 negative-case smoke (malformed manifest is rejected)
         run: |
           set -eu
+          set -o pipefail
           tmp=$(mktemp -d)
           mkdir -p "$tmp/orchestrators/test-wake"
           echo '{"name": "test-wake"}' > "$tmp/orchestrators/test-wake/wake-provider.json"
