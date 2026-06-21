@@ -418,3 +418,150 @@ But: F2 demonstrates that the lesson, even when both α and β name it explicitl
 ---
 
 (Round 2 closes here. RC. α addresses F2; appends a §R3-fix section to `self-coherence.md`; re-signals review-readiness; δ re-dispatches β for R3.)
+
+---
+
+## R3 (2026-06-21 01:34 UTC — base origin/main: fcc5cdb9a533ad86e67524bcf05a33d2b4592e8a — head origin/cycle/476: c55f706171e657e2d15e06f10c4c8b15fb6fda38)
+
+### Verdict: APPROVE
+
+α's R3 minimally addresses F2 (one-line `|| true` guard on the AC8 audit step's `grep -c` substitution + explanatory comment). The fix is correct in form and substance: under `bash -e` the substitution now exits 0 on the intended-success path (zero leaks); the substantive guard `[ "$n" != "0" ]` still fires on real leaks; the CI run on R3 head reaches the step's success echo `AC8 renderer-side: 0 role-decision leaks.` proving the guard now executes through to assertion rather than dying inside `$()`. No other findings. Merging.
+
+### F2 resolution (point-by-point)
+
+| Check | Required | Observed at R3 head | Pass? |
+|---|---|---|---|
+| `\|\| true` in place on AC8 grep substitution | line in `.github/workflows/install-wake-golden.yml` matches `n=$(grep -ciE '…' … \|\| true)` | line 128: `n=$(grep -ciE 'admin.only\|disallowed_surfaces\|defer.path\|cell_execution' src/packages/cnos.core/commands/install-wake/cn-install-wake \|\| true)` | yes |
+| Bash -e simulation on clean source (intended-success path) | `n=0`, exits 0, prints `OK` | `n=0`, exits 0, prints `OK` | yes |
+| Negative-control: real leak still triggers | injected `admin_only`; guard fires; exits non-zero | `n=1`, prints `FAIL (expected: real leak triggers)`, exits 1 | yes |
+| CI on PR #477 R3 head: AC8 step actually executes the guard | step exits 0 AND reaches the success echo (proving the guard was not short-circuited by substitution death) | job 82531073610 logs: `AC8 renderer-side: 0 role-decision leaks.` — success echo printed; whole job conclusion `success` | yes |
+| Substantive AC8 invariant still holds (renderer source has 0 leaks) | direct grep on `cn-install-wake` returns 0 | 0 | yes |
+| Explanatory comment added | inline comment above the `run:` body naming the `bash -e` + `grep -c` interaction, what `\|\| true` does, and why the guard still fires on real leaks | lines 119-126 carry the full explanation; tells the next reader exactly why `\|\| true` is correct here and not a bug-hider | yes |
+
+F2 is fully resolved. The fix shape preserves the diagnostic `$n` count for the error message (option a per α's R3 reasoning) and is the smallest valid diff.
+
+### Bash-e audit re-confirmation (independent of α)
+
+β independently audited all 9 `run:` blocks in `.github/workflows/install-wake-golden.yml` at R3 head (1224b532). Findings match α's R3 audit table byte-for-byte:
+
+| # | Step | Substitution / pipeline shape | Guard | β verdict | Matches α R3? |
+|---|---|---|---|---|---|
+| 1 | Verify jq present | `jq --version` (single command) | n/a — success path | safe | yes |
+| 2 | Re-render agent-admin wake | `./cn-install-wake agent-admin` (single command) | n/a — success path | safe | yes |
+| 3 | Verify golden unchanged | `if ! git diff --exit-code` | exit code consumed by `if !` | safe | yes |
+| 4 | Verify idempotence | `sha_before=$(sha256sum … \| cut …)` + `sha_after=$(sha256sum … \| cut …)` | safe by construction on intended-success input (file exists per gate 3); latent edge if file missing | safe (latent edge α also flagged) | yes |
+| 5 | Verify YAML parses | `python3 -c "…"` (single command) | n/a — exit IS the signal | safe | yes |
+| 6 | Verify substrate structural shape | `grep -qE` inside `if !` | exit code consumed by `if !` | safe | yes |
+| 7 | AC2 negative-case smoke | `… \| tee /tmp/neg.log` inside `if`; F1's `set -o pipefail` | yes (F1 R2 fix) | safe | yes |
+| 8 | **AC8 renderer-side authority audit** | `n=$(grep -ciE '…' \|\| true)` | yes (F2 R3 fix) | **safe (R3 fix)** | yes |
+| 9 | AC7 claude-wake.yml unchanged | `n=$(git diff --name-only … \| wc -l)` | `wc -l` always exits 0 | safe | yes |
+
+9 of 9 `run:` blocks audited; 9 of 9 guarded. No new findings. β's R2 audit claim ("F2 is the only sibling at R2") is corroborated by α's R3 audit and re-corroborated by β's R3 audit. The step-4 latent edge (sha256sum substitution would die if the golden file vanished) is bounded by step-3 success and is correctly classified by α as out-of-class (the happy path has both commands always exit 0; the failure mode requires a precondition violation that step 3 already gates). Accepted, not raised.
+
+### Pre-merge gate (R3 re-run)
+
+| # | Row | Result | Notes |
+|---|---|---|---|
+| 1 | Identity truth | pass | `git config user.email` = `beta@cdd.cnos`; `git config user.name` = `beta`; set at session start |
+| 2 | Canonical-skill freshness | pass | `git fetch origin` performed; `origin/main` still at `fcc5cdb9a533ad86e67524bcf05a33d2b4592e8a` (no mid-cycle drift since R1/R2) |
+| 3 | Non-destructive merge-test | pass | All R1+R2 mechanical invariants hold at R3 head (gates 1-10 of α's R3 self-coherence table all green, independently re-run by β); AC6 CI mechanism now empirically green on PR #477 at SHA 2a13f4a (merge of c55f7061 into fcc5cdb9), job 82531073610 conclusion `success`; AC8 step prints `AC8 renderer-side: 0 role-decision leaks.` proving the guard executes through to assertion |
+| 4 | γ artifact completeness | pass | `gamma-scaffold.md` present at canonical §5.1 path (unchanged across all 3 rounds) |
+
+### CI status (rule 3.10)
+
+| Workflow / Job | Conclusion on head c55f7061 | Pre-existing on origin/main? | Verdict impact |
+|---|---|---|---|
+| `install-wake golden / Re-render + diff per-package goldens` | **success** (job 82531073610) | NO — workflow added by this cycle | F2 resolved; gate clear |
+| `Build / SKILL.md frontmatter validation (I5)` | failure | YES — pre-existing on origin/main (53 findings across 88 SKILL.md files in `cnos.cdr/`, `cnos.cds/`, `cnos.handoff/` packages; none touched by 476) | not this cycle's concern |
+| `Build / CDD artifact ledger validation (I6)` | failure | YES — pre-existing; `cn-cdd-verify` binary missing (`No such file or directory`); independent infra debt | not this cycle's concern |
+| `Build / Repo link validation (I4)` | failure | YES — pre-existing; broken file links in `.cdd/unreleased/426/`, `427/`, `docs/gamma/`, `cnos.cdr/`, `cnos.cds/`; none touched by 476 | not this cycle's concern |
+| `Build / Go build & test` | success | — | green |
+| `Build / Package verification` | success | — | green |
+| `Build / Binary verification` | success | — | green |
+| `Build / Protocol contract schema sync (I2)` | success | — | green |
+| `Build / Package/source drift (I1)` | success | — | green |
+
+The three pre-existing red builds (I4/I5/I6) are inherited from origin/main and untouched by this cycle's diff. Per β SKILL rule 3.10, pre-existing CI failures do not block merge when the cycle's own diff does not exacerbate them; β confirmed by checking the failure messages — none reference any path under `.github/workflows/install-wake-golden.yml`, `src/packages/cnos.core/commands/install-wake/`, or `src/packages/cnos.core/orchestrators/agent-admin/`.
+
+### AC coverage re-confirmation (R3)
+
+| AC | R1 verdict | R2 verdict | R3 verdict | R3 evidence |
+|---|---|---|---|---|
+| AC1 (renderer command exists; CLI shape per contract) | pass | pass | pass | unchanged; renderer source not touched in R3 |
+| AC2 (positive + negative cases; precise error on missing schema) | pass behaviorally; F1 on CI proof | pass (F1 resolved) | pass | step 7 logs: `AC2 negative case rejected with precise error.` |
+| AC3 (output is valid YAML; substrate shape correct) | pass | pass | pass | steps 5+6 logs: `YAML parses.` + `Substrate shape OK.` |
+| AC4 (model = sonnet; max_turns ratio in agreed band) | pass | pass | pass | self-coherence §AC4 widened oracle: ratio = 0.998 |
+| AC5 (renderer fail-fast on invalid input; clear errors) | pass | pass | pass | unchanged |
+| AC6 (golden + idempotence + CI mechanism) | golden + idempotence pass; CI broken (F1) | golden + idempotence pass; CI partially broken (F2) | **pass** | step 3+4 logs: `Golden matches re-render: clean.` + `Idempotence verified: a912dd97d520b8660e4a53c2f306dad7e657b0c216bbc94f31e2958fdbd01c47`; CI mechanism conclusion = success; F2 resolved |
+| AC7 (claude-wake.yml unchanged) | pass | pass | pass | `git diff origin/main HEAD -- .github/workflows/claude-wake.yml \| wc -l` = 0 |
+| AC8 (renderer source has 0 role-decision leaks; renderer-side substantive + CI audit) | pass substantively; CI audit unverified (workflow died earlier on F1) | pass substantively; CI audit broken (F2) | **pass** | direct grep on renderer = 0; CI step 8 logs `AC8 renderer-side: 0 role-decision leaks.` proving the guard executed through to its success echo (not just that the substitution did not crash) |
+
+All 8 ACs green at R3.
+
+### Authority-split audit (R3 re-confirmation)
+
+R3 touched only `.github/workflows/install-wake-golden.yml` (CI machinery) and `.cdd/unreleased/476/self-coherence.md` (process artifact). Neither file alters the renderer, the manifest, the prompt, or the golden. Sub 2 declarations (`wake-provider.json`, `prompt.md`) byte-identical with origin/main (`git diff origin/main HEAD -- … \| wc -l` = 0). AC7 invariant (`claude-wake.yml` byte-identical) holds (`git diff origin/main HEAD -- .github/workflows/claude-wake.yml \| wc -l` = 0). Authority split preserved.
+
+### Idempotence audit (R3 re-confirmation)
+
+Renderer not touched in R3 (`git diff 4913228f HEAD -- src/packages/cnos.core/commands/install-wake/cn-install-wake` is empty). Golden not touched in R3 (`git diff 4913228f HEAD -- src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml` is empty). Idempotence preserved by construction; CI step 4 re-confirms empirically with `Idempotence verified: a912dd97d520b8660e4a53c2f306dad7e657b0c216bbc94f31e2958fdbd01c47` (same sha as R1+R2).
+
+### Claim-class verification audit (R3 model-shape)
+
+α's §R3 fix in `self-coherence.md` includes:
+- Restatement of F2 (binding β finding) with severity classification (D, blocker on AC6's CI subclause).
+- Fix-option reasoning (a vs b vs c) — α explicitly named diagnostic preservation (`$n` for the error message) as the disambiguator.
+- The one-line edit (before/after) with the actual YAML lines quoted byte-for-byte.
+- **Bash-e semantics audit table covering all 9 `run:` blocks** with line ranges, substitution shapes, guard mechanism, and empirically-observed `bash -e` exit code on intended-success input. This is the deepest per-CI-step audit shape the discipline has reached so far.
+- Honest correction extending R2's exit-code-semantics column to every step.
+- Mechanical re-verification of all R2 gates (11 of 11 pass at R3 head pre-push).
+- **Explicit cnos#472 mechanical-injection sharpening note** with the 3-column-per-CI-step table format γ should lift into the scaffold template.
+- Scope discipline statement (2 files changed; correctly excludes β's `beta-review.md` commit as out-of-α-scope).
+- R3 implementation SHA recorded.
+
+The §R3 fix is the exact model-shape next-level recovery should take. γ should lift the bash-e audit table verbatim into the cnos#472 PRA / scaffold template.
+
+### Implementation-contract coherence (Rule 7) re-confirmation
+
+β SKILL Rule 7 binds the implementation to satisfy every AC with proof appropriate to its class (CI-mechanism ACs need actual green CI; static-invariant ACs need actual grep evidence). At R3 head:
+- AC1, AC4, AC5 (static + behavioral): proof preserved from R1.
+- AC2, AC3 (CI + behavioral): proof = green CI on PR #477 (step 5, 6, 7 all log success on R3 head).
+- AC6 (golden + idempotence + CI): proof = green CI step 3+4 + workflow-as-a-whole conclusion `success` (F2 resolved).
+- AC7 (negative invariant): proof = `git diff … \| wc -l` = 0 both locally and on CI.
+- AC8 (renderer-side substantive + CI audit): proof = direct grep on renderer = 0 + CI step 8 success echo.
+
+Rule 7 satisfied across the board.
+
+### Approval line
+
+Approved at head `c55f706171e657e2d15e06f10c4c8b15fb6fda38`; merging via branch-direct (`git merge --no-ff origin/cycle/476` to `main` then push).
+
+### Final cnos#472 sharpening note for γ closeout / PRA
+
+The R1+R2+R3 trajectory across cycle/476 is the empirical case for **mechanical scaffold injection > prose discipline**, and β extends α's three-column recommendation to a concrete cnos#472 PRA action:
+
+| Round | Class of defect | What β found | Prose-naming of next sharpening | Did it stick? |
+|---|---|---|---|---|
+| cnos#470 R1 | aggregated wiring claim — "all links resolve" without per-link `ls` | broken-on-arrival wiring; CI in place but un-grep'd | cnos#472 issued — per-item table required | partial — the table was added in 476 but at artifact-presence depth, not execution-evidence depth |
+| cnos#476 R1 | per-item table at artifact-presence depth only | AC2 negative-smoke step was constant-failure under `bash -e` + missing `pipefail` (F1) | "per-item table with execution evidence" named in both β R1 + α R2 | partial — α R2 added the column for the F1 step only, not every step |
+| cnos#476 R2 | per-item table at exit-code-semantics depth for ONE step but not extended to every step | AC8 audit step exits 1 under `bash -e` because `grep -c` returns 1 on zero matches (F2) | "per-step `bash -e`-semantics audit table" named in β R2 + α R3 | yes — α R3 produced the full 9-row audit table (the desired shape) |
+| cnos#476 R3 (β verifying now) | none — α R3 produced the full 9-row audit table β named | n/a | **`mechanical scaffold injection > prose`** — make the bash-e audit table a required scaffold subsection γ must populate per cycle touching CI workflows | TBD (γ closeout for 476 + cnos#472 PRA action) |
+
+**β's R3 sharpening recommendation (extending α's R3 recommendation):** γ closeout for cycle/476 should file a cnos#472-related action that does BOTH:
+
+1. **Amend the γ scaffold template** to inject (as a populated subsection, not prose guidance) the 3-column per-CI-step table format from α's §R3 fix: (i) `bash -e` substitution-failure-mode audit per `run:` block in every cycle-introduced workflow; (ii) per-step CI execution evidence (job URL + conclusion + which assertion the step proves); (iii) per-step assertion-fires verification (the step actually exercises its assertion on at least one observed input). The table format is α's R3 audit table, byte-liftable.
+
+2. **Amend the α SKILL** to require α populate the table before signaling review-readiness (R[N]) on any cycle touching CI workflows, with the `bash -e` simulations as evidence of authorial work (not just claim).
+
+The friction is "prose discipline insufficient → mechanical template injection required." Across three rounds in this cycle alone, the same class of trap recurred at progressively deeper levels, and each round both β and α named the next-level sharpening in prose — yet each subsequent round still shipped an instance of the very class the prose had named. The empirical conclusion is that the discipline must be mechanically enforced by the act of populating a scaffold section, not the act of remembering prose guidance.
+
+γ closeout for 476 has everything it needs; the PRA / cnos#472 update follow from β's closeout document (written after merge).
+
+### New findings at R3
+
+None. α's R3 was minimal (one-line workflow fix + explanatory comment + comprehensive self-coherence update), the bash-e audit was correct and complete, and no other surfaces were touched.
+
+---
+
+(Round 3 closes here. APPROVE. Merging to main via branch-direct merge --no-ff; writing `.cdd/unreleased/476/beta-closeout.md` post-merge on main; β exits.)
+
