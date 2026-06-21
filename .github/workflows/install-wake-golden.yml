@@ -115,8 +115,17 @@ jobs:
       - name: AC8 renderer-side authority audit
         # The renderer source MUST NOT encode role decisions; those
         # come from the manifest + the inlined prompt body.
+        #
+        # Note on `|| true`: GitHub Actions invokes `run:` blocks under
+        # `/usr/bin/bash -e {0}`, so a command substitution that exits
+        # non-zero terminates the step before the `if` check fires.
+        # `grep -c` returns exit 1 when the count is zero (POSIX), which
+        # is the intended-success path here (we WANT zero leaks). The
+        # `|| true` makes the substitution exit-0-safe while preserving
+        # the count for diagnostics; the substantive check is the
+        # `[ "$n" != "0" ]` guard below, which still fires on real leaks.
         run: |
-          n=$(grep -ciE 'admin.only|disallowed_surfaces|defer.path|cell_execution' src/packages/cnos.core/commands/install-wake/cn-install-wake)
+          n=$(grep -ciE 'admin.only|disallowed_surfaces|defer.path|cell_execution' src/packages/cnos.core/commands/install-wake/cn-install-wake || true)
           if [ "$n" != "0" ]; then
             echo "::error::Renderer source leaks role-decision strings (AC8). Count: $n"
             grep -niE 'admin.only|disallowed_surfaces|defer.path|cell_execution' src/packages/cnos.core/commands/install-wake/cn-install-wake
