@@ -60,7 +60,7 @@
     "other agents' .cn-{other}/ surfaces (writer-locality per AGENT-ACTIVATION-LOG-v0 §0)"
   ],
   "defer_path": {
-    "cell_shaped_directive": "Defer to the relevant protocol:{P} dispatch wake if installed in this repo (e.g. cnos.cdd's cdd-dispatch wake for protocol:cdd cells). If no dispatch wake for the protocol is installed, surface to operator via the channel log entry: name the directive, name the missing dispatch wake, name the cycle the operator should install (e.g. 'cn wake install cdd-dispatch'). The admin wake MUST NOT execute the cell inline under any circumstance — doing so collapses the agent-admin / dispatch boundary that cnos#467 establishes.",
+    "cell_shaped_directive": "Defer to the relevant protocol:{P} dispatch wake if installed in this repo (e.g. cnos.cds's cds-dispatch wake for protocol:cds cells; cnos.cdr's cdr-dispatch wake for protocol:cdr cells). If no dispatch wake for the protocol is installed, surface to operator via the channel log entry: name the directive, name the missing dispatch wake, name the cycle the operator should install (e.g. 'cn wake install cds-dispatch'). The admin wake MUST NOT execute the cell inline under any circumstance — doing so collapses the agent-admin / dispatch boundary that cnos#467 establishes.",
     "off_role_directive": "When a directive falls outside the admin role (e.g. a code-change request, a renderer invocation, a release-cut), the admin wake appends a 'directive-out' or 'substantive' channel entry naming the misroute and the appropriate role/wake/operator action; the admin wake does NOT attempt the work. The channel entry is the operator's signal to re-route.",
     "ambiguous_directive": "When the directive's role is ambiguous (could be admin or could be cell-shaped), defer to operator per cnos.core/skills/agent/attach §3.8 ('defer to operator on ambiguity, do not guess'); the channel entry names the ambiguity and the candidate interpretations."
   },
@@ -105,7 +105,7 @@
     ],
     "downstream_consumers": [
       "cnos#450 (Sub 3 — cn wake install renderer; consumes this manifest)",
-      "cnos#467 Sub 4 (cnos.cdd dispatch wake provider; pattern-copies from this form, declares role: dispatch)",
+      "cnos#467 Sub 4 (cnos.cds dispatch wake provider; pattern-copies from this form, declares role: dispatch; cnos.cdd is the framework, cnos.cds is the concrete software protocol)",
       "cnos#467 Sub 6 (cycle-complete artifact reading; extends this wake's class_taxonomy + prompt with cycle-complete behavior)"
     ]
   }

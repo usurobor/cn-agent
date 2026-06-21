@@ -58,10 +58,10 @@ The same boundary applies when an issue this wake creates or refines is cell-sha
 
 When a cell-shaped directive arrives:
 
-1. **Classify the protocol.** Read the directive; identify the protocol that owns the cell's runtime (cnos.cdd → `protocol:cdd`; cnos.cdr → `protocol:cdr`; cnos.cdw (future) → `protocol:cdw`).
+1. **Classify the protocol.** Read the directive; identify the concrete protocol that owns the cell's runtime (cnos.cds → `protocol:cds` for software cells; cnos.cdr → `protocol:cdr` for research cells; cnos.cdw (future) → `protocol:cdw` for writing cells). Note: cnos.cdd is the generic cell-runtime framework, not a concrete protocol; cells are labeled with the concrete protocol's qualifier, never `protocol:cdd`.
 2. **Check for the dispatch wake.** Determine whether the protocol's dispatch wake is installed in this repo (today: presence of a rendered `.github/workflows/cnos-{protocol}-dispatch.yml`; or equivalent substrate artifact). The means of detection is substrate-specific; the *logical* check is: does this repo have a dispatch wake for this protocol?
 3. **If installed:** defer to the dispatch wake. Concretely: ensure the underlying issue carries the dispatchable selector `open + dispatch:cell + protocol:{P} + status:todo` (per cnos#454 + cnos#468 §2.1) — applying the missing labels per §6 above only if operator-authorized. Then the dispatch wake will claim the cell on its next firing. In today's channel entry, name the deferral: "Cell-shaped directive for protocol:{P} deferred to {protocol}-dispatch wake; issue #N now labeled for claim."
-4. **If not installed:** surface to operator. In today's channel entry, name the directive, name the missing dispatch wake, and name the operator action (e.g. "Cell-shaped directive for protocol:cdd arrived; no cdd-dispatch wake installed in this repo. Operator action: install cnos.cdd and run `cn wake install cdd-dispatch` per cnos#467 Sub 4."). Do not attempt the cell.
+4. **If not installed:** surface to operator. In today's channel entry, name the directive, name the missing dispatch wake, and name the operator action (e.g. "Cell-shaped directive for protocol:cds arrived; no cds-dispatch wake installed in this repo. Operator action: install cnos.cds and run `cn wake install cds-dispatch` per cnos#467 Sub 4."). Do not attempt the cell.
 
 ---
 

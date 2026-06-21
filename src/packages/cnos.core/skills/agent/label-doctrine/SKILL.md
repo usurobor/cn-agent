@@ -77,10 +77,12 @@ Every `dispatch:cell` issue carries **exactly one** `protocol:{id}` label. The q
 
 | Qualifier | Owner | What its presence asserts |
 |---|---|---|
-| `protocol:cdd` | `cnos.cdd` | runtime = CDD cycle (per cnos.cdd's spec) |
+| `protocol:cds` | `cnos.cds` | runtime = CDS software-cell shape (per cnos.cds's spec) |
 | `protocol:cdr` | `cnos.cdr` | runtime = CDR research-cell shape (per cnos.cdr's spec) |
 | `protocol:cdw` | `cnos.cdw` (when the package exists) | runtime = CDW writing-cell shape (per cnos.cdw's spec) |
 | `protocol:{name}` | future package | each future protocol package registers its own qualifier at install |
+
+**Note on cnos.cdd:** `cnos.cdd` is the generic *cell-runtime framework* — it defines the γ/α/β/δ role contracts, the cell mechanics, and the dispatch protocol that the concrete protocol packages (`cnos.cds`, `cnos.cdr`, `cnos.cdw`, ...) all use under the hood. It does **not** own a `protocol:cdd` qualifier of its own; cells are always labeled with the qualifier of the concrete protocol whose runtime executes them (a software cell carries `protocol:cds`, not `protocol:cdd`).
 
 The qualifier label is created in the repo when the owning package is installed via `cn install {pkg}`. cnos.core does NOT create these labels — that would conflate the layers.
 
@@ -114,7 +116,7 @@ The two layers have distinct owners and distinct install paths.
 | Layer | Owner package | Install responsibility |
 |---|---|---|
 | Generic lifecycle + dispatchability | `cnos.core` (or a future `cnos.agent` sub-package) | `cn install cnos.core` creates `status:backlog`, `status:ready`, `status:todo`, `status:in-progress`, `status:review`, `status:changes`, `status:blocked`, `dispatch:cell` |
-| Per-protocol qualifier | each protocol package | `cn install cnos.cdd` creates `protocol:cdd`; `cn install cnos.cdr` creates `protocol:cdr`; per-package |
+| Per-protocol qualifier | each concrete protocol package | `cn install cnos.cds` creates `protocol:cds`; `cn install cnos.cdr` creates `protocol:cdr`; per-package (cnos.cdd is the framework, not a concrete protocol; it does not create a protocol qualifier) |
 
 Crossing the split is a doctrine violation:
 

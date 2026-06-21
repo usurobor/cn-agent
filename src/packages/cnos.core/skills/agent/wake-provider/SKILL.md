@@ -116,7 +116,7 @@ Every wake-provider manifest MUST declare these fields, in this rough order (the
 | Field | Type | Purpose |
 |---|---|---|
 | `schema` | string, MUST equal `"cn.wake-provider.v1"` | Identifies this file as a wake-provider declaration consumable by `cn wake install`. The renderer dispatches by schema. |
-| `name` | string, kebab-case, repo-unique | The wake's identifier (e.g. `agent-admin`, `cdd-dispatch`). The renderer derives the substrate artifact name from this (today: `.github/workflows/cnos-{name}.yml`). |
+| `name` | string, kebab-case, repo-unique | The wake's identifier (e.g. `agent-admin`, `cds-dispatch`). The renderer derives the substrate artifact name from this (today: `.github/workflows/cnos-{name}.yml`). |
 | `package` | string | The owning package (e.g. `cnos.core`, `cnos.cdd`). Authoritative for ownership; the renderer verifies the manifest lives under the named package's directory tree. |
 | `role` | string, enum: `admin` \| `dispatch` \| `observer` | The wake's role class. `admin` = channel sync + admin-only directive handling, never executes cells. `dispatch` = claims cells matching its protocol selector and runs the protocol's runtime. `observer` = reads-only; emits reports but does not act. The agent-admin wake declares `admin`. |
 | `responsibilities` | array of strings, non-empty | The enumerated capabilities the wake's prompt commits to. The renderer does not interpret these (they are prose for the agent); the package authors them so they are observable in the declaration without reading the prompt. |
@@ -205,7 +205,7 @@ To declare a new wake provider in package `{pkg}`:
 5. **Do NOT touch the substrate.** No edits under `.github/workflows/`. The renderer emits the substrate artifact at `cn wake install` time (Sub 3 of cnos#467).
 6. **Verify substrate-agnostic:** `grep -ciE 'github|workflow|yaml|GITHUB_TOKEN|runs-on|claude-code-action' wake-provider.json prompt.md` MUST return 0 *except* for an explicit `relationship_to_substrate` field or a "relationship to existing claude-wake.yml" section that names the artifact being superseded (descriptive reference, not substrate emission).
 
-The agent-admin wake provider (cnos.core, sibling `orchestrators/agent-admin/wake-provider.json`) is the reference instance of this contract. The cnos.cdd dispatch wake provider (Sub 4 of cnos#467) will pattern-copy from it: `cnos.cdd/orchestrators/cdd-dispatch/wake-provider.json` + `prompt.md`, declaring `role: dispatch` instead of `role: admin`.
+The agent-admin wake provider (cnos.core, sibling `orchestrators/agent-admin/wake-provider.json`) is the reference instance of this contract. The cnos.cds dispatch wake provider (Sub 4 of cnos#467) will pattern-copy from it: `cnos.cds/orchestrators/cds-dispatch/wake-provider.json` + `prompt.md`, declaring `role: dispatch` instead of `role: admin`. (cnos.cds is the concrete software protocol; cnos.cdd is the generic cell-runtime framework that cds and the other concrete protocol packages — cnos.cdr, cnos.cdw — use under the hood. Dispatch wakes belong to concrete protocols, not to the framework.)
 
 ---
 
