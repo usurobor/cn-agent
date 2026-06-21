@@ -26,3 +26,31 @@
 - Will NOT edit `src/packages/cnos.core/skills/agent/wake-provider/SKILL.md` (the contract; friction-log routes to gamma-closeout).
 - Will NOT touch `src/go/` (γ-pinned form is shell).
 - Will NOT touch any other package (cnos.cdd, cnos.cdr, cnos.kata).
+
+## §Skills
+
+**Tier 1 (CDD lifecycle):**
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` — canonical lifecycle
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — α role contract; §2.5 incremental self-coherence; §2.6 pre-review gate; §3.6 implementation contract is δ's
+
+**Lifecycle sub-skills:**
+- `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` — issue shape (read for AC interpretation)
+- `src/packages/cnos.cdd/skills/cdd/design/SKILL.md` — design-and-build mode (form-pin decision)
+
+**Tier 3 (issue-specific):**
+- `src/packages/cnos.core/skills/agent/wake-provider/SKILL.md` — **the contract this renderer consumes**; §2.1 required fields; §2.4 substrate-rendering target; §2.5 canonical authority-split table; §3 authority split rules; §3.5 reject malformed declarations; §4.1–§4.6 verification checks
+- `src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json` — reference instance (READ ONLY)
+- `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` — prompt template (READ ONLY; inlined verbatim)
+- `src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md` — cnos#468 contextual; renderer must not emit anything that contradicts label doctrine
+- `src/packages/cnos.core/cn.package.json` — commands map (one entry added)
+- `src/packages/cnos.core/commands/{daily,weekly,save}/cn-*` — shell-command sibling precedent (`#!/bin/sh`; `set -eu`; CN_HUB_PATH/CN_PACKAGE_ROOT/CN_COMMAND_NAME dispatch contract)
+- `src/go/internal/discover/discover.go` — `ScanPackageCommands` + `ExecCommand` (confirms entry shape; path confinement; env-var contract)
+- `.github/workflows/claude-wake.yml` — substrate-bound wake (READ ONLY; AC7 byte-identical invariant); structural reference for `claude-code-action@v1` invocation shape
+- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — cited from the manifest's `output_contract.channel_log_convention`
+
+**γ scaffold:** `.cdd/unreleased/476/gamma-scaffold.md` (re-read for form-choice rationale §"Form choice"; render-target rationale §"Render target path"; AC mapping table §"AC mapping"; mechanical gate block; claim-class verification injection).
+
+**Issue body:** read in full via `mcp__github__issue_read` (issue_number=476). AC1–AC8 Invariant/Oracle/Surface blocks parsed verbatim; non-goals checked against scope plan.
+
+**Master tracker:** cnos#467 §"Foundational architecture — package-owned wake providers (authoritative)" + wave-level AC4 — already absorbed via Sub 2 (#470) merge state and γ scaffold's distillation.
+
