@@ -1,7 +1,7 @@
 ---
 title: "Dumb Models, Smart Cells"
 subtitle: "Convention over Vendor Runtime for Agent Systems"
-version: v0.4.1
+version: v0.5.0
 status: DRAFT
 author: usurobor (aka Axiom) (human & AI)
 date: 2026-06-22
@@ -10,7 +10,7 @@ date: 2026-06-22
 # Dumb Models, Smart Cells
 ## Convention over Vendor Runtime for Agent Systems
 
-**Status:** v0.4.1 (DRAFT — position paper)
+**Status:** v0.5.0 (DRAFT — position paper)
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-06-22
 
@@ -45,6 +45,7 @@ Workflow, memory, identity, evidence, permissions, receipts, and release authori
 
 Capability is rented.
 Authority is owned.
+And authority has to have a name.
 
 ---
 
@@ -125,7 +126,7 @@ In a smart system, the model performs a move inside a boundary the system owns.
 The model slot is replaceable.
 The models are not equivalent.
 
-That distinction matters.
+This is not a small distinction.
 
 A local model, a frontier model, a code-specialized model, and a long-context model do not have the same capability. Swapping one for another can change whether the work succeeds at all.
 
@@ -143,7 +144,7 @@ It is governed substitution.
 
 The model can change without moving workflow, memory, evidence, identity, or release authority into the vendor runtime.
 
-That is the property cnos wants.
+That is the property cnos is after.
 
 ---
 
@@ -243,9 +244,9 @@ For other work, validation is hard. A large refactor may compile and still be wr
 cnos does not remove that problem.
 It makes the problem visible.
 
-In CDD, `V` is the validator predicate. It checks the receipt against the contract. `delta` makes the boundary decision. If the verdict is strong enough, `delta` can accept or release. If the verdict is weak, `delta` can reject, repair-dispatch, or override with degradation recorded.
+In CDD, `V` is the validator predicate. It checks the receipt against the contract. `delta` is the boundary authority.
 
-That is the honest shape.
+That is the shape to be honest about.
 
 A weak validator should not produce a strong claim.
 A degraded release should say it is degraded.
@@ -256,33 +257,40 @@ The goal is to stop hiding the oracle inside chat.
 
 ---
 
-## 8. The floor is a name
+## 8. The floor is named authority
 
-Push the question down and it does not vanish. It bottoms out.
+Push the question down far enough and it bottoms out.
 
 Is the model trustworthy? Wrong question — bound it.
-Is `V` strong? Sometimes, and the receipt should say when it is not.
+Is `V` strong? Sometimes. The receipt should say when it is not.
 Does `delta` act well on the verdict? That is the floor.
 
-`delta` can override a failed verdict and record the degradation. So in the end the system's trustworthiness reduces to whoever holds `delta`. Inspectability is necessary. It is not sufficient. A flag no one is bound to act on becomes a rubber stamp: the label is present, the release ships, and "degraded but recorded" quietly turns into "shipped anyway."
+cnos does not remove this floor. No architecture can.
+Judgment cannot be deleted. It can only be placed.
 
-cnos does not remove this. No architecture can. Judgment cannot be deleted, only placed.
+In CDD, `V` checks the receipt against the contract. `delta` decides what crosses the boundary. It may accept, reject, repair-dispatch, or release with degradation recorded.
 
-So cnos places it. The floor is a named, accountable authority — a human, or a policy a human signed for — sitting at one seam with the evidence bound to the decision. State the claim plainly: cnos does not guarantee the *quality* of judgment. It guarantees its *location*. Judgment happens at `delta`, under a name, with the receipt attached, instead of dissolving across a chat no one can audit.
+That means cnos does not guarantee good judgment.
+It guarantees a place where judgment lands: under a name, at a seam, with the receipt attached.
 
-That placement does three things a chat log cannot.
+That is different from chat.
 
-It makes the override attributable. A degraded release is signed. The decision has an author, not an ambient consensus.
+In chat, authority diffuses. The model suggested something. The human nodded. The thread moved on. Later, nobody can say exactly where the decision lived.
 
-It makes the override propagate. A degraded cell is not a leaf annotation. In CDD the override block is the structural signal every downstream consumer must detect, and the degraded cell projects upward as degraded matter, so the next `delta` can refuse to build on it. The flag is not binding in the moment; it is load-bearing on everyone downstream who looks.
+In cnos, the override is attributable. A degraded release is not a mood. It is a signed event.
 
-It makes the rubber stamp visible as a pattern. Overrides are discrete signed events, and `epsilon` watches the receipt stream across cells. "Override became routine" is itself an incoherence the system can see.
+It also propagates. A degraded cell becomes degraded matter for the next cell. A later boundary can refuse to build on it, ask for repair, or accept the risk again under another name.
 
-None of that forces a community to care. A ring of negligent operators can rubber-stamp a clean-looking lineage of degradations all the way up, and cnos will faithfully record it. That is the true floor, and it is not architectural. It is cultural: the guarantee holds only where a community treats a recorded override as something that must be answered.
+And it can become visible as a pattern. If overrides become routine, `epsilon` can read the receipt stream and surface that as system behavior, not one-off noise.
 
-Which makes this the open-source argument from the other side. The receipt makes not-caring leave a streak. It cannot make anyone read the streak. What reads it is a commons that has agreed receipts are binding.
+This still does not force anyone to care.
+A negligent community can rubber-stamp degraded work forever. cnos will record that too.
 
-The same shape repeats one level down. "Fail closed" versus "degrade and record" is not a fact about the task; it is a `delta`-decision lifted to policy — made once, by a higher authority, so the operator at the boundary inherits a posture instead of improvising one. A stopped agent is a real cost in some domains and a safe default in others. That choice lives at a named seam too.
+The guarantee is not moral. It is structural: not-caring leaves a trail.
+
+The rest is culture. A commons has to agree that receipts and overrides are binding enough to answer.
+
+Fail-closed versus degrade-and-record follows the same rule. It is not a fact about the model. It is a policy decision made at a named seam, by an authority responsible for the cost of stopping and the risk of shipping.
 
 ---
 
