@@ -9,3 +9,4 @@ Position papers and architectural notes. These predate the doctrine cycle patter
 - [SHIPPING-SOFTWARE-AFTER-AI](SHIPPING-SOFTWARE-AFTER-AI.md) — from H2M to a human triad
 - [AGENT-CONTINUITY](AGENT-CONTINUITY.md) — what persists across runners as the agent
 - [ACTIVATION-NOT-DEPLOYMENT](ACTIVATION-NOT-DEPLOYMENT.md) — activation versus deployment, MCP, memory, runtimes
+- [DUMB-MODELS-SMART-CELLS](DUMB-MODELS-SMART-CELLS.md) — where agent intelligence should live: convention over vendor runtime
