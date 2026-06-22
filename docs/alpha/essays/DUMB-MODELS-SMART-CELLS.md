@@ -1,7 +1,7 @@
 ---
 title: "Dumb Models, Smart Cells"
 subtitle: "Convention over Vendor Runtime for Agent Systems"
-version: v0.4.0
+version: v0.4.1
 status: DRAFT
 author: usurobor (aka Axiom) (human & AI)
 date: 2026-06-22
@@ -10,7 +10,7 @@ date: 2026-06-22
 # Dumb Models, Smart Cells
 ## Convention over Vendor Runtime for Agent Systems
 
-**Status:** v0.4.0 (DRAFT — position paper)
+**Status:** v0.4.1 (DRAFT — position paper)
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-06-22
 
@@ -243,7 +243,7 @@ For other work, validation is hard. A large refactor may compile and still be wr
 cnos does not remove that problem.
 It makes the problem visible.
 
-In CDD, `V` is the validator predicate. It checks the receipt against the contract. `δ` makes the boundary decision. If the verdict is strong enough, `δ` can accept or release. If the verdict is weak, `δ` can reject, repair-dispatch, or override with degradation recorded.
+In CDD, `V` is the validator predicate. It checks the receipt against the contract. `delta` makes the boundary decision. If the verdict is strong enough, `delta` can accept or release. If the verdict is weak, `delta` can reject, repair-dispatch, or override with degradation recorded.
 
 That is the honest shape.
 
@@ -262,27 +262,27 @@ Push the question down and it does not vanish. It bottoms out.
 
 Is the model trustworthy? Wrong question — bound it.
 Is `V` strong? Sometimes, and the receipt should say when it is not.
-Does `δ` act well on the verdict? That is the floor.
+Does `delta` act well on the verdict? That is the floor.
 
-`δ` can override a failed verdict and record the degradation. So in the end the system's trustworthiness reduces to whoever holds `δ`. Inspectability is necessary. It is not sufficient. A flag no one is bound to act on becomes a rubber stamp: the label is present, the release ships, and "degraded but recorded" quietly turns into "shipped anyway."
+`delta` can override a failed verdict and record the degradation. So in the end the system's trustworthiness reduces to whoever holds `delta`. Inspectability is necessary. It is not sufficient. A flag no one is bound to act on becomes a rubber stamp: the label is present, the release ships, and "degraded but recorded" quietly turns into "shipped anyway."
 
 cnos does not remove this. No architecture can. Judgment cannot be deleted, only placed.
 
-So cnos places it. The floor is a named, accountable authority — a human, or a policy a human signed for — sitting at one seam with the evidence bound to the decision. State the claim plainly: cnos does not guarantee the *quality* of judgment. It guarantees its *location*. Judgment happens at `δ`, under a name, with the receipt attached, instead of dissolving across a chat no one can audit.
+So cnos places it. The floor is a named, accountable authority — a human, or a policy a human signed for — sitting at one seam with the evidence bound to the decision. State the claim plainly: cnos does not guarantee the *quality* of judgment. It guarantees its *location*. Judgment happens at `delta`, under a name, with the receipt attached, instead of dissolving across a chat no one can audit.
 
 That placement does three things a chat log cannot.
 
 It makes the override attributable. A degraded release is signed. The decision has an author, not an ambient consensus.
 
-It makes the override propagate. A degraded cell is not a leaf annotation. In CDD the override block is the structural signal every downstream consumer must detect, and the degraded cell projects upward as degraded matter, so the next `δ` can refuse to build on it. The flag is not binding in the moment; it is load-bearing on everyone downstream who looks.
+It makes the override propagate. A degraded cell is not a leaf annotation. In CDD the override block is the structural signal every downstream consumer must detect, and the degraded cell projects upward as degraded matter, so the next `delta` can refuse to build on it. The flag is not binding in the moment; it is load-bearing on everyone downstream who looks.
 
-It makes the rubber stamp visible as a pattern. Overrides are discrete signed events, and `ε` watches the receipt stream across cells. "Override became routine" is itself an incoherence the system can see.
+It makes the rubber stamp visible as a pattern. Overrides are discrete signed events, and `epsilon` watches the receipt stream across cells. "Override became routine" is itself an incoherence the system can see.
 
 None of that forces a community to care. A ring of negligent operators can rubber-stamp a clean-looking lineage of degradations all the way up, and cnos will faithfully record it. That is the true floor, and it is not architectural. It is cultural: the guarantee holds only where a community treats a recorded override as something that must be answered.
 
 Which makes this the open-source argument from the other side. The receipt makes not-caring leave a streak. It cannot make anyone read the streak. What reads it is a commons that has agreed receipts are binding.
 
-The same shape repeats one level down. "Fail closed" versus "degrade and record" is not a fact about the task; it is a `δ`-decision lifted to policy — made once, by a higher authority, so the operator at the boundary inherits a posture instead of improvising one. A stopped agent is a real cost in some domains and a safe default in others. That choice lives at a named seam too.
+The same shape repeats one level down. "Fail closed" versus "degrade and record" is not a fact about the task; it is a `delta`-decision lifted to policy — made once, by a higher authority, so the operator at the boundary inherits a posture instead of improvising one. A stopped agent is a real cost in some domains and a safe default in others. That choice lives at a named seam too.
 
 ---
 
@@ -304,7 +304,7 @@ For agent systems, that means:
 > the package owns local cognition,
 > the model owns only the bounded move it was asked to make.
 
-That is the architecture cnos is trying to make normal.
+That is the shape cnos is trying to normalize.
 
 A community can add a package.
 A team can swap a model.
@@ -312,28 +312,28 @@ A domain can define its own evidence.
 A validator can check a receipt.
 A future agent can continue from repo state instead of guessing from chat history.
 
-The model is replaceable because the work has a body outside the model.
+The model is replaceable at the workflow boundary because the work has a body outside the model.
 
 ---
 
 ## 10. What the boundary buys
 
 The trade is not free.
+cnos adds ceremony: cells, receipts, routing policy, validators, release gates, and package doctrine.
+That machinery has to earn its keep.
 
-cnos adds ceremony: cells, receipts, routing policy, validators, release gates, and package doctrine. That machinery has to earn its keep.
+It earns it when the work matters enough that chat history is not a safe system of record.
 
-It earns it when agent work becomes serious enough that chat history is not a safe system of record.
-
-The boundary buys substitution, not fungibility.
+It buys substitution, not fungibility.
 A team can add a new provider without moving workflow into that provider. The new provider may be better or worse. The receipt records which one ran, why it was chosen, and what validation followed.
 
-The boundary buys audit, not certainty.
+It buys audit, not certainty.
 A receipt does not prove the work was correct. It records what the system believed, what evidence was bound, what validator ran, and what decision crossed the boundary.
 
-The boundary buys durability.
+It buys durability.
 The work survives a model call, a vendor outage, a price change, a lost chat, or a new runner. The repo keeps the body.
 
-The boundary buys cost control.
+It buys cost control.
 Simple work can stay local. High-context work can escalate. Failed local work can repair-dispatch or route up. The decision is policy, not vibes.
 
 ---
@@ -383,7 +383,7 @@ Smart cells.
 Receipts over vibes.
 
 The model should be smart enough to move the work forward.
-It should be bounded enough not to own the work.
+It should be bounded enough that it never owns the work.
 
 ---
 
