@@ -177,14 +177,13 @@ Per OG-4 these are empirical observations with specific findings, not bare refer
 ## §R0 review-ready signal
 
 ```
-## R0 | base SHA: 950730c7 | implementation SHA: <captured below in §R0 SHA section>
-ready for β
+## R0 | base SHA: 950730c7 | implementation SHA: 1743e3cd | ready for β
 ```
 
-The implementation SHA is the SHA of the commit that lands the §9 amendment + this self-coherence (excluding the §R0-signal-commit itself, per `alpha/SKILL.md` §2.7 SHA convention: implementation SHA names the last implementation commit, not the signal-commit-head).
+- **Base main SHA:** `950730c74985864537696ec45ebf0023fde16b97` (cycle/486 branch point; post-Sub-5A merge state; PR #488 merged).
+- **γ scaffold SHA:** `f1011f29d989a44d76fff0818267b70a07dec796` (the γ-486 scaffold commit; sole prior commit on `cycle/486`).
+- **α implementation SHA:** `1743e3cda7da3134e32bea414ef814495c6067a1` (the implementation commit that lands §9 amendment + the body of this self-coherence; per `alpha/SKILL.md` §2.7 SHA convention, this is the last implementation commit BEFORE this signal commit).
+- **Signal commit:** this section's commit (HEAD after this commit lands; β reads the §R0 signal section from this commit's tree on `cycle/486`).
+- **Branch:** `cycle/486` (origin push pending).
 
-α implementation commit SHA: *(will be filled in by the signal commit; the implementation commit is the parent of the signal commit per `alpha/SKILL.md` §2.7 convention).*
-
-Branch HEAD at signal time: `cycle/486` head SHA (recorded in the signal commit message + this section once the signal commit lands).
-
-β: read this §R0 section + walk the §ACs table + re-verify each oracle on the cycle/486 head; produce `.cdd/unreleased/486/beta-review.md §R0` with `verdict: converge` or `verdict: iterate`.
+β: read this §R0 section + walk the §ACs table + re-verify each oracle on the cycle/486 head; produce `.cdd/unreleased/486/beta-review.md §R0` with `verdict: converge` or `verdict: iterate`. Cycle/486 does NOT touch CI surfaces, so no per-CI-step audit table applies (per γ-scaffold §7 + FN-5).
