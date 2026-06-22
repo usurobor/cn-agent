@@ -1,7 +1,7 @@
 ---
 title: "Dumb Models, Smart Cells"
 subtitle: "Convention over Vendor Runtime for Agent Systems"
-version: v0.3.0
+version: v0.4.0
 status: DRAFT
 author: usurobor (aka Axiom) (human & AI)
 date: 2026-06-22
@@ -10,7 +10,7 @@ date: 2026-06-22
 # Dumb Models, Smart Cells
 ## Convention over Vendor Runtime for Agent Systems
 
-**Status:** v0.3.0 (DRAFT — position paper)
+**Status:** v0.4.0 (DRAFT — position paper)
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-06-22
 
@@ -256,7 +256,37 @@ The goal is to stop hiding the oracle inside chat.
 
 ---
 
-## 8. Why this is an open-source shape
+## 8. The floor is a name
+
+Push the question down and it does not vanish. It bottoms out.
+
+Is the model trustworthy? Wrong question — bound it.
+Is `V` strong? Sometimes, and the receipt should say when it is not.
+Does `δ` act well on the verdict? That is the floor.
+
+`δ` can override a failed verdict and record the degradation. So in the end the system's trustworthiness reduces to whoever holds `δ`. Inspectability is necessary. It is not sufficient. A flag no one is bound to act on becomes a rubber stamp: the label is present, the release ships, and "degraded but recorded" quietly turns into "shipped anyway."
+
+cnos does not remove this. No architecture can. Judgment cannot be deleted, only placed.
+
+So cnos places it. The floor is a named, accountable authority — a human, or a policy a human signed for — sitting at one seam with the evidence bound to the decision. State the claim plainly: cnos does not guarantee the *quality* of judgment. It guarantees its *location*. Judgment happens at `δ`, under a name, with the receipt attached, instead of dissolving across a chat no one can audit.
+
+That placement does three things a chat log cannot.
+
+It makes the override attributable. A degraded release is signed. The decision has an author, not an ambient consensus.
+
+It makes the override propagate. A degraded cell is not a leaf annotation. In CDD the override block is the structural signal every downstream consumer must detect, and the degraded cell projects upward as degraded matter, so the next `δ` can refuse to build on it. The flag is not binding in the moment; it is load-bearing on everyone downstream who looks.
+
+It makes the rubber stamp visible as a pattern. Overrides are discrete signed events, and `ε` watches the receipt stream across cells. "Override became routine" is itself an incoherence the system can see.
+
+None of that forces a community to care. A ring of negligent operators can rubber-stamp a clean-looking lineage of degradations all the way up, and cnos will faithfully record it. That is the true floor, and it is not architectural. It is cultural: the guarantee holds only where a community treats a recorded override as something that must be answered.
+
+Which makes this the open-source argument from the other side. The receipt makes not-caring leave a streak. It cannot make anyone read the streak. What reads it is a commons that has agreed receipts are binding.
+
+The same shape repeats one level down. "Fail closed" versus "degrade and record" is not a fact about the task; it is a `δ`-decision lifted to policy — made once, by a higher authority, so the operator at the boundary inherits a posture instead of improvising one. A stopped agent is a real cost in some domains and a safe default in others. That choice lives at a named seam too.
+
+---
+
+## 9. Why this is an open-source shape
 
 Open source cannot win by copying every vendor feature one at a time.
 
@@ -286,7 +316,7 @@ The model is replaceable because the work has a body outside the model.
 
 ---
 
-## 9. What the boundary buys
+## 10. What the boundary buys
 
 The trade is not free.
 
@@ -308,7 +338,7 @@ Simple work can stay local. High-context work can escalate. Failed local work ca
 
 ---
 
-## 10. Relationship to the CN whitepaper and THESIS
+## 11. Relationship to the CN whitepaper and THESIS
 
 The CN whitepaper answers a substrate question:
 
@@ -336,7 +366,7 @@ This paper draws it under the model: the LLM is a provider the kernel governs, n
 
 ---
 
-## 11. Conclusion
+## 12. Conclusion
 
 Rails did not win by pretending databases were weak.
 It won by putting a strong convention in front of powerful engines.
@@ -344,7 +374,9 @@ It won by putting a strong convention in front of powerful engines.
 cnos makes the same move for agent systems — at the authority boundary, not the capability boundary.
 
 Let the model be smart.
-Keep memory, workflow, identity, evidence, receipts, and release authority outside it.
+Keep memory, workflow, identity, evidence, receipts, and release authority outside it — at a seam with a name.
+
+The architecture does not make judgment correct. It makes judgment land somewhere you can see, signed by someone who can be asked. The rest is a commons that agrees to look.
 
 Dumb models.
 Smart cells.
