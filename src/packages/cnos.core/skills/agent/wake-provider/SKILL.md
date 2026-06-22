@@ -1,6 +1,6 @@
 ---
 name: wake-provider
-description: The wake-provider declaration contract. Defines what a cnos package declares to provide a wake (identity, responsibilities, input/output contract, allowed/disallowed surfaces, defer-path, prompt template) and the split between what the package declares vs what the substrate renderer materializes. The agent-admin wake provider (cnos.core, sibling `orchestrators/agent-admin/wake-provider.json`) is the reference instance; cnos.cdd's dispatch wake provider (Sub 4 of cnos#467) will be authored against this contract alone.
+description: The wake-provider declaration contract. Defines what a cnos package declares to provide a wake (identity, responsibilities, input/output contract, allowed/disallowed surfaces, defer-path, prompt template) and the split between what the package declares vs what the substrate renderer materializes. The agent-admin wake provider (cnos.core, sibling `orchestrators/agent-admin/wake-provider.json`) is the reference instance; cnos.cds's dispatch wake provider (Sub 4 of cnos#467) — the first concrete-protocol dispatch wake — will be authored against this contract alone.
 artifact_class: skill
 kata_surface: none
 governing_question: What does a cnos package declare to provide a wake, and which fields of the declaration are the package's authority vs the substrate renderer's authority?
@@ -117,7 +117,7 @@ Every wake-provider manifest MUST declare these fields, in this rough order (the
 |---|---|---|
 | `schema` | string, MUST equal `"cn.wake-provider.v1"` | Identifies this file as a wake-provider declaration consumable by `cn wake install`. The renderer dispatches by schema. |
 | `name` | string, kebab-case, repo-unique | The wake's identifier (e.g. `agent-admin`, `cds-dispatch`). The renderer derives the substrate artifact name from this (today: `.github/workflows/cnos-{name}.yml`). |
-| `package` | string | The owning package (e.g. `cnos.core`, `cnos.cdd`). Authoritative for ownership; the renderer verifies the manifest lives under the named package's directory tree. |
+| `package` | string | The owning package (e.g. `cnos.core` for the agent-admin wake; `cnos.cds` for the CDS dispatch wake; cnos.cdr / cnos.cdw for their respective dispatch wakes). Authoritative for ownership; the renderer verifies the manifest lives under the named package's directory tree. Note: dispatch wakes belong to concrete protocol packages (cds/cdr/cdw); `cnos.cdd` is the generic cell-runtime framework and does not own a dispatch wake itself. |
 | `role` | string, enum: `admin` \| `dispatch` \| `observer` | The wake's role class. `admin` = channel sync + admin-only directive handling, never executes cells. `dispatch` = claims cells matching its protocol selector and runs the protocol's runtime. `observer` = reads-only; emits reports but does not act. The agent-admin wake declares `admin`. |
 | `responsibilities` | array of strings, non-empty | The enumerated capabilities the wake's prompt commits to. The renderer does not interpret these (they are prose for the agent); the package authors them so they are observable in the declaration without reading the prompt. |
 | `admin_only` | boolean | When `true`, the wake MUST NOT execute cells. The prompt template is required to enforce this; the renderer is required to surface it (e.g. via permission allowlist restriction in the materialized substrate artifact). `role: admin` implies `admin_only: true`. |
@@ -309,7 +309,7 @@ This skill is part of the wake-orchestration cluster (cnos#467). It defines the 
 - **cnos#468** (`agent/label-doctrine`) — the label control plane any admin wake's prompt cites for label-application discipline. The agent-admin wake provider's prompt template carries this citation.
 - **cnos#470** (this cycle; Sub 2 of #467) — authors this skill and the agent-admin wake provider as the reference instance.
 - **cnos#450** (`agent/wake-template`, amended) — the Sub 3 renderer (`cn wake install`) consumes this contract. The renderer dispatches by `schema`; required-field validation is its responsibility; substrate emission is its sole authority.
-- **cnos#454** (`agent/dispatch-protocol`, amended) — defines the claim mechanics for *dispatch*-role wakes; not consumed by admin-role wakes. Future per-package dispatch wake providers (cnos.cdd Sub 4; future cnos.cdr, cnos.cdw) cite both this contract and #454.
+- **cnos#454** (`agent/dispatch-protocol`, amended) — defines the claim mechanics for *dispatch*-role wakes; not consumed by admin-role wakes. Future per-package dispatch wake providers (cnos.cds Sub 4; future cnos.cdr, cnos.cdw) cite both this contract and #454. (cnos.cdd is the generic cell-runtime framework, not a concrete dispatch wake owner.)
 
 Adjacent skills and conventions:
 

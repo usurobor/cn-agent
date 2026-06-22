@@ -100,7 +100,7 @@ jobs:
 
             When a cell-shaped directive arrives in the home thread:
 
-            - **MUST NOT** execute the cell inline. The admin wake is not the CDD/CDR/CDW runtime; running a cell inside the admin wake collapses the role-separation invariant cnos#467 establishes.
+            - **MUST NOT** execute the cell inline. The admin wake is not the CDS/CDR/CDW protocol runtime, and it does not run the CDD cell framework inline; running a cell inside the admin wake collapses the role-separation invariant cnos#467 establishes.
             - **MUST** defer per the defer-path below.
             - **MUST** make the deferral observable in today's channel log entry (the channel entry is the operator's signal that the directive arrived and was correctly routed).
 

@@ -124,7 +124,7 @@ Crossing the split is a doctrine violation:
 - A protocol package MUST NOT create generic lifecycle labels — those are cnos.core-owned
 - A protocol package MAY depend on cnos.core (its install assumes the generic set exists in the repo)
 
-Installs are idempotent on label creation. Repeated `cn install cnos.cdd` runs are no-ops on label state.
+Installs are idempotent on label creation. Repeated `cn install cnos.core` runs are no-ops on generic label state; repeated `cn install cnos.cds` (or `cnos.cdr`, future `cnos.cdw`) runs are no-ops on each concrete protocol's `protocol:{id}` label state.
 
 ---
 
@@ -191,7 +191,7 @@ The skill format:
 
 ## 7. Failure modes
 
-- **Cross-layer label creation.** A package creates a label it does not own (e.g., cnos.cdd creates `status:todo`). _Fix:_ per-package install commands create only labels in the package's owned set; `cn install` checks ownership before write.
+- **Cross-layer label creation.** A package creates a label it does not own (e.g., cnos.cds creates `status:todo`, or cnos.core creates `protocol:cds`). _Fix:_ per-package install commands create only labels in the package's owned set; `cn install` checks ownership before write.
 - **Missing protocol qualifier.** A `dispatch:cell` issue without `protocol:{id}`. _Fix:_ dispatch wakes reject the issue with `degraded_reason: dispatch_protocol_missing` and a repair-instruction comment (per cnos#454 AC9).
 - **Cross-protocol mismatch.** A wake owning `{P}` encounters a cell labeled `protocol:{Q}` where `Q ≠ P`. The handling differs by the wake's entry path:
   - **Scheduled sweep:** the wake passes over the cell silently (it is not eligible under the wake's selector). The matching wake claims it on its own sweep. Not a drift event.
