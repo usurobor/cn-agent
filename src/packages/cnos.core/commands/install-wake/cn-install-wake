@@ -421,9 +421,10 @@ echo "" >> "$tmp_out"
 # jobs: block — runs-on / steps / claude-code-action invocation are
 # substrate authority.
 
-# Job-level if: for issues_opened_title_match — title pattern matches
-# the wake name (substrate convention; the manifest's
-# trigger_descriptions documents "title matches a configured pattern").
+# Job-level if: for issues_opened_title_match — title pattern read from
+# input_contract.issues_opened_title_pattern (per wake-provider/SKILL.md
+# §2.2). Default when the field is absent: the wake's name (documented
+# fallback, not silent — declared in §2.2's optional-fields table).
 # When schedule is also present, the if: must allow schedule events
 # unconditionally and gate only issue events.
 has_schedule=0
@@ -438,11 +439,16 @@ while [ "$i" -lt "$trigger_count" ]; do
   i=$((i + 1))
 done
 
+title_pattern="$(jq -r '.input_contract.issues_opened_title_pattern // empty' "$manifest_path")"
+if [ -z "$title_pattern" ]; then
+  title_pattern="$name"
+fi
+
 job_if=""
 if [ "$has_schedule" -eq 1 ] && [ "$has_issues" -eq 1 ]; then
-  job_if="    if: \${{ github.event_name == 'schedule' || contains(github.event.issue.title, '${name}') }}"
+  job_if="    if: \${{ github.event_name == 'schedule' || contains(github.event.issue.title, '${title_pattern}') }}"
 elif [ "$has_issues" -eq 1 ]; then
-  job_if="    if: \${{ contains(github.event.issue.title, '${name}') }}"
+  job_if="    if: \${{ contains(github.event.issue.title, '${title_pattern}') }}"
 fi
 
 {

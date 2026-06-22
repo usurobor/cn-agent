@@ -20,9 +20,10 @@
       "schedule",
       "issues_opened_title_match"
     ],
+    "issues_opened_title_pattern": "claude-wake",
     "trigger_descriptions": {
       "schedule": "Periodic firings on a cron-like schedule; substrate-specific encoding (e.g. multiple staggered hourly slots) is the renderer's responsibility. The wake does not claim from a queue; it processes whatever inbound state exists at firing time.",
-      "issues_opened_title_match": "Optional: trigger on issue-open events whose title matches a configured pattern (today: 'claude-wake'). Used for operator-driven manual wakes; coexists with schedule."
+      "issues_opened_title_match": "Trigger on issue-open events whose title contains the configured pattern. The literal pattern is declared in input_contract.issues_opened_title_pattern (currently 'claude-wake', preserved verbatim across the Sub 3 cutover so the operator-facing manual-trigger phrase does not change). Used for operator-driven manual wakes; coexists with schedule."
     },
     "inbound": "home thread (cn-{agent}:.cn-{agent}/threads/activations/{this-hub}/) + open issues in this repo (read-only access for triage); not a queue claim — the admin wake does NOT claim from dispatch:cell + protocol:{P} + status:todo queue, which is per-package dispatch wakes' job per cnos#467 + cnos#454"
   },
