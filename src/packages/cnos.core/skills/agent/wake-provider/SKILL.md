@@ -139,6 +139,7 @@ These fields MAY appear; the renderer treats their absence as the documented def
 |---|---|---|---|
 | `description` | string | (none) | Human-readable one-line summary; ignored by the renderer; helpful in code review. |
 | `agent_variable` | object | `{ "name": "agent", "default": null }` | The per-install agent identity binding (e.g. `--agent sigma` at `cn wake install` time). Object keys: `name` (the variable name the prompt template substitutes), `default` (the fallback if not provided at install time; `null` means required). |
+| `input_contract.issues_opened_title_pattern` | string | (wake's `name`) | The literal title substring the substrate matches when the `issues_opened_title_match` trigger fires. When omitted, the renderer uses the wake's `name`. Declare explicitly to preserve a legacy trigger phrase across a cutover, or whenever the title pattern intentionally differs from the wake name. |
 | `permission_intent` | array of strings | (renderer default per substrate) | Logical permissions the wake needs (e.g. `["contents.write", "issues.write", "pull_requests.write", "id_token.write"]`). Renderer maps to substrate-specific permission encoding. When omitted, renderer uses substrate's minimum-for-role defaults. |
 | `concurrency_intent` | object | `{ "serialize": false }` | Object keys: `serialize` (boolean; if true, the substrate is asked to serialize firings to prevent channel-surface races); `group` (string; logical concurrency group name; renderer maps to substrate-specific syntax). |
 | `superseded_substrate_artifact` | string | (none) | A path to an existing hand-written substrate-bound artifact this wake replaces at renderer cutover (e.g. `.github/workflows/claude-wake.yml`). Documents the migration boundary; the renderer MAY emit a warning if the named artifact still exists after install. |
@@ -186,6 +187,7 @@ This split is the contract's core invariant. The table makes it grep-able:
 | `selector.include` / `selector.exclude` (label-set filter, dispatch-required) | substrate event filter and/or runtime claim gate (e.g. `if:` on `labeled` events, runtime label-presence checks at claim time) |
 | `responsibilities` (enumerated array) | (n/a — responsibilities are prose for the agent) |
 | `input_contract.triggers` (logical taxonomy) | `on:` block (substrate trigger encoding) |
+| `input_contract.issues_opened_title_pattern` (literal title substring) | substituted into the job-level `if:` for the `issues_opened_title_match` trigger (substrate gating encoding) |
 | `input_contract.inbound` (logical description) | (n/a — agent reads inbound from the surface itself) |
 | `output_contract.channel_log_convention` (path to canonical doc; admin-shape) | (n/a — agent reads convention from the cited path) |
 | `output_contract.class_taxonomy` (array of allowed `class:` values; admin-shape) | (n/a — agent emits per the prompt + convention) |
