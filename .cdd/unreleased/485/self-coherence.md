@@ -101,7 +101,7 @@ For every `run:` block in `.github/workflows/install-wake-golden.yml` that this 
 
 ## §R0
 
-**α: R0 complete; β review-ready at sha=`<HEAD-after-commit>`.**
+**α: R0 complete; β review-ready at sha=`550a6907320d64c9032116c70a0526787cab52d1`.**
 
 R0 deliverables landed on cycle/485:
 
