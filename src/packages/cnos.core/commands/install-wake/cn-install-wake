@@ -17,6 +17,7 @@
 #
 # Usage:
 #   cn install-wake <wake-name> [--agent <agent>] [--out <path>] [--manifest <path>]
+#                               [--activation-state-override <state>]
 #
 # Arguments:
 #   <wake-name>       The wake's identifier (e.g. `agent-admin`).
@@ -35,6 +36,22 @@
 #                     --out .github/workflows/cnos-<wake-name>.yml.
 #   --manifest <path> Override the default manifest lookup (used by
 #                     AC2 negative-case tests).
+#   --activation-state-override <state>
+#                     TEST-ONLY override of the manifest's
+#                     activation_state gate (per wake-provider/SKILL.md
+#                     §3.10). When set, the renderer treats the
+#                     manifest as if activation_state == <state> for
+#                     the purpose of refusal-vs-render dispatch. The
+#                     ONLY value that bypasses refusal is `live`; any
+#                     other value either preserves the existing refusal
+#                     semantics or installs them more strictly. The
+#                     flag name itself names what is being bypassed;
+#                     a stderr warning is emitted on every use. Never
+#                     pass this flag during production install — it
+#                     exists solely so golden-fixture rendering can
+#                     exercise a declaration-only manifest's
+#                     dispatch-shape rendering path without flipping
+#                     the manifest's activation_state in source.
 #
 # Environment:
 #   CN_HUB_PATH       exported by cn dispatch (per
@@ -54,6 +71,11 @@
 #   2   schema / required-field validation failure (per wake-provider/
 #       SKILL.md §3.5 — renderer rejects malformed declarations rather
 #       than defaulting silently)
+#   3   activation-state refusal — the manifest declares
+#       activation_state != "live" and no test-only override was passed
+#       (per wake-provider/SKILL.md §3.10 declaration-only discipline).
+#       Distinguished from exit 2 so callers can dispatch refusals
+#       separately from schema failures.
 
 set -eu
 
@@ -124,6 +146,7 @@ wake_name=""
 agent=""
 out_path=""
 manifest_override=""
+activation_state_override=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -142,6 +165,11 @@ while [ $# -gt 0 ]; do
       manifest_override="$2"; shift 2 ;;
     --manifest=*)
       manifest_override="${1#--manifest=}"; shift ;;
+    --activation-state-override)
+      [ $# -ge 2 ] || die "--activation-state-override requires a value"
+      activation_state_override="$2"; shift 2 ;;
+    --activation-state-override=*)
+      activation_state_override="${1#--activation-state-override=}"; shift ;;
     --help|-h)
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
@@ -184,6 +212,31 @@ if [ -n "$manifest_override" ]; then
 else
   manifest_dir="${CN_PACKAGE_ROOT}/orchestrators/${wake_name}"
   manifest_path="${manifest_dir}/wake-provider.json"
+  # Cross-package fallback for direct invocation (CI re-render +
+  # inner-loop development). The `cn install-wake` dispatch shim
+  # normally exports CN_PACKAGE_ROOT for the wake's owning package;
+  # when invoked directly the renderer's own package is the default,
+  # which only contains the agent-admin wake. Sibling packages under
+  # src/packages/ may own other wakes (e.g. cnos.cds owns
+  # cds-dispatch). Search the sibling tree by wake-name when the
+  # default lookup misses.
+  if [ ! -f "$manifest_path" ]; then
+    packages_root="$(cd "${CN_PACKAGE_ROOT}/.." && pwd)"
+    for sibling in "${packages_root}"/*; do
+      [ -d "$sibling" ] || continue
+      candidate="${sibling}/orchestrators/${wake_name}/wake-provider.json"
+      if [ -f "$candidate" ]; then
+        # Re-pin CN_PACKAGE_ROOT to the owning sibling so the
+        # rendered header's path-stripping matches the package
+        # the manifest lives under (mirrors the dispatch shim's
+        # contract: CN_PACKAGE_ROOT is the wake's owning package).
+        CN_PACKAGE_ROOT="$sibling"
+        manifest_dir="${sibling}/orchestrators/${wake_name}"
+        manifest_path="$candidate"
+        break
+      fi
+    done
+  fi
 fi
 
 [ -f "$manifest_path" ] || die "manifest not found: $manifest_path"
@@ -257,9 +310,9 @@ EOF
 
 # Sub-field checks for objects with required keys.
 [ "$(jq -r '.input_contract.triggers | type' "$manifest_path")" = "array" ] || manifest_error "$manifest_path: input_contract.triggers must be array"
-[ "$(jq -r '.output_contract.channel_log_convention | type' "$manifest_path")" = "string" ] || manifest_error "$manifest_path: output_contract.channel_log_convention must be string"
 
-# Enum check on role (§2.1).
+# Enum check on role (§2.1). Must run BEFORE the role-conditional
+# output_contract checks below so we know which shape to validate.
 role="$(jq -r '.role' "$manifest_path")"
 case "$role" in
   admin|dispatch|observer) ;;
@@ -274,6 +327,60 @@ _admin_field="${_a}${_u}"
 admin_flag="$(jq -r ".${_admin_field}" "$manifest_path")"
 if [ "$role" = "admin" ] && [ "$admin_flag" != "true" ]; then
   manifest_error "$manifest_path: role=admin requires ${_admin_field}=true"
+fi
+
+# output_contract shape varies by role per wake-provider/SKILL.md §2.1:
+#   - admin: channel_log_convention (string) is required
+#   - dispatch: cycle_artifact_root (string), artifact_class_taxonomy
+#     (array), cell_runtime (string) are required
+# The renderer dispatches validation by role, not by trying-all-shapes.
+if [ "$role" = "admin" ]; then
+  [ "$(jq -r '.output_contract.channel_log_convention | type' "$manifest_path")" = "string" ] || manifest_error "$manifest_path: output_contract.channel_log_convention must be string (admin shape)"
+elif [ "$role" = "dispatch" ]; then
+  # Dispatch-required §2.1 fields beyond the universal ones: protocol +
+  # selector (see wake-provider/SKILL.md §3.9).
+  [ "$(jq -r '.protocol | type' "$manifest_path")" = "string" ] || manifest_error "$manifest_path: role=dispatch requires protocol (string) per wake-provider/SKILL.md §3.9"
+  [ "$(jq -r '.selector | type' "$manifest_path")" = "object" ] || manifest_error "$manifest_path: role=dispatch requires selector (object) per wake-provider/SKILL.md §3.9"
+  [ "$(jq -r '.selector.include | type' "$manifest_path")" = "array" ] || manifest_error "$manifest_path: role=dispatch requires selector.include (array) per wake-provider/SKILL.md §3.9"
+  [ "$(jq -r '.selector.exclude | type' "$manifest_path")" = "array" ] || manifest_error "$manifest_path: role=dispatch requires selector.exclude (array) per wake-provider/SKILL.md §3.9"
+  [ "$(jq -r '.selector.include | length' "$manifest_path")" -gt 0 ] || manifest_error "$manifest_path: selector.include must be non-empty per wake-provider/SKILL.md §3.9"
+  # Dispatch-shape output_contract fields per wake-provider/SKILL.md §2.1.
+  [ "$(jq -r '.output_contract.cycle_artifact_root | type' "$manifest_path")" = "string" ] || manifest_error "$manifest_path: output_contract.cycle_artifact_root must be string (dispatch shape)"
+  [ "$(jq -r '.output_contract.artifact_class_taxonomy | type' "$manifest_path")" = "array" ] || manifest_error "$manifest_path: output_contract.artifact_class_taxonomy must be array (dispatch shape)"
+  [ "$(jq -r '.output_contract.cell_runtime | type' "$manifest_path")" = "string" ] || manifest_error "$manifest_path: output_contract.cell_runtime must be string (dispatch shape)"
+fi
+
+# activation_state refusal gate per wake-provider/SKILL.md §3.10.
+# Default activation_state is "live" (§2.2 default); a manifest may
+# declare "declaration-only" or "renderer-pending" to mark itself
+# non-runnable. The renderer's policy is REFUSAL by default (exit 3
+# per the contract's safest-default option); the test-only override
+# (--activation-state-override) bypasses the gate but emits a stderr
+# warning naming the bypass and is documented in --help.
+activation_state_declared="$(jq -r '.activation_state // "live"' "$manifest_path")"
+activation_state_notes="$(jq -r '.activation_state_notes // ""' "$manifest_path")"
+
+if [ -n "$activation_state_override" ]; then
+  echo "cn-install-wake: WARNING — --activation-state-override=${activation_state_override} bypasses the manifest's declared activation_state=${activation_state_declared}. This flag is test-only; never pass it during production install. See wake-provider/SKILL.md §3.10." >&2
+  activation_state_effective="$activation_state_override"
+else
+  activation_state_effective="$activation_state_declared"
+fi
+
+if [ "$activation_state_effective" != "live" ]; then
+  # Refusal mode per §3.10 (the safest-default option). Stderr names
+  # the activation_state value AND the activation_state_notes content
+  # so the operator sees the gate AND the preconditions.
+  {
+    echo "cn-install-wake: ${wake_name}: refusing to render — activation_state=\"${activation_state_declared}\" (per wake-provider/SKILL.md §3.10)."
+    if [ -n "$activation_state_notes" ]; then
+      echo "cn-install-wake: activation_state_notes: ${activation_state_notes}"
+    else
+      echo "cn-install-wake: (no activation_state_notes provided in manifest — the manifest should name the preconditions for flipping to live)"
+    fi
+    echo "cn-install-wake: to render anyway for test/diff-review purposes, pass --activation-state-override live (test-only; see --help)."
+  } >&2
+  exit 3
 fi
 
 # Resolve the prompt template path and verify it exists.
@@ -359,6 +466,18 @@ echo "on:" >> "$tmp_out"
 # Render each trigger by enumerated taxonomy. Unknown triggers are a
 # substrate-authority gap — fail loudly per wake-provider/SKILL.md §3.5
 # rather than silently defaulting.
+#
+# Trigger taxonomy (per wake-provider/SKILL.md §2.1 input_contract.triggers):
+#   schedule                          → periodic cron firings (admin + dispatch)
+#   issues_opened_title_match         → manual-trigger issue-title match (admin)
+#   issues_labeled_selector_match     → labeled-event selector match (dispatch)
+#
+# Each trigger is recognized as a logical taxonomy value; the
+# substrate-specific encoding is renderer authority. Two issue-shape
+# triggers cannot coexist in one manifest today (the `on: issues:`
+# block needs a single types: list); if a future manifest declares
+# both, the renderer would need to merge into types: [opened, labeled]
+# — out of scope for cycle/485.
 trigger_count="$(jq -r '.input_contract.triggers | length' "$manifest_path")"
 i=0
 while [ "$i" -lt "$trigger_count" ]; do
@@ -378,8 +497,14 @@ while [ "$i" -lt "$trigger_count" ]; do
         echo "    types: [opened]"
       } >> "$tmp_out"
       ;;
+    issues_labeled_selector_match)
+      {
+        echo "  issues:"
+        echo "    types: [labeled]"
+      } >> "$tmp_out"
+      ;;
     *)
-      manifest_error "$manifest_path: unknown trigger \"$trigger\" in input_contract.triggers (renderer recognizes: schedule, issues_opened_title_match)"
+      manifest_error "$manifest_path: unknown trigger \"$trigger\" in input_contract.triggers (renderer recognizes: schedule, issues_opened_title_match, issues_labeled_selector_match)"
       ;;
   esac
   i=$((i + 1))
@@ -421,20 +546,34 @@ echo "" >> "$tmp_out"
 # jobs: block — runs-on / steps / claude-code-action invocation are
 # substrate authority.
 
-# Job-level if: for issues_opened_title_match — title pattern read from
-# input_contract.issues_opened_title_pattern (per wake-provider/SKILL.md
-# §2.2). Default when the field is absent: the wake's name (documented
-# fallback, not silent — declared in §2.2's optional-fields table).
-# When schedule is also present, the if: must allow schedule events
-# unconditionally and gate only issue events.
+# Job-level if: gate construction.
+#
+# Two issue-shape triggers in taxonomy:
+#   - issues_opened_title_match (admin): gate on issue title carrying
+#     the configured pattern (default: wake name).
+#   - issues_labeled_selector_match (dispatch): gate on the labeled
+#     event's label name matching one of the manifest's
+#     selector.include[] values.
+#
+# When schedule is ALSO present (common shape for both admin and
+# dispatch), the if: must allow schedule events unconditionally — at
+# schedule firing time `github.event.label` and `github.event.issue`
+# do not exist, so a bare contains() check evaluates to false and the
+# job silently never fires the scheduled sweep. The gate is
+# constructed as `event_name == 'schedule' || (event_name == 'issues'
+# && <type-specific match>)` to allow the substrate to fire both
+# trigger paths correctly. (Operator-named guardrail #2 per
+# .cdd/unreleased/485/gamma-scaffold.md §6.)
 has_schedule=0
-has_issues=0
+has_issues_title=0
+has_issues_labeled=0
 i=0
 while [ "$i" -lt "$trigger_count" ]; do
   trigger="$(jq -r ".input_contract.triggers[$i]" "$manifest_path")"
   case "$trigger" in
     schedule) has_schedule=1 ;;
-    issues_opened_title_match) has_issues=1 ;;
+    issues_opened_title_match) has_issues_title=1 ;;
+    issues_labeled_selector_match) has_issues_labeled=1 ;;
   esac
   i=$((i + 1))
 done
@@ -444,11 +583,53 @@ if [ -z "$title_pattern" ]; then
   title_pattern="$name"
 fi
 
+# Construct the issue-event match clause from the trigger taxonomy.
+# For issues_labeled_selector_match: read selector.include[] values
+# from the manifest (NOT from string literals in this script) and
+# build a contains(github.event.label.name, '<label>') OR-chain. This
+# is the AC7 invariant — the renderer source carries no protocol-
+# qualifier or dispatch-label literals; the labels flow through jq.
+issue_event_match=""
+if [ "$has_issues_labeled" -eq 1 ]; then
+  include_count="$(jq -r '.selector.include | length' "$manifest_path")"
+  j=0
+  while [ "$j" -lt "$include_count" ]; do
+    label_value="$(jq -r ".selector.include[$j]" "$manifest_path")"
+    clause="contains(github.event.label.name, '${label_value}')"
+    if [ -z "$issue_event_match" ]; then
+      issue_event_match="$clause"
+    else
+      issue_event_match="${issue_event_match} || ${clause}"
+    fi
+    j=$((j + 1))
+  done
+  # Wrap the OR-chain so the outer event-name conjunction binds correctly.
+  if [ "$include_count" -gt 1 ]; then
+    issue_event_match="(${issue_event_match})"
+  fi
+elif [ "$has_issues_title" -eq 1 ]; then
+  issue_event_match="contains(github.event.issue.title, '${title_pattern}')"
+fi
+
 job_if=""
-if [ "$has_schedule" -eq 1 ] && [ "$has_issues" -eq 1 ]; then
-  job_if="    if: \${{ github.event_name == 'schedule' || contains(github.event.issue.title, '${title_pattern}') }}"
-elif [ "$has_issues" -eq 1 ]; then
-  job_if="    if: \${{ contains(github.event.issue.title, '${title_pattern}') }}"
+if [ "$has_schedule" -eq 1 ] && [ -n "$issue_event_match" ]; then
+  if [ "$has_issues_title" -eq 1 ]; then
+    # Admin shape — preserve the cycle/476 byte-identical golden:
+    # `event_name == 'schedule' || contains(github.event.issue.title, '<pattern>')`
+    # (no explicit event_name == 'issues' check; the issue-title
+    # contains() returns false at schedule firing time, so the
+    # schedule short-circuit is sufficient for admin).
+    job_if="    if: \${{ github.event_name == 'schedule' || ${issue_event_match} }}"
+  else
+    # Dispatch shape — github.event.label is undefined at schedule
+    # firing time, so we explicitly gate the issue clause on the
+    # event being 'issues'. This is the OG-2 guardrail: schedule
+    # events fire the sweep unconditionally; issue events fire only
+    # when the labeled label is in the selector's include set.
+    job_if="    if: \${{ github.event_name == 'schedule' || (github.event_name == 'issues' && ${issue_event_match}) }}"
+  fi
+elif [ -n "$issue_event_match" ]; then
+  job_if="    if: \${{ ${issue_event_match} }}"
 fi
 
 {
