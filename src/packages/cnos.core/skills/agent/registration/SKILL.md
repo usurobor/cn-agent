@@ -22,7 +22,7 @@ outputs:
   - state machine: unregistered → pending_home_registration → registered
   - registration proposal emitted at foreign body (class: registration-proposal)
   - operator-visible packet emitted at activation site
-  - home updates state/activations.md (operator-mediated)
+  - home updates .cn-{agent}/state/activations.md (operator-mediated)
   - home reads foreign body via credentials (once registered)
 requires:
   - prior activation per agent/activate/SKILL.md
@@ -44,16 +44,16 @@ section-manifest:
 
 **A fresh foreign body cannot self-register.** Registration is a three-gate sequence that only an operator can close: the foreign body emits a registration proposal; the operator authorizes it at home; the operator provisions credentials for home to read the foreign surface. Until all three gates close, the channel is `pending_home_registration` and the foreign body operates in a gated degraded state — not silently, not incorrectly, but explicitly named.
 
-This is not a restriction on agent capability. It is a design commitment: the Writer Locality rule (one writer per surface) and the single-operator topology require that home's `state/activations.md` is written only at home. The foreign body cannot write it; the operator must. The registration skill names that gate explicitly and provides the operator with an actionable packet to close it.
+This is not a restriction on agent capability. It is a design commitment: the Writer Locality rule (one writer per surface) and the single-operator topology require that home's `.cn-{agent}/state/activations.md` is written only at home. The foreign body cannot write it; the operator must. The registration skill names that gate explicitly and provides the operator with an actionable packet to close it.
 
 The failure mode this skill prevents is **invisible gating** — a body that attempts cohere-join on a private repo, fails silently because home cannot read the private surface, and never surfaces the credential requirement to the operator. Invisible gating turns a structural gap into an unexplained silence. This skill ensures every gate is named, every degraded state carries a reason, and the operator always has a concrete action.
 
 ## Algorithm
 
-1. **Emit proposal** — the fresh foreign body writes a `class: registration-proposal` entry as its first `.cn-{agent}/logs/<today>.md` entry. For private repos: the proposal is local evidence only; home cannot yet read it. For public repos: home reads it on next wake.
-2. **Emit operator-visible packet** — the body outputs a registration packet to its activation site (terminal, stdout, or channel reply) in copyable form. This is the operator bridge: the packet carries all fields needed for the operator to create the home registration and provision credentials without reading the private log.
-3. **Defer to operator** — the body cannot advance its own registration. It appends `deferred to operator: pending_home_registration at <hub>` to its attach entry and waits. No further channel work until registration completes.
-4. **Home registers** (operator action) — operator creates `.cn-{agent}/state/activations.md` entry for the activation, provisions credentials (PAT or GitHub App installation), commits and pushes to home main.
+1. **Emit operator-visible packet** — the body outputs a registration packet to its activation site (terminal, stdout, or channel reply) in copyable form. This is the **primary** operator bridge: it carries all fields the operator needs to close G1/G2/G3 without reading the foreign log surface. The packet is mandatory and always produced first, because the foreign body may not yet have G3 (workflow-write permission) and therefore may not be able to commit anything locally.
+2. **Best-effort write proposal entry** — if the foreign body has `contents:write` (G3), it commits a `class: registration-proposal` entry to `.cn-{agent}/logs/YYYYMMDD.md`. If the write fails (G3 not yet granted), the body MUST NOT proceed as if it succeeded: report `degraded_reason: workflow_write_permission_missing` in the operator-visible packet AND surface it to the activation site. The local entry is best-effort; the packet is the source of truth for the operator.
+3. **Defer to operator** — the body cannot advance its own registration. It does NOT write any standard channel entry (no `class: substantive`, `heartbeat`, `inaugural`, or `directive-out`). The deferred state is recorded in the registration-proposal entry (if writable per step 2) AND in the operator-visible packet (always). No further channel work until registration completes.
+4. **Home registers** (operator action) — operator creates an entry under `.cn-{agent}/state/activations.md` at home for the activation, provisions credentials (PAT or GitHub App installation), confirms G3 (workflow-write at foreign repo), commits and pushes to home main.
 5. **Home reads** — on next home wake, home reads the foreign body's log surface using the new credentials. Channel is now live.
 
 ---
@@ -66,7 +66,7 @@ Registration has three gates. Each is operator-only. None can be bypassed.
 
 | Gate | Who closes it | What it unlocks |
 |------|---------------|-----------------|
-| **G1** Home registration | Operator edits `state/activations.md` at home | Home knows this activation exists |
+| **G1** Home registration | Operator edits `.cn-{agent}/state/activations.md` at home | Home knows this activation exists |
 | **G2** Read credentials | Operator provisions PAT or GitHub App at home | Home can clone and read foreign surface |
 | **G3** Workflow write | Operator grants GitHub App `contents:write` at foreign repo | Wake worker can commit to foreign surface |
 
@@ -93,9 +93,9 @@ registered
 
 State is observable at two surfaces:
 - **Foreign body**: last `.cn-{agent}/logs/` entry `class` field — `registration-proposal` means pending; subsequent entries with standard `class` values mean registered (channel is live).
-- **Home**: `state/activations.md` entry presence — absent means unregistered or pending; entry with `last_read_foreign_log` populated means registered.
+- **Home**: `.cn-{agent}/state/activations.md` entry presence — absent means unregistered or pending; entry with `last_read_foreign_log` populated means registered.
 
-There is no `unregistered` state entry in `state/activations.md` — absence is the state. There is no separate pending-state file — the registration-proposal entry in the foreign log is the observable evidence for pending state.
+There is no `unregistered` state entry in `.cn-{agent}/state/activations.md` — absence is the state. There is no separate pending-state file — the registration-proposal entry in the foreign log is the observable evidence for pending state.
 
 - ❌ "If I don't see the activation in home's activations.md, I'll self-register"
 - ✅ "If I don't see the activation in home's activations.md, state is unregistered or pending. Emit proposal and operator-visible packet. Stop. Defer."
@@ -118,22 +118,22 @@ Five named failure modes. Each has a structural fix.
 
 **Transition T1: unregistered → pending_home_registration**
 
-Triggered when: foreign body runs attach foreign-inaugural procedure (per `agent/attach/SKILL.md §2.3`) and finds this activation absent from home's `state/activations.md`.
+Triggered when: foreign body runs attach foreign-inaugural procedure (per `agent/attach/SKILL.md §2.3`) and finds this activation absent from home's `.cn-{agent}/state/activations.md`.
 
-Body actions:
-1. Write `class: registration-proposal` entry to `.cn-{agent}/logs/<today>.md` (§2.2).
-2. Emit operator-visible packet to activation site (§2.4).
-3. Append `deferred to operator: pending_home_registration at <hub>` to attach entry.
+Body actions (operator-packet first; local-log best-effort; no standard attach entry):
+1. Emit operator-visible packet to activation site (§2.4). **This is mandatory and always succeeds** (stdout/terminal; no repo permissions required).
+2. **Best-effort:** if G3 (workflow-write) is granted, commit `class: registration-proposal` entry to `.cn-{agent}/logs/YYYYMMDD.md` (§2.2). If the commit fails (G3 not yet granted), report `degraded_reason: workflow_write_permission_missing` in the packet — do NOT pretend the local entry landed.
+3. Record the deferred state in the registration-proposal entry (if writable from step 2) AND in the operator-visible packet (always). Do NOT write a standard `class: substantive` / `heartbeat` / `inaugural` / `directive-out` attach entry — those require `registered` state per §3.1.
 4. Stop. No further channel work this wake.
 
-Precondition check: body MUST have confirmed the activation is genuinely absent from home's `state/activations.md` (not merely unchecked). If home clone failed for any reason, declare `degraded_reason: home_clone_failed` and stop — do not assume unregistered.
+Precondition check: body MUST have confirmed the activation is genuinely absent from home's `.cn-{agent}/state/activations.md` (not merely unchecked). If home clone failed for any reason, declare `degraded_reason: home_clone_failed` and stop — do not assume unregistered.
 
 **Transition T2: pending_home_registration → registered**
 
-Triggered when: operator adds activation entry to home `state/activations.md`, commits, pushes; home wake reads foreign log using new credentials and confirms readable surface.
+Triggered when: operator adds activation entry to home `.cn-{agent}/state/activations.md`, commits, pushes; home wake reads foreign log using new credentials and confirms readable surface.
 
 Operator actions:
-1. Add entry to `cn-{agent}:state/activations.md` (format per §2.5).
+1. Add entry to `cn-{agent}:.cn-{agent}/state/activations.md` (format per §2.5).
 2. Provision credentials for home to read foreign repo (§2.3).
 3. Commit and push to home main.
 4. Optionally: post a directive to home activation thread confirming registration is open.
@@ -142,7 +142,7 @@ Body observes transition: next foreign wake reads home thread forward from curso
 
 ### 2.2. Registration proposal schema
 
-The body's first log entry when `pending_home_registration`. Written to `.cn-{agent}/logs/<today>.md`. YAML frontmatter carries the registration proposal; body carries human-readable context.
+The body's first log entry when `pending_home_registration`. Written to `.cn-{agent}/logs/YYYYMMDD.md`. YAML frontmatter carries the registration proposal; body carries human-readable context.
 
 ```markdown
 ## YYYY-MM-DDTHH:MM:SSZ — registration proposal: <agent> at <hub>
@@ -241,7 +241,7 @@ read_credential_request:   pat | github-app
 Operator steps to complete registration:
 
 G1 — Home registration:
-  Add to <home-hub>:state/activations.md:
+  Add to <home-hub>:.cn-{agent}/state/activations.md:
 
   - name: <activation-name>
     hub: https://github.com/<owner>/<repo>
@@ -260,7 +260,7 @@ G2 — Read credentials (private repos only):
 G3 — Workflow write:
   Verify wake worker has contents:write at this repo (GITHUB_TOKEN permissions or App installation).
 
-source_ref: .cn-{agent}/logs/<today>.md (local only; readable after G2)
+source_ref: .cn-{agent}/logs/YYYYMMDD.md (local only; readable after G2)
 === END PACKET ===
 ```
 
@@ -280,8 +280,8 @@ Registration gates produce degraded outcomes when unmet. These extend the canoni
 
 | Degraded reason | Trigger | Operator action |
 |-----------------|---------|-----------------|
-| `pending_home_registration` | Activation absent from home `state/activations.md` | Close G1 (home registration) |
-| `pending_home_credentials` | Home `state/activations.md` has entry but `last_read_foreign_log: ~` and repo is private with no credentials configured | Close G2 (provision credentials) |
+| `pending_home_registration` | Activation absent from home `.cn-{agent}/state/activations.md` | Close G1 (home registration) |
+| `pending_home_credentials` | Home `.cn-{agent}/state/activations.md` has entry but `last_read_foreign_log: ~` and repo is private with no credentials configured | Close G2 (provision credentials) |
 | `workflow_write_permission_missing` | Foreign wake cannot push log entries (`contents:write` denied) | Close G3 (grant write permission to workflow) |
 | `home_clone_failed` | Body could not clone home hub (network, credentials, other) | Investigate home connectivity; re-run |
 
@@ -289,7 +289,7 @@ Degraded reporting in attach/cohere:
 ```
 outcome: degraded
 degraded_reason: pending_home_registration
-operator_action: Close G1 — add activation entry to <home>:state/activations.md. See registration packet emitted to activation site.
+operator_action: Close G1 — add activation entry to <home>:.cn-{agent}/state/activations.md. See registration packet emitted to activation site.
 ```
 
 No channel entry is written as a standard attach entry until `registered` state. The registration-proposal entry IS the appropriate first entry; subsequent entries require registered state.
@@ -300,8 +300,8 @@ The canonical v0 worked example uses two public repos: cn-sigma (home) and bumpt
 
 **At bumpt (foreign body, first wake):**
 1. Body runs attach foreign-inaugural.
-2. Finds bumpt absent from cn-sigma `state/activations.md` (first time).
-3. Writes `class: registration-proposal` entry to `bumpt:.cn-sigma/logs/<today>.md`.
+2. Finds bumpt absent from cn-sigma `.cn-{agent}/state/activations.md` (first time).
+3. Writes `class: registration-proposal` entry to `bumpt:.cn-sigma/logs/YYYYMMDD.md`.
 4. Emits operator-visible packet (G2 section omitted — public repo).
 5. Defers to operator. Stop.
 
@@ -319,7 +319,7 @@ The canonical v0 worked example uses two public repos: cn-sigma (home) and bumpt
 
 **Next foreign wake at bumpt:**
 1. Body runs attach foreign-inaugural.
-2. Finds bumpt registered in cn-sigma `state/activations.md`.
+2. Finds bumpt registered in cn-sigma `.cn-{agent}/state/activations.md`.
 3. Reads home thread (empty — inaugural).
 4. Writes inaugural attach entry with `class: inaugural`.
 5. Channel is live.
@@ -342,7 +342,7 @@ A body MUST NOT write `class: substantive`, `class: heartbeat`, or `class: inaug
 After emitting the registration-proposal entry and operator-visible packet, stop. Do not continue with attach sync work. Do not guess that the operator has already closed G1. The next wake will re-run the state check; if G1 is closed, proceed to inaugural attach.
 
 - ❌ Body emits proposal, then continues reading home thread and doing work
-- ✅ Body emits proposal, emits packet, appends deferred note, stops
+- ✅ Body emits packet, best-effort writes proposal entry (if G3 granted), records deferred state in proposal + packet, stops
 
 ### 3.3. Packet is mandatory for private repos
 
@@ -353,24 +353,24 @@ For private repos, the operator-visible packet is mandatory — the only operato
 
 ### 3.4. Confirm activation absence before declaring unregistered
 
-Before declaring `pending_home_registration`, confirm the activation is genuinely absent from home's `state/activations.md` by reading the file. If home cannot be cloned, declare `home_clone_failed` and stop — do not assume unregistered.
+Before declaring `pending_home_registration`, confirm the activation is genuinely absent from home's `.cn-{agent}/state/activations.md` by reading the file. If home cannot be cloned, declare `home_clone_failed` and stop — do not assume unregistered.
 
 - ❌ Body cannot reach home; concludes "not registered"; emits proposal for a hub that's already registered
 - ✅ Body confirms absence by reading home state file; only then emits proposal
 
 ### 3.5. Operator owns G1 — home cannot be updated from foreign side
 
-G1 (home registration) is a write to home's `state/activations.md`. Writer Locality applies: only home Sigma (or the operator) can write home's state files. The foreign body MUST NOT attempt to edit `state/activations.md` at home.
+G1 (home registration) is a write to home's `.cn-{agent}/state/activations.md`. Writer Locality applies: only home Sigma (or the operator) can write home's state files. The foreign body MUST NOT attempt to edit `.cn-{agent}/state/activations.md` at home.
 
-- ❌ Foreign body uses home credentials to update home `state/activations.md`
-- ✅ Foreign body emits packet; operator updates home `state/activations.md` manually or via home wake
+- ❌ Foreign body uses home credentials to update home `.cn-{agent}/state/activations.md`
+- ✅ Foreign body emits packet; operator updates home `.cn-{agent}/state/activations.md` manually or via home wake
 
 ### 3.6. State is observable, not declared
 
-The body does not store registration state in a separate file. State is observed from two canonical surfaces: presence in home `state/activations.md` (G1) and ability to clone with credentials (G2). Re-check on every inaugural attach attempt.
+The body does not store registration state in a separate file. State is observed from two canonical surfaces: presence in home `.cn-{agent}/state/activations.md` (G1) and ability to clone with credentials (G2). Re-check on every inaugural attach attempt.
 
 - ❌ "I saved 'pending' state in a local file last session; no need to re-check"
-- ✅ Re-read home `state/activations.md` every inaugural attach to determine current state
+- ✅ Re-read home `.cn-{agent}/state/activations.md` every inaugural attach to determine current state
 
 ---
 
@@ -418,7 +418,7 @@ Simulate the cn-sigma + bumpt scenario (§2.6) step by step. Confirm the body st
 
 - `agent/activate/SKILL.md` — identity must be confirmed before registration check; activation is prerequisite.
 - `agent/attach/SKILL.md §2.3` — foreign-inaugural attach procedure triggers registration when activation is absent.
-- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — `state/activations.md` format and field definitions.
+- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — `.cn-{agent}/state/activations.md` format and field definitions.
 
 ### Downstream skills (registration informs)
 
@@ -431,7 +431,7 @@ Simulate the cn-sigma + bumpt scenario (§2.6) step by step. Confirm the body st
 
 ### Empirical evidence
 
-- cn-sigma `state/activations.md` — first registration (bumpt, 2026-05-30); PAT not required (public); G1 operator-closed. `cnos#431 / cnos#432`.
+- cn-sigma `.cn-{agent}/state/activations.md` — first registration (bumpt, 2026-05-30); PAT not required (public); G1 operator-closed. `cnos#431 / cnos#432`.
 - cn-sigma `threads/adhoc/20260519-foreign-body-activation-gap.md` — pre-convention foreign-body activation gap; established the pattern this skill canonicalizes.
 - `agent/attach/SKILL.md §1.3 A1` — "Silent self-registration" was named as attach failure mode A1 before this skill existed. Registration skill lifts the prevention mechanism from an attach-side note to a first-class procedure.
 
