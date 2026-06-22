@@ -1,7 +1,7 @@
 ---
 title: "Dumb Models, Smart Cells"
 subtitle: "Convention over Vendor Runtime for Agent Systems"
-version: v0.2.0
+version: v0.3.0
 status: DRAFT
 author: usurobor (aka Axiom) (human & AI)
 date: 2026-06-22
@@ -10,7 +10,7 @@ date: 2026-06-22
 # Dumb Models, Smart Cells
 ## Convention over Vendor Runtime for Agent Systems
 
-**Status:** v0.2.0 (DRAFT — position paper)
+**Status:** v0.3.0 (DRAFT — position paper)
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-06-22
 
@@ -27,9 +27,15 @@ In the early Rails era, the database was the powerful engine. It stored the data
 One camp put more logic in the database.
 The other camp wanted application logic in code, behind conventions the framework owned.
 
-Rails made the second bet. Active Record and migrations did not make the database weak. They made the database replaceable enough. The engine stayed powerful. The durable shape moved into the application framework.
+Rails made the second bet.
+Active Record and migrations did not make databases weak. They gave developers a stable seam. The database stayed powerful, but the application stopped living inside stored procedures, triggers, and vendor-specific behavior.
 
-cnos makes the same bet for agent systems.
+The analogy is not perfect.
+Databases had SQL, shared relational ideas, and years of adapter work. LLMs do not yet have that kind of stable capability contract. A frontier model and a small local model are not interchangeable in the way two SQL-backed adapters can sometimes be interchangeable.
+
+That makes the boundary more important, not less.
+
+cnos makes the Rails-style bet at the authority boundary: keep the durable shape of the system outside the engine.
 
 The LLM can be very smart inside a task. It can write code, inspect files, draft plans, summarize evidence, and explain tradeoffs.
 
@@ -114,7 +120,34 @@ In a smart system, the model performs a move inside a boundary the system owns.
 
 ---
 
-## 4. The cnos boundary
+## 4. Replaceable does not mean interchangeable
+
+The model slot is replaceable.
+The models are not equivalent.
+
+That distinction matters.
+
+A local model, a frontier model, a code-specialized model, and a long-context model do not have the same capability. Swapping one for another can change whether the work succeeds at all.
+
+So cnos should not promise magic portability.
+
+The promise is narrower and more useful: model choice becomes an explicit system decision instead of a hidden habit.
+
+A small task may run locally.
+A release boundary may require a frontier model.
+A local attempt may fail validation and escalate.
+A remote provider may be unavailable, and the system may fail closed instead of silently pretending the local model is good enough.
+
+That is not database-style fungibility.
+It is governed substitution.
+
+The model can change without moving workflow, memory, evidence, identity, or release authority into the vendor runtime.
+
+That is the property cnos wants.
+
+---
+
+## 5. The cnos boundary
 
 cnos draws the boundary in the provider contract.
 
@@ -135,14 +168,18 @@ Routing follows the same rule. Model choice belongs in runtime policy, not in pr
 
 Every routed model call must leave a receipt: route decision, reason set, provider, model name, fallback status, latency, token estimate, and validation signal when available.
 
-That gives cnos the Rails property for models.
+This gives cnos a weaker, more honest Rails property.
 
-Change the engine.
-Keep the application shape.
+Do not assume two engines are equal.
+Do keep the workflow outside either engine.
+
+Change the provider when policy allows it. Escalate when capability requires it. Fail closed when the available engine is not good enough.
+
+The application shape stays in cells, packages, receipts, and repo state.
 
 ---
 
-## 5. Where the work lives
+## 6. Where the work lives
 
 If the model does not own the work, something else must.
 
@@ -192,7 +229,34 @@ The repo remembers.
 
 ---
 
-## 6. Why this is an open-source shape
+## 7. Receipts do not validate themselves
+
+A receipt is not proof.
+A receipt is a body the system can inspect.
+
+That difference matters.
+
+For some work, validation is cheap. The validator can check that files exist, schemas parse, tests pass, commands ran, tags point to the expected commit, release notes exist, signatures verify, and policy transitions happened in the right order.
+
+For other work, validation is hard. A large refactor may compile and still be wrong. A plan may sound good and still miss the real constraint. A research claim may cite evidence and still overstate it.
+
+cnos does not remove that problem.
+It makes the problem visible.
+
+In CDD, `V` is the validator predicate. It checks the receipt against the contract. `δ` makes the boundary decision. If the verdict is strong enough, `δ` can accept or release. If the verdict is weak, `δ` can reject, repair-dispatch, or override with degradation recorded.
+
+That is the honest shape.
+
+A weak validator should not produce a strong claim.
+A degraded release should say it is degraded.
+A repairable failure should create repair work.
+
+The goal is not to invent a cheap oracle for correctness.
+The goal is to stop hiding the oracle inside chat.
+
+---
+
+## 8. Why this is an open-source shape
 
 Open source cannot win by copying every vendor feature one at a time.
 
@@ -222,23 +286,29 @@ The model is replaceable because the work has a body outside the model.
 
 ---
 
-## 7. What convention-over-runtime buys
+## 9. What the boundary buys
 
-This design buys four things.
+The trade is not free.
 
-**Swappability.** A new LLM backend is a new provider behind the same kernel, cells, packages, and receipts. The system does not need to rewrite its workflow when the engine changes.
+cnos adds ceremony: cells, receipts, routing policy, validators, release gates, and package doctrine. That machinery has to earn its keep.
 
-**Auditability.** Effects and model routes leave receipts. The validator checks artifacts the system owns, not logs hidden inside a vendor product.
+It earns it when agent work becomes serious enough that chat history is not a safe system of record.
 
-**Durability.** Identity, memory, workflow, release notes, tags, and closeout artifacts live in signed repo state. They survive a vendor outage, price change, API change, or product shutdown.
+The boundary buys substitution, not fungibility.
+A team can add a new provider without moving workflow into that provider. The new provider may be better or worse. The receipt records which one ran, why it was chosen, and what validation followed.
 
-**Cost control.** The runtime can keep simple work local and reserve frontier spend for tasks that need macro-coherence. The decision is policy, not habit.
+The boundary buys audit, not certainty.
+A receipt does not prove the work was correct. It records what the system believed, what evidence was bound, what validator ran, and what decision crossed the boundary.
 
-The common point is simple: keep durable concerns where the system can reach them.
+The boundary buys durability.
+The work survives a model call, a vendor outage, a price change, a lost chat, or a new runner. The repo keeps the body.
+
+The boundary buys cost control.
+Simple work can stay local. High-context work can escalate. Failed local work can repair-dispatch or route up. The decision is policy, not vibes.
 
 ---
 
-## 8. Relationship to the CN whitepaper and THESIS
+## 10. Relationship to the CN whitepaper and THESIS
 
 The CN whitepaper answers a substrate question:
 
@@ -266,24 +336,22 @@ This paper draws it under the model: the LLM is a provider the kernel governs, n
 
 ---
 
-## 9. Conclusion
+## 11. Conclusion
 
 Rails did not win by pretending databases were weak.
 It won by putting a strong convention in front of powerful engines.
 
-cnos makes the same move for agent systems.
+cnos makes the same move for agent systems — at the authority boundary, not the capability boundary.
 
 Let the model be smart.
 Keep memory, workflow, identity, evidence, receipts, and release authority outside it.
 
 Dumb models.
 Smart cells.
-Durable state.
-Governed effects.
 Receipts over vibes.
 
 The model should be smart enough to move the work forward.
-It should be dumb enough not to own the work.
+It should be bounded enough not to own the work.
 
 ---
 
