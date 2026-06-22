@@ -5,7 +5,7 @@
   "role": "dispatch",
   "admin_only": false,
   "activation_state": "declaration-only",
-  "activation_state_notes": "This provider is shipped as a contract specimen and MUST NOT be installed to the substrate (no .github/workflows/cnos-cds-dispatch.yml rendered/committed) until three preconditions all hold: (a) cnos#454 dispatch-protocol skill lands on main (PR #466 currently in β-review); (b) cnos#467 Sub 5 lands the renderer extension consuming role:dispatch + protocol + selector + dispatch-shape output_contract fields + the issues_labeled_selector_match trigger; (c) cnos#467 Sub 5 lands the δ wake-invoked mode amendment in cnos.cdd's delta SKILL. Until all three preconditions hold, this manifest documents the intended contract but is not runnable. `cn install-wake cds-dispatch` MUST refuse to install (or render with a prominent DO-NOT-INSTALL warning) while activation_state == declaration-only per wake-provider/SKILL.md §3.10. When the preconditions are all met, a future cycle flips activation_state to `live` and renders the substrate artifact.",
+  "activation_state_notes": "This provider is shipped as a contract specimen and MUST NOT be installed to the substrate (no .github/workflows/cnos-cds-dispatch.yml rendered/committed) until three preconditions all hold: (a) cnos#454 dispatch-protocol skill lands on main; (b) cnos#467 Sub 5 lands the renderer extension consuming role:dispatch + protocol + selector + dispatch-shape output_contract fields + the issues_labeled_selector_match trigger; (c) cnos#467 Sub 5 lands the δ wake-invoked mode amendment in cnos.cdd's delta SKILL. Until all three preconditions hold, this manifest documents the intended contract but is not runnable. `cn install-wake cds-dispatch` MUST refuse to install (or render with a prominent DO-NOT-INSTALL warning) while activation_state == declaration-only per wake-provider/SKILL.md §3.10. When the preconditions are all met, a future cycle flips activation_state to `live` and renders the substrate artifact.",
   "protocol": "cds",
   "selector": {
     "include": [
@@ -125,7 +125,7 @@
     "skills_landing_later": [
       {
         "path": "src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md",
-        "tracking": "cnos#454 (PR #466 in β-review)",
+        "tracking": "cnos#454",
         "purpose": "Claim mechanics + lifecycle transitions + drift handling (dispatch_protocol_missing / dispatch_protocol_mismatch / dispatch_label_drift) + concurrency discipline. This manifest declares its claim sequence and lifecycle transitions explicitly so it is internally complete; the dispatch-protocol skill is the cross-package canonical doctrine the wake's prompt cites by name."
       },
       {
