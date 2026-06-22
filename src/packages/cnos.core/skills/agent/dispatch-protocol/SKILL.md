@@ -60,9 +60,9 @@ Each label is necessary; none is sufficient alone. All three are required at cla
 1. **Query** — find open issues with `dispatch:cell` + `protocol:{P}` + `status:todo`, where `{P}` is the dispatch wake's owning protocol qualifier (per its wake-provider manifest's `protocol` field, per cnos#470 wake-provider/SKILL.md §3.9). On a sweep run, find all matches; take the lowest issue number. On an `issues: labeled` event run, check only the event issue.
 2. **Re-read** — do not trust the query result or event payload alone. Re-read the issue's current labels before claiming.
 3. **Verify** — confirm: issue open; `dispatch:cell` present; **exactly one** `protocol:*` label is present AND equals `protocol:{P}` (the wake's owning protocol); **exactly one** `status:*` label is present AND equals `status:todo`; `status:in-progress`, `status:blocked`, `status:review`, `status:changes` all absent.
-4. **Claim** — within the GitHub label API's best-effort: remove `status:todo`, add `status:in-progress`, write claim comment with wake id, run id, protocol, and head sha.
+4. **Claim** — within the GitHub label API's best-effort: remove `status:todo`, add `status:in-progress`, write claim comment with wake id, run id, protocol, and head sha. **If the comment write fails after the label edit succeeded**, release the claim (`status:in-progress → status:todo`), report `dispatch_claim_comment_failed`, and do NOT launch the runtime (a claimed cell without its audit-trail comment is under-recorded for double-claim repair).
 5. **Re-verify** — re-read labels after claim. If `status:in-progress` is not present, OR `protocol:{P}` was changed during the claim, abort and release (`status:in-progress → status:todo`); report.
-6. **Launch** — pass the claimed issue to the **matching package runtime** (the concrete protocol package owning `protocol:{P}` — e.g. cnos.cds for `protocol:cds`). The package runtime invokes the generic cnos.cdd cell-runtime framework (γ → α → β → δ) internally; the dispatch protocol does not name a specific framework here, since runtime selection is implicit in the protocol qualifier match per cnos#468 §2.2.
+6. **Launch** — pass the claimed issue to the **matching package runtime** (the concrete protocol package owning `protocol:{P}` — e.g. cnos.cds for `protocol:cds`). The package runtime invokes the generic cnos.cdd cell-runtime framework internally; this dispatch protocol does NOT define the internal role sequence (CDD's δ routes γ/α/β according to the concrete package's cell procedure — that is the cell framework's authority, not this skill's). Runtime selection is implicit in the protocol qualifier match per cnos#468 §2.2.
 
 ---
 
@@ -234,6 +234,12 @@ The claim sequence. Every step is required. No step may be skipped. `{P}` is the
    head: <current-main-sha>
    EOF
    )"
+   → If the comment write fails (transient API error) after the label
+     edit succeeded: release the claim
+     (gh issue edit --remove-label "status:in-progress" --add-label "status:todo");
+     log dispatch_claim_comment_failed; exit 1 without launching the runtime.
+     A claimed cell without its audit-trail comment is under-recorded; the
+     §2.3 layer 3 audit relies on the comment.
 
 5. Re-verify:
    gh issue view <issue-number> --repo <repo> --json labels
@@ -246,9 +252,10 @@ The claim sequence. Every step is required. No step may be skipped. `{P}` is the
    → pass the claimed issue to the concrete protocol package matching protocol:{P}
      (e.g. protocol:cds → cnos.cds; protocol:cdr → cnos.cdr; future
      protocol:cdw → cnos.cdw). The package runtime invokes the generic cnos.cdd
-     cell-runtime framework (γ → α → β → δ) internally. The dispatch protocol
-     does not name a specific framework here — runtime selection is implicit in
-     the protocol qualifier match per cnos#468 §2.2.
+     cell-runtime framework internally; this dispatch protocol does NOT define
+     the internal role sequence — CDD's δ routes γ/α/β per the concrete
+     package's cell procedure. Runtime selection is implicit in the protocol
+     qualifier match per cnos#468 §2.2.
 ```
 
 - ❌ Wake trusts the query result; skips re-read
@@ -271,13 +278,13 @@ concurrency:
 
 At most one dispatch job per (repository × wake) runs at a time. A second trigger queues behind the first, not racing. Per-protocol scoping (rather than repository-wide) means a cds-dispatch firing does not block a cdr-dispatch firing — orthogonal protocols can dispatch concurrently because they claim disjoint label sets.
 
-**Layer 2 — Claim-time re-read + label transition**
+**Layer 2 — Claim-time re-read + label transition (serialized claim guard)**
 
-Step 3 (verify) + step 4 (claim) + step 5 (re-verify) form a best-effort CAS. If two runs reach step 4 concurrently despite layer 1 (e.g. different workflow files), only one can successfully transition `status:todo` → `status:in-progress` before the other re-reads in step 5 and finds `status:in-progress` already set. The second run aborts.
+Step 3 (verify) + step 4 (claim) + step 5 (re-verify) form a **serialized claim guard**, not a true CAS. Under the intended per-protocol concurrency group, only one run should reach step 4 at a time. If duplicate workflows bypass that serialization (e.g. two separate workflow files both targeting the same protocol), label state alone may not distinguish the winner — both runs could remove `status:todo`, add `status:in-progress`, and re-read `status:in-progress` successfully. The verify gate catches drift visible at re-read time; it does not prove exclusivity.
 
-**Layer 3 — Claim comment with run id**
+**Layer 3 — Claim comment with run id (audit trail; residual repair)**
 
-The claim comment records `claimed_by: <hub>/<run-id>` and `head: <sha>`. If a double-claim occurs and both transitions appear to succeed (race between two separate GitHub Actions runs), the claim comments provide an audit trail. Operator inspects; manual deduplication; the cell that ran furthest is the canonical one.
+The claim comment records `claimed_by: <wake-name>/<run-id>`, `protocol: {P}`, `claimed_at: <utc>`, and `head: <sha>`. If a double-claim occurs despite layers 1 and 2 (race between two separate GitHub Actions runs that the concurrency group didn't catch), both claim comments persist as an audit trail. The claim comments do NOT magically prevent the double-claim — they expose it for operator repair. The cell that ran furthest is the canonical one; operator inspects the audit trail and performs manual deduplication.
 
 **Sweep is backstop, not primary**
 
@@ -337,9 +344,9 @@ A wave is a coordinated group of implementation cells with a shared tracker (mas
 
 Master issue rules:
 - Carries `kind/wave` label.
-- MUST NOT carry `dispatch:cell`.
+- MUST NOT carry `dispatch:cell` — the structural lock against dispatch is the type marker absent, NOT the lifecycle label.
 - Lists all sub-issues with expected ordering / dependency notes.
-- Does not carry `status:*` lifecycle labels (master is not dispatchable).
+- MAY carry exactly one `status:*` label for board / wave visibility (consistent with §1.1 "exactly one `status:*` per open issue" invariant). A master with `status:todo` is still NOT executable because `dispatch:cell` is absent — the three-label gate (§3.1) rejects it on every wake's verify step.
 
 Sub-issue rules:
 - Each sub carries `dispatch:cell`.
@@ -364,13 +371,14 @@ A drift state is an issue with an unexpected or inconsistent label combination. 
 | `dispatch:cell` issue without any `protocol:*` label | `dispatch_protocol_missing` | Apply the correct `protocol:{P}` for the cell's runtime (e.g. `protocol:cds` for software cells); under-specified for dispatch until applied |
 | Cell labeled `protocol:{Q}` where Q ≠ this wake's protocol (targeted/attempted claim) | `dispatch_protocol_mismatch` | Do NOT claim from this wake; the matching-protocol wake claims it. Sweep over heterogeneous queue: silent skip. Targeted claim landing on wrong-protocol cell: comment naming the mismatch; signals upstream label drift or misrouted trigger |
 | `status:in-progress` without a claim comment | `dispatch_ghost_claim` | Clear `status:in-progress`; re-apply `status:todo` if still authorized |
+| Label edit succeeded but claim comment write failed | `dispatch_claim_comment_failed` | The wake releases the claim itself (`status:in-progress → status:todo`) at claim time per §2.2 step 4 + §3.5; no operator repair needed for the single-occurrence case. If recurring, investigate the underlying API error (rate-limit, auth, network) |
 
-On drift detection (other than the silent-skip sweep case):
+On drift detection (other than the silent-skip sweep case and self-released claim-comment-failed):
 ```
 outcome: degraded
 degraded_reason: dispatch_label_drift | dispatch_type_mismatch |
                  dispatch_protocol_missing | dispatch_protocol_mismatch |
-                 dispatch_ghost_claim
+                 dispatch_ghost_claim | dispatch_claim_comment_failed
 operator_action: repair instruction (specific labels to add/remove)
 ```
 
@@ -418,12 +426,15 @@ The `status:todo` label is the operator's authorization. Planner (interactive Si
 - ❌ Planner: "Issue #449 looks complete; I'll apply status:todo"
 - ✅ Planner: "Operator said 'Step 4 GO' in D35; applying status:todo to #449 and #454 per authorization"
 
-### 3.5. Claim comment is mandatory
+### 3.5. Claim comment is mandatory; comment-failure releases the claim
 
-Every claim must produce a claim comment with `claimed_by`, `claimed_at`, and `head`. The comment is the audit trail for double-execution detection and the coordination point for operator oversight.
+Every claim must produce a claim comment with `claimed_by` (wake name + run id), `protocol`, `claimed_at`, and `head`. The comment is the audit trail for double-execution detection and the coordination point for operator oversight (per §2.3 layer 3).
+
+If the label edit succeeds but the claim comment write fails (transient API error), the wake MUST release the claim (`status:in-progress → status:todo`), report `dispatch_claim_comment_failed`, and exit without launching the runtime. A claimed cell without its audit-trail comment is under-recorded; the §2.3 layer 3 audit relies on the comment being present.
 
 - ❌ Wake transitions labels without writing the claim comment
-- ✅ Claim comment is part of the atomic claim sequence in §2.2 step 4
+- ❌ Wake transitions labels, comment write fails, wake launches the runtime anyway
+- ✅ Claim comment is part of the claim sequence in §2.2 step 4; on comment-write failure, the wake releases the claim and exits
 
 ### 3.6. Blocked transition stops the cell
 
@@ -476,7 +487,7 @@ Confirm master issues CANNOT carry `dispatch:cell` (structural, not documented-o
 
 ### 4.6. Drift-handling coverage check
 
-Confirm the four drift patterns in §2.6 cover the named failure modes. Confirm each produces a degraded report with a repair instruction comment, not a silent skip.
+Confirm all drift patterns in §2.6 cover the named failure modes. Confirm each produces a degraded report with a repair instruction comment, not a silent skip (except the explicit silent-skip case for scheduled-sweep cross-protocol mismatch per §2.6 + §1.3 D7, and the self-release case for `dispatch_claim_comment_failed` per §3.5).
 
 ---
 
@@ -490,6 +501,7 @@ Confirm the four drift patterns in §2.6 cover the named failure modes. Confirm 
 - **D6 — Protocol missing.** _Symptom:_ A `dispatch:cell` issue carries `status:todo` but no `protocol:{P}` label. Under-specified for dispatch — no wake knows which package's runtime should claim it. Every dispatch wake's selector rejects it (silent skip on sweep, since no wake's selector matches). _Fix:_ §2.6 — `dispatch_protocol_missing` repair-instruction comment; operator applies the correct `protocol:{P}`; the matching wake claims on next firing.
 - **D7 — Cross-protocol claim attempt.** _Symptom:_ A dispatch wake owning `{Q}` is steered to a cell labeled `protocol:{P}` (P ≠ Q) via a labeled-event trigger or explicit dispatch handle. Signals upstream label drift or a misrouted trigger. _Fix:_ §2.6 + §3.7 — targeted claim attempts reject with `dispatch_protocol_mismatch` and a comment naming the mismatch; scheduled sweep silently skips (the matching wake claims). The wake never claims outside its owned protocol.
 - **D8 — Hard-coded runtime in launch step.** _Symptom:_ A dispatch wake's launch step names `cnos.cdd` as the cell runtime (or any other fixed framework), conflating the generic cell-runtime framework with the concrete protocol package. Future protocols can't be added without amending the dispatch skill. _Fix:_ §3.8 — launch step passes to the matching package runtime; the matching package invokes cnos.cdd's contracts internally. cnos.cdd is framework, not concrete protocol.
+- **D9 — Claim-comment failure not released.** _Symptom:_ Wake successfully transitions `status:todo → status:in-progress`, then the claim comment write fails (transient API), but the wake launches the runtime anyway. The cell now runs without an audit-trail comment, breaking §2.3 layer 3's residual race repair path. _Fix:_ §2.2 step 4 + §3.5 — on comment-write failure, release `status:in-progress → status:todo`, report `dispatch_claim_comment_failed`, and exit without launching.
 
 ---
 
