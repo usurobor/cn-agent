@@ -1,0 +1,121 @@
+{
+  "schema": "cn.wake-provider.v1",
+  "name": "cds-dispatch",
+  "package": "cnos.cds",
+  "role": "dispatch",
+  "admin_only": false,
+  "protocol": "cds",
+  "selector": {
+    "include": [
+      "dispatch:cell",
+      "protocol:cds",
+      "status:todo"
+    ],
+    "exclude": [
+      "status:in-progress",
+      "status:blocked",
+      "status:review",
+      "status:changes"
+    ]
+  },
+  "description": "The cnos.cds package-owned dispatch wake. Claims open issues matching the dispatch selector (dispatch:cell + protocol:cds + status:todo), invokes the cnos.cdd cell-runtime framework's δ role contract in wake-invoked mode, and lands cell artifacts at .cdd/unreleased/{N}/ per the CDD framework's artifact contract. δ routes γ (scaffold + closeout), α (implement + iterate), β (review + iterate); the dispatch wake itself does not directly route those roles — it hands the claimed cell to δ. The wake is NOT an admin wake: it does not write channel logs, does not apply labels except for lifecycle transitions on the claimed cell (status:todo → status:in-progress at claim; → status:review at completion), and does not read the home thread.",
+  "responsibilities": [
+    "claim: scan open issues for the selector match (dispatch:cell + protocol:cds + status:todo); on the first match, transition status:todo → status:in-progress to take ownership per cnos#454 dispatch-protocol claim mechanics",
+    "invoke δ in wake-invoked mode: hand the claimed cell to the cnos.cdd δ role contract with the issue as input; δ owns the γ/α/β routing inside the cell",
+    "drive δ's iteration loop: surface α R[N] / β R[N] return tokens; advance the cell through review-ready → reviewed → merged; do NOT short-circuit β's verdicts",
+    "land cell artifacts: at cycle completion, ensure .cdd/unreleased/{N}/ contains the canonical artifact set per cnos.cdd's artifact contract (gamma-scaffold.md, self-coherence.md with R[N] sections, beta-review.md with R[N] verdicts, alpha-closeout.md, beta-closeout.md, gamma-closeout.md, PRA when scoped)",
+    "transition lifecycle labels for the claimed cell only: status:in-progress → status:review at cell completion; status:in-progress → status:blocked + a blocked-reason comment if a hard block hits mid-cycle; status:in-progress → status:changes when β requests changes",
+    "reject malformed claims: if a claimed cell is missing protocol:cds, has a non-matching protocol qualifier, or lacks dispatch:cell, surface dispatch_protocol_missing or dispatch_protocol_mismatch per cnos#454 AC9 and release the claim (status:in-progress → status:todo) with a repair-instruction issue comment",
+    "concurrency discipline: respect the substrate's serialize-per-protocol concurrency group; do NOT claim a cell that another firing of this wake is processing",
+    "off-role refusal: when a directive falls outside the dispatch role (admin work: channel sync, label policy decisions, repo settings), surface to the admin wake via an issue comment; do NOT attempt admin work inline"
+  ],
+  "input_contract": {
+    "triggers": [
+      "schedule"
+    ],
+    "trigger_descriptions": {
+      "schedule": "Periodic firings on a cron-like schedule; substrate-specific encoding is the renderer's responsibility. The wake fires the claim mechanism on every firing; if no eligible cell exists in the queue at firing time, the wake emits a heartbeat artifact and exits without claiming. Cron drop rate is acceptable for dispatch (cells wait in the queue; the next firing claims them); cron is not the primary smoke oracle (operator-initiated label-application is the responsive trigger when needed)."
+    },
+    "inbound": "open issues in this repo matching the selector (dispatch:cell + protocol:cds + status:todo, minus exclude labels). Read-only access to the broader issue set for triage / dispatch_protocol_missing diagnostics. The wake does NOT read the home thread (that is admin's surface) and does NOT read .cn-{agent}/ logs (that is admin's writer-locality)."
+  },
+  "output_contract": {
+    "cycle_artifact_root": ".cdd/unreleased/{N}/",
+    "artifact_class_taxonomy": [
+      "gamma-scaffold",
+      "self-coherence",
+      "beta-review",
+      "alpha-closeout",
+      "beta-closeout",
+      "gamma-closeout",
+      "post-release-assessment"
+    ],
+    "artifact_class_notes": "The seven artifact classes are the canonical CDD-cell output set per the cnos.cdd framework's artifact contract. The wake does not produce these directly; δ routes γ/α/β who produce them. The wake's responsibility is to ensure the cycle reaches a state where the canonical set is present on the cycle branch before merge. PRA (post-release-assessment) is scope-dependent — only cycles with explicit retrospective value carry it.",
+    "cell_runtime": "cnos.cdd",
+    "cell_runtime_notes": "cnos.cdd is the generic cell-runtime framework that owns the γ/α/β/δ role contracts and the cell mechanics. cnos.cds (this package) is the concrete software-development protocol that invokes the cnos.cdd framework for its dispatch work. cnos.cdd does NOT own a protocol qualifier or a dispatch wake; cnos.cds owns protocol:cds + this dispatch wake."
+  },
+  "allowed_surfaces": [
+    ".cdd/unreleased/{N}/ (the cell artifact root; γ/α/β write here per the cnos.cdd artifact contract)",
+    "cell-cycle branches (e.g. cycle/{N}; α/β commit code/test/doc changes here per the cell's design surface)",
+    "pull request creation and updates (each cell ships its work via a PR scoped to the claimed cell)",
+    "issue comments on the claimed cell (status updates, dispatch_protocol_missing / dispatch_protocol_mismatch diagnostics)",
+    "label application on the claimed cell only (status:todo → status:in-progress at claim; lifecycle transitions per responsibilities #5 above)"
+  ],
+  "disallowed_surfaces": [
+    ".github/workflows/ (substrate is rendered, not hand-edited — the dispatch wake never modifies its own carrier or other wake artifacts)",
+    ".cn-{agent}/ surfaces (channel logs are admin's writer-locality per AGENT-ACTIVATION-LOG-v0 §0; dispatch wake does NOT write channel entries)",
+    "label definition (dispatch wake APPLIES lifecycle labels on its claimed cell per cnos#468 §4.1 but never DEFINES new labels per cnos#468 §4.2)",
+    "branch protection rules (operator-owned; dispatch wake never modifies)",
+    "repository settings (operator-owned; dispatch wake never modifies)",
+    "cells outside its protocol (cross-protocol claims are a protocol violation per cnos#468 §2.1; a wake owning protocol:cds rejects protocol:cdr / protocol:cdw issues per cnos#454 AC9)",
+    "issues not matching the selector (the wake never edits, labels, or comments on issues that do not match its claim criteria, except for diagnostic comments on dispatch_protocol_missing cases)",
+    "other agents' .cn-{other}/ surfaces (writer-locality per AGENT-ACTIVATION-LOG-v0 §0)"
+  ],
+  "defer_path": {
+    "cell_shaped_directive": "The dispatch wake's primary job is cell execution; cell-shaped directives that match the selector are not deferred — they are claimed and run. For cell-shaped directives that arrive via a channel that is NOT the open-issue queue (e.g. a comment on an issue not labeled for dispatch, or a direct prompt at wake firing time), the wake surfaces to the admin wake via an issue comment: 'Cell-shaped directive arrived outside the standard claim channel; please re-route via dispatch:cell + protocol:cds + status:todo labels if intended for execution.'",
+    "off_role_directive": "When a directive falls outside the dispatch role (admin work: channel sync, label policy decisions, repo settings, agent identity), the dispatch wake appends a comment on the claimed cell (if any) or surfaces to the admin wake via a comment on the relevant issue: name the misroute and the appropriate role/wake/operator action. The dispatch wake does NOT attempt admin work inline.",
+    "ambiguous_directive": "When the directive's role is ambiguous (could be dispatch or could be admin / off-role), defer to operator: post an issue comment naming the ambiguity and the candidate interpretations; release the claim if one was taken; do not guess. Mirrors cnos.core/skills/agent/attach §3.8 ('defer to operator on ambiguity, do not guess') for the dispatch context."
+  },
+  "prompt_template": "prompt.md",
+  "agent_variable": {
+    "name": "agent",
+    "default": "sigma",
+    "description": "Per-install agent identity binding for the substrate's run-identity (today the renderer maps `sigma` to substrate bot_name/bot_id per cnos.core/commands/install-wake/cn-install-wake). NOTE: the dispatch wake's *role* is package-owned (cnos.cds), but the *substrate identity* it runs under is operator-supplied. Today only `sigma` has a wired substrate identity; per-package bot accounts (future cnos#449 follow-up) lift this constraint."
+  },
+  "permission_intent": [
+    "contents.write",
+    "issues.write",
+    "pull_requests.write",
+    "id_token.write"
+  ],
+  "permission_intent_notes": "Logical permissions; the renderer maps to the substrate-specific encoding. contents.write for cell artifact commits + cycle branch pushes; issues.write for status:* label transitions + cell comments + dispatch_protocol_missing diagnostics; pull_requests.write for cell PR creation and updates; id_token.write for OIDC-based authentication when the substrate requires it.",
+  "concurrency_intent": {
+    "serialize": true,
+    "group": "cds-dispatch-{agent}",
+    "notes": "Dispatch claims MUST be serialized to prevent two firings claiming the same cell. The renderer maps to substrate-specific concurrency encoding (today: GitHub Actions 'concurrency:' block with cancel-in-progress: false). The per-{agent} suffix scopes the serialization to the substrate identity; per-protocol scoping is implicit in the wake name (each protocol's dispatch wake has its own concurrency group)."
+  },
+  "cross_references": {
+    "architecture": [
+      "cnos#467 (master tracker — agent/wake-orchestration; foundational architecture for package-owned wake providers)"
+    ],
+    "predecessors": [
+      "cnos#468 (Sub 1 — label doctrine; consumed for the selector's label set per §2.1 / §4.1)",
+      "cnos#470 (Sub 2 — cn.wake-provider.v1 contract; this manifest is the second reference instance after agent-admin)",
+      "cnos#476 (Sub 3 — cn install-wake renderer; consumes this manifest at install time)",
+      "cnos#479 (cutover-A — admin wake activation; admin/dispatch role separation observable in production once both wakes are rendered)",
+      "cnos#454 (dispatch-protocol skill; claim mechanics + lifecycle transitions + drift handling — consumed by this wake's prompt; in β-review at the time of this manifest's authoring)"
+    ],
+    "consumed_skills": [
+      "src/packages/cnos.core/skills/agent/wake-provider/SKILL.md (this manifest's governing contract)",
+      "src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md (label control plane; selector label set; lifecycle transition discipline)",
+      "src/packages/cnos.core/skills/agent/activate/SKILL.md (identity load on wake firing)",
+      "src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md (claim mechanics; lifecycle transitions; drift handling; concurrency — landing via cnos#454 / PR #466)",
+      "src/packages/cnos.cdd/skills/cdd/delta/SKILL.md (the δ role contract; the dispatch wake invokes δ in wake-invoked mode per cnos#467 Sub 5 — wake-invoked mode landing in a follow-up sub)",
+      "src/packages/cnos.cds/skills/cds/SKILL.md (the concrete software protocol; the protocol's selection function + lifecycle the cell follows under δ's routing)",
+      "src/packages/cnos.cds/skills/cds/lifecycle/SKILL.md (cell lifecycle for software cells; consumed by α/β under δ's routing)",
+      "src/packages/cnos.cds/skills/cds/selection/SKILL.md (cell-selection criteria for software cells; consumed by γ during scaffold authoring)"
+    ],
+    "consumed_conventions": [
+      "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; this wake does NOT write channel logs but cites the convention to document the admin/dispatch writer-locality split)"
+    ]
+  }
+}

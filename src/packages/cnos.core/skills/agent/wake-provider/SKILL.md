@@ -120,14 +120,16 @@ Every wake-provider manifest MUST declare these fields, in this rough order (the
 | `package` | string | The owning package (e.g. `cnos.core` for the agent-admin wake; `cnos.cds` for the CDS dispatch wake; cnos.cdr / cnos.cdw for their respective dispatch wakes). Authoritative for ownership; the renderer verifies the manifest lives under the named package's directory tree. Note: dispatch wakes belong to concrete protocol packages (cds/cdr/cdw); `cnos.cdd` is the generic cell-runtime framework and does not own a dispatch wake itself. |
 | `role` | string, enum: `admin` \| `dispatch` \| `observer` | The wake's role class. `admin` = channel sync + admin-only directive handling, never executes cells. `dispatch` = claims cells matching its protocol selector and runs the protocol's runtime. `observer` = reads-only; emits reports but does not act. The agent-admin wake declares `admin`. |
 | `responsibilities` | array of strings, non-empty | The enumerated capabilities the wake's prompt commits to. The renderer does not interpret these (they are prose for the agent); the package authors them so they are observable in the declaration without reading the prompt. |
-| `admin_only` | boolean | When `true`, the wake MUST NOT execute cells. The prompt template is required to enforce this; the renderer is required to surface it (e.g. via permission allowlist restriction in the materialized substrate artifact). `role: admin` implies `admin_only: true`. |
+| `admin_only` | boolean | When `true`, the wake MUST NOT execute cells. The prompt template is required to enforce this; the renderer is required to surface it (e.g. via permission allowlist restriction in the materialized substrate artifact). `role: admin` implies `admin_only: true`; `role: dispatch` implies `admin_only: false`. |
 | `input_contract` | object | Logical trigger taxonomy. Required keys: `triggers` (array; e.g. `["schedule", "issues_opened_title_match"]`), `inbound` (string; logical description, e.g. `"home thread + open issues"`). Renderer maps to substrate-specific trigger encoding. |
-| `output_contract` | object | Required keys: `channel_log_convention` (string; canonical doc path, e.g. `"docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md"`), `class_taxonomy` (array of allowed `class:` values for the channel entry's frontmatter), `cursor_advance` (boolean; whether the wake advances the channel cursor). |
+| `output_contract` | object | Required keys depend on `role`. For `role: admin`: `channel_log_convention` (string; canonical doc path, e.g. `"docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md"`), `class_taxonomy` (array of allowed `class:` values for the channel entry's frontmatter), `cursor_advance` (boolean; whether the wake advances the channel cursor). For `role: dispatch`: `cycle_artifact_root` (string; the path under which cell artifacts land, e.g. `".cdd/unreleased/{N}/"`), `artifact_class_taxonomy` (array of canonical artifact class names the wake's cells emit, e.g. `["gamma-scaffold", "self-coherence", "beta-review", "beta-closeout", "alpha-closeout", "gamma-closeout"]`), `cell_runtime` (string; the cell framework whose role contracts the wake invokes — for software protocols today: `"cnos.cdd"`). |
 | `allowed_surfaces` | array of strings | What the wake MAY write. Each entry is a path glob or named surface. Patterns use `{agent}` placeholder for the per-install agent name. |
 | `disallowed_surfaces` | array of strings | What the wake MUST NOT write. Must explicitly include `.github/workflows/` and (for admin wakes) the literal phrase `cell execution` as a named surface. |
 | `defer_path` | object | Required keys: `cell_shaped_directive` (string; what to do when a cell-shaped directive arrives — e.g. `"defer to relevant protocol:{P} dispatch wake if installed; surface to operator if not"`), `off_role_directive` (string; what to do when a directive falls outside the wake's role; admin wakes defer to dispatch, dispatch wakes defer to admin or operator). |
 | `prompt_template` | string | Relative path to the prompt-template markdown file (e.g. `"prompt.md"`). The renderer reads this file and inlines its body into the substrate artifact's prompt field. |
 | `cross_references` | object | Required keys for traceability. Each value is an array of citation strings (package-path, issue ref, or canonical-doc path). At minimum: `architecture` (e.g. `["cnos#467"]`), `predecessors` (e.g. `["cnos#468"]`), `consumed_skills` (the skills the prompt invokes, e.g. `["cnos.core/skills/agent/activate", "cnos.core/skills/agent/attach"]`), `consumed_conventions` (e.g. `["docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md"]`). |
+| `protocol` | string, kebab-case, **required when `role: dispatch`** | The concrete protocol qualifier this wake claims cells for (e.g. `"cds"`, `"cdr"`, `"cdw"`). Matches the `protocol:{id}` label qualifier on the cells the wake claims. Owned by the package declaring the wake (per cnos#468 label-doctrine §2). `cnos.cdd` is the generic cell-runtime framework and does not own a protocol qualifier; therefore no `cnos.cdd` dispatch wake exists. |
+| `selector` | object, **required when `role: dispatch`** | The claim selector — the label-set filter the wake applies when claiming cells from the open-issue queue. Required keys: `include` (array of label names the issue MUST carry to be eligible; the standard dispatch include set is `["dispatch:cell", "protocol:{protocol}", "status:todo"]` where `{protocol}` matches the manifest's `protocol` field), `exclude` (array of label names whose presence DISQUALIFIES the issue; the standard dispatch exclude set is `["status:in-progress", "status:blocked", "status:review", "status:changes"]`). Per cnos#454 dispatch-protocol the selector is the contract between the dispatch protocol and the wake; explicit declaration prevents under-specified wakes from claiming the wrong queue. The renderer maps the logical selector to substrate-specific event filtering / runtime gating. |
 
 ### 2.2. Optional manifest fields
 
@@ -177,12 +179,17 @@ This split is the contract's core invariant. The table makes it grep-able:
 | Declared in manifest / prompt (package authority) | Emitted by renderer (substrate authority) |
 |---|---|
 | `name`, `package`, `role`, `admin_only` | `name:` field of substrate artifact |
+| `protocol` (string, dispatch-required) | (n/a — runtime gating; the wake's prompt uses it to verify cell ownership, and the selector encodes it as a label filter) |
+| `selector.include` / `selector.exclude` (label-set filter, dispatch-required) | substrate event filter and/or runtime claim gate (e.g. `if:` on `labeled` events, runtime label-presence checks at claim time) |
 | `responsibilities` (enumerated array) | (n/a — responsibilities are prose for the agent) |
 | `input_contract.triggers` (logical taxonomy) | `on:` block (substrate trigger encoding) |
 | `input_contract.inbound` (logical description) | (n/a — agent reads inbound from the surface itself) |
-| `output_contract.channel_log_convention` (path to canonical doc) | (n/a — agent reads convention from the cited path) |
-| `output_contract.class_taxonomy` (array of allowed `class:` values) | (n/a — agent emits per the prompt + convention) |
-| `output_contract.cursor_advance` (boolean) | (n/a — agent behavior, not substrate behavior) |
+| `output_contract.channel_log_convention` (path to canonical doc; admin-shape) | (n/a — agent reads convention from the cited path) |
+| `output_contract.class_taxonomy` (array of allowed `class:` values; admin-shape) | (n/a — agent emits per the prompt + convention) |
+| `output_contract.cursor_advance` (boolean; admin-shape) | (n/a — agent behavior, not substrate behavior) |
+| `output_contract.cycle_artifact_root` (path; dispatch-shape) | (n/a — agent writes to the named path per the cell framework) |
+| `output_contract.artifact_class_taxonomy` (array; dispatch-shape) | (n/a — agent emits per the cell framework's contract) |
+| `output_contract.cell_runtime` (string naming the framework, e.g. `"cnos.cdd"`; dispatch-shape) | (n/a — agent invokes the named framework's δ role contract) |
 | `allowed_surfaces`, `disallowed_surfaces` | (n/a — declaration only; agent enforces via prompt) |
 | `defer_path` | (n/a — declaration only; agent enforces via prompt) |
 | `permission_intent` (logical permissions) | `permissions:` block (substrate permission encoding) |
@@ -270,6 +277,15 @@ For *any* wake (admin or dispatch), `.github/workflows/` is a disallowed surface
 
 - ❌ `disallowed_surfaces: [".github/", "branch_protection"]` (cell execution implicit only in prompt)
 - ✅ `disallowed_surfaces: [".github/workflows/", "branch_protection", "repo_settings", "cell_execution", ...]`
+
+### 3.9. Dispatch wakes declare their claim selector explicitly
+
+A wake declared with `role: dispatch` MUST declare both `protocol` (the concrete protocol qualifier short-name; matches `protocol:{id}` labels) and `selector` (the label-set filter the wake applies when claiming cells). Per cnos#454 dispatch-protocol the selector is the contract between the dispatch protocol and the wake — it names exactly which cells the wake will claim. A dispatch wake that omits the selector is under-specified; per §3.5 the renderer rejects rather than silently defaulting (a default selector would conflate "claim everything" with "claim nothing" — both wrong defaults).
+
+- ❌ `role: dispatch` declared but `selector` omitted; renderer infers from labels-doctrine and "just runs"
+- ✅ `role: dispatch` declared with explicit `selector.include: ["dispatch:cell", "protocol:cds", "status:todo"]` + `selector.exclude: ["status:in-progress", "status:blocked", "status:review", "status:changes"]`
+
+The selector's `include[1]` value MUST be `protocol:{protocol}` where `{protocol}` matches the manifest's `protocol` field — i.e., the wake claims only cells whose qualifier matches its package's owned protocol (cross-protocol claims are a label-doctrine violation per cnos#468 §2.1).
 
 ---
 
