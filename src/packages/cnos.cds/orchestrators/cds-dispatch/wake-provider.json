@@ -4,6 +4,8 @@
   "package": "cnos.cds",
   "role": "dispatch",
   "admin_only": false,
+  "activation_state": "declaration-only",
+  "activation_state_notes": "This provider is shipped as a contract specimen and MUST NOT be installed to the substrate (no .github/workflows/cnos-cds-dispatch.yml rendered/committed) until three preconditions all hold: (a) cnos#454 dispatch-protocol skill lands on main (PR #466 currently in β-review); (b) cnos#467 Sub 5 lands the renderer extension consuming role:dispatch + protocol + selector + dispatch-shape output_contract fields + the issues_labeled_selector_match trigger; (c) cnos#467 Sub 5 lands the δ wake-invoked mode amendment in cnos.cdd's delta SKILL. Until all three preconditions hold, this manifest documents the intended contract but is not runnable. `cn install-wake cds-dispatch` MUST refuse to install (or render with a prominent DO-NOT-INSTALL warning) while activation_state == declaration-only per wake-provider/SKILL.md §3.10. When the preconditions are all met, a future cycle flips activation_state to `live` and renders the substrate artifact.",
   "protocol": "cds",
   "selector": {
     "include": [
@@ -18,25 +20,27 @@
       "status:changes"
     ]
   },
-  "description": "The cnos.cds package-owned dispatch wake. Claims open issues matching the dispatch selector (dispatch:cell + protocol:cds + status:todo), invokes the cnos.cdd cell-runtime framework's δ role contract in wake-invoked mode, and lands cell artifacts at .cdd/unreleased/{N}/ per the CDD framework's artifact contract. δ routes γ (scaffold + closeout), α (implement + iterate), β (review + iterate); the dispatch wake itself does not directly route those roles — it hands the claimed cell to δ. The wake is NOT an admin wake: it does not write channel logs, does not apply labels except for lifecycle transitions on the claimed cell (status:todo → status:in-progress at claim; → status:review at completion), and does not read the home thread.",
+  "description": "The cnos.cds package-owned dispatch wake. Claims open issues matching the dispatch selector (dispatch:cell + protocol:cds + status:todo), invokes the cnos.cdd cell-runtime framework's δ role contract in wake-invoked mode, and lands cell artifacts at .cdd/unreleased/{N}/ per the CDD framework's artifact contract. δ routes γ (scaffold + closeout), α (implement + iterate), β (review + iterate); the dispatch wake itself does not directly route those roles — it hands the claimed cell to δ. The wake is NOT an admin wake: it does not write channel logs, does not apply labels except for the four named lifecycle transitions on the claimed cell (claim, β converge, hard block, release-back-to-queue), and does not read the home thread.",
   "responsibilities": [
-    "claim: scan open issues for the selector match (dispatch:cell + protocol:cds + status:todo); on the first match, transition status:todo → status:in-progress to take ownership per cnos#454 dispatch-protocol claim mechanics",
-    "invoke δ in wake-invoked mode: hand the claimed cell to the cnos.cdd δ role contract with the issue as input; δ owns the γ/α/β routing inside the cell",
-    "drive δ's iteration loop: surface α R[N] / β R[N] return tokens; advance the cell through review-ready → reviewed → merged; do NOT short-circuit β's verdicts",
+    "claim — serialized claim operation (NOT atomic CAS): scan open issues for candidates matching the selector; pick FIFO; re-read the picked candidate's labels; verify well-formedness gates (issue open; dispatch:cell present; exactly one protocol:* present AND = protocol:cds; exactly one status:* present AND = status:todo) BEFORE any label write; only after verify passes, remove status:todo and add status:in-progress; write a claim comment naming this wake firing (wake name, substrate run id, protocol, head); re-read labels to confirm status:in-progress + protocol:cds still hold (catches drift during the claim itself); if the post-claim re-read shows a race, release the claim back to status:todo and exit without invoking δ",
+    "invoke δ in wake-invoked mode: hand the claimed cell to the cnos.cdd δ role contract with the issue as input; δ owns the γ/α/β routing inside the cell. δ wake-invoked mode is the cnos#467 Sub 5 contract — forward-referenced; this provider is declaration-only until that mode lands",
+    "drive δ's iteration loop: surface α R[N] / β R[N] return tokens so the cycle is observable; do NOT short-circuit β's verdicts; β iterate keeps the cell at status:in-progress (internal cell loop); β converge advances to status:review",
     "land cell artifacts: at cycle completion, ensure .cdd/unreleased/{N}/ contains the canonical artifact set per cnos.cdd's artifact contract (gamma-scaffold.md, self-coherence.md with R[N] sections, beta-review.md with R[N] verdicts, alpha-closeout.md, beta-closeout.md, gamma-closeout.md, PRA when scoped)",
-    "transition lifecycle labels for the claimed cell only: status:in-progress → status:review at cell completion; status:in-progress → status:blocked + a blocked-reason comment if a hard block hits mid-cycle; status:in-progress → status:changes when β requests changes",
-    "reject malformed claims: if a claimed cell is missing protocol:cds, has a non-matching protocol qualifier, or lacks dispatch:cell, surface dispatch_protocol_missing or dispatch_protocol_mismatch per cnos#454 AC9 and release the claim (status:in-progress → status:todo) with a repair-instruction issue comment",
-    "concurrency discipline: respect the substrate's serialize-per-protocol concurrency group; do NOT claim a cell that another firing of this wake is processing",
+    "transition lifecycle labels for the claimed cell only — four named events: (1) claim: status:todo → status:in-progress (per the claim sequence above); (2) β converge: status:in-progress → status:review; (3) hard block: status:in-progress → status:blocked with a blocked-reason comment; (4) release-back-to-queue: status:in-progress → status:todo if the post-claim re-read detects a race. The wake does NOT transition to status:changes from status:in-progress — status:changes is reserved for EXTERNAL (operator/planner) review rejection after the cell ships to status:review; β iteration is INTERNAL (cell stays at status:in-progress). The wake also does NOT transition out of status:review / status:blocked / status:changes — those are operator/planner authority.",
+    "reject malformed candidates before claiming: (a) dispatch_protocol_missing — missing dispatch:cell or zero protocol:* labels; (b) dispatch_protocol_mismatch — protocol:{Q} where Q ≠ cds; silent skip on scheduled sweep, comment on targeted/attempted claim per cnos#468 §7; (c) dispatch_label_drift — multiple protocol:* OR multiple status:* labels present. For (a) and (c) and the comment-case of (b): post a repair-instruction comment naming the specific drift class; do NOT claim; continue to the next candidate. NEVER transition labels on a malformed candidate.",
+    "concurrency discipline: respect the substrate's serialize-per-protocol concurrency group; do NOT claim a cell that another firing of this wake is processing; one-claim-per-firing is the rule",
     "off-role refusal: when a directive falls outside the dispatch role (admin work: channel sync, label policy decisions, repo settings), surface to the admin wake via an issue comment; do NOT attempt admin work inline"
   ],
   "input_contract": {
     "triggers": [
-      "schedule"
+      "schedule",
+      "issues_labeled_selector_match"
     ],
     "trigger_descriptions": {
-      "schedule": "Periodic firings on a cron-like schedule; substrate-specific encoding is the renderer's responsibility. The wake fires the claim mechanism on every firing; if no eligible cell exists in the queue at firing time, the wake emits a heartbeat artifact and exits without claiming. Cron drop rate is acceptable for dispatch (cells wait in the queue; the next firing claims them); cron is not the primary smoke oracle (operator-initiated label-application is the responsive trigger when needed)."
+      "schedule": "Periodic firings on a cron-like schedule. Substrate-specific encoding is the renderer's responsibility. The wake fires the claim mechanism on every firing; if no eligible cell exists in the queue at firing time, the wake exits cleanly (no claim attempt, no comment). Per cnos#454 AC10 the schedule trigger is the sweep backstop — it catches cells whose labels were applied while no other firing was running. Schedule cron drop rate is acceptable for the backstop role: a missed cron does not lose work; the next firing claims the queued cells. Schedule is NOT the primary responsive oracle.",
+      "issues_labeled_selector_match": "Trigger on issue-labeled events where the newly-applied label is one of the selector's include set (dispatch:cell, protocol:cds, status:todo). Per cnos#454 AC10 the event-driven trigger is the responsive path — operator-applied lifecycle labels fire the wake within seconds rather than waiting for the next scheduled sweep. The renderer maps to substrate-specific event filtering (today: GitHub Actions `on: issues: { types: [labeled] }` with a label-name `if:` gate naming the selector's include set). Renderer support for this trigger type lands with cnos#467 Sub 5; declaration-only until then (activation_state guard above)."
     },
-    "inbound": "open issues in this repo matching the selector (dispatch:cell + protocol:cds + status:todo, minus exclude labels). Read-only access to the broader issue set for triage / dispatch_protocol_missing diagnostics. The wake does NOT read the home thread (that is admin's surface) and does NOT read .cn-{agent}/ logs (that is admin's writer-locality)."
+    "inbound": "open issues in this repo matching the selector (dispatch:cell + protocol:cds + status:todo, minus exclude labels). Two trigger paths converge on this inbound: scheduled sweep (backstop) and label-event (responsive). Read-only access to the broader issue set for triage / dispatch_protocol_missing / dispatch_label_drift diagnostics. The wake does NOT read the home thread (that is admin's surface) and does NOT read .cn-{agent}/ logs (that is admin's writer-locality)."
   },
   "output_contract": {
     "cycle_artifact_root": ".cdd/unreleased/{N}/",
@@ -100,22 +104,52 @@
     "predecessors": [
       "cnos#468 (Sub 1 — label doctrine; consumed for the selector's label set per §2.1 / §4.1)",
       "cnos#470 (Sub 2 — cn.wake-provider.v1 contract; this manifest is the second reference instance after agent-admin)",
-      "cnos#476 (Sub 3 — cn install-wake renderer; consumes this manifest at install time)",
-      "cnos#479 (cutover-A — admin wake activation; admin/dispatch role separation observable in production once both wakes are rendered)",
-      "cnos#454 (dispatch-protocol skill; claim mechanics + lifecycle transitions + drift handling — consumed by this wake's prompt; in β-review at the time of this manifest's authoring)"
+      "cnos#476 (Sub 3 — cn install-wake renderer; consumes this manifest at install time once renderer extension lands)",
+      "cnos#479 (cutover-A — admin wake activation; admin/dispatch role separation observable in production once both wakes are rendered)"
     ],
     "consumed_skills": [
-      "src/packages/cnos.core/skills/agent/wake-provider/SKILL.md (this manifest's governing contract)",
+      "src/packages/cnos.core/skills/agent/wake-provider/SKILL.md (this manifest's governing contract; §2.1 / §2.2 / §3.9 / §3.10 specifically)",
       "src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md (label control plane; selector label set; lifecycle transition discipline)",
       "src/packages/cnos.core/skills/agent/activate/SKILL.md (identity load on wake firing)",
-      "src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md (claim mechanics; lifecycle transitions; drift handling; concurrency — landing via cnos#454 / PR #466)",
-      "src/packages/cnos.cdd/skills/cdd/delta/SKILL.md (the δ role contract; the dispatch wake invokes δ in wake-invoked mode per cnos#467 Sub 5 — wake-invoked mode landing in a follow-up sub)",
+      "src/packages/cnos.cdd/skills/cdd/SKILL.md (the generic cell-runtime framework that owns the γ/α/β/δ role contracts and cell mechanics)",
+      "src/packages/cnos.cdd/skills/cdd/delta/SKILL.md (the δ role contract; the dispatch wake invokes δ — wake-invoked mode amendment lands via Sub 5, listed under forward_references)",
       "src/packages/cnos.cds/skills/cds/SKILL.md (the concrete software protocol; the protocol's selection function + lifecycle the cell follows under δ's routing)",
       "src/packages/cnos.cds/skills/cds/lifecycle/SKILL.md (cell lifecycle for software cells; consumed by α/β under δ's routing)",
       "src/packages/cnos.cds/skills/cds/selection/SKILL.md (cell-selection criteria for software cells; consumed by γ during scaffold authoring)"
     ],
     "consumed_conventions": [
       "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; this wake does NOT write channel logs but cites the convention to document the admin/dispatch writer-locality split)"
+    ]
+  },
+  "forward_references": {
+    "skills_landing_later": [
+      {
+        "path": "src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md",
+        "tracking": "cnos#454 (PR #466 in β-review)",
+        "purpose": "Claim mechanics + lifecycle transitions + drift handling (dispatch_protocol_missing / dispatch_protocol_mismatch / dispatch_label_drift) + concurrency discipline. This manifest declares its claim sequence and lifecycle transitions explicitly so it is internally complete; the dispatch-protocol skill is the cross-package canonical doctrine the wake's prompt cites by name."
+      },
+      {
+        "path": "src/packages/cnos.cdd/skills/cdd/delta/SKILL.md (§ wake-invoked mode)",
+        "tracking": "cnos#467 Sub 5",
+        "purpose": "Amends the δ skill with a dispatch-wake-invoked mode contract: how δ receives a claimed cell from a dispatch wake, what the routing sequence looks like in this mode, and how δ surfaces R[N] iteration tokens back to the wake for observability."
+      }
+    ],
+    "renderer_extensions_landing_later": [
+      {
+        "feature": "cn-install-wake consumes role:dispatch + protocol + selector + dispatch-shape output_contract (cycle_artifact_root / artifact_class_taxonomy / cell_runtime) + activation_state",
+        "tracking": "cnos#467 Sub 5",
+        "purpose": "Today's renderer (Sub 3 / cycle 476) supports only the admin shape. Extending it to consume the dispatch-shape fields is required before any cds-dispatch.yml can be rendered to substrate."
+      },
+      {
+        "feature": "cn-install-wake recognizes issues_labeled_selector_match trigger type and emits the corresponding substrate event filter",
+        "tracking": "cnos#467 Sub 5",
+        "purpose": "Today's renderer recognizes schedule + issues_opened_title_match. The new responsive trigger maps to a substrate-specific labeled-event filter."
+      },
+      {
+        "feature": "cn-install-wake honors activation_state — refuses to install or emits a DO-NOT-INSTALL warning when activation_state != live (per wake-provider/SKILL.md §3.10)",
+        "tracking": "cnos#467 Sub 5",
+        "purpose": "Prevents accidental installation of declaration-only providers."
+      }
     ]
   }
 }
