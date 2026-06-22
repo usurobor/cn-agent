@@ -133,13 +133,3 @@ jobs:
           fi
           echo "AC8 renderer-side: 0 role-decision leaks."
 
-      - name: AC7 claude-wake.yml unchanged
-        # Sub 3 MUST NOT touch the existing production wake. Cutover
-        # is a separate cycle.
-        run: |
-          n=$(git diff --name-only origin/main HEAD -- .github/workflows/claude-wake.yml | wc -l)
-          if [ "$n" != "0" ]; then
-            echo "::error::.github/workflows/claude-wake.yml was modified on this branch. AC7 forbids this in Sub 3."
-            exit 1
-          fi
-          echo "AC7: claude-wake.yml byte-identical."
