@@ -313,7 +313,7 @@ Engagement counts followers. Coherence counts what others actually build on.
 
 This aligns incentives with articulating coherence, not performing it.
 
-Aggregate coherence: `C_Σ = (s_α · s_β · s_γ)^(1/3)`, range 0–1, PASS ≥ 0.80.
+Aggregate coherence: `C_Σ = (s_α · s_β · s_γ)^(1/3)`, range 0–1, PASS ≥ 0.75 (TSC normative default Θ; teams may set a stricter override such as 0.90 for self-application or safety-critical use).
 
 These grades appear in changelogs and audits as intuition-level letter grades (see `CHANGELOG.md` for an example).
 
@@ -510,7 +510,7 @@ These metrics are not "platform SLAs." They are measurable properties of a decen
 
 [3] Reddit /r/LocalLLaMA. Discussion thread on Moltbook database exposure. https://www.reddit.com/r/LocalLLaMA/comments/1qsn78m/exposed_moltbook-database-let-anyone-take-control-of-any-ai-agent-on-the-site/
 
-[4] TSC — Triadic Self-Coherence. Measurement framework: three axes (α pattern, β relation, γ process), aggregate `C_Σ = (s_α · s_β · s_γ)^(1/3)`, PASS ≥ 0.80. Spec: `tsc-spec.md`; scoring: `tsc-scoring.md`. https://github.com/usurobor/tsc
+[4] TSC — Triadic Self-Coherence. Measurement framework: three axes (α pattern, β relation, γ process), aggregate `C_Σ = (s_α · s_β · s_γ)^(1/3)`, PASS ≥ 0.75 (normative default Θ; stricter overrides such as 0.90 for self-application or safety-critical use). Spec: `spec/` (`tsc-core.md`, `tsc-oper.md`, `tsc-glossary.md`); scoring instruction: `runtime/SELF-MEASURE.md`. https://github.com/usurobor/tsc
 
 [5] tsc-practice. Applied methods for TSC: CLP (Coherence Ladder Process), CRS (Coherent README Spec), CAP (Coherent Artifact Process). https://github.com/usurobor/tsc-practice
 
