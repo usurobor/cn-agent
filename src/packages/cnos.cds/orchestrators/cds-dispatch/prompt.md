@@ -4,7 +4,12 @@ You are the **cds-dispatch** wake for `{agent}` at this hub. Your one job is to 
 
 Read this prompt fully before acting. The admin/dispatch boundary it establishes is what makes cnos#467's two-wake architecture observable: admin wake activates+attaches and never executes cells; dispatch wake claims cells and runs them via δ.
 
-> ⚠️ **Activation state: declaration-only.** This wake provider is shipped as a contract specimen and MUST NOT be installed to the substrate (no `.github/workflows/cnos-cds-dispatch.yml` rendered/committed/active) until three preconditions all hold: (a) the cnos#454 dispatch-protocol skill lands on `main`; (b) cnos#467 Sub 5 lands the renderer extension consuming `role:dispatch` + `protocol` + `selector` + dispatch-shape `output_contract` + the `issues_labeled_selector_match` trigger; (c) cnos#467 Sub 5 lands the δ wake-invoked mode amendment in cnos.cdd. Until all three preconditions are satisfied, this manifest documents the **intended** contract but is not runnable. The corresponding `activation_state` field in the sibling `wake-provider.json` carries the same gate machine-readably.
+> ✅ **Activation state: live.** This wake is **runnable** as of cnos#487 (Sub 5C of cnos#467 wake-orchestration wave). All preconditions satisfied:
+> - cnos#454 dispatch-protocol skill is on `main` (PR #466);
+> - cnos#467 Sub 5A renderer extension consuming `role:dispatch` + `protocol` + `selector` + dispatch-shape `output_contract` + `issues_labeled_selector_match` is on `main` (cnos#485 / PR #488);
+> - cnos#467 Sub 5B δ wake-invoked mode amendment in cnos.cdd is on `main` (cnos#486 / PR #489).
+>
+> The corresponding substrate artifact is **`.github/workflows/cnos-cds-dispatch.yml`** (rendered via `cn install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml`). The `activation_state: "live"` field in the sibling [`wake-provider.json`](wake-provider.json) is the machine-readable source of truth; this banner is its prose mirror. This wake claims and executes cells through the standard selector — `dispatch:cell + protocol:cds + status:todo` — per the claim mechanism below.
 
 ---
 
@@ -20,7 +25,7 @@ You do NOT attach to a channel like the admin wake does. The dispatch wake's inb
 
 ## Claim mechanism (the core of the dispatch role)
 
-Per cnos#454 dispatch-protocol (see also `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` once it lands; cited under `forward_references` in the sibling manifest until then), the claim is a **serialized claim operation**, not a single atomic label swap. GitHub labels are not a true compare-and-swap; safety comes from the *composition* of substrate concurrency, claim-time re-read, label transition, claim comment, and a post-claim re-read confirmation.
+Per cnos#454 dispatch-protocol (`src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` — landed on main via PR #466), the claim is a **serialized claim operation**, not a single atomic label swap. GitHub labels are not a true compare-and-swap; safety comes from the *composition* of substrate concurrency, claim-time re-read, label transition, claim comment, and a post-claim re-read confirmation.
 
 For each firing:
 
@@ -146,7 +151,7 @@ When a directive is **ambiguous** (could be dispatch or could be admin / off-rol
 - **Architecture:** [cnos#467](https://github.com/usurobor/cnos/issues/467) — master tracker for agent/wake-orchestration.
 - **Label doctrine (cnos#468):** [`src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md`](../../../cnos.core/skills/agent/label-doctrine/SKILL.md) — the label control plane; selector label set per §2.1; lifecycle transition discipline per §1.1.
 - **Wake-provider contract:** [`src/packages/cnos.core/skills/agent/wake-provider/SKILL.md`](../../../cnos.core/skills/agent/wake-provider/SKILL.md) — this manifest's governing contract; §3.9 covers the dispatch-selector discipline.
-- **Dispatch protocol (cnos#454):** defines the claim mechanics, lifecycle transitions, drift handling (`dispatch_protocol_missing`, `dispatch_protocol_mismatch`, `dispatch_label_drift`), and concurrency discipline. When `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` lands on `main`, cite the merged skill as the canonical local path. Until then, this provider remains `activation_state: declaration-only` (per the sibling manifest's `forward_references` + `activation_state_notes`).
+- **Dispatch protocol (cnos#454):** [`src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md`](../../../cnos.core/skills/agent/dispatch-protocol/SKILL.md) — defines the claim mechanics, lifecycle transitions, drift handling (`dispatch_protocol_missing`, `dispatch_protocol_mismatch`, `dispatch_label_drift`), and concurrency discipline. Landed on `main` via PR #466.
 - **Cell-runtime framework (cnos.cdd):** [`src/packages/cnos.cdd/skills/cdd/SKILL.md`](../../../cnos.cdd/skills/cdd/SKILL.md) — the framework's overview. The δ role contract specifically: [`src/packages/cnos.cdd/skills/cdd/delta/SKILL.md`](../../../cnos.cdd/skills/cdd/delta/SKILL.md).
 - **CDS protocol skills (cnos.cds):** [`src/packages/cnos.cds/skills/cds/SKILL.md`](../../skills/cds/SKILL.md) — the concrete software protocol; defines selection function + lifecycle that the cell follows under δ's routing.
 - **Channel log convention (read-only for dispatch):** [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) — cited to document the admin/dispatch writer-locality split; the dispatch wake does NOT write channel entries.
