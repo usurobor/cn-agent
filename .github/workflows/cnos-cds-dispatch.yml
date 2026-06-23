@@ -129,7 +129,7 @@ jobs:
 
             The dispatch wake's job is to invoke δ with the claimed cell and let δ run. The wake does NOT route γ/α/β directly; that is δ's authority per the cell framework. The wake surfaces δ's R[N] iteration tokens so the cycle is observable, but it does not short-circuit β's verdicts.
 
-            **δ's wake-invoked mode is the contract that lands in cnos#467 Sub 5** (a follow-up sub after this declaration lands). Until that mode is explicit, this prompt names what the wake expects from δ; the cnos.cdd package will land the corresponding δ skill amendment.
+            **δ's wake-invoked mode is landed** via cnos#486 / PR #489. The wake invokes the production δ contract in [`src/packages/cnos.cdd/skills/cdd/delta/SKILL.md`](../../../cnos.cdd/skills/cdd/delta/SKILL.md) §9 ("Dispatch-wake-invoked mode"). The dispatch wake hands the claimed cell to δ; δ routes γ/α/β; R[N] iteration state is observable through the cycle branch + `.cdd/unreleased/{N}/` artifacts per the δ skill's §9.4 + §9.5 contract; δ writes the return token back to this wake per §9.6.
 
             ---
 
