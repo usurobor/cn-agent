@@ -1,20 +1,20 @@
 ---
 title: "Dumb Models, Smart Cells"
-subtitle: "Receipts, Trust, and Coherence for Agent Systems"
-version: v0.8.0
+subtitle: "Receipts, Trust Claims, and Coherence Witnesses for Agent Systems"
+version: v0.9.0
 status: DRAFT
 author: usurobor (aka Axiom) (human & AI)
 date: 2026-06-23
 ---
 
 # Dumb Models, Smart Cells
-## Receipts, Trust, and Coherence for Agent Systems
+## Receipts, Trust Claims, and Coherence Witnesses for Agent Systems
 
-**Status:** v0.8.0 (DRAFT — position paper)
+**Status:** v0.9.0 (DRAFT — position paper)
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-06-23
 
-> **Scope:** This paper explains why cnos treats language models as bounded executors, not as the home of workflow, memory, identity, evidence, trust, coherence, or release authority. It complements the CN protocol whitepaper, which explains Git as the communication substrate; `THESIS.md`, which explains cnos as a recurrent coherence system; and TSC, which measures whether multiple descriptions still describe one system.
+> **Scope:** This paper explains why cnos treats language models as bounded executors, not as the home of workflow, memory, identity, evidence, trust, coherence, or release authority. It complements the CN protocol whitepaper, which explains Git as the communication substrate; `THESIS.md`, which explains cnos as a recurrent coherence system; CDD, which defines the cell closeout kernel; and TSC, which measures whether multiple descriptions still describe one system.
 
 ---
 
@@ -32,10 +32,10 @@ It refuses to confuse capability with authority.
 Capability is rented.
 Authority is owned.
 Trust level must be explicit.
-Coherence must be measured.
+Coherence must be measured when it matters.
 And the receipt must not claim more than the artifact carries.
 
-That is the paper's claim: agent systems should rent model capability while keeping workflow, memory, evidence, validation, trust, coherence measurement, permissions, receipts, and release authority in a durable system the operator controls.
+That is the paper's claim: agent systems should rent model capability while keeping workflow, memory, evidence, validation, trust claims, coherence witnesses, permissions, receipts, and release authority in a durable system the operator controls.
 
 The model may move the work forward.
 It should not own the work.
@@ -119,7 +119,7 @@ Use a stronger boundary when the work:
 
 In those cases, the system needs more than a capable model.
 It needs a place where authority lands.
-It also needs a way to ask whether the artifacts still describe one coherent unit of work.
+It also needs a way to ask whether the artifacts still describe the same unit of work.
 
 ---
 
@@ -234,7 +234,7 @@ The package can be replaced.
 
 A receipt is the durable close-out artifact.
 
-It records what happened, what evidence was bound, what decision was made, what trust claim was carried, what coherence measurement exists, and what can cross the boundary.
+It records what happened, what evidence was bound, what decision was made, what trust claim was carried, what coherence witness exists, and what can cross the boundary.
 
 The receipt is not a chat summary.
 It is the artifact another human, agent, validator, or release step can inspect later.
@@ -243,7 +243,7 @@ It is the artifact another human, agent, validator, or release step can inspect 
 
 A coherence report answers a different question from a signature, a log, or a test.
 
-It asks whether the cell still describes one work unit.
+It asks whether the cell still describes one unit of work.
 
 Do the contract, matter, review, evidence, validator verdict, delta decision, release note, and handoff still fit together?
 
@@ -407,7 +407,7 @@ A receipt can be named, signed, attested, retained, and still be incoherent.
 
 A signature can prove that a key signed bytes.
 
-It does not prove that the contract, matter, evidence, receipt, validator verdict, delta decision, release boundary, and handoff still describe one work unit.
+It does not prove that the contract, matter, evidence, receipt, validator verdict, delta decision, release boundary, and handoff still describe one unit of work.
 
 That is the TSC question.
 
