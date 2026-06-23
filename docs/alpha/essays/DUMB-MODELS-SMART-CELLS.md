@@ -1,20 +1,20 @@
 ---
 title: "Dumb Models, Smart Cells"
-subtitle: "Receipts, Trust Levels, and Named Authority for Agent Systems"
-version: v0.7.0
+subtitle: "Receipts, Trust, and Coherence for Agent Systems"
+version: v0.8.0
 status: DRAFT
 author: usurobor (aka Axiom) (human & AI)
 date: 2026-06-23
 ---
 
 # Dumb Models, Smart Cells
-## Receipts, Trust Levels, and Named Authority for Agent Systems
+## Receipts, Trust, and Coherence for Agent Systems
 
-**Status:** v0.7.0 (DRAFT — position paper)
+**Status:** v0.8.0 (DRAFT — position paper)
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-06-23
 
-> **Scope:** This paper explains why cnos treats language models as bounded executors, not as the home of workflow, memory, identity, evidence, trust, or release authority. It complements the CN protocol whitepaper, which explains Git as the communication substrate, and `THESIS.md`, which explains cnos as a recurrent coherence system.
+> **Scope:** This paper explains why cnos treats language models as bounded executors, not as the home of workflow, memory, identity, evidence, trust, coherence, or release authority. It complements the CN protocol whitepaper, which explains Git as the communication substrate; `THESIS.md`, which explains cnos as a recurrent coherence system; and TSC, which measures whether multiple descriptions still describe one system.
 
 ---
 
@@ -22,7 +22,7 @@ date: 2026-06-23
 
 The hard question is not whether models are smart.
 They are.
-The hard question is where authority lands when model output becomes work.
+The hard question is what happens when model output becomes work.
 
 A model can write code, inspect files, draft plans, summarize evidence, and propose changes. A frontier model can hold more context, plan across longer horizons, and coordinate more steps than a small local model.
 
@@ -31,12 +31,11 @@ It refuses to confuse capability with authority.
 
 Capability is rented.
 Authority is owned.
-Authority has to have a name.
-And the receipt has to say what kind of name it is.
+Trust level must be explicit.
+Coherence must be measured.
+And the receipt must not claim more than the artifact carries.
 
-A plain label, a cryptographic signature, and a third-party attestation are not the same thing. A serious agent system should not smuggle one under the language of another.
-
-That is the paper's claim: agent systems should rent model capability while keeping workflow, memory, evidence, validation, permissions, receipts, trust level, and release authority in a durable system the operator controls.
+That is the paper's claim: agent systems should rent model capability while keeping workflow, memory, evidence, validation, trust, coherence measurement, permissions, receipts, and release authority in a durable system the operator controls.
 
 The model may move the work forward.
 It should not own the work.
@@ -53,14 +52,16 @@ A hosted model runtime can hold context, remember files, call tools, run workflo
 That is not fake value.
 It is capability.
 
-The product gravity is still real. A prompt becomes a thread. A thread gets memory. Memory gets files. Files get tools. Tools get workflows. Workflows get hosted agents. Hosted agents get logs, permissions, background tasks, connectors, deployment surfaces, registries, identities, gateways, observability, and governance surfaces.
+The product gravity is still real. A prompt becomes a thread. A thread gets memory. Memory gets files. Files get tools. Tools get workflows. Workflows get hosted agents. Hosted agents get logs, permissions, background tasks, connectors, deployment surfaces, registries, identities, gateways, observability, evaluation, and governance surfaces.
 
 Each feature is useful by itself.
 Together they turn the vendor runtime into the place where work lives.
 
 This is no longer a prediction. It is the roadmap.
 
-Google's Gemini Enterprise Agent Platform brings agent development, runtime, registry, identity, gateway, observability, and governance into one platform. Google Memory Bank gives agents long-term memories across sessions. OpenAI exposes file search over vector stores. Anthropic is building managed agent infrastructure around Claude. The shape is clear: model capability is becoming a full work environment.
+Google's Gemini Enterprise Agent Platform brings agent development, runtime, registry, identity, gateway, observability, governance, and long-running state into one platform. Memory Bank gives agents long-term memories across sessions. OpenAI exposes file search over vector stores. Anthropic is building managed agent infrastructure around Claude.
+
+The shape is clear: model capability is becoming a full work environment.
 
 That is not a conspiracy.
 It is what a capable product wants to become.
@@ -89,7 +90,7 @@ You may lose long-session continuity.
 You may lose vendor-native planning features.
 You may lose hidden context the model product was quietly carrying.
 You may lose speed.
-You may add ceremony: cells, receipts, validators, routing policy, release gates, package doctrine, and trust-level bookkeeping.
+You may add ceremony: cells, receipts, validators, routing policy, release gates, package doctrine, trust claims, and coherence reports.
 
 That cost is real.
 
@@ -103,8 +104,7 @@ If the work is exploratory, cheap, private, and easy to throw away, a hosted age
 
 cnos starts to earn its keep when the work matters enough that chat history is not a safe system of record.
 
-The threshold is not philosophical.
-It is practical.
+The threshold is practical.
 
 Use a stronger boundary when the work:
 
@@ -119,6 +119,7 @@ Use a stronger boundary when the work:
 
 In those cases, the system needs more than a capable model.
 It needs a place where authority lands.
+It also needs a way to ask whether the artifacts still describe one coherent unit of work.
 
 ---
 
@@ -136,7 +137,7 @@ The model may propose changes.
 The model may summarize evidence.
 The model may recommend a next move.
 
-But the model does not decide its own permissions. It does not choose its own provider route. It does not validate its own receipt. It does not own identity, memory, or the definition of done.
+But the model does not decide its own permissions. It does not choose its own provider route. It does not validate its own receipt. It does not measure its own coherence. It does not own identity, memory, or the definition of done.
 
 That is the difference between a smart product and a smart system.
 
@@ -166,7 +167,7 @@ A remote provider may be unavailable, and the system may fail closed instead of 
 That is not fungibility.
 It is governed substitution.
 
-The model can change without moving workflow, memory, evidence, identity, or release authority into the vendor runtime.
+The model can change without moving workflow, memory, evidence, trust, coherence measurement, identity, or release authority into the vendor runtime.
 
 That is the property cnos is after.
 
@@ -196,7 +197,7 @@ Do keep the workflow outside either engine.
 
 Change the provider when policy allows it. Escalate when capability requires it. Fail closed when the available engine is not good enough.
 
-The application shape stays in cells, packages, receipts, and repo state.
+The application shape stays in cells, packages, receipts, coherence reports, and repo state.
 
 ---
 
@@ -204,7 +205,7 @@ The application shape stays in cells, packages, receipts, and repo state.
 
 If the model does not own the work, something else must.
 
-In cnos, durable work lives in four places: cells, packages, receipts, and repo state.
+In cnos, durable work lives in five places: cells, packages, receipts, coherence reports, and repo state.
 
 ### Cells own the workflow
 
@@ -214,7 +215,10 @@ A cell is a bounded unit of work. The CDD kernel names the generic loop:
 
 The kernel is substrate-independent. It names roles, artifacts, validator `V`, evidence, verdicts, and decisions. It does not name GitHub, Claude, prompts, CI, branches, or any other invocation surface.
 
-A model can produce matter for a cell. But the cell gives the work its shape. The model can change. The cell loop remains.
+A model can produce matter for a cell.
+But the cell gives the work its shape.
+The model can change.
+The cell loop remains.
 
 ### Packages own local cognition
 
@@ -230,10 +234,20 @@ The package can be replaced.
 
 A receipt is the durable close-out artifact.
 
-It records what happened, what evidence was bound, what decision was made, and what can cross the boundary.
+It records what happened, what evidence was bound, what decision was made, what trust claim was carried, what coherence measurement exists, and what can cross the boundary.
 
 The receipt is not a chat summary.
 It is the artifact another human, agent, validator, or release step can inspect later.
+
+### Coherence reports own measurement
+
+A coherence report answers a different question from a signature, a log, or a test.
+
+It asks whether the cell still describes one work unit.
+
+Do the contract, matter, review, evidence, validator verdict, delta decision, release note, and handoff still fit together?
+
+That is a TSC question.
 
 ### Repo state owns continuity
 
@@ -270,6 +284,7 @@ contract:
     - validation evidence is recorded
     - release boundary is explicit
     - closeout receipt exists
+    - coherence measurement exists or absence is recorded
 status: ready
 ```
 
@@ -282,7 +297,11 @@ dispatch:
   status: todo
   authority:
     subject: peter@operator
-    trust_level: L1_named_within_repo
+    trust_claim:
+      governance_scope: G1_repo_commons
+      evidence_strength: E0_unsigned
+      process_integrity: P1_committed_history
+      admissibility: A0_none
     signature: null
     attestation: none
   authorized_at: 2026-06-22T14:31:00Z
@@ -299,12 +318,15 @@ route_receipt:
     - implementation touches repo structure
     - release notes required
     - validation evidence required
+    - coherence report required before non-degraded release
   fallback: none
   latency_ms: 1842
   token_estimate: 18231
 ```
 
 The cell produces matter on dev, binds evidence, and closes with a receipt.
+
+This trace is illustrative. It is not a captured live demo receipt. It intentionally records missing coherence measurement instead of inventing a score.
 
 ```yaml
 cell_receipt:
@@ -320,22 +342,44 @@ cell_receipt:
     - validation output
     - release notes path
     - target commit
+  trust_claim:
+    governance_scope: G1_repo_commons
+    evidence_strength: E0_unsigned
+    process_integrity: P1_committed_history
+    admissibility: A0_none
+  coherence:
+    required: true
+    measured: false
+    status: NOT_MEASURED
+    expected_report: .tsc/cells/issue-1/report.json
+    reason:
+      - TSC coherence measurement was not run in this illustrative trace
   validator:
     name: cdd.v.basic-release
     verdict: FAIL
+    witnesses:
+      - validation_command_recorded
+      - release_notes_present
+      - target_commit_present
     reason:
       - validation command recorded but not executed in clean CI
+      - coherence report missing
   delta:
     authority:
       subject: peter@operator
-      trust_level: L1_named_within_repo
+      trust_claim:
+        governance_scope: G1_repo_commons
+        evidence_strength: E0_unsigned
+        process_integrity: P1_committed_history
+        admissibility: A0_none
       signature: null
       attestation: none
     decision: override
     reason:
       - demo repo
       - no production users
-      - degradation recorded
+      - validation weakness recorded
+      - coherence measurement missing and recorded
   outcome: degraded
   output:
     branch: deploy
@@ -343,32 +387,113 @@ cell_receipt:
     tag_signature: null
 ```
 
-This example is intentionally `L1_named_within_repo`.
-
-That means the decision is attributable inside the repo's trust commons. It does not claim cryptographic non-repudiation, third-party timestamping, or legal admissibility.
-
-A stronger receipt can add a cryptographic signature over the receipt object, commit, tag, or release artifact. A stronger still receipt can add third-party attestation. Those are higher trust levels.
-
-The base claim here is narrower: the decision is no longer ambient chat. It lands at a named seam with evidence attached.
-
 The point is not that this receipt proves the app is correct.
 
 It does not.
 
 The point is that the decision has a body.
 
-A later agent can see what ran, which model ran, what evidence was bound, which validator was weak, who accepted the degradation, and what tag crossed the boundary.
+A later agent can see what ran, which model ran, what evidence was bound, what trust claim was carried, what validation failed, what coherence measurement was missing, who accepted the degradation, and what tag crossed the boundary.
 
 That is the difference between "the model said it was done" and "the system can inspect what done meant."
 
+In the live Hello World demo, this block should stop being illustrative. The receipt should be captured from the cell run. The coherence report should be real.
+
 ---
 
-## 8. Receipts do not validate themselves
+## 8. Trust is not coherence
+
+A receipt can be named, signed, attested, retained, and still be incoherent.
+
+A signature can prove that a key signed bytes.
+
+It does not prove that the contract, matter, evidence, receipt, validator verdict, delta decision, release boundary, and handoff still describe one work unit.
+
+That is the TSC question.
+
+TSC asks whether independent descriptions of the same system still describe one system. For a cnos cell, the three descriptions are practical:
+
+- pattern: do the artifacts share one stable structure and vocabulary?
+- relation: do the parts refer to each other consistently?
+- process: can the work continue without losing identity?
+
+Applied to a cell:
+
+- pattern checks whether contract, matter, receipt, and release notes use one shape of the work.
+- relation checks whether evidence, validator verdict, delta decision, commit, and tag point to the same work.
+- process checks whether status transitions, handoff, degradation, and downstream propagation preserve the cell over time.
+
+Trust says how strongly the decision is attributable.
+Coherence says whether the artifacts still describe one unit of work.
+
+Those are different claims.
+
+A signed incoherent receipt is still incoherent.
+An unsigned coherent receipt may still be useful inside a local commons.
+
+The receipt should say both.
+
+And coherence is not correctness. TSC measures whether the descriptions fit, not whether the work is right. A coherent cell can still be wrong; an incoherent one cannot be trusted to know whether it is right.
+
+---
+
+## 9. What a coherence block should look like
+
+A cnos receipt should not hide coherence inside prose.
+It should carry a machine-readable block.
+
+If the cell has not been measured, the receipt should say that.
+
+```yaml
+coherence:
+  required: true
+  measured: false
+  status: NOT_MEASURED
+  expected_report: .tsc/cells/issue-1/report.json
+```
+
+If the cell has been measured, the receipt should point at the report and quote what the report actually carries. A TSC report keeps its aggregate under `provenance`, not as a flat score; the receipt quotes it, it does not invent it.
+
+```yaml
+coherence:
+  required: true
+  measured: true
+  target: cell:issue-1
+  mode: mechanical                 # report mode: mechanical | llm | hybrid
+  report: .tsc/cells/issue-1/report.json
+  # quoted verbatim from the TSC report (canonical v3.2 shape):
+  alpha: "<0.0..1.0>"
+  beta: "<0.0..1.0>"
+  gamma: "<0.0..1.0>"
+  bottleneck_axis: "<alpha|beta|gamma>"
+  c_sigma_num: "<0.0..1.0>"        # report.provenance.aggregate_numeric.C_sigma_num
+  # cnos gate applying TSC's verdict layer — policy, not a TSC report field:
+  gate:
+    threshold: 0.75                # TSC normative default Theta; 0.90 for self-application
+    verdict: "<PASS|FAIL|FAIL_DEGENERATE>"
+```
+
+Those numbers should not be hand-written.
+They should come from the TSC report.
+
+A TSC report has no flat top-level `c_sigma`; the aggregate lives under `provenance.aggregate_numeric.C_sigma_num`, and the per-axis values carry the bottleneck. The receipt should reflect that shape, not flatten it.
+
+For CI, mechanical mode is enough to start. It gives a deterministic structural witness without credentials. For stronger semantic review, hybrid mode preserves both mechanical and LLM-backed measurements.
+
+The validator can then treat the TSC report as one witness among others.
+
+Not the only witness.
+Not a cheap oracle for truth.
+A coherence witness.
+
+---
+
+## 10. Receipts do not validate themselves
 
 A receipt is not proof.
 A receipt is a body the system can inspect.
 
-For some work, validation is cheap. The validator can check that files exist, schemas parse, tests pass, commands ran, tags point to the expected commit, release notes exist, signatures verify, and policy transitions happened in the right order.
+For some work, validation is cheap. The validator can check that files exist, schemas parse, tests pass, commands ran, tags point to the expected commit, release notes exist, signatures verify, coherence reports exist, and policy transitions happened in the right order.
 
 For other work, validation is hard. A large refactor may compile and still be wrong. A plan may sound good and still miss the real constraint. A research claim may cite evidence and still overstate it.
 
@@ -386,50 +511,112 @@ The goal is to stop hiding the oracle inside chat.
 
 ---
 
-## 9. Named is not signed
+## 11. Trust has axes, not one ladder
 
 A name is not a signature.
 A signature is not an attestation.
 An attestation is not automatically admissible evidence.
 
 Those are different claims.
-cnos should not blur them.
 
-A useful receipt needs to say what trust level it carries. One possible ladder:
+A flat L0-to-L4 ladder is tempting, but it hides too much.
+
+The first step from a bare label to a named repo authority is social. The bytes may not change. What changes is the commons that agrees to treat the name as binding.
+
+The first cryptographic step is different. The artifact changes. A signature appears. The receipt, commit, tag, or release object now carries tamper-evident material.
+
+Those should not sit on one undifferentiated line.
+
+A useful receipt should state trust as axes.
 
 ```yaml
-trust_levels:
-  L0_label:
-    claim: a string names an actor
-    strength: useful for local logs
-    limitation: anyone with write access can forge the label
-  L1_named_within_repo:
-    claim: the repo's trust commons attributes the decision to a subject
-    strength: useful for team accountability
-    limitation: not cryptographic non-repudiation
-  L2_signed_artifact:
-    claim: a key signed the receipt, commit, tag, or release artifact
-    strength: tamper-evident within the key infrastructure
-    limitation: proves key control, not necessarily human intent
-  L3_external_attestation:
-    claim: an external witness, timestamping service, CI authority, or identity provider attested to the event
-    strength: stronger chain of evidence
-    limitation: depends on the attester and retention model
-  L4_compliance_record:
-    claim: the record satisfies a specific compliance or legal evidentiary regime
-    strength: jurisdiction-specific admissibility target
-    limitation: requires policy, retention, chain of custody, and legal review
+trust_axes:
+  governance_scope:
+    G0_local_label:
+      claim: a string names an actor
+      strength: useful for local logs
+      limitation: anyone with write access can forge the label
+    G1_repo_commons:
+      claim: the repo's trust commons attributes the decision to a subject
+      strength: useful for team accountability
+      limitation: social attribution, not cryptographic proof
+    G2_org_identity:
+      claim: an organization identity system vouches for the subject
+      strength: useful for enterprise accountability
+      limitation: depends on identity-provider controls
+    G3_external_authority:
+      claim: an external witness or authority vouches for the subject or event
+      strength: stronger evidence outside the repo
+      limitation: depends on the attester and retention model
+  evidence_strength:
+    E0_unsigned:
+      claim: no cryptographic proof is attached
+      strength: visible record inside the repo
+      limitation: tamper evidence depends on repo controls
+    E1_signed_artifact:
+      claim: a key signed the receipt, commit, tag, or release artifact
+      strength: tamper-evident within the key infrastructure
+      limitation: proves key control, not necessarily human intent
+    E2_hash_chained_log:
+      claim: records are linked by hashes
+      strength: later tampering becomes detectable
+      limitation: anchoring and retention still matter
+    E3_external_attestation:
+      claim: a timestamping service, CI authority, identity provider, or witness attested to the event
+      strength: stronger chain of evidence
+      limitation: depends on external witness quality
+  process_integrity:
+    P0_unordered_log:
+      claim: events are recorded but ordering is weak
+      strength: useful for rough audit
+      limitation: races and reconstruction errors are possible
+    P1_committed_history:
+      claim: events are recorded in repository history
+      strength: useful for repo-local reconstruction
+      limitation: branch policy and write access matter
+    P2_signed_chain:
+      claim: event sequence is signed or hash chained
+      strength: stronger tamper evidence
+      limitation: key custody and chain anchoring matter
+    P3_retained_chain:
+      claim: records are retained under explicit policy
+      strength: stronger audit readiness
+      limitation: depends on retention and access controls
+  admissibility:
+    A0_none:
+      claim: no legal or compliance claim is made
+      strength: honest default
+      limitation: not an admissibility target
+    A1_policy_record:
+      claim: the record satisfies an internal policy
+      strength: useful for organizational governance
+      limitation: not necessarily legal evidence
+    A2_compliance_record:
+      claim: the record targets a specific compliance regime
+      strength: useful for regulated workflows
+      limitation: requires policy, retention, chain of custody, and review
+    A3_legal_evidence:
+      claim: the record targets legal admissibility
+      strength: jurisdiction-specific evidence goal
+      limitation: requires lawyers, not slogans
 ```
 
-The example trace in this paper is L1.
-It is named inside the repo.
+The example trace in this paper is:
+
+```yaml
+trust_claim:
+  governance_scope: G1_repo_commons
+  evidence_strength: E0_unsigned
+  process_integrity: P1_committed_history
+  admissibility: A0_none
+```
+
+That means the decision is named inside the repo.
 It is not signed.
-It is not third-party attested.
+It is not externally attested.
 It is not a compliance record.
 
 That is fine, as long as the paper says so.
-
-Git signatures, signed tags, signed receipts, W3C-style verifiable credentials, third-party timestamping, and agent audit-trail formats can all strengthen the claim. But the receipt must show that strength. Prose should not imply it.
 
 The rule is simple:
 
@@ -437,12 +624,13 @@ The rule is simple:
 
 ---
 
-## 10. The floor is named authority
+## 12. The floor is named authority
 
 Push the question down far enough and it bottoms out.
 
 Is the model trustworthy? Wrong question — bound it.
 Is `V` strong? Sometimes. The receipt should say when it is not.
+Is the coherence report strong? Sometimes. The report should say when it is not.
 Does `delta` act well on the verdict? That is the floor.
 
 cnos does not remove this floor. No architecture can.
@@ -460,6 +648,7 @@ In chat, authority diffuses. The model suggested something. The human nodded. Th
 In cnos, the override is attributable. A degraded release is not a mood. It is a recorded decision.
 If the receipt carries a cryptographic signature, it is also a signed decision.
 If it carries third-party attestation, it may be stronger evidence outside the commons.
+If it carries a TSC report, it has a coherence witness.
 Those are different claims.
 
 A degraded cell also propagates. It becomes degraded matter for the next cell. A later boundary can refuse to build on it, ask for repair, or accept the risk again under another name.
@@ -471,13 +660,13 @@ A negligent community can rubber-stamp degraded work forever. cnos will record t
 
 The guarantee is not moral. It is structural: not-caring leaves a trail.
 
-The rest is culture. A commons has to agree that receipts and overrides are binding enough to answer.
+The rest is culture. A commons has to agree that receipts, trust claims, coherence reports, and overrides are binding enough to answer.
 
 Fail-closed versus degrade-and-record follows the same rule. It is not a fact about the model. It is a policy decision made at a named seam, by an authority responsible for the cost of stopping and the risk of shipping.
 
 ---
 
-## 11. The neighbors are real
+## 13. The neighbors are real
 
 The choice is not only cnos versus vendor runtime.
 That would be too easy.
@@ -500,20 +689,65 @@ An agent protocol can move messages between agents.
 
 cnos is after a different unit: releaseable work.
 
-A cnos cell does not only remember context or call tools. It binds a contract, produced matter, evidence, validator verdict, boundary decision, trust level, and receipt into one body the next human or agent can inspect.
+A cnos cell does not only remember context or call tools. It binds a contract, produced matter, evidence, validator verdict, coherence report, boundary decision, trust claim, and receipt into one body the next human or agent can inspect.
 
 That is the gap.
 
 Memory says what the agent may know.
 Tools say what the agent may touch.
 Agent protocols say who the agent may talk to.
-Receipts say what happened, what evidence was bound, what failed validation, who accepted the risk, what trust level the decision carries, and what crossed the boundary.
+Receipts say what happened, what evidence was bound, what failed validation, what coherence was measured, who accepted the risk, what trust claim the decision carries, and what crossed the boundary.
 
 cnos belongs at that boundary.
 
 ---
 
-## 12. The Rails echo
+## 14. Governance gateways are also real
+
+The closest neighbor to cnos receipts is not memory.
+It is the governance gateway.
+
+A governance gateway can sit between agents and tools. It can intercept calls, enforce policy, permit or deny actions, log inputs and outputs, and create a tamper-evident trail of runtime events.
+
+That matters. For some systems, per-call governance is exactly what is needed.
+
+But a call log is not a work receipt.
+
+A gateway can tell you:
+
+- which agent called which tool,
+- what policy applied,
+- whether the call was permitted,
+- what input and output hashes were recorded,
+- what timestamp and identity were attached.
+
+That is useful.
+It is not the same as saying the unit of work cohered.
+
+A cnos receipt is per cell, not per call. It asks:
+
+- what was the contract?
+- what matter was produced?
+- what evidence was bound?
+- what review happened?
+- what did the validator decide?
+- what did the coherence report say?
+- who accepted the risk?
+- what crossed the release boundary?
+- what should the next cell inherit?
+
+A governance gateway records runtime events.
+A cnos cell closes releaseable work.
+
+Those should compose. Gateway logs can become evidence inside a cnos receipt. They should not be mistaken for the receipt itself.
+
+"Every tool call was logged" is not the same claim as "this unit of work passed, or failed and was overridden by a named authority, with coherence measured and degradation recorded."
+
+cnos belongs above the call log. Not because call logs are unimportant. Because releaseable work is larger than a call.
+
+---
+
+## 15. The Rails echo
 
 Rails is not proof that LLMs are database engines.
 They are not.
@@ -541,7 +775,7 @@ The convention is what the developer keeps.
 
 ---
 
-## 13. Why this is an open-source shape
+## 16. Why this is an open-source shape
 
 Open source cannot win by copying every vendor feature one at a time.
 
@@ -556,6 +790,7 @@ For agent systems, that means:
 > the protocol owns handoff,
 > the cell owns workflow,
 > the receipt owns evidence,
+> the coherence report owns measurement,
 > the package owns local cognition,
 > the model owns only the bounded move it was asked to make.
 
@@ -565,22 +800,27 @@ A community can add a package.
 A team can swap a model.
 A domain can define its own evidence.
 A validator can check a receipt.
+A TSC report can measure coherence.
+A gateway log can become evidence.
 A future agent can continue from repo state instead of guessing from chat history.
 
 The model is replaceable at the workflow boundary because the work has a body outside the model.
 
 ---
 
-## 14. What the boundary buys
+## 17. What the boundary buys
 
 It buys substitution, not fungibility.
 A team can add a new provider without moving workflow into that provider. The new provider may be better or worse. The receipt records which one ran, why it was chosen, and what validation followed.
 
 It buys audit, not certainty.
-A receipt does not prove the work was correct. It records what the system believed, what evidence was bound, what validator ran, and what decision crossed the boundary.
+A receipt does not prove the work was correct. It records what the system believed, what evidence was bound, what validator ran, what coherence was measured, and what decision crossed the boundary.
 
-It buys explicit trust level.
+It buys explicit trust.
 A named decision, a signed decision, an externally attested decision, and a compliance record are not the same thing. The receipt can say which one it is. That prevents the system from smuggling weak evidence under strong words.
+
+It buys coherence visibility.
+A signed release can still be incoherent. A TSC report gives the validator another witness: whether the artifacts still describe one unit of work.
 
 It buys durability.
 The work survives a model call, a vendor outage, a price change, a lost chat, or a new runner. The repo keeps the body.
@@ -596,7 +836,7 @@ Keep durable concerns where the system can reach them.
 
 ---
 
-## 15. Relationship to the CN whitepaper and THESIS
+## 18. Relationship to CN, THESIS, CDD, and TSC
 
 The CN whitepaper answers a substrate question:
 
@@ -610,21 +850,35 @@ Answer: Git, with a thin CN convention layer.
 
 Answer: a recurrent coherence system whose articulations include doctrine, documents, packages, runtime modules, repos, traces, releases, and agents.
 
+CDD answers the cell question:
+
+> How does bounded work close?
+
+Answer: contract, matter, review, receipt, verdict, decision.
+
+TSC answers the measurement question:
+
+> Do independent descriptions of the same system still describe one system?
+
+Answer: measure pattern, relation, and process coherence.
+
 This paper answers a placement question:
 
 > Which parts of agent work must not live inside the vendor model?
 
-Answer: workflow, memory, identity, evidence, permissions, receipts, trust level, and release authority.
+Answer: workflow, memory, identity, evidence, permissions, trust, coherence measurement, receipts, and release authority.
 
-The three papers draw the same boundary at different layers.
+The papers draw the same boundary at different layers.
 
 CN draws it under transport: forges are projections; the repo is the substrate.
 `THESIS.md` draws it under the whole system: Git is the lowest durable articulation, not the source of coherence.
+CDD draws it around work: a cell closes only through receipt, verdict, and decision.
+TSC draws it around measurement: coherence must be observed, not assumed.
 This paper draws it under the model: the LLM is a provider the kernel governs, not an authority the system obeys.
 
 ---
 
-## 16. Conclusion
+## 19. Conclusion
 
 The strongest case for vendor runtimes is capability.
 They are good because they keep context close to the model. They can plan, act, remember, and hide friction.
@@ -633,13 +887,18 @@ The strongest case for cnos is not that this capability is fake.
 It is that capability should not silently become authority.
 
 Let the model be smart.
-Keep memory, workflow, identity, evidence, receipts, trust level, and release authority outside it — at a seam with a name.
+Keep memory, workflow, identity, evidence, trust, coherence measurement, receipts, and release authority outside it — at a seam with a name.
 
 The architecture does not make judgment correct.
 It makes judgment land somewhere you can see, under a name that can be asked.
 If the receipt is signed, the signature should be visible.
 If the receipt is attested, the attestation should be visible.
+If coherence was measured, the report should be visible.
+If coherence was not measured, that absence should be visible too.
+
 The system should not claim more trust than the artifact carries.
+It should not claim more coherence than it measured.
+
 The rest is a commons that agrees to look.
 
 Dumb models.
@@ -667,6 +926,7 @@ It should be bounded enough that it never owns the work.
 - IETF Internet-Draft, "Agent Audit Trail: A Standard Logging Format for Autonomous AI Systems." https://datatracker.ietf.org/doc/draft-sharif-agent-audit-trail/
 - W3C, "Verifiable Credential Data Integrity 1.0." https://www.w3.org/TR/vc-data-integrity/
 - Rails Guides, "Active Record Basics." https://guides.rubyonrails.org/active_record_basics.html
+- TSC (Triadic Self-Coherence), repository and docs. https://github.com/usurobor/tsc — `docs/THESIS.md`, `README.md`, `ARCHITECTURE.md`, `engine/ocaml/test/fixtures/report.schema.json` (canonical v3.2 report schema)
 - [`docs/alpha/protocol/WHITEPAPER.md`](../protocol/WHITEPAPER.md)
 - [`docs/THESIS.md`](../../THESIS.md)
 - [`docs/alpha/agent-runtime/PROVIDER-CONTRACT-v1.md`](../agent-runtime/PROVIDER-CONTRACT-v1.md)
