@@ -19,6 +19,7 @@ on:
       - 'src/packages/cnos.core/orchestrators/**'
       - 'src/packages/cnos.cds/orchestrators/**'
       - '.github/workflows/install-wake-golden.yml'
+      - '.github/workflows/cnos-cds-dispatch.yml'
   pull_request:
     branches: [main]
     paths:
@@ -26,6 +27,7 @@ on:
       - 'src/packages/cnos.core/orchestrators/**'
       - 'src/packages/cnos.cds/orchestrators/**'
       - '.github/workflows/install-wake-golden.yml'
+      - '.github/workflows/cnos-cds-dispatch.yml'
 
 jobs:
   golden-diff:
@@ -44,15 +46,15 @@ jobs:
         run: |
           ./src/packages/cnos.core/commands/install-wake/cn-install-wake agent-admin
 
-      - name: Re-render cds-dispatch wake (cnos.cds, --activation-state-override live)
-        # cnos.cds/orchestrators/cds-dispatch is declaration-only per
-        # wake-provider/SKILL.md §3.10 (cnos#483); the golden fixture
-        # exercises the dispatch-shape render path via the test-only
-        # --activation-state-override flag. Production install (no
-        # flag) must refuse with exit 3 — see the AC5 negative-case
-        # smoke step below.
+      - name: Re-render cds-dispatch wake (cnos.cds)
+        # cnos.cds/orchestrators/cds-dispatch is LIVE post cnos#487
+        # (Sub 5C of cnos#467; activation_state flipped from
+        # declaration-only to live). The renderer no longer refuses
+        # and no override flag is required. The synthetic
+        # declaration-only refusal smoke moved to a dedicated fixture
+        # (see AC5 step below + src/packages/cnos.core/commands/install-wake/test-fixtures/declaration-only/).
         run: |
-          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch --activation-state-override live
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch
 
       - name: Verify goldens unchanged
         # `git diff --exit-code` returns non-zero if any tracked file
@@ -67,6 +69,27 @@ jobs:
             exit 1
           fi
           echo "Goldens match re-render: clean."
+
+      - name: Verify live cds-dispatch workflow matches golden (sha256)
+        # Post cnos#487 (Sub 5C), the live substrate workflow at
+        # .github/workflows/cnos-cds-dispatch.yml is the rendered
+        # output of `cn install-wake cds-dispatch --out
+        # .github/workflows/cnos-cds-dispatch.yml`. Its sha256 MUST
+        # equal the per-package golden's sha256 (byte-identical),
+        # otherwise the live wake has drifted from the manifest-
+        # owned contract surface.
+        run: |
+          set -eu
+          live_sha=$(sha256sum .github/workflows/cnos-cds-dispatch.yml | cut -d' ' -f1)
+          golden_sha=$(sha256sum src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml | cut -d' ' -f1)
+          if [ "$live_sha" != "$golden_sha" ]; then
+            echo "::error::Live cds-dispatch workflow drift from golden."
+            echo "live:   $live_sha (.github/workflows/cnos-cds-dispatch.yml)"
+            echo "golden: $golden_sha (src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml)"
+            echo "Re-run \`cn install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml\` and commit."
+            exit 1
+          fi
+          echo "Live cds-dispatch workflow matches golden: $live_sha"
 
       - name: Verify idempotence (second render is a no-op) — agent-admin
         # AC6's idempotence invariant: two consecutive renders produce
@@ -85,11 +108,11 @@ jobs:
 
       - name: Verify idempotence (second render is a no-op) — cds-dispatch
         # AC6 idempotence for the dispatch-shape golden. Mirrors the
-        # agent-admin step above; uses --activation-state-override
-        # because the manifest is declaration-only.
+        # agent-admin step above; no --activation-state-override
+        # needed post cnos#487 (manifest is live).
         run: |
           sha_before=$(sha256sum src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml | cut -d' ' -f1)
-          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch --activation-state-override live
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch
           sha_after=$(sha256sum src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml | cut -d' ' -f1)
           if [ "$sha_before" != "$sha_after" ]; then
             echo "::error::Renderer is non-deterministic (cds-dispatch). Two consecutive renders produced different output."
@@ -153,15 +176,25 @@ jobs:
           fi
           echo "Substrate shape OK (cds-dispatch); OG-2 schedule gate present."
 
-      - name: AC5 — declaration-only refusal (cds-dispatch without override)
-        # AC5: `cn install-wake cds-dispatch` (no override) on the
-        # cnos#483 manifest (activation_state: declaration-only) MUST
-        # exit 3 and stderr MUST name the activation_state value and
-        # snippets of activation_state_notes.
+      - name: AC5 — declaration-only refusal (synthetic fixture)
+        # AC5: the renderer's activation_state refusal gate (exit 3 +
+        # precise stderr per wake-provider/SKILL.md §3.10).
+        #
+        # Pre-cycle/487 this step ran `cn install-wake cds-dispatch`
+        # (no override) against the cnos#483 manifest (which was
+        # activation_state: declaration-only). cycle/487 (Sub 5C)
+        # flipped that manifest to `live` (cds-dispatch is now in
+        # production substrate), so the AC5 assertion was re-pointed
+        # at a synthetic declaration-only fixture under
+        # src/packages/cnos.core/commands/install-wake/test-fixtures/
+        # to preserve the refusal-gate smoke. Per the cycle/487 γ
+        # scaffold's design fork D2 (Option B: synthetic fixture).
         run: |
           set -u
           rc=0
-          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch 2>/tmp/ac5.err >/dev/null || rc=$?
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake test-declaration-only \
+            --manifest src/packages/cnos.core/commands/install-wake/test-fixtures/declaration-only/wake-provider.json \
+            2>/tmp/ac5.err >/dev/null || rc=$?
           if [ "$rc" != "3" ]; then
             echo "::error::AC5: expected exit 3 on declaration-only refusal; got $rc"
             cat /tmp/ac5.err
@@ -177,7 +210,7 @@ jobs:
             cat /tmp/ac5.err
             exit 1
           fi
-          echo "AC5 refusal verified: exit 3 + precise error."
+          echo "AC5 refusal verified (synthetic fixture): exit 3 + precise error."
 
       - name: AC2 negative-case smoke (malformed manifest is rejected)
         run: |
