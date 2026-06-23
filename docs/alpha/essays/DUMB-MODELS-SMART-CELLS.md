@@ -1,20 +1,20 @@
 ---
 title: "Dumb Models, Smart Cells"
-subtitle: "Receipts and Named Authority for Agent Systems"
-version: v0.6.0
+subtitle: "Receipts, Trust Levels, and Named Authority for Agent Systems"
+version: v0.7.0
 status: DRAFT
 author: usurobor (aka Axiom) (human & AI)
-date: 2026-06-22
+date: 2026-06-23
 ---
 
 # Dumb Models, Smart Cells
-## Receipts and Named Authority for Agent Systems
+## Receipts, Trust Levels, and Named Authority for Agent Systems
 
-**Status:** v0.6.0 (DRAFT — position paper)
+**Status:** v0.7.0 (DRAFT — position paper)
 **Author(s):** usurobor (aka Axiom) (human & AI)
-**Date:** 2026-06-22
+**Date:** 2026-06-23
 
-> **Scope:** This paper explains why cnos treats language models as bounded executors, not as the home of workflow, memory, identity, evidence, or release authority. It complements the CN protocol whitepaper, which explains Git as the communication substrate, and `THESIS.md`, which explains cnos as a recurrent coherence system.
+> **Scope:** This paper explains why cnos treats language models as bounded executors, not as the home of workflow, memory, identity, evidence, trust, or release authority. It complements the CN protocol whitepaper, which explains Git as the communication substrate, and `THESIS.md`, which explains cnos as a recurrent coherence system.
 
 ---
 
@@ -31,9 +31,12 @@ It refuses to confuse capability with authority.
 
 Capability is rented.
 Authority is owned.
-And authority has to have a name.
+Authority has to have a name.
+And the receipt has to say what kind of name it is.
 
-That is the paper's claim: agent systems should rent model capability while keeping workflow, memory, evidence, validation, permissions, receipts, and release authority in a durable system the operator controls.
+A plain label, a cryptographic signature, and a third-party attestation are not the same thing. A serious agent system should not smuggle one under the language of another.
+
+That is the paper's claim: agent systems should rent model capability while keeping workflow, memory, evidence, validation, permissions, receipts, trust level, and release authority in a durable system the operator controls.
 
 The model may move the work forward.
 It should not own the work.
@@ -50,10 +53,17 @@ A hosted model runtime can hold context, remember files, call tools, run workflo
 That is not fake value.
 It is capability.
 
-The product gravity is still real. A prompt becomes a thread. A thread gets memory. Memory gets files. Files get tools. Tools get workflows. Workflows get hosted agents. Hosted agents get logs, permissions, background tasks, connectors, deployment surfaces, and team features.
+The product gravity is still real. A prompt becomes a thread. A thread gets memory. Memory gets files. Files get tools. Tools get workflows. Workflows get hosted agents. Hosted agents get logs, permissions, background tasks, connectors, deployment surfaces, registries, identities, gateways, observability, and governance surfaces.
 
 Each feature is useful by itself.
 Together they turn the vendor runtime into the place where work lives.
+
+This is no longer a prediction. It is the roadmap.
+
+Google's Gemini Enterprise Agent Platform brings agent development, runtime, registry, identity, gateway, observability, and governance into one platform. Google Memory Bank gives agents long-term memories across sessions. OpenAI exposes file search over vector stores. Anthropic is building managed agent infrastructure around Claude. The shape is clear: model capability is becoming a full work environment.
+
+That is not a conspiracy.
+It is what a capable product wants to become.
 
 The risk is not that vendors are evil. The risk is that the easiest place to put the next feature is also the easiest place to lose authority.
 
@@ -62,7 +72,7 @@ Then it remembers.
 Then it plans.
 Then it acts.
 Then it explains what it did.
-Then the explanation, the memory, the workflow, the logs, and the decision boundary all live inside someone else's product.
+Then the explanation, memory, workflow, logs, and decision boundary all live inside someone else's product.
 
 That may be fine for some work.
 It is not fine for all work.
@@ -79,7 +89,7 @@ You may lose long-session continuity.
 You may lose vendor-native planning features.
 You may lose hidden context the model product was quietly carrying.
 You may lose speed.
-You may add ceremony: cells, receipts, validators, routing policy, release gates, and package doctrine.
+You may add ceremony: cells, receipts, validators, routing policy, release gates, package doctrine, and trust-level bookkeeping.
 
 That cost is real.
 
@@ -200,7 +210,7 @@ In cnos, durable work lives in four places: cells, packages, receipts, and repo 
 
 A cell is a bounded unit of work. The CDD kernel names the generic loop:
 
-`contract → matter → review → receipt → verdict → decision`
+`contract -> matter -> review -> receipt -> verdict -> decision`
 
 The kernel is substrate-independent. It names roles, artifacts, validator `V`, evidence, verdicts, and decisions. It does not name GitHub, Claude, prompts, CI, branches, or any other invocation surface.
 
@@ -247,7 +257,6 @@ An operator asks Sigma to turn a new repo into a Hello World app.
 Sigma does not implement immediately. It creates an issue contract first.
 
 ```yaml
-# issue contract
 issue: 1
 title: Create minimal Hello World app
 contract:
@@ -267,19 +276,21 @@ status: ready
 The human reviews the issue and authorizes dispatch.
 
 ```yaml
-# human authorizes dispatch
 dispatch:
   issue: 1
   protocol: cdd
   status: todo
-  authority: peter@operator
+  authority:
+    subject: peter@operator
+    trust_level: L1_named_within_repo
+    signature: null
+    attestation: none
   authorized_at: 2026-06-22T14:31:00Z
 ```
 
-The wake claims the issue and routes the model call, recording why.
+The wake claims the issue and routes work.
 
 ```yaml
-# the runtime routes the model call and records why
 route_receipt:
   cell: issue-1
   provider: cnos.llm.anthropic
@@ -293,10 +304,9 @@ route_receipt:
   token_estimate: 18231
 ```
 
-The cell produces matter, binds evidence, and closes with a receipt. `V` emits a verdict; `delta` decides what crosses the boundary.
+The cell produces matter on dev, binds evidence, and closes with a receipt.
 
 ```yaml
-# the cell closes; V emits a verdict, delta decides
 cell_receipt:
   cell: issue-1
   contract: Create minimal Hello World app
@@ -316,17 +326,30 @@ cell_receipt:
     reason:
       - validation command recorded but not executed in clean CI
   delta:
-    authority: peter@operator
+    authority:
+      subject: peter@operator
+      trust_level: L1_named_within_repo
+      signature: null
+      attestation: none
     decision: override
-    outcome: degraded
     reason:
       - demo repo
       - no production users
       - degradation recorded
+  outcome: degraded
   output:
     branch: deploy
     tag: v0.1.0
+    tag_signature: null
 ```
+
+This example is intentionally `L1_named_within_repo`.
+
+That means the decision is attributable inside the repo's trust commons. It does not claim cryptographic non-repudiation, third-party timestamping, or legal admissibility.
+
+A stronger receipt can add a cryptographic signature over the receipt object, commit, tag, or release artifact. A stronger still receipt can add third-party attestation. Those are higher trust levels.
+
+The base claim here is narrower: the decision is no longer ambient chat. It lands at a named seam with evidence attached.
 
 The point is not that this receipt proves the app is correct.
 
@@ -363,7 +386,58 @@ The goal is to stop hiding the oracle inside chat.
 
 ---
 
-## 9. The floor is named authority
+## 9. Named is not signed
+
+A name is not a signature.
+A signature is not an attestation.
+An attestation is not automatically admissible evidence.
+
+Those are different claims.
+cnos should not blur them.
+
+A useful receipt needs to say what trust level it carries. One possible ladder:
+
+```yaml
+trust_levels:
+  L0_label:
+    claim: a string names an actor
+    strength: useful for local logs
+    limitation: anyone with write access can forge the label
+  L1_named_within_repo:
+    claim: the repo's trust commons attributes the decision to a subject
+    strength: useful for team accountability
+    limitation: not cryptographic non-repudiation
+  L2_signed_artifact:
+    claim: a key signed the receipt, commit, tag, or release artifact
+    strength: tamper-evident within the key infrastructure
+    limitation: proves key control, not necessarily human intent
+  L3_external_attestation:
+    claim: an external witness, timestamping service, CI authority, or identity provider attested to the event
+    strength: stronger chain of evidence
+    limitation: depends on the attester and retention model
+  L4_compliance_record:
+    claim: the record satisfies a specific compliance or legal evidentiary regime
+    strength: jurisdiction-specific admissibility target
+    limitation: requires policy, retention, chain of custody, and legal review
+```
+
+The example trace in this paper is L1.
+It is named inside the repo.
+It is not signed.
+It is not third-party attested.
+It is not a compliance record.
+
+That is fine, as long as the paper says so.
+
+Git signatures, signed tags, signed receipts, W3C-style verifiable credentials, third-party timestamping, and agent audit-trail formats can all strengthen the claim. But the receipt must show that strength. Prose should not imply it.
+
+The rule is simple:
+
+> Do not claim more trust than the artifact carries.
+
+---
+
+## 10. The floor is named authority
 
 Push the question down far enough and it bottoms out.
 
@@ -383,9 +457,12 @@ That is different from chat.
 
 In chat, authority diffuses. The model suggested something. The human nodded. The thread moved on. Later, nobody can say exactly where the decision lived.
 
-In cnos, the override is attributable. A degraded release is not a mood. It is a signed event.
+In cnos, the override is attributable. A degraded release is not a mood. It is a recorded decision.
+If the receipt carries a cryptographic signature, it is also a signed decision.
+If it carries third-party attestation, it may be stronger evidence outside the commons.
+Those are different claims.
 
-It also propagates. A degraded cell becomes degraded matter for the next cell. A later boundary can refuse to build on it, ask for repair, or accept the risk again under another name.
+A degraded cell also propagates. It becomes degraded matter for the next cell. A later boundary can refuse to build on it, ask for repair, or accept the risk again under another name.
 
 And it can become visible as a pattern. If overrides become routine, `epsilon` can read the receipt stream and surface that as system behavior, not one-off noise.
 
@@ -400,7 +477,43 @@ Fail-closed versus degrade-and-record follows the same rule. It is not a fact ab
 
 ---
 
-## 10. The Rails echo
+## 11. The neighbors are real
+
+The choice is not only cnos versus vendor runtime.
+That would be too easy.
+
+There is already a middle ecosystem trying to keep parts of agent systems outside any one model vendor.
+
+Stateful-agent systems keep memory and context across conversations. Dedicated memory layers make memory portable across orchestrators. Tool protocols standardize how models reach external systems. Agent-to-agent protocols standardize how agents discover each other and exchange work.
+
+Those are real seams.
+
+Letta is a stateful-agent system. Mem0 is a memory layer. MCP is a tool and context seam. A2A is an agent-to-agent communication seam.
+
+cnos should not pretend those neighbors do not exist.
+
+The distinction is where the boundary closes.
+
+A memory layer can preserve what an agent knows.
+A tool protocol can expose what an agent can call.
+An agent protocol can move messages between agents.
+
+cnos is after a different unit: releaseable work.
+
+A cnos cell does not only remember context or call tools. It binds a contract, produced matter, evidence, validator verdict, boundary decision, trust level, and receipt into one body the next human or agent can inspect.
+
+That is the gap.
+
+Memory says what the agent may know.
+Tools say what the agent may touch.
+Agent protocols say who the agent may talk to.
+Receipts say what happened, what evidence was bound, what failed validation, who accepted the risk, what trust level the decision carries, and what crossed the boundary.
+
+cnos belongs at that boundary.
+
+---
+
+## 12. The Rails echo
 
 Rails is not proof that LLMs are database engines.
 They are not.
@@ -428,7 +541,7 @@ The convention is what the developer keeps.
 
 ---
 
-## 11. Why this is an open-source shape
+## 13. Why this is an open-source shape
 
 Open source cannot win by copying every vendor feature one at a time.
 
@@ -458,9 +571,7 @@ The model is replaceable at the workflow boundary because the work has a body ou
 
 ---
 
-## 12. What the boundary buys
-
-When the ceremony earns its keep, here is the return.
+## 14. What the boundary buys
 
 It buys substitution, not fungibility.
 A team can add a new provider without moving workflow into that provider. The new provider may be better or worse. The receipt records which one ran, why it was chosen, and what validation followed.
@@ -468,18 +579,24 @@ A team can add a new provider without moving workflow into that provider. The ne
 It buys audit, not certainty.
 A receipt does not prove the work was correct. It records what the system believed, what evidence was bound, what validator ran, and what decision crossed the boundary.
 
+It buys explicit trust level.
+A named decision, a signed decision, an externally attested decision, and a compliance record are not the same thing. The receipt can say which one it is. That prevents the system from smuggling weak evidence under strong words.
+
 It buys durability.
 The work survives a model call, a vendor outage, a price change, a lost chat, or a new runner. The repo keeps the body.
 
 It buys cost control.
 Simple work can stay local. High-context work can escalate. Failed local work can repair-dispatch or route up. The decision is policy, not vibes.
 
+It buys audit readiness, not automatic compliance.
+The EU AI Act's Article 12 requires high-risk AI systems to technically allow automatic event logging over the lifetime of the system. NIST and OWASP governance work point in the same direction: systems need records, monitoring, risk management, and evidence. A cnos receipt is not a legal compliance program. It is the kind of body a compliance program can inspect.
+
 The common pattern is simple.
 Keep durable concerns where the system can reach them.
 
 ---
 
-## 13. Relationship to the CN whitepaper and THESIS
+## 15. Relationship to the CN whitepaper and THESIS
 
 The CN whitepaper answers a substrate question:
 
@@ -497,7 +614,7 @@ This paper answers a placement question:
 
 > Which parts of agent work must not live inside the vendor model?
 
-Answer: workflow, memory, identity, evidence, permissions, receipts, and release authority.
+Answer: workflow, memory, identity, evidence, permissions, receipts, trust level, and release authority.
 
 The three papers draw the same boundary at different layers.
 
@@ -507,7 +624,7 @@ This paper draws it under the model: the LLM is a provider the kernel governs, n
 
 ---
 
-## 14. Conclusion
+## 16. Conclusion
 
 The strongest case for vendor runtimes is capability.
 They are good because they keep context close to the model. They can plan, act, remember, and hide friction.
@@ -516,10 +633,13 @@ The strongest case for cnos is not that this capability is fake.
 It is that capability should not silently become authority.
 
 Let the model be smart.
-Keep memory, workflow, identity, evidence, receipts, and release authority outside it — at a seam with a name.
+Keep memory, workflow, identity, evidence, receipts, trust level, and release authority outside it — at a seam with a name.
 
 The architecture does not make judgment correct.
-It makes judgment land somewhere you can see, signed by someone who can be asked.
+It makes judgment land somewhere you can see, under a name that can be asked.
+If the receipt is signed, the signature should be visible.
+If the receipt is attested, the attestation should be visible.
+The system should not claim more trust than the artifact carries.
 The rest is a commons that agrees to look.
 
 Dumb models.
@@ -533,7 +653,20 @@ It should be bounded enough that it never owns the work.
 
 ## References
 
-- [Rails Guides: Active Record Basics](https://guides.rubyonrails.org/active_record_basics.html)
+- Google Cloud Blog, "Introducing Gemini Enterprise Agent Platform." https://cloud.google.com/blog/products/ai-machine-learning/introducing-gemini-enterprise-agent-platform
+- Google Cloud Docs, "Agent Platform Memory Bank." https://docs.cloud.google.com/gemini-enterprise-agent-platform/scale/memory-bank
+- OpenAI API Docs, "File search." https://developers.openai.com/api/docs/guides/tools-file-search
+- Anthropic Engineering, "Scaling Managed Agents: Decoupling the brain from the hands." https://www.anthropic.com/engineering/managed-agents
+- Letta Docs, "Letta Code." https://docs.letta.com/letta-code/
+- Mem0 Docs, "Build with Mem0." https://docs.mem0.ai/introduction
+- Model Context Protocol Docs, "Introduction." https://modelcontextprotocol.io/docs/getting-started/intro
+- Agent2Agent Protocol, GitHub repository. https://github.com/a2aproject/A2A
+- EU AI Act Service Desk, "Article 12: Record-keeping." https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-12
+- NIST, "AI Risk Management Framework." https://www.nist.gov/itl/ai-risk-management-framework
+- OWASP GenAI Security Project, "State of Agentic AI Security and Governance." https://genai.owasp.org/resource/state-of-agentic-ai-security-and-governance/
+- IETF Internet-Draft, "Agent Audit Trail: A Standard Logging Format for Autonomous AI Systems." https://datatracker.ietf.org/doc/draft-sharif-agent-audit-trail/
+- W3C, "Verifiable Credential Data Integrity 1.0." https://www.w3.org/TR/vc-data-integrity/
+- Rails Guides, "Active Record Basics." https://guides.rubyonrails.org/active_record_basics.html
 - [`docs/alpha/protocol/WHITEPAPER.md`](../protocol/WHITEPAPER.md)
 - [`docs/THESIS.md`](../../THESIS.md)
 - [`docs/alpha/agent-runtime/PROVIDER-CONTRACT-v1.md`](../agent-runtime/PROVIDER-CONTRACT-v1.md)
