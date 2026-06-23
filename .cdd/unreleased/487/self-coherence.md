@@ -138,6 +138,6 @@ I extended the workflow's `paths:` to include `.github/workflows/cnos-cds-dispat
 
 ## §R0 review-ready signal
 
-**α R0 review-ready at commit `<TBD-after-commit>`.** β may engage. All Stage 1 ACs (AC1–AC3) verified locally; OG-2 audit clean; doctrine consistency clean; install-wake-golden CI steps re-verified locally (including pipefail behavior of AC2 negative step). Stage 2 ACs (AC4–AC9) deferred per scaffold §3.2.
+**α R0 review-ready at commit `a24bedaa` (this self-coherence file shipped in that commit; the review-ready signal lands as a discrete follow-up commit per cycle/485 + cycle/486 pattern so δ can detect it cleanly).** β may engage. All Stage 1 ACs (AC1–AC3) verified locally; OG-2 audit clean; doctrine consistency clean; install-wake-golden CI steps re-verified locally (including pipefail behavior of AC2 negative step). Stage 2 ACs (AC4–AC9) deferred per scaffold §3.2.
 
 α's Stage 2 procedure is described in the cycle PR body's "Stage 2 (post-merge)" section + γ scaffold §11. δ will re-dispatch α after operator merges this PR.
