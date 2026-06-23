@@ -401,43 +401,128 @@ In the live Hello World demo, this block should stop being illustrative. The rec
 
 ---
 
-## 8. Trust is not coherence
+## 8. The same-work problem
+
+TSC solves one problem in this paper.
+
+It is not the correctness problem.
+It is the same-work problem.
+
+After agent work has moved through an issue, a cell, a commit, a validator, a release note, and a handoff, the system has to ask:
+
+> Are these still descriptions of one unit of work?
+
+That is not a trivial question.
 
 A receipt can be named, signed, attested, retained, and still be incoherent.
+A test can pass while the release note describes the wrong change.
+A commit can be signed while the evidence points at the wrong commit.
+A validator can emit FAIL while the handoff says "ready for production."
+A delta override can record a demo exception while the next cell treats the output as clean.
 
-A signature can prove that a key signed bytes.
+Every artifact exists.
+The body does not cohere.
 
-It does not prove that the contract, matter, evidence, receipt, validator verdict, delta decision, release boundary, and handoff still describe one unit of work.
+That is the gap TSC fills.
 
-That is the TSC question.
-
-TSC asks whether independent descriptions of the same system still describe one system. For a cnos cell, the three descriptions are practical:
-
-- pattern: do the artifacts share one stable structure and vocabulary?
-- relation: do the parts refer to each other consistently?
-- process: can the work continue without losing identity?
-
-Applied to a cell:
-
-- pattern checks whether contract, matter, receipt, and release notes use one shape of the work.
-- relation checks whether evidence, validator verdict, delta decision, commit, and tag point to the same work.
-- process checks whether status transitions, handoff, degradation, and downstream propagation preserve the cell over time.
-
-Trust says how strongly the decision is attributable.
-Coherence says whether the artifacts still describe one unit of work.
-
-Those are different claims.
-
-A signed incoherent receipt is still incoherent.
-An unsigned coherent receipt may still be useful inside a local commons.
-
-The receipt should say both.
-
-And coherence is not correctness. TSC measures whether the descriptions fit, not whether the work is right. A coherent cell can still be wrong; an incoherent one cannot be trusted to know whether it is right.
+Trust says who stands behind a decision.
+Validation says what checks passed or failed.
+TSC asks whether the artifacts still describe the same work.
 
 ---
 
-## 9. What a coherence block should look like
+## 9. TSC is a coherence witness
+
+A TSC report should be treated as a witness.
+
+Not as the judge.
+Not as the release authority.
+Not as a cheap oracle for truth.
+
+The CDD loop already has the right places:
+
+`contract -> matter -> review -> receipt -> verdict -> decision`
+
+The receipt binds the evidence.
+`V` checks the receipt against the contract.
+`delta` decides what crosses the boundary.
+
+TSC adds a coherence witness to `V`.
+
+The witness asks whether the cell's descriptions still fit together:
+
+```text
+pattern:
+  Do contract, matter, receipt, and release notes use one stable structure and vocabulary?
+relation:
+  Do evidence, validator verdict, delta decision, commit, tag, and release note point to the same work?
+process:
+  Do status transitions, handoff, degradation, and downstream propagation preserve the cell over time?
+```
+
+If the bottleneck is pattern, repair the shape.
+If the bottleneck is relation, repair the references.
+If the bottleneck is process, repair the handoff, state transition, or boundary propagation.
+
+That is what TSC gains over eyeballing.
+
+It turns "this feels inconsistent" into a report the validator can cite and the next agent can use.
+
+---
+
+## 10. What TSC does not solve
+
+Coherence is not correctness.
+
+TSC does not tell you the app runs.
+It does not replace tests.
+It does not replace type checks.
+It does not replace security review.
+It does not replace product judgment.
+It does not replace legal review.
+It does not establish identity.
+It does not make a signature valid.
+It does not make a weak validator strong.
+It does not make bad judgment good.
+
+A coherent cell can still be wrong.
+An incoherent cell cannot be trusted to know whether it is right.
+
+That is the narrow claim.
+
+TSC tells you whether the work body is coherent enough to be judged.
+The judgment still belongs to `V`, `delta`, and the human or policy behind them.
+
+---
+
+## 11. What the human still owns
+
+TSC does not remove the operator.
+It gives the operator a better surface.
+
+A human, or a policy a human owns, still has to decide:
+
+- what files belong to the cell bundle,
+- which artifacts are canonical,
+- whether mechanical scoring is enough,
+- whether hybrid or LLM-backed scoring is required,
+- what threshold applies,
+- whether the threshold is a baseline or a stricter policy override,
+- whether a FAIL blocks release,
+- whether a FAIL_DEGENERATE blocks the measurement itself,
+- whether low pattern, relation, or process coherence requires repair,
+- whether an override is acceptable,
+- who holds delta,
+- who answers for the risk.
+
+Those decisions cannot be delegated to a score.
+
+The score is a witness.
+The human still owns the boundary.
+
+---
+
+## 12. What a coherence block should look like
 
 A cnos receipt should not hide coherence inside prose.
 It should carry a machine-readable block.
@@ -452,43 +537,54 @@ coherence:
   expected_report: .tsc/cells/issue-1/report.json
 ```
 
-If the cell has been measured, the receipt should point at the report and quote what the report actually carries. A TSC report keeps its aggregate under `provenance`, not as a flat score; the receipt quotes it, it does not invent it.
+If the cell has been measured, the receipt should point at the report and quote what the report actually carries.
+
+The receipt quotes the report.
+It does not invent it.
 
 ```yaml
 coherence:
   required: true
   measured: true
   target: cell:issue-1
-  mode: mechanical                 # report mode: mechanical | llm | hybrid
+  mode: mechanical
   report: .tsc/cells/issue-1/report.json
-  # quoted verbatim from the TSC report (canonical v3.2 shape):
+  # quoted from the TSC report
   alpha: "<0.0..1.0>"
   beta: "<0.0..1.0>"
   gamma: "<0.0..1.0>"
   bottleneck_axis: "<alpha|beta|gamma>"
-  c_sigma_num: "<0.0..1.0>"        # report.provenance.aggregate_numeric.C_sigma_num
-  # cnos gate applying TSC's verdict layer — policy, not a TSC report field:
+  provenance:
+    aggregate_numeric:
+      C_sigma_num: "<0.0..1.0>"
+    aggregate_math:
+      C_sigma_math: "<0.0..1.0>"
+      zero_component_present: "<true|false>"
+  # cnos gate applying the TSC verdict layer
   gate:
-    threshold: 0.75                # TSC normative default Theta; 0.90 for self-application
+    threshold: 0.75
+    threshold_source: TSC normative default Theta
+    policy_override: null
     verdict: "<PASS|FAIL|FAIL_DEGENERATE>"
 ```
 
 Those numbers should not be hand-written.
 They should come from the TSC report.
 
-A TSC report has no flat top-level `c_sigma`; the aggregate lives under `provenance.aggregate_numeric.C_sigma_num`, and the per-axis values carry the bottleneck. The receipt should reflect that shape, not flatten it.
+A TSC report has no flat top-level `c_sigma`; aggregate facts live under `provenance`.
 
-For CI, mechanical mode is enough to start. It gives a deterministic structural witness without credentials. For stronger semantic review, hybrid mode preserves both mechanical and LLM-backed measurements.
+For CI, mechanical mode is enough to start. It gives a deterministic structural witness without credentials.
+
+For stronger semantic review, hybrid mode can preserve both mechanical and LLM-backed measurements.
 
 The validator can then treat the TSC report as one witness among others.
 
 Not the only witness.
-Not a cheap oracle for truth.
 A coherence witness.
 
 ---
 
-## 10. Receipts do not validate themselves
+## 13. Receipts do not validate themselves
 
 A receipt is not proof.
 A receipt is a body the system can inspect.
@@ -511,7 +607,7 @@ The goal is to stop hiding the oracle inside chat.
 
 ---
 
-## 11. Trust has axes, not one ladder
+## 14. Trust has axes, not one ladder
 
 A name is not a signature.
 A signature is not an attestation.
@@ -624,7 +720,7 @@ The rule is simple:
 
 ---
 
-## 12. The floor is named authority
+## 15. The floor is named authority
 
 Push the question down far enough and it bottoms out.
 
@@ -666,7 +762,7 @@ Fail-closed versus degrade-and-record follows the same rule. It is not a fact ab
 
 ---
 
-## 13. The neighbors are real
+## 16. The neighbors are real
 
 The choice is not only cnos versus vendor runtime.
 That would be too easy.
@@ -702,7 +798,7 @@ cnos belongs at that boundary.
 
 ---
 
-## 14. Governance gateways are also real
+## 17. Governance gateways are also real
 
 The closest neighbor to cnos receipts is not memory.
 It is the governance gateway.
@@ -747,7 +843,7 @@ cnos belongs above the call log. Not because call logs are unimportant. Because 
 
 ---
 
-## 15. The Rails echo
+## 18. The Rails echo
 
 Rails is not proof that LLMs are database engines.
 They are not.
@@ -775,7 +871,7 @@ The convention is what the developer keeps.
 
 ---
 
-## 16. Why this is an open-source shape
+## 19. Why this is an open-source shape
 
 Open source cannot win by copying every vendor feature one at a time.
 
@@ -808,7 +904,7 @@ The model is replaceable at the workflow boundary because the work has a body ou
 
 ---
 
-## 17. What the boundary buys
+## 20. What the boundary buys
 
 It buys substitution, not fungibility.
 A team can add a new provider without moving workflow into that provider. The new provider may be better or worse. The receipt records which one ran, why it was chosen, and what validation followed.
@@ -819,8 +915,13 @@ A receipt does not prove the work was correct. It records what the system believ
 It buys explicit trust.
 A named decision, a signed decision, an externally attested decision, and a compliance record are not the same thing. The receipt can say which one it is. That prevents the system from smuggling weak evidence under strong words.
 
-It buys coherence visibility.
+It buys same-work detection.
 A signed release can still be incoherent. A TSC report gives the validator another witness: whether the artifacts still describe one unit of work.
+
+It buys repair direction.
+Low pattern coherence suggests schema or vocabulary repair.
+Low relation coherence suggests reference repair.
+Low process coherence suggests handoff, transition, or propagation repair.
 
 It buys durability.
 The work survives a model call, a vendor outage, a price change, a lost chat, or a new runner. The repo keeps the body.
@@ -836,7 +937,7 @@ Keep durable concerns where the system can reach them.
 
 ---
 
-## 18. Relationship to CN, THESIS, CDD, and TSC
+## 21. Relationship to CN, THESIS, CDD, and TSC
 
 The CN whitepaper answers a substrate question:
 
@@ -866,7 +967,7 @@ This paper answers a placement question:
 
 > Which parts of agent work must not live inside the vendor model?
 
-Answer: workflow, memory, identity, evidence, permissions, trust, coherence measurement, receipts, and release authority.
+Answer: workflow, memory, identity, evidence, permissions, trust, coherence witnesses, receipts, and release authority.
 
 The papers draw the same boundary at different layers.
 
@@ -878,7 +979,7 @@ This paper draws it under the model: the LLM is a provider the kernel governs, n
 
 ---
 
-## 19. Conclusion
+## 22. Conclusion
 
 The strongest case for vendor runtimes is capability.
 They are good because they keep context close to the model. They can plan, act, remember, and hide friction.
@@ -887,7 +988,7 @@ The strongest case for cnos is not that this capability is fake.
 It is that capability should not silently become authority.
 
 Let the model be smart.
-Keep memory, workflow, identity, evidence, trust, coherence measurement, receipts, and release authority outside it — at a seam with a name.
+Keep memory, workflow, identity, evidence, trust, coherence witnesses, receipts, and release authority outside it — at a seam with a name.
 
 The architecture does not make judgment correct.
 It makes judgment land somewhere you can see, under a name that can be asked.
@@ -898,6 +999,7 @@ If coherence was not measured, that absence should be visible too.
 
 The system should not claim more trust than the artifact carries.
 It should not claim more coherence than it measured.
+And it should not confuse coherence with correctness.
 
 The rest is a commons that agrees to look.
 
@@ -926,7 +1028,7 @@ It should be bounded enough that it never owns the work.
 - IETF Internet-Draft, "Agent Audit Trail: A Standard Logging Format for Autonomous AI Systems." https://datatracker.ietf.org/doc/draft-sharif-agent-audit-trail/
 - W3C, "Verifiable Credential Data Integrity 1.0." https://www.w3.org/TR/vc-data-integrity/
 - Rails Guides, "Active Record Basics." https://guides.rubyonrails.org/active_record_basics.html
-- TSC (Triadic Self-Coherence), repository and docs. https://github.com/usurobor/tsc — `docs/THESIS.md`, `README.md`, `ARCHITECTURE.md`, `engine/ocaml/test/fixtures/report.schema.json` (canonical v3.2 report schema)
+- TSC (Triadic Self-Coherence), repository and docs. https://github.com/usurobor/tsc — `docs/THESIS.md`, `README.md`, `ARCHITECTURE.md`, `spec/tsc-glossary.md`, `engine/ocaml/test/fixtures/report.schema.json` (canonical v3.2 report schema)
 - [`docs/alpha/protocol/WHITEPAPER.md`](../protocol/WHITEPAPER.md)
 - [`docs/THESIS.md`](../../THESIS.md)
 - [`docs/alpha/agent-runtime/PROVIDER-CONTRACT-v1.md`](../agent-runtime/PROVIDER-CONTRACT-v1.md)
