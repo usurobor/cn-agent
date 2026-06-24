@@ -145,6 +145,7 @@ Seven named failure modes specific to dispatch. Each has a structural fix in §2
 - **D5 — Unauthorized transition.** Planner applies `status:todo` without an explicit human approval quote. Operator intent is bypassed. Fix: §1.2 human gate rule + §3.4.
 - **D6 — Protocol missing.** A `dispatch:cell` issue carries `status:todo` but no `protocol:{P}` (or zero protocol qualifiers). Under-specified for dispatch — no wake knows it owns the cell. Fix: §2.2 verify gate rejects; §2.6 `dispatch_protocol_missing` repair instruction comment.
 - **D7 — Cross-protocol claim attempt.** A dispatch wake owning protocol `{Q}` encounters a cell labeled `protocol:{P}` where `P ≠ Q`. On scheduled sweep: silent skip (the matching wake claims it). On targeted/attempted claim (event-driven dispatch on this specific issue via a labeled-event trigger or explicit dispatch handle): the wake rejects and reports `dispatch_protocol_mismatch`. Fix: §2.6 `dispatch_protocol_mismatch` handling; the scheduled-vs-targeted distinction matters because a sweep over a heterogeneous queue is expected; a targeted claim attempt landing on a wrong-protocol cell signals upstream label drift or misrouted trigger.
+- **D10 — Package-dispatch wake writes `.cn-{agent}/logs/`.** A package-dispatch wake (any wake whose owning manifest declares `role: dispatch + admin_only: false`) commits to `.cn-{agent}/logs/` during its firing. Package-dispatch wakes are non-writers of that surface per `AGENT-ACTIVATION-LOG-v0` §0.1 (wake-class writer ownership); only the admin wake (e.g. `cnos-agent-admin`) writes channel entries. Fix: §2.7 — `dispatch_activation_log_write_violation`; mechanical guards installed via cycle/496 (render-time refusal at `cn install-wake` exit code 4 when a package-dispatch manifest mis-declares `activation_log_writer`; run-time write fence as a workflow-level step that inspects this wake's local working-tree state + this run's local commit graph for `.cn-*/logs/` paths and fails the workflow with the named failure class). The fence is LOCAL-scoped (working tree + this run's local commit graph), NOT remote-state delta (which would false-positive on legitimate concurrent admin-wake writes). Empirical motivator: 2026-06-24 mixed log entries the cds-dispatch wake wrote despite its prompt-only prohibition.
 
 ---
 
@@ -372,13 +373,15 @@ A drift state is an issue with an unexpected or inconsistent label combination. 
 | Cell labeled `protocol:{Q}` where Q ≠ this wake's protocol (targeted/attempted claim) | `dispatch_protocol_mismatch` | Do NOT claim from this wake; the matching-protocol wake claims it. Sweep over heterogeneous queue: silent skip. Targeted claim landing on wrong-protocol cell: comment naming the mismatch; signals upstream label drift or misrouted trigger |
 | `status:in-progress` without a claim comment | `dispatch_ghost_claim` | Clear `status:in-progress`; re-apply `status:todo` if still authorized |
 | Label edit succeeded but claim comment write failed | `dispatch_claim_comment_failed` | The wake releases the claim itself (`status:in-progress → status:todo`) at claim time per §2.2 step 4 + §3.5; no operator repair needed for the single-occurrence case. If recurring, investigate the underlying API error (rate-limit, auth, network) |
+| Package-dispatch wake committed paths under `.cn-{agent}/logs/` during its run | `dispatch_activation_log_write_violation` | Mechanical guards (cycle/496) fail the workflow run after the work phase. The wake's already-applied label transitions (e.g., `status:todo → status:in-progress`) are NOT rolled back — the fence fires AFTER work has happened. Operator investigates from the workflow log + job summary (the offending paths are echoed in the fence step's `::error::` annotation). Repair: identify the writer (likely the model inside the dispatch wake invoking `attach` or hand-editing `.cn-{agent}/logs/`); update the wake's prompt and re-render; if the cell partially completed, operator decides whether to advance, release, or block the claim |
 
 On drift detection (other than the silent-skip sweep case and self-released claim-comment-failed):
 ```
 outcome: degraded
 degraded_reason: dispatch_label_drift | dispatch_type_mismatch |
                  dispatch_protocol_missing | dispatch_protocol_mismatch |
-                 dispatch_ghost_claim | dispatch_claim_comment_failed
+                 dispatch_ghost_claim | dispatch_claim_comment_failed |
+                 dispatch_activation_log_write_violation
 operator_action: repair instruction (specific labels to add/remove)
 ```
 
@@ -389,6 +392,31 @@ Post a comment naming the drift and the repair instruction. Do NOT claim the dri
 - **Targeted claim attempt** (event-driven dispatch on this specific issue via labeled-event trigger or explicit dispatch handle): the wake was steered to this issue but the protocol doesn't match. This signals upstream label drift or a misrouted trigger and MUST surface for repair. Drift event.
 
 The distinction matters because the two paths reach the same code (claim attempt → verify gate fail) but call for different operator responses.
+
+### 2.7. Activation-log writer partition (cycle/496 / cnos#496)
+
+**Invariant:** package-dispatch wakes are non-writers of `.cn-{agent}/logs/`. Only the admin wake (e.g. `cnos-agent-admin`) writes channel entries. The partition is doctrine per `AGENT-ACTIVATION-LOG-v0` §0.1.
+
+**Why.** Dispatch firings are package-runtime telemetry (selector scans, no-op exits, claim sequences, drift diagnostics). Channel logs are agent activation memory (durable narrative across activations). Mixing the two pollutes activation memory with runtime telemetry at every dispatch firing. Empirical proof-point: the 2026-06-24 mixed log entries the live `cds-dispatch` wake wrote despite its prompt-only prohibition (`cn-sigma:.cn-sigma/logs/20260624.md`, four selector-scan no-ops). Prompt-only prohibition has been falsified; mechanical enforcement is the rule.
+
+**Mechanical guards (two layers; belt-and-suspenders).**
+
+1. **Render-time refusal.** `cn install-wake` (the `cn.wake-provider.v1` renderer) refuses to materialize a package-dispatch-shape manifest that does not declare `activation_log_writer: false` (exit code 4 + stderr containing `activation_log_writer mis-declaration:`). Default-when-absent is `true` (backward-compat with admin behavior); package-dispatch wakes must declare `false` explicitly. Defense-in-depth (FN-6 from cycle/496): any manifest declaring `activation_log_writer: false` AND listing the `attach` skill in `cross_references.consumed_skills` is also refused (`attach`'s channel-append behavior is incompatible with non-writer status).
+2. **Run-time write fence.** When `activation_log_writer: false`, the renderer appends a workflow-level `run:` step (executed `if: always()` after the work phase) that inspects:
+   - the runner's working-tree state via `git status --porcelain -- '.cn-*/logs/'` (catches uncommitted writes);
+   - this run's local commit graph via `git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR -- '.cn-*/logs/'` (catches paths committed by the work phase), with a `GITHUB_SHA` fallback when the reflog entry is unavailable.
+
+If either layer detects a path under `.cn-*/logs/`, the fence fails the workflow with `dispatch_activation_log_write_violation` + a `::error::` annotation echoing the offending paths.
+
+**The fence is LOCAL-scoped, not remote-state delta.** It does NOT run `git fetch` or compare `origin/main@before` to `origin/main@after`. A naive remote-delta check would false-positive on legitimate concurrent admin-wake writes (the admin wake's `agent-admin-sigma` concurrency group runs in parallel with `cds-dispatch-sigma`; remote `main` can advance with admin-wake writes during a dispatch run without those being attributable to the dispatch wake). The local-scope discipline is load-bearing.
+
+**Runtime behavior of the failure class.** When the fence fires:
+- the workflow exits nonzero (the GitHub Actions run is marked failed);
+- the offending paths are echoed in the workflow log + the `::error::` annotation surfaces in the Actions UI;
+- the wake's already-applied label transitions (e.g. `status:todo → status:in-progress` from a successful claim) are NOT rolled back — the fence fires AFTER work has happened, so partial state may exist on the claimed cell;
+- operator investigates from the workflow log and decides repair (release the claim, block the cell, or advance it manually).
+
+The fence is detection, not prevention — by the time it fires, the writes already happened. Detection is enough for the partition: it surfaces violations into operator-visible CI surface (workflow log + the failure class label), and the empirical evidence accumulates rather than hides.
 
 ---
 
@@ -489,6 +517,10 @@ Confirm master issues CANNOT carry `dispatch:cell` (structural, not documented-o
 
 Confirm all drift patterns in §2.6 cover the named failure modes. Confirm each produces a degraded report with a repair instruction comment, not a silent skip (except the explicit silent-skip case for scheduled-sweep cross-protocol mismatch per §2.6 + §1.3 D7, and the self-release case for `dispatch_claim_comment_failed` per §3.5).
 
+### 4.7. Activation-log writer partition check (cycle/496)
+
+Confirm `AGENT-ACTIVATION-LOG-v0` §0.1 names the writer-ownership partition (admin = sole writer; package-dispatch = non-writer). Confirm every package-dispatch wake-provider manifest in the repo declares `activation_log_writer: false` explicitly (`jq -r '.activation_log_writer' src/packages/*/orchestrators/*-dispatch/wake-provider.json` returns `false`). Confirm the admin manifest declares `activation_log_writer: true` (not relying on default-when-absent). Confirm the renderer (`cn install-wake`) exits code 4 on package-dispatch mis-declarations (omission OR explicit `true`). Confirm the rendered package-dispatch workflow includes the post-run write-fence step (local-scoped: working tree + this run's local commit graph; NOT remote-state delta). Confirm the fence emits `dispatch_activation_log_write_violation` on breach.
+
 ---
 
 ## 5. Failure modes catalogue
@@ -502,6 +534,7 @@ Confirm all drift patterns in §2.6 cover the named failure modes. Confirm each 
 - **D7 — Cross-protocol claim attempt.** _Symptom:_ A dispatch wake owning `{Q}` is steered to a cell labeled `protocol:{P}` (P ≠ Q) via a labeled-event trigger or explicit dispatch handle. Signals upstream label drift or a misrouted trigger. _Fix:_ §2.6 + §3.7 — targeted claim attempts reject with `dispatch_protocol_mismatch` and a comment naming the mismatch; scheduled sweep silently skips (the matching wake claims). The wake never claims outside its owned protocol.
 - **D8 — Hard-coded runtime in launch step.** _Symptom:_ A dispatch wake's launch step names `cnos.cdd` as the cell runtime (or any other fixed framework), conflating the generic cell-runtime framework with the concrete protocol package. Future protocols can't be added without amending the dispatch skill. _Fix:_ §3.8 — launch step passes to the matching package runtime; the matching package invokes cnos.cdd's contracts internally. cnos.cdd is framework, not concrete protocol.
 - **D9 — Claim-comment failure not released.** _Symptom:_ Wake successfully transitions `status:todo → status:in-progress`, then the claim comment write fails (transient API), but the wake launches the runtime anyway. The cell now runs without an audit-trail comment, breaking §2.3 layer 3's residual race repair path. _Fix:_ §2.2 step 4 + §3.5 — on comment-write failure, release `status:in-progress → status:todo`, report `dispatch_claim_comment_failed`, and exit without launching.
+- **D10 — Activation-log write violation.** _Symptom:_ A package-dispatch wake commits paths under `.cn-{agent}/logs/` during its firing (e.g., the model loaded the `attach` skill and appended a channel entry, or a hand-edited workflow bypassed the renderer's omission). Channel logs are agent activation memory; package-dispatch firings are runtime telemetry — mixing them pollutes activation memory at every firing. _Fix:_ §2.7 + cycle/496 mechanical guards. Render-time refusal at `cn install-wake` exit code 4 if `role: dispatch + admin_only: false` mis-declares `activation_log_writer`. Run-time workflow-level fence (local-scoped: working tree + this run's local commit graph; NOT remote-state delta — false-positive resistance for legitimate concurrent admin-wake writes) emits `dispatch_activation_log_write_violation` on breach. The fence fires AFTER the work phase, so already-applied label transitions are not rolled back; operator investigates from the workflow log.
 
 ---
 
