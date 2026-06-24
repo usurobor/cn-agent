@@ -4,6 +4,7 @@
   "package": "cnos.core",
   "role": "admin",
   "admin_only": true,
+  "activation_log_writer": true,
   "description": "The cnos.core agent-admin wake. Per-install agent (e.g. sigma) activates + attaches to the channel, reads inbound directives from the home thread, applies labels when authorized, creates/refines issues when authorized, reports status. Admin-only: never executes cells. Cell-shaped directives defer to the relevant protocol package's dispatch wake (or surface to the operator if no dispatch wake is installed for that protocol).",
   "responsibilities": [
     "activate per cnos.core/skills/agent/activate (Kernel + CA skills + Persona + Operator + hub state + identity confirmation)",
