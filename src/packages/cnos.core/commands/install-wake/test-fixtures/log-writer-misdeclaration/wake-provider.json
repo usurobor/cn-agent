@@ -1,0 +1,50 @@
+{
+  "schema": "cn.wake-provider.v1",
+  "name": "test-log-writer-misdeclaration",
+  "package": "cnos.cds",
+  "role": "dispatch",
+  "admin_only": false,
+  "activation_log_writer": true,
+  "activation_state": "live",
+  "description": "Synthetic mis-declared fixture for cycle/496 AC4 oracle. Declares role:dispatch + admin_only:false + activation_log_writer:true — the mis-declaration. The renderer must refuse with exit code 4 + stderr containing 'activation_log_writer mis-declaration:'. NEVER rendered to a substrate workflow; exists solely to keep the AC4 negative-case smoke alive. Mirrors the cycle/485 declaration-only fixture pattern (small, minimal, just enough fields for the renderer to walk validation to the activation_log_writer gate before refusing).",
+  "responsibilities": [
+    "exercise the renderer's activation_log_writer mis-declaration gate at exit code 4"
+  ],
+  "protocol": "cds",
+  "selector": {
+    "include": [
+      "dispatch:cell",
+      "protocol:cds",
+      "status:todo"
+    ],
+    "exclude": []
+  },
+  "input_contract": {
+    "triggers": [
+      "schedule"
+    ],
+    "inbound": "n/a (synthetic fixture; never invoked)"
+  },
+  "output_contract": {
+    "cycle_artifact_root": ".cdd/unreleased/{N}/",
+    "artifact_class_taxonomy": [
+      "test"
+    ],
+    "cell_runtime": "cnos.cdd"
+  },
+  "allowed_surfaces": [
+    "n/a (synthetic fixture)"
+  ],
+  "disallowed_surfaces": [
+    "everything (synthetic fixture; the wake-class writer-ownership partition still applies — this manifest exists to demonstrate refusal, not to be rendered)"
+  ],
+  "defer_path": {
+    "all": "n/a (synthetic fixture)"
+  },
+  "prompt_template": "prompt.md",
+  "cross_references": {
+    "consumed_skills": [
+      "src/packages/cnos.core/skills/agent/wake-provider/SKILL.md (§3.10 + cycle/496 activation_log_writer gate)"
+    ]
+  }
+}

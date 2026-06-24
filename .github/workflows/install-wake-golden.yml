@@ -233,6 +233,217 @@ jobs:
           echo "AC2 negative case rejected with precise error."
           rm -rf "$tmp"
 
+      - name: AC4 (cycle/496) — write-fence positive (green on no-op)
+        # cycle/496 AC7 (amended) oracle, layer 1: the write fence
+        # must return zero violations when the wake's work phase did
+        # NOT write anything under .cn-*/logs/. Simulates the no-op
+        # selector-scan case (the empirical baseline for cds-dispatch
+        # firings on an empty queue).
+        #
+        # The fence script is the same shell block the renderer
+        # appends to package-dispatch workflows. We instantiate it
+        # here in a sub-shell against a clean working tree + no
+        # commit-graph delta and assert exit 0.
+        run: |
+          set -euo pipefail
+          # Work in a dedicated fixture dir to keep cleanup simple.
+          fixture=$(mktemp -d)
+          cd "$fixture"
+          git init --quiet -b main
+          git config user.email "fixture@cycle-496"
+          git config user.name "fixture-cycle-496"
+          mkdir -p .cn-sigma/logs
+          # Seed a baseline commit (so HEAD@{1} resolves later).
+          echo "baseline" > README.md
+          git add README.md
+          git commit --quiet -m "baseline"
+          baseline_sha=$(git rev-parse HEAD)
+          # No-op: do nothing. The fence should return green.
+          # Reproduce the fence's local-scope check inline.
+          violation=0
+          wt="$(git status --porcelain -- ':(glob).cn-*/logs/**' 2>/dev/null || true)"
+          if [ -n "$wt" ]; then
+            violation=1
+            echo "wt-positive: $wt"
+          fi
+          commits=""
+          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
+            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+          fi
+          if [ -n "$commits" ]; then
+            violation=1
+            echo "commit-positive: $commits"
+          fi
+          if [ "$violation" -ne 0 ]; then
+            echo "::error::AC4 cycle/496 positive: fence false-failed on a no-op working tree."
+            exit 1
+          fi
+          echo "AC4 cycle/496 positive: fence green on no-op (no .cn-*/logs/ writes detected)."
+          cd /
+          rm -rf "$fixture"
+
+      - name: AC4 (cycle/496) — write-fence negative (catches violation)
+        # cycle/496 AC7 (amended) oracle, layer 2: the write fence
+        # must fire dispatch_activation_log_write_violation when the
+        # wake's work phase wrote under .cn-*/logs/. Two sub-cases:
+        #   (a) uncommitted working-tree write (staged + unstaged)
+        #   (b) committed write in the local commit graph
+        # Both must trip the fence.
+        run: |
+          set -euo pipefail
+          # Sub-case (a): working-tree uncommitted write.
+          fixture=$(mktemp -d)
+          cd "$fixture"
+          git init --quiet -b main
+          git config user.email "fixture@cycle-496"
+          git config user.name "fixture-cycle-496"
+          mkdir -p .cn-sigma/logs
+          echo "baseline" > README.md
+          git add README.md
+          git commit --quiet -m "baseline"
+          # Synthetic dispatch-wake violation: touch the channel log.
+          echo "## synthetic fixture entry" > .cn-sigma/logs/20260624-fixture.md
+          git add .cn-sigma/logs/20260624-fixture.md
+          # Run the fence (staged but uncommitted — wt check should catch).
+          violation_a=0
+          wt="$(git status --porcelain -- ':(glob).cn-*/logs/**' 2>/dev/null || true)"
+          if [ -n "$wt" ]; then
+            violation_a=1
+          fi
+          if [ "$violation_a" -ne 1 ]; then
+            echo "::error::AC4 cycle/496 negative (a): fence did NOT catch a staged working-tree write under .cn-*/logs/."
+            exit 1
+          fi
+          echo "AC4 cycle/496 negative (a): fence caught staged working-tree write — OK."
+          cd /
+          rm -rf "$fixture"
+          # Sub-case (b): committed write in the local commit graph.
+          fixture=$(mktemp -d)
+          cd "$fixture"
+          git init --quiet -b main
+          git config user.email "fixture@cycle-496"
+          git config user.name "fixture-cycle-496"
+          mkdir -p .cn-sigma/logs
+          echo "baseline" > README.md
+          git add README.md
+          git commit --quiet -m "baseline"
+          baseline_sha=$(git rev-parse HEAD)
+          # Synthetic violation: commit a channel-log write.
+          echo "## synthetic fixture entry" > .cn-sigma/logs/20260624-fixture.md
+          git add .cn-sigma/logs/20260624-fixture.md
+          git commit --quiet -m "synthetic dispatch-wake channel-log violation"
+          # Run the fence's commit-graph layer.
+          violation_b=0
+          commits=""
+          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
+            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+          fi
+          if [ -n "$commits" ]; then
+            violation_b=1
+          fi
+          if [ "$violation_b" -ne 1 ]; then
+            echo "::error::AC4 cycle/496 negative (b): fence did NOT catch a committed write under .cn-*/logs/."
+            echo "(HEAD@{1}..HEAD diff returned empty; expected non-empty)"
+            exit 1
+          fi
+          echo "AC4 cycle/496 negative (b): fence caught committed write — OK ($commits)."
+          cd /
+          rm -rf "$fixture"
+
+      - name: AC4 (cycle/496) — write-fence false-positive resistance
+        # cycle/496 AC7 (amended) load-bearing oracle (FN-1): the
+        # fence MUST NOT false-fail when a parallel admin-wake fixture
+        # commits to .cn-sigma/logs/YYYYMMDD.md on a fixture-only
+        # branch during the dispatch run. The fence inspects only its
+        # own local writes (working tree + this run's commit graph)
+        # — NOT remote-state delta — so the parallel admin-wake's
+        # writes are invisible to the dispatch fence.
+        #
+        # Mechanically: simulate by setting up TWO separate working
+        # trees / branches. The "dispatch" tree has no .cn-*/logs/
+        # writes. The "admin" tree has a .cn-*/logs/ write committed
+        # to its own branch. The dispatch fence (running in the
+        # dispatch tree) inspects the dispatch tree's local state
+        # only; it must not consult the admin tree.
+        run: |
+          set -euo pipefail
+          # Dispatch tree (where the fence runs).
+          dispatch=$(mktemp -d)
+          cd "$dispatch"
+          git init --quiet -b main
+          git config user.email "fixture-dispatch@cycle-496"
+          git config user.name "fixture-dispatch"
+          mkdir -p .cn-sigma/logs
+          echo "baseline" > README.md
+          git add README.md
+          git commit --quiet -m "baseline (dispatch tree)"
+          # Admin tree (simulates the parallel admin-wake firing in a
+          # separate concurrency group).
+          admin=$(mktemp -d)
+          cd "$admin"
+          git init --quiet -b main
+          git config user.email "fixture-admin@cycle-496"
+          git config user.name "fixture-admin"
+          mkdir -p .cn-sigma/logs
+          echo "baseline" > README.md
+          git add README.md
+          git commit --quiet -m "baseline (admin tree)"
+          # Admin commits legitimately to .cn-sigma/logs/.
+          echo "## admin wake entry" > .cn-sigma/logs/20260624-admin.md
+          git add .cn-sigma/logs/20260624-admin.md
+          git commit --quiet -m "admin wake: legitimate channel-log write"
+          # Now run the dispatch fence IN THE DISPATCH TREE. It must
+          # see no local writes.
+          cd "$dispatch"
+          violation=0
+          wt="$(git status --porcelain -- ':(glob).cn-*/logs/**' 2>/dev/null || true)"
+          if [ -n "$wt" ]; then
+            violation=1
+          fi
+          commits=""
+          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
+            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+          fi
+          if [ -n "$commits" ]; then
+            violation=1
+          fi
+          if [ "$violation" -ne 0 ]; then
+            echo "::error::AC4 cycle/496 false-positive: dispatch fence false-failed when a parallel admin-wake tree wrote .cn-*/logs/ (FN-1 violation)."
+            echo "wt=$wt"
+            echo "commits=$commits"
+            exit 1
+          fi
+          echo "AC4 cycle/496 false-positive resistance: dispatch fence inspected only its own local state — admin tree's writes were invisible."
+          cd /
+          rm -rf "$dispatch" "$admin"
+
+      - name: AC4 (cycle/496) — renderer refusal on mis-declaration
+        # cycle/496 AC4 oracle: cn install-wake exits code 4 + stderr
+        # names the mis-declaration when handed a package-dispatch
+        # shape manifest declaring activation_log_writer:true (the
+        # mis-declaration). Test fixture lives at
+        # src/packages/cnos.core/commands/install-wake/test-fixtures/
+        # log-writer-misdeclaration/.
+        run: |
+          set -u
+          rc=0
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake test-log-writer-misdeclaration \
+            --manifest src/packages/cnos.core/commands/install-wake/test-fixtures/log-writer-misdeclaration/wake-provider.json \
+            --activation-state-override live \
+            --out /tmp/cycle-496-misdecl.yml \
+            2>/tmp/cycle-496-misdecl.err >/dev/null || rc=$?
+          if [ "$rc" != "4" ]; then
+            echo "::error::AC4 cycle/496 refusal: expected exit 4 on activation_log_writer mis-declaration; got $rc"
+            cat /tmp/cycle-496-misdecl.err
+            exit 1
+          fi
+          if ! grep -qF 'activation_log_writer mis-declaration' /tmp/cycle-496-misdecl.err; then
+            echo "::error::AC4 cycle/496 refusal: stderr does not contain 'activation_log_writer mis-declaration'."
+            cat /tmp/cycle-496-misdecl.err
+            exit 1
+          fi
+          echo "AC4 cycle/496 refusal verified: exit 4 + precise stderr."
+
       - name: AC8 (cycle/476) + AC7 (cycle/485) renderer-side authority audit
         # The renderer source MUST NOT encode role decisions; those
         # come from the manifest + the inlined prompt body. Two

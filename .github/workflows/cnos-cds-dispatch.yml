@@ -240,9 +240,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Pathspec uses git's :(glob) magic — a bare '.cn-*/logs/' is
+          # treated literally by git and matches nothing. The :(glob)
+          # prefix enables shell-style globbing and the trailing /**
+          # matches files at any depth under .cn-{agent}/logs/.
+          pathspec=':(glob).cn-*/logs/**'
           violation=0
           # Layer 1: working-tree state (staged + unstaged uncommitted writes).
-          wt="$(git status --porcelain -- '.cn-*/logs/' 2>/dev/null || true)"
+          wt="$(git status --porcelain -- "$pathspec" 2>/dev/null || true)"
           if [ -n "$wt" ]; then
             violation=1
             echo "::error::dispatch_activation_log_write_violation: local working-tree writes detected under .cn-*/logs/"
@@ -258,9 +263,9 @@ jobs:
           # but do not false-fail; the working-tree check above is primary.
           commits=""
           if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
-            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- '.cn-*/logs/' 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
           elif [ -n "${GITHUB_SHA:-}" ] && git rev-parse --verify "$GITHUB_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
-            commits="$(git log "${GITHUB_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- '.cn-*/logs/' 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log "${GITHUB_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
           else
             echo "::notice::write-fence: local commit-graph baseline unavailable (no HEAD@{1} reflog and no GITHUB_SHA divergence); working-tree check is the primary fence."
           fi
