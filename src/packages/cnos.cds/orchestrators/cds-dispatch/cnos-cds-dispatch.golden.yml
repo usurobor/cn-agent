@@ -172,7 +172,7 @@ jobs:
             You MUST NOT write to:
 
             - `.github/workflows/` — substrate is rendered, not hand-edited by the wake. You never modify your own carrier or other wake artifacts.
-            - `.cn-sigma/` surfaces — channel logs are the admin wake's writer-locality per AGENT-ACTIVATION-LOG-v0 §0. You do NOT write channel entries. (The admin wake reads your cell artifacts after the cycle merges and writes a `class: cycle-complete` channel entry per cnos#467 Sub 6; you do not pre-empt that.)
+            - `.cn-sigma/logs/` and other `.cn-sigma/` surfaces — channel logs are the admin wake's writer-locality per AGENT-ACTIVATION-LOG-v0 §0 + §0.1 (the wake-class writer-ownership partition). You do NOT write channel entries. **The prohibition on writing `.cn-sigma/logs/` is mechanically enforced — the rendered workflow includes a post-run write fence that emits `dispatch_activation_log_write_violation` on breach. This is not advisory; it is structural.** The fence checks LOCAL writes (this wake's staged + committed paths under `.cn-sigma/logs/`) and explicitly NOT remote-state delta on `main` (which would false-positive on legitimate concurrent admin-wake writes — the admin wake's `agent-admin-sigma` concurrency group runs in parallel with this wake's `cds-dispatch-sigma` group). Empirical motivator: the 2026-06-24 mixed log entries (`cn-sigma:.cn-sigma/logs/20260624.md`, four selector-scan no-ops the model wrote despite the prompt-only prohibition) — prompt-only prohibition is empirically falsified; mechanical enforcement is the rule. (The admin wake reads your cell artifacts after the cycle merges and writes a `class: cycle-complete` channel entry per cnos#467 Sub 6; you do not pre-empt that.)
             - Label definition — you APPLY lifecycle labels on your claimed cell per cnos#468 §4.1 but never DEFINE new labels per cnos#468 §4.2.
             - Cells outside your protocol — cross-protocol claims are a protocol violation per cnos#468 §2.1. If the verify gate surfaces a wrong-protocol label, do NOT claim (silent skip on scheduled sweep; `dispatch_protocol_mismatch` comment on targeted claim).
             - Issues not matching the selector — you never edit, label, or comment on issues that do not match your claim criteria, EXCEPT for diagnostic comments on `dispatch_protocol_missing` / `dispatch_label_drift` cases where you're explaining why a malformed candidate was rejected.
@@ -227,3 +227,50 @@ jobs:
             5. No labels were defined or label semantics altered.
 
             If you reach a state where you cannot complete the above (capability mismatch, ambiguous claim state, missing precondition, ambiguous directive), defer to operator per the relevant skill's defer rule. Release any claim you took. Post an issue comment naming the deferral. Then terminate; do not improvise.
+
+      - name: Write fence — dispatch_activation_log_write_violation
+        # Mechanical guard per cnos#496 / cycle/496 (AGENT-ACTIVATION-LOG-v0 §0.1).
+        # Package-dispatch wakes are non-writers of .cn-{agent}/logs/. This step
+        # inspects this wake's LOCAL writes (working-tree state + this run's local
+        # commit graph) and fails the workflow if any path under .cn-*/logs/ was
+        # touched. The check is local-scoped, NOT remote-state-delta — it does NOT
+        # fetch or compare against origin/main, which would false-positive on
+        # legitimate concurrent admin-wake writes (different concurrency group).
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          violation=0
+          # Layer 1: working-tree state (staged + unstaged uncommitted writes).
+          wt="$(git status --porcelain -- '.cn-*/logs/' 2>/dev/null || true)"
+          if [ -n "$wt" ]; then
+            violation=1
+            echo "::error::dispatch_activation_log_write_violation: local working-tree writes detected under .cn-*/logs/"
+            echo "$wt"
+          fi
+          # Layer 2: local commit graph this run added (HEAD@{1}..HEAD).
+          # HEAD@{1} is the local HEAD before this run's work phase (set by
+          # actions/checkout@v4 at job start). Paths committed by this run's
+          # graph are in the range. If the reflog entry is unavailable, fall
+          # back to comparing HEAD against the recorded checkout SHA via
+          # GITHUB_SHA (the commit checked out at job start) — still local-
+          # scoped (no fetch). On either path's unavailability, log a notice
+          # but do not false-fail; the working-tree check above is primary.
+          commits=""
+          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
+            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- '.cn-*/logs/' 2>/dev/null | grep -v '^$' || true)"
+          elif [ -n "${GITHUB_SHA:-}" ] && git rev-parse --verify "$GITHUB_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
+            commits="$(git log "${GITHUB_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- '.cn-*/logs/' 2>/dev/null | grep -v '^$' || true)"
+          else
+            echo "::notice::write-fence: local commit-graph baseline unavailable (no HEAD@{1} reflog and no GITHUB_SHA divergence); working-tree check is the primary fence."
+          fi
+          if [ -n "$commits" ]; then
+            violation=1
+            echo "::error::dispatch_activation_log_write_violation: local commit-graph writes detected under .cn-*/logs/"
+            echo "$commits"
+          fi
+          if [ "$violation" -ne 0 ]; then
+            echo "dispatch_activation_log_write_violation: package-dispatch wakes are non-writers of .cn-{agent}/logs/ per AGENT-ACTIVATION-LOG-v0 §0.1." >&2
+            exit 1
+          fi
+          echo "write-fence: no local writes under .cn-*/logs/ — green."
