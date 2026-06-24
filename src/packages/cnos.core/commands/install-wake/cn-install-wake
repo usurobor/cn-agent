@@ -76,6 +76,22 @@
 #       (per wake-provider/SKILL.md §3.10 declaration-only discipline).
 #       Distinguished from exit 2 so callers can dispatch refusals
 #       separately from schema failures.
+#   4   activation_log_writer mis-declaration (per cnos#496 / cycle/496;
+#       AGENT-ACTIVATION-LOG-v0 §0.1 wake-class writer ownership). Two
+#       trip conditions:
+#         (a) role:dispatch + admin_only:false manifest declares (or
+#             defaults to) activation_log_writer:true. Package-dispatch
+#             wakes are non-writers of .cn-{agent}/logs/; they MUST
+#             declare activation_log_writer:false explicitly.
+#         (b) any manifest declares activation_log_writer:false AND its
+#             cross_references.consumed_skills array includes the
+#             attach skill. attach's channel-append behavior is
+#             incompatible with non-writer status (defense in depth
+#             for FN-6: a future provider author who forgets to scrub
+#             the consumed_skills list still gets caught).
+#       Distinguished from exits 2 / 3 so callers can dispatch
+#       log-writer mis-declarations separately from schema /
+#       activation-state failures.
 
 set -eu
 
@@ -103,6 +119,16 @@ die() {
 manifest_error() {
   echo "cn-install-wake: $*" >&2
   exit 2
+}
+
+# activation_log_writer mis-declaration error (per cnos#496 / cycle/496;
+# AGENT-ACTIVATION-LOG-v0 §0.1). Exit code 4 is reserved for this class
+# so callers can dispatch it separately from schema (2) and
+# activation-state (3) failures. Stderr names the mis-declaration field
+# verbatim so CI fixture assertions can grep for it.
+log_writer_mis_declaration() {
+  echo "cn-install-wake: activation_log_writer mis-declaration: $*" >&2
+  exit 4
 }
 
 # Map a logical permission_intent value (e.g. "contents.write") to a
@@ -389,6 +415,75 @@ prompt_path="${manifest_dir}/${prompt_template_relpath}"
 [ -f "$prompt_path" ] || manifest_error "$manifest_path: prompt_template \"$prompt_template_relpath\" not found at $prompt_path"
 
 # ---------------------------------------------------------------------------
+# activation_log_writer gate (per cnos#496 / cycle/496;
+# AGENT-ACTIVATION-LOG-v0 §0.1 wake-class writer ownership)
+# ---------------------------------------------------------------------------
+#
+# The activation_log_writer field on cn.wake-provider.v1 declares
+# whether a wake is a writer of .cn-{agent}/logs/ (the channel log
+# surface). Default-when-absent is true (backward-compat with the
+# existing agent-admin writer behavior; admin wakes that pre-date this
+# field continue to render unchanged).
+#
+# Two mis-declaration classes trip exit code 4:
+#
+#   (a) Package-dispatch shape (role:dispatch + admin_only:false)
+#       MUST declare activation_log_writer:false explicitly. The
+#       default-when-absent backward-compat path applies only to
+#       admin wakes; package-dispatch wakes that omit the field OR
+#       declare it true are caught here. Empirical motivator: the
+#       2026-06-24 mixed log entries the live cds-dispatch wake
+#       wrote despite its prompt forbidding the surface (prompt-only
+#       prohibition empirically falsified).
+#
+#   (b) Defense in depth (FN-6 from cycle/496 γ-scaffold §8): any
+#       manifest declaring activation_log_writer:false AND listing
+#       the attach skill in cross_references.consumed_skills is a
+#       contradiction (attach's channel-append behavior is
+#       incompatible with non-writer status). Catches a future
+#       provider author who forgets to scrub consumed_skills.
+#
+# Both cases exit code 4 with a stderr message containing the literal
+# string "activation_log_writer mis-declaration:" so CI fixtures can
+# assert on it.
+# Use jq has() rather than // for the default-when-absent fallback: //
+# treats false as null-equivalent and would collapse explicit false
+# with absent, defeating the package-dispatch mis-declaration check.
+activation_log_writer="$(jq -r 'if has("activation_log_writer") then .activation_log_writer else "default-true" end' "$manifest_path")"
+
+# Mis-declaration (a): package-dispatch wake must declare false.
+if [ "$role" = "dispatch" ] && [ "$admin_flag" != "true" ]; then
+  if [ "$activation_log_writer" = "default-true" ]; then
+    log_writer_mis_declaration "$manifest_path: role:dispatch + admin_only:false manifests MUST declare activation_log_writer (default-when-absent is true and applies only to admin wakes); package-dispatch wakes are non-writers of .cn-{agent}/logs/ per AGENT-ACTIVATION-LOG-v0 §0.1; declare \"activation_log_writer\": false"
+  fi
+  if [ "$activation_log_writer" = "true" ]; then
+    log_writer_mis_declaration "$manifest_path: role:dispatch + admin_only:false manifests MUST declare activation_log_writer:false (package-dispatch wakes are non-writers of .cn-{agent}/logs/ per AGENT-ACTIVATION-LOG-v0 §0.1); the rendered workflow's post-run write fence enforces this at run time"
+  fi
+fi
+
+# Normalize the "default-true" sentinel back to true now that the
+# mis-declaration check has consumed the absence-vs-explicit-true
+# distinction.
+if [ "$activation_log_writer" = "default-true" ]; then
+  activation_log_writer="true"
+fi
+
+# Mis-declaration (b): activation_log_writer:false + attach in
+# cross_references.consumed_skills is a contradiction. The check
+# is glob-style on the consumed_skills array (which contains
+# path-shaped strings like "src/packages/cnos.core/skills/agent/
+# attach/SKILL.md"), so we use jq's any() with a regex test.
+if [ "$activation_log_writer" = "false" ]; then
+  attach_in_skills="$(jq -r '
+    (.cross_references.consumed_skills // [])
+    | any(. | test("(^|/)attach(/|$)"))
+  ' "$manifest_path")"
+  if [ "$attach_in_skills" = "true" ]; then
+    log_writer_mis_declaration "$manifest_path: activation_log_writer:false is incompatible with the attach skill being declared in cross_references.consumed_skills; attach's channel-append behavior writes .cn-{agent}/logs/ which non-writer wakes MUST NOT do (per AGENT-ACTIVATION-LOG-v0 §0.1 + cycle/496 FN-6 defense-in-depth)"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 # Resolve substrate bindings (renderer authority)
 # ---------------------------------------------------------------------------
 
@@ -665,6 +760,97 @@ fi
 # readable inside the steps[].with: scope). This matches the
 # substrate's `prompt: |` literal-block-scalar convention.
 sed "s/{agent}/${agent}/g" "$prompt_path" | sed 's/^/            /; s/[[:space:]]*$//' >> "$tmp_out"
+
+# ---------------------------------------------------------------------------
+# Append the activation-log write fence step when the manifest declares
+# activation_log_writer:false (per cnos#496 / cycle/496 D2(a); AGENT-
+# ACTIVATION-LOG-v0 §0.1 wake-class writer ownership).
+# ---------------------------------------------------------------------------
+#
+# The fence is workflow-level: a final `run:` step (after the claude-
+# code-action work phase) that inspects this wake's LOCAL working-tree
+# state + this run's commit graph for paths under .cn-{agent}/logs/
+# (glob: '.cn-*/logs/'). Non-empty result → the workflow fails with
+# `dispatch_activation_log_write_violation` (an annotated error +
+# nonzero exit). The fence is local-scoped, not remote-state-delta —
+# it does NOT compare main@before to main@after, which would false-
+# positive on legitimate concurrent admin-wake writes (different
+# concurrency group, parallel execution).
+#
+# Two local-scope checks compose:
+#   1. `git status --porcelain -- '.cn-*/logs/'` — catches uncommitted
+#      writes (staged + unstaged) in the runner's working tree at fence
+#      time. The work phase may have committed-and-pushed; this catches
+#      anything still in the working tree.
+#   2. `git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --
+#      '.cn-*/logs/'` — catches paths committed by this run's commit
+#      graph. HEAD@{1} is the local HEAD before the work phase started
+#      (set by actions/checkout@v4 at job start); any commits this run
+#      added between then and now are in the range. If the reflog entry
+#      is unavailable (first run, shallow clone), the check degrades to
+#      checking HEAD itself against the merge-base with origin/main; on
+#      unavailability it logs a warning but does NOT false-fail (the
+#      working-tree check above is the primary fence).
+#
+# The fence does NOT run `git fetch` first — by design, it inspects
+# only what this wake's local execution touched, never remote state.
+#
+# Implementation note (sh-shape consistency with the rest of the
+# rendered file): the fence step uses `bash -euo pipefail` explicitly
+# (the GHA default is `bash -e {0}` per cycle/485 FN; explicit
+# pipefail + nounset matches the install-wake-golden.yml strict-mode
+# pattern).
+if [ "$activation_log_writer" = "false" ]; then
+  {
+    echo ""
+    echo "      - name: Write fence — dispatch_activation_log_write_violation"
+    echo "        # Mechanical guard per cnos#496 / cycle/496 (AGENT-ACTIVATION-LOG-v0 §0.1)."
+    echo "        # Package-dispatch wakes are non-writers of .cn-{agent}/logs/. This step"
+    echo "        # inspects this wake's LOCAL writes (working-tree state + this run's local"
+    echo "        # commit graph) and fails the workflow if any path under .cn-*/logs/ was"
+    echo "        # touched. The check is local-scoped, NOT remote-state-delta — it does NOT"
+    echo "        # fetch or compare against origin/main, which would false-positive on"
+    echo "        # legitimate concurrent admin-wake writes (different concurrency group)."
+    echo "        if: always()"
+    echo "        shell: bash"
+    echo "        run: |"
+    echo "          set -euo pipefail"
+    echo "          violation=0"
+    echo "          # Layer 1: working-tree state (staged + unstaged uncommitted writes)."
+    echo "          wt=\"\$(git status --porcelain -- '.cn-*/logs/' 2>/dev/null || true)\""
+    echo "          if [ -n \"\$wt\" ]; then"
+    echo "            violation=1"
+    echo "            echo \"::error::dispatch_activation_log_write_violation: local working-tree writes detected under .cn-*/logs/\""
+    echo "            echo \"\$wt\""
+    echo "          fi"
+    echo "          # Layer 2: local commit graph this run added (HEAD@{1}..HEAD)."
+    echo "          # HEAD@{1} is the local HEAD before this run's work phase (set by"
+    echo "          # actions/checkout@v4 at job start). Paths committed by this run's"
+    echo "          # graph are in the range. If the reflog entry is unavailable, fall"
+    echo "          # back to comparing HEAD against the recorded checkout SHA via"
+    echo "          # GITHUB_SHA (the commit checked out at job start) — still local-"
+    echo "          # scoped (no fetch). On either path's unavailability, log a notice"
+    echo "          # but do not false-fail; the working-tree check above is primary."
+    echo "          commits=\"\""
+    echo "          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then"
+    echo "            commits=\"\$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- '.cn-*/logs/' 2>/dev/null | grep -v '^\$' || true)\""
+    echo "          elif [ -n \"\${GITHUB_SHA:-}\" ] && git rev-parse --verify \"\$GITHUB_SHA\" >/dev/null 2>&1 && [ \"\$(git rev-parse HEAD)\" != \"\$GITHUB_SHA\" ]; then"
+    echo "            commits=\"\$(git log \"\${GITHUB_SHA}..HEAD\" --name-only --diff-filter=ACMR --pretty=format: -- '.cn-*/logs/' 2>/dev/null | grep -v '^\$' || true)\""
+    echo "          else"
+    echo "            echo \"::notice::write-fence: local commit-graph baseline unavailable (no HEAD@{1} reflog and no GITHUB_SHA divergence); working-tree check is the primary fence.\""
+    echo "          fi"
+    echo "          if [ -n \"\$commits\" ]; then"
+    echo "            violation=1"
+    echo "            echo \"::error::dispatch_activation_log_write_violation: local commit-graph writes detected under .cn-*/logs/\""
+    echo "            echo \"\$commits\""
+    echo "          fi"
+    echo "          if [ \"\$violation\" -ne 0 ]; then"
+    echo "            echo \"dispatch_activation_log_write_violation: package-dispatch wakes are non-writers of .cn-{agent}/logs/ per AGENT-ACTIVATION-LOG-v0 §0.1.\" >&2"
+    echo "            exit 1"
+    echo "          fi"
+    echo "          echo \"write-fence: no local writes under .cn-*/logs/ — green.\""
+  } >> "$tmp_out"
+fi
 
 # ---------------------------------------------------------------------------
 # Idempotent write
