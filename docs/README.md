@@ -75,7 +75,7 @@ The substance of the system — doctrine, specs, definitions.
 | [RUNTIME-EXTENSIONS.md](./alpha/runtime-extensions/RUNTIME-EXTENSIONS.md) | Capability providers, discovery, and isolation |
 | [COGNITIVE-SUBSTRATE.md](./alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md) | Cognitive asset classes — doctrine, mindsets, skills |
 | [CAR.md](./alpha/cognitive-substrate/CAR.md) | Cognitive asset resolver — local, versioned cognition |
-| [WHITEPAPER.md](./alpha/protocol/WHITEPAPER.md) | CN protocol specification (v3.0.0) |
+| [GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md](./alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md) | CN protocol specification (v3.0.1) |
 | [PROTOCOL.md](./alpha/protocol/PROTOCOL.md) | FSM design — state diagrams, transition tables |
 | [TRACEABILITY.md](./alpha/security/TRACEABILITY.md) | Observability — event stream, state projections, readiness |
 | [SECURITY-MODEL.md](./alpha/security/SECURITY-MODEL.md) | Security architecture — sandbox, FSM enforcement, audit trail |
@@ -170,7 +170,7 @@ docs/
 │   │   ├── FOUNDATIONS.md             # Core doctrine and coherence loop
 │   │   └── MANIFESTO.md              # Human+AI commons, sovereignty
 │   ├── protocol/                      # Whitepaper, protocol, thread API
-│   │   ├── PROTOCOL.md, WHITEPAPER.md, THREAD-API.md
+│   │   ├── PROTOCOL.md, GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md, THREAD-API.md
 │   ├── runtime-extensions/            # Extensions spec + snapshots
 │   │   ├── README.md
 │   │   ├── RUNTIME-EXTENSIONS.md      # Canonical spec (v1.0.6)

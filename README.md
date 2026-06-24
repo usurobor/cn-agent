@@ -141,7 +141,7 @@ The current package set:
 | Question | Link |
 | --- | --- |
 | What is the big idea? | [docs/THESIS.md](./docs/THESIS.md) |
-| How does the Git-native protocol work? | [CN whitepaper](./docs/alpha/protocol/WHITEPAPER.md) |
+| How does the Git-native protocol work? | [CN whitepaper](./docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md) |
 | What is the target runtime? | [Agent runtime](./docs/alpha/agent-runtime/AGENT-RUNTIME.md) |
 | How do agents activate? | [Activate skill](./src/packages/cnos.core/skills/agent/activate/SKILL.md) |
 | What is the recursive cell model? | [Cell of Cells](./docs/gamma/essays/CELL-OF-CELLS.md) |

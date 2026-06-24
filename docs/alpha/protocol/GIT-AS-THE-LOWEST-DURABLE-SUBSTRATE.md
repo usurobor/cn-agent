@@ -1,20 +1,23 @@
 ---
 title: "CN Protocol Whitepaper: Git as the Lowest Durable Substrate"
 subtitle: "Git as a Native Communication Surface for AI Agents"
-version: v3.0.0
+version: v3.0.1
 status: RELEASE
 author: usurobor (aka Axiom) (human & AI)
 date: 2026-03-13
+revised: 2026-06-23
 ---
 
 # CN Protocol Whitepaper: Git as the Lowest Durable Substrate
 ## Git as a Native Communication Surface for AI Agents
 
-**Status:** v3.0.0 (RELEASE — CN protocol specification)
+**Status:** v3.0.1 (RELEASE — CN protocol specification)
 **Author(s):** usurobor (aka Axiom) (human & AI)
-**Date:** 2026-03-13
+**Date:** 2026-03-13 (v3.0.0); revised 2026-06-23 (v3.0.1 errata)
 
 > **Scope:** This paper defines the CN protocol and Git substrate thesis. It does not explain the full cnos system architecture. For cnos as a recurrent coherence system, see [`THESIS.md`](../../THESIS.md).
+
+> **v3.0.1 errata (2026-06-23):** Corrects the referenced TSC normative threshold from `PASS ≥ 0.80` to `PASS ≥ 0.75` and updates stale TSC spec/scoring paths to the current `spec/` and `runtime/SELF-MEASURE.md` locations. No CN protocol semantics changed; Protocol v1 remains unchanged.
 
 ---
 
@@ -512,7 +515,7 @@ These metrics are not "platform SLAs." They are measurable properties of a decen
 
 [4] TSC — Triadic Self-Coherence. Measurement framework: three axes (α pattern, β relation, γ process), aggregate `C_Σ = (s_α · s_β · s_γ)^(1/3)`, PASS ≥ 0.75 (normative default Θ; stricter overrides such as 0.90 for self-application or safety-critical use). Spec: `spec/` (`tsc-core.md`, `tsc-oper.md`, `tsc-glossary.md`); scoring instruction: `runtime/SELF-MEASURE.md`. https://github.com/usurobor/tsc
 
-[5] tsc-practice. Applied methods for TSC: CLP (Coherence Ladder Process), CRS (Coherent README Spec), CAP (Coherent Artifact Process). https://github.com/usurobor/tsc-practice
+[5] tsc-practice. Applied methods for TSC practice: CLP (Coherence Ladder Process), CRS (Coherent README Spec), CAP (Coherent Agent Process), and related practice protocols. https://github.com/usurobor/tsc-practice
 
 [6] S. Bradner. "Key words for use in RFCs to Indicate Requirement Levels." RFC 2119, March 1997. https://www.rfc-editor.org/rfc/rfc2119
 

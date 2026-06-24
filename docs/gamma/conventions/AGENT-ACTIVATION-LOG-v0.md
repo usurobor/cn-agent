@@ -8,7 +8,7 @@ related:
   - cn-sigma:.cn-sigma/spec/OPERATOR.md § Activation logs
   - cn-sigma:.cn-sigma/threads/adhoc/20260530-sigma-activation-log-v0.md
   - cn-sigma:.cn-sigma/state/activations.md
-  - docs/alpha/protocol/WHITEPAPER.md
+  - docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md
   - docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md (cnos#150)
 ---
 
@@ -16,7 +16,7 @@ related:
 
 A minimal two-artifact, single-writer, append-only convention for cross-activation continuity when one agent identity operates across multiple hubs/bodies.
 
-This is a **field convention** for the topology we have: one agent identity across multiple bodies, one operator owning all push permissions. The whitepaper v1 elaborations (signed + entry-IDed + union-merged) and cnos#150 (ref-based packets) solve problems for a different topology — adversarial routing, distrusted operators, cross-organization peer comms. Evolve toward those elaborations only when the actual topology forces it; do not pre-build for hypothetical adversaries. See [WHITEPAPER.md](../../alpha/protocol/WHITEPAPER.md) and [MESSAGE-PACKET-TRANSPORT.md](../../alpha/protocol/MESSAGE-PACKET-TRANSPORT.md) for what those elaborations look like when needed.
+This is a **field convention** for the topology we have: one agent identity across multiple bodies, one operator owning all push permissions. The whitepaper v1 elaborations (signed + entry-IDed + union-merged) and cnos#150 (ref-based packets) solve problems for a different topology — adversarial routing, distrusted operators, cross-organization peer comms. Evolve toward those elaborations only when the actual topology forces it; do not pre-build for hypothetical adversaries. See [GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md](../../alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md) and [MESSAGE-PACKET-TRANSPORT.md](../../alpha/protocol/MESSAGE-PACKET-TRANSPORT.md) for what those elaborations look like when needed.
 
 ## §0 Writer Locality invariant
 
@@ -157,14 +157,14 @@ The collision case bump-sigma surfaced 2026-06-01: at a fresh project hub where 
 
 ## §8 Single-writer caveat
 
-Single-writer is **logical**, not physical. Per-day sharding (both directions: foreign `.cn-{agent}/logs/YYYYMMDD.md`, home `.cn-{agent}/threads/activations/{activation}/YYYYMMDD.md`) is the v0 default and handles the common case (one activation per day, or several appended sequentially in the same day's file). If concurrent activations on the same day still race, the next shard is per-activation-hour or per-activation-session. Signatures belong to a different topology — adversarial routing, distrusted operators — not to a more-volume version of this one (`docs/alpha/protocol/WHITEPAPER.md` v1).
+Single-writer is **logical**, not physical. Per-day sharding (both directions: foreign `.cn-{agent}/logs/YYYYMMDD.md`, home `.cn-{agent}/threads/activations/{activation}/YYYYMMDD.md`) is the v0 default and handles the common case (one activation per day, or several appended sequentially in the same day's file). If concurrent activations on the same day still race, the next shard is per-activation-hour or per-activation-session. Signatures belong to a different topology — adversarial routing, distrusted operators — not to a more-volume version of this one (`docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md` v1).
 
 ## §9 Origin and evolution
 
 - **Origin:** `cn-sigma:spec/OPERATOR.md` § Activation logs (commit `7d8edc0`, 2026-05-30). Sigma is the first adopter; predecessor "Sigma peer log v0" (`89404dd`) was renamed to reflect the activations/peers conceptual split.
 - **Generalization:** The Sigma-specific `SIGMA-ACTIVATION-LOG-v0.md` name is superseded by this agent-level convention. The mechanics are unchanged; the scope is now any agent identity with a home hub and foreign activations.
 - **Field writeup:** `cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md` (rationale + open questions).
-- **Different-topology elaborations:** [WHITEPAPER.md](../../alpha/protocol/WHITEPAPER.md) v1 (signed envelopes, entry IDs, union merge) and [MESSAGE-PACKET-TRANSPORT.md](../../alpha/protocol/MESSAGE-PACKET-TRANSPORT.md) (cnos#150, ref-based packets) solve problems for topologies v0 does not have (adversarial routing, distrusted operators, cross-organization peer comms). They are not the next version of v0; they are the right tools when the topology changes. Cross-reference: `cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md § Reframe 2026-06-01` for the full topology argument.
+- **Different-topology elaborations:** [GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md](../../alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md) v1 (signed envelopes, entry IDs, union merge) and [MESSAGE-PACKET-TRANSPORT.md](../../alpha/protocol/MESSAGE-PACKET-TRANSPORT.md) (cnos#150, ref-based packets) solve problems for topologies v0 does not have (adversarial routing, distrusted operators, cross-organization peer comms). They are not the next version of v0; they are the right tools when the topology changes. Cross-reference: `cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md § Reframe 2026-06-01` for the full topology argument.
 
 ## §10 Naming
 
