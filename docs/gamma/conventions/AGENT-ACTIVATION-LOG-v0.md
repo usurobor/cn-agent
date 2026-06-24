@@ -34,6 +34,34 @@ This invariant prevents a class of design pressure that recurs when notification
 
 **Same-repo terminal-report carve-out.** A body writing to an issue, PR, workflow report, or other notify surface inside its own repo is not a Writer Locality violation. Same-repo terminal reports are the preferred operator-visible notify surface. The forbidden case is writing into another repo's surfaces: cross-repo comments, cross-repo dispatch payloads, or cross-repo pushes.
 
+## §0.1 Wake-class writer ownership (same-repo)
+
+**Same-repo cross-wake exclusion (hard).** When multiple wakes operate in the same repo as different bodies of the same agent identity (e.g., `cnos-agent-admin` and `cnos-cds-dispatch` at `cnos`), the writer-locality invariant of §0 is necessary but NOT sufficient — same-repo writer-locality has historically been "the body that owns this repo writes here," but the wake-orchestration architecture (cnos#467) introduces multiple wakes-as-bodies in the same repo with different ownership. This section carves out the §0 invariant for that case.
+
+**Writer ownership of `.cn-{agent}/logs/` (the channel log surface):**
+
+| Wake class | Writer of `.cn-{agent}/logs/`? | Rationale |
+|---|---|---|
+| **admin** (e.g. `cnos-agent-admin`) | **Yes — sole writer.** | The admin wake's responsibility is channel sync + status reporting per `cnos.core/orchestrators/agent-admin/wake-provider.json`. Its activation loop (per §3) ends with appending a channel entry. Writer-locality is satisfied: the admin wake at this hub writes to this hub's log. |
+| **package-dispatch** (e.g. `cnos-cds-dispatch`, future `cnos-cdr-dispatch`, `cnos-cdw-dispatch`) | **No — non-writer.** | The dispatch wake's responsibility is cell execution per `cnos.cds/orchestrators/cds-dispatch/wake-provider.json`. Its inbound is the open-issue queue, not the home thread; its outbound is cell artifacts (`.cdd/unreleased/{N}/`), cell PRs, and lifecycle label transitions on the claimed cell. **A dispatch wake firing — real claim OR no-op — MUST NOT commit to `.cn-{agent}/logs/`.** |
+
+**Why this partition.** Dispatch firings are package-runtime telemetry (selector scans, no-op exits, claim sequences, drift diagnostics). Channel logs are agent activation memory (durable narrative across activations of the agent identity). Mixing them pollutes activation memory with runtime telemetry at every dispatch firing. The empirical proof-point (2026-06-24, `cn-sigma:.cn-sigma/logs/20260624.md`): the live `cds-dispatch` wake's provider prompt forbade the write in prose; the model wrote channel entries four times anyway (selector-scan no-op entries at ~05:55Z, 08:45Z, 12:38Z, and 13:58Z). Prompt-only prohibition has been empirically falsified.
+
+**Mechanical enforcement (the rule is known; use mechanics).** Cycle/496 (cnos#496 Sub 1 of cnos#495 umbrella) installs the mechanical guard:
+
+1. **Manifest field (`activation_log_writer: bool`).** Every `cn.wake-provider.v1` manifest declares its writer status. Default-when-absent is `true` (backward-compat with existing admin behavior). Package-dispatch wakes (`role: dispatch + admin_only: false`) MUST declare `activation_log_writer: false`.
+2. **Render-time refusal (`cn install-wake` exit code 4).** The renderer refuses to materialize a package-dispatch wake whose manifest declares (or defaults to) `activation_log_writer: true` — a mis-declaration. Mis-declared providers do not reach the substrate at all.
+3. **Run-time write fence (workflow-level step).** When `activation_log_writer: false`, the renderer appends a final write-fence step to the rendered workflow. The fence inspects this wake's local working-tree state + this run's commit graph for paths under `.cn-{agent}/logs/`; non-empty → fail the workflow with `dispatch_activation_log_write_violation`. **The fence is local-scoped, not remote-state-delta** (false-positive resistance: concurrent admin-wake writes on `main` do not cause the dispatch fence to fail).
+
+This is belt and suspenders: render-time refusal is primary defense (mis-declared providers don't ship); run-time fence is secondary defense (catches drift if a hand-edited workflow bypasses the renderer; catches model writes that bypass the provider prompt).
+
+**Cross-references.**
+- **Long-arc partition framing** (cnos#495 umbrella, [comment #4792969173](https://github.com/usurobor/cnos/issues/495#issuecomment-4792969173)): *Use intelligence where meaning is unresolved. Use mechanics where the rule is known. Identity can be Sigma. Ownership is package-local. Memory is summarized upward, not dumped sideways.* This wake-class partition is the first concrete enforcement of that direction.
+- **Empirical motivator** (2026-06-24 mixed log): `cn-sigma:.cn-sigma/logs/20260624.md` shows both admin-wake entries (legitimate) and dispatch-wake selector-scan entries (the falsification). The historical entries are preserved per cnos#496 AC6 as the witness for why mechanical enforcement is necessary.
+- **Implementation cycle** (cnos#496 Sub 1): renders the field declaration into `cn.wake-provider.v1`; extends `cn install-wake` with exit code 4 + the workflow-level fence; updates `cds-dispatch`'s manifest + prompt; re-renders the production substrate.
+
+**No-op evidence destination.** Dispatch firings that produce no claim (selector scan finds nothing) surface in the GitHub Actions job summary (workflow log + run UI) — NOT in the channel log. The job summary is structured + UI-visible + ephemeral (does not pollute durable activation memory). Cycle/495 Sub 2 (HELD) will land an admin-wake `class: dispatch-summary` channel entry that *reads* the job summaries periodically and writes a single rolled-up summary into the channel; until then, the job summary is sufficient operator-visible surface.
+
 ## §1 Agents, activations, and peers
 
 A clear conceptual distinction:
