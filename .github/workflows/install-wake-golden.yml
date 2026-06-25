@@ -350,6 +350,81 @@ jobs:
           cd /
           rm -rf "$fixture"
 
+      - name: AC4 (cycle/496) — write-fence multi-commit baseline (R1)
+        # cycle/496 R1 (operator iterate-narrowly): HEAD@{1}..HEAD is NOT a
+        # safe baseline for multi-commit work phases. If commit 1 writes
+        # .cn-*/logs/ and commit 2 changes something else, HEAD@{1} points
+        # at commit 2's parent (commit 1) so commit 1's WRITE would be in
+        # the diff — BUT only because the test below seeds a baseline commit
+        # before the work phase. Without that baseline-commit shape, the
+        # reflog can land HEAD@{1} at the violating commit itself, masking
+        # the write.
+        #
+        # The R1 fix records CN_WAKE_BASE_SHA in an explicit pre-work step
+        # (rendered BEFORE the claude-code-action work phase). The fence
+        # then compares $CN_WAKE_BASE_SHA..HEAD, which is stable across
+        # ANY commit shape the work phase produces (one, many, none).
+        #
+        # This fixture explicitly tests the multi-commit case: baseline →
+        # violation in commit 1 → unrelated change in commit 2 → fence
+        # must STILL fail because CN_WAKE_BASE_SHA..HEAD covers BOTH
+        # commits and sees the violating path.
+        run: |
+          set -euo pipefail
+          fixture=$(mktemp -d)
+          cd "$fixture"
+          git init --quiet -b main
+          git config user.email "fixture@cycle-496-r1"
+          git config user.name "fixture-cycle-496-r1"
+          mkdir -p .cn-sigma/logs
+          echo "baseline" > README.md
+          git add README.md
+          git commit --quiet -m "baseline"
+          # Record the pre-work baseline — what the rendered workflow's
+          # 'Write fence — record pre-work baseline SHA' step would emit
+          # to $GITHUB_ENV before the claude-code-action work phase.
+          CN_WAKE_BASE_SHA=$(git rev-parse HEAD)
+          # Commit 1: WRITES .cn-sigma/logs/ (the violation).
+          echo "## synthetic R1 violation entry" > .cn-sigma/logs/20260624-r1-violation.md
+          git add .cn-sigma/logs/20260624-r1-violation.md
+          git commit --quiet -m "synthetic dispatch-wake channel-log violation (R1 commit 1)"
+          # Commit 2: changes something UNRELATED to .cn-*/logs/.
+          # This is the commit HEAD@{1} would point at; the violation in
+          # commit 1 would be invisible to a HEAD@{1}..HEAD check.
+          echo "unrelated change" >> README.md
+          git add README.md
+          git commit --quiet -m "unrelated change (R1 commit 2)"
+          # Now run the R1 fence — must catch the violation in commit 1.
+          violation_c=0
+          commits=""
+          # Use CN_WAKE_BASE_SHA (the R1 primary baseline).
+          if [ -n "${CN_WAKE_BASE_SHA:-}" ] && git rev-parse --verify "$CN_WAKE_BASE_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$CN_WAKE_BASE_SHA" ]; then
+            commits="$(git log "${CN_WAKE_BASE_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+          fi
+          if [ -n "$commits" ]; then
+            violation_c=1
+          fi
+          if [ "$violation_c" -ne 1 ]; then
+            echo "::error::AC4 cycle/496 R1 multi-commit: fence did NOT catch a violation buried in commit 1 of a multi-commit run."
+            echo "(CN_WAKE_BASE_SHA..HEAD covers BOTH commits; commit 1's .cn-*/logs/ write should appear in the diff)"
+            exit 1
+          fi
+          echo "AC4 cycle/496 R1 multi-commit: fence caught buried commit-1 violation — OK ($commits)."
+          # Also verify the OLD HEAD@{1}-only check would have FAILED to
+          # catch this (the empirical motivator for the R1 fix). HEAD@{1}
+          # after the second commit points at commit 1 — so in THIS
+          # contrived shape HEAD@{1}..HEAD covers only commit 2 (the
+          # unrelated change). NOTE: reflog behavior in fresh repos can
+          # vary; this assertion is informational, not load-bearing.
+          old_check_commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+          if [ -z "$old_check_commits" ]; then
+            echo "AC4 cycle/496 R1 multi-commit (informational): HEAD@{1}..HEAD did NOT catch the buried violation — confirms the R1 baseline fix is necessary."
+          else
+            echo "AC4 cycle/496 R1 multi-commit (informational): HEAD@{1}..HEAD happened to catch this shape; the R1 fix is still load-bearing for more complex multi-commit shapes."
+          fi
+          cd /
+          rm -rf "$fixture"
+
       - name: AC4 (cycle/496) — write-fence false-positive resistance
         # cycle/496 AC7 (amended) load-bearing oracle (FN-1): the
         # fence MUST NOT false-fail when a parallel admin-wake fixture
