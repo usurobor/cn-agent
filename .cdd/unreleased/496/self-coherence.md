@@ -113,3 +113,57 @@ New AC7 oracle items added to the CI guard surface:
 **δ-direct R1 absorbed.** β's R0 converge stands EXCEPT for the AC7 amended baseline mechanism, which R1 corrects mechanically. No β re-spawn needed; operator-final-read on the updated PR #498 is the next gate.
 
 Head SHA at R1 signal: `6135d6f7b618120133c0db176817ea42e67382f3`.
+
+---
+
+## §R2 — δ-direct (second operator iterate-narrowly absorbed inline)
+
+**R1 verdict held** until operator-final-read on the R1-amended PR #498.
+
+**Operator-final-read on PR #498 R1 (T-486-12 P1 defense-in-depth, second firing this cycle):** iterate narrowly. **Load-bearing flaw:** `--diff-filter=ACMR` in the commit-graph layer excludes committed DELETIONS. A dispatch wake could `git rm` a tracked `.cn-{agent}/logs/<file>.md`, commit the deletion, leave the working tree clean, and the fence would return empty — the deletion violation would escape.
+
+Per AGENT-ACTIVATION-LOG-v0 §0.1 + cnos#496 framing: *any path under `.cn-{agent}/logs/` changed by the dispatch wake* is a violation. "Changed" includes ADD, COPY, MODIFY, RENAME, DELETE, and TYPE-CHANGE. The R0 + R1 fence used `--diff-filter=ACMR` (A/C/M/R only). Deletions and type-changes escape.
+
+**Operator's preferred fix:** remove `--diff-filter` entirely. Simpler rule:
+
+> Any committed path under `.cn-*/logs/**` in this wake's local commit graph is a violation.
+
+The default `git log --name-only` (no diff-filter) covers all six change types — A/C/D/M/R/T. No edge cases.
+
+**Applied as δ-direct R2 inline (T-486-7 pattern; second narrow mechanical correctness fix; no α respawn needed).**
+
+### §R2.1 R2 step commit
+
+| Step | Surface | Commit SHA |
+|------|---------|------------|
+| 1 (single commit; small enough not to split) | Renderer source (header + 3 emission sites) + re-rendered golden + re-rendered production substrate + 5 CI fixture call-sites + new R2 delete-fixture step | `c2afb90f` |
+
+### §R2.2 New rendered output sha256
+
+- cds-dispatch golden + production substrate: `cc266be1eb0a61e6c322a88820d6bbefdd2dd890c9c5007c96aa29f72d460508` (was `88d917c8…` at R1; was `d8b77e5a…` at R0).
+- agent-admin: byte-identical to pre-cycle (FN-2 defensive check still holds across both R1 + R2).
+
+### §R2.3 AC7 amended-form oracle update (R2)
+
+The R2 fix changes the *change-type filter* of the commit-graph layer from `--diff-filter=ACMR` to `(none)` — every shape of "the wake touched this path" counts. Local-vs-remote scope is unchanged; CN_WAKE_BASE_SHA baseline is unchanged; false-positive resistance is unchanged.
+
+New CI fixture step `AC4 (cycle/496) — write-fence catches committed delete (R2)`:
+
+1. baseline + tracked `.cn-sigma/logs/delete-me.md`
+2. record `CN_WAKE_BASE_SHA`
+3. `git rm` + commit deletion (the violation)
+4. unrelated 2nd commit (multi-commit shape; R1 + R2 composed)
+5. fence runs `CN_WAKE_BASE_SHA..HEAD` WITHOUT `--diff-filter`
+6. MUST catch the deletion (informational sub-check confirms old `--diff-filter=ACMR` returns empty for the same fixture)
+
+Local sanity test confirmed before commit: the new fence returns `.cn-sigma/logs/delete-me.md`; the old `ACMR` fence returns empty.
+
+### §R2.4 Verdict + final signal (this cycle hopes)
+
+**δ-direct R2 absorbed.** β R0 converge stands; R1 baseline-mechanism fix stands; R2 change-type-filter fix is the third and (hopefully) final mechanical correctness amendment.
+
+This is the cycle's **5th operator iterate-narrowly across the wake-orchestration wave** (cycles 485/486/487/491/496 — multiple within 496 itself). T-486-12 P1 (operator-final-read defense-in-depth) continues to validate. The pattern: γ-scaffold + β prompt + α implementation cover the load-bearing invariants their checklists name; operator-final-read catches load-bearing edge cases the checklist methodology can't anticipate.
+
+**FN-γ-R1-1 (recorded at R1) is now reinforced by R2.** γ-scaffold's β prompt fence-audit clause must enumerate not just *which scopes* the fence uses (local) and *which baseline shapes* it handles (single-commit / multi-commit / no-commit) but also *which change types* it must catch (add / modify / rename / DELETE / type-change). The γ-closeout will carry this expanded scope as a P1 carryforward, parallel to T-487-1's "variable consistency table cross-surface scope" but applied to mechanical-guard AC oracle coverage.
+
+Head SHA at R2 signal: `c2afb90fb1eb9bad03931eea7587b831b1ee6702`.
