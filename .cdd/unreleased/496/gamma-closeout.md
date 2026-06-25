@@ -230,3 +230,67 @@ The activation log is now clean by mechanical enforcement, not by prompt asserti
 3. **cnos#495 umbrella remains open** — Sub 2 (admin dispatch-summary) and Sub 3 (cnos#497 artifact-root decision) are pending; umbrella does not close with Sub 1.
 
 — γ@cdd.cnos (bootstrap-δ via δ-interface session), 2026-06-25 (UTC)
+
+---
+
+## §10. AC5 ground-truth verification — VERIFIED (addendum 2026-06-25 UTC)
+
+The post-merge cds-dispatch firing fired on schedule. AC5 (live cds-dispatch produces zero `.cn-{agent}/logs/` commits) is now **empirically verified** in production substrate.
+
+### §10.1 Firing observation
+
+| Field | Value |
+|---|---|
+| Run ID | [`28197975235`](https://github.com/usurobor/cnos/actions/runs/28197975235) |
+| Run number | 83 (cnos-cds-dispatch workflow's 83rd firing) |
+| Workflow | `.github/workflows/cnos-cds-dispatch.yml` |
+| Event | `schedule` (no-op cadence run) |
+| Run started | 2026-06-25T20:19:39Z |
+| Run finished | 2026-06-25T20:22:41Z (3 min runtime) |
+| Status | `completed` |
+| Conclusion | **`success`** |
+| Head SHA | `24c111020da7b4f443b3137a4a7de6544ecab875` (γ-closeout commit; descendant of merge `b15143d2`) |
+| Post-merge descendant | confirmed via `git merge-base --is-ancestor b15143d2 24c11102` returning 0 |
+
+### §10.2 Activation-log writes post-merge (`git log b15143d2..origin/main -- .cn-sigma/logs/`)
+
+| Commit | Author class | Note |
+|---|---|---|
+| `67967b05` | admin-wake | `activate+attach: Sigma-at-cnos; home +1 (6e3c9b3; heartbeat); no directives; cursor advances` — **legitimate writer** (admin wake's writer-locality surface per AGENT-ACTIVATION-LOG-v0 §0.1) |
+| `e5421937` | admin-wake | `admin-wake: home +1 (b73f9c1; heartbeat); no directives; cursor advances` — **legitimate writer** |
+
+**ZERO cds-dispatch entries.** The post-merge `.cn-sigma/logs/20260625.md` writes are exclusively admin-wake heartbeats — the partition holds in production.
+
+### §10.3 Mechanical interpretation
+
+The firing's `success` conclusion confirms three load-bearing invariants empirically:
+
+1. **The new pre-work baseline step ran successfully** — `CN_WAKE_BASE_SHA=$(git rev-parse HEAD)` was recorded to `$GITHUB_ENV` before the `claude-code-action` step. (If the step had failed, the workflow would not have reached the work phase.)
+2. **The claude-code-action work phase completed** — the wake ran its selector scan; no eligible cell matched the dispatch selector (`dispatch:cell + protocol:cds + status:todo`); cleanly exited the no-op path.
+3. **The post-run write fence ran successfully without false-positive** — the fence's `git status --porcelain` + `git log $CN_WAKE_BASE_SHA..HEAD --name-only -- ':(glob).cn-*/logs/**'` checks returned empty; no `dispatch_activation_log_write_violation` annotation; the workflow exited 0.
+
+The fence works as designed. The model can no longer write `.cn-{agent}/logs/` from a cds-dispatch firing — not because the prompt is more persuasive, but because the substrate refuses.
+
+### §10.4 D4 (a) confirmed empirically
+
+The no-op firing surfaced exclusively in the GitHub Actions job summary (visible in the run UI) — no commit, no PR comment, no issue comment, no `.cn-sigma/logs/` entry. D4 (a) — "no-op surfaces in GitHub Actions job summary only" — is the operational shape now.
+
+The activation log's daily cadence file (`.cn-sigma/logs/20260625.md`) carries only admin-wake activity. Sigma's memory is uncluttered by no-op dispatch telemetry.
+
+### §10.5 cnos#496 ready to close
+
+All 7 ACs now hold post-PR-merge with live production evidence:
+
+| AC | Final |
+|---|---|
+| AC1 — Convention amendment | ✅ green (landed) |
+| AC2 — Provider field | ✅ green (landed) |
+| AC3 — Dispatch wake does not run attach | ✅ green (rendered workflow has no attach load) |
+| AC4 — Renderer guard | ✅ green (CI fixture verifies exit 4 on mis-declaration) |
+| AC5 — Live cds-dispatch zero log commits | ✅ green (**this addendum's empirical verification**; run `28197975235` post-merge with zero attributable writes) |
+| AC6 — Historical evidence preserved | ✅ green (`.cn-sigma/logs/20260624.md` original commits intact) |
+| AC7 (amended; R2 final) — Mechanical write fence | ✅ green (fence active in production; CI fixtures green; live firing successful) |
+
+**cnos#496 close-comment posted by γ-interface immediately following this addendum.**
+
+— γ@cdd.cnos (bootstrap-δ via δ-interface session), 2026-06-25 (UTC; addendum)
