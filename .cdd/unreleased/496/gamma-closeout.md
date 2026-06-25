@@ -7,7 +7,7 @@ pr: cnos#498
 merge_sha: b15143d2f2bd4d6aab4af6a607c20b8fcc2bd97c
 cycle_branch: cycle/496
 base_main_sha: 3f57210d95f765ce1884e0f2d6a0868e25b7e1b0
-head_sha_at_close: (filled by this commit)
+head_sha_at_close: 295962a535aee2a9712757f5cb8144aa8281b839
 rounds_summary: "R0 (γ-scaffold inline-recovery + α 8-step + β converge) + R1 (δ-direct multi-commit baseline) + R2 (δ-direct delete-detection)"
 role: γ
 authored_by: γ@cdd.cnos (bootstrap-δ via δ-interface session)
