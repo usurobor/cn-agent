@@ -39,6 +39,20 @@ jobs:
         with:
           token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
 
+      - name: Write fence — record pre-work baseline SHA
+        # Mechanical guard per cnos#496 / cycle/496 R1 (δ-direct iterate-narrowly).
+        # Records the local HEAD before the claude-code-action work phase so the
+        # post-run fence can compare $CN_WAKE_BASE_SHA..HEAD against this stable
+        # baseline — not against reflog-derived HEAD@{1}, which is unsafe for
+        # multi-commit work phases (HEAD@{1} is the IMMEDIATELY-previous HEAD, so
+        # a wake that creates two commits where the FIRST writes .cn-*/logs/ and
+        # the SECOND does not would escape a HEAD@{1}..HEAD check). The fence
+        # below prefers $CN_WAKE_BASE_SHA → $GITHUB_SHA → HEAD@{1} in that order.
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "CN_WAKE_BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -253,21 +267,28 @@ jobs:
             echo "::error::dispatch_activation_log_write_violation: local working-tree writes detected under .cn-*/logs/"
             echo "$wt"
           fi
-          # Layer 2: local commit graph this run added (HEAD@{1}..HEAD).
-          # HEAD@{1} is the local HEAD before this run's work phase (set by
-          # actions/checkout@v4 at job start). Paths committed by this run's
-          # graph are in the range. If the reflog entry is unavailable, fall
-          # back to comparing HEAD against the recorded checkout SHA via
-          # GITHUB_SHA (the commit checked out at job start) — still local-
-          # scoped (no fetch). On either path's unavailability, log a notice
-          # but do not false-fail; the working-tree check above is primary.
+          # Layer 2: local commit graph this run added — $CN_WAKE_BASE_SHA..HEAD.
+          # cycle/496 R1 (operator iterate-narrowly): the primary baseline is
+          # $CN_WAKE_BASE_SHA, captured by the 'Write fence — record pre-work
+          # baseline SHA' step BEFORE the claude-code-action work phase. This is
+          # the stable, explicit baseline — reliable for ANY commit shape the work
+          # phase produces (one commit, many commits, no commits). Fallback chain:
+          #   (1) $CN_WAKE_BASE_SHA — primary; recorded by the pre-work baseline step.
+          #   (2) $GITHUB_SHA       — fallback; the commit checked out at job start.
+          #   (3) HEAD@{1}          — last resort; reflog-derived; UNSAFE for multi-
+          #                           commit work phases (catches only the most
+          #                           recent commit's parent, NOT the pre-work baseline).
+          # On none-of-the-above, log a notice but do NOT false-fail; the working-
+          # tree check above is the primary fence.
           commits=""
-          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
-            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
+          if [ -n "${CN_WAKE_BASE_SHA:-}" ] && git rev-parse --verify "$CN_WAKE_BASE_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$CN_WAKE_BASE_SHA" ]; then
+            commits="$(git log "${CN_WAKE_BASE_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
           elif [ -n "${GITHUB_SHA:-}" ] && git rev-parse --verify "$GITHUB_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
             commits="$(git log "${GITHUB_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
+          elif git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
+            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
           else
-            echo "::notice::write-fence: local commit-graph baseline unavailable (no HEAD@{1} reflog and no GITHUB_SHA divergence); working-tree check is the primary fence."
+            echo "::notice::write-fence: local commit-graph baseline unavailable (no CN_WAKE_BASE_SHA, no GITHUB_SHA divergence, no HEAD@{1} reflog); working-tree check is the primary fence."
           fi
           if [ -n "$commits" ]; then
             violation=1

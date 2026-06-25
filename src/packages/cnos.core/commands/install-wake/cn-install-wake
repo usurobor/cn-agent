@@ -738,6 +738,22 @@ fi
   echo "      - uses: actions/checkout@v4"
   echo "        with:"
   echo "          token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
+  if [ "$activation_log_writer" = "false" ]; then
+    echo ""
+    echo "      - name: Write fence — record pre-work baseline SHA"
+    echo "        # Mechanical guard per cnos#496 / cycle/496 R1 (δ-direct iterate-narrowly)."
+    echo "        # Records the local HEAD before the claude-code-action work phase so the"
+    echo "        # post-run fence can compare \$CN_WAKE_BASE_SHA..HEAD against this stable"
+    echo "        # baseline — not against reflog-derived HEAD@{1}, which is unsafe for"
+    echo "        # multi-commit work phases (HEAD@{1} is the IMMEDIATELY-previous HEAD, so"
+    echo "        # a wake that creates two commits where the FIRST writes .cn-*/logs/ and"
+    echo "        # the SECOND does not would escape a HEAD@{1}..HEAD check). The fence"
+    echo "        # below prefers \$CN_WAKE_BASE_SHA → \$GITHUB_SHA → HEAD@{1} in that order."
+    echo "        shell: bash"
+    echo "        run: |"
+    echo "          set -euo pipefail"
+    echo "          echo \"CN_WAKE_BASE_SHA=\$(git rev-parse HEAD)\" >> \"\$GITHUB_ENV\""
+  fi
   echo ""
   echo "      - uses: anthropics/claude-code-action@v1"
   echo "        with:"
@@ -782,15 +798,19 @@ sed "s/{agent}/${agent}/g" "$prompt_path" | sed 's/^/            /; s/[[:space:]
 #      writes (staged + unstaged) in the runner's working tree at fence
 #      time. The work phase may have committed-and-pushed; this catches
 #      anything still in the working tree.
-#   2. `git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --
-#      '.cn-*/logs/'` — catches paths committed by this run's commit
-#      graph. HEAD@{1} is the local HEAD before the work phase started
-#      (set by actions/checkout@v4 at job start); any commits this run
-#      added between then and now are in the range. If the reflog entry
-#      is unavailable (first run, shallow clone), the check degrades to
-#      checking HEAD itself against the merge-base with origin/main; on
-#      unavailability it logs a warning but does NOT false-fail (the
-#      working-tree check above is the primary fence).
+#   2. `git log $CN_WAKE_BASE_SHA..HEAD --name-only --diff-filter=ACMR
+#      -- '.cn-*/logs/'` — catches paths committed by this run's commit
+#      graph. CN_WAKE_BASE_SHA is recorded by an EXPLICIT pre-work step
+#      that runs BEFORE the claude-code-action work phase (cycle/496 R1
+#      fix; operator iterate-narrowly). This is a stable baseline for
+#      ANY commit shape the work phase produces — one commit, many
+#      commits, no commits — and is robust against the multi-commit
+#      escape case that defeats reflog-derived HEAD@{1} (where commit 1
+#      writes .cn-*/logs/ and commit 2 changes something else; HEAD@{1}
+#      points only at commit 2's parent so commit 1's write would be
+#      invisible to a HEAD@{1}..HEAD check). Fallback chain when
+#      CN_WAKE_BASE_SHA is unavailable: GITHUB_SHA (commit checked out
+#      at job start) → HEAD@{1} (last resort) → working-tree-only.
 #
 # The fence does NOT run `git fetch` first — by design, it inspects
 # only what this wake's local execution touched, never remote state.
@@ -828,21 +848,28 @@ if [ "$activation_log_writer" = "false" ]; then
     echo "            echo \"::error::dispatch_activation_log_write_violation: local working-tree writes detected under .cn-*/logs/\""
     echo "            echo \"\$wt\""
     echo "          fi"
-    echo "          # Layer 2: local commit graph this run added (HEAD@{1}..HEAD)."
-    echo "          # HEAD@{1} is the local HEAD before this run's work phase (set by"
-    echo "          # actions/checkout@v4 at job start). Paths committed by this run's"
-    echo "          # graph are in the range. If the reflog entry is unavailable, fall"
-    echo "          # back to comparing HEAD against the recorded checkout SHA via"
-    echo "          # GITHUB_SHA (the commit checked out at job start) — still local-"
-    echo "          # scoped (no fetch). On either path's unavailability, log a notice"
-    echo "          # but do not false-fail; the working-tree check above is primary."
+    echo "          # Layer 2: local commit graph this run added — \$CN_WAKE_BASE_SHA..HEAD."
+    echo "          # cycle/496 R1 (operator iterate-narrowly): the primary baseline is"
+    echo "          # \$CN_WAKE_BASE_SHA, captured by the 'Write fence — record pre-work"
+    echo "          # baseline SHA' step BEFORE the claude-code-action work phase. This is"
+    echo "          # the stable, explicit baseline — reliable for ANY commit shape the work"
+    echo "          # phase produces (one commit, many commits, no commits). Fallback chain:"
+    echo "          #   (1) \$CN_WAKE_BASE_SHA — primary; recorded by the pre-work baseline step."
+    echo "          #   (2) \$GITHUB_SHA       — fallback; the commit checked out at job start."
+    echo "          #   (3) HEAD@{1}          — last resort; reflog-derived; UNSAFE for multi-"
+    echo "          #                           commit work phases (catches only the most"
+    echo "          #                           recent commit's parent, NOT the pre-work baseline)."
+    echo "          # On none-of-the-above, log a notice but do NOT false-fail; the working-"
+    echo "          # tree check above is the primary fence."
     echo "          commits=\"\""
-    echo "          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then"
-    echo "            commits=\"\$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- \"\$pathspec\" 2>/dev/null | grep -v '^\$' || true)\""
+    echo "          if [ -n \"\${CN_WAKE_BASE_SHA:-}\" ] && git rev-parse --verify \"\$CN_WAKE_BASE_SHA\" >/dev/null 2>&1 && [ \"\$(git rev-parse HEAD)\" != \"\$CN_WAKE_BASE_SHA\" ]; then"
+    echo "            commits=\"\$(git log \"\${CN_WAKE_BASE_SHA}..HEAD\" --name-only --diff-filter=ACMR --pretty=format: -- \"\$pathspec\" 2>/dev/null | grep -v '^\$' || true)\""
     echo "          elif [ -n \"\${GITHUB_SHA:-}\" ] && git rev-parse --verify \"\$GITHUB_SHA\" >/dev/null 2>&1 && [ \"\$(git rev-parse HEAD)\" != \"\$GITHUB_SHA\" ]; then"
     echo "            commits=\"\$(git log \"\${GITHUB_SHA}..HEAD\" --name-only --diff-filter=ACMR --pretty=format: -- \"\$pathspec\" 2>/dev/null | grep -v '^\$' || true)\""
+    echo "          elif git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then"
+    echo "            commits=\"\$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- \"\$pathspec\" 2>/dev/null | grep -v '^\$' || true)\""
     echo "          else"
-    echo "            echo \"::notice::write-fence: local commit-graph baseline unavailable (no HEAD@{1} reflog and no GITHUB_SHA divergence); working-tree check is the primary fence.\""
+    echo "            echo \"::notice::write-fence: local commit-graph baseline unavailable (no CN_WAKE_BASE_SHA, no GITHUB_SHA divergence, no HEAD@{1} reflog); working-tree check is the primary fence.\""
     echo "          fi"
     echo "          if [ -n \"\$commits\" ]; then"
     echo "            violation=1"
