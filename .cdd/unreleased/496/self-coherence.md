@@ -73,3 +73,43 @@ No other friction surfaced. The scaffold's anticipated FNs (FN-1 false-positive 
 **Ready for β review.** Head SHA at signal: `2d2e9c9eb234de560e4aaadb1baf51e2fdc491d5` (Step 7 commit). Self-coherence.md commits as the next step; the bare-signal commit (zero file changes) follows per cycle/487 pattern.
 
 β R0 reviews the 7 step commits + this self-coherence; β walks the AC table; β walks the variable consistency table; β runs the local-write-fence false-positive check (the three load-bearing assertions in γ-scaffold §7); β audits the per-CI-step bash-e discipline.
+
+---
+
+## §R1 — δ-direct (operator iterate-narrowly absorbed inline)
+
+**β R0 verdict:** converge (commit `f2569a0d`).
+
+**Operator-final-read on PR #498 (T-486-12 P1 defense-in-depth):** iterate narrowly. **Load-bearing flaw:** `HEAD@{1}..HEAD` is not a reliable pre-run baseline for multi-commit work phases. The reflog's `HEAD@{1}` is the IMMEDIATELY-previous HEAD — if the wake creates two commits where commit 1 writes `.cn-*/logs/` and commit 2 changes something else, `HEAD@{1}..HEAD` covers only commit 2 and the violation in commit 1 escapes the fence.
+
+The R0 fence used `HEAD@{1}..HEAD` as its primary commit-graph layer with `$GITHUB_SHA..HEAD` as fallback. R1 inverts the chain: `CN_WAKE_BASE_SHA..HEAD` is primary (captured by an explicit pre-work step), `GITHUB_SHA..HEAD` is fallback, `HEAD@{1}` drops to last resort.
+
+This was a γ-scaffold §7 completeness miss — the β prompt's local-write-fence audit had 3 checks (local-scope / working-tree scope / false-positive resistance) and did NOT explicitly require a multi-commit case check. β's R0 converge was methodologically honest given the scope. Operator-final-read defense-in-depth (T-486-12 P1) caught what β's checklist couldn't — exactly the empirical case the P2→P1 promotion in cycle/487 was responding to.
+
+**Applied as δ-direct R1 inline (T-486-7 pattern; no α respawn needed; narrow mechanical correctness fix).**
+
+### §R1.1 R1 step commits
+
+| Step | Surface | Commit SHA |
+|------|---------|------------|
+| 1 | Renderer adds pre-work baseline step; fence prefers CN_WAKE_BASE_SHA → GITHUB_SHA → HEAD@{1}; re-rendered golden + production substrate; header comment updated | `0e1078b9` |
+| 2 | Multi-commit CI fixture (new AC4 cycle/496 R1 step in install-wake-golden.yml) | `6135d6f7` |
+
+### §R1.2 New rendered output sha256
+
+- cds-dispatch golden + production substrate: `88d917c81761e72a2fef4efd37aeedbe0d606fad94c9ceea28027f9ca29373f8` (was `d8b77e5a62a98b97a54d02c395ab10bb168f6b71452271b18946c7efe5ead189` at R0).
+- agent-admin: byte-identical to pre-cycle (FN-2 defensive check still holds; baseline step is conditional on `activation_log_writer:false`).
+
+### §R1.3 AC7 amended oracle update
+
+AC7's "v0 acceptable proof" is unchanged in spirit (local-scoped; not remote-state delta; explicit guard against false-positives on concurrent admin-wake writes). The R1 fix changes the *baseline mechanism* from reflog-derived `HEAD@{1}` (unsafe for multi-commit) to explicit pre-work `CN_WAKE_BASE_SHA` (stable for any commit shape). The fence's local-vs-remote distinction is untouched.
+
+New AC7 oracle items added to the CI guard surface:
+- A multi-commit fixture (baseline → violation commit → unrelated commit) verifies the fence catches buried violations.
+- An informational comparison shows the old `HEAD@{1}-only` check would have missed the violation in this shape (reflog behavior in fresh repos varies; the assertion is informational not load-bearing, but typically confirms the empirical motivator).
+
+### §R1.4 Verdict + final signal
+
+**δ-direct R1 absorbed.** β's R0 converge stands EXCEPT for the AC7 amended baseline mechanism, which R1 corrects mechanically. No β re-spawn needed; operator-final-read on the updated PR #498 is the next gate.
+
+Head SHA at R1 signal: `6135d6f7b618120133c0db176817ea42e67382f3`.
