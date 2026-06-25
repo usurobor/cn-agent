@@ -40,7 +40,7 @@ jobs:
           token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
 
       - name: Write fence — record pre-work baseline SHA
-        # Mechanical guard per cnos#496 / cycle/496 R1 (δ-direct iterate-narrowly).
+        # Mechanical guard per cnos#496 / cycle/496 R1 + R2 (δ-direct iterate-narrowlies).
         # Records the local HEAD before the claude-code-action work phase so the
         # post-run fence can compare $CN_WAKE_BASE_SHA..HEAD against this stable
         # baseline — not against reflog-derived HEAD@{1}, which is unsafe for
@@ -280,13 +280,19 @@ jobs:
           #                           recent commit's parent, NOT the pre-work baseline).
           # On none-of-the-above, log a notice but do NOT false-fail; the working-
           # tree check above is the primary fence.
+          # cycle/496 R2 (operator iterate-narrowly): NO --diff-filter is applied.
+          # A committed DELETE of a tracked .cn-*/logs/ path is a write/ownership
+          # violation per AGENT-ACTIVATION-LOG-v0 §0.1 and per cnos#496's framing
+          # ('any path under .cn-{agent}/logs/ changed by the dispatch wake must
+          # fail'). Default `git log --name-only` (no diff-filter) catches
+          # additions, copies, modifications, renames, deletions, AND type changes.
           commits=""
           if [ -n "${CN_WAKE_BASE_SHA:-}" ] && git rev-parse --verify "$CN_WAKE_BASE_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$CN_WAKE_BASE_SHA" ]; then
-            commits="$(git log "${CN_WAKE_BASE_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log "${CN_WAKE_BASE_SHA}..HEAD" --name-only --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
           elif [ -n "${GITHUB_SHA:-}" ] && git rev-parse --verify "$GITHUB_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
-            commits="$(git log "${GITHUB_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log "${GITHUB_SHA}..HEAD" --name-only --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
           elif git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
-            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log HEAD@{1}..HEAD --name-only --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
           else
             echo "::notice::write-fence: local commit-graph baseline unavailable (no CN_WAKE_BASE_SHA, no GITHUB_SHA divergence, no HEAD@{1} reflog); working-tree check is the primary fence."
           fi

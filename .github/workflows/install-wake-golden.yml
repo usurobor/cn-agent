@@ -268,7 +268,7 @@ jobs:
           fi
           commits=""
           if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
-            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log HEAD@{1}..HEAD --name-only --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
           fi
           if [ -n "$commits" ]; then
             violation=1
@@ -336,7 +336,7 @@ jobs:
           violation_b=0
           commits=""
           if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
-            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log HEAD@{1}..HEAD --name-only --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
           fi
           if [ -n "$commits" ]; then
             violation_b=1
@@ -399,7 +399,7 @@ jobs:
           commits=""
           # Use CN_WAKE_BASE_SHA (the R1 primary baseline).
           if [ -n "${CN_WAKE_BASE_SHA:-}" ] && git rev-parse --verify "$CN_WAKE_BASE_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$CN_WAKE_BASE_SHA" ]; then
-            commits="$(git log "${CN_WAKE_BASE_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log "${CN_WAKE_BASE_SHA}..HEAD" --name-only --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
           fi
           if [ -n "$commits" ]; then
             violation_c=1
@@ -416,11 +416,84 @@ jobs:
           # contrived shape HEAD@{1}..HEAD covers only commit 2 (the
           # unrelated change). NOTE: reflog behavior in fresh repos can
           # vary; this assertion is informational, not load-bearing.
-          old_check_commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+          old_check_commits="$(git log HEAD@{1}..HEAD --name-only --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
           if [ -z "$old_check_commits" ]; then
             echo "AC4 cycle/496 R1 multi-commit (informational): HEAD@{1}..HEAD did NOT catch the buried violation — confirms the R1 baseline fix is necessary."
           else
             echo "AC4 cycle/496 R1 multi-commit (informational): HEAD@{1}..HEAD happened to catch this shape; the R1 fix is still load-bearing for more complex multi-commit shapes."
+          fi
+          cd /
+          rm -rf "$fixture"
+
+      - name: AC4 (cycle/496) — write-fence catches committed delete (R2)
+        # cycle/496 R2 (operator iterate-narrowly): a committed DELETE
+        # of a tracked .cn-*/logs/ path is a write/ownership violation.
+        # The R1 fence used `git log ... --diff-filter=ACMR ... -- $pathspec`
+        # which catches Added/Copied/Modified/Renamed but NOT Deleted.
+        # A dispatch wake could delete .cn-sigma/logs/<file>.md, commit
+        # the deletion, leave the working tree clean, and the fence
+        # would not report it. R2 removes --diff-filter entirely so any
+        # touched path (incl. delete + type-change) under .cn-*/logs/
+        # in the wake's local commit graph is a violation.
+        #
+        # Fixture shape:
+        #   1. baseline + tracked .cn-sigma/logs/delete-me.md
+        #   2. record CN_WAKE_BASE_SHA
+        #   3. commit DELETION of .cn-sigma/logs/delete-me.md
+        #   4. (optional) unrelated 2nd commit to confirm multi-commit
+        #      shape doesn't help the deletion escape
+        #   5. fence runs CN_WAKE_BASE_SHA..HEAD WITHOUT --diff-filter
+        #   6. MUST catch the deletion violation
+        run: |
+          set -euo pipefail
+          fixture=$(mktemp -d)
+          cd "$fixture"
+          git init --quiet -b main
+          git config user.email "fixture@cycle-496-r2"
+          git config user.name "fixture-cycle-496-r2"
+          mkdir -p .cn-sigma/logs
+          # Baseline: README.md + tracked channel-log file.
+          echo "baseline" > README.md
+          echo "## tracked admin entry" > .cn-sigma/logs/delete-me.md
+          git add README.md .cn-sigma/logs/delete-me.md
+          git commit --quiet -m "baseline (with tracked .cn-sigma/logs/delete-me.md)"
+          CN_WAKE_BASE_SHA=$(git rev-parse HEAD)
+          # Commit 1: DELETE .cn-sigma/logs/delete-me.md (the violation).
+          git rm --quiet .cn-sigma/logs/delete-me.md
+          git commit --quiet -m "synthetic dispatch-wake channel-log deletion (R2 commit 1)"
+          # Commit 2: unrelated change (confirms multi-commit doesn't help).
+          echo "unrelated change" >> README.md
+          git add README.md
+          git commit --quiet -m "unrelated change (R2 commit 2)"
+          # Working tree clean? Verify (R2's bite is that wt is clean
+          # because the delete is committed).
+          wt_check="$(git status --porcelain -- ':(glob).cn-*/logs/**' 2>/dev/null || true)"
+          if [ -n "$wt_check" ]; then
+            echo "::error::AC4 cycle/496 R2 fixture setup: working tree unexpectedly dirty under .cn-*/logs/ (delete should be committed)."
+            exit 1
+          fi
+          # Run the R2 fence (no --diff-filter; CN_WAKE_BASE_SHA..HEAD).
+          violation_d=0
+          commits=""
+          if [ -n "${CN_WAKE_BASE_SHA:-}" ] && git rev-parse --verify "$CN_WAKE_BASE_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$CN_WAKE_BASE_SHA" ]; then
+            commits="$(git log "${CN_WAKE_BASE_SHA}..HEAD" --name-only --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+          fi
+          if [ -n "$commits" ]; then
+            violation_d=1
+          fi
+          if [ "$violation_d" -ne 1 ]; then
+            echo "::error::AC4 cycle/496 R2: fence did NOT catch a committed delete of .cn-sigma/logs/delete-me.md (deletion escape — R0/R1 --diff-filter=ACMR class)."
+            exit 1
+          fi
+          echo "AC4 cycle/496 R2: fence caught committed delete — OK ($commits)."
+          # Informational: confirm the OLD R1 --diff-filter=ACMR check
+          # would have MISSED this. ACMR excludes deletes; the fence
+          # would return empty and the deletion would escape.
+          old_acmr_check="$(git log "${CN_WAKE_BASE_SHA}..HEAD" --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+          if [ -z "$old_acmr_check" ]; then
+            echo "AC4 cycle/496 R2 (informational): old --diff-filter=ACMR check returned empty — confirms the R2 fix is necessary."
+          else
+            echo "AC4 cycle/496 R2 (informational): --diff-filter=ACMR caught this shape; R2 fix is still load-bearing for pure-delete commits."
           fi
           cd /
           rm -rf "$fixture"
@@ -477,7 +550,7 @@ jobs:
           fi
           commits=""
           if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
-            commits="$(git log HEAD@{1}..HEAD --name-only --diff-filter=ACMR --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
+            commits="$(git log HEAD@{1}..HEAD --name-only --pretty=format: -- ':(glob).cn-*/logs/**' 2>/dev/null | grep -v '^$' || true)"
           fi
           if [ -n "$commits" ]; then
             violation=1
