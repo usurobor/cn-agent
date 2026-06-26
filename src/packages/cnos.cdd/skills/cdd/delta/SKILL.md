@@ -475,7 +475,9 @@ R[N≥1] iteration is an **internal** cell loop — the cell stays `status:in-pr
 | **claim release** (race) | label transition `status:in-progress → status:todo` + an issue comment naming the race detection per `dispatch-protocol/SKILL.md` §2.2 step 5 | When δ's first action — re-verify the claim is still valid — surfaces drift. This is the wake's own race-guard; δ honors it by releasing the claim without invoking γ. (In practice this fires inside the wake's claim sequence, before δ is fully spawned; the contract names it for completeness because a delayed re-verify by δ at spawn time is a defensive option.) |
 | **cycle-PR URL** | included in the `status:review` transition comment; not a separate token | δ writes the PR URL into the same comment that announces the converge transition so operators / observers have a single discoverable artifact. |
 
-**Carve-out — `status:changes` is EXTERNAL.** The dispatch wake does NOT transition out of `status:review` and δ does NOT write `status:changes` from `status:in-progress`. `status:changes` is the operator/planner's authority on review-rejection AFTER the cell shipped to `status:review` (per `cds-dispatch/prompt.md` §"Lifecycle transitions"; `dispatch-protocol/SKILL.md` §2.4). β iteration is **internal** — the cell stays `status:in-progress` during β-α loops; only β converge advances the cell out of that state. Future readers must not conflate β iteration with external rejection; the four return tokens above are the complete set δ writes.
+**Carve-out — `status:changes` is EXTERNAL (with mechanical translator).** The dispatch wake does NOT transition out of `status:review` and δ does NOT write `status:changes` from `status:in-progress`. `status:changes` is the operator/planner's authority on review-rejection AFTER the cell shipped to `status:review` (per `cds-dispatch/prompt.md` §"Lifecycle transitions"; `dispatch-protocol/SKILL.md` §2.4). β iteration is **internal** — the cell stays `status:in-progress` during β-α loops; only β converge advances the cell out of that state. Future readers must not conflate β iteration with external rejection; the four return tokens above are the complete set δ writes.
+
+**Reconciliation with `cn cell return` (cnos#500).** `cn cell return --verdict iterate` (or `--verdict reject`) applies the `status:review → status:changes` transition on behalf of the operator's stated verdict. The operator is still the authority; `cn cell return` is the mechanical translator of that authority into a label transition. This does NOT change the carve-out: the dispatch wake still never writes `status:changes`; δ's four return tokens are still the complete set δ writes during a wake-invoked cycle. `cn cell return` is an operator-facing CLI command, not a wake-internal mechanism — the operator invokes it (via HI) after reading the PR; the wake is not involved. See §9.10 for the resumed-from-changes routing shape that follows.
 
 ### 9.7. v0 substrate constraints (honestly named; substrate-agnostic)
 
@@ -512,3 +514,54 @@ The single descriptive carve-out in this §9 is this paragraph: it names "GitHub
   - `.cdd/releases/docs/2026-06-21/476/` — cycle/476 (Sub 3 renderer v0). R1–R3 (3 rounds): missing `set -o pipefail` + `grep -c` exit-1-on-zero-matches class-trap (per cnos#478). Cited in §9.4 as evidence that R[N] iteration must be wake-observable on the branch.
   - `.cdd/unreleased/485/` — cycle/485 (Sub 5A renderer extension). R0-only converge under cnos#478 mechanical-injection discipline. Cited in §9.4 as evidence that the per-CI-step audit format absorbs the bash-e class-trap class.
 - **Successor:** cnos#487 (Sub 5C) — flips `cds-dispatch` `activation_state` to `live`, renders + commits the substrate artifact for the cds-dispatch wake, and runs a real `protocol:cds` smoke cell. cnos#487 consumes this section as the contract its smoke cell verifies.
+
+### 9.10. resumed-from-changes shape (cnos#500)
+
+This subsection names the `resumed-from-changes` wake-invoked mode shape: what δ does when a previously-converged cell returns from `status:changes` and re-enters the cycle.
+
+**Trigger.** The operator has read the cell's PR at `status:review`, returned an `iterate` or `reject` verdict via `cn cell return`, and re-armed the cycle via `cn cell resume`. The issue now carries `status:changes`. On the next wake firing that claims the cell (under `dispatch:cell + protocol:{P} + status:todo`, after the operator re-labels from `status:changes → status:todo` to re-authorize dispatch), δ receives a cell with a prior-round artifact history — this is the `resumed-from-changes` shape.
+
+**How this differs from a first-claim cell.** A first-claim cell has only `gamma-scaffold.md` on its cycle branch. A resumed-from-changes cell has the full prior-round artifact set: `gamma-scaffold.md` (R0, unchanged) + `self-coherence.md` (all §R[0..N] sections, with §R[N+1] header appended by `cn cell resume`) + `beta-review.md` (all §R[0..N] verdicts) + `operator-review.md` (the HI-authored typed verdict artifact) + optionally prior closeout artifacts. δ MUST detect this shape and route accordingly.
+
+**Detection.** δ detects the resumed-from-changes shape by reading the cycle branch state at wake-firing time. Indicators (any one is sufficient):
+- `self-coherence.md` contains two or more `§R[N]` section headers (R0 plus at least one prior implementation round)
+- `operator-review.md` exists at `.cdd/unreleased/{N}/operator-review.md`
+- The `status:changes → status:todo` transition occurred (branch history evidence; not always available to δ)
+
+**Input contract (resumed-from-changes).** In addition to the five standard inputs (§9.2), δ receives:
+- `operator-review.md` — the HI-authored `cn.operator-review.v1` artifact carrying the operator's findings
+- prior `self-coherence.md` §R[0..N] sections — α's prior-round AC verification and review-ready signal
+- prior `beta-review.md` §R[0..N] verdicts — β's prior-round review findings
+- `R[N+1]` increment — the next round number, determined from the `§R[N+1]` header appended by `cn cell resume` (or computed by δ if `cn cell resume` was not invoked)
+
+**Routing sequence (resumed-from-changes).** Follows §9.3 with modifications for the resumed shape:
+
+1. **δ dispatches α for R[N+1]** — α receives: cycle branch HEAD; `gamma-scaffold.md`; `operator-review.md`; prior `self-coherence.md` (with §R[N+1] header); prior `beta-review.md` §R[0..N]. α's job: address `operator-review.md`'s `findings[]`; append `self-coherence.md §R[N+1]` (AC verification + review-ready signal); commit, push, append readiness signal; exit. α does NOT spawn β.
+2. **δ dispatches β for R[N+1]** — β receives: cycle branch HEAD; `gamma-scaffold.md`; α's `self-coherence.md §R[N+1]`; `operator-review.md`; issue body. β's job: walk the AC oracle list independently; append `beta-review.md §R[N+1]` with verdict + findings; commit, push, exit. β does NOT spawn α.
+3. **δ routes on β's R[N+1] verdict** — same as §9.3 step 4: `iterate` → re-dispatch α at R[N+2]; `converge` → dispatch γ for closeout amendment.
+4. **δ dispatches γ for closeout amendment** — γ appends to `gamma-closeout.md` (per `gamma/SKILL.md §2.7`) naming the R[N+1] round, the operator findings addressed, and the recovery path. γ DOES NOT rewrite prior closeout sections; γ appends an amendment section.
+
+**γ closeout amendment shape.** On converge at R[N+1], γ's closeout amendment appends a `§R[N+1] amendment` section to `gamma-closeout.md` carrying:
+- R[N+1] round summary
+- Which `operator-review.md` findings were addressed (by finding id)
+- Calibrated success claim for R[N+1]
+- Updated triage carryforward (any new findings; any findings closed)
+
+**Preserved invariants.** The resumed-from-changes shape MUST preserve:
+- `cycle/{N}` branch — not recreated, not rebased onto main during resume (only δ may rebase per §9.3 rules; `cn cell resume` does not rebase)
+- `.cdd/unreleased/{N}/` artifact directory — not replaced, not emptied
+- `gamma-scaffold.md` — unchanged (R0 γ artifact; reflects the original cell contract)
+- All prior `self-coherence.md §R[0..N]` sections — preserved; only §R[N+1] is appended
+- All prior `beta-review.md §R[0..N]` verdicts — preserved; only §R[N+1] is appended
+- `operator-review.md` — HI-owned; not modified by α/β/γ
+
+**Reconciliation with §9.6 carve-out.** `status:changes` is still the operator's authority; the resumed-from-changes shape does not change that. What changes is the return path: the operator uses `cn cell return` (the mechanical translator of the operator's verdict) to initiate the transition, then re-authorizes dispatch by applying `status:todo`. δ's wake then claims the cell in the resumed-from-changes shape. The dispatch wake still never writes `status:changes`; the four return tokens in §9.6 are still the complete set δ writes during a wake-invoked cycle.
+
+**Empirical anchor.** cycle/497 R1 is the first empirical witness for the resumed-from-changes shape — executed manually (bootstrap-exception path: HI applied corrections inline as `dd819f00` rather than via `cn cell return`/`cn cell resume`). The recovery sequence (HI files `operator-review.md`; α R1 takes ownership; β R1 takes ownership; γ R1 takes ownership) is the manual stand-in for the wake-invoked routing defined here. The `degraded_recovery: human_interface_applied_operator_patch` declaration in `.cdd/unreleased/497/gamma-closeout.md §5` records the bootstrap exception. cnos#500 lands this subsection; future cycles with `iterate` verdicts use the mechanical path.
+
+**Cross-references.**
+- [`cnos.cdd/skills/cdd/operator-review/SKILL.md`](../operator-review/SKILL.md) — `cn.operator-review.v1` schema; `degraded_recovery` declaration schema; HI authoring rules.
+- [`cnos.core/orchestrators/agent-admin/hi-contract.md`](../../../../cnos.core/orchestrators/agent-admin/hi-contract.md) — HI behavioral contract; prohibited surfaces.
+- `src/go/internal/cell/` — Go implementation of `cn cell return` (label transition) and `cn cell resume` (cycle re-arm).
+- `.cdd/unreleased/497/operator-review.md` — canonical first-use `cn.operator-review.v1` witness.
+- `.cdd/unreleased/497/gamma-closeout.md §5` — canonical first `degraded_recovery` declaration.
