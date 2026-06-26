@@ -713,6 +713,70 @@ func TestReturner_Return_WrongSchema(t *testing.T) {
 	}
 }
 
+// --- F4: cn cell resume cycle-branch preflight (cycle/500 R1) ---
+
+// TestResumer_Resume_RefusesWhenOnMain proves the F4 preflight refuses
+// to operate when the caller is not on cycle/{N}. Previously the code
+// would have appended §R[N+1] to whatever working tree happened to be
+// checked out — corrupting the wrong branch.
+func TestResumer_Resume_RefusesWhenOnMain(t *testing.T) {
+	dir := t.TempDir()
+	artifactDir := filepath.Join(dir, ".cdd", "unreleased", "500")
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	scPath := filepath.Join(artifactDir, "self-coherence.md")
+	if err := os.WriteFile(scPath, []byte("## §R0\n\ntext\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr strings.Builder
+	r := &Resumer{
+		RepoRoot: dir,
+		Stdout:   &stdout,
+		Stderr:   &stderr,
+		CurrentBranch: func(_ context.Context) (string, error) {
+			return "main", nil
+		},
+	}
+	err := r.Resume(t.Context(), ResumeArgs{Issue: 500})
+	if err == nil {
+		t.Fatal("expected refusal when on main")
+	}
+	if !strings.Contains(err.Error(), "review_resume_wrong_branch") {
+		t.Errorf("expected review_resume_wrong_branch, got: %v", err)
+	}
+	// self-coherence.md must NOT have been modified.
+	content, _ := os.ReadFile(scPath)
+	if strings.Contains(string(content), "§R1") {
+		t.Error("preflight failure must not append §R1 to self-coherence.md")
+	}
+}
+
+// TestResumer_Resume_RefusesOnDetachedHead proves the preflight refuses
+// on a detached HEAD.
+func TestResumer_Resume_RefusesOnDetachedHead(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".cdd", "unreleased", "500"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr strings.Builder
+	r := &Resumer{
+		RepoRoot: dir,
+		Stdout:   &stdout,
+		Stderr:   &stderr,
+		CurrentBranch: func(_ context.Context) (string, error) {
+			return "", fmt.Errorf("detached HEAD; cn cell resume requires being on cycle/{N}")
+		},
+	}
+	err := r.Resume(t.Context(), ResumeArgs{Issue: 500})
+	if err == nil {
+		t.Fatal("expected refusal on detached HEAD")
+	}
+	if !strings.Contains(err.Error(), "review_resume_branch_unknown") {
+		t.Errorf("expected review_resume_branch_unknown, got: %v", err)
+	}
+}
+
 // --- Smoke: Resumer.Resume with existing self-coherence.md ---
 
 func TestResumer_Resume_AppendRound(t *testing.T) {

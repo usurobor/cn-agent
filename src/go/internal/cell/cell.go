@@ -419,21 +419,49 @@ func filterStatusLabels(labels []string) []string {
 
 // Resumer executes the cn cell resume operation.
 type Resumer struct {
-	RepoRoot string    // absolute path to the repository root
+	RepoRoot string // absolute path to the repository root
 	Stdout   io.Writer
 	Stderr   io.Writer
+	// CurrentBranch returns the current local git branch name (no leading
+	// "refs/heads/"). If nil, the package-level currentLocalBranch is used.
+	// Inject a test double to unit-test the F4 (cycle/500 R1) cycle-branch
+	// preflight without standing up a real git working tree.
+	CurrentBranch func(ctx context.Context) (string, error)
 }
 
 // Resume re-arms an existing cycle on cycle/{N}:
-// - verifies the cycle branch exists on origin
-// - verifies the .cdd/unreleased/{N}/ artifact directory exists
-// - appends an R[N+1] section header to self-coherence.md
+//   - preflight: refuse unless the caller is already on cycle/{N}
+//     (F4 design choice / cycle/500 R1: Option B v0 — local-only helper)
+//   - verifies the cycle branch exists on origin
+//   - verifies the .cdd/unreleased/{N}/ artifact directory exists
+//   - appends an R[N+1] section header to self-coherence.md
+//
+// Caller MUST commit and push the §R[N+1] marker after Resume returns.
+// Option A (fetch + auto-checkout + commit + push) is deferred to a future
+// cycle; documented in self-coherence §R1 + Debt.
 func (r *Resumer) Resume(ctx context.Context, args ResumeArgs) error {
 	branch := fmt.Sprintf("cycle/%d", args.Issue)
 	artifactDir := filepath.Join(r.RepoRoot, ".cdd", "unreleased", strconv.Itoa(args.Issue))
 
-	// Verify the cycle branch exists on origin.
+	// F4 (cycle/500 R1) preflight: the caller must already be on cycle/{N}.
+	// Without this, the §R[N+1] marker could be appended to self-coherence.md
+	// on main (or any other branch), corrupting cycle attribution. This is
+	// the Option B v0 contract.
 	fmt.Fprintf(r.Stdout, "Resuming cycle/%d ...\n", args.Issue)
+	curFn := r.CurrentBranch
+	if curFn == nil {
+		curFn = currentLocalBranch
+	}
+	cur, err := curFn(ctx)
+	if err != nil {
+		return fmt.Errorf("review_resume_branch_unknown: cannot determine current git branch: %w", err)
+	}
+	if cur != branch {
+		return fmt.Errorf("review_resume_wrong_branch: cn cell resume must be invoked from %q; current branch is %q. Run 'git checkout %s' first", branch, cur, branch)
+	}
+	fmt.Fprintf(r.Stdout, "  ✓ on branch %s (preflight pass)\n", branch)
+
+	// Verify the cycle branch exists on origin.
 	if err := verifyBranchExists(ctx, branch, r.Stderr); err != nil {
 		return fmt.Errorf("cycle branch %q not found on origin: %w", branch, err)
 	}
@@ -462,6 +490,13 @@ func (r *Resumer) Resume(ctx context.Context, args ResumeArgs) error {
 		branch, args.Issue, nextRound)
 	fmt.Fprintf(r.Stdout, "Existing artifacts preserved. δ routes α R%d → β R%d → γ closeout amendment.\n",
 		nextRound, nextRound)
+	// F4 / Option B v0 (cycle/500 R1): the caller is responsible for the
+	// commit and push of the §R[N+1] marker. Option A (the fetch + checkout
+	// + commit + push variant) is a future-cycle item.
+	fmt.Fprintf(r.Stdout, "\nNEXT: commit the §R%d header and push to origin/%s:\n", nextRound, branch)
+	fmt.Fprintf(r.Stdout, "  git add %s\n", filepath.Join(".cdd", "unreleased", strconv.Itoa(args.Issue), "self-coherence.md"))
+	fmt.Fprintf(r.Stdout, "  git commit -m \"alpha-%d: open §R%d\"\n", args.Issue, nextRound)
+	fmt.Fprintf(r.Stdout, "  git push origin %s\n", branch)
 	return nil
 }
 
@@ -502,6 +537,24 @@ func verifyBranchExists(ctx context.Context, branch string, w io.Writer) error {
 		return fmt.Errorf("git ls-remote: %w", err)
 	}
 	return nil
+}
+
+// currentLocalBranch returns the current local git branch (no "refs/heads/"
+// prefix). Returns an error if HEAD is detached or git is not available.
+// F4 (cycle/500 R1) preflight surface; tests inject a mock instead.
+func currentLocalBranch(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("git rev-parse: %w (stderr: %s)", err, stderr.String())
+	}
+	name := strings.TrimSpace(stdout.String())
+	if name == "" || name == "HEAD" {
+		return "", fmt.Errorf("detached HEAD; cn cell resume requires being on cycle/{N}")
+	}
+	return name, nil
 }
 
 // reviewFrontmatter captures the operator-review fields the runtime cares
