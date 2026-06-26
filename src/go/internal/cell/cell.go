@@ -10,6 +10,20 @@
 //   next dispatched round knows it is a continuation.
 //
 // Design authority: cnos#500; implementation contract pinned in gamma-scaffold.md.
+//
+// Cycle/500 R1 operator-review corrections (operator-review.md F1–F5):
+//   F1 — readReviewFrontmatter parses issue + verdict; Return verifies the
+//        artifact matches the CLI flags before any mutation.
+//   F2 — preflightIssue inspects state + status:* labels before mutation.
+//   F3 — applyLabelTransition is a single atomic gh edit call carrying
+//        both --remove-label and --add-label; preflightTargetLabel verifies
+//        status:changes exists in the repo BEFORE mutation; on failure,
+//        assessPostFailureDrift reports a precise drift marker. Empirical
+//        witness for the F3 sub-concern: cnos#493 (label-doctor gap).
+//   F4 — Resumer.Resume requires the caller to already be on cycle/{N}
+//        (Option B v0; see verifyOnCycleBranch).
+//   F5 — operator-review/SKILL.md §1.4 canonical captured_by examples
+//        updated to κ-era identities.
 package cell
 
 import (
