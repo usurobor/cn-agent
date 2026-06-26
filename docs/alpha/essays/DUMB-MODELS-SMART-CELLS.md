@@ -293,7 +293,7 @@ The human reviews the issue and authorizes dispatch.
 ```yaml
 dispatch:
   issue: 1
-  protocol: cdd
+  protocol: cds
   status: todo
   authority:
     subject: peter@operator
@@ -306,6 +306,8 @@ dispatch:
     attestation: none
   authorized_at: 2026-06-22T14:31:00Z
 ```
+
+Here `protocol: cds` selects the concrete software-development protocol; the cell still runs the generic CDD kernel (`contract -> matter -> review -> receipt -> verdict -> decision`) internally.
 
 The wake claims the issue and routes work.
 
