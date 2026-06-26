@@ -75,11 +75,13 @@ When the HI authors an artifact, attribution MUST be distinct from role attribut
 
 | Who authors | `captured_by` value | Artifact |
 |---|---|---|
-| γ-interface (HI) | `gamma-interface (HI)` | `operator-review.md` |
+| κ herald (HI) | `kappa (HI)` | `operator-review.md` |
 | Sigma agent-admin (HI) | `sigma (HI)` | `operator-review.md` |
 | Human operator directly | `human-operator-direct` | `operator-review.md` |
 
-The HI MUST NOT sign artifacts with role identities (`alpha@cdd.cnos`, `beta@cdd.cnos`, `gamma@cdd.cnos`, `delta@cdd.cnos`). Those identities are reserved for dispatched role sessions.
+`kappa (HI)` is the **canonical default** going forward (cnos#501). `gamma-interface (HI)` is retained only as a legacy / historical witness for `.cdd/unreleased/497/operator-review.md`, which was authored before κ was named. MUST NOT be used for new artifacts.
+
+The HI MUST NOT sign artifacts with role identities (`alpha@cdd.cnos`, `beta@cdd.cnos`, `gamma@cdd.cnos`, `delta@cdd.cnos`). Those identities are reserved for dispatched role sessions. The whole point of κ as a first-class identity is to prevent the HI from being taxonomically folded into CDD cell roles.
 
 ---
 

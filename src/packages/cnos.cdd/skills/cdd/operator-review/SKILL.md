@@ -56,7 +56,7 @@ Every `cn.operator-review.v1` artifact MUST carry a YAML frontmatter block with 
 | `pr` | integer or null | The PR associated with the cell at review time; null if no PR exists |
 | `verdict` | enum | One of: `converge` / `iterate` / `reject` / `clarify` |
 | `reviewer` | string | Identity of the reviewing actor (typically `human-operator`) |
-| `captured_by` | string | Identity of the HI session that authored this artifact (e.g. `gamma-interface (HI)`) |
+| `captured_by` | string | Identity of the HI session that authored this artifact (e.g. `kappa (HI)`) |
 | `captured_at` | string | UTC date (ISO 8601) when the artifact was authored |
 | `findings_count` | integer | Count of findings listed in the body (0 on `converge`; ≥1 on `iterate`/`reject`) |
 
@@ -90,12 +90,15 @@ On `iterate` or `reject`, the artifact body MUST list one or more findings. Each
 
 ### 1.4. HI attribution rule
 
-The `captured_by` field MUST be distinct from α/β/γ/δ artifact attribution. Valid values include:
-- `gamma-interface (HI)` — when the HI session is the γ-interface mouthpiece
+The `captured_by` field MUST be distinct from α/β/γ/δ artifact attribution. Canonical values:
+- `kappa (HI)` — the κ herald skill: the HI session translating operator intent into typed artifacts; this is the **canonical default** for HI-translated operator-review artifacts (cnos#501)
 - `sigma (HI)` — when the HI session is the Sigma agent-admin
 - `human-operator-direct` — when the operator authors the artifact directly (rare; no HI translation layer)
 
-The `captured_by` value MUST NOT be `alpha`, `beta`, `gamma`, or `delta` — those identities are reserved for dispatched role sessions.
+**Legacy / historical witness only:**
+- `gamma-interface (HI)` — used by `.cdd/unreleased/497/operator-review.md` (cycle/497 R1) because κ had not yet been named. Retained for retrospective audit; MUST NOT be used for new artifacts. The taxonomy correction is recorded in cnos#501.
+
+The `captured_by` value MUST NOT be `alpha`, `beta`, `gamma`, or `delta` — those identities are reserved for dispatched role sessions. The point of κ as a first-class identity is to prevent the HI from being taxonomically folded into CDD cell roles (see cnos#501).
 
 ---
 
@@ -108,7 +111,7 @@ issue: 500
 pr: 501
 verdict: iterate
 reviewer: human-operator
-captured_by: gamma-interface (HI)
+captured_by: kappa (HI)
 captured_at: 2026-07-01 (UTC)
 worker_pr_head_at_review: abc1234f
 findings_count: 2
