@@ -252,3 +252,114 @@ One C-severity finding:
 **Substance is sound.** All 7 ACs pass on the core behavioral claims. The Go implementation is correct, clean, and all 24 tests pass. The δ §9.10 amendment is well-structured. The HI contract and schema are complete in content. The two B-severity findings are precision/compliance corrections that do not require rethinking the design.
 
 **Routing:** α addresses F1 + F3 (and optionally F2); appends §R1 to self-coherence.md; signals review-readiness. β reviews §R1.
+
+---
+
+## §R1
+
+**Verdict: APPROVE (converge)**
+
+**Base:** `origin/main` @ `3095fa2b44145490c8e5241bd347165a53ace827` (re-fetched synchronously before this review pass; unchanged)
+**Cycle HEAD:** `71973e40` (alpha-500 R1: self-coherence review-readiness signal R2)
+
+---
+
+### Fix verification
+
+#### F1 resolved
+
+β R0 finding: "invisible meddling" cited as residing in `delta/SKILL.md`; the phrase does not exist there — it is in `operator/SKILL.md §Core Principle` line 37.
+
+**Verification:**
+- `grep -n "invisible meddling" src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` → line 37: confirmed present.
+- `grep -n "invisible meddling" src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` → zero results: confirmed absent.
+- `hi-contract.md §2` now reads: `"Named failure mode: 'invisible meddling' — per src/packages/cnos.cdd/skills/cdd/operator/SKILL.md §Core Principle."` — citation resolves correctly.
+- `hi-contract.md §7` cross-references split into two lines: `delta/SKILL.md §5 — "δ does not produce matter"` and `operator/SKILL.md §Core Principle — "invisible meddling" failure mode` — structurally correct.
+- `operator-review/SKILL.md §4.2` and `§6` carry the same corrected citation to `operator/SKILL.md §Core Principle`.
+
+**F1: resolved.**
+
+#### F3 resolved
+
+β R0 finding: `operator-review/SKILL.md` `calls:` entries contained inline section anchors (failed path resolution in `validate-skill-frontmatter.sh`); `kata_surface:` field absent.
+
+**Verification (frontmatter read from cycle/500 HEAD):**
+```yaml
+calls:
+  - delta/SKILL.md
+  - alpha/SKILL.md
+kata_surface: none
+```
+- `calls:` entries are bare relative paths — no inline section anchors. Path resolution will succeed.
+- `kata_surface: none` present immediately after `calls:`.
+- No exception entry needed (field is present).
+
+**F3: resolved.**
+
+#### F2 resolved (C-severity, addressed)
+
+β R0 finding: `applyLabelTransition()` has no injection point; iterate/reject positive paths untested.
+
+**Verification:**
+- `Returner` struct now carries `RunGH func(ctx context.Context, args []string, w io.Writer) error` field (line 122 in `cell.go`).
+- `applyLabelTransition()` uses `r.RunGH` if non-nil, falls back to package-level `runGH` — production behavior unchanged.
+- `TestReturner_Return_Iterate_AppliesLabelTransition`: injects mock `RunGH`; asserts exactly 2 `gh` calls: first removes `status:review`, second adds `status:changes`. Passes.
+- `TestReturner_Return_Reject_AppliesLabelTransition`: same injection; asserts 2 `gh` calls for reject verdict. Passes.
+- Total test count: 26 (was 24; +2 positive-path tests confirmed by `grep "^func Test" | wc -l`).
+
+**F2: resolved.**
+
+---
+
+### Implementation contract re-verification (R1 diff only)
+
+The R1 commit `d413220c` touches only:
+- `src/packages/cnos.core/orchestrators/agent-admin/hi-contract.md` (citation fix — F1)
+- `src/packages/cnos.cdd/skills/cdd/operator-review/SKILL.md` (frontmatter fix — F3; citation fix — F1)
+- `src/go/internal/cell/cell.go` (`RunGH` field + `applyLabelTransition` fix — F2)
+- `src/go/internal/cell/cell_test.go` (2 new tests — F2)
+- `.cdd/unreleased/500/self-coherence.md` (§R1 section appended)
+
+No changes to language (Go + Markdown), CLI integration target, package scoping, binary disposition, runtime dependencies, wire contracts, or backward-compat invariants. All 7 implementation-contract axes remain fully satisfied.
+
+---
+
+### Full AC walk (R1 HEAD)
+
+| AC | Verdict | Note |
+|---|---|---|
+| AC1 — Typed operator-review schema | PASS | `operator-review/SKILL.md` exists; all 8 required fields defined; 497 `operator-review.md` conforms (all fields present). Frontmatter corrected (F3); substance unchanged from R0. |
+| AC2 — HI records verdict without editing role-owned matter | PASS | `hi-contract.md §2` MUST NOT language present; all six prohibited surfaces listed; citation corrected to `operator/SKILL.md §Core Principle` (F1 fix). |
+| AC3 — Mechanical `status:review` → `status:changes` transition | PASS | `Returner.Return()` on `iterate`/`reject` calls `applyLabelTransition()` → removes `status:review`, adds `status:changes`. Positive-path tests now cover iterate and reject via injected mock (F2 fix). 26/26 tests pass. |
+| AC4 — Existing cycle resumed (not replaced) | PASS | `Resumer.Resume()` uses `verifyBranchExists()` (check only), `os.Stat()` (no mkdir), `O_APPEND` (no overwrite). Tests confirm prior content preserved. Unchanged from R0. |
+| AC5 — δ routes R[N+1] in order | PASS | `delta/SKILL.md §9.10` added; routing sequence steps 1–4 explicit; §9.6 carve-out reconciled. Unchanged from R0. |
+| AC6 — HI cannot substitute for dispatched roles | PASS | All six prohibited surfaces named; MUST NOT language; enforcement = convention + β Rule 7 backstop. Citation corrected (F1 fix). |
+| AC7 — Declared bootstrap-exception escape hatch | PASS | `degraded_recovery` schema in `operator-review/SKILL.md §3`; 497 `gamma-closeout.md §5` line 78 carries conforming first-witness declaration. Unchanged from R0. |
+
+---
+
+### Pre-merge gate
+
+| Row | Status |
+|---|---|
+| 1. Identity truth | `git config --get user.email` = `beta@cdd.cnos` ✓ (asserted via `--worktree` before this commit) |
+| 2. Canonical-skill freshness | `origin/main` = `3095fa2b` — unchanged from scaffold time; no advancement. All skills current. ✓ |
+| 3. Non-destructive merge-test | Deferred: β does not merge until CI is green on the HEAD commit per the review-readiness signal (`branch CI: unavailable locally — β waits for green before merge`). All B-severity findings are resolved; no open blocking findings. Merge proceeds when CI confirms green. ✓ (conditional) |
+| 4. γ-artifact completeness | `gamma-scaffold.md` present on `origin/cycle/500` ✓ |
+
+**CI note:** α's review-readiness signal explicitly states `branch CI: unavailable locally — β waits for green before merge`. β records this as the merge gate; the APPROVE verdict is unconditional on substance, conditional on CI green.
+
+---
+
+### Overall verdict
+
+**verdict: converge**
+
+All three R0 findings are resolved:
+- F1 (B): citation corrected from `delta/SKILL.md` to `operator/SKILL.md §Core Principle` in all three surfaces (hi-contract.md §2, §7; operator-review/SKILL.md §4.2, §6).
+- F3 (B): frontmatter corrected — bare `calls:` paths, `kata_surface: none` present.
+- F2 (C): `RunGH` injection field added; iterate and reject positive-path label-transition tests pass.
+
+All 7 ACs hold against the R1 HEAD. Implementation contract all 7 axes confirmed. Substance was sound at R0; R1 is precision-only; no new findings.
+
+β approves. δ routes accordingly.
