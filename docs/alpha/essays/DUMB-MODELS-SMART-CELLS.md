@@ -1,7 +1,7 @@
 ---
 title: "Dumb Models, Smart Cells"
 subtitle: "Receipts, Trust Claims, and Coherence Witnesses for Agent Systems"
-version: v0.9.0
+version: v0.9.1
 status: DRAFT
 author: usurobor (aka Axiom) (human & AI)
 date: 2026-06-23
@@ -10,7 +10,7 @@ date: 2026-06-23
 # Dumb Models, Smart Cells
 ## Receipts, Trust Claims, and Coherence Witnesses for Agent Systems
 
-**Status:** v0.9.0 (DRAFT — position paper)
+**Status:** v0.9.1 (DRAFT — position paper)
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-06-23
 
@@ -32,7 +32,7 @@ It refuses to confuse capability with authority.
 Capability is rented.
 Authority is owned.
 Trust level must be explicit.
-Coherence must be measured when it matters.
+Coherence must be measured when a work body crosses a boundary.
 And the receipt must not claim more than the artifact carries.
 
 That is the paper's claim: agent systems should rent model capability while keeping workflow, memory, evidence, validation, trust claims, coherence witnesses, permissions, receipts, and release authority in a durable system the operator controls.
@@ -239,7 +239,7 @@ It records what happened, what evidence was bound, what decision was made, what 
 The receipt is not a chat summary.
 It is the artifact another human, agent, validator, or release step can inspect later.
 
-### Coherence reports own measurement
+### Coherence reports carry measurement
 
 A coherence report answers a different question from a signature, a log, or a test.
 
@@ -785,7 +785,7 @@ A memory layer can preserve what an agent knows.
 A tool protocol can expose what an agent can call.
 An agent protocol can move messages between agents.
 
-cnos is after a different unit: releaseable work.
+cnos is after a different unit: releasable work.
 
 A cnos cell does not only remember context or call tools. It binds a contract, produced matter, evidence, validator verdict, coherence report, boundary decision, trust claim, and receipt into one body the next human or agent can inspect.
 
@@ -835,13 +835,13 @@ A cnos receipt is per cell, not per call. It asks:
 - what should the next cell inherit?
 
 A governance gateway records runtime events.
-A cnos cell closes releaseable work.
+A cnos cell closes releasable work.
 
 Those should compose. Gateway logs can become evidence inside a cnos receipt. They should not be mistaken for the receipt itself.
 
 "Every tool call was logged" is not the same claim as "this unit of work passed, or failed and was overridden by a named authority, with coherence measured and degradation recorded."
 
-cnos belongs above the call log. Not because call logs are unimportant. Because releaseable work is larger than a call.
+cnos belongs above the call log. Not because call logs are unimportant. Because releasable work is larger than a call.
 
 ---
 
