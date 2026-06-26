@@ -7,7 +7,7 @@ role: gamma (δ-collapsed at R0; γ R1 proper role pass after HI overstep)
 
 ## §1. Cycle close summary
 
-cycle/497 produced the Model B decision (`.cdd/` is the CDD framework's receipt ledger, not a package namespace for cnos.cdd; canonical protocol identity lives in the typed receipt's `protocol_id` field). β R0 converged. The human operator's final-read on PR #499 returned `iterate (narrowly)` with six precision/closure findings outside β R0's mechanically-scoped AC oracle. The recovery sequence: the γ-interface (HI) — lacking a mechanical review-return primitive — overstepped role boundaries by absorbing the corrections inline as commit `dd819f00` and framing the absorption as "δ-direct R1"; the operator's ruling reframed `dd819f00` as an operator-supplied patch proposal and dispatched a proper role pass on top — HI then filed `operator-review.md` as typed input (`cn.operator-review.v1`); α R1 took ownership of the decision artifact (`da68e373`); β R1 (parallel) takes ownership of the review; γ R1 (this file) takes ownership of the closeouts and carries the operator-mandated `degraded_recovery` declaration. Cycle output: Model B chosen; 497B/497C do not file; cell awaits operator boundary decision on the corrected PR #499.
+cycle/497 produced the Model B decision (`.cdd/` is the CDD framework's receipt ledger, not a package namespace for cnos.cdd; canonical protocol identity lives in the typed receipt's `protocol_id` field). β R0 converged. The human operator's final-read on PR #499 returned `iterate (narrowly)` with six precision/closure findings outside β R0's mechanically-scoped AC oracle. The recovery sequence: the γ-interface (HI) — lacking a mechanical review-return primitive — overstepped role boundaries by absorbing the corrections inline as commit `dd819f00` and framing the absorption as "δ-direct R1"; the operator's ruling reframed `dd819f00` as an operator-supplied patch proposal and dispatched a proper role pass on top — HI then filed `operator-review.md` as typed input (`cn.operator-review.v1`); α R1 took ownership of the decision artifact (`da68e373`); β R1 took ownership of the review at `9b120aae`; γ R1 (this file) then took ownership of the closeout at `5e8fbe18` and carries the operator-mandated `degraded_recovery` declaration. Cycle output: Model B chosen; 497B/497C do not file; cell awaits operator boundary decision on the corrected PR #499.
 
 ---
 
@@ -46,7 +46,7 @@ This wording deliberately separates cell closure from boundary acceptance. Per C
 
 - `gamma-scaffold.md` — R0; γ-owned ✓
 - `self-coherence.md` — §R0 + §R1; α-owned (α R1 took ownership at `da68e373`) ✓
-- `beta-review.md` — §R0 + §R1; β-owned (β R1 in parallel) ✓
+- `beta-review.md` — §R0 + §R1; β-owned (β R1 took ownership of the review at `9b120aae`) ✓
 - `alpha-closeout.md` — R0 + R1; α-owned ✓
 - `beta-closeout.md` — R0 + R1; β-owned ✓
 - `gamma-closeout.md` — R0 + R1; γ-owned (this file; γ R1 took ownership replacing HI's `dd819f00` rewrite) ✓
@@ -87,7 +87,7 @@ recovery_actions:
   - operator ruling reframed dd819f00 as operator-supplied patch proposal (textual content remains on branch; provenance reclassified)
   - HI filed .cdd/unreleased/497/operator-review.md as typed input (schema cn.operator-review.v1; 6 findings O1–O6 with surface / problem / expected_change)
   - α R1 took ownership at da68e373 (self-coherence.md §R1; adopted O1 with completeness extension; adopted O2 and O3 verbatim; noted O4/O5/O6 as γ's matter; alpha-closeout R1 note)
-  - β R1 (running in parallel; β takes ownership of beta-review.md §R1 and beta-closeout.md R1 note independently — γ does not narrate β's reasoning)
+  - β R1 took ownership of the review at `9b120aae` (β takes ownership of beta-review.md §R1 and beta-closeout.md R1 note independently — γ does not narrate β's reasoning)
   - γ R1 (this file; takes ownership of gamma-closeout.md; carries this degraded_recovery declaration; adopts the O4/O5/O6 substantive content as γ's analysis, not as HI's patch text rubber-stamped)
   - cnos#500 filed (cdd/review-return: mechanically route operator iterate verdicts back into an existing cell; P1; the empirical motivator is this cycle's dd819f00)
 status: accepted as bootstrap exception; must not become the standard flow
@@ -119,7 +119,7 @@ target_state: |
 **What the proper-role-pass-on-top sequence accomplished.** Three independent role passes were executed on top of the HI's `dd819f00` textual edits, each role inspecting the HI's patch as proposed text against its own role's responsibility surface:
 
 - α R1 (`da68e373`) inspected `dd819f00`'s edits to `self-coherence.md` §R0 (O1, O2, O3), adopted them as α's R1 corrections (with one completeness extension for the `CDD Trace` action-taken bullet that the HI missed), and noted O4/O5/O6 as γ's matter. α replaced the HI-authored `§R1` with α's own analysis and took explicit ownership of the decision artifact.
-- β R1 (parallel) independently reviews α's corrected decision and the operator findings; β rewrites the HI-authored §R1 in `beta-review.md` and `beta-closeout.md` R1 note in β's own voice. (γ does not narrate β's specific R1 text — that is β's own matter.)
+- β R1 took ownership of the review at `9b120aae`; β independently reviews α's corrected decision and the operator findings; β rewrites the HI-authored §R1 in `beta-review.md` and `beta-closeout.md` R1 note in β's own voice. (γ does not narrate β's specific R1 text — that is β's own matter.)
 - γ R1 (this file) replaces the HI's rewrite of `gamma-closeout.md` with γ's own R1 closeout: takes ownership of O4 (closure-wording correction; cell closure ≠ boundary acceptance), O5 (Dispatch configuration section per CDS actor-collapse rule), O6 (process-gap audit with explicit dispositions); records the HI-boundary-violation finding as a new R1-discovered finding with `escalate` disposition pointing to cnos#500; carries the operator-mandated `degraded_recovery` declaration.
 
 The HI's `dd819f00` patch text — for the surfaces under each role's ownership — was generally correct (it carried the operator's stated expected_change reasonably faithfully). The proper-role-pass-on-top sequence's value is not invalidating the textual content; it is restoring the *attribution*: the decision artifact is α's; the review is β's; the closeout is γ's; the typed operator translation is the HI's; the lifecycle transition is the runtime's. Attribution matters because the durable record exists precisely so that future verification, retrospective, and TSC grading can read who claimed what — collapsed attribution corrupts that record.
@@ -142,7 +142,7 @@ The HI's `dd819f00` patch text — for the surfaces under each role's ownership 
 
 ## §8. Next move
 
-Operator re-reads PR #499 with the proper-role-pass-on-top sequence applied: α R1 (`da68e373`) + β R1 (parallel) + γ R1 (this file) + HI's `operator-review.md` typed input + `degraded_recovery` declaration in §5 above. If the corrections substantively addressed the six findings as adopted by the proper roles, operator merges PR #499 and closes cnos#497. If another iterate verdict returns, the same bootstrap-exception sequence repeats (HI files updated `operator-review.md`; α/β/γ dispatched separately) until cnos#500 lands.
+Operator re-reads PR #499 with the proper-role-pass-on-top sequence applied: α R1 (`da68e373`) took ownership of the decision artifact; β R1 took ownership of the review at `9b120aae`; γ R1 (this file) then took ownership of the closeout at `5e8fbe18`; HI's `operator-review.md` typed input + `degraded_recovery` declaration in §5 above. If the corrections substantively addressed the six findings as adopted by the proper roles, operator merges PR #499 and closes cnos#497. If another iterate verdict returns, the same bootstrap-exception sequence repeats (HI files updated `operator-review.md`; α/β/γ dispatched separately) until cnos#500 lands.
 
 **Umbrella state:**
 
@@ -159,3 +159,11 @@ Operator re-reads PR #499 with the proper-role-pass-on-top sequence applied: α 
 γ-497 R1 closeout authored 2026-06-26 (UTC) post-HI-overstep recovery sequence. The cell's substance (Model B decision; six precision/closure corrections adopted by the proper roles) is intact and improved relative to R0. The procedural posture is honestly recorded as `degraded_recovery: human_interface_applied_operator_patch` with the recovery actions enumerated, the underlying cause (cnos#500's missing primitive) cited, and the bootstrap-exception status declared. The HI's `dd819f00` patch text is preserved as branch history; this R1 closeout supersedes the HI's rewrite of `gamma-closeout.md` and restores γ ownership of γ-matter.
 
 — γ@cdd.cnos, cycle/497 R1, 2026-06-26 (UTC)
+
+---
+
+## §R2 amendment (γ R2 single-purpose role pass)
+
+Operator-final-read on the R1 corrected PR #499 returned `iterate (once, extremely narrowly)` with one finding (O7 in `operator-review.md §R2`): the §1 and §6 recovery-sequence descriptions used "(parallel)" / "(running in parallel...)" wording, which contradicts the role-boundary doctrine the cycle is installing. γ R2 corrects the wording to sequential per the operator's verbatim replacement text. No other edits; β verdict + AC re-walk + degraded_recovery declaration in §5 all stand.
+
+— γ@cdd.cnos, cycle/497 R2 (wording fix), 2026-06-26 (UTC)
