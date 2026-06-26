@@ -1,0 +1,82 @@
+name: oneoff-r1-500-pre
+
+# One-off pre-R1 transition workflow for cnos#500 bootstrap review-return.
+# Posts the operator-authorized bootstrap-exception comment + transitions
+# labels status:review → status:changes → status:in-progress.
+#
+# Context: GitHub MCP tools' token expired in the κ-interface session.
+# Operator-authorized bootstrap review-return exception per the verdict
+# 2026-06-26 (https://github.com/usurobor/cnos/issues/500). κ-interface
+# cannot post comments or apply labels via MCP; this workflow does it.
+#
+# Uses SIGMA_WORKFLOW_PAT (per cnos#496 oneoff-dispatch-500 precedent;
+# cross-workflow triggering not needed here — the label transitions are
+# terminal-state-record only; α R1 begins via Agent sub-session in the
+# κ-interface session, not via wake claim).
+
+on:
+  push:
+    branches:
+      - oneoff/r1-500
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oneoff-r1-500
+  cancel-in-progress: false
+
+jobs:
+  pre-r1-transition:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post bootstrap review-return exception comment on cnos#500
+        env:
+          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/comment.md <<'COMMENT_EOF'
+          ## Bootstrap review-return exception
+
+          Operator verdict: iterate.
+
+          Reason: This issue implements `cn cell return` / `cn cell resume`, so the mechanical review-return primitive cannot route its own first iterate yet.
+
+          The operator-review artifact has been written at:
+          `.cdd/unreleased/500/operator-review.md`
+
+          This is a bootstrap exception. κ records the operator verdict and applies labels, but does not implement/review/close. The current session acts as bootstrap δ and routes α/β/γ R1 sequentially.
+
+          Expected path:
+          `status:review → status:changes → status:in-progress → status:review`
+
+          ---
+
+          *Posted via one-off workflow (`.github/workflows/oneoff-r1-500-pre.yml`) on operator authorization; GitHub MCP token was expired in the κ-interface session when the operator authorized this bootstrap exception. The directive text above is the operator's verbatim instruction.*
+
+          — operator authorization 2026-06-26, applied by κ + current session as bootstrap δ
+          COMMENT_EOF
+          gh issue comment 500 --repo usurobor/cnos --body-file /tmp/comment.md
+
+      - name: Transition cnos#500 labels status:review → status:changes → status:in-progress
+        env:
+          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          # status:review → status:changes (record iterate verdict)
+          gh issue edit 500 --repo usurobor/cnos \
+            --remove-label "status:review" \
+            --add-label "status:changes"
+          echo "Labels: removed status:review; added status:changes."
+          # status:changes → status:in-progress (bootstrap δ starting R1)
+          gh issue edit 500 --repo usurobor/cnos \
+            --remove-label "status:changes" \
+            --add-label "status:in-progress"
+          echo "Labels: removed status:changes; added status:in-progress."
+
+      - name: Confirm final issue state
+        env:
+          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          gh issue view 500 --repo usurobor/cnos --json number,title,state,labels --jq '{number, title, state, labels: [.labels[].name]}'
