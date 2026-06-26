@@ -411,3 +411,157 @@ Debt item 4 (prior: Repo flag gap) is superseded. The `RunGH` injection added in
 **R1 fix summary:** F1 corrected (citation to operator/SKILL.md §Core Principle); F3 corrected (bare calls: paths + kata_surface: none); F2 addressed (RunGH injection + 2 new positive-path tests; 26 PASS).
 
 **All pre-review gate rows satisfied.** β may begin R1 review.
+
+---
+
+## §R1 — Operator-final-read iterate (post β-R1-converge; κ-routed)
+
+After the in-cycle β R0 → α R1 → β R1 converge sequence above, the human operator performed final-read on PR #502 and returned **iterate** with 5 findings (F1–F5) + 1 CI note. The operator-review.md artifact at `.cdd/unreleased/500/operator-review.md` was filed by κ (the HI; herald) as the typed durable input. This α-R1 pass adopts each finding.
+
+This is a **bootstrap review-return exception**: PR #502 IS the implementation of `cn cell return` + `cn cell resume`, so the primitive cannot route its own first operator-iterate yet. The current parent session acts as bootstrap-δ; α R1 (this session), β R1, and γ R1 are dispatched sequentially. γ closeout §5 (γ's matter) records the `degraded_recovery: self_install_bootstrap` declaration.
+
+### Per-finding adopt/adjust analysis
+
+#### F1 — Adopted (full)
+
+**Operator's expected change:** `cn cell return` MUST parse `issue` and `verdict` from the operator-review artifact frontmatter and verify `artifact.issue == --issue` and `artifact.verdict == --verdict`. If not, fail before any label mutation.
+
+**α's action:** Adopted as stated. New `readReviewFrontmatter` parses schema + issue + verdict; `Returner.Return` verifies the artifact-against-flags match BEFORE preflight or label mutation. Mismatch yields `review_return_artifact_mismatch`. Missing required fields yields `review_return_artifact_invalid`.
+
+**Commit:** `12e8d19c`
+
+**Tests added (3):**
+- `TestReturner_Return_IssueMismatch_RejectsBeforeLabelMutation` — asserts zero gh calls
+- `TestReturner_Return_VerdictMismatch_RejectsBeforeLabelMutation` — asserts zero gh calls
+- `TestReturner_Return_MissingIssueField_Rejects`
+
+#### F2 — Adopted (full)
+
+**Operator's expected change:** `cn cell return` MUST preflight the issue state and require: exactly one `status:*` label, `status:review` present, `status:changes` absent, issue open. Fail with `review_return_state_invalid` on violation.
+
+**α's action:** Adopted as stated. New `preflightIssue` calls `gh issue view --json state,labels` and enforces all four invariants. Wires through a new `RunGHJSON` injection field on `Returner` so the read path is unit-testable (parallel to `RunGH` for write).
+
+**Commit:** `165b6d19`
+
+**Tests added (3):**
+- `TestReturner_Return_Preflight_WrongStatusLabel` (e.g. status:in-progress)
+- `TestReturner_Return_Preflight_MultipleStatusLabels` (status:review + status:changes both present)
+- `TestReturner_Return_Preflight_ClosedIssue`
+
+The single-status invariant (status:changes absent) is enforced implicitly by the "exactly one status:* label, equal to status:review" check — the `MultipleStatusLabels` test covers this case explicitly.
+
+#### F3 — Adopted (preferred path)
+
+**Operator's expected change:** Atomic label transition; failure must not leave the issue statusless. Bonus: verify target label exists before destructive action (empirical witness: cnos#493 label-doctor gap; runtime exercise today during cnos#500 bootstrap recovery left the issue stranded).
+
+**α's action:** Adopted the **preferred** option — single `gh issue edit` call carrying both `--remove-label status:review` and `--add-label status:changes`. gh + the GitHub labels API resolve this as a single PATCH against `labels[]`, preserving the single-status invariant.
+
+Also adopted the bonus: `preflightTargetLabel` calls `gh label list --json name` and verifies `status:changes` exists in the repo BEFORE the destructive call. Failure yields `review_return_target_label_missing` — explicitly named after the cnos#493 empirical witness pattern.
+
+On atomic-call failure (network blip, auth glitch), `assessPostFailureDrift` re-inspects the issue and reports one of: `statusless`, `partially-applied at status:changes`, or `no drift; safe to retry`. Drift markers are appended to the error returned to the operator.
+
+**Substantive code commit:** `165b6d19` (alongside F2, because both paths share the `RunGHJSON` injection and the iterate/reject test fixtures had to flip from "two calls" to "one atomic call" at the same time). **Audit anchor commit:** `89068e54` — adds the package-level doc string mapping F1–F5 → resolution surfaces explicitly.
+
+**Tests added (3):**
+- `TestReturner_Return_AtomicTransition_OneGHCall` — asserts exactly one gh call carrying BOTH flags (not two)
+- `TestReturner_Return_TargetLabelMissing` — asserts zero gh edit calls when status:changes missing from repo
+- `TestReturner_Return_LabelDrift_OnGHFailure` — asserts `review_return_label_drift: ... statusless` marker on simulated failure
+
+#### F4 — Adopted (Option B v0 design choice)
+
+**Operator's expected change:** Choose Option A (mechanical fetch + checkout + commit + push) eventually, or Option B (local-only helper; caller must already be on `cycle/{N}`; caller commits/pushes after) for v0 with a hard preflight.
+
+**α's design choice:** **Option B v0.** Rationale: PR #502 is already scoped to install the review-return primitive; adding the auto-fetch/checkout/commit/push machinery is a meaningful additional surface (would require git workdir state machine, conflict detection on stale local refs, push-failure recovery). Option B with a hard preflight delivers the load-bearing invariant — "the §R[N+1] marker is appended to cycle/{N}'s self-coherence.md, never anywhere else" — without that complexity. Option A is captured as a §Debt item; deferring it to a future cycle keeps R1 corrections focused on the operator's findings.
+
+**α's action:**
+- `Resumer.Resume` runs cycle-branch preflight FIRST: `currentLocalBranch` must equal `cycle/{N}`. Wrong branch yields `review_resume_wrong_branch`; detached HEAD or unreadable git yields `review_resume_branch_unknown`.
+- `Resumer.CurrentBranch` injection added (parallel to `RunGH` / `RunGHJSON`).
+- Help text (`cmd_cell.go` `CellResumeCmd.Help`) updated to state the PRECONDITION (must be on cycle/{N}) and the post-condition (caller must commit + push the §R[N+1] marker). Includes a worked example.
+
+**Commit:** `eb9c4534`
+
+**Tests added (2):**
+- `TestResumer_Resume_RefusesWhenOnMain` — also asserts NO mutation of self-coherence.md when preflight fails (the load-bearing invariant)
+- `TestResumer_Resume_RefusesOnDetachedHead`
+
+#### F5 — Adopted (doctrinal vocabulary canonization)
+
+**Operator's expected change:** Replace canonical `captured_by: gamma-interface (HI)` examples in `operator-review/SKILL.md` with κ-era identities (`kappa (HI)`, `sigma (HI)`, `human-operator-direct`). Keep `gamma-interface (HI)` only as a legacy/historical witness reference.
+
+**α's action:** Adopted as stated. Updated:
+- `operator-review/SKILL.md §1.1` — required-fields table example: `kappa (HI)`
+- `operator-review/SKILL.md §1.4` — canonical values list now leads with `kappa (HI)` (canonical default; cnos#501 cited); `gamma-interface (HI)` retained only under "Legacy / historical witness only" with explicit "MUST NOT be used for new artifacts"
+- `operator-review/SKILL.md §2` — example artifact: `captured_by: kappa (HI)`
+- `hi-contract.md §4` — attribution table: κ herald (HI) is canonical; same legacy carve-out for `gamma-interface (HI)`
+
+The doctrinal vocabulary lesson from cycle/497 O4 (CDS closure vs boundary acceptance) and O5 (actor-collapse declaration) is explicitly cited: durable-record vocabulary shapes future role/identity affordances. cnos#501 (the κ skill) is the doctrinal anchor for the correction.
+
+**Commit:** `7869c49c`
+
+**No new tests** (Markdown-only canonization update; no behavioral change to test).
+
+### Test coverage delta
+
+| Round | Tests | Δ |
+|---|---|---|
+| R0 (initial implementation) | 24 | — |
+| In-cycle R1 (β R0 → α R1 → β R1) | 26 | +2 (F2 injection) |
+| **This round (operator-final-read α R1)** | **37** | **+11** |
+
+Per-finding test additions: F1 +3, F2 +3, F3 +3, F4 +2, F5 +0. Goal stated in operator brief was ≥30; achieved 37.
+
+### F4 design choice declaration
+
+**Choice: Option B v0** (caller already on `cycle/{N}`; caller commits/pushes after).
+
+**Rationale:** scope discipline. PR #502 already lands the review-return primitive end-to-end; Option A's auto-fetch/checkout/commit/push surface is a meaningfully larger second-order machinery. Option B preserves the load-bearing invariant (§R[N+1] never lands on the wrong branch) with a single git rev-parse check. Option A is a known follow-up.
+
+**Migration path declared:** when Option A ships (a future cycle), the existing `Resumer.CurrentBranch` injection becomes the basis for the fetch-and-checkout flow; the preflight semantics tighten from "must already be on cycle/{N}" to "will be on cycle/{N} after we check it out."
+
+### F5 doctrinal vocabulary update
+
+Canonization landed in two surfaces (`operator-review/SKILL.md §1.1 §1.4 §2`; `hi-contract.md §4`). No drift between the two — both lead with `kappa (HI)` and treat `gamma-interface (HI)` identically as legacy/historical-only. Future tooling that lists canonical `captured_by` values reads from these two surfaces.
+
+### CI note resolution
+
+**Operator's CI note:** PR #502 needs a clean statement that `operator-review/SKILL.md` passes frontmatter validation independently of the inherited I5 failures on main.
+
+**α's resolution:** I verified the frontmatter manually against the schema enforced by `tools/validate-skill-frontmatter.sh`:
+
+- Opens with `---` on line 1 ✓
+- Closes with `---` on line 32 ✓
+- `name`, `description`, `governing_question`, `triggers`, `scope` present ✓
+- Spec-required-but-exception-backed fields (`artifact_class`, `kata_surface`, `inputs`, `outputs`) all present ✓
+- `calls` entries are bare relative paths (`delta/SKILL.md`, `alpha/SKILL.md`); both resolve to existing files under the package skill root `src/packages/cnos.cdd/skills/cdd/` ✓
+
+(The `cue vet` step is not runnable in this substrate — `cue` is not installed and the validator returns exit 2 "prerequisite missing." This is the substrate gap, not the skill's gap; the file passes every script-level check the validator would run if `cue` were present. β R1 of the in-cycle pass already independently verified the cue-shape against the schema by reading the schema file.)
+
+PR body updated to carry this clean statement explicitly. **The new `operator-review/SKILL.md` does not contribute to the inherited I5 failures.**
+
+### Review-readiness signal
+
+Ready for β R1 review of these R1 corrections.
+
+---
+
+## Review-readiness | operator-final-read R1 | base SHA: 3095fa2b44145490c8e5241bd347165a53ace827 | implementation SHA: 7869c49cf9d56bc9bad337dafa2292bea13db1ad | branch CI: unavailable locally — β waits for green before merge | ready for β
+
+**Transient row re-validation (immediately before this signal):**
+- Row 1 (cycle branch rebased): `git log origin/main -1 --format=%H` = `3095fa2b` — unchanged from scaffold time. No rebase needed.
+- Row 10 (branch CI): CI not available in this substrate. β MUST NOT merge before CI is green on head commit.
+
+**γ-artifact:** `gamma-scaffold.md` present at canonical §5.1 path on `origin/cycle/500` ✓
+
+**Operator-final-read R1 fix summary:**
+- F1 fixed: artifact-as-authority validation (issue + verdict mismatch rejected before label mutation) — commit `12e8d19c`
+- F2 fixed: preflight issue state (review_return_state_invalid) — commit `165b6d19`
+- F3 fixed: atomic transition + drift handling + target-label preflight (preferred path; cnos#493 empirical witness cited) — commit `165b6d19` substance + `89068e54` audit anchor
+- F4 fixed: Option B v0 cycle-branch preflight (review_resume_wrong_branch) — commit `eb9c4534`
+- F5 fixed: canonical captured_by → kappa (HI); gamma-interface (HI) retained legacy-only — commit `7869c49c`
+- CI note: independent frontmatter validation statement; PR body updated
+
+**Test count:** 37 PASS, 0 FAIL (was 26 at in-cycle β R1 converge; +11 this round).
+
+**Build:** `go build ./src/go/cmd/cn/` clean. `go vet ./...` clean.
+
+**All pre-review gate rows satisfied.** β may begin operator-final-read R1 review.
