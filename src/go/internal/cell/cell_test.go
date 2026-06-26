@@ -1,6 +1,8 @@
 package cell
 
 import (
+	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -280,6 +282,76 @@ func TestReturner_Return_Converge(t *testing.T) {
 	// Verified by absence of "status:changes" in stdout.
 	if strings.Contains(stdout.String(), "status:changes") {
 		t.Error("converge verdict must not apply status:changes transition")
+	}
+}
+
+// --- Smoke: Returner.Return with iterate/reject verdicts (injected RunGH) ---
+
+func TestReturner_Return_Iterate_AppliesLabelTransition(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var called [][]string
+	mockGH := func(_ context.Context, args []string, _ io.Writer) error {
+		called = append(called, append([]string(nil), args...))
+		return nil
+	}
+
+	var stdout strings.Builder
+	var stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	if err := r.Return(t.Context(), args); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Expect exactly two gh calls: remove status:review then add status:changes.
+	if len(called) != 2 {
+		t.Fatalf("expected 2 gh calls, got %d: %v", len(called), called)
+	}
+	// First call removes status:review.
+	removeCall := strings.Join(called[0], " ")
+	if !strings.Contains(removeCall, "--remove-label") || !strings.Contains(removeCall, "status:review") {
+		t.Errorf("first gh call should remove status:review, got: %q", removeCall)
+	}
+	// Second call adds status:changes.
+	addCall := strings.Join(called[1], " ")
+	if !strings.Contains(addCall, "--add-label") || !strings.Contains(addCall, "status:changes") {
+		t.Errorf("second gh call should add status:changes, got: %q", addCall)
+	}
+	if !strings.Contains(stdout.String(), "status:changes") {
+		t.Errorf("expected 'status:changes' in output, got: %q", stdout.String())
+	}
+}
+
+func TestReturner_Return_Reject_AppliesLabelTransition(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: reject\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var called [][]string
+	mockGH := func(_ context.Context, args []string, _ io.Writer) error {
+		called = append(called, append([]string(nil), args...))
+		return nil
+	}
+
+	var stdout strings.Builder
+	var stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH}
+	args := ReturnArgs{Issue: 500, Verdict: "reject", ReviewPath: reviewPath}
+	if err := r.Return(t.Context(), args); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(called) != 2 {
+		t.Fatalf("expected 2 gh calls, got %d: %v", len(called), called)
 	}
 }
 

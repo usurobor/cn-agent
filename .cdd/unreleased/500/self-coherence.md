@@ -318,3 +318,82 @@ Both lists carry the same 6 surfaces. No drift between the two (both were author
 **γ-artifact:** `gamma-scaffold.md` present at canonical §5.1 path — `git cat-file -e origin/cycle/500:.cdd/unreleased/500/gamma-scaffold.md` → present ✓
 
 **All pre-review gate rows satisfied.** β may begin review.
+
+---
+
+## §R1 — Fix-round (β R0 findings F1, F2, F3)
+
+**β verdict:** REQUEST CHANGES (R0 cycle head: `958fb0ac`)
+**This round fixes:** F1 (B), F3 (B), F2 (C — addressed via injection; positive path now tested)
+
+### F1 — "invisible meddling" citation corrected
+
+**Finding:** Both `hi-contract.md §2` and `operator-review/SKILL.md §4.2` (and `§6`) cited "invisible meddling" as a named failure mode in `delta/SKILL.md`. The phrase is in `operator/SKILL.md §Core Principle` (line 37), not delta/SKILL.md.
+
+**Fix applied:**
+- `src/packages/cnos.core/orchestrators/agent-admin/hi-contract.md §2` — citation updated from `delta/SKILL.md` to `operator/SKILL.md §Core Principle`
+- `src/packages/cnos.core/orchestrators/agent-admin/hi-contract.md §7` — cross-reference split into two lines: `delta/SKILL.md §5 — "δ does not produce matter"` and `operator/SKILL.md §Core Principle — "invisible meddling" failure mode`
+- `src/packages/cnos.cdd/skills/cdd/operator-review/SKILL.md §4.2` — citation updated from `delta/SKILL.md named failure mode` to `operator/SKILL.md §Core Principle`
+- `src/packages/cnos.cdd/skills/cdd/operator-review/SKILL.md §6` — same split applied
+
+**Verification:** `grep -n "invisible meddling" src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` → 0 results ✓; `grep -n "invisible meddling" src/packages/cnos.cdd/skills/cdd/operator/SKILL.md` → line 37 ✓
+
+**AC2 re-check:** AC2's oracle asks that the named failure mode "invisible meddling" be cited from δ doctrine. The correct doctrine surface is `operator/SKILL.md §Core Principle` — the operator skill governs operator behavior, and invisible meddling is the operator-role failure mode. Citation now resolves accurately. AC2 still passes; citation fixed.
+
+**AC6 re-check:** Same citation appeared in `operator-review/SKILL.md §4.2`. Fixed to same corrected path. AC6 still passes.
+
+---
+
+### F3 — operator-review/SKILL.md frontmatter corrected
+
+**Finding:** `calls:` entries contained inline section anchors (e.g., `"cnos.cdd/skills/cdd/delta/SKILL.md §9.6 (return token carve-out)"`) that would fail `validate-skill-frontmatter.sh` path resolution. Additionally, `kata_surface` field was missing.
+
+**Fix applied:**
+- `calls:` entries replaced with bare relative paths: `delta/SKILL.md` and `alpha/SKILL.md` (relative to `src/packages/cnos.cdd/skills/cdd/`). Section-anchor references moved to prose context already present in §6 of the skill body.
+- `kata_surface: none` added immediately after `calls:` in frontmatter (this skill has no embedded kata).
+
+**Verification:** frontmatter now has `calls:` with two bare paths and `kata_surface: none`; no inline annotations remain in the `calls:` list.
+
+**AC1 re-check:** operator-review/SKILL.md is the AC1 oracle artifact. Its substance is unchanged; only frontmatter compliance corrected. AC1 still passes.
+
+---
+
+### F2 — applyLabelTransition() injection point added (C-severity, addressed)
+
+**Finding:** `runGH` was a package-level function with no injection point on `Returner`. The iterate/reject verdict paths could not be unit-tested without a live `gh` CLI.
+
+**Fix applied:**
+- Added `RunGH func(ctx context.Context, args []string, w io.Writer) error` field to `Returner` struct.
+- `applyLabelTransition()` now uses `r.RunGH` if non-nil, otherwise falls back to the package-level `runGH`. Production behavior unchanged (nil → package-level function).
+- Added two new tests:
+  - `TestReturner_Return_Iterate_AppliesLabelTransition` — injects a mock `RunGH`; verifies exactly 2 gh calls in correct order (remove `status:review`, add `status:changes`).
+  - `TestReturner_Return_Reject_AppliesLabelTransition` — same injection; verifies 2 gh calls for reject verdict.
+
+**Test run output:**
+```
+go test -race ./src/go/internal/cell/...
+PASS
+ok  github.com/usurobor/cnos/src/go/internal/cell  1.019s
+```
+26 PASS, 0 FAIL (was 24; +2 new positive-path tests).
+
+**AC3 re-check:** The positive label-mutation path is now unit-tested. The prior smoke test (`TestReturner_Return_Converge`) proved the converge negative; new tests prove iterate and reject positives. Oracle evidence strengthened. AC3 still passes.
+
+---
+
+### Re-verification of affected ACs
+
+| AC | Status after R1 | Change |
+|---|---|---|
+| AC1 | PASS | operator-review/SKILL.md frontmatter fixed; substance unchanged |
+| AC2 | PASS | citation corrected from delta/SKILL.md to operator/SKILL.md §Core Principle |
+| AC3 | PASS | iterate/reject positive paths now unit-tested via injected RunGH |
+| AC6 | PASS | citation corrected in operator-review/SKILL.md §4.2 |
+| AC4, AC5, AC7 | unchanged PASS | no changes to these surfaces |
+
+---
+
+### §Debt update
+
+Debt item 4 (prior: Repo flag gap) is superseded. The `RunGH` injection added in this round closes the test-coverage gap identified in F2. No new debt items.
+

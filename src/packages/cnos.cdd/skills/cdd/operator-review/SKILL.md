@@ -26,8 +26,9 @@ requires:
   - cell is at status:review
   - HI has read the PR and the operator's verdict
 calls:
-  - cnos.cdd/skills/cdd/delta/SKILL.md §9.6 (return token carve-out)
-  - cnos.cdd/skills/cdd/alpha/SKILL.md §2.1 (α dispatch intake)
+  - delta/SKILL.md
+  - alpha/SKILL.md
+kata_surface: none
 ---
 
 # Operator-review schema — cn.operator-review.v1
@@ -212,7 +213,7 @@ The HI MUST NOT author or amend the following role-owned artifact surfaces:
 
 These surfaces belong to the dispatched roles. The HI's artifact is `operator-review.md`. The HI may read any surface; it may write only `operator-review.md` and apply mechanical transitions via `cn cell return`/`cn cell resume`.
 
-**Failure mode:** "invisible meddling" — per `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` named failure mode. When the HI authors role-owned matter, role attribution in the durable record is corrupted. Future verification, retrospective, and TSC grading cannot determine who claimed what.
+**Failure mode:** "invisible meddling" — per `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md §Core Principle`. When the HI authors role-owned matter, role attribution in the durable record is corrupted. Future verification, retrospective, and TSC grading cannot determine who claimed what.
 
 **Bootstrap-exception escape hatch:** The HI may patch role-owned matter ONLY when (a) the missing mechanical primitive is the underlying cause AND (b) the override is explicitly declared as `degraded_recovery: human_interface_applied_operator_patch` in the cycle's `gamma-closeout.md` with reason + scope + recovery_actions + status fields. The escape hatch is a doctrinal acknowledgment that the bootstrap path exists; it must not become the default.
 
@@ -240,7 +241,8 @@ Operator reads PR at status:review
 
 ## 6. Related surfaces
 
-- `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §5` — "δ does not produce matter"; "invisible meddling" failure mode
+- `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §5` — "δ does not produce matter"
+- `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md §Core Principle` — "invisible meddling" failure mode
 - `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §9.6` — `status:changes` carve-out; `cn cell return` is the mechanical translator of operator authority
 - `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §9.10` — `resumed-from-changes` wake-invoked mode shape (this cycle's §9 amendment)
 - `src/packages/cnos.core/orchestrators/agent-admin/hi-contract.md` — HI behavioral contract (explicit prohibited surfaces)

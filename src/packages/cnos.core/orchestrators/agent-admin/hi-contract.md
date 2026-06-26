@@ -48,7 +48,7 @@ The HI MUST NOT author or amend any of the following role-owned artifact surface
 
 **The prohibition is absolute.** There is no "narrow mechanical text fix" exception. Even one-word corrections to these surfaces require a proper role pass (δ dispatches the role that owns the surface; the role decides whether to adopt the correction).
 
-**Named failure mode:** "invisible meddling" — per `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md`. When the HI authors role-owned matter, role attribution in the durable record is corrupted. Future verification, retrospective, and TSC grading cannot determine who claimed what.
+**Named failure mode:** "invisible meddling" — per `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md §Core Principle`. When the HI authors role-owned matter, role attribution in the durable record is corrupted. Future verification, retrospective, and TSC grading cannot determine who claimed what.
 
 ---
 
@@ -110,7 +110,8 @@ This contract ensures that cycle/497's bootstrap exception is acknowledged, trac
 
 ## 7. Cross-references
 
-- `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §5` — "δ does not produce matter"; "invisible meddling" failure mode
+- `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §5` — "δ does not produce matter"
+- `src/packages/cnos.cdd/skills/cdd/operator/SKILL.md §Core Principle` — "invisible meddling" failure mode
 - `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §9.6` — `status:changes` carve-out; operator authority over label transitions
 - `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §9.10` — `resumed-from-changes` wake-invoked mode shape
 - `src/packages/cnos.cdd/skills/cdd/operator-review/SKILL.md` — `cn.operator-review.v1` schema; `degraded_recovery` declaration schema

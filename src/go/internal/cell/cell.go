@@ -117,6 +117,9 @@ type Returner struct {
 	Repo   string    // GitHub repo slug, e.g. "usurobor/cnos"
 	Stdout io.Writer
 	Stderr io.Writer
+	// RunGH is the function used to invoke the gh CLI. If nil, the package-level
+	// runGH is used. Inject a test double to unit-test the label-mutation path.
+	RunGH func(ctx context.Context, args []string, w io.Writer) error
 }
 
 // Return reads the operator-review artifact, validates it, and on
@@ -165,6 +168,12 @@ func (r *Returner) applyLabelTransition(ctx context.Context, args ReturnArgs) er
 	issueStr := strconv.Itoa(args.Issue)
 	repoFlag := r.Repo
 
+	// Use injected RunGH if set, otherwise fall back to the package-level runGH.
+	ghFn := r.RunGH
+	if ghFn == nil {
+		ghFn = runGH
+	}
+
 	// Remove status:review label.
 	fmt.Fprintf(r.Stdout, "\nApplying label transition: status:review → status:changes ...\n")
 
@@ -172,7 +181,7 @@ func (r *Returner) applyLabelTransition(ctx context.Context, args ReturnArgs) er
 	if repoFlag != "" {
 		removeArgs = append([]string{"--repo", repoFlag}, removeArgs...)
 	}
-	if err := runGH(ctx, removeArgs, r.Stderr); err != nil {
+	if err := ghFn(ctx, removeArgs, r.Stderr); err != nil {
 		return fmt.Errorf("removing status:review label: %w", err)
 	}
 	fmt.Fprintf(r.Stdout, "  ✓ removed status:review\n")
@@ -182,7 +191,7 @@ func (r *Returner) applyLabelTransition(ctx context.Context, args ReturnArgs) er
 	if repoFlag != "" {
 		addArgs = append([]string{"--repo", repoFlag}, addArgs...)
 	}
-	if err := runGH(ctx, addArgs, r.Stderr); err != nil {
+	if err := ghFn(ctx, addArgs, r.Stderr); err != nil {
 		return fmt.Errorf("adding status:changes label: %w", err)
 	}
 	fmt.Fprintf(r.Stdout, "  ✓ added status:changes\n")
