@@ -397,3 +397,17 @@ ok  github.com/usurobor/cnos/src/go/internal/cell  1.019s
 
 Debt item 4 (prior: Repo flag gap) is superseded. The `RunGH` injection added in this round closes the test-coverage gap identified in F2. No new debt items.
 
+
+---
+
+## Review-readiness | round 2 | base SHA: 3095fa2b44145490c8e5241bd347165a53ace827 | implementation SHA: d413220c52ca62c039b09bfa394ba85dc286ebf5 | branch CI: unavailable locally — β waits for green before merge | ready for β
+
+**Transient row re-validation (immediately before this signal):**
+- Row 1 (cycle branch rebased): `git log origin/main -1 --format=%H` = `3095fa2b` — unchanged from scaffold time. No rebase needed.
+- Row 10 (branch CI): CI not available in this substrate. β MUST NOT merge before CI is green on head commit.
+
+**γ-artifact:** `gamma-scaffold.md` present at canonical §5.1 path on `origin/cycle/500` ✓
+
+**R1 fix summary:** F1 corrected (citation to operator/SKILL.md §Core Principle); F3 corrected (bare calls: paths + kata_surface: none); F2 addressed (RunGH injection + 2 new positive-path tests; 26 PASS).
+
+**All pre-review gate rows satisfied.** β may begin R1 review.
