@@ -113,44 +113,100 @@ If future observations surface a structural reason to revisit this decision (e.g
 
 **Mode:** design / decision (docs-only; the artifact IS the deliverable)
 
-**Action taken:** Analyzed both models against the 7 open questions; chose Model B on structural grounds (ledger-vs-namespace distinction; write-locality orthogonality; zero migration cost; wave-master O(1) resolution; mechanical-orchestration simplicity).
+**Action taken:** Analyzed both models against the 7 open questions; chose Model B on structural grounds (ledger-vs-namespace distinction; write-locality orthogonality; zero migration cost; wave-master single-root / constant-root-count discovery; mechanical-orchestration simplicity).
 
 **Review-readiness signal:** READY — all 6 ACs pass; no implementation work in diff; decision fully reasoned.
 
 ---
 
-## §R1 — Operator-final-read absorbed (δ-direct; T-486-7 pattern)
+## §R1 — α takes ownership of operator-finding adoption
 
-**R0 verdict:** β converge (`beta-review.md §R0`).
+cycle: 497
+role: alpha
+round: R1
+input: `.cdd/unreleased/497/operator-review.md` (HI's typed translation of the human-operator final-read; 6 findings O1–O6)
+patch_proposal_under_review: `dd819f00` (HI-authored textual edits to §R0; reframed by operator as operator-supplied patch proposal, not α's work until α inspects and takes ownership)
 
-**Operator-final-read on PR #499 (T-486-12 P1 defense-in-depth):** iterate narrowly. Architectural verdict (Model B) unchanged; six precision/closure issues found that β R0 did not surface. Absorbed inline as δ-direct R1 (no β re-spawn; the corrections are narrow mechanical text fixes; pattern's 4th empirical sample after cycle/486 R1, cycle/496 R1, cycle/496 R2).
+### Framing
 
-### R1 corrections applied
+The human operator's final-read returned `iterate (narrowly)`. The verdict left Model B intact and named six findings outside β R0's mechanically-scoped AC oracle. The γ-interface, lacking a mechanical review-return primitive (cnos#500 records the missing `cn cell return` / `cn cell resume`), absorbed the corrections inline as commit `dd819f00` and framed the findings as "narrow mechanical text fixes." That framing was wrong. The operator's ruling reframes `dd819f00` as an **operator-supplied patch proposal** and dispatches a proper role pass. This §R1 is α's substantive engagement with the findings.
 
-| # | Issue | Correction |
-|---|---|---|
-| 1 | Argument 4 + Q6 claimed "Model B keeps discovery O(1)" — conflates root-count complexity with receipt-count complexity | Replaced with "single-root discovery / constant-root-count discovery"; complexity stated honestly as `O(R)` over receipts under either model + `O(P + R)` under Model A due to protocol-root enumeration overhead |
-| 2 | Verdict + Argument 1 + Q1 framed protocol identity as "issue labels + gamma-scaffold metadata + PR body" — not the canonical typed identity | Anchored canonical protocol identity to the typed receipt's `protocol_id` field; for CDS: `cnos.cdd.cds.receipt.v1`; issue labels / gamma-scaffold metadata / PR metadata named as operational supporting surfaces, not canonical discriminators; the Go verifier dispatches validation by `protocol_id` |
-| 3 | Cross-references cited stale/vague canonical paths: `src/packages/cnos.cdd/skills/release/SKILL.md` (wrong; missing the `cdd/` subdirectory) and `cn-cdd-verify (wherever it lives)` (vague) | Corrected to `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` and `src/packages/cnos.cdd/commands/cdd-verify/` (operator invocation: `cn cdd verify`) |
-| 4 | `gamma-closeout.md` said "Cycle 497 is closed" while issue is `status:review` — conflates cell closure with boundary acceptance | Rewrote to "Cell 497 is closed and awaiting operator boundary decision. β verdict: converge. Issue state: status:review. Cycle acceptance occurs when the operator merges PR #499 and closes cnos#497." (CDS doctrine separates cell closure from boundary acceptance) |
-| 5 | Actor-collapse / configuration-floor not explicitly declared in `gamma-closeout.md` (γ + α + β collapsed on δ was acknowledged in scaffold but not in closeout) | Added "Dispatch configuration" section to `gamma-closeout.md` declaring: collapsed mode is permitted for docs/design-decision cells; configuration floor — cycle does not claim fully independent α/β actor separation; success claim calibrated — this cycle validates live wake claiming + issue lifecycle + artifact production + PR creation + operator-final-read, but does NOT newly prove independent γ/α/β execution contexts |
-| 6 | γ process-gap audit table had "mental notes" without canonical dispositions — γ doctrine requires explicit triage of every finding | Reformulated table with explicit Type + Disposition + Reason columns; both findings classified as `no-patch` (with reasons); declared `protocol_gap_count: 0`; declared `cdd-iteration.md not required` |
+The corrections are not mechanical. Each one required semantic judgment of a different class:
 
-### R1 verdict
+- O1 is an asymptotic-complexity correctness call (the original text confused root-count with receipt-count complexity)
+- O2 is an architectural anchoring decision (where does canonical protocol identity live in the typed-runtime trajectory)
+- O3 is citation accuracy against the live canonical filesystem (semi-mechanical but doctrinally important — a decision artifact must not carry knowingly-uncertain canonical paths)
+- O4 is CDD doctrine application (cell closure ≠ boundary acceptance per δ rule)
+- O5 is CDS actor-collapse-rule completeness (collapsed configurations must be declared, not just acknowledged)
+- O6 is γ doctrine triage requirement (every finding gets explicit disposition; "noted" is not a disposition)
 
-The decision artifact's substance (Model B; 5 structural arguments; Q1–Q7 answered) survives intact. The corrections are precision (complexity claim), canonical-identity anchoring, citation accuracy, doctrinal closure-vocabulary, configuration-floor honesty, and finding-disposition explicitness. None of these affect the verdict. **R1 is the absorption commit; the architectural decision is unchanged.**
+α's job in R1 is to inspect each `dd819f00` patch against §R0 and the operator's `expected_change`, then **adopt** the patch as α's correction, **adjust** it, or **reject** it with explicit reason. Adopting is not rubber-stamping — it is α's affirmative agreement that the patch text is correct as written for §R0.
 
-### Operating-model observation
+### Per-finding decisions
 
-This is the **first live-wake-claimed cycle** under the corrected mouthpiece model (per cnos#496 γ-closeout §2.2 operating-model correction). The cycle executed end-to-end autonomously: live wake claimed → δ wake-invoked mode → γ/α/β collapsed on δ (permitted for design-only cells) → artifacts landed → PR opened → status:review. Operator-final-read on PR caught what β's R0 walk methodologically could not — same pattern that drove T-486-12's P1 promotion. **R1 is δ-direct because the corrections are narrow mechanical text fixes; the live wake has no autonomous mechanism to re-engage from `status:review` so γ-interface absorbs the iterate inline.**
+#### O1 — Wave-master complexity claim (Argument 4 + Q6) — ADOPT (with completeness extension)
 
-### T-486-7 pattern sample-size = 4
+**Patch in §R0 (`dd819f00`):** Argument 4 header changed from "Wave-master resolution stays O(1)" → "Wave-master single-root discovery (constant root count)"; body rewritten to state `O(R)` receipt-walk complexity under either model and `O(P + R)` under Model A; explicit acknowledgement that the earlier R0 wording conflated root-count with receipt-count complexity. Q6 mirrored: single-root walk; `O(R)` either way; Model A is `O(P + R)`; "advantage of Model B is **constant root count**, not constant-time receipt discovery."
 
-| Cycle | δ-direct R[N] | Operator iterate trigger |
-|---|---|---|
-| cycle/486 | R1 | δ §9.5 off-by-one |
-| cycle/496 | R1 | HEAD@{1} multi-commit baseline escape |
-| cycle/496 | R2 | --diff-filter=ACMR delete escape |
-| **cycle/497** | **R1** | 6 precision/closure issues (O(1) miswording, protocol_id anchoring, stale paths, closure wording, configuration-floor, finding dispositions) |
+**α verdict: adopt.** The patch text is correct. The original `O(1)` claim was an asymptotic-complexity error: a walk over `.cdd/unreleased/` is necessarily proportional to the number of receipts (you have to read each cycle's directory to find its receipts). The structural argument never depended on the receipt-walk being constant-time; it depended on the *root count* being constant (one stable root regardless of how many concrete protocols exist). The patch separates the two concerns cleanly.
 
-The pattern is doctrinally robust: when an operator-final-read iterate is narrow-mechanical-correctness with unambiguous path forward, δ-direct absorbs efficiently without α/β respawn.
+**α adjustment:** The HI's patch fixed Argument 4 and Q6 but missed the residue in §R0's `CDD Trace` Action-taken bullet (line 116), which still cited "wave-master O(1) resolution" among the structural grounds. α corrects that bullet to "wave-master single-root / constant-root-count discovery" for full consistency. (This is a minor completeness extension, not a substantive disagreement with the HI's patch text.)
+
+#### O2 — Canonical protocol identity anchored to typed `protocol_id` (Verdict + Argument 1 + Q1) — ADOPT
+
+**Patch in §R0 (`dd819f00`):** Verdict paragraph rewritten to anchor canonical protocol identity to the typed receipt's `protocol_id` field (CDS pin: `cnos.cdd.cds.receipt.v1`); issue labels, `gamma-scaffold.md` metadata, and PR body metadata reclassified as operational supporting surfaces, not canonical discriminators. Argument 1 amended with the same anchor: typed `protocol_id` is the canonical discriminator the Go verifier dispatches on. Q1 amended to close with the explicit rule: "Path = ledger owner; `protocol_id` = concrete protocol."
+
+**α verdict: adopt.** This is the materially-strongest correction of the six. The R0 text framed protocol identity as a property of operational surfaces (labels, PR body, scaffold metadata) — those *do* corroborate, but they are not the typed-runtime canonical. The generic CDD receipt schema already carries `protocol_id` specifically so the verifier can dispatch validation mechanically; pinning the architectural anchor there matches the Go-orchestration trajectory (the long-term `cn cdd verify` runtime does not infer protocol from prose or directory names). The decision artifact is stronger after this anchor: "path = ledger owner; `protocol_id` = concrete protocol" is the typed-identity rule the trajectory needs. **α agrees with the HI's patch text verbatim.**
+
+#### O3 — Stale canonical paths in cross-references — ADOPT
+
+**Patch in §R0 (`dd819f00`):** Cross-references list line 1 changed from `src/packages/cnos.cdd/skills/release/SKILL.md` → `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` (the `cdd/` subdirectory restored). Line 2 changed from `cn-cdd-verify (wherever it lives) — inspects .cdd/; unchanged` → `src/packages/cnos.cdd/commands/cdd-verify/ (operator invocation: cn cdd verify) — inspects .cdd/ as unified ledger; validates typed receipts by protocol_id; unchanged`.
+
+**α verdict: adopt.** Path verification confirms both citations land at real directories on the current tree (`src/packages/cnos.cdd/skills/cdd/release/SKILL.md` exists; `src/packages/cnos.cdd/commands/cdd-verify/` exists with `cddverify.go`, `dispatch.go`, `verdict.go`, `README.md`, etc.). The R0 wording "wherever it lives" is the disqualifying language — a decision artifact about canonical ownership cannot itself carry knowingly-uncertain canonical paths. The HI's patch text also augments the verifier description with the typed-receipt-dispatch detail; that augmentation is on-thesis with O2's anchor and α adopts it.
+
+#### O4 — Closure wording conflated cell closure with boundary acceptance — NOT IN α'S MATTER (γ owns)
+
+**Patch in `dd819f00`:** Affects `gamma-closeout.md` only — rewrote "Cycle 497 is closed" to "Cell 497 is closed and awaiting operator boundary decision; cycle acceptance occurs when operator merges PR #499 and closes cnos#497."
+
+**α verdict: not α's call.** The textual surface is in `gamma-closeout.md`, which is γ's matter. α records here only that the operator's finding (cell closure ≠ boundary acceptance per CDS δ doctrine) is correct on its face and that the patch text in `dd819f00` correctly applies that doctrine; γ's R1 takes ownership of whether to adopt as-written. α's `self-coherence.md` §R0 text does not contain the offending wording, so no §R0 edit is required for O4.
+
+#### O5 — Actor-collapse / configuration-floor declaration missing — NOT IN α'S MATTER (γ owns)
+
+**Patch in `dd819f00`:** Adds a new "Dispatch configuration" section to `gamma-closeout.md` declaring collapsed mode + rationale + configuration floor + calibrated success claim.
+
+**α verdict: not α's call.** Same reasoning as O4: γ owns the closeout's per-role-doctrine completeness. α notes that the operator's expected_change matches the CDS actor-collapse-rule's requirement (collapse acknowledged in scaffold + declared in closeout with configuration-floor consequence) and that scaffold §"Cell mode" already acknowledges the first half; γ R1 owns the closeout side. `self-coherence.md` §R0 carries no actor-collapse declaration responsibility (that is gamma-closeout's role), so no §R0 edit is required for O5.
+
+#### O6 — γ process-gap audit table needed explicit dispositions — NOT IN α'S MATTER (γ owns)
+
+**Patch in `dd819f00`:** Reformulates the `gamma-closeout.md` process-gap table with Type + Disposition + Reason columns; both findings classified `no-patch` with reasons; declares `protocol_gap_count: 0`; declares `cdd-iteration.md not required`.
+
+**α verdict: not α's call.** γ doctrine triage of γ-surfaced findings is γ's role. The operator's expected_change is doctrinally correct — γ skill requires explicit disposition of every finding; "mental note" is not a disposition. γ R1 owns the closeout edit. `self-coherence.md` §R0 carries no γ-findings audit (the closeout owns it), so no §R0 edit is required for O6.
+
+### α R1 ownership statement
+
+After inspecting `dd819f00`'s textual edits to `self-coherence.md` §R0 (O1, O2, O3) against §R0's pre-patch text and the operator's expected_change in `operator-review.md`:
+
+- The §R0 corrections for O1, O2, and O3 (as patched by the HI in `dd819f00`) are **adopted as α's R1 corrections**. The patch text becomes α's content. α adds the one completeness extension noted under O1 (CDD Trace bullet wording).
+- The §R0 edits required to fix O4, O5, O6 are zero — those findings surface in other artifacts (γ's closeout) and are γ's matter to take ownership of.
+- α's R0 substantive decision (Model B; the five structural arguments; the Q1–Q7 answers) is unchanged. The corrections sharpen precision and anchor the typed-identity rule; they do not alter the verdict.
+
+The decision artifact at `.cdd/unreleased/497/self-coherence.md` is now α's work after this R1 pass: §R0 text reflects α's adopted corrections; this §R1 is α's own analysis; the HI-authored §R1 in `dd819f00` is replaced by this section.
+
+### Retrospective on the operator-finding class
+
+The HI's `dd819f00` commit message framed the findings as "narrow mechanical text fixes." That framing was wrong and α records here why:
+
+- O1 required asymptotic-complexity reasoning (recognizing that `O(1)` is the wrong bound for a walk that touches each receipt, and that the load-bearing claim is constant *root count*, not constant *work*).
+- O2 required architectural-anchor judgment (deciding that the typed-runtime `protocol_id` field, not the operational corroborating surfaces, is where canonical identity belongs — a Go-trajectory call).
+- O3 required canonical-filesystem audit (verifying real paths exist; recognizing that "wherever it lives" is the disqualifying language).
+- O4 required CDD doctrine application (the δ skill's named separation of cell closure from boundary acceptance).
+- O5 required CDS rule application (actor-collapse-rule completeness; cycle/487 not weakened framing).
+- O6 required γ doctrine application (explicit-triage-per-finding rule).
+
+Each is a semantic correction with a defensible doctrinal anchor. Framing them as mechanical text fixes obscured the per-finding reasoning and contributed to the boundary violation (the HI absorbed inline because each individual fix "looked small," when the *aggregate* required a proper role pass).
+
+### α R1 commit-readiness signal
+
+READY. α has taken ownership of the §R0 textual edits in `dd819f00` (O1, O2, O3 adopted with O1's completeness extension applied) and replaced the HI-authored §R1 with this analysis. The decision artifact is α's work. β R1 (independent review of the corrected decision) and γ R1 (closeouts + degraded_recovery declaration for the `dd819f00` overstep) run in parallel and are not dependencies of this α R1 pass.
+
+— α@cdd.cnos, cycle/497 R1, 2026-06-26 (UTC)
