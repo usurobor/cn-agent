@@ -1,0 +1,119 @@
+name: oneoff-dispatch-500
+
+# One-off workflow to dispatch cnos#500 to the live cds-dispatch wake.
+# Runs once when this branch is pushed; posts the operator's verbatim
+# dispatch directive as a comment on cnos#500 + applies dispatch labels.
+# After it lands, the live cnos-cds-dispatch wake will claim cnos#500
+# (within seconds on the issues:labeled event, or on the next schedule
+# sweep).
+#
+# Context: GitHub MCP tools were unavailable in the γ-interface session
+# when the operator authorized this dispatch. Per the corrected mouthpiece
+# model, the HI cannot post comments or apply labels via MCP. The
+# substrate alternative — a one-off workflow — is operator-authorized.
+#
+# Uses SIGMA_WORKFLOW_PAT (not the default GITHUB_TOKEN) so the label
+# event triggers the cds-dispatch wake immediately (cross-workflow
+# triggering requires a PAT per GitHub Actions design).
+
+on:
+  push:
+    branches:
+      - oneoff/dispatch-500
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oneoff-dispatch-500
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post operator dispatch directive on cnos#500
+        env:
+          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/comment.md <<'COMMENT_EOF'
+          ## Dispatch cnos#500
+
+          *Posted via one-off workflow (`.github/workflows/oneoff-dispatch-500.yml`) on operator authorization; GitHub MCP was unavailable in the γ-interface session at dispatch time. The directive text below is the operator's verbatim instruction.*
+
+          ---
+
+          **Issue:** cnos#500 — `cdd/review-return: mechanically route operator iterate verdicts back into an existing cell`
+
+          **Authorization:** Apply labels:
+          - `dispatch:cell`
+          - `protocol:cds`
+          - `status:todo`
+
+          **Execution:** Use the live `cnos-cds-dispatch` wake. Do not bootstrap δ unless the live wake fails.
+
+          **Purpose:** Install the missing review-return primitive discovered in cycle/497.
+
+          **Core invariant:**
+          > The human interface may turn human intent into an artifact.
+          > It must not become the worker that artifact instructs.
+
+          **Goal:** When a cell reaches `status:review` and the operator returns `iterate`, the system should mechanically route that verdict back into the existing cell.
+
+          **Expected flow:**
+          1. HI records a typed operator-review artifact.
+          2. Runtime transitions `status:review → status:changes`.
+          3. Existing cycle is resumed, not replaced.
+          4. δ routes R[N+1].
+          5. α applies the operator findings.
+          6. β reviews.
+          7. γ amends closeout.
+          8. Cell returns to `status:review`.
+
+          **Non-goals:**
+          - no replacement of the entire Go runtime;
+          - no substrate replacement;
+          - no actor-collapse doctrine rewrite;
+          - no private-repo policy work;
+          - no notification / dispatch-summary implementation.
+
+          ## Caution for γ
+
+          cnos#500 is broad. γ should decide whether it can be completed as one cell. If γ finds it too large, the correct move is not to improvise; split into a small wave:
+
+          - **500A** — operator-review schema + HI contract
+          - **500B** — mechanical `status:review` → `status:changes` / resume command
+          - **500C** — δ wake-invoked resume mode + smoke
+
+          But start with the live worker. γ can make that call from the issue contract.
+
+          ## Priority order (operator-stated)
+
+          1. **cnos#500** — review-return primitive (this dispatch)
+          2. cnos#493 — label-doctor / canonical label materialization
+          3. cnos#495 Sub 2 — admin dispatch-summary (held until cnos#500 lands)
+
+          ## Operating-model reminder
+
+          The HI is a mouthpiece and boundary translator, not an execution role. cnos#500 is what fixes the missing review-return primitive so the HI never has to absorb operator-final-read corrections inline again. The cycle/497 `degraded_recovery` declaration is the bootstrap exception cnos#500 eliminates.
+          COMMENT_EOF
+          gh issue comment 500 --repo usurobor/cnos --body-file /tmp/comment.md
+
+      - name: Apply dispatch labels to cnos#500
+        env:
+          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          gh issue edit 500 --repo usurobor/cnos \
+            --add-label "dispatch:cell" \
+            --add-label "protocol:cds" \
+            --add-label "status:todo"
+          echo "Labels applied. Live cds-dispatch wake should fire on issues:labeled event."
+
+      - name: Confirm final issue state
+        env:
+          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          gh issue view 500 --repo usurobor/cnos --json number,title,state,labels --jq '{number, title, state, labels: [.labels[].name]}'
