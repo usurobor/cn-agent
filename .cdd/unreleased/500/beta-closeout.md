@@ -88,3 +88,17 @@ Full AC walk at R1: all 7 ACs PASS. Implementation contract: all 7 axes conform.
 | 2. Canonical-skill freshness | `origin/main` = `3095fa2b` — unchanged from scaffold time ✓ |
 | 3. Non-destructive merge-test | Conditional — CI green required before merge (declared in α's review-readiness; no local CI available) |
 | 4. γ-artifact completeness | `gamma-scaffold.md` present on `origin/cycle/500` ✓ |
+
+---
+
+## R1 retrospective note — operator-final-read iterate
+
+**Bootstrap review-return exception.** After in-cycle β R1 APPROVE, the operator performed final-read on PR #502 and returned `iterate` with 5 findings + 1 CI note. κ (HI) filed the typed iterate verdict at `.cdd/unreleased/500/operator-review.md`. α R1 (`12e8d19c..c87e3ea8`) addressed each finding; β R1 (this round; see `beta-review.md §R1 — operator-final-read iterate review`) independently walked each finding's substance + ran the test suite (37/37 pass).
+
+**Verdict: converge.** All 5 findings + CI note are substantively addressed. AC1–AC7 hold against `c87e3ea8`. No regressions; AC3 and AC4 are strengthened (F1+F2+F3 add artifact-as-authority validation, lifecycle preflight, atomicity + drift handling; F4 adds the branch preflight). F5 doctrinal-vocabulary canonization landed in both `operator-review/SKILL.md` and `hi-contract.md` with consistent treatment of `gamma-interface (HI)` as legacy/historical-only.
+
+**Honest gap-class accounting.** β R0/R1 (in-cycle) missed all 5 operator findings because the AC1–AC7 oracle was mechanically scoped: it asked "is the transition mechanical?" not "is the transition mechanically correct under the artifact-as-authority invariant + lifecycle preflight + atomicity?" The 5 findings all live in a substantive-audit class outside the mechanical oracle scope. **This is the cycle/500-operator-final-read specialization of T-496-1 + FN-β-497-1** (mechanical-guard AC oracle SHAPE+TYPE coverage extension for the design-and-build cell class). Remediation owner: γ's process-gap section.
+
+**Round count:** 2 in-cycle (R0 → R1 converge) + 1 operator-final-read R1 = 3 total reviewer-author exchanges. The operator-final-read iterate is structurally outside the in-cycle β R0/R1 dance; this β closeout note records it for retrospective integrity.
+
+**Final SHA reviewed:** `c87e3ea8`. β recommends merge once CI green.
