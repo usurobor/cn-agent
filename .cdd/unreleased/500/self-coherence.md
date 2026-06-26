@@ -306,3 +306,15 @@ Both lists carry the same 6 surfaces. No drift between the two (both were author
 - `src/packages/cnos.cdd/skills/cdd/operator-review/SKILL.md` — AC1 + AC7 schema (new)
 - `src/packages/cnos.core/orchestrators/agent-admin/hi-contract.md` — AC2 + AC6 contract (new)
 - `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` — AC5 §9.10 amendment + §9.6 reconciliation note (modified)
+
+---
+
+## Review-readiness | round 1 | base SHA: 3095fa2b44145490c8e5241bd347165a53ace827 | implementation SHA: 98786321977e45744b04277ff42f3dfa9afc74c6 | branch CI: unavailable locally — β waits for green before merge | ready for β
+
+**Transient row re-validation (immediately before this signal):**
+- Row 1 (cycle branch rebased): origin/main is still at `3095fa2b` (same as scaffold time; not advanced). No rebase needed. Verified at signal time.
+- Row 10 (branch CI): CI not available in this substrate. β MUST NOT merge before CI is green on the head commit. This is declared as a gate condition, not an oversight.
+
+**γ-artifact:** `gamma-scaffold.md` present at canonical §5.1 path — `git cat-file -e origin/cycle/500:.cdd/unreleased/500/gamma-scaffold.md` → present ✓
+
+**All pre-review gate rows satisfied.** β may begin review.
