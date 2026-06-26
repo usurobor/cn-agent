@@ -132,17 +132,32 @@ func (r *Returner) Return(ctx context.Context, args ReturnArgs) error {
 		return fmt.Errorf("review artifact not found at %q: %w", args.ReviewPath, err)
 	}
 
-	// Parse schema declaration from the review artifact frontmatter.
-	schema, err := readSchemaField(args.ReviewPath)
+	// Parse schema + issue + verdict declarations from the review artifact
+	// frontmatter. The artifact is the authority; CLI flags select and confirm
+	// it. They must not override silently. F1 (cycle/500 R1): the artifact
+	// must match the CLI flags before any label mutation.
+	fm, err := readReviewFrontmatter(args.ReviewPath)
 	if err != nil {
 		return fmt.Errorf("reading review artifact: %w", err)
 	}
-	if schema != "cn.operator-review.v1" {
-		return fmt.Errorf("review artifact has unexpected schema %q; expected cn.operator-review.v1", schema)
+	if fm.Schema != "cn.operator-review.v1" {
+		return fmt.Errorf("review artifact has unexpected schema %q; expected cn.operator-review.v1", fm.Schema)
+	}
+	if fm.Issue == 0 {
+		return fmt.Errorf("review artifact at %q is missing the 'issue:' frontmatter field (review_return_artifact_invalid)", args.ReviewPath)
+	}
+	if fm.Verdict == "" {
+		return fmt.Errorf("review artifact at %q is missing the 'verdict:' frontmatter field (review_return_artifact_invalid)", args.ReviewPath)
+	}
+	if fm.Issue != args.Issue {
+		return fmt.Errorf("review artifact issue mismatch: --issue=%d but artifact frontmatter says issue=%d (review_return_artifact_mismatch)", args.Issue, fm.Issue)
+	}
+	if fm.Verdict != args.Verdict {
+		return fmt.Errorf("review artifact verdict mismatch: --verdict=%s but artifact frontmatter says verdict=%s (review_return_artifact_mismatch)", args.Verdict, fm.Verdict)
 	}
 
-	fmt.Fprintf(r.Stdout, "✓ review artifact: %s (schema: %s)\n", args.ReviewPath, schema)
-	fmt.Fprintf(r.Stdout, "  issue: %d  verdict: %s\n", args.Issue, args.Verdict)
+	fmt.Fprintf(r.Stdout, "✓ review artifact: %s (schema: %s)\n", args.ReviewPath, fm.Schema)
+	fmt.Fprintf(r.Stdout, "  issue: %d  verdict: %s (artifact ↔ flags match)\n", args.Issue, args.Verdict)
 
 	switch args.Verdict {
 	case "converge":
@@ -268,17 +283,47 @@ func verifyBranchExists(ctx context.Context, branch string, w io.Writer) error {
 	return nil
 }
 
+// reviewFrontmatter captures the operator-review fields the runtime cares
+// about: schema (which gate selects the right shape), and issue + verdict
+// (which the artifact-as-authority doctrine pins as the source of truth for
+// the `cn cell return` invocation; F1 / cycle/500 R1).
+type reviewFrontmatter struct {
+	Schema  string
+	Issue   int
+	Verdict string
+}
+
 // readSchemaField reads the YAML frontmatter of the file at path and returns
 // the value of the `schema:` field. Returns an error if the field is absent.
+// Retained for back-compat / focused unit tests; production callers use
+// readReviewFrontmatter which captures issue + verdict in addition to schema.
 func readSchemaField(path string) (string, error) {
-	f, err := os.Open(path)
+	fm, err := readReviewFrontmatter(path)
 	if err != nil {
 		return "", err
+	}
+	if fm.Schema == "" {
+		return "", fmt.Errorf("schema field not found in frontmatter of %q", path)
+	}
+	return fm.Schema, nil
+}
+
+// readReviewFrontmatter parses the YAML frontmatter of the file at path and
+// extracts the schema / issue / verdict fields the runtime needs to verify
+// the artifact-as-authority contract. Returns an error if the file has no
+// frontmatter block at all; absent individual fields are returned as zero
+// values for the caller to interpret.
+func readReviewFrontmatter(path string) (reviewFrontmatter, error) {
+	var fm reviewFrontmatter
+	f, err := os.Open(path)
+	if err != nil {
+		return fm, err
 	}
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
 	inFrontmatter := false
+	frontmatterClosed := false
 	lineNum := 0
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -291,18 +336,29 @@ func readSchemaField(path string) (string, error) {
 		}
 		if inFrontmatter {
 			if line == "---" {
+				frontmatterClosed = true
 				break // end of frontmatter
 			}
-			if strings.HasPrefix(line, "schema:") {
-				val := strings.TrimSpace(strings.TrimPrefix(line, "schema:"))
-				return val, nil
+			switch {
+			case strings.HasPrefix(line, "schema:"):
+				fm.Schema = strings.TrimSpace(strings.TrimPrefix(line, "schema:"))
+			case strings.HasPrefix(line, "issue:"):
+				val := strings.TrimSpace(strings.TrimPrefix(line, "issue:"))
+				if n, err := strconv.Atoi(val); err == nil {
+					fm.Issue = n
+				}
+			case strings.HasPrefix(line, "verdict:"):
+				fm.Verdict = strings.TrimSpace(strings.TrimPrefix(line, "verdict:"))
 			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return "", err
+		return fm, err
 	}
-	return "", fmt.Errorf("schema field not found in frontmatter of %q", path)
+	if !inFrontmatter || !frontmatterClosed {
+		return fm, fmt.Errorf("YAML frontmatter not found in %q (expected leading and trailing '---')", path)
+	}
+	return fm, nil
 }
 
 // nextRoundNumber returns the next round number by counting §R[N] section

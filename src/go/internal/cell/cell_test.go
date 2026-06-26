@@ -355,6 +355,96 @@ func TestReturner_Return_Reject_AppliesLabelTransition(t *testing.T) {
 	}
 }
 
+// --- F1: artifact-as-authority validation (issue + verdict must match flags) ---
+
+// TestReturner_Return_IssueMismatch_RejectsBeforeLabelMutation proves an
+// artifact whose issue field does NOT match --issue is rejected before any
+// gh call is made. F1 (cycle/500 R1): the artifact is the authority; CLI
+// flags select and confirm it.
+func TestReturner_Return_IssueMismatch_RejectsBeforeLabelMutation(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	// Artifact says issue: 497 — caller passes --issue 500.
+	content := "---\nschema: cn.operator-review.v1\nissue: 497\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var called [][]string
+	mockGH := func(_ context.Context, args []string, _ io.Writer) error {
+		called = append(called, append([]string(nil), args...))
+		return nil
+	}
+
+	var stdout, stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	err := r.Return(t.Context(), args)
+	if err == nil {
+		t.Fatal("expected error for issue mismatch")
+	}
+	if !strings.Contains(err.Error(), "review_return_artifact_mismatch") {
+		t.Errorf("expected review_return_artifact_mismatch error, got: %v", err)
+	}
+	if len(called) != 0 {
+		t.Errorf("no gh call must occur before mismatch is detected; got %d calls: %v", len(called), called)
+	}
+}
+
+// TestReturner_Return_VerdictMismatch_RejectsBeforeLabelMutation proves an
+// artifact whose verdict field does NOT match --verdict is rejected before
+// any gh call is made.
+func TestReturner_Return_VerdictMismatch_RejectsBeforeLabelMutation(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	// Artifact says verdict: converge — caller passes --verdict iterate.
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: converge\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var called [][]string
+	mockGH := func(_ context.Context, args []string, _ io.Writer) error {
+		called = append(called, append([]string(nil), args...))
+		return nil
+	}
+
+	var stdout, stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	err := r.Return(t.Context(), args)
+	if err == nil {
+		t.Fatal("expected error for verdict mismatch")
+	}
+	if !strings.Contains(err.Error(), "review_return_artifact_mismatch") {
+		t.Errorf("expected review_return_artifact_mismatch error, got: %v", err)
+	}
+	if len(called) != 0 {
+		t.Errorf("no gh call must occur before mismatch is detected; got %d calls: %v", len(called), called)
+	}
+}
+
+// TestReturner_Return_MissingIssueField_Rejects proves an artifact missing
+// the `issue:` frontmatter field is rejected.
+func TestReturner_Return_MissingIssueField_Rejects(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	err := r.Return(t.Context(), args)
+	if err == nil {
+		t.Fatal("expected error for missing issue field")
+	}
+	if !strings.Contains(err.Error(), "review_return_artifact_invalid") {
+		t.Errorf("expected review_return_artifact_invalid error, got: %v", err)
+	}
+}
+
 // --- Smoke: Returner.Return with wrong schema ---
 
 func TestReturner_Return_WrongSchema(t *testing.T) {
