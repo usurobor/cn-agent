@@ -2,6 +2,7 @@ package cell
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -285,7 +286,24 @@ func TestReturner_Return_Converge(t *testing.T) {
 	}
 }
 
-// --- Smoke: Returner.Return with iterate/reject verdicts (injected RunGH) ---
+// --- Smoke: Returner.Return with iterate/reject verdicts (injected RunGH + RunGHJSON) ---
+
+// mockGHJSON_HealthyPreflight returns a RunGHJSON that simulates a healthy
+// preflight: issue OPEN, single status:review label; repo has status:changes
+// in its label list. F2/F3 (cycle/500 R1) preflight path.
+func mockGHJSON_HealthyPreflight() func(context.Context, []string) ([]byte, error) {
+	return func(_ context.Context, args []string) ([]byte, error) {
+		joined := strings.Join(args, " ")
+		switch {
+		case strings.Contains(joined, "issue view"):
+			return []byte(`{"state":"OPEN","labels":[{"name":"status:review"},{"name":"dispatch:cell"}]}`), nil
+		case strings.Contains(joined, "label list"):
+			return []byte(`[{"name":"status:review"},{"name":"status:changes"},{"name":"status:in-progress"}]`), nil
+		default:
+			return nil, fmt.Errorf("unexpected gh json call: %s", joined)
+		}
+	}
+}
 
 func TestReturner_Return_Iterate_AppliesLabelTransition(t *testing.T) {
 	dir := t.TempDir()
@@ -303,25 +321,28 @@ func TestReturner_Return_Iterate_AppliesLabelTransition(t *testing.T) {
 
 	var stdout strings.Builder
 	var stderr strings.Builder
-	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH}
+	r := &Returner{
+		Stdout:    &stdout,
+		Stderr:    &stderr,
+		RunGH:     mockGH,
+		RunGHJSON: mockGHJSON_HealthyPreflight(),
+	}
 	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
 	if err := r.Return(t.Context(), args); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Expect exactly two gh calls: remove status:review then add status:changes.
-	if len(called) != 2 {
-		t.Fatalf("expected 2 gh calls, got %d: %v", len(called), called)
+	// F3 (cycle/500 R1) atomicity: one gh call with both --remove-label and
+	// --add-label flags (not two separate calls).
+	if len(called) != 1 {
+		t.Fatalf("expected 1 atomic gh call, got %d: %v", len(called), called)
 	}
-	// First call removes status:review.
-	removeCall := strings.Join(called[0], " ")
-	if !strings.Contains(removeCall, "--remove-label") || !strings.Contains(removeCall, "status:review") {
-		t.Errorf("first gh call should remove status:review, got: %q", removeCall)
+	editCall := strings.Join(called[0], " ")
+	if !strings.Contains(editCall, "--remove-label") || !strings.Contains(editCall, "status:review") {
+		t.Errorf("gh call should remove status:review, got: %q", editCall)
 	}
-	// Second call adds status:changes.
-	addCall := strings.Join(called[1], " ")
-	if !strings.Contains(addCall, "--add-label") || !strings.Contains(addCall, "status:changes") {
-		t.Errorf("second gh call should add status:changes, got: %q", addCall)
+	if !strings.Contains(editCall, "--add-label") || !strings.Contains(editCall, "status:changes") {
+		t.Errorf("gh call should add status:changes, got: %q", editCall)
 	}
 	if !strings.Contains(stdout.String(), "status:changes") {
 		t.Errorf("expected 'status:changes' in output, got: %q", stdout.String())
@@ -344,14 +365,238 @@ func TestReturner_Return_Reject_AppliesLabelTransition(t *testing.T) {
 
 	var stdout strings.Builder
 	var stderr strings.Builder
-	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH}
+	r := &Returner{
+		Stdout:    &stdout,
+		Stderr:    &stderr,
+		RunGH:     mockGH,
+		RunGHJSON: mockGHJSON_HealthyPreflight(),
+	}
 	args := ReturnArgs{Issue: 500, Verdict: "reject", ReviewPath: reviewPath}
 	if err := r.Return(t.Context(), args); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(called) != 2 {
-		t.Fatalf("expected 2 gh calls, got %d: %v", len(called), called)
+	// One atomic call (F3).
+	if len(called) != 1 {
+		t.Fatalf("expected 1 atomic gh call, got %d: %v", len(called), called)
+	}
+}
+
+// --- F2: preflight issue state (cycle/500 R1) ---
+
+// TestReturner_Return_Preflight_WrongStatusLabel proves an issue at a
+// status:* label other than status:review is refused. F2 invariant: exactly
+// status:review; nothing else.
+func TestReturner_Return_Preflight_WrongStatusLabel(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var called [][]string
+	mockGH := func(_ context.Context, args []string, _ io.Writer) error {
+		called = append(called, args)
+		return nil
+	}
+	mockJSON := func(_ context.Context, args []string) ([]byte, error) {
+		if strings.Contains(strings.Join(args, " "), "issue view") {
+			return []byte(`{"state":"OPEN","labels":[{"name":"status:in-progress"}]}`), nil
+		}
+		return []byte(`[{"name":"status:changes"}]`), nil
+	}
+	var stdout, stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH, RunGHJSON: mockJSON}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	err := r.Return(t.Context(), args)
+	if err == nil {
+		t.Fatal("expected error for wrong status label")
+	}
+	if !strings.Contains(err.Error(), "review_return_state_invalid") {
+		t.Errorf("expected review_return_state_invalid, got: %v", err)
+	}
+	if len(called) != 0 {
+		t.Errorf("preflight must reject before any label mutation; got %d gh calls", len(called))
+	}
+}
+
+// TestReturner_Return_Preflight_MultipleStatusLabels proves an issue with
+// more than one status:* label is refused.
+func TestReturner_Return_Preflight_MultipleStatusLabels(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mockGH := func(_ context.Context, _ []string, _ io.Writer) error { return nil }
+	mockJSON := func(_ context.Context, args []string) ([]byte, error) {
+		if strings.Contains(strings.Join(args, " "), "issue view") {
+			return []byte(`{"state":"OPEN","labels":[{"name":"status:review"},{"name":"status:changes"}]}`), nil
+		}
+		return []byte(`[{"name":"status:changes"}]`), nil
+	}
+	var stdout, stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH, RunGHJSON: mockJSON}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	err := r.Return(t.Context(), args)
+	if err == nil {
+		t.Fatal("expected error for multiple status labels")
+	}
+	if !strings.Contains(err.Error(), "review_return_state_invalid") {
+		t.Errorf("expected review_return_state_invalid, got: %v", err)
+	}
+}
+
+// TestReturner_Return_Preflight_ClosedIssue proves a closed issue is
+// refused.
+func TestReturner_Return_Preflight_ClosedIssue(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mockGH := func(_ context.Context, _ []string, _ io.Writer) error { return nil }
+	mockJSON := func(_ context.Context, args []string) ([]byte, error) {
+		if strings.Contains(strings.Join(args, " "), "issue view") {
+			return []byte(`{"state":"CLOSED","labels":[{"name":"status:review"}]}`), nil
+		}
+		return []byte(`[{"name":"status:changes"}]`), nil
+	}
+	var stdout, stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH, RunGHJSON: mockJSON}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	err := r.Return(t.Context(), args)
+	if err == nil {
+		t.Fatal("expected error for closed issue")
+	}
+	if !strings.Contains(err.Error(), "review_return_state_invalid") {
+		t.Errorf("expected review_return_state_invalid, got: %v", err)
+	}
+}
+
+// --- F3: atomic label transition + drift handling (cycle/500 R1) ---
+
+// TestReturner_Return_AtomicTransition_OneGHCall proves the transition is
+// a single gh issue edit call carrying both --remove-label and --add-label
+// (preserving the single-status invariant via one API request, not two).
+func TestReturner_Return_AtomicTransition_OneGHCall(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var called [][]string
+	mockGH := func(_ context.Context, args []string, _ io.Writer) error {
+		called = append(called, args)
+		return nil
+	}
+	var stdout, stderr strings.Builder
+	r := &Returner{
+		Stdout: &stdout, Stderr: &stderr,
+		RunGH:     mockGH,
+		RunGHJSON: mockGHJSON_HealthyPreflight(),
+	}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	if err := r.Return(t.Context(), args); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(called) != 1 {
+		t.Fatalf("expected 1 atomic gh edit call, got %d: %v", len(called), called)
+	}
+	call := strings.Join(called[0], " ")
+	if !strings.Contains(call, "--remove-label status:review") {
+		t.Errorf("atomic call must remove status:review, got: %q", call)
+	}
+	if !strings.Contains(call, "--add-label status:changes") {
+		t.Errorf("atomic call must add status:changes, got: %q", call)
+	}
+}
+
+// TestReturner_Return_TargetLabelMissing proves the transition refuses
+// when status:changes is not defined in the repo label set, BEFORE any
+// destructive label mutation. F3 bonus consideration (cnos#493 empirical
+// witness: the label-doctor gap left target labels missing TODAY during
+// the cnos#500 bootstrap recovery).
+func TestReturner_Return_TargetLabelMissing(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var called [][]string
+	mockGH := func(_ context.Context, args []string, _ io.Writer) error {
+		called = append(called, args)
+		return nil
+	}
+	mockJSON := func(_ context.Context, args []string) ([]byte, error) {
+		joined := strings.Join(args, " ")
+		if strings.Contains(joined, "issue view") {
+			return []byte(`{"state":"OPEN","labels":[{"name":"status:review"}]}`), nil
+		}
+		// label list: status:changes is MISSING from the repo.
+		return []byte(`[{"name":"status:review"},{"name":"status:in-progress"}]`), nil
+	}
+	var stdout, stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH, RunGHJSON: mockJSON}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	err := r.Return(t.Context(), args)
+	if err == nil {
+		t.Fatal("expected error when status:changes is missing from repo")
+	}
+	if !strings.Contains(err.Error(), "review_return_target_label_missing") {
+		t.Errorf("expected review_return_target_label_missing, got: %v", err)
+	}
+	if len(called) != 0 {
+		t.Errorf("must refuse before destructive label mutation; got %d gh calls", len(called))
+	}
+}
+
+// TestReturner_Return_LabelDrift_OnGHFailure proves the drift assessment
+// reports a precise marker when the atomic gh call fails and the issue is
+// post-hoc statusless.
+func TestReturner_Return_LabelDrift_OnGHFailure(t *testing.T) {
+	dir := t.TempDir()
+	reviewPath := filepath.Join(dir, "operator-review.md")
+	content := "---\nschema: cn.operator-review.v1\nissue: 500\nverdict: iterate\n---\n\nbody\n"
+	if err := os.WriteFile(reviewPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mockGH := func(_ context.Context, _ []string, _ io.Writer) error {
+		return fmt.Errorf("simulated gh failure")
+	}
+	calls := 0
+	mockJSON := func(_ context.Context, args []string) ([]byte, error) {
+		joined := strings.Join(args, " ")
+		calls++
+		if strings.Contains(joined, "label list") {
+			return []byte(`[{"name":"status:review"},{"name":"status:changes"}]`), nil
+		}
+		// First issue view: preflight (healthy). Second: drift assessment
+		// (statusless after the failed transition).
+		if strings.Contains(joined, "issue view") {
+			if calls <= 2 {
+				return []byte(`{"state":"OPEN","labels":[{"name":"status:review"}]}`), nil
+			}
+			return []byte(`{"state":"OPEN","labels":[]}`), nil
+		}
+		return nil, fmt.Errorf("unexpected: %s", joined)
+	}
+	var stdout, stderr strings.Builder
+	r := &Returner{Stdout: &stdout, Stderr: &stderr, RunGH: mockGH, RunGHJSON: mockJSON}
+	args := ReturnArgs{Issue: 500, Verdict: "iterate", ReviewPath: reviewPath}
+	err := r.Return(t.Context(), args)
+	if err == nil {
+		t.Fatal("expected error when gh fails")
+	}
+	if !strings.Contains(err.Error(), "review_return_label_drift") {
+		t.Errorf("expected review_return_label_drift in error, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "statusless") {
+		t.Errorf("expected statusless marker in drift report, got: %v", err)
 	}
 }
 

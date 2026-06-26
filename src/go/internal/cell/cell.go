@@ -14,7 +14,9 @@ package cell
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -114,12 +116,18 @@ func ParseResumeArgs(argv []string) (ResumeArgs, error) {
 
 // Returner executes the cn cell return operation.
 type Returner struct {
-	Repo   string    // GitHub repo slug, e.g. "usurobor/cnos"
+	Repo   string // GitHub repo slug, e.g. "usurobor/cnos"
 	Stdout io.Writer
 	Stderr io.Writer
-	// RunGH is the function used to invoke the gh CLI. If nil, the package-level
-	// runGH is used. Inject a test double to unit-test the label-mutation path.
+	// RunGH is the function used to invoke the gh CLI for label-mutation
+	// (write) commands. If nil, the package-level runGH is used. Inject a
+	// test double to unit-test the label-mutation path.
 	RunGH func(ctx context.Context, args []string, w io.Writer) error
+	// RunGHJSON is the function used to invoke the gh CLI for read commands
+	// that return JSON on stdout (e.g. `gh issue view --json labels,state`).
+	// If nil, the package-level runGHJSON is used. Inject a test double to
+	// unit-test the preflight path (F2 / F3, cycle/500 R1).
+	RunGHJSON func(ctx context.Context, args []string) ([]byte, error)
 }
 
 // Return reads the operator-review artifact, validates it, and on
@@ -169,7 +177,17 @@ func (r *Returner) Return(ctx context.Context, args ReturnArgs) error {
 		fmt.Fprintf(r.Stdout, "HI surfaces the clarification request to the operator. No cycle transition until clarification is received.\n")
 		return nil
 	case "iterate", "reject":
-		// Apply status:review → status:changes.
+		// Preflight (F2 / F3, cycle/500 R1): inspect issue state and verify
+		// the target label exists in the repo BEFORE any label mutation.
+		// This is what makes cn cell return a primitive (rather than a thin
+		// wrapper around naive gh issue edit).
+		if err := r.preflightIssue(ctx, args); err != nil {
+			return err
+		}
+		if err := r.preflightTargetLabel(ctx, args); err != nil {
+			return err
+		}
+		// Apply status:review → status:changes (drift-aware; F3).
 		return r.applyLabelTransition(ctx, args)
 	default:
 		// Already validated in ParseReturnArgs; belt-and-suspenders.
@@ -177,8 +195,97 @@ func (r *Returner) Return(ctx context.Context, args ReturnArgs) error {
 	}
 }
 
-// applyLabelTransition removes status:review and adds status:changes on the
-// GitHub issue. Uses the gh CLI which is an assumed runtime dependency.
+// preflightIssue verifies the GitHub issue is in a state that admits the
+// status:review → status:changes transition. F2 (cycle/500 R1) invariants:
+//   - exactly one status:* label present
+//   - status:review present
+//   - status:changes absent
+//   - issue open
+//
+// On violation, returns review_return_state_invalid with a precise reason.
+func (r *Returner) preflightIssue(ctx context.Context, args ReturnArgs) error {
+	issueStr := strconv.Itoa(args.Issue)
+	ghArgs := []string{"issue", "view", issueStr, "--json", "state,labels"}
+	if r.Repo != "" {
+		ghArgs = append([]string{"--repo", r.Repo}, ghArgs...)
+	}
+	ghJSON := r.RunGHJSON
+	if ghJSON == nil {
+		ghJSON = runGHJSON
+	}
+	fmt.Fprintf(r.Stdout, "\nPreflighting issue #%d state ...\n", args.Issue)
+	out, err := ghJSON(ctx, ghArgs)
+	if err != nil {
+		return fmt.Errorf("inspecting issue #%d: %w", args.Issue, err)
+	}
+	state, labels, perr := parseIssueStateLabels(out)
+	if perr != nil {
+		return fmt.Errorf("parsing issue #%d response: %w", args.Issue, perr)
+	}
+	if !strings.EqualFold(state, "OPEN") {
+		return fmt.Errorf("review_return_state_invalid: issue #%d is %s; transition requires open issue", args.Issue, state)
+	}
+	statusLabels := filterStatusLabels(labels)
+	if len(statusLabels) == 0 {
+		return fmt.Errorf("review_return_state_invalid: issue #%d carries no status:* label; transition requires exactly status:review", args.Issue)
+	}
+	if len(statusLabels) > 1 {
+		return fmt.Errorf("review_return_state_invalid: issue #%d carries multiple status:* labels %v; transition requires exactly status:review", args.Issue, statusLabels)
+	}
+	if statusLabels[0] != "status:review" {
+		return fmt.Errorf("review_return_state_invalid: issue #%d is at %s; transition requires status:review", args.Issue, statusLabels[0])
+	}
+	// statusLabels[0] == "status:review" — by construction status:changes is
+	// not present (single-status invariant just verified).
+	fmt.Fprintf(r.Stdout, "  ✓ issue #%d is OPEN at status:review (preflight pass)\n", args.Issue)
+	return nil
+}
+
+// preflightTargetLabel verifies status:changes exists in the repo's label
+// set before the transition is attempted. F3 (cycle/500 R1) empirical
+// witness: cnos#493 — the label-doctor gap previously left target labels
+// missing; the destructive remove-then-add path would have stranded the
+// issue statusless. Failing here BEFORE any destructive action.
+func (r *Returner) preflightTargetLabel(ctx context.Context, args ReturnArgs) error {
+	ghArgs := []string{"label", "list", "--limit", "200", "--json", "name"}
+	if r.Repo != "" {
+		ghArgs = append([]string{"--repo", r.Repo}, ghArgs...)
+	}
+	ghJSON := r.RunGHJSON
+	if ghJSON == nil {
+		ghJSON = runGHJSON
+	}
+	out, err := ghJSON(ctx, ghArgs)
+	if err != nil {
+		return fmt.Errorf("inspecting repo labels: %w", err)
+	}
+	names, perr := parseLabelNames(out)
+	if perr != nil {
+		return fmt.Errorf("parsing label list response: %w", perr)
+	}
+	for _, n := range names {
+		if n == "status:changes" {
+			fmt.Fprintf(r.Stdout, "  ✓ target label status:changes exists in repo (preflight pass)\n")
+			return nil
+		}
+	}
+	return fmt.Errorf("review_return_target_label_missing: status:changes label is not defined in the repo; refusing to remove status:review and strand the issue. Run label-doctor before retrying")
+}
+
+// applyLabelTransition transitions the issue from status:review to
+// status:changes. Uses the gh CLI which is an assumed runtime dependency.
+//
+// F3 (cycle/500 R1) atomicity: gh issue edit accepts --remove-label and
+// --add-label in a single invocation, which the GitHub API serves as one
+// labels-PATCH call. This preserves the single-status invariant and removes
+// the prior "remove succeeded; add failed; issue statusless" failure mode
+// (empirical witness: cnos#493 label-doctor gap; runtime exercise of the
+// previous code path stranded cnos#500 at no status during the bootstrap
+// recovery TODAY).
+//
+// If the gh call fails, we re-inspect the issue state to report whether
+// the transition partially applied (review_return_label_drift) or remained
+// at status:review (no drift; safe to retry).
 func (r *Returner) applyLabelTransition(ctx context.Context, args ReturnArgs) error {
 	issueStr := strconv.Itoa(args.Issue)
 	repoFlag := r.Repo
@@ -189,30 +296,111 @@ func (r *Returner) applyLabelTransition(ctx context.Context, args ReturnArgs) er
 		ghFn = runGH
 	}
 
-	// Remove status:review label.
-	fmt.Fprintf(r.Stdout, "\nApplying label transition: status:review → status:changes ...\n")
+	fmt.Fprintf(r.Stdout, "\nApplying label transition: status:review → status:changes (atomic) ...\n")
 
-	removeArgs := []string{"issue", "edit", issueStr, "--remove-label", "status:review"}
+	// Single gh call: both --remove-label and --add-label. gh + the labels
+	// API resolve this as a single PATCH against the issue's labels[],
+	// preserving the single-status invariant.
+	editArgs := []string{"issue", "edit", issueStr,
+		"--remove-label", "status:review",
+		"--add-label", "status:changes",
+	}
 	if repoFlag != "" {
-		removeArgs = append([]string{"--repo", repoFlag}, removeArgs...)
+		editArgs = append([]string{"--repo", repoFlag}, editArgs...)
 	}
-	if err := ghFn(ctx, removeArgs, r.Stderr); err != nil {
-		return fmt.Errorf("removing status:review label: %w", err)
+	if err := ghFn(ctx, editArgs, r.Stderr); err != nil {
+		// Atomic call failed. Re-inspect to report drift status precisely.
+		drift := r.assessPostFailureDrift(ctx, args)
+		return fmt.Errorf("applying label transition for issue #%d: %w (%s)", args.Issue, err, drift)
 	}
-	fmt.Fprintf(r.Stdout, "  ✓ removed status:review\n")
-
-	// Add status:changes label.
-	addArgs := []string{"issue", "edit", issueStr, "--add-label", "status:changes"}
-	if repoFlag != "" {
-		addArgs = append([]string{"--repo", repoFlag}, addArgs...)
-	}
-	if err := ghFn(ctx, addArgs, r.Stderr); err != nil {
-		return fmt.Errorf("adding status:changes label: %w", err)
-	}
-	fmt.Fprintf(r.Stdout, "  ✓ added status:changes\n")
+	fmt.Fprintf(r.Stdout, "  ✓ removed status:review; added status:changes\n")
 	fmt.Fprintf(r.Stdout, "\nLabel transition complete: issue #%d is now status:changes.\n", args.Issue)
 	fmt.Fprintf(r.Stdout, "Use 'cn cell resume --issue %d' to re-arm the cycle.\n", args.Issue)
 	return nil
+}
+
+// assessPostFailureDrift inspects the issue after a transition failure and
+// returns a structured marker describing whether the issue is statusless,
+// at status:changes, or still at status:review. Best-effort: if the
+// inspection itself fails, returns a marker noting that the post-failure
+// state is unknown so the operator inspects manually.
+func (r *Returner) assessPostFailureDrift(ctx context.Context, args ReturnArgs) string {
+	issueStr := strconv.Itoa(args.Issue)
+	ghArgs := []string{"issue", "view", issueStr, "--json", "state,labels"}
+	if r.Repo != "" {
+		ghArgs = append([]string{"--repo", r.Repo}, ghArgs...)
+	}
+	ghJSON := r.RunGHJSON
+	if ghJSON == nil {
+		ghJSON = runGHJSON
+	}
+	out, err := ghJSON(ctx, ghArgs)
+	if err != nil {
+		return "review_return_label_drift: post-failure state unknown — inspect issue manually"
+	}
+	_, labels, perr := parseIssueStateLabels(out)
+	if perr != nil {
+		return "review_return_label_drift: post-failure state unparseable — inspect issue manually"
+	}
+	statusLabels := filterStatusLabels(labels)
+	switch {
+	case len(statusLabels) == 0:
+		return "review_return_label_drift: issue is now statusless — manual recovery required"
+	case len(statusLabels) == 1 && statusLabels[0] == "status:changes":
+		return "review_return_label_drift: transition partially applied; issue is at status:changes but the runtime reported failure; safe to treat as transitioned"
+	case len(statusLabels) == 1 && statusLabels[0] == "status:review":
+		return "no drift: issue remained at status:review; safe to retry"
+	default:
+		return fmt.Sprintf("review_return_label_drift: issue carries unexpected status labels %v — manual recovery required", statusLabels)
+	}
+}
+
+// parseIssueStateLabels extracts state ("OPEN"/"CLOSED") and label names
+// from the JSON returned by `gh issue view --json state,labels`.
+func parseIssueStateLabels(jsonBytes []byte) (state string, labels []string, err error) {
+	type label struct {
+		Name string `json:"name"`
+	}
+	var resp struct {
+		State  string  `json:"state"`
+		Labels []label `json:"labels"`
+	}
+	if jerr := decodeJSON(jsonBytes, &resp); jerr != nil {
+		return "", nil, jerr
+	}
+	names := make([]string, 0, len(resp.Labels))
+	for _, l := range resp.Labels {
+		names = append(names, l.Name)
+	}
+	return resp.State, names, nil
+}
+
+// parseLabelNames extracts label names from the JSON returned by
+// `gh label list --json name`.
+func parseLabelNames(jsonBytes []byte) ([]string, error) {
+	type label struct {
+		Name string `json:"name"`
+	}
+	var resp []label
+	if err := decodeJSON(jsonBytes, &resp); err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(resp))
+	for _, l := range resp {
+		names = append(names, l.Name)
+	}
+	return names, nil
+}
+
+// filterStatusLabels returns labels whose name starts with "status:".
+func filterStatusLabels(labels []string) []string {
+	out := make([]string, 0, len(labels))
+	for _, l := range labels {
+		if strings.HasPrefix(l, "status:") {
+			out = append(out, l)
+		}
+	}
+	return out
 }
 
 // Resumer executes the cn cell resume operation.
@@ -271,6 +459,25 @@ func runGH(ctx context.Context, args []string, w io.Writer) error {
 		return fmt.Errorf("gh %s: %w", strings.Join(args, " "), err)
 	}
 	return nil
+}
+
+// runGHJSON executes the gh CLI with the given args, captures stdout and
+// returns it as bytes. Used for read-only inspection commands like
+// `gh issue view --json state,labels` (F2 / F3 preflight, cycle/500 R1).
+func runGHJSON(ctx context.Context, args []string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, "gh", args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("gh %s: %w (stderr: %s)", strings.Join(args, " "), err, stderr.String())
+	}
+	return stdout.Bytes(), nil
+}
+
+// decodeJSON unmarshals jsonBytes into v.
+func decodeJSON(jsonBytes []byte, v any) error {
+	return json.Unmarshal(jsonBytes, v)
 }
 
 // verifyBranchExists checks that origin/{branch} exists using git ls-remote.
