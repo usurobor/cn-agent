@@ -200,3 +200,109 @@ Per-AC oracle run against branch HEAD `f7d88053` (implementation commit).
 - No cross-branch patch to 497 artifacts needed (issue body §"AC7 resolution" note confirmed: 497 §5 already carries the declaration; this cycle only formalizes the schema)
 
 **Pass:** schema exists; 497 gamma-closeout carries the declaration at line 78; grep detects it; schema fields match the 497 declaration's fields.
+
+---
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+No. Each AC has a concrete evidence mapping:
+- AC1: schema definition file exists at canonical path; 497 artifact conformance verified by grep (not "should conform" — field-by-field check done)
+- AC2: prohibited surfaces are listed explicitly in a table in `hi-contract.md §2`; MUST NOT language is verbatim (not "should avoid")
+- AC3: label transition calls are present in `cell.go` `applyLabelTransition()`; smoke test proves converge does NOT apply transition
+- AC4: `O_APPEND` semantics prove no replacement; test verifies existing content preserved
+- AC5: §9.10 is a named subsection with routing steps numbered 1–4; β can verify by reading the diff
+- AC6: prohibited surfaces table and MUST NOT language in `hi-contract.md §2`; enforcement mechanism named
+- AC7: grep command documented; 497 witness verified by running the grep
+
+**Is every claim backed by evidence in the diff?**
+
+Yes. All seven ACs reference specific file paths + sections or test names that are present in the diff. No claim is backed by "the design implies it" or "the skill requires it."
+
+**Peer enumeration check (alpha/SKILL.md §2.3):**
+
+The diff touches the δ role skill (delta/SKILL.md §9). Per §2.3 "skill-class peers" rule, role-skill changes may ripple to lifecycle skills. Analysis:
+- The δ skill amendment is additive (new §9.10 + reconciliation note in §9.6); no existing section is removed or changed in semantics
+- Lifecycle skills (review/SKILL.md, release/SKILL.md, post-release/SKILL.md) do not encode the `resumed-from-changes` shape; they operate after β converge, which this shape adds a step *before*
+- No lifecycle skill needs updating from this amendment
+
+Peer set:
+- delta/SKILL.md: amended (§9.10 added) ✓
+- gamma/SKILL.md: no change needed (§2.5 scaffold step remains; §2.7 closeout amendment step is named in §9.10 routing sequence) ✓
+- alpha/SKILL.md: no change needed (dispatch intake §2.1 already handles the resumed-from-changes context via the operator-review.md on the branch) ✓
+- beta/SKILL.md: no change needed (Rule 7 implementation-contract verification + existing review protocol cover resumed rounds) ✓
+- review/SKILL.md: no change needed (reviews β-converged branches; resume shape adds a round before β converge, not after) ✓
+
+**Harness audit (alpha/SKILL.md §2.4):**
+
+This diff adds new files; no existing schema-bearing type is changed. The `cn.operator-review.v1` schema is new. Producers: HI only. Consumers: `cn cell return` (reads `schema:` field only). No shell harness, CI emitter, or test fixture writes this schema yet; 497's existing `operator-review.md` is the only existing conforming instance and it was authored before the schema was formalized (retroactive conformance; verified by field check). No harness audit gaps.
+
+**Intra-doc repetition check (alpha/SKILL.md §2.3):**
+
+The prohibited surfaces list appears in two places:
+- `hi-contract.md §2` (table: 6 surfaces)
+- `operator-review/SKILL.md §4.2` (list: 6 surfaces)
+
+Both lists carry the same 6 surfaces. No drift between the two (both were authored in this cycle with the same list). β can verify consistency.
+
+---
+
+## §Debt
+
+1. **AC6 CI enforcement** — CI grep of HI authorship signatures in role-owned artifact paths is not implemented. The enforcement is convention-based (β Rule 7). This is a known limitation: HI commits do not carry a machine-distinguishable authorship signature. Future candidate: a CI step that checks `operator-review.md` frontmatter `captured_by` against the author of the containing commit. Classification: P2; appropriate scope is a future cycle.
+
+2. **Alpha closeout** — α closeout is provisional per `alpha/SKILL.md §2.8` (bounded dispatch model; closeout written at review-readiness time). Marked `[provisional — pending β outcome]`. See `alpha-closeout.md`.
+
+3. **`cn cell resume` does not rebase** — per the preserved-invariants requirement (AC4), `cn cell resume` does not rebase `cycle/{N}` onto main. If `origin/main` advances significantly while the cell is at `status:changes`, the rebase must be done manually or by a future `cn cell rebase` command. This is an honest scope boundary, not a design oversight. Classification: P3; future cycle if needed.
+
+4. **`cn cell return` repo flag** — the `Returner.Repo` field defaults to empty, which means `gh issue edit` operates on the current repository's remote. In multi-repo setups, the caller would need to inject the repo slug. The `CellReturnCmd.Run()` does not populate `Repo`; `gh` auto-detects from git remote. This is consistent with how other commands in the codebase behave (e.g., `dispatch.go` — `DetectProject` is optional). Classification: P3.
+
+---
+
+## §CDD Trace
+
+**Step 1 — Receive.** Dispatch prompt from γ; branch `cycle/500`; loaded skills: alpha/SKILL.md, write/SKILL.md, dispatch/SKILL.md; delta/SKILL.md loaded for AC5. Issue cnos#500 read fully. gamma-scaffold.md read and all AC oracle approaches understood.
+
+**Step 2 — Produce (artifact order).**
+
+1. Design artifact — `self-coherence.md §R0 §Design decisions` (this file; design pass completed before implementation)
+2. Coherence contract — `self-coherence.md §Gap` (committed separately as first incremental commit)
+3. Plan — not required (implementation sequencing is clear from gamma-scaffold AC oracle + scope guardrails; no ambiguity in ordering)
+4. Tests — `src/go/internal/cell/cell_test.go` (24 tests; 24 pass)
+5. Code — `src/go/internal/cell/cell.go` + `src/go/internal/cli/cmd_cell.go` + `src/go/cmd/cn/main.go` (registration)
+6. Docs — `src/packages/cnos.cdd/skills/cdd/operator-review/SKILL.md` + `src/packages/cnos.core/orchestrators/agent-admin/hi-contract.md` + `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md §9.10`
+7. Self-coherence — this file
+
+**Step 3 — Prove.** AC-by-AC evidence in §ACs above. All 7 ACs pass.
+
+**Step 4 — Gate (pre-review checklist).**
+
+| Row | Status | Evidence |
+|---|---|---|
+| 1. cycle branch rebased onto origin/main | ✓ | Branch created from 3095fa2b (main SHA at scaffold time); main has not advanced (verified: `git log origin/main -1 --format=%H` = 3095fa2b). No rebase needed. |
+| 2. self-coherence.md carries CDD Trace through step 7 | ✓ | This section |
+| 3. tests present | ✓ | 24 tests in `cell/cell_test.go`; all pass |
+| 4. every AC has evidence | ✓ | §ACs above |
+| 5. known debt explicit | ✓ | §Debt above |
+| 6. schema / shape audit completed | ✓ | cn.operator-review.v1 is new; no existing consumers to audit |
+| 7. peer enumeration completed | ✓ | §Self-check above |
+| 8. harness audit completed | ✓ | §Self-check above |
+| 9. post-patch re-audit (polyglot) | Go: go vet + go test ./... — all pass. Markdown: no structural drift (all authored this cycle). No shell/YAML surfaces in diff. | ✓ |
+| 10. branch CI | CI not available locally; review-readiness section states this explicitly and β waits for green before merge | see review-readiness |
+| 11. artifact enumeration matches diff | All files in diff mentioned in §ACs or §CDD Trace step 6: `self-coherence.md`, `operator-review/SKILL.md`, `hi-contract.md`, `cell.go`, `cell_test.go`, `cmd_cell.go`, `delta/SKILL.md`, `main.go` ✓ | ✓ |
+| 12. caller-path trace for new modules | `cell.go`: called from `cmd_cell.go` `CellReturnCmd.Run()` → `Returner.Return()` and `CellResumeCmd.Run()` → `Resumer.Resume()`. Registered in `main.go`. Non-test caller: `src/go/internal/cli/cmd_cell.go` lines 77, 97, 116, 135. ✓ | ✓ |
+| 13. test assertion count from runner | `go test ./internal/cell/... -v` output: 24 PASS, 0 FAIL, 0 SKIP (pasted output visible in implementation pass; all 24 named test functions pass) | ✓ |
+| 14. α commit author email | `git log -1 --format='%ae' HEAD` = `alpha@cnos.cdd.cnos` ✓ (configured at session start before first commit) | ✓ |
+| 15. γ-artifact at canonical §5.1 path | `git cat-file -e origin/cycle/500:.cdd/unreleased/500/gamma-scaffold.md` — γ-scaffold present on origin/cycle/500 ✓ | ✓ |
+
+**Diff enumeration (all files in `git diff --stat origin/main..HEAD`):**
+
+- `.cdd/unreleased/500/self-coherence.md` — this file (new; §ACs evidence anchor)
+- `src/go/internal/cell/cell.go` — AC3 + AC4 implementation (new)
+- `src/go/internal/cell/cell_test.go` — AC3 + AC4 tests (new)
+- `src/go/internal/cli/cmd_cell.go` — AC3 + AC4 CLI command (new; caller of cell.go)
+- `src/go/cmd/cn/main.go` — registration of CellReturnCmd + CellResumeCmd (modified; lines added)
+- `src/packages/cnos.cdd/skills/cdd/operator-review/SKILL.md` — AC1 + AC7 schema (new)
+- `src/packages/cnos.core/orchestrators/agent-admin/hi-contract.md` — AC2 + AC6 contract (new)
+- `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` — AC5 §9.10 amendment + §9.6 reconciliation note (modified)
