@@ -133,3 +133,54 @@ HI does NOT:
 (Per `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` named failure mode: "invisible meddling.")
 
 — γ@cdd.cnos (HI; γ-interface session), 2026-06-26 (UTC)
+
+---
+
+# Operator-review §R2 — narrow wording iterate (single finding)
+
+Operator-final-read on the R1 corrected PR #499 returned `iterate (once, extremely narrowly)`. Recovery sequence substantively correct; Model B verdict + α/β/γ R1 ownership all approved. **One wording issue remains in γ-owned matter.**
+
+## Finding
+
+### O7 — Remove "parallel" from γ R1 closeout (gamma-closeout.md)
+
+**Surface:** `.cdd/unreleased/497/gamma-closeout.md` — currently uses "β R1 (parallel)" and "β R1 (running in parallel...)" in the recovery-sequence descriptions.
+
+**Problem:** The closeout text implies β and γ R1 were run in parallel. The actual recovery sequence was sequential per the role-boundary correctness doctrine the cycle is itself installing. The cycle's `gamma-closeout.md §5` carries the `degraded_recovery` declaration and the `§6` retrospective on attribution; retaining "parallel" wording in the same artifact undermines the doctrine being installed. Operator framing: *"the closeout is explicitly carrying the degraded-recovery doctrine. It should not retain a word that describes the very role-sequencing mistake we are trying to eliminate."*
+
+**Operator-supplied replacement text (verbatim):**
+
+> "β R1 took ownership of the review at 9b120aae.
+> γ R1 then took ownership of the closeout at 5e8fbe18."
+
+Or, equivalently:
+
+> "β R1 took ownership of the review; γ R1 then took ownership of the closeout."
+
+**Class:** doctrinal-vocabulary consistency (single-word disqualifier in the artifact carrying the very doctrine the wording undermines); within γ's matter; γ R2 sub-session owns the fix.
+
+**Expected scope:** ONE small commit. Replace every "(parallel)" / "(running in parallel...)" occurrence in `gamma-closeout.md` with sequential wording per the operator's replacement text. No other file edits. After this fix lands, PR #499 is mergeable per operator's authorization.
+
+## Recovery sequence (continued)
+
+| Step | Owner | Status |
+|---|---|---|
+| O7 translated into operator-review.md (this §R2 finding) | HI | this commit |
+| γ R2 sub-session applies the one-wording fix | γ | pending |
+| Merge PR #499 (operator-authorized after wording fix) | HI (operator action on operator's behalf) | pending |
+| cnos#497 auto-closes via "Closes #497" footer | mechanical | pending |
+| Final report to operator | HI (legitimate explanation work) | pending |
+
+## What γ R2 does NOT do
+
+γ R2 is a single-purpose role pass for the wording fix in O7 only. It does NOT:
+- Edit α/β/HI matter (self-coherence, alpha-closeout, beta-review, beta-closeout, operator-review.md, gamma-scaffold)
+- Add additional R2 reasoning beyond a brief amendment note in gamma-closeout (the prior R1 retrospective stands)
+- Re-walk ACs (β's verdict stands; this is a wording fix not a substantive iterate)
+- Add a new `degraded_recovery` declaration (the §5 declaration in R1 already covers the recovery scope; γ R2 is part of the recovery sequence, not a new violation)
+
+## HI's continuing stand-down
+
+After O7 translates into γ R2's input here, HI does no further role-owned edits. HI's remaining work: trigger γ R2 sub-session dispatch; merge PR #499 after γ R2 lands; final report. Operator's "no further review loop is needed from me unless you want it" authorization closes the R[N] iterate cluster.
+
+— γ@cdd.cnos (HI; γ-interface session), §R2 amendment, 2026-06-26 (UTC)
