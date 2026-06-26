@@ -53,3 +53,24 @@ Keep as one cell. Five-factor check:
 4. δ SKILL.md §9 amendment for the `resumed-from-changes` wake-invoked mode shape
 5. HI behavioral contract — explicit prohibited surfaces + MUST NOT language
 6. `degraded_recovery` declaration schema as first-class convention
+
+---
+
+## §Skills
+
+**Tier 1 — CDD lifecycle:**
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` (this role)
+- `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` (amended §9; §9.6 carve-out; §9.10 new subsection)
+
+**Tier 2 — always-applicable eng:**
+- `src/packages/cnos.core/skills/write/SKILL.md` (governing question, one-file-one-job, front-load the point)
+
+**Tier 3 — issue-specific:**
+- `src/packages/cnos.handoff/skills/handoff/dispatch/SKILL.md` (implementation contract; 7-axis schema; four-surface mesh)
+
+**Active constraints from loaded skills:**
+- write/SKILL.md §3.2 — one file, one governing question (applied to hi-contract.md and operator-review/SKILL.md)
+- write/SKILL.md §3.4 — front-load the point (applied to all authored Markdown)
+- alpha/SKILL.md §2.5 — incremental self-coherence write discipline (one section per commit)
+- alpha/SKILL.md §2.3 — peer enumeration before closure claims
+- alpha/SKILL.md §3.6 — implementation contract is δ's; α MUST NOT improvise
