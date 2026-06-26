@@ -1,217 +1,64 @@
 # cnos Documentation
 
-A recurrent coherence system with Git as its lowest durable substrate.
+cnos is a Git-native coherence system for accountable human + AI work.
 
-**Version:** 3.61.1
-**Date:** 2026-04-29
+> **Navigation note — docs reorg, Pass 1.** This portal is organized by
+> *reader intent*. The underlying files still live under `alpha/`, `beta/`,
+> and `gamma/`; the indexes below link to their current locations. The α/β/γ
+> triad is a coherence-measurement and role grammar (TSC axes, CDD roles) —
+> *not* a filing taxonomy. It is moving into document frontmatter as
+> measured metadata, not staying as top-level folders. Pass 1 adds this
+> reader-first overlay with **zero file moves**; later passes will migrate
+> content behind a path-dependency audit (the docs tree is referenced from
+> `src/` skills and CI goldens, so moves are a package-system change, not
+> just navigation).
 
----
+## Start here
 
-## Start Here
+1. [THESIS.md](./THESIS.md) — what cnos is; the whole, above the triad.
+2. [concepts/](./concepts/README.md) — the mental model: why coherence is the root concept.
+3. [Dumb Models, Smart Cells](./alpha/essays/DUMB-MODELS-SMART-CELLS.md) — why models are bounded executors, not authorities.
+4. [reference/](./reference/README.md) — the CN protocol and why Git is the lowest durable substrate.
 
-**[THESIS.md](./THESIS.md)** — what cnos is. The whole, above the triad.
+## I want to…
 
-Then choose your path:
+| Goal | Read |
+|---|---|
+| Understand cnos | [`THESIS.md`](./THESIS.md) → [`concepts/`](./concepts/README.md) → [`papers/`](./papers/README.md) |
+| Try it / activate an agent | [`quickstart/`](./quickstart/README.md) |
+| Build with cnos | [`reference/`](./reference/README.md) |
+| Understand cells & receipts | [`development/`](./development/README.md) → [`papers/`](./papers/README.md) |
+| Understand trust & coherence | [Dumb Models, Smart Cells](./alpha/essays/DUMB-MODELS-SMART-CELLS.md) |
+| Contribute | [`guides/`](./guides/README.md) → [`development/`](./development/README.md) |
+| Find canonical specs | [`reference/`](./reference/README.md) |
+| Find audits & evidence | [`evidence/`](./evidence/README.md) |
+| Find historical snapshots | [`archive/`](./archive/README.md) |
 
-| You want to... | Start with |
-|----------------|------------|
-| Understand what cnos is | [THESIS.md](./THESIS.md) → [COHERENCE-SYSTEM.md](./alpha/essays/COHERENCE-SYSTEM.md) → [FOUNDATIONS.md](./alpha/essays/FOUNDATIONS.md) |
-| Build or run a cnos agent | [AGENT-RUNTIME.md](./alpha/agent-runtime/AGENT-RUNTIME.md) → [CLI.md](./alpha/cli/CLI.md) → [HANDSHAKE.md](./beta/guides/HANDSHAKE.md) |
-| Contribute code | [CDD.md](./gamma/cdd/CDD.md) → [ARCHITECTURE.md](./beta/architecture/ARCHITECTURE.md) |
-| Understand agent doctrine / conduct | [Doctrine README](./alpha/doctrine/README.md) → [Coherence for Agents](./alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) → [Ethics for Agents](./alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) → [Judgment for Agents](./alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) → [Inheritance for Agents](./alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) |
-| Understand agent composition / CTB | [CTB README](./alpha/ctb/README.md) → [v0.1 spec](./alpha/ctb/LANGUAGE-SPEC.md) → [v0.2 draft](./alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md) |
-| Understand the formal foundation | [TSC repo](https://github.com/usurobor/tsc) → [C≡](https://github.com/usurobor/tsc/blob/main/spec/c-equiv.md) → [TSC Core](https://github.com/usurobor/tsc/blob/main/spec/tsc-core.md) → [TSC Oper](https://github.com/usurobor/tsc/blob/main/spec/tsc-oper.md) |
-| Understand the runtime extensions model | [RUNTIME-EXTENSIONS.md](./alpha/runtime-extensions/RUNTIME-EXTENSIONS.md) → [runtime-extensions bundle](./alpha/runtime-extensions/) |
-| Write or modify a skill | [WRITE-A-SKILL.md](./beta/guides/WRITE-A-SKILL.md) → [COGNITIVE-SUBSTRATE.md](./alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md) |
-| Do a release | [release skill](../src/packages/cnos.cdd/skills/cdd/release/SKILL.md) → [BUILD-RELEASE.md](./beta/guides/BUILD-RELEASE.md) |
+## Directory map (reader intent)
 
----
+- [`quickstart/`](./quickstart/README.md) — runnable first experiences
+- [`concepts/`](./concepts/README.md) — mental model and doctrine
+- [`guides/`](./guides/README.md) — task-oriented how-tos
+- [`reference/`](./reference/README.md) — canonical specs, APIs, CLI, schemas
+- [`architecture/`](./architecture/README.md) — how the system fits together
+- [`development/`](./development/README.md) — CDD method, rules, plans, checklists
+- [`papers/`](./papers/README.md) — essays, whitepapers, position papers
+- [`evidence/`](./evidence/README.md) — audits, RCAs, measurements, demo receipts
+- [`archive/`](./archive/README.md) — frozen snapshots and historical material
 
-## Reading Model
+## Coherence metadata, not coherence folders
 
-The docs tree has two dimensions:
-
-### Triad axis — ontological character
-
-Every document has a dominant axis. Read top-down for breadth.
-
-| Axis | Directory | Question |
-|------|-----------|----------|
-| **Whole** | `docs/` | What is cnos? |
-| **α Pattern** | `docs/alpha/` | What has been articulated? |
-| **β Relation** | `docs/beta/` | Do the parts cohere? |
-| **γ Evolution** | `docs/gamma/` | How does it change? |
-
-### Feature bundles — depth within a feature
-
-Related documents (spec, snapshots, design docs) are grouped into **feature bundles** within `alpha/`. Read into a bundle for depth on a single feature.
-
-| Bundle | Canonical spec | What it covers |
-|--------|---------------|----------------|
-| [agent-runtime/](./alpha/agent-runtime/) | [AGENT-RUNTIME.md](./alpha/agent-runtime/AGENT-RUNTIME.md) | CN Shell, typed ops, N-pass orchestration, receipts |
-| [runtime-extensions/](./alpha/runtime-extensions/) | [RUNTIME-EXTENSIONS.md](./alpha/runtime-extensions/RUNTIME-EXTENSIONS.md) | Capability providers, discovery, isolation |
-
-See [DOCUMENTATION-SYSTEM.md](./beta/governance/DOCUMENTATION-SYSTEM.md) for the full taxonomy and rules.
-
----
-
-## The Triad
-
-### α — Pattern: What Is Articulated
-
-The substance of the system — doctrine, specs, definitions.
-
-*"What has been made explicit? Is it internally consistent?"*
-
-**Anchor docs** (canonical, evolve in place):
-
-| Document | Scope |
-|----------|-------|
-| [COHERENCE-SYSTEM.md](./alpha/essays/COHERENCE-SYSTEM.md) | Meta-model: coherence as primary; the instruction set |
-| [FOUNDATIONS.md](./alpha/essays/FOUNDATIONS.md) | The coherence stack — doctrinal layers |
-| [MANIFESTO.md](./alpha/essays/MANIFESTO.md) | Principles and values |
-| [CAA.md](./alpha/agent-runtime/CAA.md) | Coherent agent architecture |
-| [AGENT-RUNTIME.md](./alpha/agent-runtime/AGENT-RUNTIME.md) | Runtime spec: CN Shell, typed ops, N-pass orchestration, receipts |
-| [RUNTIME-EXTENSIONS.md](./alpha/runtime-extensions/RUNTIME-EXTENSIONS.md) | Capability providers, discovery, and isolation |
-| [COGNITIVE-SUBSTRATE.md](./alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md) | Cognitive asset classes — doctrine, mindsets, skills |
-| [CAR.md](./alpha/cognitive-substrate/CAR.md) | Cognitive asset resolver — local, versioned cognition |
-| [GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md](./alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md) | CN protocol specification (v3.0.1) |
-| [PROTOCOL.md](./alpha/protocol/PROTOCOL.md) | FSM design — state diagrams, transition tables |
-| [TRACEABILITY.md](./alpha/security/TRACEABILITY.md) | Observability — event stream, state projections, readiness |
-| [SECURITY-MODEL.md](./alpha/security/SECURITY-MODEL.md) | Security architecture — sandbox, FSM enforcement, audit trail |
-| [CLI.md](./alpha/cli/CLI.md) | CLI command reference |
-| [DAEMON.md](./alpha/cli/DAEMON.md) | Daemon mode design |
-| [SETUP-INSTALLER.md](./alpha/cli/SETUP-INSTALLER.md) | Install script specification |
-| [THREAD-API.md](./alpha/protocol/THREAD-API.md) | Agent content API |
-| [MESSAGE-PACKET-TRANSPORT.md](./alpha/protocol/MESSAGE-PACKET-TRANSPORT.md) | Fail-closed inbox materialization — packet-based transport (#150) |
-
-**Feature-scoped design docs** (version-stamped, see [migration path](./beta/governance/DOCUMENTATION-SYSTEM.md#6-migration-path-for-legacy-filenames)):
-
-| Document | Feature | Version |
-|----------|---------|---------|
-| [RUNTIME-CONTRACT-v3.10.0.md](./alpha/agent-runtime/3.10.0/DESIGN.md) | Wake-up self-model contract | 3.10.0 |
-| [N-PASS-BIND-v3.8.0.md](./alpha/agent-runtime/3.8.0/N-PASS-BIND.md) | N-pass bind loop and indicators | 3.8.0 |
-| [SYSCALL-SURFACE-v3.8.0.md](./alpha/agent-runtime/3.8.0/SYSCALL-SURFACE.md) | Syscall surface redesign | 3.8.0 |
-| [SCHEDULER-v3.7.0.md](./alpha/agent-runtime/3.7.0/DESIGN.md) | Scheduler design | 3.7.0 |
-| [CTB-v4.0.0-VISION.md](./alpha/ctb/CTB-v4.0.0-VISION.md) | CTB v4.0.0 vision: agent-composition language | 4.0.0 |
-
-**Feature bundles:**
-
-| Bundle | Contents |
-|--------|----------|
-| [agent-runtime/](./alpha/agent-runtime/) | Runtime spec, CAA, runtime contract, version-scoped design docs |
-| [cli/](./alpha/cli/) | CLI reference, daemon mode, setup installer |
-| [cognitive-substrate/](./alpha/cognitive-substrate/) | Cognitive asset classes, CAR resolver |
-| [ctb/](./alpha/ctb/) | CTB — triadic agent-composition language (draft); [v0.1 baseline](./alpha/ctb/LANGUAGE-SPEC.md), [v0.2 draft](./alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md), [notes](./alpha/ctb/SEMANTICS-NOTES.md) |
-| [doctrine/](./alpha/doctrine/) | Doctrine sub-packages (coherence, ethics, judgment, inheritance) |
-| [essays/](./alpha/essays/) | System doctrine: coherence system, foundations, manifesto |
-| [protocol/](./alpha/protocol/) | Whitepaper, protocol FSMs, thread API |
-| [runtime-extensions/](./alpha/runtime-extensions/) | Extensions spec, version snapshots |
-| [security/](./alpha/security/) | Security model, traceability |
-
-### β — Relation: How Parts Cohere
-
-The graph of relations — system overview, shared vocabulary, operator connection, model-reality evidence.
-
-*"Do the parts reveal one system? Does model match reality?"*
-
-| Document | Scope |
-|----------|-------|
-| [architecture/](./beta/architecture/) | System overview — how the parts relate |
-| [governance/](./beta/governance/) | Doc system, naming conventions, glossary |
-| [lineage/](./beta/lineage/) | Origin narrative and structural lineage |
-| [schema/](./beta/schema/) | LLM schema design |
-| [guides/](./beta/guides/) | Operator ↔ system: handshake, automation, migration, skills, dojo, build/release |
-| [evidence/](./beta/evidence/) | Model ↔ reality: audit, RCAs |
-
-### γ — Evolution: How the System Moves
-
-The process that moves the system — method, plans, gates.
-
-*"How does it change without losing itself?"*
-
-| Bundle | Contents |
-|--------|----------|
-| [cdd/](./gamma/cdd/) | CDD method, agile process, frozen snapshots |
-| [rules/](./gamma/rules/) | Non-negotiable rules, coherence invariants |
-| [essays/](./gamma/essays/) | Position papers: stateless agency, executable skills |
-| [plans/](./gamma/plans/) | Implementation plans for specific releases |
-| [checklists/](./gamma/checklists/) | Review checklists by discipline |
+Documents may declare classification in frontmatter — `doc_type`, `status`,
+`canonical`, `owner`, `supersedes`. These are *knowable* facts about a
+document. TSC coherence axes (α/β/γ) are a **measurement**, recorded from a
+TSC report, and must never be hand-written into frontmatter (a hand-authored
+score is an invented score). The filesystem is organized for readers; the
+triad is kept for measurement.
 
 ---
 
-## Directory Map
-
-```
-docs/
-├── THESIS.md                          # The whole
-├── README.md                          # This file — navigation
-├── alpha/                             # α Pattern
-│   ├── agent-runtime/                 # Runtime spec, CAA, runtime contract
-│   │   ├── README.md
-│   │   ├── AGENT-RUNTIME.md           # Canonical spec (v3.8.0)
-│   │   ├── CAA.md                     # Coherent agent architecture
-│   │   ├── RUNTIME-CONTRACT-v2.md     # Runtime contract v2
-│   │   └── 3.x.0/                    # Version-scoped design docs
-│   ├── cli/                           # CLI, daemon, installer
-│   │   ├── CLI.md, DAEMON.md, SETUP-INSTALLER.md
-│   ├── cognitive-substrate/           # Cognitive assets, CAR
-│   │   ├── COGNITIVE-SUBSTRATE.md, CAR.md
-│   ├── ctb/                           # CTB agent-composition language (draft)
-│   │   ├── README.md                  # Document map + authority
-│   │   ├── LANGUAGE-SPEC.md           # v0.1 baseline (normative)
-│   │   ├── LANGUAGE-SPEC-v0.2-draft.md # v0.2 agent-module target (draft)
-│   │   ├── SEMANTICS-NOTES.md         # Conceptual rationale (non-normative)
-│   │   └── CTB-v4.0.0-VISION.md      # Strategy + roadmap (non-normative)
-│   ├── doctrine/                      # Doctrine sub-packages
-│   │   └── coherence-for-agents/, ethics-for-agents/, ...
-│   ├── essays/                        # System doctrine and long-form essays
-│   │   ├── COHERENCE-SYSTEM.md        # Meta-model: coherence as primary
-│   │   ├── FOUNDATIONS.md             # Core doctrine and coherence loop
-│   │   └── MANIFESTO.md              # Human+AI commons, sovereignty
-│   ├── protocol/                      # Whitepaper, protocol, thread API
-│   │   ├── PROTOCOL.md, GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md, THREAD-API.md
-│   ├── runtime-extensions/            # Extensions spec + snapshots
-│   │   ├── README.md
-│   │   ├── RUNTIME-EXTENSIONS.md      # Canonical spec (v1.0.6)
-│   │   └── 1.0.6/                    # Version directory
-│   │       ├── README.md             # Snapshot manifest
-│   │       └── SPEC.md               # Frozen spec at v1.0.6
-│   ├── security/                      # Security model, traceability
-│   │   ├── SECURITY-MODEL.md, TRACEABILITY.md
-│   └── schemas/                       # JSON schemas
-├── beta/                              # β Relation
-│   ├── architecture/                  # System architecture
-│   │   ├── README.md
-│   │   ├── ARCHITECTURE.md
-│   │   └── 3.14.4/
-│   ├── governance/                    # Doc system, naming, glossary
-│   │   ├── README.md
-│   │   ├── DOCUMENTATION-SYSTEM.md
-│   │   ├── NAMING.md
-│   │   ├── GLOSSARY.md
-│   │   └── 3.14.4/
-│   ├── lineage/                       # Origin and structural lineage
-│   │   ├── README.md
-│   │   ├── ORIGIN.md
-│   │   ├── LINEAGE.md
-│   │   └── 3.14.4/
-│   ├── schema/                        # LLM schema design
-│   │   ├── README.md
-│   │   ├── DESIGN-LLM-SCHEMA.md
-│   │   └── 3.14.4/
-│   ├── guides/                        # Operator guides
-│   └── evidence/                      # Audits, RCAs
-└── gamma/                             # γ Evolution
-    ├── cdd/                           # CDD method, agile process
-    │   ├── README.md
-    │   ├── CDD.md
-    │   ├── RATIONALE.md
-    │   └── 3.x.x/                    # Frozen snapshots
-    ├── rules/                         # Project rules, invariants
-    │   ├── RULES.md, INVARIANTS.md
-    ├── essays/                        # Position papers
-    │   ├── STATELESS-AGENCY.md, EXECUTABLE-SKILLS.md
-    ├── plans/                         # Implementation plans
-    └── checklists/                    # Review checklists
-```
+*The legacy α/β/γ reading model and the per-axis document tables now live in
+each intent index above, pointing at the same files. See
+[`beta/governance/DOCUMENTATION-SYSTEM.md`](./beta/governance/DOCUMENTATION-SYSTEM.md)
+for the documentation-system rules (versioned directories are frozen;
+corrections ship as new versions or superseding notes).*
