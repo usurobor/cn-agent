@@ -28,7 +28,7 @@
 - [BOX-AND-THE-RUNNER.md](../gamma/essays/BOX-AND-THE-RUNNER.md) — compute is pluggable; Git stores truth.
 - [FIDONET-AND-CNOS.md](../gamma/essays/FIDONET-AND-CNOS.md)
 - [SHIPPING-SOFTWARE-AFTER-AI.md](../alpha/essays/SHIPPING-SOFTWARE-AFTER-AI.md)
-- [agent-first.md](../essays/agent-first.md) — *(the stray `docs/essays/` leak; moves here first)*
+- [AGENT-FIRST.md](./AGENT-FIRST.md) — durable evidence beats runtime memory as the substrate for composing probabilistic systems. *(Moved from `docs/essays/`; a redirect stub remains there.)*
 
 More position papers live in [`gamma/essays/`](../gamma/essays/README.md) and
 [`alpha/essays/`](../alpha/essays/README.md) pending consolidation.
