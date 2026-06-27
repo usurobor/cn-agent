@@ -288,7 +288,7 @@ jobs:
           } > "$trace_dir/wake-trace.md"
           git add "$trace_dir/wake-trace.md"
           git -c 'user.name=sigma@cnos.cn-sigma.cnos' -c 'user.email=sigma@cnos.cn-sigma.cnos' \
-            commit -m 'wake-trace: ${issue_num} run ${{ github.run_id }}'
+            commit -m "wake-trace: ${issue_num} run ${{ github.run_id }}"
           git push
 
       - name: Write fence — dispatch_activation_log_write_violation

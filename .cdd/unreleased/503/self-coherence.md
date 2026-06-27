@@ -47,3 +47,20 @@ READY FOR REVIEW
 
 - FN-dash-echo: Dash's `echo` in double-quoted strings interprets `\n` as a literal newline (not the backslash-n sequence). Changed `printf '%s\n'` approach to a `{ echo '...'; echo '...'; } > file` block, which avoids the `\n` quoting problem entirely.
 - FN-grep-pattern: `grep -qF '- id: claude'` fails on GNU grep when the pattern starts with `-` (misinterpreted as flag). Changed AC1 oracle to use `grep -qF 'id: claude'` (without leading dash) which is still unambiguous since no other step has that string.
+
+## §R1
+
+### What was fixed
+
+β R0 finding: commit message in dispatch wake-trace step used single quotes (`'...'`), which inhibits bash variable expansion of `${issue_num}` at runtime. Fixed by changing the renderer echo line to use escaped double quotes so `${issue_num}` expands to the actual issue number at job runtime.
+
+### AC verification
+
+- Commit message quoting: FIXED — cds-dispatch golden now uses `"wake-trace: ${issue_num} run ${{ github.run_id }}"` (double-quoted).
+- All other ACs unchanged from R0.
+- Byte-identity: VERIFIED — deployed workflows match goldens.
+- Idempotence: VERIFIED.
+
+### Review-ready signal
+
+READY FOR REVIEW

@@ -850,7 +850,7 @@ if [ "$role" = "dispatch" ]; then
     echo "          } > \"\$trace_dir/wake-trace.md\""
     echo "          git add \"\$trace_dir/wake-trace.md\""
     echo "          git -c 'user.name=${bot_name}' -c 'user.email=${bot_name}' \\"
-    echo "            commit -m 'wake-trace: \${issue_num} run \${{ github.run_id }}'"
+    echo "            commit -m \"wake-trace: \${issue_num} run \${{ github.run_id }}\""
     echo "          git push"
   } >> "$tmp_out"
 fi
