@@ -20,6 +20,7 @@ on:
       - 'src/packages/cnos.cds/orchestrators/**'
       - '.github/workflows/install-wake-golden.yml'
       - '.github/workflows/cnos-cds-dispatch.yml'
+      - '.github/workflows/cnos-agent-admin.yml'
   pull_request:
     branches: [main]
     paths:
@@ -28,6 +29,7 @@ on:
       - 'src/packages/cnos.cds/orchestrators/**'
       - '.github/workflows/install-wake-golden.yml'
       - '.github/workflows/cnos-cds-dispatch.yml'
+      - '.github/workflows/cnos-agent-admin.yml'
 
 jobs:
   golden-diff:
@@ -90,6 +92,22 @@ jobs:
             exit 1
           fi
           echo "Live cds-dispatch workflow matches golden: $live_sha"
+
+      - name: Verify live agent-admin workflow matches golden (sha256)
+        # cnos#503: agent-admin deployed workflow must be byte-identical
+        # with the per-package golden. Mirrors the cds-dispatch check above.
+        run: |
+          set -eu
+          live_sha=$(sha256sum .github/workflows/cnos-agent-admin.yml | cut -d' ' -f1)
+          golden_sha=$(sha256sum src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml | cut -d' ' -f1)
+          if [ "$live_sha" != "$golden_sha" ]; then
+            echo "::error::Live agent-admin workflow drift from golden."
+            echo "live:   $live_sha (.github/workflows/cnos-agent-admin.yml)"
+            echo "golden: $golden_sha (src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml)"
+            echo "Re-run \`cn install-wake agent-admin --out .github/workflows/cnos-agent-admin.yml\` and commit."
+            exit 1
+          fi
+          echo "Live agent-admin workflow matches golden: $live_sha"
 
       - name: Verify idempotence (second render is a no-op) — agent-admin
         # AC6's idempotence invariant: two consecutive renders produce
@@ -631,4 +649,95 @@ jobs:
             exit 1
           fi
           echo "AC7 renderer-side (dispatch shape): 0 role-decision leaks."
+
+      - name: AC1 (cnos#503) — Claude step has id
+        # cnos#503 AC1 oracle: the Claude action step must have id: claude
+        # so that subsequent steps can reference steps.claude.outputs.*.
+        # The rendered YAML uses `- id: claude` (list item with inline key)
+        # so we grep for '- id: claude' (dash-prefixed form).
+        run: |
+          set -eu
+          for f in \
+            src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml \
+            src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml; do
+            if ! grep -qF 'id: claude' "$f"; then
+              echo "::error::AC1 cnos#503: missing 'id: claude' on Claude action step in $f"
+              exit 1
+            fi
+          done
+          echo "AC1: 'id: claude' present in both goldens."
+
+      - name: AC2 (cnos#503) — upload-artifact step present with retention-days 14
+        # cnos#503 AC2 oracle: upload-artifact@v4 step must be present,
+        # gated on steps.claude.outputs.execution_file, with retention-days: 14.
+        run: |
+          set -eu
+          for f in \
+            src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml \
+            src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml; do
+            if ! grep -qF 'upload-artifact@v4' "$f"; then
+              echo "::error::AC2 cnos#503: missing upload-artifact@v4 step in $f"
+              exit 1
+            fi
+            if ! grep -qF 'steps.claude.outputs.execution_file' "$f"; then
+              echo "::error::AC2 cnos#503: upload-artifact step not gated on steps.claude.outputs.execution_file in $f"
+              exit 1
+            fi
+            if ! grep -qE 'retention-days: 14' "$f"; then
+              echo "::error::AC2 cnos#503: retention-days: 14 not found in $f"
+              exit 1
+            fi
+          done
+          echo "AC2: upload-artifact step present with correct gate and retention in both goldens."
+
+      - name: AC3 (cnos#503) — wake-trace write step with required fields
+        # cnos#503 AC3 oracle: wake-trace write step must be present in both
+        # goldens with all required fields. Cell-dispatch additionally needs
+        # issue and protocol fields.
+        run: |
+          set -eu
+          # Required fields per AC3: run_id, wake_class, claude_session_id,
+          # execution_artifact, workflow, conclusion, last_known_phase.
+          # Cell-dispatch additionally: issue, protocol.
+          cds=src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+          admin=src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml
+          base_fields="run_id wake_class claude_session_id execution_artifact workflow conclusion last_known_phase"
+          for field in $base_fields; do
+            if ! grep -qF "$field" "$cds"; then
+              echo "::error::AC3 cnos#503: missing required trace field '$field' in cds-dispatch golden"
+              exit 1
+            fi
+            if ! grep -qF "$field" "$admin"; then
+              echo "::error::AC3 cnos#503: missing required trace field '$field' in agent-admin golden"
+              exit 1
+            fi
+          done
+          # Cell-dispatch-only fields.
+          for field in issue protocol; do
+            if ! grep -qF "$field" "$cds"; then
+              echo "::error::AC3 cnos#503: missing cell-dispatch-only trace field '$field' in cds-dispatch golden"
+              exit 1
+            fi
+          done
+          echo "AC3: all required trace fields present in both goldens."
+
+      - name: AC6 (cnos#503) — no-op guard present in cds-dispatch golden
+        # cnos#503 AC6 oracle: the no-op guard in the cds-dispatch trace
+        # step must reference CN_WAKE_BASE_SHA and .cdd/unreleased/ so that
+        # no-op sweeps produce no committed trace.
+        run: |
+          set -eu
+          f=src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+          # The no-op guard reads git log $CN_WAKE_BASE_SHA..HEAD to check
+          # if .cdd/unreleased/ gained new paths. Assert the key predicate
+          # is present in the rendered trace step.
+          if ! grep -qF '.cdd/unreleased/' "$f"; then
+            echo "::error::AC6 cnos#503: cds-dispatch golden does not reference .cdd/unreleased/ in no-op guard"
+            exit 1
+          fi
+          if ! grep -qF 'CN_WAKE_BASE_SHA' "$f"; then
+            echo "::error::AC6 cnos#503: cds-dispatch golden does not reference CN_WAKE_BASE_SHA in no-op guard"
+            exit 1
+          fi
+          echo "AC6: no-op guard referencing .cdd/unreleased/ and CN_WAKE_BASE_SHA present in cds-dispatch golden."
 

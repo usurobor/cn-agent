@@ -755,7 +755,8 @@ fi
     echo "          echo \"CN_WAKE_BASE_SHA=\$(git rev-parse HEAD)\" >> \"\$GITHUB_ENV\""
   fi
   echo ""
-  echo "      - uses: anthropics/claude-code-action@v1"
+  echo "      - id: claude"
+  echo "        uses: anthropics/claude-code-action@v1"
   echo "        with:"
   echo "          claude_code_oauth_token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}"
   echo "          github_token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
@@ -776,6 +777,115 @@ fi
 # readable inside the steps[].with: scope). This matches the
 # substrate's `prompt: |` literal-block-scalar convention.
 sed "s/{agent}/${agent}/g" "$prompt_path" | sed 's/^/            /; s/[[:space:]]*$//' >> "$tmp_out"
+
+# ---------------------------------------------------------------------------
+# Upload-artifact step — unconditional for all wake classes (AC2 cnos#503).
+# Gate on steps.claude.outputs.execution_file != '' so the step is a no-op
+# when the action produced no execution file (e.g. very fast exits).
+# ---------------------------------------------------------------------------
+{
+  echo ""
+  echo "      - name: Upload Claude execution log"
+  echo "        if: steps.claude.outputs.execution_file != ''"
+  echo "        uses: actions/upload-artifact@v4"
+  echo "        with:"
+  echo "          name: claude-execution-\${{ github.run_id }}"
+  echo "          path: \${{ steps.claude.outputs.execution_file }}"
+  echo "          retention-days: 14"
+} >> "$tmp_out"
+
+# ---------------------------------------------------------------------------
+# Wake-trace write step — role-conditional (AC3 / AC6 cnos#503).
+# Must be inserted BEFORE the write-fence block (dispatch shape only) because
+# the fence runs `if: always()` and must remain the final step.
+# For admin wakes (no fence), the trace step is the last real step.
+# ---------------------------------------------------------------------------
+
+# Protocol identifier for trace step (dispatch wakes only). Resolved from the
+# manifest at render time via jq so the renderer source carries no
+# protocol-literal strings (AC7 invariant — the value flows through the
+# manifest, not a hardcoded string in this file).
+protocol_val=""
+if [ "$role" = "dispatch" ]; then
+  protocol_val="$(jq -r '.protocol // "unknown"' "$manifest_path")"
+fi
+
+if [ "$role" = "dispatch" ]; then
+  {
+    echo ""
+    echo "      - name: Write wake trace"
+    echo "        if: steps.claude.outputs.session_id != ''"
+    echo "        shell: bash"
+    echo "        run: |"
+    echo "          set -euo pipefail"
+    echo "          # AC6: no-op sweep guard. Check if .cdd/unreleased/ gained"
+    echo "          # new paths in this run. Empty = no-op; skip trace commit."
+    echo "          base=\${CN_WAKE_BASE_SHA:-\${GITHUB_SHA:-}}"
+    echo "          if [ -z \"\$base\" ]; then"
+    echo "            echo 'wake-trace: no baseline SHA; skipping trace.'"
+    echo "            exit 0"
+    echo "          fi"
+    echo "          new_paths=\$(git log \"\$base..HEAD\" --name-only --pretty=format: -- '.cdd/unreleased/' 2>/dev/null | grep -v '^\$' || true)"
+    echo "          if [ -z \"\$new_paths\" ]; then"
+    echo "            echo 'wake-trace: no new .cdd/unreleased/ paths — no-op sweep; skipping trace.'"
+    echo "            exit 0"
+    echo "          fi"
+    echo "          issue_num=\$(echo \"\$new_paths\" | grep -oE '[0-9]+' | head -1)"
+    echo "          if [ -z \"\$issue_num\" ]; then"
+    echo "            echo 'wake-trace: could not extract issue number; skipping trace.'"
+    echo "            exit 0"
+    echo "          fi"
+    echo "          trace_dir=\".cdd/unreleased/\${issue_num}\""
+    echo "          mkdir -p \"\$trace_dir\""
+    echo "          { echo '# wake-trace'"
+    echo "            echo \"run_id: \${{ github.run_id }}\""
+    echo "            echo 'wake_class: cds-dispatch'"
+    echo "            echo \"issue: \${issue_num}\""
+    echo "            echo 'protocol: ${protocol_val}'"
+    echo "            echo \"claude_session_id: \${{ steps.claude.outputs.session_id }}\""
+    echo "            echo \"execution_artifact: claude-execution-\${{ github.run_id }}\""
+    echo "            echo \"workflow: \${{ github.workflow }}\""
+    echo "            echo \"conclusion: \${{ job.status }}\""
+    echo "            echo 'last_known_phase: post-claude'"
+    echo "          } > \"\$trace_dir/wake-trace.md\""
+    echo "          git add \"\$trace_dir/wake-trace.md\""
+    echo "          git -c 'user.name=${bot_name}' -c 'user.email=${bot_name}' \\"
+    echo "            commit -m 'wake-trace: \${issue_num} run \${{ github.run_id }}'"
+    echo "          git push"
+  } >> "$tmp_out"
+fi
+
+if [ "$role" = "admin" ]; then
+  {
+    echo ""
+    echo "      - name: Write wake trace"
+    echo "        if: steps.claude.outputs.session_id != ''"
+    echo "        shell: bash"
+    echo "        run: |"
+    echo "          set -euo pipefail"
+    echo "          # AC6 guard for admin wakes: skip if HEAD unchanged (heartbeat no-op)."
+    echo "          base=\${CN_WAKE_BASE_SHA:-\${GITHUB_SHA:-}}"
+    echo "          if [ -n \"\$base\" ] && [ \"\$(git rev-parse HEAD)\" = \"\$base\" ]; then"
+    echo "            echo 'wake-trace: HEAD unchanged — heartbeat no-op; skipping trace.'"
+    echo "            exit 0"
+    echo "          fi"
+    echo "          trace_dir='.cn-sigma/state/wake-traces'"
+    echo "          mkdir -p \"\$trace_dir\""
+    echo "          { echo '# wake-trace'"
+    echo "            echo \"run_id: \${{ github.run_id }}\""
+    echo "            echo 'wake_class: agent-admin'"
+    echo "            echo \"claude_session_id: \${{ steps.claude.outputs.session_id }}\""
+    echo "            echo \"execution_artifact: claude-execution-\${{ github.run_id }}\""
+    echo "            echo \"workflow: \${{ github.workflow }}\""
+    echo "            echo \"conclusion: \${{ job.status }}\""
+    echo "            echo 'last_known_phase: post-claude'"
+    echo "          } > \"\$trace_dir/\${{ github.run_id }}.md\""
+    echo "          git add \"\$trace_dir/\${{ github.run_id }}.md\""
+    echo "          git -c 'user.name=${bot_name}' -c 'user.email=${bot_name}' \\"
+    echo "            commit -m 'wake-trace: agent-admin run \${{ github.run_id }}'"
+    echo "          git push"
+  } >> "$tmp_out"
+fi
 
 # ---------------------------------------------------------------------------
 # Append the activation-log write fence step when the manifest declares

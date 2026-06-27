@@ -53,7 +53,8 @@ jobs:
           set -euo pipefail
           echo "CN_WAKE_BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
-      - uses: anthropics/claude-code-action@v1
+      - id: claude
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
@@ -241,6 +242,54 @@ jobs:
             5. No labels were defined or label semantics altered.
 
             If you reach a state where you cannot complete the above (capability mismatch, ambiguous claim state, missing precondition, ambiguous directive), defer to operator per the relevant skill's defer rule. Release any claim you took. Post an issue comment naming the deferral. Then terminate; do not improvise.
+
+      - name: Upload Claude execution log
+        if: steps.claude.outputs.execution_file != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-${{ github.run_id }}
+          path: ${{ steps.claude.outputs.execution_file }}
+          retention-days: 14
+
+      - name: Write wake trace
+        if: steps.claude.outputs.session_id != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          # AC6: no-op sweep guard. Check if .cdd/unreleased/ gained
+          # new paths in this run. Empty = no-op; skip trace commit.
+          base=${CN_WAKE_BASE_SHA:-${GITHUB_SHA:-}}
+          if [ -z "$base" ]; then
+            echo 'wake-trace: no baseline SHA; skipping trace.'
+            exit 0
+          fi
+          new_paths=$(git log "$base..HEAD" --name-only --pretty=format: -- '.cdd/unreleased/' 2>/dev/null | grep -v '^$' || true)
+          if [ -z "$new_paths" ]; then
+            echo 'wake-trace: no new .cdd/unreleased/ paths — no-op sweep; skipping trace.'
+            exit 0
+          fi
+          issue_num=$(echo "$new_paths" | grep -oE '[0-9]+' | head -1)
+          if [ -z "$issue_num" ]; then
+            echo 'wake-trace: could not extract issue number; skipping trace.'
+            exit 0
+          fi
+          trace_dir=".cdd/unreleased/${issue_num}"
+          mkdir -p "$trace_dir"
+          { echo '# wake-trace'
+            echo "run_id: ${{ github.run_id }}"
+            echo 'wake_class: cds-dispatch'
+            echo "issue: ${issue_num}"
+            echo 'protocol: cds'
+            echo "claude_session_id: ${{ steps.claude.outputs.session_id }}"
+            echo "execution_artifact: claude-execution-${{ github.run_id }}"
+            echo "workflow: ${{ github.workflow }}"
+            echo "conclusion: ${{ job.status }}"
+            echo 'last_known_phase: post-claude'
+          } > "$trace_dir/wake-trace.md"
+          git add "$trace_dir/wake-trace.md"
+          git -c 'user.name=sigma@cnos.cn-sigma.cnos' -c 'user.email=sigma@cnos.cn-sigma.cnos' \
+            commit -m 'wake-trace: ${issue_num} run ${{ github.run_id }}'
+          git push
 
       - name: Write fence — dispatch_activation_log_write_violation
         # Mechanical guard per cnos#496 / cycle/496 (AGENT-ACTIVATION-LOG-v0 §0.1).

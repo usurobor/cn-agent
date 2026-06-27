@@ -39,7 +39,8 @@ jobs:
         with:
           token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
 
-      - uses: anthropics/claude-code-action@v1
+      - id: claude
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
@@ -181,3 +182,38 @@ jobs:
             5. No labels were defined or label semantics altered.
 
             If you reach a state where you cannot complete the above (capability mismatch, ambiguous mode, missing precondition, ambiguous directive), defer to operator per the relevant skill's defer rule and append a channel entry naming the deferral. Then terminate; do not improvise.
+
+      - name: Upload Claude execution log
+        if: steps.claude.outputs.execution_file != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-${{ github.run_id }}
+          path: ${{ steps.claude.outputs.execution_file }}
+          retention-days: 14
+
+      - name: Write wake trace
+        if: steps.claude.outputs.session_id != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          # AC6 guard for admin wakes: skip if HEAD unchanged (heartbeat no-op).
+          base=${CN_WAKE_BASE_SHA:-${GITHUB_SHA:-}}
+          if [ -n "$base" ] && [ "$(git rev-parse HEAD)" = "$base" ]; then
+            echo 'wake-trace: HEAD unchanged — heartbeat no-op; skipping trace.'
+            exit 0
+          fi
+          trace_dir='.cn-sigma/state/wake-traces'
+          mkdir -p "$trace_dir"
+          { echo '# wake-trace'
+            echo "run_id: ${{ github.run_id }}"
+            echo 'wake_class: agent-admin'
+            echo "claude_session_id: ${{ steps.claude.outputs.session_id }}"
+            echo "execution_artifact: claude-execution-${{ github.run_id }}"
+            echo "workflow: ${{ github.workflow }}"
+            echo "conclusion: ${{ job.status }}"
+            echo 'last_known_phase: post-claude'
+          } > "$trace_dir/${{ github.run_id }}.md"
+          git add "$trace_dir/${{ github.run_id }}.md"
+          git -c 'user.name=sigma@cnos.cn-sigma.cnos' -c 'user.email=sigma@cnos.cn-sigma.cnos' \
+            commit -m 'wake-trace: agent-admin run ${{ github.run_id }}'
+          git push
