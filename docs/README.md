@@ -52,8 +52,9 @@ Documents may declare classification in frontmatter — `doc_type`, `status`,
 `canonical`, `owner`, `supersedes`. These are *knowable* facts about a
 document. TSC coherence axes (α/β/γ) are a **measurement**, recorded from a
 TSC report, and must never be hand-written into frontmatter (a hand-authored
-score is an invented score). The filesystem is organized for readers; the
-triad is kept for measurement.
+score is an invented score).
+
+The filesystem is organized for readers. The triad is kept for measurement.
 
 ---
 
