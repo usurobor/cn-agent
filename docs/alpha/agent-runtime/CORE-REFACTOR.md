@@ -521,4 +521,4 @@ The full design is the north star. These three moves execute first:
 - #167 — Package artifact distribution (shipped v3.34.0)
 - #162 — Modular CLI commands
 - #96 — Docs taxonomy alignment
-- `docs/gamma/essays/MODULAR-ARCHITECTURE-REFACTOR.md` — Decision record (gamma)
+- `docs/papers/MODULAR-ARCHITECTURE-REFACTOR.md` — Decision record (gamma)

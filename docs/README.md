@@ -17,7 +17,7 @@ cnos is a Git-native coherence system for accountable human + AI work.
 
 1. [THESIS.md](./THESIS.md) — what cnos is; the whole, above the triad.
 2. [concepts/](./concepts/README.md) — the mental model: why coherence is the root concept.
-3. [Dumb Models, Smart Cells](./alpha/essays/DUMB-MODELS-SMART-CELLS.md) — why models are bounded executors, not authorities.
+3. [Dumb Models, Smart Cells](papers/DUMB-MODELS-SMART-CELLS.md) — why models are bounded executors, not authorities.
 4. [reference/](./reference/README.md) — the CN protocol and why Git is the lowest durable substrate.
 
 ## I want to…
@@ -28,7 +28,7 @@ cnos is a Git-native coherence system for accountable human + AI work.
 | Try it / activate an agent | [`quickstart/`](./quickstart/README.md) |
 | Build with cnos | [`reference/`](./reference/README.md) |
 | Understand cells & receipts | [`development/`](./development/README.md) → [`papers/`](./papers/README.md) |
-| Understand trust & coherence | [Dumb Models, Smart Cells](./alpha/essays/DUMB-MODELS-SMART-CELLS.md) |
+| Understand trust & coherence | [Dumb Models, Smart Cells](papers/DUMB-MODELS-SMART-CELLS.md) |
 | Contribute | [`guides/`](./guides/README.md) → [`development/`](./development/README.md) |
 | Find canonical specs | [`reference/`](./reference/README.md) |
 | Find audits & evidence | [`evidence/`](./evidence/README.md) |

@@ -9,14 +9,14 @@
 ## Start
 
 - [THESIS.md](../THESIS.md) — what cnos is; the whole, above the triad.
-- [COHERENCE-SYSTEM.md](../alpha/essays/COHERENCE-SYSTEM.md) — coherence as the primary concept.
-- [FOUNDATIONS.md](../alpha/essays/FOUNDATIONS.md) — the coherence stack and doctrinal layers.
-- [MANIFESTO.md](../alpha/essays/MANIFESTO.md) — principles and values; the human + AI commons.
+- [COHERENCE-SYSTEM.md](../papers/COHERENCE-SYSTEM.md) — coherence as the primary concept.
+- [FOUNDATIONS.md](../papers/FOUNDATIONS.md) — the coherence stack and doctrinal layers.
+- [MANIFESTO.md](../papers/MANIFESTO.md) — principles and values; the human + AI commons.
 
 ## Agents over time
 
-- [AGENT-CONTINUITY.md](../alpha/essays/AGENT-CONTINUITY.md) — identity and memory across activations.
-- [ACTIVATION-NOT-DEPLOYMENT.md](../alpha/essays/ACTIVATION-NOT-DEPLOYMENT.md) — agents wake into a body; they are not deployed.
+- [AGENT-CONTINUITY.md](../papers/AGENT-CONTINUITY.md) — identity and memory across activations.
+- [ACTIVATION-NOT-DEPLOYMENT.md](../papers/ACTIVATION-NOT-DEPLOYMENT.md) — agents wake into a body; they are not deployed.
 - [AGENT-NETWORK.md](../alpha/vision/AGENT-NETWORK.md) — the coherence network vision.
 
 ## Doctrine and origin

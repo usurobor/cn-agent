@@ -253,7 +253,7 @@ hub/
 | Document | Relation |
 |----------|----------|
 | [THESIS.md](../../THESIS.md) | The whole — this doc maps its internal relations |
-| [COHERENCE-SYSTEM.md](../../alpha/essays/COHERENCE-SYSTEM.md) | Meta-model that this doc makes relational |
+| [COHERENCE-SYSTEM.md](../../papers/COHERENCE-SYSTEM.md) | Meta-model that this doc makes relational |
 | [CAA.md](../../alpha/agent-runtime/CAA.md) | Agent structure — this doc maps it to runtime modules |
 | [AGENT-RUNTIME.md](../../alpha/agent-runtime/AGENT-RUNTIME.md) | Runtime spec — this doc shows how it relates to FSMs and observability |
 | [PROTOCOL.md](../../alpha/protocol/PROTOCOL.md) | FSM design — this doc shows how FSMs compose |

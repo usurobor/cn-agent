@@ -1,12 +1,7 @@
-# Essays
+# Moved
 
-Position papers and architectural notes. These predate the doctrine cycle pattern and are not governed by it.
+Active papers moved to [`../../papers/`](../../papers/).
 
-- [FOUNDATIONS](FOUNDATIONS.md) — theory and practice of coherence; why cnos exists
-- [MANIFESTO](MANIFESTO.md) — principles for a human+AI commons
-- [COHERENCE-SYSTEM](COHERENCE-SYSTEM.md) — how coherence unfolds into cnos
-- [SKILL-ARCHITECTURE](SKILL-ARCHITECTURE.md) — why skills compose instead of inherit
-- [SHIPPING-SOFTWARE-AFTER-AI](SHIPPING-SOFTWARE-AFTER-AI.md) — from H2M to a human triad
-- [AGENT-CONTINUITY](AGENT-CONTINUITY.md) — what persists across runners as the agent
-- [ACTIVATION-NOT-DEPLOYMENT](ACTIVATION-NOT-DEPLOYMENT.md) — activation versus deployment, MCP, memory, runtimes
-- [DUMB-MODELS-SMART-CELLS](DUMB-MODELS-SMART-CELLS.md) — why agent workflow, memory, evidence, and authority should live outside the vendor model
+This directory remains temporarily so older links resolve during the docs
+reorganization; each file here is now a redirect stub to its new home in
+`papers/`.

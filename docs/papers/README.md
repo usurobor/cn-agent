@@ -1,34 +1,50 @@
 # papers/
 
-**Essays, whitepapers, and position papers — one home for the arguments.**
+Essays, whitepapers, and position papers — one home for the arguments.
 
-> **Pass 1 overlay.** Position papers are currently split across three
-> places — `alpha/essays/`, `gamma/essays/`, and the stray `essays/`. This
-> index is the single entry point; a later pass consolidates the files here
-> (leaving the frozen `3.14.5/` snapshot and version-stamped copies in
-> [`archive/`](../archive/README.md)). The CN protocol whitepaper stays in
-> its protocol bundle under [`reference/`](../reference/README.md), since it
-> is a normative spec, not an essay.
+> The CN protocol whitepaper is a normative spec and lives in its protocol
+> bundle under [`reference/`](../reference/README.md), not here. Frozen
+> snapshots (e.g. `gamma/essays/3.14.5/`) and the `CDD-OVERVIEW.pdf` stay in
+> place; see [`archive/`](../archive/README.md).
 
 ## Flagship
 
-- [Dumb Models, Smart Cells](../alpha/essays/DUMB-MODELS-SMART-CELLS.md) — capability is rented, authority is owned; receipts, trust claims, coherence witnesses. (DRAFT)
+- [Dumb Models, Smart Cells](./DUMB-MODELS-SMART-CELLS.md) — capability is rented, authority is owned; receipts, trust claims, coherence witnesses.
 
-## Coherence & cells
+## Foundations
 
-- [CELL-OF-CELLS.md](../gamma/essays/CELL-OF-CELLS.md)
-- [CCNF-AND-TYPED-TRUST.md](../gamma/essays/CCNF-AND-TYPED-TRUST.md)
-- [DECREASING-INCOHERENCE.md](../gamma/essays/DECREASING-INCOHERENCE.md)
-- [COHERENCE-MUST-BE-FREE.md](../gamma/essays/COHERENCE-MUST-BE-FREE.md)
+- [FOUNDATIONS](./FOUNDATIONS.md) — the theory and practice of coherence; why cnos exists.
+- [MANIFESTO](./MANIFESTO.md) — principles for a human + AI commons.
+- [COHERENCE-SYSTEM](./COHERENCE-SYSTEM.md) — how coherence unfolds into cnos.
 
-## Agents, substrate & history
+## Agents and activation
 
-- [STATELESS-AGENCY.md](../gamma/essays/STATELESS-AGENCY.md)
-- [EXECUTABLE-SKILLS.md](../gamma/essays/EXECUTABLE-SKILLS.md) · [SKILL-ARCHITECTURE.md](../alpha/essays/SKILL-ARCHITECTURE.md)
-- [BOX-AND-THE-RUNNER.md](../gamma/essays/BOX-AND-THE-RUNNER.md) — compute is pluggable; Git stores truth.
-- [FIDONET-AND-CNOS.md](../gamma/essays/FIDONET-AND-CNOS.md)
-- [SHIPPING-SOFTWARE-AFTER-AI.md](../alpha/essays/SHIPPING-SOFTWARE-AFTER-AI.md)
-- [AGENT-FIRST.md](./AGENT-FIRST.md) — durable evidence beats runtime memory as the substrate for composing probabilistic systems. *(Moved from `docs/essays/`; a redirect stub remains there.)*
+- [AGENT-FIRST](./AGENT-FIRST.md) — durable evidence beats runtime memory as the composition substrate.
+- [AGENT-CONTINUITY](./AGENT-CONTINUITY.md) — what persists across runners as the agent.
+- [ACTIVATION-NOT-DEPLOYMENT](./ACTIVATION-NOT-DEPLOYMENT.md) — activation versus deployment; MCP, memory, runtimes.
+- [AGENT-ACTIVATION-LOGS-AND-EVENTUAL-CONSISTENCY](./AGENT-ACTIVATION-LOGS-AND-EVENTUAL-CONSISTENCY.md)
+- [AGENT-MEMORY-LOG-STRUCTURED](./AGENT-MEMORY-LOG-STRUCTURED.md)
+- [AGENT-COMMS-FUTURES-KISS](./AGENT-COMMS-FUTURES-KISS.md)
 
-More position papers live in [`gamma/essays/`](../gamma/essays/README.md) and
-[`alpha/essays/`](../alpha/essays/README.md) pending consolidation.
+## Cells, coherence, and trust
+
+- [CELL-OF-CELLS](./CELL-OF-CELLS.md) — recursive coherence as a system model.
+- [CCNF-AND-TYPED-TRUST](./CCNF-AND-TYPED-TRUST.md) — CDD as a recursive coherence-cell kernel; typed receipts; V at the δ boundary.
+- [DECREASING-INCOHERENCE](./DECREASING-INCOHERENCE.md) — from task execution to decreasing incoherence.
+- [COHERENCE-MUST-BE-FREE](./COHERENCE-MUST-BE-FREE.md) — open, decentralized coherent agency as public substrate.
+
+## Substrate, skills, and architecture
+
+- [STATELESS-AGENCY](./STATELESS-AGENCY.md) — why chat fails as substrate; the case for Git-native agency.
+- [EXECUTABLE-SKILLS](./EXECUTABLE-SKILLS.md) — CTB as the skill language for CN agents.
+- [SKILL-ARCHITECTURE](./SKILL-ARCHITECTURE.md) — why skills compose instead of inherit.
+- [CLOSED-LOOP-SKILL-QUALITY](./CLOSED-LOOP-SKILL-QUALITY.md) — closing the loop on skill quality.
+- [MODULAR-ARCHITECTURE-REFACTOR](./MODULAR-ARCHITECTURE-REFACTOR.md)
+- [BOX-AND-THE-RUNNER](./BOX-AND-THE-RUNNER.md) — compute is pluggable; Git stores truth.
+- [FIDONET-AND-CNOS](./FIDONET-AND-CNOS.md)
+- [SHIPPING-SOFTWARE-AFTER-AI](./SHIPPING-SOFTWARE-AFTER-AI.md) — from H2M to a human triad.
+
+## Engineering and release
+
+- [ENGINEERING-LEVEL-ASSESSMENT](./ENGINEERING-LEVEL-ASSESSMENT.md)
+- [RELEASE-LEVEL-CLASSIFICATION](./RELEASE-LEVEL-CLASSIFICATION.md)

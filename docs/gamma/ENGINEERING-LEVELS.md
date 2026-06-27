@@ -8,7 +8,7 @@ Status: Draft
 Purpose: Define the shared meaning of engineering levels used in cnos so references to "L5", "L6", or "L7" are stable, local, and actionable.
 
 Related:
-- docs/gamma/essays/ENGINEERING-LEVEL-ASSESSMENT.md
+- docs/papers/ENGINEERING-LEVEL-ASSESSMENT.md
 - src/agent/skills/eng/README.md
 
 ---

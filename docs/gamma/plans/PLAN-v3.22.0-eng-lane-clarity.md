@@ -66,7 +66,7 @@ Optionally add small cross-links from nearby docs.
 
 ### Optional cross-links
 
-- docs/gamma/essays/ENGINEERING-LEVEL-ASSESSMENT.md
+- docs/papers/ENGINEERING-LEVEL-ASSESSMENT.md
 - other lane/index docs if they reference engineering levels or bundles
 
 ---
@@ -272,7 +272,7 @@ The docs improve clarity without requiring the skill tree itself to change.
 ### Edit
 
 - src/agent/skills/eng/README.md
-- optionally docs/gamma/essays/ENGINEERING-LEVEL-ASSESSMENT.md for a small descriptive-vs-normative cross-link
+- optionally docs/papers/ENGINEERING-LEVEL-ASSESSMENT.md for a small descriptive-vs-normative cross-link
 
 ---
 

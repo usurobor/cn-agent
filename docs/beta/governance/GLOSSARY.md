@@ -135,7 +135,7 @@ The authoritative per-release record in `CHANGELOG.md`. Each row captures two di
 
 The ledger is append-only. TSC grades are provisional at release time and may be revised by the post-release assessment. Engineering levels are classified per `docs/gamma/ENGINEERING-LEVELS.md`, capped by CDD §9.1 cycle execution quality (mechanical ratio, review rounds).
 
-Historical classification: `docs/gamma/essays/RELEASE-LEVEL-CLASSIFICATION.md`.
+Historical classification: `docs/papers/RELEASE-LEVEL-CLASSIFICATION.md`.
 
 Defined in: `CHANGELOG.md`.
 

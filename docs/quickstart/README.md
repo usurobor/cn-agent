@@ -21,4 +21,4 @@
 
 The captured receipt and coherence report from Demo 0 will land in
 [`evidence/`](../evidence/README.md); the conceptual argument for why the
-receipt matters is [Dumb Models, Smart Cells](../alpha/essays/DUMB-MODELS-SMART-CELLS.md).
+receipt matters is [Dumb Models, Smart Cells](../papers/DUMB-MODELS-SMART-CELLS.md).

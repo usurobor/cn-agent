@@ -16,6 +16,6 @@
 - `demo-runs/` — Demo 0 onward: real cell receipts captured from live runs.
 
 This is where the *illustrative* trace in
-[Dumb Models, Smart Cells](../alpha/essays/DUMB-MODELS-SMART-CELLS.md) §7
+[Dumb Models, Smart Cells](../papers/DUMB-MODELS-SMART-CELLS.md) §7
 gets replaced by a captured receipt + real coherence report — the gate that
 lets that paper leave DRAFT.
