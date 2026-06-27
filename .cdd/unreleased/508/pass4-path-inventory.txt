@@ -1,0 +1,663 @@
+.github/workflows/build.yml:223:        run: diff docs/alpha/schemas/protocol-contract.json test/cmd/protocol-contract.json
+.github/workflows/cnos-agent-admin.yml:82:            4. **Status reporting.** Append today's channel log entry to `.cn-sigma/logs/$(date -u +%Y%m%d).md` per the entry format in [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) §5. Frontmatter MUST carry `cursor_in`, `cursor_out`, `at`, `mode`, and `class`. The `class:` field is one of: `heartbeat` (no-op wake, cursor advance only), `substantive` (real walk with work done), `inaugural` (first attach), `directive-out` (outbound directive, no walk), `cycle-complete` (reserved — wired in Sub 6 of cnos#467).
+.github/workflows/cnos-agent-admin.yml:168:            - **Channel log convention:** [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) — entry format, cursor mechanics, class taxonomy.
+.github/workflows/cnos-cds-dispatch.yml:225:            - **Channel log convention (read-only for dispatch):** [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) — cited to document the admin/dispatch writer-locality split; the dispatch wake does NOT write channel entries.
+docs/THESIS.md:703:- `docs/alpha/doctrine/FOUNDATIONS.md`
+docs/THESIS.md:711:- `docs/alpha/agent-runtime/CAA.md`
+docs/THESIS.md:714:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md`
+docs/THESIS.md:717:- `docs/alpha/cognitive-substrate/CAR.md`
+docs/THESIS.md:720:- `docs/alpha/security/TRACEABILITY.md`
+docs/THESIS.md:723:- `docs/gamma/cdd/CDD.md`
+docs/alpha/HUB-PLACEMENT-MODELS.md:468:- `docs/alpha/HUB-PLACEMENT-MODELS.md`
+docs/alpha/agent-runtime/3.14.0/README.md:18:The canonical evolving doc is `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md`.
+docs/alpha/agent-runtime/3.14.0/SELF-COHERENCE.md:38:- Design doc at `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md` (versioned filename) should eventually move to `docs/alpha/agent-runtime/SPEC.md` per #75 feature bundle rules. Severity: C.
+docs/alpha/agent-runtime/CONFIGURE-AGENT.md:6:**Canonical-Path:** docs/alpha/agent-runtime/CONFIGURE-AGENT.md
+docs/alpha/agent-runtime/CORE-REFACTOR.md:434:- `docs/alpha/agent-runtime/CORE-REFACTOR.md` (this design)
+docs/alpha/agent-runtime/CORE-REFACTOR.md:443:- `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md`
+docs/alpha/agent-runtime/CORE-REFACTOR.md:444:- `docs/alpha/package-system/PACKAGE-SYSTEM.md`
+docs/alpha/agent-runtime/CORE-REFACTOR.md:445:- `docs/alpha/package-system/PACKAGE-ARTIFACTS.md`
+docs/alpha/agent-runtime/CORE-REFACTOR.md:446:- `docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md`
+docs/alpha/agent-runtime/CORE-REFACTOR.md:447:- `docs/beta/architecture/PACKAGE-SYSTEM.md` (retired — see alpha spec)
+docs/alpha/agent-runtime/CORE-REFACTOR.md:489:**Move 3 — Retire beta package doc (#180).** Replace `docs/beta/architecture/PACKAGE-SYSTEM.md` with a short redirect stub pointing to the alpha spec. Preserves old links while killing the authority conflict.
+docs/alpha/agent-runtime/GO-KERNEL-COMMANDS.md:9:- docs/alpha/package-system/PACKAGE-SYSTEM.md (package content classes)
+docs/alpha/agent-runtime/HYBRID-LLM-ROUTING.md:360:- `docs/alpha/agent-runtime/HYBRID-LLM-ROUTING.md` (this file)
+docs/alpha/agent-runtime/HYBRID-LLM-ROUTING.md:364:- `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md` — add body-level provider/routing visibility
+docs/alpha/agent-runtime/HYBRID-LLM-ROUTING.md:365:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md` — clarify provider routing as body-plane policy
+docs/alpha/agent-runtime/HYBRID-LLM-ROUTING.md:366:- `docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md` — clarify that LLM backends can be delivered as capability providers if desired
+docs/alpha/agent-runtime/MEMORY.md:355:- `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md` — add `threads/adhoc/` to the memory model, clarify `state/conversation.json` as working continuity
+docs/alpha/agent-runtime/MEMORY.md:357:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md` — align memory language with the lean model if needed
+docs/alpha/agent-runtime/ORCHESTRATORS.md:7:**Canonical-Path:** docs/alpha/agent-runtime/ORCHESTRATORS.md
+docs/alpha/agent-runtime/PLAN-174-orchestrator-runtime.md:22:- `docs/alpha/package-system/PACKAGE-SYSTEM.md` — add orchestrators to content-class table (per #174 scope note)
+docs/alpha/agent-runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md:471:- `docs/alpha/agent-runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md`
+docs/alpha/agent-runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md:475:- `docs/alpha/package-system/PACKAGE-SYSTEM.md`
+docs/alpha/agent-runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md:478:- `docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md`
+docs/alpha/agent-runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md:480:- `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md`
+docs/alpha/architecture/INVARIANTS.md:6:**Canonical-Path:** `docs/alpha/architecture/INVARIANTS.md`
+docs/alpha/ctb/CTB-v4.0.0-VISION.md:341:Operating the CDD skill-program as a triadic agent coordination system surfaced four additional language design requirements. Full evidence at `docs/gamma/essays/SKILLS-LANGUAGE-EVIDENCE.md`.
+docs/alpha/ctb/CTB-v4.0.0-VISION.md:352:See also: `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
+docs/alpha/ctb/CTB-v4.0.0-VISION.md:377:**Composability:** Once a triad stabilizes, it appears at its external boundary as one articulated whole — a function that takes an issue and returns a release. A fourth agent creates a new two-sided boundary, not a new primitive. The system grows by composing wholes (triads as units at the next scale), not by counting agents. See `docs/alpha/doctrine/COHERENCE-FOR-AGENTS.md` for the structural derivation.
+docs/alpha/ctb/LANGUAGE-SPEC.md:305:(See `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` §6.)
+docs/alpha/ctb/LANGUAGE-SPEC.md:511:- `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` governs the architectural argument for composition over inheritance.
+docs/alpha/ctb/SEMANTICS-NOTES.md:50:The architectural argument is in `docs/alpha/doctrine/SKILL-ARCHITECTURE.md`. The short form:
+docs/alpha/design/WRITER-PACKAGE.md:14:The four-essay doctrine sequence (CFA, EFA, JFA, IFA) ran four full triadic cycles using one stable agent pattern: roles α/β/γ, the `cnos.core/skills/write` skill governing the prose, cycle artifacts (cycle log, critiques, optional external observations) co-located with the essay. The pattern is repeatable. It exists nowhere except as evidence inside `docs/alpha/doctrine/`.
+docs/alpha/design/WRITER-PACKAGE.md:21:- Four cycles ran (`docs/alpha/doctrine/coherence-for-agents/`, `ethics-for-agents/`, `judgment-for-agents/`, `inheritance-for-agents/`) — pattern is empirically stable across four uses.
+docs/alpha/design/WRITER-PACKAGE.md:23:- `docs/alpha/doctrine/README.md` §"Skill" notes the write skill is the one common surface across all four essays — but the surrounding triadic structure has no package home.
+docs/alpha/design/WRITER-PACKAGE.md:31:- **Doctrine essays at `docs/alpha/doctrine/` are frozen artifacts.** Each essay travels with its cycle log and critiques in the essay's own folder (doctrine README §"Cycle artifacts"). The writer package cannot move them (issue Non-Goal #2) and cannot copy them without violating `write/SKILL.md` rule 3.3 (one home per stable fact).
+docs/alpha/design/WRITER-PACKAGE.md:38:Issue #278 §"Parallel dependency" requires that any conflict between this design and the parallel `cnos` agent language reference surface in the design doc, not silently. The reference is `docs/alpha/ctb/LANGUAGE-SPEC.md` (CTB Language Spec v0.1, draft-normative, dated 2026-04-26).
+docs/alpha/design/WRITER-PACKAGE.md:59:- `docs/alpha/doctrine/README.md` §"Skill" — currently points to `write/SKILL.md`; if the writer package adds load-order or role context, this README is the natural place to link to the package without restating it.
+docs/alpha/design/WRITER-PACKAGE.md:68:- The four-essay inherited failure modes (`docs/alpha/doctrine/README.md` §"Inherited failure modes" lines 38–46) must not be restated in the writer package's own SKILL.md or normative spec. They are cited by source path and section.
+docs/alpha/design/WRITER-PACKAGE.md:75:- On individual essays' contents: the essay file at `docs/alpha/doctrine/{essay}/` governs; cycle logs are evidence about the essay, not authority over it.
+docs/alpha/design/WRITER-PACKAGE.md:107:**Chosen path:** Reference. The four doctrine essays and their cycle artifacts stay at `docs/alpha/doctrine/`. The writer package links to them and cites specific sections; it does not embed copies.
+docs/alpha/design/WRITER-PACKAGE.md:146:**D5. No version directory bootstrap.** `cnos.cdd` §5.1 requires the first diff on a substantial branch to create `docs/{tier}/{bundle}/{X.Y.Z}/`. Writer cycles produce essays that lock at convergence and live forever in their named folder (e.g. `docs/alpha/doctrine/coherence-for-agents/`). They carry no `X.Y.Z` because they are not released as a versioned bundle. Reasoning: doctrine README §"Cycle artifacts" already encodes the convention "every cycle's artifacts live in the essay's folder." A version-directory layer would invent a release boundary the artifact does not have.
+docs/alpha/design/WRITER-PACKAGE.md:176:Citation: `docs/alpha/doctrine/coherence-for-agents/CFA-cycle-log.md` §"What broke the oscillation": "β's third critique named the pattern explicitly… The naming was the third surface. Once it existed, neither role could continue the oscillation without acknowledging it."
+docs/alpha/design/WRITER-PACKAGE.md:180:Citation: `docs/alpha/doctrine/coherence-for-agents/CFA-cycle-log.md` §"Convergence": "The cycle's most disciplined act was stopping… continuing to choose between micro-variants past that point would have been the comfort failure in its purest form."
+docs/alpha/design/WRITER-PACKAGE.md:184:Citation: `docs/alpha/doctrine/ethics-for-agents/EFA-cycle-log.md` §"Final round — two surgical reinsertions" + `INHERITANCE-FOR-AGENTS.md` §"Inheritance is not imitation": "The cycle did not imitate openness by obeying every reviewer. It inherited boundary discipline by evaluating each observation against the governing question and the write skill."
+docs/alpha/design/WRITER-PACKAGE.md:188:Citation: `docs/alpha/doctrine/judgment-for-agents/JFA-cycle-log-gamma.md` §"No findings hidden under approval" → "EFA's no-fixed-order commitment held. The essay denies fixed ordering at four sites and never reintroduces it through softer phrases" + `INHERITANCE-FOR-AGENTS.md` §"Doctrine grows by composing cycles".
+docs/alpha/design/WRITER-PACKAGE.md:192:Citation: `docs/alpha/doctrine/inheritance-for-agents/IFA-cycle-log-gamma.md` §"IFA-Specific Cycle Lessons (Not Inherited)": "This is a material-specific failure mode of essays making composition claims, and is recorded here for the archive rather than as a binding constraint on unrelated future cycles."
+docs/alpha/design/WRITER-PACKAGE.md:196:Citation: `docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md` §"Inheritance can soften into drift" + `IFA-cycle-log-gamma.md` §"Inherited Failure Modes": "Pretending to inherit a prior commitment while softening its phrasing at the point of pressure (e.g., converting a structural constraint into a general preference)."
+docs/alpha/design/WRITER-PACKAGE.md:200:Citation: `docs/alpha/doctrine/inheritance-for-agents/IFA-cycle-log-gamma.md` §"IFA-Specific Risks Evaluated" → "Cold-Author Drift: Caught and repaired" bullet: "α's initial failure to utilize available JFA artifacts was a strict failure of the contract. β's refusal to accept the artifact's absence forced the necessary derivation."
+docs/alpha/design/WRITER-PACKAGE.md:204:Citation: `docs/alpha/doctrine/inheritance-for-agents/IFA-critiques.md` §"Verdict 02 — approve" lists six explicit verifications β performed: "JFA dyad round structure → matches JFA-critiques exactly; Round counts → match JFA-cycle-log-gamma verbatim in substance; No-fixed-order denial at multiple sites → matches JFA-cycle-log-gamma verification subsection; α-1's procedure-substitute phrase → appears verbatim in JFA-cycle-log-dyad; Case-capture and terminal-debt repairs → match JFA-critiques findings 2–4; Both composition steps → match CFA-cycle-log, EFA-cycle-log, EFA-external-observations, JFA-cycle-log-gamma."
+docs/alpha/design/WRITER-PACKAGE.md:208:Citation: `docs/alpha/doctrine/README.md` §"Cycle artifacts": "Each essay travels with the record of the cycle that produced it. Every cycle's artifacts live in the essay's folder."
+docs/alpha/design/WRITER-PACKAGE.md:216:Citation: `docs/alpha/doctrine/README.md` §"Cycle artifacts": "Each essay travels with the record of the cycle that produced it. Every cycle's artifacts live in the essay's folder." Concrete artifacts: `CFA-cycle-log.md`, `CFA-critiques.md`, `EFA-cycle-log.md`, `EFA-critiques.md`, `EFA-external-observations.md`, `JFA-cycle-log-dyad.md`, `JFA-cycle-log-gamma.md`, `JFA-critiques.md`, `IFA-cycle-log-dyad.md`, `IFA-cycle-log-gamma.md`, `IFA-critiques.md`. Every β verdict, α disposition, γ observation, and external-observation evaluation in the four-cycle archive is a committed file, not a PR/issue comment.
+docs/alpha/design/WRITER-PACKAGE.md:237:`docs/alpha/doctrine/README.md` gains one link to `cnos.writer/skills/writer/SKILL.md` under §"Skill" with one sentence: "The triadic writer pattern is packaged at `cnos.writer`." No other doctrine surface changes.
+docs/alpha/design/WRITER-PACKAGE.md:279:- Migrating the four essays from `docs/alpha/doctrine/`.
+docs/alpha/design/WRITER-PACKAGE.md:303:- **Edit:** `docs/alpha/doctrine/README.md` §"Skill" — add one sentence linking to `cnos.writer`.
+docs/alpha/design/WRITER-PACKAGE.md:307:- **Create (this cycle):** `docs/alpha/design/WRITER-PACKAGE.md`
+docs/alpha/design/WRITER-PACKAGE.md:332:| 0 Observe | — | — | Read issue #278; surveyed `docs/alpha/doctrine/` (four cycles complete); read `cnos.cdd` package structure; confirmed `cnos.core/skills/write/` and `cnos.core/skills/skill/` are current. Selected signal: writer pattern exists only in cycle artifacts; no package home. |
+docs/alpha/design/WRITER-PACKAGE.md:338:| 6 Artifacts | `docs/alpha/design/WRITER-PACKAGE.md` | `cdd/design`, `core/skills/skill`, `core/skills/write` | Design artifact produced. Plan not required (single artifact, no implementation sequencing). Tests/code/docs not required (design-only cycle). |
+docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md:13:- [COHERENCE-SYSTEM](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/COHERENCE-SYSTEM.md) — the system-scale coherence model
+docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md:12:- [Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/COHERENCE-FOR-AGENTS.md) — structural derivation this essay translates
+docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md:13:- [FOUNDATIONS](https://github.com/usurobor/cnos/blob/main/docs/alpha/FOUNDATIONS.md) — theory/practice dependency stack
+docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md:19:- [COHERENCE-SYSTEM](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/COHERENCE-SYSTEM.md) — system-scale boundary model
+docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md:20:- [Glossary](https://github.com/usurobor/cnos/blob/main/docs/beta/governance/GLOSSARY.md) — vocabulary authority
+docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md:12:- [Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) — first agent-doctrine essay
+docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md:13:- [Ethics for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) — second agent-doctrine essay
+docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md:14:- [Judgment for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) — third agent-doctrine essay
+docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md:15:- [CFA cycle log](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/CFA-cycle-log.md) and [CFA critiques](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/CFA-critiques.md) — primary evidence for the first cycle
+docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md:16:- [EFA cycle log](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/EFA-cycle-log.md), [EFA critiques](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/EFA-critiques.md), and [EFA external observations](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/EFA-external-observations.md) — primary evidence for the second cycle
+docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md:17:- [JFA dyad cycle log](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JFA-cycle-log-dyad.md), [JFA gamma cycle log](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JFA-cycle-log-gamma.md), and [JFA critiques](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JFA-critiques.md) — primary evidence for the third cycle
+docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md:20:- [Glossary](https://github.com/usurobor/cnos/blob/main/docs/beta/governance/GLOSSARY.md) — vocabulary authority
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:73:- `docs/alpha/package-system/BUILD-AND-DIST.md` §Migration steps 2 — already states "Add `dist/` to `.gitignore`" as a planned step. Needs update: strike "planned," mark the migration's dist-gitignore step as accomplished by this cycle, and remove any "currently committed" language.
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:75:- `docs/alpha/architecture/INVARIANTS.md` line 166 — lists `dist/packages/<name>-<version>.tar.gz` as an artifact class. **Unchanged** — the artifact still exists at that path; it's just not committed.
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:76:- `docs/alpha/package-system/PACKAGE-AUTHORING.md`, `PACKAGE-SYSTEM.md`, `DESIGN-227-distribution-pipeline.md`, `SELF-COHERENCE-227.md` — describe `cn build` producing dist/. **Unchanged** — production step still occurs; the commit step is what disappears.
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:137:7. **Update `docs/alpha/package-system/BUILD-AND-DIST.md`.** The migration section currently writes `Add dist/ to .gitignore` as a future step. Mark it as accomplished under the specific cycle (reference #266), and remove transitional language that implies dist/ is still committed. Keep the layout diagrams (they describe structure, not tracking).
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:224:- `docs/alpha/package-system/BUILD-AND-DIST.md` — §Migration steps: mark step 2 (`Add dist/ to .gitignore`) accomplished, with a DESIGN-266 link; remove any remaining transitional "currently committed" language; leave the §Directory Structure and §Flow diagrams unchanged (they describe structure, which is preserved).
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:228:- `docs/alpha/package-system/DESIGN-266-dist-out-of-git.md` — this file (primary branch artifact).
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:241:- [ ] **AC1 (issue AC1):** This design doc exists at `docs/alpha/package-system/DESIGN-266-dist-out-of-git.md`, names the chosen MCA (A), lists rejected alternatives (B, C, D, E) with per-option rationale. Verification: `test -f docs/alpha/package-system/DESIGN-266-dist-out-of-git.md && grep -c '^## Alternatives Considered' …` returns 1, and the Alternatives table has rows for A/B/C/D/E.
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:247:- [ ] **AC3 (issue AC3 — partial, α-side):** The design doc names the expected engineering level (L7) and states the post-release question β must answer: *"After N subsequent cycles touching `src/packages/`, did any rebase-race recurrence occur?"* Verification: `grep -E 'L7|post-release' docs/alpha/package-system/DESIGN-266-dist-out-of-git.md` returns hits in the Challenged Assumption, Engineering Level header, and CDD Trace. (β's post-release assessment closes this AC per CDD §9.1; α cannot verify it from the branch.)
+docs/alpha/package-system/DESIGN-266-dist-out-of-git.md:249:- [ ] **AC5 (build-and-dist.md alignment):** `docs/alpha/package-system/BUILD-AND-DIST.md` no longer describes the dist-in-git state as current. Verification: `grep -n 'dist/ to .gitignore' docs/alpha/package-system/BUILD-AND-DIST.md` shows the step marked accomplished with a #266 reference; no lines imply dist/ is currently tracked.
+docs/alpha/package-system/PACKAGE-ARTIFACTS.md:444:- `docs/alpha/package-system/PACKAGE-SYSTEM.md` — add `commands` content class, document artifact-first distribution
+docs/alpha/package-system/PACKAGE-SYSTEM.md:9:- docs/beta/architecture/PACKAGE-SYSTEM.md (retired — redirect stub)
+docs/alpha/package-system/PACKAGE-SYSTEM.md:10:- docs/alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md (asset taxonomy)
+docs/alpha/package-system/PACKAGE-SYSTEM.md:11:- docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md (extension model)
+docs/alpha/package-system/PACKAGE-SYSTEM.md:69:trigger — see `docs/alpha/agent-runtime/ORCHESTRATORS.md` for the
+docs/alpha/protocol/THREAD-EVENT-MODEL.md:12:- `docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md`
+docs/alpha/protocol/THREAD-EVENT-MODEL.md:13:- `docs/alpha/AGENT-RUNTIME.md`
+docs/alpha/protocol/THREAD-EVENT-MODEL.md:694:- `docs/alpha/protocol/THREAD-EVENT-MODEL.md`
+docs/alpha/protocol/THREAD-EVENT-MODEL.md:703:- `docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md`
+docs/beta/EXTENSION-REGISTRY.md:8:**Depends on:** Runtime Extensions (docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md)
+docs/beta/SUSTAINABILITY.md:6:**Canonical-Path:** `docs/beta/SUSTAINABILITY.md`
+docs/beta/architecture/3.14.4/README.md:9:- ARCHITECTURE.md moved from `docs/beta/` root into `docs/beta/architecture/` bundle
+docs/beta/architecture/3.14.4/README.md:15:| ARCHITECTURE.md | docs/beta/architecture/ARCHITECTURE.md |
+docs/beta/architecture/3.14.4/SELF-COHERENCE.md:3:See `docs/gamma/cdd/3.14.4/SELF-COHERENCE.md` for the full branch-level report. This bundle's migration is part of #89.
+docs/beta/architecture/PACKAGE-SYSTEM.md:7:> **[docs/alpha/package-system/PACKAGE-SYSTEM.md](../../alpha/package-system/PACKAGE-SYSTEM.md)**
+docs/beta/architecture/PACKAGE-SYSTEM.md:15:> [docs/gamma/plans/PLAN-package-system.md](../../gamma/plans/PLAN-package-system.md).
+docs/beta/evidence/AUDIT.md:79:| 2026-02-05 incident RCA | ACTOR-MODEL-DESIGN.md s1 | Preserved in archive; consider extracting to docs/beta/evidence/rca/ |
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:35:docs/alpha/{scope}/
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:39:- `docs/alpha/agent-runtime/`
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:40:- `docs/alpha/runtime-extensions/`
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:47:docs/alpha/agent-runtime/
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:59:- **Inside the bundle** as `docs/alpha/{feature-name}/SPEC.md`, or
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:60:- **At the alpha root** as `docs/alpha/{FEATURE-NAME}.md` (legacy placement, see §6)
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:89:The index document for a feature bundle. Lives at `docs/alpha/{feature}/README.md`.
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:134:docs/alpha/{feature}/1.0.6/
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:171:Version directories inside feature bundles use the cnos release version, not a document-local version. Example: `docs/alpha/agent-runtime/3.8.0/` — not `2.0.0/`.
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:202:docs/alpha/{feature}/vX.Y.Z/
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:248:docs/alpha/{feature-name}/
+docs/beta/governance/3.14.4/DOCUMENTATION-SYSTEM.md:274:Several documents in `docs/alpha/` use version-stamped filenames at the root level. These predate the feature bundle system.
+docs/beta/governance/3.14.4/GLOSSARY.md:17:Defined in: `packages/cnos.core/doctrine/COHERENCE.md`, `docs/alpha/doctrine/COHERENCE-SYSTEM.md`.
+docs/beta/governance/3.14.4/GLOSSARY.md:25:Used in: `docs/alpha/agent-runtime/CAA.md` §5.6, §10; `docs/gamma/CDD.md` §3.4, §9.5.
+docs/beta/governance/3.14.4/GLOSSARY.md:84:Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §3.1; used in `docs/alpha/agent-runtime/CAA.md` §5.2, `docs/gamma/CDD.md` §2.1.
+docs/beta/governance/3.14.4/GLOSSARY.md:94:Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §3.2; used in `docs/alpha/agent-runtime/CAA.md` §5.1, `docs/gamma/CDD.md` §4.2.
+docs/beta/governance/3.14.4/GLOSSARY.md:168:Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §5.
+docs/beta/governance/3.14.4/GLOSSARY.md:222:Defined in: `docs/alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md` §7.3.
+docs/beta/governance/3.14.4/GLOSSARY.md:246:Defined in: `docs/alpha/agent-runtime/CAA.md`, `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §7.
+docs/beta/governance/3.14.4/GLOSSARY.md:252:Document: `docs/alpha/agent-runtime/CAA.md`.
+docs/beta/governance/3.14.4/GLOSSARY.md:262:Document: `docs/gamma/CDD.md`.
+docs/beta/governance/3.14.4/GLOSSARY.md:274:Defined in: `docs/alpha/agent-runtime/AGENT-RUNTIME.md`.
+docs/beta/governance/3.14.4/GLOSSARY.md:304:Defined in: `packages/cnos.core/doctrine/FOUNDATIONS.md` §6, `docs/alpha/agent-runtime/CAA.md` §4.
+docs/beta/governance/3.14.4/GLOSSARY.md:310:Document: `docs/alpha/cognitive-substrate/CAR.md`.
+docs/beta/governance/3.14.4/GLOSSARY.md:316:Defined in: `docs/gamma/CDD.md` §6.
+docs/beta/governance/3.14.4/README.md:9:- DOCUMENTATION-SYSTEM.md, NAMING.md, GLOSSARY.md moved from `docs/beta/` root into `docs/beta/governance/` bundle
+docs/beta/governance/3.14.4/README.md:17:| DOCUMENTATION-SYSTEM.md | docs/beta/governance/DOCUMENTATION-SYSTEM.md |
+docs/beta/governance/3.14.4/README.md:18:| NAMING.md | docs/beta/governance/NAMING.md |
+docs/beta/governance/3.14.4/README.md:19:| GLOSSARY.md | docs/beta/governance/GLOSSARY.md |
+docs/beta/governance/3.14.4/SELF-COHERENCE.md:3:See `docs/gamma/cdd/3.14.4/SELF-COHERENCE.md` for the full branch-level report. This bundle's migration is part of #89.
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:35:docs/alpha/{scope}/
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:39:- `docs/alpha/agent-runtime/`
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:40:- `docs/alpha/runtime-extensions/`
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:47:docs/alpha/agent-runtime/
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:59:- **Inside the bundle** as `docs/alpha/{feature-name}/SPEC.md`, or
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:60:- **At the alpha root** as `docs/alpha/{FEATURE-NAME}.md` (legacy placement, see §6)
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:89:The index document for a feature bundle. Lives at `docs/alpha/{feature}/README.md`.
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:134:docs/alpha/{feature}/1.0.6/
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:171:Version directories inside feature bundles use the cnos release version, not a document-local version. Example: `docs/alpha/agent-runtime/3.8.0/` — not `2.0.0/`.
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:202:docs/alpha/{feature}/vX.Y.Z/
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:248:docs/alpha/{feature-name}/
+docs/beta/governance/DOCUMENTATION-SYSTEM.md:274:Several documents in `docs/alpha/` use version-stamped filenames at the root level. These predate the feature bundle system.
+docs/beta/governance/GLOSSARY.md:17:Defined in: `packages/cnos.core/doctrine/COHERENCE.md`, `docs/alpha/doctrine/COHERENCE-SYSTEM.md`.
+docs/beta/governance/GLOSSARY.md:25:Used in: `docs/alpha/agent-runtime/CAA.md` §5.6, §10; `docs/gamma/cdd/CDD.md` §3.4, §9.5.
+docs/beta/governance/GLOSSARY.md:84:Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §3.1; used in `docs/alpha/agent-runtime/CAA.md` §5.2, `docs/gamma/cdd/CDD.md` §2.1.
+docs/beta/governance/GLOSSARY.md:94:Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §3.2; used in `docs/alpha/agent-runtime/CAA.md` §5.1, `docs/gamma/cdd/CDD.md` §4.2.
+docs/beta/governance/GLOSSARY.md:136:The ledger is append-only. TSC grades are provisional at release time and may be revised by the post-release assessment. Engineering levels are classified per `docs/gamma/ENGINEERING-LEVELS.md`, capped by CDD §9.1 cycle execution quality (mechanical ratio, review rounds).
+docs/beta/governance/GLOSSARY.md:181:Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §5.
+docs/beta/governance/GLOSSARY.md:235:Defined in: `docs/alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md` §7.3.
+docs/beta/governance/GLOSSARY.md:259:Defined in: `docs/alpha/agent-runtime/CAA.md`, `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §7.
+docs/beta/governance/GLOSSARY.md:265:Document: `docs/alpha/agent-runtime/CAA.md`.
+docs/beta/governance/GLOSSARY.md:275:Document: `docs/gamma/cdd/CDD.md`.
+docs/beta/governance/GLOSSARY.md:287:Defined in: `docs/alpha/agent-runtime/AGENT-RUNTIME.md`.
+docs/beta/governance/GLOSSARY.md:317:Defined in: `docs/alpha/doctrine/FOUNDATIONS.md` §6, `docs/alpha/agent-runtime/CAA.md` §4.
+docs/beta/governance/GLOSSARY.md:323:Document: `docs/alpha/cognitive-substrate/CAR.md`.
+docs/beta/governance/GLOSSARY.md:329:Defined in: `docs/gamma/cdd/CDD.md` §6.
+docs/beta/guides/HANDSHAKE.md:192:- `docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md` — CN protocol specification
+docs/beta/lineage/3.14.4/LINEAGE.md:10:| **Canonical-Path** | docs/beta/lineage/LINEAGE.md |
+docs/beta/lineage/3.14.4/ORIGIN.md:10:| **Canonical-Path** | docs/beta/lineage/ORIGIN.md |
+docs/beta/lineage/3.14.4/README.md:9:- ORIGIN.md and LINEAGE.md moved from `docs/beta/` root into `docs/beta/lineage/` bundle
+docs/beta/lineage/3.14.4/README.md:16:| ORIGIN.md | docs/beta/lineage/ORIGIN.md |
+docs/beta/lineage/3.14.4/README.md:17:| LINEAGE.md | docs/beta/lineage/LINEAGE.md |
+docs/beta/lineage/3.14.4/SELF-COHERENCE.md:3:See `docs/gamma/cdd/3.14.4/SELF-COHERENCE.md` for the full branch-level report. This bundle's migration is part of #89.
+docs/beta/lineage/LINEAGE.md:10:| **Canonical-Path** | docs/beta/lineage/LINEAGE.md |
+docs/beta/lineage/ORIGIN.md:10:| Canonical-Path | docs/beta/lineage/ORIGIN.md |
+docs/beta/schema/3.14.4/README.md:9:- DESIGN-LLM-SCHEMA.md moved from `docs/beta/` root into `docs/beta/schema/` bundle
+docs/beta/schema/3.14.4/README.md:15:| DESIGN-LLM-SCHEMA.md | docs/beta/schema/DESIGN-LLM-SCHEMA.md |
+docs/beta/schema/3.14.4/SELF-COHERENCE.md:3:See `docs/gamma/cdd/3.14.4/SELF-COHERENCE.md` for the full branch-level report. This bundle's migration is part of #89.
+docs/gamma/ENGINEERING-LEVELS.md:267:- assessing the executed level of a CDD cycle (see `docs/gamma/cdd/CDD.md` §9.1)
+docs/gamma/cdd/3.13.0/CDD.md:6:**Placement:** γ document (`docs/gamma/`)
+docs/gamma/cdd/3.13.0/CDD.md:243:| 1 | **Design** | Design doc or design section in the spec stub. States the structural decision and its triadic justification. | Version dir or `docs/alpha/` |
+docs/gamma/cdd/3.13.0/CDD.md:245:| 3 | **Plan** | Implementation plan: ordered steps, dependencies, risk boundaries, compile-safe increments. | `docs/gamma/plans/PLAN-vX.Y.Z-{scope}.md` or version dir |
+docs/gamma/cdd/3.13.0/CDD.md:272:The workflow states (Backlog → Claimed → In Progress → Review → Done) defined in `docs/gamma/AGILE-PROCESS.md` govern how work moves through the team. CDD governs what coherence means at each stage:
+docs/gamma/cdd/3.13.0/CDD.md:343:- `docs/alpha/agent-runtime/CAA.md`
+docs/gamma/cdd/3.13.0/CDD.md:344:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md`
+docs/gamma/cdd/3.13.0/CDD.md:345:- `docs/alpha/cognitive-substrate/CAR.md`
+docs/gamma/cdd/3.13.0/CDD.md:350:- `docs/gamma/AGILE-PROCESS.md`
+docs/gamma/cdd/3.13.0/CDD.md:351:- `docs/gamma/RULES.md`
+docs/gamma/cdd/3.13.0/CDD.md:357:- Feature-specific plans in `docs/gamma/plans/` (e.g., `PLAN-vX.Y.Z-{scope}.md`)
+docs/gamma/cdd/3.13.0/SELF-COHERENCE.md:13:| 0 | Bootstrap | done | `docs/gamma/cdd/v3.13.0/` created with `README.md` + `CDD.md` stub. Commit `0f7073c`. |
+docs/gamma/cdd/3.13.0/SELF-COHERENCE.md:15:| 2 | Coherence contract | done | `docs/gamma/plans/PR-docs-governance-v3.13.0.md` — gap, mode, scope, triadic effect, known debt, test plan. |
+docs/gamma/cdd/3.13.0/SELF-COHERENCE.md:16:| 3 | Plan | done | `docs/gamma/plans/PLAN-v3.13.0-docs-governance.md` — retroactive but complete: 4 phases, 16 ordered steps, dependencies, risk boundaries. |
+docs/gamma/cdd/3.13.0/SELF-COHERENCE.md:63:2. **Skill/doc parity strategy:** The executable skill is an actionable summary. The canonical doc (`docs/gamma/CDD.md`) is authoritative for the full artifact contract, pipeline table, and governance detail. The skill now explicitly declares this in its Authority section, eliminating the ambiguity about which governs when they diverge.
+docs/gamma/cdd/3.14.1/CDD.md:6:**Placement:** γ document (`docs/gamma/`)
+docs/gamma/cdd/3.14.1/CDD.md:243:| 1 | **Design** | Design doc or design section in the spec stub. States the structural decision and its triadic justification. | Version dir or `docs/alpha/` |
+docs/gamma/cdd/3.14.1/CDD.md:245:| 3 | **Plan** | Implementation plan: ordered steps, dependencies, risk boundaries, compile-safe increments. | `docs/gamma/plans/PLAN-vX.Y.Z-{scope}.md` or version dir |
+docs/gamma/cdd/3.14.1/CDD.md:272:The workflow states (Backlog → Claimed → In Progress → Review → Done) defined in `docs/gamma/AGILE-PROCESS.md` govern how work moves through the team. CDD governs what coherence means at each stage:
+docs/gamma/cdd/3.14.1/CDD.md:343:- `docs/alpha/agent-runtime/CAA.md`
+docs/gamma/cdd/3.14.1/CDD.md:344:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md`
+docs/gamma/cdd/3.14.1/CDD.md:345:- `docs/alpha/cognitive-substrate/CAR.md`
+docs/gamma/cdd/3.14.1/CDD.md:350:- `docs/gamma/AGILE-PROCESS.md`
+docs/gamma/cdd/3.14.1/CDD.md:351:- `docs/gamma/RULES.md`
+docs/gamma/cdd/3.14.1/CDD.md:357:- Feature-specific plans in `docs/gamma/plans/` (e.g., `PLAN-vX.Y.Z-{scope}.md`)
+docs/gamma/cdd/3.14.1/README.md:19:| CDD.md | docs/gamma/CDD.md |
+docs/gamma/cdd/3.14.1/README.md:21:| TROUBLESHOOTING.md | docs/beta/guides/TROUBLESHOOTING.md |
+docs/gamma/cdd/3.14.4/CDD.md:6:**Placement:** γ document (`docs/gamma/`)
+docs/gamma/cdd/3.14.4/CDD.md:243:| 1 | **Design** | Design doc or design section in the spec stub. States the structural decision and its triadic justification. | Version dir or `docs/alpha/` |
+docs/gamma/cdd/3.14.4/CDD.md:245:| 3 | **Plan** | Implementation plan: ordered steps, dependencies, risk boundaries, compile-safe increments. | `docs/gamma/plans/PLAN-vX.Y.Z-{scope}.md` or version dir |
+docs/gamma/cdd/3.14.4/CDD.md:274:The workflow states (Backlog → Claimed → In Progress → Review → Done) defined in `docs/gamma/AGILE-PROCESS.md` govern how work moves through the team. CDD governs what coherence means at each stage:
+docs/gamma/cdd/3.14.4/CDD.md:345:- `docs/alpha/agent-runtime/CAA.md`
+docs/gamma/cdd/3.14.4/CDD.md:346:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md`
+docs/gamma/cdd/3.14.4/CDD.md:347:- `docs/alpha/cognitive-substrate/CAR.md`
+docs/gamma/cdd/3.14.4/CDD.md:352:- `docs/gamma/AGILE-PROCESS.md`
+docs/gamma/cdd/3.14.4/CDD.md:353:- `docs/gamma/RULES.md`
+docs/gamma/cdd/3.14.4/CDD.md:359:- Feature-specific plans in `docs/gamma/plans/` (e.g., `PLAN-vX.Y.Z-{scope}.md`)
+docs/gamma/cdd/3.14.4/README.md:15:| CDD.md | docs/gamma/CDD.md |
+docs/gamma/cdd/3.14.5/CDD.md:6:**Placement:** γ document (`docs/gamma/`)
+docs/gamma/cdd/3.14.5/CDD.md:243:| 1 | **Design** | Design doc or design section in the spec stub. States the structural decision and its triadic justification. | Version dir or `docs/alpha/` |
+docs/gamma/cdd/3.14.5/CDD.md:245:| 3 | **Plan** | Implementation plan: ordered steps, dependencies, risk boundaries, compile-safe increments. | `docs/gamma/plans/PLAN-vX.Y.Z-{scope}.md` or version dir |
+docs/gamma/cdd/3.14.5/CDD.md:274:The workflow states (Backlog → Claimed → In Progress → Review → Done) defined in `docs/gamma/cdd/AGILE-PROCESS.md` govern how work moves through the team. CDD governs what coherence means at each stage:
+docs/gamma/cdd/3.14.5/CDD.md:345:- `docs/alpha/agent-runtime/CAA.md`
+docs/gamma/cdd/3.14.5/CDD.md:346:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md`
+docs/gamma/cdd/3.14.5/CDD.md:347:- `docs/alpha/cognitive-substrate/CAR.md`
+docs/gamma/cdd/3.14.5/CDD.md:352:- `docs/gamma/cdd/AGILE-PROCESS.md`
+docs/gamma/cdd/3.14.5/CDD.md:353:- `docs/gamma/rules/RULES.md`
+docs/gamma/cdd/3.14.5/CDD.md:359:- Feature-specific plans in `docs/gamma/plans/` (e.g., `PLAN-vX.Y.Z-{scope}.md`)
+docs/gamma/cdd/3.14.5/README.md:16:| CDD.md | docs/gamma/cdd/CDD.md |
+docs/gamma/cdd/3.14.5/README.md:17:| AGILE-PROCESS.md | docs/gamma/cdd/AGILE-PROCESS.md |
+docs/gamma/cdd/3.14.6/CDD.md:6:**Placement:** γ document (`docs/gamma/`)
+docs/gamma/cdd/3.14.6/CDD.md:243:| 1 | **Design** | Design doc or design section in the spec stub. States the structural decision and its triadic justification. | Version dir or `docs/alpha/` |
+docs/gamma/cdd/3.14.6/CDD.md:245:| 3 | **Plan** | Implementation plan: ordered steps, dependencies, risk boundaries, compile-safe increments. | `docs/gamma/plans/PLAN-vX.Y.Z-{scope}.md` or version dir |
+docs/gamma/cdd/3.14.6/CDD.md:274:The workflow states (Backlog → Claimed → In Progress → Review → Done) defined in `docs/gamma/cdd/AGILE-PROCESS.md` govern how work moves through the team. CDD governs what coherence means at each stage:
+docs/gamma/cdd/3.14.6/CDD.md:345:- `docs/alpha/agent-runtime/CAA.md`
+docs/gamma/cdd/3.14.6/CDD.md:346:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md`
+docs/gamma/cdd/3.14.6/CDD.md:347:- `docs/alpha/cognitive-substrate/CAR.md`
+docs/gamma/cdd/3.14.6/CDD.md:352:- `docs/gamma/cdd/AGILE-PROCESS.md`
+docs/gamma/cdd/3.14.6/CDD.md:353:- `docs/gamma/rules/RULES.md`
+docs/gamma/cdd/3.14.6/CDD.md:359:- Feature-specific plans in `docs/gamma/plans/` (e.g., `PLAN-vX.Y.Z-{scope}.md`)
+docs/gamma/cdd/3.14.6/README.md:17:| CDD.md | docs/gamma/cdd/CDD.md |
+docs/gamma/cdd/3.14.6/README.md:18:| POST-RELEASE-EPOCH-v3.12.md | docs/gamma/cdd/POST-RELEASE-EPOCH-v3.12.md |
+docs/gamma/cdd/3.14.6/README.md:19:| POST-RELEASE-EPOCH-v3.14.md | docs/gamma/cdd/POST-RELEASE-EPOCH-v3.14.md |
+docs/gamma/cdd/3.14.6/SELF-COHERENCE.md:8:| Bootstrap | done | Version dir `docs/gamma/cdd/3.14.6/` |
+docs/gamma/cdd/3.14.7/CDD.md:144:  - ✅ First commit: `docs/gamma/cdd/v3.13.0/README.md` + `CDD.md` stub
+docs/gamma/cdd/3.14.7/CDD.md:214:  - See `docs/gamma/cdd/CDD.md` §7.8 for the full format template
+docs/gamma/cdd/3.14.7/CDD.md:226:  - ✅ Update `docs/alpha/agent-runtime/AGENT-RUNTIME.md`, bump version header
+docs/gamma/cdd/3.14.7/CDD.md:229:  - Pattern: `docs/alpha/NAME-vMAJOR.md`
+docs/gamma/cdd/3.14.7/CDD.md:230:  - ❌ `docs/alpha/new-thing.md` (no version)
+docs/gamma/cdd/3.14.7/CDD.md:231:  - ✅ `docs/alpha/CAA-v1.md`
+docs/gamma/cdd/3.14.7/CDD.md:232:  - ✅ `docs/alpha/CAR-v3.4.md`
+docs/gamma/cdd/3.14.7/CDD.md:235:  - Feature/release scoped: `docs/gamma/plans/PLAN-vX.Y.Z.md` (e.g. `PLAN-v3.6.0.md`)
+docs/gamma/cdd/3.14.7/CDD.md:236:  - Subsystem scoped: `docs/gamma/plans/NAME-implementation-plan.md` (e.g. `CAR-implementation-plan.md`)
+docs/gamma/cdd/3.14.7/CDD.md:238:  - ✅ `docs/gamma/plans/CAR-implementation-plan.md`
+docs/gamma/cdd/3.14.7/CDD.md:239:  - ✅ `docs/gamma/plans/PLAN-v3.6.0.md`
+docs/gamma/cdd/3.14.7/CDD.md:648:This skill is the **executable summary** of CDD. The **authoritative source** for the full artifact contract, pipeline table, frozen-snapshot rules, self-coherence report format, and governance detail is `docs/gamma/cdd/CDD.md`. When this skill and the canonical doc disagree, the canonical doc governs — except for sections added in v3.14.7 (§1.5, §11.11, §11.12) which exist only in this skill pending canonical update. Until the canonical doc is updated to include these sections, this skill is authoritative for them.
+docs/gamma/cdd/3.14.7/CDD.md:655:- **Canonical CDD method doc: `docs/gamma/cdd/CDD.md`** (authoritative for full artifact contract)
+docs/gamma/cdd/3.14.7/CDD.md:658:- Agile workflow integration: `docs/gamma/cdd/AGILE-PROCESS.md`
+docs/gamma/cdd/3.14.7/README.md:22:| CDD.md | src/agent/skills/ops/cdd/SKILL.md (executable skill, not canonical docs/gamma/cdd/CDD.md — see Authority note) |
+docs/gamma/cdd/3.14.7/SELF-COHERENCE.md:52:- Canonical `docs/gamma/cdd/CDD.md` (v3.13.0) not updated with §1.5, §11.11, §11.12. Authority claim narrowed explicitly. Canonical update is follow-up work.
+docs/gamma/cdd/3.15.0/README.md:48:| Self-coherence | docs/gamma/cdd/3.15.0/SELF-COHERENCE.md |
+docs/gamma/cdd/3.15.0/SELF-COHERENCE.md:13:| §4.0 Bootstrap | Done | `docs/gamma/cdd/3.15.0/README.md` — first commit |
+docs/gamma/cdd/3.15.2/CDD.md:6:**Placement:** γ document (`docs/gamma/cdd/`)
+docs/gamma/cdd/3.15.2/RATIONALE.md:6:**Placement:** γ document (`docs/gamma/cdd/`)
+docs/gamma/cdd/3.15.2/SELF-COHERENCE.md:14:| 2. Bootstrap | done | `docs/gamma/cdd/3.15.2/README.md` created as first diff |
+docs/gamma/cdd/3.16.0/SELF-COHERENCE.md:14:| 2. Bootstrap | done | `docs/gamma/cdd/3.16.0/README.md` created as first diff |
+docs/gamma/cdd/3.16.1/SELF-COHERENCE.md:15:| 3. Bootstrap | done | `docs/gamma/cdd/3.16.1/README.md` created as first diff |
+docs/gamma/cdd/3.16.2/README.md:61:| `docs/gamma/rules/INVARIANTS.md` | I5: Two-Membrane Projection Integrity |
+docs/gamma/cdd/3.16.2/SELF-COHERENCE.md:15:| 3. Bootstrap | done | `docs/gamma/cdd/3.16.2/README.md` with observation inputs, gap, mode, scope, frozen artifact table |
+docs/gamma/cdd/3.18.0/README.md:7:**Design:** `docs/beta/architecture/PACKAGE-SYSTEM.md`
+docs/gamma/cdd/3.19.0/README.md:46:- `docs/gamma/cdd/3.19.0/SELF-COHERENCE.md` — self-coherence report
+docs/gamma/cdd/3.20.0/README.md:31:- `docs/gamma/cdd/3.20.0/SELF-COHERENCE.md` — self-coherence report
+docs/gamma/cdd/3.22.0/README.md:32:- `docs/gamma/cdd/3.22.0/SELF-COHERENCE.md` — self-coherence report
+docs/gamma/cdd/3.24.0/PLAN.md:112:Create `docs/alpha/package-system/PACKAGE-SYSTEM.md`:
+docs/gamma/cdd/3.24.0/README.md:36:- `docs/gamma/cdd/3.24.0/SELF-COHERENCE.md` -- self-coherence report
+docs/gamma/cdd/3.25.0/SELF-COHERENCE.md:85:| `docs/gamma/cdd/3.25.0/` | CDD bundle: README, SELECTION, PLAN, SELF-COHERENCE |
+docs/gamma/cdd/3.26.0/SELF-COHERENCE.md:7:| SELECTION.md | present | docs/gamma/cdd/3.26.0/SELECTION.md |
+docs/gamma/cdd/3.26.0/SELF-COHERENCE.md:8:| README.md | present | docs/gamma/cdd/3.26.0/README.md |
+docs/gamma/cdd/3.26.0/SELF-COHERENCE.md:9:| PLAN.md | present | docs/gamma/cdd/3.26.0/PLAN.md |
+docs/gamma/cdd/3.29.0/README.md:28:| 3 Bootstrap | ✅ | `docs/gamma/cdd/3.29.0/README.md` |
+docs/gamma/cdd/3.31.0/PLAN-message-packet-transport.md:6:Implements: docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md
+docs/gamma/cdd/3.31.0/PLAN-message-packet-transport.md:505:- docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md
+docs/gamma/cdd/3.31.0/README.md:33:docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md
+docs/gamma/cdd/3.32.0/PLAN-thread-event-model.md:6:**Implements:** docs/alpha/protocol/THREAD-EVENT-MODEL.md
+docs/gamma/cdd/3.32.0/PLAN-thread-event-model.md:8:**Depends on:** docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md, inbox processing, peer sync, Git-first transport
+docs/gamma/cdd/3.32.0/PLAN-thread-event-model.md:457:- `docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md`
+docs/gamma/cdd/3.32.0/PLAN-thread-event-model.md:465:- `docs/alpha/AGENT-RUNTIME.md`
+docs/gamma/cdd/3.32.0/POST-RELEASE-ASSESSMENT.md:142:  - #153 thread event model -- next MCA, plan written at `docs/gamma/cdd/3.32.0/PLAN-thread-event-model.md`
+docs/gamma/cdd/3.32.0/SELF-COHERENCE.md:52:| Audit table (29 rows) | docs/gamma/cdd/3.32.0/README.md |
+docs/gamma/cdd/3.32.0/SELF-COHERENCE.md:53:| Scope acknowledgment (21 out-of-scope) | docs/gamma/cdd/3.32.0/README.md (Scope section) |
+docs/gamma/cdd/3.33.0/PLAN-hub-placement-models.md:6:**Implements:** docs/alpha/HUB-PLACEMENT-MODELS.md
+docs/gamma/cdd/3.33.0/SELF-COHERENCE.md:46:| CDD bootstrap | docs/gamma/cdd/3.33.0/README.md |
+docs/gamma/cdd/3.34.0/PLAN-package-artifacts.md:6:**Implements:** docs/alpha/package-system/PACKAGE-ARTIFACTS.md
+docs/gamma/cdd/3.34.0/PLAN-package-artifacts.md:71:4. `docs/alpha/package-system/PACKAGE-SYSTEM.md` — add commands as
+docs/gamma/cdd/3.34.0/PLAN-package-artifacts.md:77:6. `docs/alpha/package-system/PACKAGE-ARTIFACTS.md` — cherry-pick
+docs/gamma/cdd/3.34.0/POST-RELEASE-ASSESSMENT-package-artifacts.md:240:- Consolidated misversioned `docs/gamma/cdd/3.35.0/` into
+docs/gamma/cdd/3.34.0/POST-RELEASE-ASSESSMENT-package-artifacts.md:241:  `docs/gamma/cdd/3.34.0/` as `*-package-artifacts.md` files to
+docs/gamma/cdd/3.34.0/README-package-artifacts.md:5:**Design:** docs/alpha/package-system/PACKAGE-ARTIFACTS.md
+docs/gamma/cdd/3.34.0/README-package-artifacts.md:57:Full design in `docs/alpha/package-system/PACKAGE-ARTIFACTS.md`
+docs/gamma/cdd/3.34.0/README-package-artifacts.md:112:| 2 Design | `docs/alpha/package-system/PACKAGE-ARTIFACTS.md` | design, cap, writing | Artifact-first + commands-as-content-class + runtime extensions separate |
+docs/gamma/cdd/3.34.0/README.md:39:cnos assumes `hub_root == workspace_root`. Sandboxed agents (Claude Code, Codespaces, CI) need distinct roots: hub state in one repo, workspace operations in another. The design doc (`docs/alpha/HUB-PLACEMENT-MODELS.md`) and 10-step plan exist. This cycle implements the foundation: placement manifest, discovery refactor, and CLI root split.
+docs/gamma/cdd/3.34.0/SELF-COHERENCE-package-artifacts.md:35:| Manifest schema `cn.package.v1` | `packages/<name>/cn.package.json` | `cn_build.ml` parser extended; `docs/alpha/package-system/PACKAGE-SYSTEM.md` documents the new `commands` class |
+docs/gamma/cdd/3.34.0/SELF-COHERENCE-package-artifacts.md:44:- `cn.deps.lock.v1` literal: only in `docs/alpha/cognitive-substrate/CAR.md`
+docs/gamma/cdd/3.34.0/SELF-COHERENCE-package-artifacts.md:152:| Design | `docs/alpha/package-system/PACKAGE-ARTIFACTS.md` |
+docs/gamma/cdd/3.34.0/SELF-COHERENCE-package-artifacts.md:153:| System docs | `docs/alpha/package-system/PACKAGE-SYSTEM.md` (§1.1, §2.4, §7) |
+docs/gamma/cdd/3.34.0/SELF-COHERENCE-package-artifacts.md:154:| Bootstrap | `docs/gamma/cdd/3.35.0/README.md` |
+docs/gamma/cdd/3.34.0/SELF-COHERENCE-package-artifacts.md:155:| Plan | `docs/gamma/cdd/3.35.0/PLAN-package-artifacts.md` |
+docs/gamma/cdd/3.35.0/GATE.md:7:  - [x] Design: `docs/alpha/agent-runtime/ORCHESTRATORS.md` §4 (pre-existing)
+docs/gamma/cdd/3.35.0/GATE.md:8:  - [x] Coherence contract: `docs/gamma/cdd/3.35.0/README.md` (gap, mode, ACs)
+docs/gamma/cdd/3.35.0/GATE.md:9:  - [x] Plan: `docs/gamma/cdd/3.35.0/PLAN-runtime-activation.md`
+docs/gamma/cdd/3.35.0/GATE.md:12:  - [x] Docs: `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md` §4 JSON schema extended with activation_index, commands, orchestrators
+docs/gamma/cdd/3.35.0/GATE.md:13:  - [x] Self-coherence: `docs/gamma/cdd/3.35.0/SELF-COHERENCE.md` (α A, β A, γ A−)
+docs/gamma/cdd/3.35.0/GATE.md:20:- **Previous release assessed:** yes (v3.34.0 post-release covers #167 slice in `docs/gamma/cdd/3.34.0/POST-RELEASE-ASSESSMENT-package-artifacts.md`)
+docs/gamma/cdd/3.35.0/PLAN-runtime-activation.md:6:**Implements:** docs/alpha/agent-runtime/ORCHESTRATORS.md §4
+docs/gamma/cdd/3.35.0/POST-RELEASE-ASSESSMENT.md:117:The bootstrap artifacts for the #173 cycle — `README.md`, `PLAN-runtime-activation.md`, `SELF-COHERENCE.md`, `GATE.md` under `docs/gamma/cdd/3.35.0/`, plus the RUNTIME-CONTRACT-v2.md §4 schema update — were authored on the `claude/173-runtime-contract-activation` branch (merged into v3.35.0 via PR #176) **and are off-branch relative to this PR** (this PR is `claude/post-release-3.35.0`, a docs-only follow-up adding the post-release assessment). Rows below reference the merged state of main, not this PR's diff.
+docs/gamma/cdd/3.35.0/POST-RELEASE-ASSESSMENT.md:119:- **CDD α:** 4/4 — all required artifacts present on main for v3.35.0: README + PLAN + SELF-COHERENCE + GATE under `docs/gamma/cdd/3.35.0/`, plus RUNTIME-CONTRACT-v2.md §4 schema update. CDD Trace rendered in both README and PR #176 body. Scored against the released state, not against this PR's diff.
+docs/gamma/cdd/3.35.0/POST-RELEASE-ASSESSMENT.md:192:An earlier assessment was committed at `docs/gamma/cdd/post-release/3.35.0.md` (commit `d2a3e2e`) using the `post-release/<version>.md` path convention. This file at `docs/gamma/cdd/3.35.0/POST-RELEASE-ASSESSMENT.md` follows the per-version directory convention already established by 3.19.0 / 3.28.0, so that old file is removed in the same commit as this one is corrected. The review on PR #178 (round 1) explicitly offered this resolution path. The technical scoring and next-MCA selection in this assessment match the superseded file; earlier drafts of this file carried fabricated issue numbers and a wrong next-MCA (review F1 + F2), which are corrected here.
+docs/gamma/cdd/3.35.0/README.md:6:**Design:** docs/alpha/agent-runtime/ORCHESTRATORS.md §4
+docs/gamma/cdd/3.35.0/README.md:67:- `docs/alpha/agent-runtime/ORCHESTRATORS.md` — already canonical, not edited
+docs/gamma/cdd/3.35.0/README.md:68:- `docs/gamma/cdd/3.35.0/` — bootstrap (this dir)
+docs/gamma/cdd/3.35.0/SELF-COHERENCE.md:65:| `docs/gamma/cdd/3.35.0/*.md` | 326 | 0 |
+docs/gamma/cdd/3.35.0/SELF-COHERENCE.md:139:| Design | `docs/alpha/agent-runtime/ORCHESTRATORS.md` §4 |
+docs/gamma/cdd/3.35.0/SELF-COHERENCE.md:140:| Bootstrap | `docs/gamma/cdd/3.35.0/README.md` |
+docs/gamma/cdd/3.35.0/SELF-COHERENCE.md:141:| Plan | `docs/gamma/cdd/3.35.0/PLAN-runtime-activation.md` |
+docs/gamma/cdd/3.36.0/GATE.md:7:  - [x] Design: `docs/alpha/agent-runtime/ORCHESTRATORS.md` §7–8
+docs/gamma/cdd/3.36.0/GATE.md:8:  - [x] Plan: `docs/alpha/agent-runtime/PLAN-174-orchestrator-runtime.md` (committed at 29eeb29)
+docs/gamma/cdd/3.36.0/GATE.md:9:  - [x] Bootstrap: `docs/gamma/cdd/3.36.0/README.md`
+docs/gamma/cdd/3.36.0/POST-RELEASE-ASSESSMENT.md:163:  delta. The corresponding row is added to `docs/gamma/cdd/CDD.md`
+docs/gamma/cdd/3.36.0/POST-RELEASE-ASSESSMENT.md:223:  present in `docs/gamma/cdd/3.36.0/`: README, SELF-COHERENCE, GATE,
+docs/gamma/cdd/3.36.0/POST-RELEASE-ASSESSMENT.md:225:  `docs/alpha/agent-runtime/PLAN-174-orchestrator-runtime.md` (a
+docs/gamma/cdd/3.36.0/POST-RELEASE-ASSESSMENT.md:306:| 12 Assess | `docs/gamma/cdd/3.36.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | Scoring matches CHANGELOG row (C_Σ A · α A · β A · γ A− · L7); §9.1 triggers identified; recurring failure named and patched at the skill level |
+docs/gamma/cdd/3.36.0/POST-RELEASE-ASSESSMENT.md:321:1. **`docs/gamma/cdd/3.36.0/POST-RELEASE-ASSESSMENT.md`** — this file.
+docs/gamma/cdd/3.36.0/POST-RELEASE-ASSESSMENT.md:325:   - `docs/gamma/cdd/CDD.md` §5.3 step table or §5.4 — corresponding row/note (authority-sync per CDD §3.3a)
+docs/gamma/cdd/3.36.0/README.md:6:**Design:** `docs/alpha/agent-runtime/ORCHESTRATORS.md` §7–8 (627 lines)
+docs/gamma/cdd/3.36.0/README.md:7:**Plan:** `docs/alpha/agent-runtime/PLAN-174-orchestrator-runtime.md` (committed at 29eeb29)
+docs/gamma/cdd/3.36.0/README.md:46:Each stage gets: tests first → implementation → `dune build` gate → commit. Full plan in `docs/alpha/agent-runtime/PLAN-174-orchestrator-runtime.md`.
+docs/gamma/cdd/3.36.0/README.md:56:- `docs/gamma/cdd/3.36.0/` (this dir)
+docs/gamma/cdd/3.36.0/README.md:66:- `docs/alpha/package-system/PACKAGE-SYSTEM.md` — `orchestrators` as 8th content class
+docs/gamma/cdd/3.36.0/README.md:82:| 3 Bootstrap | `docs/gamma/cdd/3.36.0/` | — | README + (link to) PLAN + SELF-COHERENCE later + GATE later |
+docs/gamma/cdd/3.36.0/SELF-COHERENCE.md:34:| `PACKAGE-SYSTEM.md` content class table | `docs/alpha/package-system/PACKAGE-SYSTEM.md` §1.1 | Updated to list orchestrators as the 8th class with source location, declaration shape, and runtime role. |
+docs/gamma/cdd/3.36.0/SELF-COHERENCE.md:64:| `docs/alpha/package-system/PACKAGE-SYSTEM.md` | ~15 | 0 |
+docs/gamma/cdd/3.36.0/SELF-COHERENCE.md:65:| `docs/gamma/cdd/3.36.0/` | ~400 | 0 |
+docs/gamma/cdd/3.36.0/SELF-COHERENCE.md:109:| Design | `docs/alpha/agent-runtime/ORCHESTRATORS.md` §7–8 |
+docs/gamma/cdd/3.36.0/SELF-COHERENCE.md:110:| Plan | `docs/alpha/agent-runtime/PLAN-174-orchestrator-runtime.md` |
+docs/gamma/cdd/3.36.0/SELF-COHERENCE.md:111:| Bootstrap | `docs/gamma/cdd/3.36.0/README.md` |
+docs/gamma/cdd/3.36.0/SELF-COHERENCE.md:118:| Content class docs | `docs/alpha/package-system/PACKAGE-SYSTEM.md` §1.1 |
+docs/gamma/cdd/3.37.0/GATE.md:7:  - [x] Design: `docs/alpha/agent-runtime/CORE-REFACTOR.md` §2 + §7 (Move 1)
+docs/gamma/cdd/3.37.0/GATE.md:8:  - [x] Bootstrap: `docs/gamma/cdd/3.37.0/README.md`
+docs/gamma/cdd/3.37.0/GATE.md:13:  - [x] Docs: `docs/alpha/package-system/PACKAGE-SYSTEM.md` §1.1 updated (row + prose)
+docs/gamma/cdd/3.37.0/GATE.md:33:3. **CDD Trace in the PR body.** To include in the PR body at open time: steps 0–7a per `docs/gamma/cdd/CDD.md` §5.3.
+docs/gamma/cdd/3.37.0/POST-RELEASE-ASSESSMENT.md:76:**Patch:** `src/agent/skills/cdd/SKILL.md` §2.5b gains a **sixth** mechanical check, mirrored to `packages/cnos.core/skills/cdd/SKILL.md` (build-sync per CDD §3.3) and noted in `docs/gamma/cdd/CDD.md` §5.3 step row 7a (authority-sync per CDD §3.3a):
+docs/gamma/cdd/3.37.0/POST-RELEASE-ASSESSMENT.md:111:- **CDD α (artifact integrity): 4/4.** All required cycle artifacts present in `docs/gamma/cdd/3.37.0/`: README, SELF-COHERENCE, GATE, and POST-RELEASE-ASSESSMENT (this file). PLAN lives inline in README §Plan because the cycle was small enough to not warrant a separate `PLAN-184-…md`. CDD Trace tables in both the README and PR #185 body, populated through step 9.
+docs/gamma/cdd/3.37.0/POST-RELEASE-ASSESSMENT.md:182:| 12 Assess | `docs/gamma/cdd/3.37.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | Scoring matches CHANGELOG row (C_Σ A− · α A · β A · γ B+ · L6); §9.1 triggers identified (3 firm + 1 soft); recurring failure mode named explicitly and patched at the skill level in this same commit. |
+docs/gamma/cdd/3.37.0/POST-RELEASE-ASSESSMENT.md:183:| 12a Skill patch | `src/agent/skills/cdd/SKILL.md` §2.5b check 6 + `packages/cnos.core/skills/cdd/SKILL.md` (build-sync) + `docs/gamma/cdd/CDD.md` §5.3 step row 7a note (authority-sync per CDD §3.3a) | post-release, cdd | Patch closes the recurring fixture-drift failure class at the skill specification level by extending §2.5b's mechanical pre-review checklist with a sixth check covering schema/shape audit across `test/`. Justified in §3 above. Mirror + canonical-spec sync done in the same commit per CDD §3.3 + §3.3a. |
+docs/gamma/cdd/3.37.0/POST-RELEASE-ASSESSMENT.md:198:1. **`docs/gamma/cdd/3.37.0/POST-RELEASE-ASSESSMENT.md`** — this file.
+docs/gamma/cdd/3.37.0/POST-RELEASE-ASSESSMENT.md:202:   - `docs/gamma/cdd/CDD.md` §5.3 step table row `7a Pre-review` — note that the pre-review checklist now has six items (authority-sync per CDD §3.3a)
+docs/gamma/cdd/3.37.0/README.md:5:**Design:** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §2 + §7 "Move 1"
+docs/gamma/cdd/3.37.0/README.md:116:- `docs/alpha/package-system/PACKAGE-SYSTEM.md` §1.1
+docs/gamma/cdd/3.37.0/README.md:117:- `docs/gamma/cdd/3.37.0/` (this dir)
+docs/gamma/cdd/3.37.0/README.md:133:| 3 Bootstrap | `docs/gamma/cdd/3.37.0/` | — | this file + PLAN inline in §Plan table + SELF-COHERENCE + GATE later |
+docs/gamma/cdd/3.37.0/SELF-COHERENCE.md:65:| `docs/alpha/package-system/PACKAGE-SYSTEM.md` §1.1 | ~20 lines touched |
+docs/gamma/cdd/3.37.0/SELF-COHERENCE.md:66:| `docs/gamma/cdd/3.37.0/` (new) | README + this file + GATE |
+docs/gamma/cdd/3.37.0/SELF-COHERENCE.md:115:| Design | `docs/alpha/agent-runtime/CORE-REFACTOR.md` §2 + §7 Move 1 |
+docs/gamma/cdd/3.37.0/SELF-COHERENCE.md:116:| Bootstrap | `docs/gamma/cdd/3.37.0/README.md` |
+docs/gamma/cdd/3.37.0/SELF-COHERENCE.md:123:| Content-class docs | `docs/alpha/package-system/PACKAGE-SYSTEM.md` §1.1 |
+docs/gamma/cdd/3.38.0/GATE.md:7:  - [x] Design: `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 (with v3.38.0 status block)
+docs/gamma/cdd/3.38.0/GATE.md:8:  - [x] Bootstrap: `docs/gamma/cdd/3.38.0/README.md`
+docs/gamma/cdd/3.38.0/GATE.md:12:  - [x] Docs status update: `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status block
+docs/gamma/cdd/3.38.0/GATE.md:29:3. **CDD Trace in the PR body.** To include in the PR body at open time: steps 0–7a per `docs/gamma/cdd/CDD.md` §5.3, mirroring the trace table in `README.md` §"CDD Trace".
+docs/gamma/cdd/3.38.0/POST-RELEASE-ASSESSMENT.md:95:| 12 Assess | `docs/gamma/cdd/3.38.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | Scoring: C_Σ A · α A · β A · γ A · L5. MCI freeze declared (≥3 growing lag items). No skill patches needed. |
+docs/gamma/cdd/3.38.0/README.md:6:**Design:** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 "Move 2 — Pure-model gravity into `src/lib/`"
+docs/gamma/cdd/3.38.0/README.md:98:| F | Update `docs/alpha/agent-runtime/CORE-REFACTOR.md` Move 2 status: first slice shipped, three remaining (runtime contract, workflow, activation) | — |
+docs/gamma/cdd/3.38.0/README.md:114:- `docs/alpha/agent-runtime/CORE-REFACTOR.md` — Move 2 status (first slice)
+docs/gamma/cdd/3.38.0/README.md:130:| 3 Bootstrap | `docs/gamma/cdd/3.38.0/` | — | this file + SELF-COHERENCE + GATE |
+docs/gamma/cdd/3.38.0/SELF-COHERENCE.md:75:| `docs/alpha/agent-runtime/CORE-REFACTOR.md` | +1 status block (Move 2 first slice shipped) |
+docs/gamma/cdd/3.38.0/SELF-COHERENCE.md:76:| `docs/gamma/cdd/3.38.0/` (new) | README + this file + GATE |
+docs/gamma/cdd/3.38.0/SELF-COHERENCE.md:131:| Design | `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 (with v3.38.0 status block) |
+docs/gamma/cdd/3.38.0/SELF-COHERENCE.md:132:| Bootstrap | `docs/gamma/cdd/3.38.0/README.md` |
+docs/gamma/cdd/3.39.0/GATE.md:7:  - [x] Design: `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 (with v3.39.0 status block appended alongside v3.38.0)
+docs/gamma/cdd/3.39.0/GATE.md:8:  - [x] Bootstrap: `docs/gamma/cdd/3.39.0/README.md` (10 ACs including implementer-added AC10, impact graph, CDD trace)
+docs/gamma/cdd/3.39.0/GATE.md:12:  - [x] Docs status update: `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 v3.39.0 status block
+docs/gamma/cdd/3.39.0/GATE.md:27:2. **Self-coherence artifact present.** Yes — `docs/gamma/cdd/3.39.0/SELF-COHERENCE.md` with all 5 sections (α, β, γ, triadic check, pointers + exit criteria).
+docs/gamma/cdd/3.39.0/GATE.md:28:3. **CDD Trace in the PR body.** To include verbatim from `README.md` §"CDD Trace" at PR open time: steps 0–7a per `docs/gamma/cdd/CDD.md` §5.3.
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:9:**Stacking note:** This assessment was written together with `docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md`. Both cycles' §9.1 cycle iteration sections point to the same corrective — PR #198 (the §2.5b check 7 + check 8 skill patch), which was written in parallel with the v3.40.0 fix commits and shipped ahead of this assessment. Writing both assessments simultaneously avoids duplicating the §12a skill-patch narrative across two separate PRs.
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:32:| #190 | Agent network — cnos as protocol for peer agents | feature | `docs/alpha/vision/AGENT-NETWORK.md` (vision-tier) | not started | new (pre-converged; not counted in growing) |
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:39:**MCI/MCA balance:** **balanced**, though the v3.38.0 post-release had declared **freeze MCI** on the basis of 3+ growing-lag issues (`llm`, `#175`, `#186`, `#180`). That freeze was honored during v3.39.0 — no new design docs landed except the vision-tier `docs/alpha/vision/AGENT-NETWORK.md` (#190) which is pre-converged and doesn't count against the MCI budget. The freeze remains in effect through v3.40.0's next-MCA (slice 4) at minimum.
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:92:- **CDD α (artifact integrity): 4/4.** All required cycle artifacts present in `docs/gamma/cdd/3.39.0/`: README, SELF-COHERENCE (α A, β A, γ A−), GATE, and now POST-RELEASE-ASSESSMENT (this file). CDD Trace tables in both the README and the PR #195 body, populated through step 9.
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:115:**Skill impact:** §2.5b check 7 (workspace-global library-name uniqueness). **Patched in PR #198** as an immediate output, landed ahead of this assessment. The skill source is `packages/cnos.core/skills/cdd/SKILL.md` §2.5b (build-sync copy from `src/agent/skills/cdd/SKILL.md`); the canonical spec is `docs/gamma/cdd/CDD.md` §5.3 row 7a (authority-sync); both updated in the same #198 commit.
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:168:| 12 Assess | `docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | Scoring C_Σ A− · α A · β A · γ B+ · L5. §9.1 cycle iteration section present (3 triggers fired — mechanical ratio, environmental, skill gap). Explicit retroactive §12a disposition citing PR #198 as landed corrective. |
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:169:| 12a Skill patch | **PR #198 (already shipped)** — §2.5b check 7 (workspace-global library-name uniqueness) across `src/agent/skills/cdd/SKILL.md`, `packages/cnos.core/skills/cdd/SKILL.md` (build-sync), and `docs/gamma/cdd/CDD.md` §5.3 row 7a (authority-sync) | post-release, cdd | Patch landed ahead of this assessment via a standalone skill-patch PR. The ordering is unusual but the closure is valid — the corrective is real, shipped, and cited by the PR body as targeting this cycle's #195 F1 failure class. |
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:184:1. **`docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md`** — this file.
+docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md:185:2. **Stacked with `docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md`** — written in the same commit / same PR because both cycles' §9.1 sections point to the same corrective (#198) and writing them together avoids duplicating the §12a narrative. Both files land in the same branch and the same PR.
+docs/gamma/cdd/3.39.0/README.md:6:**Design:** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 "Move 2 — Pure-model gravity into `src/lib/`" + the v3.38.0 status block naming slice 2 as next
+docs/gamma/cdd/3.39.0/README.md:49:- [ ] **AC9** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status block updated: slice 2 shipped, two remaining (workflow IR, activation evaluator).
+docs/gamma/cdd/3.39.0/README.md:75:| F | Update `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status: slice 2 shipped, two remaining (workflow IR, activation evaluator) | AC9 |
+docs/gamma/cdd/3.39.0/README.md:92:- `docs/alpha/agent-runtime/CORE-REFACTOR.md` — §7 Move 2 status block (slice 2 shipped)
+docs/gamma/cdd/3.39.0/README.md:108:| 3 Bootstrap | `docs/gamma/cdd/3.39.0/` | — | this file + SELF-COHERENCE + GATE |
+docs/gamma/cdd/3.39.0/SELF-COHERENCE.md:80:| `docs/alpha/agent-runtime/CORE-REFACTOR.md` | +1 status block (v3.39.0 Move 2 slice 2 shipped; preserves the v3.38.0 block for history) |
+docs/gamma/cdd/3.39.0/SELF-COHERENCE.md:81:| `docs/gamma/cdd/3.39.0/` (new) | README + this file + GATE |
+docs/gamma/cdd/3.39.0/SELF-COHERENCE.md:92:| 2 | Self-coherence artifact present | ✅ | `docs/gamma/cdd/3.39.0/SELF-COHERENCE.md` — this file |
+docs/gamma/cdd/3.39.0/SELF-COHERENCE.md:120:   - **AC9** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status block updated: v3.39.0 block appended after v3.38.0 block, naming 2 remaining slices (workflow IR, activation evaluator).
+docs/gamma/cdd/3.39.0/SELF-COHERENCE.md:153:| Design | `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 (with v3.38.0 + v3.39.0 status blocks) |
+docs/gamma/cdd/3.39.0/SELF-COHERENCE.md:154:| Bootstrap | `docs/gamma/cdd/3.39.0/README.md` |
+docs/gamma/cdd/3.39.0/SELF-COHERENCE.md:155:| Pattern reference (slice 1) | `docs/gamma/cdd/3.38.0/SELF-COHERENCE.md` + `src/lib/cn_package.ml` + `src/cmd/cn_deps.ml` |
+docs/gamma/cdd/3.40.0/GATE.md:7:  - [x] Design: `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 (with v3.40.0 status block appended alongside v3.38.0 + v3.39.0)
+docs/gamma/cdd/3.40.0/GATE.md:8:  - [x] Bootstrap: `docs/gamma/cdd/3.40.0/README.md` (8 ACs from #196, impact graph, CDD trace, explicit option-(b) decision rationale)
+docs/gamma/cdd/3.40.0/GATE.md:12:  - [x] Docs status update: `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 v3.40.0 status block
+docs/gamma/cdd/3.40.0/GATE.md:27:2. **Self-coherence artifact present.** Yes — `docs/gamma/cdd/3.40.0/SELF-COHERENCE.md` with all 5 sections (α, β, γ, triadic check, pointers + exit criteria).
+docs/gamma/cdd/3.40.0/GATE.md:28:3. **CDD Trace in PR body.** To include verbatim from `README.md` §"CDD Trace" at PR open time: steps 0–7a per `docs/gamma/cdd/CDD.md` §5.3.
+docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md:9:**Stacking note:** This assessment was written in the same commit as `docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md`. The v3.39.0 cycle F1 (library-name collision) and the v3.40.0 cycle F1 (expect-test stderr mismatch) are two instances of the same failure class: "mechanical failure reached the reviewer because the author could not verify locally." Both instances share the same §12a corrective — PR #198 (§2.5b checks 7 + 8), which landed ahead of both assessments. Writing the two post-release docs together avoids duplicating the §3 / §4b / §6 narratives that reference #198.
+docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md:31:| #190 | Agent network — cnos as protocol for peer agents | feature | `docs/alpha/vision/AGENT-NETWORK.md` (vision-tier) | not started | new (pre-converged) |
+docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md:101:- **CDD α (artifact integrity): 4/4.** All required cycle artifacts present in `docs/gamma/cdd/3.40.0/`: README (with 8 ACs + impact graph + 11-row CDD Trace), SELF-COHERENCE (α A, β A, γ A−), GATE, and now POST-RELEASE-ASSESSMENT (this file). CDD Trace tables in both the README and the PR #197 body, populated through step 9.
+docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md:124:**Skill impact:** **§2.5b check 8 — CI-green-before-review gate with draft-until-green mechanism.** Patched in PR #198 as an immediate output, landed ahead of this assessment. The skill source is `packages/cnos.core/skills/cdd/SKILL.md` §2.5b (build-sync copy from `src/agent/skills/cdd/SKILL.md`); the canonical spec is `docs/gamma/cdd/CDD.md` §5.3 row 7a (authority-sync); both updated in the same #198 commit alongside check 7 for v3.39.0's F1. The PR #198 body cites **both** v3.39.0 F1 and this cycle F1 as the motivating precedents.
+docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md:177:| 12 Assess | `docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | Scoring C_Σ B+ · α A · β A · γ B · L5. §9.1 cycle iteration section present (3 triggers fired). Explicit retroactive §12a disposition citing PR #198 as landed corrective for both this cycle's F1 and v3.39.0's F1. |
+docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md:178:| 12a Skill patch | **PR #198 (already shipped)** — §2.5b checks 7 + 8 across `src/agent/skills/cdd/SKILL.md`, `packages/cnos.core/skills/cdd/SKILL.md` (build-sync), and `docs/gamma/cdd/CDD.md` §5.3 row 7a (authority-sync). The PR #198 body explicitly cites both v3.39.0 F1 (library-name collision) and this cycle F1 (ppx_expect stderr mismatch) as motivating precedents | post-release, cdd | Patch landed ahead of this assessment via a standalone skill-patch PR that was written in parallel with the v3.40.0 R1 fix commits. Check 7 targets v3.39.0's F1 class. Check 8 targets this cycle's F1 class. One PR, two corrective checks, closes two cycles' §12a requirements simultaneously. |
+docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md:193:1. **`docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md`** — this file.
+docs/gamma/cdd/3.40.0/POST-RELEASE-ASSESSMENT.md:194:2. **`docs/gamma/cdd/3.39.0/POST-RELEASE-ASSESSMENT.md`** — stacked in the same commit / same PR. Both cycles' §12a corrective is PR #198 (already shipped); writing them together avoids duplicating the §12a narrative across two separate PRs.
+docs/gamma/cdd/3.40.0/README.md:6:**Design:** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 "Move 2 — Pure-model gravity into `src/lib/`" + the v3.39.0 status block naming slice 3 as next
+docs/gamma/cdd/3.40.0/README.md:74:- [ ] **AC8** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status block updated: slice 3 shipped, 1 remaining (activation evaluator).
+docs/gamma/cdd/3.40.0/README.md:96:| F | Update `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status: slice 3 shipped, 1 remaining (activation evaluator) | AC8 |
+docs/gamma/cdd/3.40.0/README.md:112:- `docs/alpha/agent-runtime/CORE-REFACTOR.md` — §7 Move 2 status block (slice 3 shipped)
+docs/gamma/cdd/3.40.0/README.md:126:| 3 Bootstrap | `docs/gamma/cdd/3.40.0/` | — | this file + SELF-COHERENCE + GATE |
+docs/gamma/cdd/3.40.0/SELF-COHERENCE.md:44:- `grep -rn "Cn_workflow\.\(trigger\|permissions\|step\|orchestrator\|issue_kind\|issue\|require_string\|parse_string_list\|parse_trigger\|parse_permissions\|parse_step\|parse\|step_id\|validate\|manifest_orchestrator_ids\|Op_step\|Llm_step\|If_step\|Match_step\|Return_step\|Fail_step\|Missing_field\|Unknown_step_kind\|Duplicate_step_id\|Invalid_step_ref\|Permission_gap\|Llm_without_permission\|Empty_steps\)"` → 27 source-tree matches for moved types in `test/cmd/cn_workflow_test.ml` (all resolve through re-exports as listed above). Plus expected informational matches in `docs/gamma/cdd/` historical self-coherence docs.
+docs/gamma/cdd/3.40.0/SELF-COHERENCE.md:79:| `docs/alpha/agent-runtime/CORE-REFACTOR.md` | +1 status block (v3.40.0 Move 2 slice 3 shipped; preserves v3.38.0 + v3.39.0 blocks) |
+docs/gamma/cdd/3.40.0/SELF-COHERENCE.md:80:| `docs/gamma/cdd/3.40.0/` (new) | README (bootstrap, ~200 lines) + this file + GATE |
+docs/gamma/cdd/3.40.0/SELF-COHERENCE.md:106:| 2 | Self-coherence artifact present | ✅ | `docs/gamma/cdd/3.40.0/SELF-COHERENCE.md` — this file |
+docs/gamma/cdd/3.40.0/SELF-COHERENCE.md:134:   - **AC8** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status block updated: v3.40.0 block appended after v3.39.0 block, naming 1 remaining slice (activation evaluator from `cn_activation.ml`). Status history is cumulative — v3.38.0 + v3.39.0 blocks preserved for audit trail.
+docs/gamma/cdd/3.40.0/SELF-COHERENCE.md:166:| Design | `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 (with v3.38.0 + v3.39.0 + v3.40.0 status blocks) |
+docs/gamma/cdd/3.40.0/SELF-COHERENCE.md:167:| Bootstrap | `docs/gamma/cdd/3.40.0/README.md` |
+docs/gamma/cdd/3.40.0/SELF-COHERENCE.md:168:| Pattern references (prior slices) | slice 1: `docs/gamma/cdd/3.38.0/SELF-COHERENCE.md` + `src/lib/cn_package.ml`; slice 2: `docs/gamma/cdd/3.39.0/SELF-COHERENCE.md` + `src/lib/cn_contract.ml` |
+docs/gamma/cdd/3.41.0/GATE.md:8:  - [x] Bootstrap: `docs/gamma/cdd/3.41.0/README.md` (8 ACs + Move 2 complete milestone + §1.4 compliance trace)
+docs/gamma/cdd/3.41.0/GATE.md:20:2. **Self-coherence present.** ✅ `docs/gamma/cdd/3.41.0/SELF-COHERENCE.md`
+docs/gamma/cdd/3.41.0/POST-RELEASE-ASSESSMENT.md:101:| 12 Assess | `docs/gamma/cdd/3.41.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | Scoring: C_Σ A · α A · β A+ · γ A · L7. MCI freeze continues. No skill patches needed. |
+docs/gamma/cdd/3.41.0/README.md:6:**Design:** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 "Move 2 — Pure-model gravity into `src/lib/`" + the v3.38.0 / v3.39.0 / v3.40.0 status blocks (this cycle adds the final status block: **Move 2 complete**)
+docs/gamma/cdd/3.41.0/README.md:67:- [ ] **AC8** `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status block updated: **Move 2 complete (0 remaining slices)**. The status block grows a v3.41.0 entry; the "remaining candidates" line becomes "(none — Move 2 complete)."
+docs/gamma/cdd/3.41.0/README.md:87:| F | Update `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 Move 2 status: v3.41.0 block added, naming Move 2 as complete and referencing #192 as the now-unblocked next track | AC8 |
+docs/gamma/cdd/3.41.0/README.md:103:- `docs/alpha/agent-runtime/CORE-REFACTOR.md` — §7 Move 2 status block (v3.41.0 entry: Move 2 complete)
+docs/gamma/cdd/3.41.0/README.md:116:| 3 Bootstrap | `docs/gamma/cdd/3.41.0/` | — | this file + SELF-COHERENCE + GATE |
+docs/gamma/cdd/3.41.0/SELF-COHERENCE.md:46:- `grep -rn "Cn_activation\.\(frontmatter\|empty_frontmatter\|split_lines\|extract_block\|parse_key_value\|is_list_item\|list_item_value\|parse_frontmatter\|manifest_skill_ids\|issue_kind\|issue\b\|issue_kind_label\|Missing_skill\|Empty_triggers\|Trigger_conflict\)"` → 2 source-tree matches: `src/cmd/cn_doctor.ml` (6 reference sites) + `test/cmd/cn_activation_test.ml` (~18 reference sites). All resolve through re-exports + delegating let-bindings as enumerated in §Beta above. Historical matches in `docs/gamma/cdd/` frozen snapshot docs are expected and informational only.
+docs/gamma/cdd/3.41.0/SELF-COHERENCE.md:83:| `docs/alpha/agent-runtime/CORE-REFACTOR.md` | +1 status block (v3.41.0 Move 2 complete, with milestone callout) |
+docs/gamma/cdd/3.41.0/SELF-COHERENCE.md:84:| `docs/gamma/cdd/3.41.0/` (new) | README + this file + GATE |
+docs/gamma/cdd/3.41.0/SELF-COHERENCE.md:128:| Design | `docs/alpha/agent-runtime/CORE-REFACTOR.md` §7 (with v3.41.0 "✅ Move 2 complete" status block) |
+docs/gamma/cdd/3.41.0/SELF-COHERENCE.md:129:| Bootstrap | `docs/gamma/cdd/3.41.0/README.md` |
+docs/gamma/cdd/3.42.0/POST-RELEASE-ASSESSMENT.md:51:Both synced across `src/agent/skills/`, `packages/cnos.core/skills/`, and `docs/gamma/cdd/CDD.md`.
+docs/gamma/cdd/3.42.0/POST-RELEASE-ASSESSMENT.md:78:**Before this release:** `docs/beta/architecture/PACKAGE-SYSTEM.md` (620 lines) described Git as the canonical package transport. `OPERATOR.md` linked to it. Alpha doc referenced it as "system-level design."
+docs/gamma/cdd/3.42.0/POST-RELEASE-ASSESSMENT.md:83:1. `wc -l docs/beta/architecture/PACKAGE-SYSTEM.md` → 18 lines
+docs/gamma/cdd/3.42.0/POST-RELEASE-ASSESSMENT.md:85:3. `grep -ri "git.native" docs/alpha/ docs/beta/ --include="*.md"` → only the retired doc's redirect text
+docs/gamma/cdd/3.56.1/POST-RELEASE-ASSESSMENT.md:193:  - [x] This post-release assessment committed to `docs/gamma/cdd/3.56.1/POST-RELEASE-ASSESSMENT.md` (`5436dbb`, amended by this correction commit)
+docs/gamma/cdd/3.56.1/POST-RELEASE-ASSESSMENT.md:212:- **Daily reflection:** **deferred** — β does not hold write access to the `cn-beta` hub reflection surface from this session context. The reflection content (cycle state, scoring, MCI status, next move) is nonetheless captured verbatim in this assessment (§1, §2, §4a, §7) so the state is recoverable by any next session that reads `docs/gamma/cdd/3.56.1/POST-RELEASE-ASSESSMENT.md`. This is a known compaction gap pattern (3.41.0 precedent), mitigated here by in-repo artifact carrying the same content.
+docs/gamma/cdd/3.56.2/POST-RELEASE-ASSESSMENT.md:165:Invariants document (`docs/alpha/DESIGN-CONSTRAINTS.md`) was not modified by this cycle; the tightening of T-004 is a preserve-tightened status update, not a revision.
+docs/gamma/cdd/3.56.2/POST-RELEASE-ASSESSMENT.md:197:  - [x] This post-release assessment committed to `docs/gamma/cdd/3.56.2/POST-RELEASE-ASSESSMENT.md` (`f302428`, amended by this correction commit)
+docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md:210:| 12 Assess | this file (`docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md`) | post-release, writing | assessment completed |
+docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md:215:cnos maintains `docs/alpha/DESIGN-CONSTRAINTS.md` as the canonical invariants surface. Constraints touched this cycle:
+docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md:254:  - ✅ Post-release assessment (this file) committed to `docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md`.
+docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md:260:  - **OCaml `cn_doctor.ml` severity divergence note in a doctrine surface** — currently the many-to-many activation model lives only in `src/go/internal/doctor/doctor.go` line 107–109 comments. Capturing it in a doctrine doc (candidate: `docs/alpha/package-system/PACKAGE-ARTIFACTS.md` activation section, or a new `docs/alpha/ACTIVATION-MODEL.md`) is a future-cycle docs task.
+docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md:272:The cnos-kernel repository does not maintain a hub-memory surface distinct from `.cdd/releases/`. Prior releases treated the β close-out under `.cdd/releases/<version>/beta/<issue>.md` as the adhoc-thread analog (cross-session continuity for the Go-port / skill-activation / CDD-evolution threads), and the post-release assessment under `docs/gamma/cdd/<version>/POST-RELEASE-ASSESSMENT.md` as the daily-reflection analog.
+docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md:274:- **Daily reflection analog:** this assessment, at `docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md`. Committed in the same commit as §7 closure.
+docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md:281:Signed: β (`beta@cdd.cnos`) · 2026-04-24 · release commit `3357409` · merge commit `41485ad` · assessment `docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md`
+docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md:257:| 12 Assess | this file (`docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md`) | post-release, gamma | rollup assessment completed; CHANGELOG provisional score (A-/A-/A-/A-, L7) confirmed without revision |
+docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md:263:cnos maintains `docs/alpha/DESIGN-CONSTRAINTS.md` as the canonical invariants surface. Constraints touched this rollup:
+docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md:298:- ✅ Post-release assessment (this file) committed to `docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md` per CDD `cafb399` ownership move.
+docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md:321:- **Daily reflection analog:** this assessment, at `docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md`. Committed in the same commit as the skill patches per CDD §10.1 step 12a.
+docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md:338:Signed: γ (`sigma@cdd.cnos`) · 2026-04-25 · release commit `8b1c348` · tag `3.58.0` · PRA at `docs/gamma/cdd/3.58.0/POST-RELEASE-ASSESSMENT.md` · skill patches landing in same commit per CDD §10.1 step 12a (`alpha/SKILL.md §2.3 + §2.6 + §2.7`, `review/SKILL.md §2.1.3`)
+docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md:134:- **CDD β (surface agreement):** **3/4.** Release-time state agrees across all surfaces: VERSION + cn.json + 3 cn.package.json files all on 3.59.0; CHANGELOG TSC row reflects scoring (A-/A-/A/A-/L6); RELEASE.md + GitHub release body identical (release was published from RELEASE.md per `release.yml`'s `body_path: RELEASE.md`); β close-out at `.cdd/releases/3.59.0/beta/CLOSE-OUT.md`; α close-out at `.cdd/releases/3.59.0/alpha/CLOSE-OUT.md`; this PRA at `docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md`; all bare-version tags per §5.3a. Architecture check 6/7 yes (1 n/a); INVARIANTS T-002 / T-004 preserved-tightened; DESIGN-CONSTRAINTS §1 / §2.2 / §6.3 tightened, §3.2 / §3.1 / §4.1 / §4.2 / §5.0 / §6.1 / §6.2 preserved. **Drop from 4:** F1 authority-surface conflict (the parallel parser that reached review). Symmetric β-side observation in close-out: review §2.2.8 caught it, but caught it at R1 rather than at authoring time — one cross-surface drift reached the review surface.
+docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md:232:| 12 Assess | this file (`docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md`) | post-release, gamma | cycle assessment completed; CHANGELOG provisional score (A-/A-/A/A-/L6 cycle cap; L7 diff) confirmed without revision |
+docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md:238:cnos maintains `docs/alpha/DESIGN-CONSTRAINTS.md` as the canonical invariants surface. Constraints touched this cycle:
+docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md:254:Cross-reference to `docs/alpha/architecture/INVARIANTS.md`:
+docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md:281:- ✅ Post-release assessment (this file) committed to `docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md` per CDD `cafb399` ownership.
+docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md:289:- **Pre-existing stale doc-path references on `main`** — `eng/go/SKILL.md` §2.17 + §2.18 reference `INVARIANTS.md` (actual path: `docs/alpha/architecture/INVARIANTS.md`); `src/go/internal/pkg/pkg.go:134` references `POLYGLOT-PACKAGES-AND-PROVIDERS.md` (actual path: `docs/alpha/agent-runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md`). Both pre-existing, out of #230 scope. Defer-to-next-touch (the next cycle that edits §2.17 or pkg.go can include the path-string repair as a small-change-path immediate output per CDD §5.6 frozen-snapshot rule's path-reference-repair allowance).
+docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md:307:- **Daily reflection analog:** this assessment, at `docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md`. Committed in the same commit as the skill patches per CDD §10.1 step 12a.
+docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md:325:Signed: γ (`gamma@cdd.cnos`) · 2026-04-26 · release commit `9dd30d9d` · tag `3.59.0` (operator-pushed at 11:20:37Z window) · GitHub release `3.59.0` published with 12-asset matrix · PRA at `docs/gamma/cdd/3.59.0/POST-RELEASE-ASSESSMENT.md` · γ close-out at `.cdd/releases/3.59.0/gamma/CLOSE-OUT.md` · skill patches landing in same commit per CDD §10.1 step 12a (`cdd/CDD.md §Tracking` synchronous-baseline + glob-template; `cdd/alpha/SKILL.md §2.6` row 9 polyglot re-audit; `eng/go/SKILL.md §2.17` diff-local canonical generalization)
+docs/gamma/cdd/3.60.0/POST-RELEASE-ASSESSMENT.md:12:  - **γ** holds A-. Not the cycle's γ (this is a δ-authored PRA). The A- captures: issue #235 was high-quality at dispatch (all γ §2.4 fields present, Tier 3 skills named, design constraints linked, non-goals stated); dispatch was right-sized (small substantial MCA). The minus reflects: issue body cited stale `docs/alpha/INVARIANTS.md` path (β's N4); harness branch naming (`claude/alpha-tier-3-skills-M8Vce`) continues the non-canonical CDD §4.2 pattern from 3.59.0 — same observation, still unresolved.
+docs/gamma/cdd/3.60.0/POST-RELEASE-ASSESSMENT.md:52:- **Issue body stale doc-path.** #235 body cited `docs/alpha/INVARIANTS.md`; canonical is `docs/alpha/architecture/INVARIANTS.md`. Did not affect implementation. γ-side issue-quality observation.
+docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md:160:| 12 Assess | `docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | assessment completed; provisional CHANGELOG row accepted as-is (γ does not revise β's release-time scoring); two §9.1 triggers fired with explicit dispositions |
+docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md:166:The cnos repo does not maintain a single canonical `INVARIANTS.md`; the architectural constraints live distributed across `docs/alpha/DESIGN-CONSTRAINTS.md` (where present), `docs/alpha/ctb/LANGUAGE-SPEC.md` §2 / §10 / §11 (CTB v0.1 skill-module shape), and `CDD.md` §1.4 / §5.3 / §5.3a (lifecycle, artifact contract, location matrix). For this cycle, the invariants touched are:
+docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md:170:| `CDD.md` §5.3a Artifact Location Matrix (PRA path = `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`; cycle dir post-release = `.cdd/releases/{X.Y.Z}/{N}/`) | yes | preserved (PRA at `docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md`; cycle dir at `.cdd/releases/3.63.0/301/`) |
+docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md:195:  - PRA at `docs/gamma/cdd/3.63.0/POST-RELEASE-ASSESSMENT.md` (this file)
+docs/gamma/cdd/3.78.0/POST-RELEASE-ASSESSMENT.md:142:| 12 Assess | `docs/gamma/cdd/3.78.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | Assessment completed — three skill patches landed (β/SKILL.md row 3; activate SKILL.md calls; R5-activate kata) |
+docs/gamma/cdd/3.79.0/POST-RELEASE-ASSESSMENT.md:158:| 12 Assess | `docs/gamma/cdd/3.79.0/POST-RELEASE-ASSESSMENT.md` (this file) | post-release | Assessment completed — one skill patch landed (alpha/SKILL.md §2.6 row 14 SHA-citation invariant); one deferred MCA filed (I4 link validation remediation). |
+docs/gamma/cdd/3.81.0/POST-RELEASE-ASSESSMENT.md:165:| 12 Assess | `docs/gamma/cdd/3.81.0/POST-RELEASE-ASSESSMENT.md` | post-release | Assessment completed; no immediate skill patches; #373 escalated |
+docs/gamma/cdd/3.81.0/POST-RELEASE-ASSESSMENT.md:191:  - PRA written: `docs/gamma/cdd/3.81.0/POST-RELEASE-ASSESSMENT.md` (this artifact)
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:29:docs/gamma/cdd/
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:30:docs/gamma/cdd/{version}/POST-RELEASE-ASSESSMENT.md
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:31:docs/gamma/cdd/{PLAN,SELF-COHERENCE,GATE}-TEMPLATE.md
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:32:docs/gamma/cdd/RATIONALE.md
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:149:docs/gamma/cdd  version surface
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:525:- `docs/gamma/cdd/RATIONALE.md` exists.
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:526:- `docs/gamma/cdd/3.15.2/RATIONALE.md` exists as a frozen snapshot.
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:528:**Patch option A:** Change CDD.md §11.2 to: "`docs/gamma/cdd/RATIONALE.md` explains why CDD takes this shape. Frozen release snapshots may also contain version-local rationale files."
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:530:**Patch option B:** Add `src/packages/cnos.cdd/skills/cdd/RATIONALE.md` as a pointer file: "Canonical rationale: `docs/gamma/cdd/RATIONALE.md`"
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:598:docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:615:- For this package, actual observed release assessment path: `docs/gamma/cdd/3.57.0/POST-RELEASE-ASSESSMENT.md`
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:620:  - `docs/gamma/cdd/$VERSION/POST-RELEASE-ASSESSMENT.md`
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:631:| Version snapshot directory | `docs/{tier}/{bundle}/{X.Y.Z}/` | `docs/gamma/cdd/{X.Y.Z}/` | `.cdd/` is not the frozen snapshot |
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:632:| POST-RELEASE-ASSESSMENT.md | `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `.cdd/releases/.../ASSESSMENT.md` is triadic scratch/legacy unless explicitly declared canonical |
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:642:Then update `post-release/SKILL.md` Writing process step 1 to: "Create the assessment file at `docs/gamma/cdd/X.Y.Z/POST-RELEASE-ASSESSMENT.md` for the CDD package, or more generally at `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`."
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:697:  - `docs/gamma/cdd/PLAN-TEMPLATE.md`
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:698:  - `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md`
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:699:  - `docs/gamma/cdd/GATE-TEMPLATE.md`
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:700:- `post-release/SKILL.md` references the same `docs/gamma/cdd` template area.
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:701:- These files exist in `docs/gamma/cdd/`, not under `src/packages/cnos.cdd`.
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:705:**Patch option A:** Leave paths unchanged and add to `cn.package.json` or package README: "This package has repo-level documentation template dependencies under `docs/gamma/cdd/`."
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:709:**No edit — design question for operator:** Are skill packages supposed to be self-contained, or may they depend on repo-level `docs/gamma/cdd` templates?
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:844:- actual observed CDD package assessments live in `docs/gamma/cdd/{version}/`.
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:866:- `docs/gamma/cdd/RATIONALE.md` exists.
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:900:16. Repoint CDD.md §11.2: `docs/gamma/cdd/RATIONALE.md` or add package-local pointer `RATIONALE.md`
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:920:   - Current package references `docs/gamma/cdd` templates.
+docs/gamma/cdd/CDD-PACKAGE-AUDIT.md:931:   - If `.cdd/` is intended as canonical, CDD.md §9.1 and `docs/gamma/cdd` assessment practice must change.
+docs/gamma/cdd/ISSUE-CONSOLIDATION-ANALYSIS.md:452:Signed: α (`alpha@cdd.cnos`) · 2026-04-25 · branch `claude/consolidate-issue-bundles-mOkM7` · doc at `docs/gamma/cdd/ISSUE-CONSOLIDATION-ANALYSIS.md`.
+docs/gamma/cdd/OVERVIEW.md:6:**Placement:** γ document (`docs/gamma/cdd/`)
+docs/gamma/cdd/RATIONALE.md:6:**Placement:** γ document (`docs/gamma/cdd/`)
+docs/gamma/cdd/README.md:8:**Canonical-Path:** `docs/gamma/cdd/README.md`
+docs/gamma/cdd/docs/2026-05-10/POST-RELEASE-ASSESSMENT.md:125:| 12 Assess | `docs/gamma/cdd/docs/2026-05-10/POST-RELEASE-ASSESSMENT.md` | post-release/SKILL.md | Assessment complete; α A-, β A-, γ A-; C_Σ A- |
+docs/gamma/cdd/docs/2026-05-10/POST-RELEASE-ASSESSMENT.md:158:- `docs/gamma/cdd/docs/2026-05-10/POST-RELEASE-ASSESSMENT.md` written (this file)
+docs/gamma/cdd/docs/2026-05-11/POST-RELEASE-ASSESSMENT.md:126:| 12 Assess | `docs/gamma/cdd/docs/2026-05-11/POST-RELEASE-ASSESSMENT.md` | post-release/SKILL.md | Assessment complete; α A, β A, γ A; C_Σ A |
+docs/gamma/cdd/docs/2026-05-11/POST-RELEASE-ASSESSMENT.md:154:- `docs/gamma/cdd/docs/2026-05-11/POST-RELEASE-ASSESSMENT.md` written (this file)
+docs/gamma/cdd/docs/2026-05-12/344/POST-RELEASE-ASSESSMENT.md:141:| 12 Assess | `docs/gamma/cdd/docs/2026-05-12/344/POST-RELEASE-ASSESSMENT.md` | post-release/SKILL.md | Assessment complete; α A-, β A, γ A-, C_Σ A- |
+docs/gamma/cdd/docs/2026-05-12/344/POST-RELEASE-ASSESSMENT.md:171:- `docs/gamma/cdd/docs/2026-05-12/344/POST-RELEASE-ASSESSMENT.md` written (this file)
+docs/gamma/cdd/docs/2026-05-12/POST-RELEASE-ASSESSMENT.md:130:| 12 Assess | `docs/gamma/cdd/docs/2026-05-12/POST-RELEASE-ASSESSMENT.md` | post-release/SKILL.md | Assessment complete; α A, β A, γ A; C_Σ A |
+docs/gamma/cdd/docs/2026-05-12/POST-RELEASE-ASSESSMENT.md:158:- `docs/gamma/cdd/docs/2026-05-12/POST-RELEASE-ASSESSMENT.md` written (this file)
+docs/gamma/cdd/docs/2026-05-15/POST-RELEASE-ASSESSMENT.md:146:| 12 Assess | `docs/gamma/cdd/docs/2026-05-15/POST-RELEASE-ASSESSMENT.md` | post-release/SKILL.md | Assessment complete; α A, β A, γ A; C_Σ A |
+docs/gamma/cdd/docs/2026-05-15/POST-RELEASE-ASSESSMENT.md:168:- Immediate outputs executed: this PRA (`docs/gamma/cdd/docs/2026-05-15/POST-RELEASE-ASSESSMENT.md`); cycle evidence moved to `.cdd/releases/docs/2026-05-15/364/`; CHANGELOG row added; cycle/364 remote branch deleted
+docs/gamma/cdd/docs/2026-05-15/POST-RELEASE-ASSESSMENT.md:174:- `docs/gamma/cdd/docs/2026-05-15/POST-RELEASE-ASSESSMENT.md` written (this file)
+docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT-476.md:165:| 12 Assess | this PRA at `docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT-476.md`; cycle artifacts at `.cdd/releases/docs/2026-06-21/476/` per `release/SKILL.md §2.5b` | post-release; gamma/SKILL.md §2.7; release/SKILL.md §2.5b | assessment completed; docs-only disconnect via §2.5b; per-cycle suffix on PRA filename preserves disambiguation with cycle/470's same-day PRA |
+docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT-476.md:211:- this PRA at `docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT-476.md` (committed at `adde4e8f`; this commit you are reading is the post-PRA amendment that swaps `TBD-1` / `TBD-2` placeholders for actual `[cnos#478]` / `[cnos#479]` references after the MCP re-authorized and the issues filed cleanly)
+docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT.md:160:| 12 Assess | this PRA at `docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT.md`; cycle artifacts at `.cdd/releases/docs/2026-06-21/470/` per `release/SKILL.md §2.5b` | post-release; gamma/SKILL.md §2.7; release/SKILL.md §2.5b | assessment completed; docs-only disconnect via §2.5b |
+docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT.md:200:- this PRA at `docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT.md` (commit pending in same set as archive move)
+docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md:11:  - docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md
+docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md:12:  - docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md (cnos#150)
+docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md:188:Single-writer is **logical**, not physical. Per-day sharding (both directions: foreign `.cn-{agent}/logs/YYYYMMDD.md`, home `.cn-{agent}/threads/activations/{activation}/YYYYMMDD.md`) is the v0 default and handles the common case (one activation per day, or several appended sequentially in the same day's file). If concurrent activations on the same day still race, the next shard is per-activation-hour or per-activation-session. Signatures belong to a different topology — adversarial routing, distrusted operators — not to a more-volume version of this one (`docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md` v1).
+docs/gamma/design/README.md:5:These docs sit alongside `docs/gamma/essays/` (position papers) and the role-skill / handoff / cdd / cds / cdr packages (implementation surfaces). A doc lands here when:
+docs/gamma/design/README.md:23:- **`docs/gamma/essays/`** — position papers. Read essays for the *why* and the long-form vision; read design docs for the *what and where* a downstream cycle must pin.
+docs/gamma/design/README.md:24:- **`docs/gamma/cdd/`** — CDD-class docs and historical post-release assessments (PRAs). Read for archival precedent; do not edit historical records.
+docs/gamma/design/README.md:25:- **`docs/alpha/essays/`** — foundational position papers (C≡ / TSC / CTB / cnos stack). Cited from γ-class designs.
+docs/gamma/essays/3.14.5/EXECUTABLE-SKILLS.md:398:[1] WHITEPAPER v2.0.3. "Moltbook Failed. Long Live Moltbook. — Git as a Native Communication Surface for AI Agents." docs/alpha/protocol/WHITEPAPER.md in cnos. https://github.com/usurobor/cnos
+docs/gamma/essays/3.14.5/README.md:11:| STATELESS-AGENCY.md | docs/gamma/essays/STATELESS-AGENCY.md |
+docs/gamma/essays/3.14.5/README.md:12:| EXECUTABLE-SKILLS.md | docs/gamma/essays/EXECUTABLE-SKILLS.md |
+docs/gamma/essays/3.14.5/SELF-COHERENCE.md:3:See `docs/gamma/cdd/3.14.5/SELF-COHERENCE.md` for the full branch-level report. This bundle's migration is part of #91.
+docs/gamma/plans/CAR-implementation-plan.md:110:| `docs/alpha/cognitive-substrate/CAR.md` | Updated to v3.5 |
+docs/gamma/plans/INVARIANT-HARDENING-v1.md:5:**Implements:** `docs/gamma/rules/INVARIANTS.md`
+docs/gamma/plans/INVARIANT-HARDENING-v1.md:61:**Path:** `docs/alpha/schemas/protocol-contract.json`
+docs/gamma/plans/INVARIANT-HARDENING-v1.md:137:- `docs/gamma/rules/INVARIANTS.md` — canonical invariant catalog
+docs/gamma/plans/INVARIANT-HARDENING-v1.md:138:- `docs/gamma/plans/INVARIANT-HARDENING-v1.md` — this plan
+docs/gamma/plans/INVARIANT-HARDENING-v1.md:139:- `docs/alpha/schemas/protocol-contract.json` — machine-readable protocol contract
+docs/gamma/plans/PLAN-package-system.md:6:**Implements:** docs/beta/architecture/PACKAGE-SYSTEM.md (retired; see docs/alpha/package-system/PACKAGE-SYSTEM.md)
+docs/gamma/plans/PLAN-runtime-extensions.md:80:- add schema under docs/alpha/schemas/
+docs/gamma/plans/PLAN-v3.13.0-docs-governance.md:17:1. **Feature bundles + snapshot rules** — create `docs/alpha/agent-runtime/`, `docs/alpha/runtime-extensions/` with bundle READMEs; move `runtime-extensions/v1.0.6/` into proper directory structure
+docs/gamma/plans/PLAN-v3.13.0-docs-governance.md:23:4. **Bootstrap CDD v1.3.0** — create version directory `docs/gamma/cdd/3.13.0/` with stub files (later renamed from v1.3.0 to v3.13.0)
+docs/gamma/plans/PLAN-v3.22.0-eng-lane-clarity.md:51:- docs/gamma/ENGINEERING-LEVELS.md
+docs/gamma/plans/PLAN-v3.22.0-eng-lane-clarity.md:61:- docs/gamma/ENGINEERING-LEVELS.md
+docs/gamma/plans/PLAN-v3.22.0-eng-lane-clarity.md:227:- eng/README.md links to docs/gamma/ENGINEERING-LEVELS.md
+docs/gamma/plans/PLAN-v3.22.0-eng-lane-clarity.md:270:- docs/gamma/ENGINEERING-LEVELS.md
+docs/gamma/plans/PLAN-v3.22.0-eng-lane-clarity.md:345:2. docs/gamma/ENGINEERING-LEVELS.md exists and defines L5/L6/L7 in stable cnos-local terms.
+docs/gamma/plans/PLAN-v3.8.0-n-pass-bind.md:70:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md` (already amended)
+docs/gamma/plans/PR-docs-governance-v3.13.0.md:14:- CDD feature bundle created: `docs/gamma/cdd/` with `v3.13.0/` frozen snapshot
+docs/gamma/plans/PR-docs-governance-v3.13.0.md:23:1. DOCUMENTATION-SYSTEM.md v1 said "canonical docs never versioned" but docs/alpha/ had version-stamped files. No bundle structure, no snapshot placement rules, no navigation.
+docs/gamma/rules/3.14.5/INVARIANTS.md:78:A structured protocol contract (`docs/alpha/schemas/protocol-contract.json`) must exist in machine-readable form and be checked against code.
+docs/gamma/rules/3.14.5/README.md:11:| RULES.md | docs/gamma/rules/RULES.md |
+docs/gamma/rules/3.14.5/README.md:12:| INVARIANTS.md | docs/gamma/rules/INVARIANTS.md |
+docs/gamma/rules/3.14.5/SELF-COHERENCE.md:3:See `docs/gamma/cdd/3.14.5/SELF-COHERENCE.md` for the full branch-level report. This bundle's migration is part of #91.
+docs/gamma/rules/INVARIANTS.md:78:A structured protocol contract (`docs/alpha/schemas/protocol-contract.json`) must exist in machine-readable form and be checked against code.
+docs/gamma/smoke/cds-dispatch-smoke-20260623.md:93:docs/gamma/smoke/cds-dispatch-smoke-20260623.md
+docs/gamma/smoke/cds-dispatch-smoke-20260623.md:110:- AC4: `docs/gamma/smoke/cds-dispatch-smoke-20260623.md` exists; 6 evidence sections present. **PASS.**
+docs/papers/ACTIVATION-NOT-DEPLOYMENT.md:4:- [agent doctrine](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/README.md) — structural ground (CFA, EFA, JFA, IFA); see Doctrine lineage below
+docs/papers/ACTIVATION-NOT-DEPLOYMENT.md:27:[Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) grounds the receipt requirement: claim, evidence, and verdict must stay connected. A runner episode that leaves no evidence asks the next activation to inherit unverifiable closure.
+docs/papers/ACTIVATION-NOT-DEPLOYMENT.md:29:[Inheritance for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) grounds the continuity requirement: later cycles inherit named constraints, not appearances. A runner can write something back and still weaken continuity if it softens a prior commitment into a form that no longer constrains action.
+docs/papers/ACTIVATION-NOT-DEPLOYMENT.md:31:[Judgment for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) grounds debt and close-out language: when no move preserves every boundary, the agent must name what it protected, what it breached, and what remains unpaid.
+docs/papers/ACTIVATION-NOT-DEPLOYMENT.md:33:[Ethics for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) grounds the future-cycle concern: undocumented drift affects later agents that must inherit the surface left behind.
+docs/papers/ACTIVATION-NOT-DEPLOYMENT.md:178:    "docs/alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md",
+docs/papers/AGENT-COMMS-FUTURES-KISS.md:362:- `Agent Activation Log Convention v0`: [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../gamma/conventions/AGENT-ACTIVATION-LOG-v0.md)
+docs/papers/AGENT-CONTINUITY.md:4:- [agent doctrine](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/README.md) — structural ground (CFA, EFA, JFA, IFA); see Doctrine lineage below
+docs/papers/AGENT-CONTINUITY.md:25:[Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) grounds the receipt requirement: claim, evidence, and verdict must stay connected. A runner episode that leaves no evidence asks the next activation to inherit unverifiable closure.
+docs/papers/AGENT-CONTINUITY.md:27:[Inheritance for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/inheritance-for-agents/INHERITANCE-FOR-AGENTS.md) grounds the continuity requirement: later cycles inherit named constraints, not appearances. A runner can write something back and still weaken continuity if it softens a prior commitment into a form that no longer constrains action.
+docs/papers/AGENT-CONTINUITY.md:29:[Judgment for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) grounds debt and close-out language: when no move preserves every boundary, the agent must name what it protected, what it breached, and what remains unpaid.
+docs/papers/AGENT-CONTINUITY.md:31:[Ethics for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) grounds the future-cycle concern: undocumented drift affects later agents that must inherit the surface left behind.
+docs/papers/AGENT-MEMORY-LOG-STRUCTURED.md:207:    - target: docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md
+docs/papers/AGENT-MEMORY-LOG-STRUCTURED.md:499:- Agent Activation Log Convention v0, [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../gamma/conventions/AGENT-ACTIVATION-LOG-v0.md)
+docs/papers/CCNF-AND-TYPED-TRUST.md:8:  - docs/gamma/ENGINEERING-LEVELS.md
+docs/papers/CCNF-AND-TYPED-TRUST.md:383:Land this document under `docs/gamma/essays/` and point to it from the essays README.
+docs/papers/CCNF-AND-TYPED-TRUST.md:458:- `docs/gamma/ENGINEERING-LEVELS.md`
+docs/papers/CELL-OF-CELLS.md:16:  - docs/gamma/design/ccnf-o-track-a1-survey.md
+docs/papers/COHERENCE-SYSTEM.md:601:- `docs/alpha/doctrine/FOUNDATIONS.md`
+docs/papers/COHERENCE-SYSTEM.md:609:- `docs/alpha/agent-runtime/CAA.md`
+docs/papers/COHERENCE-SYSTEM.md:612:- `docs/alpha/agent-runtime/AGENT-RUNTIME.md`
+docs/papers/COHERENCE-SYSTEM.md:615:- `docs/alpha/cognitive-substrate/CAR.md`
+docs/papers/COHERENCE-SYSTEM.md:618:- `docs/gamma/cdd/CDD.md`
+docs/papers/DECREASING-INCOHERENCE.md:528:Add this file under `docs/gamma/essays/` and add a short pointer to `docs/gamma/essays/README.md`.
+docs/papers/DUMB-MODELS-SMART-CELLS.md:817:- docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md
+docs/papers/DUMB-MODELS-SMART-CELLS.md:819:- docs/alpha/agent-runtime/PROVIDER-CONTRACT-v1.md
+docs/papers/DUMB-MODELS-SMART-CELLS.md:820:- docs/alpha/agent-runtime/HYBRID-LLM-ROUTING.md
+docs/papers/EXECUTABLE-SKILLS.md:398:[1] WHITEPAPER v2.0.3. "Moltbook Failed. Long Live Moltbook. — Git as a Native Communication Surface for AI Agents." docs/alpha/protocol/WHITEPAPER.md in cnos. https://github.com/usurobor/cnos
+docs/papers/MANIFESTO.md:161:[1] "Moltbook Failed. Long Live Moltbook. Git as a Native Communication Surface for AI Agents." CN Whitepaper (Protocol v1 spec). docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md
+docs/papers/RELEASE-LEVEL-CLASSIFICATION.md:4:**Rubric**: `docs/gamma/ENGINEERING-LEVELS.md` §8 (diff-level) + `docs/gamma/cdd/CDD.md` §9.1 (cycle-level caps)
+docs/papers/RELEASE-LEVEL-CLASSIFICATION.md:8:- docs/gamma/ENGINEERING-LEVELS.md
+docs/papers/RELEASE-LEVEL-CLASSIFICATION.md:10:- docs/gamma/cdd/CDD.md §9.1
+schemas/README.md:11:[CTB LANGUAGE-SPEC.md](../docs/alpha/ctb/LANGUAGE-SPEC.md) §2 and §11.
+schemas/README.md:159:When [LANGUAGE-SPEC.md](../docs/alpha/ctb/LANGUAGE-SPEC.md) changes:
+schemas/README.md:183:- `docs/alpha/ctb/LANGUAGE-SPEC.md` — v0.1 spec governing field shape, stratification, and reserved vocabulary.
+schemas/README.md:184:- `docs/alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md` — v0.2 draft (out of scope until promoted).
+schemas/cdd/README.md:126:- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+schemas/cdd/README.md:133:- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+schemas/cdd/README.md:373:- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md) —
+src/go/cmd/cn/main.go:73:	// See docs/alpha/DESIGN-CONSTRAINTS.md §3.1.
+src/go/internal/cli/command.go:7:// Design authority: docs/alpha/agent-runtime/GO-KERNEL-COMMANDS.md
+src/go/internal/cli/dispatch.go:30:// Lookup order — see docs/alpha/DESIGN-CONSTRAINTS.md §3.1:
+src/go/internal/pkg/pkg.go:126:// (installed-package display), per docs/alpha/package-system/PACKAGE-SYSTEM.md
+src/ocaml/cmd/cn_workflow.ml:4:    `docs/alpha/agent-runtime/ORCHESTRATORS.md` §7-8.
+src/ocaml/lib/dune:5:; See docs/alpha/agent-runtime/CORE-REFACTOR.md §7 Move 2.
+src/ocaml/transport/cn_packet.ml:8:    Design: docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md *)
+src/packages/cnos.cdd/commands/cdd-verify/README.md:41:| `--bundle <path>` | Override PRA bundle dir (default `docs/gamma/cdd`). |
+src/packages/cnos.cdd/commands/cdd-verify/run.go:59:	a.Bundle = "docs/gamma/cdd" // default per bash predecessor
+src/packages/cnos.cdd/commands/cdd-verify/run.go:161:  --bundle <path>        bundle-relative PRA dir (default: docs/gamma/cdd)
+src/packages/cnos.cdd/commands/cdd-verify/test-cn-cdd-verify.sh:93:  mkdir -p "$repo/docs/gamma/cdd/$version"
+src/packages/cnos.cdd/commands/cdd-verify/test-cn-cdd-verify.sh:94:  cat > "$repo/docs/gamma/cdd/$version/POST-RELEASE-ASSESSMENT.md" <<EOF
+src/packages/cnos.cdd/commands/cdd-verify/test-cn-cdd-verify.sh:99:  git -C "$repo" add "docs/gamma/cdd/$version/POST-RELEASE-ASSESSMENT.md" >/dev/null
+src/packages/cnos.cdd/skills/cdd/CDD.md:119:- `docs/gamma/cdd/RATIONALE.md` — companion rationale for shape decisions
+src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md:118:5. enumerate every artifact the issue names — both `## Related artifacts` linked entries **and** any artifact named in inline prose (e.g. `## Parallel dependency`, `## Depends on`, "see also X.md", "drafted in parallel"). Read each before drafting; if a named artifact has no path, search the repo to resolve it. Surface unavailability to γ via the cycle's artifact channel before treating an artifact as skipped. *Derives from: #278 F1 — α-1 read `## Related artifacts` as the load list and missed the `## Parallel dependency` paragraph naming `docs/alpha/ctb/LANGUAGE-SPEC.md` only by description; β round-1 D-blocker repaired in α-2.*
+src/packages/cnos.cdd/skills/cdd/design/SKILL.md:134:  - ✅ "`src/packages/cnos.cdd/skills/cdd/CDD.md` is the canonical source; `docs/gamma/cdd/CDD.md` is a human-facing pointer and must continue to point to the right canonical path"
+src/packages/cnos.cdd/skills/cdd/gamma/SKILL.md:264:Then write the post-release assessment per `post-release/SKILL.md` at `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (CDD package: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). The PRA is γ's — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
+src/packages/cnos.cdd/skills/cdd/issue/constraints/SKILL.md:120:    "spec_ref": "docs/alpha/ctb/LANGUAGE-SPEC.md §2.1",
+src/packages/cnos.cdd/skills/cdd/issue/contract/SKILL.md:128:| CTB v0.1 frontmatter fields | docs/alpha/ctb/LANGUAGE-SPEC.md §2, §11 | current spec | governs current skill frontmatter |
+src/packages/cnos.cdd/skills/cdd/issue/contract/SKILL.md:195:- ✅ `docs/alpha/ctb/LANGUAGE-SPEC.md §2.1`
+src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md:51:The assessment produces one artifact at the canonical path `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (for the CDD package: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). All version strings in the artifact are bare `X.Y.Z`; do not use a `v` prefix.
+src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md:253:Did this cycle itself follow CDD coherently? Score each axis 1–4. The branch-level SELF-COHERENCE.md uses the template at `docs/gamma/cdd/SELF-COHERENCE-TEMPLATE.md`; this assessment-level check uses the same triadic axes:
+src/packages/cnos.cdd/skills/cdd/release-effector/SKILL.md:118:| Snapshot dir | `docs/gamma/cdd/3.67.0/` |
+src/packages/cnos.cdd/skills/cdd/release/SKILL.md:194:  - **No CHANGELOG ledger row.** The Release Coherence Ledger tracks tagged releases. γ records the cycle in `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md` instead — same PRA structure as a tagged release, just keyed by date.
+src/packages/cnos.cdd/skills/cdd/release/SKILL.md:212:  - ✅ γ writes `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md`
+src/packages/cnos.cdd/skills/cdd/release/SKILL.md:217:  - **Tag naming convention:** use bare version numbers without `v` prefix: `3.15.1`, not `v3.15.1`. This matches VERSION file content, branch naming (`claude/3.15.0-22-...`), and snapshot directory names (`docs/gamma/cdd/3.15.0/`). Consistency across all version surfaces.
+src/packages/cnos.cds/docs/extraction-map.md:188:**Source content:** PRA contents (measured coherence delta, encoding lag, MCA/MCI balance, process learning, review quality metrics, CDD self-coherence on α/β/γ axes, cycle iteration, next-move commitment); **§9.1 cycle iteration** triggers (review rounds > 2; mechanical ratio > 20%; avoidable tooling/environmental failure; loaded skill failed to prevent a finding); friction log; root cause classification; skill impact; MCA; **cycle-level L5/L6/L7 framework** (per `docs/gamma/ENGINEERING-LEVELS.md`). Operational realization in `post-release/SKILL.md`.
+src/packages/cnos.cds/docs/extraction-map.md:190:**Status:** **v0.1 migrated; canonical at [`CDS.md §"Assessment"`](../skills/cds/CDS.md).** Landed via [cnos#410](https://github.com/usurobor/cnos/issues/410) (Sub 5, B-lite thin extract). The PRA contents (seven sections: coherence measurement, encoding lag, process learning, review quality, CDS self-coherence, production verification, next move), the four §9.1 cycle-iteration triggers (review rounds > 2; mechanical ratio > 20%; avoidable tooling/environmental failure; loaded skill failed) preserved verbatim as anchor targets for Sub 6, the friction log (root cause classification / skill impact / MCA / disposition), and the L5/L6/L7 engineering-levels framework now live as canonical content in `CDS.md`; the v0.1 operational overlay continues to live in `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6 / §5.6a / §5.6b / §5.7`, `gamma/SKILL.md §2.7–§2.9`, and `docs/gamma/ENGINEERING-LEVELS.md` (cited from `CDS.md §"Assessment" → "Operational realization"`) until the v1 CDS-side role rewrite.
+src/packages/cnos.cds/docs/extraction-map.md:197:| §Assessment — cycle-level L5/L6/L7 framework (per `docs/gamma/ENGINEERING-LEVELS.md`) | `skills/cds/CDS.md §"Assessment" → "Engineering levels"` | Sub 5 | Verbatim move with citation; the L5/L6/L7 framework is software-class. |
+src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml:225:            - **Channel log convention (read-only for dispatch):** [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) — cited to document the admin/dispatch writer-locality split; the dispatch wake does NOT write channel entries.
+src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md:157:- **Channel log convention (read-only for dispatch):** [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) — cited to document the admin/dispatch writer-locality split; the dispatch wake does NOT write channel entries.
+src/packages/cnos.cds/orchestrators/cds-dispatch/wake-provider.json:128:      "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; this wake does NOT write channel logs but cites the convention to document the admin/dispatch writer-locality split)"
+src/packages/cnos.cds/skills/cds/CDS.md:1712:| plan | build | α | sequencing artifact OR explicit "not required" | `docs/gamma/cdd/PLAN-TEMPLATE.md` | L7 / cycle-sized |
+src/packages/cnos.cds/skills/cds/CDS.md:1718:| gate | release | δ | release-readiness preflight verdict | `docs/gamma/cdd/GATE-TEMPLATE.md` | always |
+src/packages/cnos.cds/skills/cds/CDS.md:1752:| Version snapshot directory | `docs/{tier}/{bundle}/{X.Y.Z}/` | `docs/gamma/cdd/{X.Y.Z}/` | `.cdd/releases/{X.Y.Z}/` is **not** the frozen snapshot — it is triadic protocol/scratch space |
+src/packages/cnos.cds/skills/cds/CDS.md:1753:| POST-RELEASE-ASSESSMENT.md (PRA) | `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` | `.cdd/releases/{X.Y.Z}/beta/POST-RELEASE-ASSESSMENT.md` and `.cdd/releases/{X.Y.Z}/beta/ASSESSMENT.md` are legacy/warn-only |
+src/packages/cnos.cds/skills/cds/CDS.md:2467:the PRA lives at `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md`
+src/packages/cnos.cds/skills/cds/CDS.md:2760:[`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/gamma/ENGINEERING-LEVELS.md).
+src/packages/cnos.cds/skills/cds/CDS.md:2834:- [`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/gamma/ENGINEERING-LEVELS.md)
+src/packages/cnos.cds/skills/cds/CDS.md:3113:  `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md` PRA
+src/packages/cnos.core/doctrine/AGENT-OPS.md:47:ops: [{"kind":"fs_read","path":"docs/alpha/agent-runtime/AGENT-RUNTIME.md"}]
+src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml:82:            4. **Status reporting.** Append today's channel log entry to `.cn-sigma/logs/$(date -u +%Y%m%d).md` per the entry format in [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) §5. Frontmatter MUST carry `cursor_in`, `cursor_out`, `at`, `mode`, and `class`. The `class:` field is one of: `heartbeat` (no-op wake, cursor advance only), `substantive` (real walk with work done), `inaugural` (first attach), `directive-out` (outbound directive, no walk), `cycle-complete` (reserved — wired in Sub 6 of cnos#467).
+src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml:168:            - **Channel log convention:** [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) — entry format, cursor mechanics, class taxonomy.
+src/packages/cnos.core/orchestrators/agent-admin/prompt.md:28:4. **Status reporting.** Append today's channel log entry to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` per the entry format in [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) §5. Frontmatter MUST carry `cursor_in`, `cursor_out`, `at`, `mode`, and `class`. The `class:` field is one of: `heartbeat` (no-op wake, cursor advance only), `substantive` (real walk with work done), `inaugural` (first attach), `directive-out` (outbound directive, no walk), `cycle-complete` (reserved — wired in Sub 6 of cnos#467).
+src/packages/cnos.core/orchestrators/agent-admin/prompt.md:114:- **Channel log convention:** [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) — entry format, cursor mechanics, class taxonomy.
+src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json:13:    "status reporting: append today's channel log entry per docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md; advance cursor",
+src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json:32:    "channel_log_convention": "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md",
+src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json:103:      "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; cursor mechanics §4; entry format §5; class taxonomy)"
+src/packages/cnos.core/skills/agent/attach/SKILL.md:18:  - access to the channel surfaces defined by `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`
+src/packages/cnos.core/skills/agent/attach/SKILL.md:27:  - the convention spec `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` (single source of truth for loop mechanics)
+src/packages/cnos.core/skills/agent/attach/SKILL.md:46:The channel surfaces and cursor mechanics are defined in `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`. This skill does not redefine them — it operationalizes them: it tells a body how to (a) detect which channel surface applies here, (b) detect whether this is the inaugural attach or a follow-up sync, and (c) execute the correct procedure for the detected combination.
+src/packages/cnos.core/skills/agent/attach/SKILL.md:323:- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — the two-artifact channel shape, cursor mechanism, entry format, trust boundary, single-writer caveat. This skill does not redefine these; it operationalizes the post-activation procedure for binding a body to a channel.
+src/packages/cnos.core/skills/agent/attach/SKILL.md:336:- `cnos:docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — the convention this skill operationalizes; field experience across three activations (Sigma-at-cnos, Sigma-at-bumpt, Sigma-at-home) confirmed the topology-fit framing.
+src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md:545:- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — channel convention; claim protocol is the implementation-cell analog of the activation-log write discipline.
+src/packages/cnos.core/skills/agent/emoji-language/SKILL.md:70:See: [CTB v4.0.0 Vision](../../../../../../docs/alpha/ctb/CTB-v4.0.0-VISION.md)
+src/packages/cnos.core/skills/agent/registration/SKILL.md:421:- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — `.cn-{agent}/state/activations.md` format and field definitions.
+src/packages/cnos.core/skills/agent/wake-provider/SKILL.md:125:| `output_contract` | object | Required keys depend on `role`. For `role: admin`: `channel_log_convention` (string; canonical doc path, e.g. `"docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md"`), `class_taxonomy` (array of allowed `class:` values for the channel entry's frontmatter), `cursor_advance` (boolean; whether the wake advances the channel cursor). For `role: dispatch`: `cycle_artifact_root` (string; the path under which cell artifacts land, e.g. `".cdd/unreleased/{N}/"`), `artifact_class_taxonomy` (array of canonical artifact class names the wake's cells emit, e.g. `["gamma-scaffold", "self-coherence", "beta-review", "beta-closeout", "alpha-closeout", "gamma-closeout"]`), `cell_runtime` (string; the cell framework whose role contracts the wake invokes — for software protocols today: `"cnos.cdd"`). |
+src/packages/cnos.core/skills/agent/wake-provider/SKILL.md:130:| `cross_references` | object | Required keys for traceability. Each value is an array of citation strings (package-path, issue ref, or canonical-doc path). At minimum: `architecture` (e.g. `["cnos#467"]`), `predecessors` (e.g. `["cnos#468"]`), `consumed_skills` (the skills the prompt invokes, e.g. `["cnos.core/skills/agent/activate", "cnos.core/skills/agent/attach"]`), `consumed_conventions` (e.g. `["docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md"]`). |
+src/packages/cnos.core/skills/agent/wake-provider/SKILL.md:355:- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — the channel log convention any wake's output contract cites.
+src/packages/cnos.eng/skills/eng/README.md:8:- docs/gamma/ENGINEERING-LEVELS.md
+src/packages/cnos.eng/skills/eng/README.md:216:See docs/gamma/ENGINEERING-LEVELS.md for the full shared definition.
+src/packages/cnos.handoff/docs/extraction-map.md:37:- **Sub 6** — "Cross-reference cleanup + close tracker" (P2; depends on Subs 2–5). Sweeps citations in `cnos.cdd` / `cnos.cds` / `cnos.cdr` (and the docs essays under `docs/gamma/`) to re-point at the new `cnos.handoff` canonical homes. Closes [cnos#404](https://github.com/usurobor/cnos/issues/404).
+src/packages/cnos.handoff/docs/extraction-map.md:233:**Status: v0.1 complete; cnos#404 wave closed 2026-05-22.** Landed via [cnos#420](https://github.com/usurobor/cnos/issues/420) (Sub 6 of [cnos#404](https://github.com/usurobor/cnos/issues/404)). The residual citation sweep across cnos.cdd / cnos.cdr / cnos.cds confirmed that all canonical-home statements correctly name `cnos.handoff/skills/handoff/<area>/SKILL.md`; old-path cites that remain are uniformly framed as "consumer-side", "role-side realization", "pointer", or "runbook (pointer to canonical home)" — the cdd-side surfaces correctly self-describe as consumers of the new canonical doctrine. The 28-line compatibility stub at `cnos.cdd/skills/cdd/cross-repo/SKILL.md` is preserved for backward compatibility (Sub 6 D6 decision; see Sub 6's gamma-closeout). The `.cdd/iterations/INDEX.md` header was re-pointed from `cdd/post-release/SKILL.md` to `cnos.handoff/skills/handoff/receipt-stream/SKILL.md` as the canonical wire-format home. Historical post-release-assessment documents under `docs/gamma/cdd/docs/2026-05-*/` were left untouched (immutable archival records of past cycles). cnos.cdr was not modified (no residual cites discovered).
+src/packages/cnos.handoff/docs/extraction-map.md:236:**Source content:** All cross-references in `cnos.cdd/`, `cnos.cdr/`, `cnos.cds/`, and `docs/gamma/` essays that cite handoff-class surfaces. Per-citation update: cite the new `cnos.handoff/skills/handoff/<area>/SKILL.md` canonical home rather than the pre-migration cdd / cds path.
+src/packages/cnos.handoff/docs/extraction-map.md:280:- **Q6 (Sub 6 scope of sweep).** Sub 6's citation sweep covers cnos.cdd / cnos.cdr / cnos.cds skill files. Does it also cover `docs/gamma/essays/*.md` and `docs/gamma/cdd/RATIONALE.md`? **Resolved (Sub 6 / cnos#420):** scope clarified to cover live citation surfaces (cdd / cdr / cds / handoff skill files + the `.cdd/iterations/INDEX.md` header). Historical post-release-assessment documents under `docs/gamma/cdd/docs/2026-05-*/` were explicitly excluded — they are immutable archival records of past cycles that describe what was true at the cycle's pin, not current canonical citations. `docs/gamma/essays/*.md` audited: no old-path-as-canonical residuals found.
+test/cmd/cn_contract_test.ml:3:    Verifies that code constants match docs/alpha/schemas/protocol-contract.json.
+test/cmd/cn_sandbox_test.ml:59:  show_normalize "docs/alpha/";
+test/cmd/cn_traceability_test.ml:5:    contract (docs/alpha/schemas/protocol-contract.json).

@@ -1,0 +1,4 @@
+./.github/workflows/install-wake-golden.yml
+./.cdd/unreleased/508/pass4-golden-inventory.txt
+./src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+./src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml
