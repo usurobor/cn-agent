@@ -322,7 +322,7 @@ All three substrate surfaces are now landed. δ-as-role's authority over the pla
 
 ## 8. Remote-runner delegation — δ-class effect surface
 
-Canonical doctrine: [`docs/gamma/essays/BOX-AND-THE-RUNNER.md`](../../../../../../docs/gamma/essays/BOX-AND-THE-RUNNER.md) (cnos#425, this section's authoring cycle). Landed alongside this section under the doctrine-before-first-use rule: the essay, this skill section, the first workflow artifact, and the first instantiated receipt all land in the same commit-set; the workflow's push trigger only fires post-merge, by which point the doctrine governs.
+Canonical doctrine: [`docs/papers/BOX-AND-THE-RUNNER.md`](../../../../../../docs/papers/BOX-AND-THE-RUNNER.md) (cnos#425, this section's authoring cycle). Landed alongside this section under the doctrine-before-first-use rule: the essay, this skill section, the first workflow artifact, and the first instantiated receipt all land in the same commit-set; the workflow's push trigger only fires post-merge, by which point the doctrine governs.
 
 **δ-class rule:** Any artifact an agent commits that, when present on its branch, causes another body to execute is a δ-class effect surface. δ holds authority over its authoring, not just over the receipt that closes the cell containing it.
 

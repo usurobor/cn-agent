@@ -46,8 +46,8 @@ cnos.handoff is **consumed** by cnos.cdd / cnos.cdr / cnos.cds today; consumed b
 - `cnos.cdd/skills/cdd/COHERENCE-CELL.md` and `COHERENCE-CELL-NORMAL-FORM.md` (kernel doctrine; handoff transports between cells)
 - cnos#404 (parent tracker)
 - cnos#405 (CCNF-O orchestration grammar — peer; composes cells over handoff's transport)
-- `docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`
-- `docs/gamma/essays/DECREASING-INCOHERENCE.md`
+- `docs/papers/CCNF-AND-TYPED-TRUST.md`
+- `docs/papers/DECREASING-INCOHERENCE.md`
 
 ---
 

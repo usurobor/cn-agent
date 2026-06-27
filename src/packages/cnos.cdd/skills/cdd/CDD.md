@@ -117,7 +117,7 @@ The canonical surfaces CDD cites are grouped by what they own:
 **Loader and rationale:**
 - [`SKILL.md`](SKILL.md) — package-visible loader entrypoint (not a second fact source)
 - `docs/gamma/cdd/RATIONALE.md` — companion rationale for shape decisions
-- `docs/gamma/essays/CCNF-AND-TYPED-TRUST.md` — the essay that pins the CCNF spine and the kernel/realization separation
+- `docs/papers/CCNF-AND-TYPED-TRUST.md` — the essay that pins the CCNF spine and the kernel/realization separation
 
 ## Software-specific realization → cnos.cds
 
@@ -143,7 +143,7 @@ Software-cycle realization detail lives in [`cnos.cds/skills/cds/CDS.md`](../../
 
 ## Hard rule
 
-The essay `docs/gamma/essays/CCNF-AND-TYPED-TRUST.md` pins: *"Do not finalize CDD.md until V works and domain evidence has somewhere else to live."* Both preconditions hold as of this rewrite:
+The essay `docs/papers/CCNF-AND-TYPED-TRUST.md` pins: *"Do not finalize CDD.md until V works and domain evidence has somewhere else to live."* Both preconditions hold as of this rewrite:
 
 - **V is executable.** The cn binary at `src/packages/cnos.cdd/commands/cdd-verify/` implements `V : Contract × Receipt → ValidationVerdict`. The operator-facing wrapper `cn cdd verify --receipt <path>` dispatches into V. Shipped under [cnos#392](https://github.com/usurobor/cnos/issues/392) (Phase 3 of #366).
 - **Domain evidence has homes.** `schemas/cdd/` (generic), `schemas/cds/` (software), and `schemas/cdr/` (research) all exist on `origin/main` per [cnos#388](https://github.com/usurobor/cnos/issues/388) (Phase 2.5 — generic/domain schema split). `cnos.cdr` v0.1 shipped per [cnos#376](https://github.com/usurobor/cnos/issues/376). `cnos.cds` v0.1 shipped under the [cnos#403](https://github.com/usurobor/cnos/issues/403) wave — the canonical software-realization doctrine lives at [`cnos.cds/skills/cds/CDS.md`](../../../cnos.cds/skills/cds/CDS.md).

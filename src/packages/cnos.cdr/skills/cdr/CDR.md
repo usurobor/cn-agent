@@ -127,11 +127,11 @@ The decision rationale and the schema-level precedent are sourced from:
 - [`schemas/cdd/README.md §"Architectural choice"`](../../../../../schemas/cdd/README.md#architectural-choice--generic-vs-domain-split)
   — the cnos#388 decision-record. Rationale (1)–(5) for the schema case;
   inherited here by reference.
-- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md §"Separate persona, protocol,
-  and project"`](../../../../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+- [`docs/papers/CCNF-AND-TYPED-TRUST.md §"Separate persona, protocol,
+  and project"`](../../../../../docs/papers/CCNF-AND-TYPED-TRUST.md)
   — the doctrinal source for treating persona, protocol, and project as
   three distinct layers.
-- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md §"Wave 4 — CDR bootstrap"`](../../../../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+- [`docs/papers/CCNF-AND-TYPED-TRUST.md §"Wave 4 — CDR bootstrap"`](../../../../../docs/papers/CCNF-AND-TYPED-TRUST.md)
   — declares the wave-shape: "Create `cnos.cdr` as the research overlay,
   anchored in cph but not defined by cph. CDR owns research role overlays.
   Rho owns the research persona. cph owns the project binding." CDR.md
@@ -498,7 +498,7 @@ CDR's empirical anchor is [`usurobor/cph`](https://github.com/usurobor/cph)
 — the research repository where the CDR pattern is realised in concrete
 research waves, datasets, and field reports. CDR is anchored in cph but
 not defined by cph (per
-[`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md §"Wave 4 — CDR bootstrap"`](../../../../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)):
+[`docs/papers/CCNF-AND-TYPED-TRUST.md §"Wave 4 — CDR bootstrap"`](../../../../../docs/papers/CCNF-AND-TYPED-TRUST.md)):
 cph is the project binding (layer 4 of the five-layer enforcement chain);
 CDR is the protocol overlay (layer 3); the layers are doctrinally
 independent.
@@ -576,7 +576,7 @@ Inherits, cites, or extends:
   CDR Field 3 names.
 - [`schemas/cdd/README.md §"Architectural choice"`](../../../../../schemas/cdd/README.md#architectural-choice--generic-vs-domain-split)
   — the upstream decision-record for the (a) split inherited above.
-- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../../../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+- [`docs/papers/CCNF-AND-TYPED-TRUST.md`](../../../../../docs/papers/CCNF-AND-TYPED-TRUST.md)
   — the L7 design essay; specifically `§"Separate persona, protocol, and
   project"` and `§"Wave 4 — CDR bootstrap"`.
 - [`src/packages/cnos.cdd/skills/cdd/CDD.md`](../../../../cnos.cdd/skills/cdd/CDD.md)

@@ -171,12 +171,12 @@ The decision rationale and the schema-level precedent are sourced from:
 - [`schemas/cdd/README.md §"Architectural choice"`](../../../../../schemas/cdd/README.md#architectural-choice--generic-vs-domain-split)
   — the cnos#388 decision-record. Rationale (1)–(5) for the schema case;
   inherited here by reference.
-- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md §"Separate persona, protocol,
-  and project"`](../../../../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+- [`docs/papers/CCNF-AND-TYPED-TRUST.md §"Separate persona, protocol,
+  and project"`](../../../../../docs/papers/CCNF-AND-TYPED-TRUST.md)
   — the doctrinal source for treating persona, protocol, and project as
   three distinct layers.
-- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md §"Wave 5 — CDS extraction by
-  reference"` and `§"Wave 7 — final CDD.md rewrite"`](../../../../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+- [`docs/papers/CCNF-AND-TYPED-TRUST.md §"Wave 5 — CDS extraction by
+  reference"` and `§"Wave 7 — final CDD.md rewrite"`](../../../../../docs/papers/CCNF-AND-TYPED-TRUST.md)
   — declare the wave-shape for the engineering-realization extraction. The
   CCNF spine landed at Phase 7 of cnos#366 (cycle/402); the cds extraction
   is the post-CCNF wave at cnos#403; CDS.md is its doctrinal-contract step.
@@ -354,7 +354,7 @@ design notes.
 - **Design notes** — the contract-shape surface. `cdd/design/SKILL.md`
   artifacts (invariant/volatile/boundary triplets), issue-body
   implementation contracts (per cnos#393 δ-as-architect), L7 essays in
-  `docs/gamma/essays/`. Design notes are α-matter when they pin a
+  `docs/papers/`. Design notes are α-matter when they pin a
   contract-shape decision a future cycle binds against; the design itself
   is matter, not metadata about matter.
 
@@ -2781,7 +2781,7 @@ The three levels (cited from `ENGINEERING-LEVELS.md`):
   invariants pinned, deprecated surfaces removed, architectural
   decompositions revised. L7 is the level of substantial design
   cycles (per the §Selection function's maximum-leverage rule); L7
-  cycles' PRAs carry an L7 essay in `docs/gamma/essays/` when the
+  cycles' PRAs carry an L7 essay in `docs/papers/` when the
   structural change is large enough to warrant standalone
   rationale-record.
 
@@ -3309,7 +3309,7 @@ contradiction. Spot-checks against the empirical cycle wave:
   every doctrine file), schemas (`schemas/cdd/`, `schemas/cds/`,
   `schemas/cdr/`), CI definitions (the GitHub Actions workflows), runtime
   contracts (`cn.package.json` per package, the package-discovery
-  conventions), and design notes (`docs/gamma/essays/`, the
+  conventions), and design notes (`docs/papers/`, the
   `cdd/design/SKILL.md` artifacts produced in cycle-authoring). The
   matter-type taxonomy decomposes the cnos-cycle output set without loss.
 - **Field 2 (Review oracle)** — cnos cycles use compilation +

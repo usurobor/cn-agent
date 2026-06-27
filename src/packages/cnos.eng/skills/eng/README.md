@@ -6,7 +6,7 @@ Purpose: Define the engineering skill suite, recommended loading bundles, and th
 
 Related:
 - docs/gamma/ENGINEERING-LEVELS.md
-- docs/gamma/essays/ENGINEERING-LEVEL-ASSESSMENT.md
+- docs/papers/ENGINEERING-LEVEL-ASSESSMENT.md
 
 ---
 

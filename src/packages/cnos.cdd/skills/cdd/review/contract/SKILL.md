@@ -77,7 +77,7 @@ For every load-bearing claim in the issue or PR body, verify the canonical sourc
 
 If paths changed, grep old paths across live docs and code.
 
-- ❌ "Manifesto lives under doctrine/" when canonical path is `docs/alpha/essays/MANIFESTO.md`.
+- ❌ "Manifesto lives under doctrine/" when canonical path is `docs/papers/MANIFESTO.md`.
 - ✅ Root README, docs README, and source map all point to the same canonical path.
 
 ### 3. Scope and non-goal consistency

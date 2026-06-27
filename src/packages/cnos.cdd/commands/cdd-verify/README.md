@@ -97,7 +97,7 @@ bash tests/cdd/test_cn_cdd_validate_receipt.sh   # 37-check AC oracle
 - `src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md` — V's validation contract
 - `src/packages/cnos.eng/skills/eng/go/SKILL.md` — binding doctrine for this Go code
 - `schemas/cdd/validation_verdict.schema.json` — stable JSON-schema contract
-- `docs/gamma/essays/CCNF-AND-TYPED-TRUST.md` §3 — CUE/V split design source
+- `docs/papers/CCNF-AND-TYPED-TRUST.md` §3 — CUE/V split design source
 - cnos#389 — Python predecessor (merged at 993d7f93)
 - cnos#391 — closed as rescoped (this issue supersedes)
 - cnos#392 — this cycle
