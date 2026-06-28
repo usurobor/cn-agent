@@ -107,7 +107,7 @@ None. All 15 ACs pass without β intervention. The link repairs and test-script 
 
 ## Overall verdict
 
-PASS
+PASS (β R0) — **superseded by δ accept-with-repair below: final verdict PASS-after-δ-repair, with AC5 and AC8 recorded as violated-then-accepted, not clean PASS.**
 
 ## Notes for δ
 
@@ -122,3 +122,42 @@ PASS
 5. **AC13 (development/README.md)**: The pre-existing docs/development/README.md had a "Pass 1 overlay" blockquote removed and links updated. This is a link-repair edit in an active index file (not a moved file) — correct behavior and in scope.
 
 6. **test-cn-cdd-verify.sh**: Updated to use docs/development/cdd/$version for PRA fixture paths. This was required for Go test to pass after the bundle default moved. The AC11 hard gate confirms this was necessary and correct.
+
+---
+
+## δ accept-with-repair (post-β, operator-authorized 2026-06-28)
+
+An independent δ boundary check (operator-directed) on `cycle/512` examined the do-not-touch boundary (AC5) and the live I4 link-validation result. Two items required correction of β's clean-PASS claims. The operator ruled **accept F1, repair F2, merge with an honest receipt.** This section supersedes the AC5, AC8, and AC12 verdicts above.
+
+### F1 — AC5 (do-not-touch): FAIL, accepted by explicit δ override
+
+β recorded AC5 PASS on the grounds that the γ scaffold's §AC5 note sanctioned link-repoints in the do-not-touch bundles. The operator's authoritative ruling is that the **issue-level** AC5 do-not-touch list is the governing boundary, and it was crossed. Five files on that list were edited:
+
+- `docs/alpha/agent-runtime/AGENT-RUNTIME.md`
+- `docs/alpha/agent-runtime/README.md`
+- `docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md`
+- `docs/beta/architecture/ARCHITECTURE.md`
+- `docs/beta/architecture/PACKAGE-SYSTEM.md`
+
+δ diffed all five: **every changed line is a pure `gamma/{cdd,plans}/…` → `development/{cdd,plans}/…` active-link repoint (10 lines total). Zero prose, semantic, structural, ownership, frozen-record, golden, or bundle-content edits.** Accepted because AC7 active-link liveness is the stronger requirement for this move (reverting would leave 5 links resolving only to redirect stubs). **Recorded as AC5 = violated-then-accepted, NOT PASS.**
+
+### F2 — I4 (link validation): 7 newly-introduced errors, REPAIRED by δ before merge
+
+The live I4 run added 7 errors not present pre-4C: the moved `development/cdd/README.md` (6) and `development/rules/README.md` (1) carried bare relative version-history links (`[3.15.2/](3.15.2/)`) that resolved to nonexistent `development/cdd/3.15.2/` — the versioned snapshots stayed frozen at `gamma/{cdd,rules}/` (correctly, out of scope). β had satisfied AC8 ("no moved file points back at gamma/") by leaving these links bare, which is precisely what created the broken targets. δ repointed all 7 to the frozen snapshots' real homes:
+
+- `docs/development/cdd/README.md`: `3.15.2/ 3.15.0/ 3.14.7/ 3.14.6/ 3.14.5/ 3.14.4/` → `../../gamma/cdd/<v>/` (6 links)
+- `docs/development/rules/README.md`: `3.14.5/` → `../../gamma/rules/3.14.5/` (1 link)
+
+All 7 targets confirmed to exist. This **intentionally inverts AC8-literal**: the moved READMEs now point back at `gamma/` because that is where the frozen snapshots genuinely live — correct, and superseding the AC8 PASS claim above. **Recorded as AC8 = intentionally violated for snapshot-link correctness; I4 = the 7 new 4C errors repaired (remaining I4 reds are pre-existing skill cross-ref + POST-RELEASE-ASSESSMENT placeholder debt, identical to the I4/I5/I6 inherited baseline).**
+
+### Corrected verdicts
+
+- **AC5:** FAIL, accepted by δ override (5 do-not-touch files, pure link-repoints only).
+- **AC8:** intentionally violated by δ repair (moved READMEs point at frozen `gamma/` snapshots — correct).
+- **AC12:** the I4/I5/I6 baseline reds remain; the 7 *new* I4 errors 4C introduced are repaired. I5/I6 unchanged inherited.
+- **All other ACs:** PASS as recorded by β.
+- **Final:** PASS-after-δ-repair. Merge under inherited-cap (Go build/test green, no goldens changed, no new I4 errors from 4C, the 5 do-not-touch repoints listed above, no clean-AC5-PASS claim preserved).
+
+### Forward policy (codified lesson for 4D/4E)
+
+Do-not-touch means **no content, structure, prose, or ownership edits.** Pure active-link repoints from a do-not-touch file to a bundle moved *in the current pass* are allowed **only under explicit δ override**, must be **listed in the receipt**, and must be **limited to path repairs**. When a moved index/README links a versioned snapshot that stays frozen at the old bundle path, repoint the link to the snapshot's real (old) home — do not leave it bare (it would resolve into the new bundle and break I4).

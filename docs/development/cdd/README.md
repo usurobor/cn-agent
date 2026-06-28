@@ -61,9 +61,9 @@ Read this bundle when you need to know:
 
 | Version | Directory | Highlights |
 |---------|-----------|------------|
-| v3.15.2 | [3.15.2/](3.15.2/) | CDD canonical rewrite (v3.15.0 method state), RATIONALE.md created, authority split resolved, review/release skill hardened, empty Telegram filter (#29) |
-| v3.15.0 | [3.15.0/](3.15.0/) | Version coherence (#22): VERSION-first flow, stamp-versions.sh |
-| v3.14.7 | [3.14.7/](3.14.7/) | Review pre-flight, scope enumeration, review quality metrics |
-| v3.14.6 | [3.14.6/](3.14.6/) | Epoch 2 addendum: v3.14.3–v3.14.5 coverage |
-| v3.14.5 | [3.14.5/](3.14.5/) | Gamma root migration; AGILE-PROCESS joins the bundle |
-| v3.14.4 | [3.14.4/](3.14.4/) | Beta reorg and freeze-semantics note |
+| v3.15.2 | [3.15.2/](../../gamma/cdd/3.15.2/) | CDD canonical rewrite (v3.15.0 method state), RATIONALE.md created, authority split resolved, review/release skill hardened, empty Telegram filter (#29) |
+| v3.15.0 | [3.15.0/](../../gamma/cdd/3.15.0/) | Version coherence (#22): VERSION-first flow, stamp-versions.sh |
+| v3.14.7 | [3.14.7/](../../gamma/cdd/3.14.7/) | Review pre-flight, scope enumeration, review quality metrics |
+| v3.14.6 | [3.14.6/](../../gamma/cdd/3.14.6/) | Epoch 2 addendum: v3.14.3–v3.14.5 coverage |
+| v3.14.5 | [3.14.5/](../../gamma/cdd/3.14.5/) | Gamma root migration; AGILE-PROCESS joins the bundle |
+| v3.14.4 | [3.14.4/](../../gamma/cdd/3.14.4/) | Beta reorg and freeze-semantics note |

@@ -24,4 +24,4 @@ Non-negotiable project rules and coherence invariants.
 
 | Version | Directory | Highlights |
 |---------|-----------|-----------|
-| v3.14.5 | [3.14.5/](3.14.5/) | Initial bundle migration from gamma root (#91) |
+| v3.14.5 | [3.14.5/](../../gamma/rules/3.14.5/) | Initial bundle migration from gamma root (#91) |
