@@ -116,7 +116,7 @@ Stub exists at `docs/beta/guides/MIGRATION.md`. Content: redirect to `../../guid
 
 **Status: PASS**
 
-`LC_ALL=C grep -rlP '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f​‌‍ ﻿‪-‮⁦-⁩]'` over all changed files: no matches.
+`LC_ALL=C grep -rlP '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x{200b}-\x{200d}\x{feff}\x{202a}-\x{202e}\x{2066}-\x{2069}]'` over all changed files: no matches.
 
 ---
 
