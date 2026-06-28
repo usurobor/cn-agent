@@ -122,7 +122,7 @@ See [SECURITY-MODEL.md](../security/SECURITY-MODEL.md) for full details.
 
 ## Open Questions
 
-- ~~Daemon process management~~ → systemd (documented in [AUTOMATION.md](../../beta/guides/AUTOMATION.md))
+- ~~Daemon process management~~ → systemd (documented in [AUTOMATION.md](../../guides/AUTOMATION.md))
 - Plugin discovery and loading (future)
 - ~~Config format~~ → `.cn/config.json` with `runtime.scheduler` block
 - ~~Telegram auth/tokens~~ → `.cn/secrets.env` or env vars

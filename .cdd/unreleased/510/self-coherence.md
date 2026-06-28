@@ -39,7 +39,7 @@ Spot-check: `git show HEAD:docs/beta/guides/AUTOMATION.md` → stub with relativ
 
 ### AC3 — active markdown links target new homes
 
-**Status: PASS**
+**Status: PASS (after δ accept-with-repair — 4 active links were initially missed; see δ note at end)**
 
 Repointed active markdown links in:
 - `docs/guides/README.md` — 4 guide links updated; Pass 1 overlay blockquote removed
@@ -84,7 +84,7 @@ All three intent-index READMEs (`docs/guides/README.md`, `docs/evidence/README.m
 
 ### AC7 — no active stale links to 4B bundle old paths remain
 
-**Status: PASS**
+**Status: PASS (after δ accept-with-repair — initially over-claimed; see δ note at end)**
 
 `git grep -nE 'docs/(beta/guides|beta/evidence|beta/lineage|alpha/doctrine)/'` run over `docs/`, `OPERATOR.md`. All remaining hits classified:
 
@@ -138,3 +138,20 @@ All other 32 moved files: content byte-for-byte identical to original (stubs at 
 9/10 ACs pass cleanly. AC1 is architecturally incompatible with AC2 (the stub pattern). The intent of AC1 (traceability of moves) is satisfied via commit structure and stub content; the literal R-entry requirement cannot be satisfied when stubs occupy old paths. This is a known limitation of the stub pattern established in Pass 2/3 and should be addressed in the cell spec as a known tension.
 
 **Review-ready signal: R0 — ready for β.**
+
+---
+
+## δ accept-with-repair (post-β, operator-authorized 2026-06-28)
+
+β converged claiming AC3/AC7/AC8 PASS. An independent δ boundary check (operator-directed) found the AC7 oracle was too narrow: it grepped `docs/(beta/guides|beta/evidence|beta/lineage|alpha/doctrine)/` (the `docs/`-prefixed form) and therefore **missed relative markdown links** of the form `../beta/...` and `../../beta/...`. Four active stale links to old 4B paths remained:
+
+- `docs/quickstart/README.md:14` — `[Operator handshake](../beta/guides/HANDSHAKE.md)` (Pass 1 portal index → AC8)
+- `docs/quickstart/README.md:15` — `[Automation](../beta/guides/AUTOMATION.md)` (Pass 1 portal index → AC8)
+- `docs/alpha/cli/DAEMON.md:125` — `[AUTOMATION.md](../../beta/guides/AUTOMATION.md)`
+- `docs/alpha/security/TRACEABILITY.md:743` — `[AUDIT.md](../../beta/evidence/AUDIT.md)`
+
+These resolved via the redirect stubs (not broken), but were active stale links, so AC3/AC7/AC8 were over-claimed.
+
+**Disposition: δ accept-with-repair (NOT status:changes).** A 4-line repair commit repointed all four to their new homes (`../guides/...`, `../../guides/...`, `../../evidence/...`). The AC7 grep was re-run including the relative-link form: **0 active stale links to old 4B paths remain.** No semantic/prose edits, no frozen records, no goldens, no do-not-touch paths touched.
+
+**Corrected AC status:** AC3 PASS (after repair), AC7 PASS (after repair), AC8 PASS (portal index repaired). The "9/10 clean" summary above is superseded by this record. The narrow AC7 grep pattern (missing relative `../` link forms) is a cell-process lesson for 4C–4E.

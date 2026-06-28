@@ -740,4 +740,4 @@ This replaces ad hoc lifecycle logging with a system that can answer, from files
 - [`CAA.md`](../agent-runtime/CAA.md) — capability architecture whose execution events are traced
 - [`CAR.md`](../cognitive-substrate/CAR.md) — package resolver whose load events are traced
 - [`SECURITY-MODEL.md`](SECURITY-MODEL.md) — audit trail as security mechanism
-- [`AUDIT.md`](../../beta/evidence/AUDIT.md) — audit architecture
+- [`AUDIT.md`](../../evidence/AUDIT.md) — audit architecture

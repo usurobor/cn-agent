@@ -11,8 +11,8 @@
 ## Available now
 
 - [Activate an agent in a repo](../../src/packages/cnos.core/skills/agent/activate/SKILL.md) — the `activate` skill.
-- [Operator handshake](../beta/guides/HANDSHAKE.md) — connect an operator to a repo and exchange the first coordination.
-- [Automation](../beta/guides/AUTOMATION.md) — wake/dispatch automation surfaces.
+- [Operator handshake](../guides/HANDSHAKE.md) — connect an operator to a repo and exchange the first coordination.
+- [Automation](../guides/AUTOMATION.md) — wake/dispatch automation surfaces.
 
 ## Coming (gated on Demo 0)
 
