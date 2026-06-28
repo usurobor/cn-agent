@@ -116,7 +116,7 @@ The canonical surfaces CDD cites are grouped by what they own:
 
 **Loader and rationale:**
 - [`SKILL.md`](SKILL.md) — package-visible loader entrypoint (not a second fact source)
-- `docs/gamma/cdd/RATIONALE.md` — companion rationale for shape decisions
+- `docs/development/cdd/RATIONALE.md` — companion rationale for shape decisions
 - `docs/papers/CCNF-AND-TYPED-TRUST.md` — the essay that pins the CCNF spine and the kernel/realization separation
 
 ## Software-specific realization → cnos.cds

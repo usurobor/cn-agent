@@ -131,7 +131,7 @@ Identify what governs before proposing what changes.
 4.3. **Enumerate copies and embeddings**
   - Where does the same information appear in multiple places?
   - ❌ "Update src, packages will sync"
-  - ✅ "`src/packages/cnos.cdd/skills/cdd/CDD.md` is the canonical source; `docs/gamma/cdd/CDD.md` is a human-facing pointer and must continue to point to the right canonical path"
+  - ✅ "`src/packages/cnos.cdd/skills/cdd/CDD.md` is the canonical source; `docs/development/cdd/CDD.md` is a human-facing pointer and must continue to point to the right canonical path"
 
 4.4. **Name authority relationships**
   - If two artifacts carry the same information, which governs?

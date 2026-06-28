@@ -1,13 +1,3 @@
-# Engineering Checklist
+# Moved
 
-From `mindsets/ENGINEERING.md`
-
-| Item | Severity |
-|------|----------|
-| Solves stated problem | D |
-| Simplest solution (KISS) | C |
-| No unnecessary additions (YAGNI) | C |
-| No premature optimization | B |
-| Rebase before review | C |
-| No self-merge | D |
-| Clean commit history | B |
+This file has moved to [`docs/development/checklists/engineering.md`](../../development/checklists/engineering.md).

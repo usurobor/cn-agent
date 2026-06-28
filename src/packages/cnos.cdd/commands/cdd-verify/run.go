@@ -56,7 +56,7 @@ type Args struct {
 // Mirrors the bash predecessor's flag set so backward compat (AC7) holds.
 func ParseArgs(argv []string) (Args, error) {
 	var a Args
-	a.Bundle = "docs/gamma/cdd" // default per bash predecessor
+	a.Bundle = "docs/development/cdd" // default per bash predecessor
 	i := 0
 	for i < len(argv) {
 		arg := argv[i]
@@ -158,7 +158,7 @@ func Usage(w io.Writer) {
   cn cdd-verify --receipt <path> --contract <p>  V with explicit contract path
 
 Options:
-  --bundle <path>        bundle-relative PRA dir (default: docs/gamma/cdd)
+  --bundle <path>        bundle-relative PRA dir (default: docs/development/cdd)
   --repo-root <path>     override repo root (testing)
   --exceptions <path>    legacy exceptions file (YAML format)
   --receipt <path>       dispatch into V validator (Phase 3 of #366)

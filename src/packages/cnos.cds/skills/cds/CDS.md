@@ -1709,13 +1709,13 @@ pre-#402 CDD §5.3 with software-engineering vocabulary preserved):
 |---|---|---|---|---|---|
 | design | build | α | design artifact OR explicit "not required" | `design/SKILL.md §3.1` | substantial only |
 | contract | build | α | named incoherence + AC oracle | `self-coherence.md §Gap` + `§Mode` + `§ACs` | always |
-| plan | build | α | sequencing artifact OR explicit "not required" | `docs/gamma/cdd/PLAN-TEMPLATE.md` | L7 / cycle-sized |
+| plan | build | α | sequencing artifact OR explicit "not required" | `docs/development/cdd/PLAN-TEMPLATE.md` | L7 / cycle-sized |
 | tests | build | α | test files OR explicit reason none apply | diff | always |
 | code | build | α | implementation diff OR "docs/process only" | diff | always |
 | docs | build | α | changed canonical docs / specs / READMEs | diff | when docs affected |
 | self-coherence | build | α | review-readiness signal complete | `self-coherence.md` carrying CDS Trace through stage 7 | substantial only |
 | review | review | β | verdict + findings (round-by-round) | `review/SKILL.md` output format | always |
-| gate | release | δ | release-readiness preflight verdict | `docs/gamma/cdd/GATE-TEMPLATE.md` | always |
+| gate | release | δ | release-readiness preflight verdict | `docs/development/cdd/GATE-TEMPLATE.md` | always |
 | release | release | δ | tag + release notes + version-snapshot | `release-effector/SKILL.md` | always |
 | observe | close | γ | post-release observation result | `post-release/SKILL.md` | always |
 | assess | close | γ | `POST-RELEASE-ASSESSMENT.md` | `post-release/SKILL.md` output template | always |

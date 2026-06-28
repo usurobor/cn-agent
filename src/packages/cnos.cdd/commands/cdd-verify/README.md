@@ -38,7 +38,7 @@ The hyphenated form `cn cdd-verify` is intercepted as a group listing by the `cn
 | `--version X --cycle N` | One cycle (current artifact layout). |
 | `--version X --triadic` | Include legacy `.cdd/` close-out checks. |
 | `--pr N` | PR-scoped cycle. |
-| `--bundle <path>` | Override PRA bundle dir (default `docs/gamma/cdd`). |
+| `--bundle <path>` | Override PRA bundle dir (default `docs/development/cdd`). |
 | `--exceptions <path>` | Load YAML exceptions for missing-artifact warnings. |
 | `--repo-root <path>` | Override repo root detection (used in tests). |
 

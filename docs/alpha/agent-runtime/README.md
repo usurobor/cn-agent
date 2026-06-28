@@ -26,10 +26,10 @@ The native cnos agent runtime: CN Shell, typed ops, N-pass orchestration, receip
 
 | Plan | Scope |
 |------|-------|
-| [PLAN-v3.7.0-scheduler.md](../../gamma/plans/PLAN-v3.7.0-scheduler.md) | Scheduler unification implementation plan |
-| [PLAN-v3.8.0-n-pass-bind.md](../../gamma/plans/PLAN-v3.8.0-n-pass-bind.md) | N-pass bind loop implementation plan |
-| [PLAN-v3.8.0-syscall-surface.md](../../gamma/plans/PLAN-v3.8.0-syscall-surface.md) | Syscall surface coherence implementation plan |
-| [PLAN-v3.10.0-runtime-contract.md](../../gamma/plans/PLAN-v3.10.0-runtime-contract.md) | Runtime contract implementation plan |
+| [PLAN-v3.7.0-scheduler.md](../../development/plans/PLAN-v3.7.0-scheduler.md) | Scheduler unification implementation plan |
+| [PLAN-v3.8.0-n-pass-bind.md](../../development/plans/PLAN-v3.8.0-n-pass-bind.md) | N-pass bind loop implementation plan |
+| [PLAN-v3.8.0-syscall-surface.md](../../development/plans/PLAN-v3.8.0-syscall-surface.md) | Syscall surface coherence implementation plan |
+| [PLAN-v3.10.0-runtime-contract.md](../../development/plans/PLAN-v3.10.0-runtime-contract.md) | Runtime contract implementation plan |
 
 ---
 

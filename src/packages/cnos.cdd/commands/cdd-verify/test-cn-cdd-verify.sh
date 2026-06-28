@@ -90,13 +90,13 @@ EOF
 write_canonical_pra() {
   local repo="$1"
   local version="$2"
-  mkdir -p "$repo/docs/gamma/cdd/$version"
-  cat > "$repo/docs/gamma/cdd/$version/POST-RELEASE-ASSESSMENT.md" <<EOF
+  mkdir -p "$repo/docs/development/cdd/$version"
+  cat > "$repo/docs/development/cdd/$version/POST-RELEASE-ASSESSMENT.md" <<EOF
 ## Post-Release Assessment — $version
 
 (test fixture)
 EOF
-  git -C "$repo" add "docs/gamma/cdd/$version/POST-RELEASE-ASSESSMENT.md" >/dev/null
+  git -C "$repo" add "docs/development/cdd/$version/POST-RELEASE-ASSESSMENT.md" >/dev/null
   git -C "$repo" commit -q -m "PRA $version"
 }
 

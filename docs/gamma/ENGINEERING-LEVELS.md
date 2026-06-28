@@ -264,7 +264,7 @@ Use this doc when:
 
 - writing engineering assessment essays
 - describing the level of a diff or change set
-- assessing the executed level of a CDD cycle (see `docs/gamma/cdd/CDD.md` §9.1)
+- assessing the executed level of a CDD cycle (see `docs/development/cdd/CDD.md` §9.1)
 - deciding which engineering skill bundle to load
 - deciding whether a branch is merely correct, system-safe, or system-shaping
 

@@ -1,13 +1,13 @@
 # Release-Level Classification
 
 **Scope**: All 60 releases in the coherence grade table (v0.1.0–v3.24.0)
-**Rubric**: `docs/gamma/ENGINEERING-LEVELS.md` §8 (diff-level) + `docs/gamma/cdd/CDD.md` §9.1 (cycle-level caps)
+**Rubric**: `docs/gamma/ENGINEERING-LEVELS.md` §8 (diff-level) + `docs/development/cdd/CDD.md` §9.1 (cycle-level caps)
 **Date**: 2026-03-28
 
 Related:
 - docs/gamma/ENGINEERING-LEVELS.md
 - docs/papers/ENGINEERING-LEVEL-ASSESSMENT.md
-- docs/gamma/cdd/CDD.md §9.1
+- docs/development/cdd/CDD.md §9.1
 
 ---
 

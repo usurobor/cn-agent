@@ -12,7 +12,7 @@
 > in the consumer path.
 >
 > For the package-system design plan history, see
-> [docs/gamma/plans/PLAN-package-system.md](../../gamma/plans/PLAN-package-system.md).
+> [docs/development/plans/PLAN-package-system.md](../../development/plans/PLAN-package-system.md).
 
 ---
 
