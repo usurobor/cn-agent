@@ -3,7 +3,7 @@
 **Version:** 1.0.0
 **Status:** Draft
 **Doc-Class:** canonical-spec
-**Canonical-Path:** docs/alpha/agent-runtime/CONFIGURE-AGENT.md
+**Canonical-Path:** docs/reference/runtime/CONFIGURE-AGENT.md
 **Owns:** configuration mode, constitutive-self installation, operator interview flow, confirmation protocol, promotion rules
 **Does-Not-Own:** general onboarding, runtime contract schema, memory system, release process
 

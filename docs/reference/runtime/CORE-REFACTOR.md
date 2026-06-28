@@ -431,7 +431,7 @@ This refactor does not:
 
 ### Create
 
-- `docs/alpha/agent-runtime/CORE-REFACTOR.md` (this design)
+- `docs/reference/runtime/CORE-REFACTOR.md` (this design)
 - `src/core/` scaffolding
 - `src/runtime/` scaffolding
 - `src/builtins/` scaffolding
@@ -440,10 +440,10 @@ This refactor does not:
 
 ### Edit
 
-- `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md`
-- `docs/alpha/package-system/PACKAGE-SYSTEM.md`
-- `docs/alpha/package-system/PACKAGE-ARTIFACTS.md`
-- `docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md`
+- `docs/reference/runtime/RUNTIME-CONTRACT-v2.md`
+- `docs/reference/packages/PACKAGE-SYSTEM.md`
+- `docs/reference/packages/PACKAGE-ARTIFACTS.md`
+- `docs/reference/runtime/extensions/RUNTIME-EXTENSIONS.md`
 - `docs/beta/architecture/PACKAGE-SYSTEM.md` (retired — see alpha spec)
 - `src/cmd/cn_runtime_contract.ml`
 - Package build/install code to support commands and orchestrators through the same pipeline

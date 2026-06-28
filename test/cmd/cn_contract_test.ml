@@ -1,6 +1,6 @@
 (** cn_contract_test.ml — Protocol contract consistency checks (I2)
 
-    Verifies that code constants match docs/alpha/schemas/protocol-contract.json.
+    Verifies that code constants match docs/reference/schemas/protocol-contract.json.
     This is a deterministic structural check — no I/O to external systems.
 
     The contract is loaded at test time from the repo root.

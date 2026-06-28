@@ -70,10 +70,10 @@ This is the same assumption the code already holds about binaries (`cn` is not c
 
 - `dist/packages/checksums.txt` (committed) vs `cn build` output (derived) — **the duplication the change resolves**.
 - `dist/packages/index.json` (committed) vs `cn build` output (derived) — **same**.
-- `docs/alpha/package-system/BUILD-AND-DIST.md` §Migration steps 2 — already states "Add `dist/` to `.gitignore`" as a planned step. Needs update: strike "planned," mark the migration's dist-gitignore step as accomplished by this cycle, and remove any "currently committed" language.
+- `docs/reference/packages/BUILD-AND-DIST.md` §Migration steps 2 — already states "Add `dist/` to `.gitignore`" as a planned step. Needs update: strike "planned," mark the migration's dist-gitignore step as accomplished by this cycle, and remove any "currently committed" language.
 - `README.md` line 168 — describes `cn build` → `dist/packages/` → `cn setup` flow. **Unchanged** — the flow still describes what `cn build` does locally.
 - `docs/alpha/architecture/INVARIANTS.md` line 166 — lists `dist/packages/<name>-<version>.tar.gz` as an artifact class. **Unchanged** — the artifact still exists at that path; it's just not committed.
-- `docs/alpha/package-system/PACKAGE-AUTHORING.md`, `PACKAGE-SYSTEM.md`, `DESIGN-227-distribution-pipeline.md`, `SELF-COHERENCE-227.md` — describe `cn build` producing dist/. **Unchanged** — production step still occurs; the commit step is what disappears.
+- `docs/reference/packages/PACKAGE-AUTHORING.md`, `PACKAGE-SYSTEM.md`, `DESIGN-227-distribution-pipeline.md`, `SELF-COHERENCE-227.md` — describe `cn build` producing dist/. **Unchanged** — production step still occurs; the commit step is what disappears.
 
 ### Authority relationships
 
@@ -134,7 +134,7 @@ src/packages/   ────► cn build ────► dist/packages/      src
 
 6. **`restore.go` `FindIndexPath` stays unchanged.** It walks up to find `dist/packages/index.json`; that file exists once `cn build` has run locally. No code change needed for the MCA itself. (A minor UX improvement — a helpful error message when the index is missing, pointing to `cn build` — is appealing but is **out of scope for this cycle** per §Non-goals.)
 
-7. **Update `docs/alpha/package-system/BUILD-AND-DIST.md`.** The migration section currently writes `Add dist/ to .gitignore` as a future step. Mark it as accomplished under the specific cycle (reference #266), and remove transitional language that implies dist/ is still committed. Keep the layout diagrams (they describe structure, not tracking).
+7. **Update `docs/reference/packages/BUILD-AND-DIST.md`.** The migration section currently writes `Add dist/ to .gitignore` as a future step. Mark it as accomplished under the specific cycle (reference #266), and remove transitional language that implies dist/ is still committed. Keep the layout diagrams (they describe structure, not tracking).
 
 ### Source of truth (§1) after this change
 
@@ -221,11 +221,11 @@ Choice rationale: A is the only candidate that makes the failure class *structur
 
 - `.gitignore` — add `dist/` block with DESIGN-266 reference comment.
 - `.github/workflows/coherence.yml` — remove the `dist-source-sync` job; remove from `notify.needs`; update the status-aggregation shell to drop the `R2` variable and the dist reference in the status icon logic.
-- `docs/alpha/package-system/BUILD-AND-DIST.md` — §Migration steps: mark step 2 (`Add dist/ to .gitignore`) accomplished, with a DESIGN-266 link; remove any remaining transitional "currently committed" language; leave the §Directory Structure and §Flow diagrams unchanged (they describe structure, which is preserved).
+- `docs/reference/packages/BUILD-AND-DIST.md` — §Migration steps: mark step 2 (`Add dist/ to .gitignore`) accomplished, with a DESIGN-266 link; remove any remaining transitional "currently committed" language; leave the §Directory Structure and §Flow diagrams unchanged (they describe structure, which is preserved).
 
 ### Create
 
-- `docs/alpha/package-system/DESIGN-266-dist-out-of-git.md` — this file (primary branch artifact).
+- `docs/reference/packages/DESIGN-266-dist-out-of-git.md` — this file (primary branch artifact).
 
 ### Unchanged (peers audited; no edit required)
 
@@ -238,15 +238,15 @@ Choice rationale: A is the only candidate that makes the failure class *structur
 
 ## Acceptance Criteria
 
-- [ ] **AC1 (issue AC1):** This design doc exists at `docs/alpha/package-system/DESIGN-266-dist-out-of-git.md`, names the chosen MCA (A), lists rejected alternatives (B, C, D, E) with per-option rationale. Verification: `test -f docs/alpha/package-system/DESIGN-266-dist-out-of-git.md && grep -c '^## Alternatives Considered' …` returns 1, and the Alternatives table has rows for A/B/C/D/E.
+- [ ] **AC1 (issue AC1):** This design doc exists at `docs/reference/packages/DESIGN-266-dist-out-of-git.md`, names the chosen MCA (A), lists rejected alternatives (B, C, D, E) with per-option rationale. Verification: `test -f docs/reference/packages/DESIGN-266-dist-out-of-git.md && grep -c '^## Alternatives Considered' …` returns 1, and the Alternatives table has rows for A/B/C/D/E.
 - [ ] **AC2 (issue AC2):** The specific failure mode in #262 ("PR rebased on main-at-open + main-side edit to any `src/packages/` file → red I3 on merge commit") is structurally impossible. Verification:
   - (a) `git ls-files dist/packages/` on HEAD returns empty.
   - (b) `.gitignore` contains `dist/` (or `dist/packages/`).
   - (c) `.github/workflows/coherence.yml` contains no job named `dist-source-sync` and no `dist/packages/` reference.
   - (d) After the PR merges, any subsequent PR can edit any `src/packages/**` file on main without producing a new file diff in `dist/packages/` on any other open PR (because there is no `dist/packages/` to diff).
-- [ ] **AC3 (issue AC3 — partial, α-side):** The design doc names the expected engineering level (L7) and states the post-release question β must answer: *"After N subsequent cycles touching `src/packages/`, did any rebase-race recurrence occur?"* Verification: `grep -E 'L7|post-release' docs/alpha/package-system/DESIGN-266-dist-out-of-git.md` returns hits in the Challenged Assumption, Engineering Level header, and CDD Trace. (β's post-release assessment closes this AC per CDD §9.1; α cannot verify it from the branch.)
+- [ ] **AC3 (issue AC3 — partial, α-side):** The design doc names the expected engineering level (L7) and states the post-release question β must answer: *"After N subsequent cycles touching `src/packages/`, did any rebase-race recurrence occur?"* Verification: `grep -E 'L7|post-release' docs/reference/packages/DESIGN-266-dist-out-of-git.md` returns hits in the Challenged Assumption, Engineering Level header, and CDD Trace. (β's post-release assessment closes this AC per CDD §9.1; α cannot verify it from the branch.)
 - [ ] **AC4 (impact-graph coverage, per cdd/design §2.5):** Every consumer/producer enumerated in §Impact Graph is either updated or explicitly marked "unchanged" with a reason. Verification: the §Impact Graph tables cover `coherence.yml`, `release.yml`, `ci.yml`, `scripts/kata/*`, `src/packages/cnos.kata/**`, `restore.go`, `pkgbuild/build.go`, `pkg_test.go` — confirmed by cross-reference against `grep -rn 'dist/packages' --include='*.go' --include='*.sh' --include='*.yml' --include='*.md'`.
-- [ ] **AC5 (build-and-dist.md alignment):** `docs/alpha/package-system/BUILD-AND-DIST.md` no longer describes the dist-in-git state as current. Verification: `grep -n 'dist/ to .gitignore' docs/alpha/package-system/BUILD-AND-DIST.md` shows the step marked accomplished with a #266 reference; no lines imply dist/ is currently tracked.
+- [ ] **AC5 (build-and-dist.md alignment):** `docs/reference/packages/BUILD-AND-DIST.md` no longer describes the dist-in-git state as current. Verification: `grep -n 'dist/ to .gitignore' docs/reference/packages/BUILD-AND-DIST.md` shows the step marked accomplished with a #266 reference; no lines imply dist/ is currently tracked.
 - [ ] **AC6 (kata still passes post-change):** `scripts/kata/run-all.sh` and the kata-tier2 sequence (`cn build` → init hub → `cn deps lock` → `cn deps restore`) succeed with an empty dist/ at start. Verification: local `scripts/kata/run-all.sh` exits 0.
 
 ## Known Debt

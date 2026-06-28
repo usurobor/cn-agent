@@ -1,7 +1,7 @@
 (** cn_workflow.ml — Orchestrator IR runtime (`cn.orchestrator.v1`).
 
     Implements the mechanical workflow engine specified in
-    `docs/alpha/agent-runtime/ORCHESTRATORS.md` §7-8.
+    `docs/reference/runtime/ORCHESTRATORS.md` §7-8.
 
     Responsibilities:
     - Parse an orchestrator manifest (`cn.orchestrator.v1` JSON)
@@ -17,7 +17,7 @@
       dispatch via [Cn_executor.execute_op]. Receipts/events are
       emitted to the global trace session (no-op when no session).
 
-    Deferred to a later cycle (documented in ORCHESTRATORS.md §8.2):
+    Deferred to a later cycle (documented in docs/reference/runtime/ORCHESTRATORS.md §8.2):
     - [parallel] step kind (cnos has no async model)
     - [llm] step execution (prompt + context injection mechanism
       not yet designed)

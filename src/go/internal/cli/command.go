@@ -4,7 +4,7 @@
 // normalized into a CommandSpec (runtime descriptor), implements the
 // Command interface (Spec + Run), and registers into a single Registry.
 //
-// Design authority: docs/alpha/agent-runtime/GO-KERNEL-COMMANDS.md
+// Design authority: docs/reference/runtime/GO-KERNEL-COMMANDS.md
 package cli
 
 import (

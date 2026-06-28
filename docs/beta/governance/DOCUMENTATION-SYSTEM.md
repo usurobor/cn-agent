@@ -36,8 +36,8 @@ docs/alpha/{scope}/
 ```
 
 Examples:
-- `docs/alpha/agent-runtime/`
-- `docs/alpha/runtime-extensions/`
+- `docs/reference/runtime/` (active; `docs/alpha/agent-runtime/` retains frozen version snapshots)
+- `docs/reference/runtime/extensions/` (active; `docs/alpha/runtime-extensions/` retains frozen version snapshots)
 
 Provenance (originating version, issue number) is recorded in the bundle's `README.md`, not in the directory name. This is deliberate: bundles are long-lived feature containers that accumulate version snapshots over time. Their identity is the feature scope, not their creation moment. Branches use `{version}-{issue}-{scope}` because branches are ephemeral and need disambiguation; directories are permanent structure and need stability.
 

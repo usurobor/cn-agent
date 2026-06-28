@@ -5,7 +5,7 @@
 **Version:** 1.0.0
 **Status:** Draft
 **Scope:** Ecosystem/distribution layer above Runtime Extensions
-**Depends on:** Runtime Extensions (docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md)
+**Depends on:** Runtime Extensions (docs/reference/runtime/extensions/RUNTIME-EXTENSIONS.md)
 
 ---
 

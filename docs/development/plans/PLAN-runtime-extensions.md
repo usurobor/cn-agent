@@ -77,7 +77,7 @@ Do not rewrite built-in capabilities. Add:
 **Goal:** Create a machine-readable schema for extensions.
 
 **Work:**
-- add schema under docs/alpha/schemas/
+- add schema under docs/reference/schemas/
 - implement parser/validator in code
 - support fields from the design:
   - name

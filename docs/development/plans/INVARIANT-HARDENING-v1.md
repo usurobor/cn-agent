@@ -58,7 +58,7 @@ Use existing `cn build --check`.
 
 Create a machine-readable protocol contract.
 
-**Path:** `docs/alpha/schemas/protocol-contract.json`
+**Path:** `docs/reference/schemas/protocol-contract.json`
 
 **Contents:**
 - Legacy coordination op names
@@ -136,7 +136,7 @@ Update CI workflow so deterministic checks are required.
 ### New files
 - `docs/gamma/rules/INVARIANTS.md` — canonical invariant catalog
 - `docs/gamma/plans/INVARIANT-HARDENING-v1.md` — this plan
-- `docs/alpha/schemas/protocol-contract.json` — machine-readable protocol contract
+- `docs/reference/schemas/protocol-contract.json` — machine-readable protocol contract
 - `test/cmd/cn_contract_test.ml` — protocol contract consistency test
 - `test/cmd/cn_traceability_test.ml` — readiness projection smoke test
 - `.github/workflows/coherence.yml` — coherence-specific CI jobs

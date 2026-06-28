@@ -175,7 +175,7 @@ The receipt below is illustrative. cnos does not yet require activation receipts
   "task": "review PR #297 for CTB document coherence",
   "branch": "claude/cleanup-ctb-docs",
   "artifacts": [
-    "docs/alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md",
+    "docs/reference/ctb/LANGUAGE-SPEC-v0.2-draft.md",
     ".cdd/releases/3.74.0/327/beta-review.md"
   ],
   "closeout": ".cdd/releases/3.74.0/327/beta-closeout.md",

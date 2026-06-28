@@ -3,7 +3,7 @@
 ## Implementation Plan for the Git-Native Package System
 
 **Status:** Draft
-**Implements:** docs/beta/architecture/PACKAGE-SYSTEM.md (retired; see docs/alpha/package-system/PACKAGE-SYSTEM.md)
+**Implements:** docs/beta/architecture/PACKAGE-SYSTEM.md (retired; see docs/reference/packages/PACKAGE-SYSTEM.md)
 **Depends on:** Runtime Contract v2, Runtime Extensions, Extension Registry
 **Supersedes:** #73 Phase 2 selection (cbf123c) — scope expanded to full package substrate
 

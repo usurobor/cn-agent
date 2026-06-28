@@ -352,9 +352,9 @@ This adds:
 
 ### Edit
 
-- `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md` — add `threads/adhoc/` to the memory model, clarify `state/conversation.json` as working continuity
+- `docs/reference/runtime/RUNTIME-CONTRACT-v2.md` — add `threads/adhoc/` to the memory model, clarify `state/conversation.json` as working continuity
 - `src/cmd/cn_runtime_contract.ml` — reflect the same distinction in emitted contract
-- `docs/alpha/agent-runtime/AGENT-RUNTIME.md` — align memory language with the lean model if needed
+- `docs/reference/runtime/AGENT-RUNTIME.md` — align memory language with the lean model if needed
 
 ### No new files in v1
 

@@ -814,8 +814,8 @@ It should be bounded enough that it never owns the work.
 - W3C, "Verifiable Credential Data Integrity 1.0." https://www.w3.org/TR/vc-data-integrity/
 - Rails Guides, "Active Record Basics." https://guides.rubyonrails.org/active_record_basics.html
 - TSC (Triadic Self-Coherence), repository and docs. https://github.com/usurobor/tsc — docs/THESIS.md, README.md, ARCHITECTURE.md, spec/tsc-glossary.md, engine/ocaml/test/fixtures/report.schema.json
-- docs/alpha/protocol/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md
+- docs/reference/protocol/cn/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md
 - docs/THESIS.md
-- docs/alpha/agent-runtime/PROVIDER-CONTRACT-v1.md
-- docs/alpha/agent-runtime/HYBRID-LLM-ROUTING.md
+- docs/reference/runtime/PROVIDER-CONTRACT-v1.md
+- docs/reference/runtime/HYBRID-LLM-ROUTING.md
 - src/packages/cnos.cdd/skills/cdd/CDD.md

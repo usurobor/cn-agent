@@ -5,7 +5,7 @@
     packet before any inbox write. If validation fails, no materialization
     occurs.
 
-    Design: docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md *)
+    Design: docs/reference/protocol/cn/MESSAGE-PACKET-TRANSPORT.md *)
 
 (* === Packet Schema Types === *)
 

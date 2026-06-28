@@ -2,7 +2,7 @@
 
     Validates that the readiness projection writer (cn_trace_state.ml)
     produces output matching the required field schema from the protocol
-    contract (docs/alpha/schemas/protocol-contract.json).
+    contract (docs/reference/schemas/protocol-contract.json).
 
     These are deterministic structural checks. They write projections
     to a temp hub and then validate the JSON shape against the contract. *)

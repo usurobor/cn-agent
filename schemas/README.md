@@ -8,7 +8,7 @@ artifacts come under coherence-CI gating.
 
 `schemas/skill.cue` defines a [CUE](https://cuelang.org/) schema for the
 YAML frontmatter at the top of every `src/packages/**/SKILL.md`, per
-[CTB LANGUAGE-SPEC.md](../docs/alpha/ctb/LANGUAGE-SPEC.md) §2 and §11.
+[CTB LANGUAGE-SPEC.md](../docs/reference/ctb/LANGUAGE-SPEC.md) §2 and §11.
 
 The schema enforces:
 
@@ -156,7 +156,7 @@ is re-tested against a new CUE release.
 
 ## How to update the schema when the CTB spec changes
 
-When [LANGUAGE-SPEC.md](../docs/alpha/ctb/LANGUAGE-SPEC.md) changes:
+When [LANGUAGE-SPEC.md](../docs/reference/ctb/LANGUAGE-SPEC.md) changes:
 
 1. Decide whether the change adds, removes, or re-strata a field.
 2. Update `schemas/skill.cue`:
@@ -180,5 +180,5 @@ When [LANGUAGE-SPEC.md](../docs/alpha/ctb/LANGUAGE-SPEC.md) changes:
 - [#301](https://github.com/usurobor/cnos/issues/301) — this work, CUE-based skill frontmatter validation in coherence CI.
 - [#289](https://github.com/usurobor/cnos/issues/289) — CTB v0.2 stabilization (this is the machine-checkable layer of v0.2 AC5).
 - [#303](https://github.com/usurobor/cnos/issues/303) — `ctb-check` v0 (witness / close-out validation; out of scope here).
-- `docs/alpha/ctb/LANGUAGE-SPEC.md` — v0.1 spec governing field shape, stratification, and reserved vocabulary.
-- `docs/alpha/ctb/LANGUAGE-SPEC-v0.2-draft.md` — v0.2 draft (out of scope until promoted).
+- `docs/reference/ctb/LANGUAGE-SPEC.md` — v0.1 spec governing field shape, stratification, and reserved vocabulary.
+- `docs/reference/ctb/LANGUAGE-SPEC-v0.2-draft.md` — v0.2 draft (out of scope until promoted).

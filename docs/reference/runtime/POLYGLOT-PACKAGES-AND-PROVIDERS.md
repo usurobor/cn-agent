@@ -468,16 +468,16 @@ It also requires resisting the temptation to let every package invent its own ex
 
 **Create:**
 
-- `docs/alpha/agent-runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md`
+- `docs/reference/runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md`
 
 **Edit:**
 
-- `docs/alpha/package-system/PACKAGE-SYSTEM.md`
+- `docs/reference/packages/PACKAGE-SYSTEM.md`
   - clarify language-agnostic payload principle
   - mention platform-aware payloads where relevant
-- `docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md`
+- `docs/reference/runtime/extensions/RUNTIME-EXTENSIONS.md`
   - clarify provider contract vs package distribution
-- `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md`
+- `docs/reference/runtime/RUNTIME-CONTRACT-v2.md`
   - later, expose provider registry / health
 - command/provider design docs
   - align with one descriptor model for commands

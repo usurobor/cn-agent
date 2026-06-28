@@ -1,25 +1,5 @@
-# Schema — Feature Bundle
+# Moved
 
-LLM schema design: structured output format, OCaml serialization, tradeoffs.
+Active documents have moved to [`docs/reference/schemas/`](../../reference/schemas/).
 
----
-
-## Canonical Spec
-
-**[DESIGN-LLM-SCHEMA.md](./DESIGN-LLM-SCHEMA.md)** — LLM schema design document.
-
----
-
-## Document Map
-
-| Document | Class | Description |
-|----------|-------|-------------|
-| [DESIGN-LLM-SCHEMA.md](./DESIGN-LLM-SCHEMA.md) | Design doc | Schema format, OCaml serialization decision, tradeoffs |
-
----
-
-## Version History
-
-| Version | Directory | Highlights |
-|---------|-----------|-----------|
-| v3.14.4 | [3.14.4/](3.14.4/) | Initial bundle migration from beta root (#89) |
+Frozen version snapshot (3.14.4/) remains here.

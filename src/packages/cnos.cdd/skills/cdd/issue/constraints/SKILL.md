@@ -117,7 +117,7 @@ Exceptions are debt, not permission to ignore the rule.
     "path": "src/packages/cnos.core/skills/example/SKILL.md",
     "allowed_missing": ["artifact_class", "kata_surface"],
     "reason": "Legacy skill; v0.1 migration pending",
-    "spec_ref": "docs/alpha/ctb/LANGUAGE-SPEC.md §2.1",
+    "spec_ref": "docs/reference/ctb/LANGUAGE-SPEC.md §2.1",
     "owner": "cnos.core",
     "remove_when": "frontmatter migration completes"
   }

@@ -6,7 +6,7 @@
 **Status:** Draft
 **Addresses:** #192 (Go kernel rewrite), #209 (CLI dispatch)
 **Related:**
-- docs/alpha/package-system/PACKAGE-SYSTEM.md (package content classes)
+- docs/reference/packages/PACKAGE-SYSTEM.md (package content classes)
 - src/cmd/cn_command.ml (current OCaml command dispatch)
 - src/lib/cn_lib.ml (current OCaml command variants)
 

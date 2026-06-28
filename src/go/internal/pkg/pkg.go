@@ -123,7 +123,7 @@ type EnginesJSON struct {
 // ContentClasses is the canonical, ordered list of package content
 // class directory names. This is the single source of truth shared
 // by `cn build --check` (filesystem discovery) and `cn status`
-// (installed-package display), per docs/alpha/package-system/PACKAGE-SYSTEM.md
+// (installed-package display), per docs/reference/packages/PACKAGE-SYSTEM.md
 // §1.1.
 //
 // Order follows the canonical §1.1 table. Filesystem presence — not

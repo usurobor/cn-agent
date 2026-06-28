@@ -19,7 +19,7 @@ ORCHESTRATORS.md §7–8 (orchestrator model + IR schema).
 - `src/cmd/cn_orchestrator.ml` (new) — IR types, JSON parser, schema validator
 - `src/cmd/cn_doctor.ml` — add orchestrator validation (missing steps, invalid refs, permission gaps)
 - `packages/cnos.core/cn.package.json` — add `"orchestrators": []` to sources (empty initially)
-- `docs/alpha/package-system/PACKAGE-SYSTEM.md` — add orchestrators to content-class table (per #174 scope note)
+- `docs/reference/packages/PACKAGE-SYSTEM.md` — add orchestrators to content-class table (per #174 scope note)
 
 **Tests (write first):**
 - IR parser: valid manifest, missing required fields, unknown step kinds, invalid step refs

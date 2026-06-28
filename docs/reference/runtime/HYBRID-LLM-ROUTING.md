@@ -357,13 +357,13 @@ This design does not:
 
 **Create:**
 
-- `docs/alpha/agent-runtime/HYBRID-LLM-ROUTING.md` (this file)
+- `docs/reference/runtime/HYBRID-LLM-ROUTING.md` (this file)
 
 **Edit (future, when implementation begins):**
 
-- `docs/alpha/agent-runtime/RUNTIME-CONTRACT-v2.md` — add body-level provider/routing visibility
-- `docs/alpha/agent-runtime/AGENT-RUNTIME.md` — clarify provider routing as body-plane policy
-- `docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md` — clarify that LLM backends can be delivered as capability providers if desired
+- `docs/reference/runtime/RUNTIME-CONTRACT-v2.md` — add body-level provider/routing visibility
+- `docs/reference/runtime/AGENT-RUNTIME.md` — clarify provider routing as body-plane policy
+- `docs/reference/runtime/extensions/RUNTIME-EXTENSIONS.md` — clarify that LLM backends can be delivered as capability providers if desired
 - Go runtime kernel: routing policy module, provider interface, receipts
 
 ---

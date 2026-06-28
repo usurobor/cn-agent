@@ -209,9 +209,9 @@ This file states the theory/practice dependency stack.
 |----------|------|
 | [THESIS.md](../THESIS.md) | The whole system as a recurrent coherence system |
 | [COHERENCE-SYSTEM.md](./COHERENCE-SYSTEM.md) | Meta-model: MCP, CMP, CAP, CLP across scales |
-| [CAA.md](../alpha/agent-runtime/CAA.md) | What a coherent agent is structurally |
-| [AGENT-RUNTIME.md](../alpha/agent-runtime/AGENT-RUNTIME.md) | How coherent action runs |
-| [CAR.md](../alpha/cognitive-substrate/CAR.md) | How cognition arrives locally |
+| [CAA.md](../reference/runtime/CAA.md) | What a coherent agent is structurally |
+| [AGENT-RUNTIME.md](../reference/runtime/AGENT-RUNTIME.md) | How coherent action runs |
+| [CAR.md](../architecture/cognitive-substrate/CAR.md) | How cognition arrives locally |
 | [CDD.md](../development/cdd/CDD.md) | How cnos itself evolves coherently |
 
 FOUNDATIONS explains the ground. The other docs explain the practices built on it.

@@ -441,7 +441,7 @@ No PATH fallback in v1. If two external commands claim the same name at the same
 - `.github/workflows/release.yml` — build and publish package tarballs + index
 - `scripts/stamp-versions.sh` — stamp package artifact versions
 - `scripts/check-version-consistency.sh` — validate package artifacts
-- `docs/alpha/package-system/PACKAGE-SYSTEM.md` — add `commands` content class, document artifact-first distribution
+- `docs/reference/packages/PACKAGE-SYSTEM.md` — add `commands` content class, document artifact-first distribution
 - `packages/cnos.core/cn.package.json` — add `commands` content class entries
 - `packages/cnos.eng/cn.package.json` — add `commands` content class entries if applicable
 - `src/cmd/cn_runtime_contract.ml` — add skill activation table to cognition layer (scan exposed skills' frontmatter for trigger keywords)

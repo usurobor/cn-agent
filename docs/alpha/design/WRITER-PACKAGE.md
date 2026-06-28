@@ -35,7 +35,7 @@ The package must respect contracts already in force:
 
 ## Parallel Dependency: CTB Language Spec Reconciliation
 
-Issue #278 §"Parallel dependency" requires that any conflict between this design and the parallel `cnos` agent language reference surface in the design doc, not silently. The reference is `docs/alpha/ctb/LANGUAGE-SPEC.md` (CTB Language Spec v0.1, draft-normative, dated 2026-04-26).
+Issue #278 §"Parallel dependency" requires that any conflict between this design and the parallel `cnos` agent language reference surface in the design doc, not silently. The reference is `docs/reference/ctb/LANGUAGE-SPEC.md` (CTB Language Spec v0.1, draft-normative, dated 2026-04-26).
 
 **LANGUAGE-SPEC's bearing on this design.** §0 names the signature surface defined in §2 — `name`, `description`, `artifact_class`, `kata_surface`, `governing_question`, `scope`, `visibility`, `triggers`, `inputs`, `outputs`, `requires`, `calls`, `calls_dynamic`, `runs_after`, `runs_before`, `excludes` — as fully realized today in `cnos.cdd` and **prescriptive** for cnos.core skills (which carry the older minimal frontmatter). §10 lists the well-formedness constraints a conformant skill must satisfy: every skill must declare the five required-fields per §2.1, must declare `scope` per §3.2, must declare `inputs` and `outputs` per §2.3, and public skills must declare `visibility: public` per §4.1.
 

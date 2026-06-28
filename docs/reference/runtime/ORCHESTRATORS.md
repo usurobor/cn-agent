@@ -4,7 +4,7 @@
 **Status:** Draft
 **Issue:** #170
 **Doc-Class:** canonical-spec
-**Canonical-Path:** docs/alpha/agent-runtime/ORCHESTRATORS.md
+**Canonical-Path:** docs/reference/runtime/ORCHESTRATORS.md
 **Owns:** orchestrator model, command-provider model, activation index, compiled orchestrator IR, runtime contract additions
 **Does-Not-Own:** low-level capability provider execution, package transport details, skill corpus standards
 

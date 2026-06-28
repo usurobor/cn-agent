@@ -220,7 +220,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check contract copy matches source
-        run: diff docs/alpha/schemas/protocol-contract.json test/cmd/protocol-contract.json
+        run: diff docs/reference/schemas/protocol-contract.json test/cmd/protocol-contract.json
 
   link-check:
     name: Repo link validation (I4)

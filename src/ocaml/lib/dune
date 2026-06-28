@@ -2,7 +2,7 @@
 ;
 ; Discipline: no filesystem, git, process exec, HTTP, or LLM code in
 ; this library. Pure types, validators, parsers, and lookups only.
-; See docs/alpha/agent-runtime/CORE-REFACTOR.md §7 Move 2.
+; See docs/reference/runtime/CORE-REFACTOR.md §7 Move 2.
 (library
  (name cn_lib)
  (wrapped false)

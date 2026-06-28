@@ -9,8 +9,8 @@
 
 **Related:**
 
-- `docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md`
-- `docs/alpha/AGENT-RUNTIME.md`
+- `docs/reference/protocol/cn/MESSAGE-PACKET-TRANSPORT.md`
+- `docs/reference/runtime/AGENT-RUNTIME.md`
 - `docs/reference/GLOSSARY.md`
 
 ---
@@ -691,7 +691,7 @@ Reflections remain separate in v1.
 
 ### Create
 
-- `docs/alpha/protocol/THREAD-EVENT-MODEL.md`
+- `docs/reference/protocol/cn/THREAD-EVENT-MODEL.md`
 - `src/transport/cn_thread_event.ml`
 - local event-store module
 - feed projection module
@@ -700,7 +700,7 @@ Reflections remain separate in v1.
 
 ### Edit
 
-- `docs/alpha/protocol/MESSAGE-PACKET-TRANSPORT.md`
+- `docs/reference/protocol/cn/MESSAGE-PACKET-TRANSPORT.md`
   - clarify envelope thread metadata and locator semantics
 - `src/transport/cn_packet.ml`
   - validate thread-event metadata

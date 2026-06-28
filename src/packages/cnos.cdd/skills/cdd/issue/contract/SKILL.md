@@ -125,7 +125,7 @@ Distinguish shipped reality from expected or draft targets:
 
 | Claim / surface | Canonical source | Status | Notes |
 |---|---|---|---|
-| CTB v0.1 frontmatter fields | docs/alpha/ctb/LANGUAGE-SPEC.md §2, §11 | current spec | governs current skill frontmatter |
+| CTB v0.1 frontmatter fields | docs/reference/ctb/LANGUAGE-SPEC.md §2, §11 | current spec | governs current skill frontmatter |
 ```
 
 Every load-bearing claim must link to a path, issue, or upstream document. No "the docs say" without a path.
@@ -192,7 +192,7 @@ State constraints in plain language.
 Link exact paths. If a companion artifact is being drafted in parallel, say how conflicts are resolved.
 
 - ❌ `Related: CTB docs.`
-- ✅ `docs/alpha/ctb/LANGUAGE-SPEC.md §2.1`
+- ✅ `docs/reference/ctb/LANGUAGE-SPEC.md §2.1`
 
 ### 2.10 Implementation guidance
 

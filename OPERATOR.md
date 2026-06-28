@@ -3,7 +3,7 @@
 Day-2 operations for a running cnos agent. Assumes install and setup are done.
 
 For install: [README.md quickstart](README.md).
-For setup: [SETUP-INSTALLER.md](docs/alpha/cli/SETUP-INSTALLER.md).
+For setup: [SETUP-INSTALLER.md](docs/reference/cli/SETUP-INSTALLER.md).
 
 ---
 
@@ -158,7 +158,7 @@ cn deps update                 # re-resolve and update lockfile
 
 Desired state: `.cn/deps.json`. Resolved state: `.cn/deps.lock.json`. Installed: `.cn/vendor/packages/`.
 
-See [PACKAGE-SYSTEM.md](docs/alpha/package-system/PACKAGE-SYSTEM.md).
+See [PACKAGE-SYSTEM.md](docs/reference/packages/PACKAGE-SYSTEM.md).
 
 ### Peers
 
@@ -230,4 +230,4 @@ See [TROUBLESHOOTING.md](docs/guides/TROUBLESHOOTING.md) for detailed diagnostic
 | Update binary | `cn update` |
 | Sync peers | `cn sync` |
 | Process one item | `cn agent --process` (planned) |
-| Full CLI reference | `cn --help` or [CLI.md](docs/alpha/cli/CLI.md) |
+| Full CLI reference | `cn --help` or [CLI.md](docs/reference/cli/CLI.md) |

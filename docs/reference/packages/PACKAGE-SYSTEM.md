@@ -7,8 +7,8 @@
 **Addresses:** #119 (template distribution), build-system content model
 **Related:**
 - docs/beta/architecture/PACKAGE-SYSTEM.md (retired — redirect stub)
-- docs/alpha/cognitive-substrate/COGNITIVE-SUBSTRATE.md (asset taxonomy)
-- docs/alpha/runtime-extensions/RUNTIME-EXTENSIONS.md (extension model)
+- docs/architecture/cognitive-substrate/COGNITIVE-SUBSTRATE.md (asset taxonomy)
+- docs/reference/runtime/extensions/RUNTIME-EXTENSIONS.md (extension model)
 
 ---
 
@@ -66,7 +66,7 @@ a `commands` object.
 The `orchestrators` class: each orchestrator id has a directory at
 `src/packages/<name>/orchestrators/<id>/orchestrator.json`. The JSON
 is a `cn.orchestrator.v1` manifest with steps, permissions, and a
-trigger — see `docs/alpha/agent-runtime/ORCHESTRATORS.md` for the
+trigger — see `docs/reference/runtime/ORCHESTRATORS.md` for the
 full schema.
 
 Metadata (`cn.package.json`) is not a content class — it is always
