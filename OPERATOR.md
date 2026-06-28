@@ -49,7 +49,7 @@ Crontab entry:
 
 Both modes run the same protocol loop: sync peers, materialize inbox, flush outbox, drain queue. The daemon loops; oneshot exits after one pass.
 
-See [AUTOMATION.md](docs/beta/guides/AUTOMATION.md) for scheduler config, drain limits, and systemd unit setup.
+See [AUTOMATION.md](docs/guides/AUTOMATION.md) for scheduler config, drain limits, and systemd unit setup.
 
 ### Configuration
 
@@ -73,7 +73,7 @@ Settings: `.cn/config.json`.
 }
 ```
 
-Full config options: [AUTOMATION.md scheduler settings](docs/beta/guides/AUTOMATION.md).
+Full config options: [AUTOMATION.md scheduler settings](docs/guides/AUTOMATION.md).
 
 ---
 
@@ -145,7 +145,7 @@ curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | sh
 
 After updating, restart the daemon if running: `systemctl restart cn-<name>` (target — when daemon is running).
 
-See [BUILD-RELEASE.md](docs/beta/guides/BUILD-RELEASE.md) for rollback procedure.
+See [BUILD-RELEASE.md](docs/guides/BUILD-RELEASE.md) for rollback procedure.
 
 ### Packages
 
@@ -168,7 +168,7 @@ cn peer add <name> <url>       # add peer
 cn peer sync                   # fetch all peer repos
 ```
 
-See [HANDSHAKE.md](docs/beta/guides/HANDSHAKE.md) for establishing peer-to-peer coordination.
+See [HANDSHAKE.md](docs/guides/HANDSHAKE.md) for establishing peer-to-peer coordination.
 
 ---
 
@@ -216,7 +216,7 @@ Start with `cn logs --errors`. Every failure path emits to the unified log.
 | Unknown peer errors | `cn peer` | Verify peer name and URL |
 | Package drift | `cn doctor` then `cn deps restore` | Lockfile vs vendor mismatch |
 
-See [TROUBLESHOOTING.md](docs/beta/guides/TROUBLESHOOTING.md) for detailed diagnostics.
+See [TROUBLESHOOTING.md](docs/guides/TROUBLESHOOTING.md) for detailed diagnostics.
 
 ---
 

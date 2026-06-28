@@ -2,10 +2,6 @@
 
 **The mental model — what cnos is, and why coherence is the root concept.**
 
-> **Pass 1 overlay.** These files currently live under `alpha/essays/`,
-> `alpha/doctrine/`, `alpha/vision/`, and `beta/lineage/`. They will move
-> here in a later pass.
-
 ## Start
 
 - [THESIS.md](../THESIS.md) — what cnos is; the whole, above the triad.
@@ -21,7 +17,7 @@
 
 ## Doctrine and origin
 
-- [Doctrine bundle](../alpha/doctrine/README.md) — coherence, ethics, judgment, inheritance for agents.
-- [Origin](../beta/lineage/ORIGIN.md) and [Lineage](../beta/lineage/LINEAGE.md) — where cnos came from and how it is structured.
+- [Doctrine bundle](doctrine/README.md) — coherence, ethics, judgment, inheritance for agents.
+- [Origin](lineage/ORIGIN.md) and [Lineage](lineage/LINEAGE.md) — where cnos came from and how it is structured.
 
 Long-form arguments (whitepapers, position papers) live in [`papers/`](../papers/README.md).
