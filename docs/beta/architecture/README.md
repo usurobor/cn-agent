@@ -6,7 +6,7 @@
 | Document | New home |
 |----------|----------|
 | ARCHITECTURE.md | [`docs/architecture/ARCHITECTURE.md`](../../architecture/ARCHITECTURE.md) |
-| PACKAGE-SYSTEM.md (retired redirect) | [`docs/architecture/PACKAGE-SYSTEM.md`](../../architecture/PACKAGE-SYSTEM.md) |
+| PACKAGE-SYSTEM.md (retired) | [`docs/reference/packages/PACKAGE-SYSTEM.md`](../../reference/packages/PACKAGE-SYSTEM.md) |
 
 ## Version History (frozen)
 

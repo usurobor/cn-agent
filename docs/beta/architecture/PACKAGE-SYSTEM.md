@@ -1,3 +1,6 @@
 # Moved
 
-This file has moved to [`docs/architecture/PACKAGE-SYSTEM.md`](../../architecture/PACKAGE-SYSTEM.md).
+This retired architecture pointer now resolves to the package-system reference:
+[`../../reference/packages/PACKAGE-SYSTEM.md`](../../reference/packages/PACKAGE-SYSTEM.md)
+
+This stub remains so older links do not break during the docs reorganization.

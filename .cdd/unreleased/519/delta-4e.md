@@ -11,7 +11,7 @@
 
 | AC | Status | Evidence |
 |---|---|---|
-| AC1 Scope | PASS | Only `ARCHITECTURE.md` + `PACKAGE-SYSTEM.md` moved `beta/architecture/` → `architecture/`. |
+| AC1 Scope | PASS (after δ repair) | `ARCHITECTURE.md` moved `beta/architecture/` → `architecture/`. `PACKAGE-SYSTEM.md` was initially moved too, then — per operator δ repair (see below) — **deleted** from `architecture/` (it is a retired redirect, not an architecture paper); its old-path stub now points straight to `reference/packages/`. |
 | AC2 History | PASS (stub-model) | `git mv` used; per the kept-stub-model policy the old paths then receive stubs, so git records A(new)+M(old-stub) rather than R — consistent with 4B/4C. |
 | AC3 Stubs | PASS | `# Moved` stubs at both old active paths → `../../architecture/<file>`. |
 | AC4 Frozen | PASS | `docs/beta/architecture/3.14.4/` untouched (not in changed set). |
@@ -50,6 +50,21 @@ file at `docs/architecture/PACKAGE-SYSTEM.md` remains a retirement breadcrumb (i
 No merge/collision with `docs/reference/packages/PACKAGE-SYSTEM.md` (distinct path; the retired file already
 defers to it). **Flagged for operator**: if you'd rather not feature a retired redirect in the reader-intent
 architecture home, deleting it (leaving only the old-path stub → reference/packages) is a trivial follow-up.
+
+## Operator δ repair (pre-merge, 2026-06-29)
+
+Operator ruled the retired `PACKAGE-SYSTEM.md` redirect does not belong in the reader-intent
+architecture home. Applied before merge:
+
+1. **Deleted** `docs/architecture/PACKAGE-SYSTEM.md` (the moved retired redirect — never lands on `main`).
+2. **Old-path stub `docs/beta/architecture/PACKAGE-SYSTEM.md` retargeted** to point directly at
+   `../../reference/packages/PACKAGE-SYSTEM.md` (so older links still resolve, to the real authority).
+3. **Removed** the `PACKAGE-SYSTEM.md` entry from `docs/architecture/README.md` (architecture index).
+4. **Retargeted** the `docs/beta/architecture/README.md` redirect-table row → `reference/packages/PACKAGE-SYSTEM.md`.
+
+Net effect: `docs/architecture/` holds only `ARCHITECTURE.md` (+ the existing cognitive-substrate/security
+subdirs); the retired package-system pointer resolves to the reference spec via the old-path stub. AC5
+reader index lists only `ARCHITECTURE.md`. No clean PASS is preserved over this change — AC1/AC5 reflect it.
 
 ## Frozen / not-moved
 
