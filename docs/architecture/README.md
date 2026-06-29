@@ -4,7 +4,8 @@
 
 ## System
 
-- [ARCHITECTURE.md](../beta/architecture/ARCHITECTURE.md) — system overview: how the parts relate.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — system overview: how the parts relate.
+- [PACKAGE-SYSTEM.md](PACKAGE-SYSTEM.md) — package-system architecture note (retired; points to the reference package-system spec).
 - [CAA.md](../reference/runtime/CAA.md) — coherent agent architecture.
 - [INVARIANTS.md](../alpha/architecture/INVARIANTS.md) — architectural invariants.
 

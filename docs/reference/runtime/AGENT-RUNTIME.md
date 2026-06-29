@@ -2363,7 +2363,7 @@ The renderer MUST block it and use a fallback or skip projection.
 - [Traceability](../../architecture/security/TRACEABILITY.md) — event stream, state projections, readiness, and transition reasoning
 - [Daemon Architecture](../cli/DAEMON.md) — Plugin direction (this doc is the first plugin)
 - [Protocol Specification](../protocol/cn/PROTOCOL.md) — FSM definitions
-- [Architecture](../../beta/architecture/ARCHITECTURE.md) — Module layers, data flow, agent I/O protocol
+- [Architecture](../../architecture/ARCHITECTURE.md) — Module layers, data flow, agent I/O protocol
 
 ### External
 - [Telegram Bot API — getUpdates](https://core.telegram.org/bots/api#getupdates)

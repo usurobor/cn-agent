@@ -1,25 +1,17 @@
-# Architecture — Feature Bundle
+# Architecture — Moved
 
-System architecture: module layers, data flow, agent I/O protocol, directory layout.
+> **The active architecture docs have moved to [`docs/architecture/`](../../architecture/).**
+> This is no longer a live architecture home.
 
----
+| Document | New home |
+|----------|----------|
+| ARCHITECTURE.md | [`docs/architecture/ARCHITECTURE.md`](../../architecture/ARCHITECTURE.md) |
+| PACKAGE-SYSTEM.md (retired redirect) | [`docs/architecture/PACKAGE-SYSTEM.md`](../../architecture/PACKAGE-SYSTEM.md) |
 
-## Canonical Spec
-
-**[ARCHITECTURE.md](./ARCHITECTURE.md)** — the single source of truth for cnos system architecture.
-
----
-
-## Document Map
-
-| Document | Class | Description |
-|----------|-------|-------------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Canonical spec | System overview — modules, FSMs, data flow, directory layout |
-
----
-
-## Version History
+## Version History (frozen)
 
 | Version | Directory | Highlights |
 |---------|-----------|-----------|
 | v3.14.4 | [3.14.4/](3.14.4/) | Initial bundle migration from beta root (#89) |
+
+The `3.14.4/` snapshot remains frozen in place.
