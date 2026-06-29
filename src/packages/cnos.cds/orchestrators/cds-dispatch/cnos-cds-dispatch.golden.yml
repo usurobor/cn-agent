@@ -222,7 +222,7 @@ jobs:
             - **Dispatch protocol (cnos#454):** [`src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md`](../../../cnos.core/skills/agent/dispatch-protocol/SKILL.md) — defines the claim mechanics, lifecycle transitions, drift handling (`dispatch_protocol_missing`, `dispatch_protocol_mismatch`, `dispatch_label_drift`), and concurrency discipline. Landed on `main` via PR #466.
             - **Cell-runtime framework (cnos.cdd):** [`src/packages/cnos.cdd/skills/cdd/SKILL.md`](../../../cnos.cdd/skills/cdd/SKILL.md) — the framework's overview. The δ role contract specifically: [`src/packages/cnos.cdd/skills/cdd/delta/SKILL.md`](../../../cnos.cdd/skills/cdd/delta/SKILL.md).
             - **CDS protocol skills (cnos.cds):** [`src/packages/cnos.cds/skills/cds/SKILL.md`](../../skills/cds/SKILL.md) — the concrete software protocol; defines selection function + lifecycle that the cell follows under δ's routing.
-            - **Channel log convention (read-only for dispatch):** [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md) — cited to document the admin/dispatch writer-locality split; the dispatch wake does NOT write channel entries.
+            - **Channel log convention (read-only for dispatch):** [`docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`](../../../../../docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md) — cited to document the admin/dispatch writer-locality split; the dispatch wake does NOT write channel entries.
             - **Activate skill:** [`src/packages/cnos.core/skills/agent/activate/SKILL.md`](../../../cnos.core/skills/agent/activate/SKILL.md) — identity load procedure.
 
             ---

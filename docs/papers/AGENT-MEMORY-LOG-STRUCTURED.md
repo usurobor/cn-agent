@@ -204,7 +204,7 @@ outputs:
   retained:
     - activation logs should be agent-level, not Sigma-only
   promoted:
-    - target: docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md
+    - target: docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md
       claim: activation home logs should be date-sharded directories
   dropped:
     - old flat home-log path
@@ -496,5 +496,5 @@ That is agent memory without a memory store.
 - Martin Fowler, [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)
 - Microsoft Azure Architecture Center, [Event Sourcing pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing)
 - Jay Kreps, [Questioning the Lambda Architecture](https://www.oreilly.com/radar/questioning-the-lambda-architecture/)
-- Agent Activation Log Convention v0, [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../gamma/conventions/AGENT-ACTIVATION-LOG-v0.md)
+- Agent Activation Log Convention v0, [`docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`](../reference/conventions/AGENT-ACTIVATION-LOG-v0.md)
 - Companion essays: [`AGENT-ACTIVATION-LOGS-AND-EVENTUAL-CONSISTENCY.md`](./AGENT-ACTIVATION-LOGS-AND-EVENTUAL-CONSISTENCY.md), [`AGENT-COMMS-FUTURES-KISS.md`](./AGENT-COMMS-FUTURES-KISS.md)

@@ -359,7 +359,7 @@ That is the point to protect: enough structure to converge, not enough machinery
 
 ## References
 
-- `Agent Activation Log Convention v0`: [`docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`](../gamma/conventions/AGENT-ACTIVATION-LOG-v0.md)
+- `Agent Activation Log Convention v0`: [`docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`](../reference/conventions/AGENT-ACTIVATION-LOG-v0.md)
 - Companion essay: [`docs/papers/AGENT-ACTIVATION-LOGS-AND-EVENTUAL-CONSISTENCY.md`](./AGENT-ACTIVATION-LOGS-AND-EVENTUAL-CONSISTENCY.md)
 - Douglas B. Terry, Alan J. Demers, Karin Petersen, Mike Spreitzer, Marvin Theimer, and Brent Welch, "Session Guarantees for Weakly Consistent Replicated Data," 1994: https://pages.cs.wisc.edu/~remzi/Classes/739/Fall2016/Papers/bayou-sessions94.pdf
 - Marc Shapiro, Nuno Preguiça, Carlos Baquero, and Marek Zawirski, "Conflict-free Replicated Data Types," 2011: https://www.csa.iisc.ac.in/~raghavan/CleanedPods2021/crdt-shapiro-2011.pdf

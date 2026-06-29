@@ -1,13 +1,16 @@
 # Legacy docs tail map (H4A audit)
 
-**Status:** H4B/H4C **executed**. The 40 real-active files in the worklist
-below were moved to their reader-intent homes (a `# Moved` stub was left at
-each old path and active inbound links were repointed). `docs/{alpha,beta,gamma}`
+**Status:** H4B/H4C **and H5 executed**. The 40 real-active files in the
+worklist below were moved to their reader-intent homes (a `# Moved` stub was
+left at each old path and active inbound links were repointed), and the
+golden-bound `AGENT-ACTIVATION-LOG-v0.md` was moved
+`gamma/conventions/` → `reference/conventions/` as a golden-aware cell (H5:
+sources edited, the agent-admin / cds-dispatch wake goldens re-rendered via
+`cn install-wake`, path-only golden diff verified). `docs/{alpha,beta,gamma}`
 now hold **zero** active non-stub, non-frozen files; only redirect stubs, frozen
-snapshots, frozen PRAs, and the single golden-bound convention remain. The
-worklist is retained below as the executed record. **Remaining tail:** H5 (the
-golden `AGENT-ACTIVATION-LOG-v0.md` move, still pending) + retirement of the
-redirect stubs and `docs/essays/` after a grace period.
+snapshots, and frozen PRAs remain. The worklist is retained below as the
+executed record. **Remaining tail:** retirement of the redirect stubs and
+`docs/essays/` after a grace period (separate from this map).
 
 **Purpose:** classify everything still living under `docs/alpha/`, `docs/beta/`,
 `docs/gamma/`, `docs/essays/` after the 4A–4E reader-intent migration, so the

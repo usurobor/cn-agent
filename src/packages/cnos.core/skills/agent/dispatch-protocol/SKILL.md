@@ -542,7 +542,7 @@ Confirm `AGENT-ACTIVATION-LOG-v0` §0.1 names the writer-ownership partition (ad
 
 ### Upstream protocol
 
-- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — channel convention; claim protocol is the implementation-cell analog of the activation-log write discipline.
+- `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` — channel convention; claim protocol is the implementation-cell analog of the activation-log write discipline.
 
 ### Skills and issues that depend on this protocol
 

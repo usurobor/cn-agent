@@ -15,7 +15,7 @@ triggers:
 scope: task-local
 inputs:
   - an activated agent identity (see `agent/activate/SKILL.md`)
-  - access to the channel surfaces defined by `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`
+  - access to the channel surfaces defined by `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`
   - body capabilities (shell + git, HTTP fetch only, or no fetch — see activate §2.2)
 outputs:
   - body has bound to its channel (mode detected, attached-state detected)
@@ -24,7 +24,7 @@ outputs:
   - changes committed and pushed to `main` (skipped for ephemeral mode)
 requires:
   - prior activation per `agent/activate/SKILL.md` — channel work without identity load produces drift
-  - the convention spec `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` (single source of truth for loop mechanics)
+  - the convention spec `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` (single source of truth for loop mechanics)
 calls:
   - agent/activate/SKILL.md
 ---
@@ -43,7 +43,7 @@ section-manifest:
 
 A body that is activated but not attached has identity without continuity: it knows it is Sigma but does not know what Sigma-at-this-hub said yesterday, what directives are pending from home, or where to write today's entry. Attach closes that gap by binding the activated identity to the channel surface defined for this body in this environment.
 
-The channel surfaces and cursor mechanics are defined in `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md`. This skill does not redefine them — it operationalizes them: it tells a body how to (a) detect which channel surface applies here, (b) detect whether this is the inaugural attach or a follow-up sync, and (c) execute the correct procedure for the detected combination.
+The channel surfaces and cursor mechanics are defined in `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`. This skill does not redefine them — it operationalizes them: it tells a body how to (a) detect which channel surface applies here, (b) detect whether this is the inaugural attach or a follow-up sync, and (c) execute the correct procedure for the detected combination.
 
 The failure mode this skill prevents is **silent channel drift** — a body that writes an entry without first reading what the other side said since the last cursor, or that writes a cursor without doing the read, or that self-registers a new activation without home's approval. Each of these is a cursor-integrity violation; together they erode the channel's value as durable evidence.
 
@@ -320,7 +320,7 @@ Implementation-level:
 
 ### Convention this skill operationalizes
 
-- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — the two-artifact channel shape, cursor mechanism, entry format, trust boundary, single-writer caveat. This skill does not redefine these; it operationalizes the post-activation procedure for binding a body to a channel.
+- `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` — the two-artifact channel shape, cursor mechanism, entry format, trust boundary, single-writer caveat. This skill does not redefine these; it operationalizes the post-activation procedure for binding a body to a channel.
 
 ### Peer skill
 
@@ -333,7 +333,7 @@ Implementation-level:
 ### Reflections this skill derives from
 
 - `cnos:.cn-sigma/logs/20260601.md` — claude-code-action substrate verification; established that GH Actions can run the channel work end-to-end with operator's subscription billing.
-- `cnos:docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — the convention this skill operationalizes; field experience across three activations (Sigma-at-cnos, Sigma-at-bumpt, Sigma-at-home) confirmed the topology-fit framing.
+- `cnos:docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` — the convention this skill operationalizes; field experience across three activations (Sigma-at-cnos, Sigma-at-bumpt, Sigma-at-home) confirmed the topology-fit framing.
 
 ### Authority and stability
 

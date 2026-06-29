@@ -125,7 +125,7 @@
       "src/packages/cnos.cds/skills/cds/selection/SKILL.md (cell-selection criteria for software cells; consumed by γ during scaffold authoring)"
     ],
     "consumed_conventions": [
-      "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; this wake does NOT write channel logs but cites the convention to document the admin/dispatch writer-locality split)"
+      "docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; this wake does NOT write channel logs but cites the convention to document the admin/dispatch writer-locality split)"
     ]
   }
 }

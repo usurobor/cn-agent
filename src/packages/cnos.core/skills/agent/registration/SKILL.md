@@ -418,7 +418,7 @@ Simulate the cn-sigma + bumpt scenario (§2.6) step by step. Confirm the body st
 
 - `agent/activate/SKILL.md` — identity must be confirmed before registration check; activation is prerequisite.
 - `agent/attach/SKILL.md §2.3` — foreign-inaugural attach procedure triggers registration when activation is absent.
-- `docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md` — `.cn-{agent}/state/activations.md` format and field definitions.
+- `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` — `.cn-{agent}/state/activations.md` format and field definitions.
 
 ### Downstream skills (registration informs)
 

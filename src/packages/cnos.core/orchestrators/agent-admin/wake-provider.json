@@ -10,7 +10,7 @@
     "activate per cnos.core/skills/agent/activate (Kernel + CA skills + Persona + Operator + hub state + identity confirmation)",
     "attach per cnos.core/skills/agent/attach (mode detection, attached-state detection, follow-up sync or inaugural attach as appropriate)",
     "channel sync: read home thread from prior cursor to home HEAD; process inbound directives per standing posture",
-    "status reporting: append today's channel log entry per docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md; advance cursor",
+    "status reporting: append today's channel log entry per docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md; advance cursor",
     "issue creation/refinement: create or refine cnos issues when the operator's directive or standing posture authorizes it",
     "label application: apply status:* labels per operator authorization; apply protocol:{id} labels when the issue body unambiguously names a single protocol; ask the operator when ambiguous; never define new labels (per cnos.core/skills/agent/label-doctrine §4)",
     "directive routing: classify inbound directives as admin (handle inline) or cell-shaped (defer per defer_path.cell_shaped_directive)",
@@ -29,7 +29,7 @@
     "inbound": "home thread (cn-{agent}:.cn-{agent}/threads/activations/{this-hub}/) + open issues in this repo (read-only access for triage); not a queue claim — the admin wake does NOT claim from dispatch:cell + protocol:{P} + status:todo queue, which is per-package dispatch wakes' job per cnos#467 + cnos#454"
   },
   "output_contract": {
-    "channel_log_convention": "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md",
+    "channel_log_convention": "docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md",
     "writer_surface": ".cn-{agent}/logs/YYYYMMDD.md (per the convention's §2; today's file in the current hub)",
     "class_taxonomy": [
       "heartbeat",
@@ -100,7 +100,7 @@
       "src/packages/cnos.core/skills/agent/wake-provider/SKILL.md (this manifest's governing contract)"
     ],
     "consumed_conventions": [
-      "docs/gamma/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; cursor mechanics §4; entry format §5; class taxonomy)"
+      "docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md (channel log convention; cursor mechanics §4; entry format §5; class taxonomy)"
     ],
     "adjacent_operator_doctrine": [
       "cn-sigma:.cn-sigma/spec/OPERATOR.md §\"CDD role assignment\" (Sigma admin boundary; what Sigma may / may not do)"
