@@ -131,11 +131,11 @@ hub/thread state (`threads/`) lives in an agent's *home* repo (e.g. `cn-sigma`),
 not here. `dist/` is generated build output (gitignored): `cn build` produces
 tarballs under `dist/packages/`.
 
-**Legacy pointer (not active source):** `src/ocaml/` is an archived stub for the
-original OCaml thread-reference implementation — see
+**Legacy:** the original OCaml thread-reference implementation is archived off
+`main` — see
 [`docs/reference/legacy/OCAML-THREAD-REFERENCE.md`](docs/reference/legacy/OCAML-THREAD-REFERENCE.md)
 (branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`).
-The active runtime is Go (`src/go/`).
+The active runtime is Go (`src/go/`); `src/` holds only `go/` and `packages/`.
 
 The current package set:
 
