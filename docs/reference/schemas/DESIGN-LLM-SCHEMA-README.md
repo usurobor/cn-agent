@@ -22,4 +22,4 @@ LLM schema design: structured output format, OCaml serialization, tradeoffs.
 
 | Version | Directory | Highlights |
 |---------|-----------|-----------|
-| v3.14.4 | [3.14.4/](3.14.4/) | Initial bundle migration from beta root (#89) |
+| v3.14.4 | [3.14.4/](../../beta/schema/3.14.4/) | Initial bundle migration from beta root (#89) |

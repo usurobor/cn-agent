@@ -1,4 +1,11 @@
-# gamma-closeout — cnos#514 — docs Pass 4D
+# gamma-closeout — cnos#514 — docs Pass 4D — **RETRACTED**
+
+> **RETRACTED (δ, 2026-06-29).** This `R0 converge` close-out was written by a
+> third dispatch wake on the rejected branch — like the α/β closeouts, it
+> finalized ceremony over work that failed AC3/AC11/AC9/AC12/AC15/AC16 without
+> performing any repair. Authoritative record: [`delta-repair.md`](delta-repair.md).
+> No clean PASS here is valid. The work was manually δ-repaired and is held for
+> operator review.
 
 **cycle-branch:** cycle/514
 **mode:** design-and-build

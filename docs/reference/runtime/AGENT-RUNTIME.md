@@ -21,7 +21,7 @@
 - Receipt pass field uses numeric labels (`"1"`, `"2"`, ...) under N-pass; `cn.receipts.v1` schema unchanged
 - `state/runtime.json` now includes `max_passes` for operator visibility
 - Backward compatible: `max_passes=2` reproduces existing N-pass behavior
-- See: [`N-PASS-BIND-v3.8.0.md`](3.8.0/N-PASS-BIND.md) and [`PLAN-v3.8.0-n-pass-bind.md`](../../development/plans/PLAN-v3.8.0-n-pass-bind.md) for full design and plan
+- See: [`N-PASS-BIND-v3.8.0.md`](../../alpha/agent-runtime/3.8.0/N-PASS-BIND.md) and [`PLAN-v3.8.0-n-pass-bind.md`](../../development/plans/PLAN-v3.8.0-n-pass-bind.md) for full design and plan
 
 **v3.8.0** — Syscall Surface Coherence Amendment:
 - Implement `fs_glob` observe op (was advertised but returned `not_yet_implemented`)
@@ -30,7 +30,7 @@
 - Add `offset` and `limit` fields to `fs_read` for chunked observation of large files
 - Make `fs_patch` external dependency on `patch(1)` explicit: `cn doctor` checks for it; receipts reflect failure
 - New receipt reason: `nothing_staged` (git_commit when index has no staged changes)
-- See: [`SYSCALL-SURFACE-v3.8.0.md`](3.8.0/SYSCALL-SURFACE.md) for full design
+- See: [`SYSCALL-SURFACE-v3.8.0.md`](../../alpha/agent-runtime/3.8.0/SYSCALL-SURFACE.md) for full design
 
 **v3.7.0** — Scheduler Unification (one loop, two schedulers):
 - Replace the daemon-vs-cron behavioral split with **one protocol loop, one processing engine, two schedulers**
@@ -43,7 +43,7 @@
 - Add `scheduler` config block: `sync_interval_sec`, `review_interval_sec`, `oneshot_drain_limit`, `daemon_drain_limit`
 - Add scheduler projection to `state/ready.json`: `scheduler.mode`, `last_sync_at`, `last_sync_status`, `last_maintenance_at`, `last_maintenance_status`
 - Add trace events: `maintenance.start/.complete`, `sync.start/.ok/.error`, `inbox.materialized`, `outbox.flushed`, `drain.start/.complete/.stopped`, `scheduler.tick/.idle/.degraded`
-- See [`SCHEDULER-v3.7.0.md`](3.7.0/DESIGN.md) and [`PLAN-v3.7.0.md`](../../development/plans/PLAN-v3.7.0-scheduler.md) for full design and implementation plan
+- See [`SCHEDULER-v3.7.0.md`](../../alpha/agent-runtime/3.7.0/DESIGN.md) and [`PLAN-v3.7.0.md`](../../development/plans/PLAN-v3.7.0-scheduler.md) for full design and implementation plan
 
 **v3.6.0** — Output Plane Separation and sink-safe rendering:
 - Introduce strict separation between **control plane** (frontmatter, coordination ops, typed `ops:` manifest) and **presentation plane** (human-facing text projected to sinks such as Telegram/Discord)

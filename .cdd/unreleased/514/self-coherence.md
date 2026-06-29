@@ -1,5 +1,13 @@
 # self-coherence — cnos#514
 
+> **SUPERSEDED (δ, 2026-06-29).** Every PASS claim below is superseded. This R0
+> self-assessment over-claimed AC3 (PASS → **FAIL**: 41 docs moved with no stub),
+> AC11 (PASS → **FAIL**: `gamma/conventions` golden edited), AC9 (→ **BLOCKED**:
+> `dune` never ran), and AC12/AC15/AC16 (→ **FAIL**: ~20 do-not-touch repoints
+> uncounted). The work was rejected by δ; re-dispatch did not repair; manual δ
+> repair was applied. Authoritative record: [`delta-repair.md`](delta-repair.md).
+> No clean PASS in this file should be relied upon.
+
 ## §R0 — Implementation
 
 ### Gap
