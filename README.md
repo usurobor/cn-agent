@@ -123,7 +123,6 @@ cnos/
 ├── scripts/         developer / CI scripts
 ├── .cdd/            CDD work cells, receipts, and release evidence
 ├── .cn-sigma/       Sigma activation / home state (foreign-activation footprint)
-├── .bumpt/          bumpt peer namespace
 └── .github/         workflows and issue templates
 ```
 
