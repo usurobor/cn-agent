@@ -32,7 +32,7 @@ parent: full-fixture
 
 # Full fixture
 
-Used by `tools/validate-skill-frontmatter.sh --self-test` (#301 AC8) to
+Used by `scripts/ci/validate-skill-frontmatter.sh --self-test` (#301 AC8) to
 prove the schema accepts every reserved field, an unknown package-local
 key (`parent:`), and a `calls` target whose existence is checked relative
 to the package skill root.

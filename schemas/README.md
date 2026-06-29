@@ -48,7 +48,7 @@ The validation has two surfaces with one rule each:
 - **`schemas/skill.cue`** — owns shape, type, and enum constraints. CUE
   fails any frontmatter whose fields drift from this declaration. Pure;
   no filesystem I/O.
-- **`tools/validate-skill-frontmatter.sh`** — owns file discovery,
+- **`scripts/ci/validate-skill-frontmatter.sh`** — owns file discovery,
   frontmatter extraction, exception handling, and `calls`
   filesystem-existence checks. This is shell logic that wraps
   `cue vet` per skill.
@@ -123,13 +123,13 @@ You need [CUE](https://cuelang.org/) and `jq` on your `PATH`. Then:
 
 ```bash
 # Validate every src/packages/**/SKILL.md against schema + exceptions.
-./tools/validate-skill-frontmatter.sh
+./scripts/ci/validate-skill-frontmatter.sh
 
 # Run the positive/negative fixture suite (#301 AC8).
-./tools/validate-skill-frontmatter.sh --self-test
+./scripts/ci/validate-skill-frontmatter.sh --self-test
 
 # Validate a single skill file (useful while editing).
-./tools/validate-skill-frontmatter.sh --file src/packages/.../SKILL.md
+./scripts/ci/validate-skill-frontmatter.sh --file src/packages/.../SKILL.md
 ```
 
 `NO_COLOR=1` suppresses color. Findings are emitted one per line in the
@@ -164,7 +164,7 @@ When [LANGUAGE-SPEC.md](../docs/reference/ctb/LANGUAGE-SPEC.md) changes:
      stratification table above. Expect mass exception-list churn.
    - Adding a spec-required-but-exception-backed field: add a `?`
      field in CUE and add it to `SPEC_REQUIRED_EXCEPTION_BACKED` in
-     `tools/validate-skill-frontmatter.sh`.
+     `scripts/ci/validate-skill-frontmatter.sh`.
    - Adding a reserved field validated only if present: add a `?` field
      in CUE; no script change.
    - Tightening an enum: update the disjunction in CUE; expect to amend
@@ -172,7 +172,7 @@ When [LANGUAGE-SPEC.md](../docs/reference/ctb/LANGUAGE-SPEC.md) changes:
 3. Update fixtures in `schemas/fixtures/skill-frontmatter/`:
    - At least one positive fixture must use the new field.
    - At least one negative fixture must violate the new constraint.
-4. Re-run `./tools/validate-skill-frontmatter.sh --self-test` and the
+4. Re-run `./scripts/ci/validate-skill-frontmatter.sh --self-test` and the
    full validation; resolve any new findings before commit.
 
 ## Related issues and specs

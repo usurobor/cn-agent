@@ -15,5 +15,5 @@ outputs:
 
 # Minimal fixture
 
-Used by `tools/validate-skill-frontmatter.sh --self-test` (#301 AC8) to
+Used by `scripts/ci/validate-skill-frontmatter.sh --self-test` (#301 AC8) to
 prove the schema accepts a skill with only the hard-gate fields.
