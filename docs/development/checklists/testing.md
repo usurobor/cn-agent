@@ -6,7 +6,7 @@ From `skills/testing/SKILL.md`
 |------|----------|
 | New functions have tests | C |
 | Edge cases covered (empty, missing, malformed) | C |
-| `dune runtest` passes | D |
+| `go test ./...` passes (from `src/go/`) | D |
 | No `[%expect]` mismatches | D |
 | Parsing roundtrips tested | B |
 | Critical paths have integration tests | B |

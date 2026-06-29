@@ -52,7 +52,7 @@
 | AC6 | No `*.golden.yml` in diff; no `.github/workflows/` in diff | `git diff --name-only \| grep -E '\.golden\.yml\|\.github/workflows'` returns empty |
 | AC7 | `git grep -nE 'docs/(beta/guides\|beta/evidence\|beta/lineage\|alpha/doctrine)/'` returns only stubs + frozen citations | grep audit |
 | AC8 | `docs/README.md` portal + intent-index READMEs link to new local homes | inspect updated READMEs |
-| AC9 | No bidi/hidden/control chars in moved or changed files | `LC_ALL=C grep -rP '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f​-‏‪-‮﻿]'` over changed files |
+| AC9 | No bidi/hidden/control chars in moved or changed files | `LC_ALL=C grep -rP '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x{200b}-\x{200f}\x{202a}-\x{202e}\x{feff}]'` over changed files |
 | AC10 | Moved files' content unchanged except required relative-link repairs | `git diff` of moved files shows only link-path changes + stub content at old paths |
 
 ---
