@@ -160,8 +160,8 @@ The current package set:
 | How does the Git-native protocol work? | [CN whitepaper](./docs/reference/protocol/cn/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md) |
 | What is the target runtime? | [Agent runtime](./docs/reference/runtime/AGENT-RUNTIME.md) |
 | How do agents activate? | [Activate skill](./src/packages/cnos.core/skills/agent/activate/SKILL.md) |
-| What is the recursive cell model? | [Cell of Cells](./docs/gamma/essays/CELL-OF-CELLS.md) |
-| Why "decreasing incoherence"? | [Decreasing Incoherence](./docs/gamma/essays/DECREASING-INCOHERENCE.md) |
+| What is the recursive cell model? | [Cell of Cells](./docs/papers/CELL-OF-CELLS.md) |
+| Why "decreasing incoherence"? | [Decreasing Incoherence](./docs/papers/DECREASING-INCOHERENCE.md) |
 | What is CDD? | [CDD kernel](./src/packages/cnos.cdd/skills/cdd/CDD.md) |
 | What is CDS? | [CDS package](./src/packages/cnos.cds/README.md) |
 | What is CDR? | [CDR package](./src/packages/cnos.cdr/README.md) |

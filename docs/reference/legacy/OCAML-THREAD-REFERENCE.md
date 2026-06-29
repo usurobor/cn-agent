@@ -33,10 +33,11 @@ originally specified in code?" and "what did the typed FSMs enforce?":
 
 ## Relationship to the contract fixture
 
-`test/cmd/protocol-contract.json` (an OCaml-era test fixture) is **retained on `main`**
+`tests/fixtures/protocol-contract.json` (an OCaml-era test fixture) is **retained on `main`**
 because the I2 `protocol-contract-check` gate diffs it against the canonical
-`docs/reference/schemas/protocol-contract.json`. It is data, not OCaml code, and is the
-one OCaml-tree artifact intentionally left in place.
+`docs/reference/schemas/protocol-contract.json`. It is data, not OCaml code. The OCaml
+test tree is fully removed; this fixture was relocated from the old `test/cmd/` path to
+`tests/fixtures/` (cnos H1) so no `test/` directory lingers at the root.
 
 ---
 
