@@ -2,13 +2,16 @@
 
 cnos is a Git-native coherence system for accountable human + AI work.
 
-> **Navigation note — docs reorg.**
-> The primary docs surface is now organized by *reader intent*:
-> quickstart, concepts, guides, reference, development, architecture, papers, evidence, and archive.
-> The legacy `alpha/`, `beta/`, and `gamma/` paths remain for redirect stubs, frozen history,
-> and explicitly deferred material — they are no longer the primary reader-intent homes.
-> The α/β/γ triad is no longer a filing taxonomy. It is kept for measurement and role grammar
-> (TSC axes, CDD roles).
+> **Navigation note.**
+> The primary documentation surface is now organized by reader intent:
+> `quickstart/`, `concepts/`, `guides/`, `reference/`, `development/`,
+> `architecture/`, `papers/`, `evidence/`, and `archive/`.
+>
+> Legacy `alpha/`, `beta/`, and `gamma/` paths remain only for redirect
+> stubs, frozen snapshots, and explicitly deferred historical material.
+>
+> The triad is no longer a filing taxonomy. It is kept for measurement,
+> role grammar, and coherence analysis.
 
 ## Start here
 

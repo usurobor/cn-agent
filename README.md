@@ -112,14 +112,31 @@ CTB enforcement
 
 ```text
 cnos/
-├── src/go/        Go CLI source
-├── src/packages/  cognitive packages and skills
-├── src/ocaml/     archived OCaml thread reference (stub → legacy/ocaml-thread-reference)
-├── docs/          doctrine, protocol, runtime, architecture, essays
-├── dist/          built packages and binaries
-├── scripts/       build and release scripts
-└── test/          tests
+├── cn.json          CN manifest
+├── docs/            human documentation, organized by reader intent
+├── src/
+│   ├── go/          active cn runtime / CLI (the shipped binary)
+│   └── packages/    cnos cognitive packages and skills
+├── schemas/         machine-readable schemas + fixtures (CUE, JSON)
+├── cue.mod/         CUE module metadata for schema validation
+├── tests/           tests and test fixtures
+├── scripts/         developer / CI scripts
+├── .cdd/            CDD work cells, receipts, and release evidence
+├── .cn-sigma/       Sigma activation / home state (foreign-activation footprint)
+├── .bumpt/          bumpt peer namespace
+└── .github/         workflows and issue templates
 ```
+
+cnos is a **development repository** (source, packages, docs), not an agent hub:
+hub/thread state (`threads/`) lives in an agent's *home* repo (e.g. `cn-sigma`),
+not here. `dist/` is generated build output (gitignored): `cn build` produces
+tarballs under `dist/packages/`.
+
+**Legacy pointer (not active source):** `src/ocaml/` is an archived stub for the
+original OCaml thread-reference implementation — see
+[`docs/reference/legacy/OCAML-THREAD-REFERENCE.md`](docs/reference/legacy/OCAML-THREAD-REFERENCE.md)
+(branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`).
+The active runtime is Go (`src/go/`).
 
 The current package set:
 
