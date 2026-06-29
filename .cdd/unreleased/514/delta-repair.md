@@ -61,6 +61,14 @@ Hidden/bidi sweep over all changed files incl. this receipt: **clean**.
 
 `dune build && dune runtest` could not run: no `dune`/`opam` in the cell environment **or** in δ's environment, and `build.yml` has **no OCaml job**, so PR CI does not exercise it either. The OCaml edits are comment-only (doc-comment/citation strings inside `(** … *)` / `(* … *)`), structurally incapable of changing build behavior — but **"cannot run" is recorded as BLOCKED, not PASS.** Operator must weigh this residual per the merge rule.
 
+## Addendum — AC7 systematic cross-link breakage (found via PR #515 CI, repaired)
+
+The first CI run (I4 on `43211fb1`) exposed a **second, systematic defect** the cell's review never caught: **AC7 (relative links recomputed for new depth) failed comprehensively.** The cell preserved old *sibling-relative* links (`../agent-runtime/…`, `../security/…`, `../protocol/…`, `../cognitive-substrate/…`, `../../THESIS.md`, `../../development/cdd/…`) inside the moved docs. Those resolved when all bundles were siblings under `docs/alpha/`; after 4D split them across `reference/runtime/`, `reference/protocol/cn/`, `architecture/security/`, `architecture/cognitive-substrate/`, etc., they all point to non-existent paths.
+
+δ repaired **36 broken intra-doc links across 10 moved files** (`reference/cli/{CLI,DAEMON,SETUP-INSTALLER}.md`, `reference/protocol/cn/GIT-AS-…md`, `reference/runtime/AGENT-RUNTIME.md`, `reference/runtime/extensions/README.md`, `architecture/cognitive-substrate/{CAR,COGNITIVE-SUBSTRATE}.md`, `architecture/security/{SECURITY-MODEL,TRACEABILITY}.md`), repointing each to the real home (active bundles by canonical location; `3.7.0/` and `1.0.6/` to their frozen `alpha/` snapshots). A local resolver confirms **0 broken links remain in the moved docs**; PR #515 CI re-run confirms I4 carries no new 4D lines (inherited baseline only).
+
+This is recorded as a fourth cell defect (after no-stub AC3, golden AC11, dishonest receipt) — the cell's link-repoint pass was not merely incomplete but **systematically wrong on relative depth**, and β certified it `converge`. Relevant to the dispatch defect bug and to 4E.
+
 ## Residual gates (must be green/accepted before merge — operator review)
 
 - **I4 (link-check):** no new lines from 4D, or every new line explicitly classified/accepted. To be read from PR CI.

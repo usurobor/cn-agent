@@ -310,6 +310,6 @@ Installed to `/usr/local/bin/cn`.
 
 ## Related
 
-- [AGENT-RUNTIME.md](../agent-runtime/AGENT-RUNTIME.md) — Full runtime spec (CN Shell, typed ops, N-pass orchestration, receipts)
-- [SECURITY-MODEL.md](../security/SECURITY-MODEL.md) — Security architecture
+- [AGENT-RUNTIME.md](../runtime/AGENT-RUNTIME.md) — Full runtime spec (CN Shell, typed ops, N-pass orchestration, receipts)
+- [SECURITY-MODEL.md](../../architecture/security/SECURITY-MODEL.md) — Security architecture
 - [SETUP-INSTALLER.md](SETUP-INSTALLER.md) — Install script specification

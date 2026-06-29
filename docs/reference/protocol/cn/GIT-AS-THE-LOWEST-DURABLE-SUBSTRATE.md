@@ -15,7 +15,7 @@ revised: 2026-06-23
 **Author(s):** usurobor (aka Axiom) (human & AI)
 **Date:** 2026-03-13 (v3.0.0); revised 2026-06-23 (v3.0.1 errata)
 
-> **Scope:** This paper defines the CN protocol and Git substrate thesis. It does not explain the full cnos system architecture. For cnos as a recurrent coherence system, see [`THESIS.md`](../../THESIS.md).
+> **Scope:** This paper defines the CN protocol and Git substrate thesis. It does not explain the full cnos system architecture. For cnos as a recurrent coherence system, see [`THESIS.md`](../../../THESIS.md).
 
 > **v3.0.1 errata (2026-06-23):** Corrects the referenced TSC normative threshold from `PASS ≥ 0.80` to `PASS ≥ 0.75` and updates stale TSC spec/scoring paths to the current `spec/` and `runtime/SELF-MEASURE.md` locations. No CN protocol semantics changed; Protocol v1 remains unchanged.
 
@@ -330,12 +330,12 @@ The cnos project implements this protocol and extends it with layers not specifi
 
 | Layer | Document | Scope |
 |-------|----------|-------|
-| **System thesis** | [`THESIS.md`](../../THESIS.md) | cnos as a recurrent coherence system |
-| **Agent architecture** | [`CAA.md`](../agent-runtime/CAA.md) | Structural definition of a coherent agent |
-| **Runtime** | [`AGENT-RUNTIME.md`](../agent-runtime/AGENT-RUNTIME.md) | CN Shell, typed ops, N-pass orchestration |
-| **Cognitive packages** | [`CAR.md`](../cognitive-substrate/CAR.md) | Local, versioned, installable cognition |
-| **Observability** | [`TRACEABILITY.md`](../security/TRACEABILITY.md) | Reconstructable mind/body/sensor state |
-| **Development method** | [`CDD.md`](../../development/cdd/CDD.md) | Coherence-driven development |
+| **System thesis** | [`THESIS.md`](../../../THESIS.md) | cnos as a recurrent coherence system |
+| **Agent architecture** | [`CAA.md`](../../runtime/CAA.md) | Structural definition of a coherent agent |
+| **Runtime** | [`AGENT-RUNTIME.md`](../../runtime/AGENT-RUNTIME.md) | CN Shell, typed ops, N-pass orchestration |
+| **Cognitive packages** | [`CAR.md`](../../../architecture/cognitive-substrate/CAR.md) | Local, versioned, installable cognition |
+| **Observability** | [`TRACEABILITY.md`](../../../architecture/security/TRACEABILITY.md) | Reconstructable mind/body/sensor state |
+| **Development method** | [`CDD.md`](../../../development/cdd/CDD.md) | Coherence-driven development |
 
 This paper does not track cnos implementation status. For current system architecture, start with THESIS.md.
 

@@ -145,7 +145,7 @@ Edge cases:
 
 ### 5.6 Path Sandbox alignment (CN Shell)
 
-CN Shell ([AGENT-RUNTIME.md](../agent-runtime/AGENT-RUNTIME.md) §Path Sandbox) deny-lists the `.cn/` prefix for typed filesystem ops. This is intentional: `.cn/` contains configuration and secrets (including `.cn/secrets.env`).
+CN Shell ([AGENT-RUNTIME.md](../runtime/AGENT-RUNTIME.md) §Path Sandbox) deny-lists the `.cn/` prefix for typed filesystem ops. This is intentional: `.cn/` contains configuration and secrets (including `.cn/secrets.env`).
 
 Implications for `cn setup`:
 
@@ -153,7 +153,7 @@ Implications for `cn setup`:
 - **Path checks MUST apply to the canonical resolved path** (after `..` collapse and symlink resolution), to prevent symlink bypasses into `.cn/`.
 - **`cn setup` MUST NOT create secrets or config outside `.cn/`** — doing so would place them in paths reachable by typed ops.
 
-This subsection is the back-link to the shared vocabulary defined in AGENT-RUNTIME.md §Path Sandbox and referenced by [SECURITY-MODEL.md](../security/SECURITY-MODEL.md) §CN Shell Addendum.
+This subsection is the back-link to the shared vocabulary defined in AGENT-RUNTIME.md §Path Sandbox and referenced by [SECURITY-MODEL.md](../../architecture/security/SECURITY-MODEL.md) §CN Shell Addendum.
 
 ## 7. `cn setup` UX / Flow (target — design spec for planned interactive flow)
 

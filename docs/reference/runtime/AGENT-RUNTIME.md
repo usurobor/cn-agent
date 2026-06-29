@@ -53,7 +53,7 @@
 - Add required projection events: `projection.render.start`, `.ok`, `.blocked`, `.fallback`
 
 **v3.3.7** — Observability / traceability architecture alignment:
-- Add [`TRACEABILITY.md`](../security/TRACEABILITY.md) as the normative observability spec
+- Add [`TRACEABILITY.md`](../../architecture/security/TRACEABILITY.md) as the normative observability spec
 - Clarify that runtime traceability now has three layers:
   - **events** — append-only lifecycle/state transition log (`logs/events/YYYYMMDD.jsonl`)
   - **projections** — current truth snapshots (`state/ready.json`, `state/runtime.json`, `state/coherence.json`)
@@ -69,7 +69,7 @@
   - **mind** — doctrine, mindsets, skills, capabilities, LLM call lifecycle
   - **body** — lock, queue, FSM, pass selection, recovery, finalize
   - **sensors** — transport ingress/egress, offsets, projection, UX signals
-- Clarify that [`TRACEABILITY.md`](../security/TRACEABILITY.md) supersedes ad hoc runtime lifecycle logging:
+- Clarify that [`TRACEABILITY.md`](../../architecture/security/TRACEABILITY.md) supersedes ad hoc runtime lifecycle logging:
   - IO-pair archives remain authoritative for deliberation
   - receipts remain authoritative for typed capability execution
   - structured events become authoritative for lifecycle, readiness, and transition reasoning
@@ -1056,7 +1056,7 @@ Observe artifacts are injected into Pass B context as bounded excerpts (see Budg
 3. Apply coordination op phase rules (see table above): execute safe, defer unsafe
 4. Write artifacts to `state/artifacts/<trigger_id>/<op_id>.*`
 5. Write receipts to `state/receipts/<trigger_id>.json`
-6. Archive IO pair (Pass A) per IO-pair archival invariant (see [TRACEABILITY.md §11.1](../security/TRACEABILITY.md#111-io-pairs-remain-authoritative-for-deliberation))
+6. Archive IO pair (Pass A) per IO-pair archival invariant (see [TRACEABILITY.md §11.1](../../architecture/security/TRACEABILITY.md#111-io-pairs-remain-authoritative-for-deliberation))
 
 #### Pass B (decision / effect)
 
@@ -1072,7 +1072,7 @@ Observe artifacts are injected into Pass B context as bounded excerpts (see Budg
    - If ALL effect ops completed with `status: ok` → execute coordination ops in listed order; FSM transitions applied
    - If ANY effect op has `status: error` or `status: denied` → skip terminal coordination ops (`done`, `fail`, `delete`, `delegate`, `send`, `defer`) with receipt `status: skipped`, `reason: effects_failed`; allow only `reply`/`surface` so the agent can report the failure
    - If no typed effect ops were proposed → execute coordination ops normally
-7. Archive IO pair (Pass B) per IO-pair archival invariant (see [TRACEABILITY.md §11.1](../security/TRACEABILITY.md#111-io-pairs-remain-authoritative-for-deliberation))
+7. Archive IO pair (Pass B) per IO-pair archival invariant (see [TRACEABILITY.md §11.1](../../architecture/security/TRACEABILITY.md#111-io-pairs-remain-authoritative-for-deliberation))
 
 This ordering ensures the system never advances narrative state (FSM) when the world action didn't succeed — consistent with CAP: act on world, then update model, never the reverse.
 
@@ -1099,7 +1099,7 @@ Ops exceeding budgets receive receipt `status: denied`, `reason: budget_exceeded
 
 ### Path Sandbox
 
-Typed ops that reference filesystem paths (`fs_read`, `fs_write`) or execute commands (`exec`) are subject to path and environment sandboxing. These rules are shared vocabulary across CN Shell, [SECURITY-MODEL.md](../security/SECURITY-MODEL.md), and [SETUP-INSTALLER.md](../cli/SETUP-INSTALLER.md).
+Typed ops that reference filesystem paths (`fs_read`, `fs_write`) or execute commands (`exec`) are subject to path and environment sandboxing. These rules are shared vocabulary across CN Shell, [SECURITY-MODEL.md](../../architecture/security/SECURITY-MODEL.md), and [SETUP-INSTALLER.md](../cli/SETUP-INSTALLER.md).
 
 #### Path normalization and validation order
 
@@ -2359,10 +2359,10 @@ The renderer MUST block it and use a fallback or skip projection.
 ### cnos Internal
 - [Coherent Agent Architecture](./CAA.md) — What the agent *is* structurally
 - [Agent Ops Skill](../../../src/packages/cnos.core/skills/agent/agent-ops/SKILL.md) — Legacy coordination op format and agent-facing output discipline
-- [Security Model](../security/SECURITY-MODEL.md) — Agent sandbox, protected files, audit trail
-- [Traceability](../security/TRACEABILITY.md) — event stream, state projections, readiness, and transition reasoning
+- [Security Model](../../architecture/security/SECURITY-MODEL.md) — Agent sandbox, protected files, audit trail
+- [Traceability](../../architecture/security/TRACEABILITY.md) — event stream, state projections, readiness, and transition reasoning
 - [Daemon Architecture](../cli/DAEMON.md) — Plugin direction (this doc is the first plugin)
-- [Protocol Specification](../protocol/PROTOCOL.md) — FSM definitions
+- [Protocol Specification](../protocol/cn/PROTOCOL.md) — FSM definitions
 - [Architecture](../../beta/architecture/ARCHITECTURE.md) — Module layers, data flow, agent I/O protocol
 
 ### External
