@@ -1,3 +1,3 @@
 # Moved
 
-This file has moved to [`docs/architecture/design/WRITER-PACKAGE.md`](../../architecture/design/WRITER-PACKAGE.md).
+This file has moved to [`docs/evidence/design/WRITER-PACKAGE.md`](../../evidence/design/WRITER-PACKAGE.md).

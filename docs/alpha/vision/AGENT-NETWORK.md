@@ -1,3 +1,3 @@
 # Moved
 
-This file has moved to [`docs/concepts/vision/AGENT-NETWORK.md`](../../concepts/vision/AGENT-NETWORK.md).
+This file has moved to [`docs/concepts/AGENT-NETWORK.md`](../../concepts/AGENT-NETWORK.md).

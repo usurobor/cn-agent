@@ -44,7 +44,7 @@ Different source forms normalize into one runtime descriptor model. Help, doctor
 
 ### §5.0 OCaml is archived
 
-The OCaml codebase has been **archived** off `main` as a frozen reference (branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`). On `main`, `src/ocaml/` is now only a stub pointer. **Do not reintroduce OCaml implementation files to `main`, and do not treat OCaml as an active build/runtime/test target.** All work and all fixes to existing behavior are in Go (`src/go/`, the `cn` binary). The OCaml tree remains the reference for CN thread semantics — see [`docs/reference/legacy/OCAML-THREAD-REFERENCE.md`](legacy/OCAML-THREAD-REFERENCE.md). If a change genuinely needs to alter OCaml reference semantics, it belongs in the legacy branch or a dedicated archival-reference update, never as an incidental mainline change.
+The OCaml codebase has been **archived** off `main` as a frozen reference (branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`). On `main`, `src/ocaml/` is now only a stub pointer. **Do not reintroduce OCaml implementation files to `main`, and do not treat OCaml as an active build/runtime/test target.** All work and all fixes to existing behavior are in Go (`src/go/`, the `cn` binary). The OCaml tree remains the reference for CN thread semantics — see [`docs/reference/legacy/OCAML-THREAD-REFERENCE.md`](../reference/legacy/OCAML-THREAD-REFERENCE.md). If a change genuinely needs to alter OCaml reference semantics, it belongs in the legacy branch or a dedicated archival-reference update, never as an incidental mainline change.
 
 ## §6. Architecture
 

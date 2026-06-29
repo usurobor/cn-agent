@@ -20,5 +20,5 @@
 
 ## Constraints
 
-- [DESIGN-CONSTRAINTS.md](../reference/DESIGN-CONSTRAINTS.md) — system-wide design constraints.
+- [DESIGN-CONSTRAINTS.md](DESIGN-CONSTRAINTS.md) — system-wide design constraints.
 - [HUB-PLACEMENT-MODELS.md](HUB-PLACEMENT-MODELS.md) — hub placement topology models.
