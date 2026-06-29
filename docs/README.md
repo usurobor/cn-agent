@@ -60,6 +60,6 @@ The filesystem is organized for readers. The triad is kept for measurement.
 
 *The legacy α/β/γ reading model and the per-axis document tables now live in
 each intent index above, pointing at the same files. See
-[`beta/governance/DOCUMENTATION-SYSTEM.md`](./beta/governance/DOCUMENTATION-SYSTEM.md)
+[`reference/governance/DOCUMENTATION-SYSTEM.md`](reference/governance/DOCUMENTATION-SYSTEM.md)
 for the documentation-system rules (versioned directories are frozen;
 corrections ship as new versions or superseding notes).*

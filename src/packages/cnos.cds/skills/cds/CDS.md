@@ -2757,7 +2757,7 @@ Each friction-log row carries four fields:
 
 The PRA records the cycle-level **engineering level** (L5 / L6 / L7)
 per the canonical framework at
-[`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/gamma/ENGINEERING-LEVELS.md).
+[`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/development/ENGINEERING-LEVELS.md).
 The Level column appears in the CHANGELOG TSC ledger row (per
 §Artifact contract → §Ownership matrix); the PRA names the level and
 its rationale.
@@ -2831,7 +2831,7 @@ role rewrite:
   — independent γ process-gap check (even when no §9.1 trigger fired,
   γ asks the four questions; states why-not in one sentence when no
   patch is needed).
-- [`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/gamma/ENGINEERING-LEVELS.md)
+- [`docs/gamma/ENGINEERING-LEVELS.md`](../../../../../docs/development/ENGINEERING-LEVELS.md)
   — the L5 / L6 / L7 framework cited above; the per-level definitions,
   typical behaviors, strengths, limits, and signals.
 

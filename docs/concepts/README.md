@@ -13,7 +13,7 @@
 
 - [AGENT-CONTINUITY.md](../papers/AGENT-CONTINUITY.md) — identity and memory across activations.
 - [ACTIVATION-NOT-DEPLOYMENT.md](../papers/ACTIVATION-NOT-DEPLOYMENT.md) — agents wake into a body; they are not deployed.
-- [AGENT-NETWORK.md](../alpha/vision/AGENT-NETWORK.md) — the coherence network vision.
+- [AGENT-NETWORK.md](vision/AGENT-NETWORK.md) — the coherence network vision.
 
 ## Doctrine and origin
 

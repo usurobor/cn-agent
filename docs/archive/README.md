@@ -15,7 +15,7 @@ snapshot migration happens until after Demo 0.
 
 ## Policy
 
-Per [`beta/governance/DOCUMENTATION-SYSTEM.md`](../beta/governance/DOCUMENTATION-SYSTEM.md):
+Per [`reference/governance/DOCUMENTATION-SYSTEM.md`](../reference/governance/DOCUMENTATION-SYSTEM.md):
 version directories are immutable. Link/path repairs in active reader paths are
 allowed; semantic edits to a frozen snapshot are not. Release evidence under
 `.cdd/releases/` (outside `docs/`) is likewise frozen.

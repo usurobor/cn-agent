@@ -1,5 +1,14 @@
 # Legacy docs tail map (H4A audit)
 
+**Status:** H4B/H4C **executed**. The 40 real-active files in the worklist
+below were moved to their reader-intent homes (a `# Moved` stub was left at
+each old path and active inbound links were repointed). `docs/{alpha,beta,gamma}`
+now hold **zero** active non-stub, non-frozen files; only redirect stubs, frozen
+snapshots, frozen PRAs, and the single golden-bound convention remain. The
+worklist is retained below as the executed record. **Remaining tail:** H5 (the
+golden `AGENT-ACTIVATION-LOG-v0.md` move, still pending) + retirement of the
+redirect stubs and `docs/essays/` after a grace period.
+
 **Purpose:** classify everything still living under `docs/alpha/`, `docs/beta/`,
 `docs/gamma/`, `docs/essays/` after the 4A–4E reader-intent migration, so the
 H4B/H4C/H5 cleanup is a known, bounded move — not another 4D-style surprise.

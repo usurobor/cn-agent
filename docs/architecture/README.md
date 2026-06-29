@@ -6,7 +6,7 @@
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — system overview: how the parts relate.
 - [CAA.md](../reference/runtime/CAA.md) — coherent agent architecture.
-- [INVARIANTS.md](../alpha/architecture/INVARIANTS.md) — architectural invariants.
+- [INVARIANTS.md](INVARIANTS.md) — architectural invariants.
 
 ## Cognition
 
@@ -20,5 +20,5 @@
 
 ## Constraints
 
-- [DESIGN-CONSTRAINTS.md](../alpha/DESIGN-CONSTRAINTS.md) — system-wide design constraints.
-- [HUB-PLACEMENT-MODELS.md](../alpha/HUB-PLACEMENT-MODELS.md) — hub placement topology models.
+- [DESIGN-CONSTRAINTS.md](../reference/DESIGN-CONSTRAINTS.md) — system-wide design constraints.
+- [HUB-PLACEMENT-MODELS.md](HUB-PLACEMENT-MODELS.md) — hub placement topology models.

@@ -13,7 +13,7 @@ Each release is scored on two dimensions: **coherence quality** (TSC grades) and
 
 These are intuition-level ratings, not outputs from a running TSC engine (formal C_Σ ranges 0–1; ≥0.80 = PASS).
 
-**Engineering level** per [ENGINEERING-LEVELS.md](docs/gamma/ENGINEERING-LEVELS.md), capped by CDD §9.1 cycle execution quality:
+**Engineering level** per [ENGINEERING-LEVELS.md](docs/development/ENGINEERING-LEVELS.md), capped by CDD §9.1 cycle execution quality:
 
 - **L4** — Pre-architecture: working prototype, no stable boundaries yet
 - **L5** — Local correctness: fix works, follows patterns, no boundary change

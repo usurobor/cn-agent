@@ -1,0 +1,65 @@
+# Design Constraints
+
+Active constraints governing cnos architecture and interfaces. Referenced by CDD review (§2.2.13) and issue skills.
+
+---
+
+## §1. Source of truth
+
+Each fact lives in one place. Derived copies must not diverge from the authoritative source.
+
+## §2. Package system
+
+### §2.1 One package substrate
+
+All packages use `cn.package.v1` schema. One manifest format, one build pipeline, one install path.
+
+### §2.2 Source / artifact / installed clarity
+
+What is authored (`src/`), what is built (`dist/`), and what is installed (`.cn/vendor/`) are always distinct and explicit.
+
+## §3. Command surface
+
+### §3.1 Git-style subcommands
+
+Commands use `cn <noun> <verb>` (git-style): `cn kata run`, `cn cdd verify`, `cn deps lock`.
+
+Internal registry key is hyphenated (`kata-run`). User-facing surface is space-separated. `cn <noun>` with no verb lists available subcommands.
+
+### §3.2 Dispatch boundary
+
+`cli/` owns dispatch. Domain packages own logic. No `cmd_*.go` file may contain domain logic beyond argument parsing and dispatch.
+
+## §4. Runtime surfaces
+
+### §4.1 Surface separation
+
+Skills, commands, orchestrators, and providers are distinct runtime surfaces with separate contracts. Transport implementation is distinct from protocol semantics.
+
+### §4.2 Registry normalization
+
+Different source forms normalize into one runtime descriptor model. Help, doctor, status, and runtime contract reveal the same registry truth.
+
+## §5. Language and runtime
+
+### §5.0 OCaml is archived
+
+The OCaml codebase has been **archived** off `main` as a frozen reference (branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`). On `main`, `src/ocaml/` is now only a stub pointer. **Do not reintroduce OCaml implementation files to `main`, and do not treat OCaml as an active build/runtime/test target.** All work and all fixes to existing behavior are in Go (`src/go/`, the `cn` binary). The OCaml tree remains the reference for CN thread semantics — see [`docs/reference/legacy/OCAML-THREAD-REFERENCE.md`](legacy/OCAML-THREAD-REFERENCE.md). If a change genuinely needs to alter OCaml reference semantics, it belongs in the legacy branch or a dedicated archival-reference update, never as an incidental mainline change.
+
+## §6. Architecture
+
+### §6.1 Reason to change
+
+Each module/package/boundary has one real reason to change. No convenience buckets.
+
+### §6.2 Policy above detail
+
+Policy remains in the kernel. Packages cannot widen their own authority.
+
+### §6.3 Degraded-path visibility
+
+Fallback and degraded behavior is explicit, testable, and inspectable via doctor/status.
+
+---
+
+_This document is the canonical constraints reference. CDD review §2.2.13 loads it. Issue skill §2.4.2 links to it. When a constraint is revised, name the revision explicitly._
