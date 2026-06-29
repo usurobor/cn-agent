@@ -9,7 +9,7 @@
 // The module path `cnos.dev/cnos` is a canonical-style placeholder identifier
 // (not a real domain). CUE only requires the path to be stable and unique
 // within the build; resolution is filesystem-relative under `cue.mod/`. The
-// existing `schemas/skill.cue` (used by tools/validate-skill-frontmatter.sh)
+// existing `schemas/skill.cue` (used by scripts/ci/validate-skill-frontmatter.sh)
 // is unaffected — it is invoked directly by path, not by import.
 
 module: "cnos.dev/cnos"

@@ -254,10 +254,10 @@ jobs:
           version: v0.13.2
 
       - name: Schema self-test (positive + negative fixtures)
-        run: ./tools/validate-skill-frontmatter.sh --self-test
+        run: ./scripts/ci/validate-skill-frontmatter.sh --self-test
 
       - name: Validate every SKILL.md frontmatter
-        run: ./tools/validate-skill-frontmatter.sh
+        run: ./scripts/ci/validate-skill-frontmatter.sh
 
   cdd-artifact-check:
     name: CDD artifact ledger validation (I6)

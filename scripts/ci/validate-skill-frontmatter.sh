@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tools/validate-skill-frontmatter.sh — validate every SKILL.md frontmatter
+# scripts/ci/validate-skill-frontmatter.sh — validate every SKILL.md frontmatter
 # against schemas/skill.cue (#301, I5 coherence-CI job).
 #
 # The CUE schema owns shape / type / enum constraints. This script owns
@@ -13,14 +13,14 @@
 #   2  prerequisite missing (cue, jq) — not a validation failure
 #
 # Usage:
-#   ./tools/validate-skill-frontmatter.sh
+#   ./scripts/ci/validate-skill-frontmatter.sh
 #       Validate all SKILL.md under src/packages/.
-#   ./tools/validate-skill-frontmatter.sh --root <dir>
+#   ./scripts/ci/validate-skill-frontmatter.sh --root <dir>
 #       Validate every SKILL.md under <dir> instead of src/packages/.
-#   ./tools/validate-skill-frontmatter.sh --self-test
+#   ./scripts/ci/validate-skill-frontmatter.sh --self-test
 #       Run schemas/fixtures/skill-frontmatter/{valid,invalid}/ as the
 #       built-in positive/negative regression suite (#301 AC8).
-#   ./tools/validate-skill-frontmatter.sh --file <path>
+#   ./scripts/ci/validate-skill-frontmatter.sh --file <path>
 #       Validate a single SKILL.md path. Used by --self-test internally.
 #
 # Honors NO_COLOR. Diagnostics are machine-readable: one finding per line,

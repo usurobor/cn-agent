@@ -1,6 +1,6 @@
 // schemas/skill.cue — CUE schema for SKILL.md frontmatter (CTB v0.1).
 //
-// Validated by tools/validate-skill-frontmatter.sh as the I5 coherence-CI
+// Validated by scripts/ci/validate-skill-frontmatter.sh as the I5 coherence-CI
 // job. Field shape, type, and enum constraints live here; file discovery,
 // frontmatter extraction, exception handling, and filesystem path checks
 // are owned by the script (#301 AC2 surface boundary).

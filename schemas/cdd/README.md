@@ -114,7 +114,7 @@ specific keys in the map. This is rejected for the reasons below.
 - A repo-level CUE module file (`cue.mod/module.cue`) is required so
   `schemas/cds/` and `schemas/cdr/` can `import "cnos.dev/cnos/schemas/cdd"`.
   Mitigated: a 2-line file; does not affect the existing
-  `tools/validate-skill-frontmatter.sh` invocations.
+  `scripts/ci/validate-skill-frontmatter.sh` invocations.
 - Phase 3's V acquires a small dispatch layer reading `protocol_id`.
   Mitigated: one switch statement; the alternative (field-shape
   inference) is structurally worse.
