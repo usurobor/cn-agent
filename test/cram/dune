@@ -1,8 +1,0 @@
-; Cram tests for cn CLI
-; Run: dune runtest
-
-(cram
- (deps
-  cn.sh
-  ../../VERSION
-  %{bin:cn}))

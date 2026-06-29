@@ -114,7 +114,7 @@ CTB enforcement
 cnos/
 ├── src/go/        Go CLI source
 ├── src/packages/  cognitive packages and skills
-├── src/ocaml/     legacy runtime, retained during the Go rewrite
+├── src/ocaml/     archived OCaml thread reference (stub → legacy/ocaml-thread-reference)
 ├── docs/          doctrine, protocol, runtime, architecture, essays
 ├── dist/          built packages and binaries
 ├── scripts/       build and release scripts

@@ -15,7 +15,7 @@ GitHub Issues is the single source of truth for bugs, features, and backlog.
 1. Fork the repository
 2. Create a branch from `main`
 3. Make your changes
-4. Run tests (`dune runtest`)
+4. Run tests (`go test ./...` from `src/go/`)
 5. Commit with a clear message
 6. Push and open a Pull Request
 
