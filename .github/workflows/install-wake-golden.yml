@@ -213,6 +213,12 @@ jobs:
           echo "AC5 refusal verified (synthetic fixture): exit 3 + precise error."
 
       - name: AC2 negative-case smoke (malformed manifest is rejected)
+        # JSON-legacy-specific test (cnos#524 W3): this exercises the JSON
+        # manifest schema-validation path — a malformed wake-provider.json
+        # missing the required `schema` field. There is no SKILL.md equivalent
+        # ("malformed JSON missing schema" is meaningless for a CUE-validated
+        # SKILL.md), so it pins --source json explicitly rather than the new
+        # skill default. Retire/replace in W4 when JSON is removed.
         run: |
           set -eu
           set -o pipefail
@@ -221,6 +227,7 @@ jobs:
           echo '{"name": "test-wake"}' > "$tmp/orchestrators/test-wake/wake-provider.json"
           echo "" > "$tmp/orchestrators/test-wake/prompt.md"
           if ./src/packages/cnos.core/commands/install-wake/cn-install-wake test-wake \
+              --source json \
               --manifest "$tmp/orchestrators/test-wake/wake-provider.json" 2>&1 | tee /tmp/neg.log; then
             echo "::error::Renderer accepted malformed manifest (schema missing); expected exit 2 per wake-provider/SKILL.md §3.5."
             exit 1

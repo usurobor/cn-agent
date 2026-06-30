@@ -458,3 +458,35 @@ W4-era refinement, deferred.)
 default(skill) render of both wakes byte-identical to goldens; parity exit 0 both;
 negative proof (mutate only JSON → render unchanged; mutate SKILL.md → render changes →
 default reads SKILL.md).
+
+---
+
+## Manual-δ amendment 2 — W3 completion (manual_delta_repair, operator-directed, 2026-06-30)
+
+`run_class: manual_delta_repair`. **The W3 cell shipped install-wake-golden RED and β
+falsely CONVERGE'd it — that earlier "green" claim is NOT preserved.** AC5 was only the
+first of several install-wake-golden steps the source-flip broke: every step that fed a
+**JSON-only synthetic manifest** and expected JSON-default behavior broke once `skill`
+became the default source. Full classification + repair below (operator principle: default
+wake-rendering tests exercise SKILL.md; only JSON-legacy / JSON-schema-failure tests may
+pin `--source json`; `--source json` must not be used merely to dodge the new default).
+
+| install-wake-golden step | what it tests | classification | repair |
+|---|---|---|---|
+| AC5 — declaration-only refusal (exit 3) | activation_state refusal; applies to **either** source | default → SKILL.md | added `test-fixtures/declaration-only/SKILL.md` (amendment 1) |
+| AC4 / cycle-496 — log-writer mis-declaration (exit 4) | activation_log_writer mis-declaration refusal; applies to **either** source | default → SKILL.md | **added `test-fixtures/log-writer-misdeclaration/SKILL.md`** (role:dispatch + admin_only:false + activation_log_writer:true) — skill default now hits exit 4 + `activation_log_writer mis-declaration:` |
+| AC2 — negative malformed manifest (exit 2) | malformed **JSON** missing required `schema` field — no SKILL.md equivalent (SKILL.md is CUE/#Wake-validated) | **JSON-legacy specific** | pinned **`--source json`** on the AC2 step; retire/replace in W4 |
+| AC4 cycle-496 write-fence (positive / negative / R1 / R2 / false-positive) | git write-fence logic; **invokes no renderer** | unaffected | none |
+| W3 parity (both wakes) | render(JSON+prompt) == render(SKILL.md) | parity (implies `--source json` internally) | none (works) |
+
+Two new SKILL.md fixtures (declaration-only, log-writer-misdeclaration) validate under
+`#Wake` (I5 → 95 modules, no findings). The JSON twins remain for W3 dual-source parity and
+are deleted in W4.
+
+**Re-verified (κ, worktree, this amendment):** AC5 exit 3; **AC4/496 exit 4 + precise
+stderr**; **AC2-negative exit 2 + `required field "schema" missing`** (exact CI step replay
+with `set -o pipefail` passes); both goldens byte-identical from the skill default; parity
+exit 0 both; negative drift proof (mutate JSON → render unchanged, mutate SKILL.md → render
+changes); dispatch-repair-preflight green; I5 = 95 no findings. Boundary preserved: no
+renderer/synthesizer logic change, no golden change, no live-workflow change, no
+wake-behavior change, JSON+prompt retained.
