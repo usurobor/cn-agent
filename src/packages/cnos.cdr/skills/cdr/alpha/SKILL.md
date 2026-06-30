@@ -7,6 +7,14 @@ parent: cdr
 triggers:
   - alpha
 scope: role-local
+kata_surface: embedded
+inputs:
+  - research gap
+  - wave and dispatch context
+  - evidence and sources in scope
+outputs:
+  - review-ready research matter (claims, hypotheses, methods, datasets, analyses, reports)
+  - truth-preserving claim transmission discipline applied
 ---
 
 # Alpha (research α)

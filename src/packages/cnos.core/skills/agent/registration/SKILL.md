@@ -19,8 +19,8 @@ inputs:
   - repo visibility (public or private)
   - activated identity (see agent/activate/SKILL.md)
 outputs:
-  - state machine: unregistered → pending_home_registration → registered
-  - registration proposal emitted at foreign body (class: registration-proposal)
+  - "state machine: unregistered → pending_home_registration → registered"
+  - "registration proposal emitted at foreign body (class: registration-proposal)"
   - operator-visible packet emitted at activation site
   - home updates .cn-{agent}/state/activations.md (operator-mediated)
   - home reads foreign body via credentials (once registered)

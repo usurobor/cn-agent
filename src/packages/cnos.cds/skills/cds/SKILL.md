@@ -29,11 +29,8 @@ requires:
   - CDS applies (software-class matter, not research-class)
 calls:
   - CDS.md
-  - alpha/SKILL.md
-  - beta/SKILL.md
-  - gamma/SKILL.md
-  - delta/SKILL.md
-  - epsilon/SKILL.md
+calls_dynamic:
+  - source: cnos.cdd cell-runtime role contracts (gamma/alpha/beta/delta/epsilon), dispatched at cycle runtime for the cds protocol
 ---
 
 # CDS

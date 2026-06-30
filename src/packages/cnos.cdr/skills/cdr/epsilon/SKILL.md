@@ -9,6 +9,12 @@ triggers:
   - epsilon
   - cdr-iteration
   - protocol-iteration
+kata_surface: embedded
+inputs:
+  - the CDR receipt stream
+  - research-protocol-gap findings
+outputs:
+  - a CDR-iteration artifact recording durable protocol improvements under MCA discipline
 ---
 
 # Epsilon (research ε)

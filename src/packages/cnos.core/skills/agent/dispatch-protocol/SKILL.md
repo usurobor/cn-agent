@@ -30,8 +30,8 @@ requires:
   - GitHub repository with generic label set per cnos#468 (cnos.core-owned) and the wake's owning protocol's `protocol:{P}` qualifier (per-package-owned)
   - operator-applied status:todo label on target issue
   - repository-level workflow concurrency group (per-protocol scoped per cnos#470)
-calls:
-  - the matching package's runtime (concrete-protocol-package — e.g. cnos.cds for `protocol:cds` cells); each concrete protocol invokes the generic cnos.cdd cell-runtime framework's γ/α/β/δ contracts internally
+calls_dynamic:
+  - source: the matching package runtime (concrete-protocol-package — e.g. cnos.cds for `protocol:cds` cells); each concrete protocol invokes the generic cnos.cdd cell-runtime framework's γ/α/β/δ contracts internally
 ---
 
 <!--

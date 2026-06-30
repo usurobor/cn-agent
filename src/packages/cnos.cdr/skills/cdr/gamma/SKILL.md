@@ -7,6 +7,14 @@ parent: cdr
 triggers:
   - gamma
 scope: role-local
+kata_surface: embedded
+inputs:
+  - research wave context
+  - candidate research gaps
+  - alpha and beta receipts
+outputs:
+  - selected research gap and alpha/beta dispatch
+  - typed CDRReceipt closing the wave
 ---
 
 # Gamma (research γ)

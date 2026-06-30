@@ -32,11 +32,8 @@ requires:
   - active CDD-class cycle exists with a quality-gated issue, a cycle branch on origin, and `gamma-scaffold.md` filed
 calls:
   - HANDOFF.md
-  - cnos.cdd/skills/cdd/gamma/SKILL.md
-  - cnos.cdd/skills/cdd/alpha/SKILL.md
-  - cnos.cdd/skills/cdd/beta/SKILL.md
-  - cnos.cdd/skills/cdd/delta/SKILL.md
-  - cnos.cdd/skills/cdd/operator/SKILL.md
+calls_dynamic:
+  - source: cnos.cdd cell-runtime role contracts (gamma/alpha/beta/delta/operator), dispatched at cycle runtime by the consumer protocol package
 ---
 
 # Dispatch — γ → α/β prompt + δ implementation-contract enrichment

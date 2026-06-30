@@ -22,7 +22,7 @@ inputs:
 outputs:
   - per-role artifact written at .cdd/unreleased/{N}/{filename}.md
   - SHA advance on origin/cycle/{N} (the handoff signal to the successor role)
-  - at release: cycle directory moved from .cdd/unreleased/{N}/ to .cdd/releases/{X.Y.Z}/{N}/ (frozen snapshot)
+  - "at release: cycle directory moved from .cdd/unreleased/{N}/ to .cdd/releases/{X.Y.Z}/{N}/ (frozen snapshot)"
 requires:
   - cycle/{N} exists on origin
   - the role's predecessor (if any) has signaled completion via the channel (see §2.3 Sequential rule)

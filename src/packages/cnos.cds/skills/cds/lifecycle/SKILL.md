@@ -2,14 +2,19 @@
 name: lifecycle
 description: CDS development lifecycle — v0.1 thin overlay. Canonical 0–13 steps, S0–S12 state machine, branch rule, pre-flight, and tier structure at CDS.md; mechanics delegate to cnos.cdd role + harness skills.
 artifact_class: skill
-kata_surface: pointer
+kata_surface: none
 governing_question: How does a CDS cycle progress from observation through close-out across the 0–13 steps and S0–S12 state machine?
 visibility: public
 parent: cds
 triggers:
   - lifecycle
-scope: lifecycle-phase
+scope: task-local
 status: v0.1-thin-overlay
+inputs:
+  - a CDS cycle in progress
+  - the current lifecycle step or state
+outputs:
+  - the canonical 0-13 step and S0-S12 state for the current cycle position (located in CDS.md)
 ---
 
 # CDS Development lifecycle — v0.1 thin overlay

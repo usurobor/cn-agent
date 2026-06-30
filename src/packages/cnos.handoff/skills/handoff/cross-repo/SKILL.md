@@ -25,11 +25,9 @@ outputs:
   - bundle archival decision when terminal events fire
 requires:
   - a cross-repo event applies (the matter spans two repos)
-  - consumer protocol package's loader has routed here (typically cnos.cdd γ intake/close-out, cnos.cds γ intake, or cnos.cdr γ — see `calls:` below)
-calls:
-  - cnos.cdd/skills/cdd/gamma/SKILL.md
-  - cnos.cdd/skills/cdd/post-release/SKILL.md
-  - cnos.cdd/skills/cdd/issue/SKILL.md
+  - consumer protocol package's loader has routed here (typically cnos.cdd γ intake/close-out, cnos.cds γ intake, or cnos.cdr γ — see `calls_dynamic:` below)
+calls_dynamic:
+  - source: cnos.cdd cell-runtime role contracts (gamma/post-release/issue), dispatched at cycle runtime by the consumer protocol package
 ---
 
 # Cross-Repo Coordination

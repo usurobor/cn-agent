@@ -9,6 +9,13 @@ triggers:
   - gate
   - unblock
 scope: role-local
+kata_surface: embedded
+inputs:
+  - research receipts
+  - the data-mounted gate state
+  - the wave-transition cadence
+outputs:
+  - a gate verdict (accept or reject) recorded on the wave-transition cadence
 ---
 
 # Operator (research δ)

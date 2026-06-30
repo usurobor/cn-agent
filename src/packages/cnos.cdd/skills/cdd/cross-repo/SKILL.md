@@ -1,14 +1,21 @@
 ---
 name: cross-repo
 description: Compatibility pointer. Cross-repo handoff doctrine has moved to cnos.handoff/skills/handoff/cross-repo/SKILL.md as of cnos#416 (Sub 2 of cnos#404 handoff extraction).
-artifact_class: pointer
+artifact_class: reference
 visibility: internal
 parent: cdd
+governing_question: Where did the cnos.cdd cross-repo handoff doctrine move to, and why is cnos.cdd a consumer rather than the owner?
+scope: task-local
 status: moved
 canonical: cnos.handoff/skills/handoff/cross-repo/SKILL.md
 triggers:
   - cross-repo-moved
   - handoff-extracted
+kata_surface: none
+inputs:
+  - a reader resolving the old cnos.cdd cross-repo doctrine path
+outputs:
+  - a redirect to the canonical home at cnos.handoff/skills/handoff/cross-repo/SKILL.md
 ---
 
 # Cross-repo doctrine — moved

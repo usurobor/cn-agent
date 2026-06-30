@@ -14,6 +14,13 @@ triggers:
   - cdd-iteration
   - protocol-iteration
   - epsilon
+kata_surface: embedded
+inputs:
+  - the cross-cycle receipt stream
+  - cdd-gap findings
+  - the cycle receipt protocol_gap_count
+outputs:
+  - cdd-iteration.md recording durable cdd-protocol improvements when protocol_gap_count is above zero
 ---
 
 # Epsilon (CDD ε)

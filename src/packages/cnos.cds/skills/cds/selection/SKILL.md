@@ -2,14 +2,19 @@
 name: selection
 description: CDS selection function — v0.1 thin overlay. Canonical rules at CDS.md; mechanics delegate to cnos.cdd gamma/SKILL.md.
 artifact_class: skill
-kata_surface: pointer
+kata_surface: none
 governing_question: How does γ select the next CDS cycle's gap by applying the canonical selection function in rule order?
 visibility: public
 parent: cds
 triggers:
   - selection
-scope: lifecycle-phase
+scope: task-local
 status: v0.1-thin-overlay
+inputs:
+  - candidate CDS gaps
+  - the canonical selection rules in CDS.md
+outputs:
+  - the next CDS cycle gap selected by the rule-ordered selection function
 ---
 
 # CDS Selection — v0.1 thin overlay

@@ -7,6 +7,14 @@ parent: cdr
 triggers:
   - beta
 scope: role-local
+kata_surface: embedded
+inputs:
+  - alpha research matter
+  - the claim and evidence set
+  - data-policy constraints
+outputs:
+  - independent beta audit verdict on claim and evidence alignment
+  - falsifiability, reproduction, and citation-integrity findings
 ---
 
 # Beta (research β)
