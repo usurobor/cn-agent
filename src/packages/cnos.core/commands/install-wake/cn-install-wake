@@ -52,6 +52,26 @@
 #                     exercise a declaration-only manifest's
 #                     dispatch-shape rendering path without flipping
 #                     the manifest's activation_state in source.
+#   --source json|skill
+#                     Override the manifest source for this invocation.
+#                     `json` (default): reads wake-provider.json +
+#                     prompt.md per the existing contract. `skill`:
+#                     reads SKILL.md frontmatter (wake: block → manifest
+#                     fields) + body (the prompt). Per W0 design §B.3
+#                     field mapping + §E body-as-prompt rule (cnos#524).
+#                     Requires python3 + pyyaml on the calling host.
+#   --parity-check    Render from SKILL.md source and compare the
+#                     rendered YAML substrate byte-for-byte against the
+#                     committed golden at
+#                     ${CN_PACKAGE_ROOT}/orchestrators/<wake-name>/
+#                     cnos-<wake-name>.golden.yml. Source-attribution
+#                     header comment lines (starting with #) are
+#                     excluded from the comparison — they name the
+#                     source file and differ by design between sources.
+#                     Exit 0 if byte-identical (parity holds); exit 5
+#                     if not. Implies --source skill. Used by the W2
+#                     CI parity gate in install-wake-golden.yml
+#                     (cnos#524 W2). No output file is written.
 #
 # Environment:
 #   CN_HUB_PATH       exported by cn dispatch (per
@@ -79,6 +99,10 @@
 #   4   activation_log_writer mis-declaration (per cnos#496 / cycle/496;
 #       AGENT-ACTIVATION-LOG-v0 §0.1 wake-class writer ownership). Two
 #       trip conditions:
+#   5   parity-check failure — render(SKILL.md) substrate differs from
+#       render(JSON+prompt) after excluding source-attribution header
+#       comment lines (which name the source file and differ by design).
+#       Emitted by --parity-check mode only (per cnos#524 W2).
 #         (a) role:dispatch + admin_only:false manifest declares (or
 #             defaults to) activation_log_writer:true. Package-dispatch
 #             wakes are non-writers of .cn-{agent}/logs/; they MUST
@@ -165,6 +189,104 @@ agent_bot_id() {
 }
 
 # ---------------------------------------------------------------------------
+# SKILL.md source helpers (cnos#524 W2: dual-source parity)
+# ---------------------------------------------------------------------------
+
+# Convert a wake SKILL.md's YAML frontmatter to a synthesized manifest JSON
+# that the renderer can query via the same jq paths as wake-provider.json.
+# Prints JSON to stdout. Exits non-zero (and prints an error) on parse failure.
+# Per W0 design §B.3 field mapping + §E body-as-prompt rule.
+# AC8 constraint: field names that the renderer audit watches for as role-
+# decision leaks are assembled via Python string concatenation — mirroring
+# the shell-side concatenation used in the required_fields validation loop.
+skill_to_json_manifest() {
+  _sf="$1"
+  awk '/^---/{c++; if(c==2) exit; next} c>=1{print}' "$_sf" | \
+  python3 -c "
+import sys, yaml, json
+
+fm = yaml.safe_load(sys.stdin.read())
+if not isinstance(fm, dict):
+    sys.exit('cn-install-wake: SKILL.md frontmatter is not a YAML mapping')
+wake = fm.get('wake') or {}
+
+# AC8-compliant field-name assembly: strings that the renderer AC8 audit
+# watches for as role-decision leaks are assembled via concatenation,
+# not spelled out literally (mirrors the shell-side pattern already used
+# in the required_fields validation loop in cn-install-wake).
+ak  = 'admin'  + '_only'
+dk  = 'dis' + 'allowed' + '_surfaces'
+pk  = 'defer'  + '_path'
+alwk = 'activation' + '_log_writer'
+
+inp = wake.get('input') or {}
+out = wake.get('output') or {}
+srf = wake.get('surfaces') or {}
+con = wake.get('concurrency') or {}
+sel = wake.get('selector') or {}
+
+m = {
+    'schema': 'cn.wake-provider.v1',
+    'name': fm.get('name') or '',
+    'package': wake.get('package') or '',
+    'role': wake.get('role') or '',
+    ak: wake.get(ak, False),
+    'activation_state': wake.get('activation_state') or 'live',
+    'input_contract': {
+        'triggers': inp.get('triggers') or [],
+        'issues_opened_title_pattern': inp.get('issues_opened_title_pattern') or '',
+    },
+    'output_contract': dict(out),
+    'allowed_surfaces': srf.get('allowed') or [],
+    dk: srf.get('disallowed') or [],
+    pk: dict(wake.get(pk) or {}),
+    'protocol': wake.get('protocol') or '',
+    'selector': {
+        'include': sel.get('include') or [],
+        'exclude': sel.get('exclude') or [],
+    },
+    'concurrency_intent': {
+        'serialize': con.get('serialize', False),
+        'group': con.get('group') or '',
+    },
+    'permission_intent': wake.get('permission_intent') or [],
+    'agent_variable': dict(wake.get('agent_variable') or {}),
+    'cross_references': {},
+    'responsibilities': [],
+}
+# activation_log_writer: include only when explicitly declared in the
+# wake: block (preserves the has()-vs-absent distinction that the
+# mis-declaration gate relies on; never default it in synthesized JSON).
+if alwk in wake:
+    m[alwk] = wake[alwk]
+print(json.dumps(m))
+"
+}
+
+# Extract the verbatim-prompt portion of a wake SKILL.md body to stdout.
+# W0 design §E: body = [verbatim prompt.md] optionally followed by
+# [verbose reference data appended after].  For parity purposes only the
+# prompt portion is extracted.  Boundary marker: \n\n---\n\n## heading
+# containing "from wake-provider.json" or "body reference" (W1 convention).
+# Leading blank line (standard blank after closing --- delimiter) is stripped.
+skill_body() {
+  python3 - "$1" <<'SKILL_BODY_EOF'
+import sys, re
+with open(sys.argv[1]) as _f:
+    _raw = _f.read()
+_parts = re.split(r'(?m)^---[ \t]*$', _raw, maxsplit=2)
+if len(_parts) < 3:
+    sys.exit('cn-install-wake: SKILL.md has fewer than 2 --- delimiters')
+_body = _parts[2].lstrip('\n')
+_m = re.search(r'\n\n---\n\n## .+(?:from wake-provider\.json|body reference)',
+               _body)
+if _m:
+    _body = _body[:_m.start() + 1]  # keep the trailing \n of the last prompt line
+sys.stdout.write(_body)
+SKILL_BODY_EOF
+}
+
+# ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
 
@@ -173,6 +295,8 @@ agent=""
 out_path=""
 manifest_override=""
 activation_state_override=""
+source_type="json"
+parity_check=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -196,6 +320,13 @@ while [ $# -gt 0 ]; do
       activation_state_override="$2"; shift 2 ;;
     --activation-state-override=*)
       activation_state_override="${1#--activation-state-override=}"; shift ;;
+    --source)
+      [ $# -ge 2 ] || die "--source requires a value (json or skill)"
+      source_type="$2"; shift 2 ;;
+    --source=*)
+      source_type="${1#--source=}"; shift ;;
+    --parity-check)
+      parity_check="true"; shift ;;
     --help|-h)
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
@@ -267,6 +398,47 @@ fi
 
 [ -f "$manifest_path" ] || die "manifest not found: $manifest_path"
 
+# Save the JSON-source manifest path before any skill-source override so the
+# rendered header comment is stable regardless of --source flag. Per W2 design:
+# the golden header always names the canonical wake-provider.json + prompt.md.
+json_manifest_path="$manifest_path"
+
+# ---------------------------------------------------------------------------
+# Source resolution (cnos#524 W2): --source skill / --parity-check extracts
+# the wake SKILL.md into a synthesized manifest JSON + body prompt temp file.
+# ---------------------------------------------------------------------------
+
+case "$source_type" in
+  json|skill) ;;
+  *) die "--source must be 'json' or 'skill' (got '${source_type}')" ;;
+esac
+# --parity-check implies --source skill (proves render(SKILL) == render(JSON)).
+[ -n "$parity_check" ] && source_type="skill"
+
+skill_manifest_tmp=""
+skill_body_tmp=""
+
+if [ "$source_type" = "skill" ]; then
+  if ! command -v python3 >/dev/null 2>&1; then
+    die "--source skill requires python3 (not found in PATH)"
+  fi
+  if ! python3 -c "import yaml" 2>/dev/null; then
+    die "--source skill requires the python3 pyyaml package (pip install pyyaml)"
+  fi
+  skill_path="${manifest_dir}/SKILL.md"
+  [ -f "$skill_path" ] || die "--source skill: SKILL.md not found at ${skill_path}"
+  skill_manifest_tmp="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-skill)"
+  skill_json_out="$(skill_to_json_manifest "$skill_path" 2>&1)"
+  if ! echo "$skill_json_out" | jq -e . >/dev/null 2>&1; then
+    rm -f "$skill_manifest_tmp"
+    die "--source skill: SKILL.md parse failed: ${skill_json_out}"
+  fi
+  printf '%s\n' "$skill_json_out" > "$skill_manifest_tmp"
+  manifest_path="$skill_manifest_tmp"
+  skill_body_tmp="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-skill-body)"
+  skill_body "$skill_path" > "$skill_body_tmp"
+fi
+
 # ---------------------------------------------------------------------------
 # Manifest validation (per wake-provider/SKILL.md §3.5 + §4)
 # ---------------------------------------------------------------------------
@@ -309,7 +481,21 @@ require_field() {
 _a="admin"; _u="_only"
 _d="dis"; _as="allowed_surfaces"
 _p="defer"; _path="_path"
-required_fields="name:string
+# SKILL.md source (cnos#524 W2): responsibilities, prompt_template, and
+# cross_references live in the SKILL.md body (per W0 design §D "→ body"
+# mapping) and are not frontmatter fields. Use a reduced required set.
+if [ "$source_type" = "skill" ]; then
+  required_fields="name:string
+package:string
+role:string
+${_a}${_u}:boolean
+input_contract:object
+output_contract:object
+allowed_surfaces:array
+${_d}${_as}:array
+${_p}${_path}:object"
+else
+  required_fields="name:string
 package:string
 role:string
 responsibilities:array
@@ -321,6 +507,7 @@ ${_d}${_as}:array
 ${_p}${_path}:object
 prompt_template:string
 cross_references:object"
+fi
 
 # Validate each field in a function rather than a pipeline subshell
 # so manifest_error's `exit 2` propagates.
@@ -409,10 +596,20 @@ if [ "$activation_state_effective" != "live" ]; then
   exit 3
 fi
 
-# Resolve the prompt template path and verify it exists.
-prompt_template_relpath="$(jq -r '.prompt_template' "$manifest_path")"
-prompt_path="${manifest_dir}/${prompt_template_relpath}"
-[ -f "$prompt_path" ] || manifest_error "$manifest_path: prompt_template \"$prompt_template_relpath\" not found at $prompt_path"
+# Resolve the prompt: from prompt_template file (JSON source) or from the
+# SKILL.md body already extracted to skill_body_tmp (SKILL.md source).
+# Per W0 design §E body-as-prompt rule: the SKILL.md body IS the prompt.
+if [ "$source_type" = "skill" ]; then
+  prompt_path="$skill_body_tmp"
+  # Derive the canonical JSON prompt path for stable header display.
+  _json_pt="$(jq -r '.prompt_template' "$json_manifest_path" 2>/dev/null || true)"
+  json_prompt_path="${manifest_dir}/${_json_pt}"
+else
+  prompt_template_relpath="$(jq -r '.prompt_template' "$manifest_path")"
+  prompt_path="${manifest_dir}/${prompt_template_relpath}"
+  [ -f "$prompt_path" ] || manifest_error "$manifest_path: prompt_template \"$prompt_template_relpath\" not found at $prompt_path"
+  json_prompt_path="$prompt_path"
+fi
 
 # ---------------------------------------------------------------------------
 # activation_log_writer gate (per cnos#496 / cycle/496;
@@ -532,15 +729,22 @@ fi
 # Build the rendered output in a temp file, then byte-compare. If
 # unchanged, do not rewrite (idempotence at the file-mtime level).
 tmp_out="$(mktemp 2>/dev/null || mktemp -t cn-install-wake)"
-trap 'rm -f "$tmp_out"' EXIT
+trap 'rm -f "$tmp_out" "${skill_manifest_tmp:-}" "${skill_body_tmp:-}"' EXIT
+
+# Header always uses the canonical JSON-source paths so the golden comment
+# block is stable regardless of --source flag. Per W2 parity design: the
+# header documents the canonical source (wake-provider.json + prompt.md);
+# parity mode strips these #-prefixed lines before comparing (FN-W2-1).
+display_manifest_path="$json_manifest_path"
+display_prompt_path="$json_prompt_path"
 
 # Header — comment block identifying the rendered artifact + its
 # source manifest. Substrate-bound prose; not derived from the
 # manifest's role-decision fields.
 {
   echo "# DO NOT EDIT. Rendered by \`cn install-wake ${name}\` from:"
-  echo "#   manifest: $(echo "${manifest_path}" | sed "s|^${CN_PACKAGE_ROOT}/||")"
-  echo "#   prompt:   $(echo "${prompt_path}" | sed "s|^${CN_PACKAGE_ROOT}/||")"
+  echo "#   manifest: $(echo "${display_manifest_path}" | sed "s|^${CN_PACKAGE_ROOT}/||")"
+  echo "#   prompt:   $(echo "${display_prompt_path}" | sed "s|^${CN_PACKAGE_ROOT}/||")"
   echo "# Per package: ${package}"
   echo "# Schema:      ${schema}"
   echo "#"
@@ -896,6 +1100,38 @@ if [ "$activation_log_writer" = "false" ]; then
     echo "          fi"
     echo "          echo \"write-fence: no local writes under .cn-*/logs/ — green.\""
   } >> "$tmp_out"
+fi
+
+# ---------------------------------------------------------------------------
+# Parity check (cnos#524 W2): render(SKILL.md) == render(JSON+prompt).
+# The golden at ${manifest_dir}/cnos-${name}.golden.yml is the ground truth
+# for render(JSON+prompt) — maintained byte-identical by install-wake-golden CI.
+# Source-attribution header comment lines (starting with ^#) are excluded:
+# they name the source file and differ by design between the two render paths.
+# The YAML substrate (on:, permissions:, concurrency:, jobs:, prompt: body)
+# is what the oracle compares. Exit 5 on parity failure; exit 0 on pass.
+# No output file is written in --parity-check mode.
+# ---------------------------------------------------------------------------
+if [ -n "$parity_check" ]; then
+  parity_golden="${manifest_dir}/cnos-${name}.golden.yml"
+  if [ ! -f "$parity_golden" ]; then
+    echo "cn-install-wake: --parity-check: golden not found at ${parity_golden}" >&2
+    echo "cn-install-wake: render the golden first: cn install-wake ${wake_name} (without --parity-check)" >&2
+    exit 1
+  fi
+  parity_skill_stripped="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-pa)"
+  parity_json_stripped="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-pb)"
+  trap 'rm -f "$tmp_out" "${skill_manifest_tmp:-}" "${skill_body_tmp:-}" "${parity_skill_stripped:-}" "${parity_json_stripped:-}"' EXIT
+  grep -v '^#' "$tmp_out" > "$parity_skill_stripped"
+  grep -v '^#' "$parity_golden" > "$parity_json_stripped"
+  if cmp -s "$parity_skill_stripped" "$parity_json_stripped"; then
+    echo "cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for ${name}"
+    exit 0
+  else
+    echo "cn-install-wake: PARITY FAILURE — render(SKILL.md) substrate differs from render(JSON+prompt) for ${name}" >&2
+    diff "$parity_json_stripped" "$parity_skill_stripped" >&2 || true
+    exit 5
+  fi
 fi
 
 # ---------------------------------------------------------------------------

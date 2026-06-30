@@ -146,3 +146,40 @@ No renderer, golden, workflow, or wake-provider.json files are in the diff. Scop
 W1 delivers. PR created for cycle/524 → main. Issue #524 transitioned to `status:review` for operator merge decision. W2–W4 phases pending operator authorization.
 
 _Filed by γ@cdd.cnos (W1 R0 closeout), 2026-06-30 (UTC). Cycle/524 W1 R0: CONVERGE. AC1+AC2 delivered. Awaiting operator merge._
+
+---
+
+# γ-closeout — cnos#524 W2 R1
+
+## §1. Cycle outcome
+
+**Verdict: CONVERGE.** W2 R1 delivered the renderer dual-source parity extension and CI guard.
+β found no blocking findings. The parity gate passes for both wakes. All stop conditions clear.
+
+**Calibrated success claim:** W2 delivers: (1) `cn-install-wake --parity-check` mode that proves
+`render(SKILL.md) == render(JSON+prompt)` byte-for-byte (modulo source-attribution header comments
+excluded by design); (2) a CI parity guard step in `install-wake-golden.yml` that will keep
+byte-identity in CI going forward; (3) `--source skill` flag for standalone SKILL.md-sourced
+renders (verified to produce identical golden output). No wake behavior changed. No golden
+changed. No live workflow changed. W3 (source flip) is now technically unblocked.
+
+## §2. What the parity gate proved
+
+The committed goldens serve as ground truth for `render(JSON+prompt)` — they are verified
+byte-identical by the existing `install-wake-golden` re-render steps. The new parity step proves
+`render(SKILL.md)` is byte-identical to the goldens (after stripping `^#` header lines). This
+establishes the full chain: `render(SKILL.md) == render(JSON+prompt)`, which is the W0 §F oracle
+for the W2→W3 phase boundary.
+
+## §3. Stop condition audit
+
+All six W2 stop conditions cleared (per `beta-review.md §R1 §Stop Condition Audit`). No green
+gate turned red.
+
+## §4. Next step
+
+W3 (renderer flip: default source becomes SKILL.md) is now technically unblocked. Pending operator
+authorization. Issue #524 transitions to `status:review` for the W2 PR. W3–W4 phases require
+separate operator dispatch.
+
+_Filed by γ@cdd.cnos (W2 R1 closeout), 2026-06-30 (UTC). Cycle/524 W2 R1: CONVERGE. Parity gate delivered. W3 unblocked pending operator authorization._

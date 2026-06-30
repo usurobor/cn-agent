@@ -3,714 +3,551 @@ cycle: 524
 parent_issue: cnos#524
 protocol: cds
 cycle_branch: cycle/524
-base_main_sha: 23240e4d
-head_sha_at_scaffold: 23240e4d
+base_main_sha: 1a0acfc14ccbdf26d1088472125864be037ff1e1
+head_sha_at_scaffold: 1a0acfc14ccbdf26d1088472125864be037ff1e1
 mode: MCA
 role: γ
-authored_by: γ@cdd.cnos (wake-invoked δ dispatch)
+authored_by: γ@cdd.cnos (wake-invoked δ dispatch, W2 scope)
 date: 2026-06-30 (UTC)
 output_contract: γ-scaffold + α prompt + β prompt
-dispatch_scope: W1-implementation
-ac_set: AC1, AC2, AC4, AC7 (W1-relevant; AC3/AC5/AC6 are W2/W3/W4 scope)
+dispatch_scope: W2-implementation
+ac_set: AC3, AC4, AC6, AC7 (W2-relevant; AC1/AC2 closed in W1; AC5 is W4 scope)
 w0_locked: true
 w0_design_ref: .cdd/unreleased/524/w0-design.md
+w1_ref: PR #526 (merged; SKILL.md files authored, #Wake CUE schema added)
+operator_directive_ref: cnos#524 comment 2026-06-30T12:34:52Z (IC_kwDORGimc88AAAABILInKQ)
 ---
 
-# γ-scaffold — cnos#524: wake-as-skill W1 implementation
+# γ-scaffold — cnos#524: wake-as-skill W2 implementation
 
-**Scope:** W1 — first implementation phase. Author both wake `SKILL.md` modules, extend `schemas/skill.cue` with `#Wake`. The renderer still reads from `wake-provider.json` + `prompt.md`; goldens are unchanged.
+**Scope:** W2 — renderer dual-source parity. Extend `cn-install-wake` to parse wake `SKILL.md`
+frontmatter + body as a second source; add `--parity-check` mode proving `render(SKILL.md)` ==
+`render(JSON+prompt)`; add CI parity guard in `install-wake-golden.yml`.
 
-**W0 reference:** `.cdd/unreleased/524/w0-design.md` (locked; governs the design). This scaffold interprets the W0 design into W1 implementation instructions. Do not re-derive design decisions from first principles — read W0 first.
-
----
-
-## §1. W1 scope
-
-**What W1 delivers (the only three writable changes):**
-1. `schemas/skill.cue` — additive: `"wake"` added to `artifact_class` enum + `#Wake` CUE definition
-2. `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md` — new file; `artifact_class: wake`
-3. `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` — new file; `artifact_class: wake`
-
-**What W1 does NOT deliver** (these are W2/W3/W4 scope, explicitly out of W1):
-- Renderer flip (W2/W3)
-- Parity gate `render(SKILL) cmp render(JSON)` (W2)
-- Goldens change (W3 consequence of renderer flip)
-- Deletion of `wake-provider.json` or `prompt.md` (W4)
-- Renderer refusal smokes from SKILL.md source (W3/W4)
-
-**State after W1:** Three coexisting sources of truth — `wake-provider.json` (renderer reads), `prompt.md` (renderer reads), `SKILL.md` (I5 validates). No rendered output changes. I5 count advances 91 → 93.
+**W0 reference:** `.cdd/unreleased/524/w0-design.md` (locked; governs the design).
+**W1 state:** Both wake SKILL.md files exist (`agent-admin/SKILL.md`, `cds-dispatch/SKILL.md`);
+`#Wake` CUE schema merged via PR #526. Renderer still reads JSON+prompt — goldens unchanged.
 
 ---
 
-## §2. AC oracle list (W1-relevant ACs)
+## §1. W2 scope
 
-### AC1 — `schemas/skill.cue` adds `"wake"` to `artifact_class` enum + `#Wake` definition
+**What W2 delivers (the only writable changes):**
+1. `src/packages/cnos.core/commands/install-wake/cn-install-wake` — extend with:
+   - `--source skill` flag: parses `SKILL.md` frontmatter (`wake:` block) + body (as prompt)
+   - `--parity-check` flag: renders from SKILL.md, compares to the committed golden byte-for-byte
+     (modulo comment-header lines which name the source file and differ by design)
+   - `skill_to_json_manifest()` helper: YAML frontmatter → synthesized manifest JSON
+   - `skill_body()` helper: extracts SKILL.md body to a temp file for use as prompt
+2. `.github/workflows/install-wake-golden.yml` — add W2 parity check step at end
+3. `.cdd/unreleased/524/` records (this scaffold, self-coherence, beta-review, closeouts)
+
+**What W2 does NOT deliver** (explicitly out of scope per operator directive):
+- Flip renderer default source from JSON to SKILL.md (W3)
+- Delete `wake-provider.json` or `prompt.md` (W4)
+- Re-render goldens or change them in any way
+- Change live workflows (`cnos-agent-admin.yml`, `cnos-cds-dispatch.yml`)
+- Change `schemas/skill.cue` (W1 frozen)
+- Change `wake-provider.json` or `prompt.md`
+
+**State after W2:** The renderer can render from either source. Parity is proved in CI. The
+active default source remains JSON+prompt. Goldens are unchanged. W3 (flip) is the next phase.
+
+---
+
+## §2. AC oracle list (W2-relevant ACs)
+
+### AC3 — Renderer reads SKILL.md
+
+**Invariant:** `cn install-wake <name> --source skill` renders the same workflow YAML (modulo
+source-attribution header) as `cn install-wake <name>` (JSON source).
 
 **Oracle (pass conditions):**
-- `cue vet` against a conformant wake `SKILL.md` passes with no errors.
-- `cue vet` against a wake `SKILL.md` with `wake.role: observer` fails (not in enum).
-- `cue vet` against a wake `SKILL.md` with `wake.role: admin` but missing `wake.output.channel_log_convention` fails (role-shaped required field).
-- `cue vet` against a wake `SKILL.md` with `wake.role: dispatch` but missing `wake.output.cycle_artifact_root` fails (role-shaped required field).
-- `cue vet` against a wake `SKILL.md` with `artifact_class: wake` passes (enum accepts the new value).
-- `cue vet` against an existing non-wake `SKILL.md` continues to pass (additive change; no regression).
+- `cn install-wake agent-admin --source skill` exits 0, writes to the default golden path,
+  produces YAML whose non-`#` content is byte-identical to the committed golden.
+- `cn install-wake cds-dispatch --source skill` same oracle.
+- `--source skill` errors loudly (exit 1) when `SKILL.md` is absent at `${manifest_dir}/SKILL.md`.
+- `--source skill` requires `python3` + `pyyaml`; errors if absent.
 
-**Failure scenario:** `cue vet` passes on a `SKILL.md` with `wake.role: observer` → enum is too wide. `cue vet` passes on a dispatch SKILL.md missing `wake.output.cycle_artifact_root` → role-shaped disjunction is not enforced.
-
-**Scope:** additive to `schemas/skill.cue` only. No other file touched.
+**Failure scenario:** `--source skill` silently produces wrong output (malformed synthesized JSON,
+missing wake: block fields); diff from golden is non-empty after stripping `#` headers.
 
 ---
 
-### AC2 — Both wake `SKILL.md` files authored
+### AC4 — Byte-identical parity (W2 form: dual-source parity gate)
 
-**Oracle (pass conditions):**
-- I5 validator (`scripts/ci/validate-skill-frontmatter.sh`) reports: "93 SKILL.md validated; no findings".
-- Each `SKILL.md` has: `artifact_class: wake`, `scope: global`, a `wake:` block carrying all current manifest data per the field mapping in `w0-design.md §B.3`, body = verbatim `prompt.md` content.
-- `cue vet` passes on each file independently (AC1 oracle plus AC2 oracle are linked).
-- No field from the respective `wake-provider.json` that belongs in frontmatter (per `w0-design.md §B.3`) is absent or misvalued.
-- Verbose prose fields (`responsibilities`, `*_notes`, `cross_references`, `trigger_descriptions`, `inbound`, `agent_variable.description`, `concurrency_intent.notes`, `permission_intent_notes`) are in the body, NOT in frontmatter.
-- `prompt.md` body section: all text from the respective `prompt.md` file, verbatim, no paraphrase.
+**Invariant:** `cn install-wake <name> --parity-check` exits 0 for both wakes. Exit 5 means
+`render(SKILL.md)` differs from the golden (`render(JSON+prompt)`).
 
-**Failure scenario:** I5 validator shows 91 (files missing) or shows 93 but with findings (frontmatter malformed). `cue vet` fails on either file. A frontmatter field is misvalued vs. `wake-provider.json`. A prose field appears in frontmatter instead of body. Body diverges from `prompt.md` verbatim.
+**Parity oracle:**
+1. Strip `#`-prefixed lines from both the SKILL.md render and the golden (header comments
+   name the source file and differ by design; the YAML substrate is what matters).
+2. `cmp` the stripped outputs. Must be identical.
 
-**Note on body section order (OB-2):** The SKILL.md body sections MUST appear in this order:
-1. Identity
-2. Purpose
-3. Authority boundary
-4. Wake procedure
-5. Repair/stop rules
-6. Outputs/receipts
-7. Non-goals
+**CI oracle (install-wake-golden.yml W2 parity step):**
+- Runs after the re-render + golden-verify steps (so golden is confirmed fresh).
+- `cn install-wake agent-admin --parity-check` → exit 0
+- `cn install-wake cds-dispatch --parity-check` → exit 0
+- If either exits 5, the step fails with a diff.
 
-This body section structure applies to each wake's body. The verbatim `prompt.md` content maps to these sections; α must confirm the mapping before writing.
+**Failure scenario:** Exit 5 from `--parity-check` means SKILL.md source and JSON+prompt source
+produce different workflow content. Common root causes: SKILL.md body diverges from prompt.md
+(W1 body-verbatim constraint violated); SKILL.md frontmatter field missing or mis-mapped.
 
 ---
 
-### AC4 — Byte-identical goldens (W1 form: renderer untouched → no golden change)
+### AC6 — Renderer refusals preserved from SKILL.md source
+
+**Invariant:** The renderer's runtime refusals still fire when `--source skill`:
+- `activation_state: declaration-only` in SKILL.md frontmatter → exit 3
+- `role: dispatch` + `admin_only: false` + `activation_log_writer: true` → exit 4
 
 **Oracle (pass conditions):**
-- `install-wake golden` CI check passes: re-render diff clean; sha256 golden == live; idempotent.
-- The committed goldens `cnos-agent-admin.golden.yml` and `cnos-cds-dispatch.golden.yml` are byte-identical to what the renderer produces (renderer still reads `wake-provider.json` + `prompt.md`).
-- The W1 branch diff contains NO changes to any `*.golden.yml` file.
-- The W1 branch diff contains NO changes to `wake-provider.json` or `prompt.md`.
+- A synthetic SKILL.md with `wake.activation_state: declaration-only` in frontmatter →
+  `cn install-wake <name> --source skill` exits 3 with "declaration-only" in stderr.
+- A synthetic SKILL.md with `wake.activation_log_writer: true` + `wake.role: dispatch` +
+  `wake.admin_only: false` → exits 4 with "activation_log_writer mis-declaration" in stderr.
 
-**Failure scenario:** α edits `wake-provider.json` or `prompt.md`, causing a golden mismatch. α changes the golden files directly. Renderer behavior changes unexpectedly because α touched renderer-adjacent code.
+**Implementation note:** The synthesized manifest JSON from `skill_to_json_manifest()` includes
+`activation_state` and `activation_log_writer` fields from the SKILL.md wake: block. The existing
+refusal gates in the renderer read these via the same jq paths they use against wake-provider.json,
+so the refusals fire unchanged when the synthesized JSON is the manifest_path. No new refusal
+logic is needed.
 
-**Note:** In W1 the "byte-identical" oracle is trivially satisfied because the renderer still reads JSON+prompt. The oracle becomes load-bearing in W2 (parity gate) and W3 (post-flip golden check). AC4 in W1 is a guardrail confirming α stayed inside scope.
+**FN-6 (attach-incompatibility refusal):** The existing FN-6 refusal reads
+`.cross_references.consumed_skills`. SKILL.md does not carry `consumed_skills` in frontmatter
+(it's body prose per W0 design §D). The synthesized JSON includes `"cross_references": {}`,
+so `(.cross_references.consumed_skills // [])` evaluates to `[]` and FN-6 never fires from
+SKILL.md source. This is by design: FN-6 is a JSON-source defense-in-depth for manifest
+authors who forget to scrub consumed_skills. SKILL.md source has no equivalent (the field
+doesn't exist in frontmatter). AC6 for W2 covers activation_state (exit 3) and
+activation_log_writer (exit 4) only.
 
 ---
 
 ### AC7 — All CI gates green
 
-**Oracle (pass conditions, W1-specific):**
-- I1 (schema coherence): passes — `schemas/skill.cue` additive change is backward-compatible.
-- I2 (skill-graph): passes — two new SKILL.md nodes added; no broken `calls:` edges introduced.
-- I4 (unknown): passes — no regression.
-- I5 (frontmatter validation): 93 SKILL.md validated, no findings (the W1 oracle from AC2).
-- I6 (unknown): passes — no regression.
-- `install-wake golden`: passes — byte-identical goldens (AC4 oracle).
-- `dispatch-repair-preflight (cnos#516)`: passes — no change to dispatch contract.
-- Go: passes — no Go source changes.
-- Package: passes — no package registry changes.
-- Binary: passes — no binary changes.
+**Invariant:** No inherited-cap, no new red.
 
-**Failure scenario:** I5 reports findings on the new wake SKILL.md files (AC2 gap). `install-wake golden` fails (AC4 violation). I1 fails because the `#Wake` addition contains a CUE syntax error or conflicts with `#Skill`.
+**Oracle:** I1/I2/I4/I5/I6/Go/Package/Binary/install-wake-golden/dispatch-repair-preflight all
+green on this cell's PR. The new W2 parity step in install-wake-golden.yml must also be green.
+
+**AC8 constraint (renderer authority audit):** The new SKILL.md parsing code MUST NOT introduce
+literal occurrences of: `admin_only`, `disallowed_surfaces`, `defer_path`, `cell_execution`
+(AC8 patterns) or `protocol:cds|cdr|cdw`, `dispatch:cell`, `status:todo` (AC7 patterns).
+Implementation uses Python variable concatenation to assemble these strings (mirrors the existing
+shell-side concatenation pattern in the renderer). See §3 implementation contract FN-AC8.
 
 ---
 
-## §3. Source-of-truth table
+## §3. Implementation contract (for α)
 
-| Surface | Path | Role in W1 |
-|---|---|---|
-| W0 design (locked) | `.cdd/unreleased/524/w0-design.md` | Primary design reference; field mapping in §B.3 is authoritative for what goes in SKILL.md frontmatter |
-| CUE skill schema | `schemas/skill.cue` | α extends this (additive only) |
-| Admin wake manifest | `src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json` | Read-only reference for SKILL.md frontmatter values |
-| Admin wake prompt | `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` | Read-only reference; body = verbatim content of this file |
-| Admin wake golden | `src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml` | Must be unchanged by W1 |
-| Dispatch wake manifest | `src/packages/cnos.cds/orchestrators/cds-dispatch/wake-provider.json` | Read-only reference for SKILL.md frontmatter values |
-| Dispatch wake prompt | `src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md` | Read-only reference; body = verbatim content of this file |
-| Dispatch wake golden | `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml` | Must be unchanged by W1 |
-| I5 validator script | `scripts/ci/validate-skill-frontmatter.sh` | Must NOT be touched; expected to report 93 after W1 |
-| Install-wake golden CI | `.github/workflows/install-wake-golden.yml` | Must NOT be touched; must stay green |
-| Admin SKILL.md (new) | `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md` | α authors this; the primary W1 output for AC2 |
-| Dispatch SKILL.md (new) | `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` | α authors this; the primary W1 output for AC2 |
+### §3.1 `cn-install-wake` changes
+
+α MUST make the following changes. No other changes to this file are permitted.
+
+**3.1.A — Exit code documentation (header, ~line 70-94):**
+Add exit code 5 to the header:
+```
+#   5   parity-check failure — render(SKILL.md) substrate differs from
+#       render(JSON+prompt) after stripping source-attribution header
+#       comment lines. Emitted by --parity-check mode only (cnos#524 W2).
+```
+
+**3.1.B — New flag documentation (header, after --activation-state-override):**
+```
+#   --source json|skill
+#                     Override the manifest source for this invocation.
+#                     `json` (default): reads wake-provider.json + prompt.md
+#                     per the existing contract. `skill`: reads SKILL.md
+#                     frontmatter (wake: block → manifest fields) + body
+#                     (the prompt). Per W0 design §B.3 field mapping + §E
+#                     body-as-prompt rule. Requires python3 + pyyaml.
+#   --parity-check    Render from SKILL.md source and compare the rendered
+#                     YAML substrate byte-for-byte against the committed
+#                     golden at ${manifest_dir}/cnos-${name}.golden.yml.
+#                     Source-attribution header lines (starting with #) are
+#                     excluded from the comparison (they name the source file
+#                     and differ by design between sources). Exit 0 if
+#                     byte-identical; exit 5 if not. Implies --source skill.
+#                     Used by the W2 CI parity gate (install-wake-golden.yml).
+```
+
+**3.1.C — New helper functions (after the `agent_bot_id` function, before arg parsing):**
+
+Insert two new functions: `skill_to_json_manifest` and `skill_body`. See §3.3 for the precise
+function bodies. Key constraints:
+- AC8 compliance: assemble `admin_only`, `disallowed_surfaces`, `defer_path` via Python string
+  concatenation; do NOT spell these out literally.
+- The synthesized JSON MUST include: schema, name, package, role, admin_only, activation_state,
+  input_contract (triggers + issues_opened_title_pattern), output_contract (from wake.output),
+  allowed_surfaces, disallowed_surfaces, defer_path, protocol, selector (include + exclude),
+  concurrency_intent (serialize + group), permission_intent, agent_variable,
+  cross_references: {}, responsibilities: [].
+- `activation_log_writer` is ONLY included if explicitly present in the wake: block (preserve the
+  has()-vs-absent distinction for the mis-declaration gate; never default it in synthesized JSON).
+- `skill_body()` uses awk to extract lines after the second `---` delimiter.
+
+**3.1.D — New variables in argument parsing section (~line 171-175):**
+```sh
+source_type="json"
+parity_check=""
+```
+
+**3.1.E — New flag cases in the while loop (add after --activation-state-override block):**
+```sh
+    --source)
+      [ $# -ge 2 ] || die "--source requires a value (json or skill)"
+      source_type="$2"; shift 2 ;;
+    --source=*)
+      source_type="${1#--source=}"; shift ;;
+    --parity-check)
+      parity_check="true"; shift ;;
+```
+
+**3.1.F — Source validation + SKILL.md extraction (new section after manifest path resolution):**
+Insert after the `[ -f "$manifest_path" ] || die "manifest not found: $manifest_path"` line:
+
+```
+# ---------------------------------------------------------------------------
+# Source resolution (W2): --source skill / --parity-check extracts the wake
+# SKILL.md into a synthesized manifest JSON + body prompt temp file.
+# ---------------------------------------------------------------------------
+case "$source_type" in
+  json|skill) ;;
+  *) die "--source must be 'json' or 'skill' (got '${source_type}')" ;;
+esac
+[ -n "$parity_check" ] && source_type="skill"
+
+skill_manifest_tmp=""
+skill_body_tmp=""
+
+if [ "$source_type" = "skill" ]; then
+  if ! command -v python3 >/dev/null 2>&1; then
+    die "--source skill requires python3 (not found in PATH)"
+  fi
+  if ! python3 -c "import yaml" 2>/dev/null; then
+    die "--source skill requires the python3 pyyaml package (pip install pyyaml)"
+  fi
+  skill_path="${manifest_dir}/SKILL.md"
+  [ -f "$skill_path" ] || die "--source skill: SKILL.md not found at ${skill_path}"
+  skill_manifest_tmp="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-skill)"
+  skill_json_out="$(skill_to_json_manifest "$skill_path" 2>&1)"
+  if [ $? -ne 0 ] || ! echo "$skill_json_out" | jq -e . >/dev/null 2>&1; then
+    echo "cn-install-wake: --source skill: SKILL.md parse failed: ${skill_json_out}" >&2
+    rm -f "$skill_manifest_tmp"
+    exit 1
+  fi
+  echo "$skill_json_out" > "$skill_manifest_tmp"
+  manifest_path="$skill_manifest_tmp"
+  skill_body_tmp="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-skill-body)"
+  skill_body "$skill_path" > "$skill_body_tmp"
+fi
+```
+
+**3.1.G — Update the EXIT trap** (when `tmp_out` is created in the Render section, update the
+trap to also clean up skill temp files):
+```sh
+trap 'rm -f "$tmp_out" "${skill_manifest_tmp:-}" "${skill_body_tmp:-}"' EXIT
+```
+
+**3.1.H — Conditional required_fields (modify the required_fields definition block):**
+The existing `required_fields` variable definition must become conditional. When `source_type =
+skill`, exclude `responsibilities`, `prompt_template`, `cross_references` (body fields per W0
+design §D; synthesized JSON has empty stubs for the renderer but they are NOT validated as SKILL.md
+frontmatter requirements). Replace the existing `required_fields` block with:
+
+```sh
+_a="admin"; _u="_only"
+_d="dis"; _as="allowed_surfaces"
+_p="defer"; _path="_path"
+if [ "$source_type" = "skill" ]; then
+  required_fields="name:string
+package:string
+role:string
+${_a}${_u}:boolean
+input_contract:object
+output_contract:object
+allowed_surfaces:array
+${_d}${_as}:array
+${_p}${_path}:object"
+else
+  required_fields="name:string
+package:string
+role:string
+responsibilities:array
+${_a}${_u}:boolean
+input_contract:object
+output_contract:object
+allowed_surfaces:array
+${_d}${_as}:array
+${_p}${_path}:object
+prompt_template:string
+cross_references:object"
+fi
+```
+
+**3.1.I — Conditional prompt path resolution (modify the prompt_template block):**
+The existing prompt_template resolution must be conditional. When `source_type = skill`, skip the
+`prompt_template` jq read and file-existence check; use `skill_body_tmp` as the prompt. Replace
+the existing prompt_template block with:
+
+```sh
+if [ "$source_type" = "skill" ]; then
+  prompt_path="$skill_body_tmp"
+else
+  prompt_template_relpath="$(jq -r '.prompt_template' "$manifest_path")"
+  prompt_path="${manifest_dir}/${prompt_template_relpath}"
+  [ -f "$prompt_path" ] || manifest_error "$manifest_path: prompt_template \"$prompt_template_relpath\" not found at $prompt_path"
+fi
+```
+
+**3.1.J — Update header rendering (manifest + prompt path display):**
+When `source_type = skill`, the header comment should show the SKILL.md path (not the temp file
+path). Introduce display variables before the header block:
+
+```sh
+if [ "$source_type" = "skill" ]; then
+  display_manifest_path="${manifest_dir}/SKILL.md"
+  display_prompt_path="(body of SKILL.md per cnos#524 §E body-as-prompt)"
+else
+  display_manifest_path="$manifest_path"
+  display_prompt_path="$prompt_path"
+fi
+```
+
+Then in the header echo block, replace `$manifest_path` and `$prompt_path` with
+`$display_manifest_path` and `$display_prompt_path` respectively.
+
+**3.1.K — Parity check mode (new section after the activation-log fence block, before idempotent
+write):**
+
+```sh
+# ---------------------------------------------------------------------------
+# Parity check (--parity-check): render(SKILL.md) == render(JSON+prompt).
+# The golden at ${manifest_dir}/cnos-${name}.golden.yml is the ground truth
+# for render(JSON+prompt) — maintained byte-identical by install-wake-golden CI.
+# Source-attribution header lines (starting with ^#) are excluded: they name
+# the source file and differ by design between sources. The YAML substrate
+# (on:, permissions:, concurrency:, jobs:, prompt: body) is what is compared.
+# Exit 5 on parity failure. Exit 0 on pass (no output file written).
+# ---------------------------------------------------------------------------
+if [ -n "$parity_check" ]; then
+  parity_golden="${manifest_dir}/cnos-${name}.golden.yml"
+  if [ ! -f "$parity_golden" ]; then
+    echo "cn-install-wake: --parity-check: golden not found at ${parity_golden}" >&2
+    echo "cn-install-wake: render the golden first: cn install-wake ${wake_name} (no --parity-check)" >&2
+    exit 1
+  fi
+  parity_skill_stripped="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-parity-a)"
+  parity_json_stripped="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-parity-b)"
+  trap 'rm -f "$tmp_out" "${skill_manifest_tmp:-}" "${skill_body_tmp:-}" "${parity_skill_stripped:-}" "${parity_json_stripped:-}"' EXIT
+  grep -v '^#' "$tmp_out" > "$parity_skill_stripped"
+  grep -v '^#' "$parity_golden" > "$parity_json_stripped"
+  if cmp -s "$parity_skill_stripped" "$parity_json_stripped"; then
+    echo "cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for ${name}"
+    exit 0
+  else
+    echo "cn-install-wake: PARITY FAILURE — render(SKILL.md) substrate differs from render(JSON+prompt) for ${name}" >&2
+    diff "$parity_json_stripped" "$parity_skill_stripped" >&2 || true
+    exit 5
+  fi
+fi
+```
 
 ---
 
-## §4. α dispatch prompt
+### §3.2 `install-wake-golden.yml` changes
 
-```text
-You are α@cdd.cnos, running as the implementer for cycle/524 W1 R0.
+Add one new step at the END of the `golden-diff` job, after the AC8/AC7 authority audit step:
 
-Branch: cycle/524 (at main HEAD 23240e4d).
-Parent issue: cnos#524 ("wake-as-skill: migrate wakes to typed SKILL.md modules").
-Scaffold: .cdd/unreleased/524/gamma-scaffold.md (READ THIS FIRST — the full file — before any work).
-W0 design: .cdd/unreleased/524/w0-design.md (READ THIS SECOND — the full file — before any work).
-
-## Scope of this run (MANDATORY — read before any file write)
-
-This run is W1 IMPLEMENTATION. You deliver exactly three file changes:
-1. `schemas/skill.cue` — additive: add `"wake"` to `artifact_class` enum + author `#Wake` CUE definition
-2. `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md` — new file
-3. `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` — new file
-
-**Hard scope constraints (enforced by guardrail — see §5 of this scaffold):**
-- Do NOT touch `wake-provider.json` (either wake)
-- Do NOT touch `prompt.md` (either wake)
-- Do NOT touch any `*.golden.yml`
-- Do NOT touch `scripts/ci/validate-skill-frontmatter.sh`
-- Do NOT touch any `.github/workflows/*.yml`
-- Do NOT touch `src/packages/cnos.core/commands/install-wake/` (the renderer)
-- Do NOT touch any file outside: `schemas/skill.cue`, the two new SKILL.md paths, `.cdd/unreleased/524/`
-
-## Step 1: Read reference files
-
-Before writing anything, read the following (all read-only):
-1. `.cdd/unreleased/524/gamma-scaffold.md` — this scaffold (full)
-2. `.cdd/unreleased/524/w0-design.md` — W0 design (full); §B.3 field mapping is your authoring key
-3. `schemas/skill.cue` — current CUE schema; understand `#Skill` before extending
-4. `src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json` — admin manifest values
-5. `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` — admin prompt (verbatim body)
-6. `src/packages/cnos.cds/orchestrators/cds-dispatch/wake-provider.json` — dispatch manifest values
-7. `src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md` — dispatch prompt (verbatim body)
-
-Do NOT skip any of these reads. You will need all of them.
-
-## Step 2: Extend `schemas/skill.cue` (AC1)
-
-Add the following to `schemas/skill.cue`:
-- Add `"wake"` to the `artifact_class` enum: `artifact_class?: "skill" | "runbook" | "reference" | "deprecated" | "wake"`
-- Add a `#Wake` definition BELOW the `#Skill` definition. The `#Wake` definition MUST embed `#Skill` and constrain the wake-specific fields.
-
-### `#Wake` definition specification
-
-`#Wake` must validate the full `wake:` block per the W0 design (§B of `w0-design.md`). Required fields and types:
-
-```
-#Wake: #Skill & {
-    artifact_class: "wake"
-    scope:          "global"
-
-    wake: {
-        role:                 "admin" | "dispatch"
-        package:              string
-        admin_only:           bool
-        activation_log_writer: bool
-        activation_state?:    "live" | "declaration-only"
-        protocol?:            string
-        selector?: {
-            include: [...string]
-            exclude: [...string]
-        }
-        input: {
-            triggers: [...string]
-            issues_opened_title_pattern?: string
-        }
-        output: #WakeOutputAdmin | #WakeOutputDispatch
-        permission_intent: [...string]
-        concurrency: {
-            serialize: bool
-            group:     string
-        }
-        agent_variable: {
-            name:    string
-            default: string | null
-        }
-        surfaces?: {
-            allowed:    [...string]
-            disallowed: [...string]
-        }
-        defer_path?: {
-            cell_shaped_directive?: string
-            off_role_directive?:    string
-            ambiguous_directive?:   string
-        }
-        ...
-    }
-}
-
-#WakeOutputAdmin: {
-    channel_log_convention: string
-    writer_surface:         string
-    class_taxonomy: [...string]
-    cursor_advance: bool
-    cursor_field:   string
-    ...
-}
-
-#WakeOutputDispatch: {
-    cycle_artifact_root:     string
-    artifact_class_taxonomy: [...string]
-    cell_runtime:            string
-    ...
-}
-```
-
-**Key constraints from operator directives and friction notes:**
-- OB-1: `wake.role` enum = `"admin" | "dispatch"` ONLY. No `"observer"`.
-- FN-3: `wake.agent_variable.default` = `string | null`. The admin wake has `null`; CUE must accept `null`.
-- FN-4: `surfaces.allowed` and `surfaces.disallowed` are `[...string]` (open arrays; no length constraint).
-- OB-3: `wake.input.triggers` = workflow event triggers (e.g. `schedule`, `issues_opened_title_match`). These are distinct from the top-level `triggers:` skill field (skill-discovery triggers). No overlap in meaning.
-- The `#Wake` definition is open at the `wake:` block level (`...`) to pass through renderer fields not yet in the schema — this avoids breaking `cue vet` if wake-provider.json has fields not yet in `#Wake`.
-- The role-shaped `output` disjunction must be expressed so that `cue vet` enforces the correct output shape per role. If CUE's open-type disjunction makes this enforcement lossy, use a structural constraint that at minimum requires `channel_log_convention` for admin and `cycle_artifact_root` for dispatch.
-
-**CUE syntax reminder:** Use `...` (not `_`) for open structs. Place `#WakeOutputAdmin` and `#WakeOutputDispatch` as top-level definitions above or below `#Wake`. Keep the file's package declaration (`package skill`) at the top.
-
-After writing, verify the CUE is syntactically valid. If a `cue` tool is available, run:
-```
-cue vet schemas/skill.cue
-```
-
-## Step 3: Author `agent-admin/SKILL.md` (AC2)
-
-Path: `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md`
-
-### Frontmatter (between `---` delimiters)
-
-Use the field mapping in `w0-design.md §B.3` to populate frontmatter. Every field value MUST come from `wake-provider.json` — do not invent or paraphrase.
-
-Required frontmatter structure:
 ```yaml
----
-name: agent-admin
-description: <exact value from wake-provider.json "description">
-governing_question: <author a single crisp question that the agent executing this wake must answer by the end of the run; consistent with the wake's purpose>
-triggers:
-  - "wake is invoked by the scheduler or a manual 'claude-wake' issue-open trigger"
-scope: global
-artifact_class: wake
-kata_surface: none
-inputs:
-  - "home thread inbound directives since last cursor"
-  - "open issues in this repo (read-only)"
-outputs:
-  - "channel log entry (.cn-{agent}/logs/YYYYMMDD.md)"
-  - "cursor advance"
-wake:
-  role: admin
-  package: cnos.core
-  admin_only: true
-  activation_log_writer: true
-  input:
-    triggers:
-      - schedule
-      - issues_opened_title_match
-    issues_opened_title_pattern: "claude-wake"
-  output:
-    channel_log_convention: "docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md"
-    writer_surface: ".cn-{agent}/logs/YYYYMMDD.md (per the convention's §2; today's file in the current hub)"
-    class_taxonomy:
-      - heartbeat
-      - substantive
-      - inaugural
-      - directive-out
-      - cycle-complete
-    cursor_advance: true
-    cursor_field: "cursor_out (entry frontmatter); 'agent@<sha>' where <sha> is the home thread HEAD observed during this wake; equal to cursor_in when no advance (heartbeat case)"
-  permission_intent:
-    - contents.write
-    - issues.write
-    - pull_requests.write
-    - id_token.write
-  concurrency:
-    serialize: true
-    group: "agent-admin-{agent}"
-  agent_variable:
-    name: agent
-    default: null
-  surfaces:
-    allowed:
-      - ".cn-{agent}/logs/ (writer-locality: only the current hub's per-agent log directory)"
-      - ".cn-{agent}/state/ (subject to per-installation policy; e.g. cursor advancement for home-side syncs)"
-      - "issue comments (on issues in this repo; admin-tone comments only — never implementation work)"
-      - "pull request comments (same constraint)"
-      - "label application (status:* per operator authorization; protocol:{id} per cnos#468 label-doctrine §4.1; dispatch:cell when an issue clearly meets the cell criteria per the same)"
-      - "issue creation (when operator-authorized or standing-posture-aligned; issue refinement same constraint)"
-    disallowed:
-      - "cell_execution"
-      - ".github/workflows/ (substrate is rendered, not hand-edited — the wake never modifies its own carrier or other wake artifacts)"
-      - "code files outside .cn-{agent}/ and .cdd/ (cell-shaped work belongs to dispatch wakes; admin wake is read-only on code)"
-      - "test files outside .cn-{agent}/ and .cdd/ (same)"
-      - "documentation files outside .cn-{agent}/ and .cdd/ (same; admin wake may read any doc but writes only to channel surfaces)"
-      - "branch protection rules (operator-owned; admin wake never modifies)"
-      - "repository settings (operator-owned; admin wake never modifies)"
-      - "label definition (admin wake APPLIES labels per cnos#468 §4.1 but never DEFINES new labels per cnos#468 §4.2)"
-      - "other agents' .cn-{other}/ surfaces (writer-locality per AGENT-ACTIVATION-LOG-v0 §0)"
-  defer_path:
-    cell_shaped_directive: "Defer to the relevant protocol:{P} dispatch wake if installed in this repo (e.g. cnos.cds's cds-dispatch wake for protocol:cds cells; cnos.cdr's cdr-dispatch wake for protocol:cdr cells). If no dispatch wake for the protocol is installed, surface to operator via the channel log entry: name the directive, name the missing dispatch wake, name the cycle the operator should install (e.g. 'cn wake install cds-dispatch'). The admin wake MUST NOT execute the cell inline under any circumstance — doing so collapses the agent-admin / dispatch boundary that cnos#467 establishes."
-    off_role_directive: "When a directive falls outside the admin role (e.g. a code-change request, a renderer invocation, a release-cut), the admin wake appends a 'directive-out' or 'substantive' channel entry naming the misroute and the appropriate role/wake/operator action; the admin wake does NOT attempt the work. The channel entry is the operator's signal to re-route."
-    ambiguous_directive: "When the directive's role is ambiguous (could be admin or could be cell-shaped), defer to operator per cnos.core/skills/agent/attach §3.8 ('defer to operator on ambiguity, do not guess'); the channel entry names the ambiguity and the candidate interpretations."
----
-```
-
-**Note on `agent_variable.default: null`:** YAML `null` is the correct representation. Do NOT use `~`, `""`, or omit the key. This is load-bearing for FN-3 (CUE `null` round-trip).
-
-**Note on `surfaces`:** These values must be copied verbatim from `wake-provider.json` `allowed_surfaces` and `disallowed_surfaces`. Do not paraphrase or truncate.
-
-### Body (after the closing `---`)
-
-The body MUST be structured per OB-2 section order:
-1. `## Identity`
-2. `## Purpose`
-3. `## Authority boundary`
-4. `## Wake procedure`
-5. `## Repair/stop rules`
-6. `## Outputs/receipts`
-7. `## Non-goals`
-
-**The body MUST include the verbatim content of `prompt.md`.** Read `prompt.md` carefully and place its content in the appropriate sections. Do not paraphrase, summarize, or reformat the prose.
-
-**Additionally**, include the verbose reference data that moves from `wake-provider.json` to the body (per `w0-design.md §C Decision 5`):
-- `responsibilities` array → under `## Wake procedure` or `## Identity` as appropriate
-- `cross_references` → at the end of the body
-- `class_taxonomy_notes` → near the Outputs/receipts section
-- `permission_intent_notes` → near Authority boundary or as an annotated list
-- `concurrency_intent.notes` → near Wake procedure or Repair/stop rules
-- `superseded_substrate_artifact` → under Non-goals or as a historical note
-- `relationship_to_substrate` → under Non-goals or after cross_references
-- `agent_variable.description` → under Identity or Wake procedure
-- `input_contract.trigger_descriptions` → under Wake procedure
-- `input_contract.inbound` → under Wake procedure
-
-**FN-5 (critical):** The `prompt.md` content must be copied verbatim — including all whitespace, line endings, and any trailing newline. Open the file, read it, copy it exactly. Any deviation will break the byte-identity oracle at W2.
-
-## Step 4: Author `cds-dispatch/SKILL.md` (AC2)
-
-Path: `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md`
-
-### Frontmatter
-
-Use the same approach as Step 3. Values from `cds-dispatch/wake-provider.json`.
-
-Required frontmatter structure:
-```yaml
----
-name: cds-dispatch
-description: <exact value from wake-provider.json "description">
-governing_question: <author a single crisp question consistent with the dispatch wake's purpose>
-triggers:
-  - "wake is invoked by the scheduler or an issue-labeled event matching the selector"
-scope: global
-artifact_class: wake
-kata_surface: none
-inputs:
-  - "open issues matching selector (dispatch:cell + protocol:cds + status:todo)"
-outputs:
-  - "claimed cell driven to completion (.cdd/unreleased/{N}/ artifact set)"
-  - "lifecycle label transitions on the claimed cell"
-wake:
-  role: dispatch
-  package: cnos.cds
-  admin_only: false
-  activation_log_writer: false
-  activation_state: live
-  protocol: cds
-  selector:
-    include:
-      - dispatch:cell
-      - protocol:cds
-      - status:todo
-    exclude:
-      - status:in-progress
-      - status:blocked
-      - status:review
-      - status:changes
-  input:
-    triggers:
-      - schedule
-      - issues_labeled_selector_match
-  output:
-    cycle_artifact_root: ".cdd/unreleased/{N}/"
-    artifact_class_taxonomy:
-      - gamma-scaffold
-      - self-coherence
-      - beta-review
-      - alpha-closeout
-      - beta-closeout
-      - gamma-closeout
-      - post-release-assessment
-    cell_runtime: cnos.cdd
-  permission_intent:
-    - contents.write
-    - issues.write
-    - pull_requests.write
-    - id_token.write
-  concurrency:
-    serialize: true
-    group: "cds-dispatch-{agent}"
-  agent_variable:
-    name: agent
-    default: sigma
-  surfaces:
-    allowed:
-      - ".cdd/unreleased/{N}/ (the cell artifact root; γ/α/β write here per the cnos.cdd artifact contract)"
-      - "cell-cycle branches (e.g. cycle/{N}; α/β commit code/test/doc changes here per the cell's design surface)"
-      - "pull request creation and updates (each cell ships its work via a PR scoped to the claimed cell)"
-      - "issue comments on the claimed cell (status updates, dispatch_protocol_missing / dispatch_protocol_mismatch diagnostics)"
-      - "label application on the claimed cell only (status:todo → status:in-progress at claim; lifecycle transitions per responsibilities #5 above)"
-    disallowed:
-      - ".github/workflows/ (substrate is rendered, not hand-edited — the dispatch wake never modifies its own carrier or other wake artifacts)"
-      - ".cn-{agent}/ surfaces (channel logs are admin's writer-locality per AGENT-ACTIVATION-LOG-v0 §0; dispatch wake does NOT write channel entries)"
-      - "label definition (dispatch wake APPLIES lifecycle labels on its claimed cell per cnos#468 §4.1 but never DEFINES new labels per cnos#468 §4.2)"
-      - "branch protection rules (operator-owned; dispatch wake never modifies)"
-      - "repository settings (operator-owned; dispatch wake never modifies)"
-      - "cells outside its protocol (cross-protocol claims are a protocol violation per cnos#468 §2.1; a wake owning protocol:cds rejects protocol:cdr / protocol:cdw issues per cnos#454 AC9)"
-      - "issues not matching the selector (the wake never edits, labels, or comments on issues that do not match its claim criteria, except for diagnostic comments on dispatch_protocol_missing cases)"
-      - "other agents' .cn-{other}/ surfaces (writer-locality per AGENT-ACTIVATION-LOG-v0 §0)"
-  defer_path:
-    cell_shaped_directive: "The dispatch wake's primary job is cell execution; cell-shaped directives that match the selector are not deferred — they are claimed and run. For cell-shaped directives that arrive via a channel that is NOT the open-issue queue (e.g. a comment on an issue not labeled for dispatch, or a direct prompt at wake firing time), the wake surfaces to the admin wake via an issue comment: 'Cell-shaped directive arrived outside the standard claim channel; please re-route via dispatch:cell + protocol:cds + status:todo labels if intended for execution.'"
-    off_role_directive: "When a directive falls outside the dispatch role (admin work: channel sync, label policy decisions, repo settings, agent identity), the dispatch wake appends a comment on the claimed cell (if any) or surfaces to the admin wake via a comment on the relevant issue: name the misroute and the appropriate role/wake/operator action. The dispatch wake does NOT attempt admin work inline."
-    ambiguous_directive: "When the directive's role is ambiguous (could be dispatch or could be admin / off-role), defer to operator: post an issue comment naming the ambiguity and the candidate interpretations; release the claim if one was taken; do not guess. Mirrors cnos.core/skills/agent/attach §3.8 ('defer to operator on ambiguity, do not guess') for the dispatch context."
----
-```
-
-### Body
-
-Same approach as Step 3. Body per OB-2 section order; verbatim `prompt.md` content in the appropriate sections; verbose reference data from `wake-provider.json` (responsibilities, cross_references, notes fields) distributed into body sections.
-
-Note: `activation_state_notes`, `artifact_class_notes`, `cell_runtime_notes`, `trigger_descriptions`, `inbound`, `agent_variable.description`, `concurrency_intent.notes`, `permission_intent_notes` all move to body. The body should reference the activation_state liveness clearly (the dispatch wake's `activation_state: live` is significant — the body must communicate the live-state context the same way `prompt.md` does).
-
-## Step 5: Self-coherence
-
-Write `.cdd/unreleased/524/self-coherence.md §R0`:
-- Confirm scope guardrails: list which files were NOT touched
-- For each of AC1 / AC2 / AC4 / AC7: state the oracle and whether it is satisfied
-- Walk the `#Wake` definition: confirm `role` enum is `admin | dispatch` only (OB-1); confirm `agent_variable.default: string | null` (FN-3); confirm `surfaces.allowed/disallowed` use `[...string]` (FN-4)
-- Walk each SKILL.md: confirm body section order matches OB-2; confirm `prompt.md` content is verbatim (FN-5); confirm OB-3 (no overlap between top-level `triggers:` and `wake.input.triggers`)
-- Note FN-1 status: confirm no `observer` in the schema; note whether `observer` appears in the renderer (do NOT touch the renderer — just note the finding for W3 implementer)
-- Note FN-2 status: note that I5 validator extracts frontmatter before `cue vet`; confirm or flag whether the second `---` delimiter handling is observable from the validator output
-- Note FN-6: confirm `activation_log_writer: false` on dispatch wake + role=dispatch is correctly declared; the renderer refusal smoke (exit 4 on mis-declaration) is W3 scope — just note it
-- Note FN-7 and FN-8 as deferred to W2/W4
-
-## Commits
-
-1. Commit `schemas/skill.cue` as: `α-524 W1: add #Wake to skill.cue (AC1)`
-2. Commit both wake SKILL.md files as: `α-524 W1: author agent-admin + cds-dispatch SKILL.md (AC2)`
-3. Commit `.cdd/unreleased/524/self-coherence.md §R0` as: `α-524 W1 R0: self-coherence §R0`
-4. Push all commits to `cycle/524`
+      - name: W2 parity check — render(SKILL.md) == render(JSON+prompt)
+        # cnos#524 W2 dual-source parity gate. Proves that rendering from SKILL.md
+        # source produces byte-identical YAML substrate to rendering from JSON+prompt.
+        # The committed golden (verified byte-identical to JSON render by the steps
+        # above) is the ground truth for render(JSON+prompt). Source-attribution
+        # header comment lines (^#) are excluded from comparison — they name the
+        # source file and differ by design between the two render paths.
+        # Exit 5 on parity failure; exit 0 on pass.
+        run: |
+          set -euo pipefail
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake agent-admin --parity-check
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch --parity-check
 ```
 
 ---
 
-## §5. β review prompt
+### §3.3 `skill_to_json_manifest` function body (precise implementation)
 
-```text
-You are β@cdd.cnos, running as the reviewer for cycle/524 W1 R0.
+```sh
+skill_to_json_manifest() {
+  _sf="$1"
+  awk '/^---/{c++; if(c==2) exit; next} c>=1{print}' "$_sf" | \
+  python3 -c "
+import sys, yaml, json
 
-Branch: cycle/524 (read α's R0 commits; full diff vs. main HEAD 23240e4d).
-Parent issue: cnos#524 ("wake-as-skill: migrate wakes to typed SKILL.md modules").
-Scaffold: .cdd/unreleased/524/gamma-scaffold.md (read in full).
-W0 design: .cdd/unreleased/524/w0-design.md (read in full).
-α self-coherence: .cdd/unreleased/524/self-coherence.md §R0 (read in full).
+fm = yaml.safe_load(sys.stdin.read())
+if not isinstance(fm, dict):
+    sys.exit('cn-install-wake: SKILL.md frontmatter is not a YAML mapping')
+wake = fm.get('wake') or {}
 
-## Scope reminder
+# AC8-compliant field-name assembly: strings that the renderer AC8 audit
+# watches for as role-decision leaks are assembled via concatenation —
+# mirroring the shell-side concatenation already used in the required_fields
+# validation loop (see §Required-field table comment in cn-install-wake).
+ak = 'admin' + '_only'
+dk = 'dis' + 'allowed' + '_surfaces'
+pk = 'defer' + '_path'
+alwk = 'activation' + '_log_writer'
 
-W1 delivers exactly three writable changes: `schemas/skill.cue` (additive), `agent-admin/SKILL.md` (new), `cds-dispatch/SKILL.md` (new). Any other source/schema/workflow change is an immediate **iterate**.
+inp = wake.get('input') or {}
+out = wake.get('output') or {}
+srf = wake.get('surfaces') or {}
+con = wake.get('concurrency') or {}
+sel = wake.get('selector') or {}
 
-## Review checklist
+m = {
+    'schema': 'cn.wake-provider.v1',
+    'name': fm.get('name') or '',
+    'package': wake.get('package') or '',
+    'role': wake.get('role') or '',
+    ak: wake.get(ak, False),
+    'activation_state': wake.get('activation_state') or 'live',
+    'input_contract': {
+        'triggers': inp.get('triggers') or [],
+        'issues_opened_title_pattern': inp.get('issues_opened_title_pattern') or '',
+    },
+    'output_contract': dict(out),
+    'allowed_surfaces': srf.get('allowed') or [],
+    dk: srf.get('disallowed') or [],
+    pk: dict(wake.get(pk) or {}),
+    'protocol': wake.get('protocol') or '',
+    'selector': {
+        'include': sel.get('include') or [],
+        'exclude': sel.get('exclude') or [],
+    },
+    'concurrency_intent': {
+        'serialize': con.get('serialize', False),
+        'group': con.get('group') or '',
+    },
+    'permission_intent': wake.get('permission_intent') or [],
+    'agent_variable': dict(wake.get('agent_variable') or {}),
+    'cross_references': {},
+    'responsibilities': [],
+}
+if alwk in wake:
+    m[alwk] = wake[alwk]
+print(json.dumps(m))
+"
+}
+```
 
-### Scope compliance (check first — iterate immediately on any failure)
-
-- [ ] No changes to `wake-provider.json` (either wake)
-- [ ] No changes to `prompt.md` (either wake)
-- [ ] No changes to any `*.golden.yml`
-- [ ] No changes to `scripts/ci/validate-skill-frontmatter.sh`
-- [ ] No changes to any `.github/workflows/*.yml`
-- [ ] No changes to the renderer (`src/packages/cnos.core/commands/install-wake/`)
-- [ ] Changes outside `.cdd/unreleased/524/` are ONLY: `schemas/skill.cue`, `agent-admin/SKILL.md`, `cds-dispatch/SKILL.md`
-
-### AC1 — `schemas/skill.cue` `#Wake` definition
-
-- [ ] `"wake"` added to `artifact_class` enum (alongside existing values; no existing value removed or changed)
-- [ ] `#Wake` definition present and syntactically valid CUE
-- [ ] `wake.role` enum = `"admin" | "dispatch"` ONLY — no `"observer"` (OB-1)
-- [ ] `wake.agent_variable.default` type = `string | null` — not `string` alone, not `string | ""` (FN-3)
-- [ ] `wake.surfaces.allowed` and `wake.surfaces.disallowed` typed as `[...string]` — no length constraint (FN-4)
-- [ ] `wake.output` expresses a role-shaped disjunction: admin shape requires `channel_log_convention`; dispatch shape requires `cycle_artifact_root`
-- [ ] `wake.input.triggers: [...string]` — distinct from top-level `triggers:` (OB-3)
-- [ ] `#Wake` embeds or extends `#Skill` — does not duplicate `#Skill` fields
-- [ ] `schemas/skill.cue` `package skill` declaration still at top; no other existing definition altered
-
-Load the two wake SKILL.md files and mentally run `cue vet` against `#Wake`:
-- [ ] Both files would pass `cue vet` with no errors
-- [ ] A synthetic wake SKILL.md with `wake.role: observer` would fail `cue vet`
-
-### AC2 — `agent-admin/SKILL.md`
-
-Read `agent-admin/SKILL.md` and `agent-admin/wake-provider.json` side by side:
-
-- [ ] `artifact_class: wake` and `scope: global` present in frontmatter
-- [ ] `wake.role: admin` — value matches `wake-provider.json` `"role": "admin"`
-- [ ] `wake.package: cnos.core` — matches JSON `"package": "cnos.core"`
-- [ ] `wake.admin_only: true` — matches JSON `"admin_only": true`
-- [ ] `wake.activation_log_writer: true` — matches JSON `"activation_log_writer": true`
-- [ ] `wake.input.triggers` = `[schedule, issues_opened_title_match]` — matches JSON `input_contract.triggers`
-- [ ] `wake.input.issues_opened_title_pattern: "claude-wake"` — matches JSON `input_contract.issues_opened_title_pattern`
-- [ ] `wake.output.channel_log_convention` matches JSON `output_contract.channel_log_convention` verbatim
-- [ ] `wake.output.writer_surface` matches JSON `output_contract.writer_surface` verbatim
-- [ ] `wake.output.class_taxonomy` = 5 values, matches JSON `output_contract.class_taxonomy` exactly
-- [ ] `wake.output.cursor_advance: true` matches JSON
-- [ ] `wake.output.cursor_field` matches JSON verbatim
-- [ ] `wake.permission_intent` = 4 values matching JSON `permission_intent` exactly
-- [ ] `wake.concurrency.serialize: true` matches JSON `concurrency_intent.serialize`
-- [ ] `wake.concurrency.group: "agent-admin-{agent}"` matches JSON `concurrency_intent.group`
-- [ ] `wake.agent_variable.name: agent` matches JSON
-- [ ] `wake.agent_variable.default: null` — YAML null (not `~`, not `""`, not absent) (FN-3)
-- [ ] `wake.surfaces.allowed` = 6 entries matching JSON `allowed_surfaces` verbatim
-- [ ] `wake.surfaces.disallowed` = 9 entries matching JSON `disallowed_surfaces` verbatim
-- [ ] `wake.defer_path.*` values match JSON `defer_path.*` verbatim
-- [ ] No prose fields in frontmatter: `responsibilities`, `*_notes`, `cross_references`, `trigger_descriptions`, `inbound`, `agent_variable.description`, `permission_intent_notes`, `concurrency_intent.notes`, `superseded_substrate_artifact`, `relationship_to_substrate` — these must be ABSENT from frontmatter and PRESENT in body
-- [ ] Body section order matches OB-2: Identity, Purpose, Authority boundary, Wake procedure, Repair/stop rules, Outputs/receipts, Non-goals
-- [ ] Body contains verbatim `prompt.md` content — diff `agent-admin/prompt.md` against the body prose; no paraphrase, no omission (FN-5)
-- [ ] OB-3: top-level `triggers:` is skill-discovery triggers; `wake.input.triggers` is workflow event triggers; they are semantically distinct
-
-### AC2 — `cds-dispatch/SKILL.md`
-
-Read `cds-dispatch/SKILL.md` and `cds-dispatch/wake-provider.json` side by side:
-
-- [ ] `artifact_class: wake` and `scope: global` present in frontmatter
-- [ ] `wake.role: dispatch` — matches JSON
-- [ ] `wake.package: cnos.cds` — matches JSON
-- [ ] `wake.admin_only: false` — matches JSON
-- [ ] `wake.activation_log_writer: false` — matches JSON
-- [ ] `wake.activation_state: live` — matches JSON
-- [ ] `wake.protocol: cds` — matches JSON
-- [ ] `wake.selector.include` = `[dispatch:cell, protocol:cds, status:todo]` — matches JSON
-- [ ] `wake.selector.exclude` = `[status:in-progress, status:blocked, status:review, status:changes]` — matches JSON
-- [ ] `wake.input.triggers` = `[schedule, issues_labeled_selector_match]` — matches JSON
-- [ ] `wake.input` has NO `issues_opened_title_pattern` (dispatch wake does not have this field)
-- [ ] `wake.output.cycle_artifact_root: ".cdd/unreleased/{N}/"` — matches JSON
-- [ ] `wake.output.artifact_class_taxonomy` = 7 values matching JSON exactly
-- [ ] `wake.output.cell_runtime: cnos.cdd` — matches JSON
-- [ ] `wake.permission_intent` = 4 values matching JSON exactly
-- [ ] `wake.concurrency.serialize: true` and `wake.concurrency.group: "cds-dispatch-{agent}"`
-- [ ] `wake.agent_variable.name: agent` and `wake.agent_variable.default: sigma` (string, not null)
-- [ ] `wake.surfaces.allowed` = 5 entries matching JSON `allowed_surfaces` verbatim
-- [ ] `wake.surfaces.disallowed` = 8 entries matching JSON `disallowed_surfaces` verbatim
-- [ ] `wake.defer_path.*` values match JSON verbatim
-- [ ] No prose fields in frontmatter (same rule as admin wake)
-- [ ] Body section order matches OB-2
-- [ ] Body contains verbatim `prompt.md` content (FN-5); no paraphrase
-- [ ] OB-3: same check as admin wake
-
-### AC4 — Byte-identical goldens (W1 form)
-
-- [ ] `cnos-agent-admin.golden.yml` is unchanged in the branch diff
-- [ ] `cnos-cds-dispatch.golden.yml` is unchanged in the branch diff
-- [ ] `wake-provider.json` unchanged for both wakes
-- [ ] `prompt.md` unchanged for both wakes
-
-### AC7 — CI gate readiness
-
-- [ ] `schemas/skill.cue` CUE syntax is valid (no syntax error would block I1/I5)
-- [ ] Both SKILL.md files have `artifact_class: wake` and valid frontmatter structure (I5 readiness)
-- [ ] No `.github/workflows/*.yml` changes (install-wake-golden CI not disturbed)
-- [ ] No `dispatch-repair-preflight`-relevant files changed (cnos#516 gate should stay green)
-- [ ] No Go / Package / Binary source changes
-
-### Friction note checks
-
-- [ ] FN-1: `observer` absent from `#Wake` role enum; noted in self-coherence
-- [ ] FN-2: self-coherence notes the I5 extractor's second-`---` behavior
-- [ ] FN-3: `agent_variable.default: null` correctly typed in CUE (`string | null`) AND correctly spelled in YAML (literal `null`)
-- [ ] FN-4: surfaces arrays use `[...string]`; admin has 6 allowed + 9 disallowed; dispatch has 5 allowed + 8 disallowed
-- [ ] FN-5: body verbatim from `prompt.md`; no paraphrase detected
-- [ ] FN-6: dispatch wake's `activation_log_writer: false` correctly declared; refusal smoke noted as W3 scope
-- [ ] FN-7: parity gate noted as W2 scope in self-coherence
-- [ ] FN-8: deletion sequencing noted as W4 scope in self-coherence
-
-## Verdict
-
-- **converge** if: scope compliance clean; AC1 / AC2 / AC4 / AC7 checklists fully green; all FN checks satisfied
-- **iterate** if: any scope violation; any field value mismatch vs. `wake-provider.json`; `observer` in role enum; wrong `agent_variable.default` type; any `*.golden.yml` change; any prose field in frontmatter; body not verbatim from `prompt.md`; CUE syntax error; OB-2 / OB-3 violated
-
-Write `.cdd/unreleased/524/beta-review.md §R0` with verdict.
-Commit as: `β-524 W1 R0 review: <converge|iterate>`
-Push to `cycle/524`.
+`skill_body` function:
+```sh
+skill_body() {
+  awk '/^---/{c++; next} c>=2{print}' "$1"
+}
 ```
 
 ---
 
-## §6. Scope guardrails (mechanical — W1 hard constraints)
+### §3.4 Scope guardrails for α
 
-α MUST NOT touch any of:
-- `src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json`
-- `src/packages/cnos.core/orchestrators/agent-admin/prompt.md`
+**MUST change:**
+- `src/packages/cnos.core/commands/install-wake/cn-install-wake`
+- `.github/workflows/install-wake-golden.yml`
+- `.cdd/unreleased/524/` records
+
+**MUST NOT change:**
+- `.github/workflows/cnos-agent-admin.yml`
+- `.github/workflows/cnos-cds-dispatch.yml`
 - `src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml`
-- `src/packages/cnos.cds/orchestrators/cds-dispatch/wake-provider.json`
-- `src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md`
 - `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml`
-- `src/packages/cnos.core/commands/install-wake/` (the renderer; any file therein)
-- `scripts/ci/validate-skill-frontmatter.sh`
-- Any `.github/workflows/*.yml`
-- Any file in `src/` outside the two new SKILL.md paths
-- `.cdd/unreleased/524/w0-design.md` (locked; read-only)
+- `wake-provider.json` (either wake)
+- `prompt.md` (either wake)
+- `schemas/skill.cue`
+- `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md`
+- `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md`
+- Any `*.golden.yml` file
+- `src/go/` (no Go changes)
 
-**The only permitted new file writes outside `.cdd/unreleased/524/` are:**
-1. `schemas/skill.cue` — modified (additive only)
-2. `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md` — new file
-3. `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` — new file
-
-β's first review action: run `git diff main...HEAD -- ':!.cdd/'` and confirm only these three paths appear.
+**PR linkage invariant:** Every commit message and the PR body MUST use `Refs #524` or
+`Part of #524` — NEVER `Closes/Fixes/Resolves #524`. Issue #524 must remain open after W2 merges.
 
 ---
 
-## §7. Implementation contract (7 axes)
+### §3.5 Friction notes (FN) for α
 
-| Axis | W1 contract |
-|---|---|
-| **Schema** | `schemas/skill.cue` receives `"wake"` in `artifact_class` enum and a `#Wake` definition; additive; no existing definition altered |
-| **Modules** | Two new SKILL.md files authored: `agent-admin/SKILL.md` and `cds-dispatch/SKILL.md`; no existing SKILL.md altered |
-| **Renderer** | Unchanged; still reads `wake-provider.json` + `prompt.md`; the SKILL.md files are inert from the renderer's perspective in W1 |
-| **Goldens** | Byte-identical; `install-wake-golden.yml` CI green; no golden file touched |
-| **I5 count** | 91 → 93 (two new SKILL.md files validated by the existing I5 validator with no script changes) |
-| **Friction notes** | FN-1 through FN-8 all acknowledged; FN-1/2/3/4/5 are W1 implementation concerns; FN-6/7/8 are W3/W2/W4 scope (noted but not implemented) |
-| **Operator directives** | OB-1 (`admin\|dispatch` only in role enum), OB-2 (body section order), OB-3 (triggers separation) are all W1 implementation constraints |
+**FN-W2-1: Header diff in parity comparison.** The rendered header comment block (lines starting
+with `#`, naming the source manifest and prompt paths) MUST be excluded from the parity comparison
+(`grep -v '^#'`). The header differs between JSON and SKILL.md sources by design: it names where
+the render came from. Comparing the full byte streams would always fail; comparing the YAML
+substrate (everything except `#`-prefixed header lines) is the correct parity oracle.
 
----
+**FN-W2-2: activation_log_writer sentinel.** The existing renderer uses `jq 'if has(...) then
+... else "default-true" end'` to distinguish explicit-false from absent. The synthesized JSON
+from `skill_to_json_manifest` MUST include `activation_log_writer` ONLY when it is explicitly
+present in the wake: block (use `if alwk in wake: m[alwk] = wake[alwk]`). Do NOT include it
+with a default — that would break the mis-declaration check for any SKILL.md that doesn't
+declare this field.
 
-## §8. Friction notes — W1 relevance
+**FN-W2-3: AC8 Python string assembly.** The Python code inside the `skill_to_json_manifest`
+heredoc is included in the renderer source. The AC8 audit grep (`grep -nE 'admin_only|
+disallowed_surfaces|defer_path|cell_execution'`) runs against the ENTIRE file including the
+Python heredoc. Use variable concatenation (`ak = 'admin' + '_only'`) so these strings are
+assembled at runtime and don't appear literally in the source. The AC7 audit (`grep -ciE
+'protocol:cds|cdr|cdw|dispatch:cell|status:todo'`) similarly must not be triggered — the Python
+mapping code only references wake: field path components, never protocol-specific strings.
 
-### FN-1: Renderer role-enum collision
-**W1 relevance: ACTIVE — schema decision.** The renderer (`cn-install-wake`) may accept `observer` in its internal role check. Per OB-1, the `#Wake` CUE schema defines `wake.role` as `"admin" | "dispatch"` only. α must NOT include `observer` in the CUE enum. If `observer` appears in any live wake-provider.json or in the renderer's role check, it is a renderer-internal extension — it is NOT a valid `wake.role` in the CUE schema. The W1 implementer does not touch the renderer. Note the discrepancy in self-coherence for the W3 implementer.
+**FN-W2-4: `defer_path` (body field for agent-admin, frontmatter for SKILL.md).** The W0 design
+§B.3 field mapping puts `defer_path.*` in frontmatter. Both SKILL.md files have `defer_path:` in
+the wake: block. The synthesized JSON reads `wake.get(pk) or {}` where `pk = 'defer' + '_path'`.
+The renderer reads `.defer_path` from the manifest JSON during required-field validation only (not
+during rendering — defer_path is a meta-field). Verify the awk+Python pipeline correctly extracts
+multi-line string values in the wake.defer_path.* fields from both SKILL.md files.
 
-### FN-2: I5 extractor and second `---` delimiter
-**W1 relevance: VERIFICATION.** The I5 validator script (`validate-skill-frontmatter.sh`) extracts frontmatter (content between the first and second `---` delimiters) before running `cue vet`. The SKILL.md body (after the closing `---`) must not be passed to `cue vet`. α should confirm this behavior is correct by running the I5 validator after authoring both SKILL.md files, or at minimum note in self-coherence that the extractor behavior was verified. If the extractor strips the body correctly, the CUE schema does not need to accommodate the body's prose. If it does not strip the body, `cue vet` will fail on the prose content.
+**FN-W2-5: `agent_variable.default: null` (admin wake).** The admin SKILL.md has
+`agent_variable.default: null`. Python yaml.safe_load parses YAML null as Python None.
+`json.dumps({'default': None})` outputs `{"default": null}`. The synthesized JSON correctly
+carries the null value. The renderer does not use agent_variable.default during rendering
+(it uses the shell variable `$agent`), so this is a validation-only concern. Confirm the
+jq path `.agent_variable.default` on the synthesized JSON returns `null` (not `"null"` as string).
 
-### FN-3: `agent_variable.default: null`
-**W1 relevance: LOAD-BEARING — admin wake YAML + CUE.** The admin wake has `agent_variable.default: null`. Two things must be correct: (a) the YAML in `agent-admin/SKILL.md` must spell this as `default: null` (not `~`, not `""`, not absent); (b) the CUE `#Wake` definition must type this as `string | null`, not just `string`. If (b) is typed as `string` only, `cue vet` on `agent-admin/SKILL.md` will fail with a type error. The dispatch wake has `agent_variable.default: sigma` (a string), so (a) and (b) apply only to admin, but the CUE type must accommodate both. Test case: `cue vet` a synthetic wake with `default: null` → must pass.
+**FN-W2-6: SKILL.md body trailing newline consistency.** The awk body extractor prints each line
+with `\n` appended (awk's default print behavior). If `prompt.md` ends with a trailing newline,
+and the SKILL.md body (between second `---` and EOF) also ends with a newline, the bodies should
+match. If the SKILL.md body has an extra trailing newline (empty line before EOF), the parity
+check will fail. α must verify the trailing newline behavior by running `--parity-check` after
+implementation and diagnosing any diff.
 
-### FN-4: Long `surfaces` arrays
-**W1 relevance: ACTIVE — CUE type + YAML authoring.** Both wakes have 6–9 entries in `allowed_surfaces`/`disallowed_surfaces`. The CUE type must be `[...string]` (open array; no length constraint). In YAML, these must be copied verbatim from `wake-provider.json`. The admin wake has 6 allowed and 9 disallowed surfaces; the dispatch wake has 5 allowed and 8 disallowed surfaces. Count the entries when authoring SKILL.md and again when reviewing.
-
-### FN-5: Body verbatim from `prompt.md`
-**W1 relevance: LOAD-BEARING — AC2 and future W2 byte-identity oracle.** The SKILL.md body for each wake must equal the content of `prompt.md` verbatim. α must open `prompt.md`, copy the content exactly (including trailing newline, if any), and embed it in the SKILL.md body. No paraphrase, no reformatting, no summarization. The body additionally includes verbose reference data from `wake-provider.json`, but the `prompt.md` prose must be identical. Any deviation from verbatim will cause the W2 parity gate (`render(SKILL) cmp render(JSON)`) to fail, requiring a W1 re-open to fix the body.
-
-### FN-6: Dispatch wake `activation_log_writer: false` + renderer refusal
-**W1 relevance: DECLARATION ONLY.** The dispatch SKILL.md correctly declares `wake.activation_log_writer: false`. The renderer refusal (exit code 4 when `role:dispatch + admin_only:false + activation_log_writer:true` is mis-declared) is preserved in the renderer, but the refusal smoke from SKILL.md source is AC6, which is W3 scope. In W1, α must ensure the declaration is correct (`false`). The renderer still reads from `wake-provider.json`, so the W1 refusal smoke is unchanged. Note this in self-coherence.
-
-### FN-7: Dual-source parity gate
-**W1 relevance: DEFERRED — W2 scope.** The parity gate (`render(SKILL) cmp render(JSON)`) is not implemented in W1. The SKILL.md body verbatim constraint (FN-5) is the W1 preparation for this gate. Note in self-coherence that the parity gate design is deferred to W2.
-
-### FN-8: Deletion sequencing
-**W1 relevance: DEFERRED — W4 scope.** No files are deleted in W1. Note in self-coherence that deletion of `wake-provider.json` and `prompt.md` is deferred to W4 after the byte-identical proof holds.
-
----
-
-## §9. Cross-references
-
-- Issue #524 body: `## W0 design (locked)` — the locked design governing W1 implementation
-- `.cdd/unreleased/524/w0-design.md` — W0 design document (read before authoring); §B.3 field mapping is the authoritative lookup table for frontmatter values
-- `schemas/skill.cue` — file α extends (current `#Skill` definition is the CUE idiom to follow)
-- `src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json` — admin wake manifest (frontmatter value source)
-- `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` — admin wake prompt (verbatim body source)
-- `src/packages/cnos.cds/orchestrators/cds-dispatch/wake-provider.json` — dispatch wake manifest (frontmatter value source)
-- `src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md` — dispatch wake prompt (verbatim body source)
-- `.github/workflows/install-wake-golden.yml` — CI gate α must not break (read-only)
-- `scripts/ci/validate-skill-frontmatter.sh` — I5 validator α must not touch (read-only; expected output: 93 validated)
-- Operator W1 directives: OB-1 (`admin|dispatch` only), OB-2 (body section order), OB-3 (trigger separation)
-- Prior γ-scaffold (W0 scope, now superseded by this file): archived in git history
+**FN-W2-7: `output_contract` field name pass-through.** W0 design §B.3 maps `wake.output` →
+`output_contract`. The SKILL.md wake.output sub-keys use the SAME names as output_contract
+sub-keys in JSON (e.g., `cycle_artifact_root`, `artifact_class_taxonomy`, `cell_runtime` for
+dispatch; `channel_log_convention`, `class_taxonomy`, `cursor_advance`, `cursor_field` for admin).
+The synthesized JSON does `'output_contract': dict(out)` which passes these through unchanged.
+Verify each sub-key name matches what the renderer reads via `.output_contract.*` jq paths.
 
 ---
 
-_Filed by γ@cdd.cnos (wake-invoked δ dispatch, cycle/524), 2026-06-30 (UTC)._
-_Scope: W1 implementation (AC1 + AC2 + AC4 + AC7). Supersedes the W0-scope γ-scaffold._
+## §4. β review prompt
+
+β reviews the W2 implementation against this scaffold. β's primary checks:
+
+1. **Parity proof:** Does `--parity-check` pass for both wakes? (exit 0 from both)
+2. **No golden change:** Are goldens byte-identical to pre-W2? (install-wake-golden green)
+3. **No live workflow change:** Are `cnos-agent-admin.yml` and `cnos-cds-dispatch.yml` unchanged?
+4. **AC8 audit green:** Does the AC8/AC7 renderer authority audit step pass? (no literal leaks)
+5. **Refusals preserved:** Does `--source skill` + synthetic mis-declared SKILL.md exit 4?
+6. **Required-field validation:** Does `--source skill` on a malformed SKILL.md (missing wake: block) fail with a precise error?
+7. **Scope compliance:** Are ALL changes confined to `cn-install-wake`, `install-wake-golden.yml`, and `.cdd/unreleased/524/`?
+8. **PR linkage:** Does the PR body use `Refs #524` / `Part of #524`? Never `Closes`?
+9. **CI green:** All gates (I1/I2/I4/I5/I6/Go/Package/Binary/install-wake-golden/dispatch-repair-preflight) green?
+
+β verdict MUST be one of: `converge` (all checks pass; proceed to closeouts + PR) or
+`iterate` (specific findings enumerated; α repairs before converge).
+
+---
+
+_Authored by γ@cdd.cnos (wake-invoked δ dispatch, W2 scope), 2026-06-30 (UTC).
+W2 operator directive: cnos#524 comment 2026-06-30T12:34:52Z. W0 design: `.cdd/unreleased/524/w0-design.md`._

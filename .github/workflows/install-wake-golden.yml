@@ -592,6 +592,20 @@ jobs:
           fi
           echo "AC4 cycle/496 refusal verified: exit 4 + precise stderr."
 
+      - name: W2 parity check — render(SKILL.md) == render(JSON+prompt)
+        # cnos#524 W2 dual-source parity gate. The committed goldens (confirmed
+        # byte-identical to JSON+prompt renders by the steps above) are the ground
+        # truth for render(JSON+prompt). This step proves render(SKILL.md) is
+        # byte-identical to the goldens, establishing: render(SKILL.md) ==
+        # render(JSON+prompt). Source-attribution header comment lines (^#) are
+        # excluded from the comparison — they name the source file and differ by
+        # design between the two render paths. Exit 5 on parity failure; exit 0
+        # on pass. Requires python3 + pyyaml (pre-installed on ubuntu-latest).
+        run: |
+          set -euo pipefail
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake agent-admin --parity-check
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch --parity-check
+
       - name: AC8 (cycle/476) + AC7 (cycle/485) renderer-side authority audit
         # The renderer source MUST NOT encode role decisions; those
         # come from the manifest + the inlined prompt body. Two

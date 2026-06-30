@@ -162,3 +162,95 @@ FN-3 (null default): YAML `literal null` written for `agent_variable.default` on
 FN-5 (body verbatim): Both bodies verified line-by-line against respective `prompt.md` files before committing.
 
 _Authored by α@cdd.cnos (W1 R0 closeout), 2026-06-30 (UTC). W1 R0 β-verdict: CONVERGE. AC1 + AC2 delivered._
+
+---
+
+# α-closeout — cnos#524 W2 R1: renderer dual-source parity
+
+---
+cycle: 524
+role: alpha
+verdict: converge
+date: 2026-06-30 (UTC)
+authored_by: α@cdd.cnos (W2 R1 closeout)
+parent_issue: cnos#524
+round: W2-R1
+beta_verdict: pending
+---
+
+## What was implemented
+
+Four files changed on `cycle/524` relative to `main` for the W2 scope:
+
+**`src/packages/cnos.core/commands/install-wake/cn-install-wake` (renderer extension):**
+- `skill_to_json_manifest()` helper: converts SKILL.md YAML frontmatter `wake:` block → synthesized
+  `cn.wake-provider.v1` JSON with the same jq paths as `wake-provider.json`. Preserves
+  `activation_log_writer` has()-vs-absent distinction. Uses python3 + pyyaml.
+- `skill_body()` helper: Python-based extractor for the verbatim-prompt portion of SKILL.md body.
+  Strips the leading blank line (standard blank after closing `---` delimiter) and stops at
+  `\n\n---\n\n## .+(from wake-provider.json|body reference)` — the W1 boundary marker for
+  reference-data sections appended beyond the verbatim `prompt.md` content.
+- `--source skill` flag: routes manifest and prompt through `skill_to_json_manifest()` +
+  `skill_body()` instead of `wake-provider.json` + `prompt.md`.
+- `--parity-check` flag: implies `--source skill`; renders to temp file; compares with committed
+  golden (stripping `^#` lines from both sides per FN-W2-1); exits 0 on match, 5 on diff.
+- Header stability fix: `display_manifest_path` / `display_prompt_path` always use the canonical
+  JSON-source paths (`json_manifest_path` / `json_prompt_path`) regardless of `--source` flag,
+  so the golden's comment header is stable across invocations.
+- Exit code 5 documented in header comments.
+
+**`.github/workflows/install-wake-golden.yml` (parity guard step):**
+- One new step added BEFORE the AC8 authority audit step:
+  ```
+  W2 parity check — render(SKILL.md) == render(JSON+prompt)
+  cn-install-wake agent-admin --parity-check
+  cn-install-wake cds-dispatch --parity-check
+  ```
+
+**`.cdd/unreleased/524/gamma-scaffold.md`:**
+- W2-scoped γ scaffold superseding the W1 scope document.
+
+**`.cdd/unreleased/524/self-coherence.md §R1`:**
+- W2 implementation self-coherence section appended.
+
+## Parity verification results
+
+```
+cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for agent-admin  EXIT: 0
+cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for cds-dispatch EXIT: 0
+cn-install-wake: agent-admin → …/cnos-agent-admin.golden.yml (unchanged)  (default render)
+cn-install-wake: cds-dispatch → …/cnos-cds-dispatch.golden.yml (unchanged) (default render)
+cn-install-wake: agent-admin → …/cnos-agent-admin.golden.yml (unchanged)  (--source skill)
+cn-install-wake: cds-dispatch → …/cnos-cds-dispatch.golden.yml (unchanged) (--source skill)
+```
+
+## Scope compliance
+
+| Constraint | Status |
+|---|---|
+| `schemas/skill.cue` | Not touched |
+| `wake-provider.json` (both wakes) | Not touched |
+| `prompt.md` (both wakes) | Not touched |
+| `cnos-agent-admin.golden.yml` | Not touched (`git diff` confirmed) |
+| `cnos-cds-dispatch.golden.yml` | Not touched (`git diff` confirmed) |
+| `.github/workflows/cnos-agent-admin.yml` | Not touched |
+| `.github/workflows/cnos-cds-dispatch.yml` | Not touched |
+| W3/W4 implementation artifacts | Not created |
+| `#524` issue state | Open (no close/fix/resolve linkage in commits) |
+
+## Friction notes encountered
+
+**FN-W2-1 (header-line exclusion):** Parity comparison strips `^#` prefix lines before `cmp`.
+Verified working: parity reports OK for both wakes despite differing `# manifest:` / `# prompt:`
+header comments between JSON and skill renders.
+
+**FN-W2-2 (body boundary detection):** The Python `skill_body()` extractor detects the boundary
+using the `\n\n---\n\n## .+(from wake-provider.json|body reference)` pattern. Both wakes'
+reference-data sections are correctly excluded from the parity comparison.
+
+**Awk-to-Python migration:** The initial `skill_body()` awk implementation had a subtle bug:
+`/^---/{c++; next}` consumed ALL bare `---` lines (both frontmatter delimiters and body
+horizontal-rule separators), silently dropping the latter. The fix required switching to Python
+for reliable body extraction with look-ahead boundary detection.
+
+_Authored by α@cdd.cnos (W2 R1 closeout), 2026-06-30 (UTC). W2 R1 β-verdict: pending β review._
