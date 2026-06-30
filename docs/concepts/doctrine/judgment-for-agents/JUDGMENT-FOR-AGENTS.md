@@ -17,7 +17,7 @@ Related:
 - [CBP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CBP.md) — relational conduct doctrine
 - [CA-CONDUCT](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CA-CONDUCT.md) — operational conduct surface
 - [Human interaction](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/skills/agent/human-interaction/SKILL.md) — human attention boundary
-- [Glossary](https://github.com/usurobor/cnos/blob/main/docs/beta/governance/GLOSSARY.md) — vocabulary authority
+- [Glossary](https://github.com/usurobor/cnos/blob/main/docs/reference/governance/GLOSSARY.md) — vocabulary authority
 
 ---
 

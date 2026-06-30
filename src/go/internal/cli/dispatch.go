@@ -27,7 +27,7 @@ type Resolution struct {
 // ResolveCommand returns the command to dispatch for the given argv
 // (without the program name).
 //
-// Lookup order — see docs/alpha/DESIGN-CONSTRAINTS.md §3.1:
+// Lookup order — see docs/architecture/DESIGN-CONSTRAINTS.md §3.1:
 //
 //  1. Noun-verb form: args[0]+"-"+args[1] as a registry key
 //     (e.g., "kata run" → "kata-run").

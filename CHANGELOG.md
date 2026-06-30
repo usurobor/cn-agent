@@ -20,7 +20,7 @@ These are intuition-level ratings, not outputs from a running TSC engine (formal
 - **L6** — System-safe: cross-surface coherence, failure modes handled
 - **L7** — System-shaping: architecture boundary moved, class of future work eliminated
 
-See [RELEASE-LEVEL-CLASSIFICATION.md](docs/gamma/essays/RELEASE-LEVEL-CLASSIFICATION.md) for the full historical analysis.
+See [RELEASE-LEVEL-CLASSIFICATION.md](docs/papers/RELEASE-LEVEL-CLASSIFICATION.md) for the full historical analysis.
 
 ## 3.82.0
 

@@ -4,7 +4,7 @@
 **Created:** 2026-02-05
 **Updated:** 2026-03-12
 
-> **See also:** [SCHEDULER-v3.7.0](../../alpha/agent-runtime/3.7.0/DESIGN.md) — the unified scheduler
+> **See also:** SCHEDULER-v3.7.0 — the unified scheduler
 > design that implements the core of this vision. The plugin architecture below
 > remains a future direction.
 
@@ -130,4 +130,4 @@ See [SECURITY-MODEL.md](../../architecture/security/SECURITY-MODEL.md) for full 
 
 ---
 
-*Original vision doc. See [SCHEDULER-v3.7.0](../../alpha/agent-runtime/3.7.0/DESIGN.md) for current implementation.*
+*Original vision doc. See SCHEDULER-v3.7.0 for current implementation.*

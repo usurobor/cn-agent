@@ -9,15 +9,15 @@ Status: Essay — companion to Coherence for Agents
 Governing question: What is the difference between an agent that preserves boundaries and an agent that is good?
 
 Related:
-- [Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/COHERENCE-FOR-AGENTS.md) — structural derivation this essay translates
-- [FOUNDATIONS](https://github.com/usurobor/cnos/blob/main/docs/alpha/FOUNDATIONS.md) — theory/practice dependency stack
+- [Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) — structural derivation this essay translates
+- [FOUNDATIONS](https://github.com/usurobor/cnos/blob/main/docs/papers/FOUNDATIONS.md) — theory/practice dependency stack
 - [COHERENCE.md](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/COHERENCE.md) — TSC review geometry
 - [CAP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CAP.md) — single-agent move this essay extends to conduct
 - [CBP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CBP.md) — conduct vocabulary translated here
 - [CA-CONDUCT](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CA-CONDUCT.md) — operational conduct surface
 - [Human interaction skill](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/skills/agent/human-interaction/SKILL.md) — human attention boundary
-- [COHERENCE-SYSTEM](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/COHERENCE-SYSTEM.md) — system-scale boundary model
-- [Glossary](https://github.com/usurobor/cnos/blob/main/docs/beta/governance/GLOSSARY.md) — vocabulary authority
+- [COHERENCE-SYSTEM](https://github.com/usurobor/cnos/blob/main/docs/papers/COHERENCE-SYSTEM.md) — system-scale boundary model
+- [Glossary](https://github.com/usurobor/cnos/blob/main/docs/reference/governance/GLOSSARY.md) — vocabulary authority
 
 ---
 

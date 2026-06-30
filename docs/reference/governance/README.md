@@ -32,4 +32,4 @@ Documentation system, naming conventions, and glossary. How docs are organized, 
 
 | Version | Directory | Highlights |
 |---------|-----------|-----------|
-| v3.14.4 | [3.14.4/](../../beta/governance/3.14.4) | Initial bundle migration from beta root (#89). Freeze policy path-correction exception added. |
+| v3.14.4 | 3.14.4/ | Initial bundle migration from beta root (#89). Freeze policy path-correction exception added. |

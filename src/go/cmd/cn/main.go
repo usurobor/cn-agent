@@ -70,7 +70,7 @@ func main() {
 
 	// Resolve the command — supports noun-verb form (cn kata run),
 	// flat form (cn kata-run), and noun-group listing (cn kata).
-	// See docs/alpha/DESIGN-CONSTRAINTS.md §3.1.
+	// See docs/architecture/DESIGN-CONSTRAINTS.md §3.1.
 	res := cli.ResolveCommand(reg, os.Args[1:])
 
 	// Group case: args[0] is a noun prefix with no matching verb.

@@ -10,7 +10,7 @@ Related:
 - [CAP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/skills/agent/cap/SKILL.md) — the single-agent principle this generalizes
 - [CBP](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/CBP.md) — the relational conduct layer this essay grounds
 - [COHERENCE.md](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.core/doctrine/COHERENCE.md) — canonical TSC doctrine
-- [COHERENCE-SYSTEM](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/COHERENCE-SYSTEM.md) — the system-scale coherence model
+- [COHERENCE-SYSTEM](https://github.com/usurobor/cnos/blob/main/docs/papers/COHERENCE-SYSTEM.md) — the system-scale coherence model
 - [CDD](https://github.com/usurobor/cnos/blob/main/src/packages/cnos.cdd/skills/cdd/CDD.md) — the triadic lifecycle that operationalizes the structure
 
 ---

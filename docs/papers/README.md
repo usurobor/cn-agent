@@ -3,9 +3,9 @@
 Essays, whitepapers, and position papers — one home for the arguments.
 
 > The CN protocol whitepaper is a normative spec and lives in its protocol
-> bundle under [`reference/`](../reference/README.md), not here. Frozen
-> snapshots (e.g. `gamma/essays/3.14.5/`) and the `CDD-OVERVIEW.pdf` stay in
-> place; see [`archive/`](../archive/README.md).
+> bundle under [`reference/`](../reference/README.md), not here. Superseded
+> drafts and frozen snapshots are not kept on `main` — git history is the
+> archive.
 
 ## Flagship
 

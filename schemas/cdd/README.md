@@ -123,14 +123,14 @@ specific keys in the map. This is rejected for the reasons below.
 
 The design rationale is sourced from:
 
-- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/papers/CCNF-AND-TYPED-TRUST.md)
   §"Schema direction" — names the split into `schemas/cdd/` +
   `schemas/cds/` + `schemas/cdr/` as the preferred shape; also names the
   adapter-boundary variant as acceptable if it preserves the same
   invariant ("Generic CDD validates the cell shape. Domain schemas
   validate domain evidence. V dispatches by declared protocol."). The (a)
   decision recorded here is consistent with the essay's preferred shape.
-- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md)
+- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/papers/CCNF-AND-TYPED-TRUST.md)
   §2 "Use CUE for typed trust surfaces" — distinguishes CUE structural
   validation (the schemas here) from runtime evidence dereference (V's
   job in Phase 3). The split preserves the distinction.
@@ -370,6 +370,6 @@ This directory is **schema-only**. It does not:
   [`schemas/fixtures/skill-frontmatter/`](../fixtures/skill-frontmatter/) —
   schema-layer pattern precedent: CUE owns shape, README owns prose,
   fixtures live under `schemas/{subsystem}/fixtures/`.
-- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/gamma/essays/CCNF-AND-TYPED-TRUST.md) —
+- [`docs/gamma/essays/CCNF-AND-TYPED-TRUST.md`](../../docs/papers/CCNF-AND-TYPED-TRUST.md) —
   L7 design essay; §"Schema direction" is the design source for this
   cycle's architectural choice.

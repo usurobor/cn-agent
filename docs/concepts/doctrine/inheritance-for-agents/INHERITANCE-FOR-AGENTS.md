@@ -9,12 +9,12 @@ Status: Essay — fourth in the doctrine set; meta-derivation from CFA, EFA, JFA
 Governing question: How does a doctrine grow across cycles without becoming dogma?
 
 Related:
-- [Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) — first agent-doctrine essay
-- [Ethics for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) — second agent-doctrine essay
-- [Judgment for Agents](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) — third agent-doctrine essay
-- [CFA cycle log](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/CFA-cycle-log.md) and [CFA critiques](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/coherence-for-agents/CFA-critiques.md) — primary evidence for the first cycle
-- [EFA cycle log](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/EFA-cycle-log.md), [EFA critiques](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/EFA-critiques.md), and [EFA external observations](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/ethics-for-agents/EFA-external-observations.md) — primary evidence for the second cycle
-- [JFA dyad cycle log](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JFA-cycle-log-dyad.md), [JFA gamma cycle log](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JFA-cycle-log-gamma.md), and [JFA critiques](https://github.com/usurobor/cnos/blob/main/docs/alpha/doctrine/judgment-for-agents/JFA-critiques.md) — primary evidence for the third cycle
+- [Coherence for Agents](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md) — first agent-doctrine essay
+- [Ethics for Agents](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/ethics-for-agents/ETHICS-FOR-AGENTS.md) — second agent-doctrine essay
+- [Judgment for Agents](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/judgment-for-agents/JUDGMENT-FOR-AGENTS.md) — third agent-doctrine essay
+- [CFA cycle log](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/coherence-for-agents/CFA-cycle-log.md) and [CFA critiques](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/coherence-for-agents/CFA-critiques.md) — primary evidence for the first cycle
+- [EFA cycle log](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/ethics-for-agents/EFA-cycle-log.md), [EFA critiques](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/ethics-for-agents/EFA-critiques.md), and [EFA external observations](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/ethics-for-agents/EFA-external-observations.md) — primary evidence for the second cycle
+- [JFA dyad cycle log](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/judgment-for-agents/JFA-cycle-log-dyad.md), [JFA gamma cycle log](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/judgment-for-agents/JFA-cycle-log-gamma.md), and [JFA critiques](https://github.com/usurobor/cnos/blob/main/docs/concepts/doctrine/judgment-for-agents/JFA-critiques.md) — primary evidence for the third cycle
 
 ---
 

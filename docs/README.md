@@ -3,15 +3,13 @@
 cnos is a Git-native coherence system for accountable human + AI work.
 
 > **Navigation note.**
-> The primary documentation surface is now organized by reader intent:
+> The documentation surface is organized by reader intent:
 > `quickstart/`, `concepts/`, `guides/`, `reference/`, `development/`,
-> `architecture/`, `papers/`, `evidence/`, and `archive/`.
+> `architecture/`, `papers/`, and `evidence/`.
 >
-> Legacy `alpha/`, `beta/`, and `gamma/` paths remain only for redirect
-> stubs, frozen snapshots, and explicitly deferred historical material.
->
-> The triad is no longer a filing taxonomy. It is kept for measurement,
-> role grammar, and coherence analysis.
+> Frozen history is not kept on `main` — git history is the archive. The
+> α/β/γ triad is no longer a filing taxonomy; it is kept only as a coherence
+> measurement (role grammar and TSC analysis), never as folders.
 
 ## Start here
 
@@ -32,7 +30,6 @@ cnos is a Git-native coherence system for accountable human + AI work.
 | Contribute | [`guides/`](./guides/README.md) → [`development/`](./development/README.md) |
 | Find canonical specs | [`reference/`](./reference/README.md) |
 | Find audits & evidence | [`evidence/`](./evidence/README.md) |
-| Find historical snapshots | [`archive/`](./archive/README.md) |
 
 ## Directory map (reader intent)
 
@@ -44,7 +41,6 @@ cnos is a Git-native coherence system for accountable human + AI work.
 - [`development/`](./development/README.md) — CDD method, rules, plans, checklists
 - [`papers/`](./papers/README.md) — essays, whitepapers, position papers
 - [`evidence/`](./evidence/README.md) — audits, RCAs, measurements, demo receipts
-- [`archive/`](./archive/README.md) — frozen snapshots and historical material
 
 ## Coherence metadata, not coherence folders
 

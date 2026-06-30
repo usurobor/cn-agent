@@ -13,7 +13,7 @@
 - [rules/](rules/RULES.md) — non-negotiable rules and coherence invariants.
 - [plans/](plans) — implementation plans for specific releases.
 - [checklists/](checklists) — review/gate checklists by discipline.
-- [kata/](../gamma/kata) — practice katas.
+- [kata/](kata) — practice katas.
 
 Conceptual papers on cells and coherence (e.g. *Cell of Cells*) live in
 [`papers/`](../papers/README.md).

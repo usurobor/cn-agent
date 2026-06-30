@@ -30,4 +30,4 @@ Origin narrative and structural lineage. How CNOS came to be and who contributed
 
 | Version | Directory | Highlights |
 |---------|-----------|-----------|
-| v3.14.4 | [3.14.4/](../../beta/lineage/3.14.4/) | Initial bundle migration from beta root (#89) |
+| v3.14.4 | 3.14.4/ | Initial bundle migration from beta root (#89) |
