@@ -615,14 +615,36 @@ jobs:
         # the count for diagnostics; the substantive check is the
         # `[ "$n" != "0" ]` guard below, which still fires on real leaks.
         run: |
-          # AC8 audit (admin shape).
-          n_admin=$(grep -ciE 'admin.only|disallowed_surfaces|defer.path|cell_execution' src/packages/cnos.core/commands/install-wake/cn-install-wake || true)
-          if [ "$n_admin" != "0" ]; then
-            echo "::error::Renderer source leaks admin-shape role-decision strings (AC8). Count: $n_admin"
-            grep -niE 'admin.only|disallowed_surfaces|defer.path|cell_execution' src/packages/cnos.core/commands/install-wake/cn-install-wake
+          # AC8 audit (admin shape) — scoped renderer-side authority audit.
+          #
+          # The renderer is role-agnostic substrate: admin-shape role-decision
+          # logic must live in the manifest, not here. This audit fails only
+          # when the admin-shape field names appear in EXECUTABLE / RENDERED
+          # role-decision logic. It deliberately ignores two non-leaks:
+          #   (a) comments — documentation of the manifest contract;
+          #   (b) stderr validation diagnostics — the renderer NAMES these
+          #       manifest fields only to reject a malformed manifest
+          #       (die / manifest_error / log_writer_mis_declaration, all of
+          #       which echo to >&2); naming a field to validate it is not
+          #       encoding role behavior.
+          #
+          # Root cause of the prior false positive (#475-D): the old check used
+          # `grep -iE 'admin.only|defer.path|...'` — regex `.` matches any char,
+          # so `admin.only` matched the renderer's own `admin_only` docs and
+          # diagnostics, and the scan was source-wide (no comment/diagnostic
+          # exclusion). It self-matched the renderer's contract documentation.
+          # Fix: literal field names + exclude comments and diagnostic calls.
+          admin_leaks=$(grep -nE 'admin_only|disallowed_surfaces|defer_path|cell_execution' \
+              src/packages/cnos.core/commands/install-wake/cn-install-wake \
+            | grep -vE '^[0-9]+:[[:space:]]*#' \
+            | grep -vE '(die|manifest_error|log_writer_mis_declaration)[[:space:]]' \
+            || true)
+          if [ -n "$admin_leaks" ]; then
+            echo "::error::Renderer encodes admin-shape role-decision logic (AC8). Offending lines:"
+            echo "$admin_leaks"
             exit 1
           fi
-          echo "AC8 renderer-side (admin shape): 0 role-decision leaks."
+          echo "AC8 renderer-side (admin shape): 0 role-decision leaks (comments + stderr diagnostics excluded)."
           # AC7 audit (dispatch shape; cycle/485).
           n_dispatch=$(grep -ciE 'protocol:cds|cdr|cdw|dispatch:cell|status:todo' src/packages/cnos.core/commands/install-wake/cn-install-wake || true)
           if [ "$n_dispatch" != "0" ]; then
