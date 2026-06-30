@@ -115,3 +115,50 @@ No W1, W2, W3, or W4 implementation artifacts were created. β's scope complianc
 ---
 
 _Authored by α@cdd.cnos (R0 closeout), 2026-06-30 (UTC). R0 β-verdict: CONVERGE. Cycle/524 W0 design phase complete; W1→W4 build phases not yet scheduled._
+
+---
+
+# α-closeout — cnos#524 W1 R0: CUE #Wake schema + wake SKILL.md modules
+
+---
+cycle: 524
+role: alpha
+verdict: converge
+date: 2026-06-30 (UTC)
+authored_by: α@cdd.cnos (W1 R0 closeout)
+parent_issue: cnos#524
+round: W1-R0
+beta_verdict: converge
+---
+
+## What was implemented
+
+Three files changed on `cycle/524` relative to `main` for the W1 scope:
+
+**AC1 — `schemas/skill.cue`:**
+- `artifact_class` enum extended: `"wake"` added as the fifth value (was `"skill" | "runbook" | "reference" | "deprecated"`)
+- `#WakeOutputAdmin` definition: required fields `channel_log_convention`, `writer_surface`, `class_taxonomy`, `cursor_advance`, `cursor_field`; open struct
+- `#WakeOutputDispatch` definition: required fields `cycle_artifact_root`, `artifact_class_taxonomy`, `cell_runtime`; open struct
+- `#Wake` definition: embeds `#Skill`; constrains `artifact_class: "wake"`, `scope: "global"`; full `wake:` block with `role: "admin" | "dispatch"` enum (OB-1); `agent_variable.default: string | null` (FN-3); `surfaces.allowed?/disallowed?` as `[...string]` (FN-4); output disjunction `#WakeOutputAdmin | #WakeOutputDispatch`
+
+**AC2 — `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md`:**
+- New file: 6 allowed + 9 disallowed surfaces; `agent_variable.default: null` (literal null, operator-required); `activation_log_writer: true`; body = verbatim `prompt.md` content + verbose prose from JSON
+
+**AC2 — `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md`:**
+- New file: `activation_state: live`; `protocol: cds`; selector include/exclude matching `wake-provider.json` exactly; `agent_variable.default: sigma`; `activation_log_writer: false`; body = verbatim `prompt.md` content (242 lines) + verbose prose from JSON
+
+No renderer, golden, workflow, or wake-provider.json files were touched.
+
+## Scope compliance
+
+Zero diff on all constrained paths: `*.golden.yml`, `wake-provider.json`, `prompt.md`, `.github/workflows/`, renderer source.
+
+## Friction notes encountered
+
+FN-1 (observer role): OB-1 check from W0 β. Audited before authoring `#Wake` — no `observer` role found in any live `wake-provider.json`; enum correctly constrained to `"admin" | "dispatch"`.
+
+FN-3 (null default): YAML `literal null` written for `agent_variable.default` on admin SKILL.md. Confirmed not empty string.
+
+FN-5 (body verbatim): Both bodies verified line-by-line against respective `prompt.md` files before committing.
+
+_Authored by α@cdd.cnos (W1 R0 closeout), 2026-06-30 (UTC). W1 R0 β-verdict: CONVERGE. AC1 + AC2 delivered._

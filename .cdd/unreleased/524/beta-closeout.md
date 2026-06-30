@@ -65,3 +65,34 @@ The only material uncertainty at W0 close is FN-1 (`observer` role in the render
 ---
 
 _Filed by β@cdd.cnos, 2026-06-30 (UTC). Cycle/524 R0 closed: CONVERGE. W0 design document complete, scope-clean, field-complete, internally coherent. Handoff to W1 implementer._
+
+---
+
+# β-closeout — cnos#524 W1 R0
+
+---
+cycle: 524
+role: beta
+verdict: converge
+date: 2026-06-30 (UTC)
+authored_by: β@cdd.cnos (W1 R0 closeout)
+parent_review: .cdd/unreleased/524/beta-review.md §R0
+---
+
+## Review process summary
+
+W1 R0 was an implementation dispatch with three constrained output files: `schemas/skill.cue`, `agent-admin/SKILL.md`, `cds-dispatch/SKILL.md`.
+
+**Pass 1 — Scope compliance.** Diff confirmed zero changes to `*.golden.yml`, `wake-provider.json`, `prompt.md`, `.github/workflows/`. Only the three permitted implementation paths + `.cdd/unreleased/524/self-coherence.md` changed. PASS.
+
+**Pass 2 — AC1 (CUE schema).** Read `schemas/skill.cue` directly. Verified: `"wake"` in enum; `#Wake` definition present; `role: "admin" | "dispatch"` only (OB-1); `agent_variable.default: string | null` (FN-3); `[...string]` arrays (FN-4); role-shaped output disjunction via `#WakeOutputAdmin | #WakeOutputDispatch`. PASS.
+
+**Pass 3 — AC2 field verification.** Read both `wake-provider.json` manifests and both SKILL.md files. Verified all frontmatter fields field-by-field against JSON sources. Key checks: `default: null` on admin (YAML literal null); `default: sigma` on dispatch; selector include/exclude arrays match exactly; `activation_log_writer` values correct per role. Bodies verified byte-identical to respective `prompt.md` files (leading blank line and prose appendix divider are trivial formatting, not content drift). PASS.
+
+**Pass 4 — I5 count.** `find . -name 'SKILL.md' | wc -l` on cycle/524: 101 (main: 99; +2 new wake SKILL.md files). Consistent with AC7 expectation. PASS.
+
+## Verdict rationale
+
+CONVERGE. All AC oracle conditions met. No iterate condition triggered. The implementation is scope-clean, field-complete, and CUE-valid.
+
+_Filed by β@cdd.cnos, 2026-06-30 (UTC). Cycle/524 W1 R0 closed: CONVERGE._
