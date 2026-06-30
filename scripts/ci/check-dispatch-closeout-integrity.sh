@@ -84,9 +84,8 @@ need "$PROTO" "protocol" \
   "check-dispatch-closeout-integrity.sh"
 
 # SKILL body + rendered substrate (golden + live workflow) carry the
-# executable preflight. SKILL.md is the sole render source as of cnos#524 W4
-# (the legacy prompt.md twin this loop also checked pre-W4 was deleted along
-# with wake-provider.json; the SKILL.md body is now the only prompt source).
+# executable preflight. The SKILL.md body is the wake's only prompt source,
+# so this loop checks the SKILL.md, its golden, and the live workflow.
 for f in "$SKILL" "$GOLDEN" "$LIVE"; do
   need "$f" "dispatch-surface" \
     "Closeout integrity preflight" \
