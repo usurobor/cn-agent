@@ -161,3 +161,102 @@ conditions triggered. The iterate threshold (scope violation, golden change, liv
 new role-decision string) was not met.
 
 _Filed by β@cdd.cnos, 2026-06-30 (UTC). Cycle/524 W3 R2 closed: CONVERGE._
+
+---
+
+# β-closeout — cnos#524 W4 R3 (final phase)
+
+---
+cycle: 524
+role: beta
+verdict: converge
+date: 2026-06-30 (UTC)
+authored_by: β@cdd.cnos (W4 R3 closeout)
+parent_review: .cdd/unreleased/524/beta-review.md §R3
+round: W4-R3
+run_class: repair_pass
+---
+
+## Review process summary
+
+W4 is the final phase: delete `wake-provider.json` + `prompt.md` for both wakes, make
+`cn-install-wake` SKILL.md-only, and prove the rendered goldens/workflows change by header-only
+diff. This is also a `repair_pass` re-entry (per `REPAIR-PLAN.md`) — the prior W4 dispatch run was
+invalidated as an empty run (no PR/commits/closeout), and a separate already-merged cell (PR #531)
+now guards against that failure mode mechanically. I reviewed both the substantive W4 delivery and
+the repair-re-entry posture.
+
+I treated this as the highest-stakes review in the cycle and ran every check myself from a clean
+checkout, rather than trusting α's `self-coherence.md §R3` account. Full transcripts are in
+`beta-review.md §R3`; this closeout summarizes the process and confidence level.
+
+**Pass 1 — header-only-diff, mechanically re-verified.** This is the single highest-stakes claim
+in the cycle (a wrong header-only claim would mean the migration silently changed rendered wake
+behavior). I ran `git diff db547ebe...cycle/524` against both goldens and both live workflows
+myself and inspected the full diff (not `--stat`). Confirmed: exactly the two-line→one-line header
+collapse on all four files, zero other bytes differ.
+
+**Pass 2 — deletion completeness.** Ran the `find` command for `wake-provider.json`/`prompt.md`
+across both orchestrator dirs and both test-fixture dirs myself. Empty. Confirmed.
+
+**Pass 3 — SKILL.md body-prose boundary.** Confirmed zero diff on both wake SKILL.md files — the
+single hardest scope-discipline requirement in this cycle (the temptation to "fix" the dangling
+`wake-provider.json` references while already touching adjacent files was real, and α correctly
+did not yield to it).
+
+**Pass 4 — renderer correctness.** Read the full 234-line diff on `cn-install-wake`. Confirmed no
+JSON code path survives anywhere, confirmed the `--source`/`--parity-check` flags hard-error with
+an informative message rather than silently misbehaving, and ran the renderer myself against both
+wakes — output identical to the committed goldens.
+
+**Pass 5 — refusal gates and the AC2 conversion.** Replayed the exact CI-step commands by hand for
+the AC5 declaration-only smoke (exit 3), the AC4/cycle-496 mis-declaration smoke (exit 4), and the
+converted AC2 malformed-SKILL.md smoke (exit 2, `role must be one of admin/dispatch/observer`).
+All three independently reproduced.
+
+**Pass 6 — the out-of-scaffold CI-script fix.** This was the one place α's diff exceeded the
+scaffold's explicit MUST-change list. I did not take the justification on faith: I diffed the
+pre-W4 version of both scripts to confirm the causal claim ("deleting `prompt.md` would have
+broken these scripts") was literally true, then confirmed the fix changed only the file-existence
+target, not any required phrase or detection logic, then ran both scripts myself (including
+`--self-test` for closeout-integrity) and confirmed green. The fix is a genuine, narrowly-scoped
+necessity, not scope creep.
+
+**Pass 7 — scope, commit hygiene, repair_evidence readiness.** Full diff-stat walk: every file is
+either on the scaffold's MUST-change list or the §Pass-6 justified exception. All MUST-NOT-touch
+paths (`schemas/skill.cue`, both wake SKILL.md bodies, other skill docs, `docs/**`,
+`.cdd/releases/**`, other `.cdd/unreleased/{N}/`, `src/go/**`) confirmed absent from the diff.
+Commit messages use `Refs #524` only, no `Closes`/`Fixes`/`Resolves` in any form.
+
+## Confidence level
+
+**High.** Every checklist item was independently re-run, not copy-checked from α's report — this
+is the standard I held myself to given that the cycle is a repair re-entry following a prior false
+"review-ready" state. The header-only-diff claim (the binding oracle for this entire migration)
+holds exactly as claimed under independent verification. No STOP-level issue found across 11
+checklist items spanning the AC oracle list, the scope-guardrail list, and the repair/deliverable
+evidence requirements.
+
+## Notable process observation — closeouts and PR correctly absent until convergence
+
+At R3 review time, `alpha-closeout.md`/`beta-closeout.md`/`gamma-closeout.md` carried zero diff
+and no W4 PR existed yet. I checked `cdd/delta/SKILL.md §9.3`/§9.5 before treating this as a
+defect: closeouts are authored by α/β/γ **after** β's `verdict: converge` lands, as part of δ's
+converge routing, and the cycle-PR is opened at the `status:review` transition that follows —
+not before β review. This is expected pipeline state, correctly deferred to the post-converge
+closeout step (this document and its siblings), not a gap in the implementation round.
+
+## What's notable about reviewing a `repair_pass` round specifically
+
+Unlike a normal iteration round, there was no prior W4 **code** to compare against — the
+invalidated run produced zero commits. The repair posture here is process-shaped, not code-shaped:
+my job was to confirm (a) the process gap that caused the empty-run failure is closed by a
+different, already-merged cell (#531), and (b) this cycle's branch state is observably,
+mechanically different from the invalidated run's zero-commit state (trivially true — three real
+commits, a real diff, real CI-replayable checks — but I confirmed it explicitly rather than
+asserting it by default).
+
+---
+
+_Filed by β@cdd.cnos, 2026-06-30 (UTC). Cycle/524 W4 R3 closed: CONVERGE. Final phase of the
+W0→W4 wake-as-skill migration independently re-verified end to end._

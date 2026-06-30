@@ -326,3 +326,121 @@ Three files changed on `cycle/524` for the W3 scope (on top of the W2 baseline):
 | AC7/AC8 (CI green; no role strings) | EXPECTED PASS — no role-decision strings added |
 
 _Authored by α@cdd.cnos (W3 R2 closeout), 2026-06-30 (UTC). W3 R2 β-verdict: CONVERGE._
+
+---
+
+# α-closeout — cnos#524 W4 R3: delete wake-provider.json + prompt.md; renderer is SKILL.md-only (final phase)
+
+---
+cycle: 524
+role: alpha
+verdict: converge
+date: 2026-06-30 (UTC)
+authored_by: α@cdd.cnos (W4 R3 closeout)
+parent_issue: cnos#524
+round: W4-R3
+beta_verdict: converge
+run_class: repair_pass
+---
+
+## What was implemented
+
+This is the **final phase** of the W0→W4 wake-as-skill migration. `run_class: repair_pass` per
+`REPAIR-PLAN.md`: a prior W4 dispatch run (substrate run `28464981342`) was invalidated as an
+**empty run** — it reached `status:review` with no PR, no commits, no closeout, and no deliverable.
+That process gap was remediated by a separate, already-merged cell (PR #531, the
+closeout-integrity guard). This cycle performed the actual W4 implementation, against current
+`main` (`db547ebe5b408e4c74092ad3ed56509e605894ef`), under the operator's "W4 (final phase, clean
+re-dispatch)" directive and `gamma-scaffold.md`.
+
+**Deleted (8 files — the legacy JSON+prompt contract system, in full):**
+- `src/packages/cnos.core/orchestrators/agent-admin/{wake-provider.json,prompt.md}`
+- `src/packages/cnos.cds/orchestrators/cds-dispatch/{wake-provider.json,prompt.md}`
+- `src/packages/cnos.core/commands/install-wake/test-fixtures/declaration-only/{wake-provider.json,prompt.md}`
+- `src/packages/cnos.core/commands/install-wake/test-fixtures/log-writer-misdeclaration/{wake-provider.json,prompt.md}`
+
+Each directory already carried a `SKILL.md` twin (added across W1/W3); only the legacy pair was
+removed. Both wake SKILL.md files themselves carry **zero diff** in this cycle (frontmatter and
+body both untouched — see "Known gap," below).
+
+**`cn-install-wake` made SKILL.md-only:** `--source json|skill` and `--parity-check` removed as
+live flags — both (and `--source=*`) now hit a dedicated `case` arm that `die`s with a message
+naming cnos#524 W4, rather than silently disappearing or falling through to a now-broken default.
+The `source_type`/`parity_check` shell variables are gone entirely; the SKILL.md→JSON synthesis
+(`skill_to_json_manifest`) and body extraction (`skill_body`) are now unconditional — there is
+exactly one code path. Manifest resolution (both the default per-package lookup and the
+cross-package sibling-search fallback) now resolves `SKILL.md` instead of `wake-provider.json`.
+Header attribution changed from the two-line `# manifest: .../wake-provider.json` /
+`# prompt: .../prompt.md` block to a single `# source: orchestrators/<name>/SKILL.md` line — the
+**only** byte-level change to any golden or live-workflow output. Exit code 5 (`--parity-check`
+failure) is documented as retired, not reused.
+
+**`.github/workflows/install-wake-golden.yml`:** the W3 parity-check step is removed (nothing left
+to compare). The AC2 negative-case smoke converts from a malformed-JSON fixture to a
+malformed-SKILL.md fixture (`wake:` block omitting `role`); same oracle (malformed declaration →
+exit 2 + informative stderr), different message text because the code path is different (see
+judgment call below). The AC5 and AC4/cycle-496 refusal-smoke steps' `--manifest` arguments are
+repointed at the fixtures' `SKILL.md` files; assertions (exit 3 / exit 4, same stderr substrings)
+are unchanged.
+
+**Goldens + live workflows re-rendered, header-only diff** (verified twice — see AC verification
+below): both `cnos-agent-admin.golden.yml` / `cnos-cds-dispatch.golden.yml` and both
+`.github/workflows/cnos-*.yml`.
+
+## AC verification summary (W4-relevant ACs)
+
+| AC | Result |
+|---|---|
+| AC4 (revised — header-only diff) | Verified twice: renderer-change-alone diff against pre-W4 goldens, then post-deletion diff against the same baseline. Both confirmed header-only — `git diff --cached` inspected per-file, not just `--stat`. sha256(live)==sha256(golden) holds (cds-dispatch). Idempotence holds for both wakes. |
+| AC5 (JSON+prompt deleted) | `find` over both orchestrator dirs + both test-fixture dirs for `wake-provider.json`/`prompt.md` → empty. Renderer reads only SKILL.md; cross-package sibling-fallback verified explicitly with `CN_PACKAGE_ROOT` unset. |
+| AC6 (refusals preserved) | AC5 declaration-only smoke → exit 3, correct stderr. AC4/cycle-496 mis-declaration smoke → exit 4, correct stderr. Both fire from the SKILL.md-only path (no other path exists). |
+| AC7 (all gates green) | Go build/vet/test clean; I1 (`./cn build --check`) clean; I2 clean; I6-adjacent (`cn cdd verify`) 106 passed/0 failed; `install-wake-golden` steps replayed individually, all green; both CI guard scripts (see judgment call below) green. I5 not runnable locally (no `cue` binary in this environment) — flagged for CI; neither `schemas/skill.cue` nor either wake SKILL.md's frontmatter changed this cycle, so I5 has no mechanical reason to regress. |
+
+Full verification detail, including exact commands and outputs, is in
+`self-coherence.md §R3 §3–§4`; β independently re-ran every check rather than trusting this report
+(see `beta-review.md §R3`).
+
+## Judgment calls
+
+**Out-of-scaffold CI-script fix (`check-dispatch-closeout-integrity.sh` /
+`check-dispatch-repair-preflight.sh`).** Both scripts hardcoded a required-file check against
+`cds-dispatch/prompt.md`, left over from the W2/W3 dual-source transition window. Deleting
+`prompt.md` per the W4 mandate would have made both scripts fail with `required file missing` —
+turning two required-green CI gates red as a direct, mechanical consequence of the deletion the
+scaffold itself required. I verified the scripts' required phrase-checks against `$SKILL` /
+`$GOLDEN` / `$LIVE` were already satisfied independent of `$PROMPT`, then swapped each script's
+loop target from the now-deleted `$PROMPT` variable to the already-present `$SKILL` variable — no
+phrase, label, or detection logic changed, only the file-existence target. This was not on the
+scaffold's original MUST-change list, but it is the minimum necessary fix to keep two
+scaffold-required-green gates green after a deletion the scaffold itself mandates, not scope
+creep. β independently verified the causal claim (would these scripts actually have broken?) was
+true, not merely asserted, and confirmed the fix is contract-preserving.
+
+Other judgment calls (`--manifest` accepting a directory or file; the AC2 fixture shape choice;
+making `--source`/`--parity-check` hard errors rather than silent no-ops; retiring exit code 5
+with a documentation note rather than dropping the row) are recorded in full, with rationale, in
+`self-coherence.md §R3 §2`.
+
+## Known gap (explicitly out of scope, named for follow-up)
+
+Both wake SKILL.md files — `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md` and
+`src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` — have **zero diff** in this cycle.
+Their body prose still references the now-deleted `wake-provider.json` in a few places: most
+visibly `cds-dispatch/SKILL.md`'s `[wake-provider.json](wake-provider.json)` markdown link (now a
+dangling 404 target), plus both files' `## Responsibilities (from wake-provider.json; body
+reference)` / `## Cross-references (from wake-provider.json)` section-header parentheticals. This
+was a deliberate scope decision, not an oversight: the SKILL.md body **is** the rendered prompt
+(W0 design §E, body-as-prompt rule), so editing it would change non-header bytes of the rendered
+golden/live-workflow output — directly violating the operator's "Stop if: any non-header workflow
+bytes change" condition. The "no active references to wake-provider.json/prompt.md remain"
+required-proof bullet is satisfied per the scaffold's own resolution (§1.1): by (a) the files
+being deleted (AC5) and (b) zero renderer resolution/parsing-logic references remaining — not by
+scrubbing frozen prompt-body prose. This is a legitimate, separately-scoped follow-up (a prompt
+content change, not a renderer/substrate change) for a future cell. A tracked follow-up issue is
+filed at closeout (see `gamma-closeout.md`'s process-gap audit for the issue number).
+
+---
+
+_Authored by α@cdd.cnos (W4 R3 closeout), 2026-06-30 (UTC). W4 R3 β-verdict: CONVERGE. This closes
+the W0→W4 wake-as-skill migration: one contract system (SKILL.md + CUE), the JSON+prompt system
+fully retired._

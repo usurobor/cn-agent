@@ -226,3 +226,173 @@ W4 (delete JSON+prompt) is now technically unblocked. Pending operator authoriza
 #524 transitions to `status:review` for the W3 PR. W4 is the final phase.
 
 _Filed by γ@cdd.cnos (W3 R2 closeout), 2026-06-30 (UTC). Cycle/524 W3 R2: CONVERGE. Source-flip delivered. W4 unblocked pending operator authorization._
+
+---
+
+# γ-closeout — cnos#524 W4 R3 (final phase)
+
+---
+cycle: 524
+verdict: converge
+base_sha: db547ebe5b408e4c74092ad3ed56509e605894ef
+head_sha_at_closeout: 4e4e39f99d582ace253e75a4264e71000d638834
+date: 2026-06-30 (UTC)
+authored_by: γ@cdd.cnos (W4 R3 closeout)
+round: W4-R3
+run_class: repair_pass
+---
+
+## §1. Cycle outcome
+
+**Verdict: CONVERGE.** W4 R3 delivered the final phase of the wake-as-skill migration: deletion of
+`wake-provider.json` + `prompt.md` for both wakes (and both test fixtures), a SKILL.md-only
+`cn-install-wake`, and a header-only diff on both goldens and both live workflows. β independently
+re-ran every check from a clean checkout rather than trusting α's report and found no blocking
+findings. The γ→α→β routing completed in a single round (R3) despite this being a `repair_pass`
+re-entry after a previously invalidated, empty W4 attempt.
+
+**Calibrated success claim:** cycle/524 W4 R3 produced the actual W4 deliverable that the prior
+invalidated run (substrate run `28464981342`) failed to produce: 8 deleted legacy files, a
+SKILL.md-only renderer (234-line diff), an updated CI workflow, two CI guard scripts patched to
+survive the deletion (a necessary, narrowly-scoped exception to the scaffold's MUST-change list,
+independently verified causal and contract-preserving by β), and four re-rendered
+goldens/workflows whose diff is confined — mechanically verified twice, independently by both α
+and β — to a single header line per file. This closes the W0→W4 arc: one typed contract system
+(SKILL.md + CUE) replaces the bespoke JSON+prompt system entirely.
+
+---
+
+## §2. Process-gap audit (per `gamma/SKILL.md` §2.7 triage)
+
+### §2.1 Did the γ→α→β routing work as intended this round?
+
+**Yes, cleanly, including the repair-re-entry posture.** This is the most consequential question
+for this round specifically, because the immediately preceding W4 attempt failed at the process
+level (reached `status:review` with zero deliverable). Three things had to work correctly for this
+round to be trustworthy:
+
+1. **The repair classification was honored, not skipped.** `REPAIR-PLAN.md` was written before any
+   other file in this cycle (per the dispatch-protocol repair-re-entry preflight Step C), correctly
+   classified `run_class: repair_pass`, and correctly identified that there was no prior **code**
+   to repair against — only process state, already remediated by a separate cell (PR #531). The
+   γ-scaffold encoded this classification in its own frontmatter (`run_class: repair_pass`,
+   `prior_w4_attempt: INVALIDATED`, `rca_repair_ref: PR #531`) so α and β both had the repair
+   context without needing to re-derive it.
+2. **The guard actually held.** PR #531's closeout-integrity guard — the mechanism specifically
+   built to prevent this round from repeating the empty-run failure — was live on `main` before
+   this cycle's claim and was not bypassed. This cycle could not have reached `status:review`
+   without a real PR, real commits, and real closeout artifacts, because the guard now checks for
+   exactly those things mechanically.
+3. **α and β operated as designed, with no carried-over false context.** Per `REPAIR-PLAN.md`'s
+   "what this cycle is NOT repairing" section, α and β were fresh role-spawns reading only the
+   current branch state — there was nothing on the prior invalidated branch to carry over (it was
+   deleted per A1), so no risk of inheriting stale assumptions from the failed run.
+
+### §2.2 Friction in this round
+
+**One genuine friction point: scope exceeded the scaffold's literal MUST-change list once, for a
+reason the scaffold itself created.** The scaffold's W4 deletion mandate (delete `prompt.md` for
+both wakes) had a side effect the scaffold's author did not anticipate: two CI guard scripts
+(`check-dispatch-closeout-integrity.sh`, `check-dispatch-repair-preflight.sh` — themselves
+products of the cnos#516 and cnos#524-W4-RCA process-hardening work) hardcoded a presence check
+against `cds-dispatch/prompt.md`, a holdover from the W2/W3 dual-source transition window. Deleting
+the file the scaffold mandated would have broken two of the gates the scaffold also required green.
+α correctly diagnosed this as a forced consequence rather than scope creep, fixed it minimally
+(swap the check target, change no detection logic), and named the reasoning explicitly in
+`self-coherence.md §R3` judgment call (f). β did not accept this on faith — β diffed the pre-W4
+script versions to confirm the breakage was real, then verified the fix's narrowness. This is the
+kind of friction that the γ-scaffold's MUST-change/MUST-NOT-change boundary cannot fully
+anticipate in advance, because it is downstream of *other* recent process-hardening cells
+(cnos#516, the W4 RCA itself) whose artifacts the scaffold's author did not cross-reference at
+scaffold-authoring time. **No new issue needed** — this was resolved within the round, not
+deferred — but it is worth naming as a pattern: when a scope contract mandates deleting a file,
+the scaffolding step should grep the repo for other hardcoded references to that file before
+finalizing the MUST-change list, not rely on the implementer to discover it.
+
+**No other friction.** The header-only-diff invariant (the single highest-stakes check in this
+cycle) held exactly as the scaffold predicted on both verification passes (α's and β's,
+independently). The AC2 conversion (malformed-JSON fixture → malformed-SKILL.md fixture) required
+a judgment call on fixture shape (documented in `self-coherence.md §R3` judgment call (b)) but
+resolved within a single round with no β iterate.
+
+### §2.3 Required block 1 — `repair_evidence`
+
+```yaml
+repair_evidence:
+  prior_rejection: "https://github.com/usurobor/cnos/issues/524#issuecomment-4847057225 (\"⛔ W4 empty run INVALIDATED — RCA accepted, repair path set\")"
+  repairs_required:
+    - RCA-A1: "Delete stale cycle/524 branch left behind by the invalidated empty run."
+    - RCA-A2: "Add a closeout-integrity guard so status:review requires PR+diff+closeout evidence; otherwise STOP/BLOCKED."
+    - RCA-A4: "W4 must not freeze the stale JSON/prompt header after deletion; accept a header-only golden diff attributing to SKILL.md instead."
+    - RCA-core: "Deliver the actual W4 work (delete wake-provider.json+prompt.md; SKILL.md-only renderer; CI updates) — the invalidated run produced none of it."
+  repairs_completed:
+    - RCA-A1: "Confirmed cycle/524 absent via git ls-remote --heads before this claim (γ-scaffold preconditions); fresh cycle/524 created from main@db547ebe this cycle."
+    - RCA-A2: "PR #531 merged at 7950ab3d before this claim (confirmed ancestor of main); scripts/ci/check-dispatch-closeout-integrity.sh present and green this cycle (including --self-test)."
+    - RCA-A4: "Header attribution changed from `# manifest:`/`# prompt:` to `# source: orchestrators/<name>/SKILL.md`; the resulting header-only diff on both goldens and both live workflows was mechanically verified twice by α and independently re-verified by β from a clean checkout."
+    - RCA-core: "This cycle's own 3 commits (a5d7d482, 06252591, 4e4e39f9) deliver: 8 files deleted, cn-install-wake made SKILL.md-only (234-line diff), install-wake-golden.yml updated, 2 CI guard scripts patched, 4 goldens/workflows re-rendered header-only. PR opened below."
+  repairs_not_completed: []
+  delta_overrides: []
+  new_state_differs_from_rejected: "The invalidated run (28464981342) produced zero commits, zero PR, zero closeout artifacts on a branch that was subsequently deleted. This cycle's cycle/524 carries 3 real commits (a5d7d482 scaffold+REPAIR-PLAN, 06252591 the actual delete+renderer+CI implementation, 4e4e39f9 β review) with a 19-file diff against main@db547ebe (per `git diff db547ebe..cycle/524 --stat`), all six closeout/review artifacts populated, and (after this closeout round) an opened PR. The state is observably, mechanically different — not by assertion but by `git log`/`git diff` evidence anyone can re-run."
+```
+
+### §2.4 Required block 2 — `deliverable_evidence`
+
+```yaml
+deliverable_evidence:
+  pr: "#534 (cycle/524 -> main)"
+  head_sha: "4e4e39f99d582ace253e75a4264e71000d638834"
+  base_sha: "db547ebe5b408e4c74092ad3ed56509e605894ef"
+  commits_beyond_base: 3
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+(PR number/head SHA filled in after PR open below; see §5.)
+
+---
+
+## §3. Carryforward items — known gap and follow-up issue
+
+The one known, deliberately-deferred gap from this cycle: both wake SKILL.md files' body prose
+still references the now-deleted `wake-provider.json` (a dangling markdown link in
+`cds-dispatch/SKILL.md`, and two stale section-header parentheticals in both files). This was
+named explicitly in the γ-scaffold §1.1 as out of W4's scope — fixing it would change non-header
+rendered-prompt bytes, violating the header-only-diff invariant. Filed as a tracked follow-up:
+
+**Follow-up issue: [cnos#533](https://github.com/usurobor/cnos/issues/533)** — "wake-as-skill: fix
+stale wake-provider.json/prompt.md prose references in wake SKILL.md bodies." Scoped narrowly to a
+prose-only fix on the two SKILL.md bodies, explicitly out-of-scope for renderer/schema/CUE changes,
+and explicitly expects (not avoids) a non-header golden/workflow diff as the correct outcome of
+that future fix.
+
+No other carryforward items. The W0→W4 migration's non-goals (no Demo 0, no `.cdd/releases/` work,
+no per-package bot identities, no new wake roles) remain non-goals; none were touched this cycle or
+need follow-up.
+
+---
+
+## §4. Scope guardrail confirmation (γ view)
+
+`git diff db547ebe..cycle/524 --stat` (19 files) touches exactly: 3 `.cdd/unreleased/524/` records
+(`REPAIR-PLAN.md` new, `gamma-scaffold.md` rewritten for W4 scope, `self-coherence.md` extended) +
+2 live workflows (header-only) + 2 goldens (header-only) + `install-wake-golden.yml` +
+`cn-install-wake` + 2 CI guard scripts (the justified exception, §2.2) + 8 deleted JSON/prompt
+files (4 production + 4 fixture). Confirmed absent: `schemas/skill.cue`, both wake SKILL.md bodies,
+`wake-provider/SKILL.md`, `dispatch-protocol/SKILL.md`, `delta/SKILL.md`, `docs/**`,
+`.cdd/releases/**`, any other `.cdd/unreleased/{N}/`, `src/go/**`. Scope guardrails: CLEAN.
+
+---
+
+## §5. Next step
+
+W4 delivers the final phase of the wake-as-skill migration. PR opened for `cycle/524` → `main`
+(see `deliverable_evidence` above for the PR number). Issue #524 transitions to `status:review` for
+operator final review; **issue #524 stays open** — the operator performs the final
+close/cycle-complete read, this cycle does not self-close it. No further wake-as-skill phases are
+scheduled; the migration's W0→W4 arc is complete pending operator merge. Follow-up issue #533
+tracks the one known, deliberately-deferred stale-prose gap.
+
+---
+
+_Filed by γ@cdd.cnos (W4 R3 closeout), 2026-06-30 (UTC). Cycle/524 W4 R3: CONVERGE. Final phase of
+the W0→W4 wake-as-skill migration delivered under repair-pass re-entry. #524 stays open for
+operator review. Follow-up: #533._
