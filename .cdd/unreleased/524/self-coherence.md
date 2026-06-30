@@ -280,10 +280,17 @@ cn-install-wake: cds-dispatch → …/cnos-cds-dispatch.golden.yml (unchanged)  
 
 ### 4. Implementation invariants verified
 
-**FN-W2-1 (header-line exclusion in parity comparison):** The `--parity-check` implementation
-strips `^#` lines from both the skill-rendered temp file and the golden before `cmp`. The header
-comment lines (`# manifest:`, `# prompt:`) differ by source type but are excluded from the
-comparison. Verified: parity OK reported for both wakes despite different source attribution.
+**FN-W2-1 → SUPERSEDED (manual-δ amendment, post-β, operator W2 tweak 2026-06-30):** The
+`--parity-check` implementation originally stripped `^#` lines from both the skill-rendered temp
+file and the golden before `cmp`. But because the header is source-stable (see "Header stability"
+immediately below), the two renders are in fact byte-identical *including* the `# manifest:` /
+`# prompt:` attribution lines — so the stripping excluded nothing. Per the operator's W2 tweak the
+header-stripping was removed: `--parity-check` now compares the **full** rendered output
+byte-for-byte, headers included. This makes the oracle exactly `render(SKILL.md) ==
+render(JSON+prompt)` with no tolerance, so any future header drift (which will matter in W3/W4) is
+now a parity failure. Verified: full-byte parity OK for both wakes; negative test (golden drift
+injected) correctly exits 5. The header-exclusion references in the α/β/γ closeouts describe the
+original pre-tweak pass and are superseded by this amendment.
 
 **Header stability (golden unchanged by `--source skill`):** The `display_manifest_path` and
 `display_prompt_path` variables are now derived from the canonical JSON-source paths

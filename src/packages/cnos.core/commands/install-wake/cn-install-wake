@@ -61,13 +61,13 @@
 #                     field mapping + §E body-as-prompt rule (cnos#524).
 #                     Requires python3 + pyyaml on the calling host.
 #   --parity-check    Render from SKILL.md source and compare the
-#                     rendered YAML substrate byte-for-byte against the
-#                     committed golden at
+#                     FULL rendered output byte-for-byte (headers
+#                     included) against the committed golden at
 #                     ${CN_PACKAGE_ROOT}/orchestrators/<wake-name>/
-#                     cnos-<wake-name>.golden.yml. Source-attribution
-#                     header comment lines (starting with #) are
-#                     excluded from the comparison — they name the
-#                     source file and differ by design between sources.
+#                     cnos-<wake-name>.golden.yml. The header block uses
+#                     canonical JSON-source paths regardless of --source,
+#                     so the two renders are fully identical including the
+#                     source-attribution comment lines; nothing is excluded.
 #                     Exit 0 if byte-identical (parity holds); exit 5
 #                     if not. Implies --source skill. Used by the W2
 #                     CI parity gate in install-wake-golden.yml
@@ -99,10 +99,10 @@
 #   4   activation_log_writer mis-declaration (per cnos#496 / cycle/496;
 #       AGENT-ACTIVATION-LOG-v0 §0.1 wake-class writer ownership). Two
 #       trip conditions:
-#   5   parity-check failure — render(SKILL.md) substrate differs from
-#       render(JSON+prompt) after excluding source-attribution header
-#       comment lines (which name the source file and differ by design).
-#       Emitted by --parity-check mode only (per cnos#524 W2).
+#   5   parity-check failure — render(SKILL.md) differs from
+#       render(JSON+prompt) on a full byte-for-byte comparison
+#       (headers included; no lines excluded). Emitted by
+#       --parity-check mode only (per cnos#524 W2).
 #         (a) role:dispatch + admin_only:false manifest declares (or
 #             defaults to) activation_log_writer:true. Package-dispatch
 #             wakes are non-writers of .cn-{agent}/logs/; they MUST
@@ -732,9 +732,10 @@ tmp_out="$(mktemp 2>/dev/null || mktemp -t cn-install-wake)"
 trap 'rm -f "$tmp_out" "${skill_manifest_tmp:-}" "${skill_body_tmp:-}"' EXIT
 
 # Header always uses the canonical JSON-source paths so the golden comment
-# block is stable regardless of --source flag. Per W2 parity design: the
-# header documents the canonical source (wake-provider.json + prompt.md);
-# parity mode strips these #-prefixed lines before comparing (FN-W2-1).
+# block is stable regardless of --source flag. Because the header is
+# source-stable, render(SKILL.md) and render(JSON+prompt) are byte-identical
+# including these #-prefixed lines, so --parity-check compares the full
+# output (headers included) with no exclusion (cnos#524 W2).
 display_manifest_path="$json_manifest_path"
 display_prompt_path="$json_prompt_path"
 
@@ -1106,11 +1107,12 @@ fi
 # Parity check (cnos#524 W2): render(SKILL.md) == render(JSON+prompt).
 # The golden at ${manifest_dir}/cnos-${name}.golden.yml is the ground truth
 # for render(JSON+prompt) — maintained byte-identical by install-wake-golden CI.
-# Source-attribution header comment lines (starting with ^#) are excluded:
-# they name the source file and differ by design between the two render paths.
-# The YAML substrate (on:, permissions:, concurrency:, jobs:, prompt: body)
-# is what the oracle compares. Exit 5 on parity failure; exit 0 on pass.
-# No output file is written in --parity-check mode.
+# The comparison is FULL byte-for-byte, headers included: the header block uses
+# canonical JSON-source paths regardless of --source (see display_* above), so
+# the two render paths produce identical output down to the attribution
+# comments. No lines are excluded — any divergence (including header drift,
+# which will matter in W3/W4) is a parity failure. Exit 5 on failure; exit 0
+# on pass. No output file is written in --parity-check mode.
 # ---------------------------------------------------------------------------
 if [ -n "$parity_check" ]; then
   parity_golden="${manifest_dir}/cnos-${name}.golden.yml"
@@ -1119,17 +1121,12 @@ if [ -n "$parity_check" ]; then
     echo "cn-install-wake: render the golden first: cn install-wake ${wake_name} (without --parity-check)" >&2
     exit 1
   fi
-  parity_skill_stripped="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-pa)"
-  parity_json_stripped="$(mktemp 2>/dev/null || mktemp -t cn-install-wake-pb)"
-  trap 'rm -f "$tmp_out" "${skill_manifest_tmp:-}" "${skill_body_tmp:-}" "${parity_skill_stripped:-}" "${parity_json_stripped:-}"' EXIT
-  grep -v '^#' "$tmp_out" > "$parity_skill_stripped"
-  grep -v '^#' "$parity_golden" > "$parity_json_stripped"
-  if cmp -s "$parity_skill_stripped" "$parity_json_stripped"; then
-    echo "cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for ${name}"
+  if cmp -s "$tmp_out" "$parity_golden"; then
+    echo "cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for ${name} (full byte identity, headers included)"
     exit 0
   else
-    echo "cn-install-wake: PARITY FAILURE — render(SKILL.md) substrate differs from render(JSON+prompt) for ${name}" >&2
-    diff "$parity_json_stripped" "$parity_skill_stripped" >&2 || true
+    echo "cn-install-wake: PARITY FAILURE — render(SKILL.md) differs from render(JSON+prompt) for ${name} (full byte comparison, headers included)" >&2
+    diff "$parity_golden" "$tmp_out" >&2 || true
     exit 5
   fi
 fi
