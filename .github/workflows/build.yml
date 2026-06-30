@@ -291,3 +291,17 @@ jobs:
 
       - name: Run test fixtures
         run: src/packages/cnos.cdd/commands/cdd-verify/test-fixtures.sh
+
+  dispatch-repair-preflight:
+    name: Dispatch repair-preflight guard (cnos#516)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # cnos#516 regression guard: asserts the rendered dispatch surface
+      # (protocol + cds-dispatch prompt + golden + live workflow) still carries
+      # the repair re-entry preflight contract, so a re-claimed
+      # status:changes -> status:todo cell cannot silently re-certify rejected
+      # work (the Pass 4D / cnos#514 failure mode).
+      - name: Check dispatch repair re-entry preflight contract
+        run: ./scripts/ci/check-dispatch-repair-preflight.sh

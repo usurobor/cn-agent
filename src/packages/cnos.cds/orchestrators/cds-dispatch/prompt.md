@@ -61,6 +61,72 @@ You MUST NOT claim more than one cell per firing. The one-claim-per-firing rule 
 
 ---
 
+## Repair re-entry preflight (before invoking δ)
+
+A claimed `status:todo` cell is **not always a first pass.** When the operator moves a rejected cell `status:changes → status:todo` for re-dispatch (§Lifecycle transitions; dispatch-protocol §2.8), the next claim re-enters a cycle a prior δ review already **rejected** and posted a repair contract for. Re-running δ as if fresh — re-scaffolding, re-asserting `converge`, and writing closeouts over the rejected branch — re-certifies rejected work. This is the **cnos#516** failure class (Pass 4D / cnos#514: three successive wakes wrote `alpha-closeout.md` → `beta-closeout.md` → `gamma-closeout.md` on the rejected `cycle/514` branch, repaired 0 of 41 required items, left the ring-fenced `gamma/conventions` golden still modified, and the receipt still claimed the work was clean — rescued only by manual δ). **Before invoking δ, run this preflight.**
+
+### Step A — classify the run (`run_class`)
+
+Determine whether this claim is a **first pass** or a **repair re-entry**. It is a repair re-entry if ANY of these hold for the claimed issue `#{N}`:
+
+- the issue has prior `status:changes` history (a `review → changes` then `changes → todo` round in its timeline/label events or comments);
+- the `cycle/{N}` branch already exists with commits beyond its base;
+- `.cdd/unreleased/{N}/` already contains prior cell artifacts (any of `gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`, `*-closeout.md`, `delta-repair.md`);
+- prior β/δ bounce comments exist on the issue.
+
+Record the classification as the cycle's `run_class` (see below). If first pass, skip to §Invoke δ. If repair re-entry, Steps B–E are **mandatory**.
+
+### Step B — load the repair context (repair re-entry only; before any file write)
+
+Do NOT scaffold, implement, or write any artifact until you have loaded, for `#{N}`:
+
+1. the latest bounce / `status:changes` comments (the rejection and its stated reasons);
+2. prior β findings (`.cdd/unreleased/{N}/beta-review.md` + β comments);
+3. prior δ findings (δ bounce comments + `.cdd/unreleased/{N}/delta-repair.md` if present);
+4. the **required repair checklist** — the explicit, itemized contract the rejection demanded (e.g. the six-item repair contract in cnos#514);
+5. the current `cycle/{N}` branch diff against its base;
+6. the existing `.cdd/unreleased/{N}/` artifacts;
+7. previous closeouts, if any.
+
+### Step C — write the REPAIR-PLAN before changing files
+
+Write `.cdd/unreleased/{N}/REPAIR-PLAN.md` **before modifying any other file.** It maps each rejected finding to a planned action — one row per finding: `rejected finding | source (β/δ comment/artifact) | planned repair | evidence target`. Only after `REPAIR-PLAN.md` is committed may δ route α to repair against it.
+
+### Step D — repair, do not re-certify
+
+δ repairs against the `REPAIR-PLAN`. The repair run MUST NOT re-assert a `converge` verdict over work a prior δ review rejected without showing the rejected findings are addressed, and MUST NOT write `alpha-closeout.md` / `beta-closeout.md` / `gamma-closeout.md` over the rejected branch while required repairs are unaddressed.
+
+### Step E — closeouts require a `repair_evidence` block (repair re-entry only)
+
+On a repair re-entry, every closeout the cycle lands MUST carry a `repair_evidence` block, and the cell MUST NOT advance to `status:review` until it is complete:
+
+```yaml
+repair_evidence:
+  prior_rejection: <link to the bounce comment / PR review / delta-repair.md>
+  repairs_required:
+    - <finding-id>: <what the rejection demanded>
+  repairs_completed:
+    - <finding-id>: <evidence: file / commit / test that proves it>
+  repairs_not_completed:
+    - <finding-id>: <why still open; blocked reason>
+  delta_overrides:
+    - <finding-id>: <δ override rationale + authority>
+  new_state_differs_from_rejected: <evidence the branch state now differs from the rejected R0, e.g. the repair commit range>
+```
+
+A closeout on a repair re-entry without a complete `repair_evidence` block is a cnos#516 violation; the wake **STOPS and defers to operator** rather than shipping the cell.
+
+### `run_class` (recorded in the cycle receipt + this wake's return token)
+
+One of:
+
+- `first_pass` — no prior rejection; normal δ cycle;
+- `repair_pass` — repair re-entry handled by this wake per Steps A–E;
+- `manual_delta_repair` — repaired by manual δ intervention on the branch (not this wake), as in cnos#514's rescue;
+- `blocked` — repair could not proceed (missing context, unrepairable finding); the wake defers to operator and does **not** write closeouts.
+
+---
+
 ## Invoke δ in wake-invoked mode
 
 A claimed cell is handed to the cnos.cdd cell-runtime framework's δ role contract. The δ role:
@@ -70,7 +136,7 @@ A claimed cell is handed to the cnos.cdd cell-runtime framework's δ role contra
 3. Routes α (implementer) with the γ scaffold; α produces the initial implementation + `.cdd/unreleased/{N}/self-coherence.md`.
 4. Routes β (reviewer) with α's output; β produces `.cdd/unreleased/{N}/beta-review.md` with a verdict (converge or iterate).
 5. **Iterates** per β's verdict: on iterate, route α again with β's findings — **the cell remains `status:in-progress`** (β iteration is an INTERNAL cell loop, not an external lifecycle event); on converge, advance the cell.
-6. Lands the cycle's canonical artifact set: gamma-scaffold, self-coherence (with §R[N] sections), beta-review (with R[N] verdicts), alpha-closeout, beta-closeout, gamma-closeout, optionally PRA.
+6. Lands the cycle's canonical artifact set: gamma-scaffold, self-coherence (with §R[N] sections), beta-review (with R[N] verdicts), alpha-closeout, beta-closeout, gamma-closeout, optionally PRA. **On a `repair_pass` (see §Repair re-entry preflight), every closeout MUST carry the `repair_evidence` block and the cycle MUST NOT advance to `status:review` until it is complete; a closeout without it is a cnos#516 violation and the wake STOPS and defers to operator.**
 7. Opens (or updates) a pull request scoped to the cell, references the issue, and only on β's converge verdict transitions the cell's label `status:in-progress → status:review`.
 
 The dispatch wake's job is to invoke δ with the claimed cell and let δ run. The wake does NOT route γ/α/β directly; that is δ's authority per the cell framework. The wake surfaces δ's R[N] iteration tokens so the cycle is observable, but it does not short-circuit β's verdicts.

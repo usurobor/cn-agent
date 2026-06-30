@@ -420,6 +420,22 @@ The fence is detection, not prevention — by the time it fires, the writes alre
 
 ---
 
+### 2.8. Repair re-entry detection and preflight (cnos#516)
+
+`status:changes → status:todo` re-dispatch is **not** a first pass. A claimed `status:todo` cell whose cycle was previously rejected (`status:review → status:changes`, then operator `changes → todo` for re-dispatch per §2.4) is a **repair re-entry**: a prior δ review rejected the work and posted a repair contract. Re-running the cell as if fresh — re-scaffolding, re-asserting `converge`, and writing closeouts over the rejected branch — re-certifies rejected work. This is the **cnos#516** failure class: in Pass 4D / cnos#514, three successive dispatch wakes wrote `alpha-closeout.md` → `beta-closeout.md` → `gamma-closeout.md` on the rejected `cycle/514` branch, repairing 0 of 41 required items (the ring-fenced `gamma/conventions` golden still modified, the receipt still claiming the work was clean), and the cell was rescued only by manual δ intervention.
+
+**Detection.** A claim is a repair re-entry if ANY hold for issue `#{N}`: prior `status:changes` history (a `review → changes` then `changes → todo` round in the timeline); an existing `cycle/{N}` branch with commits beyond base; pre-existing `.cdd/unreleased/{N}/` cell artifacts (`gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`, `*-closeout.md`, `delta-repair.md`); prior β/δ bounce comments. The wake MUST distinguish first-run implementation from repair-run re-entry before invoking the cell runtime.
+
+**Preflight (mandatory on a repair re-entry, before any file write).** Load, for `#{N}`: (1) the latest bounce / `status:changes` comments; (2) prior β findings; (3) prior δ findings; (4) the required repair checklist; (5) the current branch diff against base; (6) existing `.cdd/unreleased/{N}/` artifacts; (7) previous closeouts. Then write a `REPAIR-PLAN` mapping each rejected finding to a planned repair **before modifying any other file**.
+
+**Closeout rule.** A repair re-entry MUST NOT write α/β/γ closeouts until it has shown — in a `repair_evidence` block on the closeout — which rejected findings were repaired, which were δ-overridden, which remain blocked, and what evidence proves the new branch state differs from the rejected state. A closeout lacking a complete `repair_evidence` block on a repair re-entry is a protocol violation; the wake **STOPS and defers to operator** rather than shipping. This makes the cnos#514 failure mode — *"status:changes issue re-certified rejected branch without repairs"* — an explicit, named violation rather than silent ceremony.
+
+**Receipt.** The cycle receipt (and the wake's return token) records `run_class ∈ {first_pass, repair_pass, manual_delta_repair, blocked}`.
+
+The concrete dispatch wake operationalizes this as a preflight before invoking the cell runtime — e.g. the cnos.cds `cds-dispatch` prompt §"Repair re-entry preflight". A CI guard (`scripts/ci/check-dispatch-repair-preflight.sh`) asserts the rendered dispatch surface carries this contract so it cannot be silently removed.
+
+---
+
 ## 3. Rules
 
 ### 3.1. All three labels required for claim
@@ -521,6 +537,10 @@ Confirm all drift patterns in §2.6 cover the named failure modes. Confirm each 
 
 Confirm `AGENT-ACTIVATION-LOG-v0` §0.1 names the writer-ownership partition (admin = sole writer; package-dispatch = non-writer). Confirm every package-dispatch wake-provider manifest in the repo declares `activation_log_writer: false` explicitly (`jq -r '.activation_log_writer' src/packages/*/orchestrators/*-dispatch/wake-provider.json` returns `false`). Confirm the admin manifest declares `activation_log_writer: true` (not relying on default-when-absent). Confirm the renderer (`cn install-wake`) exits code 4 on package-dispatch mis-declarations (omission OR explicit `true`). Confirm the rendered package-dispatch workflow includes the post-run write-fence step (local-scoped: working tree + this run's local commit graph; NOT remote-state delta). Confirm the fence emits `dispatch_activation_log_write_violation` on breach.
 
+### 4.8. Repair re-entry preflight check (cnos#516)
+
+Confirm §2.8 defines repair re-entry detection, the mandatory preflight, the `REPAIR-PLAN`-before-write rule, the `repair_evidence` closeout rule, and the `run_class` taxonomy. Confirm the concrete dispatch wake's rendered surface carries the preflight contract: run `./scripts/ci/check-dispatch-repair-preflight.sh` (asserts the dispatch-protocol, the `cds-dispatch` prompt, and the rendered golden + live workflow all carry the `Repair re-entry preflight` / `REPAIR-PLAN` / `repair_evidence` / `run_class` contract). The check fails if a future edit removes the preflight from the prompt/protocol (and thus from the re-rendered golden) — the cnos#514 failure mode cannot silently return.
+
 ---
 
 ## 5. Failure modes catalogue
@@ -535,6 +555,7 @@ Confirm `AGENT-ACTIVATION-LOG-v0` §0.1 names the writer-ownership partition (ad
 - **D8 — Hard-coded runtime in launch step.** _Symptom:_ A dispatch wake's launch step names `cnos.cdd` as the cell runtime (or any other fixed framework), conflating the generic cell-runtime framework with the concrete protocol package. Future protocols can't be added without amending the dispatch skill. _Fix:_ §3.8 — launch step passes to the matching package runtime; the matching package invokes cnos.cdd's contracts internally. cnos.cdd is framework, not concrete protocol.
 - **D9 — Claim-comment failure not released.** _Symptom:_ Wake successfully transitions `status:todo → status:in-progress`, then the claim comment write fails (transient API), but the wake launches the runtime anyway. The cell now runs without an audit-trail comment, breaking §2.3 layer 3's residual race repair path. _Fix:_ §2.2 step 4 + §3.5 — on comment-write failure, release `status:in-progress → status:todo`, report `dispatch_claim_comment_failed`, and exit without launching.
 - **D10 — Activation-log write violation.** _Symptom:_ A package-dispatch wake commits paths under `.cn-{agent}/logs/` during its firing (e.g., the model loaded the `attach` skill and appended a channel entry, or a hand-edited workflow bypassed the renderer's omission). Channel logs are agent activation memory; package-dispatch firings are runtime telemetry — mixing them pollutes activation memory at every firing. _Fix:_ §2.7 + cycle/496 mechanical guards. Render-time refusal at `cn install-wake` exit code 4 if `role: dispatch + admin_only: false` mis-declares `activation_log_writer`. Run-time workflow-level fence (local-scoped: working tree + this run's local commit graph; NOT remote-state delta — false-positive resistance for legitimate concurrent admin-wake writes) emits `dispatch_activation_log_write_violation` on breach. The fence fires AFTER the work phase, so already-applied label transitions are not rolled back; operator investigates from the workflow log.
+- **D11 — Repair re-entry re-certifies rejected work.** _Symptom:_ A cell rejected by δ (`status:review → status:changes`) is re-dispatched (`changes → todo`); the re-claimed cell does not load the bounce/repair contract, and instead writes α/β/γ closeouts over the rejected branch and re-asserts `converge`, leaving the required repairs unaddressed (observed in Pass 4D / cnos#514 across three wakes; 0 of 41 repairs done; rescued by manual δ). _Fix:_ §2.8 — the wake classifies `run_class`, distinguishes first-run from repair re-entry, runs the mandatory preflight (load bounce comments + prior β/δ findings + repair checklist + branch diff + existing artifacts + previous closeouts), writes a `REPAIR-PLAN` before any file change, and may not land closeouts without a complete `repair_evidence` block; on an incomplete repair it STOPS and defers to operator. The `scripts/ci/check-dispatch-repair-preflight.sh` guard keeps the contract present in the rendered dispatch surface.
 
 ---
 
