@@ -1,7 +1,7 @@
 # self-coherence — cycle/532
 
 manifest:
-  completed: [Gap, Skills, ACs]
+  completed: [Gap, Skills, ACs, Self-check]
 
 ## Gap
 
@@ -136,3 +136,52 @@ Negative case: confirmed no edited sentence states `status:review` implies accep
 ### AC10: Receipt is honest
 
 **In progress as of this section.** This `self-coherence.md` document is the receipt for this cycle; §Debt below names every known gap honestly (no false CONVERGE claimed for anything not actually verified). α does not write `alpha-closeout.md` in this dispatch (per `alpha/SKILL.md` §2.8, close-out happens at re-dispatch after β's merge in bounded-dispatch mode) — γ's eventual close-out triage and this self-coherence document together satisfy AC10's receipt-honesty requirement for the α-side portion of the cycle.
+
+## Self-check
+
+### Guard-B-invocation-point decision — followed δ's resolution, not γ's mis-cited recommendation
+
+γ's scaffold flagged the Guard-B invocation point as UNPINNED and recommended a "wake-internal post-step" — but justified that recommendation by claiming consistency with how "the #516 `dispatch-repair-preflight` guard is also invoked from inside `cds-dispatch/prompt.md`'s own steps (not a separate workflow)." δ's dispatch explicitly named this citation as factually wrong (`check-dispatch-repair-preflight.sh` is a standalone CI job, `dispatch-repair-preflight`, in `.github/workflows/build.yml`, unrelated to the wake's own run) and re-pinned Guard B's invocation point on independent grounds: "the event being gated (a label transition on a specific issue) happens inside the wake's own run, and a generic PR-triggered CI job cannot itself prevent a label edit that occurs in a separate workflow run."
+
+I implemented per δ's resolution, explicitly: Guard B is invoked by the dispatch wake's own steps (`cds-dispatch/SKILL.md` + `prompt.md` step 7, `delta/SKILL.md` §9.5/§9.6's token-write specification) immediately before the `status:in-progress → status:review` label transition — not as a `pull_request`-triggered workflow job. I did not add a new `.github/workflows/` job for Guard B's live mode; the only new CI job (`review-request-preflight` in `build.yml`) runs Guard A's doctrine-presence checks plus Guard B's **offline fixture self-test** (structural mode only, no live cross-checks), which is a distinct thing from "Guard B live-gating a PR" — exactly as δ's contract specified ("Guard B itself does NOT need a separate `.github/workflows/` job").
+
+### Peer enumeration
+
+**Role-skill peers** (per `alpha/SKILL.md` §2.3): the `status:in-progress → status:review` label transition is described independently in three role-adjacent surfaces beyond the four δ explicitly named (CDD.md, dispatch-protocol/SKILL.md, cds-dispatch/SKILL.md, prompt.md). I found and updated a fourth: `delta/SKILL.md` §9.5/§9.6 — δ's own canonical specification of when it writes the `status:review` return token. This was not named in δ's dispatch contract's "Surfaces α is expected to touch" list, but leaving it stale would have been exactly the lifecycle-skill-peer-drift failure mode `alpha/SKILL.md` §2.3 warns against (its own citation: "three of four R1 findings landed in lifecycle skills... the audit's checklist did not distinguish the two classes"). Updated in commit `7a44d84`.
+
+I additionally found `wake-provider.json`'s `responsibilities` array carries the same prose independently again (a fifth copy). I confirmed via re-render (`cn-install-wake cds-dispatch` — golden unchanged) that this field is pure manifest documentation, not substituted into the rendered workflow, so updating it carries no golden-drift risk. Updated for consistency in the same commit.
+
+Checked and found **not** peers (no `status:review` text present, confirmed via `grep -ln "status:review"` over the candidate set): `gamma/SKILL.md`, `beta/SKILL.md`, `review/SKILL.md`. `operator-review/SKILL.md` does reference `status:review` but only describes the **downstream** operator-initiated `status:review → status:changes` transition (after the cell already reached `status:review`), which this cycle's gate does not change — left untouched, correctly, since editing it would be out of scope (the issue's non-goal: "do not change who owns final delta decisions").
+
+### Harness audit (schema-bearing change: REVIEW-REQUEST.yml)
+
+`REVIEW-REQUEST.yml` is a new schema-bearing artifact. Enumerated producers and consumers:
+
+- **Producer**: the dispatch wake / δ, per the doctrine edits in `dispatch-protocol/SKILL.md`, `cds-dispatch/SKILL.md`+`prompt.md`, `delta/SKILL.md` — all updated to require emitting it before requesting `status:review`.
+- **Consumer**: `scripts/ci/check-review-request-preflight.sh`'s Guard B (both structural and live modes) — the only consumer in this cycle's scope. No other script, Go binary, or CI job reads `REVIEW-REQUEST.yml` (`grep -rl "REVIEW-REQUEST" --include="*.sh" --include="*.go"` outside the new guard script and its own doc references → only the guard script and the doctrine prose).
+- **Non-primary-language writers**: none exist yet to drift — this is a net-new artifact with no prior shell/CI/template/fixture writer to audit for staleness. The fixture YAML files I authored under `scripts/ci/fixtures/review-request/` are themselves the only other writers of the shape, and they are hand-authored test fixtures (not a second production writer), consistent with the existing `schemas/cds/fixtures/` / `schemas/cdd/fixtures/` convention of hand-authored positive/negative YAML.
+- **Schema-validation runtime dependency check** (per δ's pinned contract): confirmed `scripts/ci/validate-skill-frontmatter.sh` uses `cue` + `jq` for its schema, but that schema is CUE-based and JSON-targeted (skill frontmatter, extracted to JSON first); it is not a YAML-parsing precedent. No script in `scripts/ci/` parses YAML structurally before this cycle. Per δ's instruction ("keep Guard B's YAML field extraction simple — grep/sed/awk is acceptable for a flat-ish schema"), I used pure `awk` (no `yq`/`python3`/new dependency) for `REVIEW-REQUEST.yml`'s flat-ish two-level-nesting shape.
+
+### Caller-path trace for new modules
+
+The only new "module" is `scripts/ci/check-review-request-preflight.sh` itself (a script, not a library function, so the relevant trace is: who invokes it). Callers, all confirmed by direct grep/read:
+
+- `.github/workflows/build.yml` job `review-request-preflight` → `./scripts/ci/check-review-request-preflight.sh --guard-a` and `--self-test` (CI invocation, runs on every PR).
+- `cds-dispatch/SKILL.md` + `prompt.md` step 7 (prose instruction naming the exact invocation `scripts/ci/check-review-request-preflight.sh --guard-b --fixture .cdd/unreleased/{N}/REVIEW-REQUEST.yml`) → the dispatch wake's own future real invocation (not exercised by this cycle's CI, since this cycle does not itself transition any cell's `status:review` — it ships the gate, it is not gated by it; the immediately-following cycle that requests `status:review` for *this* issue, #532, will be the first live exercise of Guard B's live mode).
+- `delta/SKILL.md` §9.5 (prose instruction) → δ's own future real invocation, same caller-path as above from δ's role perspective.
+
+No dead helper functions remain in the script — I found and removed one (`yaml_block_nonempty`) during authoring after confirming via `grep -n "yaml_block_nonempty"` that it had zero callers once I switched the `changed_files` check to a direct nested-block scan.
+
+### Test-assertion count from runner output
+
+Pasted directly from runner output, not manually enumerated:
+
+- Go: `go test ./... -v 2>&1 | grep -c "^--- PASS"` → **262** individual test cases pass, 0 fail, across 14 packages.
+- Guard B fixture suite: `./scripts/ci/check-review-request-preflight.sh --self-test 2>&1 | grep -c "✓\|✗"` → **10** fixture assertions (2 valid pass + 7 invalid fail + 1 missing-file-repro fail), all ✓ (matched expectation), 0 ✗.
+- Guard A: 1 assertion (presence-of-contract check across 4 files × ~5-8 string patterns each, all-or-nothing pass/fail per invocation) — passes.
+- `cn cdd verify --unreleased`: **106 passed, 0 failed, 78 warnings** (184 total) per its own summary line, against all unreleased cycles repo-wide (not specific to #532, since #532's own self-coherence.md was incomplete at the time the gate was last run — re-run after this section completes, see §Review-readiness).
+- `cn-cdd-verify` test-fixtures.sh: 3/3 fixture tests pass ("🎉 All fixture tests passed!").
+
+### Artifact enumeration matches diff
+
+Every file in `git diff --stat origin/main..HEAD` is named explicitly in this document's §ACs or §CDD Trace (CDD Trace step 6, next section) — cross-checked: 23 files changed total (1 pre-existing γ-scaffold commit's file + 22 files this cycle's α commits touch, now growing with this self-coherence.md itself). No file appears in the diff without a corresponding mention.
