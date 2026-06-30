@@ -737,3 +737,95 @@ any other `.cdd/unreleased/{N}/`, or `src/go/`. Confirmed via targeted `git diff
 protected non-goal paths).
 
 REVIEW READY: R3
+
+---
+
+## §manual_delta_repair (operator-directed; post-R3)
+
+**run_class:** `manual_delta_repair`
+**authored_by:** κ@cnos (operator-directed δ; not a CDS cell run)
+**date:** 2026-06-30 (UTC)
+**directive:** operator "Choose Option 1: fix the wake SKILL.md bodies now" + "Apply manual δ repair on PR #534."
+
+### 1. Why this amendment exists (invariant conflict)
+
+The R3 cell closed under a **header-only golden-diff** invariant: it treated "no
+non-header workflow bytes may change" as the binding scope rule, and on that basis it
+**deferred** the dangling `wake-provider.json` / `prompt.md` references as a
+"separately-scoped follow-up" (see §6 of the R0/R3 self-coherence body above, and
+gamma-scaffold §1.1). Under that stance the "no active references remain" required-proof
+bullet was declared satisfied by *file deletion + renderer-logic scrub alone*, explicitly
+**not** by correcting prose.
+
+The operator **overrode** that stance with a stronger, binding invariant:
+
+> After W4, `wake-provider.json` and `prompt.md` are gone from the active system. No active
+> doc, prompt, workflow, or skill body should point at them. Active dangling refs must NOT be
+> deferred (to #533 or elsewhere). I4 must be green.
+
+The header-only invariant and the no-active-legacy-reference invariant **collide** wherever a
+deleted file is referenced from a rendered SKILL.md body: honoring the latter forces a
+non-header byte to change. The operator resolved the collision in favor of the stronger
+invariant and **refined** the expected diff (below). This amendment records that the R3
+"header-only / defer the prose scrub" disposition is **superseded** — it is NOT preserved as a
+clean PASS.
+
+### 2. Refined W4 golden-diff invariant (binding)
+
+The W4 golden/live diff **MAY** include: generated-header source-attribution changing to
+`SKILL.md`; prompt/body prose that **removes references to the deleted
+`wake-provider.json` / `prompt.md`**.
+
+The W4 golden/live diff **MUST NOT** include: trigger changes; permission changes; selector
+changes; concurrency changes; behavior/authority changes; prompt-instruction semantic changes
+beyond source-attribution cleanup.
+
+Verified: the only rendered-output delta across both wakes is the single `cds-dispatch`
+live-state banner line (golden == live, both wakes; `agent-admin` rendered output unchanged —
+its edits are appendix-only and not extracted into the prompt body). No trigger / permission /
+selector / concurrency / authority byte changed. **No executable workflow or authority
+behavior changed; only source-attribution and stale-source prose changed.**
+
+### 3. What changed (6 files)
+
+| File | Change | Rendered/golden impact |
+|---|---|---|
+| `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` | live-state banner: dangling `[wake-provider.json](wake-provider.json)` link → `wake.activation_state` in this module's frontmatter; appendix header parentheticals dropped | 1 banner line (golden == live) |
+| `.../cds-dispatch/cnos-cds-dispatch.golden.yml` | re-rendered | 1 banner line |
+| `.github/workflows/cnos-cds-dispatch.yml` | re-rendered | 1 banner line (== golden) |
+| `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md` | appendix header parentheticals dropped (`(from wake-provider.json; body reference)` → `(body reference)`; `(from wake-provider.json)` → removed) | **none** (appendix not extracted into prompt body) |
+| `src/packages/cnos.core/commands/install-wake/cn-install-wake` | body-extractor boundary regex + comment: drop the legacy `from wake-provider.json` alternate, keep the neutral `body reference` marker | none (extraction boundary unchanged in effect; goldens re-render byte-identical) |
+| `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` | 5 markdown links + 3 inline-code citations repointed from the deleted `cds-dispatch/wake-provider.json` / `prompt.md` to the unified `cds-dispatch/SKILL.md` (frontmatter `wake:` block = former manifest; body = former prompt); two now-false `activation_state: declaration-only` clauses adjacent to edited links dropped | none (skill, no rendered workflow) |
+
+### 4. Retractions (claims from the R3 body that are no longer accurate)
+
+- §6's "this is NOT fixed here … legitimate, separately-scoped follow-up for a future cell" —
+  **retracted**: fixed in-PR per operator Option 1.
+- §6's "no active references … satisfied … not by scrubbing frozen prompt-body prose" —
+  **retracted**: the refined invariant requires the prose to be scrubbed; it now is.
+- §7's "No diff on … `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md`" — **no longer true**:
+  `delta/SKILL.md` is edited by this repair (link/citation repoint only; no role-behavior change).
+
+### 5. Verification (this repair)
+
+- Active-link sweep (all `*.md` outside `.cdd`): **zero** markdown links to `wake-provider.json`
+  / `prompt.md` remain. I4's single reported error (the deduped `wake-provider.json` URL,
+  reached from both `cds-dispatch/SKILL.md` and `delta/SKILL.md`) is removed at its only two
+  active sources → I4 expected green. (lychee not installable in the repair environment;
+  confirmation defers to #534's I4 job, whose pre-repair run reported exactly that one error.)
+- Renderer: both wakes re-render byte-identical (`unchanged`); golden == live (sha match) for
+  both.
+- Guards: closeout-integrity self-test ✓; repair-preflight self-test ✓; I5 frontmatter ✓ (95
+  SKILL.md, no findings); hidden/bidi/control-char sweep on all changed files clean.
+- Renderer code comments still naming `wake-provider.json` / `prompt.md` (cn-install-wake lines
+  ~180/185/257/261/354/691) are **deliberately retained**: all are past-tense historical
+  narration ("was removed", "now that the file is deleted", "deleted … pair") documenting that
+  the files are gone and SKILL.md is the sole source. They do not *point at* the files as usable
+  references, are not `.md`, are not links, and have no I4 impact; removing them would erase
+  maintenance provenance. Out of scope for the no-active-legacy-reference invariant.
+
+### 6. #533 disposition
+
+If #533 exists only to clean these stale references, it is resolved by #534 (mark resolved
+after merge). If #533 is broader, keep it open but remove the stale-reference-cleanup item —
+it is done here.

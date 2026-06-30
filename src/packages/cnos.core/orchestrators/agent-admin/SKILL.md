@@ -204,7 +204,7 @@ If you reach a state where you cannot complete the above (capability mismatch, a
 
 ---
 
-## Responsibilities (from wake-provider.json; body reference)
+## Responsibilities (body reference)
 
 1. activate per cnos.core/skills/agent/activate (Kernel + CA skills + Persona + Operator + hub state + identity confirmation)
 2. attach per cnos.core/skills/agent/attach (mode detection, attached-state detection, follow-up sync or inaugural attach as appropriate)
@@ -263,7 +263,7 @@ home thread (`cn-{agent}:.cn-{agent}/threads/activations/{this-hub}/`) + open is
 
 ---
 
-## Cross-references (from wake-provider.json)
+## Cross-references
 
 **Architecture:**
 - cnos#467 (master tracker — agent/wake-orchestration; foundational architecture for package-owned wake providers)

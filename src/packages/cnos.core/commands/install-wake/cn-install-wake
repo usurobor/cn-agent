@@ -257,7 +257,8 @@ print(json.dumps(m))
 # W0 design §E: body = [verbatim prompt.md] optionally followed by
 # [verbose reference data appended after].  For parity purposes only the
 # prompt portion is extracted.  Boundary marker: \n\n---\n\n## heading
-# containing "from wake-provider.json" or "body reference" (W1 convention).
+# containing "body reference" (the appendix convention; cnos#524 W4 dropped the
+# legacy "from wake-provider.json" alternate now that the file is deleted).
 # Leading blank line (standard blank after closing --- delimiter) is stripped.
 skill_body() {
   python3 - "$1" <<'SKILL_BODY_EOF'
@@ -268,7 +269,7 @@ _parts = re.split(r'(?m)^---[ \t]*$', _raw, maxsplit=2)
 if len(_parts) < 3:
     sys.exit('cn-install-wake: SKILL.md has fewer than 2 --- delimiters')
 _body = _parts[2].lstrip('\n')
-_m = re.search(r'\n\n---\n\n## .+(?:from wake-provider\.json|body reference)',
+_m = re.search(r'\n\n---\n\n## .+body reference',
                _body)
 if _m:
     _body = _body[:_m.start() + 1]  # keep the trailing \n of the last prompt line
