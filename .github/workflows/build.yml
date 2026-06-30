@@ -230,13 +230,17 @@ jobs:
 
       # lychee: Rust binary link checker, no runtime deps.
       # --offline: skip external URLs (check local file links only).
-      # --config lychee.toml: progressive ignore list for known pre-existing
-      # broken refs (frozen historical snapshots, schema-placeholder links).
-      # See lychee.toml for entries; tracker: #300.
+      # --hidden: explicitly include dotted dirs so the scan scope is
+      #   deterministic across lychee versions; frozen evidence under .cdd/ is
+      #   then scoped out via lychee.toml `exclude_path` (active-docs gate only).
+      # --config lychee.toml: input scope (exclude_path) for frozen history +
+      #   a small URL ignore list for frozen snapshots / intentional example
+      #   placeholders. See lychee.toml; tracker: #300. Frozen .cdd / PRA link
+      #   drift is audited separately and non-blocking (#523), not gated here.
       - name: Check repo links with lychee
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --offline --no-progress --config lychee.toml '**/*.md'
+          args: --offline --no-progress --hidden --config lychee.toml '**/*.md'
           fail: true
 
   skill-frontmatter-check:

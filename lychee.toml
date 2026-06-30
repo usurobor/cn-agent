@@ -8,6 +8,17 @@
 # Target: keep this list under 50 entries; remove entries as the underlying
 # debt is resolved.
 
+# Active-docs scope (policy, #475-C): I4 gates ACTIVE docs only. Frozen history
+# is not part of the active link gate. The paths below hold CDD work-cell
+# evidence (receipts, releases, unreleased cycles) and frozen gamma-triad
+# post-release assessments / snapshots — read-only records, not living docs.
+# Their internal links drift against later tree reshuffles by design; they are
+# audited separately and non-blocking (see #523), never gated or rewritten here.
+exclude_path = [
+    ".cdd",
+    "docs/gamma/cdd",
+]
+
 exclude = [
     # docs/beta/architecture/3.14.4/ARCHITECTURE.md is a frozen historical
     # snapshot of the canonical architecture doc. Its relative-path links
@@ -38,11 +49,4 @@ exclude = [
     # tree, not the releases directory. These are historical review records,
     # not living docs.
     "file://.*/.cdd/releases/.*/activation/SKILL\\.md.*",
-
-    # docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT.md is a frozen
-    # gamma-470 post-release-assessment (date-based PRA, repository-policy
-    # read-only). Its `docs/.cdd/releases/.../470/gamma-closeout.md` reference
-    # was the cycle-tree path at archival and resolves outside the PRA dir
-    # today. Frozen evidence — not edited; narrow target exclusion. #475-C.
-    "file://.*/docs/\\.cdd/releases/docs/2026-06-21/470/gamma-closeout\\.md$",
 ]
