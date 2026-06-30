@@ -33,7 +33,7 @@ need() {
 }
 
 PROTO="src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md"
-PROMPT="src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md"
+SKILL="src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md"
 GOLDEN="src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml"
 LIVE=".github/workflows/cnos-cds-dispatch.yml"
 
@@ -46,9 +46,12 @@ need "$PROTO" "protocol" \
   "run_class" \
   "first_pass" "repair_pass" "manual_delta_repair" "blocked"
 
-# Prompt + rendered substrate (golden and live workflow, which must be
+# SKILL body + rendered substrate (golden and live workflow, which must be
 # byte-identical per install-wake-golden) carry the executable preflight.
-for f in "$PROMPT" "$GOLDEN" "$LIVE"; do
+# SKILL.md is the sole render source as of cnos#524 W4 (the legacy
+# prompt.md twin this loop also checked pre-W4 was deleted along with
+# wake-provider.json; the SKILL.md body is now the only prompt source).
+for f in "$SKILL" "$GOLDEN" "$LIVE"; do
   need "$f" "dispatch-surface" \
     "Repair re-entry preflight" \
     "REPAIR-PLAN" \

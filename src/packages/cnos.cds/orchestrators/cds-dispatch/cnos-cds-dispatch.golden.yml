@@ -1,6 +1,5 @@
 # DO NOT EDIT. Rendered by `cn install-wake cds-dispatch` from:
-#   manifest: orchestrators/cds-dispatch/wake-provider.json
-#   prompt:   orchestrators/cds-dispatch/prompt.md
+#   source: orchestrators/cds-dispatch/SKILL.md
 # Per package: cnos.cds
 # Schema:      cn.wake-provider.v1
 #

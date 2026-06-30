@@ -71,7 +71,6 @@ need() {
 }
 
 PROTO="src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md"
-PROMPT="src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md"
 SKILL="src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md"
 GOLDEN="src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml"
 LIVE=".github/workflows/cnos-cds-dispatch.yml"
@@ -84,10 +83,11 @@ need "$PROTO" "protocol" \
   "cnos#524" \
   "check-dispatch-closeout-integrity.sh"
 
-# Prompt + SKILL body + rendered substrate (golden + live workflow) carry the
-# executable preflight. SKILL.md is the W3 default render source; prompt.md is
-# kept verbatim-identical for W2/W3 parity until W4.
-for f in "$PROMPT" "$SKILL" "$GOLDEN" "$LIVE"; do
+# SKILL body + rendered substrate (golden + live workflow) carry the
+# executable preflight. SKILL.md is the sole render source as of cnos#524 W4
+# (the legacy prompt.md twin this loop also checked pre-W4 was deleted along
+# with wake-provider.json; the SKILL.md body is now the only prompt source).
+for f in "$SKILL" "$GOLDEN" "$LIVE"; do
   need "$f" "dispatch-surface" \
     "Closeout integrity preflight" \
     "deliverable_evidence" \

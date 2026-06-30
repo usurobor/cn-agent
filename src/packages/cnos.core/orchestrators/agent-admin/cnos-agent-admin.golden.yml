@@ -1,6 +1,5 @@
 # DO NOT EDIT. Rendered by `cn install-wake agent-admin` from:
-#   manifest: orchestrators/agent-admin/wake-provider.json
-#   prompt:   orchestrators/agent-admin/prompt.md
+#   source: orchestrators/agent-admin/SKILL.md
 # Per package: cnos.core
 # Schema:      cn.wake-provider.v1
 #

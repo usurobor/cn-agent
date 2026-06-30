@@ -189,11 +189,14 @@ jobs:
         # src/packages/cnos.core/commands/install-wake/test-fixtures/
         # to preserve the refusal-gate smoke. Per the cycle/487 γ
         # scaffold's design fork D2 (Option B: synthetic fixture).
+        # cnos#524 W4: the fixture's wake-provider.json + prompt.md
+        # twin was deleted; `--manifest` now points directly at the
+        # fixture's SKILL.md (the renderer's only source as of W4).
         run: |
           set -u
           rc=0
           ./src/packages/cnos.core/commands/install-wake/cn-install-wake test-declaration-only \
-            --manifest src/packages/cnos.core/commands/install-wake/test-fixtures/declaration-only/wake-provider.json \
+            --manifest src/packages/cnos.core/commands/install-wake/test-fixtures/declaration-only/SKILL.md \
             2>/tmp/ac5.err >/dev/null || rc=$?
           if [ "$rc" != "3" ]; then
             echo "::error::AC5: expected exit 3 on declaration-only refusal; got $rc"
@@ -212,28 +215,50 @@ jobs:
           fi
           echo "AC5 refusal verified (synthetic fixture): exit 3 + precise error."
 
-      - name: AC2 negative-case smoke (malformed manifest is rejected)
-        # JSON-legacy-specific test (cnos#524 W3): this exercises the JSON
-        # manifest schema-validation path — a malformed wake-provider.json
-        # missing the required `schema` field. There is no SKILL.md equivalent
-        # ("malformed JSON missing schema" is meaningless for a CUE-validated
-        # SKILL.md), so it pins --source json explicitly rather than the new
-        # skill default. Retire/replace in W4 when JSON is removed.
+      - name: AC2 negative-case smoke (malformed SKILL.md is rejected)
+        # cnos#524 W4: converted from the retired JSON-manifest negative case
+        # (a malformed wake-provider.json missing `schema` — meaningless now
+        # that JSON is gone) to a SKILL.md-only negative case. A synthetic
+        # SKILL.md whose `wake:` block omits `role` must still be rejected
+        # (not silently defaulted) — the renderer's required-field / enum
+        # validation runs unconditionally on the synthesized manifest, so a
+        # missing `wake.role` trips the role enum check downstream of
+        # require_field with a precise message. Same oracle as before:
+        # malformed declarations are rejected (exit 2 + informative stderr),
+        # not silently accepted.
         run: |
           set -eu
           set -o pipefail
           tmp=$(mktemp -d)
           mkdir -p "$tmp/orchestrators/test-wake"
-          echo '{"name": "test-wake"}' > "$tmp/orchestrators/test-wake/wake-provider.json"
-          echo "" > "$tmp/orchestrators/test-wake/prompt.md"
+          cat > "$tmp/orchestrators/test-wake/SKILL.md" <<'FIXTURE_EOF'
+          ---
+          name: test-wake
+          description: "AC2 negative-case fixture (cnos#524 W4) — wake.role omitted"
+          governing_question: n/a
+          artifact_class: wake
+          scope: global
+          kata_surface: none
+          triggers:
+            - admin-wake
+          inputs:
+            - "n/a"
+          outputs:
+            - "n/a"
+          wake:
+            package: cnos.core
+            admin_only: true
+          ---
+
+          # AC2 negative-case fixture body
+          FIXTURE_EOF
           if ./src/packages/cnos.core/commands/install-wake/cn-install-wake test-wake \
-              --source json \
-              --manifest "$tmp/orchestrators/test-wake/wake-provider.json" 2>&1 | tee /tmp/neg.log; then
-            echo "::error::Renderer accepted malformed manifest (schema missing); expected exit 2 per wake-provider/SKILL.md §3.5."
+              --manifest "$tmp/orchestrators/test-wake/SKILL.md" 2>&1 | tee /tmp/neg.log; then
+            echo "::error::Renderer accepted malformed SKILL.md (wake.role missing); expected exit 2 per wake-provider/SKILL.md §3.5."
             exit 1
           fi
-          if ! grep -q 'required field "schema"' /tmp/neg.log; then
-            echo "::error::Renderer rejected malformed manifest but error message did not name the missing field."
+          if ! grep -q 'role must be one of admin/dispatch/observer' /tmp/neg.log; then
+            echo "::error::Renderer rejected malformed SKILL.md but error message did not name the missing/invalid field."
             cat /tmp/neg.log
             exit 1
           fi
@@ -578,12 +603,14 @@ jobs:
         # shape manifest declaring activation_log_writer:true (the
         # mis-declaration). Test fixture lives at
         # src/packages/cnos.core/commands/install-wake/test-fixtures/
-        # log-writer-misdeclaration/.
+        # log-writer-misdeclaration/. cnos#524 W4: the fixture's
+        # wake-provider.json + prompt.md twin was deleted; --manifest
+        # now points directly at the fixture's SKILL.md.
         run: |
           set -u
           rc=0
           ./src/packages/cnos.core/commands/install-wake/cn-install-wake test-log-writer-misdeclaration \
-            --manifest src/packages/cnos.core/commands/install-wake/test-fixtures/log-writer-misdeclaration/wake-provider.json \
+            --manifest src/packages/cnos.core/commands/install-wake/test-fixtures/log-writer-misdeclaration/SKILL.md \
             --activation-state-override live \
             --out /tmp/cycle-496-misdecl.yml \
             2>/tmp/cycle-496-misdecl.err >/dev/null || rc=$?
@@ -598,22 +625,6 @@ jobs:
             exit 1
           fi
           echo "AC4 cycle/496 refusal verified: exit 4 + precise stderr."
-
-      - name: W3 parity check — render(JSON+prompt) == render(SKILL.md)
-        # cnos#524 W3 parity gate. After the W3 source-flip, the committed goldens
-        # are now produced from SKILL.md (the new default). This step proves
-        # render(JSON+prompt) is byte-identical to those goldens, establishing:
-        # render(JSON+prompt) == render(SKILL.md). --parity-check now implies
-        # --source json. The comparison is FULL byte-for-byte, headers included —
-        # the header block uses canonical JSON-source paths regardless of source,
-        # so the renders match down to the attribution comments and nothing is
-        # excluded (any future header drift is a parity failure, which matters in
-        # W4). Exit 5 on parity failure; exit 0 on pass. Requires python3 + pyyaml
-        # (pre-installed on ubuntu-latest).
-        run: |
-          set -euo pipefail
-          ./src/packages/cnos.core/commands/install-wake/cn-install-wake agent-admin --parity-check
-          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch --parity-check
 
       - name: AC8 (cycle/476) + AC7 (cycle/485) renderer-side authority audit
         # The renderer source MUST NOT encode role decisions; those
