@@ -305,3 +305,17 @@ jobs:
       # work (the Pass 4D / cnos#514 failure mode).
       - name: Check dispatch repair re-entry preflight contract
         run: ./scripts/ci/check-dispatch-repair-preflight.sh
+
+  dispatch-closeout-integrity:
+    name: Dispatch closeout-integrity guard (cnos#524)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # cnos#524 W4 RCA regression guard: asserts the rendered dispatch surface
+      # (protocol + cds-dispatch prompt + SKILL + golden + live workflow) carries
+      # the closeout-integrity contract (deliverable proof before status:review),
+      # and self-tests the empty-review detector. Prevents the W4 failure mode: a
+      # cell setting status:review with no PR / no commits / no closeout.
+      - name: Check dispatch closeout-integrity contract (+ empty-review self-test)
+        run: ./scripts/ci/check-dispatch-closeout-integrity.sh

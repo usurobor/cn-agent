@@ -227,6 +227,32 @@ The dispatch wake's job is to invoke δ with the claimed cell and let δ run. Th
 
 ---
 
+## Closeout integrity preflight (before `status:review`)
+
+Per dispatch-protocol §2.9 (cnos#524 W4 RCA), the wake MUST NOT transition the cell to `status:review` unless a **deliverable demonstrably exists**. The W4 empty-run failure: a cell ran to completion and set `status:review` with no PR, no commits, no closeout, and no STOP comment.
+
+**Before applying `status:in-progress → status:review`, prove ALL of:**
+1. a pull request exists for the issue/cycle and references `#{N}` (`Refs #{N}` / `Part of #{N}`);
+2. the PR has commits beyond its base (`cycle/{N}` HEAD ≠ base SHA);
+3. the `cycle/{N}` branch exists and differs from base;
+4. the required `.cdd/unreleased/{N}/` closeout artifacts exist (`gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`);
+5. the closeout/receipt names the PR number or a commit SHA as evidence.
+
+Record the proof in a `deliverable_evidence` block on the cycle's closeout:
+
+```
+deliverable_evidence:
+  pr: "#<n> (cycle/{N} -> <base>)"
+  head_sha: "<sha>"
+  base_sha: "<sha>"
+  commits_beyond_base: <count>      # MUST be > 0
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+**No-deliverable rule.** If ANY of (1)–(5) is missing, **STOP**: post a `STOP`/`BLOCKED` comment naming the missing evidence, leave the cell at `status:in-progress` (or move to `status:blocked` with a reason), and do **NOT** set `status:review`. A `status:review` transition without a complete `deliverable_evidence` block is a cnos#524 protocol violation. This deliverable-integrity preflight complements the cnos#516 repair-integrity preflight: #516 guards repair re-entries; #524 guards every closeout.
+
+---
+
 ## Lifecycle transitions (this wake's authority)
 
 The dispatch wake transitions the **claimed cell's** lifecycle labels at these named events only:
