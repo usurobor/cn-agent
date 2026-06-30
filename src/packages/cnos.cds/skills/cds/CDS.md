@@ -1149,7 +1149,7 @@ set.
 **Tier 2 — General engineering (load the applicable bundle).**
 
 Pick the engineering-substrate bundle for the work shape from
-[`src/packages/cnos.eng/skills/eng/README.md`](../../../../cnos.eng/skills/eng/README.md):
+[`src/packages/cnos.eng/skills/eng/README.md`](../../../cnos.eng/skills/eng/README.md):
 coding / review / design / runtime-and-platform / tooling / writing.
 
 The engineering package README is the source of truth for which bundle
@@ -1158,10 +1158,10 @@ enumerate language- or platform-specific bundles here — that surface lives
 in the engineering package and changes independently of the CDS protocol.
 
 The skill that owns skill-program / frontmatter coherence is
-[`cnos.core/skills/skill/SKILL.md`](../../../../cnos.core/skills/skill/SKILL.md)
+[`cnos.core/skills/skill/SKILL.md`](../../../cnos.core/skills/skill/SKILL.md)
 (load when authoring or modifying skills). The skill that owns
 architecture / design reasoning is
-[`cnos.core/skills/design/SKILL.md`](../../../../cnos.core/skills/design/SKILL.md)
+[`cnos.core/skills/design/SKILL.md`](../../../cnos.core/skills/design/SKILL.md)
 (load when reviewing or producing architecture-level decisions).
 
 **Tier 3 — Issue-specific (named per issue).**

@@ -45,11 +45,11 @@ When CDS applies (the matter is software-class — artifact improvement under re
 
 1. Load [`CDS.md`](CDS.md) in this directory as the canonical instantiation contract. CDS.md declares the six fields per [`ROLES.md §3`](../../../../../ROLES.md): matter type, review oracle, γ close-out artifact, δ cadence, ε iteration cadence, actor collapse rule. It also records the architectural-choice inheritance from [cnos#388](https://github.com/usurobor/cnos/issues/388), the persona/protocol/project boundary per [`ROLES.md §4a`](../../../../../ROLES.md), and the empirical-anchor citation to `usurobor/cnos` itself.
 2. Load the role overlay for the active role:
-   - α: [`alpha/SKILL.md`](alpha/SKILL.md)
-   - β: [`beta/SKILL.md`](beta/SKILL.md)
-   - γ: [`gamma/SKILL.md`](gamma/SKILL.md)
-   - δ: [`delta/SKILL.md`](delta/SKILL.md)
-   - ε: [`epsilon/SKILL.md`](epsilon/SKILL.md)
+   - α: `alpha/SKILL.md`
+   - β: `beta/SKILL.md`
+   - γ: `gamma/SKILL.md`
+   - δ: `delta/SKILL.md`
+   - ε: `epsilon/SKILL.md`
 
    **Pending Subs 3–5 of [cnos#403](https://github.com/usurobor/cnos/issues/403).** Pointer overlays delegating to the existing [`cnos.cdd/skills/cdd/<role>/SKILL.md`](../../../cnos.cdd/skills/cdd/) overlays are acceptable in v0.1; deep rewrites are deferred.
 3. Load Tier 2 (process / role-local) and Tier 3 (lifecycle / kata) skills as directed by the role overlay and the cycle shape.
@@ -84,11 +84,11 @@ Per-role overlays may **not** redefine:
 
 Forthcoming per Subs 3–5 of [cnos#403](https://github.com/usurobor/cnos/issues/403). The five role positions and their intended responsibilities are:
 
-- [`alpha/`](alpha/SKILL.md) — α role: code, test, doc, design-note matter production; software-engineering discipline against artifact degradation.
-- [`beta/`](beta/SKILL.md) — β role: review against compilation/passing-tests, AC oracle, mechanical-vs-judgment boundary, configuration-floor, evidence-binding rule; verdict in the typed `#CDSReceipt`.
-- [`gamma/`](gamma/SKILL.md) — γ role: cycle coordination, typed `#CDSReceipt` close-out, triage of `cds-*-gap` findings to ε.
-- [`delta/`](delta/SKILL.md) — δ role: gap selection, cycle dispatch, gate-transition-shaped cadence, merge-mounted gate enforcement.
-- [`epsilon/`](epsilon/SKILL.md) — ε role: receipt-stream review over software protocol gaps; protocol patches via the CDS-iteration artifact (CDS analogue of `cdd-iteration.md`). Generic ε doctrine inherited from [`ROLES.md §4b`](../../../../../ROLES.md) per the cycle/401 precedent.
+- `alpha/` — α role: code, test, doc, design-note matter production; software-engineering discipline against artifact degradation.
+- `beta/` — β role: review against compilation/passing-tests, AC oracle, mechanical-vs-judgment boundary, configuration-floor, evidence-binding rule; verdict in the typed `#CDSReceipt`.
+- `gamma/` — γ role: cycle coordination, typed `#CDSReceipt` close-out, triage of `cds-*-gap` findings to ε.
+- `delta/` — δ role: gap selection, cycle dispatch, gate-transition-shaped cadence, merge-mounted gate enforcement.
+- `epsilon/` — ε role: receipt-stream review over software protocol gaps; protocol patches via the CDS-iteration artifact (CDS analogue of `cdd-iteration.md`). Generic ε doctrine inherited from [`ROLES.md §4b`](../../../../../ROLES.md) per the cycle/401 precedent.
 
 Each role overlay is a CDS-specific extension of the corresponding `cnos.cdd/skills/cdd/<role>/SKILL.md` generic doctrine. The kernel grammar (role-cell shape, algorithm structure, independence rules, resumption protocol) is inherited by reference; the discipline profile and matter type diverge for the software-engineering loss function per `ROLES.md §4a.2`.
 

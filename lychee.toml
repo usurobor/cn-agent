@@ -38,4 +38,11 @@ exclude = [
     # tree, not the releases directory. These are historical review records,
     # not living docs.
     "file://.*/.cdd/releases/.*/activation/SKILL\\.md.*",
+
+    # docs/gamma/cdd/docs/2026-06-21/POST-RELEASE-ASSESSMENT.md is a frozen
+    # gamma-470 post-release-assessment (date-based PRA, repository-policy
+    # read-only). Its `docs/.cdd/releases/.../470/gamma-closeout.md` reference
+    # was the cycle-tree path at archival and resolves outside the PRA dir
+    # today. Frozen evidence — not edited; narrow target exclusion. #475-C.
+    "file://.*/docs/\\.cdd/releases/docs/2026-06-21/470/gamma-closeout\\.md$",
 ]

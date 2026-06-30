@@ -579,7 +579,7 @@ Inherits, cites, or extends:
 - [`docs/papers/CCNF-AND-TYPED-TRUST.md`](../../../../../docs/papers/CCNF-AND-TYPED-TRUST.md)
   — the L7 design essay; specifically `§"Separate persona, protocol, and
   project"` and `§"Wave 4 — CDR bootstrap"`.
-- [`src/packages/cnos.cdd/skills/cdd/CDD.md`](../../../../cnos.cdd/skills/cdd/CDD.md)
+- [`src/packages/cnos.cdd/skills/cdd/CDD.md`](../../../cnos.cdd/skills/cdd/CDD.md)
   — the reference instantiation (CDS-shaped). Structural exemplar for
   this file's shape; the research-discipline content here is **not**
   inherited from CDD.md, only the heading conventions.
