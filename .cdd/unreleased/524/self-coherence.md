@@ -1,0 +1,172 @@
+---
+cycle: 524
+parent_issue: cnos#524
+document_class: self-coherence
+authored_by: α@cdd.cnos (R0)
+date: 2026-06-30 (UTC)
+---
+
+# Self-coherence — cnos#524 R0
+
+## §R0
+
+### 1. Scope guardrail confirmation
+
+Files NOT touched by this run (hard constraints per operator directive and γ-scaffold §7):
+
+| File / surface | Status |
+|---|---|
+| `schemas/skill.cue` | Not touched |
+| `src/packages/cnos.core/commands/install-wake/cn-install-wake` | Not touched |
+| `src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json` | Not touched |
+| `src/packages/cnos.core/orchestrators/agent-admin/prompt.md` | Not touched |
+| `src/packages/cnos.cds/orchestrators/cds-dispatch/wake-provider.json` | Not touched |
+| `src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md` | Not touched |
+| `.github/workflows/*.yml` | Not touched |
+| `*.golden.yml` | Not touched |
+| Any W1→W4 implementation files | Not created |
+
+**Writable outputs produced:**
+- `.cdd/unreleased/524/w0-design.md` — the W0 design document (this run's primary output)
+- `.cdd/unreleased/524/self-coherence.md §R0` — this document
+
+### 2. §4 structure walk (§A through §I)
+
+| Section | Present | Internal coherence |
+|---|---|---|
+| §A — Problem statement and invariant | yes | Two-sentence problem (two contract systems, should be one); invariant stated verbatim from issue body |
+| §B — `wake:` block schema | yes | Complete field listing with types, optionality, role-shaped disjunction; field-by-field cross-reference table to both `wake-provider.json` files |
+| §C — 5 operator design decisions | yes | All 5 decisions present (nesting, artifact_class, scope, CUE/renderer boundary, body-as-prompt); each has decision + rationale + W1 implication |
+| §D — CUE ↔ renderer boundary table | yes | 15-row table; no concern appears in both columns; consistent with §C Decision 4 |
+| §E — Body-as-prompt rule | yes | Frontmatter/body split defined; byte-identity oracle named; `install-wake golden` cited as substrate oracle |
+| §F — W1→W4 migration plan | yes | 4 phases; oracle at each phase boundary; state after each phase described |
+| §G — W1 ACs (AC1–AC7) | yes | All 7 ACs from issue body present; oracle for each AC |
+| §H — Friction notes | yes | FN-1 through FN-8 present; material for W1 implementer |
+| §I — Non-goals | yes | 8 explicit non-goals; consistent with issue body non-goals section |
+
+### 3. Field completeness check — §B vs both `wake-provider.json` files
+
+**agent-admin `wake-provider.json` fields:**
+
+| Field | Covered in §B? | Disposition |
+|---|---|---|
+| `schema` | yes | → "Not carried; artifact class signals schema version" (table row) |
+| `name` | yes | → SKILL.md `name:` (standard skill field) |
+| `package` | yes | → `wake.package` |
+| `role` | yes | → `wake.role` |
+| `admin_only` | yes | → `wake.admin_only` |
+| `activation_log_writer` | yes | → `wake.activation_log_writer` |
+| `description` | yes | → SKILL.md `description:` |
+| `responsibilities` | yes | → body |
+| `input_contract.triggers` | yes | → `wake.input.triggers` |
+| `input_contract.issues_opened_title_pattern` | yes | → `wake.input.issues_opened_title_pattern` |
+| `input_contract.trigger_descriptions` | yes | → body |
+| `input_contract.inbound` | yes | → body |
+| `output_contract.channel_log_convention` | yes | → `wake.output.channel_log_convention` |
+| `output_contract.writer_surface` | yes | → `wake.output.writer_surface` |
+| `output_contract.class_taxonomy` | yes | → `wake.output.class_taxonomy` |
+| `output_contract.class_taxonomy_notes` | yes | → body |
+| `output_contract.cursor_advance` | yes | → `wake.output.cursor_advance` |
+| `output_contract.cursor_field` | yes | → `wake.output.cursor_field` |
+| `allowed_surfaces` | yes | → `wake.surfaces.allowed` |
+| `disallowed_surfaces` | yes | → `wake.surfaces.disallowed` |
+| `defer_path.cell_shaped_directive` | yes | → `wake.defer_path.cell_shaped_directive` |
+| `defer_path.off_role_directive` | yes | → `wake.defer_path.off_role_directive` |
+| `defer_path.ambiguous_directive` | yes | → `wake.defer_path.ambiguous_directive` |
+| `prompt_template` | yes | → "Not carried; body IS the prompt" |
+| `agent_variable.name` | yes | → `wake.agent_variable.name` |
+| `agent_variable.default` | yes | → `wake.agent_variable.default` |
+| `agent_variable.description` | yes | → body |
+| `permission_intent` | yes | → `wake.permission_intent` |
+| `permission_intent_notes` | yes | → body |
+| `concurrency_intent.serialize` | yes | → `wake.concurrency.serialize` |
+| `concurrency_intent.group` | yes | → `wake.concurrency.group` |
+| `concurrency_intent.notes` | yes | → body |
+| `superseded_substrate_artifact` | yes | → body |
+| `relationship_to_substrate` | yes | → body |
+| `cross_references` | yes | → body |
+
+**cds-dispatch `wake-provider.json` fields:**
+
+| Field | Covered in §B? | Disposition |
+|---|---|---|
+| `schema` | yes | → "Not carried" |
+| `name` | yes | → SKILL.md `name:` |
+| `package` | yes | → `wake.package` |
+| `role` | yes | → `wake.role` |
+| `admin_only` | yes | → `wake.admin_only` |
+| `activation_log_writer` | yes | → `wake.activation_log_writer` |
+| `activation_state` | yes | → `wake.activation_state` |
+| `activation_state_notes` | yes | → body |
+| `protocol` | yes | → `wake.protocol` |
+| `selector.include` | yes | → `wake.selector.include` |
+| `selector.exclude` | yes | → `wake.selector.exclude` |
+| `description` | yes | → SKILL.md `description:` |
+| `responsibilities` | yes | → body |
+| `input_contract.triggers` | yes | → `wake.input.triggers` |
+| `input_contract.trigger_descriptions` | yes | → body |
+| `input_contract.inbound` | yes | → body |
+| `output_contract.cycle_artifact_root` | yes | → `wake.output.cycle_artifact_root` |
+| `output_contract.artifact_class_taxonomy` | yes | → `wake.output.artifact_class_taxonomy` |
+| `output_contract.artifact_class_notes` | yes | → body |
+| `output_contract.cell_runtime` | yes | → `wake.output.cell_runtime` |
+| `output_contract.cell_runtime_notes` | yes | → body |
+| `allowed_surfaces` | yes | → `wake.surfaces.allowed` |
+| `disallowed_surfaces` | yes | → `wake.surfaces.disallowed` |
+| `defer_path.cell_shaped_directive` | yes | → `wake.defer_path.cell_shaped_directive` |
+| `defer_path.off_role_directive` | yes | → `wake.defer_path.off_role_directive` |
+| `defer_path.ambiguous_directive` | yes | → `wake.defer_path.ambiguous_directive` |
+| `prompt_template` | yes | → "Not carried; body IS the prompt" |
+| `agent_variable.name` | yes | → `wake.agent_variable.name` |
+| `agent_variable.default` | yes | → `wake.agent_variable.default` |
+| `agent_variable.description` | yes | → body |
+| `permission_intent` | yes | → `wake.permission_intent` |
+| `permission_intent_notes` | yes | → body |
+| `concurrency_intent.serialize` | yes | → `wake.concurrency.serialize` |
+| `concurrency_intent.group` | yes | → `wake.concurrency.group` |
+| `concurrency_intent.notes` | yes | → body |
+| `cross_references` | yes | → body |
+
+**Field completeness verdict:** All fields from both `wake-provider.json` files are covered in `w0-design.md §B`. Zero missing.
+
+### 4. Internal coherence checks
+
+**Role-shaped output disjunction (§B.2):**
+- Admin shape: `channel_log_convention`, `writer_surface`, `class_taxonomy`, `cursor_advance`, `cursor_field` — all sourced from `agent-admin/wake-provider.json` `output_contract`. Consistent.
+- Dispatch shape: `cycle_artifact_root`, `artifact_class_taxonomy`, `cell_runtime` — all sourced from `cds-dispatch/wake-provider.json` `output_contract`. Consistent.
+- The two shapes are disjoint (no overlap). Consistent with §C Decision 4 (CUE enforces role-shaped required fields).
+
+**§F migration plan consistent with §B schema shape:**
+- W1 authors SKILL.md with the `wake:` block as defined in §B. Consistent.
+- W2 teaches renderer to read `wake:` frontmatter and body. The fields the renderer reads (per §D) are a subset of the §B schema. Consistent.
+- W3 flips source; no schema change. Consistent.
+- W4 deletes `wake-provider.json` + `prompt.md`. After deletion, only the §B schema shape exists. Consistent.
+
+**§G ACs consistent with §D CUE↔renderer boundary:**
+- AC1 (`#Wake` CUE schema): scoped to static shape/enums/disjunction → CUE column in §D. Consistent.
+- AC3 (renderer reads SKILL.md): body extraction, install-time substitution → renderer column in §D. Consistent.
+- AC6 (refusals preserved): `activation_state`, `activation_log_writer` mis-declaration, FN-6 → renderer column in §D. Consistent.
+- No AC asks CUE to enforce a runtime refusal; no AC asks the renderer to enforce static shape. Consistent.
+
+**§C Decision 5 (body-as-prompt) consistent with §E:**
+- §C-5 states verbose notes/cross_references move to body. §E states the body IS the prompt (verbatim `prompt.md` + moved prose). §B table marks all notes/cross_references as "→ body". All three sections are consistent.
+
+### 5. No W1→W4 implementation artifacts
+
+Confirmed: no source files, schema files, workflow files, or golden files were created or modified in this run. The only new files on `cycle/524` after this run are:
+- `.cdd/unreleased/524/w0-design.md`
+- `.cdd/unreleased/524/self-coherence.md`
+
+No W1 code exists on the branch.
+
+### 6. Known gaps / open items
+
+**Gap-1: `observer` role.** The W0 schema defines `wake.role: "admin" | "dispatch"`. The renderer source may accept an `observer` role internally. The W1 implementer must audit the renderer to determine whether `observer` needs to be added to the `#Wake` role enum or remains renderer-internal only (see FN-1).
+
+**Gap-2: Verbose `defer_path` strings.** The `defer_path.*` values in the current `wake-provider.json` are long prose strings (several sentences each). The W0 schema types them as `string`. The W1 implementer must confirm these strings pass `cue vet` as plain strings — no length constraint — and confirm the renderer does not parse their content structurally.
+
+**Gap-3: `governing_question` authorship.** The W0 design does not specify the `governing_question` text for either wake SKILL.md. This is standard skill-authoring work for W1 (no design decision required). The W1 implementer authors these per the skill-authoring discipline.
+
+**Gap-4: `triggers:` (standard skill field) vs `wake.input.triggers` (renderer triggers).** The standard SKILL.md `triggers:` field captures skill-level invocation triggers (how a human/agent invokes the skill). The `wake.input.triggers` field captures the substrate event triggers the renderer encodes. These are distinct. The W1 implementer must author both correctly: `triggers:` describes install-time invocation; `wake.input.triggers` describes the GitHub Actions event trigger set.
+
+_Self-coherence verdict: PASS. All 9 sections present; all JSON fields covered; internal coherence holds; no W1→W4 artifacts on branch; scope guardrails clean._
