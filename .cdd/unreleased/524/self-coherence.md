@@ -423,3 +423,38 @@ and exits 0 on identity, 5 on divergence.
 No golden files. No live workflow files. No SKILL.md files. No JSON/prompt files. Scope clean.
 
 REVIEW READY: R2
+
+---
+
+## Manual-δ amendment (post-β, operator-directed — W3 AC5 fixture repair, 2026-06-30)
+
+**What W3 exposed.** Flipping `cn-install-wake`'s default source to `SKILL.md` broke the
+AC5 declaration-only refusal smoke in `install-wake-golden.yml`: the test fixture at
+`src/packages/cnos.core/commands/install-wake/test-fixtures/declaration-only/` was
+**JSON-only** (`wake-provider.json` + `prompt.md`, no `SKILL.md`). With `skill` now the
+default source, the renderer looked for a non-existent `SKILL.md` in the fixture dir and
+died `--source skill: SKILL.md not found` (exit 1) instead of reaching the declaration-only
+refusal (exit 3). The original W3 cell missed this (β CONVERGE despite a red gate); the
+golden re-render job was RED.
+
+**Repair (operator chose option 2: add the SKILL.md, not escape to `--source json`).** Added
+`test-fixtures/declaration-only/SKILL.md` — the typed twin of the JSON manifest, carrying
+the same declaration-only wake contract (`role: admin`, `admin_only: true`,
+`activation_state: declaration-only`, `input.triggers: [schedule]`, full admin output
+block). It validates under `#Wake` (I5). The default skill path now synthesizes the
+manifest from this SKILL.md, reaches the activation_state gate, and refuses with **exit 3**;
+the refusal stderr names `declaration-only` and (via the renderer's no-notes fallback line)
+`preconditions`, satisfying the AC5 assertions. AC5 now tests the **actual default
+(SKILL.md) source path**, not the legacy JSON path.
+
+**Boundary preserved.** No renderer/synthesizer change; no golden change; no live-workflow
+change. The JSON twin (`wake-provider.json` + `prompt.md`) is retained for W3 dual-source
+parity and is deleted in W4. (The `activation_state_notes` prose lives in the SKILL.md body
+per design decision 5; the synthesizer does not map it, so the refusal uses its fallback
+"preconditions" line — a faithful mapping of notes into the skill manifest is a possible
+W4-era refinement, deferred.)
+
+**Re-verified (κ, worktree):** AC5 exit 3 + stderr; I5 = 94 SKILL.md, no findings;
+default(skill) render of both wakes byte-identical to goldens; parity exit 0 both;
+negative proof (mutate only JSON → render unchanged; mutate SKILL.md → render changes →
+default reads SKILL.md).
