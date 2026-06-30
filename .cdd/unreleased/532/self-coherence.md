@@ -1,7 +1,7 @@
 # self-coherence — cycle/532
 
 manifest:
-  completed: [Gap, Skills, ACs, Self-check]
+  completed: [Gap, Skills, ACs, Self-check, Debt]
 
 ## Gap
 
@@ -185,3 +185,15 @@ Pasted directly from runner output, not manually enumerated:
 ### Artifact enumeration matches diff
 
 Every file in `git diff --stat origin/main..HEAD` is named explicitly in this document's §ACs or §CDD Trace (CDD Trace step 6, next section) — cross-checked: 23 files changed total (1 pre-existing γ-scaffold commit's file + 22 files this cycle's α commits touch, now growing with this self-coherence.md itself). No file appears in the diff without a corresponding mention.
+
+## Debt
+
+1. **`cn cdd verify` (I6, Go) does not know about `REVIEW-REQUEST.yml`.** Per δ's pinned contract ("No Go source changes"), I6's existing artifact-presence checker was not extended to require or validate `REVIEW-REQUEST.yml` as part of its own canonical artifact set. This means I6 alone cannot detect a cell that reached `status:review` without a `REVIEW-REQUEST.yml` — that detection is Guard B's job, invoked separately by the dispatch wake. This is consistent with the issue's own deferred items ("full projection schema integration," "domain-specific CDS review-request extensions beyond the minimum proof fields") and δ's explicit Go-exclusion, so it is not a gap in *this* cycle's closure, but it is worth naming: a future cycle could fold `REVIEW-REQUEST.yml` presence into I6 for defense-in-depth (two independent checkers instead of one).
+
+2. **Guard B's live mode is unexercised end-to-end in this cycle.** This cycle ships the gate; it does not itself request `status:review` for issue #532 through the gate (that happens after β converges, per δ's normal cycle flow — δ will run Guard B live against this very cycle's `REVIEW-REQUEST.yml` before applying `status:review` to #532 itself, per the now-updated `delta/SKILL.md` §9.5). The fixture suite (AC5) proves Guard B's structural logic deterministically; the live cross-check paths (`git rev-parse HEAD` comparison, `gh pr view`) were authored and reasoned about but not exercised against a real open PR during this implementation session, since no PR exists yet for `cycle/532` (α does not open PRs — that is δ's job per the dispatch instruction). This is expected, not a defect: the live mode literally cannot be exercised before a PR exists.
+
+3. **`yaml_scalar`'s field-extraction is line-oriented, not a real YAML parser.** It correctly handles the flat two-level-nesting shape `REVIEW-REQUEST.yml` actually uses (confirmed by the full fixture suite, including edge cases like empty lists `changed_files: []` and empty maps `artifacts: {}` in the #524 W4 repro fixture), but it would not correctly parse deeply nested, multi-line-string, or anchor/alias YAML. This is an intentional, named tradeoff per δ's explicit instruction to keep Guard B's extraction simple (grep/sed/awk) rather than introduce a new YAML-parsing runtime dependency. If `REVIEW-REQUEST.yml`'s shape grows more complex in a future cycle, this tradeoff should be revisited.
+
+4. **No CUE schema for `REVIEW-REQUEST.yml`.** γ's scaffold flagged this as a genuinely open question ("whether this needs a CUE schema... or whether a doc-level shape + shell-script field checks is sufficient for this cycle"). I resolved it in favor of doc-level shape + shell-script checks, consistent with δ's pinned contract's "JSON/wire contract preservation" row ("does not modify any existing `schemas/cdd/*.cue` or `schemas/cds/*.cue` contract" — read as: do not touch existing CUE files; silent on whether to add a *new* one) and the "Runtime dependencies" row's preference for simplicity. A future cycle could add `schemas/cdd/review_request.cue` if stronger typed validation becomes warranted; named here as deferred, not silently dropped.
+
+5. **Fixture artifact stub files are minimal placeholders.** `scripts/ci/fixtures/review-request/_artifacts-524/{alpha-closeout,self-coherence,receipt}.md` exist only so Guard B's on-disk-existence check has real paths to resolve in the offline fixture suite — they are not meant to be read as documentation and contain only a one-line provenance comment each. This is intentional and named, not an oversight.
