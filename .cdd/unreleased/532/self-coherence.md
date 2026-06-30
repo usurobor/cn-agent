@@ -1,7 +1,7 @@
 # self-coherence — cycle/532
 
 manifest:
-  completed: [Gap, Skills, ACs, Self-check, Debt]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
 
 ## Gap
 
@@ -197,3 +197,41 @@ Every file in `git diff --stat origin/main..HEAD` is named explicitly in this do
 4. **No CUE schema for `REVIEW-REQUEST.yml`.** γ's scaffold flagged this as a genuinely open question ("whether this needs a CUE schema... or whether a doc-level shape + shell-script field checks is sufficient for this cycle"). I resolved it in favor of doc-level shape + shell-script checks, consistent with δ's pinned contract's "JSON/wire contract preservation" row ("does not modify any existing `schemas/cdd/*.cue` or `schemas/cds/*.cue` contract" — read as: do not touch existing CUE files; silent on whether to add a *new* one) and the "Runtime dependencies" row's preference for simplicity. A future cycle could add `schemas/cdd/review_request.cue` if stronger typed validation becomes warranted; named here as deferred, not silently dropped.
 
 5. **Fixture artifact stub files are minimal placeholders.** `scripts/ci/fixtures/review-request/_artifacts-524/{alpha-closeout,self-coherence,receipt}.md` exist only so Guard B's on-disk-existence check has real paths to resolve in the offline fixture suite — they are not meant to be read as documentation and contain only a one-line provenance comment each. This is intentional and named, not an oversight.
+
+## CDD Trace
+
+1. **contract** — issue [#532](https://github.com/usurobor/cnos/issues/532), `design-and-build` mode, scoped by γ's `gamma-scaffold.md` (commit `4404611`, pre-existing on the branch at α dispatch time), sharpened by the operator's 2026-06-30T19:29:09Z clarification comment, and pinned by δ's dispatch (Guard A/Guard B two-script split; Guard B invocation point resolved to wake-internal; implementation-contract table: Markdown+Bash+YAML, no new `cn` subcommand, doctrine at canonical paths + `scripts/ci/` + new fixture convention, no new runtime deps, additive/backward-compatible, no label taxonomy change).
+
+2. **design** — not a separate artifact; the `REVIEW-REQUEST.yml` shape was already drafted in the issue body as a concrete YAML example (γ confirmed: "already drafted in the issue as a strong proposal, not yet a converged schema doc"). I treated documenting that shape in `dispatch-protocol/SKILL.md` (AC2) as the design artifact for this `design-and-build` cycle, per `alpha/SKILL.md` §2.2's allowance ("design... may be marked 'not required' only with a concrete justification"). Justification: the shape was already concretely specified by the issue; the work was to document and mechanically enforce it, not invent it.
+
+3. **plan** — not a separate artifact; γ's scaffold's "Surfaces α is expected to touch" + "Per-AC oracle approach" + "Expected diff scope" sections functioned as the plan, and I followed that sequencing (doctrine surfaces first, then the guard script, then fixtures, then CI wiring, then golden re-render, then peer-surface sweep, then self-coherence) without needing a separate `PLAN.md`.
+
+4. **tests** — the Guard B fixture suite (`scripts/ci/fixtures/review-request/{valid,invalid}/`, 9 fixtures) IS the test suite for this cycle's only new executable logic (the guard script). No Go tests were added (no Go code changed, per δ's pinned contract). The fixture suite is itself wired into CI (`build.yml` job `review-request-preflight`), so it is not merely a local convenience — it runs on every future PR.
+
+5. **code** — `scripts/ci/check-review-request-preflight.sh` (Guard A + Guard B + self-test harness, 420 lines). No other executable code changed.
+
+6. **docs** (full file enumeration — every file in `git diff --stat origin/main..HEAD` is named below, exhaustively, per `alpha/SKILL.md` §2.6 row 11):
+   - `.cdd/unreleased/532/gamma-scaffold.md` — γ's pre-existing scaffold (not authored by α; read as input).
+   - `.github/workflows/build.yml` — new job `review-request-preflight` (Guard A + Guard B self-test).
+   - `.github/workflows/cnos-cds-dispatch.yml` — regenerated (not hand-edited) via `cn-install-wake cds-dispatch --out ...`, reflecting `prompt.md`'s step-7 edit.
+   - `scripts/ci/check-review-request-preflight.sh` — new guard script (Guard A + Guard B + self-test).
+   - `scripts/ci/fixtures/review-request/_artifacts-524/{alpha-closeout,self-coherence,receipt}.md` — fixture stub artifacts (on-disk targets for the valid fixture's `artifacts.*` paths).
+   - `scripts/ci/fixtures/review-request/invalid/invalid-524-w4-empty-review.yaml` — #524 W4 reproduction fixture (AC5).
+   - `scripts/ci/fixtures/review-request/invalid/invalid-empty-diff-no-no_op.yaml` — undeclared empty diff fixture.
+   - `scripts/ci/fixtures/review-request/invalid/invalid-missing-artifact.yaml` — missing on-disk artifact fixture.
+   - `scripts/ci/fixtures/review-request/invalid/invalid-missing-pr.yaml` — missing PR fixture.
+   - `scripts/ci/fixtures/review-request/invalid/invalid-missing-request-fields.yaml` — missing `request.requested_by`/`requested_at` fixture.
+   - `scripts/ci/fixtures/review-request/invalid/invalid-no-commits-beyond-base.yaml` — `base_sha == head_sha` fixture.
+   - `scripts/ci/fixtures/review-request/invalid/invalid-no_op-without-approval.yaml` — undeclared-no_op-without-approval fixture.
+   - `scripts/ci/fixtures/review-request/valid/valid-no_op-with-approval.yaml` — properly-declared no-op fixture (proves the exemption path actually works, not just that its absence fails).
+   - `scripts/ci/fixtures/review-request/valid/valid-review-request.yaml` — full deliverable-proof valid fixture.
+   - `src/packages/cnos.cdd/skills/cdd/CDD.md` — AC1, kernel doctrine addition.
+   - `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` — role-skill peer update (§9.5/§9.6 Guard B precondition on the `status:review` token write).
+   - `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` — AC3/AC6, step 7 + lifecycle-transitions table.
+   - `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml` — regenerated via `cn-install-wake cds-dispatch` (not hand-edited).
+   - `src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md` — AC3/AC6, identical edit to SKILL.md (confirmed byte-identical at the edited region).
+   - `src/packages/cnos.cds/orchestrators/cds-dispatch/wake-provider.json` — peer-surface consistency update (`responsibilities` array prose; confirmed not substituted into rendered output, so no golden-drift risk).
+   - `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` — AC2/AC3/AC7, new §"Review-request proof gate" + `status:review` row precondition.
+   - `.cdd/unreleased/532/self-coherence.md` — this document.
+
+7. **self-coherence** — this document, written incrementally per §2.5's discipline (one section per commit: §Gap `4c2c283`, §Skills `337b438`, §ACs `edbff6e`, §Self-check `06fce26`, §Debt `8ee349c`, §CDD Trace this commit).
