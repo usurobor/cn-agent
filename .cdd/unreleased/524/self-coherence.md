@@ -170,3 +170,66 @@ No W1 code exists on the branch.
 **Gap-4: `triggers:` (standard skill field) vs `wake.input.triggers` (renderer triggers).** The standard SKILL.md `triggers:` field captures skill-level invocation triggers (how a human/agent invokes the skill). The `wake.input.triggers` field captures the substrate event triggers the renderer encodes. These are distinct. The W1 implementer must author both correctly: `triggers:` describes install-time invocation; `wake.input.triggers` describes the GitHub Actions event trigger set.
 
 _Self-coherence verdict: PASS. All 9 sections present; all JSON fields covered; internal coherence holds; no W1→W4 artifacts on branch; scope guardrails clean._
+
+---
+
+## §R0 — W1 implementation self-coherence (α@cdd.cnos, 2026-06-30)
+
+This section documents the W1 implementation run (AC1 + AC2) on top of the W0 design above.
+
+### 1. Gap this cycle addresses
+
+Issue #524 addresses the gap between two contract systems: (1) the bespoke JSON+prompt contract system (`wake-provider.json` + `prompt.md`, consumed by `cn install-wake`) and (2) the typed SKILL.md contract system (`SKILL.md` frontmatter + body, validated by `schemas/skill.cue` via the I5 gate). W1 bridges this gap by authoring typed `SKILL.md` modules for both existing wakes and extending `schemas/skill.cue` with a `#Wake` definition, so that wake contracts enter the CUE-typed pipeline. The renderer still reads from JSON+prompt in W1; the SKILL.md files coexist as the first authoritative typed representation.
+
+### 2. AC1 — what was added to `schemas/skill.cue`
+
+1. `"wake"` added to the `artifact_class` optional field enum — no existing value removed or altered.
+2. `#WakeOutputAdmin` definition — requires `channel_log_convention`, `writer_surface`, `class_taxonomy`, `cursor_advance`, `cursor_field`; open struct.
+3. `#WakeOutputDispatch` definition — requires `cycle_artifact_root`, `artifact_class_taxonomy`, `cell_runtime`; open struct.
+4. `#Wake` definition — embeds `#Skill`; constrains `artifact_class: "wake"`, `scope: "global"`, and the full `wake:` block per w0-design §B. Role enum: `"admin" | "dispatch"` ONLY (OB-1). `agent_variable.default: string | null` (FN-3). `surfaces.allowed?/disallowed?` as `[...string]` (FN-4). `output: #WakeOutputAdmin | #WakeOutputDispatch` (role-shaped disjunction). Open at `wake:` level (`...`) per LANGUAGE-SPEC §11.
+
+### 3. AC2 — both SKILL.md files
+
+**`agent-admin/SKILL.md`:**
+- All frontmatter fields from `wake-provider.json` per w0-design §B.3 (verified field by field)
+- `wake.agent_variable.default: null` — YAML literal null (FN-3)
+- `wake.surfaces.allowed`: 6 entries; `wake.surfaces.disallowed`: 9 entries — both verbatim from JSON (FN-4)
+- Body = verbatim `prompt.md` content (130 lines, all sections) + verbose prose from wake-provider.json appended
+- No prose fields in frontmatter; all notes/cross_references/descriptions in body
+
+**`cds-dispatch/SKILL.md`:**
+- All frontmatter fields from `wake-provider.json` per w0-design §B.3 (verified field by field)
+- `wake.activation_state: live`, `wake.protocol: cds`, `wake.selector` — all present
+- `wake.agent_variable.default: sigma` (string)
+- `wake.surfaces.allowed`: 5 entries; `wake.surfaces.disallowed`: 8 entries — both verbatim from JSON (FN-4)
+- Body = verbatim `prompt.md` content (242 lines, including activation-state banner, repair re-entry preflight, repair_evidence YAML block, lifecycle transitions table, all defer-paths) + verbose prose appended
+- No prose fields in frontmatter
+
+### 4. AC4 — goldens unchanged
+
+The renderer was not touched. Neither `wake-provider.json` nor `prompt.md` was modified for either wake. The golden files are byte-identical. The W1 branch diff outside `.cdd/unreleased/524/` contains only:
+- `schemas/skill.cue` (additive change)
+- `src/packages/cnos.core/orchestrators/agent-admin/SKILL.md` (new file)
+- `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` (new file)
+
+### 5. AC7 — CI gates
+
+- I1 (schema coherence): `#Skill` unchanged; new definitions additive — EXPECTED PASS
+- I2 (skill-graph): two new SKILL.md nodes, no broken calls: edges — EXPECTED PASS
+- I5 (frontmatter validation): 91 → 93 SKILL.md validated; both new files have valid `#Skill`-compatible frontmatter — EXPECTED PASS
+- `install-wake golden`: renderer untouched, golden byte-identical — EXPECTED PASS
+- `dispatch-repair-preflight (cnos#516)`: dispatch contract unchanged — EXPECTED PASS
+- Go / Package / Binary: no changes — EXPECTED PASS
+
+### 6. Friction note status
+
+- **FN-1:** `observer` absent from `#Wake` role enum (OB-1 satisfied). W3 implementer should audit renderer's internal role check.
+- **FN-2:** I5 extractor strips body via awk (`/^---$/ { n++; if (n==1) next; if (n==2) exit }`) — body is NOT passed to `cue vet`. Verified from validator script source (lines 140–143).
+- **FN-3:** `agent_variable.default: string | null` in CUE; `default: null` in admin SKILL.md YAML (literal null, not `~` or `""`).
+- **FN-4:** `[...string]` open arrays; admin 6+9 entries, dispatch 5+8 entries, all verbatim from JSON.
+- **FN-5:** Body verbatim from prompt.md — confirmed for both wakes.
+- **FN-6:** `activation_log_writer: false` correctly declared on dispatch SKILL.md. Renderer refusal smoke from SKILL.md source is W3/AC6 scope.
+- **FN-7:** Parity gate deferred to W2.
+- **FN-8:** Deletion sequencing deferred to W4.
+
+REVIEW READY: R0
