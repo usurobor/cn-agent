@@ -265,8 +265,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check CDD artifacts
-        run: src/packages/cnos.cdd/commands/cdd-verify/cn-cdd-verify --all
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: src/go/go.sum
+
+      - name: Build cn
+        working-directory: src/go
+        run: go build -o "$GITHUB_WORKSPACE/cn" ./cmd/cn
+
+      # I6 is an in-flight CDD gate: it validates current (.cdd/unreleased/)
+      # cycles, not frozen release history. The legacy `cn-cdd-verify` shell
+      # script was removed in cnos#392 (V is now the `cn cdd verify`
+      # subcommand); this step builds cn and invokes the canonical form.
+      # `.cdd/exceptions.yml` carries narrow, issue-linked unreleased
+      # exceptions only. Released CDD records under .cdd/releases/ are immutable
+      # evidence and are audited separately, not gated here.
+      - name: Check CDD artifacts (unreleased gate)
+        run: ./cn cdd verify --unreleased --exceptions .cdd/exceptions.yml
 
       - name: Run test fixtures
         run: src/packages/cnos.cdd/commands/cdd-verify/test-fixtures.sh

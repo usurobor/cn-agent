@@ -1,0 +1,23 @@
+# CDD verify — unreleased gate exceptions
+#
+# Policy: I6 is an in-flight CDD gate. Released CDD records remain immutable
+# historical evidence; they are NOT repaired or mass-excepted inside the
+# mainline CI gate. Known unreleased exceptions must be explicit, narrow, and
+# tied to a follow-up issue.
+#
+# The cdd-verify loader keys exceptions on the exact missing-artifact `path:`
+# it would otherwise fail on (here: the cycle dir + artifact filename).
+
+exceptions:
+  - id: cdd-unreleased-512-dispatch-repair-loop
+    scope: unreleased
+    cycle: .cdd/unreleased/512
+    path: .cdd/unreleased/512/self-coherence.md
+    gate: cdd-verify
+    reason: >
+      Cycle 512 records the rejected Pass 4D dispatch failure. The cell
+      re-certified rejected work instead of loading the bounce repair contract.
+      Do not fabricate self-coherence or rewrite the cycle. Keep this exception
+      until the dispatch repair-loop defect is fixed.
+    follow_up: cnos#516
+    remove_when: cnos#516 closed and cycle 512 disposition is resolved
