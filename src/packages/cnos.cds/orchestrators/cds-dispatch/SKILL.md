@@ -219,7 +219,7 @@ A claimed cell is handed to the cnos.cdd cell-runtime framework's δ role contra
 4. Routes β (reviewer) with α's output; β produces `.cdd/unreleased/{N}/beta-review.md` with a verdict (converge or iterate).
 5. **Iterates** per β's verdict: on iterate, route α again with β's findings — **the cell remains `status:in-progress`** (β iteration is an INTERNAL cell loop, not an external lifecycle event); on converge, advance the cell.
 6. Lands the cycle's canonical artifact set: gamma-scaffold, self-coherence (with §R[N] sections), beta-review (with R[N] verdicts), alpha-closeout, beta-closeout, gamma-closeout, optionally PRA. **On a `repair_pass` (see §Repair re-entry preflight), every closeout MUST carry the `repair_evidence` block and the cycle MUST NOT advance to `status:review` until it is complete; a closeout without it is a cnos#516 violation and the wake STOPS and defers to operator.**
-7. Opens (or updates) a pull request scoped to the cell, references the issue, and only on β's converge verdict transitions the cell's label `status:in-progress → status:review`.
+7. Opens (or updates) a pull request scoped to the cell, references the issue, and on β's converge verdict **writes `.cdd/unreleased/{N}/REVIEW-REQUEST.yml` naming the PR/branch/head SHA/checks, then runs `scripts/ci/check-review-request-preflight.sh --guard-b --fixture .cdd/unreleased/{N}/REVIEW-REQUEST.yml` (live mode, with `git`/`gh` cross-checks against real cycle state) before transitioning the cell's label `status:in-progress → status:review`.** If the guard fails, the wake does NOT apply `status:review` — it posts a STOP/BLOCKED comment naming the missing proof and leaves the cell at `status:in-progress` (or `status:blocked` per §"Lifecycle transitions" if the gap is a hard, unrecoverable block). Converging without provable matter (no PR, no commits beyond base, no diff, no `REVIEW-REQUEST.yml`) is the cnos#532 / #524 W4 failure class this gate exists to make structurally unable to recur silently — see `cnos.core/skills/agent/dispatch-protocol/SKILL.md` §"Review-request proof gate" for the full doctrine and the artifact's field shape.
 
 The dispatch wake's job is to invoke δ with the claimed cell and let δ run. The wake does NOT route γ/α/β directly; that is δ's authority per the cell framework. The wake surfaces δ's R[N] iteration tokens so the cycle is observable, but it does not short-circuit β's verdicts.
 
@@ -234,7 +234,7 @@ The dispatch wake transitions the **claimed cell's** lifecycle labels at these n
 | Event | From | To | Notes |
 |---|---|---|---|
 | claim (verified + acknowledged) | `status:todo` | `status:in-progress` | step 5+6 of the claim sequence above |
-| β converge verdict (end of cycle) | `status:in-progress` | `status:review` | δ's step 7 |
+| β converge verdict (end of cycle) **and** Guard B deliverable-proof pass | `status:in-progress` | `status:review` | δ's step 7; cnos#532 — β converge alone is necessary but not sufficient, Guard B must also pass against `REVIEW-REQUEST.yml` |
 | hard block hit mid-cycle | `status:in-progress` | `status:blocked` | + a blocked-reason comment naming the block class (external dependency, missing precondition, infra failure) |
 | release-back-to-queue (post-claim drift detected) | `status:in-progress` | `status:todo` | + a claim-released comment naming the race; the wake exits without invoking δ |
 
