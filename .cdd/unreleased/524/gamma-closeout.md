@@ -332,7 +332,7 @@ repair_evidence:
     - RCA-core: "This cycle's own 3 commits (a5d7d482, 06252591, 4e4e39f9) deliver: 8 files deleted, cn-install-wake made SKILL.md-only (234-line diff), install-wake-golden.yml updated, 2 CI guard scripts patched, 4 goldens/workflows re-rendered header-only. PR opened below."
   repairs_not_completed: []
   delta_overrides: []
-  new_state_differs_from_rejected: "The invalidated run (28464981342) produced zero commits, zero PR, zero closeout artifacts on a branch that was subsequently deleted. This cycle's cycle/524 carries 3 real commits (a5d7d482 scaffold+REPAIR-PLAN, 06252591 the actual delete+renderer+CI implementation, 4e4e39f9 β review) with a 19-file diff against main@db547ebe (per `git diff db547ebe..cycle/524 --stat`), all six closeout/review artifacts populated, and (after this closeout round) an opened PR. The state is observably, mechanically different — not by assertion but by `git log`/`git diff` evidence anyone can re-run."
+  new_state_differs_from_rejected: "The invalidated run (28464981342) produced zero commits, zero PR, zero closeout artifacts on a branch that was subsequently deleted. This cycle's cycle/524 carries 4 real commits beyond main@db547ebe (a5d7d482 scaffold+REPAIR-PLAN, 06252591 the actual delete+renderer+CI implementation, 4e4e39f9 β review, 18b90f44 this closeout amendment) with a 23-file diff (per `git diff db547ebe..cycle/524 --stat`), all six closeout/review artifacts populated, and PR #534 opened against main. The state is observably, mechanically different — not by assertion but by `git log`/`git diff` evidence anyone can re-run."
 ```
 
 ### §2.4 Required block 2 — `deliverable_evidence`
@@ -340,11 +340,15 @@ repair_evidence:
 ```yaml
 deliverable_evidence:
   pr: "#534 (cycle/524 -> main)"
-  head_sha: "4e4e39f99d582ace253e75a4264e71000d638834"
+  head_sha: "18b90f44767a2abcd930aac351d10acafc262af0"
   base_sha: "db547ebe5b408e4c74092ad3ed56509e605894ef"
-  commits_beyond_base: 3
+  commits_beyond_base: 4
   closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
 ```
+
+(`head_sha` is the PR head after the closeout-amendment commit `18b90f44` landed on top of β's
+`4e4e39f9` convergence point; `commits_beyond_base` = 4 = the 3 W4-implementation/review commits
+(`a5d7d482`, `06252591`, `4e4e39f9`) + this closeout-amendment commit (`18b90f44`).)
 
 (PR number/head SHA filled in after PR open below; see §5.)
 
@@ -372,8 +376,10 @@ need follow-up.
 
 ## §4. Scope guardrail confirmation (γ view)
 
-`git diff db547ebe..cycle/524 --stat` (19 files) touches exactly: 3 `.cdd/unreleased/524/` records
-(`REPAIR-PLAN.md` new, `gamma-scaffold.md` rewritten for W4 scope, `self-coherence.md` extended) +
+`git diff db547ebe..cycle/524 --stat` (23 files, as of this closeout-amendment commit) touches
+exactly: 6 `.cdd/unreleased/524/` records (`REPAIR-PLAN.md` new, `gamma-scaffold.md` rewritten for
+W4 scope, `self-coherence.md` extended, plus this round's amendments to `alpha-closeout.md` /
+`beta-closeout.md` / `gamma-closeout.md`) +
 2 live workflows (header-only) + 2 goldens (header-only) + `install-wake-golden.yml` +
 `cn-install-wake` + 2 CI guard scripts (the justified exception, §2.2) + 8 deleted JSON/prompt
 files (4 production + 4 fixture). Confirmed absent: `schemas/skill.cue`, both wake SKILL.md bodies,
