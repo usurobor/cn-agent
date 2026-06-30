@@ -34,6 +34,21 @@ V is a typed predicate, not a role. δ holds gate authority over what crosses th
 
 The kernel sections of `COHERENCE-CELL-NORMAL-FORM.md` are **substrate-independent.** They name only roles (α, β, γ, δ, ε), the validator predicate (V), the artifacts the kernel reasons over (`contract`, `matter`, `review`, `receipt`, `verdict`, `decision`, `evidence`), the scope index (`n`, `n+1`), and the verdicts and decisions the algorithm composes. They do not name any particular tooling, platform, or invocation surface.
 
+### Review-request invariant (no self-certified review state)
+
+The kernel's step 1→2 boundary (`matterₙ := αₙ.produce(contractₙ)` → `reviewₙ := βₙ.review(contractₙ, matterₙ)`) names three distinct acts that a cell must not collapse into one:
+
+- α may **self-check** matter it produced (an internal author-side pass over its own work);
+- α may **request** review (assert that matter exists and is ready for βₙ to read);
+- α may not **grant itself review state** — βₙ's review is a separate, externally-discriminated act, not something αₙ performs on itself.
+
+The invariant:
+
+> No matter, no review.
+> No proof, no `status:review`.
+
+A cell that requests review without proving matter exists has not produced `matterₙ` — it has only asserted that it did. Self-checking matter is not the same act as βₙ reviewing it, and requesting review is not the same act as βₙ's review having happened. A substrate that lets a cell write its own review-pending state without a corresponding deliverable-existence check (a PR, a branch, a non-empty diff, the cell's required artifacts) lets the cell self-certify a step the kernel reserves for βₙ. This does not change the kernel's five-step signature — it names a precondition on the substrate-side transition that *represents* the boundary between step 1 and step 2, so that representation cannot drift ahead of the matter it claims to describe. See `cnos.core/skills/agent/dispatch-protocol/SKILL.md` §"Lifecycle labels" for the GitHub/CDS realization of this invariant (the `status:review` label's deliverable-proof precondition) and that file's `REVIEW-REQUEST.yml` schema documentation for the concrete proof artifact.
+
 ## Outcomes
 
 A closed cell at scope `n` terminates in **exactly one of four outcomes,** determined by `(verdictₙ, decisionₙ)`:
