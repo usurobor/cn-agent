@@ -582,3 +582,204 @@ None. All checklist items pass.
 ---
 
 _β@cdd.cnos — cycle/524 W3 R2 review — 2026-06-30 (UTC). CONVERGE._
+
+---
+
+## §R3 — W4 review (β@cdd.cnos, 2026-06-30)
+
+**Verdict: CONVERGE**
+
+Independent re-review of the W4 implementation (commits `a5d7d482` γ-scaffold/REPAIR-PLAN, `06252591`
+the actual delete+renderer+CI work) against `gamma-scaffold.md`, `REPAIR-PLAN.md`, the operator's
+verbatim W4 "clean re-dispatch" directive on issue #524, and α's `self-coherence.md §R3` account.
+I have no stake in this work; every claim below was re-run by me from a clean checkout of
+`cycle/524`, not copy-checked from α's report. Full command transcripts retained in this session;
+key results summarized per checklist item.
+
+### 1. Header-only diff — mechanically re-verified
+
+```
+git diff db547ebe...cycle/524 -- <both goldens> <both live workflows>
+```
+Ran this myself. The diff touches exactly the two-line→one-line header on all four files, e.g.:
+```
+-#   manifest: orchestrators/agent-admin/wake-provider.json
+-#   prompt:   orchestrators/agent-admin/prompt.md
++#   source: orchestrators/agent-admin/SKILL.md
+```
+identically shaped for `cds-dispatch`. Zero other bytes differ on any of the four files (full diff
+inspected, not `--stat`). **Confirmed independently — highest-stakes check passes.**
+
+### 2. Files actually deleted
+
+```
+find src/packages/cnos.core/orchestrators src/packages/cnos.cds/orchestrators \
+     src/packages/cnos.core/commands/install-wake/test-fixtures \
+     -name wake-provider.json -o -name prompt.md
+```
+Returns empty on the checked-out branch. Confirmed.
+
+### 3. SKILL.md body prose untouched
+
+```
+git diff db547ebe...cycle/524 -- .../agent-admin/SKILL.md .../cds-dispatch/SKILL.md
+```
+Empty — zero diff on both files. Confirmed; no scope violation.
+
+### 4. Renderer correctness
+
+Read the full diff on `cn-install-wake` (234 lines changed). Confirmed: `--source`/`--source=*`/
+`--parity-check` now hit a dedicated `case` arm that calls `die` with a cnos#524 W4-referencing
+message (hard error, not silent passthrough — no path can reach a now-absent JSON file). Default
+per-package manifest lookup and the cross-package sibling-search fallback both resolve `SKILL.md`
+paths now; `grep -n 'wake-provider.json' cn-install-wake` returns 5 hits, all `#`-comments
+documenting the removal, zero in resolution/parsing logic — verified by line-reading each hit, not
+just counting.
+
+Ran the renderer myself:
+```
+./cn-install-wake agent-admin --out /tmp/aa.yml   → exit 0, diff /tmp/aa.yml vs golden: IDENTICAL
+./cn-install-wake cds-dispatch --out /tmp/cds.yml → exit 0, diff /tmp/cds.yml vs golden: IDENTICAL
+```
+`git status --short` after both runs was clean (no incidental working-tree drift). Confirmed.
+
+### 5. Refusal gates — independently run, not trusted from α's report
+
+Read `.github/workflows/install-wake-golden.yml` for the exact updated step commands and replayed
+both by hand:
+
+**AC5 declaration-only smoke:**
+```
+./cn-install-wake test-declaration-only --manifest .../declaration-only/SKILL.md
+```
+→ exit **3**; stderr: `activation_state="declaration-only"` + names `cnos#454`/`cnos#467`/
+`preconditions` line. Matches both CI grep assertions (`declaration-only` substring;
+`cnos#454|cnos#467|preconditions` regex). Confirmed.
+
+**AC4/cycle-496 mis-declaration smoke:**
+```
+./cn-install-wake test-log-writer-misdeclaration --manifest .../log-writer-misdeclaration/SKILL.md \
+  --activation-state-override live --out /tmp/x.yml
+```
+→ exit **4**; stderr contains literal `activation_log_writer mis-declaration`. Matches CI assertion.
+Confirmed.
+
+Both gates fire from the SKILL.md-only path (there is no other path left), satisfying AC6.
+
+### 6. AC2 conversion is a real oracle
+
+Replayed the exact heredoc fixture from the CI step (a `SKILL.md` with `wake:` block omitting
+`role`, valid otherwise) against the renderer directly:
+```
+./cn-install-wake test-wake --manifest <fixture>/SKILL.md
+```
+→ exit **2**; stderr: `role must be one of admin/dispatch/observer (got "")`. This is a genuine
+rejection (not silent defaulting, not a different exit code, not an uncaught exception/exit 1) —
+confirms α's judgment call (b) in `self-coherence.md` was correct: the chosen fixture shape (missing
+`role`) trips the renderer's own enum check with a precise, informative message, preserving AC2's
+"malformed declarations are rejected" oracle through the only code path that exists post-W4.
+
+### 7. Out-of-scaffold CI-script fix — claim independently verified TRUE
+
+Diffed `db547ebe:scripts/ci/check-dispatch-closeout-integrity.sh` against the pre-W4 base: it
+hardcoded `PROMPT="src/packages/cnos.cds/orchestrators/cds-dispatch/prompt.md"` and looped
+`for f in "$PROMPT" "$SKILL" "$GOLDEN" "$LIVE"; do need "$f" ...` — a hard presence-and-phrase
+requirement on `prompt.md`. Same shape in `check-dispatch-repair-preflight.sh`. Since W4 deletes
+`cds-dispatch/prompt.md`, **not** fixing these scripts would have made `need()` fail at
+`[ -f "$ROOT/$f" ]` (or the phrase-grep immediately after), turning two required-green CI gates
+(`dispatch-closeout-integrity`, `dispatch-repair-preflight`, both named in the operator's W4
+required-proof list) red as a direct, mechanical consequence of the scaffold-mandated deletion. The
+causal claim is TRUE, not merely asserted.
+
+The fix is contract-preserving: both scripts swap their loop target from `$PROMPT` to the
+already-declared `$SKILL` variable; no required phrase string, label, or detection logic changed —
+only the file-existence target. Ran both scripts myself on `cycle/524`:
+```
+bash scripts/ci/check-dispatch-closeout-integrity.sh             → exit 0 (presence guard + self-test both pass)
+bash scripts/ci/check-dispatch-closeout-integrity.sh --self-test → exit 0
+bash scripts/ci/check-dispatch-repair-preflight.sh                → exit 0
+```
+This is a legitimate, narrowly-scoped follow-on fix, not scope creep — it is the minimum patch
+required to keep two scaffold-required-green gates green after a deletion the scaffold itself
+mandates.
+
+### 8. AC8/AC7 renderer-authority-leak audit — re-run independently
+
+Re-ran both greps from the CI step directly against the new renderer source:
+```
+admin_leaks=$(grep -nE 'admin_only|disallowed_surfaces|defer_path|cell_execution' cn-install-wake \
+  | grep -vE '^[0-9]+:[[:space:]]*#' | grep -vE '(die|manifest_error|log_writer_mis_declaration)[[:space:]]')
+→ empty (0 leaks)
+
+n_dispatch=$(grep -ciE 'protocol:cds|cdr|cdw|dispatch:cell|status:todo' cn-install-wake)
+→ 0
+```
+Both zero. Confirmed.
+
+### 9. CI gates runnable locally
+
+| Gate | Result |
+|---|---|
+| `go build ./...` (src/go) | clean |
+| `go vet ./...` | clean |
+| `go test ./...` | all 14 packages `ok` (one `[no test files]` for cmd/cn, expected) |
+| `./cn build --check` (I1, package/source drift) | all 8 packages valid |
+| `./cn cdd verify --unreleased --exceptions .cdd/exceptions.yml` (I6-adjacent) | 106 passed, 0 failed, 77 warnings (pre-existing/unrelated; includes this issue's own `.cdd/unreleased/524` artifact-presence checks, all passing) |
+| `scripts/ci/check-dispatch-closeout-integrity.sh` / `--self-test` | green (see §7) |
+| `scripts/ci/check-dispatch-repair-preflight.sh` | green (see §7) |
+| `install-wake-golden.yml`'s steps (replayed by hand: re-render, sha256, idempotence, AC5, AC2, AC4/496, AC8/AC7) | all green, replayed individually above |
+
+**Not runnable in this environment:** I5 (`scripts/ci/validate-skill-frontmatter.sh`) requires the
+`cue` binary, which is not installed here — confirmed `which cue` fails. α flagged the same gap
+honestly in `self-coherence.md §R3 §4`. Since neither `schemas/skill.cue` nor either wake SKILL.md's
+frontmatter changed in this cycle (confirmed §3 above), I5 has no mechanical reason to regress, but
+I could not execute it myself — flagging for the actual CI run to confirm, same as α did. Binary/
+Package CI jobs (full multi-tier suites with CI-specific setup) likewise not replicated locally;
+`go build`/`go vet`/`go test` serve as the closest local proxy and are clean.
+
+### 10. Scope compliance — full diff stat
+
+```
+git diff db547ebe...cycle/524 --stat
+```
+19 files: 3 `.cdd/unreleased/524/` records (REPAIR-PLAN.md new, gamma-scaffold.md rewritten,
+self-coherence.md extended) + 2 live workflows (header-only) + 2 goldens (header-only) +
+`install-wake-golden.yml` + `cn-install-wake` + the 2 CI guard scripts (§7) + 8 deleted
+JSON/prompt files (4 production + 4 fixture). Every file is on the scaffold's §3.2 MUST-change
+list, or is the §7 justified out-of-scaffold CI-script fix. Confirmed absent from the diff:
+`schemas/skill.cue`, `wake-provider/SKILL.md`, `dispatch-protocol/SKILL.md`, `delta/SKILL.md`,
+`docs/**`, `.cdd/releases/**`, any other `.cdd/unreleased/{N}/`, `src/go/**`. Confirmed clean.
+
+### 11. Commit hygiene
+
+```
+git log db547ebe..cycle/524 --oneline
+a5d7d482 cnos#524 W4: γ-scaffold + REPAIR-PLAN for clean re-dispatch
+06252591 cnos#524 W4: delete wake-provider.json + prompt.md; renderer is SKILL.md-only
+```
+Both full commit messages end with `Refs #524`. Neither message contains `Closes`/`Fixes`/
+`Resolves #524` in any form (checked the full message bodies, not just trailers). Confirmed.
+
+### Process note (not a finding): closeouts and PR are correctly absent at this stage
+
+`alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md` carry zero diff from base, and no
+W4 PR exists yet (`gh pr list --head cycle/524` shows only the merged #525–#529 for W0–W3). I
+checked the δ skill (`cdd/delta/SKILL.md §9.3` step 4–5) before treating this as a defect: closeouts
+are authored by α/β/γ **after** β's `verdict: converge` lands, as part of δ's converge routing, and
+the cycle-PR is opened by δ at the `status:review` transition — not before β review. So this is
+expected pipeline state, not a `deliverable_evidence` gap in α's work. It does mean the scaffold's
+checklist item "`deliverable_evidence` present" (§3.1 / β-prompt item 8) is **not yet satisfiable**
+and is correctly deferred to the post-converge closeout step that follows this verdict.
+
+### Findings
+
+None blocking. All 11 checklist items independently re-verified and pass. No STOP-level issue
+found — the header-only-diff invariant (the single highest-stakes claim in this cycle) holds
+exactly as claimed, the JSON/prompt deletion is complete and total, both refusal gates and the
+AC2 oracle fire correctly from the SKILL.md-only path, the two out-of-scaffold CI-script edits are
+a genuine, narrowly-scoped, contract-preserving necessity (not scope creep), and commit hygiene is
+clean.
+
+---
+
+_β@cdd.cnos — cycle/524 W4 R3 review — 2026-06-30 (UTC). CONVERGE._
