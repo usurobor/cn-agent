@@ -130,3 +130,34 @@ behavior, golden files, or live workflow files. The iterate threshold (scope vio
 failure, stop condition trigger) was not met.
 
 _Filed by β@cdd.cnos, 2026-06-30 (UTC). Cycle/524 W2 R1 closed: CONVERGE._
+
+---
+
+# β-closeout — cnos#524 W3 R2
+
+## Review process summary
+
+W3 delivered a source-flip (6 targeted edits to `cn-install-wake`) and a CI step update.
+The review ran in three passes.
+
+**Pass 1 — Scope compliance.** Diff confirmed: `cn-install-wake`, `install-wake-golden.yml`,
+and `.cdd/unreleased/524/` artifacts only. All 8 constrained paths PASS (schemas, JSON+prompt
+files, SKILL.md files, goldens, live workflows — none in diff).
+
+**Pass 2 — Core change verification.** Verified edit 3.1.A (`source_type="skill"` at init)
+and edit 3.1.B (`--parity-check` sets `source_type="json"`). Code inspection confirms: plain
+`cn install-wake <name>` takes SKILL.md path; `--parity-check` takes JSON path. AC3 by
+construction. AC4 by transitivity from W2 parity.
+
+**Pass 3 — Documentation and CI step.** All 4 doc edits (3.1.C–F) correctly reflect W3
+semantics. CI step name and comment updated consistently. Run block unchanged.
+
+## Verdict rationale
+
+**CONVERGE.**
+
+Scope compliance CLEAN. Core flip correct by code inspection. Documentation consistent. No stop
+conditions triggered. The iterate threshold (scope violation, golden change, live workflow change,
+new role-decision string) was not met.
+
+_Filed by β@cdd.cnos, 2026-06-30 (UTC). Cycle/524 W3 R2 closed: CONVERGE._

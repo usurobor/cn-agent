@@ -54,24 +54,27 @@
 #                     the manifest's activation_state in source.
 #   --source json|skill
 #                     Override the manifest source for this invocation.
-#                     `json` (default): reads wake-provider.json +
-#                     prompt.md per the existing contract. `skill`:
-#                     reads SKILL.md frontmatter (wake: block → manifest
-#                     fields) + body (the prompt). Per W0 design §B.3
-#                     field mapping + §E body-as-prompt rule (cnos#524).
-#                     Requires python3 + pyyaml on the calling host.
-#   --parity-check    Render from SKILL.md source and compare the
-#                     FULL rendered output byte-for-byte (headers
-#                     included) against the committed golden at
-#                     ${CN_PACKAGE_ROOT}/orchestrators/<wake-name>/
-#                     cnos-<wake-name>.golden.yml. The header block uses
+#                     `skill` (default): reads SKILL.md frontmatter
+#                     (wake: block → manifest fields) + body (the
+#                     prompt). Per W0 design §B.3 field mapping + §E
+#                     body-as-prompt rule (cnos#524). Requires python3
+#                     + pyyaml on the calling host. `json`: reads
+#                     wake-provider.json + prompt.md per the existing
+#                     contract.
+#   --parity-check    Render from JSON+prompt source (wake-provider.json
+#                     + prompt.md) and compare the FULL rendered output
+#                     byte-for-byte (headers included) against the
+#                     committed golden at ${CN_PACKAGE_ROOT}/orchestrators/
+#                     <wake-name>/cnos-<wake-name>.golden.yml (now produced
+#                     from SKILL.md by default). The header block uses
 #                     canonical JSON-source paths regardless of --source,
 #                     so the two renders are fully identical including the
 #                     source-attribution comment lines; nothing is excluded.
+#                     Proves render(JSON+prompt) == render(SKILL.md).
 #                     Exit 0 if byte-identical (parity holds); exit 5
-#                     if not. Implies --source skill. Used by the W2
+#                     if not. Implies --source json. Used by the W3
 #                     CI parity gate in install-wake-golden.yml
-#                     (cnos#524 W2). No output file is written.
+#                     (cnos#524 W3). No output file is written.
 #
 # Environment:
 #   CN_HUB_PATH       exported by cn dispatch (per
@@ -99,10 +102,10 @@
 #   4   activation_log_writer mis-declaration (per cnos#496 / cycle/496;
 #       AGENT-ACTIVATION-LOG-v0 §0.1 wake-class writer ownership). Two
 #       trip conditions:
-#   5   parity-check failure — render(SKILL.md) differs from
-#       render(JSON+prompt) on a full byte-for-byte comparison
+#   5   parity-check failure — render(JSON+prompt) differs from
+#       render(SKILL.md) on a full byte-for-byte comparison
 #       (headers included; no lines excluded). Emitted by
-#       --parity-check mode only (per cnos#524 W2).
+#       --parity-check mode only (per cnos#524 W3).
 #         (a) role:dispatch + admin_only:false manifest declares (or
 #             defaults to) activation_log_writer:true. Package-dispatch
 #             wakes are non-writers of .cn-{agent}/logs/; they MUST
@@ -295,7 +298,7 @@ agent=""
 out_path=""
 manifest_override=""
 activation_state_override=""
-source_type="json"
+source_type="skill"
 parity_check=""
 
 while [ $# -gt 0 ]; do
@@ -412,8 +415,8 @@ case "$source_type" in
   json|skill) ;;
   *) die "--source must be 'json' or 'skill' (got '${source_type}')" ;;
 esac
-# --parity-check implies --source skill (proves render(SKILL) == render(JSON)).
-[ -n "$parity_check" ] && source_type="skill"
+# --parity-check implies --source json (proves render(JSON) == render(SKILL)).
+[ -n "$parity_check" ] && source_type="json"
 
 skill_manifest_tmp=""
 skill_body_tmp=""
@@ -1122,10 +1125,10 @@ if [ -n "$parity_check" ]; then
     exit 1
   fi
   if cmp -s "$tmp_out" "$parity_golden"; then
-    echo "cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for ${name} (full byte identity, headers included)"
+    echo "cn-install-wake: parity OK — render(JSON+prompt) == render(SKILL.md) for ${name} (full byte identity, headers included)"
     exit 0
   else
-    echo "cn-install-wake: PARITY FAILURE — render(SKILL.md) differs from render(JSON+prompt) for ${name} (full byte comparison, headers included)" >&2
+    echo "cn-install-wake: PARITY FAILURE — render(JSON+prompt) differs from render(SKILL.md) for ${name} (full byte comparison, headers included)" >&2
     diff "$parity_golden" "$tmp_out" >&2 || true
     exit 5
   fi

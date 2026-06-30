@@ -183,3 +183,46 @@ authorization. Issue #524 transitions to `status:review` for the W2 PR. W3–W4 
 separate operator dispatch.
 
 _Filed by γ@cdd.cnos (W2 R1 closeout), 2026-06-30 (UTC). Cycle/524 W2 R1: CONVERGE. Parity gate delivered. W3 unblocked pending operator authorization._
+
+---
+
+# γ-closeout — cnos#524 W3 R2
+
+## §1. Cycle outcome
+
+**Verdict: CONVERGE.** W3 R2 delivered the renderer source-flip in a single round. β found no
+blocking findings. All AC oracles satisfied. Stop conditions clean.
+
+**Calibrated success claim:** W3 delivers the minimal surgical flip: `cn install-wake <name>` now
+reads SKILL.md by default. The `--parity-check` mode inverts to prove render(JSON+prompt) ==
+render(SKILL.md). Six targeted edits to `cn-install-wake`; one CI step update. No golden changed.
+No live workflow changed. No SKILL.md or JSON+prompt file changed. W2 parity proof holds by
+transitivity — the byte-identity oracle was already proved at W2; the source flip (a code path
+re-ordering, not a render logic change) does not invalidate it.
+
+## §2. What the W3 source-flip proves
+
+After W3:
+- `render(SKILL.md)` is the default path (no flag needed)
+- `render(SKILL.md)` == committed golden (by W2 transitivity)
+- `render(JSON+prompt)` == committed golden (by W2 parity; `--parity-check` confirms)
+- Therefore: `render(SKILL.md)` == `render(JSON+prompt)` (by W2 proof, inverted direction)
+
+The oracle is: CI "Re-render" steps pass with no golden diff + "W3 parity check" passes for
+both wakes. If both hold, the W3 invariant is established.
+
+## §3. Stop condition audit
+
+All W3 stop conditions clear:
+- Golden change: not triggered (goldens absent from diff)
+- Live workflow change: not triggered (live workflows absent from diff)
+- JSON+prompt change: not triggered (wake-provider.json and prompt.md absent from diff)
+- New role-decision strings: not triggered (only `"json"`/`"skill"` string literals changed)
+- Parity break: not expected (source material unchanged since W2 parity proof)
+
+## §4. Next step
+
+W4 (delete JSON+prompt) is now technically unblocked. Pending operator authorization. Issue
+#524 transitions to `status:review` for the W3 PR. W4 is the final phase.
+
+_Filed by γ@cdd.cnos (W3 R2 closeout), 2026-06-30 (UTC). Cycle/524 W3 R2: CONVERGE. Source-flip delivered. W4 unblocked pending operator authorization._

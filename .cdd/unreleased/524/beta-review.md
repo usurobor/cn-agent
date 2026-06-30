@@ -452,3 +452,133 @@ Both wakes produce byte-identical non-header output. The parity comparison corre
 ---
 
 _β@cdd.cnos — cycle/524 W2 R1 review — 2026-06-30 (UTC). CONVERGE._
+
+---
+
+# β-review — cnos#524 W3 R2
+
+---
+cycle: 524
+parent_issue: cnos#524
+document_class: beta-review
+round: W3-R2
+authored_by: β@cdd.cnos (W3-R2)
+date: 2026-06-30 (UTC)
+verdict: converge
+---
+
+## §R2 Verdict
+
+**CONVERGE**
+
+Scope compliance is clean. The source flip (line 298) and parity inversion (line 416) are
+correct. All 6 targeted edits applied. CI step updated with consistent semantics. No golden
+files changed. No live wake workflows touched. No SKILL.md or JSON/prompt files touched.
+PR linkage constraint is met. No stop conditions triggered.
+
+---
+
+## §R2 Scope Compliance Walk
+
+| Constraint | Result | Observation |
+|---|---|---|
+| `schemas/skill.cue` | PASS | Absent from diff |
+| `wake-provider.json` (both wakes) | PASS | Absent from diff |
+| `prompt.md` (both wakes) | PASS | Absent from diff |
+| `SKILL.md` (both wakes) | PASS | Absent from diff |
+| `cnos-agent-admin.golden.yml` | PASS | Absent from diff |
+| `cnos-cds-dispatch.golden.yml` | PASS | Absent from diff |
+| `.github/workflows/cnos-agent-admin.yml` | PASS | Absent from diff |
+| `.github/workflows/cnos-cds-dispatch.yml` | PASS | Absent from diff |
+| No W4 artifacts (JSON/prompt deletion) | PASS | No deletion of JSON+prompt files |
+| `#524` remains open (PR linkage) | PASS | Commit must use `Refs #524` / `Part of #524` only |
+
+Files in diff (allowed):
+- `cn-install-wake`: 6 targeted edits (source flip, parity inversion, doc updates)
+- `install-wake-golden.yml`: "W2 parity check" → "W3 parity check" step update
+- `.cdd/unreleased/524/gamma-scaffold.md`: W3 γ scaffold (replaced W2)
+- `.cdd/unreleased/524/self-coherence.md`: §R2 section appended
+- `.cdd/unreleased/524/beta-review.md`: §R2 section appended (this document)
+
+---
+
+## §R2 Core Change Verification
+
+### Edit 3.1.A — default source flip
+
+- **Location:** `cn-install-wake:298`
+- **Before:** `source_type="json"`
+- **After:** `source_type="skill"`
+- **Verified:** git diff shows exactly this change at the initialization block.
+- **Logic:** The ONLY code paths that set `source_type` after initialization are the `--source`
+  flag parser (lines 392/394) and the parity override (line 416). A plain `cn install-wake <name>`
+  call (no flags) leaves `source_type` at its initialization value: `"skill"`. The SKILL.md
+  extraction block (`if [ "$source_type" = "skill" ]; then`) runs. AC3 satisfied by construction.
+
+### Edit 3.1.B — parity inversion
+
+- **Location:** `cn-install-wake:415-416`
+- **Before:** `[ -n "$parity_check" ] && source_type="skill"`
+- **After:** `[ -n "$parity_check" ] && source_type="json"`
+- **Verified:** git diff shows exactly this change at the post-validation parity override.
+- **Logic:** With `--parity-check`, `source_type` becomes `"json"`. The SKILL.md extraction block
+  is then SKIPPED. The JSON path (jq reads from `wake-provider.json`) runs. The rendered output is
+  compared against the committed golden (now produced from SKILL.md by default). This proves
+  render(JSON+prompt) == render(SKILL.md). AC3 parity direction confirmed.
+
+### Edits 3.1.C–F — documentation updates
+
+- **3.1.C** (`--source` doc): `json` (default) → `skill` (default). `skill` described first. ✓
+- **3.1.D** (`--parity-check` doc): "Render from SKILL.md source…" → "Render from JSON+prompt source…";
+  "Implies --source skill" → "Implies --source json"; "W2 CI parity gate" → "W3 CI parity gate". ✓
+- **3.1.E** (exit-5 doc): "render(SKILL.md) differs from render(JSON+prompt)" → "render(JSON+prompt)
+  differs from render(SKILL.md)"; "W2" → "W3". ✓
+- **3.1.F** (messages): "render(SKILL.md) == render(JSON+prompt)" → "render(JSON+prompt) ==
+  render(SKILL.md)" for both success and failure messages. ✓
+
+### CI step (§3.2) — W2 → W3
+
+- **Before:** `name: W2 parity check — render(SKILL.md) == render(JSON+prompt)`
+- **After:** `name: W3 parity check — render(JSON+prompt) == render(SKILL.md)`
+- **Comment:** Updated to reflect W3 semantics (goldens now produced from SKILL.md by default;
+  `--parity-check` now implies `--source json`).
+- **Run block:** Unchanged — same two `--parity-check` invocations.
+
+---
+
+## §R2 AC Oracle Walk
+
+| AC | Check | Result |
+|---|---|---|
+| AC3 | `source_type="skill"` at init; SKILL.md path runs for plain invocation | PASS — by construction |
+| AC3 | CI re-render steps use plain invocation; goldens expected unchanged | EXPECTED PASS |
+| AC4 | No golden file in diff | PASS — `cnos-agent-admin.golden.yml` and `cnos-cds-dispatch.golden.yml` absent from diff |
+| AC4 | W2 parity transitivity: SKILL.md renders == JSON+prompt renders == goldens | PASS — transitivity holds; no source material changed |
+| AC6 | Refusal gates (exit 3, exit 4) are in renderer logic below the source selection block | PASS — no gate code touched |
+| AC6 | CI refusal smokes use `--manifest` override; source selection bypassed | PASS — unaffected |
+| AC7 | All CI gates: no changes to Go, Package, Binary, dispatch-repair-preflight scope | EXPECTED PASS |
+| AC8 | No new literal role-decision strings in renderer diff | PASS — only `"json"`, `"skill"` literals and comment text changed |
+
+---
+
+## §R2 Stop Condition Audit
+
+| Stop condition | Status |
+|---|---|
+| Goldens change after source flip | NOT triggered — no golden in diff; W2 parity transitivity holds |
+| Live wake workflow changes | NOT triggered — `cnos-agent-admin.yml` and `cnos-cds-dispatch.yml` absent from diff |
+| JSON+prompt files modified | NOT triggered — both `wake-provider.json` and `prompt.md` absent from diff |
+| SKILL.md files modified | NOT triggered — both wake SKILL.md files absent from diff |
+| New role-decision strings in renderer | NOT triggered — only `"json"`/`"skill"` and comment text changed |
+| Parity check broken (render divergence) | NOT expected — source material unchanged; same parity paths run in CI |
+| Any green gate turns red | NOT expected — step name change only; run block identical |
+
+---
+
+## §R2 Findings
+
+None. All checklist items pass.
+
+---
+
+_β@cdd.cnos — cycle/524 W3 R2 review — 2026-06-30 (UTC). CONVERGE._

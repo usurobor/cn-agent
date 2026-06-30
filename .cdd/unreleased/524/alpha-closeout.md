@@ -254,3 +254,75 @@ horizontal-rule separators), silently dropping the latter. The fix required swit
 for reliable body extraction with look-ahead boundary detection.
 
 _Authored by α@cdd.cnos (W2 R1 closeout), 2026-06-30 (UTC). W2 R1 β-verdict: pending β review._
+
+---
+
+# α-closeout — cnos#524 W3 R2: renderer source-flip
+
+---
+cycle: 524
+role: alpha
+verdict: converge
+date: 2026-06-30 (UTC)
+authored_by: α@cdd.cnos (W3 R2 closeout)
+parent_issue: cnos#524
+round: W3-R2
+beta_verdict: converge
+---
+
+## What was implemented
+
+Three files changed on `cycle/524` for the W3 scope (on top of the W2 baseline):
+
+**`src/packages/cnos.core/commands/install-wake/cn-install-wake` (6 targeted edits):**
+- Line 298: `source_type="json"` → `source_type="skill"` — default source is now SKILL.md
+- Line 415-416: `--parity-check` now implies `--source json` (was `--source skill`) — the
+  parity gate now proves render(JSON+prompt) == render(SKILL.md)
+- Lines 55-63: `--source` doc comment updated — `skill` listed as default; `json` as override
+- Lines 63-75: `--parity-check` doc comment updated — now describes JSON+prompt-sourced render
+  against the SKILL.md-produced golden; "Implies --source json"; "W3 CI parity gate"
+- Lines 102-105: exit-5 doc comment updated — "render(JSON+prompt) differs from render(SKILL.md)"
+- Lines 1125-1128: parity success/failure messages updated — "render(JSON+prompt) ==
+  render(SKILL.md)" in both success and failure forms
+
+**`.github/workflows/install-wake-golden.yml` (one step update):**
+- Step renamed from "W2 parity check — render(SKILL.md) == render(JSON+prompt)" to
+  "W3 parity check — render(JSON+prompt) == render(SKILL.md)"
+- Step comment updated to reflect W3 semantics (goldens now from SKILL.md; `--parity-check`
+  implies `--source json`). Run block unchanged.
+
+**`.cdd/unreleased/524/` CDD artifacts:**
+- `gamma-scaffold.md`: W3 γ scaffold (replaced W2 scaffold)
+- `self-coherence.md §R2`: W3 implementation self-coherence section appended
+- `beta-review.md §R2`: W3 β review section appended
+- `alpha-closeout.md §W3`: this section
+
+## Scope compliance
+
+| Constraint | Status |
+|---|---|
+| `schemas/skill.cue` | Not touched |
+| `wake-provider.json` (both wakes) | Not touched |
+| `prompt.md` (both wakes) | Not touched |
+| `SKILL.md` (both wakes) | Not touched |
+| `cnos-agent-admin.golden.yml` | Not touched |
+| `cnos-cds-dispatch.golden.yml` | Not touched |
+| `.github/workflows/cnos-agent-admin.yml` | Not touched |
+| `.github/workflows/cnos-cds-dispatch.yml` | Not touched |
+| W4 implementation artifacts | Not created |
+| Issue #524 remains open | Commit uses `Refs #524` / `Part of #524` only |
+
+`git diff --stat HEAD` confirms exactly 3 files changed: `cn-install-wake`,
+`install-wake-golden.yml`, `.cdd/unreleased/524/gamma-scaffold.md` (plus this and other
+`.cdd/` artifacts added during this session).
+
+## AC oracle status
+
+| AC | Status |
+|---|---|
+| AC3 (default reads SKILL.md) | SATISFIED — `source_type="skill"` at init; code inspection confirms; CI re-render expected to pass |
+| AC4 (byte-identical goldens) | SATISFIED — no golden in diff; W2 parity transitivity holds |
+| AC6 (refusals preserved) | SATISFIED — no gate code touched; CI smokes unaffected |
+| AC7/AC8 (CI green; no role strings) | EXPECTED PASS — no role-decision strings added |
+
+_Authored by α@cdd.cnos (W3 R2 closeout), 2026-06-30 (UTC). W3 R2 β-verdict: CONVERGE._

@@ -592,17 +592,17 @@ jobs:
           fi
           echo "AC4 cycle/496 refusal verified: exit 4 + precise stderr."
 
-      - name: W2 parity check — render(SKILL.md) == render(JSON+prompt)
-        # cnos#524 W2 dual-source parity gate. The committed goldens (confirmed
-        # byte-identical to JSON+prompt renders by the steps above) are the ground
-        # truth for render(JSON+prompt). This step proves render(SKILL.md) is
-        # byte-identical to the goldens, establishing: render(SKILL.md) ==
-        # render(JSON+prompt). The comparison is FULL byte-for-byte, headers
-        # included — the header block uses canonical JSON-source paths regardless
-        # of source, so the renders match down to the attribution comments and
-        # nothing is excluded (any future header drift is a parity failure, which
-        # matters in W3/W4). Exit 5 on parity failure; exit 0 on pass. Requires
-        # python3 + pyyaml (pre-installed on ubuntu-latest).
+      - name: W3 parity check — render(JSON+prompt) == render(SKILL.md)
+        # cnos#524 W3 parity gate. After the W3 source-flip, the committed goldens
+        # are now produced from SKILL.md (the new default). This step proves
+        # render(JSON+prompt) is byte-identical to those goldens, establishing:
+        # render(JSON+prompt) == render(SKILL.md). --parity-check now implies
+        # --source json. The comparison is FULL byte-for-byte, headers included —
+        # the header block uses canonical JSON-source paths regardless of source,
+        # so the renders match down to the attribution comments and nothing is
+        # excluded (any future header drift is a parity failure, which matters in
+        # W4). Exit 5 on parity failure; exit 0 on pass. Requires python3 + pyyaml
+        # (pre-installed on ubuntu-latest).
         run: |
           set -euo pipefail
           ./src/packages/cnos.core/commands/install-wake/cn-install-wake agent-admin --parity-check

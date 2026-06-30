@@ -336,3 +336,90 @@ PATH. The CI environment satisfies this (verified from existing `install-wake-go
 step). For local use, operators must have pyyaml installed.
 
 REVIEW READY: R1
+
+---
+
+## §R2 — W3 implementation self-coherence (α@cdd.cnos, 2026-06-30)
+
+### 1. Gap this cycle addresses
+
+W3 is the source-flip: after W2 proved byte-identical parity between SKILL.md renders and
+JSON+prompt renders, W3 flips the renderer default so `cn install-wake <name>` reads SKILL.md
+by default. The `--parity-check` mode is inverted: it now proves render(JSON+prompt) ==
+render(SKILL.md), rather than the W2 direction. Goldens are unchanged; JSON+prompt files are
+unchanged; live workflows are unchanged. This is a minimal surgical flip — the invariant is
+that the committed goldens remain byte-identical (provable by transitivity from W2 parity).
+
+### 2. Files changed (W3 scope)
+
+| File | Change type | Stop-condition check |
+|---|---|---|
+| `src/packages/cnos.core/commands/install-wake/cn-install-wake` | 6 targeted edits | Source default flipped; parity semantics inverted; doc comments updated; no golden change; no live workflow change |
+| `.github/workflows/install-wake-golden.yml` | Step rename + comment update | "W2 parity check" → "W3 parity check"; run block unchanged; no golden-write; no new step |
+| `.cdd/unreleased/524/gamma-scaffold.md` | Replaced W2 scaffold with W3 scaffold | W3 scope, ACs, implementation contract, β review prompt |
+| `.cdd/unreleased/524/self-coherence.md §R2` | Extended (this section) | Artifact; no code change |
+
+**Files NOT touched (hard constraints):**
+
+| File / surface | Confirmed |
+|---|---|
+| `schemas/skill.cue` | Not touched |
+| `wake-provider.json` (both wakes) | Not touched |
+| `prompt.md` (both wakes) | Not touched |
+| `SKILL.md` (both wakes) | Not touched |
+| `cnos-agent-admin.golden.yml` | Not touched (git diff confirms) |
+| `cnos-cds-dispatch.golden.yml` | Not touched (git diff confirms) |
+| `.github/workflows/cnos-agent-admin.yml` | Not touched |
+| `.github/workflows/cnos-cds-dispatch.yml` | Not touched |
+
+### 3. Core flip verification
+
+**Edit 3.1.A (`cn-install-wake:298`):** `source_type="json"` → `source_type="skill"`.
+The ONLY assignments to `source_type` after initialization are: `--source json/skill` flag
+overrides (lines 392/394) and the parity-check override (line 416). A plain invocation
+(`cn install-wake <name>`) sets no flags, so `source_type` stays `"skill"` and the SKILL.md
+extraction path runs. Correct.
+
+**Edit 3.1.B (`cn-install-wake:415-416`):** The parity override now sets `source_type="json"`.
+When `--parity-check` is passed, source_type becomes "json" — the SKILL.md extraction block
+(`if [ "$source_type" = "skill" ]; then`) is skipped; the JSON path (jq reads from
+`wake-provider.json`) runs. The rendered output is compared against the committed golden (now
+produced from SKILL.md by default). This proves render(JSON+prompt) == render(SKILL.md). Correct.
+
+**Edits 3.1.C–F:** Documentation and message strings updated to reflect flipped semantics.
+No logic changed by these edits.
+
+**CI step (§3.2):** Step name and comment updated. `run:` block is identical — same two
+`--parity-check` invocations. The step continues to run both wakes through the parity check
+and exits 0 on identity, 5 on divergence.
+
+### 4. AC oracle status
+
+| AC | Oracle | Status |
+|---|---|---|
+| AC3 (default reads SKILL.md) | Code inspection (§3 above) + CI re-render → golden unchanged | SATISFIED by construction |
+| AC4 (goldens byte-identical) | git diff confirms no golden change + transitivity from W2 parity | SATISFIED by transitivity |
+| AC6 (refusals preserved) | Refusal gates are in renderer logic, not in source selection; CI smokes use `--manifest` override | SATISFIED — no gate code touched |
+| AC7/AC8 (CI green, no role-decision strings) | No new literal role-decision strings added; audit grep targets unaffected lines | EXPECTED PASS |
+
+### 5. Stop-condition audit (W3)
+
+| Stop condition | Status |
+|---|---|
+| Goldens change after source flip | NOT expected — W2 parity proof; git diff confirms no golden file in diff |
+| Live wake workflow changes | NOT triggered — `cnos-agent-admin.yml` and `cnos-cds-dispatch.yml` not in diff |
+| JSON+prompt files modified | NOT triggered — both `wake-provider.json` and `prompt.md` files untouched |
+| SKILL.md files modified | NOT triggered — both wake SKILL.md files untouched |
+| New role-decision strings in renderer | NOT triggered — only `"json"`/`"skill"` string literals and comment text changed |
+| Any green gate turns red | NOT expected — CI step updated consistently with code semantics |
+
+### 6. Scope compliance
+
+`git diff --stat HEAD` shows exactly 3 files:
+- `.cdd/unreleased/524/gamma-scaffold.md` (replaced W2 with W3)
+- `.github/workflows/install-wake-golden.yml` (parity step renamed)
+- `src/packages/cnos.core/commands/install-wake/cn-install-wake` (6 edits)
+
+No golden files. No live workflow files. No SKILL.md files. No JSON/prompt files. Scope clean.
+
+REVIEW READY: R2
