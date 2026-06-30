@@ -1,0 +1,36 @@
+# Fixture: scripts/ci/fixtures/review-request/valid/valid-review-request.yaml
+# cnos#532 AC5 — a structurally complete REVIEW-REQUEST.yml. Guard B's
+# offline structural mode must pass this fixture.
+#
+# artifacts.* paths point at sibling stub files under
+# scripts/ci/fixtures/review-request/_artifacts-524/ so the on-disk
+# existence check is self-contained and does not depend on a real cycle.
+
+schema: cdd.review-request.v1
+cell: 524
+issue: 524
+run_class: first_pass
+matter:
+  branch: cycle/524
+  pr: 529
+  base_sha: 90b9e8120000000000000000000000000000000
+  head_sha: 1d97d863000000000000000000000000000000
+  changed_files:
+    - src/packages/cnos.core/commands/install-wake/cn-install-wake
+artifacts:
+  alpha_closeout: scripts/ci/fixtures/review-request/_artifacts-524/alpha-closeout.md
+  self_coherence: scripts/ci/fixtures/review-request/_artifacts-524/self-coherence.md
+  receipt: scripts/ci/fixtures/review-request/_artifacts-524/receipt.md
+checks:
+  - install-wake-golden: pass
+  - I1: pass
+  - I2: pass
+  - I4: pass
+  - I5: pass
+  - I6: pass
+  - Go: pass
+known_gaps: []
+request:
+  next_state: status:review
+  requested_by: alpha
+  requested_at: 2026-06-30T00:00:00Z

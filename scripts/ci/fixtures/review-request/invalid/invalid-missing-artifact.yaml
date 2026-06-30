@@ -1,0 +1,27 @@
+# Fixture: scripts/ci/fixtures/review-request/invalid/invalid-missing-artifact.yaml
+# cnos#532 AC4 — required .cdd/unreleased/<N>/ artifacts do not exist on
+# disk. Guard B must fail this fixture: the self_coherence path points at
+# a file that was never created.
+
+schema: cdd.review-request.v1
+cell: 524
+issue: 524
+run_class: first_pass
+matter:
+  branch: cycle/524
+  pr: 529
+  base_sha: 90b9e8120000000000000000000000000000000
+  head_sha: 1d97d863000000000000000000000000000000
+  changed_files:
+    - src/packages/cnos.core/commands/install-wake/cn-install-wake
+artifacts:
+  alpha_closeout: scripts/ci/fixtures/review-request/_artifacts-524/alpha-closeout.md
+  self_coherence: .cdd/unreleased/524/this-file-does-not-exist.md
+  receipt: scripts/ci/fixtures/review-request/_artifacts-524/receipt.md
+checks:
+  - Go: pass
+known_gaps: []
+request:
+  next_state: status:review
+  requested_by: alpha
+  requested_at: 2026-06-30T00:00:00Z

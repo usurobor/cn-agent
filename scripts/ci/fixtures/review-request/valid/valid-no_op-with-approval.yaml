@@ -1,0 +1,28 @@
+# Fixture: scripts/ci/fixtures/review-request/valid/valid-no_op-with-approval.yaml
+# cnos#532 — a genuinely no-op cell (no diff) with an explicit no_op
+# declaration and operator approval. Guard B must pass this fixture: the
+# operator-clarification's "No-op cells" rule permits status:review without
+# a PR/diff only when no_op + no_op_approval are both present.
+
+schema: cdd.review-request.v1
+cell: 524
+issue: 524
+run_class: first_pass
+no_op: true
+no_op_approval: "operator approved no-op review request in issue #524 comment, 2026-06-30"
+matter:
+  branch: cycle/524
+  base_sha: 90b9e8120000000000000000000000000000000
+  head_sha: 1d97d863000000000000000000000000000000
+  changed_files: []
+artifacts:
+  alpha_closeout: scripts/ci/fixtures/review-request/_artifacts-524/alpha-closeout.md
+  self_coherence: scripts/ci/fixtures/review-request/_artifacts-524/self-coherence.md
+  receipt: scripts/ci/fixtures/review-request/_artifacts-524/receipt.md
+checks:
+  - Go: pass
+known_gaps: []
+request:
+  next_state: status:review
+  requested_by: alpha
+  requested_at: 2026-06-30T00:00:00Z

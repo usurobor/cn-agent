@@ -1,0 +1,26 @@
+# Fixture: scripts/ci/fixtures/review-request/invalid/invalid-missing-pr.yaml
+# cnos#532 AC5 — matter.pr is absent and no_op is not declared. Guard B must
+# fail this fixture: "a PR exists" is one of the operator-clarification's
+# required deliverable-proof predicates.
+
+schema: cdd.review-request.v1
+cell: 524
+issue: 524
+run_class: first_pass
+matter:
+  branch: cycle/524
+  base_sha: 90b9e8120000000000000000000000000000000
+  head_sha: 1d97d863000000000000000000000000000000
+  changed_files:
+    - src/packages/cnos.core/commands/install-wake/cn-install-wake
+artifacts:
+  alpha_closeout: scripts/ci/fixtures/review-request/_artifacts-524/alpha-closeout.md
+  self_coherence: scripts/ci/fixtures/review-request/_artifacts-524/self-coherence.md
+  receipt: scripts/ci/fixtures/review-request/_artifacts-524/receipt.md
+checks:
+  - Go: pass
+known_gaps: []
+request:
+  next_state: status:review
+  requested_by: alpha
+  requested_at: 2026-06-30T00:00:00Z

@@ -1,0 +1,27 @@
+# Fixture: scripts/ci/fixtures/review-request/invalid/invalid-524-w4-empty-review.yaml
+# cnos#532 AC5 — direct reproduction of the #524 W4 empty-review failure
+# mode named in the issue: "status:review / no PR / no commits beyond base
+# / no reviewable diff / no receipt / no closeout / no STOP comment."
+#
+# This fixture represents a cell that attempted to request status:review
+# with none of the required deliverable proof: no PR, base_sha == head_sha
+# (no commits), no changed_files, and no artifacts. Guard B must fail this
+# on every predicate simultaneously — the historical failure state must
+# not silently validate.
+
+schema: cdd.review-request.v1
+cell: 524
+issue: 524
+run_class: first_pass
+matter:
+  branch: cycle/524
+  base_sha: 90b9e8120000000000000000000000000000000
+  head_sha: 90b9e8120000000000000000000000000000000
+  changed_files: []
+artifacts: {}
+checks: []
+known_gaps: []
+request:
+  next_state: status:review
+  requested_by: alpha
+  requested_at: 2026-06-30T00:00:00Z
