@@ -343,3 +343,112 @@ All three W1 deliverables are correctly implemented: `schemas/skill.cue` adds `"
 ---
 
 _β@cdd.cnos — cycle/524 W1 R0 review — 2026-06-30 (UTC)_
+
+---
+
+# β-review — cnos#524 W2 R1
+
+---
+cycle: 524
+parent_issue: cnos#524
+document_class: beta-review
+round: W2-R1
+authored_by: β@cdd.cnos (W2-R1)
+date: 2026-06-30 (UTC)
+base_sha: 1a0acfc14ccbdf26d1088472125864be037ff1e1
+verdict: converge
+---
+
+## §R1 Verdict
+
+**CONVERGE**
+
+Scope compliance is clean. Parity gate passes for both wakes (exit 0). No golden files changed.
+No live wake workflows touched. The renderer extension is internally coherent and does not alter
+the existing wake behavior (default source remains JSON+prompt). No stop conditions triggered.
+
+---
+
+## §R1 Scope Compliance Walk
+
+| Constraint | Result | Observation |
+|---|---|---|
+| `schemas/skill.cue` | PASS | Absent from diff |
+| `wake-provider.json` (both wakes) | PASS | Absent from diff |
+| `prompt.md` (both wakes) | PASS | Absent from diff |
+| `cnos-agent-admin.golden.yml` | PASS | Absent from diff; verified byte-identical |
+| `cnos-cds-dispatch.golden.yml` | PASS | Absent from diff; verified byte-identical |
+| `.github/workflows/cnos-agent-admin.yml` | PASS | Absent from diff |
+| `.github/workflows/cnos-cds-dispatch.yml` | PASS | Absent from diff |
+| No W3/W4 artifacts | PASS | No source flip, no JSON/prompt deletion |
+| #524 remains open | PASS | Commit messages use `Refs #524` / `Part of #524` only |
+
+Files in diff (allowed):
+- `cn-install-wake`: W2 renderer extension (writable per directive)
+- `install-wake-golden.yml`: parity step addition (writable per directive — CI guard step ONLY)
+- `.cdd/unreleased/524/gamma-scaffold.md`: W2 γ scaffold (writable)
+- `.cdd/unreleased/524/self-coherence.md`: R1 section appended (writable)
+- `.cdd/unreleased/524/alpha-closeout.md`: W2 R1 section appended (writable)
+
+---
+
+## §R1 Parity Gate Verification
+
+```
+cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for agent-admin  EXIT: 0
+cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for cds-dispatch EXIT: 0
+```
+
+Both wakes produce byte-identical non-header output. The parity comparison correctly strips
+`^#`-prefixed header comment lines (FN-W2-1) before comparing.
+
+---
+
+## §R1 Renderer Extension Review
+
+**`skill_to_json_manifest()` correctness:**
+- Generates synthesized JSON with `schema: cn.wake-provider.v1` — matches the JSON source schema field.
+- Maps `wake.*` frontmatter fields to the exact jq paths consumed by the renderer's validation and
+  rendering logic. Verified by parity pass: the renderer reads the synthesized JSON and produces
+  the same output as when reading `wake-provider.json` directly.
+- `activation_log_writer` has()-vs-absent distinction: Python includes the key only when explicitly
+  present in SKILL.md's `wake:` block. admin SKILL.md has no `activation_log_writer` key → field
+  absent from synthesized JSON (same as `wake-provider.json`). cds-dispatch SKILL.md has
+  `activation_log_writer: false` → field present as `false`. Both cases match the existing JSON
+  manifests. Parity confirms this.
+
+**`skill_body()` extraction:**
+- Python-based extractor. Strips leading blank line (standard blank after closing `---` delimiter)
+  and stops before the W1 reference-data sections. Boundary detection via
+  `\n\n---\n\n## .+(from wake-provider.json|body reference)` regex matches the W1 authoring
+  convention for both wakes.
+- Both extracted bodies are byte-identical to their respective `prompt.md` files (confirmed by
+  parity pass — the rendered output is byte-identical).
+
+**Header stability:**
+- `display_manifest_path` / `display_prompt_path` always use `json_manifest_path` / `json_prompt_path`
+  regardless of `--source` flag. Verified: `--source skill` produces `(unchanged)` for both goldens
+  (identical headers, identical body → full file identical).
+
+**CI parity step in `install-wake-golden.yml`:**
+- Step is placed BEFORE the AC8/AC7 authority audit step.
+- Uses `--parity-check` flag (exits 0 or 5); no `--out` flag; no golden write.
+- The step comment correctly explains the oracle: goldens are ground truth for render(JSON+prompt);
+  `--parity-check` proves render(SKILL.md) == golden → establishes byte-identity.
+
+---
+
+## §R1 Stop Condition Audit
+
+| Stop condition | Status |
+|---|---|
+| SKILL.md render differs from JSON+prompt render | NOT triggered — parity OK both wakes |
+| Any golden changes | NOT triggered — `git diff` PASS on both goldens |
+| Any live wake workflow changes | NOT triggered — PASS on both live workflows |
+| Renderer change alters wake behavior | NOT triggered — default source unchanged; golden idempotent |
+| Parity requires weakening validation | NOT triggered — skill source has reduced required_fields per W0 §D (prose fields → body), not a validation weakening |
+| Any green gate turns red | NOT triggered — parity step passes; no existing steps removed |
+
+---
+
+_β@cdd.cnos — cycle/524 W2 R1 review — 2026-06-30 (UTC). CONVERGE._

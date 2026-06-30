@@ -233,3 +233,106 @@ The renderer was not touched. Neither `wake-provider.json` nor `prompt.md` was m
 - **FN-8:** Deletion sequencing deferred to W4.
 
 REVIEW READY: R0
+
+---
+
+## §R1 — W2 implementation self-coherence (α@cdd.cnos, 2026-06-30)
+
+### 1. Gap this cycle addresses
+
+W2 extends `cn-install-wake` so the renderer can read from either source:
+`wake-provider.json + prompt.md` (JSON source, default) or `SKILL.md` frontmatter + body (skill
+source). The parity gate proves the two renders produce identical output (modulo `#`-prefixed
+header comment lines that name the source file, which differ by design — FN-W2-1). No source flip
+occurs in W2; goldens are unchanged; active wake behavior is unchanged.
+
+### 2. Files changed (W2 scope)
+
+| File | Change type | Stop-condition check |
+|---|---|---|
+| `src/packages/cnos.core/commands/install-wake/cn-install-wake` | Extended | No golden change; no live workflow change; exit codes added (5 = parity fail); new flags only (`--source`, `--parity-check`) |
+| `.github/workflows/install-wake-golden.yml` | Added step | Parity step added BEFORE AC8 step; step uses `--parity-check` not production install; no golden-write invocation |
+| `.cdd/unreleased/524/gamma-scaffold.md` | Authored (W2 scope) | W2 γ scaffold; supersedes W1 scope document |
+| `.cdd/unreleased/524/self-coherence.md §R1` | Extended (this section) | Artifact; no code change |
+
+**Files NOT touched (hard constraints):**
+
+| File / surface | Confirmed |
+|---|---|
+| `schemas/skill.cue` | Not touched |
+| `wake-provider.json` (both wakes) | Not touched |
+| `prompt.md` (both wakes) | Not touched |
+| `cnos-agent-admin.golden.yml` | Not touched (git diff confirms) |
+| `cnos-cds-dispatch.golden.yml` | Not touched (git diff confirms) |
+| `.github/workflows/cnos-agent-admin.yml` | Not touched |
+| `.github/workflows/cnos-cds-dispatch.yml` | Not touched |
+
+### 3. Parity check results (verified locally)
+
+```
+cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for agent-admin   EXIT: 0
+cn-install-wake: parity OK — render(SKILL.md) == render(JSON+prompt) for cds-dispatch  EXIT: 0
+cn-install-wake: agent-admin → …/cnos-agent-admin.golden.yml (unchanged)   (default render)
+cn-install-wake: cds-dispatch → …/cnos-cds-dispatch.golden.yml (unchanged)  (default render)
+cn-install-wake: agent-admin → …/cnos-agent-admin.golden.yml (unchanged)   (--source skill)
+cn-install-wake: cds-dispatch → …/cnos-cds-dispatch.golden.yml (unchanged)  (--source skill)
+```
+
+### 4. Implementation invariants verified
+
+**FN-W2-1 → SUPERSEDED (manual-δ amendment, post-β, operator W2 tweak 2026-06-30):** The
+`--parity-check` implementation originally stripped `^#` lines from both the skill-rendered temp
+file and the golden before `cmp`. But because the header is source-stable (see "Header stability"
+immediately below), the two renders are in fact byte-identical *including* the `# manifest:` /
+`# prompt:` attribution lines — so the stripping excluded nothing. Per the operator's W2 tweak the
+header-stripping was removed: `--parity-check` now compares the **full** rendered output
+byte-for-byte, headers included. This makes the oracle exactly `render(SKILL.md) ==
+render(JSON+prompt)` with no tolerance, so any future header drift (which will matter in W3/W4) is
+now a parity failure. Verified: full-byte parity OK for both wakes; negative test (golden drift
+injected) correctly exits 5. The header-exclusion references in the α/β/γ closeouts describe the
+original pre-tweak pass and are superseded by this amendment.
+
+**Header stability (golden unchanged by `--source skill`):** The `display_manifest_path` and
+`display_prompt_path` variables are now derived from the canonical JSON-source paths
+(`json_manifest_path`, `json_prompt_path`) regardless of `--source` flag. This means `--source
+skill` writes the same header as the JSON render, keeping the golden byte-identical on subsequent
+runs.
+
+**`skill_body()` boundary detection:** The Python extractor strips the leading blank line
+(standard blank after the closing `---` frontmatter delimiter) and stops at the first
+`\n\n---\n\n## .+(from wake-provider.json|body reference)` pattern — the W1 convention for
+reference-data sections appended beyond the verbatim `prompt.md` content. Both wakes pass parity
+after this fix.
+
+**`activation_log_writer` has()-vs-absent distinction preserved:** `skill_to_json_manifest()`
+only includes `activation_log_writer` in the synthesized JSON when the field is explicitly present
+in the `wake:` block. Verified: agent-admin (no `activation_log_writer` key in SKILL.md wake
+block) → field absent from synthesized JSON; cds-dispatch (`activation_log_writer: false`) →
+field present as `false`. Parity passes for both.
+
+### 5. Stop-condition audit (W2)
+
+| Stop condition | Status |
+|---|---|
+| SKILL.md render differs from JSON+prompt render | NOT triggered — parity OK for both wakes |
+| Any golden changes | NOT triggered — `git diff` confirms both goldens unchanged |
+| Any live wake workflow changes | NOT triggered — no touch to cnos-agent-admin.yml or cnos-cds-dispatch.yml |
+| Renderer change alters wake behavior | NOT triggered — default source remains JSON; no golden diff |
+| Parity requires weakening validation | NOT triggered — required_fields set for skill source is additive-reduced (prose fields move to body per W0 design §D), not a weakening of the validation contract |
+| Any green gate turns red | NOT triggered — parity step added only passes for both wakes; no existing step removed or altered |
+
+### 6. Friction notes (W2)
+
+**FN-W2-1 (header-line exclusion):** Documented above. The `grep -v '^#'` approach correctly
+excludes all header comment lines.
+
+**FN-W2-2 (body boundary detection):** The boundary `\n\n---\n\n## .+(from wake-provider.json|
+body reference)` is specific to the W1 SKILL.md authoring convention. If a future wake SKILL.md
+uses different section-heading naming, the extractor may include extra content. W3 implementer
+should audit SKILL.md body structures when the flip is executed.
+
+**FN-W2-3 (python3 + pyyaml dependency):** `--source skill` requires `python3` and `pyyaml` in
+PATH. The CI environment satisfies this (verified from existing `install-wake-golden.yml` setup
+step). For local use, operators must have pyyaml installed.
+
+REVIEW READY: R1

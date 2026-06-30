@@ -96,3 +96,37 @@ W1 R0 was an implementation dispatch with three constrained output files: `schem
 CONVERGE. All AC oracle conditions met. No iterate condition triggered. The implementation is scope-clean, field-complete, and CUE-valid.
 
 _Filed by β@cdd.cnos, 2026-06-30 (UTC). Cycle/524 W1 R0 closed: CONVERGE._
+
+---
+
+# β-closeout — cnos#524 W2 R1
+
+## Review process summary
+
+W2 delivered a renderer extension (`--source skill`, `--parity-check`) and a CI parity guard step.
+The review ran in three passes.
+
+**Pass 1 — Scope compliance.** Walked the diff. All 9 constrained paths PASS. The two changed
+non-artifact paths (`cn-install-wake`, `install-wake-golden.yml`) are both explicitly listed as
+writable in the W2 operator directive.
+
+**Pass 2 — Parity gate.** Ran both `--parity-check` invocations. Both exit 0. Both goldens
+confirmed unchanged before and after `--source skill` runs. Header stability verified.
+
+**Pass 3 — Implementation review.** Reviewed `skill_to_json_manifest()`, `skill_body()`,
+`--parity-check` exit-code handling, and the CI step placement. No blocking findings:
+- synthesized JSON maps all required fields correctly (confirmed by parity pass)
+- body extractor correctly strips leading blank and trailing reference sections (confirmed by parity)
+- `activation_log_writer` has()-vs-absent preserved (admin: absent, dispatch: false — matches JSON)
+- CI step uses `--parity-check` only; no golden write risk
+
+## Verdict rationale
+
+**CONVERGE.**
+
+Scope compliance CLEAN. Parity gate PASSES for both wakes. No stop conditions triggered. The W2
+implementation proves byte-identity of both render paths in CI without altering the active wake
+behavior, golden files, or live workflow files. The iterate threshold (scope violation, parity
+failure, stop condition trigger) was not met.
+
+_Filed by β@cdd.cnos, 2026-06-30 (UTC). Cycle/524 W2 R1 closed: CONVERGE._
