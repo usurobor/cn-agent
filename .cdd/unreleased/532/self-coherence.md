@@ -1,7 +1,7 @@
 # self-coherence — cycle/532
 
 manifest:
-  completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
 
 ## Gap
 
@@ -235,3 +235,53 @@ Every file in `git diff --stat origin/main..HEAD` is named explicitly in this do
    - `.cdd/unreleased/532/self-coherence.md` — this document.
 
 7. **self-coherence** — this document, written incrementally per §2.5's discipline (one section per commit: §Gap `4c2c283`, §Skills `337b438`, §ACs `edbff6e`, §Self-check `06fce26`, §Debt `8ee349c`, §CDD Trace this commit).
+
+## Review-readiness | round 1 | implementation SHA: `e893d9a6` | branch CI: not run on this exact head (no PR/Actions run exists yet for cycle/532 as of this writing — α does not open PRs) | **STOP — NOT ready for β in the normal sense**
+
+**This cycle is implementation-complete against issue #532's 10 ACs as scoped** (see §ACs above; all evidence gathered, all locally-runnable gates green as enumerated below) — **but the branch is intentionally NOT rebased onto current `origin/main`**, because doing so surfaces a genuine, unresolved doctrinal conflict with an independently-landed remediation for the same root-cause incident (cnos#524 W4 RCA, PR #531, merged to `main` while this cycle was in progress). Full detail: `.cdd/unreleased/532/CONFLICT-cnos524-w4-overlap.md`.
+
+Per `alpha/SKILL.md` §2.6 row 1 ("if `origin/main` advanced, α rebases the cycle branch onto it") and the dispatch's own instruction ("If you hit a genuine ambiguity not resolved by the issue, the operator comment, the scaffold, or this dispatch, do not guess — write the conflict to `.cdd/unreleased/532/` and stop rather than improvising scope") — I am following the stop-and-surface path, not the rebase-and-improvise path. Rebasing past the conflict would require a design decision (supersede / layer / merge the two parallel deliverable-proof mechanisms — see the conflict doc's three named candidate paths) that is γ/δ/operator's to make, not mine to guess at mid-implementation.
+
+**Pre-review gate checklist (§2.6), honestly scored against this blocked state:**
+
+1. **Cycle branch rebased onto current `origin/main`** — ❌ **NOT DONE, intentionally.** `origin/main` is at `7950ab3d`; `cycle/532` is still based at `8f4f01b0` (13 commits behind). A real rebase attempt was performed and aborted after confirming the conflict is genuine (see conflict doc). This is the row this entire section is about.
+2. `.cdd/unreleased/{N}/self-coherence.md` carries CDD Trace through step 7 — ✅ done (this document, §CDD Trace above, step 7 is this Review-readiness section itself).
+3. Tests present — ✅ the Guard B fixture suite (9 fixtures + self-test harness) is this cycle's test surface; no Go code changed so no Go tests were needed.
+4. Every AC has evidence — ✅ §ACs above, all 10 ACs mapped to concrete oracle evidence.
+5. Known debt explicit — ✅ §Debt above (5 named items) plus this conflict, which is debt of a different, blocking class.
+6. Schema/shape audit completed — ✅ §Self-check "Harness audit" above.
+7. Peer enumeration completed — ✅ §Self-check "Peer enumeration" above (found and fixed 2 additional peer surfaces beyond δ's named 4: `delta/SKILL.md`, `wake-provider.json`).
+8. Harness audit completed — ✅ same as row 6.
+9. Post-patch re-audit — N/A, no mid-cycle β patch occurred yet (round 1).
+10. **Branch CI is green on the head commit** — ⚠️ **partially verified locally only; no Actions run exists for this exact head since no PR is open.** See the explicit local-vs-CI-only gate breakdown below.
+11. Artifact enumeration matches diff — ✅ §CDD Trace step 6 lists every file (as of the pre-conflict-doc state; the conflict doc + this section themselves are now also part of the diff and are self-evidently enumerated by being part of this very document).
+12. Caller-path trace for new modules — ✅ §Self-check above.
+13. Test-assertion count from runner output — ✅ §Self-check above (262 Go assertions, 10 fixture assertions, pasted directly).
+14. α's commit author email matches canonical pattern — ✅ verified: `git log --format='%ae' HEAD` → `alpha@cdd.cnos` for every α commit on this branch (confirmed via `git log --format='%h %ae' -6` showing 6 consecutive `alpha@cdd.cnos` commits before the pre-existing γ-scaffold commit's distinct identity, as expected).
+15. γ-side artifact presence at the rule-3.11b surface — ✅ `gamma-scaffold.md` present at the canonical `.cdd/unreleased/532/gamma-scaffold.md` path (§5.1 canonical dispatch configuration; confirmed via direct file read at the start of this dispatch).
+
+**Gates verified locally (explicit, with results):**
+
+- `go build ./...`, `go build -o cn ./cmd/cn`, `go vet ./...` — all OK.
+- `go test ./...` and `go test ./... -v` — all 14 packages OK, 262 individual `--- PASS` assertions, 0 failures.
+- Dispatch boundary check (INVARIANTS.md T-002) — OK, 0 violations.
+- Smoke test (`./cn help`) — OK.
+- Tier 1 verification (`scripts/kata/run-all.sh`, equivalent to `binary-verify` CI job) — all katas passed (Status, Doctor, Build, Install).
+- `cn build` (package build, equivalent to part of `package-verify`) — 8/8 packages built successfully.
+- I1 (`cn build --check`) — all 8 packages valid.
+- I2 (`diff docs/reference/schemas/protocol-contract.json tests/fixtures/protocol-contract.json`) — identical, OK.
+- I6 (`cn cdd verify --unreleased --exceptions .cdd/exceptions.yml`) — 106 passed, 0 failed, 78 warnings (pre-existing warnings across other unreleased cycles, not introduced by this cycle).
+- I6 fixture tests (`cdd-verify/test-fixtures.sh`) — 3/3 passed.
+- cnos#516 guard (`check-dispatch-repair-preflight.sh`) — passes unmodified, confirming this cycle's doctrine edits did not regress the #516 contract.
+- This cycle's own Guard A (`check-review-request-preflight.sh --guard-a`) — passes.
+- This cycle's own Guard B self-test (`check-review-request-preflight.sh --self-test`) — all 10 fixture assertions pass as expected (2 valid pass, 7 invalid fail, including the #524 W4 reproduction).
+- install-wake-golden equivalents — live/golden sha256 match; both goldens idempotent on a second render; both parse as YAML; cds-dispatch's required substrate shape intact (verified the exact assertions install-wake-golden.yml's `golden-diff` job runs, manually, locally).
+
+**Gates NOT verified locally (CI-only, because they require GitHub Actions infrastructure not available in this session, or because no PR/Actions run exists yet):**
+
+- I4 (link-check via `lychee`) — `lychee` binary not installed in this session's environment; risk assessed as near-zero (no new markdown links were introduced in this cycle's diff — verified via grep for `](`  syntax in every edited doctrine file, 0 hits).
+- I5 (`validate-skill-frontmatter.sh`, requires `cue`) — `cue` binary not installed in this session's environment; risk assessed as near-zero (no SKILL.md frontmatter block was touched — every edit in this cycle lands well past each file's frontmatter, confirmed via `git diff` hunk line numbers).
+- The actual `dispatch-closeout-integrity` (#524 W4) and `review-request-preflight` (#532, this cycle) CI jobs running together in a real Actions run — cannot be exercised without a PR; this is exactly the rebase-blocked state described above.
+- `binary-verify`/`package-verify` Tier 2 (`cn kata run --class runtime` inside a constructed CI hub) — Tier 1 was run and passed; Tier 2's specific multi-package hub construction was not separately re-verified in this session beyond the package-build step, since it is unaffected by this cycle's doctrine-only + new-script diff (no package manifest or schema changed).
+
+**What β should know before reading this branch:** the implementation is complete and self-consistent **in isolation against `8f4f01b0`**, but is **not yet reconciled with `main`'s current state**, which now contains a second, independently-shipped mechanism for the same invariant. β should not approve a merge of this branch as-is without γ/δ first resolving the conflict doc's three candidate paths — merging now would land doctrinal redundancy onto `main`, not just this cycle's intended additive change.
