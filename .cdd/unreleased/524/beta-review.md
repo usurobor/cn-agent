@@ -194,3 +194,152 @@ No blocking findings. No iterate conditions triggered.
 ---
 
 _Reviewed by β@cdd.cnos (R0), 2026-06-30 (UTC). Verdict: CONVERGE. No iterate conditions. α's W0 design document is complete, field-complete, scope-clean, and internally coherent._
+
+---
+
+# β Review — cnos#524 W1 R0
+
+## §R0
+
+**Verdict: CONVERGE**
+
+---
+
+### AC1 — schemas/skill.cue
+
+- [x] `artifact_class` enum includes `"wake"` — line 35: `"skill" | "runbook" | "reference" | "deprecated" | "wake"`. No existing value removed.
+- [x] `#Wake` definition present AFTER `#Skill` definition — `#WakeOutputAdmin` at line 76, `#WakeOutputDispatch` at line 88, `#Wake` at line 107; all after `#Skill` closes at line 71.
+- [x] `role: "admin" | "dispatch"` — no other values. Line 114. OB-1 satisfied.
+- [x] `agent_variable.default: string | null` — line 156. Handles null correctly (FN-3).
+- [x] `artifact_class: "wake"` in `#Wake` — line 108. Constrained to the `"wake"` literal within `#Wake`.
+- [x] Arrays use `[...string]` syntax — `surfaces.allowed?` and `surfaces.disallowed?` at lines 162–163; `permission_intent`, `input.triggers`, selector arrays. No length constraints (FN-4).
+- [x] Output disjunction present — line 140: `output: #WakeOutputAdmin | #WakeOutputDispatch`. `#WakeOutputAdmin` requires `channel_log_convention` (line 77); `#WakeOutputDispatch` requires `cycle_artifact_root` (line 89). Role-shaped enforcement is structural.
+- [x] CUE syntax: `package skill` at top (line 18). All struct bodies balanced. No syntax errors detected. (`cue` binary unavailable in review environment; manual scan performed.)
+- [x] ONLY `schemas/skill.cue` changed for AC1 — confirmed by `git diff origin/main --name-only | grep -v .cdd/` showing only three paths: `schemas/skill.cue`, `agent-admin/SKILL.md`, `cds-dispatch/SKILL.md`.
+
+---
+
+### AC2 — agent-admin/SKILL.md
+
+Checked against `src/packages/cnos.core/orchestrators/agent-admin/wake-provider.json`.
+
+- [x] `artifact_class: wake` — line 5.
+- [x] `scope: global` — line 6.
+- [x] `wake.role: admin` — line 20. Matches JSON `"role": "admin"`.
+- [x] `wake.package: cnos.core` — line 21. Matches JSON.
+- [x] `wake.admin_only: true` — line 22. Matches JSON.
+- [x] `wake.activation_log_writer: true` — line 23. Matches JSON.
+- [x] `wake.concurrency.group: "agent-admin-{agent}"` — line 47. Matches JSON `concurrency_intent.group`.
+- [x] `wake.agent_variable.default: null` — line 50. YAML literal null (not `~`, not `""`, not absent). FN-3 satisfied.
+- [x] `wake.input.triggers` = `[schedule, issues_opened_title_match]` — lines 26–28. Matches JSON `input_contract.triggers`.
+- [x] `wake.input.issues_opened_title_pattern: claude-wake` — line 29. Matches JSON.
+- [x] Body starts with verbatim content of `prompt.md` — verified by diff: after the leading blank line that follows the closing `---` delimiter, the body content is byte-identical to `prompt.md` (129 lines). The leading blank line is a formatting artifact of the YAML frontmatter separator, not a content deviation.
+- [x] OB-2 section order — body uses verbatim prompt.md headings (per FN-5). "Identity and activation" appears first (line 83). OB-2 requires sections in order `if present`; exact OB-2 heading names (Purpose, Authority boundary, Wake procedure, Repair/stop rules, Outputs/receipts, Non-goals) are not present as standalone headings. The verbatim constraint (FN-5) takes precedence; vacuously satisfied for absent headings.
+- [x] OB-3 — top-level `triggers:` = `[activate, attach, channel-sync, admin-wake]` (skill-invocation labels); `wake.input.triggers:` = `[schedule, issues_opened_title_match]` (GitHub workflow event classes). Semantically distinct; no overlap.
+- [x] `wake.output.channel_log_convention` — line 30. Verbatim from JSON.
+- [x] `wake.output.writer_surface` — line 31. Verbatim from JSON.
+- [x] `wake.output.class_taxonomy` — 5 entries (heartbeat, substantive, inaugural, directive-out, cycle-complete). Matches JSON.
+- [x] `wake.output.cursor_advance: true` — line 38. Matches JSON.
+- [x] `wake.output.cursor_field` — line 39. Verbatim from JSON.
+- [x] `wake.permission_intent` — 4 entries (contents.write, issues.write, pull_requests.write, id_token.write). Matches JSON.
+- [x] `wake.concurrency.serialize: true` — line 46. Matches JSON.
+- [x] `wake.agent_variable.name: agent` — line 49. Matches JSON.
+- [x] `wake.surfaces.allowed` — 6 entries, verbatim from JSON `allowed_surfaces`. Verified side-by-side.
+- [x] `wake.surfaces.disallowed` — 9 entries, verbatim from JSON `disallowed_surfaces`. Verified side-by-side.
+- [x] `wake.defer_path.*` — all three values verbatim from JSON. Verified side-by-side.
+- [x] No prose fields in frontmatter — `responsibilities`, `*_notes`, `cross_references`, `trigger_descriptions`, `inbound`, `agent_variable.description`, `permission_intent_notes`, `concurrency_intent.notes`, `superseded_substrate_artifact`, `relationship_to_substrate` all absent from frontmatter and present in body.
+
+---
+
+### AC2 — cds-dispatch/SKILL.md
+
+Checked against `src/packages/cnos.cds/orchestrators/cds-dispatch/wake-provider.json`.
+
+- [x] `artifact_class: wake` — line 5.
+- [x] `scope: global` — line 6.
+- [x] `wake.role: dispatch` — line 19. Matches JSON.
+- [x] `wake.package: cnos.cds` — line 20. Matches JSON.
+- [x] `wake.admin_only: false` — line 21. Matches JSON.
+- [x] `wake.activation_log_writer: false` — line 22. Matches JSON.
+- [x] `wake.activation_state: live` — line 23. Matches JSON.
+- [x] `wake.protocol: cds` — line 24. Matches JSON.
+- [x] `wake.selector.include` = `[dispatch:cell, protocol:cds, status:todo]` — lines 26–29. Matches JSON.
+- [x] `wake.selector.exclude` = `[status:in-progress, status:blocked, status:review, status:changes]` — lines 30–34. Matches JSON.
+- [x] `wake.concurrency.group: "cds-dispatch-{agent}"` — line 57. Matches JSON `concurrency_intent.group`.
+- [x] `wake.agent_variable.default: sigma` — line 60. String (not null). FN-3 satisfied.
+- [x] `wake.input.triggers` = `[schedule, issues_labeled_selector_match]` — lines 37–39. Matches JSON.
+- [x] No `issues_opened_title_pattern` in dispatch `wake.input` — confirmed absent.
+- [x] `wake.output.cycle_artifact_root: ".cdd/unreleased/{N}/"` — line 41. Matches JSON.
+- [x] `wake.output.artifact_class_taxonomy` — 7 entries. Matches JSON.
+- [x] `wake.output.cell_runtime: cnos.cdd` — line 50. Matches JSON.
+- [x] `wake.permission_intent` — 4 entries. Matches JSON.
+- [x] `wake.concurrency.serialize: true` — line 56. Matches JSON.
+- [x] `wake.agent_variable.name: agent` — line 59. Matches JSON.
+- [x] `wake.surfaces.allowed` — 5 entries, verbatim from JSON `allowed_surfaces`. Verified.
+- [x] `wake.surfaces.disallowed` — 8 entries, verbatim from JSON `disallowed_surfaces`. Verified.
+- [x] `wake.defer_path.*` — all three values verbatim from JSON. Verified.
+- [x] No prose fields in frontmatter — `responsibilities`, `activation_state_notes`, `artifact_class_notes`, `cell_runtime_notes`, `trigger_descriptions`, `inbound`, `agent_variable.description`, `permission_intent_notes`, `concurrency_intent.notes`, `cross_references` all absent from frontmatter and present in body.
+- [x] Body starts with verbatim content of `prompt.md` — verified by diff: body content (after leading blank line) is byte-identical to `prompt.md` (241 lines).
+- [x] OB-2 and OB-3 — same analysis as admin. Pass.
+
+---
+
+### AC4 — Protected files
+
+Command: `git diff origin/main -- '*.golden.yml' wake-provider.json prompt.md .github/workflows/`
+
+Result: empty (no output). Zero diff on all protected files:
+- Both `*.golden.yml` files: unchanged.
+- Both `wake-provider.json` files: unchanged.
+- Both `prompt.md` files: unchanged.
+- `.github/workflows/`: no files changed.
+
+---
+
+### AC7 — CI readiness
+
+**SKILL.md files exist:**
+```
+src/packages/cnos.core/orchestrators/agent-admin/SKILL.md  ✓
+src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md  ✓
+```
+
+**I5 count:**
+- `git ls-tree -r origin/main --name-only | grep SKILL.md | wc -l` → 99
+- `git ls-tree -r HEAD --name-only | grep SKILL.md | wc -l` → 101
+- Delta: +2. Exactly the two new wake SKILL.md files. Correct.
+- Note: γ-scaffold cited 91→93 (the count at scaffold-authoring time; main has grown since). The delta invariant (+2) holds.
+
+**Changes outside `.cdd/`:** only `schemas/skill.cue` (additive), `agent-admin/SKILL.md` (new), `cds-dispatch/SKILL.md` (new). No other paths.
+
+- [x] CUE syntax valid (manual scan; `cue` binary unavailable)
+- [x] Both SKILL.md files have `artifact_class: wake` and valid frontmatter
+- [x] No `.github/workflows/*.yml` changes
+- [x] No `dispatch-repair-preflight`-relevant files changed
+- [x] No Go / Package / Binary changes
+
+---
+
+### Implementation contract conformance
+
+- [x] Language: CUE for `schemas/skill.cue`; YAML+Markdown for SKILL.md files. No Python, Go, or other languages.
+- [x] `wake-provider.json` files: NOT modified.
+- [x] `prompt.md` files: NOT modified.
+- [x] `.github/workflows/` files: NOT modified.
+- [x] `*.golden.yml` files: NOT modified.
+
+---
+
+### Findings
+
+None. All checklist items pass.
+
+---
+
+### Verdict rationale
+
+All three W1 deliverables are correctly implemented: `schemas/skill.cue` adds `"wake"` to the enum and a well-formed `#Wake` definition (OB-1 role enum, FN-3 null default, FN-4 open arrays, role-shaped output disjunction); both SKILL.md files carry all frontmatter fields verbatim from their respective `wake-provider.json` sources with no value deviations; both bodies contain verbatim `prompt.md` content plus the required appended prose from `wake-provider.json`; no protected file was touched; the SKILL.md delta is +2 as required. W1 is ready to converge.
+
+---
+
+_β@cdd.cnos — cycle/524 W1 R0 review — 2026-06-30 (UTC)_
