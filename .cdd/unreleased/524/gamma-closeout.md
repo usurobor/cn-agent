@@ -355,12 +355,13 @@ paragraph (`ee006241`), the branch carried 5 commits beyond `base_sha`: `a5d7d48
 (scaffold+REPAIR-PLAN), `06252591` (the W4 implementation), `4e4e39f9` (β review, the convergence
 point), `18b90f44` (the closeout-amendment commit), and `ee006241` (this correction commit, the
 last commit this cycle adds). `commits_beyond_base: 5` and `closeout_artifacts` are both verified
-non-self-referential facts (six closeout/review artifact files exist; five commits exist beyond
-base) and do not drift the way a frozen SHA string would. No further commits are added to this
-branch after `ee006241`; readers should treat `git rev-parse cycle/524` as authoritative if a
-discrepancy is ever observed.
+non-self-referential facts (six closeout/review artifact files exist; commits exist beyond base)
+and do not drift the way a frozen SHA string would. Readers should treat `git rev-parse cycle/524`
+/ `gh pr view 534 --json headRefOid` as authoritative for the exact current head SHA and commit
+count; both were >= 5 commits beyond base at every point after the closeout-amendment commit
+landed, satisfying `commits_beyond_base > 0` regardless of the exact trailing count at read time.
 
-(PR number/head SHA filled in after PR open below; see §5.)
+PR #534 is opened (see §5); the values above are accurate as of this closeout round.
 
 ---
 
