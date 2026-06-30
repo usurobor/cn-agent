@@ -3,8 +3,8 @@ cycle: 524
 parent_issue: cnos#524
 protocol: cds
 cycle_branch: cycle/524
-base_main_sha: 667388ce30d58a335e44dbf98217eb52eb789d9b
-head_sha_at_scaffold: (filled by scaffold-landing commit)
+base_main_sha: d7d2244cb4cb95b94e28569ac8ef090d49876c89
+head_sha_at_scaffold: d7d2244cb4cb95b94e28569ac8ef090d49876c89
 mode: MCA
 role: γ
 authored_by: γ@cdd.cnos (wake-invoked δ dispatch)
@@ -225,7 +225,7 @@ cn install-wake cds-dispatch  # exit 0; golden unchanged
 | Axis | Value |
 |---|---|
 | **Branch** | `cycle/524` |
-| **Base SHA** | `667388ce30d58a335e44dbf98217eb52eb789d9b` |
+| **Base SHA** | `d7d2244cb4cb95b94e28569ac8ef090d49876c89` |
 | **Issue** | cnos#524 |
 | **Mode** | MCA — W0 operator-ratified; α executes W1→W4 sequence |
 | **AC set** | AC1–AC7 (all) |
@@ -238,7 +238,7 @@ cn install-wake cds-dispatch  # exit 0; golden unchanged
 ```text
 You are α@cdd.cnos, running as the implementer for cycle/524.
 
-Branch: cycle/524 (at base main SHA 667388ce30d58a335e44dbf98217eb52eb789d9b).
+Branch: cycle/524 (at base main SHA d7d2244cb4cb95b94e28569ac8ef090d49876c89).
 Parent issue: cnos#524 ("wake-as-skill: migrate wakes to typed SKILL.md modules").
 Scaffold: .cdd/unreleased/524/gamma-scaffold.md (READ THIS FIRST in full before any edits).
 
@@ -258,7 +258,7 @@ Load these skills in order:
 | Axis | Value |
 |---|---|
 | Branch | cycle/524 |
-| Base SHA | 667388ce30d58a335e44dbf98217eb52eb789d9b |
+| Base SHA | d7d2244cb4cb95b94e28569ac8ef090d49876c89 |
 | Issue | cnos#524 |
 | Mode | MCA — execute known W1→W4 sequence; W0 is locked |
 | AC set | AC1–AC7 (all) |
