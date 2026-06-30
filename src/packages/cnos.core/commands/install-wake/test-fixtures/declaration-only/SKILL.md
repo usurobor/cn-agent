@@ -1,6 +1,6 @@
 ---
 name: test-declaration-only
-description: "Synthetic declaration-only wake fixture (cnos#524 W3). The typed SKILL.md twin of this directory's wake-provider.json, added when W3 flipped cn-install-wake's default source to SKILL.md so the AC5 refusal smoke exercises the SKILL.md default path (not the legacy JSON path). Never rendered to a substrate workflow — the renderer refuses (exit 3) on activation_state: declaration-only before prompt inlining."
+description: "Synthetic declaration-only wake fixture (cnos#524). The wake SKILL.md the AC5 refusal smoke renders from, exercising the SKILL.md source path. Never rendered to a substrate workflow — the renderer refuses (exit 3) on activation_state: declaration-only before prompt inlining."
 governing_question: Does the renderer refuse to render a declaration-only wake (exit 3) when reading from the SKILL.md default source?
 artifact_class: wake
 scope: global
@@ -58,8 +58,7 @@ read, and to keep the AC5 negative-case smoke alive against the W3 default
 ## Activation preconditions (would be required to flip to `live`)
 
 This fixture deliberately documents preconditions — cnos#454 and cnos#467 — so
-the contract it represents matches the legacy `wake-provider.json` twin in this
-directory. The renderer's refusal message names the activation_state value and,
+the contract it represents is a complete, well-formed declaration-only wake. The renderer's refusal message names the activation_state value and,
 when the synthesized manifest carries no `activation_state_notes`, states that
 the manifest should name the preconditions for flipping to live. The JSON twin
 is retained for W3 dual-source parity and is deleted in W4.

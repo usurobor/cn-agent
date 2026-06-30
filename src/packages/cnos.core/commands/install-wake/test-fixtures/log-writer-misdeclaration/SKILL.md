@@ -1,6 +1,6 @@
 ---
 name: test-log-writer-misdeclaration
-description: "Synthetic mis-declared wake fixture (cnos#524 W3). Typed SKILL.md twin of this directory's wake-provider.json, added when W3 flipped cn-install-wake's default source to SKILL.md so the AC4/cycle-496 mis-declaration smoke exercises the SKILL.md default path. Declares role:dispatch + admin_only:false + activation_log_writer:true — the mis-declaration — so the renderer refuses with exit 4 + stderr 'activation_log_writer mis-declaration:'. Never rendered to a substrate workflow."
+description: "Synthetic mis-declared wake fixture (cnos#524). The wake SKILL.md the AC4/cycle-496 mis-declaration smoke renders from. Declares role:dispatch + admin_only:false + activation_log_writer:true — the mis-declaration — so the renderer refuses with exit 4 + stderr 'activation_log_writer mis-declaration:'. Never rendered to a substrate workflow."
 governing_question: Does the renderer refuse (exit 4) an activation_log_writer mis-declaration when reading from the SKILL.md default source?
 artifact_class: wake
 scope: global

@@ -48,9 +48,8 @@ need "$PROTO" "protocol" \
 
 # SKILL body + rendered substrate (golden and live workflow, which must be
 # byte-identical per install-wake-golden) carry the executable preflight.
-# SKILL.md is the sole render source as of cnos#524 W4 (the legacy
-# prompt.md twin this loop also checked pre-W4 was deleted along with
-# wake-provider.json; the SKILL.md body is now the only prompt source).
+# The SKILL.md body is the wake's only prompt source, so this loop checks
+# the SKILL.md, its golden, and the live workflow.
 for f in "$SKILL" "$GOLDEN" "$LIVE"; do
   need "$f" "dispatch-surface" \
     "Repair re-entry preflight" \
