@@ -34,11 +34,9 @@
 #                     .cdd/unreleased/476/gamma-scaffold.md §"Render
 #                     target path"). The future cutover cycle will pass
 #                     --out .github/workflows/cnos-<wake-name>.yml.
-#   --manifest <path> Override the default manifest lookup (used by CI
+#   --manifest <path> Override the default SKILL.md lookup (used by CI
 #                     fixture smokes). Accepts a path to a wake
-#                     SKILL.md file directly (per cnos#524 W4 — the
-#                     renderer reads SKILL.md only; there is no JSON
-#                     manifest source any more).
+#                     SKILL.md file directly.
 #   --activation-state-override <state>
 #                     TEST-ONLY override of the manifest's
 #                     activation_state gate (per wake-provider/SKILL.md
@@ -175,15 +173,14 @@ agent_bot_id() {
 }
 
 # ---------------------------------------------------------------------------
-# SKILL.md source helpers (cnos#524: SKILL.md is the only manifest source as
-# of W4 — introduced in W2 for dual-source parity, made unconditional in W4
-# when the legacy wake-provider.json + prompt.md source was removed)
+# SKILL.md source helpers. A wake's SKILL.md is its source: the YAML
+# frontmatter supplies the wake contract; the body supplies the prompt.
 # ---------------------------------------------------------------------------
 
 # Convert a wake SKILL.md's YAML frontmatter to a synthesized manifest JSON
-# that the renderer queries via jq paths (the same shape the legacy
-# wake-provider.json manifest used, retained internally post-W4 so the
-# validation/render code below stays jq-driven). Prints JSON to stdout.
+# that the renderer queries via jq paths (the internal `cn.wake-provider.v1`
+# contract shape, so the validation/render code below stays jq-driven).
+# Prints JSON to stdout.
 # Exits non-zero (and prints an error) on parse failure.
 # Per W0 design §B.3 field mapping + §E body-as-prompt rule.
 # AC8 constraint: field names that the renderer audit watches for as role-
@@ -254,11 +251,10 @@ print(json.dumps(m))
 }
 
 # Extract the verbatim-prompt portion of a wake SKILL.md body to stdout.
-# W0 design §E: body = [verbatim prompt.md] optionally followed by
-# [verbose reference data appended after].  For parity purposes only the
-# prompt portion is extracted.  Boundary marker: \n\n---\n\n## heading
-# containing "body reference" (the appendix convention; cnos#524 W4 dropped the
-# legacy "from wake-provider.json" alternate now that the file is deleted).
+# W0 design §E: the body is [the verbatim prompt] optionally followed by
+# [verbose reference data appended after].  Only the prompt portion is
+# extracted.  Boundary marker: \n\n---\n\n## heading containing
+# "body reference" (the appendix convention).
 # Leading blank line (standard blank after closing --- delimiter) is stripped.
 skill_body() {
   python3 - "$1" <<'SKILL_BODY_EOF'
@@ -310,13 +306,12 @@ while [ $# -gt 0 ]; do
     --activation-state-override=*)
       activation_state_override="${1#--activation-state-override=}"; shift ;;
     --source|--source=*|--parity-check)
-      # Retired in cnos#524 W4 — SKILL.md is now the only manifest
-      # source, so there is nothing left to select between or prove
-      # parity against. Refuse explicitly rather than silently
-      # ignoring the flag, so any caller still passing it (e.g. a
-      # stale CI invocation) gets a precise error instead of
+      # Not supported: SKILL.md is the only wake source, so there is no
+      # source to select between and no parity to prove. Refuse explicitly
+      # rather than silently ignoring the flag, so any caller still passing
+      # it (e.g. a stale CI invocation) gets a precise error instead of
       # surprising behavior.
-      die "flag '$1' was removed in cnos#524 W4 (SKILL.md is now the only manifest source; --source/--parity-check no longer apply)" ;;
+      die "flag '$1' is not supported — SKILL.md is the only wake source; --source/--parity-check do not apply" ;;
     --help|-h)
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
@@ -350,9 +345,8 @@ if [ -z "${CN_PACKAGE_ROOT:-}" ]; then
   CN_PACKAGE_ROOT="$(cd "$script_dir/../.." && pwd)"
 fi
 
-# Manifest source is SKILL.md only (cnos#524 W4 — the legacy
-# wake-provider.json + prompt.md source was removed; SKILL.md is the
-# sole manifest format). `skill_path` below is always a SKILL.md file.
+# The wake source is a SKILL.md file: `skill_path` below always points at
+# one. Its frontmatter supplies the contract; its body supplies the prompt.
 if [ -n "$manifest_override" ]; then
   skill_path="$manifest_override"
   # --manifest accepts either a SKILL.md file path directly, or a
@@ -686,10 +680,7 @@ fi
 tmp_out="$(mktemp 2>/dev/null || mktemp -t cn-install-wake)"
 trap 'rm -f "$tmp_out" "${skill_manifest_tmp:-}" "${skill_body_tmp:-}"' EXIT
 
-# Header attribution names the single SKILL.md source (cnos#524 W4 —
-# the prior two-line manifest/prompt header attributed to the now-
-# deleted wake-provider.json + prompt.md pair; SKILL.md is the only
-# source left, so one line names it).
+# Header attribution names the wake's SKILL.md source on a single line.
 display_skill_path="$skill_path"
 
 # Header — comment block identifying the rendered artifact + its
