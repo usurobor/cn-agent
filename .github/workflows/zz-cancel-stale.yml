@@ -1,0 +1,30 @@
+name: zz-cancel-stale
+
+# One-off operational helper: cancel specific in-flight/queued workflow runs.
+# The MCP GitHub integration cannot cancel runs (no cancel method / 403), so
+# this uses the runner GITHUB_TOKEN with an explicit actions:write grant.
+# workflow_dispatch only — pushing this file does not trigger it; it is fired
+# explicitly with the run IDs to cancel, then removed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_ids:
+        description: Space-separated workflow run IDs to cancel
+        required: true
+
+permissions:
+  actions: write
+
+jobs:
+  cancel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for id in ${{ github.event.inputs.run_ids }}; do
+            echo "Cancelling run $id"
+            gh api -X POST "repos/${{ github.repository }}/actions/runs/$id/cancel" || true
+          done
