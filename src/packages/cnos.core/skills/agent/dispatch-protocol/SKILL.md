@@ -88,11 +88,77 @@ The two-layer ownership is doctrine: cnos.core MUST NOT define `protocol:{P}` la
 | `status:ready` | Specified and reviewed; not yet authorized for dispatch |
 | `status:todo` | Human-authorized for dispatch; executable when combined with `dispatch:cell` + a `protocol:{P}` |
 | `status:in-progress` | Claimed by a package-owned dispatch wake; matching package runtime running |
-| `status:review` | Cell complete; awaiting external human/planner review |
+| `status:review` | Cell complete; awaiting external human/planner review. **Precondition (cnos#532):** a cell may transition to `status:review` only after deliverable proof exists — see §"Review-request proof gate" below. `status:review` means "ready for β review," never "accepted"; it carries no verdict. |
 | `status:changes` | External (human/planner) review requested changes; awaiting repair before re-dispatch |
 | `status:blocked` | Blocked on external dependency or human decision |
 
 Closed issue = done. No `status:done` label in v0.
+
+### Review-request proof gate (cnos#532)
+
+**Invariant.** No matter, no review. No proof, no `status:review`. A cell may self-check its own matter and may request review, but a cell MUST NOT grant itself `status:review` without proving deliverable matter exists. This is the dispatch-protocol realization of the CDD kernel's review-request invariant (`cnos.cdd/skills/cdd/CDD.md` §"Review-request invariant"). `status:review` is a request for review, not a review verdict, a validator verdict, or a δ decision — those remain β's, V's, and δ's respectively; this gate only proves the *matter* a review request claims to point at is real.
+
+**`REVIEW-REQUEST.yml` — the proof artifact.** A cell requesting `status:review` writes `.cdd/unreleased/<N>/REVIEW-REQUEST.yml` (`<N>` = the issue number) naming the concrete matter the request points at:
+
+```yaml
+schema: cdd.review-request.v1
+cell: 524
+issue: 524
+run_class: first_pass
+matter:
+  branch: cycle/524
+  pr: 529
+  base_sha: 90b9e812
+  head_sha: 1d97d863
+  changed_files:
+    - src/packages/cnos.core/commands/install-wake/cn-install-wake
+artifacts:
+  alpha_closeout: .cdd/unreleased/524/alpha-closeout.md
+  self_coherence: .cdd/unreleased/524/self-coherence.md
+  receipt: .cdd/unreleased/524/receipt.md
+checks:
+  - install-wake-golden: pass
+  - I1: pass
+  - I2: pass
+  - I4: pass
+  - I5: pass
+  - I6: pass
+  - Go: pass
+known_gaps: []
+request:
+  next_state: status:review
+  requested_by: alpha
+  requested_at: 2026-06-30T00:00:00Z
+```
+
+Field shape:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `schema` | yes | `cdd.review-request.v1` — fixed value, names the artifact's wire contract |
+| `cell` / `issue` | yes | the cell's issue number (both name the same issue; kept as two fields for clarity at call sites that read one or the other) |
+| `run_class` | yes | one of `first_pass` / `repair_pass` / `manual_delta_repair` / `blocked` per `dispatch-protocol/SKILL.md` §"Repair re-entry" (the dispatch-protocol's existing `run_class` vocabulary; not a new taxonomy) |
+| `matter.branch` | yes | the cycle branch, `cycle/<N>` |
+| `matter.pr` | yes unless `no_op: true` | the PR number carrying the cell's diff |
+| `matter.base_sha` / `matter.head_sha` | yes | the branch's base and head commit SHAs; MUST differ (head must be ahead of base) |
+| `matter.changed_files` | yes unless `no_op: true` | non-empty list of files the diff touches |
+| `artifacts.*` | yes | repo-relative paths to the cell's required `.cdd/unreleased/<N>/` artifacts; each path MUST exist on disk |
+| `checks` | yes | list of CI gate name → `pass`/`fail` pairs the requester observed |
+| `known_gaps` | yes | list (may be empty) of named debt the request does not resolve |
+| `request.next_state` | yes | MUST be `status:review` — the only transition this artifact requests |
+| `request.requested_by` | yes | the role making the request (e.g. `alpha`) |
+| `request.requested_at` | yes | ISO 8601 timestamp |
+| `no_op` | only for no-op cells | `true` when the cell genuinely produces no diff (e.g. a pure doctrine-confirmation cycle) |
+| `no_op_approval` | required when `no_op: true` | names the operator approval permitting a no-op review request; without it, "no diff" fails the guard |
+
+A review request without a PR or changed matter is invalid unless explicitly declared `no_op: true` with `no_op_approval:` present — an undeclared empty diff fails the gate.
+
+**Mechanical guard.** `scripts/ci/check-review-request-preflight.sh` implements two checks:
+
+- **Guard A** (presence-of-contract) — asserts this doctrine, the `REVIEW-REQUEST.yml` shape, and the `status:review` precondition language are present in `CDD.md`, this file, `cds-dispatch/SKILL.md`, and `cds-dispatch/prompt.md`. Runs unconditionally in CI on every PR (job `review-request-preflight` in `.github/workflows/build.yml`), modeled on the `scripts/ci/check-dispatch-repair-preflight.sh` (cnos#516) precedent.
+- **Guard B** (deliverable-existence) — validates a `REVIEW-REQUEST.yml`'s structural shape (the field table above) against the filesystem, offline and fixture-testable with no network/`gh` calls in its unit-tested core. Invoked by the dispatch wake itself, as a script step, immediately before the wake applies the `status:in-progress → status:review` label transition (`cds-dispatch/SKILL.md` step 7) — not as a separate GitHub-triggered workflow job, since the event being gated (a label edit inside the wake's own run) is not visible to a generic PR-triggered CI job. In its live invocation the wake MAY cross-check `REVIEW-REQUEST.yml`'s claims against real `git`/`gh` state; the unit-tested core never does.
+
+**On guard failure.** If Guard B fails, the wake MUST NOT apply `status:review`. It posts a STOP/BLOCKED comment naming the missing proof and leaves the cell at `status:in-progress` (or transitions to `status:blocked` per the existing hard-block lifecycle event in `cds-dispatch/SKILL.md` §"Lifecycle transitions" if the missing proof is a hard, unrecoverable block — α/δ judgment, not an automatic re-route). The cell is never left silently in `status:review` without proof — this is the mechanism that makes the #524 W4 empty-review failure (`status:review` with no PR, no commits, no diff) structurally unable to recur silently.
 
 **Type markers + dispatchability** — zero or one per issue:
 
