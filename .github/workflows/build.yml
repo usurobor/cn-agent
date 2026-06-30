@@ -305,3 +305,28 @@ jobs:
       # work (the Pass 4D / cnos#514 failure mode).
       - name: Check dispatch repair re-entry preflight contract
         run: ./scripts/ci/check-dispatch-repair-preflight.sh
+
+  review-request-preflight:
+    name: Review-request proof gate (cnos#532)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # cnos#532 Guard A: presence-of-contract. Asserts the review-request
+      # invariant ("no matter, no review; no proof, no status:review") and
+      # the REVIEW-REQUEST.yml shape are documented at CDD.md,
+      # dispatch-protocol/SKILL.md, cds-dispatch/SKILL.md, and prompt.md.
+      # Pure grep over checked-in files, no network/gh calls. Modeled on
+      # the cnos#516 dispatch-repair-preflight guard above.
+      - name: Check review-request doctrine presence (Guard A)
+        run: ./scripts/ci/check-review-request-preflight.sh --guard-a
+
+      # cnos#532 Guard B self-test: runs the deliverable-existence guard's
+      # offline structural mode against the fixture set (valid +
+      # multiple invalid REVIEW-REQUEST.yml cases, including a direct
+      # reproduction of the #524 W4 empty-review failure: no PR, no
+      # commits beyond base, no diff, no artifacts) and asserts pass/fail
+      # matches expectation. Deterministic and offline by construction —
+      # no network or git-remote/gh calls in this mode.
+      - name: Check Guard B fixture suite (offline, AC5 negative proof)
+        run: ./scripts/ci/check-review-request-preflight.sh --self-test
