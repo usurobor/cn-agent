@@ -1,55 +1,56 @@
 ---
 name: wake-provider
-description: The wake-provider declaration contract. Defines what a cnos package declares to provide a wake (identity, responsibilities, input/output contract, allowed/disallowed surfaces, defer-path, prompt template) and the split between what the package declares vs what the substrate renderer materializes. The agent-admin wake provider (cnos.core, sibling `orchestrators/agent-admin/wake-provider.json`) is the reference instance; cnos.cds's dispatch wake provider (Sub 4 of cnos#467) — the first concrete-protocol dispatch wake — will be authored against this contract alone.
+description: The wake contract a cnos package declares to provide a wake. A wake is a typed `SKILL.md` module (`artifact_class: wake`) whose frontmatter `wake:` block carries the contract (identity, role, input/output, surfaces, defer-path, selector) and whose body is the prompt. Defines what the block MUST contain, the split between what the package declares (the wake skill) and what the substrate renderer materializes (the workflow), and the split between what CUE validates (`#Wake` / I5) and what the renderer enforces at run time. The agent-admin wake (cnos.core, `orchestrators/agent-admin/SKILL.md`) is the reference instance.
 artifact_class: skill
 kata_surface: none
-governing_question: What does a cnos package declare to provide a wake, and which fields of the declaration are the package's authority vs the substrate renderer's authority?
+governing_question: What does a cnos package declare to provide a wake, and which parts of the declaration are the package's authority vs the substrate renderer's authority?
 visibility: public
 parent: agent
 triggers:
   - wake provider
   - wake declaration
-  - cn wake install
+  - wake skill
+  - cn install-wake
   - package-owned wake
 scope: task-local
 inputs:
   - none (contract reference)
 outputs:
-  - the wake-provider declaration contract (required + optional fields)
+  - the wake contract (the `wake:` frontmatter block + body-as-prompt)
   - the substrate-rendering boundary (package authority vs renderer authority)
-  - the schema name (`cn.wake-provider.v1`) consumed by the Sub 3 renderer
+  - the typed-validation split (`#Wake` in `schemas/skill.cue` / I5 vs the renderer's runtime refusals)
 requires:
-  - none (foundational; consumed by `cn wake install` per cnos#450, by the agent-admin wake provider per cnos#467 Sub 2, and by future per-package dispatch wake providers per cnos#467 Subs 4+)
+  - none (foundational; consumed by `cn install-wake` and by every package-owned wake `SKILL.md`)
 ---
 
-# Wake-provider declaration contract
+# Wake contract
 
-A cnos package declares a **wake provider** to ship a long-form work shape that an external substrate (today: GitHub Actions) materializes into a real workflow file. The package authors the *abstract* declaration (identity, responsibilities, surfaces, prompt template); the renderer authors the *substrate-specific* artifact (today: YAML; tomorrow possibly other schedulers).
+A cnos package declares a **wake** to ship a long-form work shape that an external substrate (today: GitHub Actions) materializes into a real workflow file. A wake is a **typed `SKILL.md` module** (`artifact_class: wake`, `scope: global`): its frontmatter `wake:` block is the machine-consumable contract, and its body is the prompt the agent runs. The package authors the *abstract* declaration (identity, role, surfaces, prompt); the renderer authors the *substrate-specific* artifact (today: YAML; tomorrow possibly other schedulers).
 
-This skill is the contract: what a wake provider declaration MUST contain, what it MAY contain, and where the boundary lies between the package's authority and the renderer's authority.
+This skill is the contract: what a wake `SKILL.md` MUST carry, what it MAY carry, where the `#Wake` CUE definition draws the line, and where the boundary lies between the package's authority and the renderer's authority.
 
 ## Core Principle
 
-**A wake provider declaration is substrate-agnostic data + a substrate-agnostic prompt template. The substrate is the renderer's authority, not the package's.**
+**A wake is substrate-agnostic data (the `wake:` frontmatter block) + a substrate-agnostic prompt (the body). The substrate is the renderer's authority, not the package's.**
 
 Two coupled invariants govern the contract:
 
 1. **Package authority.** The package declares *what the wake is*: identity, role, allowed/disallowed surfaces, defer-path, the prompt the agent runs. These are fixed per the package's design — changing the substrate does not change them.
 2. **Renderer authority.** The renderer materializes the declaration into the current substrate (today: GitHub Actions YAML in `.github/workflows/`). Permission allowlist *shape*, secret-name *binding*, trigger *encoding*, run identity *binding*, concurrency *encoding* — these are substrate-specific and the renderer owns them.
 
-A package that emits substrate-specific YAML in its declaration has confused the boundary; a renderer that decides what responsibilities the wake's prompt enumerates has confused the boundary in the other direction. The two errors compound: package-side substrate emission locks the package to one scheduler; renderer-side responsibility decision means the package's role is defined by the renderer's defaults, not the package's design.
+A package that emits substrate-specific YAML in its `wake:` block or its body has confused the boundary; a renderer that decides what responsibilities the wake's prompt enumerates has confused the boundary in the other direction. The two errors compound: package-side substrate emission locks the package to one scheduler; renderer-side responsibility decision means the package's role is defined by the renderer's defaults, not the package's design.
 
 The failure modes this contract structurally prevents are listed in §6.
 
 ## Algorithm
 
-A wake provider declaration is **one machine-consumable manifest + one substrate-agnostic prompt template**, both under a single directory the package nominates. The renderer:
+A wake is **one typed `SKILL.md` module**: the frontmatter `wake:` block is the contract; the body is the prompt. Both live in a single file the package nominates under a content class. The renderer:
 
-1. **Discovers** the declaration by walking the installed package's content classes (`commands/`, `orchestrators/`, or any future class declared in `cn.package.json`) for files matching the wake-provider schema name.
-2. **Parses** the manifest (schema `cn.wake-provider.v1`); validates required fields are present and well-typed.
-3. **Inlines** the prompt template (a separate `.md` file alongside the manifest) into the rendered substrate artifact's `prompt:` field (or the substrate-specific equivalent).
-4. **Materializes** the substrate artifact at the substrate's canonical path (today: `.github/workflows/cnos-{wake-name}.yml`).
-5. **Reports** install / uninstall idempotently — repeated `cn wake install {wake}` is a no-op when the materialized artifact already matches.
+1. **Discovers** the wake by resolving the wake name to `orchestrators/{wake-name}/SKILL.md` under the installed package's content classes (`commands/`, `orchestrators/`, or any future class declared in `cn.package.json`).
+2. **Reads** the frontmatter `wake:` block — the typed contract the `#Wake` definition validates at I5 time — and projects it into the internal `cn.wake-provider.v1` shape the renderer queries via `jq`; validates that required fields are present and well-typed.
+3. **Inlines** the body (the prompt) into the rendered substrate artifact's `prompt:` field (or the substrate-specific equivalent).
+4. **Materializes** the substrate artifact at the substrate's canonical path (today: `.github/workflows/cnos-{wake-name}.yml`); the committed golden (`orchestrators/{wake-name}/cnos-{wake-name}.golden.yml`) is the reviewed copy of that same output.
+5. **Reports** render idempotently — a repeated render is a no-op when the materialized artifact already matches (the `install-wake golden` byte-identity oracle: re-render diff clean + `sha256(golden)==sha256(live)` + idempotence).
 
 The contract is what the renderer reads. The package declares; the renderer materializes. This skill defines what the renderer is allowed to expect from the declaration and what the package is allowed to expect from the renderer.
 
@@ -59,280 +60,262 @@ The contract is what the renderer reads. The package declares; the renderer mate
 
 ### 1.1. Identify the parts
 
-A wake-provider declaration has these parts:
+A wake declaration is **one `SKILL.md` module** (`artifact_class: wake`) with two parts:
 
-- **Manifest** — a JSON file declaring the schema (`cn.wake-provider.v1`), identity, intent, contracts, and surfaces. Machine-consumable.
-- **Prompt template** — a Markdown file the renderer inlines into the rendered substrate artifact's prompt field. Substrate-agnostic prose.
-- **Optional README** — human-readable cross-references; never read by the renderer.
+- **The `wake:` frontmatter block** — the typed, machine-consumable contract (identity, role, input/output, surfaces, defer-path, selector). Validated by the `#Wake` definition in `schemas/skill.cue` at I5 time. Machine-consumable.
+- **The body** — the prompt the renderer inlines into the rendered substrate artifact's prompt field. Substrate-agnostic prose. Verbose reference material (responsibilities narrative, cross-references, doctrine) lives here — after the prompt, appended below a `## …` boundary heading — not in the frontmatter.
 
-A substrate-rendered artifact (the renderer's output) is **not** part of the declaration. The declaration is what the package authors; the artifact is what the renderer emits. The two MUST NOT live in the same directory of the package's source tree (the package authors declarations, not artifacts).
+A substrate-rendered artifact (the renderer's output) is **not** authored by the package. The declaration is what the package writes by hand; the renderer emits both the live workflow (`.github/workflows/cnos-{wake}.yml`) and its committed golden (`orchestrators/{wake}/cnos-{wake}.golden.yml`) at install time. The live workflow MUST NOT be hand-edited; the golden is the renderer-emitted, reviewed compiled artifact that CI diffs against on every change.
 
-- ❌ Package ships `orchestrators/{wake}/cnos-{wake}.yml` alongside the manifest (the package is now substrate-coupled)
-- ✅ Package ships `orchestrators/{wake}/wake-provider.json` + `orchestrators/{wake}/prompt.md` only; renderer emits `.github/workflows/cnos-{wake}.yml` at install time
+- ❌ Package hand-edits `.github/workflows/cnos-{wake}.yml` (the substrate is rendered, not authored)
+- ✅ Package ships `orchestrators/{wake}/SKILL.md` (frontmatter `wake:` + body); the renderer emits `.github/workflows/cnos-{wake}.yml` and the committed `cnos-{wake}.golden.yml` at install time
 
 ### 1.2. Articulate how they fit
 
-The manifest is **the schema-bound data** the renderer can dispatch on. The prompt template is **the inline body** the renderer substitutes into the substrate's prompt-receiving field. Together they are *the wake provider* — a package-owned, substrate-agnostic declaration of what wake gets installed.
+The `wake:` block is **the schema-bound data** the renderer can dispatch on. The body is **the prompt** the renderer inlines into the substrate's prompt-receiving field. Together, in one typed `SKILL.md`, they are *the wake* — a package-owned, substrate-agnostic declaration validated by the same CUE / I5 pipeline as every other skill.
 
-The package authority/renderer authority split (§Core Principle) makes the split concrete:
+The package authority / renderer authority split (§Core Principle) makes the split concrete:
 
 | Lives in the declaration (package authority) | Lives in the renderer (substrate authority) |
 |---|---|
 | Wake name, role, target agent variable | Workflow `name:` field encoding |
-| Responsibilities enumeration (what the agent does) | Permission allowlist syntax (e.g. GitHub Actions `permissions:` block) |
-| Allowed / disallowed surfaces | Secret name binding (e.g. `${{ secrets.X }}`) |
-| Input contract (logical trigger taxonomy: schedule, issues-opened-with-title-match, ...) | Substrate trigger encoding (e.g. `on: { schedule: [...], issues: { types: [opened] } }`) |
-| Output contract (channel log entry per AGENT-ACTIVATION-LOG-v0; cursor advance) | Run-identity binding (e.g. `bot_name` / `bot_id` in claude-code-action) |
-| Defer-path for off-role directives | Concurrency / serialization encoding |
-| Prompt template body | Inlining the prompt into the substrate's prompt field |
-| Cross-references (skills the wake invokes; doctrine the wake cites) | (none — references are package authority) |
+| Responsibilities (in the body — what the agent does) | Permission allowlist syntax (e.g. GitHub Actions `permissions:` block) |
+| Allowed / disallowed surfaces (`wake.surfaces`) | Secret name binding (e.g. `${{ secrets.X }}`) |
+| Input contract (`wake.input`: logical trigger taxonomy) | Substrate trigger encoding (e.g. `on: { schedule: [...], issues: { types: [opened] } }`) |
+| Output contract (`wake.output`: channel-log/cursor for admin; cell-artifact for dispatch) | Run-identity binding (e.g. `bot_name` / `bot_id` in claude-code-action) |
+| Defer-path for off-role directives (`wake.defer_path`) | Concurrency / serialization encoding |
+| The body (prompt) | Inlining the body into the substrate's prompt field |
+| Cross-references (in the body: skills the wake invokes; doctrine it cites) | (none — references are package authority) |
 
-The contract is the rule that makes the split machine-checkable: if a field belongs in the right column above, it MUST NOT appear in the manifest; if a field belongs in the left column, it MUST appear in the manifest.
+The contract is the rule that makes the split machine-checkable: if a field belongs in the right column above, it MUST NOT appear in the `wake:` block; if a field belongs in the left column, it MUST appear in the declaration.
 
-- ❌ Manifest carries a `permissions:` field with GitHub Actions YAML keys
-- ✅ Manifest carries a `permission_intent:` field that names the *logical* permission (e.g. `contents.write`, `issues.write`); renderer maps to the substrate's encoding
+- ❌ `wake:` block carries a `permissions:` field with GitHub Actions YAML keys
+- ✅ `wake:` block carries a `permission_intent:` field that names the *logical* permission (e.g. `contents.write`, `issues.write`); the renderer maps to the substrate's encoding
 
 ### 1.3. Name the failure mode
 
-The wake-provider contract fails through **substrate leakage**: the package declares substrate-specific content in its manifest or prompt (GitHub Actions YAML, runner names, secret names with `${{ }}` interpolation, hard-coded workflow paths). When the substrate changes (a future scheduler; a different runner; a different secret manager), every package's declaration must be edited. The package no longer owns its wake — the substrate owns the package.
+The wake contract fails through **substrate leakage**: the package declares substrate-specific content in its `wake:` block or body (GitHub Actions YAML, runner names, secret names with `${{ }}` interpolation, hard-coded workflow paths). When the substrate changes (a future scheduler; a different runner; a different secret manager), every package's declaration must be edited. The package no longer owns its wake — the substrate owns the package.
 
-The opposite failure is **renderer overreach**: the renderer decides what responsibilities the wake enumerates, what defer-path applies, what the prompt body says. The package's intent is reduced to a thin manifest of "just install the wake" and the renderer fills in defaults. Two packages get the same wake regardless of their distinct design.
+The opposite failure is **renderer overreach**: the renderer decides what responsibilities the wake enumerates, what defer-path applies, what the prompt body says. The package's intent is reduced to a thin declaration of "just install the wake" and the renderer fills in defaults. Two packages get the same wake regardless of their distinct design.
 
 Both failures are observable:
 
-- **F1 — Substrate leakage.** _Symptom:_ `grep -ciE 'github|workflow|yaml|GITHUB_TOKEN|runs-on|claude-code-action' {manifest} {prompt}` returns non-zero (except in the AC7-equivalent "relationship to existing substrate-bound wake" section if one exists). _Fix:_ remove substrate-specific tokens; replace with logical equivalents the renderer maps.
-- **F2 — Renderer overreach.** _Symptom:_ The manifest omits one of the required fields below (§2.1) and the renderer inserts a default. _Fix:_ the renderer's contract rejects manifests with missing required fields rather than defaulting silently; the package must declare.
-- **F3 — Schema drift.** _Symptom:_ A field changes meaning without changing schema name; older renderers misparse newer manifests. _Fix:_ schema is versioned (`cn.wake-provider.v1`); breaking changes bump the suffix.
-- **F4 — Substrate-rendered artifact in the source tree.** _Symptom:_ The package ships a rendered `.yml` alongside the manifest. _Fix:_ §1.1 boundary — the source tree carries the declaration; the renderer emits at install time at the substrate's canonical path.
+- **F1 — Substrate leakage.** _Symptom:_ `grep -ciE 'github|workflow|yaml|GITHUB_TOKEN|runs-on|claude-code-action' {wake SKILL.md}` returns non-zero (except in an explicit "relationship to existing substrate-bound wake" section, if one exists). _Fix:_ remove substrate-specific tokens; replace with logical equivalents the renderer maps.
+- **F2 — Renderer overreach.** _Symptom:_ The `wake:` block omits one of the required fields below (§2.1) and the renderer inserts a default. _Fix:_ the renderer's contract rejects declarations with missing required fields rather than defaulting silently; the package must declare.
+- **F3 — Contract drift.** _Symptom:_ A field changes meaning without the `#Wake` definition changing; older renderers misparse newer declarations. _Fix:_ the typed contract is `#Wake` in `schemas/skill.cue` (the I5 gate); the renderer queries a versioned internal shape (`cn.wake-provider.v1`); breaking changes are made to both.
+- **F4 — Hand-edited substrate artifact.** _Symptom:_ The live workflow under `.github/workflows/` is edited by hand and diverges from the golden. _Fix:_ §3.4 — the renderer emits the workflow and its golden; the `install-wake golden` oracle fails on any drift.
 
 ---
 
 ## 2. Unfold
 
-### 2.1. Required manifest fields
+### 2.1. Required `wake:` block fields
 
-Every wake-provider manifest MUST declare these fields, in this rough order (the renderer parses by name, not position, but consistent ordering aids human review):
+Every wake `SKILL.md` carries the standard skill frontmatter (`name`, `description`, `governing_question`, `artifact_class: wake`, `scope: global`, `kata_surface`, `triggers`, `inputs`, `outputs`) plus a `wake:` block. The `#Wake` definition in `schemas/skill.cue` validates the block's shape at I5; `cn-install-wake` enforces the cross-field refusals at render time. Every `wake:` block MUST declare these fields:
 
 | Field | Type | Purpose |
 |---|---|---|
-| `schema` | string, MUST equal `"cn.wake-provider.v1"` | Identifies this file as a wake-provider declaration consumable by `cn wake install`. The renderer dispatches by schema. |
-| `name` | string, kebab-case, repo-unique | The wake's identifier (e.g. `agent-admin`, `cds-dispatch`). The renderer derives the substrate artifact name from this (today: `.github/workflows/cnos-{name}.yml`). |
-| `package` | string | The owning package (e.g. `cnos.core` for the agent-admin wake; `cnos.cds` for the CDS dispatch wake; cnos.cdr / cnos.cdw for their respective dispatch wakes). Authoritative for ownership; the renderer verifies the manifest lives under the named package's directory tree. Note: dispatch wakes belong to concrete protocol packages (cds/cdr/cdw); `cnos.cdd` is the generic cell-runtime framework and does not own a dispatch wake itself. |
-| `role` | string, enum: `admin` \| `dispatch` \| `observer` | The wake's role class. `admin` = channel sync + admin-only directive handling, never executes cells. `dispatch` = claims cells matching its protocol selector and runs the protocol's runtime. `observer` = reads-only; emits reports but does not act. The agent-admin wake declares `admin`. |
-| `responsibilities` | array of strings, non-empty | The enumerated capabilities the wake's prompt commits to. The renderer does not interpret these (they are prose for the agent); the package authors them so they are observable in the declaration without reading the prompt. |
-| `admin_only` | boolean | When `true`, the wake MUST NOT execute cells. The prompt template is required to enforce this; the renderer is required to surface it (e.g. via permission allowlist restriction in the materialized substrate artifact). `role: admin` implies `admin_only: true`; `role: dispatch` implies `admin_only: false`. |
-| `input_contract` | object | Logical trigger taxonomy. Required keys: `triggers` (array; recognized values today: `"schedule"`, `"issues_opened_title_match"`, `"issues_labeled_selector_match"`), `inbound` (string; logical description, e.g. `"home thread + open issues"`). Renderer maps to substrate-specific trigger encoding. The taxonomy is forward-extensible: new trigger types may be added to the array; the renderer rejects unknown trigger values per §3.5. |
-| `output_contract` | object | Required keys depend on `role`. For `role: admin`: `channel_log_convention` (string; canonical doc path, e.g. `"docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md"`), `class_taxonomy` (array of allowed `class:` values for the channel entry's frontmatter), `cursor_advance` (boolean; whether the wake advances the channel cursor). For `role: dispatch`: `cycle_artifact_root` (string; the path under which cell artifacts land, e.g. `".cdd/unreleased/{N}/"`), `artifact_class_taxonomy` (array of canonical artifact class names the wake's cells emit, e.g. `["gamma-scaffold", "self-coherence", "beta-review", "beta-closeout", "alpha-closeout", "gamma-closeout"]`), `cell_runtime` (string; the cell framework whose role contracts the wake invokes — for software protocols today: `"cnos.cdd"`). |
-| `allowed_surfaces` | array of strings | What the wake MAY write. Each entry is a path glob or named surface. Patterns use `{agent}` placeholder for the per-install agent name. |
-| `disallowed_surfaces` | array of strings | What the wake MUST NOT write. Must explicitly include `.github/workflows/` and (for admin wakes) the literal phrase `cell execution` as a named surface. |
-| `defer_path` | object | Required keys: `cell_shaped_directive` (string; what to do when a cell-shaped directive arrives — e.g. `"defer to relevant protocol:{P} dispatch wake if installed; surface to operator if not"`), `off_role_directive` (string; what to do when a directive falls outside the wake's role; admin wakes defer to dispatch, dispatch wakes defer to admin or operator). |
-| `prompt_template` | string | Relative path to the prompt-template markdown file (e.g. `"prompt.md"`). The renderer reads this file and inlines its body into the substrate artifact's prompt field. |
-| `cross_references` | object | Required keys for traceability. Each value is an array of citation strings (package-path, issue ref, or canonical-doc path). At minimum: `architecture` (e.g. `["cnos#467"]`), `predecessors` (e.g. `["cnos#468"]`), `consumed_skills` (the skills the prompt invokes, e.g. `["cnos.core/skills/agent/activate", "cnos.core/skills/agent/attach"]`), `consumed_conventions` (e.g. `["docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md"]`). |
-| `protocol` | string, kebab-case, **required when `role: dispatch`** | The concrete protocol qualifier this wake claims cells for (e.g. `"cds"`, `"cdr"`, `"cdw"`). Matches the `protocol:{id}` label qualifier on the cells the wake claims. Owned by the package declaring the wake (per cnos#468 label-doctrine §2). `cnos.cdd` is the generic cell-runtime framework and does not own a protocol qualifier; therefore no `cnos.cdd` dispatch wake exists. |
-| `selector` | object, **required when `role: dispatch`** | The claim selector — the label-set filter the wake applies when claiming cells from the open-issue queue. Required keys: `include` (array of label names the issue MUST carry to be eligible; the standard dispatch include set is `["dispatch:cell", "protocol:{protocol}", "status:todo"]` where `{protocol}` matches the manifest's `protocol` field), `exclude` (array of label names whose presence DISQUALIFIES the issue; the standard dispatch exclude set is `["status:in-progress", "status:blocked", "status:review", "status:changes"]`). Per cnos#454 dispatch-protocol the selector is the contract between the dispatch protocol and the wake; explicit declaration prevents under-specified wakes from claiming the wrong queue. The renderer maps the logical selector to substrate-specific event filtering / runtime gating. |
+| `role` | string, enum: `admin` \| `dispatch` | The wake's role class. `admin` = channel sync + admin-only directive handling, never executes cells. `dispatch` = claims cells matching its protocol selector and runs the protocol's runtime. Drives the role-shaped `output` disjunction. (There is no `observer` role.) |
+| `package` | string | The owning package (e.g. `cnos.core` for the agent-admin wake; `cnos.cds` for the CDS dispatch wake). Authoritative for ownership; the renderer verifies the `SKILL.md` lives under the named package's directory tree. Dispatch wakes belong to concrete protocol packages (cds/cdr/cdw); `cnos.cdd` is the generic cell-runtime framework and owns no dispatch wake. |
+| `admin_only` | bool | When `true`, the wake MUST NOT execute cells. The body enforces this; the renderer surfaces it. `role: admin` implies `admin_only: true`; `role: dispatch` implies `admin_only: false`. |
+| `activation_log_writer` | bool | Writer-ownership of the activation channel log (`AGENT-ACTIVATION-LOG-v0` §0.1). Admin wakes are the sole writers (`true`); package-dispatch wakes are non-writers (`false`) and MUST declare it explicitly. The renderer refuses a `role: dispatch + admin_only: false` wake that declares (or defaults to) `activation_log_writer: true` with exit 4 (cycle/496). |
+| `input` | object | Logical trigger taxonomy. Required key: `triggers` (array; recognized values today: `schedule`, `issues_opened_title_match`, `issues_labeled_selector_match`). Optional key: `issues_opened_title_pattern` (the literal title substring the `issues_opened_title_match` trigger matches; defaults to the wake `name`). The renderer maps to substrate-specific trigger encoding; unknown trigger values are rejected per §3.5. |
+| `output` | object, **role-shaped** | Validated by a role disjunction (`#WakeOutputAdmin` \| `#WakeOutputDispatch`). For `role: admin`: `channel_log_convention` (canonical doc path), `writer_surface` (the log path the wake writes), `class_taxonomy` (allowed channel-entry `class:` values), `cursor_advance` (bool), `cursor_field` (how the cursor is recorded). For `role: dispatch`: `cycle_artifact_root` (path under which cell artifacts land, e.g. `.cdd/unreleased/{N}/`), `artifact_class_taxonomy` (canonical artifact class names the wake's cells emit), `cell_runtime` (the cell framework the wake invokes, e.g. `cnos.cdd`). |
+| `permission_intent` | array of strings | Logical permissions the wake needs (e.g. `contents.write`, `issues.write`, `pull_requests.write`, `id_token.write`). The renderer maps to substrate-specific permission encoding. |
+| `concurrency` | object | Keys: `serialize` (bool; when true the substrate is asked to serialize firings to prevent surface races), `group` (logical concurrency-group name; the renderer maps to substrate syntax). |
+| `agent_variable` | object | The per-install agent identity binding. Keys: `name` (the variable the body/substitution uses; today `agent`), `default` (`string \| null`; `null` means operator-required — the admin-wake pattern; a string means operator-defaultable — the dispatch-wake pattern). |
 
-### 2.2. Optional manifest fields
+### 2.2. Optional `wake:` block fields
 
-These fields MAY appear; the renderer treats their absence as the documented default.
+These fields MAY appear; the dispatch-shaped ones are **required when `role: dispatch`**.
 
-| Field | Type | Default | Purpose |
+| Field | Type | Applies | Purpose |
 |---|---|---|---|
-| `description` | string | (none) | Human-readable one-line summary; ignored by the renderer; helpful in code review. |
-| `agent_variable` | object | `{ "name": "agent", "default": null }` | The per-install agent identity binding (e.g. `--agent sigma` at `cn wake install` time). Object keys: `name` (the variable name the prompt template substitutes), `default` (the fallback if not provided at install time; `null` means required). |
-| `input_contract.issues_opened_title_pattern` | string | (wake's `name`) | The literal title substring the substrate matches when the `issues_opened_title_match` trigger fires. When omitted, the renderer uses the wake's `name`. Declare explicitly to preserve a legacy trigger phrase across a cutover, or whenever the title pattern intentionally differs from the wake name. |
-| `permission_intent` | array of strings | (renderer default per substrate) | Logical permissions the wake needs (e.g. `["contents.write", "issues.write", "pull_requests.write", "id_token.write"]`). Renderer maps to substrate-specific permission encoding. When omitted, renderer uses substrate's minimum-for-role defaults. |
-| `concurrency_intent` | object | `{ "serialize": false }` | Object keys: `serialize` (boolean; if true, the substrate is asked to serialize firings to prevent channel-surface races); `group` (string; logical concurrency group name; renderer maps to substrate-specific syntax). |
-| `superseded_substrate_artifact` | string | (none) | A path to an existing hand-written substrate-bound artifact this wake replaces at renderer cutover (e.g. `.github/workflows/claude-wake.yml`). Documents the migration boundary; the renderer MAY emit a warning if the named artifact still exists after install. |
-| `relationship_to_substrate` | string | (none) | Free-form prose describing this declaration's relationship to existing substrate-bound artifacts. Used in conjunction with `superseded_substrate_artifact` to document Sub 3 cutover semantics for cnos#467 Sub 2 (agent-admin) and parallel cycles. |
-| `activation_state` | string, enum: `declaration-only` \| `renderer-pending` \| `live` | `live` | Names whether this provider is runnable. `declaration-only`: shipped as a contract specimen — required when downstream skill dependencies or renderer-extension work has not landed; the renderer MUST refuse to install or render with a prominent DO-NOT-INSTALL warning (§3.10). `renderer-pending`: the renderer partially supports the manifest's shape (e.g. unknown but non-critical optional fields) — install under operator review. `live` (default): the renderer-emitted substrate artifact is the production wake. |
-| `activation_state_notes` | string | (none) | Free-form prose explaining the activation_state choice — naming the preconditions that must hold before flipping to `live`. Required-in-practice when `activation_state != "live"` (so the gate is operator-readable from the manifest alone). |
-| `forward_references` | object | (none) | Citations to skills / renderer features / cycles that have not yet landed but are referenced by this manifest or its prompt. Optional but recommended when `activation_state != "live"`. Required keys (when present): `skills_landing_later` (array of {path, tracking, purpose} objects), `renderer_extensions_landing_later` (array of {feature, tracking, purpose} objects). Separates landed `consumed_skills` from not-yet-landed dependencies so the contract is honest and the §3.6 cross-reference-declaration discipline holds. |
+| `activation_state` | enum: `live` \| `declaration-only` | dispatch (default `live`) | Names whether the wake is runnable. `declaration-only`: shipped as a contract specimen — the renderer refuses to render (or renders with a never-fire guard) per §3.10. `live`: the renderer-emitted workflow is the production wake. |
+| `protocol` | string, kebab-case | **required when `role: dispatch`** | The concrete protocol qualifier the wake claims cells for (e.g. `cds`, `cdr`, `cdw`); matches the `protocol:{id}` label on claimed cells. Owned by the declaring package (cnos#468 §2). |
+| `selector` | object `{ include: [...], exclude: [...] }` | **required when `role: dispatch`** | The claim selector — the label-set filter applied when claiming cells (§3.9). |
+| `surfaces` | object `{ allowed: [...], disallowed: [...] }` | any | What the wake MAY / MUST NOT write. Patterns use `{agent}` for the per-install agent name. `disallowed` MUST name `.github/workflows/`, and (for admin wakes) `cell_execution` (§3.8). |
+| `defer_path` | object | any | Routing doctrine: `cell_shaped_directive`, `off_role_directive`, `ambiguous_directive` — what the wake does when a directive is cell-shaped, off-role, or ambiguous. |
 
-### 2.3. Prompt template requirements
+The `#Wake` block is **open** (per `LANGUAGE-SPEC §11`): renderer fields not yet named in `#Wake` pass through validation rather than failing it, so a renderer feature can land ahead of a schema amendment.
 
-The prompt template is a Markdown file the renderer inlines verbatim into the substrate artifact's prompt-receiving field (e.g. claude-code-action's `prompt:`). The template MUST:
+### 2.3. Body (prompt) requirements
 
-1. **Be substrate-agnostic.** No GitHub Actions YAML, no `${{ }}` interpolation syntax, no hard-coded runner names, no `.github/workflows/` paths (except in a documented "relationship to existing substrate-bound wake" section when the wake supersedes one — and even there, the reference is descriptive, not interpolative).
-2. **Enumerate the responsibilities** named in the manifest's `responsibilities` field. The prompt is the agent's view; the manifest is the renderer's view; the two MUST agree.
-3. **Enumerate the defer-path** named in the manifest's `defer_path` field. The wake's behavior when a directive falls outside its role is the most important behavioral commitment; it must be explicit in the prompt where the agent reads it.
-4. **For admin wakes (`role: admin`, `admin_only: true`):** explicitly forbid cell execution in unambiguous language (e.g. "MUST NOT execute cells under any circumstance"; "Never execute cell-shaped directives inline"). This is what makes the admin/dispatch boundary observable in the prompt.
-5. **Cite the consumed skills + conventions** named in the manifest's `cross_references` field. The agent reading the prompt should be able to load every skill the prompt expects without consulting another document.
-6. **Substitute the `agent_variable`** (or its default) where the prompt names "the agent identity" (e.g. `"Activate and attach as https://github.com/usurobor/cn-{agent}"`). The renderer performs this substitution at install time using the value the operator passed (e.g. `--agent sigma` → `cn-sigma`).
+The body of the wake `SKILL.md` is the prompt the renderer inlines verbatim into the substrate artifact's prompt-receiving field (e.g. claude-code-action's `prompt:`). The body MUST:
 
-The renderer does NOT rewrite the prompt body. It substitutes named variables (today: `{agent}`); it inlines the result; it does not edit prose. Prose changes belong in the package's source tree.
+1. **Be substrate-agnostic.** No GitHub Actions YAML, no `${{ }}` interpolation, no hard-coded runner names, no `.github/workflows/` paths (except in a documented "relationship to existing substrate-bound wake" section when the wake supersedes one — and even there, the reference is descriptive, not interpolative).
+2. **Enumerate the responsibilities.** The body is the agent's view; the `wake:` block is the renderer's view; the two MUST agree.
+3. **Enumerate the defer-path** named in `wake.defer_path`. The wake's behavior when a directive falls outside its role is the most important behavioral commitment; it must be explicit where the agent reads it.
+4. **For admin wakes (`role: admin`, `admin_only: true`):** explicitly forbid cell execution in unambiguous language (e.g. "MUST NOT execute cells under any circumstance"). This is what makes the admin/dispatch boundary observable in the prompt.
+5. **Cite the consumed skills + conventions.** The agent reading the prompt should be able to load every skill the prompt expects without consulting another document.
+6. **Substitute the `agent_variable`** (or its default) where the prompt names the agent identity (e.g. "Activate and attach as https://github.com/usurobor/cn-{agent}"). The renderer performs this substitution at install time using the value the operator passed (e.g. `--agent sigma` → `cn-sigma`).
+
+The renderer does NOT rewrite the body. It substitutes named variables (today: `{agent}`); it inlines the result; it does not edit prose. The prompt portion is the body up to the reference-appendix boundary heading; verbose reference material after that heading is not inlined.
 
 ### 2.4. Substrate-rendering target
 
 Today's substrate is **GitHub Actions** with `anthropics/claude-code-action@v1` as the agent-execution carrier. Specifically:
 
-- **Substrate artifact path:** `.github/workflows/cnos-{wake-name}.yml`
+- **Substrate artifact path:** `.github/workflows/cnos-{wake-name}.yml` (live) + `orchestrators/{wake-name}/cnos-{wake-name}.golden.yml` (committed golden)
 - **Substrate trigger encoding:** YAML `on:` block (e.g. `on: { schedule: [...], issues: { types: [opened] } }`)
 - **Substrate permission encoding:** YAML `permissions:` block at workflow level
 - **Substrate run-identity binding:** `bot_name` + `bot_id` inputs to `claude-code-action`
 - **Substrate secret binding:** `${{ secrets.* }}` interpolations
 - **Substrate prompt-receiving field:** `prompt:` input to `claude-code-action`
 
-Tomorrow's substrate may be different (a different scheduler, a different agent-execution carrier, a different secret manager). The package's declaration does not change when the substrate changes — only the renderer changes. This is the contract's leverage: future substrate migrations are renderer-local, not package-tree-wide.
+Tomorrow's substrate may be different. The package's declaration does not change when the substrate changes — only the renderer changes. This is the contract's leverage: future substrate migrations are renderer-local, not package-tree-wide.
 
-The mapping from declaration fields to substrate-specific encoding is the renderer's responsibility (Sub 3 of cnos#467); this skill names what the declaration MUST provide so the renderer can produce a working substrate artifact without operator-side improvisation.
+The mapping from `wake:` fields to substrate-specific encoding is the renderer's responsibility; this skill names what the declaration MUST provide so the renderer can produce a working substrate artifact without operator-side improvisation.
 
-### 2.5. The package-authors-vs-renderer-materializes split (canonical table)
+### 2.5. The package-declares-vs-renderer-materializes split (canonical table)
 
-This split is the contract's core invariant. The table makes it grep-able:
+This split is the contract's core invariant. The table makes it grep-able. The left column is the wake `SKILL.md` (its `wake:` block or body); the right column is renderer / substrate authority.
 
-| Declared in manifest / prompt (package authority) | Emitted by renderer (substrate authority) |
+| Declared in the wake `SKILL.md` (package authority) | Emitted by the renderer (substrate authority) |
 |---|---|
-| `name`, `package`, `role`, `admin_only` | `name:` field of substrate artifact |
-| `protocol` (string, dispatch-required) | (n/a — runtime gating; the wake's prompt uses it to verify cell ownership, and the selector encodes it as a label filter) |
-| `selector.include` / `selector.exclude` (label-set filter, dispatch-required) | substrate event filter and/or runtime claim gate (e.g. `if:` on `labeled` events, runtime label-presence checks at claim time) |
-| `responsibilities` (enumerated array) | (n/a — responsibilities are prose for the agent) |
-| `input_contract.triggers` (logical taxonomy) | `on:` block (substrate trigger encoding) |
-| `input_contract.issues_opened_title_pattern` (literal title substring) | substituted into the job-level `if:` for the `issues_opened_title_match` trigger (substrate gating encoding) |
-| `input_contract.inbound` (logical description) | (n/a — agent reads inbound from the surface itself) |
-| `output_contract.channel_log_convention` (path to canonical doc; admin-shape) | (n/a — agent reads convention from the cited path) |
-| `output_contract.class_taxonomy` (array of allowed `class:` values; admin-shape) | (n/a — agent emits per the prompt + convention) |
-| `output_contract.cursor_advance` (boolean; admin-shape) | (n/a — agent behavior, not substrate behavior) |
-| `output_contract.cycle_artifact_root` (path; dispatch-shape) | (n/a — agent writes to the named path per the cell framework) |
-| `output_contract.artifact_class_taxonomy` (array; dispatch-shape) | (n/a — agent emits per the cell framework's contract) |
-| `output_contract.cell_runtime` (string naming the framework, e.g. `"cnos.cdd"`; dispatch-shape) | (n/a — agent invokes the named framework's δ role contract) |
-| `allowed_surfaces`, `disallowed_surfaces` | (n/a — declaration only; agent enforces via prompt) |
-| `defer_path` | (n/a — declaration only; agent enforces via prompt) |
-| `permission_intent` (logical permissions) | `permissions:` block (substrate permission encoding) |
-| `concurrency_intent` | `concurrency:` block (substrate concurrency encoding) |
-| `agent_variable` | (substituted by renderer at install time using `--agent` flag) |
-| Prompt template body | inlined into substrate's prompt field |
-| `cross_references` | (n/a — declaration only; for traceability) |
+| `wake.role`, `wake.package`, `wake.admin_only`, `wake.activation_log_writer` | `name:` field of the substrate artifact |
+| `wake.protocol` (dispatch-required) | (n/a — runtime gating; the body uses it to verify cell ownership; the selector encodes it as a label filter) |
+| `wake.selector.include` / `.exclude` (label-set filter, dispatch-required) | substrate event filter and/or runtime claim gate (`if:` on `labeled` events; runtime label-presence checks at claim time) |
+| Responsibilities (enumerated in the body) | (n/a — responsibilities are prose for the agent) |
+| `wake.input.triggers` (logical taxonomy) | `on:` block (substrate trigger encoding) |
+| `wake.input.issues_opened_title_pattern` (literal title substring) | substituted into the job-level `if:` for the `issues_opened_title_match` trigger |
+| `wake.output.channel_log_convention` / `.writer_surface` / `.class_taxonomy` / `.cursor_*` (admin-shape) | (n/a — the agent reads/writes per the cited convention) |
+| `wake.output.cycle_artifact_root` / `.artifact_class_taxonomy` / `.cell_runtime` (dispatch-shape) | (n/a — the agent writes per the cell framework's contract) |
+| `wake.surfaces.allowed` / `.disallowed` | (n/a — declaration only; the agent enforces via the body) |
+| `wake.defer_path` | (n/a — declaration only; the agent enforces via the body) |
+| `wake.permission_intent` (logical permissions) | `permissions:` block (substrate permission encoding) |
+| `wake.concurrency` | `concurrency:` block (substrate concurrency encoding) |
+| `wake.agent_variable` | (substituted by the renderer at install time using `--agent`) |
+| The body (prompt) | inlined into the substrate's prompt field |
+| Cross-references (in the body) | (n/a — declaration only; for traceability) |
 | (nothing) | substrate-bound secret names, runner names, action versions, `${{ }}` interpolations, default-branch policy, OIDC permission encoding |
 
-The right column is the renderer's territory. A package that declares any of the right column has confused the boundary.
+The right column is the renderer's territory. A wake `SKILL.md` that declares any of the right column has confused the boundary.
 
-### 2.6. Authoring a new wake provider against this contract
+### 2.6. Authoring a new wake
 
-To declare a new wake provider in package `{pkg}`:
+To declare a new wake in package `{pkg}`:
 
-1. **Pick a directory under the package's content classes.** `commands/install-{wake-name}/` or `orchestrators/{wake-name}/` are the two valid surfaces today (per cnos#467 active design constraint — no new `wakes/` class until `commands/` + `orchestrators/` prove insufficient).
-2. **Create `wake-provider.json`** in that directory; populate every required field from §2.1; populate optional fields from §2.2 as needed.
-3. **Create `prompt.md`** alongside; author the prompt per §2.3 requirements; substitute named variables only at the `{agent}`-placeholder positions.
-4. **Optionally create `README.md`** for human-readable cross-references; the renderer ignores it.
-5. **Do NOT touch the substrate.** No edits under `.github/workflows/`. The renderer emits the substrate artifact at `cn wake install` time (Sub 3 of cnos#467).
-6. **Verify substrate-agnostic:** `grep -ciE 'github|workflow|yaml|GITHUB_TOKEN|runs-on|claude-code-action' wake-provider.json prompt.md` MUST return 0 *except* for an explicit `relationship_to_substrate` field or a "relationship to existing claude-wake.yml" section that names the artifact being superseded (descriptive reference, not substrate emission).
+1. **Pick a directory under the package's content classes.** `orchestrators/{wake-name}/` is the standard surface today (per cnos#467 active design constraint — no new `wakes/` class until `commands/` + `orchestrators/` prove insufficient).
+2. **Create `SKILL.md`** with the standard skill frontmatter, `artifact_class: wake`, `scope: global`, and a `wake:` block populating every required field from §2.1 (plus the dispatch-shaped fields from §2.2 when `role: dispatch`).
+3. **Author the body as the prompt** per §2.3. Move verbose responsibilities, `*_notes`, and cross-references into the body's reference appendix (after the prompt-boundary heading), not the frontmatter — the frontmatter is the typed contract; the body is prompt + doctrine.
+4. **Do NOT touch the substrate.** No hand-edits under `.github/workflows/`. The renderer emits the live workflow and its committed golden at `cn install-wake` time.
+5. **Verify:** `cue vet` (I5) validates the `wake:` block; the substrate-agnostic check (§4.3) passes; `cn install-wake {wake}` renders a golden byte-identical to the committed one (§4.6).
 
-The agent-admin wake provider (cnos.core, sibling `orchestrators/agent-admin/wake-provider.json`) is the reference instance of this contract. The cnos.cds dispatch wake provider (Sub 4 of cnos#467) will pattern-copy from it: `cnos.cds/orchestrators/cds-dispatch/wake-provider.json` + `prompt.md`, declaring `role: dispatch` instead of `role: admin`. (cnos.cds is the concrete software protocol; cnos.cdd is the generic cell-runtime framework that cds and the other concrete protocol packages — cnos.cdr, cnos.cdw — use under the hood. Dispatch wakes belong to concrete protocols, not to the framework.)
+The agent-admin wake (cnos.core, `orchestrators/agent-admin/SKILL.md`) is the reference instance of this contract. The cnos.cds dispatch wake (`orchestrators/cds-dispatch/SKILL.md`) is the reference `role: dispatch` instance — same shape, declaring `role: dispatch` with `protocol`, `selector`, and a dispatch-shaped `output`. (cnos.cds is the concrete software protocol; cnos.cdd is the generic cell-runtime framework that cds and the other concrete protocol packages — cnos.cdr, cnos.cdw — use under the hood. Dispatch wakes belong to concrete protocols, not to the framework.)
 
 ---
 
 ## 3. Rules
 
-### 3.1. Schema is versioned; breaking changes bump the suffix
+### 3.1. The typed contract is CUE-validated; the renderer enforces runtime refusals
 
-The schema `cn.wake-provider.v1` is the contract version. A breaking change (renaming a required field, changing a field's type, removing a required field) bumps to `cn.wake-provider.v2` and the renderer adds a v2 handler. Older v1 manifests continue to work via the v1 handler; the renderer dispatches by the `schema` field value.
+The `#Wake` definition in `schemas/skill.cue` is the typed contract surface (the I5 gate): it validates the `wake:` block's shape — field types, enums, the role-shaped `output` disjunction, dispatch-required fields. The renderer (`cn install-wake`) owns the *runtime* refusals CUE cannot express statically (activation-state gating, `activation_log_writer` mis-declaration, body resolution, install-time substitution, exit codes) and queries a versioned internal shape (`cn.wake-provider.v1`) synthesized from the frontmatter. A breaking change to the contract is made in both surfaces together; the open `#Wake` block (`…`) lets a renderer field land ahead of its schema amendment.
 
-- ❌ Add a new required field to v1 silently; existing renderers reject manifests they previously accepted
-- ✅ Add a new required field as v2; existing manifests declare v1 and continue to work
+- ❌ Add a required field to the renderer's expectations without adding it to `#Wake`; I5 cannot catch a declaration that omits it
+- ✅ Add the required field to `#Wake` (I5 rejects declarations that omit it) and to the renderer (which enforces any cross-field rule)
 
-### 3.2. The manifest is data; the prompt is prose
+### 3.2. The `wake:` block is data; the body is prose
 
-The manifest is machine-consumable structured data. The prompt is human-readable prose for the agent to read. Do not put prose in the manifest (a free-form `description` is the only exception); do not put structured data in the prompt (use named variables only at the `{agent}`-placeholder positions).
+The `wake:` block is machine-consumable structured data. The body is human-readable prose for the agent to read. Do not put prose in the `wake:` block (a free-form `description` in the standard frontmatter is the exception); do not put structured contract data in the body (use named variables only at the `{agent}`-placeholder positions).
 
-- ❌ Manifest carries a paragraph of explanation in a `notes` field; renderer treats as data
-- ✅ Manifest carries fielded data; prose lives in `prompt.md` or `README.md`
+- ❌ `wake:` block carries a paragraph of explanation in a `notes` field
+- ✅ `wake:` block carries fielded data; prose lives in the body or a `README.md`
 
 ### 3.3. Substrate-specific content does not appear in the declaration
 
-The declaration is substrate-agnostic by contract. Substrate-specific content (GitHub Actions YAML, runner names, secret names with `${{ }}`, hard-coded workflow paths, action versions) belongs in the renderer.
+The declaration (the `wake:` block and the body) is substrate-agnostic by contract. Substrate-specific content (GitHub Actions YAML, runner names, secret names with `${{ }}`, hard-coded workflow paths, action versions) belongs in the renderer.
 
-The single carve-out: a `relationship_to_substrate` field or "relationship to existing claude-wake.yml" prose section MAY name a substrate-bound artifact this declaration supersedes — that is a *descriptive* reference, not substrate emission. The grep gate (§2.6 step 6) excludes this carve-out by reading the field's name + the surrounding section header.
+The single carve-out: a "relationship to existing substrate-bound wake" prose section MAY name a substrate-bound artifact this wake supersedes — a *descriptive* reference, not substrate emission. The grep gate (§4.3) excludes this carve-out by the surrounding section header.
 
-- ❌ Manifest field `permissions:` carries GitHub Actions permission keys
-- ❌ Prompt template inlines `${{ secrets.GITHUB_TOKEN }}`
-- ✅ Manifest field `permission_intent:` lists logical permissions; renderer maps to substrate
-- ✅ Prompt template names the agent's behavioral commitments; renderer handles secret binding
+- ❌ `wake.permission_intent` carries GitHub Actions permission keys
+- ❌ The body inlines `${{ secrets.GITHUB_TOKEN }}`
+- ✅ `wake.permission_intent` lists logical permissions; the renderer maps to the substrate
+- ✅ The body names the agent's behavioral commitments; the renderer handles secret binding
 
-### 3.4. The package does not ship rendered artifacts
+### 3.4. The package does not hand-edit rendered artifacts
 
-The package's source tree carries the declaration. The renderer emits the substrate artifact at install time at the substrate's canonical path. The two MUST NOT coexist in the package source tree.
+The package's source tree carries the declaration (the wake `SKILL.md`). The renderer emits the substrate artifact — the live workflow at `.github/workflows/cnos-{wake}.yml` and its committed golden `orchestrators/{wake}/cnos-{wake}.golden.yml`. The golden is renderer-output committed for review and as the byte-identity oracle; it is regenerated by re-running the renderer, never hand-edited. The live workflow is never hand-edited.
 
-- ❌ `cnos.core/orchestrators/agent-admin/cnos-agent-admin.yml` shipped alongside the manifest
-- ✅ Renderer emits `.github/workflows/cnos-agent-admin.yml` at `cn wake install agent-admin --agent sigma` time
+- ❌ Someone edits `.github/workflows/cnos-agent-admin.yml` (or the golden) by hand; it drifts from a fresh render
+- ✅ `cn install-wake agent-admin --agent sigma` regenerates both; the `install-wake golden` oracle confirms `sha256(golden)==sha256(live)`
 
 ### 3.5. The renderer rejects malformed declarations rather than defaulting silently
 
-If a required field is missing, the wrong type, or names a path that does not exist (e.g. `prompt_template: "prompt.md"` but the file is absent), `cn wake install` MUST fail with a precise error naming the field and the file. Silent defaulting hides design gaps.
+If a required `wake:` field is missing, the wrong type, or names a path that does not exist, `cn install-wake` MUST fail with a precise error naming the field. Silent defaulting hides design gaps. (Static shape violations are caught earlier by `#Wake` at I5; the renderer is the second gate for cross-field and path rules.)
 
-- ❌ Renderer fills in default `responsibilities` when the manifest omits the field
-- ✅ Renderer errors `wake-provider.json: required field "responsibilities" missing` and exits non-zero
+- ❌ The renderer fills in a default `output` when the `wake:` block omits it
+- ✅ The renderer errors naming the missing required field and exits non-zero
 
-### 3.6. Cross-references are declared, not inferred
+### 3.6. Cross-references are declared in the body, not inferred
 
-The `cross_references` object names the architecture (cnos#467), predecessor cycles (cnos#468 label doctrine for any wake whose prompt cites label-application discipline), consumed skills (e.g. `cnos.core/skills/agent/activate`), and consumed conventions (e.g. `AGENT-ACTIVATION-LOG-v0.md`). These are the package's authority — they document what the declaration depends on. The renderer does not infer them from the prompt text.
+The body names the architecture (cnos#467), predecessor cycles, consumed skills (e.g. `cnos.core/skills/agent/activate`), and consumed conventions (e.g. `AGENT-ACTIVATION-LOG-v0.md`) the prompt depends on. These are the package's authority; the renderer does not infer them from the prompt text.
 
-- ❌ Renderer greps the prompt for skill paths and constructs a derived `cross_references` view
-- ✅ Manifest declares `cross_references` explicitly; renderer can verify the prompt cites everything declared
+- ❌ The renderer greps the body for skill paths and constructs a derived cross-reference view
+- ✅ The body declares its cross-references explicitly; a reviewer can verify the prompt cites everything it depends on
 
-### 3.7. Admin-only wakes enforce the boundary in the prompt
+### 3.7. Admin-only wakes enforce the boundary in the body
 
-A wake declared with `role: admin` + `admin_only: true` MUST carry a prompt template that explicitly forbids cell execution and explicitly names the defer-path for cell-shaped directives. The contract makes this enforceable via the manifest's structural declaration; the prompt's prose makes it operational at agent-runtime.
+A wake declared with `role: admin` + `admin_only: true` MUST carry a body that explicitly forbids cell execution and names the defer-path for cell-shaped directives. The `wake:` block makes the boundary structurally declared; the body makes it operational at agent-runtime.
 
-- ❌ `admin_only: true` declared but the prompt body never names "no cell execution"
-- ✅ `admin_only: true` declared and the prompt body contains "MUST NOT execute cells" + the defer-path
+- ❌ `admin_only: true` declared but the body never names "no cell execution"
+- ✅ `admin_only: true` declared and the body contains "MUST NOT execute cells" + the defer-path
 
 ### 3.8. Disallowed surfaces explicitly name `.github/workflows/` and cell execution
 
-For *any* wake (admin or dispatch), `.github/workflows/` is a disallowed surface — the substrate is rendered, not hand-edited by the wake. For admin wakes, `cell execution` is named as a disallowed surface (a logical "surface," not a path) so the boundary is grep-able from the manifest without reading the prompt.
+For *any* wake (admin or dispatch), `.github/workflows/` is a disallowed surface — the substrate is rendered, not hand-edited by the wake. For admin wakes, `cell_execution` is named as a disallowed surface (a logical "surface," not a path) so the boundary is grep-able from `wake.surfaces.disallowed` without reading the body.
 
-- ❌ `disallowed_surfaces: [".github/", "branch_protection"]` (cell execution implicit only in prompt)
-- ✅ `disallowed_surfaces: [".github/workflows/", "branch_protection", "repo_settings", "cell_execution", ...]`
+- ❌ `wake.surfaces.disallowed: [".github/", "branch_protection"]` (cell execution implicit only in the body)
+- ✅ `wake.surfaces.disallowed: [".github/workflows/", "cell_execution", "branch protection rules", …]`
 
 ### 3.9. Dispatch wakes declare their claim selector explicitly
 
-A wake declared with `role: dispatch` MUST declare both `protocol` (the concrete protocol qualifier short-name; matches `protocol:{id}` labels) and `selector` (the label-set filter the wake applies when claiming cells). Per cnos#454 dispatch-protocol the selector is the contract between the dispatch protocol and the wake — it names exactly which cells the wake will claim. A dispatch wake that omits the selector is under-specified; per §3.5 the renderer rejects rather than silently defaulting (a default selector would conflate "claim everything" with "claim nothing" — both wrong defaults).
+A wake declared with `role: dispatch` MUST declare both `protocol` (the concrete protocol qualifier; matches `protocol:{id}` labels) and `selector` (the label-set filter applied when claiming cells). Per cnos#454 dispatch-protocol the selector is the contract between the dispatch protocol and the wake — it names exactly which cells the wake claims. A dispatch wake that omits the selector is under-specified; per §3.5 the renderer rejects rather than silently defaulting.
 
-- ❌ `role: dispatch` declared but `selector` omitted; renderer infers from labels-doctrine and "just runs"
-- ✅ `role: dispatch` declared with explicit `selector.include: ["dispatch:cell", "protocol:cds", "status:todo"]` + `selector.exclude: ["status:in-progress", "status:blocked", "status:review", "status:changes"]`
+- ❌ `role: dispatch` declared but `selector` omitted; the renderer infers from label doctrine and "just runs"
+- ✅ `role: dispatch` with explicit `selector.include: [dispatch:cell, protocol:cds, status:todo]` + `selector.exclude: [status:in-progress, status:blocked, status:review, status:changes]`
 
-The selector's `include[1]` value MUST be `protocol:{protocol}` where `{protocol}` matches the manifest's `protocol` field — i.e., the wake claims only cells whose qualifier matches its package's owned protocol (cross-protocol claims are a label-doctrine violation per cnos#468 §2.1).
+The selector's `include` protocol entry MUST be `protocol:{protocol}` where `{protocol}` matches `wake.protocol` — the wake claims only cells whose qualifier matches its package's owned protocol (cross-protocol claims are a label-doctrine violation per cnos#468 §2.1).
 
-### 3.10. Declaration-only providers are not silently activated
+### 3.10. Declaration-only wakes are not silently activated
 
-A provider declared with `activation_state: declaration-only` is a contract specimen — it documents the intended wake shape but is not runnable yet (typically because downstream skill dependencies or renderer-extension work has not landed; the manifest's `activation_state_notes` + `forward_references` should name the preconditions and their tracking issues). The renderer MUST NOT silently produce a substrate artifact that an operator installs without seeing the activation-state declaration; it MUST either:
+A wake declared with `activation_state: declaration-only` is a contract specimen — it documents the intended wake shape but is not runnable yet (typically because downstream skill dependencies or renderer-extension work has not landed). The renderer MUST NOT silently produce a substrate artifact an operator installs without seeing the activation-state declaration; it MUST either:
 
-- **Refuse to install:** exit non-zero with a precise error naming the activation_state value and the activation_state_notes content; OR
-- **Render with explicit warning:** emit the substrate artifact with a top-of-file `# DO NOT INSTALL: activation_state = declaration-only` comment + a stderr warning, AND set the workflow's `if:` gate at the job level to a permanently-false condition so the rendered artifact cannot actually fire even if accidentally committed.
+- **Refuse to install:** exit non-zero with a precise error naming the `activation_state` value; OR
+- **Render with explicit warning:** emit the substrate artifact with a top-of-file `# DO NOT INSTALL: activation_state = declaration-only` comment + a stderr warning, AND set the workflow's job-level `if:` gate to a permanently-false condition so the rendered artifact cannot fire even if committed.
 
-The renderer's choice between refusal and warned-render is itself a substrate-authority decision (rendering policy is the renderer's, not the package's). For declaration-only providers, refusal is the safest default; rendering with the never-fire gate is the carve-out when the operator explicitly wants the rendered artifact for diff review.
+For declaration-only wakes, refusal is the safest default; the warned-render is the carve-out when the operator explicitly wants the rendered artifact for diff review. When the preconditions hold, a future cycle flips `activation_state` to `live`, the renderer succeeds without the guard, and the substrate artifact is committed and activated. The flip is a package-authority decision (the `wake:` block changes), not a renderer decision.
 
-- ❌ Renderer reads `activation_state: declaration-only` and renders a normal-looking workflow file (the operator commits and the wake fires without realizing the contract is incomplete)
-- ✅ Renderer reads `activation_state: declaration-only` and either refuses with `cn install-wake: cds-dispatch: activation_state == declaration-only; refusing to render — see activation_state_notes`, OR emits the substrate artifact with a leading `# DO NOT INSTALL` banner + a never-fire `if:` gate
-
-When the preconditions named in `activation_state_notes` all hold, a future cycle flips `activation_state` to `live`, the renderer's `cn install-wake` succeeds without the guard, and the substrate artifact is committed and activated. The flip is a package-authority decision (the manifest changes), not a renderer-authority decision.
+- ❌ The renderer reads `activation_state: declaration-only` and renders a normal-looking workflow (the operator commits and it fires without realizing the contract is incomplete)
+- ✅ The renderer refuses (`activation_state == declaration-only; refusing to render`), OR emits with a leading `# DO NOT INSTALL` banner + a never-fire `if:` gate
 
 ---
 
 ## 4. Verify
 
-### 4.1. Schema-presence check
+### 4.1. Contract-shape check
 
-Confirm the manifest's first key is `"schema"` and its value is `"cn.wake-provider.v1"`. The renderer dispatches by schema; missing or mistyped schema means the renderer cannot identify the manifest.
+Confirm the wake `SKILL.md` carries `artifact_class: wake`, `scope: global`, and a `wake:` block, and that `cue vet` against `#Wake` passes (the I5 gate). Missing or mistyped fields are §3.1 / §3.5 failures.
 
 ### 4.2. Required-field check
 
-Confirm every required field in §2.1 is present and well-typed. Missing required fields are §3.5 failures.
+Confirm every required field in §2.1 is present and well-typed, plus the dispatch-shaped fields (§2.2) when `role: dispatch`. Missing required fields are §3.5 failures.
 
 ### 4.3. Substrate-agnostic check
 
-Run: `grep -ciE 'github|workflow|yaml|GITHUB_TOKEN|runs-on|claude-code-action' wake-provider.json prompt.md`. The result MUST be 0 *except* for occurrences within an explicit `relationship_to_substrate` field or a "relationship to existing {substrate-bound artifact}" prose section.
+Run: `grep -ciE 'github|workflow|yaml|GITHUB_TOKEN|runs-on|claude-code-action' {wake SKILL.md}`. The result MUST be 0 *except* for occurrences within an explicit "relationship to existing substrate-bound wake" prose section.
 
 ### 4.4. Admin-only enforcement check
 
-For wakes declared with `admin_only: true`: grep the prompt body for explicit "no cell execution" language and for the defer-path. Both MUST be present in unambiguous form.
+For wakes declared with `admin_only: true`: grep the body for explicit "no cell execution" language and for the defer-path. Both MUST be present in unambiguous form.
 
 ### 4.5. Cross-reference completeness check
 
-For each entry in `cross_references.consumed_skills` and `cross_references.consumed_conventions`, confirm the prompt body names the path. If a skill is declared but not named in the prompt, either the declaration is over-stating or the prompt is under-citing — both are findings.
+For each skill / convention the body cites as consumed, confirm the body names the path. If a skill is depended on but not named, the body is under-citing; both directions are findings.
 
-### 4.6. Substrate-rendered-artifact absence check
+### 4.6. Golden byte-identity check
 
-Confirm no `.yml` files live under the package's source tree at or under the wake-provider directory. The package authors declarations; the renderer emits substrate artifacts.
+Confirm `cn install-wake {wake}` renders a live workflow byte-identical to the committed golden (`sha256(golden)==sha256(live)`), and that re-rendering is a no-op. The `install-wake golden` CI job is the oracle. The golden is the reviewed compiled artifact; a diff means either the declaration changed (re-render + commit) or the substrate artifact was hand-edited (§3.4 violation).
 
 ---
 
@@ -340,23 +323,25 @@ Confirm no `.yml` files live under the package's source tree at or under the wak
 
 This skill is part of the wake-orchestration cluster (cnos#467). It defines the contract consumed by:
 
-- **cnos#467** (`agent/wake-orchestration`) — the master architecture; this contract operationalizes the "package-owned wake providers" doctrine declared there.
-- **cnos#468** (`agent/label-doctrine`) — the label control plane any admin wake's prompt cites for label-application discipline. The agent-admin wake provider's prompt template carries this citation.
-- **cnos#470** (this cycle; Sub 2 of #467) — authors this skill and the agent-admin wake provider as the reference instance.
-- **cnos#450** (`agent/wake-template`, amended) — the Sub 3 renderer (`cn wake install`) consumes this contract. The renderer dispatches by `schema`; required-field validation is its responsibility; substrate emission is its sole authority.
-- **cnos#454** (`agent/dispatch-protocol`, amended) — defines the claim mechanics for *dispatch*-role wakes; not consumed by admin-role wakes. Future per-package dispatch wake providers (cnos.cds Sub 4; future cnos.cdr, cnos.cdw) cite both this contract and #454. (cnos.cdd is the generic cell-runtime framework, not a concrete dispatch wake owner.)
+- **cnos#467** (`agent/wake-orchestration`) — the master architecture; this contract operationalizes the "package-owned wakes" doctrine declared there.
+- **cnos#468** (`agent/label-doctrine`) — the label control plane any admin wake's body cites for label-application discipline.
+- **cnos#470** — authored this skill and the agent-admin wake as the reference instance.
+- **cnos#450** (`agent/wake-template`, amended) — the renderer (`cn install-wake`) consumes this contract; required-field validation and substrate emission are its authority.
+- **cnos#454** (`agent/dispatch-protocol`, amended) — defines the claim mechanics for *dispatch*-role wakes; cited by dispatch wakes alongside this contract.
+- **cnos#524** (`wake-as-skill`) — migrated wakes to the typed `SKILL.md` model this skill describes; added `#Wake` + `artifact_class: wake` to `schemas/skill.cue` and made `cn-install-wake` read the wake `SKILL.md` as its only source.
 
 Adjacent skills and conventions:
 
-- `cnos.core/skills/agent/activate/SKILL.md` — the activate skill any wake's prompt invokes for identity load.
-- `cnos.core/skills/agent/attach/SKILL.md` — the attach skill any wake's prompt invokes for channel sync.
-- `cnos.core/skills/agent/label-doctrine/SKILL.md` — the label doctrine admin wakes cite for label-application discipline (cnos#468 merged predecessor).
-- `cnos.core/skills/skill/SKILL.md` — the skill-format meta-skill this skill conforms to.
-- `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` — the channel log convention any wake's output contract cites.
+- `cnos.core/skills/agent/activate/SKILL.md` — the activate skill any wake's body invokes for identity load.
+- `cnos.core/skills/agent/attach/SKILL.md` — the attach skill any wake's body invokes for channel sync.
+- `cnos.core/skills/agent/label-doctrine/SKILL.md` — the label doctrine admin wakes cite for label-application discipline (cnos#468).
+- `cnos.core/skills/skill/SKILL.md` — the skill-format meta-skill this skill (and every wake `SKILL.md`) conforms to.
+- `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` — the channel log convention an admin wake's `output` cites.
 
-Reference instance:
+Reference instances:
 
-- `cnos.core/orchestrators/agent-admin/wake-provider.json` + `prompt.md` — the agent-admin wake provider; the reference instance authored against this contract (cnos#470).
+- `cnos.core/orchestrators/agent-admin/SKILL.md` — the agent-admin wake; the reference `role: admin` instance authored against this contract (cnos#470).
+- `cnos.cds/orchestrators/cds-dispatch/SKILL.md` — the CDS dispatch wake; the reference `role: dispatch` instance (cnos#467 Sub 4).
 
 ---
 
@@ -364,19 +349,17 @@ Reference instance:
 
 The four named failure modes from §1.3, plus two implementation-level ones:
 
-- **F1 — Substrate leakage.** _Symptom:_ Manifest or prompt carries GitHub Actions YAML / `${{ }}` interpolations / hard-coded workflow paths. _Fix:_ §3.3; replace with logical equivalents the renderer maps.
-- **F2 — Renderer overreach.** _Symptom:_ Renderer fills in defaults for required fields the manifest omitted. _Fix:_ §3.5; renderer errors on missing required fields.
-- **F3 — Schema drift.** _Symptom:_ A field's meaning changes without a schema-version bump; older renderers misparse. _Fix:_ §3.1; breaking changes bump the schema suffix.
-- **F4 — Substrate-rendered artifact in the source tree.** _Symptom:_ Package ships a rendered `.yml` alongside the manifest. _Fix:_ §3.4; renderer emits at install time; source tree carries declarations only.
-- **F5 — Admin/dispatch boundary erosion.** _Symptom:_ A wake declared `admin_only: true` carries a prompt that does not forbid cell execution. _Fix:_ §3.7; admin wakes enforce the boundary in the prompt prose.
-- **F6 — Cross-reference drift.** _Symptom:_ Manifest declares a `consumed_skill` not named in the prompt, or the prompt cites a skill the manifest does not declare. _Fix:_ §4.5; cross-references are explicit on both sides.
+- **F1 — Substrate leakage.** _Symptom:_ The `wake:` block or body carries GitHub Actions YAML / `${{ }}` interpolations / hard-coded workflow paths. _Fix:_ §3.3; replace with logical equivalents the renderer maps.
+- **F2 — Renderer overreach.** _Symptom:_ The renderer fills in defaults for required fields the declaration omitted. _Fix:_ §3.5; the renderer errors on missing required fields.
+- **F3 — Contract drift.** _Symptom:_ A field's meaning changes without `#Wake` (and the renderer's internal shape) changing; declarations misparse. _Fix:_ §3.1; the change is made to both the CUE contract and the renderer.
+- **F4 — Hand-edited substrate artifact.** _Symptom:_ The live workflow or golden diverges from a fresh render. _Fix:_ §3.4; the renderer emits both; the byte-identity oracle fails on drift.
+- **F5 — Admin/dispatch boundary erosion.** _Symptom:_ A wake declared `admin_only: true` carries a body that does not forbid cell execution. _Fix:_ §3.7; admin wakes enforce the boundary in the body.
+- **F6 — Cross-reference drift.** _Symptom:_ The body depends on a skill it does not name, or names one it does not use. _Fix:_ §4.5; cross-references are explicit in the body.
 
 ---
 
 ## 7. Authority and stability
 
-This skill is doctrine-adjacent: it defines the contract every cnos package follows when shipping a wake provider. Future changes follow the constitutive-change approval discipline that governs other doctrine-adjacent skills (compare `cnos.core/skills/agent/label-doctrine/SKILL.md §8 Versioning`).
+This skill is doctrine-adjacent: it defines the contract every cnos package follows when shipping a wake. Future changes follow the constitutive-change approval discipline that governs other doctrine-adjacent skills (compare `cnos.core/skills/agent/label-doctrine/SKILL.md §8 Versioning`).
 
-Drift between this skill and the Sub 3 renderer (`cn wake install`) is resolved in favor of this skill — the contract is the canonical surface; the renderer follows. If a future renderer needs a field this contract does not declare, the contract is amended (with a schema-version bump if breaking) before the renderer ships the field-dependent behavior.
-
-Drift between this skill and a concrete wake provider declaration (e.g. `cnos.core/orchestrators/agent-admin/wake-provider.json`) is resolved in favor of this skill — the declaration is one *instance* of the contract; the contract governs.
+Drift between this skill and the renderer (`cn install-wake`) is resolved in favor of this skill — the contract is the canonical surface; the renderer follows. Drift between this skill and the typed `#Wake` definition is resolved by amending both together (this skill states the contract in prose; `#Wake` states it in CUE; they must agree). Drift between this skill and a concrete wake `SKILL.md` (e.g. `agent-admin/SKILL.md`) is resolved in favor of this skill — the declaration is one *instance* of the contract; the contract governs.
