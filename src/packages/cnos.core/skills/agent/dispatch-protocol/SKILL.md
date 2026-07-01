@@ -583,16 +583,16 @@ Confirm §2.9 defines the deliverable-proof requirement before `status:review` a
 ### Skills and issues that depend on this protocol
 
 - `agent/label-doctrine/SKILL.md` (`cnos#468`, MERGED) — defines the canonical generic label set (cnos.core-owned) and the per-protocol qualifier rule (concrete-package-owned). This skill's §1.1 cites label-doctrine as the doctrinal source; the dispatch protocol operationalizes label-doctrine's contract at claim time.
-- `agent/wake-provider/SKILL.md` (`cnos#470`, MERGED) — `cn.wake-provider.v1` declaration contract. Dispatch wakes (`role: dispatch`) declare `protocol`, `selector`, and dispatch-shape `output_contract` per its §3.9; this skill's claim algorithm reads those fields at install time.
+- `agent/wake-provider/SKILL.md` (`cnos#470`, MERGED) — `cn.wake-provider.v1` declaration contract. Dispatch wakes (`role: dispatch`) declare `protocol`, `selector`, and dispatch-shaped `wake.output` per its §3.9; this skill's claim algorithm reads those fields at install time.
 - `agent/wake-template/SKILL.md` (`cnos#450`) — renders package-owned dispatch wakes from `cn.wake-provider.v1` manifests; renders `on: issues` labeled trigger filtered by `protocol:{P}`, scheduled sweep trigger, per-protocol concurrency group, dispatch query, and claim/report steps. Cites this skill as source of truth for claim behavior.
-- `cnos.cds/orchestrators/cds-dispatch/SKILL.md` (`cnos#467 Sub 4 / PR #483`, MERGED) — first reference dispatch wake; its frontmatter `wake:` block declares `protocol: cds`, the standard `selector` (`dispatch:cell + protocol:cds + status:todo` minus excluded statuses), and the dispatch-shape `output_contract` invoking cnos.cdd as `cell_runtime`. cnos.cdd is the framework; cnos.cds is the concrete protocol.
+- `cnos.cds/orchestrators/cds-dispatch/SKILL.md` (`cnos#467 Sub 4 / PR #483`, MERGED) — first reference dispatch wake; its frontmatter `wake:` block declares `protocol: cds`, the standard `selector` (`dispatch:cell + protocol:cds + status:todo` minus excluded statuses), and the dispatch-shaped `wake.output` invoking cnos.cdd as `cell_runtime`. cnos.cdd is the framework; cnos.cds is the concrete protocol.
 - `agent/cohere/SKILL.md` (`cnos#444`) — cohere orchestrator dispatches cells per this protocol. The three-label composition is enforced at cohere's dispatch layer.
 
 ### Related issues
 
 - `cnos#454` — this skill's authoring issue. ACs in §1–§5 correspond to AC1–AC11 of cnos#454, amended for the protocol-qualifier doctrine landed via PR #480.
 - `cnos#468` — label doctrine; the two-layer ownership of labels (generic by cnos.core; protocol qualifiers by concrete-protocol packages).
-- `cnos#470` — wake-provider contract; dispatch wakes declare `protocol` + `selector` + dispatch-shape `output_contract`.
+- `cnos#470` — wake-provider contract; dispatch wakes declare `protocol` + `selector` + dispatch-shaped `wake.output`.
 - `cnos#480` — doctrine correction: cnos.cdd is framework, not concrete protocol; cnos.cds is the concrete software-development protocol.
 - `cnos#483` — Sub 4 cnos.cds dispatch wake provider (first dispatch reference instance); declaration-only until renderer + δ wake-invoked mode land.
 - `cnos#479` — cutover-A (admin wake live in production); the other half of the two-wake architecture cnos#467 establishes.
