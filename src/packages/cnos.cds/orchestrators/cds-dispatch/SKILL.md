@@ -88,7 +88,7 @@ Read this prompt fully before acting. The admin/dispatch boundary it establishes
 
 > ✅ **Activation state: live.** This wake is **runnable** as of cnos#487 (Sub 5C of cnos#467 wake-orchestration wave). All preconditions satisfied:
 > - cnos#454 dispatch-protocol skill is on `main` (PR #466);
-> - cnos#467 Sub 5A renderer extension consuming `role:dispatch` + `protocol` + `selector` + dispatch-shape `output_contract` + `issues_labeled_selector_match` is on `main` (cnos#485 / PR #488);
+> - cnos#467 Sub 5A renderer extension consuming `role:dispatch` + `protocol` + `selector` + dispatch-shaped `wake.output` + `issues_labeled_selector_match` is on `main` (cnos#485 / PR #488);
 > - cnos#467 Sub 5B δ wake-invoked mode amendment in cnos.cdd is on `main` (cnos#486 / PR #489).
 >
 > The corresponding substrate artifact is **`.github/workflows/cnos-cds-dispatch.yml`** (rendered via `cn install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml`). The `wake.activation_state: "live"` field in this module's frontmatter is the machine-readable source of truth; this banner is its prose mirror. This wake claims and executes cells through the standard selector — `dispatch:cell + protocol:cds + status:todo` — per the claim mechanism below.
@@ -366,7 +366,7 @@ If you reach a state where you cannot complete the above (capability mismatch, a
 
 ## Activation state notes
 
-This provider is LIVE in production substrate as of cnos#487 (Sub 5C of cnos#467 wake-orchestration wave). Preconditions satisfied: (a) cnos#454 dispatch-protocol skill landed on main (PR #466); (b) cnos#467 Sub 5A landed the renderer extension consuming role:dispatch + protocol + selector + dispatch-shape output_contract fields + the issues_labeled_selector_match trigger (cnos#485 / PR #488); (c) cnos#467 Sub 5B landed the δ wake-invoked mode amendment in cnos.cdd's delta SKILL (cnos#486 / PR #489). The corresponding rendered substrate artifact lives at `.github/workflows/cnos-cds-dispatch.yml` per `cn install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml`; the renderer no longer refuses (per wake-provider/SKILL.md §3.10 — `activation_state == "live"` is the production state). This SKILL.md body carries a matching live-state banner so the model executing the wake reads consistent state from both the frontmatter `wake.activation_state` field and this body prose. Any future flip back to declaration-only (renderer-pending / rollback) MUST update BOTH the frontmatter `wake.activation_state` AND this body's banner — they are coupled.
+This provider is LIVE in production substrate as of cnos#487 (Sub 5C of cnos#467 wake-orchestration wave). Preconditions satisfied: (a) cnos#454 dispatch-protocol skill landed on main (PR #466); (b) cnos#467 Sub 5A landed the renderer extension consuming role:dispatch + protocol + selector + dispatch-shaped wake.output fields + the issues_labeled_selector_match trigger (cnos#485 / PR #488); (c) cnos#467 Sub 5B landed the δ wake-invoked mode amendment in cnos.cdd's delta SKILL (cnos#486 / PR #489). The corresponding rendered substrate artifact lives at `.github/workflows/cnos-cds-dispatch.yml` per `cn install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml`; the renderer no longer refuses (per wake-provider/SKILL.md §3.10 — `activation_state == "live"` is the production state). This SKILL.md body carries a matching live-state banner so the model executing the wake reads consistent state from both the frontmatter `wake.activation_state` field and this body prose. Any future flip back to declaration-only (renderer-pending / rollback) MUST update BOTH the frontmatter `wake.activation_state` AND this body's banner — they are coupled.
 
 ---
 
@@ -425,7 +425,7 @@ open issues in this repo matching the selector (dispatch:cell + protocol:cds + s
 - cnos#476 (Sub 3 — cn install-wake renderer baseline)
 - cnos#479 / PR #481 (cutover-A — admin wake activation; both wake classes are now rendered in production)
 - cnos#454 / PR #466 (dispatch-protocol skill; 3-label claim mechanics + serialized claim guard the wake's prompt cites)
-- cnos#485 / PR #488 (Sub 5A — renderer extension consuming role:dispatch + protocol + selector + dispatch-shape output_contract + activation_state + issues_labeled_selector_match)
+- cnos#485 / PR #488 (Sub 5A — renderer extension consuming role:dispatch + protocol + selector + dispatch-shaped wake.output + activation_state + issues_labeled_selector_match)
 - cnos#486 / PR #489 (Sub 5B — δ wake-invoked mode amendment in cnos.cdd/skills/cdd/delta/SKILL.md §9; the contract this wake invokes)
 - cnos#487 (Sub 5C — this provider's activation_state flipped to live + cnos-cds-dispatch.yml committed to substrate)
 

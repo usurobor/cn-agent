@@ -73,7 +73,7 @@ jobs:
 
             > ✅ **Activation state: live.** This wake is **runnable** as of cnos#487 (Sub 5C of cnos#467 wake-orchestration wave). All preconditions satisfied:
             > - cnos#454 dispatch-protocol skill is on `main` (PR #466);
-            > - cnos#467 Sub 5A renderer extension consuming `role:dispatch` + `protocol` + `selector` + dispatch-shape `output_contract` + `issues_labeled_selector_match` is on `main` (cnos#485 / PR #488);
+            > - cnos#467 Sub 5A renderer extension consuming `role:dispatch` + `protocol` + `selector` + dispatch-shaped `wake.output` + `issues_labeled_selector_match` is on `main` (cnos#485 / PR #488);
             > - cnos#467 Sub 5B δ wake-invoked mode amendment in cnos.cdd is on `main` (cnos#486 / PR #489).
             >
             > The corresponding substrate artifact is **`.github/workflows/cnos-cds-dispatch.yml`** (rendered via `cn install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml`). The `wake.activation_state: "live"` field in this module's frontmatter is the machine-readable source of truth; this banner is its prose mirror. This wake claims and executes cells through the standard selector — `dispatch:cell + protocol:cds + status:todo` — per the claim mechanism below.

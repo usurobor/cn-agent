@@ -452,7 +452,7 @@ The per-round artifact set names the wake-observable contract: at R[N], the bran
 
 At each R[N] boundary, the cycle branch MUST carry the artifacts named below. The wake confirms a round complete by reading these paths; the matching package's release-time tooling (per [`cdd/SKILL.md`](../SKILL.md) artifact contract) lifts them into `.cdd/releases/docs/<date>/{N}/` on merge.
 
-Seven canonical artifact classes per [`cnos.cds/orchestrators/cds-dispatch/SKILL.md`](../../../../cnos.cds/orchestrators/cds-dispatch/SKILL.md) frontmatter `wake.output_contract.artifact_class_taxonomy`:
+Seven canonical artifact classes per [`cnos.cds/orchestrators/cds-dispatch/SKILL.md`](../../../../cnos.cds/orchestrators/cds-dispatch/SKILL.md) frontmatter `wake.output.artifact_class_taxonomy`:
 
 | Boundary | Required artifacts at `.cdd/unreleased/{N}/` |
 |---|---|
@@ -503,7 +503,7 @@ The single descriptive carve-out in this §9 is this paragraph: it names "GitHub
 
 - [`cnos.core/skills/agent/dispatch-protocol/SKILL.md`](../../../../cnos.core/skills/agent/dispatch-protocol/SKILL.md) (cnos#454) — claim sequence (§2.2), concurrency discipline (§2.3), lifecycle transitions (§2.4), drift handling (§2.6). Wake-invoked-δ consumes the claim sequence's output and honors its lifecycle transitions; the contract above maps each return token (§9.6) to a transition this skill defines.
 - [`cnos.core/skills/agent/wake-provider/SKILL.md`](../../../../cnos.core/skills/agent/wake-provider/SKILL.md) (cnos#470) — substrate-agnosticism doctrine (§3.3 substrate-leakage rule); cited as the source for §9.8 above.
-- [`cnos.cds/orchestrators/cds-dispatch/SKILL.md`](../../../../cnos.cds/orchestrators/cds-dispatch/SKILL.md) (cnos#483) — the reference dispatch-shape wake; its frontmatter `wake:` block is the dispatch-shape manifest. `wake.output_contract.artifact_class_taxonomy` is the canonical artifact set §9.5 matches; `wake.responsibilities` enumerates the lifecycle transitions §9.6 consumes.
+- [`cnos.cds/orchestrators/cds-dispatch/SKILL.md`](../../../../cnos.cds/orchestrators/cds-dispatch/SKILL.md) (cnos#483) — the reference dispatch-shape wake; its frontmatter `wake:` block is the dispatch-shape manifest. `wake.output.artifact_class_taxonomy` is the canonical artifact set §9.5 matches; `wake.responsibilities` enumerates the lifecycle transitions §9.6 consumes.
 - The body of the same [`cnos.cds/orchestrators/cds-dispatch/SKILL.md`](../../../../cnos.cds/orchestrators/cds-dispatch/SKILL.md) (cnos#483) is the wake's prompt body; it forward-references this section; the reference resolved to a landed citation once cnos#486 merged.
 - [`cdd/issue/SKILL.md`](../issue/SKILL.md) — cell-shaped issue contract; δ reads the claimed cell's issue body against this skill's §"Minimal output pattern" (§9.2 input #1).
 - [`cdd/gamma/SKILL.md`](../gamma/SKILL.md) — γ role contract; wake-invoked routing dispatches γ per its §2.5 (scaffold) and §2.7 (closeout). δ does not restate γ-side mechanics here.
