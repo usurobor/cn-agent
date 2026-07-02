@@ -15,6 +15,7 @@
 - [checklists/](checklists) — review/gate checklists by discipline.
 - [kata/](kata) — practice katas.
 - [issues/](issues/README.md) — issue taxonomy, triage, and dispatch policy (how issues are classified and labeled).
+- [board/](board/README.md) — interactive maps of the open-issue board (Voronoi tessellation + heat map), colored by the issue taxonomy.
 
 Conceptual papers on cells and coherence (e.g. *Cell of Cells*) live in
 [`papers/`](../papers/README.md).

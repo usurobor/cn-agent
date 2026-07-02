@@ -1,7 +1,7 @@
 # Issue board maps
 
 Interactive, self-contained visualizations of the `usurobor/cnos` open-issue board,
-labeled per [the issue taxonomy](../development/issues/TAXONOMY.md).
+labeled per [the issue taxonomy](../issues/TAXONOMY.md).
 
 - [`index.html`](index.html) — **Voronoi tessellation**: organic cells for
   `kind → area → issue`, colored by priority, with facet filters (kind / area /
