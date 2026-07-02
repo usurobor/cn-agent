@@ -1934,5 +1934,28 @@
     "created": "2026-07-02T09:40:46Z",
     "updated": "2026-07-02T09:40:46Z",
     "url": "https://github.com/usurobor/cnos/issues/549"
+  },
+  {
+    "n": 556,
+    "t": "issues: move Issue Pivot into `cnos.issues` package boundary",
+    "kind": "tooling",
+    "areas": [
+      "ci",
+      "cli",
+      "docs",
+      "package"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-02T18:42:30Z",
+    "updated": "2026-07-02T18:42:30Z",
+    "url": "https://github.com/usurobor/cnos/issues/556"
   }
 ]
