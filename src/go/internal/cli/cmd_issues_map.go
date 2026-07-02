@@ -3,7 +3,7 @@ package cli
 import (
 	"context"
 
-	issuesmap "github.com/usurobor/cnos/packages/cnos.issues/commands/issues-map"
+	"github.com/usurobor/cnos/src/go/internal/issuesmap"
 )
 
 // IssuesMapCmd implements `cn issues map` — generate the interactive
@@ -11,12 +11,7 @@ import (
 //
 // Per the dispatch boundary (INVARIANTS.md T-002, eng/go §2.18), this file
 // owns only the dispatch wiring; all domain logic (fetch, taxonomy parse,
-// effort computation, render, write) lives in the issuesmap package, which
-// is Go-source co-located under src/packages/cnos.issues/commands/issues-map/
-// per cnos#556 (mirroring the cnos#392 cdd-verify precedent). `cn issues
-// map` remains a compiled-in kernel command (SourceKernel/TierKernel,
-// registered in src/go/cmd/cn/main.go) — this is Go-source co-location,
-// not package-command exec-dispatch (PACKAGE-SYSTEM.md §7).
+// effort computation, render, write) lives in the issuesmap package.
 type IssuesMapCmd struct{}
 
 func (c *IssuesMapCmd) Spec() CommandSpec {
