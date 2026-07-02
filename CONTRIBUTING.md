@@ -22,21 +22,22 @@ GitHub Issues is the single source of truth for bugs, features, and backlog.
 
 ### Commit Style
 
-```
-type: short description
+```text
+prefix: short description
 
 - detail 1
 - detail 2
 ```
 
-Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `MCI`, `MCA`
+Common prefixes: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`. Use `MCI` / `MCA` only when the commit records a minor coherent intervention/action under the repo process.
 
 ### Code Standards
 
-- Native OCaml only — no JavaScript, no Melange
-- Zero runtime dependencies
-- Tests for new functionality
-- Update relevant docs
+- Active runtime and CLI code lives in Go under `src/go/`.
+- Packages, skills, doctrine, and package-local cognition live under `src/packages/`.
+- Keep runtime dependencies explicit and minimal.
+- Add tests for new functionality.
+- Update relevant docs when behavior or contracts change.
 
 ### Development Method
 
@@ -44,10 +45,10 @@ cnos uses coherence-driven development (CDD). See [docs/development/cdd/CDD.md](
 
 ### For Agents
 
-- Use git primitives (branches, commits, merges)
-- Push branches; don't self-merge
-- Follow the same commit style as humans
-- Doctrine and skills live in `src/agent/`, packages are built from there via `cn build`
+- Use git primitives: branches, commits, merges.
+- Push branches; do not self-merge unless an approved wave contract explicitly grants that authority.
+- Follow the same commit style as humans.
+- Treat `SKILL.md` as the typed skill entrypoint; package skills live under `src/packages/`.
 
 ## Questions?
 
