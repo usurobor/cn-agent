@@ -73,6 +73,35 @@ convenient rather than as a gating step.
 `P0` · `P1` · `P2` · `P3`, plus `priority/deferred` for work intentionally parked.
 Priority is orthogonal to `kind` and `area`.
 
+## Effort labels
+
+Effort is an ordinal estimate of implementation/review size — **not priority and
+not calendar time**. Use **at most one**:
+
+- `effort/S` — small, localized, low coordination cost
+- `effort/M` — moderate, touches a few files or one subsystem
+- `effort/L` — large, cross-surface or multi-step work
+- `effort/XL` — wave-sized, needs decomposition or careful sequencing
+
+**Dashboard weights** (gentle doubling — this is a board-shape tool, not estimation
+accounting; Fibonacci would let `XL` dominate the visual):
+
+| Label | Weight |
+|---|---|
+| `effort/S` | 1 |
+| `effort/M` | 2 |
+| `effort/L` | 4 |
+| `effort/XL` | 8 |
+
+**Missing effort means _unestimated_, not `effort/S`.** The dashboard renders
+unestimated *actionable* issues with nominal weight `1` but visually marks them as
+unestimated (desaturated / outline / hatch) and offers an "unestimated only" filter.
+Do not treat missing effort as small.
+
+`kind/tracking` issues are containers, not units of work, and are **excluded from
+effort rollups by default**. They may appear in "all issues" mode as container
+markers.
+
 ## Status (when actionable)
 
 `status:ready` · `status:todo` · `status:in-progress` · `status:review` ·
