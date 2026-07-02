@@ -11,6 +11,7 @@ completed:
   - ACs
   - Self-check
   - Debt
+  - CDD Trace
 ---
 
 # α self-coherence — cnos#556
@@ -386,3 +387,95 @@ No known debt beyond the above. In particular: no scope creep occurred (no
 Node generator, no #216 solving, no board-visualization rewrite, no
 taxonomy semantic change, no `.github/workflows/board-map.yml` edit) — see
 §ACs AC5/AC6/AC8 for the concrete non-events.
+
+## §CDD Trace
+
+1. **Design artifact:** not authored separately — γ's `gamma-scaffold.md`
+   (committed by γ, present on branch) served the design-artifact role for
+   this cycle: it names the concrete architectural shape (cnos#392
+   precedent, package-scoping decision, scope guardrails) before any code
+   was written. α did not need to author a competing design memo; the
+   scaffold's §6/§8 constitute the "design decided" state per
+   `alpha/SKILL.md` §2.2's "design artifact (when required) or explicit
+   'not required'" — required and already supplied by γ.
+2. **Coherence contract:** this file's §Gap (issue, mode, base SHA, pinned
+   implementation contract).
+3. **Plan:** not written as a separate artifact — the scaffold's §3
+   (surfaces table) and §8 (α prompt, itemized 1–9) constitute a sufficient
+   implementation sequence for a single-cell relocation; no additional
+   sequencing artifact was needed (single atomic move + two additive
+   commits, no multi-phase rollout).
+4. **Tests:** `issuesmap_test.go` moved unmodified (100% file identity per
+   `git diff --stat`'s rename detection); re-verified green from the new
+   module root (`go test ./...` → 4 test funcs / 8 pass lines, 0 failures).
+   No new test files added — behavior is preserved, not extended, so no new
+   test surface was required (confirmed via the AC7 byte-identical output
+   diff).
+5. **Code:** commit `88156120` (directory move + wiring: new `go.mod`,
+   `go.work` `use` entry, `src/go/go.mod` `require`+`replace`,
+   `cmd_issues_map.go` import update, embedded README-string path update,
+   package doc-comment update).
+6. **Docs:** commit `b39b44de` (`cnos.issues/SKILL.md`,
+   `cn.package.json`, `skills/map|taxonomy|triage/SKILL.md`) and commit
+   `13198122` (`docs/development/board/README.md` path-reference update).
+
+   **Full diff enumeration** (`git diff --stat origin/main..HEAD`, every
+   entry accounted for above or in §ACs):
+   - `.cdd/unreleased/556/gamma-scaffold.md` — γ's artifact (not α-authored;
+     present on branch, cited throughout this file).
+   - `.cdd/unreleased/556/self-coherence.md` — this artifact.
+   - `docs/development/board/README.md` — commit `13198122` (AC-mapped
+     above: source-of-truth-table row, §7 friction note).
+   - `go.work` — commit `88156120` (wiring; AC1/AC9).
+   - `src/go/go.mod` — commit `88156120` (wiring; AC1/AC9).
+   - `src/go/internal/cli/cmd_issues_map.go` — commit `88156120` (AC4).
+   - `src/packages/cnos.issues/SKILL.md` — commit `b39b44de` (AC2, AC10).
+   - `src/packages/cnos.issues/cn.package.json` — commit `b39b44de` (AC1,
+     AC6).
+   - `src/packages/cnos.issues/commands/issues-map/fetch.go` (renamed,
+     100% identity) — commit `88156120`.
+   - `src/packages/cnos.issues/commands/issues-map/go.mod` (new) — commit
+     `88156120` (AC1 wiring precedent).
+   - `src/packages/cnos.issues/commands/issues-map/issuesmap.go` (renamed,
+     94% identity — the embedded README string + doc comment updated) —
+     commit `88156120` (AC3, AC7).
+   - `src/packages/cnos.issues/commands/issues-map/issuesmap_test.go`
+     (renamed, 100% identity) — commit `88156120` (AC3/AC9 test evidence).
+   - `src/packages/cnos.issues/commands/issues-map/templates/board.template.html`
+     (renamed, 100% identity) — commit `88156120` (`//go:embed` target,
+     §Self-check harness audit).
+   - `src/packages/cnos.issues/commands/issues-map/testdata/issues.json`
+     (renamed, 100% identity) — commit `88156120` (used directly for the
+     AC3/AC7 fixture-driven proof).
+   - `src/packages/cnos.issues/skills/map/SKILL.md` — commit `b39b44de`
+     (AC2).
+   - `src/packages/cnos.issues/skills/taxonomy/SKILL.md` — commit
+     `b39b44de` (AC2; link-depth fixed post-lychee in a follow-up amend
+     within the same logical commit boundary — see §Debt item 4's sibling
+     note: the taxonomy/triage link fix was folded into the same working
+     tree before the package-files commit landed, so no separate "fix"
+     commit exists for it).
+   - `src/packages/cnos.issues/skills/triage/SKILL.md` — commit `b39b44de`
+     (AC2).
+
+7. **Self-coherence:** this file, written incrementally per §2.5 (one
+   section per commit: `16a0fcc6` §Gap, `4fda6fc9` §Skills, `dc1e392c`
+   §ACs, `e889e5ba` §Self-check, `e75f594e` §Debt, this commit §CDD Trace).
+
+**Caller-path trace for new modules (pre-review-gate row 12).** The new
+module `github.com/usurobor/cnos/packages/cnos.issues/commands/issues-map`
+has exactly one non-test caller: `src/go/internal/cli/cmd_issues_map.go`'s
+`Run()` method, which calls `issuesmap.Run(ctx, inv.Args, inv.Stdin,
+inv.Stdout, inv.Stderr)` — the same call shape as before the move (the
+import path is the only thing that changed). No new function or module was
+added beyond the relocation itself (the package's exported surface —
+`Run`, `readme`, `render`, `splice`, etc. — is unchanged from before the
+move; `git diff` on `issuesmap.go` shows only the two path-reference string
+edits and the header-comment expansion, not a new exported symbol).
+
+**Test assertion count from runner output (pre-review-gate row 13).**
+`go test ./... -v` from the new module root: 4 `func Test*` declarations,
+8 `--- PASS` lines in the raw runner output (`TestToRecord_LabelParsingAndEffort`
++ its 4 named subtests, `TestEffortWeights`, `TestRun_Fixture`,
+`TestRun_Stdin`) — counted directly from runner output, not hand-enumerated
+from source.
