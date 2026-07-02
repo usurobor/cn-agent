@@ -278,11 +278,28 @@ cycle-branch HEAD (`4fda6fc9` at time of this section):
   surface touched by this cycle; the wake/golden contract is unrelated to a
   Go-domain relocation + package-metadata addition).
 
-No remote CI run URL is available from this session (local reproduction
-only — see §Review-readiness for the explicit "β must confirm green on the
-actual GitHub Actions run" disclosure, pre-review-gate row 10).
-**AC9: locally green; remote-CI confirmation is β's independent check per
-γ's oracle.**
+**Remote-CI update (post local-reproduction round):** pushing this
+self-coherence artifact's own commits to `origin/cycle/556` surfaced a
+genuine remote-only failure the local reproduction above had not caught —
+`cdd-artifact-check (I6)` hard-failed on commits `16a0fcc6`, `4fda6fc9`,
+`dc1e392c`, `e889e5ba` (root cause + fix documented in §Debt item 4: this
+file's own "§"-prefixed section headers didn't match `ledger.go`'s literal
+`"## Gap"`/`"## Skills"`/`"## ACs"`/`"## CDD Trace"` match, compounded by
+this cycle being classified `"small-change"` — no `beta-review.md` yet —
+which turns missing-section detection into a hard fail instead of a warn).
+Fixed by renaming the headers; the fix commit `f3fd05bc` reached
+**remote GitHub Actions run
+[28627809025](https://github.com/usurobor/cnos/actions/runs/28627809025),
+conclusion `success`, all 10 jobs green** (`go`, `binary-verify`,
+`package-verify`, `package-source-drift` (I1), `protocol-contract-check`
+(I2), `link-check` (I4), `skill-frontmatter-check` (I5),
+`cdd-artifact-check` (I6), `dispatch-repair-preflight`,
+`dispatch-closeout-integrity`), confirmed at 23:24:08 UTC via `gh run view
+28627809025 --json jobs`. `install-wake-golden.yml` did not run for this
+branch/HEAD (its trigger scope does not include `cycle/*` pushes — expected,
+per this cycle's non-goals).
+**AC9: met — remote CI green on `f3fd05bc`, independently re-checkable by
+β via `gh run list --branch cycle/556`.**
 
 ### AC10 — Receipt records the #216 relationship
 
@@ -337,43 +354,40 @@ root passes, confirming the relative path still resolves).
 
 **Did α push ambiguity onto β?** No known case identified. Every AC has a
 locally-reproduced command/diff/log as evidence (§ACs above), not a bare
-claim. The one place a future reader might want independent confirmation —
-AC9's CI-green claim — is explicitly scoped as "locally green; remote-CI
-confirmation is β's independent check" rather than asserted as a fact about
-the GitHub Actions run (no run URL exists for this session, since commits
-were only just pushed). That is a scoping honesty, not an ambiguity push:
-β is expected to check `gh run list --branch cycle/556` per γ's β-prompt
-oracle, and the artifact says so plainly instead of implying I already
-watched a green run.
+claim. AC9's CI-green claim is now backed by a concrete remote run URL and
+conclusion (`28627809025`, `success`), not just local reproduction — but β
+is still expected to independently re-check via `gh run list --branch
+cycle/556` per pre-review-gate row 10's transient-row discipline, and this
+artifact says so plainly rather than treating the one observed green run as
+permanently authoritative.
 
-**Would a loaded skill have prevented remaining debt?** No — see §Debt
-below; the one debt item (no remote CI run observed yet) is inherent to
-local-first α authoring, not a skill-load gap.
+**Would a loaded skill have prevented remaining debt?** Partially: the
+`alpha/SKILL.md` §2.5 "§Section" prose convention, applied literally to
+actual Markdown headers, is what produced the header-naming bug documented
+in §Debt item 3. No single loaded skill states "when a skill instructs you
+to name a self-coherence section '§X' in prose, the literal Markdown header
+must still be plain '## X'" — this is the kind of doc/tool-convention gap
+this artifact surfaces as a factual pattern (§Debt item 3's "Pattern worth
+flagging"), not a recommendation for α to act on unilaterally.
 
 ## Debt
 
-1. **No remote GitHub Actions run observed yet for this exact HEAD.** All
-   CI-equivalent checks were reproduced locally (go build/vet/test in both
-   module roots, `cn build --check`, dispatch-boundary check, protocol-
-   contract-check, link-check via locally-installed `lychee`,
-   skill-frontmatter-check via locally-installed `cue`, cdd-artifact-check,
-   both dispatch guard scripts) — all green. But the actual
-   `cycle/556`-branch GitHub Actions run (triggered by this session's
-   pushes) had not yet reported a result at authoring time. β must
-   independently confirm via `gh run list --branch cycle/556 --json
-   status,conclusion,name` before merge, per pre-review-gate row 10.
-2. **`binary-verify` / `package-verify` Tier-1/Tier-2 kata harnesses were
-   not run end-to-end locally** (`scripts/kata/run-all.sh`, `cn kata run
-   --class runtime`, the framework-command-surface checks). The underlying
-   `cn build` / `cn build --check` steps they depend on were run directly
-   and passed; the kata harnesses themselves exercise `cnos.core` /
-   `cnos.kata` surfaces unrelated to this cycle's diff, so the risk of a
-   regression there is low, but it was not mechanically proven in this
-   session. β should confirm these jobs are green on the actual CI run.
-3. **`install-wake-golden.yml` not exercised.** Unrelated surface (no
-   install/activation change in this diff); named here for completeness
-   per γ's AC9 oracle list rather than silently omitted.
-4. **cdd-artifact-check (I6) genuinely failed on the remote GitHub Actions
+1. **Resolved during this round.** Remote GitHub Actions run
+   [28627809025](https://github.com/usurobor/cnos/actions/runs/28627809025)
+   on fix commit `f3fd05bc` came back `success` on all 10 `Build`-workflow
+   jobs — including `binary-verify` and `package-verify` (their Tier-1/
+   Tier-2 kata harnesses ran on the actual runner, resolving what would
+   otherwise have been a "not exercised locally" debt item). β should still
+   independently re-confirm via `gh run list --branch cycle/556 --json
+   status,conclusion,name` per pre-review-gate row 10's transient-row
+   discipline (this row was true at observation time — 23:24:08 UTC on
+   `f3fd05bc` — and must be re-checked if the branch advances further).
+2. **`install-wake-golden.yml` did not run for this branch.** Confirmed via
+   `gh run list --branch cycle/556` (only the `Build` workflow appears) —
+   its trigger scope does not include `cycle/*` pushes. Unrelated surface
+   regardless (no install/activation change in this diff); named here for
+   completeness per γ's AC9 oracle list rather than silently omitted.
+3. **cdd-artifact-check (I6) genuinely failed on the remote GitHub Actions
    run for commits `16a0fcc6`, `4fda6fc9`, `dc1e392c`, `e889e5ba`** — this
    was not a fluke; it reproduced on every one of those pushes. Root cause,
    found by reading `gh run view --log-failed` and then
@@ -414,7 +428,7 @@ local-first α authoring, not a skill-load gap.
      Markdown headers reproduces this exact failure. Distinct from D1-class
      findings noted in prior cycles; first occurrence observed in this
      session.
-5. **The earlier local `cn cdd verify` run that showed "1 failed" before
+4. **The earlier local `cn cdd verify` run that showed "1 failed" before
    this fix was diagnosed** was, separately, also affected by an
    incorrect working directory relative to `--exceptions .cdd/exceptions.yml`
    in one early invocation (resolved by `cd`-ing to repo root before
