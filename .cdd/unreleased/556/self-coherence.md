@@ -16,7 +16,7 @@ completed:
 
 # α self-coherence — cnos#556
 
-## §Gap
+## Gap
 
 **Issue:** cnos#556 — "issues: move Issue Pivot into `cnos.issues` package boundary."
 
@@ -56,7 +56,7 @@ command), single `cn` binary preserved, no new runtime dependencies,
 JSON/wire contract preserved as-is, backward-compat invariants preserved.
 All seven axes were populated in the scaffold; none required escalation.
 
-## §Skills
+## Skills
 
 **Tier 1:** `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` (this file's
 own load order, §2.1–§2.8, §3.6).
@@ -86,7 +86,7 @@ peer-role skills per §2.1 load-order rule); no `eng/{language}`-specific
 skill beyond stdlib-Go conventions already established by the moved code
 (no new language, no new dependency).
 
-## §ACs
+## ACs
 
 Implementation SHA (last implementation commit before this artifact's own
 commits): `88156120` (directory move + wiring). Package-files commit:
@@ -305,7 +305,7 @@ declares no `commands` object at all — both facts are consistent with the
 Option-B statement and neither is contradicted anywhere else in the diff.
 **AC10: met.**
 
-## §Self-check
+## Self-check
 
 **Peer enumeration.** The family of peers for a CLI-dispatch-boundary
 change is "every `cmd_*.go` file in `src/go/internal/cli/`." CI's own
@@ -350,7 +350,7 @@ watched a green run.
 below; the one debt item (no remote CI run observed yet) is inherent to
 local-first α authoring, not a skill-load gap.
 
-## §Debt
+## Debt
 
 1. **No remote GitHub Actions run observed yet for this exact HEAD.** All
    CI-equivalent checks were reproduced locally (go build/vet/test in both
@@ -373,22 +373,62 @@ local-first α authoring, not a skill-load gap.
 3. **`install-wake-golden.yml` not exercised.** Unrelated surface (no
    install/activation change in this diff); named here for completeness
    per γ's AC9 oracle list rather than silently omitted.
-4. **cdd-artifact-check (I6) showed one transient non-reproducible
-   "1 failed" result** on an early, mis-invoked run (wrong working
-   directory relative to `--exceptions .cdd/exceptions.yml`, which resolved
-   the flag path incorrectly and caused cycle #512's exception-backed
-   missing-artifact to hard-fail instead of warn). Re-run correctly from
-   repo root 5/5 times → consistent `PASSED with warnings`, 0 failed. Noting
-   this here rather than silently deleting the evidence of the earlier
-   confusion — the fix was a corrected local invocation (`cd` to repo root),
-   not a code or artifact change, so no commit corresponds to it.
+4. **cdd-artifact-check (I6) genuinely failed on the remote GitHub Actions
+   run for commits `16a0fcc6`, `4fda6fc9`, `dc1e392c`, `e889e5ba`** — this
+   was not a fluke; it reproduced on every one of those pushes. Root cause,
+   found by reading `gh run view --log-failed` and then
+   `src/packages/cnos.cdd/commands/cdd-verify/ledger.go` directly:
+   - This self-coherence.md's `## §Gap` / `## §Skills` / `## §ACs` /
+     `## §CDD Trace` headers used a "§" section-mark prefix (matching this
+     artifact's own prose convention, and γ's scaffold's convention for
+     citing sections). But `ledger.go`'s `sectionPresent()` does an exact
+     line match on the literal string `"## Gap"` (etc.) — `"## §Gap"` is
+     not equal to, nor prefixed by, `"## Gap "`, so the check saw all four
+     as missing.
+   - Separately, `classifyCycleType()` classifies a cycle as
+     `"small-change"` (not `"triadic"`) whenever `self-coherence.md` (or
+     `alpha-closeout.md`) exists but `beta-review.md` does not — which is
+     indistinguishable, by file presence alone, from a full triadic cycle
+     that simply hasn't reached β yet (this cycle's actual state at R0).
+     `checkSmallChangeArtifacts()` then calls `validateSections(...,
+     forUnreleased=false)`, which turns any missing section into a hard
+     `checkFail` rather than the `checkWarn` a genuinely in-progress
+     triadic cycle gets via `checkUnreleasedTriadicArtifacts`'s
+     `forUnreleased=true` path. So a mid-flight α round of a real triadic
+     cycle is, today, one missing/misnamed section away from a hard CI
+     failure that a same-shaped small-change cycle would only warn on.
+   - **Fix applied (this session, working-tree edit before the section
+     commits' content was otherwise finalized):** renamed all six headers
+     to the literal form the parser checks (`## Gap`, `## Skills`, `## ACs`,
+     `## Self-check`, `## Debt`, `## CDD Trace`) via `sed`. Re-ran `cn cdd
+     verify --unreleased --exceptions .cdd/exceptions.yml` from repo root 4
+     times post-fix → consistent `108 passed, 0 failed, 79 warnings,
+     PASSED with warnings`. This is a genuine, reproducible fix, not a
+     re-roll of a flake.
+   - **Pattern worth flagging (not a recommendation — factual observation
+     per `alpha/SKILL.md` §2.8 voice rule):** the `alpha/SKILL.md` §2.5
+     instructions and this repo's own `gamma-scaffold.md` both write
+     section names with a "§" prefix in prose (e.g. "§Gap", "§ACs"), but
+     `ledger.go`'s literal-header-match convention has no "§". A future
+     α following the doc-prose convention literally when naming actual
+     Markdown headers reproduces this exact failure. Distinct from D1-class
+     findings noted in prior cycles; first occurrence observed in this
+     session.
+5. **The earlier local `cn cdd verify` run that showed "1 failed" before
+   this fix was diagnosed** was, separately, also affected by an
+   incorrect working directory relative to `--exceptions .cdd/exceptions.yml`
+   in one early invocation (resolved by `cd`-ing to repo root before
+   invoking). That was a local-invocation artifact, distinct from the
+   header-naming bug in item 4 above, and is fully resolved by always
+   invoking from repo root (as all evidence in §ACs AC9 and this section
+   now does).
 
 No known debt beyond the above. In particular: no scope creep occurred (no
 Node generator, no #216 solving, no board-visualization rewrite, no
 taxonomy semantic change, no `.github/workflows/board-map.yml` edit) — see
 §ACs AC5/AC6/AC8 for the concrete non-events.
 
-## §CDD Trace
+## CDD Trace
 
 1. **Design artifact:** not authored separately — γ's `gamma-scaffold.md`
    (committed by γ, present on branch) served the design-artifact role for
