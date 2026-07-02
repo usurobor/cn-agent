@@ -10,6 +10,7 @@ completed:
   - Skills
   - ACs
   - Self-check
+  - Debt
 ---
 
 # α self-coherence — cnos#556
@@ -347,3 +348,41 @@ watched a green run.
 **Would a loaded skill have prevented remaining debt?** No — see §Debt
 below; the one debt item (no remote CI run observed yet) is inherent to
 local-first α authoring, not a skill-load gap.
+
+## §Debt
+
+1. **No remote GitHub Actions run observed yet for this exact HEAD.** All
+   CI-equivalent checks were reproduced locally (go build/vet/test in both
+   module roots, `cn build --check`, dispatch-boundary check, protocol-
+   contract-check, link-check via locally-installed `lychee`,
+   skill-frontmatter-check via locally-installed `cue`, cdd-artifact-check,
+   both dispatch guard scripts) — all green. But the actual
+   `cycle/556`-branch GitHub Actions run (triggered by this session's
+   pushes) had not yet reported a result at authoring time. β must
+   independently confirm via `gh run list --branch cycle/556 --json
+   status,conclusion,name` before merge, per pre-review-gate row 10.
+2. **`binary-verify` / `package-verify` Tier-1/Tier-2 kata harnesses were
+   not run end-to-end locally** (`scripts/kata/run-all.sh`, `cn kata run
+   --class runtime`, the framework-command-surface checks). The underlying
+   `cn build` / `cn build --check` steps they depend on were run directly
+   and passed; the kata harnesses themselves exercise `cnos.core` /
+   `cnos.kata` surfaces unrelated to this cycle's diff, so the risk of a
+   regression there is low, but it was not mechanically proven in this
+   session. β should confirm these jobs are green on the actual CI run.
+3. **`install-wake-golden.yml` not exercised.** Unrelated surface (no
+   install/activation change in this diff); named here for completeness
+   per γ's AC9 oracle list rather than silently omitted.
+4. **cdd-artifact-check (I6) showed one transient non-reproducible
+   "1 failed" result** on an early, mis-invoked run (wrong working
+   directory relative to `--exceptions .cdd/exceptions.yml`, which resolved
+   the flag path incorrectly and caused cycle #512's exception-backed
+   missing-artifact to hard-fail instead of warn). Re-run correctly from
+   repo root 5/5 times → consistent `PASSED with warnings`, 0 failed. Noting
+   this here rather than silently deleting the evidence of the earlier
+   confusion — the fix was a corrected local invocation (`cd` to repo root),
+   not a code or artifact change, so no commit corresponds to it.
+
+No known debt beyond the above. In particular: no scope creep occurred (no
+Node generator, no #216 solving, no board-visualization rewrite, no
+taxonomy semantic change, no `.github/workflows/board-map.yml` edit) — see
+§ACs AC5/AC6/AC8 for the concrete non-events.
