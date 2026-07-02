@@ -9,6 +9,7 @@ completed:
   - Gap
   - Skills
   - ACs
+  - Self-check
 ---
 
 # α self-coherence — cnos#556
@@ -301,3 +302,48 @@ artifact. The kernel registration `reg.Register(&cli.IssuesMapCmd{})` at
 declares no `commands` object at all — both facts are consistent with the
 Option-B statement and neither is contradicted anywhere else in the diff.
 **AC10: met.**
+
+## §Self-check
+
+**Peer enumeration.** The family of peers for a CLI-dispatch-boundary
+change is "every `cmd_*.go` file in `src/go/internal/cli/`." CI's own
+dispatch-boundary check (INVARIANTS.md T-002) scans that whole directory,
+not just the changed file, and I reproduced it locally against the full
+directory — it passed for all files, not only `cmd_issues_map.go`. The
+`cn.package.json` `commands`-object peer question (does any other package
+wrongly declare a co-located-but-undispatched directory as a command?) was
+checked by reading `cnos.cdd/cn.package.json` (the precedent) directly:
+it declares only `cdd-status`, not `cdd-verify`, confirming the same
+distinction this cycle's `cnos.issues/cn.package.json` also holds (no
+`issues-map` key). I did not find or need a third co-located-command
+package to complete this peer set — `cdd-verify`/`cdd-status` and
+`issues-map` are the only two instances of this pattern in the repo today
+(confirmed: only `cnos.cdd/commands/` and `cnos.issues/commands/` exist
+under `src/packages/*/commands/`).
+
+**Harness audit.** The schema-bearing surfaces here are `board-data.json`'s
+shape and the embedded HTML template's data-splice contract — both
+unchanged (AC7's byte-identical diff is the proof). Non-Go harnesses
+touching this surface: the GitHub Action (`board-map.yml`, read in full,
+unchanged, confirmed still calls only the public command); the embedded
+`//go:embed templates/board.template.html` directive (verified it still
+resolves post-move — the fixture-driven `cn issues map` run in AC3/AC7
+would fail immediately if it didn't, since `render()` calls
+`templates.ReadFile` against the embedded FS); the test fixture
+`testdata/issues.json` (moved with the code, `go test` from the new module
+root passes, confirming the relative path still resolves).
+
+**Did α push ambiguity onto β?** No known case identified. Every AC has a
+locally-reproduced command/diff/log as evidence (§ACs above), not a bare
+claim. The one place a future reader might want independent confirmation —
+AC9's CI-green claim — is explicitly scoped as "locally green; remote-CI
+confirmation is β's independent check" rather than asserted as a fact about
+the GitHub Actions run (no run URL exists for this session, since commits
+were only just pushed). That is a scoping honesty, not an ambiguity push:
+β is expected to check `gh run list --branch cycle/556` per γ's β-prompt
+oracle, and the artifact says so plainly instead of implying I already
+watched a green run.
+
+**Would a loaded skill have prevented remaining debt?** No — see §Debt
+below; the one debt item (no remote CI run observed yet) is inherent to
+local-first α authoring, not a skill-load gap.
