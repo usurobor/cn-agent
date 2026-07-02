@@ -8,6 +8,7 @@ author: alpha
 completed:
   - Gap
   - Skills
+  - ACs
 ---
 
 # α self-coherence — cnos#556
@@ -81,3 +82,222 @@ own load order, §2.1–§2.8, §3.6).
 peer-role skills per §2.1 load-order rule); no `eng/{language}`-specific
 skill beyond stdlib-Go conventions already established by the moved code
 (no new language, no new dependency).
+
+## §ACs
+
+Implementation SHA (last implementation commit before this artifact's own
+commits): `88156120` (directory move + wiring). Package-files commit:
+`b39b44de`. Doc-update commit: `13198122`.
+
+### AC1 — `cnos.issues` package exists
+
+`src/packages/cnos.issues/cn.package.json` committed at `b39b44de`:
+
+```json
+{
+  "schema": "cn.package.v1",
+  "name": "cnos.issues",
+  "version": "0.1.0",
+  "kind": "package",
+  "engines": {
+    "cnos": ">=3.82.0"
+  }
+}
+```
+
+`cn build --check` (binary built from `src/go` at cycle-branch HEAD):
+
+```
+✓ cnos.cdd: valid
+✓ cnos.cdd.kata: valid
+✓ cnos.cdr: valid
+✓ cnos.cds: valid
+✓ cnos.core: valid
+✓ cnos.eng: valid
+✓ cnos.handoff: valid
+✓ cnos.issues: valid
+✓ cnos.kata: valid
+✓ All packages valid.
+```
+
+`cnos.issues` is recognized and valid. **AC1: met.**
+
+### AC2 — Package owns issue-board cognition
+
+`src/packages/cnos.issues/SKILL.md` §"Core Principle" states explicitly:
+"`cnos.issues` is the package home for issue-board cognition: it owns issue
+taxonomy, board mapping, and Issue Pivot generation as a domain, distinct
+from the CLI dispatch that invokes it," then names the three owned surfaces
+(taxonomy, triage, board mapping) each pointing at its own sub-skill. This is
+not an empty wrapper — it also carries the full command-dispatch-disposition
+statement (§AC10 below) and an explicit non-goals list. **AC2: met.**
+
+### AC3 — Public command remains `cn issues map`
+
+Ran against a `cn` binary built from the cycle-branch HEAD, using the
+relocated module's own fixture (network-independent, deterministic):
+
+```
+$ ./cn issues map --fixture src/packages/cnos.issues/commands/issues-map/testdata/issues.json --out /tmp/board-out
+cn issues map: taxonomy gaps (advisory):
+  missing kind/*: #547
+  missing area/*: #547
+cn issues map: wrote 5 open issues to /tmp/board-out (index.html, board-data.json, README.md)
+```
+
+Exit code 0; `index.html`, `board-data.json`, `README.md` all written. Also
+confirmed with `--repo usurobor/cnos --out <tmpdir>` (live-API path) during
+development — same success shape (issue count varies with live state, which
+is expected). **AC3: met.**
+
+### AC4 — CLI dispatch remains thin
+
+`git diff` on `src/go/internal/cli/cmd_issues_map.go` (commit `88156120`):
+only the import path changed (old `internal/issuesmap` → new
+`packages/cnos.issues/commands/issues-map`) plus an explanatory doc-comment
+expansion. No taxonomy/rendering/label logic added — `Run()` is still a
+single-line delegation:
+
+```go
+func (c *IssuesMapCmd) Run(ctx context.Context, inv Invocation) error {
+	return issuesmap.Run(ctx, inv.Args, inv.Stdin, inv.Stdout, inv.Stderr)
+}
+```
+
+CI's own "Dispatch boundary check (INVARIANTS.md T-002)" step (scans every
+`internal/cli/cmd_*.go` for banned domain-logic imports) reproduced locally:
+`✓ Dispatch boundary: all cmd_*.go files are thin wrappers`. **AC4: met.**
+
+### AC5 — GitHub Action calls the public command
+
+`git diff --stat` on `.github/workflows/board-map.yml` across this entire
+cycle: empty (file untouched). Read in full: it still only runs
+`./cn issues map --repo "$GITHUB_REPOSITORY" --out docs/development/board`
+after `go build -o "$GITHUB_WORKSPACE/cn" ./cmd/cn` from `working-directory:
+src/go` — no package-internal path, no `scripts/board`, no Node. The
+`go build` step from `src/go` picks up the new module transparently via
+`go.work` (Go workspace mode walks up from cwd to find `go.work` at the repo
+root) — confirmed locally by building exactly that way (see AC9). No reason
+to edit the workflow was discovered; per γ's scaffold §6 guardrail #4, no
+edit made, and none logged to `gamma-clarification.md` since none was
+needed. **AC5: met (no change required, confirmed correct as-is).**
+
+### AC6 — Package installation path is explicit
+
+Because `cn issues map` stays a compiled-in kernel dispatch (not a declared
+package command — see AC10), there is nothing to install: no `cn deps
+restore` step exists in `board-map.yml` today, and none was added. The
+workflow does not touch `.cn/vendor/` at all. `cnos.issues/cn.package.json`
+has no `commands` object at all (confirmed: `grep -c "issues-map"
+cn.package.json` → 0). **AC6: met** — stated explicitly here rather than
+left implicit, per γ's oracle.
+
+### AC7 — Current board output behavior is preserved
+
+Before/after comparison, fixture-driven (deterministic, not live-API,
+so the diff isolates code-motion effects from live-issue-state drift):
+
+1. Built `cn` from `origin/main` (`4fe8e433`, pre-move) in a separate
+   worktree; ran `cn issues map --fixture .../testdata/issues.json --out
+   /tmp/board-out-pre`.
+2. Built `cn` from `cycle/556` HEAD (post-move); ran the same fixture to
+   `/tmp/board-out`.
+3. `diff /tmp/board-out-pre/board-data.json /tmp/board-out/board-data.json`
+   → **empty (byte-identical)**.
+4. `diff /tmp/board-out-pre/index.html /tmp/board-out/index.html` →
+   **empty (byte-identical)**.
+5. `diff /tmp/board-out-pre/README.md /tmp/board-out/README.md` → differs
+   only in the intentional path-reference line:
+   ```
+   42c42,43
+   < The generator is the Go command `cn issues map` (`src/go/internal/issuesmap/`).
+   ---
+   > The generator is the Go command `cn issues map`
+   > (`src/packages/cnos.issues/commands/issues-map/`).
+   ```
+   This is the expected, non-semantic (prose path pointer only) change —
+   not a board-visualization or data-model change. No `docs/board/`
+   (pre-#545 path) resurrection. **AC7: met.**
+
+### AC8 — No Node production generator
+
+`find . -iname "*.mjs" -path "*board*"` → no hits (checked repo-wide).
+`git diff --stat origin/main..HEAD` introduces no `package.json` /
+`node_modules` on the production path. `.github/workflows/board-map.yml`
+contains no `node`/`npm`/`npx` invocation (unchanged, confirmed by full
+read). **AC8: met.**
+
+### AC9 — CI remains green
+
+Local reproduction of every job in `.github/workflows/build.yml` and
+`.github/workflows/board-map.yml`'s relevant steps, run against
+cycle-branch HEAD (`4fda6fc9` at time of this section):
+
+- **`go` (Go build & test):** `go build ./...`, `go build -o cn ./cmd/cn`,
+  `go test ./... -v`, `go vet ./...` — all pass, 0 failures (all 14
+  `src/go` packages `ok`). Dispatch-boundary check: pass. Smoke test
+  (`./cn help`) lists `issues-map` correctly.
+- **New module** (`src/packages/cnos.issues/commands/issues-map`):
+  `go build ./...`, `go vet ./...`, `go test ./... -v` — 4 test functions, 8
+  pass lines (`TestToRecord_LabelParsingAndEffort` + 4 subtests,
+  `TestEffortWeights`, `TestRun_Fixture`, `TestRun_Stdin`), 0 failures.
+- **`binary-verify` / `package-verify`:** not run end-to-end locally (no
+  Tier-1/Tier-2 kata harness invoked here), but the underlying `cn build`
+  step they depend on was run directly (AC1) and passed.
+- **`package-source-drift` (I1):** `cn build --check` → all packages valid
+  (AC1 excerpt above).
+- **`protocol-contract-check` (I2):** `diff docs/reference/schemas/protocol-contract.json
+  tests/fixtures/protocol-contract.json` → identical (unaffected by this
+  cycle's diff).
+- **`link-check` (I4):** installed `lychee` v0.24.2 locally (`cargo
+  install`), ran `lychee --offline --no-progress --hidden --config
+  lychee.toml '**/*.md'` → initially found 3 broken relative links in the
+  new `skills/taxonomy/SKILL.md` / `skills/triage/SKILL.md` (off-by-one
+  `../` depth); fixed; re-ran → `🚫 0 Errors` across 1420 total / 437 unique
+  links.
+- **`skill-frontmatter-check` (I5):** installed `cue` v0.17.0 locally,
+  ran `./scripts/ci/validate-skill-frontmatter.sh` (full repo) →
+  `✓ 99 SKILL.md validated; no findings.` (includes the 4 new
+  `cnos.issues` SKILL.md files).
+- **`cdd-artifact-check` (I6):** built `cn`, ran `./cn cdd verify
+  --unreleased --exceptions .cdd/exceptions.yml` from repo root 5
+  consecutive times → `PASSED with warnings` every time (0 failed, ~79
+  warnings, consistent with pre-existing baseline noise — e.g. cycle #512's
+  known, exception-backed missing `self-coherence.md` per
+  `.cdd/exceptions.yml`'s `cdd-unreleased-512-dispatch-repair-loop` entry).
+  Also ran `src/packages/cnos.cdd/commands/cdd-verify/test-fixtures.sh`
+  (unaffected by this cycle — no cdd-verify source touched).
+- **`dispatch-repair-preflight`:** `./scripts/ci/check-dispatch-repair-preflight.sh`
+  → pass (unaffected by this cycle).
+- **`dispatch-closeout-integrity`:** `./scripts/ci/check-dispatch-closeout-integrity.sh`
+  → pass, including its self-test (unaffected by this cycle).
+- **`install-wake-golden.yml`:** not exercised locally (no install/activation
+  surface touched by this cycle; the wake/golden contract is unrelated to a
+  Go-domain relocation + package-metadata addition).
+
+No remote CI run URL is available from this session (local reproduction
+only — see §Review-readiness for the explicit "β must confirm green on the
+actual GitHub Actions run" disclosure, pre-review-gate row 10).
+**AC9: locally green; remote-CI confirmation is β's independent check per
+γ's oracle.**
+
+### AC10 — Receipt records the #216 relationship
+
+Stated verbatim (matching γ's scaffold §4 AC10 oracle and the operator's
+Option-B default) in `src/packages/cnos.issues/SKILL.md` §"Command-dispatch
+disposition":
+
+> `cn issues map` remains a temporary built-in shim until #216 lands.
+> Domain logic is isolated under this package's boundary
+> (`src/packages/cnos.issues/commands/issues-map/`, its own Go module,
+> mirroring the cnos#392 `cdd-verify` precedent), but dispatch stays through
+> the compiled-in kernel registration, not through the package-command
+> exec-dispatch mechanism (`PACKAGE-SYSTEM.md` §7).
+
+This is **Option B**, not Option A: no claim of "package-provided through
+documented command-discovery" is made anywhere in the diff or this
+artifact. The kernel registration `reg.Register(&cli.IssuesMapCmd{})` at
+`src/go/cmd/cn/main.go:47` is unchanged, and `cnos.issues/cn.package.json`
+declares no `commands` object at all — both facts are consistent with the
+Option-B statement and neither is contradicted anywhere else in the diff.
+**AC10: met.**
