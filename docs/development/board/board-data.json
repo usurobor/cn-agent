@@ -1382,7 +1382,7 @@
   },
   {
     "n": 444,
-    "t": "agent/cohere: orchestrator skill — wake composition moves from \"Activate and attach as \u003chub\u003e\" to \"Cohere as \u003chub\u003e\"",
+    "t": "agent/cohere: orchestrator skill — wake composition moves from \u0026#34;Activate and attach as \u0026#34; to \u0026#34;Cohere as \u0026#34;",
     "kind": "skill",
     "areas": [
       "agent",
@@ -1896,6 +1896,31 @@
     "url": "https://github.com/usurobor/cnos/issues/542"
   },
   {
+    "n": 545,
+    "t": "board: `cn issues map` — Go generator + refresh Action for the interactive issue-board (Voronoi / heatmap / Pivot)",
+    "kind": "tooling",
+    "areas": [
+      "cdd",
+      "ci",
+      "cli",
+      "docs",
+      "observability",
+      "ui"
+    ],
+    "pri": "P2",
+    "status": "changes",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-02T07:52:40Z",
+    "updated": "2026-07-02T15:29:29Z",
+    "url": "https://github.com/usurobor/cnos/issues/545"
+  },
+  {
     "n": 547,
     "t": "board-map phase 2: live client-side issue fetch (follow-up to #545)",
     "kind": "",
@@ -1934,5 +1959,27 @@
     "created": "2026-07-02T09:40:46Z",
     "updated": "2026-07-02T09:40:46Z",
     "url": "https://github.com/usurobor/cnos/issues/549"
+  },
+  {
+    "n": 552,
+    "t": "board: encode Voronoi area = effort (not count), color = priority; flag unestimated; exclude tracking",
+    "kind": "tooling",
+    "areas": [
+      "docs",
+      "observability",
+      "ui"
+    ],
+    "pri": "P2",
+    "status": "ready",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-02T15:00:07Z",
+    "updated": "2026-07-02T15:29:36Z",
+    "url": "https://github.com/usurobor/cnos/issues/552"
   }
 ]
