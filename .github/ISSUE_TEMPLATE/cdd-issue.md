@@ -18,7 +18,16 @@ labels: ''
 
 ## Priority
 
-<!-- P0 / P1 / P2 -->
+<!-- P0 / P1 / P2 / P3 -->
+
+## Classification
+
+<!-- Label per docs/development/issues/TAXONOMY.md: one primary kind/*, one or more area/*,
+     and (only if an executable cell) dispatch:cell + protocol:*. See docs/development/issues/TRIAGE.md. -->
+
+- **kind:** <!-- kind/bugfix | kind/cleanup | kind/process | kind/feature | kind/tooling | kind/doctrine | kind/audit | kind/tracking | kind/research | kind/skill | kind/spike -->
+- **area:** <!-- area/* (one or more) -->
+- **dispatchable:** <!-- yes → dispatch:cell + protocol:cds/cdd + status:ready|todo ; no → design/tracking/research -->
 
 ## Scope
 

@@ -14,6 +14,7 @@
 - [plans/](plans) — implementation plans for specific releases.
 - [checklists/](checklists) — review/gate checklists by discipline.
 - [kata/](kata) — practice katas.
+- [issues/](issues/README.md) — issue taxonomy, triage, and dispatch policy (how issues are classified and labeled).
 
 Conceptual papers on cells and coherence (e.g. *Cell of Cells*) live in
 [`papers/`](../papers/README.md).

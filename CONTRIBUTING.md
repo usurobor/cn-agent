@@ -9,6 +9,7 @@ GitHub Issues is the single source of truth for bugs, features, and backlog.
 - Check existing issues before opening a new one
 - Include steps to reproduce, expected behavior, and actual behavior
 - For security issues, see [SECURITY.md](./SECURITY.md)
+- For issue classification and triage, see [docs/development/issues/](docs/development/issues/README.md)
 
 ### Proposing Changes
 

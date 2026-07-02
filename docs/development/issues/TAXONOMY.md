@@ -15,6 +15,10 @@ The single most important split is the primary `kind/*` — it answers "what *ki
 of work is this?" and keeps feature work, cleanup, doctrine, and process
 improvements from blurring together.
 
+This document defines the labels. For *how to apply them* — classifying, deciding
+`kind`, when to dispatch, when to close or supersede, and when a wave δ may relabel
+under MCA — see [TRIAGE.md](TRIAGE.md).
+
 ## Primary kind (choose exactly one)
 
 | Label | Meaning |
@@ -98,18 +102,11 @@ Apply on close when the reason is not a plain "done":
 These are especially useful for retiring historical experiment issues (early
 wake/OAuth test runs) and for consolidating duplicates.
 
-## Applying the taxonomy — rules of thumb
+## Applying the taxonomy
 
-1. Every open issue gets exactly one primary `kind/*` and at least one `area/*`.
-2. Add a priority; add a `status:*` only if the issue is actionable now.
-3. `dispatch:cell` + `protocol:*` go on together, and only on genuinely dispatchable cells.
-4. Non-dispatch design/tracking/research issues do **not** carry `dispatch:cell`.
-5. Close stale historical experiment issues with `resolution/superseded` (or
-   `resolution/completed` when the work actually shipped elsewhere).
-6. Consolidate duplicates: keep the canonical issue, close the rest with
-   `resolution/duplicate`.
-7. Retag legacy `enhancement`-only issues into the right `kind/*` (usually
-   `kind/feature`, `kind/process`, `kind/doctrine`, or `kind/cleanup`).
+The operational rules — how to classify, distinguish the kinds, decide dispatch
+eligibility, close/supersede/defer, and relabel under MCA — live in
+[TRIAGE.md](TRIAGE.md).
 
 ## Label lifecycle
 
