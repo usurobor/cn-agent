@@ -1,0 +1,106 @@
+[
+ {
+  "number": 540,
+  "title": "cli: move CI guard logic into cn",
+  "html_url": "https://github.com/usurobor/cnos/issues/540",
+  "labels": [
+   {
+    "name": "kind/tooling"
+   },
+   {
+    "name": "area/cli"
+   },
+   {
+    "name": "area/ci"
+   },
+   {
+    "name": "P1"
+   },
+   {
+    "name": "status:ready"
+   },
+   {
+    "name": "effort/L"
+   }
+  ]
+ },
+ {
+  "number": 552,
+  "title": "board: area = effort",
+  "html_url": "https://github.com/usurobor/cnos/issues/552",
+  "labels": [
+   {
+    "name": "kind/tooling"
+   },
+   {
+    "name": "area/ui"
+   },
+   {
+    "name": "P2"
+   },
+   {
+    "name": "status:ready"
+   },
+   {
+    "name": "effort/M"
+   }
+  ]
+ },
+ {
+  "number": 326,
+  "title": "tracker umbrella",
+  "html_url": "https://github.com/usurobor/cnos/issues/326",
+  "labels": [
+   {
+    "name": "kind/tracking"
+   },
+   {
+    "name": "area/cdd"
+   }
+  ]
+ },
+ {
+  "number": 545,
+  "title": "board: cn issues map",
+  "html_url": "https://github.com/usurobor/cnos/issues/545",
+  "labels": [
+   {
+    "name": "kind/tooling"
+   },
+   {
+    "name": "area/ci"
+   },
+   {
+    "name": "dispatch:cell"
+   },
+   {
+    "name": "protocol:cds"
+   },
+   {
+    "name": "status:changes"
+   },
+   {
+    "name": "effort/XL"
+   }
+  ]
+ },
+ {
+  "number": 547,
+  "title": "phase-2 live fetch (no labels)",
+  "html_url": "https://github.com/usurobor/cnos/issues/547",
+  "labels": []
+ },
+ {
+  "number": 999,
+  "title": "a pull request masquerading",
+  "html_url": "https://github.com/usurobor/cnos/pull/999",
+  "labels": [
+   {
+    "name": "kind/feature"
+   }
+  ],
+  "pull_request": {
+   "url": "x"
+  }
+ }
+]

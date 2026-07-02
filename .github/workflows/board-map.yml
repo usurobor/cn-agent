@@ -1,0 +1,70 @@
+name: Board map
+
+# Regenerates the self-contained interactive issue-board views under
+# docs/development/board/ (the Voronoi map + the Pivot-feel deep-zoom view)
+# from the repo's current open-issue set, and commits the refreshed output.
+#
+# The generator is the Go command `cn issues map` — built and run here. There
+# is no standalone script generator on the production path; the browser only
+# renders the embedded data. See cnos#545 for the design.
+#
+# Remote-runner effect-surface receipt (delta/SKILL.md §8):
+# .cdd/unreleased/545/remote-runner-receipt-board-map.md
+
+on:
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled, assigned, unassigned]
+  workflow_dispatch: {}
+  schedule:
+    # Daily fallback in case an issue-event trigger is ever missed
+    # (e.g. a GitHub Actions outage window). Time of day is arbitrary.
+    - cron: '17 4 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: board-map
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    name: Regenerate docs/development/board
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: src/go/go.mod
+
+      - name: Build cn
+        working-directory: src/go
+        run: go build -o "$GITHUB_WORKSPACE/cn" ./cmd/cn
+
+      - name: Regenerate board views
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./cn issues map --repo "$GITHUB_REPOSITORY" --out docs/development/board
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if [ -n "$(git status --porcelain docs/development/board)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push refreshed board
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "board-map-bot"
+          git config user.email "board-map-bot@users.noreply.github.com"
+          git add docs/development/board
+          git commit -m "board-map: regenerate docs/development/board from live open issues"
+          # Rebase onto any concurrent pushes before pushing (belt-and-braces
+          # alongside the concurrency group) so a racing update does not reject.
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"
