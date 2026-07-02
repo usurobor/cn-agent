@@ -115,8 +115,8 @@ func TestRun_Fixture(t *testing.T) {
 		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
 	}
 
-	// All four artifacts written.
-	for _, name := range []string{"index.html", "pivot.html", "board-data.json", "README.md"} {
+	// All artifacts written.
+	for _, name := range []string{"index.html", "board-data.json", "README.md"} {
 		if _, err := os.Stat(filepath.Join(out, name)); err != nil {
 			t.Errorf("missing output %s: %v", name, err)
 		}
@@ -151,8 +151,8 @@ func TestRun_Fixture(t *testing.T) {
 	if strings.Contains(sidx, "__BOARD__") || strings.Contains(sidx, "__KINDS__") {
 		t.Errorf("index.html still contains an unspliced placeholder")
 	}
-	if !strings.Contains(sidx, "const BOARD=[") {
-		t.Errorf("index.html missing spliced BOARD data")
+	if !strings.Contains(sidx, "const DATA=[") {
+		t.Errorf("index.html missing spliced board data")
 	}
 	// Self-contained = no external *resource loads*. Anchor hrefs to issue
 	// URLs are legitimate data links, so only script/style/font loads count.
@@ -174,7 +174,7 @@ func TestRun_Fixture(t *testing.T) {
 		nil, &so2, &se2); err != nil {
 		t.Fatalf("second Run: %v", err)
 	}
-	for _, name := range []string{"index.html", "pivot.html", "board-data.json"} {
+	for _, name := range []string{"index.html", "board-data.json"} {
 		a, _ := os.ReadFile(filepath.Join(out, name))
 		b, _ := os.ReadFile(filepath.Join(out2, name))
 		if !bytes.Equal(a, b) {

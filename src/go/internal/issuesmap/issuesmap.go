@@ -26,7 +26,7 @@ import (
 	"strings"
 )
 
-//go:embed templates/index.template.html templates/pivot.template.html
+//go:embed templates/board.template.html
 var templates embed.FS
 
 // effortWeight maps the effort/* label suffix to the dashboard area weight
@@ -51,12 +51,19 @@ type ghLabel struct {
 	Name string `json:"name"`
 }
 
+type ghUser struct {
+	Login string `json:"login"`
+}
+
 type ghIssue struct {
 	Number      int              `json:"number"`
 	Title       string           `json:"title"`
 	HTMLURL     string           `json:"html_url"`
 	State       string           `json:"state"`
 	Labels      []ghLabel        `json:"labels"`
+	Assignees   []ghUser         `json:"assignees"`
+	CreatedAt   string           `json:"created_at"`
+	UpdatedAt   string           `json:"updated_at"`
 	PullRequest *json.RawMessage `json:"pull_request,omitempty"`
 }
 
@@ -76,6 +83,9 @@ type Record struct {
 	EffortWeight int      `json:"effort_weight"`
 	Unestimated  bool     `json:"unestimated"`
 	Tracking     bool     `json:"tracking"`
+	Assignee     string   `json:"assignee"`
+	Created      string   `json:"created"`
+	Updated      string   `json:"updated"`
 	URL          string   `json:"url"`
 }
 
@@ -121,6 +131,11 @@ func toRecord(is ghIssue, repo string) Record {
 		r.Unestimated = true
 	}
 	r.Tracking = r.Kind == "tracking"
+	if len(is.Assignees) > 0 {
+		r.Assignee = is.Assignees[0].Login
+	}
+	r.Created = is.CreatedAt
+	r.Updated = is.UpdatedAt
 	return r
 }
 
@@ -197,7 +212,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 
 	reportGaps(recs, stderr)
 
-	index, pivot, err := render(recs)
+	index, err := render(recs)
 	if err != nil {
 		return err
 	}
@@ -211,7 +226,6 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	}
 	files := map[string]string{
 		"index.html":      index,
-		"pivot.html":      pivot,
 		"board-data.json": string(data) + "\n",
 		"README.md":       readme(*repo),
 	}
@@ -221,31 +235,27 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		}
 	}
 
-	fmt.Fprintf(stdout, "cn issues map: wrote %d open issues to %s (index.html, pivot.html, board-data.json, README.md)\n", len(recs), *out)
+	fmt.Fprintf(stdout, "cn issues map: wrote %d open issues to %s (index.html, board-data.json, README.md)\n", len(recs), *out)
 	return nil
 }
 
 // render splices the board records and kind ordering into the embedded
 // templates. json.Marshal HTML-escapes <, >, & so the data is safe to embed
 // directly inside a <script> element.
-func render(recs []Record) (index, pivot string, err error) {
+func render(recs []Record) (string, error) {
 	board, err := json.Marshal(recs)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	kinds, err := json.Marshal(kindOrder)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-	idxT, err := templates.ReadFile("templates/index.template.html")
+	tmpl, err := templates.ReadFile("templates/board.template.html")
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-	pvT, err := templates.ReadFile("templates/pivot.template.html")
-	if err != nil {
-		return "", "", err
-	}
-	return splice(string(idxT), board, kinds), splice(string(pvT), board, kinds), nil
+	return splice(string(tmpl), board, kinds), nil
 }
 
 func splice(tmpl string, board, kinds []byte) string {
@@ -295,29 +305,29 @@ func readme(repo string) string {
 		"> **Generated file — do not edit by hand.** Regenerate with\n" +
 		"> `cn issues map --repo " + repo + " --out " + defaultOut + "`, or let the\n" +
 		"> `board-map` GitHub Action refresh it on issue changes.\n\n" +
-		"- [`index.html`](index.html) — **Voronoi tessellation**: organic cells for\n" +
-		"  `kind → area → issue`, colored by priority, with facet filters (kind / area /\n" +
-		"  priority / status / dispatchable / unestimated / search). Click a kind label to\n" +
-		"  zoom, a cell to open the issue; light/dark.\n" +
-		"- [`pivot.html`](pivot.html) — **Pivot-feel deep-zoom**: a continuous card wall,\n" +
-		"  whole board → single issue card, driven by `d3.zoom()`; the same facet filters\n" +
-		"  rearrange the wall.\n" +
-		"- `board-data.json` — the embedded board data as a standalone file (the same\n" +
-		"  records spliced into the HTML).\n\n" +
-		"Each HTML file is fully self-contained (D3 inlined) — open it directly, no server\n" +
-		"needed. For a live preview URL without hosting setup:\n\n" +
-		"- Voronoi: " + base + "/index.html\n" +
-		"- Pivot: " + base + "/pivot.html\n\n" +
+		"[`index.html`](index.html) is a **PivotViewer-style faceted issue browser** —\n" +
+		"one self-contained page (D3 inlined) with three views:\n\n" +
+		"- **Board** — a weighted **Voronoi tessellation** where **cell area = effort**\n" +
+		"  and **color = priority**; group-by pivot (kind → area → issue, or reorder by\n" +
+		"  priority / status / area / effort), click a group to semantic-zoom in via the\n" +
+		"  breadcrumb, click a cell for the issue detail panel.\n" +
+		"- **Heatmap** — a `kind × area` matrix of **summed effort**; click a cell to\n" +
+		"  filter the whole board.\n" +
+		"- **List** — the filtered issues as a table.\n\n" +
+		"A left **facet rail** (kind / area / priority / effort / status / protocol /\n" +
+		"dispatchable / unestimated / assignee / age) filters every view at once, with\n" +
+		"live counts; search and Export JSON are in the footer.\n\n" +
+		"`board-data.json` is the same records as a standalone file. Open `index.html`\n" +
+		"directly — no server needed. Live preview: " + base + "/index.html\n\n" +
 		"## Encoding\n\n" +
+		"- **Cell area = effort weight** (`effort/S|M|L|XL` = 1/2/4/8).\n" +
 		"- **Color = priority** (P0 → P3; `none` neutral).\n" +
-		"- **Cell area = issue count** in v1; the effort-weighted area encoding\n" +
-		"  (`area = effort`, per the `effort/*` labels) is tracked in the follow-up.\n" +
-		"- **Data is effort-aware now**: every record carries `effort`, `effort_weight`,\n" +
-		"  and `unestimated`. Unestimated issues render with a **dashed cell** (Voronoi)\n" +
-		"  / an `unestimated` tag (Pivot) and are selectable via the **unestimated only**\n" +
-		"  filter — a visible gap, never treated as small.\n" +
+		"- **Data is effort-aware**: every record carries `effort`, `effort_weight`, and\n" +
+		"  `unestimated`. Unestimated issues render **hatched/dimmed** with nominal weight\n" +
+		"  1 (a visible gap, never treated as small) and are selectable via the\n" +
+		"  **unestimated only** facet.\n" +
 		"- **`kind/tracking`** issues are containers and are excluded from the effort\n" +
-		"  rollup (the `effort Σ` stat).\n\n" +
+		"  rollups (the `effort Σ` stat and the heatmap sums).\n\n" +
 		"## Source of truth\n\n" +
 		"The generator is the Go command `cn issues map` (`src/go/internal/issuesmap/`).\n" +
 		"There is no standalone script generator on the production path; the browser only\n" +
