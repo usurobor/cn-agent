@@ -12,6 +12,7 @@ completed:
   - Self-check
   - Debt
   - CDD Trace
+  - Review-readiness
 ---
 
 # α self-coherence — cnos#556
@@ -514,7 +515,13 @@ taxonomy semantic change, no `.github/workflows/board-map.yml` edit) — see
 
 7. **Self-coherence:** this file, written incrementally per §2.5 (one
    section per commit: `16a0fcc6` §Gap, `4fda6fc9` §Skills, `dc1e392c`
-   §ACs, `e889e5ba` §Self-check, `e75f594e` §Debt, this commit §CDD Trace).
+   §ACs, `e889e5ba` §Self-check, `e75f594e` §Debt, `a381a7e9` §CDD Trace),
+   followed by two correction commits after remote CI surfaced the
+   header-naming defect: `f3fd05bc` (section-header fix, §Debt item 3) and
+   `987db05a` (remote-CI-green confirmation + debt-item resolution). Both
+   correction commits' own diffs are self-documented in their commit
+   messages and in §Debt above, per the "commit-message closure claims are
+   a peer of the artifact they fix" rule (`alpha/SKILL.md` §2.3).
 
 **Caller-path trace for new modules (pre-review-gate row 12).** The new
 module `github.com/usurobor/cnos/packages/cnos.issues/commands/issues-map`
@@ -533,3 +540,41 @@ edits and the header-comment expansion, not a new exported symbol).
 + its 4 named subtests, `TestEffortWeights`, `TestRun_Fixture`,
 `TestRun_Stdin`) — counted directly from runner output, not hand-enumerated
 from source.
+
+**Commit-author identity (pre-review-gate row 14).** `git log -1
+--format='%ae' HEAD` → `alpha@cdd.cnos` (the canonical `{role}@cdd.cnos`
+elision form for the cnos project) — confirmed for every commit authored
+in this round; no drift to correct.
+
+**γ-artifact presence at the rule-3.11b surface (pre-review-gate row 15).**
+`git cat-file -e origin/cycle/556:.cdd/unreleased/556/gamma-scaffold.md` →
+present. **γ-artifact at canonical §5.1 path.**
+
+## Review-readiness
+
+**Round 1 | base SHA: `4fe8e4333b36372f595201841fb76cc0c31acff4` (origin/main
+at cycle-branch time; re-confirmed not advanced as of this signal via `git
+merge-base --is-ancestor origin/main HEAD`) | implementation SHA:
+`987db05a6ced71006cfb4728951fecd6fa1a976c` | branch CI: green — remote run
+[28627809025](https://github.com/usurobor/cnos/actions/runs/28627809025)
+succeeded on fix commit `f3fd05bc`, and a follow-up run succeeded on
+`987db05a` (confirmed via `gh run list --branch cycle/556`, both `status:
+completed`, `conclusion: success`) at 23:27:27 UTC | ready for β.**
+
+All ten pre-review-gate rows (`alpha/SKILL.md` §2.6) are satisfied:
+rebase-currency (row 1, re-verified above), CDD Trace through step 7 (row
+2), tests present (row 3), every AC has evidence (row 4), known debt
+explicit (row 5, §Debt), schema/shape audit (row 6, §Self-check), peer
+enumeration (row 7, §Self-check), harness audit (row 8, §Self-check), no
+mid-cycle patch to re-audit yet (row 9 — this is R0, β has not yet
+responded), branch CI green on head commit (row 10, above), artifact
+enumeration matches diff (row 11, §CDD Trace step 6), caller-path trace
+(row 12), test assertion count (row 13), commit-author identity (row 14),
+γ-artifact presence (row 15).
+
+β: please poll `.cdd/unreleased/556/beta-review.md` on `origin/cycle/556`
+and re-verify AC1–AC10 independently per γ's β-prompt oracle list
+(`gamma-scaffold.md` §9), rather than trusting this artifact's claims
+alone — in particular AC1 (`cn build --check`), AC3 (build `cn` from this
+branch yourself), AC9 (`gh run list --branch cycle/556`), and AC10 (read
+`cnos.issues/SKILL.md` directly for the Option-B statement).
