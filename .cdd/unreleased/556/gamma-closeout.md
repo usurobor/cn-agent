@@ -114,3 +114,16 @@ not extend into #216-shaped command-discovery work, per the operator's
 explicit non-goal). The three follow-up-issue recommendations in the
 triage table above are the concrete next-step candidates; δ/operator holds
 the decision on which (if any) to open as tracked issues.
+
+## Deliverable evidence (dispatch-protocol §2.9 / cnos#524 closeout-integrity preflight)
+
+```
+deliverable_evidence:
+  pr: "#557 (cycle/556 -> main)"
+  head_sha: "30527108ad312261ba624147436338d1970458f8"
+  base_sha: "4fe8e4333b36372f595201841fb76cc0c31acff4"
+  commits_beyond_base: 20
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+Recorded by δ post-PR-open, confirming all five closeout-integrity preflight conditions hold before the `status:in-progress -> status:review` transition: PR #557 exists and references #556; HEAD differs from base by 20 commits; `cycle/556` branch exists and differs from base; all six required artifacts present at `.cdd/unreleased/556/`; this block names the PR number and head/base SHAs as evidence.
