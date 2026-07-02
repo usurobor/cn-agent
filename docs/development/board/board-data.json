@@ -1946,7 +1946,7 @@
       "package"
     ],
     "pri": "P1",
-    "status": "ready",
+    "status": "todo",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -1955,7 +1955,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-02T18:42:30Z",
-    "updated": "2026-07-02T18:42:30Z",
+    "updated": "2026-07-02T22:50:26Z",
     "url": "https://github.com/usurobor/cnos/issues/556"
   }
 ]
