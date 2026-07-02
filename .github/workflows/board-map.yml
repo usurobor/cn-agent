@@ -12,13 +12,21 @@ name: Board map
 # .cdd/unreleased/545/remote-runner-receipt-board-map.md
 
 on:
+  # Board *data* changed — an issue moved.
   issues:
-    types: [opened, edited, closed, reopened, labeled, unlabeled, assigned, unassigned]
+    types: [opened, edited, deleted, closed, reopened, labeled, unlabeled, assigned, unassigned]
+  # Generator / template / taxonomy may have changed — regenerate from source.
+  # paths-ignore keeps the Action's own commit to docs/development/board/** from
+  # re-triggering it (no self-trigger loop).
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/development/board/**'
   workflow_dispatch: {}
   schedule:
-    # Daily fallback in case an issue-event trigger is ever missed
+    # Daily fallback in case an event trigger is ever missed
     # (e.g. a GitHub Actions outage window). Time of day is arbitrary.
-    - cron: '17 4 * * *'
+    - cron: '17 6 * * *'
 
 permissions:
   contents: write
