@@ -7,6 +7,7 @@ round: R0
 author: alpha
 completed:
   - Gap
+  - Skills
 ---
 
 # α self-coherence — cnos#556
@@ -50,3 +51,33 @@ dispatch (unchanged), package scoping = Go-source co-location under
 command), single `cn` binary preserved, no new runtime dependencies,
 JSON/wire contract preserved as-is, backward-compat invariants preserved.
 All seven axes were populated in the scaffold; none required escalation.
+
+## §Skills
+
+**Tier 1:** `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` (this file's
+own load order, §2.1–§2.8, §3.6).
+
+**Tier 2 (always-applicable `eng/*`):** `src/packages/cnos.core/skills/write/SKILL.md`
+(prose discipline for the new SKILL.md doctrine files and this artifact).
+
+**Tier 3 (issue-specific, per γ's scaffold §8 α-prompt):**
+
+- `docs/architecture/DESIGN-CONSTRAINTS.md` §3 (§3.1 command naming,
+  §3.2 CLI-dispatch/domain-package boundary — the rule this cycle exists to
+  honor and keep honoring through the move).
+- `docs/reference/packages/PACKAGE-SYSTEM.md` §1.1 (content classes —
+  `commands` class shape) and §7 (command discovery precedence — built-in
+  always shadows; the reason `commands/issues-map/` must NOT be declared in
+  `cn.package.json`'s `commands` object).
+- `docs/reference/runtime/GO-KERNEL-COMMANDS.md` (bootstrap-kernel target
+  set; confirms `issues-map` is not in the target set today, i.e. the
+  built-in-shim disposition is intentional, #216-shaped, not this cycle's
+  job).
+- `docs/development/issues/TAXONOMY.md` and `docs/development/issues/TRIAGE.md`
+  (cited, not forked, by the new `skills/taxonomy/SKILL.md` and
+  `skills/triage/SKILL.md`).
+
+**Not loaded (correctly out of scope):** β/γ role skills (α does not load
+peer-role skills per §2.1 load-order rule); no `eng/{language}`-specific
+skill beyond stdlib-Go conventions already established by the moved code
+(no new language, no new dependency).
