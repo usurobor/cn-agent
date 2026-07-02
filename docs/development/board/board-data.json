@@ -1184,7 +1184,7 @@
   },
   {
     "n": 444,
-    "t": "agent/cohere: orchestrator skill — wake composition moves from \u0026#34;Activate and attach as \u0026#34; to \u0026#34;Cohere as \u0026#34;",
+    "t": "agent/cohere: orchestrator skill — wake composition moves from \"Activate and attach as \u003chub\u003e\" to \"Cohere as \u003chub\u003e\"",
     "kind": "skill",
     "areas": [
       "agent",
@@ -1624,28 +1624,6 @@
     "unestimated": true,
     "tracking": false,
     "url": "https://github.com/usurobor/cnos/issues/542"
-  },
-  {
-    "n": 545,
-    "t": "board: `cn issues map` — Go generator + refresh Action for the interactive issue-board (Voronoi / heatmap / Pivot)",
-    "kind": "tooling",
-    "areas": [
-      "cdd",
-      "ci",
-      "cli",
-      "docs",
-      "observability",
-      "ui"
-    ],
-    "pri": "P2",
-    "status": "changes",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "url": "https://github.com/usurobor/cnos/issues/545"
   },
   {
     "n": 547,
