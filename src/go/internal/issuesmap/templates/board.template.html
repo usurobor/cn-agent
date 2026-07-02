@@ -108,11 +108,42 @@ table.lst tr{cursor:pointer}table.lst tr:hover td{background:var(--grid)}
 .foot .count{margin-left:auto;color:var(--ink2);font-size:12px}
 .tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--ring);border-radius:8px;padding:7px 10px;font-size:12px;box-shadow:0 6px 24px #0003;opacity:0;transition:opacity .1s;z-index:50;max-width:300px}
 .hidden{display:none!important}
+/* mobile ---------------------------------------------------------------- */
+.mfilters,.mclose{display:none}
+.backdrop{position:fixed;inset:0;background:#0006;z-index:55;opacity:0;pointer-events:none;transition:opacity .2s;display:none}
+@media (max-width:820px){
+  .topbar{gap:8px;padding:0 10px;height:46px}
+  .brand{font-size:14px;white-space:nowrap}.brand .logo{width:18px;height:18px}
+  .bhide{display:none}
+  .asof{display:none}
+  .tabs{margin-left:auto;padding:2px}.tab{padding:5px 9px;font-size:12px}
+  .strip{gap:6px;padding:7px 10px;flex-wrap:nowrap;overflow-x:auto}
+  .strip .legend{display:none}.kpi{min-width:auto}
+  .layout{display:block;padding:8px}
+  .main{min-height:76vh}
+  #board-view{min-height:72vh}
+  .mainhead{flex-wrap:wrap}
+  .mainhead .mh-right{margin-left:0;width:100%}
+  .mainhead .mh-right label{width:100%;display:flex;gap:6px;align-items:center}
+  .mainhead .mh-right select{flex:1;min-width:0}
+  .mfilters{display:inline-flex;align-items:center;order:-1}
+  .bc{font-size:12px;order:1}
+  .rail{position:fixed;top:0;left:0;bottom:0;width:86vw;max-width:340px;z-index:60;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 40px #0006;border-radius:0}
+  .rail.open{transform:none}
+  .rail h3{padding-right:34px}
+  .detail{padding-top:34px}
+  .detail{position:fixed;left:0;right:0;bottom:0;max-height:82vh;z-index:60;transform:translateY(101%);transition:transform .22s;border-radius:16px 16px 0 0;box-shadow:0 -10px 40px #0006}
+  .detail.open{transform:none}
+  .backdrop{display:block}.backdrop.on{opacity:1;pointer-events:auto}
+  .mclose{display:block;position:absolute;top:8px;right:12px;font-size:22px;line-height:1;background:none;border:0;color:var(--ink2);cursor:pointer;z-index:3}
+  .foot{flex-wrap:nowrap;overflow-x:auto;gap:8px}.foot .lbl{white-space:nowrap}.foot input[type=text]{min-width:130px}
+  .foot .count{position:sticky;right:0}
+}
 </style></head>
 <body>
 <div class="app">
   <div class="topbar">
-    <div class="brand"><span class="logo"></span> cnos Issue Pivot</div>
+    <div class="brand"><span class="logo"></span> cnos <span class="bhide">Issue </span>Pivot</div>
     <div class="asof" id="asof"></div>
     <div class="tabs" id="tabs">
       <div class="tab on" data-tab="board">Board</div>
@@ -129,6 +160,7 @@ table.lst tr{cursor:pointer}table.lst tr:hover td{background:var(--grid)}
 
     <div class="card main">
       <div class="mainhead">
+        <button class="btn mfilters" id="mfilters">☰ Filters</button>
         <div class="bc" id="bc"></div>
         <div class="mh-right">
           <label style="color:var(--ink2)">Group by
@@ -160,6 +192,7 @@ table.lst tr{cursor:pointer}table.lst tr:hover td{background:var(--grid)}
     <span class="count" id="count"></span>
   </div>
 </div>
+<div class="backdrop" id="backdrop"></div>
 <div class="tip" id="tip"></div>
 
 <script>
@@ -261,7 +294,7 @@ function renderStrip(){
 // ---- facet rail -------------------------------------------------------
 function renderRail(){
   const el=document.getElementById("rail");
-  let h=`<h3>Facets <a id="reset">Reset all</a></h3><input class="fsearch" id="fsearch" placeholder="Search facets…">`;
+  let h=`<button class="mclose" aria-label="close">×</button><h3>Facets <a id="reset">Reset all</a></h3><input class="fsearch" id="fsearch" placeholder="Search facets…">`;
   for(const f of FACETS){
     const base=DATA.filter(r=>passExcept(r,f.key));
     const counts=new Map();
@@ -294,9 +327,9 @@ function renderRail(){
 }
 
 // ---- board (weighted voronoi) -----------------------------------------
-const W=1000,H=690,PAD=8;
-const clip=[[PAD,PAD],[W-PAD,PAD],[W-PAD,H-PAD],[PAD,H-PAD]];
-const svg=d3.select("#svg").attr("viewBox",`0 0 ${W} ${H}`);
+const PAD=8;
+const svg=d3.select("#svg");
+function dims(){const el=document.getElementById("board-view");const w=Math.max(320,el.clientWidth||1000),h=Math.max(360,el.clientHeight||690);return{W:1000,H:Math.round(1000*h/w)};}
 function boardRows(){let rows=filtered();zoomPath.forEach(z=>{rows=rows.filter(r=>gval(r,z.k)===z.v);});return rows;}
 function levels(){return groupBy.slice(zoomPath.length);}
 function leafNode(r){return {name:"#"+r.n,value:Math.max(0.01,r.effort_weight),issue:r};}
@@ -308,6 +341,9 @@ function build(rows,lv,d){
 const poly2path=p=>"M"+p.map(pt=>pt[0].toFixed(1)+","+pt[1].toFixed(1)).join("L")+"Z";
 function renderBoard(){
   const rows=boardRows(), lv=levels();
+  const {W,H}=dims();
+  const clip=[[PAD,PAD],[W-PAD,PAD],[W-PAD,H-PAD],[PAD,H-PAD]];
+  svg.attr("viewBox",`0 0 ${W} ${H}`);
   svg.selectAll("*").remove();
   if(!rows.length){svg.append("text").attr("x",W/2).attr("y",H/2).attr("text-anchor","middle").attr("fill",cssv("--muted")).text("no issues match the filters");return;}
   const root=d3.hierarchy(lv.length?{name:"root",children:build(rows,lv,0)}:{name:"root",children:rows.map(leafNode)}).sum(d=>d.value);
@@ -408,13 +444,13 @@ function renderList(){
 }
 
 // ---- detail -----------------------------------------------------------
-function selectIssue(r){selected=r;renderDetail();if(tab==="board")renderBoard();}
+function selectIssue(r){selected=r;renderDetail();openDetailSheet();if(tab==="board")renderBoard();}
 function renderDetail(){
   const el=document.getElementById("detail");
-  if(!selected){el.innerHTML=`<div class="empty">Select an issue<br>(click a cell, or a list row)</div>`;return;}
+  if(!selected){el.innerHTML=`<button class="mclose" aria-label="close">×</button><div class="empty">Select an issue<br>(click a cell, or a list row)</div>`;return;}
   const r=selected;
   const row=(k,v)=>v?`<dt>${k}</dt><dd>${v}</dd>`:"";
-  el.innerHTML=`<h2>Issue #${r.n}
+  el.innerHTML=`<button class="mclose" aria-label="close">×</button><h2>Issue #${r.n}
       <span class="tag prtag" style="background:${priColor(r.pri)}">${r.pri==="none"?"none":r.pri}</span>
       ${r.unestimated?'<span class="tag">unestimated</span>':'<span class="tag">effort/'+r.effort+'</span>'}</h2>
     <div class="title">${esc(r.t)}</div>
@@ -451,7 +487,7 @@ function switchTab(t){tab=t;document.querySelectorAll(".tab").forEach(x=>x.class
   document.getElementById("board-view").classList.toggle("hidden",t!=="board");
   document.getElementById("heatmap-view").classList.toggle("hidden",t!=="heatmap");
   document.getElementById("list-view").classList.toggle("hidden",t!=="list");
-  renderMain();}
+  closeSheets();renderMain();}
 document.querySelectorAll(".tab").forEach(x=>x.onclick=()=>switchTab(x.dataset.tab));
 document.getElementById("groupby").onchange=e=>{groupBy=e.target.value.split(",");zoomPath=[];renderAll();};
 document.getElementById("zoomout").onclick=()=>{if(zoomPath.length){zoomPath.pop();renderAll();}};
@@ -469,6 +505,15 @@ function renderAll(){renderStrip();renderRail();renderDetail();renderMain();docu
 // as-of = latest updated_at (deterministic; no wall-clock in the file)
 const latest=DATA.map(r=>r.updated).filter(Boolean).sort().pop();
 document.getElementById("asof").textContent=latest?("data as of "+latest.replace("T"," ").replace("Z"," UTC")):"";
+// ---- mobile drawer / sheet -------------------------------------------
+const backdrop=document.getElementById("backdrop");
+function openRail(){document.getElementById("rail").classList.add("open");backdrop.classList.add("on");}
+function openDetailSheet(){if(matchMedia("(max-width:820px)").matches&&selected){document.getElementById("detail").classList.add("open");backdrop.classList.add("on");}}
+function closeSheets(){document.getElementById("rail").classList.remove("open");document.getElementById("detail").classList.remove("open");backdrop.classList.remove("on");}
+document.getElementById("mfilters").onclick=openRail;
+backdrop.onclick=closeSheets;
+document.addEventListener("click",e=>{if(e.target.classList&&e.target.classList.contains("mclose"))closeSheets();});
+let _rz;addEventListener("resize",()=>{clearTimeout(_rz);_rz=setTimeout(()=>{if(tab==="board")renderBoard();},180);});
 renderAll();
 </script>
 </body></html>
