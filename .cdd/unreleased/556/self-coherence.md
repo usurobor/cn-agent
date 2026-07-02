@@ -578,3 +578,178 @@ and re-verify AC1–AC10 independently per γ's β-prompt oracle list
 alone — in particular AC1 (`cn build --check`), AC3 (build `cn` from this
 branch yourself), AC9 (`gh run list --branch cycle/556`), and AC10 (read
 `cnos.issues/SKILL.md` directly for the Option-B statement).
+
+## §R1
+
+**Round 1 | repair author: alpha | base for this round: `origin/cycle/556` at
+`bdad537f5e5a719d6f76374da282eb6764fd014b` (β's R0 review commit, verdict
+`converge`) | this round does not re-litigate β's R0 AC1–AC10 findings —
+all ten remain independently verified and unchanged; this round repairs the
+one thing β itself flagged (Finding 1) and δ subsequently overrode on.**
+
+### What was overridden and why
+
+δ's override comment on cnos#556 (posted after β's R0 `converge` verdict,
+titled "δ override — R0 converge not accepted; R1 repair ordered") rejected
+R0's `converge` verdict specifically on the axis β itself had flagged as
+Finding 1 (a non-blocking "process/coherence" note in β's R0 review) but
+did not block on. δ's own independent re-read of the operator's clarifying
+comment on this issue (posted 2026-07-02T22:50:19Z, the same comment that
+released this cell to `status:todo`) found it states, verbatim, under a
+"## Go implementation rule" heading:
+
+> Do not force Go implementation code into `src/packages/`. The active Go
+> implementation may remain under `src/go/internal/issuesmap/` during the
+> shim phase, but it must be treated as the implementation of the
+> `cnos.issues` domain.
+
+R0 (this file's `## Gap` through `## Review-readiness` sections above, all
+authored in R0 and left unmodified by this append) implemented the
+opposite: γ's R0 scaffold (`gamma-scaffold.md` §6 item 2) pinned physical
+relocation of `src/go/internal/issuesmap/{issuesmap.go,fetch.go,
+issuesmap_test.go,templates/,testdata/}` into
+`src/packages/cnos.issues/commands/issues-map/` as a *binding* guardrail,
+framed in the scaffold as "restated from the operator's clarifying
+comment" — but on direct re-read (both by β in R0 Finding 1, and
+independently by δ in the override comment), that framing was inaccurate:
+the relocation was γ's own architectural judgment call (mirroring the
+cnos#392 `cdd-verify` precedent), overriding the operator's specific,
+on-topic, most-recent sentence rather than restating it. δ's override
+holds that an explicit operator instruction on the exact axis in question
+supersedes precedent-matching, and directs this R1 repair.
+
+### Repair performed
+
+1. **Reverted the physical code relocation.** `issuesmap.go`, `fetch.go`,
+   `issuesmap_test.go`, `templates/board.template.html`, and
+   `testdata/issues.json` are back at `src/go/internal/issuesmap/` (their
+   pre-R0 location). Done via `git revert --no-edit` of the two R0 commits
+   that performed and then referenced the relocation
+   (`88156120` "issues-map: relocate domain implementation to cnos.issues
+   package boundary" and `13198122` "docs: update board README path
+   reference to cnos.issues package location"), reverted in reverse
+   chronological order (`13198122` first, then `88156120`). Git recognized
+   both file renames cleanly (`rename src/{packages/cnos.issues/commands/
+   issues-map => go/internal/issuesmap}/*.go` etc.) — no manual conflict
+   resolution was needed, and the revert is byte-for-byte equivalent to
+   the pre-R0 file contents (verified via `git show 2ae24f27:...` diffed
+   against the post-revert tree).
+2. **Removed the now-unnecessary Go module wiring**, restored to its
+   pre-R0 state by the same reverts: `src/packages/cnos.issues/commands/
+   issues-map/go.mod` no longer exists (the `commands/` directory is gone
+   entirely — confirmed via `find src/packages/cnos.issues -maxdepth 2
+   -type d`, which now lists only `skills/{map,taxonomy,triage}`); the
+   `require`+`replace` block for `issues-map` is gone from
+   `src/go/go.mod`; `go.work`'s `use (...)` list no longer includes
+   `./src/packages/cnos.issues/commands/issues-map` (only `./src/go` and
+   `./src/packages/cnos.cdd/commands/cdd-verify` remain, exactly as
+   pre-R0).
+3. **Reverted `src/go/internal/cli/cmd_issues_map.go`'s import path** back
+   to `github.com/usurobor/cnos/src/go/internal/issuesmap` (the same
+   revert restored this). `Run()` remains the one-line delegation
+   `return issuesmap.Run(ctx, inv.Args, inv.Stdin, inv.Stdout,
+   inv.Stderr)` — still thin, no domain logic added or removed.
+4. **Kept the `cnos.issues` doctrine/skill surfaces** —
+   `cn.package.json`, `SKILL.md`, `skills/map/SKILL.md`,
+   `skills/taxonomy/SKILL.md`, `skills/triage/SKILL.md` — all still
+   present, per δ's explicit instruction that these are not part of the
+   repair. **Updated `SKILL.md` and `skills/map/SKILL.md`** (commit
+   `aa635c7a`) to state plainly that the Go implementation lives at
+   `src/go/internal/issuesmap/`, not under `src/packages/cnos.issues/`,
+   quoting the operator's "Go implementation rule" verbatim as the
+   grounding, and naming the R0-relocation-then-R1-reversion history so a
+   future reader does not mistake the current doctrine text for an
+   unfinished migration. `skills/taxonomy/SKILL.md` and
+   `skills/triage/SKILL.md` contained no path references to begin with
+   (confirmed via grep) and needed no change.
+5. **Reverted `docs/development/board/README.md:42`** back to
+   `` The generator is the Go command `cn issues map`
+   (`src/go/internal/issuesmap/`). `` — restored by the same revert of
+   `13198122`.
+6. **Re-grepped the whole repo** for `internal/issuesmap` and
+   `cnos.issues/commands/issues-map` after all edits landed
+   (`grep -rn "internal/issuesmap\|cnos.issues/commands/issues-map"
+   src/ docs/ go.work`). Result: every live-code/doc reference now points
+   at `src/go/internal/issuesmap/` (the import in `cmd_issues_map.go`,
+   the embedded README-generator string inside `issuesmap.go` itself, the
+   board `README.md` line, and the doctrine prose in the two updated
+   `SKILL.md` files). The only remaining occurrences of
+   `cnos.issues/commands/issues-map` are inside the two updated
+   `SKILL.md` files' own prose, explicitly narrating the R0-relocation-
+   then-R1-reversion history in the past tense — not live references to
+   an existing path. No dangling reference to the removed module path
+   exists anywhere outside `.cdd/unreleased/556/{gamma-scaffold,
+   beta-review}.md`, which are R0-round historical artifacts left
+   unmodified per this round's own instructions (append-only, do not
+   rewrite prior rounds' artifacts).
+
+### Build/test/CI re-verification
+
+- `cd src/go && go build ./... && go vet ./... && go test ./...` — all
+  clean; `go test ./...` reports `ok` for all 14 `src/go` packages
+  including `github.com/usurobor/cnos/src/go/internal/issuesmap` (the
+  restored package, tests unchanged and passing at their restored
+  location).
+- Built `cn` from `src/go` (`go build -o /tmp/cn_r1 ./cmd/cn`) and ran,
+  myself: `/tmp/cn_r1 issues map --fixture internal/issuesmap/testdata/
+  issues.json --out /tmp/board-out-r1` → `wrote 5 open issues to
+  /tmp/board-out-r1 (index.html, board-data.json, README.md)`, exit 0.
+  Also ran the exact form named in δ's repair contract against the live
+  repo: `/tmp/cn_r1 issues map --repo usurobor/cnos --out
+  /tmp/board-out-r1-live` → `wrote 93 open issues to /tmp/board-out-r1-live
+  (index.html, board-data.json, README.md)`, exit 0.
+- `/tmp/cn_r1 build --check` → `✓ cnos.issues: valid` alongside all other
+  packages, `✓ All packages valid.` — `cnos.issues` is recognized as a
+  doctrine-only package: `cn.package.json` has no `commands` object entry
+  (confirmed: the file has no `commands` key at all, matching its pre-R0/
+  R0 shape), and there is no `commands/` directory under
+  `src/packages/cnos.issues/` at all after the revert.
+- Remote CI on the R1 head commit (`aa635c7a80454e3c9dcb4793dda6d20ddd76e5dc`,
+  pushed to `origin/cycle/556`): run
+  [28628522058](https://github.com/usurobor/cnos/actions/runs/28628522058),
+  `status: completed`, `conclusion: success`. All 10 required jobs green:
+  `Go build & test`, `Binary verification`, `Package verification`,
+  `Package/source drift (I1)`, `Protocol contract schema sync (I2)`,
+  `Repo link validation (I4)` (validates the relative links added in the
+  updated `SKILL.md` files resolve correctly — confirmed locally before
+  push via direct path resolution, then confirmed green in CI),
+  `SKILL.md frontmatter validation (I5)` (validates the two edited
+  `SKILL.md` files' frontmatter is still well-formed — body-only edits,
+  frontmatter untouched), `CDD artifact ledger validation (I6)`,
+  `Dispatch repair-preflight guard (cnos#516)`, `Dispatch closeout-
+  integrity guard (cnos#524)`.
+
+### Commits this round
+
+- `97a4b7d3` — `Revert "docs: update board README path reference to
+  cnos.issues package location"`
+- `f9707a9d` — `Revert "issues-map: relocate domain implementation to
+  cnos.issues package boundary"`
+- `aa635c7a` — `cnos.issues: update doctrine to reflect Go impl at
+  src/go/internal/issuesmap/ (R1)`
+
+### Review-readiness (R1)
+
+**Round 1 | base SHA: `bdad537f5e5a719d6f76374da282eb6764fd014b` (β's R0
+review commit) | implementation SHA: `aa635c7a80454e3c9dcb4793dda6d20ddd76e5dc`
+| branch CI: green — remote run
+[28628522058](https://github.com/usurobor/cnos/actions/runs/28628522058)
+succeeded on the R1 head commit, all 10 required jobs `success` | ready for
+β re-review.**
+
+This repair does not reopen AC1–AC9 as previously verified by β in R0 (all
+unaffected by this round — no board-output behavior, taxonomy, CLI dispatch
+shape, or GitHub Action changed). It specifically repairs the disposition
+underlying **AC10** (and β's R0 Finding 1): the receipt now honestly and
+consistently states that the Go implementation lives at
+`src/go/internal/issuesmap/`, not relocated into `src/packages/
+cnos.issues/`, per the operator's explicit instruction, while
+`cnos.issues` still exists as the domain's doctrine/skill home (AC1, AC2
+unaffected). β should independently re-verify: (a) the file layout
+(`find src/go/internal/issuesmap src/packages/cnos.issues -type f`), (b)
+`go build/vet/test` from `src/go`, (c) `cn build --check` still recognizes
+`cnos.issues` with no `commands` entry, (d) `cn issues map --repo
+usurobor/cnos --out <tmpdir>` still works, (e) the repo-wide grep for
+`internal/issuesmap` / `cnos.issues/commands/issues-map` shows no dangling
+references, and (f) CI green on `aa635c7a` via `gh run list --branch
+cycle/556`.
