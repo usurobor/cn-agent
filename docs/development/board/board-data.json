@@ -2009,7 +2009,7 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "in-progress",
+    "status": "review",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2018,7 +2018,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-03T20:41:49Z",
-    "updated": "2026-07-03T22:32:40Z",
+    "updated": "2026-07-03T23:08:26Z",
     "url": "https://github.com/usurobor/cnos/issues/569"
   }
 ]
