@@ -157,10 +157,10 @@ repair_evidence:
   new_state_differs_from_rejected: "cycle/556-r2 (base main@1c1cfb06) carries 8 commits reinstating the relocation + doctrine fix + R2 CDD artifacts, superseding merged PR #557's R1 content"
 
 deliverable_evidence:
-  pr: "new PR from cycle/556-r2 -> main, superseding merged #557 (see PR body for link)"
-  head_sha: "205df4e17c1060bcf0d18a98ba661ac559974cc7"
+  pr: "#559 (cycle/556-r2 -> main), superseding merged #557"
+  head_sha: "60481231680fb2279be8c77969dec0c8b2876bef"
   base_sha: "1c1cfb06603c44cfdcc5362abee470183cc22332"
-  commits_beyond_base: 8
+  commits_beyond_base: 9
   closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
 ```
 
