@@ -1954,7 +1954,27 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-03T01:45:46Z",
-    "updated": "2026-07-03T04:16:16Z",
+    "updated": "2026-07-03T04:52:28Z",
     "url": "https://github.com/usurobor/cnos/issues/558"
+  },
+  {
+    "n": 560,
+    "t": "docs: hygiene sweep — 4 stale citations surfaced during #558 (packages list, CHANGELOG threshold, lychee.toml comment, glossary version header)",
+    "kind": "cleanup",
+    "areas": [
+      "docs"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-03T04:54:25Z",
+    "updated": "2026-07-03T04:54:25Z",
+    "url": "https://github.com/usurobor/cnos/issues/560"
   }
 ]
