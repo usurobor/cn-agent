@@ -35,6 +35,17 @@ jobs:
         working-directory: src/go
         run: go vet ./...
 
+      # cnos#568 AC9: commands/issues-map and commands/issues-fsm are their
+      # own Go modules (co-located under src/packages/, wired into go.work),
+      # NOT covered by the `Test` step above — `go test ./...` from
+      # src/go is CWD-relative to that module only (verified empirically:
+      # `go list ./...` from src/go has no issues-fsm/issues-map packages).
+      # This explicit step is what turns CI red if an issues-fsm fixture
+      # regresses (e.g. the cnos#368 dead-in-progress-with-commits guard).
+      - name: Test issues-fsm module (cnos#568 AC9)
+        working-directory: src/packages/cnos.issues/commands/issues-fsm
+        run: go test ./... -v
+
       - name: Dispatch boundary check (INVARIANTS.md T-002)
         working-directory: src/go
         run: |

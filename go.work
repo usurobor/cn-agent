@@ -4,4 +4,5 @@ use (
 	./src/go
 	./src/packages/cnos.cdd/commands/cdd-verify
 	./src/packages/cnos.issues/commands/issues-map
+	./src/packages/cnos.issues/commands/issues-fsm
 )

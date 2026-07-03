@@ -1,0 +1,13 @@
+{
+  "issue": 604,
+  "labels": ["dispatch:cell", "protocol:cds", "status:changes"],
+  "run_state": "",
+  "branch_exists": true,
+  "commits_beyond_base": 2,
+  "pr_exists": true,
+  "pr_commit_count": 2,
+  "cdd_artifacts": ["gamma-scaffold.md", "self-coherence.md", "beta-review.md"],
+  "review_request_present": false,
+  "repair_contract_present": false,
+  "checks_state": "failure"
+}
