@@ -1113,7 +1113,7 @@
     "areas": [
       "cdd"
     ],
-    "pri": "P1",
+    "pri": "P2",
     "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
@@ -1123,7 +1123,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-05-16T17:55:51Z",
-    "updated": "2026-07-03T13:21:41Z",
+    "updated": "2026-07-03T13:33:10Z",
     "url": "https://github.com/usurobor/cnos/issues/368"
   },
   {
