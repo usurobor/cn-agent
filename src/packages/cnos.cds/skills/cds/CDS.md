@@ -1023,7 +1023,7 @@ and a failure / retry path.
 | **S4: α implementing** | α | Branch, issue, active skills loaded | Code, tests, docs on `cycle/{N}` | S5 | Blocker → γ unblocks; RC from β → re-dispatch α for fix round (within-scope repair) |
 | **S5: α signaled review-ready** | α | Pre-review gate passed (`alpha/SKILL.md §2.6`) | `self-coherence.md` review-readiness section on `cycle/{N}` | S6 | Gate fails → fix and re-signal |
 | **S6: β reviewing** | β | `self-coherence.md` review-readiness, diff, CI green | `beta-review.md` round verdict (RC or A) | RC → S4; A → S7 | β blocked → γ unblocks |
-| **S7: β merged** | β | Approved verdict; pre-merge gate passed (`beta/SKILL.md §"Pre-merge gate"`) | Merge commit on main with `Closes #N`; `beta-closeout.md` | S8 | Merge conflict → β resolves in throwaway worktree |
+| **S7: β merged** | β | Approved verdict; pre-merge gate passed (`beta/SKILL.md §"Pre-merge gate"`, including row 5's close-keyword check) | Merge commit on main with `Closes #N`; `beta-closeout.md` | S8 | Merge conflict → β resolves in throwaway worktree; missing/ineffective close-keyword → issue state MUST still be asserted `CLOSED` before γ declares closure (S11; `gamma/SKILL.md §2.10` row 15 is the hard gate — this is a mandatory verification, not a conditional fallback) |
 | **S8: α close-out** | α (re-dispatched) | `beta-review.md` (approved); merged state | `alpha-closeout.md` on main | S9 | Re-dispatch unavailable → provisional close-out at review-readiness (declared as debt) |
 | **S9: γ triaging** | γ | `alpha-closeout.md`, `beta-closeout.md`, `RELEASE.md` | PRA at canonical path; γ close-out triage; skill patches landed | S10 | Missing close-out → request re-dispatch; missing RELEASE.md → γ writes it |
 | **S10: δ release-boundary preflight** | δ | PRA present; RELEASE.md present; `.cdd/unreleased/{N}/` not yet moved; merge on main | Proceed / Request changes / Override | Proceed → S11; RC → route to β/α/override | δ blocks → γ routes change |
@@ -2296,6 +2296,18 @@ below must be observable on `origin/main`:
   has landed; the merge commit's SHA is recoverable; CI ran green on the
   merge commit (per Field 2's "no regressions" oracle on adjacent
   surfaces).
+- **Issue close-state asserted CLOSED.** This is a mandatory verification,
+  not a conditional fallback: γ MUST have run
+  `gh issue view {N} --json state --jq .state` and observed `CLOSED`
+  before writing the closure declaration (`gamma/SKILL.md §2.10` row 15).
+  A merge subject carrying `Closes #N` is necessary but not sufficient —
+  GitHub's auto-close can be skipped by wording drift, and the assertion
+  is the structural catch when it is. If the observed state was not
+  `CLOSED`, γ MUST have run `gh issue close {N}` and recorded the
+  discrepancy (pre-assertion state, corrective action, post-correction
+  state) in `gamma-closeout.md` before this precondition holds. There is
+  no path in which the gate accepts an unasserted or still-OPEN issue
+  state.
 - **CI green on merge SHA.** Required CI workflows have
   `conclusion == "success"` on the merge commit's SHA. A red or pending
   required workflow blocks the gate; the recovery is the release-effector
