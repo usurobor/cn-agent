@@ -27,6 +27,31 @@
     "cdd_artifacts_present": "at least one CDD artifact exists under .cdd/unreleased/{issue}/",
     "checks_passing": "the most recently observed CI/checks state is success"
   },
+  "_doc_phase2": [
+    "cnos#569 (Phase 2, authority flip) adds the first two rules under",
+    "state \"in-progress\" below: a worker (concretely: the δ wake-invoked",
+    "cycle, cds-dispatch/SKILL.md step 7) that has produced",
+    "REVIEW-REQUEST.yml and deliverable matter (a PR and/or commits beyond",
+    "base) REQUESTS the in-progress -> review transition by running",
+    "`cn issues fsm evaluate --issue {N} --apply`; the FSM proposes (and,",
+    "with --apply, applies) the transition only when review_request_present",
+    "is true AND at least one of pr_exists / pr_has_commits /",
+    "branch_has_commits is true. Deliberately NOT gated on all_false:",
+    "[run_active] (unlike the pre-existing dead-in-progress rules further",
+    "down): the primary caller is the worker's OWN wake requesting the",
+    "transition synchronously, at a point where its own workflow run is",
+    "still \"in_progress\" by definition -- gating on a dead run would make",
+    "AC2's entire request-your-own-transition mechanism unusable in its",
+    "main use case. A second new rule blocks (outcome: blocked) the",
+    "symmetric case -- review_request_present true but no deliverable",
+    "matter -- so a worker that writes REVIEW-REQUEST.yml without doing",
+    "real work is refused, not silently repurposed into some other",
+    "transition (AC3: empty-review is structurally impossible). Neither",
+    "rule changes any existing in-progress fixture's outcome: both require",
+    "review_request_present == true, which no Phase-1 fixture sets while",
+    "in-progress (see issues-fsm/issuesfsm_test.go's",
+    "TestSeam_CellKindNotEnforced-adjacent backward-compat coverage)."
+  ],
   "transitions": [
     {
       "state": "ready",
@@ -56,6 +81,24 @@
       "state": "in-progress",
       "trigger": "evaluate",
       "rules": [
+        {
+          "all_true": ["review_request_present"],
+          "any_true": ["pr_exists", "pr_has_commits", "branch_has_commits"],
+          "outcome": "proposed",
+          "action": "propose_status_review",
+          "target_state": "review",
+          "repair_pass": false,
+          "reason": "cnos#569 Phase 2: review requested (REVIEW-REQUEST.yml present) with deliverable matter (a PR and/or commits beyond base); in-progress -> review requested by the worker."
+        },
+        {
+          "all_true": ["review_request_present"],
+          "all_false": ["pr_exists", "pr_has_commits", "branch_has_commits"],
+          "outcome": "blocked",
+          "action": "block",
+          "target_state": "",
+          "evidence_guards": ["pr_exists", "pr_has_commits", "branch_has_commits"],
+          "reason": "cnos#569 Phase 2: review requested (REVIEW-REQUEST.yml present) but no deliverable matter (no PR, no commits beyond base) -- refusing to propose in-progress -> review."
+        },
         {
           "all_true": ["run_active"],
           "outcome": "valid",

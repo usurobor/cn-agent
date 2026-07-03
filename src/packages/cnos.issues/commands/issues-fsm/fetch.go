@@ -1,11 +1,13 @@
 package issuesfsm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +16,17 @@ import (
 	"strconv"
 	"strings"
 )
+
+// githubAPIBase is the GitHub REST API root. It is a package-level var
+// (rather than a literal baked into every call site) solely so the
+// cnos#569 Phase 2 label-write tests can point it at an httptest server
+// and assert on the exact requests issued — the live default is always
+// "https://api.github.com". assembleLive's read-only GETs intentionally
+// keep their existing literal URLs (byte-identical to Phase 1); only the
+// new mutation path below (applyStatusLabel and its helpers) reads this
+// var, since that path is the one cnos#569 adds and the one the tests
+// need to intercept.
+var githubAPIBase = "https://api.github.com"
 
 // assembleLive builds a FactSnapshot for issue N by combining the GitHub
 // REST API (workflow-run / PR / label state, via net/http + a GITHUB_TOKEN)
@@ -192,4 +205,117 @@ func ghGetJSON(ctx context.Context, url, token string, out interface{}) error {
 		return fmt.Errorf("github api %s: HTTP %d", url, resp.StatusCode)
 	}
 	return json.Unmarshal(body, out)
+}
+
+// --- cnos#569 Phase 2: the label-write primitives ---------------------
+//
+// Everything above this point (and everything in the rest of the
+// package) is read-only, exactly as Phase 1 (cnos#568) shipped it. The
+// functions below are the ONLY code in this package that mutate GitHub
+// state, and they are reachable only from issuesfsm.go's --apply branch,
+// itself gated on Evaluate having already produced outcome=="proposed"
+// with a non-empty TargetState (i.e. the transition table's guards
+// already passed — see table.go's Rule matching). No third-party GitHub
+// client: same dependency-free net/http + auth-header idiom as
+// ghGetJSON above.
+
+// ghRequest issues an authenticated non-GET request against the GitHub
+// REST API and returns the raw response for the caller to interpret
+// (status-code handling differs between add-label and remove-label, in
+// particular the 404-tolerance remove-label wants — see
+// applyStatusLabel's doc comment).
+func ghRequest(ctx context.Context, method, apiURL, token string, body []byte) (*http.Response, error) {
+	var r io.Reader
+	if body != nil {
+		r = bytes.NewReader(body)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, apiURL, r)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Set("User-Agent", "cn-issues-fsm")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	return http.DefaultClient.Do(req)
+}
+
+// ghAddLabel adds label to issue (repo "owner/name") via POST
+// /repos/{repo}/issues/{issue}/labels. GitHub's add-labels endpoint is
+// itself idempotent (re-adding a label the issue already carries is not
+// an error), so no pre-check is needed here.
+func ghAddLabel(ctx context.Context, repo string, issue int, token, label string) error {
+	payload, err := json.Marshal(struct {
+		Labels []string `json:"labels"`
+	}{Labels: []string{label}})
+	if err != nil {
+		return err
+	}
+	addURL := fmt.Sprintf("%s/repos/%s/issues/%d/labels", githubAPIBase, repo, issue)
+	resp, err := ghRequest(ctx, http.MethodPost, addURL, token, payload)
+	if err != nil {
+		return fmt.Errorf("github api add label %q: %w", label, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("github api add label %q: HTTP %d: %s", label, resp.StatusCode, string(b))
+	}
+	return nil
+}
+
+// ghRemoveLabel removes label from issue via DELETE
+// /repos/{repo}/issues/{issue}/labels/{label}. A 404 (label already
+// absent) is tolerated, not an error — see applyStatusLabel's doc
+// comment for why.
+func ghRemoveLabel(ctx context.Context, repo string, issue int, token, label string) error {
+	removeURL := fmt.Sprintf("%s/repos/%s/issues/%d/labels/%s", githubAPIBase, repo, issue, url.PathEscape(label))
+	resp, err := ghRequest(ctx, http.MethodDelete, removeURL, token, nil)
+	if err != nil {
+		return fmt.Errorf("github api remove label %q: %w", label, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("github api remove label %q: HTTP %d: %s", label, resp.StatusCode, string(b))
+	}
+	return nil
+}
+
+// applyStatusLabel is the single mutation entry point this package
+// exposes: it moves issue #{issue}'s status:* label from fromState to
+// toState (label names are the CDS "status:" prefix convention
+// CurrentState already reads — see snapshot.go). fromState is the
+// Decision's CurrentState (may be "" if the issue was unlabeled).
+//
+// 404-tolerance decision (documented per the γ scaffold's Friction
+// notes, since it is an implementation-contract-adjacent call the
+// scaffold left to α): the remove-old-label call tolerates a 404
+// (already removed). This keeps a manually-recovered or
+// partially-applied state idempotent — e.g. an operator who already
+// hand-removed status:in-progress, or a prior --apply call that added
+// the new label but crashed before removing the old one, must not turn
+// a second --apply into a hard failure. The add-new-label call is not
+// given the same tolerance for a *conflicting* error (only 200/201 are
+// accepted) because GitHub's add-labels endpoint is already idempotent
+// for the "label already present" case (see ghAddLabel), so there is no
+// analogous benign-404 case to tolerate there.
+func applyStatusLabel(ctx context.Context, repo string, issue int, token, fromState, toState string) error {
+	if fromState != "" && fromState != toState {
+		if err := ghRemoveLabel(ctx, repo, issue, token, "status:"+fromState); err != nil {
+			return fmt.Errorf("remove old label status:%s: %w", fromState, err)
+		}
+	}
+	if err := ghAddLabel(ctx, repo, issue, token, "status:"+toState); err != nil {
+		return fmt.Errorf("add label status:%s: %w", toState, err)
+	}
+	return nil
 }

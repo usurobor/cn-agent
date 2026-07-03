@@ -37,6 +37,21 @@ type Decision struct {
 	// MissingEvidence lists the guard names that were false and caused a
 	// "blocked" outcome (AC3's "missing-evidence list").
 	MissingEvidence []string
+
+	// ApplyAttempted and Applied are cnos#569 Phase 2 additions: set only
+	// when the caller passed --apply. ApplyAttempted is false for every
+	// Phase-1-era caller (no --apply flag existed), which is what keeps
+	// Render's read-only output byte-identical to Phase 1 (the
+	// backward-compat invariant) — the new "applied:" line below is
+	// additive and only appears when ApplyAttempted is true.
+	ApplyAttempted bool
+	// Applied reports whether this Decision's proposed transition was
+	// actually written to GitHub. Meaningful only when ApplyAttempted is
+	// true; false when Outcome != "proposed", when TargetState == ""
+	// (a proposal that isn't a status-label move, e.g. delta-recovery),
+	// or when the write itself failed (the caller surfaces that as a
+	// non-nil error separately -- Applied stays false in that case too).
+	Applied bool
 }
 
 // Render writes the AC2-required decision block to w: current state,
@@ -83,15 +98,29 @@ func (d Decision) Render(w io.Writer) {
 		fmt.Fprintf(w, "  missing_evidence: %s\n", strings.Join(d.MissingEvidence, ", "))
 	}
 	fmt.Fprintf(w, "  proposed_action: %s\n", orNoneStr(d.Action, "none"))
+	// cnos#569 Phase 2: additive-only field. Absent entirely when
+	// ApplyAttempted is false, so evaluate-without---apply output is
+	// byte-identical to Phase 1 (the backward-compat invariant).
+	if d.ApplyAttempted {
+		fmt.Fprintf(w, "  applied: %v\n", d.Applied)
+	}
 	if d.RepairPass {
 		fmt.Fprintln(w, "  repair_pass: true")
 	}
 	fmt.Fprintf(w, "  reason: %s\n", orNoneStr(d.Reason, "(none)"))
 
-	// AC8: this command never mutates a label. Restate it in the output so
-	// the boundary is operator-visible, not just an internal invariant.
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, "(read-only: no label was written; this is a proposal, not an action)")
+	if d.ApplyAttempted {
+		// cnos#569 Phase 2: --apply was passed. This command DOES mutate a
+		// label now, gated on the guards above having already passed
+		// (outcome == "proposed"); "applied" above reports the outcome.
+		fmt.Fprintln(w, "(--apply: mutation attempted per the 'applied' field above; see cnos#569)")
+	} else {
+		// Phase 1 default (cnos#568 AC8): this command never mutates a
+		// label unless --apply is passed. Restate it in the output so the
+		// boundary is operator-visible, not just an internal invariant.
+		fmt.Fprintln(w, "(read-only: no label was written; this is a proposal, not an action)")
+	}
 }
 
 func orNone(s string) string {
