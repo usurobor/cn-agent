@@ -1976,5 +1976,25 @@
     "created": "2026-07-03T04:54:25Z",
     "updated": "2026-07-03T04:54:25Z",
     "url": "https://github.com/usurobor/cnos/issues/560"
+  },
+  {
+    "n": 561,
+    "t": "cdd: alpha/SKILL.md §2.5 self-coherence section-heading notation causes recurring I6 ledger-validation CI failures (2x in a row: #556, #558)",
+    "kind": "cleanup",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-03T04:56:41Z",
+    "updated": "2026-07-03T04:56:41Z",
+    "url": "https://github.com/usurobor/cnos/issues/561"
   }
 ]
