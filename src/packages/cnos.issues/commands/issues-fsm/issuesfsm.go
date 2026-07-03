@@ -1,14 +1,22 @@
-// Package issuesfsm implements `cn issues fsm evaluate`: a read-only issue-
-// state reconciler (cnos#568 Phase 1). It observes an explicit fact snapshot
-// for one issue (live via the GitHub REST API + local git, or from a
-// --fixture for offline/test use), evaluates it against a declarative
-// transition table, and prints the current state, observed facts, enabled
-// transition, blocked reason, and proposed action.
+// Package issuesfsm implements `cn issues fsm evaluate`: an issue-state
+// reconciler. It observes an explicit fact snapshot for one issue (live via
+// the GitHub REST API + local git, or from a --fixture for offline/test
+// use), evaluates it against a declarative transition table, and prints the
+// current state, observed facts, enabled transition, blocked reason, and
+// proposed action.
 //
-// Phase 1 is read-only by design: there is no --apply flag and no code path
-// anywhere in this package writes a GitHub label. Every proposed action
-// (table.go's Rule.Action) is text printed to stdout, never executed. Label-
-// write authority is Phase 2 (cnos#569) — see AC8.
+// Phase 1 (cnos#568) shipped this read-only: no --apply flag, no code path
+// writing a GitHub label, every proposed action (table.go's Rule.Action)
+// text printed to stdout and never executed.
+//
+// Phase 2 (cnos#569) adds the guarded mutation path: an optional --apply
+// flag on this same "evaluate" verb (not a new subcommand — see runEvaluate)
+// that writes the proposed status label, but ONLY when Evaluate already
+// produced outcome=="proposed" with a non-empty TargetState -- i.e. only
+// when the declarative transition table's guards already passed. Without
+// --apply, this command is exactly as read-only as Phase 1 shipped it
+// (byte-identical decision logic and output for any fixture Phase 1's test
+// suite already covers) -- see AC1 in .cdd/unreleased/569/gamma-scaffold.md.
 //
 // Ownership split (AC1): this package owns the generic fact-snapshot model,
 // the evaluator engine, and the CLI. The CDS-specific transition table is
@@ -36,14 +44,16 @@ import (
 // transition table (AC1: package-owned declarative data, not Go literals).
 const defaultTableRelPath = "src/packages/cnos.cds/skills/cds/fsm/transitions.json"
 
-// Run is the entry point for `cn issues fsm`. Phase 1 supports exactly one
-// sub-verb, "evaluate" — args[0] after the "issues fsm" noun-verb pair is
-// resolved by the CLI dispatcher (see cmd_issues_fsm.go). Do not add
-// "apply" here: it is explicitly out of scope for Phase 1 (cnos#568,
-// cnos#569 is Phase 2).
+// Run is the entry point for `cn issues fsm`. This package supports exactly
+// one sub-verb, "evaluate" — args[0] after the "issues fsm" noun-verb pair
+// is resolved by the CLI dispatcher (see cmd_issues_fsm.go). Mutation
+// authority (cnos#569 Phase 2) is a --apply FLAG on "evaluate" (parsed
+// inside runEvaluate), not a separate "apply" sub-verb — the issue's own
+// oracle line (`cn issues fsm evaluate --issue {N} --apply`) pins this
+// shape; there is still no "apply" sub-verb.
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "Usage: cn issues fsm evaluate --issue N [--fixture path] [--table path]")
+		fmt.Fprintln(stderr, "Usage: cn issues fsm evaluate --issue N [--apply] [--fixture path] [--table path]")
 		return fmt.Errorf("cn issues fsm: a subcommand is required")
 	}
 	switch args[0] {
@@ -51,8 +61,8 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return runEvaluate(ctx, args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "✗ cn issues fsm: unknown subcommand %q\n\n", args[0])
-		fmt.Fprintln(stderr, "Phase 1 (cnos#568) supports only: evaluate")
-		fmt.Fprintln(stderr, "(mutation subcommands like 'apply' are Phase 2 — cnos#569 — and do not exist here.)")
+		fmt.Fprintln(stderr, "cn issues fsm supports only: evaluate")
+		fmt.Fprintln(stderr, "(mutation authority is the --apply flag on evaluate — cnos#569 Phase 2 — not a separate 'apply' subcommand.)")
 		return fmt.Errorf("cn issues fsm: unknown subcommand %q", args[0])
 	}
 }
@@ -65,17 +75,36 @@ func runEvaluate(ctx context.Context, args []string, stdout, stderr io.Writer) e
 	table := fs.String("table", "", "path to the transition table JSON (default: repo-root-relative "+defaultTableRelPath+")")
 	repo := fs.String("repo", "", "target repository as owner/name (default: $GITHUB_REPOSITORY)")
 	token := fs.String("token", "", "GitHub token (default: $GITHUB_TOKEN, then $GH_TOKEN)")
+	apply := fs.Bool("apply", false, "apply the proposed transition (cnos#569 Phase 2): writes the status label ONLY when the decision's outcome is \"proposed\" with a non-empty target_state (i.e. only when the transition table's guards already passed). Off by default -- without --apply this command is exactly as read-only as Phase 1 (cnos#568) shipped it. Requires --repo (or $GITHUB_REPOSITORY) to know where to write; works with --fixture for hermetic testing (facts come from the fixture, the write still targets the real --repo).")
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "Usage: cn issues fsm evaluate --issue N [--fixture path] [--table path] [--repo owner/name]")
+		fmt.Fprintln(stderr, "Usage: cn issues fsm evaluate --issue N [--apply] [--fixture path] [--table path] [--repo owner/name]")
 		fmt.Fprintln(stderr)
-		fmt.Fprintln(stderr, "Read-only (cnos#568 Phase 1): prints current state, observed facts,")
-		fmt.Fprintln(stderr, "enabled transition, blocked reason, and proposed action. Never mutates")
-		fmt.Fprintln(stderr, "a label. There is no --apply flag.")
+		fmt.Fprintln(stderr, "Without --apply (default, cnos#568 Phase 1 behavior): read-only. Prints")
+		fmt.Fprintln(stderr, "current state, observed facts, enabled transition, blocked reason, and")
+		fmt.Fprintln(stderr, "proposed action. Never mutates a label.")
+		fmt.Fprintln(stderr)
+		fmt.Fprintln(stderr, "With --apply (cnos#569 Phase 2): additionally writes the proposed status")
+		fmt.Fprintln(stderr, "label, but ONLY when the evaluated outcome is \"proposed\" with a non-empty")
+		fmt.Fprintln(stderr, "target_state -- i.e. only when the transition table's guards passed. A")
+		fmt.Fprintln(stderr, "\"blocked\" outcome exits nonzero and writes nothing (e.g. an empty")
+		fmt.Fprintln(stderr, "status:review request with no PR/commits/REVIEW-REQUEST.yml evidence).")
 		fmt.Fprintln(stderr)
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+
+	r := *repo
+	if r == "" {
+		r = os.Getenv("GITHUB_REPOSITORY")
+	}
+	tk := *token
+	if tk == "" {
+		tk = os.Getenv("GITHUB_TOKEN")
+	}
+	if tk == "" {
+		tk = os.Getenv("GH_TOKEN")
 	}
 
 	var snap FactSnapshot
@@ -89,17 +118,6 @@ func runEvaluate(ctx context.Context, args []string, stdout, stderr io.Writer) e
 	default:
 		if *issue == 0 {
 			return fmt.Errorf("cn issues fsm evaluate: --issue is required (or use --fixture for offline mode)")
-		}
-		r := *repo
-		if r == "" {
-			r = os.Getenv("GITHUB_REPOSITORY")
-		}
-		tk := *token
-		if tk == "" {
-			tk = os.Getenv("GITHUB_TOKEN")
-		}
-		if tk == "" {
-			tk = os.Getenv("GH_TOKEN")
 		}
 		snap, err = assembleLive(ctx, r, *issue, tk)
 		if err != nil {
@@ -126,7 +144,42 @@ func runEvaluate(ctx context.Context, args []string, stdout, stderr io.Writer) e
 	if err != nil {
 		return err
 	}
+
+	var applyErr error
+	if *apply {
+		dec.ApplyAttempted = true
+		switch {
+		case dec.Outcome == "proposed" && dec.TargetState != "":
+			// Guard-gated mutation: reachable only because Evaluate already
+			// matched a rule whose outcome is "proposed" -- the table's
+			// guards passed (AC1). This is the package's only write path.
+			if r == "" {
+				applyErr = fmt.Errorf("cn issues fsm evaluate --apply: --repo (or $GITHUB_REPOSITORY) is required to apply a transition")
+				break
+			}
+			if err := applyStatusLabel(ctx, r, dec.Issue, tk, dec.CurrentState, dec.TargetState); err != nil {
+				applyErr = fmt.Errorf("cn issues fsm evaluate --apply: %w", err)
+				break
+			}
+			dec.Applied = true
+		case dec.Outcome == "blocked":
+			// AC3: empty-review (or any other blocked transition) is
+			// structurally refused -- no write attempted, nonzero exit.
+			applyErr = fmt.Errorf("cn issues fsm evaluate --apply: transition blocked (%s); refusing to mutate any label", orNoneStr(dec.BlockedReason, "no reason given"))
+		default:
+			// outcome == "valid" (nothing proposed), or a "proposed"
+			// action with no direct status target (e.g.
+			// propose_delta_recovery): nothing this command can apply as
+			// a label mutation. Not an error -- this is the AC1
+			// idempotence case: re-running --apply against the
+			// post-mutation state finds outcome=="valid" and is a no-op.
+		}
+	}
+
 	dec.Render(stdout)
+	if applyErr != nil {
+		return applyErr
+	}
 	return nil
 }
 

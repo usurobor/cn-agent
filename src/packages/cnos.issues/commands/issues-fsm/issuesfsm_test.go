@@ -3,10 +3,14 @@ package issuesfsm
 import (
 	"bytes"
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -257,6 +261,8 @@ func TestAC7_Idempotent(t *testing.T) {
 		"testdata/in-progress-dead-with-commits.json",
 		"testdata/changes-no-repair.json",
 		"testdata/changes-with-repair.json",
+		"testdata/in-progress-review-request-with-matter.json",
+		"testdata/in-progress-review-request-no-matter.json",
 	} {
 		t.Run(fixture, func(t *testing.T) {
 			tab := loadRealTable(t)
@@ -294,56 +300,309 @@ func TestAC7_Idempotent(t *testing.T) {
 	}
 }
 
-// --- AC8: zero label mutation. No --apply flag exists; no gh/GitHub
-// label-write call anywhere in this package's non-test source. ---
+// --- cnos#569 Phase 2: --apply is a guard-gated mutation path. Phase 1's
+// AC8 locked "zero label mutation, no --apply flag, no gh/GitHub label-
+// write call anywhere in this package's non-test source" -- that
+// forward-reference ("Label-write authority is Phase 2 (cnos#569)") is
+// now consumed. The tests below replace the old Phase-1 negative locks
+// with the Phase-2 positive contract: --apply exists, but every write it
+// performs is reachable only after Evaluate already produced
+// outcome=="proposed" with a non-empty target_state (AC1), and every
+// blocked outcome (AC3) exits nonzero with zero write calls. ---
 
-func TestAC8_NoApplyFlag(t *testing.T) {
+// withFakeGitHub points githubAPIBase at an httptest server for the
+// duration of the test and restores the real default on cleanup, so the
+// new label-write path (fetch.go's ghAddLabel/ghRemoveLabel) never
+// reaches the network.
+func withFakeGitHub(t *testing.T, handler http.HandlerFunc) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(handler)
+	orig := githubAPIBase
+	githubAPIBase = srv.URL
+	t.Cleanup(func() {
+		srv.Close()
+		githubAPIBase = orig
+	})
+	return srv
+}
+
+// TestApply_ReviewTransitionAppliesOnGuardPassAndIsIdempotent is AC1's
+// positive + idempotence case for the new in-progress -> review request
+// path (AC2's mechanism): a worker with REVIEW-REQUEST.yml + deliverable
+// matter present gets the transition applied and confirmed; a second
+// --apply against the post-mutation state (status:review, valid) is a
+// real second call that performs zero writes.
+func TestApply_ReviewTransitionAppliesOnGuardPassAndIsIdempotent(t *testing.T) {
+	var mu sync.Mutex
+	var requests []string
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodPost {
+			w.Write([]byte(`[]`))
+		}
+	})
+
 	var stdout, stderr bytes.Buffer
-	// --apply is not a registered flag: flag.ContinueOnError should reject
-	// it as unknown.
-	err := Run(context.Background(), []string{"evaluate", "--apply", "--issue", "1"}, nil, &stdout, &stderr)
-	if err == nil {
-		t.Fatal("expected an error: --apply is not a recognized flag in Phase 1")
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "700", "--apply",
+		"--fixture", "testdata/in-progress-review-request-with-matter.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "applied: true") {
+		t.Errorf("expected \"applied: true\" in output, got:\n%s", stdout.String())
+	}
+
+	mu.Lock()
+	got := append([]string(nil), requests...)
+	mu.Unlock()
+	wantDelete := "DELETE /repos/acme/widgets/issues/700/labels/" + url.PathEscape("status:in-progress")
+	wantPost := "POST /repos/acme/widgets/issues/700/labels"
+	if len(got) != 2 || got[0] != wantDelete || got[1] != wantPost {
+		t.Fatalf("requests = %v, want [%q %q]", got, wantDelete, wantPost)
+	}
+
+	// Idempotence (AC1): a REAL second --apply call, against a fixture
+	// representing the post-mutation state (status:review with a PR --
+	// testdata/review-with-pr.json, already the AC3 valid-review
+	// fixture), must perform zero writes.
+	mu.Lock()
+	requests = nil
+	mu.Unlock()
+	stdout.Reset()
+	stderr.Reset()
+	err = Run(context.Background(), []string{
+		"evaluate", "--issue", "700", "--apply",
+		"--fixture", "testdata/review-with-pr.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("second Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "applied: false") {
+		t.Errorf("expected \"applied: false\" (no-op) on the second call, got:\n%s", stdout.String())
+	}
+	mu.Lock()
+	n := len(requests)
+	mu.Unlock()
+	if n != 0 {
+		t.Errorf("expected zero label-write requests on the idempotent second call, got %d: %v", n, requests)
 	}
 }
 
-func TestAC8_NoLabelMutationCodeInSource(t *testing.T) {
-	forbidden := []string{
-		// A registered --apply flag (as opposed to comment prose that
-		// documents its absence) is the actual AC8 regression to catch.
-		`fs.Bool("apply"`,
-		`fs.String("apply"`,
-		"gh issue edit",
-		"gh label",
-		"-X PATCH",
-		"-X POST",
-		"/labels\"",
-		"AddLabel",
-		"RemoveLabel",
+// TestApply_RequeueTransitionAppliesOnGuardPassAndIsIdempotent covers the
+// same AC1 positive+idempotence shape for the pre-existing (Phase 1)
+// in-progress -> todo requeue proposal, proving --apply's guard-gating
+// generalizes beyond the new review-request rule.
+func TestApply_RequeueTransitionAppliesOnGuardPassAndIsIdempotent(t *testing.T) {
+	var mu sync.Mutex
+	var requests []string
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodPost {
+			w.Write([]byte(`[]`))
+		}
+	})
+
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "602", "--apply",
+		"--fixture", "testdata/in-progress-dead-no-matter.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
 	}
-	entries, err := os.ReadDir(".")
+	if !strings.Contains(stdout.String(), "applied: true") {
+		t.Errorf("expected \"applied: true\" in output, got:\n%s", stdout.String())
+	}
+
+	mu.Lock()
+	got := append([]string(nil), requests...)
+	mu.Unlock()
+	wantDelete := "DELETE /repos/acme/widgets/issues/602/labels/" + url.PathEscape("status:in-progress")
+	wantPost := "POST /repos/acme/widgets/issues/602/labels"
+	if len(got) != 2 || got[0] != wantDelete || got[1] != wantPost {
+		t.Fatalf("requests = %v, want [%q %q]", got, wantDelete, wantPost)
+	}
+
+	mu.Lock()
+	requests = nil
+	mu.Unlock()
+	stdout.Reset()
+	stderr.Reset()
+	err = Run(context.Background(), []string{
+		"evaluate", "--issue", "602", "--apply",
+		"--fixture", "testdata/todo.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("second Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "applied: false") {
+		t.Errorf("expected \"applied: false\" (no-op) on the second call, got:\n%s", stdout.String())
+	}
+	mu.Lock()
+	n := len(requests)
+	mu.Unlock()
+	if n != 0 {
+		t.Errorf("expected zero label-write requests on the idempotent second call, got %d: %v", n, requests)
+	}
+}
+
+// TestApply_BlockedReviewRequestRefusesAndMutatesNothing is AC1's
+// negative case + AC3's structural block, for the new rule: a worker
+// that wrote REVIEW-REQUEST.yml but has no deliverable matter (no PR, no
+// commits) is refused -- nonzero exit, zero label-write calls.
+func TestApply_BlockedReviewRequestRefusesAndMutatesNothing(t *testing.T) {
+	var calls int
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusOK)
+	})
+
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "701", "--apply",
+		"--fixture", "testdata/in-progress-review-request-no-matter.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected a nonzero-exit error for a blocked --apply transition")
+	}
+	if calls != 0 {
+		t.Errorf("expected zero label-write calls for a blocked transition, got %d", calls)
+	}
+	if !strings.Contains(stdout.String(), "outcome: blocked") {
+		t.Errorf("expected \"outcome: blocked\" in rendered output, got:\n%s", stdout.String())
+	}
+}
+
+// TestApply_EmptyReviewStateBlocked reuses the Phase-1 review-empty.json
+// fixture (status:review already set, no PR/commits/REVIEW-REQUEST.yml)
+// under --apply: the pre-existing (unchanged) review-state rule already
+// blocks it, so --apply must refuse it too -- AC3 is not limited to the
+// new in-progress rule.
+func TestApply_EmptyReviewStateBlocked(t *testing.T) {
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("unexpected label-write request for a blocked transition: %s %s", r.Method, r.URL.Path)
+	})
+
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "601", "--apply",
+		"--fixture", "testdata/review-empty.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected a nonzero-exit error for status:review with no deliverable evidence")
+	}
+}
+
+// TestAC569_InProgressReviewRequestWithMatterProposesReview and
+// TestAC569_InProgressReviewRequestNoMatterBlocked exercise the new
+// transitions.json rules directly through Evaluate (no CLI / no
+// network), mirroring this file's existing per-fixture AC-style tests.
+func TestAC569_InProgressReviewRequestWithMatterProposesReview(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-review-request-with-matter.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") {
-			continue
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.TargetState != "review" {
+		t.Errorf("outcome=%q target_state=%q, want proposed/review", dec.Outcome, dec.TargetState)
+	}
+	if dec.Action != "propose_status_review" {
+		t.Errorf("action = %q, want propose_status_review", dec.Action)
+	}
+	if dec.EnabledTransition != "in-progress -> review" {
+		t.Errorf("enabled_transition = %q, want %q", dec.EnabledTransition, "in-progress -> review")
+	}
+}
+
+func TestAC569_InProgressReviewRequestNoMatterBlocked(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-review-request-no-matter.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "blocked" {
+		t.Fatalf("outcome = %q, want blocked", dec.Outcome)
+	}
+	if dec.TargetState == "review" {
+		t.Fatal("cnos#569 AC3 regression: must not propose review without deliverable matter")
+	}
+}
+
+// TestApplyStatusLabel_ToleratesNotFoundOnRemove and
+// TestApplyStatusLabel_NoRemovalWhenFromStateEmpty lock the two
+// implementation-contract-adjacent decisions the γ scaffold's Friction
+// notes flagged as α's call to make (see self-coherence.md): a 404 on
+// the remove-old-label call is tolerated (already-removed / manually-
+// recovered state stays idempotent), and no remove call is issued at
+// all when there was no prior status label to remove.
+func TestApplyStatusLabel_ToleratesNotFoundOnRemove(t *testing.T) {
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodDelete:
+			w.WriteHeader(http.StatusNotFound)
+		case http.MethodPost:
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`[]`))
 		}
-		if strings.HasSuffix(e.Name(), "_test.go") {
-			// This test file itself legitimately contains the forbidden
-			// strings as string literals to check for; skip it.
-			continue
+	})
+	if err := applyStatusLabel(context.Background(), "acme/widgets", 1, "tok", "in-progress", "review"); err != nil {
+		t.Fatalf("applyStatusLabel: %v (expected a 404 on remove to be tolerated)", err)
+	}
+}
+
+func TestApplyStatusLabel_NoRemovalWhenFromStateEmpty(t *testing.T) {
+	var deleteCalls int
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			deleteCalls++
 		}
-		data, err := os.ReadFile(e.Name())
-		if err != nil {
-			t.Fatal(err)
-		}
-		content := string(data)
-		for _, f := range forbidden {
-			if strings.Contains(content, f) {
-				t.Errorf("%s contains forbidden label-mutation pattern %q (AC8 violation)", e.Name(), f)
-			}
-		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`[]`))
+	})
+	if err := applyStatusLabel(context.Background(), "acme/widgets", 1, "tok", "", "todo"); err != nil {
+		t.Fatalf("applyStatusLabel: %v", err)
+	}
+	if deleteCalls != 0 {
+		t.Errorf("expected no DELETE call when fromState is empty, got %d", deleteCalls)
+	}
+}
+
+// TestApply_MissingRepoErrors: --apply without --repo (and no
+// $GITHUB_REPOSITORY) cannot know where to write, even when the
+// evaluated outcome is "proposed" -- must error, not silently skip the
+// write.
+func TestApply_MissingRepoErrors(t *testing.T) {
+	t.Setenv("GITHUB_REPOSITORY", "")
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "700", "--apply",
+		"--fixture", "testdata/in-progress-review-request-with-matter.json",
+		"--table", realTablePath,
+	}, nil, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected an error: --apply with no --repo/$GITHUB_REPOSITORY cannot apply a transition")
 	}
 }
 
@@ -426,6 +685,8 @@ func TestSeam_CellKindNotEnforced(t *testing.T) {
 		"testdata/review-empty.json",
 		"testdata/in-progress-dead-with-commits.json",
 		"testdata/changes-with-repair.json",
+		"testdata/in-progress-review-request-with-matter.json",
+		"testdata/in-progress-review-request-no-matter.json",
 	} {
 		base, err := LoadFixture(fx)
 		if err != nil {
