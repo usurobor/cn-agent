@@ -1107,26 +1107,6 @@
     "url": "https://github.com/usurobor/cnos/issues/329"
   },
   {
-    "n": 368,
-    "t": "bug(cdd): cycle close-out can leave issue OPEN — Closes-keyword inconsistently applied, γ fallback skipped on docs-only disconnect",
-    "kind": "bugfix",
-    "areas": [
-      "cdd"
-    ],
-    "pri": "P2",
-    "status": "in-progress",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-05-16T17:55:51Z",
-    "updated": "2026-07-03T13:33:10Z",
-    "url": "https://github.com/usurobor/cnos/issues/368"
-  },
-  {
     "n": 372,
     "t": "Roadmap: Operator UX for CDD — observation-first, multi-surface",
     "kind": "doctrine",
