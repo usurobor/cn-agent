@@ -1,0 +1,126 @@
+{
+  "_doc": [
+    "cnos#568 (CDS issue-state FSM, Phase 1) — the single declarative source",
+    "of truth for CDS issue-status transitions (AC1). This is package-owned",
+    "data (cnos.cds), consumed by the generic, package-agnostic evaluator",
+    "engine at src/packages/cnos.issues/commands/issues-fsm/table.go. The",
+    "engine never hardcodes a CDS state name in a switch/if-chain: it looks",
+    "up the current state's entry in `transitions` below and evaluates each",
+    "`rules[]` guard against the observed FactSnapshot in order, first match",
+    "wins. Guard names reference the fixed, generic predicate vocabulary",
+    "implemented once in table.go's guard registry (run_active,",
+    "branch_has_commits, pr_exists, ... — see `guards` below); adding a new",
+    "CDS state or rule requires editing only this file, not Go source.",
+    "Phase 1 is read-only: every `action` here is a *proposal* the CLI",
+    "prints, never an executed mutation (no label writes anywhere in this",
+    "package — see AC8)."
+  ],
+  "states": ["ready", "todo", "in-progress", "review", "changes"],
+  "guards": {
+    "run_active": "the issue's dispatch workflow run is queued or in_progress",
+    "branch_exists": "the cycle/{issue} branch exists",
+    "branch_has_commits": "cycle/{issue} has commits beyond its base (non-empty diff)",
+    "pr_exists": "a pull request for the issue exists",
+    "pr_has_commits": "the PR has commits beyond its base",
+    "review_request_present": "REVIEW-REQUEST.yml is present under .cdd/unreleased/{issue}/",
+    "repair_contract_present": "a repair contract / prior beta or delta findings are present (e.g. delta-repair.md, or beta-review.md with an iterate verdict) — required for changes -> todo repair re-entry per cnos#516",
+    "cdd_artifacts_present": "at least one CDD artifact exists under .cdd/unreleased/{issue}/",
+    "checks_passing": "the most recently observed CI/checks state is success"
+  },
+  "transitions": [
+    {
+      "state": "ready",
+      "trigger": "evaluate",
+      "rules": [
+        {
+          "outcome": "proposed",
+          "action": "propose_status_todo",
+          "target_state": "todo",
+          "repair_pass": false,
+          "reason": "status:ready has no Phase-1 gating guard; release for dispatch (operator flips ready -> todo)."
+        }
+      ]
+    },
+    {
+      "state": "todo",
+      "trigger": "evaluate",
+      "rules": [
+        {
+          "outcome": "valid",
+          "action": "none",
+          "reason": "status:todo is already dispatchable; no evaluator action needed."
+        }
+      ]
+    },
+    {
+      "state": "in-progress",
+      "trigger": "evaluate",
+      "rules": [
+        {
+          "all_true": ["run_active"],
+          "outcome": "valid",
+          "action": "none",
+          "reason": "workflow run is active (queued/in_progress); awaiting completion, no transition proposed."
+        },
+        {
+          "all_false": ["run_active"],
+          "any_true": ["branch_has_commits", "pr_exists", "pr_has_commits"],
+          "outcome": "proposed",
+          "action": "propose_delta_recovery",
+          "target_state": "",
+          "repair_pass": false,
+          "reason": "dead run with matter: no active run, but cycle/{issue} has commits beyond base and/or a PR exists. Never re-dispatch blind over existing work (cnos#368 failure mode) -- propose delta-recovery (open/request a recovery PR) instead."
+        },
+        {
+          "outcome": "proposed",
+          "action": "propose_status_todo",
+          "target_state": "todo",
+          "repair_pass": false,
+          "reason": "dead run with no matter: no active run, branch absent/empty, no PR -- safe to requeue to status:todo."
+        }
+      ]
+    },
+    {
+      "state": "review",
+      "trigger": "evaluate",
+      "rules": [
+        {
+          "any_true": ["pr_exists", "branch_has_commits", "review_request_present"],
+          "outcome": "valid",
+          "action": "none",
+          "reason": "review evidence present (PR, commits beyond base, or REVIEW-REQUEST.yml); status:review is valid."
+        },
+        {
+          "all_false": ["pr_exists", "branch_has_commits", "review_request_present"],
+          "outcome": "blocked",
+          "action": "block",
+          "target_state": "",
+          "evidence_guards": ["pr_exists", "branch_has_commits", "review_request_present"],
+          "reason": "empty review: status:review with no PR, no commits beyond base, and no REVIEW-REQUEST.yml present."
+        }
+      ]
+    },
+    {
+      "state": "changes",
+      "trigger": "evaluate",
+      "rules": [
+        {
+          "all_true": ["repair_contract_present"],
+          "outcome": "proposed",
+          "action": "propose_repair_dispatch",
+          "target_state": "todo",
+          "repair_pass": true,
+          "reason": "repair contract / prior beta-delta findings present; changes -> todo repair re-entry enabled (repair_pass)."
+        },
+        {
+          "all_false": ["repair_contract_present"],
+          "outcome": "blocked",
+          "action": "block",
+          "target_state": "",
+          "evidence_guards": ["repair_contract_present"],
+          "reason": "changes -> todo blocked: no repair contract or prior beta/delta findings present; repair re-entry requires repair context (cnos#516)."
+        }
+      ]
+    }
+  ]
+}

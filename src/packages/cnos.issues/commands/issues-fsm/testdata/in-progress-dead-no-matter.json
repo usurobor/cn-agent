@@ -1,0 +1,14 @@
+{
+  "issue": 602,
+  "labels": ["dispatch:cell", "protocol:cds", "status:in-progress"],
+  "run_state": "completed",
+  "run_conclusion": "failure",
+  "branch_exists": false,
+  "commits_beyond_base": 0,
+  "pr_exists": false,
+  "pr_commit_count": 0,
+  "cdd_artifacts": [],
+  "review_request_present": false,
+  "repair_contract_present": false,
+  "checks_state": ""
+}
