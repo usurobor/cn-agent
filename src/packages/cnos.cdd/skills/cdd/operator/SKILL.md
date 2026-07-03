@@ -291,6 +291,7 @@ When a dispatched session SIGTERMs, hits a timeout, or crashes before committing
 - **Override declaration.** If δ commits work on behalf of an agent, this is an implicit override; δ declares it per [`delta/SKILL.md`](../delta/SKILL.md) §3 with the standard shape ("Override: operator-identity commit for cycle #N. Reason: …"). The mechanics record entry lives in `self-coherence.md §Debt` per harness §6.4.
 - **Grade implication.** A cycle with operator-identity recovery commits is a cycle with operator override; per `release/SKILL.md §3.8`, the γ-axis grade reflects the override.
 - **Prevention.** The recovery procedure is the failure path; the prevention path is a correctly-sized dispatch budget per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule" (heuristic constants in this file's §5.2). Record budget/AC count in PRA telemetry (`post-release/SKILL.md` §4) so the heuristic refines.
+- **Close-state assertion parity.** If recovery carries a SIGTERM-terminated cycle through to a merge, δ MUST run the same close-state hard gate a normal γ close-out runs (`gamma/SKILL.md §2.10` row 15: `gh issue view {N} --json state --jq .state` MUST return `CLOSED`) before declaring the recovered cycle closed — mechanics at `harness/SKILL.md` §6.6. Recovery changes who runs the closure gate, not whether it runs.
 
 ---
 
