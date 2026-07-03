@@ -59,3 +59,18 @@ Per this task's own instructions, the following release-time steps were **not** 
 - opening or updating a PR
 
 None of the above bears on the triage conclusion above: there are no blocking findings and no committed MCA to lose by deferring them.
+
+---
+
+## Deliverable evidence (dispatch-wake closeout-integrity preflight, cnos#524)
+
+```
+deliverable_evidence:
+  pr: "#572 (cycle/570 -> main)"
+  head_sha: "213af838e78784f4ec24a986935ab07f77b3d7d6"
+  base_sha: "3a511121c4cf50fa4024494ae00f7bca6fae47dd"
+  commits_beyond_base: 5
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+All five items of the §Closeout integrity preflight are satisfied: PR #572 exists and references `#570`; `cycle/570` HEAD (`213af838`) differs from base (`3a511121`) by 5 commits; the branch exists and diverges from base; all six required `.cdd/unreleased/570/` artifacts are present; this block names the PR number and head/base SHAs as evidence.
