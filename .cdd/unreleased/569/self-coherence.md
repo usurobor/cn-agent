@@ -2,7 +2,7 @@
 
 manifest:
   planned_sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check]
+  completed: [Gap, Skills, ACs, Self-check, Debt]
 
 ## §Gap
 
@@ -125,3 +125,11 @@ Neither new rule changes any Phase-1 fixture's outcome — both require `review_
 **Harness audit for schema-bearing changes (per `alpha/SKILL.md` §2.4):** `transitions.json` is schema-bearing CDS data; its one Go consumer (`table.go`) and its one non-Go "harness" (none exists — no shell/CI script parses `transitions.json` directly; `check-dispatch-closeout-integrity.sh` implements an *independent* empty-review predicate in shell, not a `transitions.json` reader, so it is a peer detector, not a harness of this schema) were both identified and left correctly alone. `FactSnapshot`'s JSON shape is unchanged (no new fields), so no fixture-writer or CI-emitted-example audit was needed beyond the three new `testdata/*.json` fixtures α authored to the existing schema.
 
 **Every claim backed by evidence in the diff?** Yes — §ACs cites concrete test names, file paths, and command output for every AC; no claim above rests on "should work" without a corresponding test or manual run captured in this cycle.
+
+## §Debt
+
+- **I5 (skill-frontmatter-check) not executed locally.** The `cue` CLI is unavailable in this sandbox. Structural argument for why it should still pass (frontmatter blocks untouched — see §Self-check) is documented, but this is reasoning, not a run. β / CI should confirm.
+- **Pre-existing I6 failure, unrelated to this cycle.** `cn cdd verify --unreleased` reports one failure (`.cdd/unreleased/512/self-coherence.md` missing) on **both** `origin/main` and `cycle/569` HEAD, byte-identical output before/after this cycle's changes (verified via diff of the two runs' warning/error lines). This is stale repo debt from an unrelated older cycle (#512), not introduced or touched by cnos#569. Not fixed in this cycle (out of scope — #512 is not named anywhere in this issue or scaffold, and "fixing" it would mean guessing at #512's actual missing artifact content, which α has no authority or context to author).
+- **`assembleLive`'s live-mode path for `--apply` is not covered by an automated test that exercises the full live-fetch + live-apply round trip against a real GitHub API shape** (only the fixture-facts + fake-server-apply combination is tested, per the scaffold's own oracle: "or `--fixture` for hermetic tests"). This mirrors Phase 1's own test-coverage shape (`assembleLive`'s live GET path was likewise never exercised against a real network in Phase 1's test suite) — not a regression, but also not newly closed by this cycle. A future cycle wiring an end-to-end live smoke (e.g. against a disposable test repo) would strengthen this, but is out of this issue's scope (issue's own proof plan names fixture-based positive/negative cases, not a live-network integration test).
+- **No PR opened.** Per dispatch instructions, α does not open the PR this cycle — δ does, after β converges.
+- **γ's non-binding guard-combination suggestion was not adopted verbatim.** This is not "debt" in the technical-shortfall sense, but flagging explicitly per the process discipline: α deviated from γ's suggested `any_true`/`all_false: [run_active]` shape and documented why in §ACs/AC1. If β disagrees with the reasoning, this is the one design surface most likely to generate a fix-round finding.
