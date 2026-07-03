@@ -2020,29 +2020,5 @@
     "created": "2026-07-03T20:41:49Z",
     "updated": "2026-07-03T21:34:35Z",
     "url": "https://github.com/usurobor/cnos/issues/569"
-  },
-  {
-    "n": 570,
-    "t": "cdd/cds: codify cell kinds and the matter each cell produces",
-    "kind": "process",
-    "areas": [
-      "cdd",
-      "cds",
-      "coherence",
-      "issues",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-03T21:27:55Z",
-    "updated": "2026-07-03T22:20:21Z",
-    "url": "https://github.com/usurobor/cnos/issues/570"
   }
 ]
