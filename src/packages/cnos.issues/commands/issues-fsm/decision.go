@@ -68,6 +68,11 @@ func (d Decision) Render(w io.Writer) {
 	fmt.Fprintf(w, "  review_request_present: %v\n", d.Facts.ReviewRequestPresent)
 	fmt.Fprintf(w, "  repair_contract_present: %v\n", d.Facts.RepairContractPresent)
 	fmt.Fprintf(w, "  checks_state: %s\n", orNone(d.Facts.ChecksState))
+	// cell_kind seam (cnos#568 note / cnos#570 taxonomy): observed but not
+	// consumed by any transition rule. Shown so the defaulting is operator-
+	// visible rather than silent.
+	fmt.Fprintf(w, "  cell_kind: %s (source: %s, defaulted_to: %s)\n",
+		orNone(d.Facts.CellKind.Observed), orNone(d.Facts.CellKind.Source), orNone(d.Facts.CellKind.DefaultedTo))
 	fmt.Fprintln(w)
 
 	fmt.Fprintln(w, "Decision:")

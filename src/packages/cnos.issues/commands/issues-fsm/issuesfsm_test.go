@@ -65,6 +65,7 @@ func TestAC2_RunPrintsFullDecisionBlock(t *testing.T) {
 		"Current state: review",
 		"Observed facts:",
 		"labels:",
+		"cell_kind: (none) (source: absent, defaulted_to: implementation)",
 		"enabled_transition:",
 		"blocked_reason:",
 		"proposed_action:",
@@ -386,5 +387,63 @@ func TestEvaluate_UnknownState_Blocked(t *testing.T) {
 	}
 	if dec.Outcome != "blocked" {
 		t.Errorf("outcome = %q, want blocked for a state absent from the table", dec.Outcome)
+	}
+}
+
+// --- cell_kind seam (cnos#568 operator note / cnos#570 taxonomy).
+// Contract: the field is OPTIONAL and DEFAULTED when absent, and it is NOT
+// ENFORCED — no transition rule consumes it, so its value cannot change any
+// Phase-1 decision. This test locks both halves so the seam cannot silently
+// become enforcement without failing here. ---
+
+func TestSeam_CellKindDefaultedWhenAbsent(t *testing.T) {
+	// Every shipped fixture omits cell_kind; LoadFixture must record the
+	// defaulting explicitly rather than leaving it silent/empty.
+	snap, err := LoadFixture("testdata/review-with-pr.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.CellKind.Observed != "" {
+		t.Errorf("Observed = %q, want empty (no source parsed in Phase 1)", snap.CellKind.Observed)
+	}
+	if snap.CellKind.Source != "absent" {
+		t.Errorf("Source = %q, want \"absent\"", snap.CellKind.Source)
+	}
+	if snap.CellKind.DefaultedTo != "implementation" {
+		t.Errorf("DefaultedTo = %q, want \"implementation\"", snap.CellKind.DefaultedTo)
+	}
+}
+
+func TestSeam_CellKindNotEnforced(t *testing.T) {
+	tab := loadRealTable(t)
+	// Evaluate the same facts under several cell_kind values (including the
+	// non-implementation kinds cnos#570 will define). The Decision must be
+	// byte-identical every time: Phase 1 observes cell_kind but no rule
+	// consumes it, so it cannot change the outcome, target, or action.
+	for _, fx := range []string{
+		"testdata/review-empty.json",
+		"testdata/in-progress-dead-with-commits.json",
+		"testdata/changes-with-repair.json",
+	} {
+		base, err := LoadFixture(fx)
+		if err != nil {
+			t.Fatalf("%s: %v", fx, err)
+		}
+		want, err := Evaluate(tab, base)
+		if err != nil {
+			t.Fatalf("%s: %v", fx, err)
+		}
+		for _, kind := range []string{"implementation", "issue_authoring", "wave", "cleanup", "recovery"} {
+			snap := base
+			snap.CellKind = CellKind{Observed: kind, Source: "issue_body"}
+			got, err := Evaluate(tab, snap)
+			if err != nil {
+				t.Fatalf("%s / %s: %v", fx, kind, err)
+			}
+			if got.Outcome != want.Outcome || got.TargetState != want.TargetState || got.Action != want.Action {
+				t.Errorf("%s: cell_kind=%q changed the decision (outcome %q→%q, target %q→%q, action %q→%q) — seam must not be enforced",
+					fx, kind, want.Outcome, got.Outcome, want.TargetState, got.TargetState, want.Action, got.Action)
+			}
+		}
 	}
 }

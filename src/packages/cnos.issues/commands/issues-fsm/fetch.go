@@ -87,6 +87,7 @@ func assembleLive(ctx context.Context, repo string, issue int, token string) (Fa
 	}
 
 	if repo == "" {
+		snap.normalizeCellKind()
 		return snap, nil
 	}
 
@@ -127,6 +128,7 @@ func assembleLive(ctx context.Context, repo string, issue int, token string) (Fa
 		}
 	}
 
+	snap.normalizeCellKind()
 	return snap, nil
 }
 
