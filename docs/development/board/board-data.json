@@ -2000,27 +2000,6 @@
     "url": "https://github.com/usurobor/cnos/issues/567"
   },
   {
-    "n": 568,
-    "t": "cds/issues: FSM Phase 1 — read-only issue-state reconciler (cn issues fsm evaluate)",
-    "kind": "tooling",
-    "areas": [
-      "cds",
-      "issues"
-    ],
-    "pri": "P1",
-    "status": "in-progress",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-03T20:41:26Z",
-    "updated": "2026-07-03T21:34:31Z",
-    "url": "https://github.com/usurobor/cnos/issues/568"
-  },
-  {
     "n": 569,
     "t": "cds/issues: FSM Phase 2 — authority flip (FSM applies labels; workers request transitions)",
     "kind": "process",
