@@ -131,8 +131,17 @@ Recorded by δ post-PR-open, confirming all five closeout-integrity preflight co
 ## §R2 addendum — deliverable evidence at the repaired head
 
 This repair round supersedes the closeout's original deliverable-evidence
-block (which pointed at R1's now-rejected head). Updated evidence below;
-PR #557 will be updated to reference `cycle/556`'s new tip.
+block (which pointed at R1's now-rejected head). **Discovery mid-repair:**
+PR #557 was already squash-merged into `main` (merge commit `4e03082b`,
+merged by the operator at 2026-07-03T01:03:03Z) carrying exactly R1's
+rejected state — before this repair round began. `main`'s tree for
+`.cdd/unreleased/556/*` and `src/packages/cnos.issues/*` was confirmed
+byte-identical to `cycle/556`'s pre-repair tip (`7cbd07b7`), so the repair
+commits (originally authored on `cycle/556`) were cherry-picked cleanly
+onto a fresh branch off current `main` and pushed as `cycle/556-r2`,
+since a merged PR cannot be updated in place. A new PR against `main` is
+opened from `cycle/556-r2` to carry the repair; it supersedes #557 rather
+than amending it.
 
 ```yaml
 repair_evidence:
@@ -141,19 +150,26 @@ repair_evidence:
     - finding-1: "Go implementation must live under src/packages/cnos.issues/commands/issues-map/"
     - finding-6: "receipt honesty on package-command dispatch disposition (Option A vs B)"
   repairs_completed:
-    - finding-1: "reinstated via git revert of R1's reverts (df4bfd8b, 4d9695f8); independently confirmed by beta-review.md §R2"
+    - finding-1: "reinstated via git revert of R1's reverts (df4bfd8b, 4d9695f8) on cycle/556, then cherry-picked cleanly onto cycle/556-r2 (base: main @ 1c1cfb06, PR #557's merged R1 state); independently confirmed by beta-review.md §R2 and re-verified build/test/cn-build-check/board-gen after the cherry-pick"
     - finding-6: "SKILL.md states Option B (kernel-dispatch thin shim, #216 debt) explicitly"
   repairs_not_completed: []
   delta_overrides: []
-  new_state_differs_from_rejected: "cycle/556 HEAD moved 7cbd07b7 -> 2603d2d1 across 7 commits (REPAIR-PLAN, 2 reverts, doctrine rewrite, self-coherence §R2, beta-review §R2, closeout addenda)"
+  new_state_differs_from_rejected: "cycle/556-r2 (base main@1c1cfb06) carries 8 commits reinstating the relocation + doctrine fix + R2 CDD artifacts, superseding merged PR #557's R1 content"
 
 deliverable_evidence:
-  pr: "#557 (cycle/556 -> main), updated to reference 2603d2d1"
-  head_sha: "2603d2d1d231e65aac378e5306b4769e22e8680a"
-  base_sha: "4fe8e4333b36372f595201841fb76cc0c31acff4"
-  commits_beyond_base: 29
+  pr: "new PR from cycle/556-r2 -> main, superseding merged #557 (see PR body for link)"
+  head_sha: "205df4e17c1060bcf0d18a98ba661ac559974cc7"
+  base_sha: "1c1cfb06603c44cfdcc5362abee470183cc22332"
+  commits_beyond_base: 8
   closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
 ```
+
+CI confirmed green on the literal pushed tip `205df4e1` (run `28633378590`,
+all 10 required jobs `success`) before this addendum was appended; the
+addendum commit itself will be re-verified by a follow-up CI run before
+the PR is opened, per the same "confirm the true final tip separately"
+practice used in R1 (`beta-review.md §R1`) rather than chasing a
+self-referential SHA.
 
 Note: `head_sha` above is the pre-CI-rerun commit; CI was re-run and confirmed green
 on the actual pushed tip (see the push + CI verification step immediately following).
