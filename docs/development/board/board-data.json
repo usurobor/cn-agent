@@ -1974,5 +1974,26 @@
     "created": "2026-07-03T04:56:41Z",
     "updated": "2026-07-03T04:56:41Z",
     "url": "https://github.com/usurobor/cnos/issues/561"
+  },
+  {
+    "n": 564,
+    "t": "cds/selection: operationalize the selection-function inputs for the GitHub/label/board substrate",
+    "kind": "doctrine",
+    "areas": [
+      "cdd",
+      "cds"
+    ],
+    "pri": "P2",
+    "status": "ready",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-03T13:28:10Z",
+    "updated": "2026-07-03T13:28:10Z",
+    "url": "https://github.com/usurobor/cnos/issues/564"
   }
 ]
