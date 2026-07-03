@@ -145,12 +145,15 @@ repair_evidence:
     - finding-6: "SKILL.md states Option B (kernel-dispatch thin shim, #216 debt) explicitly"
   repairs_not_completed: []
   delta_overrides: []
-  new_state_differs_from_rejected: "cycle/556 HEAD moved 7cbd07b7 -> 8693164c across 6 commits (REPAIR-PLAN, 2 reverts, doctrine rewrite, self-coherence §R2, beta-review §R2)"
+  new_state_differs_from_rejected: "cycle/556 HEAD moved 7cbd07b7 -> 2603d2d1 across 7 commits (REPAIR-PLAN, 2 reverts, doctrine rewrite, self-coherence §R2, beta-review §R2, closeout addenda)"
 
 deliverable_evidence:
-  pr: "#557 (cycle/556 -> main), to be updated to reference 8693164c"
-  head_sha: "8693164c92a13b31bf5520f2ad6683f6a5004060"
+  pr: "#557 (cycle/556 -> main), updated to reference 2603d2d1"
+  head_sha: "2603d2d1d231e65aac378e5306b4769e22e8680a"
   base_sha: "4fe8e4333b36372f595201841fb76cc0c31acff4"
-  commits_beyond_base: 27
+  commits_beyond_base: 29
   closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
 ```
+
+Note: `head_sha` above is the pre-CI-rerun commit; CI was re-run and confirmed green
+on the actual pushed tip (see the push + CI verification step immediately following).
