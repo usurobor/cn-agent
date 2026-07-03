@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -445,5 +447,96 @@ func TestSeam_CellKindNotEnforced(t *testing.T) {
 					fx, kind, want.Outcome, got.Outcome, want.TargetState, got.TargetState, want.Action, got.Action)
 			}
 		}
+	}
+}
+
+// --- cnos#570 observation wiring: parseCellKind reads the `cell_kind:`
+// recording line CELL-KINDS.md §"Recording point" names as canonical
+// (.cdd/unreleased/{N}/gamma-scaffold.md), in both the bold-markdown form γ
+// scaffolds use and the plain form. This is the helper assembleLive calls;
+// testing it directly needs no network/GitHub API access. ---
+
+func TestParseCellKind(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+		want string
+	}{
+		{
+			name: "bold markdown form with trailing prose",
+			body: "**cell_kind:** `doctrine` (this cell produces CDD doctrine + an observation-wiring change)",
+			want: "doctrine",
+		},
+		{
+			name: "plain form",
+			body: "cell_kind: implementation",
+			want: "implementation",
+		},
+		{
+			name: "embedded in a larger scaffold body",
+			body: "# γ scaffold\n\n**Branch:** `cycle/570`\n**cell_kind:** `wave`\n\n## Surfaces",
+			want: "wave",
+		},
+		{
+			name: "absent",
+			body: "# γ scaffold\n\nNo cell kind line here.",
+			want: "",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := parseCellKind(c.body); got != c.want {
+				t.Errorf("parseCellKind(%q) = %q, want %q", c.body, got, c.want)
+			}
+		})
+	}
+}
+
+// TestAssembleLive_ObservesCellKindFromGammaScaffold drives assembleLive
+// (repo="" so it never makes a network call) against a temp directory
+// carrying a .cdd/unreleased/{N}/gamma-scaffold.md fixture, and asserts the
+// observation populates CellKind.Observed / Source without needing GitHub
+// API access. Mirrors this package's existing fixture-based test idiom
+// (LoadFixture + testdata/*.json) but exercises the live-path parse
+// specifically, since LoadFixture never reads gamma-scaffold.md.
+func TestAssembleLive_ObservesCellKindFromGammaScaffold(t *testing.T) {
+	dir := t.TempDir()
+	issue := 570
+	scaffoldDir := filepath.Join(dir, ".cdd", "unreleased", strconv.Itoa(issue))
+	if err := os.MkdirAll(scaffoldDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	scaffold := "# γ scaffold — cnos#570\n\n**cell_kind:** `doctrine` (worked example)\n"
+	if err := os.WriteFile(filepath.Join(scaffoldDir, "gamma-scaffold.md"), []byte(scaffold), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	snap, err := assembleLive(context.Background(), "", issue, "")
+	if err != nil {
+		t.Fatalf("assembleLive: %v", err)
+	}
+	if snap.CellKind.Observed != "doctrine" {
+		t.Errorf("CellKind.Observed = %q, want %q", snap.CellKind.Observed, "doctrine")
+	}
+	if snap.CellKind.Source != "cdd_artifact" {
+		t.Errorf("CellKind.Source = %q, want %q", snap.CellKind.Source, "cdd_artifact")
+	}
+	// normalizeCellKind must not overwrite an observed value with the
+	// absent-default (DefaultedTo stays unset because Observed != "").
+	if snap.CellKind.DefaultedTo != "" {
+		t.Errorf("CellKind.DefaultedTo = %q, want empty (an observed kind must not also carry a default)", snap.CellKind.DefaultedTo)
 	}
 }

@@ -125,6 +125,11 @@ with a receipt.
 Canonical: `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md`,
 `src/packages/cnos.cdd/skills/cdd/CDD.md`.
 
+Cells come in typed kinds (e.g. `implementation`, `issue_authoring`, `wave`,
+`cleanup`, `doctrine`) that refine the same generic kernel with a specific
+matter shape — see
+`src/packages/cnos.cdd/skills/cdd/CELL-KINDS.md`.
+
 ### Wave
 
 A **parent cell that coordinates several child cells under one approved

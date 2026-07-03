@@ -47,6 +47,8 @@ A coherent issue is an executable work contract. It names:
 
 A coherent issue lets an engineer who was not in the conversation act without asking clarifying questions.
 
+**An issue can itself be a cell's matter.** Per [`../CELL-KINDS.md`](../CELL-KINDS.md)'s `issue_authoring` cell kind, the coherence cell that writes this issue produces the issue pack itself as its matter — α drafts it, β reviews it for executability (not a code diff), and γ closes the authoring cell once the issue reaches `status:ready`. That authoring cell is distinct from the `implementation` cell that later executes the issue; `cell_kind: issue_authoring` names the former, not the latter.
+
 Failure modes:
 
 - **ambiguity** — engineer must ask what the issue means;
