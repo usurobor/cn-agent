@@ -250,9 +250,10 @@ application rules: `docs/development/issues/TRIAGE.md`.
 
 ### Issue
 
-A backlog item. A coherent issue carries exactly one primary `kind/*`, one or
-more `area/*`, one priority, a `status:*` when actionable, and — only if it is a
-genuine executable cell — `dispatch:cell` + `protocol:*`.
+A backlog item. A coherent issue carries exactly one primary `kind/*` and one or
+more `area/*`. An **actionable** issue also carries one priority and a
+`status:*`; `kind/tracking` issues are containers and may be priority-exempt.
+Only a genuine executable cell also carries `dispatch:cell` + `protocol:*`.
 
 ### dispatch:cell
 
@@ -282,7 +283,8 @@ awaiting operator/δ) · `status:changes` (rejected; repair required). Only
   `skill`, `spike`, `chore`.
 - **`area/*`** — where the work lives (one or more): `agent`, `cdd`, `cds`,
   `core`, `runtime`, `docs`, `ci`, `cli`, `wake`, `coherence`, … (extensible).
-- **priority** — `P0`–`P3`, or `priority/deferred`. Orthogonal to kind/area.
+- **priority** — `P0`–`P3`, or `priority/deferred`. One per actionable issue;
+  `kind/tracking` containers may be priority-exempt. Orthogonal to kind/area.
 - **`effort/*`** — ordinal size estimate (at most one): `S`, `M`, `L`, `XL`.
   Missing effort means *unestimated*, **not** `S`.
 - **`resolution/*`** — on close when not a plain completion: `completed`,
@@ -354,9 +356,9 @@ emitted by the renderer from the wake declaration and must match its golden.
 
 ### activation_state
 
-Frontmatter enum on a wake: `live` (the renderer-emitted workflow is the
-production wake) or `declaration-only` (shipped as a contract specimen; the
-renderer refuses to render, or renders a never-fire guard).
+Frontmatter enum on a wake: `live` means the renderer emits an installable
+workflow. `declaration-only` means the wake is a contract specimen and the
+renderer refuses to render it as a live wake.
 
 ---
 
@@ -414,11 +416,10 @@ nervous system." Reference: `docs/reference/cli/CLI.md`.
 
 ### Trust vs coherence
 
-**Coherence** is model-reality fit (is the work whole and correct?). **Trust**
-is warranted reliance on an actor or artifact (can this claim be relied upon,
-and on what evidence?). They are distinct: coherent work still needs a trust
-chain (signatures, attestations, receipts) to be *relied upon* by others;
-trusted actors can still produce incoherent work.
+**Coherence** asks whether the work body hangs together with its stated model
+strongly enough to be judged. **Trust** asks whether an actor or artifact can be
+relied on, and what evidence supports that reliance. A coherent artifact can
+still be wrong. A trusted actor can still produce incoherent work.
 
 ### Trust claim
 
