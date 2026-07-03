@@ -17,5 +17,9 @@
 - [issues/](issues/README.md) — issue taxonomy, triage, and dispatch policy (how issues are classified and labeled).
 - [board/](board/README.md) — interactive maps of the open-issue board (Voronoi tessellation + heat map), colored by the issue taxonomy.
 
+The vocabulary used throughout CDD/CDS — `cell`, `wave`, `matter`, `receipt`,
+`projection`, the roles α/β/γ/δ/ε/V, and the issue-taxonomy labels — is defined
+in the canonical [Glossary](../reference/governance/GLOSSARY.md).
+
 Conceptual papers on cells and coherence (e.g. *Cell of Cells*) live in
 [`papers/`](../papers/README.md).

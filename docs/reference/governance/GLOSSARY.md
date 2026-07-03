@@ -1,412 +1,529 @@
-# Glossary – cnos v3.6.0
+# Glossary — cnos
 
-Short definitions of the main terms used in cnos, the CN whitepaper, and the coherence system documentation.
+The canonical vocabulary surface for cnos: the coherence system, the CDD/CDS
+work model (cells, waves, receipts), the issue taxonomy, wakes, packages, and
+the trust/evidence layer. Definitions are short and precise; each points at the
+canonical source with an inline path.
 
-> **Note:** Document versions (e.g., GLOSSARY v2.0.0) are local to each file. See `CHANGELOG.md` for the overall template version.
+> **Version note.** Document versions are local to each file; see `CHANGELOG.md`
+> for the template/release version. This glossary tracks the *current* work
+> model — reader-intent docs, α/β/γ as role/measurement grammar, CDS cell
+> dispatch, and the issue taxonomy. It is not organized alphabetically first;
+> it is organized the way people encounter the system.
+
+> **One rule to read everything else by.** The filesystem is organized **for
+> readers** (`quickstart/`, `concepts/`, `guides/`, `reference/`,
+> `development/`, `architecture/`, `papers/`, `evidence/`). **α/β/γ are role
+> grammar and TSC measurement axes — never docs folders.** There is no
+> `docs/alpha/`, `docs/beta/`, or `docs/gamma/`; those directories were retired
+> in the docs cleanup and their contents now live under intent directories
+> (e.g. the foundational essays are in `docs/papers/`). Cognitive packages live
+> under `src/packages/` (e.g. `src/packages/cnos.core/`), not a root
+> `packages/`. There is no root `threads/` in this repo — threads are a *hub*
+> concept (see **Thread**).
 
 ---
 
-## Coherence System Terms
+## 1. Core coherence terms
 
 ### Coherence
 
-The degree to which a system's model matches reality. Incoherence is the gap between model and reality. The foundational claim of cnos is that coherence is primary — everything in the system exists to make coherence visible, bounded, reviewable, recoverable, and evolvable.
+The degree to which a system's model matches reality. The foundational claim of
+cnos: coherence is primary — everything exists to make coherence visible,
+bounded, reviewable, recoverable, and evolvable. Measured across three axes:
+α (Pattern), β (Relation), γ (Exit/Process). See **TSC**.
 
-Measured across three axes: α (Pattern), β (Relation), γ (Exit). See **TSC**.
+Defined in: `src/packages/cnos.core/doctrine/COHERENCE.md`.
 
-Defined in: `packages/cnos.core/doctrine/COHERENCE.md`, `docs/alpha/doctrine/COHERENCE-SYSTEM.md`.
+### Incoherence
+
+The gap between model and reality. cnos moves along a *path of decreasing
+incoherence*: each cell, cycle, and release should close some measurable slice
+of that gap. Incoherence is the thing acted on; coherence is the direction.
 
 ### Coherence delta
 
-A bounded movement from a less coherent state to a more coherent one. The architectural unit of meaningful change in cnos. Each agent cycle, each development iteration, and each release should produce a measurable coherence delta.
-
-A coherence delta is not merely a feature or a fix — it is the change in coherence itself, of which the feature or fix is the concrete, operator-visible articulation.
-
-Used in: `docs/reference/runtime/CAA.md` §5.6, §10; `docs/development/cdd/CDD.md` §3.4, §9.5.
-
-### CAP (Coherent Agent Principle)
-
-The dynamic atom of coherence. When an agent detects a gap between model and reality, there are two coherent responses:
-
-- **MCA** — Most Coherent Action: change reality (act on the world)
-- **MCI** — Most Coherent Insight: change the model (update understanding)
-
-Priority rule: **MCA before MCI.** If you can act, act first. If you cannot act, learn. If both are needed, act then learn from the result.
-
-> Gap → MCA or MCI → MCA first
-
-CAP is derived from Friston's Free Energy Principle, reframed for agents. It is doctrine — always-on, non-negotiable.
-
-Defined in: `packages/cnos.core/doctrine/CAP.md`.
-
-### MCA (Most Coherent Action)
-
-One of two mechanisms for closing the gap between model and reality. MCA changes reality to match the model. Examples: fix a bug, ship a feature, correct a runtime behavior.
-
-MCA is preferred over MCI when coherent action is possible.
-
-Defined in: `packages/cnos.core/doctrine/CAP.md` §2.1.
-
-### MIC (Make It Coherent)
-
-Verb. Cohere an artifact to its canonical contract for the first time. The artifact has content but was never structured to the current spec. "MIC the release skill" = it has good content, DUR contract now exists, give it the right shape.
-
-MIC is authoring coherence where none existed (relative to the current contract). The artifact may have been internally consistent before, but it wasn't aligned to the spec that now governs its class.
-
-### MICA (Make It Coherent Again)
-
-Verb. Restore coherence that was lost through drift. An artifact was coherent to its contract — then context evolved (new contracts, new specs, new standards) and the artifact didn't move with it. MICA is the act of bringing it back.
-
-The "again" does real work: MICA asserts a prior coherent state. You can't MICA something that was never coherent to the current contract (that's MIC). You can't MICA something already aligned (that's a no-op). MICA only applies in the gap between "was coherent" and "context moved."
-
-Related: MIC (first-time coherence), DUR (the contract being cohered to), CLP (the process used to verify convergence).
-
-### MCI (Most Coherent Insight)
-
-The second mechanism for closing the gap between model and reality. MCI changes the model to match reality. Examples: update documentation, revise an assumption, change the design.
-
-MCI is used when MCA is blocked or when the model itself is wrong.
-
-Defined in: `packages/cnos.core/doctrine/CAP.md` §2.2.
-
-### MCP (Most Coherent Picture)
-
-The current best picture the system can form of itself and its world. Not omniscience — the best currently available picture across α, β, and γ.
-
-An MCP includes:
-- the relevant articulations
-- the known relations among them
-- the visible tensions and gaps
-- the current path pressures / likely exits
-
-MCP is what Sense → Compare (FOUNDATIONS §3) produces implicitly at the agent scale, named explicitly at the system scale.
-
-Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §3.1; used in `docs/reference/runtime/CAA.md` §5.2, `docs/development/cdd/CDD.md` §2.1.
-
-### CMP (Coherence Mapping Pass)
-
-The operation that produces or refreshes the MCP. CMP is the system-scale expression of the Sense → Compare phase.
-
-At the agent scale, CMP is the sensing / comparison phase that precedes the MCA-or-MCI choice. At the development scale, CMP maps the relevant artifacts (α), their relations (β), and the pressures on future movement (γ) before choosing a development intervention.
-
-CMP asks: what are the relevant articulations right now? How do they relate? Where are the strongest incoherences? What is the weakest axis?
-
-Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §3.2; used in `docs/reference/runtime/CAA.md` §5.1, `docs/development/cdd/CDD.md` §4.2.
-
-### CLP (Coherence Ladder Process)
-
-The reflective law that governs movement. CLP is the review rhythm that keeps CAP from drifting. Structure:
-
-1. **Seed** — state the gap clearly
-2. **Bohmian reflection** — dialog that seeks the real structure of the problem
-3. **Triadic check** — score across α (Pattern), β (Relation), γ (Exit)
-4. **Patch weakest axis** — do not polish the strongest axis; fix the weakest one
-5. **Repeat** — until coherent enough to proceed
-
-CLP also provides a dialogue structure for reviews and discussions:
-- **TERMS** — what is being discussed; shared vocabulary
-- **POINTER** — where the tension is; what's incoherent
-- **EXIT** — what changed; what's next
-
-Never publish cold. Always run at least one CLP cycle first.
-
-Defined in: `packages/cnos.core/doctrine/COHERENCE.md`.
-
-### TSC (Triadic Self-Coherence)
-
-A framework for measuring coherence across three algebraically independent axes:
-
-- **α (Alpha) — PATTERN**: Internal consistency. Are the articulations non-contradictory? Do the parts hold together?
-- **β (Beta) — RELATION**: Alignment across views and articulations. Do all layers reveal the same system?
-- **γ (Gamma) — EXIT / PROCESS**: Viable evolution path. Can the system change without losing itself?
-
-Composite score: `C_Σ = (s_α · s_β · s_γ)^(1/3)`. PASS threshold: C_Σ ≥ 0.80.
-
-Originated by usurobor. Formal spec: `tsc/spec/tsc-core.md`.
-
-Defined in: `packages/cnos.core/doctrine/COHERENCE.md`.
-
-### Release Coherence Ledger
-
-The authoritative per-release record in `CHANGELOG.md`. Each row captures two dimensions of a release cycle:
-
-- **Coherence quality** — TSC grades (C_Σ, α, β, γ) measuring how cleanly the release shipped
-- **Architectural scope** — Engineering level (L5/L6/L7) measuring what boundary moved
-
-The ledger is append-only. TSC grades are provisional at release time and may be revised by the post-release assessment. Engineering levels are classified per `docs/gamma/ENGINEERING-LEVELS.md`, capped by CDD §9.1 cycle execution quality (mechanical ratio, review rounds).
-
-Historical classification: `docs/papers/RELEASE-LEVEL-CLASSIFICATION.md`.
-
-Defined in: `CHANGELOG.md`.
-
-### The Core Coherence Algorithm
-
-The recurrent algorithm of the system at every scale:
-
-> **CMP → CAP (MCA/MCI) → CLP → update articulations → CMP**
-
-1. CMP — build the MCP
-2. CAP — choose the coherent move (MCA first)
-3. CLP — review the result across α / β / γ
-4. Update — record the result
-5. CMP — build the next picture
-
-At the agent scale: Sense → Compare → MCA/MCI → Repeat (FOUNDATIONS §4).
-At the system scale: CMP → CAP → CLP → update → CMP (COHERENCE-SYSTEM §3.3).
-
-### Bohmian Reflection
-
-Dialog that seeks the real structure of a problem before acting. Not brainstorming. Core questions:
-- What is the system trying to become?
-- What are we implicitly assuming?
-- Where are two truths coexisting?
-- What would make this simpler and truer?
-
-Used in CLP step 2 and CDD §4.2.
-
-### Coherence Walk
-
-The practice of rebalancing between coherence axes after scoring:
-
-1. Score α, β, γ
-2. Reflect on what contributed to each score
-3. Set a goal for the next cycle, investing in the lower axis
-
-If α < β, invest in PATTERN. If β < α, invest in RELATION. Balance two, let the third emerge.
+A bounded movement from a less coherent state to a more coherent one — the
+architectural unit of meaningful change. Not merely a feature or a fix, but the
+*change in coherence itself*, of which the feature or fix is the concrete,
+operator-visible articulation.
 
 ### Articulation
 
-Any durable expression of coherence at a particular scale. Doctrine, code, skills, packages, traces, release notes, and agents are all articulations. cnos is a network of recurrent coherent articulations that generate, constrain, package, execute, observe, and repair one another.
+Any durable expression of coherence at a particular scale: doctrine, code,
+skills, packages, receipts, release notes, agents. cnos is a network of
+recurrent coherent articulations that generate, constrain, package, execute,
+observe, and repair one another.
 
-Defined in: `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §5.
+### TSC (Triadic Self-Coherence)
 
----
+The framework for *measuring* coherence across three algebraically independent
+axes:
 
-## Doctrinal Terms
+- **α — PATTERN**: internal consistency. Are the articulations non-contradictory?
+- **β — RELATION**: alignment across views. Do all layers reveal the same system?
+- **γ — EXIT / PROCESS**: viable evolution path. Can it change without losing itself?
 
-### CBP (Coherent Behavior Principle)
+Composite score: **CΣ = (sα · sβ · sγ)^(1/3)**. TSC is a *measurement recorded
+from a report*, never a hand-authored frontmatter score. It is **not** a single
+hardcoded pass gate: in current CDS work the verdict is **V**'s `PASS`/`FAIL`
+against the cell contract plus **δ**'s boundary decision (see **V**, **δ**), not
+a universal "CΣ ≥ 0.80" threshold.
 
-The ethical complement to CAP. While CAP governs internal coherence (MCA/MCI), CBP governs relational coherence with others. Core values: **Peace, Love, Unity, Respect (PLUR).**
+Defined in: `src/packages/cnos.core/doctrine/COHERENCE.md`.
 
-CAP without CBP produces effective but harmful agents. CBP without CAP produces kind but ineffective agents.
+### α / β / γ (as measurement axes)
 
-Defined in: `packages/cnos.core/doctrine/CBP.md`.
+The three TSC axes — Pattern, Relation, Exit. Used as a *measurement* grammar
+and as *role* grammar (see §3), never as a filing taxonomy. If you see α/β/γ,
+ask "which axis / which role" — never "which folder."
 
-### CA-Conduct
+### CAP (Coherent Agent Principle)
 
-How every Coherent Agent must behave. Built on PLUR as the absolute foundation, with operational principles: Ship (done beats perfect, bias for action), Own (radical ownership, surface MCAs), Truth (radical candor), Learn (kaizen, go and see), Prepare (search before asking, use existing skills).
+The dynamic atom of coherence. On detecting a gap between model and reality,
+there are two coherent responses: **MCA** (change reality) or **MCI** (change
+the model). Priority rule: **MCA before MCI** — if you can act, act; if you
+cannot, learn. Doctrine — always-on, non-negotiable.
 
-Defined in: `packages/cnos.core/doctrine/CA-CONDUCT.md`.
+Defined in: `src/packages/cnos.core/doctrine/CAP.md`.
 
-### AGENT-OPS
+### MCA (Most Coherent Action)
 
-Runtime emission discipline. Always-on rules for agent output format. Defines the output contract (frontmatter with id, coordination ops, typed capability ops, response body), RACI discipline, and the principle that if you see something, you capture and track it.
+A small action inside an approved contract that moves the system toward
+coherence without needing operator interruption. The action side of CAP: change
+reality to match the model (fix a bug, ship a feature, correct behavior).
+Preferred over MCI when coherent action is possible.
 
-Defined in: `packages/cnos.core/doctrine/AGENT-OPS.md`.
+Defined in: `src/packages/cnos.core/doctrine/CAP.md`.
 
-### Doctrine
+### MCI (Most Coherent Insight)
 
-Always-on, constitutive, non-competitive cognitive substrate. Doctrine defines first principles, conduct, runtime grammar, and review law. Loaded at every wake-up. Never competes for skill slots. Never dropped for context budget. Doctrine is identity, not tooling.
+The insight side of CAP: change the model to match reality (update a doc, revise
+an assumption, change the design). Used when MCA is blocked or the model itself
+is wrong.
 
-The four doctrinal layers (FOUNDATIONS.md):
-1. **CAP** — the dynamic atom (when/how to act or learn)
-2. **COHERENCE** — the review geometry (whether the result remained whole)
-3. **CBP + CA-Conduct** — the relational boundary (trust preservation)
-4. **AGENT-OPS** — the runtime grammar (how the agent emits output)
+Defined in: `src/packages/cnos.core/doctrine/CAP.md`.
 
-### Mindset
+### MCP (Most Coherent Picture)
 
-Always-on, orienting, deterministic cognitive frame. Mindsets shape craft and style. They are not optional enrichments — they are structural orientation. Like doctrine, mindsets never compete for skill slots.
-
-Examples: ENGINEERING, PM, WISDOM, OPERATIONS.
-
-### DUR (Define / Unfold / Rules)
-
-The canonical skill contract. The three-section structure every skill MUST follow:
-
-1. **Define** — identify the parts, articulate how they fit, name the failure mode
-2. **Unfold** — expand each part into domain-specific structure with ❌/✅ pairs
-3. **Rules** — numbered, stable-ID rules with ❌/✅ pairs showing incoherent/coherent behavior
-
-DUR is to skills what TSC is to coherence scoring — the structural invariant that makes the class recognizable and reviewable.
-
-"MIC X to DUR" = cohere skill X to Define/Unfold/Rules for the first time. "MICA X" = restore DUR coherence lost through drift.
-
-Defined in: `docs/architecture/cognitive-substrate/COGNITIVE-SUBSTRATE.md` §7.3.
-
-### Skill
-
-Bounded, selected, instrumental cognitive module. Skills are situational amplifiers, not identity. They live under `skills/{name}/` with a `SKILL.md` file defining TERMS, INPUTS, and EFFECTS. Skills are scored and compete for bounded slots at wake-up.
-
-**Location:** `skills/{category}/{name}/SKILL.md` in the package source (e.g., `packages/cnos.core/skills/agent/self-cohere/SKILL.md`); installed into `.cn/vendor/packages/{pkg}/skills/{category}/{name}/`.
-
-If doctrine competes with task skills, the architecture is already confused.
+The current best picture the system can form of itself and its world across α,
+β, and γ — the relevant articulations, their known relations, the visible
+tensions, and the likely exits. Not omniscience; the best currently available
+picture. (Distinct from the unrelated "MCP" of Model Context Protocol.)
 
 ---
 
-## Architecture Terms
+## 2. Work lifecycle
 
-### Coherent Agent (CA)
+### Cell
 
-An articulation of coherence that can sense, compare, choose, act or learn, and remain itself while evolving. Specifically, an agent that can:
-- perform CMP to form an MCP
-- detect a gap between model and reality
-- choose MCA or MCI (MCA first)
-- execute a bounded move
-- review the result via CLP
-- continue the loop
+A **bounded unit of work** that moves through **contract → matter → review →
+receipt → verdict → decision**. The atom of dispatchable, proof-carrying work.
+A cell is scoped, carries acceptance criteria and a proof oracle, and closes
+with a receipt.
 
-Defined in: `docs/reference/runtime/CAA.md`, `docs/alpha/doctrine/COHERENCE-SYSTEM.md` §7.
+Canonical: `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md`,
+`src/packages/cnos.cdd/skills/cdd/CDD.md`.
 
-### CAA (Coherent Agent Architecture)
+### Wave
 
-The design document that specifies what a coherent agent is structurally: definition, first principle, doctrinal layers, cognitive strata at wake-up, the agent loop, runtime embodiment, invariants, and failure modes.
+A **parent cell that coordinates several child cells under one approved
+contract**. A wave lets an agent execute a planned campaign without asking the
+operator about every minor coherent action. Cell vs wave: a cell is one bounded
+unit; a wave is a cell-of-cells with a boundary authority (**wave δ**) that runs
+the campaign inside the approved contract.
 
-Document: `docs/reference/runtime/CAA.md`.
+Canonical: `src/packages/cnos.cdd/skills/cdd/` (recursive cell framework);
+wave records under `.cdd/waves/`.
 
-### CDD (Coherence-Driven Development)
+### Matter
 
-Also a verb. "CDD 47" = take issue #47 through the full pipeline: gap → design → plan → tests → code → docs → review → release → observe. Each step produces a measured coherence delta.
+The **produced work body of a cell**: code, docs, artifacts, receipts,
+generated files, or other concrete output. Matter is what α produces and what β
+reviews.
 
-The development method in which every meaningful change is treated as an intervention on incoherence. CDD applies CAP to the development process itself. CDD is γ at the development scale — the expression of evolution applied to cnos.
+### Receipt
 
-Each substantial release is a **measured coherence delta**. Features are the operator-facing articulation of that movement.
+The **durable closeout artifact** that records what happened, what evidence was
+bound, what validation ran, what decision was made, and what can be inspected
+later. A CDS cell's receipt requires the closure-record evidence set — the five
+per-cycle artifacts (`self_coherence`, `beta_review`, `alpha_closeout`,
+`beta_closeout`, `gamma_closeout`), the evidence root, the cycle diff, and
+optional CI refs — which **V** dereferences when validating.
 
-Document: `docs/development/cdd/CDD.md`.
+Schema: `schemas/cdd/receipt.cue`, `schemas/cds/receipt.cue`. Contract:
+`src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md`.
 
-### CN Shell
+### Review request
 
-The capability runtime that mediates between the agent and the world. The agent proposes typed ops; CN Shell validates against policy, executes within budget, records receipts, and feeds evidence back. Enforces the N-pass bind loop:
+A **proof artifact showing that matter exists and is ready for β review.** It is
+**not** a review verdict — it asserts readiness, not acceptance. The verdict
+comes from β (converge/iterate) and, at the boundary, from δ.
 
-- **Observe pass**: agent requests observe ops → runtime gathers evidence, defers effects
-- **Effect pass**: agent proposes effect ops → runtime executes governed effects
-- **Terminal pass**: no ops → final projection
+### Projection
 
-The loop is bounded by `max_passes` (default 5), `max_total_ops`, and `max_total_artifact_bytes`. Each pass is one packed context → one LLM call → one execution step. This is CAP made runtime-real: sensing is first-class, action is governed.
+The **typed interface by which a closed child cell becomes input to a parent
+cell.** A child cell does **not** become a parent role; it *projects* matter,
+verdicts, decisions, risks, and handoff upward. See **projection, not
+role-renaming** (§3).
 
-Defined in: `docs/reference/runtime/AGENT-RUNTIME.md`.
+### Validator (V)
 
-### N-pass bind loop
+See §3. The predicate that checks a receipt/evidence against the contract and
+emits a `PASS`/`FAIL` verdict.
 
-The runtime's enforcement of "observe before effect" via bounded iteration. Each pass classifies its typed ops as observe-class or effect-class:
+### Delta (δ) / Epsilon (ε)
 
-- **Observe-class pass**: gathers evidence (file reads, state checks, searches), defers effects with receipts
-- **Effect-class pass**: executes governed effects (writes, patches, commits)
-- **Terminal pass**: no ops remaining → final projection to user
-
-This generalizes the original two-pass structure (`max_passes=2` reproduces it exactly). The loop is the runtime expression of CAP's Sense → Compare → Act cycle, extended to support deeper reasoning chains (observe → effect → verify → adapt).
-
-### Receipts
-
-Records of CN Shell execution. Every mutation produces a receipt. Receipts enable crash recovery, auditability, and idempotency. Stored in `state/receipts/`.
-
-### Wake-up / Reconstitution
-
-The process by which a coherent agent reconstitutes itself from local, versioned, installed packages at the start of each cycle. A coherent agent must not wake as an empty chat window. Wake-up loads:
-
-1. Identity (SOUL, USER)
-2. Core Doctrine (FOUNDATIONS, CAP, COHERENCE, CBP, CA-Conduct, AGENT-OPS)
-3. Mindsets (role and operating frames)
-4. Reflections (recent learning)
-5. Task Skills (situationally selected, scored)
-6. Capabilities (what the runtime supports)
-7. Conversation + inbound message
-
-No network. No sibling checkout. Local files only.
-
-Defined in: `docs/alpha/doctrine/FOUNDATIONS.md` §6, `docs/reference/runtime/CAA.md` §4.
-
-### CAR (Cognitive Asset Resolver)
-
-The package distribution system. Defines how cognitive assets (doctrine, mindsets, skills) are packaged, versioned, installed, and resolved locally. CAR ensures wake-up is deterministic: same lockfile + same hub state → same packed context.
-
-Document: `docs/architecture/cognitive-substrate/CAR.md`.
-
-### Coherence Contract
-
-A lightweight declaration that accompanies every substantial change under CDD. Answers: what gap is being closed? Is this MCA or MCI? Which layer is affected? What is the expected triadic effect (alpha/β/γ)? What fails if skipped? What is the expected coherence delta?
-
-Defined in: `docs/development/cdd/CDD.md` §6.
+See §3. δ is the boundary authority (accept/reject/repair/override/block); ε is
+the stream observer across receipts and cells.
 
 ---
 
-## Protocol Terms
+## 3. Roles / Greek letters
 
-### CN (Coherence Network)
+The Greek letters are **roles** (and TSC axes), not folders and not renames of
+each other. A role is a function a cell plays, not a directory it lives in.
 
-A network of agents that use git repositories as their primary surface for specs, threads, and state. Git is the transport. Files are the state. Commits are the communication.
+### α / alpha — Pattern role
 
-### Hub
+Produces matter and establishes the **shape** of the work (the implementer).
 
-A git repository that is an agent's home. Holds identity (`spec/SOUL.md`, `spec/USER.md`), threads, state, and installed cognitive packages. Created by `cn init` + `cn setup`.
+### β / beta — Relation / review role
 
-Cognition is local: doctrine, mindsets, and skills are installed into `.cn/vendor/packages/` at setup time. The hub is wake-ready from its own files — no external checkout required.
+Reviews matter against contract, evidence, and neighboring artifacts. Emits a
+`converge` (advance) or `iterate` (send back to α) verdict. β iteration is an
+**internal** cell loop, not an external lifecycle event.
 
-### cnos (Coherence Network OS)
+### γ / gamma — Process / closeout role
 
-The source repo and runtime for CN agents. Contains the `cn` CLI, cognitive packages (doctrine, mindsets, skills), design documents, and tests. cnos is the current lowest durable software articulation of the coherence system. Agents consume cnos through installed packages, not through a checkout dependency.
+Coordinates **closure**: receipts, handoff, and continuity. Authors the cell's
+scaffold and lands the closeout artifact set.
 
-### Thread
+### δ / delta — Boundary authority
 
-A Markdown file under `threads/` that represents a conversation, reflection, or topic.
+Decides **what crosses the boundary**: `accept`, `release`, `reject`,
+`repair_dispatch`, or `override`. An `override` accepts a non-`PASS` receipt and
+closes the cell in **degraded state** (see **Degraded outcome**). δ never
+rewrites V's verdict; an override is recorded separately.
 
-**Structure:** Threads are organized by type under `threads/`:
-- `threads/reflections/daily/YYYYMMDD.md` — daily reflections using α/β/γ format
-- `threads/reflections/weekly/YYYY-WNN.md` — weekly reflections
-- `threads/adhoc/` — topic conversations, reviews, discussions
-- `threads/mail/inbox/`, `threads/mail/outbox/` — multi-party threads
+Schema: `schemas/cdd/boundary_decision.cue`. Contract:
+`src/packages/cnos.cdd/skills/cdd/delta/SKILL.md`.
 
-### Peer
+### ε / epsilon — Stream observer
 
-Another agent or hub that this hub tracks in `state/peers.md`. Peers are discovered via `cn peer add` and synchronized via `cn sync`.
+Reads patterns **across** receipts/cells and surfaces process-level
+observations. ε watches the stream; it does not produce or gate a single cell's
+matter.
 
-### Agent
+Contract: `src/packages/cnos.cdd/skills/cdd/epsilon/`.
 
-A system (usually an AI assistant + host runtime) that:
-- has a CN hub
-- reads `state/input.md` and writes `state/output.md`
-- proposes typed ops; the runtime executes them
-- is a pure function: input → output. Never touches files or git directly — `cn` handles all I/O
+### V — Validator predicate
 
-The agent is the brain. `cn` is the body. Git is the nervous system.
+Checks the receipt/evidence against the contract and emits a **verdict**
+(`PASS` | `FAIL`). V dispatches on the receipt's `protocol_id` and dereferences
+the required evidence refs. δ acts on V's verdict; it does not overwrite it.
+
+Schema: `schemas/cdd/boundary_decision.cue` (`#ValidationVerdict`).
+
+### Projection, not role-renaming
+
+The governing rule for how cells compose: a closed child cell **projects** its
+outputs (matter, verdicts, decisions, risks, handoff) into a parent cell through
+a typed interface. It does **not** get "promoted" or "renamed" into a parent
+role. Composition is by projection across a boundary, not by relabeling a role.
+
+### MCA / Wave δ (parent δ)
+
+**MCA** (Most Coherent Action, §1) is the unit of autonomy a boundary authority
+may take inside an approved contract. **Wave δ / parent δ** is the boundary
+authority *for a wave*: it may take minor coherent actions inside the approved
+wave contract and **must stop** on scope, authority, semantic, risk, or
+release-boundary changes.
 
 ---
 
-## Operational Terms
+## 4. Issues and dispatch
 
-### Kata
+GitHub Issues is the single source of truth for the backlog; labels make it
+legible and dispatchable. Full model: `docs/development/issues/TAXONOMY.md`;
+application rules: `docs/development/issues/TRIAGE.md`.
 
-A practice exercise that walks an agent or human through concrete steps to learn or exercise a behavior.
+### Issue
 
-**Location:** `skills/{category}/{name}/kata.md` — katas live alongside the skill they exercise (e.g., `skills/agent/self-cohere/kata.md`).
+A backlog item. A coherent issue carries exactly one primary `kind/*`, one or
+more `area/*`, one priority, a `status:*` when actionable, and — only if it is a
+genuine executable cell — `dispatch:cell` + `protocol:*`.
 
-### Coherent Reflection
+### dispatch:cell
 
-The structured practice of assessing coherence at regular cadences (daily, weekly, monthly, quarterly, half-yearly, yearly) using TSC's α/β/γ framework. Output is a reflection thread under the appropriate cadence directory (e.g., `threads/reflections/daily/YYYYMMDD.md`, `threads/reflections/weekly/YYYY-WNN.md`).
+Marks an issue as a **cell a dispatch wake can execute**: scoped, with
+acceptance criteria and a proof oracle. Applied **only** to genuinely executable
+cells — never to a bare design/tracking/research issue.
 
-Each periodic thread:
-1. Scores PATTERN (α), RELATION (β), EXIT (γ)
-2. Identifies what contributed to each score
-3. Sets a rebalancing goal for the next cycle (Coherence Walk)
+### protocol:cds / protocol:cdd
 
-### State
+The concrete protocol the cell dispatches through (`cds` = the software-
+development realization of `cdd`). Applied **only** together with
+`dispatch:cell`.
 
-Files under `state/` that record the current situation for this hub. Unlike specs, state is expected to change frequently. Includes queue, receipts, conversation history, input/output, and lock files.
+### status:* (lifecycle)
+
+`status:ready` (shaped and approved, but held) · `status:todo` (claimable now) ·
+`status:in-progress` (claimed, cycle running) · `status:review` (matter landed,
+awaiting operator/δ) · `status:changes` (rejected; repair required). Only
+`status:todo` is claimable by a dispatch wake, via the selector
+`dispatch:cell + protocol:{p} + status:todo`. The operator flips
+`status:ready → status:todo` to release a cell.
+
+### kind/* · area/* · priority · effort/*
+
+- **`kind/*`** — the primary split (exactly one): `bugfix`, `cleanup`,
+  `process`, `feature`, `tooling`, `doctrine`, `audit`, `tracking`, `research`,
+  `skill`, `spike`, `chore`.
+- **`area/*`** — where the work lives (one or more): `agent`, `cdd`, `cds`,
+  `core`, `runtime`, `docs`, `ci`, `cli`, `wake`, `coherence`, … (extensible).
+- **priority** — `P0`–`P3`, or `priority/deferred`. Orthogonal to kind/area.
+- **`effort/*`** — ordinal size estimate (at most one): `S`, `M`, `L`, `XL`.
+  Missing effort means *unestimated*, **not** `S`.
+- **`resolution/*`** — on close when not a plain completion: `completed`,
+  `superseded`, `duplicate`, `deferred`, `wontfix`.
+
+---
+
+## 5. Agent / wake terms
+
+### Wake
+
+One firing of an agent from its installed local files — the reconstitution of a
+coherent agent at the start of a cycle (identity → doctrine → mindsets →
+reflections → skills → capabilities → inbound). A coherent agent never wakes as
+an empty chat window. Wakes are defined **as skills** (wake-as-skill): a package
+ships a wake declaration and the renderer materializes the substrate artifact.
+
+Defined in: `docs/reference/runtime/CAA.md`;
+`src/packages/cnos.core/skills/agent/wake-provider/SKILL.md`.
+
+### Admin wake
+
+The wake that handles channel sync, status reporting, and label routing. It
+activates/attaches and **never executes cells**. Substrate:
+`.github/workflows/cnos-agent-admin.yml`.
+
+### CDS dispatch wake
+
+The wake that **claims software-protocol cells** from the open-issue queue and
+runs them via the δ role contract. Its inbound is the issue queue, not a home
+thread; its selector is `dispatch:cell + protocol:cds + status:todo`; it claims
+one cell per firing (FIFO by creation), invokes δ, and opens a PR.
+
+Package: `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md`. Substrate:
+`.github/workflows/cnos-cds-dispatch.yml`.
+
+### SKILL.md
+
+The file that defines a skill (and, for orchestrators, a wake). A skill's
+`SKILL.md` carries the DUR contract (Define / Unfold / Rules) and, for wakes,
+`wake:` frontmatter (role, protocol, selector, `activation_state`,
+`wake.output`). See **DUR**, **Skill**.
+
+Location: `src/packages/{pkg}/skills/{category}/{name}/SKILL.md`;
+orchestrators at `src/packages/{pkg}/orchestrators/{name}/SKILL.md`.
+
+### wake.output
+
+A wake's **output contract**. Admin-shape: channel-log convention + cursor.
+Dispatch-shape: the cell-artifact set the cycle emits. It names what the wake is
+accountable for producing, machine-readably.
+
+Defined in: `src/packages/cnos.core/skills/agent/wake-provider/SKILL.md`.
+
+### golden
+
+The **renderer-emitted, reviewed, committed compiled artifact** a wake install
+produces alongside the live workflow — `orchestrators/{wake}/cnos-{wake}.golden.yml`.
+CI byte-diffs the golden against the live workflow on every change; any drift
+fails the `install-wake golden` oracle. More generally, a *golden* is a
+ring-fenced reference output that a validator compares against and that must not
+be silently modified.
+
+### live workflow
+
+The **materialized substrate artifact** at the substrate's canonical path —
+`.github/workflows/cnos-{wake}.yml`. It **MUST NOT be hand-edited**; it is
+emitted by the renderer from the wake declaration and must match its golden.
+
+### activation_state
+
+Frontmatter enum on a wake: `live` (the renderer-emitted workflow is the
+production wake) or `declaration-only` (shipped as a contract specimen; the
+renderer refuses to render, or renders a never-fire guard).
+
+---
+
+## 6. Package / command terms
 
 ### Package
 
-A distributable cognitive unit. Packages contain doctrine, mindsets, and/or skills. Installed locally under `.cn/vendor/packages/`. Core packages: `cnos.core` (doctrine, mindsets, core skills), `cnos.eng` (engineering skills), `cnos.pm` (PM skills).
+A distributable cognitive unit containing doctrine, mindsets, skills, commands,
+and/or orchestrators. Source lives under `src/packages/{pkg}/`; installed into a
+hub's `.cn/vendor/packages/`.
+
+### cnos.core
+
+The core package: doctrine (`CAP`, `COHERENCE`, `CBP`, `CA-Conduct`,
+`AGENT-OPS`), mindsets, and core agent skills (activate, wake-provider,
+dispatch-protocol). `src/packages/cnos.core/`.
+
+### cnos.cdd / cnos.cds / cnos.issues
+
+- **`cnos.cdd`** — the generic Coherence-Driven Development kernel: the
+  recursive cell framework, the δ/β/γ/V role skills, receipt validation.
+- **`cnos.cds`** — the **software** realization of CDD (the concrete engineering
+  protocol) and its dispatch orchestrator.
+- **`cnos.issues`** — the issue/backlog package boundary (taxonomy, triage,
+  board tooling).
+
+### Skill (module)
+
+A bounded, selected, instrumental cognitive module under `skills/{category}/{name}/`
+with a `SKILL.md` (DUR contract). Skills are situational amplifiers that compete
+for bounded slots at wake-up — not identity. Doctrine never competes for skill
+slots.
+
+### Command
+
+Executable machinery a package ships under `commands/` (e.g.
+`src/packages/cnos.cdd/commands/cdd-verify/`), invoked through the `cn` CLI.
+
+### Kernel
+
+The generic, protocol-independent core of a system that specific protocols
+overlay. E.g. the CDD generic receipt kernel (`schemas/cdd/`) that the CDS and
+CDR receipts unify onto.
+
+### cn
+
+The capability CLI / runtime: the agent's body. The agent proposes typed ops;
+`cn` validates against policy, executes within budget, records receipts, and
+feeds evidence back. "The agent is the brain, `cn` is the body, git is the
+nervous system." Reference: `docs/reference/cli/CLI.md`.
 
 ---
 
-## Document Hierarchy
+## 7. Trust / evidence
 
-| Layer | Document | Question |
-|-------|----------|----------|
-| Meta-model | COHERENCE-SYSTEM.md | How does coherence unfold into cnos? |
-| Doctrine | FOUNDATIONS.md, CAP.md, COHERENCE.md, CBP.md, CA-CONDUCT.md, AGENT-OPS.md | Why — first principles |
-| Architecture | CAA.md | What is a coherent agent structurally? |
-| Runtime | AGENT-RUNTIME.md | How does it execute? |
-| Distribution | CAR.md | How does cognition arrive locally? |
-| Development | CDD.md | How does cnos evolve coherently? |
-| Observability | TRACEABILITY.md | How is it observed? |
+### Trust vs coherence
+
+**Coherence** is model-reality fit (is the work whole and correct?). **Trust**
+is warranted reliance on an actor or artifact (can this claim be relied upon,
+and on what evidence?). They are distinct: coherent work still needs a trust
+chain (signatures, attestations, receipts) to be *relied upon* by others;
+trusted actors can still produce incoherent work.
+
+### Trust claim
+
+An assertion that some artifact or actor warrants reliance — carried by
+evidence (a signature, an attestation, a validated receipt), not by assertion
+alone. A trust claim is only as good as the evidence bound to it.
+
+### Signature vs attestation
+
+- **Signature** — a cryptographic binding proving *who* produced or approved an
+  artifact (authenticity/integrity of origin).
+- **Attestation** — a statement *about* an artifact or process (what ran, what
+  was checked, under what conditions). A signature says "I made this"; an
+  attestation says "this is what happened."
+
+### Coherence witness (TSC witness)
+
+Evidence that a coherence measurement actually occurred — the recorded TSC
+report (scores + provenance) that a receipt or ledger row points at. It is the
+*witness* to a coherence claim, distinguishing a measured CΣ from an
+asserted one.
+
+### CDD receipt
+
+See **Receipt** (§2). The trust/evidence view: the receipt is the durable object
+against which **V** validates and on which **δ** decides — the unit that makes a
+cell's outcome inspectable and transmissible later.
+
+### Degraded outcome
+
+The state a cell closes in when **δ records an `override`** — accepting a
+non-`PASS` receipt anyway. `degraded_state` is pinned true on the override; the
+cell is closed but flagged as degraded, with the original (non-`PASS`) verdict
+preserved and the override rationale + authority recorded. A degraded outcome is
+still transmissible, but it is honestly labeled as degraded rather than clean.
+
+Schema: `schemas/cdd/boundary_decision.cue` (`#Override`).
+
+---
+
+## Appendix — doctrine, architecture, protocol (reference)
+
+Terms that remain load-bearing but sit beneath the day-to-day work vocabulary.
+
+### Doctrine
+
+Always-on, constitutive cognitive substrate: first principles, conduct, runtime
+grammar, review law. Loaded at every wake; never competes for skill slots. Four
+layers: **CAP** (dynamic atom), **COHERENCE** (review geometry), **CBP +
+CA-Conduct** (relational boundary), **AGENT-OPS** (runtime grammar).
+`src/packages/cnos.core/doctrine/`.
+
+### DUR (Define / Unfold / Rules)
+
+The canonical skill contract every `SKILL.md` follows: **Define** the parts,
+**Unfold** each with ❌/✅ pairs, state numbered **Rules**. DUR is to skills what
+TSC is to coherence — the structural invariant that makes the class recognizable.
+
+### CLP (Coherence Ladder Process)
+
+The review rhythm that keeps CAP from drifting: seed the gap → Bohmian
+reflection → triadic check (α/β/γ) → patch the *weakest* axis → repeat. Never
+publish cold. `src/packages/cnos.core/doctrine/COHERENCE.md`.
+
+### CAA (Coherent Agent Architecture)
+
+The design document specifying what a coherent agent is structurally: doctrinal
+layers, cognitive strata at wake-up, the agent loop, invariants, failure modes.
+`docs/reference/runtime/CAA.md`.
+
+### CN Shell / N-pass bind loop
+
+The capability runtime that mediates agent↔world: the agent proposes typed ops;
+the shell validates against policy, executes within budget, records receipts.
+The **N-pass bind loop** enforces observe-before-effect across bounded passes
+(observe → effect → terminal). `docs/reference/runtime/AGENT-RUNTIME.md`.
+
+### CAR (Cognitive Asset Resolver)
+
+The package distribution system: how cognitive assets are packaged, versioned,
+installed, and resolved locally so wake-up is deterministic.
+`docs/architecture/cognitive-substrate/CAR.md`.
+
+### CN (Coherence Network) / Hub / Peer / Thread
+
+- **CN** — a network of agents using git repositories as the primary surface for
+  specs, state, and messages. Git is the transport; files are the state.
+- **Hub** — a git repository that is an agent's home (identity, state, installed
+  packages). Wake-ready from its own files.
+- **Peer** — another hub this hub tracks and syncs with.
+- **Thread** — a Markdown conversation/reflection file **in a hub** (under that
+  hub's `threads/`). This is a *hub-side* concept; the cnos source repo has no
+  root `threads/`.
+
+Protocol: `docs/reference/protocol/cn/PROTOCOL.md`.
+
+### cnos (Coherence Network OS)
+
+The source repo and runtime for CN agents: the `cn` CLI, cognitive packages
+(`src/packages/`), design docs (`docs/`), schemas, and tests. cnos is the
+current lowest durable software articulation of the coherence system; agents
+consume it through installed packages, not a checkout dependency.
+
+---
+
+*Canonical spec for the doc system these terms live in:*
+`docs/reference/governance/DOCUMENTATION-SYSTEM.md`. *Naming conventions:*
+`docs/reference/governance/NAMING.md`.

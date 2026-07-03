@@ -34,3 +34,9 @@ The protocol feature bundle, in reading order:
 
 - [CTB](ctb/README.md) — triadic agent-composition language (draft).
 - [schemas/](schemas/) — JSON schemas and schema design docs.
+
+## Governance
+
+- [GLOSSARY.md](governance/GLOSSARY.md) — **the canonical vocabulary for cnos**: coherence terms, the cell/wave/receipt work model, roles (α/β/γ/δ/ε/V), the issue taxonomy, wakes, packages, and trust/evidence.
+- [DOCUMENTATION-SYSTEM.md](governance/DOCUMENTATION-SYSTEM.md) — doc taxonomy, bundle rules, freeze policy.
+- [NAMING.md](governance/NAMING.md) — naming conventions (CN, cnos, cn).

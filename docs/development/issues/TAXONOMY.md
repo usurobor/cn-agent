@@ -19,6 +19,10 @@ This document defines the labels. For *how to apply them* — classifying, decid
 `kind`, when to dispatch, when to close or supersede, and when a wave δ may relabel
 under MCA — see [TRIAGE.md](TRIAGE.md).
 
+> The terms these labels sit on — `cell`, `wave`, `dispatch:cell`, `status:*`,
+> `kind/*`, `area/*`, `effort/*`, and the roles δ/β/γ — are defined in the
+> canonical [Glossary](../../reference/governance/GLOSSARY.md).
+
 ## Primary kind (choose exactly one)
 
 | Label | Meaning |
