@@ -2,7 +2,7 @@
 
 manifest:
   planned_sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-  completed: [Gap, Skills, ACs]
+  completed: [Gap, Skills, ACs, Self-check]
 
 ## §Gap
 
@@ -105,3 +105,23 @@ Neither new rule changes any Phase-1 fixture's outcome — both require `review_
 - `cn-install-wake cds-dispatch` (golden re-render) and `cn-install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml` (live re-render) — `diff` between the two outputs is empty (byte-identical), satisfying `install-wake-golden`'s re-render-and-diff check. `cn-install-wake agent-admin` re-run for completeness (untouched wake) — reported "(unchanged)".
 - Dispatch-boundary check (INVARIANTS.md T-002) — manually re-ran the CI grep against `internal/cli/cmd_*.go`: `cmd_issues_fsm.go`'s edit is a doc-comment-only change, no new imports; grep reports clean.
 - `scripts/kata/run-all.sh` (binary-verify / package-verify's Tier 1 kata suite) — `KATA SUITE: all passed` (Kata 01 Deps/Help through Kata 06 Install, 31 total pass assertions across the 6 kata).
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+- The one open design decision the scaffold flagged (guard combination for the new `in-progress → review` rule, including the deliberate deviation from γ's non-binding `all_false: [run_active]` suggestion) is resolved and reasoned through in §ACs/AC1 above, not left for β to adjudicate. β's job is to verify the reasoning holds, not to make the call itself.
+- The 404-tolerance decision for label removal is likewise resolved and locked by a dedicated unit test (`TestApplyStatusLabel_ToleratesNotFoundOnRemove`), not left implicit.
+- One residual gap: I5 (skill-frontmatter-check) could not be run locally because the `cue` CLI is not installed in this sandbox. Mitigated by checking that every edited SKILL.md's diff hunks land well past the frontmatter block (verified via `git diff` hunk headers), so there is no plausible frontmatter regression — but β (or CI) should still confirm I5 green on the actual PR, since this is the one AC5 gate α could not execute directly rather than reason about structurally.
+- AC4's evidence is a grep-based enumeration, not an exhaustive semantic audit of "what counts as a taxonomy change." α re-read every grep hit individually (not just the hit count) and classified each; β should re-run the same grep independently per its own oracle rather than trust α's classification alone (per `alpha/SKILL.md` §"Do not claim structural closure without exhaustive enumeration").
+
+**Peer enumeration (per `alpha/SKILL.md` §2.3):**
+
+- **Sibling commands at the same layer:** `cn issues map` (`issues-map` package) and `cn cdd verify` (`cdd-verify` package) — both are Go modules in the same workspace, co-located under the same package-command pattern as `issues-fsm`. Neither consumes `transitions.json` or the FSM's `Decision`/`FactSnapshot` shapes, so neither needed a code change; both were re-built and re-tested green as part of AC5's harness audit (§ACs/AC5 evidence) rather than assumed unaffected.
+- **Multiple writers/readers of the extended schema:** `transitions.json` (CDS-owned declarative data) has exactly one consumer, `table.go`'s `Evaluate`/`ruleMatches`/`guardFuncs` — unmodified this cycle (extension is data-only, per the scaffold's explicit "do not re-derive Phase-1 transition logic" guardrail). `FactSnapshot` (the JSON wire shape) has one producer path duplicated twice (`assembleLive` for live mode, `LoadFixture` for fixtures) and one consumer (`Evaluate`); neither producer changed shape this cycle — `review_request_present` already existed in Phase 1's `FactSnapshot`/fixture schema, the new rules only read it.
+- **Prose ↔ rendered-substrate peers:** `cds-dispatch/SKILL.md` (source) has two rendered peers that must byte-match a fresh render — `cnos-cds-dispatch.golden.yml` and `.github/workflows/cnos-cds-dispatch.yml`. Both re-rendered and diffed identical (§ACs/AC2, AC5 evidence). `agent-admin`'s golden was re-run for completeness (not a peer of this change, since its SKILL.md was untouched) and confirmed "(unchanged)".
+- **Intra-doc repetition (per §2.3's numeric/named-value drift rule):** the phrase "writes the label transition" / "sets `status:review`" as a *normative* (not historical-symptom) claim was grepped across all three touched prose files after editing, not just at the one site named in the γ scaffold — zero surviving hits (§ACs/AC2 evidence).
+
+**Harness audit for schema-bearing changes (per `alpha/SKILL.md` §2.4):** `transitions.json` is schema-bearing CDS data; its one Go consumer (`table.go`) and its one non-Go "harness" (none exists — no shell/CI script parses `transitions.json` directly; `check-dispatch-closeout-integrity.sh` implements an *independent* empty-review predicate in shell, not a `transitions.json` reader, so it is a peer detector, not a harness of this schema) were both identified and left correctly alone. `FactSnapshot`'s JSON shape is unchanged (no new fields), so no fixture-writer or CI-emitted-example audit was needed beyond the three new `testdata/*.json` fixtures α authored to the existing schema.
+
+**Every claim backed by evidence in the diff?** Yes — §ACs cites concrete test names, file paths, and command output for every AC; no claim above rests on "should work" without a corresponding test or manual run captured in this cycle.
