@@ -1979,7 +1979,7 @@
   {
     "n": 567,
     "t": "cds/issues: make issue status transitions FSM-controlled, not worker-mutated",
-    "kind": "process",
+    "kind": "tracking",
     "areas": [
       "cdd",
       "cds",
@@ -1987,16 +1987,16 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "ready",
-    "dispatch": true,
-    "protocol": "cds",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
-    "tracking": false,
+    "tracking": true,
     "assignee": "",
     "created": "2026-07-03T20:26:57Z",
-    "updated": "2026-07-03T20:27:12Z",
+    "updated": "2026-07-03T20:40:49Z",
     "url": "https://github.com/usurobor/cnos/issues/567"
   }
 ]
