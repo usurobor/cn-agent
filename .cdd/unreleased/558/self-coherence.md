@@ -142,3 +142,15 @@ No claim in this file is unbacked by a command run against the actual branch sta
 7. **Self-coherence** — this document.
 
 Head implementation SHA: `f89ae5f97e9e13280471a4dcd6a994d5b5cb43fa` (commit "docs: refresh canonical glossary for current cnos work model"). Branch verified fast-forward onto `origin/main` at `2d0afca3` (no rebase needed — `origin/main` had not advanced past γ's base SHA while this cycle was in progress).
+
+Fix-round: `ad47430c18354dd1262aad5942c0f455a670e853` — the first self-coherence.md commit (`02bf3627`) used `## §Gap` / `## §Skills` / `## §ACs` / `## §Self-check` / `## §Debt` / `## §CDD Trace` headings, which failed the I6 "CDD artifact ledger validation" job (`src/packages/cnos.cdd/commands/cdd-verify/ledger.go` `sectionPresent()` requires an exact-line match on `## Gap`, `## Skills`/`## Mode`, `## ACs`/`## AC Coverage`, `## CDD Trace`; the `§` prefix broke every match). Confirmed via `gh run view 28638764530 --log-failed`, reproduced locally by building `./cn` from `src/go` (`go build -o ../../cn ./cmd/cn`) and running `./cn cdd verify --unreleased --exceptions .cdd/exceptions.yml` (114 passed / 1 failed → 115 passed / 0 failed after dropping the `§` prefix from all six headings). Re-pushed as `ad47430c`; CI re-run `28638886666` green on all 10 jobs including I6 and I4.
+
+## Review-readiness
+
+round 1 | base SHA (origin/main): `2d0afca31d0917ead4f3c8b555a780da0c337280` | head SHA: `ad47430c18354dd1262aad5942c0f455a670e853` | branch CI: green at 04:43 UTC 2026-07-03 (run [28638886666](https://github.com/usurobor/cnos/actions/runs/28638886666), all 10 jobs succeeded, including "Repo link validation (I4)" and "CDD artifact ledger validation (I6)") | cycle/558 verified fast-forward onto origin/main (no drift) | ready for β
+
+Scope: `docs/reference/governance/GLOSSARY.md` (AC1–AC5 primary target), `docs/README.md` + `docs/reference/README.md` + `docs/development/README.md` + `docs/development/issues/TAXONOMY.md` (AC6 one-line links each), `.cdd/unreleased/558/gamma-scaffold.md` (γ's prior artifact, unmodified by α) + `.cdd/unreleased/558/self-coherence.md` (this file). No files outside `docs/` and `.cdd/unreleased/558/` are touched (AC8, re-verified at this SHA: `git diff --stat origin/main...cycle/558 -- . ':!docs' ':!.cdd/unreleased/558'` → empty).
+
+γ-artifact-of-record: present at the canonical §5.1 path — `.cdd/unreleased/558/gamma-scaffold.md` exists on `origin/cycle/558` (γ's commit `072c4ef5`).
+
+Known debt: see §Debt above (no local lychee binary — CI's I4 job is the binding oracle and is green; three pre-existing, out-of-scope staleness items noted for future cleanup, none blocking this cycle's ACs).
