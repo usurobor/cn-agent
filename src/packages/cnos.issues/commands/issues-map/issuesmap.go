@@ -9,8 +9,16 @@
 // self-contained page with no runtime network dependency.
 //
 // Design authority: cnos#545. The dispatch wrapper lives in
-// internal/cli/cmd_issues_map.go and holds no domain logic, per the
+// src/go/internal/cli/cmd_issues_map.go and holds no domain logic, per the
 // dispatch boundary (INVARIANTS.md T-002, eng/go §2.18).
+//
+// Package co-location: this package is Go-source co-located under the
+// cnos.issues package boundary (cnos#556), mirroring the cnos#392
+// cdd-verify precedent. `cn issues map` remains a compiled-in kernel
+// command (SourceKernel/TierKernel, registered in src/go/cmd/cn/main.go)
+// — it is not dispatched through the package-command exec-dispatch
+// mechanism (PACKAGE-SYSTEM.md §7). See src/packages/cnos.issues/SKILL.md
+// for the package-level doctrine statement and the #216 relationship.
 package issuesmap
 
 import (
@@ -329,7 +337,8 @@ func readme(repo string) string {
 		"- **`kind/tracking`** issues are containers and are excluded from the effort\n" +
 		"  rollups (the `effort Σ` stat and the heatmap sums).\n\n" +
 		"## Source of truth\n\n" +
-		"The generator is the Go command `cn issues map` (`src/go/internal/issuesmap/`).\n" +
+		"The generator is the Go command `cn issues map`\n" +
+		"(`src/packages/cnos.issues/commands/issues-map/`).\n" +
 		"There is no standalone script generator on the production path; the browser only\n" +
 		"renders the embedded data.\n"
 }

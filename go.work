@@ -3,4 +3,5 @@ go 1.24
 use (
 	./src/go
 	./src/packages/cnos.cdd/commands/cdd-verify
+	./src/packages/cnos.issues/commands/issues-map
 )
