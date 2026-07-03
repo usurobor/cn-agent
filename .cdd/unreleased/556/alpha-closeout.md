@@ -175,3 +175,31 @@ own scaffold-correctness verification as a primary duty, but a cheap
 I can see by reading the comment myself" cross-check — which β actually did
 perform in R0 (Finding 1) — would have been a low-cost second read α could
 also have done, and did not.
+
+## §R2 addendum — repair round (post status:changes)
+
+The operator reopened #556 with `status:changes`, correcting R1: R1's
+revert of the physical relocation (based on a since-withdrawn operator
+comment) was wrong relative to true intent. This round (`8693164c` on
+`cycle/556`) reinstates R0's already-converged relocation via
+`git revert` of the two R1 revert commits, plus a fresh doctrine rewrite
+stating current truth. Full detail in `self-coherence.md §R2`; independent
+verification in `beta-review.md §R2` (verdict: converge).
+
+```yaml
+repair_evidence:
+  prior_rejection: "https://github.com/usurobor/cnos/issues/556 — operator status:changes comment, 2026-07-03"
+  repairs_required:
+    - finding-1: "physically relocate Go implementation into src/packages/cnos.issues/commands/issues-map/ and keep it there"
+    - finding-3: "doctrine must state current truth without R0/R1 narration"
+    - finding-5: "cn build --check / go test / required CI green at new HEAD"
+    - finding-6: "receipt must state package-command dispatch disposition explicitly"
+  repairs_completed:
+    - finding-1: "commits df4bfd8b + 4d9695f8 (git revert of f9707a9d/97a4b7d3)"
+    - finding-3: "commit e2017b3f (fresh SKILL.md rewrite)"
+    - finding-5: "local + remote CI green, run 28633115708, all 10 required jobs success"
+    - finding-6: "SKILL.md states Option B explicitly"
+  repairs_not_completed: []
+  delta_overrides: []
+  new_state_differs_from_rejected: "git diff 7cbd07b7..8693164c --stat: 13 files changed, 114 insertions(+), 23 deletions(-) (excluding this closeout's own append)"
+```

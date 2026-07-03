@@ -494,3 +494,138 @@ removed package-relocated path. CI is green on the literal current branch
 tip (`4f7b607b`, run `28628664782`, all 10 required jobs `success`). Nothing
 outside the repair's own predicted footprint changed. This closes the
 review loop from β's side; δ may proceed to closeouts + PR.
+
+## §R2
+
+**Round 2 (repair re-review) | base: R1 rejected state `7cbd07b7` | repair SHA under review: `8693164c` | independently re-verifying α's R2 repair (`.cdd/unreleased/556/self-coherence.md §R2`).**
+
+### File layout — CONFIRMED
+
+`find src/go/internal/issuesmap src/packages/cnos.issues -type f` (run
+independently against `8693164c`) shows `src/go/internal/issuesmap`
+absent entirely, and the five domain files
+(`fetch.go`, `issuesmap.go`, `issuesmap_test.go`, `templates/
+board.template.html`, `testdata/issues.json`) plus a new `go.mod` present
+under `src/packages/cnos.issues/commands/issues-map/`. Matches the operator's
+"Acceptance" item 1 verbatim ("`src/go/internal/issuesmap/` no longer
+exists").
+
+### Build/test — CONFIRMED, independently re-run
+
+- `cd src/go && go build ./... && go vet ./... && go test ./...` — clean,
+  13 packages `ok` (issuesmap is correctly no longer part of this module).
+- `cd src/packages/cnos.issues/commands/issues-map && go build ./... && go
+  vet ./... && go test ./...` — clean, `ok`, tests unmodified and green at
+  the new location.
+- `go.work` lists `./src/packages/cnos.issues/commands/issues-map`;
+  `src/go/go.mod` carries the `require`+`replace` pair mirroring the
+  `cdd-verify` precedent exactly (same comment style, same wiring shape).
+
+### `cn build --check` and command behavior — CONFIRMED
+
+Built `cn` from `src/go` independently, ran:
+- `cn build --check` → `✓ cnos.issues: valid`, `✓ All packages valid.`
+  `cn.package.json` still has no `commands` object entry for `issues-map`
+  (confirmed: matches the `cnos.cdd`/`cdd-verify` precedent, which also has
+  no `commands` entry for its co-located command).
+- `cn issues map --fixture .../testdata/issues.json --out <tmpdir>` →
+  succeeds, writes `index.html`, `board-data.json`, `README.md`.
+- `cn issues map --repo usurobor/cnos --out <tmpdir>` → succeeds against
+  the live repo.
+
+### Doctrine text — CONFIRMED matches operator's "teach current truth"
+instruction
+
+`src/packages/cnos.issues/SKILL.md` and `skills/map/SKILL.md` (commit
+`e2017b3f`) state the implementation's current location
+(`commands/issues-map/`) as fact, cite the `cnos#392` `cdd-verify`
+precedent, and state the dispatch disposition explicitly as Option B
+(kernel-dispatch thin shim, package-owned implementation, `#216` debt for
+true exec-dispatch) — satisfying AC10 / the operator's "Acceptance" item on
+receipt honesty. Grepped both files for `R0`/`R1`/round-narration language:
+none present in the rewritten sections (the doctrine states current truth
+only, not a rewrite history — matching the operator's explicit "no R0/R1
+narration in active skill prose" instruction, unlike R1's `aa635c7a` which
+over-narrated the reversion).
+
+### Repo-wide dangling-reference grep — CONFIRMED clean
+
+`grep -rln "internal/issuesmap\|cnos.issues/commands/issues-map" . 
+--exclude-dir=.git --exclude-dir=.cdd` → exactly 8 files, all referencing
+the correct **current** path
+(`go.work`, `docs/development/board/README.md`, `src/go/go.mod`,
+`src/go/internal/cli/cmd_issues_map.go`, `src/packages/cnos.issues/
+SKILL.md`, `src/packages/cnos.issues/commands/issues-map/{issuesmap.go,
+go.mod}`, `src/packages/cnos.issues/skills/map/SKILL.md`). No live
+reference to the removed `src/go/internal/issuesmap/` path anywhere. The
+three `.cdd/unreleased/556/*.md` R0-round artifacts (`gamma-scaffold.md`,
+the R0 section of `beta-review.md`, the R0 section of `self-coherence.md`)
+still narrate R0/R1 history in past tense, as they must — they are
+append-only historical CDD records, not active skill doctrine, and the
+repair contract explicitly names them out of scope.
+
+### Nothing outside the repair's own footprint changed
+
+`git diff --stat 4fe8e4333b36372f595201841fb76cc0c31acff4...8693164c`
+(true cycle base to this round's pushed head) touches exactly: the seven
+`.cdd/unreleased/556/*.md` CDD artifacts (six from R0/R1 plus this round's
+`REPAIR-PLAN.md`), `docs/development/board/README.md` (one path line),
+`go.work` (+1 line), `src/go/go.mod` (+9 lines), `cmd_issues_map.go`
+(import path), the `cnos.issues` package manifest/doctrine files (created
+at R0, doctrine text repaired at R2), and the five relocated Go-domain
+files plus their `go.mod`. `.github/workflows/board-map.yml` is untouched
+(`git diff ...board-map.yml` empty) — confirms AC5/AC7/AC8 (Action still
+calls the public command, board output generation logic unchanged, no
+Node generator introduced) remain met, unaffected by this repair round.
+
+### CI — green at the true current HEAD
+
+`gh run view 28633115708 --json jobs` (run triggered by the push of
+`8693164c` to `cycle/556`) → all 10 required jobs `success`: Go build &
+test, Binary verification, Package verification, Package/source drift
+(I1), Protocol contract schema sync (I2), Repo link validation (I4),
+SKILL.md frontmatter validation (I5), CDD artifact ledger validation (I6),
+Dispatch repair-preflight guard (cnos#516), Dispatch closeout-integrity
+guard (cnos#524). Confirmed `8693164c` is the actual current `cycle/556`
+tip via `git rev-parse origin/cycle/556`, not a stale earlier commit. AC9:
+met at the literal current head.
+
+### repair_evidence cross-check
+
+Independently re-derived α's `self-coherence.md §R2` `repair_evidence`
+block against the operator's six-item repair contract
+(`REPAIR-PLAN.md` rows 1–6): all six map to a completed repair with
+verifiable evidence; `repairs_not_completed` and `delta_overrides` are
+correctly empty (this repair required no further δ override — it directly
+reinstates δ's own R0-converged decision, which the operator's correction
+confirms was the correct call all along, superseding the R1 override that
+this round reverses).
+
+### Findings
+
+None. α's R2 repair is a clean, byte-for-byte reinstatement of R0's
+already-converged relocation (git rename-detected, 0 semantic diff on the
+moved files beyond the embedded string/doc-comment, matching R0's original
+diff exactly) plus a fresh, honest doctrine rewrite that satisfies the
+operator's "teach current truth, no round-narration" instruction more
+strictly than R1's own doctrine commit did. All ten required CI jobs are
+green at the literal, confirmed-current branch tip. Nothing outside the
+repair's predicted footprint changed. The repair directly and completely
+addresses every item in the operator's `status:changes` correction.
+
+## Verdict (R2)
+
+verdict: converge
+
+α's R2 repair reinstates R0's β-converged relocation of the Go
+implementation into `src/packages/cnos.issues/commands/issues-map/`
+(reverting R1's wrongful revert, which was itself based on a now-withdrawn
+operator comment) and rewrites the `cnos.issues` doctrine to state that
+location as current, honest fact — matching the operator's explicit,
+most-recent correction on cnos#556 point-for-point. Build, vet, test,
+`cn build --check`, fixture and live `cn issues map` runs, the repo-wide
+dangling-reference grep, and the diffstat footprint check all pass
+independently. Remote CI is green on the literal current branch tip
+(`8693164c`, run `28633115708`, all 10 required jobs `success`). This
+closes the R2 repair review loop from β's side; δ may proceed to closeouts
++ PR update.

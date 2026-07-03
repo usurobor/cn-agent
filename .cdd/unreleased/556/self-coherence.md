@@ -753,3 +753,132 @@ usurobor/cnos --out <tmpdir>` still works, (e) the repo-wide grep for
 `internal/issuesmap` / `cnos.issues/commands/issues-map` shows no dangling
 references, and (f) CI green on `aa635c7a` via `gh run list --branch
 cycle/556`.
+
+## §R2
+
+**Repair round 2 | base: R1 rejected state `7cbd07b7` (branch tip at operator's `status:changes`) | repair SHA: `e2017b3f` | ready for β re-review.**
+
+### What was rejected and why
+
+The operator reopened #556 with `status:changes` (issue comment, 2026-07-03,
+titled "Operator correction — #556 reopened"). The rejection: R1's repair
+(triggered by a δ override) reverted R0's already-converged relocation of
+the Go implementation into `src/packages/cnos.issues/commands/issues-map/`,
+on the strength of an earlier operator comment ("the Go implementation may
+remain under `src/go/internal/issuesmap/` during the shim phase"). The
+operator's correction explicitly **withdraws** that earlier comment: *"That
+was a misunderstanding of intent and is now withdrawn. The actual goal is a
+clean package/kernel separation, including the Go code... Do not revert the
+relocation this time — move the Go implementation into the package and keep
+it there."*
+
+### Repair taken (see `.cdd/unreleased/556/REPAIR-PLAN.md` for the full
+finding→repair map)
+
+1. `git revert --no-edit f9707a9d 97a4b7d3` (commits `df4bfd8b`, `4d9695f8`)
+   — cleanly reinstates R0's relocation: `issuesmap.go`, `fetch.go`,
+   `issuesmap_test.go`, `templates/`, `testdata/` move back to
+   `src/packages/cnos.issues/commands/issues-map/` (git rename-detected, 0
+   semantic diff on the moved files besides `issuesmap.go`'s embedded
+   README string / doc-comment, matching R0's original diff exactly); the
+   module's own `go.mod` is recreated; `go.work` regains the `use` entry;
+   `src/go/go.mod` regains the `require`+`replace` pair; `cmd_issues_map.go`
+   is back to importing the package path as a one-line thin shim;
+   `docs/development/board/README.md`'s source-of-truth line points at the
+   package path again.
+2. Rewrote `src/packages/cnos.issues/SKILL.md` and
+   `src/packages/cnos.issues/skills/map/SKILL.md` fresh (commit `e2017b3f`)
+   rather than re-reverting R1's doctrine commit (`aa635c7a`, which was not
+   itself part of the two reverted commits and so remained live, describing
+   the now-false `src/go/internal/issuesmap/` location). New text states
+   current truth only: implementation at
+   `src/packages/cnos.issues/commands/issues-map/`, Go-source co-location
+   mirroring the `cnos#392` `cdd-verify` precedent, kernel-dispatch thin
+   shim (Option B, `#216` debt) — no R0/R1 round narration in the active
+   skill prose, per the operator's "teach current truth" instruction (item
+   5 of the repair contract).
+
+### Build/test/CI re-verification
+
+- `cd src/go && go build ./... && go vet ./... && go test ./...` — clean;
+  13 packages `ok` (the `issuesmap` package is no longer part of this
+  module — see next line).
+- `cd src/packages/cnos.issues/commands/issues-map && go build ./... && go
+  vet ./... && go test ./...` — clean; `ok` for the relocated module,
+  tests unchanged and passing at the new location.
+- Built `cn` from `src/go` (`go build -o /tmp/cn_r2 ./cmd/cn`) and ran,
+  myself: `/tmp/cn_r2 build --check` → `✓ cnos.issues: valid` alongside
+  all other packages, `✓ All packages valid.`
+- `/tmp/cn_r2 issues map --fixture src/packages/cnos.issues/commands/
+  issues-map/testdata/issues.json --out /tmp/board-out-r2` → `wrote 5 open
+  issues to /tmp/board-out-r2 (index.html, board-data.json, README.md)`,
+  exit 0.
+- `/tmp/cn_r2 issues map --repo usurobor/cnos --out /tmp/board-out-r2-live`
+  → `wrote 94 open issues to /tmp/board-out-r2-live (index.html,
+  board-data.json, README.md)`, exit 0 (issue count differs from R1's 93
+  only because new issues were filed on the live repo between rounds —
+  expected, not a regression).
+- Repo-wide grep `grep -rln "internal/issuesmap\|cnos.issues/commands/
+  issues-map" . --exclude-dir=.git --exclude-dir=.cdd` → exactly 8 files,
+  all pointing at the correct **new** `cnos.issues/commands/issues-map`
+  path (`go.work`, `docs/development/board/README.md`, `src/go/go.mod`,
+  `src/go/internal/cli/cmd_issues_map.go`, `src/packages/cnos.issues/
+  SKILL.md`, `src/packages/cnos.issues/commands/issues-map/{issuesmap.go,
+  go.mod}`, `src/packages/cnos.issues/skills/map/SKILL.md`). No dangling
+  reference to the old `src/go/internal/issuesmap/` path remains anywhere
+  live.
+- `git diff --stat` from the cycle's true base (`4fe8e433`, the commit PR
+  #557 was originally opened against) to this round's HEAD (`e2017b3f`)
+  touches exactly the files the repair contract predicts: the package
+  manifest/doctrine additions, the five relocated Go-domain files, `go.work`,
+  `src/go/go.mod`, the recreated `commands/issues-map/go.mod`,
+  `cmd_issues_map.go`, the board README path line, and this round's own
+  `.cdd/unreleased/556/*.md` artifacts. `.github/workflows/board-map.yml`
+  is untouched — confirmed via `git diff 4fe8e433...HEAD --
+  .github/workflows/board-map.yml` (empty).
+
+### Commits this round
+
+- `35562a92` — `delta: REPAIR-PLAN for R2 repair round (cnos#556)`
+- `df4bfd8b` — `Reapply "issues-map: relocate domain implementation to
+  cnos.issues package boundary"` (revert of R1's `f9707a9d`)
+- `4d9695f8` — `Reapply "docs: update board README path reference to
+  cnos.issues package location"` (revert of R1's `97a4b7d3`)
+- `e2017b3f` — `cnos.issues: fix doctrine to state current truth (R2)`
+
+### repair_evidence
+
+```yaml
+repair_evidence:
+  prior_rejection: "https://github.com/usurobor/cnos/issues/556 — operator status:changes comment, 2026-07-03, 'Operator correction — #556 reopened'"
+  repairs_required:
+    - finding-1: "Go implementation must physically live under src/packages/cnos.issues/commands/issues-map/, not src/go/internal/issuesmap/ — R1's revert was wrong relative to true operator intent"
+    - finding-2: "cmd_issues_map.go must remain a thin shim over the package-owned implementation"
+    - finding-3: "cnos.issues doctrine (SKILL.md, skills/map/SKILL.md) must state current truth (package-relocated), not the withdrawn src/go/internal/issuesmap/ narrative, and without R0/R1 narration in active prose"
+    - finding-4: "board Action and board output behavior must remain unchanged"
+    - finding-5: "cn build --check, go test ./..., and all required CI jobs must pass at the new HEAD"
+    - finding-6: "receipt must explicitly state the package-command dispatch disposition (Option A vs B)"
+  repairs_completed:
+    - finding-1: "git revert of f9707a9d/97a4b7d3 (commits df4bfd8b, 4d9695f8) reinstates R0's relocation byte-for-byte; verified via file-layout find + go.work/go.mod diff"
+    - finding-2: "cmd_issues_map.go re-verified as one-line import + delegation (see file contents in commit df4bfd8b)"
+    - finding-3: "commit e2017b3f rewrites both SKILL.md files fresh, stating package-relocated truth only, no R0/R1 narration"
+    - finding-4: "git diff 4fe8e433...HEAD -- .github/workflows/board-map.yml is empty; board-data.json/index.html generation logic unchanged (only the moved Go source, 0 semantic diff besides embedded string)"
+    - finding-5: "local go build/vet/test green in both modules; cn build --check green; cn issues map fixture+live runs succeed; remote CI to be confirmed after push (see beta-review.md §R2)"
+    - finding-6: "SKILL.md 'Command-dispatch disposition' section states Option B explicitly: package-owned implementation, kernel-dispatch thin shim, true package-command exec-dispatch remains #216 debt"
+  repairs_not_completed: []
+  delta_overrides: []
+  new_state_differs_from_rejected: "git diff 7cbd07b7..e2017b3f --stat: 13 files changed, 114 insertions(+), 23 deletions(-) — the rejected R1 state had the Go implementation at src/go/internal/issuesmap/ with doctrine describing that location; the repaired state has it at src/packages/cnos.issues/commands/issues-map/ with doctrine describing that location, plus the go.work/go.mod wiring and REPAIR-PLAN.md"
+```
+
+### Review-readiness (R2)
+
+This repair does not reopen AC1–AC9 as previously verified by β at R0
+(board output, taxonomy, CLI dispatch shape, GitHub Action are unaffected —
+this round is the physical-location repair only). It repairs AC10 and the
+operator's explicit correction: the receipt now honestly states the Go
+implementation lives at `src/packages/cnos.issues/commands/issues-map/`,
+matching the operator's final, most-recent, on-topic instruction. β should
+independently re-verify: (a) the file layout, (b) go build/vet/test in both
+modules, (c) `cn build --check`, (d) `cn issues map` fixture + live, (e) the
+repo-wide dangling-reference grep, (f) the diffstat footprint against the
+true cycle base, and (g) CI green on the pushed head once available.

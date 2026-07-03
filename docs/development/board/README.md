@@ -39,6 +39,7 @@ directly — no server needed. Live preview: https://raw.githack.com/usurobor/cn
 
 ## Source of truth
 
-The generator is the Go command `cn issues map` (`src/go/internal/issuesmap/`).
+The generator is the Go command `cn issues map`
+(`src/packages/cnos.issues/commands/issues-map/`).
 There is no standalone script generator on the production path; the browser only
 renders the embedded data.
