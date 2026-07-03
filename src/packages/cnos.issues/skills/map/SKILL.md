@@ -32,23 +32,14 @@ model: every field a board record carries is derived from taxonomy labels
 
 The domain implementation lives at
 [`src/go/internal/issuesmap/`](../../../../go/internal/issuesmap/) — **not**
-under this package's directory. Per the operator's explicit "Go
-implementation rule" on [cnos#556](https://github.com/usurobor/cnos/issues/556)
-("Do not force Go implementation code into `src/packages/`. The active Go
-implementation may remain under `src/go/internal/issuesmap/` during the
-shim phase, but it must be treated as the implementation of the
-`cnos.issues` domain."), this location is deliberate and pinned, not a
-migration-in-progress. It is dispatched by the thin
+under this package's directory. It is dispatched by the thin
 `src/go/internal/cli/cmd_issues_map.go` (argument parsing + one-line
 delegation only — no domain logic).
 
-See `src/packages/cnos.issues/SKILL.md` §"Command-dispatch disposition" for
-the full rationale, including the R1 reversion of an R0 attempt that
-physically relocated this source under
-`src/packages/cnos.issues/commands/issues-map/` (mirroring the
-[cnos#392](https://github.com/usurobor/cnos/issues/392) `cdd-verify`
-precedent) — that relocation contradicted the operator's instruction above
-and was reverted.
+`cn issues map` is a temporary built-in shim until
+[#216](https://github.com/usurobor/cnos/issues/216); see
+`src/packages/cnos.issues/SKILL.md` §"Command-dispatch disposition" for the
+current command/package boundary.
 
 ## Command contract
 

@@ -43,56 +43,31 @@ from the CLI dispatch that invokes it.
   open issues, derives taxonomy-aware records, computes effort, and renders
   the interactive board (`skills/map/SKILL.md`).
 
-## Command-dispatch disposition (read this before assuming package-command discovery)
+## Command-dispatch disposition
 
 The user-facing command `cn issues map` is a **compiled-in kernel command**
-(`Source: SourceKernel`, `Tier: TierKernel`), registered directly in
-`src/go/cmd/cn/main.go` and dispatched by `src/go/internal/cli/cmd_issues_map.go`.
+(`SourceKernel` / `TierKernel`), registered in `src/go/cmd/cn/main.go` and
+dispatched by the thin `src/go/internal/cli/cmd_issues_map.go` (argument
+parsing + delegation only).
 
-**Go implementation location (read literally, do not assume a package-relative
-path):** the Go domain implementation — `issuesmap.go`, `fetch.go`,
-`issuesmap_test.go`, `templates/`, `testdata/` — physically lives at
-[`src/go/internal/issuesmap/`](../../go/internal/issuesmap/), **not** under
-`src/packages/cnos.issues/`. This is a deliberate, operator-pinned
-constraint, not an oversight or a not-yet-done migration. The operator's
-clarifying comment on [cnos#556](https://github.com/usurobor/cnos/issues/556)
-states verbatim: *"Do not force Go implementation code into `src/packages/`.
-The active Go implementation may remain under
-`src/go/internal/issuesmap/` during the shim phase, but it must be treated
-as the implementation of the `cnos.issues` domain."* An R0 attempt at this
-cycle physically relocated the Go source into
-`src/packages/cnos.issues/commands/issues-map/` (mirroring the
-[cnos#392](https://github.com/usurobor/cnos/issues/392) `cdd-verify`
-precedent); that relocation was overridden and reverted in R1 specifically
-because it contradicted the operator's explicit instruction above. Precedent
-matching does not supersede an explicit, on-topic, most-recent operator
-instruction.
+The Go domain implementation — `issuesmap.go`, `fetch.go`,
+`issuesmap_test.go`, `templates/`, `testdata/` — lives at
+[`src/go/internal/issuesmap/`](../../go/internal/issuesmap/), not under this
+package. That path **is** the implementation of the `cnos.issues` domain —
+own it conceptually as such, even though it is not physically nested here.
 
-Practically, this means: `src/go/internal/issuesmap/` **is** the
-implementation of the `cnos.issues` domain — own it conceptually as such —
-even though it is not physically nested under this package's directory.
-`cn issues map` remains a **temporary built-in shim until
-[#216](https://github.com/usurobor/cnos/issues/216) lands**; dispatch stays
-through the compiled-in kernel registration, not through the package-command
-exec-dispatch mechanism
-([`PACKAGE-SYSTEM.md` §7](../../../docs/reference/packages/PACKAGE-SYSTEM.md)).
+`cn issues map` is a **temporary built-in shim until
+[#216](https://github.com/usurobor/cnos/issues/216)**: dispatch stays through
+the compiled-in kernel registration, not the package-command exec-dispatch
+mechanism ([`PACKAGE-SYSTEM.md` §7](../../../docs/reference/packages/PACKAGE-SYSTEM.md)).
+Accordingly, `cn.package.json` declares **no** `commands` entry and there is
+no `commands/issues-map/` directory — declaring one would misrepresent the
+command's dispatch path and the code's location.
 
-This package's `cn.package.json` has no `commands` object entry for
-`issues-map` — correctly so, since there is no `commands/issues-map/`
-directory under this package at all during the shim phase. Declaring one
-would misrepresent both the command's dispatch path (still kernel built-in,
-not package-command exec-dispatch) and the code's actual location.
-
-A future [#216](https://github.com/usurobor/cnos/issues/216) cycle that
-flips `issues-map` onto real package-command exec-dispatch would need to (a)
-remove the kernel registration in `main.go`, (b) physically relocate (or
-newly place) the domain source under this package's `commands/issues-map/`,
-(c) add a `commands.issues-map` entry to this file's `cn.package.json` with
-a `cn-issues-map` entrypoint script, and (d) add package-install plumbing to
-the board-map GitHub Action. None of that is done by this package as it
-stands — this cycle ([cnos#556](https://github.com/usurobor/cnos/issues/556))
-only establishes the package's doctrine/skill home and the conceptual
-domain-ownership statement above; it does not move any Go source.
+A future #216 cycle may move `issues-map` onto real package-command
+exec-dispatch (placing the domain source under this package, adding a
+`commands.issues-map` entry, and package-install plumbing to the board
+Action).
 
 ## Non-goals
 
