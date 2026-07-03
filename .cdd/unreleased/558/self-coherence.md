@@ -1,6 +1,6 @@
 # self-coherence — cycle/558
 
-## §Gap
+## Gap
 
 Issue: [#558](https://github.com/usurobor/cnos/issues/558) — "docs: refresh canonical glossary for current cnos work model".
 
@@ -10,14 +10,14 @@ Version / mode: **design-and-build** (per issue header and γ's scaffold — the
 
 Branch: `cycle/558`, base verified fast-forward from `284be5693cc162c0fcd6c97fb69f22d9a4b1b5ea` (δ-supplied SHA) through γ's `072c4ef5` (gamma-scaffold commit) to `origin/main` at `2d0afca3`.
 
-## §Skills
+## Skills
 
 - **Tier 1:** `CDD.md` (canonical lifecycle); `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` (this role surface); `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` (AC-boundary interpretation — no design/plan sub-skill invoked; the issue's own "design-and-build" mode and γ's scaffold made a separate design/plan pass unnecessary for a single-file docs refresh).
 - **Tier 2:** none of the always-applicable `eng/*` bundles apply — this is a Markdown-only docs cycle with no code, no CLI surface, no runtime dependency (per the pinned implementation contract).
 - **Tier 3 (issue-specified):** `src/packages/cnos.core/skills/write/SKILL.md` — governed prose structure (one governing question per entry, front-loaded point, contrastive ❌/✅ discipline where used, cut duplicate facts).
 - **γ artifact:** `.cdd/unreleased/558/gamma-scaffold.md` — read in full before drafting; every citation in its source-of-truth table was independently re-verified against the live tree before use (see §ACs; several were found to need a further correction beyond what the scaffold flagged — the scaffold's paths for `docs/development/cdd/CDD.md` §3.4/§9.5, `docs/architecture/cognitive-substrate/COGNITIVE-SUBSTRATE.md` §7.3 for DUR, and `docs/papers/FOUNDATIONS.md` §6 for wake-up no longer resolve to the content they used to; these were re-pointed to their current canonical locations rather than left broken).
 
-## §ACs
+## ACs
 
 **AC1 — glossary is current.**
 Evidence: every backtick-quoted repo-relative path in the rewritten glossary was checked with `test -f` (see script output below); all resolve except a small set of intentionally hub-relative or external-repo-relative paths (`spec/SOUL.md`, `state/*.md`, `threads/reflections/...`, `tsc/spec/tsc-core.md`) that describe an agent hub's structure or the external `tsc` repo, not this repo — consistent with how the pre-existing glossary already used those paths (e.g. `state/receipts/`, `state/peers.md`). Two pre-existing stale citations were also found and corrected beyond what the scaffold flagged: the "DUR" entry's dead pointer to `COGNITIVE-SUBSTRATE.md §7.3` (no such section; DUR now lives in `src/packages/cnos.core/skills/skill/SKILL.md` §1–§3) and the "Wake-up" entry's dead pointer to `FOUNDATIONS.md §6` (no wake-up content there anymore; content lives only in `CAA.md §4`, already cross-cited). "Coherence delta"'s stale `docs/development/cdd/CDD.md §3.4, §9.5` citation (that file is now a 3-line pointer, not the algorithm) was dropped, keeping the verified `CAA.md §5.6/§10` citation.
@@ -109,7 +109,7 @@ $ git diff --stat origin/main...cycle/558 -- . ':!docs' ':!.cdd/unreleased/558'
 ```
 Every touched file is under `docs/` or `.cdd/unreleased/558/`. No code, no schema, no CI config changed.
 
-## §Self-check
+## Self-check
 
 Did this cycle push ambiguity onto β? The four friction notes γ surfaced were resolved explicitly rather than deferred:
 
@@ -124,14 +124,14 @@ One judgment call not flagged by γ: the "Coherence Contract" entry (not on the 
 
 No claim in this file is unbacked by a command run against the actual branch state (see the fenced command blocks under each AC).
 
-## §Debt
+## Debt
 
 - **No local lychee run.** The environment had no cargo-built `lychee` binary and no network-cached release; AC7's binding evidence is the CI job result on the pushed head commit, not a pre-push local run. A manual link-resolution script (Python, checks every `[text](url)` in the 5 changed files against the filesystem) was used as a pre-push gate instead and found 0 broken links; CI confirmed green after push.
 - **Document-local version number not bumped.** The glossary's header still reads "cnos v3.6.0" (a pre-existing, differently-scoped versioning convention — the file's own note says document versions are "local to each file," but the header format doesn't match that note's own example format `GLOSSARY v2.0.0`). This pre-existing inconsistency was not in scope for this issue (no AC requires it) and was left untouched to avoid scope creep beyond the pinned backward-compat invariant.
 - **`CHANGELOG.md` still cites `≥0.80 = PASS`.** Found incidentally while verifying the TSC threshold citation. `CHANGELOG.md` is outside this issue's scoped surface (GLOSSARY.md + 4 entrypoints) and outside AC8's allowed diff — left untouched, noted here as a candidate follow-up for whoever next touches that file.
 - **`lychee.toml`'s own comment says the I4 job lives in `.github/workflows/coherence.yml`**, but the actual job is defined in `.github/workflows/build.yml` (confirmed via CI run evidence above). This is a pre-existing doc-comment/reality mismatch in a file this issue does not touch — noted, not fixed, since `lychee.toml` is outside the pinned package-scoping axis.
 
-## §CDD Trace
+## CDD Trace
 
 1. **Gap** — named above; issue #558, design-and-build mode, small-change work-shape.
 2. **Mode** — design-and-build; no separate DESIGN.md/PLAN.md pair required (γ verified MCA preconditions did not apply for a single-file docs refresh; concurred).
