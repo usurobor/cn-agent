@@ -127,3 +127,30 @@ deliverable_evidence:
 ```
 
 Recorded by δ post-PR-open, confirming all five closeout-integrity preflight conditions hold before the `status:in-progress -> status:review` transition: PR #557 exists and references #556; HEAD differs from base by 20 commits; `cycle/556` branch exists and differs from base; all six required artifacts present at `.cdd/unreleased/556/`; this block names the PR number and head/base SHAs as evidence.
+
+## §R2 addendum — deliverable evidence at the repaired head
+
+This repair round supersedes the closeout's original deliverable-evidence
+block (which pointed at R1's now-rejected head). Updated evidence below;
+PR #557 will be updated to reference `cycle/556`'s new tip.
+
+```yaml
+repair_evidence:
+  prior_rejection: "https://github.com/usurobor/cnos/issues/556 — operator status:changes comment, 2026-07-03"
+  repairs_required:
+    - finding-1: "Go implementation must live under src/packages/cnos.issues/commands/issues-map/"
+    - finding-6: "receipt honesty on package-command dispatch disposition (Option A vs B)"
+  repairs_completed:
+    - finding-1: "reinstated via git revert of R1's reverts (df4bfd8b, 4d9695f8); independently confirmed by beta-review.md §R2"
+    - finding-6: "SKILL.md states Option B (kernel-dispatch thin shim, #216 debt) explicitly"
+  repairs_not_completed: []
+  delta_overrides: []
+  new_state_differs_from_rejected: "cycle/556 HEAD moved 7cbd07b7 -> 8693164c across 6 commits (REPAIR-PLAN, 2 reverts, doctrine rewrite, self-coherence §R2, beta-review §R2)"
+
+deliverable_evidence:
+  pr: "#557 (cycle/556 -> main), to be updated to reference 8693164c"
+  head_sha: "8693164c92a13b31bf5520f2ad6683f6a5004060"
+  base_sha: "4fe8e4333b36372f595201841fb76cc0c31acff4"
+  commits_beyond_base: 27
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```

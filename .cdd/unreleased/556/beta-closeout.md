@@ -143,3 +143,33 @@ about this verdict.
    mistakes, cross-checking the operator's comment directly rather than via
    scaffold paraphrase) worked as intended and is not something I would
    change.
+
+## §R2 addendum — independent re-review of the repair
+
+Independently re-verified α's R2 repair against the operator's six-item
+repair contract (file layout, build/test in both modules, `cn build
+--check`, `cn issues map` fixture+live, doctrine text, dangling-reference
+grep, diffstat footprint, remote CI). Full detail in `beta-review.md §R2`.
+Verdict: converge — the repair reinstates R0's own already-β-converged
+work byte-for-byte and repairs the doctrine text more strictly than R1's
+own doctrine commit did (no round-narration in active prose).
+
+```yaml
+repair_evidence:
+  prior_rejection: "https://github.com/usurobor/cnos/issues/556 — operator status:changes comment, 2026-07-03"
+  repairs_required:
+    - finding-1: "physical relocation must stick"
+    - finding-2: "cmd_issues_map.go must remain a thin shim"
+    - finding-3: "doctrine states current truth, no R0/R1 narration"
+    - finding-4: "board Action/output behavior unchanged"
+    - finding-5: "CI green at new HEAD"
+  repairs_completed:
+    - finding-1: "file-layout find confirms src/go/internal/issuesmap absent, files present under commands/issues-map/"
+    - finding-2: "cmd_issues_map.go re-read: one-line import + delegation"
+    - finding-3: "grep for R0/R1 narration in rewritten SKILL.md sections: none"
+    - finding-4: "git diff on board-map.yml and board generation logic: empty/unaffected"
+    - finding-5: "gh run view 28633115708: all 10 required jobs success"
+  repairs_not_completed: []
+  delta_overrides: []
+  new_state_differs_from_rejected: "independently re-ran git diff 7cbd07b7..8693164c --stat, matches alpha-closeout's reported footprint exactly"
+```
