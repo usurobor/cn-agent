@@ -2008,7 +2008,7 @@
       "issues"
     ],
     "pri": "P1",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2017,7 +2017,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-03T20:41:26Z",
-    "updated": "2026-07-03T20:43:47Z",
+    "updated": "2026-07-03T20:44:39Z",
     "url": "https://github.com/usurobor/cnos/issues/568"
   },
   {
