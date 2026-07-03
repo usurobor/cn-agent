@@ -2,7 +2,7 @@
 
 manifest:
   planned_sections: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check, Debt]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
 
 ## §Gap
 
@@ -29,7 +29,7 @@ Phase 1 (#568) gave the FSM the ability to *observe and reason about* issue stat
 
 ## §ACs
 
-Implementation SHA (last implementation commit before this readiness signal): `f344c5c` (prose/golden). Go+JSON implementation landed at `901a5cb`.
+Implementation SHA (last implementation commit before this readiness signal): `986e459` (prose/golden). Go+JSON implementation landed at `1fc6e15`.
 
 ### AC1 — `--apply` is guard-gated
 
@@ -64,7 +64,7 @@ Neither new rule changes any Phase-1 fixture's outcome — both require `review_
 
 **Invariant:** workers produce matter and request transitions; the FSM applies status labels.
 
-**What was built (prose-only, commit `f344c5c`):**
+**What was built (prose-only, commit `986e459`):**
 - `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` step 7: now reads "...requests the `status:in-progress → status:review` transition — δ ensures `REVIEW-REQUEST.yml` and the closeout matter exist, then runs `cn issues fsm evaluate --issue {N} --apply`... rather than writing the label directly." The "Closeout integrity preflight" intro + "No-deliverable rule" paragraphs, and the "Lifecycle transitions" table's β-converge row + its lead-in sentence, are updated the same way; the other three named transitions (claim, hard-block, release-back-to-queue) are explicitly called out as unchanged direct label writes — AC2's scope is the review request only.
 - `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` §9.6's `status:review` return-token row: "Wake-observable mechanism" column now reads "a *request* for the `status:in-progress → status:review` transition... (`cn issues fsm evaluate --issue {N} --apply`... — δ does NOT write the label directly)".
 - `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` §2.9: one added paragraph ("Mechanism (cnos#569 Phase 2)") stating the wake requests rather than writes the transition, and that the FSM guard is a second independent layer over the same deliverable-evidence invariant. §2.4 (the abstract lifecycle-transition diagram) was read and left unchanged — it names states and actors ("wake: claim operation", "cell completes") but never asserts a label-write mechanism, so it does not contradict AC2.
@@ -93,7 +93,7 @@ Neither new rule changes any Phase-1 fixture's outcome — both require `review_
 
 **Invariant:** the authority flip does not regress repo health.
 
-**Evidence (all run locally on branch HEAD, commit `f344c5c` implementation content + this artifact's commits on top):**
+**Evidence (all run locally on branch HEAD, commit `986e459` implementation content + this artifact's commits on top):**
 - `cd src/go && go build ./... && go vet ./... && go test ./...` — all 14 `src/go` internal packages pass (`activate`, `activation`, `binupdate`, `cell`, `cli`, `discover`, `dispatch`, `doctor`, `hubinit`, `hubsetup`, `hubstatus`, `pkg`, `pkgbuild`, `restore`), `cmd/cn` has no test files (unchanged from baseline).
 - `cd src/packages/cnos.issues/commands/issues-fsm && go build ./... && go vet ./... && go test ./... -race -v` — 27 top-level/subtest `--- PASS` lines, 0 failures (full list includes all pre-existing `TestAC1`–`TestAC8`-lineage tests unmodified in assertion shape, plus the new AC1/AC3/569-specific tests above).
 - `cd src/packages/cnos.issues/commands/issues-map && go build ./... && go test ./...` and `cd src/packages/cnos.cdd/commands/cdd-verify && go build ./... && go test ./...` — both green (peer Go modules in the workspace, unaffected but re-verified per the harness-audit discipline).
@@ -133,3 +133,34 @@ Neither new rule changes any Phase-1 fixture's outcome — both require `review_
 - **`assembleLive`'s live-mode path for `--apply` is not covered by an automated test that exercises the full live-fetch + live-apply round trip against a real GitHub API shape** (only the fixture-facts + fake-server-apply combination is tested, per the scaffold's own oracle: "or `--fixture` for hermetic tests"). This mirrors Phase 1's own test-coverage shape (`assembleLive`'s live GET path was likewise never exercised against a real network in Phase 1's test suite) — not a regression, but also not newly closed by this cycle. A future cycle wiring an end-to-end live smoke (e.g. against a disposable test repo) would strengthen this, but is out of this issue's scope (issue's own proof plan names fixture-based positive/negative cases, not a live-network integration test).
 - **No PR opened.** Per dispatch instructions, α does not open the PR this cycle — δ does, after β converges.
 - **γ's non-binding guard-combination suggestion was not adopted verbatim.** This is not "debt" in the technical-shortfall sense, but flagging explicitly per the process discipline: α deviated from γ's suggested `any_true`/`all_false: [run_active]` shape and documented why in §ACs/AC1. If β disagrees with the reasoning, this is the one design surface most likely to generate a fix-round finding.
+
+## §CDD Trace
+
+1. **Gap** — see §Gap above; sourced from issue #569 body + γ scaffold (`.cdd/unreleased/569/gamma-scaffold.md`).
+2. **Mode** — design-and-build, per issue header. MCA preconditions not met (no committed `DESIGN.md`/`PLAN.md` pinning the exact guard-combination mechanism) — α does the real design work for the `in-progress → review` guard combination and the 404-tolerance decision inside this cycle, per the scaffold's own framing.
+3. **Design** — not a separate artifact; the γ scaffold names the exact surfaces, the per-AC oracle list, and the one open design question (guard combination), which α resolves and documents in §ACs/AC1 above rather than in a standalone design doc. Justification: the design surface is narrow (one new declarative rule pair + one Go mutation path + prose sync), fully scoped by the scaffold's source-of-truth table and 7-axis implementation contract — no additional impact graph beyond what the scaffold already enumerated.
+4. **Plan** — not a separate artifact; the scaffold's "Surfaces α is expected to touch" list functioned as the plan, followed in that order: Go evaluator + CLI (`issuesfsm.go`, `decision.go`, `fetch.go`, tests, fixtures) → CDS declarative data (`transitions.json`) → CDS wake/protocol prose (`cds-dispatch/SKILL.md`, `delta/SKILL.md` §9.6, `dispatch-protocol/SKILL.md` §2.9) → golden/live-workflow re-render → CI verification → this artifact.
+5. **Tests** — `src/packages/cnos.issues/commands/issues-fsm/issuesfsm_test.go`: 9 new top-level test functions (`TestApply_ReviewTransitionAppliesOnGuardPassAndIsIdempotent`, `TestApply_RequeueTransitionAppliesOnGuardPassAndIsIdempotent`, `TestApply_BlockedReviewRequestRefusesAndMutatesNothing`, `TestApply_EmptyReviewStateBlocked`, `TestAC569_InProgressReviewRequestWithMatterProposesReview`, `TestAC569_InProgressReviewRequestNoMatterBlocked`, `TestApplyStatusLabel_ToleratesNotFoundOnRemove`, `TestApplyStatusLabel_NoRemovalWhenFromStateEmpty`, `TestApply_MissingRepoErrors`) plus 2 pre-existing fixture lists extended (`TestAC7_Idempotent`, `TestSeam_CellKindNotEnforced` both gained the two new fixtures). 2 Phase-1 tests that locked the *absence* of `--apply`/label-mutation code (`TestAC8_NoApplyFlag`, `TestAC8_NoLabelMutationCodeInSource`) were removed and replaced — their forward-reference ("Label-write authority is Phase 2") is what this cycle consumes, so keeping them would have been asserting the cycle's own goal is a bug. Full run: `go test ./... -v` in `src/packages/cnos.issues/commands/issues-fsm` → 27 `--- PASS` lines (top-level + subtests), 0 failures (exact command + count captured in §ACs/AC5).
+6. **Code / docs** — full file list from `git diff --stat origin/main...HEAD` (16 files, 980 insertions / 116 deletions):
+   - `src/packages/cnos.issues/commands/issues-fsm/issuesfsm.go` (+/-) — AC1: `--apply` flag, guard-gated dispatch logic, doc-comment/usage updates.
+   - `src/packages/cnos.issues/commands/issues-fsm/fetch.go` (+126) — AC1: `ghRequest`/`ghAddLabel`/`ghRemoveLabel`/`applyStatusLabel`, `githubAPIBase` var.
+   - `src/packages/cnos.issues/commands/issues-fsm/decision.go` (+/-35) — AC1: additive `ApplyAttempted`/`Applied` fields + `Render` branch.
+   - `src/packages/cnos.issues/commands/issues-fsm/issuesfsm_test.go` (+/-339) — AC1/AC3 test coverage (see step 5).
+   - `src/packages/cnos.issues/commands/issues-fsm/testdata/in-progress-review-request-with-matter.json` (new) — AC1/AC2 positive fixture.
+   - `src/packages/cnos.issues/commands/issues-fsm/testdata/in-progress-review-request-no-matter.json` (new) — AC3 negative fixture.
+   - `src/packages/cnos.issues/commands/issues-fsm/testdata/todo.json` (new) — AC1 idempotence post-state fixture.
+   - `src/packages/cnos.cds/skills/cds/fsm/transitions.json` (+43) — AC1/AC2/AC3: the two new `in-progress` rules + `_doc_phase2` explanatory block.
+   - `src/go/internal/cli/cmd_issues_fsm.go` (+/-28) — doc-comment-only sync (no structural change, per scaffold's "verify" instruction).
+   - `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` (+/-18) — AC2: step 7, Closeout integrity preflight, Lifecycle transitions table.
+   - `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml` (+/-18) — AC2/AC5: re-rendered from the SKILL.md edit above.
+   - `.github/workflows/cnos-cds-dispatch.yml` (+/-18) — AC2/AC5: re-rendered live workflow, byte-identical to the golden.
+   - `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` (+/-2) — AC2: §9.6 `status:review` return-token row.
+   - `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` (+2) — AC2: §2.9 mechanism paragraph.
+   - `.cdd/unreleased/569/gamma-scaffold.md` (new, γ-authored) — the primary spec this cycle implements against; not α-authored, listed for diff-completeness (pre-review-gate row 11).
+   - `.cdd/unreleased/569/self-coherence.md` (this file) — α's own artifact.
+   - **Caller-path trace for new code (pre-review-gate row 12):** `applyStatusLabel` (new, `fetch.go`) is called from `runEvaluate` in `issuesfsm.go` inside the `--apply` branch — a non-test caller exists. `ghAddLabel`/`ghRemoveLabel` (new, `fetch.go`) are called from `applyStatusLabel` — non-test callers exist. `ghRequest` (new, `fetch.go`) is called from both `ghAddLabel` and `ghRemoveLabel` — non-test caller exists.
+7. **Self-coherence** — this file.
+
+## Review-readiness
+
+round 0 (initial submission) | base SHA: `54d4048e39bd6ed793fa0fc24f214b3d7c3edba3` (cycle branch rebased onto current `origin/main` — main had advanced by one unrelated commit, `.cn-sigma/logs/` channel entry, since γ's original branch-point `0520235e`; rebase was clean, no conflicts) | implementation SHA: `986e459` (prose/golden layer; `1fc6e15` is the Go+JSON layer beneath it) | branch CI: not observed from this sandbox (no access to GitHub Actions runners here) — every named gate was instead reproduced locally and confirmed green (see §ACs/AC5 for the full per-gate evidence: `go build`/`go vet`/`go test -race` across all 4 workspace modules, I1 `cn build --check`, I2 schema diff, I6 `cn cdd verify --unreleased` byte-identical-to-main comparison, `check-dispatch-closeout-integrity.sh`, `check-dispatch-repair-preflight.sh`, `cn-install-wake` golden/live re-render diff, `scripts/kata/run-all.sh`); I5 could not be run directly (no `cue` CLI in this sandbox) — structural argument only, disclosed in §Debt | γ-artifact: present at canonical §5.1 path — `.cdd/unreleased/569/gamma-scaffold.md` exists on `origin/cycle/569` | git identity: `alpha@cdd.cnos` on every α commit (verified via `git log -1 --format='%ae' HEAD`) | ready for β, pending β's own CI-green confirmation on the head commit before merge.
