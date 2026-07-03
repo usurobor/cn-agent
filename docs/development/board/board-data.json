@@ -1975,28 +1975,5 @@
     "created": "2026-07-03T13:28:10Z",
     "updated": "2026-07-03T13:28:10Z",
     "url": "https://github.com/usurobor/cnos/issues/564"
-  },
-  {
-    "n": 567,
-    "t": "cds/issues: make issue status transitions FSM-controlled, not worker-mutated",
-    "kind": "tracking",
-    "areas": [
-      "cdd",
-      "cds",
-      "issues",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": true,
-    "assignee": "",
-    "created": "2026-07-03T20:26:57Z",
-    "updated": "2026-07-03T20:42:16Z",
-    "url": "https://github.com/usurobor/cnos/issues/567"
   }
 ]
