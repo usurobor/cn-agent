@@ -1977,13 +1977,16 @@
     "url": "https://github.com/usurobor/cnos/issues/564"
   },
   {
-    "n": 566,
-    "t": "feat(cdd): stalled-cell reaper — reclaim issues stuck in status:in-progress after a dead dispatch run",
-    "kind": "feature",
+    "n": 567,
+    "t": "cds/issues: make issue status transitions FSM-controlled, not worker-mutated",
+    "kind": "process",
     "areas": [
-      "cdd"
+      "cdd",
+      "cds",
+      "issues",
+      "wake"
     ],
-    "pri": "P2",
+    "pri": "P1",
     "status": "ready",
     "dispatch": true,
     "protocol": "cds",
@@ -1992,8 +1995,8 @@
     "unestimated": true,
     "tracking": false,
     "assignee": "",
-    "created": "2026-07-03T20:20:56Z",
-    "updated": "2026-07-03T20:20:56Z",
-    "url": "https://github.com/usurobor/cnos/issues/566"
+    "created": "2026-07-03T20:26:57Z",
+    "updated": "2026-07-03T20:27:12Z",
+    "url": "https://github.com/usurobor/cnos/issues/567"
   }
 ]
