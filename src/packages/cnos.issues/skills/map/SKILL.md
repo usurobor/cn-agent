@@ -31,15 +31,20 @@ model: every field a board record carries is derived from taxonomy labels
 ## Implementation location
 
 The domain implementation lives at
-[`src/go/internal/issuesmap/`](../../../../go/internal/issuesmap/) — **not**
-under this package's directory. It is dispatched by the thin
-`src/go/internal/cli/cmd_issues_map.go` (argument parsing + one-line
-delegation only — no domain logic).
+[`src/packages/cnos.issues/commands/issues-map/`](../../commands/issues-map/)
+as its own Go module
+(`module github.com/usurobor/cnos/packages/cnos.issues/commands/issues-map`),
+co-located with this package, mirroring the
+[cnos#392](https://github.com/usurobor/cnos/issues/392) `cdd-verify`
+precedent exactly:
 
-`cn issues map` is a temporary built-in shim until
-[#216](https://github.com/usurobor/cnos/issues/216); see
-`src/packages/cnos.issues/SKILL.md` §"Command-dispatch disposition" for the
-current command/package boundary.
+- wired into `src/go/go.mod` via a `require`+`replace` pair;
+- added to `go.work`'s `use (...)` list;
+- dispatched by the thin `src/go/internal/cli/cmd_issues_map.go` (argument
+  parsing + one-line delegation only — no domain logic).
+
+See `src/packages/cnos.issues/SKILL.md` §"Command-dispatch disposition" for
+why this is Go-source co-location and not package-command exec-dispatch.
 
 ## Command contract
 
