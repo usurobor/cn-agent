@@ -2002,7 +2002,7 @@
   {
     "n": 568,
     "t": "cds/issues: FSM Phase 1 — read-only issue-state reconciler (cn issues fsm evaluate)",
-    "kind": "feature",
+    "kind": "tooling",
     "areas": [
       "cds",
       "issues"
@@ -2017,7 +2017,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-03T20:41:26Z",
-    "updated": "2026-07-03T20:44:39Z",
+    "updated": "2026-07-03T21:30:19Z",
     "url": "https://github.com/usurobor/cnos/issues/568"
   },
   {
@@ -2063,7 +2063,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-03T21:27:55Z",
-    "updated": "2026-07-03T21:27:55Z",
+    "updated": "2026-07-03T21:28:29Z",
     "url": "https://github.com/usurobor/cnos/issues/570"
   }
 ]
