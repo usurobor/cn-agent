@@ -1957,5 +1957,27 @@
     "created": "2026-07-02T18:42:30Z",
     "updated": "2026-07-03T01:45:28Z",
     "url": "https://github.com/usurobor/cnos/issues/556"
+  },
+  {
+    "n": 558,
+    "t": "docs: refresh canonical glossary for current cnos work model",
+    "kind": "cleanup",
+    "areas": [
+      "cdd",
+      "coherence",
+      "docs"
+    ],
+    "pri": "P1",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-03T01:45:46Z",
+    "updated": "2026-07-03T01:45:46Z",
+    "url": "https://github.com/usurobor/cnos/issues/558"
   }
 ]
