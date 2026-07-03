@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -86,6 +87,19 @@ func assembleLive(ctx context.Context, repo string, issue int, token string) (Fa
 		}
 	}
 
+	// A gamma-scaffold.md's `cell_kind:` line is the canonical recording
+	// point cnos#570 chose for the cell-kind observation seam
+	// (CELL-KINDS.md §"Recording point"). This is observation only: it
+	// populates the seam that snapshot.go already carries
+	// (FactSnapshot.CellKind), but no transition rule in table.go consumes
+	// it — TestSeam_CellKindNotEnforced locks that invariant.
+	if data, err := os.ReadFile(filepath.Join(dir, "gamma-scaffold.md")); err == nil {
+		if kind := parseCellKind(string(data)); kind != "" {
+			snap.CellKind.Observed = kind
+			snap.CellKind.Source = "cdd_artifact"
+		}
+	}
+
 	if repo == "" {
 		snap.normalizeCellKind()
 		return snap, nil
@@ -130,6 +144,25 @@ func assembleLive(ctx context.Context, repo string, issue int, token string) (Fa
 
 	snap.normalizeCellKind()
 	return snap, nil
+}
+
+// cellKindLinePattern matches a `cell_kind:` recording line in either the
+// bold-markdown form γ scaffolds use (`**cell_kind:** `implementation` ...`,
+// with optional trailing prose after the value) or the plain form
+// (`cell_kind: implementation`). Kept intentionally simple — a line-scan /
+// single regex, per CELL-KINDS.md §"Recording point" (cnos#570) — this is an
+// observation convenience, not a schema-validated parse.
+var cellKindLinePattern = regexp.MustCompile("(?m)^\\*{0,2}cell_kind:\\*{0,2}\\s*`?([A-Za-z_][A-Za-z0-9_-]*)")
+
+// parseCellKind scans gamma-scaffold.md content for the first `cell_kind:`
+// line and returns the kind token, or "" if none is present. See
+// CELL-KINDS.md §"Recording point" for the convention this parses.
+func parseCellKind(scaffold string) string {
+	m := cellKindLinePattern.FindStringSubmatch(scaffold)
+	if m == nil {
+		return ""
+	}
+	return m[1]
 }
 
 // ghGetJSON issues an authenticated GET against the GitHub REST API and

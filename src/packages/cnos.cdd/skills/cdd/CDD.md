@@ -91,6 +91,7 @@ The canonical surfaces CDD cites are grouped by what they own:
 - [`COHERENCE-CELL.md`](COHERENCE-CELL.md) — predecessor doctrine; receipt rule; four-way structural separation
 - [`COHERENCE-CELL-NORMAL-FORM.md`](COHERENCE-CELL-NORMAL-FORM.md) — CCNF; the recursion equation source for this document
 - [`RECEIPT-VALIDATION.md`](RECEIPT-VALIDATION.md) — V's design surface; input refs, output verdict shape, invocation rule
+- [`CELL-KINDS.md`](CELL-KINDS.md) — the cell-kind taxonomy: one kernel, multiple typed refinements (`issue_authoring`, `implementation`, `repair`, `recovery`, `wave`, `cleanup`, `audit`, `release`, `doctrine`, `experiment`), each naming its matter, review surface, and FSM implication ([cnos#570](https://github.com/usurobor/cnos/issues/570))
 - `ROLES.md` §1, §3, §4, §4a, §4b — generic role doctrine (§4a: δ; §4b: ε protocol-iteration)
 
 **Schemas (typed evidence by domain):**
