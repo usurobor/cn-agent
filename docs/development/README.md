@@ -19,3 +19,7 @@
 
 Conceptual papers on cells and coherence (e.g. *Cell of Cells*) live in
 [`papers/`](../papers/README.md).
+
+## Vocabulary
+
+- [Glossary](../reference/governance/GLOSSARY.md) — short definitions of the terms used across CDD, cells, waves, and issues.

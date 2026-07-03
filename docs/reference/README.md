@@ -34,3 +34,7 @@ The protocol feature bundle, in reading order:
 
 - [CTB](ctb/README.md) — triadic agent-composition language (draft).
 - [schemas/](schemas/) — JSON schemas and schema design docs.
+
+## Vocabulary
+
+- [governance/GLOSSARY.md](governance/GLOSSARY.md) — canonical short definitions of cnos terms.

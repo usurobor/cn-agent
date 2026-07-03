@@ -143,3 +143,9 @@ Labels are created lazily — applying a `kind/*` or `area/*` label that does no
 exist creates it. Keep the set small and prefixed; prefer an existing label to a
 near-synonym. Retire ambiguous unprefixed labels opportunistically, not as a blocking
 migration.
+
+## Vocabulary
+
+For definitions of `dispatch:cell`, `effort/*`, and the surrounding CDD/CDS terms
+(cell, wave, issue, α/β/γ/δ/ε), see the
+[Glossary](../../reference/governance/GLOSSARY.md).

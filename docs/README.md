@@ -17,6 +17,7 @@ cnos is a Git-native coherence system for accountable human + AI work.
 2. [concepts/](./concepts/README.md) — the mental model: why coherence is the root concept.
 3. [Dumb Models, Smart Cells](papers/DUMB-MODELS-SMART-CELLS.md) — why models are bounded executors, not authorities.
 4. [reference/](./reference/README.md) — the CN protocol and why Git is the lowest durable substrate.
+5. [Glossary](./reference/governance/GLOSSARY.md) — short definitions of cnos's current vocabulary (cells, waves, roles, receipts, TSC, and more).
 
 ## I want to…
 
