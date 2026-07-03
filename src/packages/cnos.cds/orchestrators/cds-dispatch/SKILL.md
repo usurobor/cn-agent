@@ -219,7 +219,7 @@ A claimed cell is handed to the cnos.cdd cell-runtime framework's δ role contra
 4. Routes β (reviewer) with α's output; β produces `.cdd/unreleased/{N}/beta-review.md` with a verdict (converge or iterate).
 5. **Iterates** per β's verdict: on iterate, route α again with β's findings — **the cell remains `status:in-progress`** (β iteration is an INTERNAL cell loop, not an external lifecycle event); on converge, advance the cell.
 6. Lands the cycle's canonical artifact set: gamma-scaffold, self-coherence (with §R[N] sections), beta-review (with R[N] verdicts), alpha-closeout, beta-closeout, gamma-closeout, optionally PRA. **On a `repair_pass` (see §Repair re-entry preflight), every closeout MUST carry the `repair_evidence` block and the cycle MUST NOT advance to `status:review` until it is complete; a closeout without it is a cnos#516 violation and the wake STOPS and defers to operator.**
-7. Opens (or updates) a pull request scoped to the cell, references the issue, and only on β's converge verdict transitions the cell's label `status:in-progress → status:review`.
+7. Opens (or updates) a pull request scoped to the cell, references the issue, and only on β's converge verdict **requests** the `status:in-progress → status:review` transition — δ ensures `REVIEW-REQUEST.yml` and the closeout matter exist, then runs `cn issues fsm evaluate --issue {N} --apply` (cnos#569 Phase 2) rather than writing the label directly. The FSM applies `status:review` only when its guards pass (deliverable evidence: PR and/or commits beyond base, plus `REVIEW-REQUEST.yml`); δ decides *when* to request the transition, the FSM decides *whether* the guards allow it.
 
 The dispatch wake's job is to invoke δ with the claimed cell and let δ run. The wake does NOT route γ/α/β directly; that is δ's authority per the cell framework. The wake surfaces δ's R[N] iteration tokens so the cycle is observable, but it does not short-circuit β's verdicts.
 
@@ -229,9 +229,9 @@ The dispatch wake's job is to invoke δ with the claimed cell and let δ run. Th
 
 ## Closeout integrity preflight (before `status:review`)
 
-Per dispatch-protocol §2.9 (cnos#524 W4 RCA), the wake MUST NOT transition the cell to `status:review` unless a **deliverable demonstrably exists**. The W4 empty-run failure: a cell ran to completion and set `status:review` with no PR, no commits, no closeout, and no STOP comment.
+Per dispatch-protocol §2.9 (cnos#524 W4 RCA), the wake MUST NOT request the cell's transition to `status:review` unless a **deliverable demonstrably exists**. The W4 empty-run failure: a cell ran to completion and set `status:review` with no PR, no commits, no closeout, and no STOP comment. Since cnos#569 Phase 2, the wake does not write `status:review` itself; it requests the transition via `cn issues fsm evaluate --issue {N} --apply` (§"Invoke δ in wake-invoked mode" step 7), and the FSM's own `in-progress → review` guard independently enforces this same evidence bar (`REVIEW-REQUEST.yml` + deliverable matter) — this preflight and the FSM guard are two layers checking the same invariant, not a replacement of one by the other.
 
-**Before applying `status:in-progress → status:review`, prove ALL of:**
+**Before requesting `status:in-progress → status:review` (via `cn issues fsm evaluate --apply`), prove ALL of:**
 1. a pull request exists for the issue/cycle and references `#{N}` (`Refs #{N}` / `Part of #{N}`);
 2. the PR has commits beyond its base (`cycle/{N}` HEAD ≠ base SHA);
 3. the `cycle/{N}` branch exists and differs from base;
@@ -249,20 +249,20 @@ deliverable_evidence:
   closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
 ```
 
-**No-deliverable rule.** If ANY of (1)–(5) is missing, **STOP**: post a `STOP`/`BLOCKED` comment naming the missing evidence, leave the cell at `status:in-progress` (or move to `status:blocked` with a reason), and do **NOT** set `status:review`. A `status:review` transition without a complete `deliverable_evidence` block is a cnos#524 protocol violation. This deliverable-integrity preflight complements the cnos#516 repair-integrity preflight: #516 guards repair re-entries; #524 guards every closeout.
+**No-deliverable rule.** If ANY of (1)–(5) is missing, **STOP**: post a `STOP`/`BLOCKED` comment naming the missing evidence, leave the cell at `status:in-progress` (or move to `status:blocked` with a reason), and do **NOT** request `status:review` (do not run `cn issues fsm evaluate --apply`). A `status:review` transition without a complete `deliverable_evidence` block is a cnos#524 protocol violation. This deliverable-integrity preflight complements the cnos#516 repair-integrity preflight: #516 guards repair re-entries; #524 guards every closeout. As a second, independent layer, the FSM's `in-progress → review` guard (cnos#569) structurally refuses to apply the transition even if this preflight were skipped — a `REVIEW-REQUEST.yml` with no PR/commits evidence exits `--apply` nonzero and writes no label.
 
 ---
 
 ## Lifecycle transitions (this wake's authority)
 
-The dispatch wake transitions the **claimed cell's** lifecycle labels at these named events only:
+The dispatch wake transitions the **claimed cell's** lifecycle labels at these named events only. For the claim, hard-block, and release-back-to-queue events, the wake writes the label directly (per the claim sequence's serialized-claim mechanism, which predates and is orthogonal to cnos#569). For the β-converge event, the wake does **not** write the label directly — it requests the transition via the FSM (`cn issues fsm evaluate --issue {N} --apply`, cnos#569 Phase 2) and the FSM applies the label only when its guards pass:
 
 | Event | From | To | Notes |
 |---|---|---|---|
-| claim (verified + acknowledged) | `status:todo` | `status:in-progress` | step 5+6 of the claim sequence above |
-| β converge verdict (end of cycle) | `status:in-progress` | `status:review` | δ's step 7 |
-| hard block hit mid-cycle | `status:in-progress` | `status:blocked` | + a blocked-reason comment naming the block class (external dependency, missing precondition, infra failure) |
-| release-back-to-queue (post-claim drift detected) | `status:in-progress` | `status:todo` | + a claim-released comment naming the race; the wake exits without invoking δ |
+| claim (verified + acknowledged) | `status:todo` | `status:in-progress` | step 5+6 of the claim sequence above; direct label write |
+| β converge verdict (end of cycle) | `status:in-progress` | `status:review` | δ's step 7 **requests** this via `cn issues fsm evaluate --issue {N} --apply`; the FSM applies the label only on passing guards (cnos#569) |
+| hard block hit mid-cycle | `status:in-progress` | `status:blocked` | + a blocked-reason comment naming the block class (external dependency, missing precondition, infra failure); direct label write |
+| release-back-to-queue (post-claim drift detected) | `status:in-progress` | `status:todo` | + a claim-released comment naming the race; the wake exits without invoking δ; direct label write |
 
 The dispatch wake does **NOT**:
 

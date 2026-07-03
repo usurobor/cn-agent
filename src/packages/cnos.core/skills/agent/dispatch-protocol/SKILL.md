@@ -444,6 +444,8 @@ A claimed cell MUST NOT transition an issue to `status:review` unless it can **p
 
 The concrete dispatch wake operationalizes this as a §"Closeout integrity preflight" in the cds-dispatch prompt. A CI guard (`scripts/ci/check-dispatch-closeout-integrity.sh`) asserts the rendered dispatch surface carries this contract and self-tests the empty-review detector (`status:review` + no PR + no commits → violation), so the failure mode cannot silently return. This extends cnos#516 (which fixed repair-context loading): #516 = repair integrity; #524 = deliverable integrity.
 
+**Mechanism (cnos#569 Phase 2 — authority flip).** The wake does not write `status:review` itself: it *requests* the transition via `cn issues fsm evaluate --issue {N} --apply`, and the FSM's `in-progress → review` guard independently re-enforces this same deliverable-evidence bar (`REVIEW-REQUEST.yml` + PR/commits) before applying the label. Workers produce matter and request transitions; the FSM applies status labels — this section's preflight and the FSM guard are two layers over the same invariant, not one replacing the other.
+
 ---
 
 ## 3. Rules
