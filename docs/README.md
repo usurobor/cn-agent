@@ -29,6 +29,7 @@ cnos is a Git-native coherence system for accountable human + AI work.
 | Understand trust & coherence | [Dumb Models, Smart Cells](papers/DUMB-MODELS-SMART-CELLS.md) |
 | Contribute | [`guides/`](./guides/README.md) → [`development/`](./development/README.md) |
 | Find canonical specs | [`reference/`](./reference/README.md) |
+| Look up a term | [Glossary](./reference/governance/GLOSSARY.md) |
 | Find audits & evidence | [`evidence/`](./evidence/README.md) |
 
 ## Directory map (reader intent)
