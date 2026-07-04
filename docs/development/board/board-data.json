@@ -2170,5 +2170,45 @@
     "created": "2026-07-04T05:36:27Z",
     "updated": "2026-07-04T05:38:53Z",
     "url": "https://github.com/usurobor/cnos/issues/584"
+  },
+  {
+    "n": 585,
+    "t": "docs(cdd): fix collapsed-authority phrasing in CDD.md Roles-pointer (β merge line)",
+    "kind": "cleanup",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T06:06:49Z",
+    "updated": "2026-07-04T06:06:49Z",
+    "url": "https://github.com/usurobor/cnos/issues/585"
+  },
+  {
+    "n": 586,
+    "t": "docs(cdd): document literal self-coherence.md header-string contract in alpha/SKILL.md",
+    "kind": "process",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T06:07:00Z",
+    "updated": "2026-07-04T06:07:00Z",
+    "url": "https://github.com/usurobor/cnos/issues/586"
   }
 ]
