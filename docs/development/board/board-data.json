@@ -2122,5 +2122,29 @@
     "created": "2026-07-04T04:12:22Z",
     "updated": "2026-07-04T04:12:22Z",
     "url": "https://github.com/usurobor/cnos/issues/582"
+  },
+  {
+    "n": 583,
+    "t": "arch(cds): make the dispatch cell fully mechanical — cognition deferred to skills (γ/α/β); skills don't control",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "cdd",
+      "cds",
+      "coherence",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T04:19:18Z",
+    "updated": "2026-07-04T04:19:18Z",
+    "url": "https://github.com/usurobor/cnos/issues/583"
   }
 ]
