@@ -82,22 +82,20 @@
       "trigger": "evaluate",
       "rules": [
         {
-          "all_true": ["review_request_present"],
-          "any_true": ["pr_exists", "pr_has_commits", "branch_has_commits"],
+          "all_true": ["review_request_present", "pr_exists", "pr_has_commits"],
           "outcome": "proposed",
           "action": "propose_status_review",
           "target_state": "review",
           "repair_pass": false,
-          "reason": "cnos#569 Phase 2: review requested (REVIEW-REQUEST.yml present) with deliverable matter (a PR and/or commits beyond base); in-progress -> review requested by the worker."
+          "reason": "cnos#569 Phase 2 / cnos#574 AC3: review requested (REVIEW-REQUEST.yml present) with a PR and commits beyond base on that PR; in-progress -> review requested by the worker. Branch-commits-only (no PR) no longer qualifies (cnos#574 tightened this from any_true to all_true, aligning the FSM with the closeout-integrity preflight's PR-required rule)."
         },
         {
           "all_true": ["review_request_present"],
-          "all_false": ["pr_exists", "pr_has_commits", "branch_has_commits"],
           "outcome": "blocked",
           "action": "block",
           "target_state": "",
-          "evidence_guards": ["pr_exists", "pr_has_commits", "branch_has_commits"],
-          "reason": "cnos#569 Phase 2: review requested (REVIEW-REQUEST.yml present) but no deliverable matter (no PR, no commits beyond base) -- refusing to propose in-progress -> review."
+          "evidence_guards": ["pr_exists", "pr_has_commits"],
+          "reason": "cnos#574 AC3: review requested (REVIEW-REQUEST.yml present) but missing a PR and/or commits beyond base on that PR (branch-commits-only no longer qualifies) -- refusing to propose in-progress -> review. This rule is unconditional given review_request_present==true and is positioned after rule 1, so it fires on ANY partial-evidence combination rule 1 didn't match (not just all-three-false) -- see cnos#574 self-coherence.md Friction-notes writeup."
         },
         {
           "all_true": ["run_active"],
@@ -128,18 +126,17 @@
       "trigger": "evaluate",
       "rules": [
         {
-          "any_true": ["pr_exists", "branch_has_commits", "review_request_present"],
+          "all_true": ["review_request_present", "pr_exists", "pr_has_commits"],
           "outcome": "valid",
           "action": "none",
-          "reason": "review evidence present (PR, commits beyond base, or REVIEW-REQUEST.yml); status:review is valid."
+          "reason": "cnos#574 AC2: review evidence present (REVIEW-REQUEST.yml AND an open PR AND commits beyond base on that PR); status:review is valid. review_request_present alone (or any two of the three) is no longer sufficient -- cnos#574 tightened this from any_true to all_true."
         },
         {
-          "all_false": ["pr_exists", "branch_has_commits", "review_request_present"],
           "outcome": "blocked",
           "action": "block",
           "target_state": "",
-          "evidence_guards": ["pr_exists", "branch_has_commits", "review_request_present"],
-          "reason": "empty review: status:review with no PR, no commits beyond base, and no REVIEW-REQUEST.yml present."
+          "evidence_guards": ["review_request_present", "pr_exists", "pr_has_commits"],
+          "reason": "cnos#574 AC2: status:review requires REVIEW-REQUEST.yml AND an open PR AND commits beyond base on that PR; at least one is missing -- refusing to validate an under-evidenced review. This rule is unconditional and positioned after rule 1, so it fires on ANY partial-evidence combination (not just all-three-false) -- see cnos#574 self-coherence.md Friction-notes writeup."
         }
       ]
     },
