@@ -2018,5 +2018,26 @@
     "created": "2026-07-04T02:11:23Z",
     "updated": "2026-07-04T02:11:23Z",
     "url": "https://github.com/usurobor/cnos/issues/575"
+  },
+  {
+    "n": 576,
+    "t": "process(agent): κ over-asks — blocks on decisions already covered by CAP §4.2 or the active contract",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "cds"
+    ],
+    "pri": "P2",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T03:27:53Z",
+    "updated": "2026-07-04T03:27:53Z",
+    "url": "https://github.com/usurobor/cnos/issues/576"
   }
 ]
