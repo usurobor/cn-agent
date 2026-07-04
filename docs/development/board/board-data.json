@@ -1978,22 +1978,24 @@
   },
   {
     "n": 575,
-    "t": "cds/fsm Phase 3 (deferred): route claim/hard-block/release-back-to-queue through the FSM",
+    "t": "cds/fsm: route claim, hard-block, release-back-to-queue through the FSM (Phase 3 — Sub 2 of #583)",
     "kind": "process",
     "areas": [
-      "cds"
+      "cdd",
+      "cds",
+      "wake"
     ],
-    "pri": "none",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-07-04T02:11:23Z",
-    "updated": "2026-07-04T02:11:23Z",
+    "updated": "2026-07-04T05:37:08Z",
     "url": "https://github.com/usurobor/cnos/issues/575"
   },
   {
@@ -2146,5 +2148,27 @@
     "created": "2026-07-04T04:19:18Z",
     "updated": "2026-07-04T05:36:00Z",
     "url": "https://github.com/usurobor/cnos/issues/583"
+  },
+  {
+    "n": 584,
+    "t": "arch(cds/cdd): codify mechanical cell runtime vs cognitive skills (mechanism/cognition boundary)",
+    "kind": "doctrine",
+    "areas": [
+      "agent",
+      "cdd",
+      "cds"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T05:36:27Z",
+    "updated": "2026-07-04T05:36:27Z",
+    "url": "https://github.com/usurobor/cnos/issues/584"
   }
 ]
