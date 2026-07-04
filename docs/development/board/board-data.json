@@ -1986,7 +1986,7 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "ready",
+    "status": "todo",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -1995,7 +1995,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-04T02:11:23Z",
-    "updated": "2026-07-04T05:37:08Z",
+    "updated": "2026-07-04T06:46:32Z",
     "url": "https://github.com/usurobor/cnos/issues/575"
   },
   {
