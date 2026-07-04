@@ -35,7 +35,7 @@ calls:
 
 β owns:
 - review verdict
-- merge (β's authority per CDD.md — the natural conclusion of review)
+- merge judgment (β's authority per CDD.md — the natural conclusion of review: merge or no-merge). Under the current bootstrap-mode architecture, pending the Subs 2–4 mechanical runtime (`CDD.md` §"Mechanism and cognition"), β also executes the mechanical `git merge` itself as a stand-in for that not-yet-built runtime. The target architecture keeps the two distinct: β renders the merge/no-merge judgment; the runtime executes it.
 - β close-out (review context + release evidence)
 
 δ owns the release boundary: tag, deploy, disconnect release. β does NOT tag, push tags, bump versions, update CHANGELOG for release, delete cycle branches, or move `.cdd/` artifacts to release directories. After merge and β close-out, β's work is done — δ takes over at the release boundary.
@@ -67,7 +67,7 @@ This file owns β's role boundary, dispatch contract, and phase-linking rules. C
 
 - **β intake** → receive, git identity, poll for branch + `.cdd/unreleased/{N}/self-coherence.md`, load skills, read diff + artifact + issue. **Issue-edit cache-bust:** when polling sees a `gamma-clarification.md` add or update on the cycle branch, re-read the issue body via `gh issue view {N}` (or MCP equivalent) to get the live version, not cached state. Canonical wire-format at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../../../../cnos.handoff/skills/handoff/mid-flight/SKILL.md); the channel substrate at [`cnos.handoff/skills/handoff/artifact-channel/SKILL.md`](../../../../cnos.handoff/skills/handoff/artifact-channel/SKILL.md).
 - **β review / RC loop** → per `review/SKILL.md`, verdict written to `.cdd/unreleased/{N}/beta-review.md`
-- **β merge** → `git merge` per `release/SKILL.md` (merge only — tag/deploy is δ's release boundary)
+- **β merge** → β renders the merge/no-merge judgment; under the current bootstrap-mode architecture β also executes `git merge` itself per `release/SKILL.md` as a stand-in for the not-yet-built mechanical runtime (merge only — tag/deploy is δ's release boundary; see `CDD.md` §"Mechanism and cognition" for the target split)
 - **β close-out** → written to `.cdd/unreleased/{N}/beta-closeout.md`
 
 This file does not replace those sub-skills.
