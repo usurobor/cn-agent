@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
 -->
 
 # Self-coherence — cnos#584
@@ -154,9 +154,26 @@ $ git diff origin/main...HEAD -- src/packages/cnos.issues/commands/issues-fsm/is
 
 **No `transitions.json` or any `.json`/`.go`/`.yml`/`.yaml` file appears in the diff** (confirmed by the same `--name-only` listing above — 4 files total, all `.md`).
 
-**CI gates.** This is a docs-only diff with no code, workflow, or schema surface touched, so I1/I2/I4/I5/I6, `install-wake-golden`, dispatch guards, Go, Package, and Binary gates are structurally unaffected — there is no code path for them to exercise. I attempted to run the local frontmatter validator (`scripts/ci/validate-skill-frontmatter.sh`) as an extra check on `beta/SKILL.md`'s frontmatter (unchanged by my edit, but the file's YAML header could in principle be corrupted by a body edit); it exited with `prerequisite missing: cue` — the `cue` binary is not installed in this environment, so the check could not run locally. I manually re-read `beta/SKILL.md`'s frontmatter block (lines 1–28) after editing and confirmed it is unchanged and well-formed (no stray blank lines, closing `---` intact, no key collisions introduced by my edits, both of which were in the body well below the frontmatter). This is disclosed as known debt in §Debt — β should re-run the frontmatter validator with `cue` available, or confirm CI's own frontmatter-validation gate is green on the branch head.
+**CI gates — confirmed green on branch HEAD.** Branch CI run [28696946173](https://github.com/usurobor/cnos/actions/runs/28696946173) at commit `7c81c387e44a846616768798478c599a7398ac86` (this cycle's final commit) — all 10 jobs `success`:
 
-**AC4: met**, with the one disclosed local-tooling gap above.
+```
+Package/source drift (I1): success
+Protocol contract schema sync (I2): success
+Repo link validation (I4): success
+SKILL.md frontmatter validation (I5): success
+CDD artifact ledger validation (I6): success
+Go build & test: success
+Binary verification: success
+Package verification: success
+Dispatch repair-preflight guard (cnos#516): success
+Dispatch closeout-integrity guard (cnos#524): success
+```
+
+I5 (SKILL.md frontmatter validation) passing on branch HEAD supersedes the local-tooling gap noted below (I could not run `scripts/ci/validate-skill-frontmatter.sh` locally — missing `cue` binary — but CI's own run of the same check is green, confirming `beta/SKILL.md`'s frontmatter is intact). I6 passing confirms the self-coherence.md header fix (§Debt #5) actually resolved the artifact-ledger failure, not just locally.
+
+**Note on prior red runs.** Commits `b2af8076`, `0ce26c9e`, `26381cc0`, `a20cd669`, `cb8968a5` (the incremental self-coherence.md commits before the header fix) show `failure` on I6 in the run history — this is expected and not a regression: those were genuinely-incomplete intermediate states of this same file (missing sections / wrong header form), fixed by commit `7c81c387`, which is green. The final branch HEAD is what matters for the AC4 gate, and it is green.
+
+**AC4: met**, confirmed by live CI, not just structural reasoning.
 
 ## Self-check
 
@@ -172,7 +189,7 @@ $ git diff origin/main...HEAD -- src/packages/cnos.issues/commands/issues-fsm/is
 ## Debt
 
 1. **CDD.md line 104 (pre-existing, not touched this cycle).** The Roles pointer list in `CDD.md` §Pointers reads: `[`beta/SKILL.md`](beta/SKILL.md) — β (reviews and merges; merge is β's authority)`. This is the same "skill executes the mechanical action as its own authority" phrasing pattern that AC3 required correcting in `beta/SKILL.md` itself, but `CDD.md`'s existing Roles-pointer line is not one of the 5 AC3-audited files, and my permitted `CDD.md` edit this cycle is scoped to "new section(s) for AC1+AC2" only (per the pinned implementation contract) — correcting an unrelated pre-existing line in the same file would be unrelated restructuring outside that scope. Named here per the scaffold's explicit instruction to surface (not silently fix) findings outside the prescribed audit-file list. **Disposition: γ triage** — likely a small, mechanical, one-line follow-up (either fold into a Sub 2–4 cycle or a same-cycle immediate fix if γ judges the risk of touching `CDD.md` beyond the pinned scope acceptable).
-2. **`scripts/ci/validate-skill-frontmatter.sh` could not run locally** (missing `cue` binary in this environment). I manually verified `beta/SKILL.md`'s frontmatter block is unchanged and well-formed after my body-only edits (see §ACs → AC4). β should confirm the branch-head CI run for this validator (or any package/frontmatter gate) is green before merge, per α's own pre-review gate row 10 (branch CI must be green, or the artifact must say so explicitly and β waits for green).
+2. **`scripts/ci/validate-skill-frontmatter.sh` could not run locally** (missing `cue` binary in this environment). Superseded: branch CI's own I5 job ran the same validator against branch HEAD (`7c81c387`) and passed (see §ACs → AC4). No residual gap.
 3. **No design or plan artifact was produced separately from this self-coherence.md.** Per `alpha/SKILL.md` §2.2, design and plan may be marked "not required" with a concrete justification: this cycle is doctrine-only prose across 2 files plus one audited correction in a 3rd; the canonical-home decision and the AC3 resolution path were both fully pre-specified by γ's scaffold (the source-of-truth table + friction notes 2 and 3), leaving no independent design surface for α to produce beyond the placement/wording judgment recorded directly in §ACs above. Marking design and plan as "not required" for this reason.
 4. **Peer enumeration / harness audit (per `alpha/SKILL.md` §2.3–§2.4) do not apply in their code-surface form** — there is no schema-bearing parser, manifest shape, or runtime contract changed by this cycle, so there is no producer/consumer/harness family to enumerate in the code sense. The doctrine-level "peer enumeration" analog — every one of the 5 AC3-audited files, individually read and individually reported on (edited / not-edited-with-reason) — is done explicitly in §ACs → AC3 above, which is the applicable form of this rule for a docs-only, audit-shaped cycle.
 5. **CI-caught-and-fixed (not a residual gap; recorded for the record).** Branch CI's `CDD artifact ledger validation (I6)` job (`.github/workflows/build.yml`, `cn cdd verify --unreleased`) failed at commits `26381cc0`/`0ce26c9e`/`b2af8076` because this file's own section headers used a `## §Name` form (e.g. `## §Gap`) instead of the literal `## Gap` / `## Skills` / `## ACs` / `## CDD Trace` strings the checker's `sectionPresent` matcher requires (exact-match or `"## Gap "`-prefix; the `§` character breaks the match). Fixed by renaming all six headers to the plain form (`## Gap`, `## Skills`, `## ACs`, `## Self-check`, `## Debt`, `## CDD Trace`); re-ran `cn cdd verify --unreleased --exceptions .cdd/exceptions.yml` locally (built from `src/go` at this branch's HEAD) and confirmed `0 failed` / exit 0 before re-pushing. Named here because it is exactly the kind of loaded-skill-should-have-prevented-this gap `alpha/SKILL.md` §2.6 row 9 asks α to name: neither `alpha/SKILL.md` nor `issue/SKILL.md` states the literal required header strings for `self-coherence.md`; only `cn cdd verify`'s Go source (`src/packages/cnos.cdd/commands/cdd-verify/ledger.go`) does. γ may want to fold the literal header contract into `alpha/SKILL.md` §2.5 as a follow-up so a future α does not discover this via a red CI run.
@@ -189,3 +206,27 @@ $ git diff origin/main...HEAD -- src/packages/cnos.issues/commands/issues-fsm/is
 | 5 Mode | `self-coherence.md` §Gap, §Skills | `cdd/alpha`, `write` | Mode confirmed design-and-build per the issue header; active skills named (Tier 1 `CDD.md` + `alpha/SKILL.md` + `issue/SKILL.md`; Tier 3 `write/SKILL.md`; no Tier 2 `eng/*` — no source code). |
 | 6 Artifacts | `CDD.md` (new §"Mechanism and cognition"), `beta/SKILL.md` (corrected lines 38/70) | `cdd/alpha`, `write` | AC1+AC2 doctrine authored in `CDD.md` (commit `c005b854`); AC3 correction applied to `beta/SKILL.md` (commit `10700bab`); AC4 diff-scope confirmed `.md`-only, `issuesfsm_test.go` untouched. |
 | 7 Self-coherence | `.cdd/unreleased/584/self-coherence.md` | `cdd/alpha` | AC-by-AC self-check completed (§ACs above); AC1, AC2, AC3, AC4 all met with cited oracle evidence; known debt named explicitly (§Debt). |
+
+## Review-readiness
+
+**Round 1 | base SHA: `9309de97d7e6d90637012839163e8d0511b56ca6` (origin/main) | implementation SHA: `7c81c387e44a846616768798478c599a7398ac86` | branch CI: green at run [28696946173](https://github.com/usurobor/cnos/actions/runs/28696946173), all 10 jobs `success` | ready for β**
+
+Pre-review gate (`alpha/SKILL.md` §2.6), re-validated immediately before this signal:
+
+1. **Cycle branch current with main.** `git fetch origin main` → `origin/main` HEAD is still `9309de97d7e6d90637012839163e8d0511b56ca6`, unchanged since branch time; no rebase needed.
+2. `self-coherence.md` carries the CDD Trace through step 7 — done above.
+3. **Tests:** none apply — doctrine-only, no source code (Language axis: N/A per the pinned implementation contract).
+4. Every AC has cited evidence — §ACs, all 4.
+5. Known debt is explicit — §Debt, 5 items, including 2 out-of-scope findings named per the scaffold's instruction (not fixed).
+6–8. Schema/shape audit, peer enumeration, harness audit — the code-surface forms don't apply (no schema/contract changed); the docs-audit analogs are done in §ACs → AC3 (all 5 files individually read and reported) and §Debt #4.
+9. Post-patch re-audit — done after the header-fix patch (§Debt #5): re-ran all 4 AC oracles + the local `cn cdd verify` check against the patched HEAD before re-pushing.
+10. **Branch CI green** — confirmed above, live, at implementation SHA `7c81c387`.
+11. **Artifact enumeration matches diff.** All 4 changed files (`gamma-scaffold.md`, `self-coherence.md`, `CDD.md`, `beta/SKILL.md`) are named in this file's CDD Trace step 6 / §ACs.
+12. Caller-path trace for new modules — N/A, no new modules or functions.
+13. Test assertion count — N/A, no tests.
+14. **Commit author email.** `git log --format='%ae' origin/main..HEAD` — all 8 α-authored commits show `alpha@cdd.cnos`, matching the canonical role pattern. The one non-α commit (`740382ff`, γ's scaffold) is correctly attributed to γ's identity and predates α's session.
+15. **γ-artifact presence.** `.cdd/unreleased/584/gamma-scaffold.md` present on `origin/cycle/584` at the canonical §5.1 path (confirmed via `git ls-tree`) — γ-artifact at canonical §5.1 path.
+
+Known debt (§Debt) is disclosed, not hidden. Two items are out-of-scope findings named per the scaffold's explicit instruction to surface rather than silently fix (`CDD.md` line 104's pre-existing Roles-pointer phrasing, and the general observation that no loaded skill states the literal `self-coherence.md` header contract `cn cdd verify` enforces — §Debt #5).
+
+Ready for β.
