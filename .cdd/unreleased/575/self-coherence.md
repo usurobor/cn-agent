@@ -3,7 +3,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs, self-check, debt, cdd-trace]
+  completed: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
 -->
 
 ## Gap
@@ -365,3 +365,33 @@ Per `CDS.md` §"Step table", α owns steps 4-7.
   - **Artifact enumeration matches diff (pre-review gate row 11):** every file in `git diff --stat origin/main..HEAD` is named in this step's bullets above or in §ACs: `transitions.json`, `snapshot.go`, `table.go`, `fetch.go`, `decision.go`, `issuesfsm_test.go`, the 6 new `testdata/*.json` fixtures, `cds-dispatch/SKILL.md`, `dispatch-protocol/SKILL.md`, `cnos-cds-dispatch.golden.yml`, `.github/workflows/cnos-cds-dispatch.yml`, `.cdd/unreleased/575/gamma-scaffold.md` (γ's pre-existing artifact, not authored by α), and this `self-coherence.md` itself.
 - **Step 7 — Self-coherence (α audits own work against ACs and the triad).** This file, §ACs + §Self-check + §Debt above, is that audit.
 
+
+## Review-readiness | round 1
+
+**Implementation SHA:** `dd3e966` (last implementation/doctrine commit, AC4 — "cds-dispatch: request claim/hard-block/release via FSM"). Everything after it on this branch is self-coherence authorship plus two CI-fix commits (`167410e` fixes a lychee relative-link off-by-one in `dispatch-protocol/SKILL.md` and this file's section-heading form; both are documented above and re-verified green).
+
+**Base SHA:** `4876278` (`origin/main` at rebase time — `agent-admin wake: heartbeat` — checked again immediately before writing this section, unchanged, so the branch is not stale against `main`).
+
+**Head SHA:** `167410e`.
+
+**Pre-review gate (alpha/SKILL.md §2.6), walked explicitly:**
+
+1. **Branch rebased onto current `origin/main`.** Done mid-cycle: `origin/main` advanced by one commit (`8f97b60` → `4876278`, a non-overlapping agent-admin heartbeat log entry) while this file was being authored; rebased cleanly (no conflicts), re-ran the full test suite (still green), and re-stamped the four SHA citations this file had already recorded. Re-checked immediately before this section (`git fetch origin main` → still `4876278`) — not stale at signal time.
+2. **CDD Trace through step 7.** Present (§CDD Trace above).
+3. **Tests present.** 14 new `TestAC575_*` tests + 6 new fixtures; full suite 51/51 passing (§ACs AC5).
+4. **Every AC has evidence.** §ACs AC1-AC5, each with real command output.
+5. **Known debt explicit.** §Debt: two follow-up-candidate items (delta/SKILL.md §9.6 cross-reference gap; the "Surfaces" bullet phrasing) plus the CI-gate local-proxy caveat (superseded below — actual branch CI is now confirmed green, not just locally proxied).
+6. **Schema/shape audit.** `transitions.json` additive-only, confirmed (§Gap implementation-contract table; §ACs AC5).
+7. **Peer enumeration.** §Self-check: `cds-dispatch/SKILL.md`'s 5 "direct label write" prose sites, the two rendered-artifact peers (golden + live workflow), the `transitions.json` existing-fixture peers, and the `delta/SKILL.md` §9.6 sibling surface (read, deliberately not edited).
+8. **Harness audit.** `fetch.go`'s live path (non-`LoadFixture` caller) exercised by `TestAC575_LiveObservesNewMarkerFiles`; the golden/workflow render harness re-verified byte-identical to source.
+9. **Post-patch re-audit.** After the two CI-fix commits, re-ran: `go test ./...` (issuesfsm, 51/51), `go build ./... && go test ./...` (src/go, all green), `cn cdd verify --unreleased --exceptions .cdd/exceptions.yml` (0 failed, was 1), and confirmed the corrected relative link resolves via `realpath -e`.
+10. **Branch CI green on HEAD.** Confirmed via `gh run list`/`gh run view` against head commit `167410e`: the "Build" workflow's 10 jobs — SKILL.md frontmatter validation (I5), Go build & test, Repo link validation (I4), Package/source drift (I1), CDD artifact ledger validation (I6), Protocol contract schema sync (I2), Dispatch repair-preflight guard (#516), Dispatch closeout-integrity guard (#524), Binary verification, Package verification — **all `success`**. The separate "install-wake golden" workflow (path-filtered to `cds-dispatch/orchestrators/**`, not re-triggered by the CI-fix commit since it didn't touch that path) last ran green against commit `0defb27`, which carries byte-identical `cds-dispatch/` content to current HEAD (no changes to that surface since). Observed at 11:00 UTC, re-verified immediately before writing this row.
+11. **Artifact enumeration matches diff.** §CDD Trace step 6: every file in `git diff --stat origin/main..HEAD` is named.
+12. **Caller-path trace for new modules.** §CDD Trace step 6, dedicated bullet.
+13. **Test assertion count from runner output.** §ACs AC5: 51 `--- PASS`, 0 `--- FAIL`, pasted from actual `go test -v` output, not manually enumerated.
+14. **Commit author email matches canonical pattern.** `git log -1 --format='%ae' HEAD` = `alpha@cdd.cnos` for every α commit on this branch (confirmed at session start before any implementation commit — no retroactive rebase-for-identity needed).
+15. **γ-artifact presence at rule-3.11b surface.** `.cdd/unreleased/575/gamma-scaffold.md` present at the canonical §5.1 path on `origin/cycle/575` (γ's commit, now `1db0608` post-rebase) — confirmed via `git ls-tree`.
+
+**Deviations from the pinned implementation contract:** none. Every row in §Gap's implementation-contract table is honored as pinned; no axis was improvised.
+
+**Ready for β.**
