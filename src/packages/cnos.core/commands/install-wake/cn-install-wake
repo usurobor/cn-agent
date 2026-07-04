@@ -1047,6 +1047,67 @@ if [ "$activation_log_writer" = "false" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Append the mechanical checkpoint + PR-open/update finalizer step (cnos#591).
+# ---------------------------------------------------------------------------
+#
+# Governing rule: if a run ends with matter, there must be a branch/commit/
+# pull-request — or an explicit blocked/STOP record. A cell must never be
+# left with work on the branch (or only in the workspace) and no pull
+# request open. Checkpoint + PR creation are a MECHANICAL runtime/finalizer
+# responsibility, not a step a cognitive work session has to remember to
+# reach: workers produce matter; this step checkpoints (commit + push) and
+# opens/updates the pull request; lifecycle status labels remain owned
+# entirely elsewhere (this step never mutates one and never requests a
+# transition).
+#
+# This step is a SIBLING to the write-fence step above — added, not
+# interleaved into it — and follows the identical `if: always()` +
+# $CN_WAKE_BASE_SHA baseline convention (cnos#496), but is gated on a
+# DIFFERENT concern: role == "dispatch", read from the same $role shell
+# variable the manifest validation block earlier in this script already
+# computed. This is NOT the activation_log_writer gate used by the write
+# fence above — that variable governs channel-log write ownership, an
+# independent concern that happens to currently coincide with this one for
+# a single existing wake. Gating on role keeps this finalizer applicable to
+# any future dispatch-shaped wake uniformly, consistent with the renderer's
+# protocol-agnostic architecture (the renderer never encodes a concrete
+# protocol name or label taxonomy; see the AC7/AC8 leak-audit in
+# install-wake-golden.yml, which this step's wording is written to keep
+# clean).
+#
+# `if: always()`: the finalizer must run even when the work-phase step
+# above failed or timed out — a work session that dies mid-flight with
+# matter already produced is exactly the failure mode this mechanism
+# exists to close off; it must not depend on the work phase having
+# succeeded or even having reached its own final step.
+#
+# The step builds the kernel binary fresh from source (rather than
+# assuming a pre-built binary is on PATH) and invokes the finalize
+# sub-verb with no explicit issue number: the command self-detects its
+# target from the checked-out branch name, or — failing that — from which
+# CDD artifact directory under .cdd/unreleased/ carries matter, since the
+# renderer cannot know the issue number in advance for an arbitrary future
+# dispatch-shaped wake.
+if [ "$role" = "dispatch" ]; then
+  {
+    echo ""
+    echo "      - name: Mechanical checkpoint + PR finalizer"
+    echo "        # Runtime/finalizer guard per cnos#591: if this run ends with matter"
+    echo "        # (uncommitted changes, commits beyond base, CDD artifacts, or an"
+    echo "        # existing cycle branch), there must be a checkpoint + an open pull"
+    echo "        # request — never a cell silently stranded with matter and no PR."
+    echo "        # This step never mutates a lifecycle label and never requests a"
+    echo "        # transition; it only commits/pushes matter and ensures a draft PR."
+    echo "        if: always()"
+    echo "        shell: bash"
+    echo "        run: |"
+    echo "          set -euo pipefail"
+    echo "          (cd src/go && go build -o /tmp/cn-finalize ./cmd/cn)"
+    echo "          /tmp/cn-finalize cell finalize --base-sha \"\${CN_WAKE_BASE_SHA:-}\""
+  } >> "$tmp_out"
+fi
+
+# ---------------------------------------------------------------------------
 # Idempotent write
 # ---------------------------------------------------------------------------
 

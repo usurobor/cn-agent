@@ -815,3 +815,400 @@ func TestResumer_Resume_AppendRound(t *testing.T) {
 		t.Error("§R1 must be appended")
 	}
 }
+
+// --- ParseFinalizeArgs tests (cnos#591) ---
+
+func TestParseFinalizeArgs_EmptyIsValid(t *testing.T) {
+	a, err := ParseFinalizeArgs(nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if a.Issue != 0 || a.BaseSHA != "" {
+		t.Errorf("expected zero-value args, got %+v", a)
+	}
+}
+
+func TestParseFinalizeArgs_IssueAndBaseSHA(t *testing.T) {
+	a, err := ParseFinalizeArgs([]string{"--issue", "591", "--base-sha", "deadbeef"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if a.Issue != 591 || a.BaseSHA != "deadbeef" {
+		t.Errorf("got %+v", a)
+	}
+}
+
+func TestParseFinalizeArgs_BaseSHAOnly(t *testing.T) {
+	a, err := ParseFinalizeArgs([]string{"--base-sha", "deadbeef"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if a.Issue != 0 || a.BaseSHA != "deadbeef" {
+		t.Errorf("got %+v", a)
+	}
+}
+
+func TestParseFinalizeArgs_InvalidIssue(t *testing.T) {
+	if _, err := ParseFinalizeArgs([]string{"--issue", "-1"}); err == nil {
+		t.Fatal("expected error for non-positive --issue")
+	}
+}
+
+func TestParseFinalizeArgs_UnknownFlag(t *testing.T) {
+	if _, err := ParseFinalizeArgs([]string{"--bogus"}); err == nil {
+		t.Fatal("expected error for unknown flag")
+	}
+}
+
+// --- AC2: matter-detection is a pure function over an explicit facts
+// struct (mirrors FactSnapshot's shape idea); each of the four signals is
+// independently sufficient, and all-false must not report matter. ---
+
+func TestFinalize_MatterDetection(t *testing.T) {
+	cases := []struct {
+		name string
+		f    FinalizeFacts
+		want bool
+	}{
+		{
+			name: "signal 1: uncommitted changes only",
+			f:    FinalizeFacts{Issue: 591, UncommittedChanges: true},
+			want: true,
+		},
+		{
+			name: "signal 2: commits beyond base only",
+			f:    FinalizeFacts{Issue: 591, CommitsBeyondBase: 3},
+			want: true,
+		},
+		{
+			name: "signal 3: CDD artifacts only",
+			f:    FinalizeFacts{Issue: 591, CDDArtifacts: []string{"gamma-scaffold.md"}},
+			want: true,
+		},
+		{
+			name: "signal 4: branch exists only",
+			f:    FinalizeFacts{Issue: 591, BranchExists: true},
+			want: true,
+		},
+		{
+			name: "all four true",
+			f: FinalizeFacts{
+				Issue:              591,
+				UncommittedChanges: true,
+				CommitsBeyondBase:  1,
+				CDDArtifacts:       []string{"self-coherence.md"},
+				BranchExists:       true,
+			},
+			want: true,
+		},
+		{
+			name: "all four false — no matter",
+			f:    FinalizeFacts{Issue: 591},
+			want: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := HasMatter(c.f)
+			if got != c.want {
+				t.Errorf("HasMatter(%+v) = %v, want %v", c.f, got, c.want)
+			}
+		})
+	}
+}
+
+// --- Finalize test fixtures (shared fakes) ---
+
+// fakeGHJSONSeq returns a RunGHJSON fake that dispatches on the joined
+// args: "pr list" → prListJSON; anything else is an error (so tests fail
+// loudly on an unexpected gh read call rather than silently no-op).
+func fakeGHJSONSeq(prListJSON string) func(context.Context, []string) ([]byte, error) {
+	return func(_ context.Context, args []string) ([]byte, error) {
+		joined := strings.Join(args, " ")
+		if strings.Contains(joined, "pr list") {
+			return []byte(prListJSON), nil
+		}
+		return nil, fmt.Errorf("unexpected gh json call: %s", joined)
+	}
+}
+
+// callRecorder captures gh (write) invocations for assertion.
+type callRecorder struct {
+	calls [][]string
+}
+
+func (r *callRecorder) run(_ context.Context, args []string, _ io.Writer) error {
+	r.calls = append(r.calls, append([]string(nil), args...))
+	return nil
+}
+
+func (r *callRecorder) joined() []string {
+	out := make([]string, len(r.calls))
+	for i, c := range r.calls {
+		out[i] = strings.Join(c, " ")
+	}
+	return out
+}
+
+// noopCheckpoint is an injected Finalizer.Checkpoint fake: it records that
+// it was called but performs no real git operation, so AC3/AC4/AC6/AC9
+// tests exercise the PR create/update decision with zero subprocess calls.
+func noopCheckpoint(called *bool) func(context.Context, int, FinalizeFacts) error {
+	return func(_ context.Context, _ int, _ FinalizeFacts) error {
+		if called != nil {
+			*called = true
+		}
+		return nil
+	}
+}
+
+// --- AC3: matter → checkpoint + draft PR create (no existing PR) ---
+
+func TestFinalize_Checkpoint(t *testing.T) {
+	dir := t.TempDir()
+	var stdout, stderr strings.Builder
+	var checkpointCalled bool
+	var gh callRecorder
+
+	f := &Finalizer{
+		RepoRoot: dir,
+		Stdout:   &stdout,
+		Stderr:   &stderr,
+		AssembleFacts: func(context.Context, FinalizeArgs) (FinalizeFacts, error) {
+			return FinalizeFacts{Issue: 591, UncommittedChanges: true}, nil
+		},
+		Checkpoint: noopCheckpoint(&checkpointCalled),
+		RunGHJSON:  fakeGHJSONSeq(`[]`), // no existing PR
+		RunGH:      gh.run,
+	}
+
+	if err := f.Finalize(t.Context(), FinalizeArgs{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !checkpointCalled {
+		t.Error("expected Checkpoint to be invoked when matter exists")
+	}
+	if len(gh.calls) != 1 {
+		t.Fatalf("expected exactly 1 gh call (pr create), got %d: %v", len(gh.calls), gh.joined())
+	}
+	createCall := gh.joined()[0]
+	if !strings.Contains(createCall, "pr create") {
+		t.Errorf("expected a pr create call, got: %q", createCall)
+	}
+	if !strings.Contains(createCall, "--draft") {
+		t.Errorf("PR must be created as draft, got: %q", createCall)
+	}
+	if !strings.Contains(createCall, "--head cycle/591") {
+		t.Errorf("PR must target --head cycle/591, got: %q", createCall)
+	}
+	if !strings.Contains(createCall, "--base main") {
+		t.Errorf("PR must target --base main, got: %q", createCall)
+	}
+	if !strings.Contains(createCall, "Refs #591") {
+		t.Errorf("PR body must contain 'Refs #591', got: %q", createCall)
+	}
+}
+
+// --- AC4: idempotent — existing open PR → no duplicate create ---
+
+func TestFinalize_Idempotent(t *testing.T) {
+	dir := t.TempDir()
+
+	newFinalizer := func(gh *callRecorder) *Finalizer {
+		var stdout, stderr strings.Builder
+		return &Finalizer{
+			RepoRoot: dir,
+			Stdout:   &stdout,
+			Stderr:   &stderr,
+			AssembleFacts: func(context.Context, FinalizeArgs) (FinalizeFacts, error) {
+				return FinalizeFacts{Issue: 591, BranchExists: true, CommitsBeyondBase: 2}, nil
+			},
+			Checkpoint: noopCheckpoint(nil),
+			RunGHJSON:  fakeGHJSONSeq(`[{"number":42,"url":"https://github.com/usurobor/cnos/pull/42"}]`),
+			RunGH:      gh.run,
+		}
+	}
+
+	var gh1 callRecorder
+	f1 := newFinalizer(&gh1)
+	if err := f1.Finalize(t.Context(), FinalizeArgs{}); err != nil {
+		t.Fatalf("first Finalize: unexpected error: %v", err)
+	}
+	if len(gh1.calls) != 0 {
+		t.Fatalf("first Finalize: expected zero gh write calls (PR already open), got %d: %v", len(gh1.calls), gh1.joined())
+	}
+
+	// Second call against unchanged facts must produce the same decision:
+	// still zero pr create calls — never a duplicate.
+	var gh2 callRecorder
+	f2 := newFinalizer(&gh2)
+	if err := f2.Finalize(t.Context(), FinalizeArgs{}); err != nil {
+		t.Fatalf("second Finalize: unexpected error: %v", err)
+	}
+	if len(gh2.calls) != 0 {
+		t.Fatalf("second Finalize: expected zero gh write calls (idempotent), got %d: %v", len(gh2.calls), gh2.joined())
+	}
+}
+
+// --- AC5: no matter → clean no-op, zero git/gh calls, exit 0 ---
+
+func TestFinalize_NoMatterNoOp(t *testing.T) {
+	dir := t.TempDir()
+	var stdout, stderr strings.Builder
+	var checkpointCalled bool
+	var gh callRecorder
+	ghJSONCalls := 0
+
+	f := &Finalizer{
+		RepoRoot: dir,
+		Stdout:   &stdout,
+		Stderr:   &stderr,
+		AssembleFacts: func(context.Context, FinalizeArgs) (FinalizeFacts, error) {
+			return FinalizeFacts{Issue: 591}, nil // all four signals false
+		},
+		Checkpoint: noopCheckpoint(&checkpointCalled),
+		RunGHJSON: func(context.Context, []string) ([]byte, error) {
+			ghJSONCalls++
+			return nil, fmt.Errorf("RunGHJSON must not be called when no matter exists")
+		},
+		RunGH: gh.run,
+	}
+
+	if err := f.Finalize(t.Context(), FinalizeArgs{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if checkpointCalled {
+		t.Error("Checkpoint must not be invoked when no matter exists")
+	}
+	if ghJSONCalls != 0 {
+		t.Errorf("expected zero RunGHJSON calls, got %d", ghJSONCalls)
+	}
+	if len(gh.calls) != 0 {
+		t.Errorf("expected zero RunGH calls, got %d: %v", len(gh.calls), gh.joined())
+	}
+}
+
+// --- AC6: PR-open failure → STOP evidence, precise error, no label call ---
+
+func TestFinalize_PROpenFailure(t *testing.T) {
+	dir := t.TempDir()
+	var stdout, stderr strings.Builder
+
+	failingGH := func(_ context.Context, args []string, _ io.Writer) error {
+		return fmt.Errorf("gh: authentication required")
+	}
+
+	f := &Finalizer{
+		RepoRoot: dir,
+		Stdout:   &stdout,
+		Stderr:   &stderr,
+		AssembleFacts: func(context.Context, FinalizeArgs) (FinalizeFacts, error) {
+			return FinalizeFacts{Issue: 591, UncommittedChanges: true}, nil
+		},
+		Checkpoint: noopCheckpoint(nil),
+		RunGHJSON:  fakeGHJSONSeq(`[]`),
+		RunGH:      failingGH,
+	}
+
+	err := f.Finalize(t.Context(), FinalizeArgs{})
+	if err == nil {
+		t.Fatal("expected an error on PR-open failure")
+	}
+	if !strings.Contains(err.Error(), "cell_finalize_pr_open_failed") {
+		t.Errorf("expected error to carry cell_finalize_pr_open_failed marker, got: %v", err)
+	}
+
+	stopPath := filepath.Join(dir, ".cdd", "unreleased", "591", "FINALIZE-STOP.md")
+	content, rerr := os.ReadFile(stopPath)
+	if rerr != nil {
+		t.Fatalf("expected STOP evidence file at %s: %v", stopPath, rerr)
+	}
+	if !strings.Contains(string(content), "cell_finalize_pr_open_failed") {
+		t.Errorf("STOP evidence must name the failure marker, got: %q", string(content))
+	}
+
+	// Zero label-mutation calls (AC8): failingGH's own call site (pr
+	// create) carries no label flags, and this Finalize call never
+	// reaches a second gh invocation after the failure.
+	if strings.Contains(stdout.String()+stderr.String(), "--add-label") || strings.Contains(stdout.String()+stderr.String(), "--remove-label") {
+		t.Error("unexpected label-mutation reference in output on PR-open failure")
+	}
+}
+
+// --- AC9: the #368/#504/#568/#571/#574 strand class — matter exists, no
+// PR, run_active is irrelevant (not consulted) → finalizer creates the PR,
+// not a no-op and not a silent failure. ---
+
+func TestFinalize_AC9_StrandClassRecovered(t *testing.T) {
+	dir := t.TempDir()
+	var stdout, stderr strings.Builder
+	var gh callRecorder
+
+	f := &Finalizer{
+		RepoRoot: dir,
+		Stdout:   &stdout,
+		Stderr:   &stderr,
+		AssembleFacts: func(context.Context, FinalizeArgs) (FinalizeFacts, error) {
+			// Exactly the strand-class fixture: branch exists with commits
+			// beyond base (matter), no uncommitted changes, no CDD artifacts
+			// signal needed — the branch/commits signals alone are matter.
+			// Deliberately no run_active field exists on FinalizeFacts at
+			// all: this command does not consult it (gamma-scaffold.md
+			// Friction note 3).
+			return FinalizeFacts{Issue: 591, BranchExists: true, CommitsBeyondBase: 5}, nil
+		},
+		Checkpoint: noopCheckpoint(nil),
+		RunGHJSON:  fakeGHJSONSeq(`[]`), // no PR exists yet — the strand
+		RunGH:      gh.run,
+	}
+
+	if err := f.Finalize(t.Context(), FinalizeArgs{}); err != nil {
+		t.Fatalf("AC9: expected the strand to be recovered, got error: %v", err)
+	}
+	if len(gh.calls) != 1 || !strings.Contains(gh.joined()[0], "pr create") {
+		t.Fatalf("AC9: expected exactly one pr create call (strand recovered, not a no-op), got: %v", gh.joined())
+	}
+	if strings.Contains(stdout.String(), "no-op") {
+		t.Errorf("AC9: must not report a no-op decision when matter exists with no PR, got stdout: %q", stdout.String())
+	}
+}
+
+// --- AC7/AC8 static scope check: the Finalizer code path never touches
+// REVIEW-REQUEST.yml, never calls `cn issues fsm evaluate`, and never
+// issues a label-mutation gh call in any of the above scenarios. This is
+// re-asserted here (rather than only by source grep) so a future edit
+// that reintroduces one of these trips a test, not just a code-review
+// grep. ---
+
+func TestFinalize_NeverTouchesLabelsOrFSM(t *testing.T) {
+	dir := t.TempDir()
+	var stdout, stderr strings.Builder
+	var gh callRecorder
+
+	f := &Finalizer{
+		RepoRoot: dir,
+		Stdout:   &stdout,
+		Stderr:   &stderr,
+		AssembleFacts: func(context.Context, FinalizeArgs) (FinalizeFacts, error) {
+			return FinalizeFacts{Issue: 591, UncommittedChanges: true}, nil
+		},
+		Checkpoint: noopCheckpoint(nil),
+		RunGHJSON:  fakeGHJSONSeq(`[]`),
+		RunGH:      gh.run,
+	}
+	if err := f.Finalize(t.Context(), FinalizeArgs{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, joined := range gh.joined() {
+		if strings.Contains(joined, "--add-label") || strings.Contains(joined, "--remove-label") {
+			t.Errorf("Finalizer must never mutate labels, got call: %q", joined)
+		}
+		if strings.Contains(joined, "fsm evaluate") {
+			t.Errorf("Finalizer must never call fsm evaluate, got call: %q", joined)
+		}
+	}
+	combined := stdout.String() + stderr.String()
+	if strings.Contains(combined, "REVIEW-REQUEST.yml") {
+		t.Errorf("Finalizer must never reference REVIEW-REQUEST.yml, got output: %q", combined)
+	}
+}

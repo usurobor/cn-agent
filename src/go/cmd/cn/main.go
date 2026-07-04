@@ -44,6 +44,7 @@ func main() {
 	reg.Register(&cli.CddVerifyCmd{})
 	reg.Register(&cli.CellReturnCmd{})
 	reg.Register(&cli.CellResumeCmd{})
+	reg.Register(&cli.CellFinalizeCmd{})
 	reg.Register(&cli.IssuesMapCmd{})
 	reg.Register(&cli.IssuesFsmCmd{})
 

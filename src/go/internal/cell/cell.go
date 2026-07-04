@@ -52,6 +52,19 @@ type ResumeArgs struct {
 	Issue int
 }
 
+// FinalizeArgs holds the parsed flags for cn cell finalize.
+//
+// Issue is optional (cnos#591 implementation contract): when zero, Finalize
+// self-detects the target issue number from the current branch name
+// (cycle/{N}) or, failing that, by scanning .cdd/unreleased/{N}/ for the
+// issue with matter. An explicit --issue override exists for testability
+// and manual invocation; the renderer-emitted mechanical step never passes
+// it (it cannot know N in advance).
+type FinalizeArgs struct {
+	Issue   int
+	BaseSHA string // optional; passed through to matter-scan (newly-committed paths since BaseSHA)
+}
+
 // ParseReturnArgs parses argv for cn cell return.
 // Expected: --issue N --verdict V --review path
 func ParseReturnArgs(argv []string) (ReturnArgs, error) {
@@ -124,6 +137,37 @@ func ParseResumeArgs(argv []string) (ResumeArgs, error) {
 	}
 	if a.Issue == 0 {
 		return a, fmt.Errorf("--issue is required")
+	}
+	return a, nil
+}
+
+// ParseFinalizeArgs parses argv for cn cell finalize.
+// Expected: [--issue N] [--base-sha SHA] — both optional (cnos#591; no
+// required flags at all — an empty argv is valid and lets Finalize
+// self-detect the issue from the current branch or the CDD tree).
+func ParseFinalizeArgs(argv []string) (FinalizeArgs, error) {
+	var a FinalizeArgs
+	for i := 0; i < len(argv); i++ {
+		switch argv[i] {
+		case "--issue":
+			if i+1 >= len(argv) {
+				return a, fmt.Errorf("--issue requires a value")
+			}
+			i++
+			n, err := strconv.Atoi(argv[i])
+			if err != nil || n <= 0 {
+				return a, fmt.Errorf("--issue must be a positive integer, got %q", argv[i])
+			}
+			a.Issue = n
+		case "--base-sha":
+			if i+1 >= len(argv) {
+				return a, fmt.Errorf("--base-sha requires a value")
+			}
+			i++
+			a.BaseSHA = argv[i]
+		default:
+			return a, fmt.Errorf("unknown flag %q", argv[i])
+		}
 	}
 	return a, nil
 }
@@ -500,6 +544,311 @@ func (r *Resumer) Resume(ctx context.Context, args ResumeArgs) error {
 	return nil
 }
 
+// FinalizeFacts is the finalizer's entire matter-detection input: an
+// explicit, hidden-inference-free observation of one cell's branch/PR
+// state (cnos#591). Mirrors the shape idea of issues-fsm's FactSnapshot
+// (src/packages/cnos.issues/commands/issues-fsm/snapshot.go): decision
+// logic (HasMatter) consumes a FinalizeFacts value directly and never
+// re-derives facts by shelling out itself. This is what makes AC2 (the
+// four-signal matter-detection table test) and AC9 (the strand-class
+// fixture) constructible in-process, with no real git/gh subprocess.
+type FinalizeFacts struct {
+	// Issue is the issue number this snapshot describes, or 0 if no
+	// candidate issue number could be resolved at all (self-detection
+	// failure; see ParseFinalizeArgs / assembleFacts).
+	Issue int
+
+	// UncommittedChanges reports whether the working tree has staged or
+	// unstaged changes (signal 1 of 4).
+	UncommittedChanges bool
+
+	// CommitsBeyondBase is the number of commits on cycle/{Issue} beyond
+	// its base (main). Nonzero is signal 2 of 4.
+	CommitsBeyondBase int
+
+	// CDDArtifacts lists filenames present under .cdd/unreleased/{Issue}/.
+	// Non-empty is signal 3 of 4.
+	CDDArtifacts []string
+
+	// BranchExists reports whether cycle/{Issue} exists (locally or on
+	// origin). Signal 4 of 4.
+	BranchExists bool
+
+	// PRExists, PRNumber, PRURL describe an already-open pull request for
+	// cycle/{Issue}, if one exists (gh pr list --head cycle/{Issue}
+	// --state open). Used by the idempotent create/update decision (AC4),
+	// not by matter-detection itself.
+	PRExists bool
+	PRNumber int
+	PRURL    string
+}
+
+// HasMatter reports whether f represents "matter" per the governing rule
+// restated in gamma-scaffold.md (cnos#591): the OR of four independently-
+// sufficient signals — uncommitted file changes, commits beyond base on
+// cycle/{N}, CDD artifacts under .cdd/unreleased/{N}/, or an existing
+// cycle/{N} branch. Pure function over an explicit facts struct: no git/gh
+// subprocess, no side effects. AC2 / AC9 oracle target.
+func HasMatter(f FinalizeFacts) bool {
+	return f.UncommittedChanges ||
+		f.CommitsBeyondBase > 0 ||
+		len(f.CDDArtifacts) > 0 ||
+		f.BranchExists
+}
+
+// Finalizer executes the cn cell finalize operation: mechanical
+// checkpoint (commit + push) and idempotent draft-PR create/update,
+// gated purely on HasMatter. It never writes a status label and never
+// requests an FSM transition — that authority remains with the FSM
+// (issues-fsm) and stays entirely out of this code path (cnos#591 AC7/AC8;
+// see gamma-scaffold.md Friction note 2).
+type Finalizer struct {
+	Repo     string // GitHub repo slug, e.g. "usurobor/cnos"; empty uses gh's default
+	RepoRoot string // absolute path to the repository root
+	Stdout   io.Writer
+	Stderr   io.Writer
+
+	// RunGH is the function used to invoke the gh CLI for write commands
+	// (gh pr create). If nil, the package-level runGH is used. Mirrors
+	// Returner's injection pattern exactly.
+	RunGH func(ctx context.Context, args []string, w io.Writer) error
+	// RunGHJSON is the function used to invoke the gh CLI for read
+	// commands that return JSON on stdout (gh pr list). If nil, the
+	// package-level runGHJSON is used. Mirrors Returner's injection
+	// pattern exactly.
+	RunGHJSON func(ctx context.Context, args []string) ([]byte, error)
+
+	// AssembleFacts builds the FinalizeFacts value for a Finalize call.
+	// If nil, the real git-shelling implementation (assembleFacts) is
+	// used. Tests inject a fake returning a FinalizeFacts literal
+	// directly, so the checkpoint+PR decision logic is exercised with
+	// zero real git/gh subprocess calls (AC3/AC4/AC5/AC6/AC9).
+	AssembleFacts func(ctx context.Context, args FinalizeArgs) (FinalizeFacts, error)
+
+	// Checkpoint performs the mechanical commit+push step once matter is
+	// confirmed: ensures cycle/{issue} exists, commits any uncommitted
+	// changes, and pushes. If nil, the real git-shelling implementation
+	// (realCheckpoint) is used. Tests inject a no-op fake so the PR
+	// create/update decision can be exercised in isolation.
+	Checkpoint func(ctx context.Context, issue int, facts FinalizeFacts) error
+}
+
+// Finalize is the entry point for cn cell finalize. It assembles (or
+// accepts injected) matter-detection facts, no-ops cleanly when no matter
+// exists (AC5), otherwise checkpoints the branch and ensures a draft PR
+// exists — creating one if absent (AC3/AC9) or leaving an existing open
+// PR untouched (AC4; see gamma-scaffold.md Friction note 5 for the
+// no-op-vs-update design choice this cycle makes). On checkpoint or
+// PR-open failure, Finalize never claims success: it writes a
+// FINALIZE-STOP.md evidence file and returns a precise, package-
+// convention-following error marker (AC6). It never writes a label and
+// never calls `cn issues fsm evaluate` (AC7/AC8).
+func (f *Finalizer) Finalize(ctx context.Context, args FinalizeArgs) error {
+	assemble := f.AssembleFacts
+	if assemble == nil {
+		assemble = f.assembleFacts
+	}
+	facts, err := assemble(ctx, args)
+	if err != nil {
+		return fmt.Errorf("cell_finalize_facts_unavailable: assembling matter-detection facts: %w", err)
+	}
+
+	issue := args.Issue
+	if issue == 0 {
+		issue = facts.Issue
+	}
+
+	if !HasMatter(facts) {
+		fmt.Fprintf(f.Stdout, "cn cell finalize: no matter detected — no-op (nothing to checkpoint, no PR touched).\n")
+		return nil
+	}
+	if issue == 0 {
+		// Matter signals present but no issue number resolvable at all —
+		// defensive no-op rather than guessing a branch/PR target.
+		fmt.Fprintf(f.Stdout, "cn cell finalize: matter signals present but no issue number could be resolved — no-op.\n")
+		return nil
+	}
+
+	branch := fmt.Sprintf("cycle/%d", issue)
+	fmt.Fprintf(f.Stdout, "cn cell finalize: matter detected for %s (issue #%d) — checkpointing.\n", branch, issue)
+
+	checkpoint := f.Checkpoint
+	if checkpoint == nil {
+		checkpoint = f.realCheckpoint
+	}
+	if err := checkpoint(ctx, issue, facts); err != nil {
+		return f.stopWithEvidence(issue, "cell_finalize_checkpoint_failed", err)
+	}
+	fmt.Fprintf(f.Stdout, "  ✓ checkpoint complete: %s committed and pushed\n", branch)
+
+	return f.ensurePR(ctx, issue, branch)
+}
+
+// ensurePR performs the idempotent draft-PR create/update decision (AC4):
+// an existing open PR for cycle/{issue} is left as a clean no-op (this
+// cycle's chosen shape — see gamma-scaffold.md Friction note 5); absent
+// one, a new draft PR is opened targeting main, referencing the issue
+// (AC3/AC7/AC9). It never touches REVIEW-REQUEST.yml, never calls
+// `cn issues fsm evaluate`, and never mutates a label (AC7/AC8).
+func (f *Finalizer) ensurePR(ctx context.Context, issue int, branch string) error {
+	ghJSON := f.RunGHJSON
+	if ghJSON == nil {
+		ghJSON = runGHJSON
+	}
+	listArgs := []string{"pr", "list", "--head", branch, "--state", "open", "--json", "number,url"}
+	if f.Repo != "" {
+		listArgs = append([]string{"--repo", f.Repo}, listArgs...)
+	}
+	out, err := ghJSON(ctx, listArgs)
+	if err != nil {
+		return f.stopWithEvidence(issue, "cell_finalize_pr_list_failed", err)
+	}
+	existing, perr := parsePRList(out)
+	if perr != nil {
+		return f.stopWithEvidence(issue, "cell_finalize_pr_list_unparseable", perr)
+	}
+	if len(existing) > 0 {
+		fmt.Fprintf(f.Stdout, "cn cell finalize: PR already open for %s: %s (idempotent no-op; no duplicate created)\n", branch, existing[0].URL)
+		return nil
+	}
+
+	ghFn := f.RunGH
+	if ghFn == nil {
+		ghFn = runGH
+	}
+	title := fmt.Sprintf("cycle/%d", issue)
+	body := fmt.Sprintf("Refs #%d\n\nAutomated checkpoint opened by the mechanical cell finalizer (cnos#591). Draft — not yet review-ready.\n", issue)
+	createArgs := []string{"pr", "create", "--draft", "--base", "main", "--head", branch, "--title", title, "--body", body}
+	if f.Repo != "" {
+		createArgs = append([]string{"--repo", f.Repo}, createArgs...)
+	}
+	if err := ghFn(ctx, createArgs, f.Stderr); err != nil {
+		return f.stopWithEvidence(issue, "cell_finalize_pr_open_failed", err)
+	}
+	fmt.Fprintf(f.Stdout, "  ✓ opened draft PR for %s (Refs #%d)\n", branch, issue)
+	return nil
+}
+
+// stopWithEvidence records a STOP-evidence artifact at
+// .cdd/unreleased/{issue}/FINALIZE-STOP.md naming the failure class and
+// the raw error (AC6), then returns a precise error carrying the same
+// marker, following this package's review_return_*/review_resume_*
+// naming convention. It never touches a label or REVIEW-REQUEST.yml —
+// evidence is for a human or a later δ hard-block judgment, not an
+// auto-escalation (gamma-scaffold.md Friction note 2).
+func (f *Finalizer) stopWithEvidence(issue int, marker string, cause error) error {
+	dir := filepath.Join(f.RepoRoot, ".cdd", "unreleased", strconv.Itoa(issue))
+	if mkErr := os.MkdirAll(dir, 0o755); mkErr != nil {
+		return fmt.Errorf("%s: %w (additionally failed to create evidence directory %q: %v)", marker, cause, dir, mkErr)
+	}
+	path := filepath.Join(dir, "FINALIZE-STOP.md")
+	content := fmt.Sprintf(
+		"# FINALIZE-STOP\n\nmarker: %s\nissue: %d\nerror: %s\n\nThis is mechanical checkpoint/PR-open evidence written by `cn cell finalize`\n(cnos#591). It does not itself change any status label; a human or a\nlater hard-block judgment consumes this evidence.\n",
+		marker, issue, cause,
+	)
+	if wErr := os.WriteFile(path, []byte(content), 0o644); wErr != nil {
+		return fmt.Errorf("%s: %w (additionally failed to write evidence file %q: %v)", marker, cause, path, wErr)
+	}
+	fmt.Fprintf(f.Stderr, "✗ cn cell finalize: %s: %v (evidence: %s)\n", marker, cause, path)
+	return fmt.Errorf("%s: %w", marker, cause)
+}
+
+// prListItem is one entry of `gh pr list --json number,url` output.
+type prListItem struct {
+	Number int    `json:"number"`
+	URL    string `json:"url"`
+}
+
+// parsePRList decodes the JSON returned by `gh pr list --json number,url`.
+func parsePRList(jsonBytes []byte) ([]prListItem, error) {
+	var items []prListItem
+	if err := decodeJSON(jsonBytes, &items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+// assembleFacts is the production, real-git fact-assembly path (not
+// exercised by unit tests — they inject Finalizer.AssembleFacts directly
+// per AC2/AC9). It resolves the target issue number per the
+// implementation contract: (1) current branch matches cycle/(\d+); else
+// (2) scan .cdd/unreleased/{N}/ for the N with uncommitted or (given
+// --base-sha) newly-committed matter. If neither resolves an issue
+// number, Issue is left 0 and Finalize takes the AC5 no-matter path.
+func (f *Finalizer) assembleFacts(ctx context.Context, args FinalizeArgs) (FinalizeFacts, error) {
+	var facts FinalizeFacts
+
+	issue := args.Issue
+	if issue == 0 {
+		if cur, err := currentLocalBranch(ctx); err == nil {
+			if n, ok := parseCycleBranchName(cur); ok {
+				issue = n
+			}
+		}
+	}
+	if issue == 0 {
+		issue = f.scanForIssueWithMatter(ctx, args)
+	}
+	facts.Issue = issue
+	if issue == 0 {
+		return facts, nil
+	}
+
+	branch := fmt.Sprintf("cycle/%d", issue)
+	facts.UncommittedChanges = gitHasUncommittedChanges(ctx, f.RepoRoot)
+	facts.BranchExists = gitBranchExists(ctx, f.RepoRoot, branch)
+	if facts.BranchExists {
+		facts.CommitsBeyondBase = gitCommitsBeyondBase(ctx, f.RepoRoot, branch, "main")
+	}
+	facts.CDDArtifacts = listCDDArtifacts(f.RepoRoot, issue)
+	return facts, nil
+}
+
+// scanForIssueWithMatter implements the second self-detection path: when
+// the current branch is not cycle/{N}, scan .cdd/unreleased/*/ for
+// uncommitted paths (always) or newly-committed paths since --base-sha
+// (when given), and return the first N with a matching path. Returns 0
+// if nothing is found (the caller's AC5 no-matter path).
+func (f *Finalizer) scanForIssueWithMatter(ctx context.Context, args FinalizeArgs) int {
+	candidates := gitPorcelainPaths(ctx, f.RepoRoot, ".cdd/unreleased/")
+	if args.BaseSHA != "" {
+		candidates = append(candidates, gitDiffNamesSinceBase(ctx, f.RepoRoot, args.BaseSHA, ".cdd/unreleased/")...)
+	}
+	for _, p := range candidates {
+		if n, ok := extractIssueFromCDDPath(p); ok {
+			return n
+		}
+	}
+	return 0
+}
+
+// realCheckpoint is the production, real-git checkpoint implementation
+// (not exercised by unit tests — they inject Finalizer.Checkpoint as a
+// no-op fake). Ensures cycle/{issue} exists, commits any uncommitted
+// changes, and pushes to origin.
+func (f *Finalizer) realCheckpoint(ctx context.Context, issue int, facts FinalizeFacts) error {
+	branch := fmt.Sprintf("cycle/%d", issue)
+
+	if !facts.BranchExists {
+		if err := runGitCmd(ctx, f.RepoRoot, f.Stderr, "checkout", "-B", branch); err != nil {
+			return fmt.Errorf("creating branch %s: %w", branch, err)
+		}
+	}
+	if facts.UncommittedChanges {
+		if err := runGitCmd(ctx, f.RepoRoot, f.Stderr, "add", "-A"); err != nil {
+			return fmt.Errorf("staging changes on %s: %w", branch, err)
+		}
+		msg := fmt.Sprintf("cell-finalize: checkpoint matter for cycle/%d", issue)
+		if err := runGitCmd(ctx, f.RepoRoot, f.Stderr, "commit", "-m", msg); err != nil {
+			return fmt.Errorf("committing checkpoint on %s: %w", branch, err)
+		}
+	}
+	if err := runGitCmd(ctx, f.RepoRoot, f.Stderr, "push", "-u", "origin", branch); err != nil {
+		return fmt.Errorf("pushing %s: %w", branch, err)
+	}
+	return nil
+}
+
 // runGH executes the gh CLI with the given args. stderr is forwarded to w.
 func runGH(ctx context.Context, args []string, w io.Writer) error {
 	cmd := exec.CommandContext(ctx, "gh", args...)
@@ -555,6 +904,162 @@ func currentLocalBranch(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("detached HEAD; cn cell resume requires being on cycle/{N}")
 	}
 	return name, nil
+}
+
+// --- Finalizer git plumbing (cnos#591) ---
+//
+// These are real exec.Command calls used only by the production
+// assembleFacts/realCheckpoint paths above. Unit tests never reach them:
+// they inject Finalizer.AssembleFacts / Finalizer.Checkpoint fakes
+// instead, so the matter-detection facts struct (and the checkpoint+PR
+// decision it drives) is constructible in tests with no git subprocess
+// at all (AC2/AC3/AC4/AC5/AC6/AC9).
+
+// runGitCmd runs git with the given args in dir, forwarding stderr to w.
+func runGitCmd(ctx context.Context, dir string, w io.Writer, args ...string) error {
+	cmd := exec.CommandContext(ctx, "git", args...)
+	if dir != "" {
+		cmd.Dir = dir
+	}
+	cmd.Stderr = w
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+	}
+	return nil
+}
+
+// runGitCmdOutput runs git with the given args in dir and returns stdout.
+func runGitCmdOutput(ctx context.Context, dir string, args ...string) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", args...)
+	if dir != "" {
+		cmd.Dir = dir
+	}
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("git %s: %w (stderr: %s)", strings.Join(args, " "), err, stderr.String())
+	}
+	return stdout.String(), nil
+}
+
+// gitHasUncommittedChanges reports whether the working tree at dir has
+// any staged or unstaged changes. Errors are treated as "no" (the caller
+// falls back to the other three matter signals; a broken git invocation
+// here should not itself manufacture a false matter signal).
+func gitHasUncommittedChanges(ctx context.Context, dir string) bool {
+	out, err := runGitCmdOutput(ctx, dir, "status", "--porcelain")
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(out) != ""
+}
+
+// gitBranchExists reports whether branch exists locally or on origin.
+func gitBranchExists(ctx context.Context, dir, branch string) bool {
+	if err := runGitCmd(ctx, dir, io.Discard, "rev-parse", "--verify", "--quiet", branch); err == nil {
+		return true
+	}
+	if err := runGitCmd(ctx, dir, io.Discard, "rev-parse", "--verify", "--quiet", "origin/"+branch); err == nil {
+		return true
+	}
+	return false
+}
+
+// gitCommitsBeyondBase returns the count of commits on branch beyond base
+// (e.g. "main..cycle/591"). Returns 0 on any error (branch/base missing).
+func gitCommitsBeyondBase(ctx context.Context, dir, branch, base string) int {
+	out, err := runGitCmdOutput(ctx, dir, "rev-list", "--count", base+".."+branch)
+	if err != nil {
+		return 0
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(out))
+	if err != nil {
+		return 0
+	}
+	return n
+}
+
+// gitPorcelainPaths returns the paths reported by `git status --porcelain`
+// scoped to pathspec (uncommitted changes only).
+func gitPorcelainPaths(ctx context.Context, dir, pathspec string) []string {
+	out, err := runGitCmdOutput(ctx, dir, "status", "--porcelain", "--", pathspec)
+	if err != nil {
+		return nil
+	}
+	var paths []string
+	for _, line := range strings.Split(out, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		paths = append(paths, fields[len(fields)-1])
+	}
+	return paths
+}
+
+// gitDiffNamesSinceBase returns paths under pathspec changed between
+// baseSHA and HEAD (newly-committed matter since the wake's baseline).
+func gitDiffNamesSinceBase(ctx context.Context, dir, baseSHA, pathspec string) []string {
+	out, err := runGitCmdOutput(ctx, dir, "diff", "--name-only", baseSHA+"..HEAD", "--", pathspec)
+	if err != nil {
+		return nil
+	}
+	var paths []string
+	for _, line := range strings.Split(out, "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			paths = append(paths, line)
+		}
+	}
+	return paths
+}
+
+// extractIssueFromCDDPath extracts N from a path containing
+// ".../unreleased/{N}/...". Returns ok=false if no such segment is found.
+func extractIssueFromCDDPath(p string) (int, bool) {
+	parts := strings.Split(filepath.ToSlash(p), "/")
+	for i, part := range parts {
+		if part == "unreleased" && i+1 < len(parts) {
+			if n, err := strconv.Atoi(parts[i+1]); err == nil && n > 0 {
+				return n, true
+			}
+		}
+	}
+	return 0, false
+}
+
+// listCDDArtifacts lists filenames present under
+// repoRoot/.cdd/unreleased/{issue}/ (non-recursive; files only). Returns
+// nil if the directory does not exist.
+func listCDDArtifacts(repoRoot string, issue int) []string {
+	dir := filepath.Join(repoRoot, ".cdd", "unreleased", strconv.Itoa(issue))
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	var names []string
+	for _, e := range entries {
+		if !e.IsDir() {
+			names = append(names, e.Name())
+		}
+	}
+	return names
+}
+
+// parseCycleBranchName extracts N from a branch name of the form
+// "cycle/{N}". Returns ok=false for any other shape.
+func parseCycleBranchName(name string) (int, bool) {
+	const prefix = "cycle/"
+	if !strings.HasPrefix(name, prefix) {
+		return 0, false
+	}
+	n, err := strconv.Atoi(name[len(prefix):])
+	if err != nil || n <= 0 {
+		return 0, false
+	}
+	return n, true
 }
 
 // reviewFrontmatter captures the operator-review fields the runtime cares

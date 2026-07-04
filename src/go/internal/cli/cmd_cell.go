@@ -177,3 +177,102 @@ func (c *CellResumeCmd) Run(ctx context.Context, inv Invocation) error {
 	}
 	return nil
 }
+
+// CellFinalizeCmd implements "cn cell finalize".
+//
+// Usage: cn cell finalize [--issue N] [--base-sha SHA]
+//
+// Mechanical checkpoint + PR-open/update finalizer (cnos#591). Detects
+// "matter" (uncommitted changes, commits beyond base, CDD artifacts, or an
+// existing cycle/{N} branch) and, when present, commits/pushes and ensures
+// a draft PR exists — idempotently. Never writes a status label and never
+// calls `cn issues fsm evaluate`; the FSM remains the sole label-writer.
+type CellFinalizeCmd struct{}
+
+func (c *CellFinalizeCmd) Spec() CommandSpec {
+	return CommandSpec{
+		Name:     "cell-finalize",
+		Summary:  "Mechanical checkpoint + idempotent draft-PR open/update when a cell has matter",
+		Source:   SourceKernel,
+		Tier:     TierKernel,
+		NeedsHub: true, // needs repo root to locate .cdd/unreleased/{N}/ and run git
+	}
+}
+
+func (c *CellFinalizeCmd) Help() string {
+	return `cn cell finalize - Mechanical checkpoint + PR-open/update finalizer
+
+USAGE:
+  cn cell finalize [--issue N] [--base-sha SHA]
+
+DESCRIPTION:
+  Runtime/finalizer responsibility (cnos#591): if a run ends with matter,
+  there must be a branch/commit/PR, not a cell stranded at status:in-progress
+  with no PR. cn cell finalize checkpoints matter (commit + push) and
+  opens (or idempotently reuses) a draft pull request. It does not decide
+  cognition and does not own status labels — the FSM ('cn issues fsm
+  evaluate --apply') remains the only mechanism that applies a lifecycle
+  status label; this command has no label-mutation code path at all.
+
+  Matter is detected as the OR of four independent signals:
+    1. uncommitted file changes in the working tree
+    2. commits on cycle/{N} beyond its base (main)
+    3. CDD artifacts present under .cdd/unreleased/{N}/
+    4. an existing cycle/{N} branch
+
+  If none of the four signals hold, this is a clean no-op: exit 0, no
+  branch created, no commit, no gh pr create call.
+
+  When matter exists: ensures cycle/{N} exists, commits any uncommitted
+  changes, pushes, then ensures a draft PR exists for cycle/{N} — creating
+  one (base: main; body references Refs #{N}) if none is open, or leaving
+  an already-open PR as a clean no-op (idempotent; never a duplicate).
+
+  On checkpoint or PR-open failure, this command never claims success: it
+  writes .cdd/unreleased/{N}/FINALIZE-STOP.md naming the failure and
+  returns a precise error (cell_finalize_checkpoint_failed /
+  cell_finalize_pr_open_failed / cell_finalize_pr_list_failed).
+
+FLAGS (both optional):
+  --issue N      GitHub issue number. If omitted, self-detected from the
+                 current branch (cycle/{N}) or, failing that, by scanning
+                 .cdd/unreleased/{N}/ for the issue with matter.
+  --base-sha SHA Baseline SHA (e.g. $CN_WAKE_BASE_SHA from a dispatch-shaped
+                 wake's write-fence baseline step) used only to widen the
+                 self-detection scan to newly-committed CDD paths since
+                 that baseline when the current branch is not cycle/{N}.
+
+EXAMPLES:
+  cn cell finalize
+  cn cell finalize --base-sha "$CN_WAKE_BASE_SHA"
+  cn cell finalize --issue 591
+
+EXIT CODES:
+  0  Success (matter checkpointed + PR ensured, or clean no-matter no-op)
+  1  Error (checkpoint failed, PR list/create failed — see FINALIZE-STOP.md)
+
+DEPENDENCIES:
+  git and gh CLI must be installed and authenticated (existing runtime
+  dependencies of this package).`
+}
+
+func (c *CellFinalizeCmd) Run(ctx context.Context, inv Invocation) error {
+	args, err := cell.ParseFinalizeArgs(inv.Args)
+	if err != nil {
+		fmt.Fprintf(inv.Stderr, "✗ cn cell finalize: %s\n\n", err)
+		fmt.Fprintf(inv.Stderr, "Run 'cn help cell' to see usage.\n")
+		return err
+	}
+
+	finalizer := &cell.Finalizer{
+		RepoRoot: inv.HubPath,
+		Stdout:   inv.Stdout,
+		Stderr:   inv.Stderr,
+	}
+
+	if err := finalizer.Finalize(ctx, args); err != nil {
+		fmt.Fprintf(inv.Stderr, "✗ cn cell finalize: %s\n", err)
+		return err
+	}
+	return nil
+}
