@@ -2124,7 +2124,7 @@
     "tracking": true,
     "assignee": "",
     "created": "2026-07-04T04:19:18Z",
-    "updated": "2026-07-04T14:35:27Z",
+    "updated": "2026-07-04T16:09:49Z",
     "url": "https://github.com/usurobor/cnos/issues/583"
   },
   {
@@ -2206,27 +2206,5 @@
     "created": "2026-07-04T11:24:37Z",
     "updated": "2026-07-04T11:24:37Z",
     "url": "https://github.com/usurobor/cnos/issues/590"
-  },
-  {
-    "n": 591,
-    "t": "cds/dispatch: mechanical checkpoint + PR-open-on-first-matter finalizer (Sub B of #583)",
-    "kind": "process",
-    "areas": [
-      "cdd",
-      "cds",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "in-progress",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-04T14:34:55Z",
-    "updated": "2026-07-04T14:38:09Z",
-    "url": "https://github.com/usurobor/cnos/issues/591"
   }
 ]
