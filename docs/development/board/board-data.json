@@ -2124,7 +2124,7 @@
     "tracking": true,
     "assignee": "",
     "created": "2026-07-04T04:19:18Z",
-    "updated": "2026-07-04T16:09:49Z",
+    "updated": "2026-07-04T23:29:08Z",
     "url": "https://github.com/usurobor/cnos/issues/583"
   },
   {
@@ -2206,5 +2206,27 @@
     "created": "2026-07-04T11:24:37Z",
     "updated": "2026-07-04T11:24:37Z",
     "url": "https://github.com/usurobor/cnos/issues/590"
+  },
+  {
+    "n": 593,
+    "t": "cds/runtime: mechanically recover stranded dispatch cells (Sub C of #583)",
+    "kind": "process",
+    "areas": [
+      "cdd",
+      "cds",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T23:28:53Z",
+    "updated": "2026-07-04T23:29:02Z",
+    "url": "https://github.com/usurobor/cnos/issues/593"
   }
 ]
