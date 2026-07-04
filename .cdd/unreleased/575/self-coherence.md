@@ -6,7 +6,7 @@ section-manifest:
   completed: [gap, skills, acs, self-check, debt, cdd-trace]
 -->
 
-## §Gap
+## Gap
 
 **Issue:** [usurobor/cnos#575](https://github.com/usurobor/cnos/issues/575) — "cds/fsm: route claim, hard-block, release-back-to-queue through the FSM (Phase 3 — Sub 2 of #583)".
 
@@ -32,7 +32,7 @@ section-manifest:
 
 No axis was improvised or relaxed; no unpinned row was encountered.
 
-## §Skills
+## Skills
 
 **Tier 1 (canonical lifecycle + role contract):**
 - `src/packages/cnos.cdd/skills/cdd/CDD.md` (implicit via `alpha/SKILL.md`'s load order)
@@ -53,7 +53,7 @@ No axis was improvised or relaxed; no unpinned row was encountered.
 
 **Source files read before coding (peer enumeration of the existing implementation, per alpha/SKILL.md §2.1 step 5):** `transitions.json`, `table.go`, `snapshot.go`, `fetch.go`, `decision.go`, `issuesfsm.go`, `issuesfsm_test.go` (all existing tests + all existing `testdata/*.json` fixtures), `cmd_issues_fsm.go`, `cds-dispatch/SKILL.md` (full body), `dispatch-protocol/SKILL.md` (full body), and `delta/SKILL.md` §9.6 (grep-scoped, per Friction note 3).
 
-## §ACs
+## ACs
 
 Evidence below is real command output run against branch HEAD (implementation commits `02ef725` / `dd3e966`, before this readiness section), not a manual claim.
 
@@ -284,7 +284,7 @@ No new rule references `cell_kind`; the seam stays observed-only. `TestSeam_Cell
 
 **Status: MET** (behavioral invariants), **local proxy evidence only for the substrate CI gates** — see §Review-readiness for the explicit CI-state disclosure.
 
-## §Self-check
+## Self-check
 
 **Did α's work push ambiguity onto β?**
 
@@ -304,7 +304,7 @@ Yes. Every new Go symbol (`ClaimRequestPresent`, `BlockRequestPresent`, `Release
 - **`transitions.json` existing-fixture peers** — every pre-existing fixture in `testdata/*.json` was re-evaluated against the new rule set via the full test suite (not just the six new fixtures), and `TestSeam_CellKindNotEnforced`'s fixture list was extended rather than a parallel, uncovered test created.
 - **Sibling doctrine surface `delta/SKILL.md` §9.6** — read and considered (same "direct write" prose pattern), explicitly NOT edited; see §Debt Friction note 3 for the reasoning, recorded rather than silently skipped or silently edited.
 
-## §Debt
+## Debt
 
 ### Friction note resolutions (all six, as required by dispatch)
 
@@ -348,7 +348,7 @@ Yes. Every new Go symbol (`ClaimRequestPresent`, `BlockRequestPresent`, `Release
 - **`cds-dispatch/SKILL.md`'s "Surfaces" §"You MAY write to" bullet** ("Label application on the claimed cell only — the four transitions enumerated in §Lifecycle transitions above") was not reworded to mention the FSM-request indirection; it remains true at the level it's written (the wake still causes those four labels to be applied, now via the FSM rather than directly) and rewording it would be restating the same fact a third time beyond the frontmatter description and the Lifecycle transitions table/prose — judged as diminishing-return repetition rather than a required peer site, since it doesn't use the phrase "direct label write" or any of the AC4 oracle's targeted strings.
 - **CDS.md was consulted but not re-audited line-by-line** (3600 lines) — only the sections the scaffold specifically pointed to (artifact contract, location matrix, coordination surfaces) were read. No claim in this cycle depends on an unread part of CDS.md; if CDS.md's step table itself named the four lifecycle transitions with write-vs-request phrasing, that would be a peer this cycle should have caught — a targeted `rg` for the same oracle strings against CDS.md is a cheap next check β can run if this concerns review (`rg -n "direct label write|wake writes the label directly" src/packages/cnos.cds/skills/cds/CDS.md` returns zero matches at the time of this writing, run as part of closing this debt item before the review-readiness signal).
 
-## §CDD Trace
+## CDD Trace
 
 Per `CDS.md` §"Step table", α owns steps 4-7.
 
