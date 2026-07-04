@@ -6,7 +6,7 @@ section-manifest:
 
 # Self-coherence — cnos#584
 
-## §Gap
+## Gap
 
 **Issue:** [usurobor/cnos#584](https://github.com/usurobor/cnos/issues/584) — "arch(cds/cdd): codify mechanical cell runtime vs cognitive skills (mechanism/cognition boundary)". Sub 1 of 5 under parent #583 (master wave — mechanical dispatch-cell architecture). Lands first.
 
@@ -18,7 +18,7 @@ section-manifest:
 
 **Scope guardrail (restated):** in scope — codify the governing rule in cell-framework doctrine; classify the 9 named dispatch lifecycle steps mechanical vs. cognitive; audit 5 named files (`cdd/gamma`, `cdd/alpha`, `cdd/beta`, `dispatch-protocol/SKILL.md`, `cds-dispatch/SKILL.md`) for control-implying prose and correct it. Out of scope — any runtime/workflow/transition-table change (Subs 2–4), implementing checkpoint/PR-open/recovery, `cell_kind` enforcement, new status labels/taxonomy, Demo 0.
 
-## §Skills
+## Skills
 
 **Tier 1 (loaded, canonical):**
 - `src/packages/cnos.cdd/skills/cdd/CDD.md` — canonical lifecycle + kernel doctrine; the chosen AC1/AC2 doctrine home.
@@ -37,7 +37,7 @@ section-manifest:
 
 No Tier 2 `eng/*` skills were loaded — this cycle produces no source code in any language (per the pinned implementation contract's Language axis: N/A).
 
-## §ACs
+## ACs
 
 ### AC1 — the governing rule is codified as doctrine
 
@@ -158,7 +158,7 @@ $ git diff origin/main...HEAD -- src/packages/cnos.issues/commands/issues-fsm/is
 
 **AC4: met**, with the one disclosed local-tooling gap above.
 
-## §Self-check
+## Self-check
 
 **Did this work push ambiguity onto β?**
 
@@ -169,14 +169,15 @@ $ git diff origin/main...HEAD -- src/packages/cnos.issues/commands/issues-fsm/is
 
 **Is every claim backed by evidence in the diff?** Yes — §ACs cites the exact commit SHAs (`10700bab` for the beta/SKILL.md fix), the exact pre-edit line content, and re-runs every oracle command against the current branch head rather than against memory of an earlier run.
 
-## §Debt
+## Debt
 
 1. **CDD.md line 104 (pre-existing, not touched this cycle).** The Roles pointer list in `CDD.md` §Pointers reads: `[`beta/SKILL.md`](beta/SKILL.md) — β (reviews and merges; merge is β's authority)`. This is the same "skill executes the mechanical action as its own authority" phrasing pattern that AC3 required correcting in `beta/SKILL.md` itself, but `CDD.md`'s existing Roles-pointer line is not one of the 5 AC3-audited files, and my permitted `CDD.md` edit this cycle is scoped to "new section(s) for AC1+AC2" only (per the pinned implementation contract) — correcting an unrelated pre-existing line in the same file would be unrelated restructuring outside that scope. Named here per the scaffold's explicit instruction to surface (not silently fix) findings outside the prescribed audit-file list. **Disposition: γ triage** — likely a small, mechanical, one-line follow-up (either fold into a Sub 2–4 cycle or a same-cycle immediate fix if γ judges the risk of touching `CDD.md` beyond the pinned scope acceptable).
 2. **`scripts/ci/validate-skill-frontmatter.sh` could not run locally** (missing `cue` binary in this environment). I manually verified `beta/SKILL.md`'s frontmatter block is unchanged and well-formed after my body-only edits (see §ACs → AC4). β should confirm the branch-head CI run for this validator (or any package/frontmatter gate) is green before merge, per α's own pre-review gate row 10 (branch CI must be green, or the artifact must say so explicitly and β waits for green).
 3. **No design or plan artifact was produced separately from this self-coherence.md.** Per `alpha/SKILL.md` §2.2, design and plan may be marked "not required" with a concrete justification: this cycle is doctrine-only prose across 2 files plus one audited correction in a 3rd; the canonical-home decision and the AC3 resolution path were both fully pre-specified by γ's scaffold (the source-of-truth table + friction notes 2 and 3), leaving no independent design surface for α to produce beyond the placement/wording judgment recorded directly in §ACs above. Marking design and plan as "not required" for this reason.
 4. **Peer enumeration / harness audit (per `alpha/SKILL.md` §2.3–§2.4) do not apply in their code-surface form** — there is no schema-bearing parser, manifest shape, or runtime contract changed by this cycle, so there is no producer/consumer/harness family to enumerate in the code sense. The doctrine-level "peer enumeration" analog — every one of the 5 AC3-audited files, individually read and individually reported on (edited / not-edited-with-reason) — is done explicitly in §ACs → AC3 above, which is the applicable form of this rule for a docs-only, audit-shaped cycle.
+5. **CI-caught-and-fixed (not a residual gap; recorded for the record).** Branch CI's `CDD artifact ledger validation (I6)` job (`.github/workflows/build.yml`, `cn cdd verify --unreleased`) failed at commits `26381cc0`/`0ce26c9e`/`b2af8076` because this file's own section headers used a `## §Name` form (e.g. `## §Gap`) instead of the literal `## Gap` / `## Skills` / `## ACs` / `## CDD Trace` strings the checker's `sectionPresent` matcher requires (exact-match or `"## Gap "`-prefix; the `§` character breaks the match). Fixed by renaming all six headers to the plain form (`## Gap`, `## Skills`, `## ACs`, `## Self-check`, `## Debt`, `## CDD Trace`); re-ran `cn cdd verify --unreleased --exceptions .cdd/exceptions.yml` locally (built from `src/go` at this branch's HEAD) and confirmed `0 failed` / exit 0 before re-pushing. Named here because it is exactly the kind of loaded-skill-should-have-prevented-this gap `alpha/SKILL.md` §2.6 row 9 asks α to name: neither `alpha/SKILL.md` nor `issue/SKILL.md` states the literal required header strings for `self-coherence.md`; only `cn cdd verify`'s Go source (`src/packages/cnos.cdd/commands/cdd-verify/ledger.go`) does. γ may want to fold the literal header contract into `alpha/SKILL.md` §2.5 as a follow-up so a future α does not discover this via a red CI run.
 
-## §CDD Trace
+## CDD Trace
 
 | Step | Artifact | Skills loaded | Decision |
 |---|---|---|---|
