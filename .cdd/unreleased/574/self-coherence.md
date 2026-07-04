@@ -11,7 +11,7 @@ completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
 
 **Parent/wave:** #567 (master, CLOSED/COMPLETED) — this cell is an operator-review remediation of the #567 wave (#568 Phase 1, #570 cell-kind doctrine, #569 Phase 2), all three merged and closed, found not fully clean by operator review.
 
-**Branch:** `cycle/574`, created by γ from `origin/main@452191fe28bae8f7fbad53fe2010d4c122645342`. Confirmed unchanged at α's dispatch time (`git rev-parse origin/main` still resolves to `452191fe...` as of this writing) — no rebase required (pre-review gate row 1).
+**Branch:** `cycle/574`, created by γ from `origin/main@452191fe28bae8f7fbad53fe2010d4c122645342`. At α's mid-cycle pre-review-gate re-check (row 1), `origin/main` had advanced one commit to `914939958d5845522548795e42ecb822aa94e6f0` — `board-map: regenerate docs/development/board from live open issues`, touching only `docs/development/board/{board-data.json,index.html}` (the same doc-data auto-regeneration class γ's own pre-flight already found non-propagating, per gamma-scaffold.md §Issue reference/mode). α rebased `cycle/574` onto this new `origin/main` tip (`git rebase origin/main`, zero conflicts) and force-pushed with `--force-with-lease`, per alpha/SKILL.md §2.6 row 1 — see §Review-readiness for the final base/head SHAs.
 
 **γ scaffold read in full** at `.cdd/unreleased/574/gamma-scaffold.md` before any implementation commit, per dispatch instructions. Followed its load order, exact guard strings, per-AC oracle list, source-of-truth table, scope guardrails, and friction notes. Did not improvise beyond it except where explicitly documented below (AC4's design call, and one internal scaffold tension in AC2 resolved and documented in §ACs).
 
