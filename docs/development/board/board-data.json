@@ -2159,7 +2159,7 @@
       "cds"
     ],
     "pri": "P1",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2168,7 +2168,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-04T05:36:27Z",
-    "updated": "2026-07-04T05:37:23Z",
+    "updated": "2026-07-04T05:38:53Z",
     "url": "https://github.com/usurobor/cnos/issues/584"
   }
 ]
