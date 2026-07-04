@@ -56,6 +56,33 @@ type FactSnapshot struct {
 	// under .cdd/unreleased/{issue}/.
 	ReviewRequestPresent bool `json:"review_request_present"`
 
+	// ClaimRequestPresent reports whether CLAIM-REQUEST.yml is present
+	// under .cdd/unreleased/{issue}/ (cnos#575 AC1). Mirrors the
+	// ReviewRequestPresent / REVIEW-REQUEST.yml pattern: an explicit marker
+	// the dispatch wake writes before requesting todo -> in-progress via
+	// `cn issues fsm evaluate --apply`, so an incidental/offline evaluate
+	// call against a status:todo issue never itself proposes a claim.
+	ClaimRequestPresent bool `json:"claim_request_present,omitempty"`
+
+	// BlockRequestPresent reports whether BLOCK-REQUEST.yml is present
+	// under .cdd/unreleased/{issue}/ (cnos#575 AC2) — the explicit
+	// STOP/escalation evidence a hard-block transition requires. Same
+	// marker-file shape as ReviewRequestPresent/ClaimRequestPresent: a
+	// deterministic, observable presence check rather than comment-text
+	// parsing.
+	BlockRequestPresent bool `json:"block_request_present,omitempty"`
+
+	// ReleaseRequestPresent reports whether RELEASE-REQUEST.yml is present
+	// under .cdd/unreleased/{issue}/ (cnos#575 AC3) — the worker's explicit
+	// request to release its claim pre-work (in-progress -> todo). Distinct
+	// from the pre-existing dead-run reconciliation rules (table.go's
+	// "in-progress" rules, all_false: [run_active]): those fire on a sweep
+	// finding an ABANDONED issue; this fires synchronously on the
+	// requesting wake's own still-active run releasing its claim before
+	// producing matter (cnos#368 protection — never blind-requeue if matter
+	// already exists).
+	ReleaseRequestPresent bool `json:"release_request_present,omitempty"`
+
 	// RepairContractPresent reports whether a repair contract / prior beta
 	// or delta findings are present (e.g. delta-repair.md, or a beta-review
 	// with an "iterate" verdict) — the repair-re-entry context required by

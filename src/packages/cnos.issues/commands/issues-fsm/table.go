@@ -97,6 +97,12 @@ var guardFuncs = map[string]func(FactSnapshot) bool{
 	"repair_contract_present": func(f FactSnapshot) bool { return f.RepairContractPresent },
 	"cdd_artifacts_present":   func(f FactSnapshot) bool { return len(f.CDDArtifacts) > 0 },
 	"checks_passing":          func(f FactSnapshot) bool { return f.ChecksState == "success" },
+	// cnos#575: claim / hard-block / release-back-to-queue guards, added
+	// following the review_request_present/REVIEW-REQUEST.yml precedent
+	// exactly (marker-file presence, not comment-text parsing).
+	"claim_request_present":   func(f FactSnapshot) bool { return f.ClaimRequestPresent },
+	"block_request_present":   func(f FactSnapshot) bool { return f.BlockRequestPresent },
+	"release_request_present": func(f FactSnapshot) bool { return f.ReleaseRequestPresent },
 }
 
 // evalGuard evaluates a single named guard against f. Returns an error if

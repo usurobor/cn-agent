@@ -25,8 +25,44 @@
     "review_request_present": "REVIEW-REQUEST.yml is present under .cdd/unreleased/{issue}/",
     "repair_contract_present": "a repair contract / prior beta or delta findings are present (e.g. delta-repair.md, or beta-review.md with an iterate verdict) — required for changes -> todo repair re-entry per cnos#516",
     "cdd_artifacts_present": "at least one CDD artifact exists under .cdd/unreleased/{issue}/",
-    "checks_passing": "the most recently observed CI/checks state is success"
+    "checks_passing": "the most recently observed CI/checks state is success",
+    "claim_request_present": "CLAIM-REQUEST.yml is present under .cdd/unreleased/{issue}/ -- the dispatch wake's explicit request to claim (todo -> in-progress) via the FSM instead of a direct label write (cnos#575 AC1)",
+    "block_request_present": "BLOCK-REQUEST.yml is present under .cdd/unreleased/{issue}/ -- explicit STOP/escalation evidence for a hard-block request (in-progress -> blocked) via the FSM instead of a direct label write (cnos#575 AC2)",
+    "release_request_present": "RELEASE-REQUEST.yml is present under .cdd/unreleased/{issue}/ -- the worker's explicit request to release its claim pre-work (in-progress -> todo) via the FSM instead of a direct label write (cnos#575 AC3); distinct from the dead-run reconciliation guards below (all_false: [run_active]), which cover an abandoned-issue sweep, not a live release request"
   },
+  "_doc_phase3": [
+    "cnos#575 (Phase 3, Sub 2 of #583) extends the authority flip started by",
+    "cnos#569 to the remaining three CDS lifecycle transitions: claim",
+    "(todo -> in-progress), hard-block (in-progress -> blocked), and",
+    "release-back-to-queue (in-progress -> todo, pre-work). Each follows the",
+    "review_request_present/REVIEW-REQUEST.yml precedent exactly: an",
+    "explicit marker file under .cdd/unreleased/{issue}/ that the dispatch",
+    "wake (claim, release) or δ (hard-block) writes before running",
+    "`cn issues fsm evaluate --issue {N} --apply`, so an incidental/offline",
+    "evaluate call against a todo or in-progress issue never itself",
+    "proposes a transition -- only an explicit request does. The",
+    "hard-block and release-back-to-queue rules are deliberately NOT gated",
+    "on all_false: [run_active] (same rationale as the cnos#569",
+    "review-request rule): the primary caller is the worker's OWN wake",
+    "requesting the transition synchronously, at a point where its own",
+    "workflow run is still 'in_progress' by definition. The claim rule IS",
+    "gated on all_false: [run_active] (todo state, not in-progress) -- 'no",
+    "competing active run' is satisfied by checking that no workflow run",
+    "is already queued/in_progress against the would-be cycle/{issue}",
+    "branch, which is a genuinely useful defense-in-depth check distinct",
+    "from (and layered on top of) the claim sequence's own serialized-claim",
+    "guard (dispatch-protocol/SKILL.md §2.3): a self-vs-other run-id",
+    "distinguishing mechanism was considered and rejected as unneeded",
+    "complexity, since at claim time (before cycle/{issue} exists) the",
+    "requesting wake's own run cannot appear as 'active' under run_active's",
+    "existing cycle/{issue}-branch-scoped definition -- see",
+    "self-coherence.md Friction note 1 for the full writeup. The",
+    "release-back-to-queue rule pair mirrors the cnos#569 review-request",
+    "pair's positive/negative shape (matter present -> delta-recovery,",
+    "never blind-requeue -- the cnos#368 protection) rather than the",
+    "dead-run reconciliation rules' shape, because it answers a different",
+    "question (a live pre-work release request, not a dead-run sweep)."
+  ],
   "_doc_phase2": [
     "cnos#569 (Phase 2, authority flip) adds the first two rules under",
     "state \"in-progress\" below: a worker (concretely: the δ wake-invoked",
@@ -71,6 +107,22 @@
       "trigger": "evaluate",
       "rules": [
         {
+          "all_true": ["claim_request_present"],
+          "all_false": ["run_active"],
+          "outcome": "proposed",
+          "action": "propose_status_in_progress",
+          "target_state": "in-progress",
+          "repair_pass": false,
+          "reason": "cnos#575 AC1: claim requested (CLAIM-REQUEST.yml present) with no competing active run observed on the would-be cycle/{issue} branch; todo -> in-progress requested by the dispatch wake's claim sequence in place of a direct label write."
+        },
+        {
+          "all_true": ["claim_request_present"],
+          "outcome": "blocked",
+          "action": "block",
+          "target_state": "",
+          "reason": "cnos#575 AC1: claim requested, but a competing active workflow run is already observed on the would-be cycle/{issue} branch (run_active) -- refusing to propose todo -> in-progress until that run resolves. This rule is unconditional given claim_request_present==true and is positioned after rule 1, so it fires whenever rule 1's no-competing-run check fails."
+        },
+        {
           "outcome": "valid",
           "action": "none",
           "reason": "status:todo is already dispatchable; no evaluator action needed."
@@ -96,6 +148,32 @@
           "target_state": "",
           "evidence_guards": ["pr_exists", "pr_has_commits"],
           "reason": "cnos#574 AC3: review requested (REVIEW-REQUEST.yml present) but missing a PR and/or commits beyond base on that PR (branch-commits-only no longer qualifies) -- refusing to propose in-progress -> review. This rule is unconditional given review_request_present==true and is positioned after rule 1, so it fires on ANY partial-evidence combination rule 1 didn't match (not just all-three-false) -- see cnos#574 self-coherence.md Friction-notes writeup."
+        },
+        {
+          "all_true": ["block_request_present"],
+          "outcome": "proposed",
+          "action": "propose_status_blocked",
+          "target_state": "blocked",
+          "repair_pass": false,
+          "reason": "cnos#575 AC2: hard-block requested with explicit STOP/escalation evidence present (BLOCK-REQUEST.yml present); in-progress -> blocked requested by the wake in place of a direct label write. Deliberately NOT gated on all_false: [run_active] (mirrors the cnos#569 review-request rule above): the primary caller is the worker's OWN wake requesting this transition synchronously mid-run, at a point where its own workflow run is still 'in_progress' by definition."
+        },
+        {
+          "all_true": ["release_request_present"],
+          "all_false": ["branch_has_commits", "pr_exists", "pr_has_commits"],
+          "outcome": "proposed",
+          "action": "propose_status_todo",
+          "target_state": "todo",
+          "repair_pass": false,
+          "reason": "cnos#575 AC3: release-back-to-queue requested (RELEASE-REQUEST.yml present) with no matter produced since claim (no commits beyond base, no PR); in-progress -> todo requested by the wake in place of a direct label write. Deliberately NOT gated on all_false: [run_active] (same rationale as the hard-block rule above). Distinct from the dead-run reconciliation rules further down (all_false: [run_active]): those fire on a reconciliation sweep finding an abandoned issue, not a live pre-work release request from the requesting wake's own active run."
+        },
+        {
+          "all_true": ["release_request_present"],
+          "any_true": ["branch_has_commits", "pr_exists", "pr_has_commits"],
+          "outcome": "proposed",
+          "action": "propose_delta_recovery",
+          "target_state": "",
+          "repair_pass": false,
+          "reason": "cnos#575 AC3 / cnos#368 protection: release-back-to-queue requested, but matter has been produced since claim (commits beyond base and/or a PR exists) -- never blind-requeue over existing work; propose delta-recovery instead, exactly like the dead-run-with-matter rule further down."
         },
         {
           "all_true": ["run_active"],

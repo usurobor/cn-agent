@@ -1,0 +1,27 @@
+issue: 575
+protocol: cds
+cycle_branch: cycle/575
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/588"
+converge_verdict_ref: .cdd/unreleased/575/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's R0 converge
+  verdict (converge, zero findings, all 5 ACs pass, implementation-contract
+  conforms, scope guardrails held). All closeout artifacts (gamma-scaffold.md,
+  self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md,
+  gamma-closeout.md) are present on this branch.
+
+  Process-gap note (recorded for the record, not blocking this request): PR
+  #588 was opened out-of-band before delta reached this step (created
+  2026-07-04T11:09:49Z, between alpha's last implementation commit and beta's
+  first review commit) -- a sequencing deviation from delta/SKILL.md section 9.6,
+  which assigns PR-opening to delta after converge. beta's independent
+  closeout traced this to a plausible doctrine gap (beta/SKILL.md's standing
+  "merge is beta authority" language has no cross-reference to the
+  wake-invoked-mode shift of PR-authority to delta). The PR's engineering
+  content is accurate; its body's "Recovery note" paragraph (claiming
+  delta-recovery of a "died-with-matter" strand) is factually wrong -- the
+  only prior dispatch attempt for #575 was a died-empty run with no branch
+  and no matter, already reconciled before this cycle's claim. delta is
+  correcting the PR body to remove the inaccurate claim before requesting
+  this transition.

@@ -112,10 +112,10 @@ jobs:
                - **multiple `status:*` labels** → `dispatch_label_drift`; do NOT claim; comment with repair instructions naming the conflicting status labels
                - `protocol:{Q}` where `Q ≠ cds` → for **scheduled sweep**: silent skip (the matching protocol's wake claims it; per cnos#468 §7 / cnos#454 AC9). For **targeted/attempted claim** (event-driven dispatch on this specific issue): `dispatch_protocol_mismatch`; comment naming the mismatch; do NOT claim
 
-            5. **Remove** `status:todo` from the cell's label set.
-            6. **Add** `status:in-progress` to the cell's label set.
+            5. **Ensure `CLAIM-REQUEST.yml` is present** under `.cdd/unreleased/{N}/` (create the directory and the marker file if this is the cell's first claim attempt) — the explicit, machine-observable evidence that this specific well-formedness-verified claim intends to move `status:todo → status:in-progress`. This mirrors the cnos#569 `REVIEW-REQUEST.yml` pattern exactly: the marker exists so an unrelated or offline `cn issues fsm evaluate` call against a `status:todo` issue never itself proposes a claim.
+            6. **Request** the `status:todo → status:in-progress` transition by running `cn issues fsm evaluate --issue {N} --apply` (cnos#575 Phase 3) — the wake does NOT write the label itself; the FSM applies the transition only when its guards pass (claim requested via the step-5 marker, AND no competing active workflow run already observed on the would-be `cycle/{N}` branch). This replaces the pre-cnos#575 direct `gh issue edit --remove-label status:todo --add-label status:in-progress` write: the wake requests, the FSM decides and applies (mirroring how cnos#569 flipped the `in-progress → review` authority).
             7. **Write claim comment** identifying this wake firing: wake name (`cds-dispatch`), substrate run id (the substrate-emitted run URL — renderer authority surfaces it), protocol (`cds`), and head commit (current `main` HEAD or the cycle branch base). The claim comment is the operator-visible record that this firing took ownership.
-            8. **Re-read** the cell's labels (fresh fetch again). Confirm `status:in-progress` and `protocol:cds` still hold; if drift occurred between steps 5 and 7 (another firing or a manual edit raced), **release the claim** — return to `status:todo`, post a race-detection comment, and do NOT invoke δ.
+            8. **Re-read** the cell's labels (fresh fetch again). Confirm `status:in-progress` and `protocol:cds` still hold; if drift occurred between steps 6 and 7 (another firing or a manual edit raced), **release the claim** — request `status:in-progress → status:todo` via `cn issues fsm evaluate --issue {N} --apply` (see §Lifecycle transitions; requires a fresh `RELEASE-REQUEST.yml`), post a race-detection comment, and do NOT invoke δ.
             9. **Invoke δ** in wake-invoked mode (see next section).
 
             This is a **serialized claim operation**, not a CAS. The serialization comes from:
@@ -240,14 +240,14 @@ jobs:
 
             ## Lifecycle transitions (this wake's authority)
 
-            The dispatch wake transitions the **claimed cell's** lifecycle labels at these named events only. For the claim, hard-block, and release-back-to-queue events, the wake writes the label directly (per the claim sequence's serialized-claim mechanism, which predates and is orthogonal to cnos#569). For the β-converge event, the wake does **not** write the label directly — it requests the transition via the FSM (`cn issues fsm evaluate --issue {N} --apply`, cnos#569 Phase 2) and the FSM applies the label only when its guards pass:
+            The dispatch wake transitions the **claimed cell's** lifecycle labels at these named events only. As of cnos#575 (Phase 3, completing the authority transfer cnos#569 started), the wake does **not** write ANY of the four named lifecycle labels directly — every transition is **requested** through the CDS issue-state FSM (`cn issues fsm evaluate --issue {N} --apply`) and applied by the FSM only when its guards pass. Each request is gated on an explicit marker file under `.cdd/unreleased/{N}/` (the same `REVIEW-REQUEST.yml` pattern cnos#569 established), so an incidental or offline `evaluate` call never itself proposes a transition:
 
             | Event | From | To | Notes |
             |---|---|---|---|
-            | claim (verified + acknowledged) | `status:todo` | `status:in-progress` | step 5+6 of the claim sequence above; direct label write |
+            | claim (verified + acknowledged) | `status:todo` | `status:in-progress` | step 5+6 of the claim sequence above: wake writes `CLAIM-REQUEST.yml`, then **requests** via `cn issues fsm evaluate --issue {N} --apply`; the FSM applies only when no competing active run is observed on the would-be `cycle/{N}` branch (cnos#575) |
             | β converge verdict (end of cycle) | `status:in-progress` | `status:review` | δ's step 7 **requests** this via `cn issues fsm evaluate --issue {N} --apply`; the FSM applies the label only on passing guards (cnos#569) |
-            | hard block hit mid-cycle | `status:in-progress` | `status:blocked` | + a blocked-reason comment naming the block class (external dependency, missing precondition, infra failure); direct label write |
-            | release-back-to-queue (post-claim drift detected) | `status:in-progress` | `status:todo` | + a claim-released comment naming the race; the wake exits without invoking δ; direct label write |
+            | hard block hit mid-cycle | `status:in-progress` | `status:blocked` | δ (or the wake, on δ's signal) writes `BLOCK-REQUEST.yml` naming the block class (external dependency, missing precondition, infra failure), then **requests** via `cn issues fsm evaluate --issue {N} --apply`; the FSM applies only when that explicit STOP/escalation evidence is present (cnos#575) |
+            | release-back-to-queue (post-claim drift detected, or pre-work claim release) | `status:in-progress` | `status:todo` | the wake writes `RELEASE-REQUEST.yml` naming the race/release reason, then **requests** via `cn issues fsm evaluate --issue {N} --apply`; the FSM applies only when no matter (commits/PR) has been produced since claim — matter present routes to delta-recovery instead, never a blind requeue (cnos#368 protection, cnos#575) |
 
             The dispatch wake does **NOT**:
 
