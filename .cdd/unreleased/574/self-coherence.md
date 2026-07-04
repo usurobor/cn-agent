@@ -1,7 +1,7 @@
 # self-coherence — cycle/574
 
 manifest: sections planned = [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-completed: [Gap, Skills, ACs]
+completed: [Gap, Skills, ACs, Self-check]
 
 ## §Gap
 
@@ -158,3 +158,25 @@ Named CI jobs (I1/I2/I4/I5/I6, install-wake-golden, dispatch-repair-preflight, d
 7. STOP-and-ask trigger — AC4's chosen approach (option (b)) uses only the GitHub REST endpoints already implicitly authorized by the existing `GITHUB_TOKEN`/`ghGetJSON` pattern already used for PR/run observation in the same file (`/repos/{repo}/branches/{branch}` and `/repos/{repo}/compare/...` are both standard-scope read endpoints, no broader token authority than the pre-existing PR/issue/run GETs) — no broadening of GitHub API/token authority; no STOP triggered.
 
 **Implementation-contract conformance (the 7 axes pinned in gamma-scaffold.md, alpha/SKILL.md §3.6):** Language — Go + JSON data, as pinned (no Python/other-language introduced). CLI integration target — `cn issues fsm evaluate [--apply]` unchanged; no new subcommand, no flag rename. Package scoping — all Go changes stayed within `src/packages/cnos.issues/commands/issues-fsm/`; the only data change is `src/packages/cnos.cds/skills/cds/fsm/transitions.json`; no workflow YAML was touched (AC4 picked option (b), not (a)/hybrid, so the workflow-file row of the pinned scoping table was correctly left untouched). Existing-binary disposition — preserved, single compiled-in `cn issues fsm evaluate [--apply]`. Runtime dependencies — none new; `observeRemoteBranch` reuses `net/http` stdlib + the existing `ghGetJSON` idiom. JSON/wire contract preservation — `FactSnapshot`/`Decision` struct shapes unchanged; all fixture files remain loadable with unchanged field names/types (only the *values* of two testdata JSON files changed: `review-with-pr.json`'s `review_request_present`/`cdd_artifacts`, and the three new fixture files added). Backward-compat invariant — every existing fixture whose scenario the invariant-tightening doesn't specifically probe evaluates identically (verified by the full green test suite); the two exceptions (`review-with-pr.json`'s field values, `TestAC3_EmptyReviewBlocked`'s expected `MissingEvidence` set) are both documented, invariant-tied, deliberate changes, not silent regressions.
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+- AC2's internal scaffold tension (literal 3-guard `all_true` vs. the "no regression for `review-with-pr.json`" instruction) was resolved by α, not left for β to discover — the resolution (update the pre-existing fixture's field values rather than weaken the guard) is documented in §ACs AC2 with explicit reasoning, and the resulting test-assertion change is called out inline in the test file itself, not just in this artifact.
+- AC4's design decision (option (b) over (a)) is made and reasoned, not deferred — β does not need to re-litigate fetch-vs-API, only verify the chosen implementation is correct and hermetically tested.
+- AC5's edit-vs-append judgment (technically-possible edit, chose append anyway) is explicit with reasoning, not silently defaulted.
+- AC7's CI-on-pushed-head-commit gap is named as debt (below), not silently asserted green — β is told exactly what was and wasn't independently verified in this session.
+
+**Is every claim backed by evidence in the diff?**
+
+- AC1: authenticated `gh issue view` output quoted in §ACs; public-render check names the exact selector used and the result.
+- AC2/AC3: TDD red→green sequence narrated with the specific test names and the specific guard-string before/after; both are inspectable directly in `transitions.json` and `issuesfsm_test.go`.
+- AC4: three new/extracted-function tests named, each mapped to what it proves; the design-decision reasoning is inline as a doc comment in `fetch.go` itself (not only in this artifact — so a future reader of the code, not just this cycle's artifact, sees the reasoning).
+- AC5: both GitHub URLs (correction comment, new issue) are live links a reviewer can open directly.
+- AC6: the exact `rg` invocation and file set are reproducible by β re-running the same command.
+- AC7: exact test-runner counts (37 PASS / 0 FAIL / 48 RUN) pasted from actual output, per the pre-review gate's row 13 requirement, not manually enumerated.
+
+**Peer enumeration:** the family of surfaces touched is small and fully enumerated in §ACs per-AC — `transitions.json` (2 states' rules), `fetch.go` (1 new function + 1 call-site edit), `issuesfsm_test.go` (new tests + one pre-existing assertion update), 4 testdata fixture files (3 new, 1 edited). No sibling command/renderer/writer of the same schema was identified beyond what's already named: `table.go`'s `guardFuncs` registry was checked and confirmed to already contain every guard AC2/AC3 need (no new guard function required, per scope guardrail 6) and was not modified.
+
+**Harness audit:** the only non-Go harness in the wave-touched surface set is the `.github/workflows/*.yml` CI definitions (checked, unchanged — AC4 did not pick the workflow-fetch option) and the JSON transition table itself (which *is* the schema-bearing data structure this cycle's AC2/AC3 changes edit — its consumer, `table.go`'s `Evaluate`, was read and confirmed unchanged/compatible, not re-derived).
