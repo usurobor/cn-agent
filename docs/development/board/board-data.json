@@ -1975,5 +1975,28 @@
     "created": "2026-07-03T13:28:10Z",
     "updated": "2026-07-03T13:28:10Z",
     "url": "https://github.com/usurobor/cnos/issues/564"
+  },
+  {
+    "n": 574,
+    "t": "fix(cds/fsm): harden review guards + remote-branch observation; correct wave-closure language (post-#567 remediation)",
+    "kind": "bugfix",
+    "areas": [
+      "cdd",
+      "cds",
+      "issues",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T01:49:26Z",
+    "updated": "2026-07-04T01:49:26Z",
+    "url": "https://github.com/usurobor/cnos/issues/574"
   }
 ]
