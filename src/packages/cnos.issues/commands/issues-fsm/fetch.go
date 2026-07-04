@@ -72,6 +72,41 @@ func assembleLive(ctx context.Context, repo string, issue int, token string) (Fa
 		}
 	}
 
+	// --- GitHub REST: remote branch existence + commits beyond base
+	// (cnos#574 AC4) ---
+	//
+	// The local-git block above only sees refs the local checkout has
+	// fetched. A CI invocation (.github/workflows/cnos-cds-dispatch.yml's
+	// actions/checkout@v4 step takes no ref:/fetch-depth: override) checks
+	// out only the default branch at default depth -- refs/heads/cycle/*
+	// is never fetched there. A dead run whose cycle/{N} branch exists
+	// only on the remote (pushed by a different workflow run / a sandbox
+	// that has since torn down) must still be observed as having matter,
+	// never misclassified "no matter" (the cnos#368 blind-requeue failure
+	// mode this evaluator exists to prevent).
+	//
+	// α's design decision (cnos#574 AC4, the one open design call the γ
+	// scaffold left to α): option (b) -- observe remote branch/PR state
+	// via the GitHub API in fetch.go -- over option (a) -- have the FSM
+	// workflow `git fetch refs/heads/cycle/*` before invoking the
+	// evaluator. Rationale (see self-coherence.md §ACs AC4 for the full
+	// writeup): option (b) fixes the observation primitive itself
+	// (assembleLive) regardless of caller -- a local operator run, a
+	// future non-workflow invocation, or the existing CI workflow all
+	// benefit -- whereas option (a) only fixes the one CI-workflow
+	// invocation path and leaves any other caller still local-git-only.
+	//
+	// observeRemoteBranch (below) backs up the local-git result with a
+	// GitHub API call when (and only when) local git did not already find
+	// the branch -- it never downgrades a local-git-confirmed
+	// BranchExists/CommitsBeyondBase, it only fills the gap local git
+	// cannot see.
+	if repo != "" && !snap.BranchExists {
+		exists, commits := observeRemoteBranch(ctx, repo, branch, token)
+		snap.BranchExists = exists
+		snap.CommitsBeyondBase = commits
+	}
+
 	// --- local filesystem: .cdd/unreleased/{N}/ artifacts ---
 	dir := filepath.Join(".cdd", "unreleased", strconv.Itoa(issue))
 	if entries, err := os.ReadDir(dir); err == nil {
@@ -176,6 +211,56 @@ func parseCellKind(scaffold string) string {
 		return ""
 	}
 	return m[1]
+}
+
+// observeRemoteBranch is the cnos#574 AC4 GitHub-API branch/commit
+// observation primitive: it reports whether branch exists on the remote
+// (via GET /repos/{repo}/branches/{branch}, 200 vs 404) and, if so, how
+// many commits it is ahead of main (via GET
+// /repos/{repo}/compare/main...{branch}'s .ahead_by), mirroring the
+// dependency-free ghGetJSON idiom already used for PR/run observation
+// elsewhere in this file (no third-party GitHub client).
+//
+// Extracted as its own function (rather than inlined in assembleLive) so
+// it can be exercised in isolation against a fake HTTP server without
+// also triggering assembleLive's other read-only GitHub calls (labels,
+// PR, workflow-run), which intentionally keep their Phase-1 literal
+// "https://api.github.com" URLs (see githubAPIBase's doc comment) and so
+// are not fake-server-interceptable the way this function is.
+//
+// A caller error (branch genuinely absent -> 404, or a transient network
+// failure) is not distinguished from "absent": both report exists=false,
+// commits=0. This mirrors the rest of assembleLive's live path, which is
+// "kept honest but deliberately simple" (see this file's package doc) —
+// the fixture path is what the ACs gate, not this live observation path.
+func observeRemoteBranch(ctx context.Context, repo, branch, token string) (exists bool, commitsBeyondBase int) {
+	var branchInfo struct {
+		Name string `json:"name"`
+	}
+	branchURL := fmt.Sprintf("%s/repos/%s/branches/%s", githubAPIBase, repo, branch)
+	if err := ghGetJSON(ctx, branchURL, token, &branchInfo); err != nil {
+		// 404 (branch genuinely absent on the remote too) or a transient
+		// API error -- report absent rather than fail the whole snapshot.
+		return false, 0
+	}
+
+	var cmp struct {
+		AheadBy int `json:"ahead_by"`
+	}
+	cmpURL := fmt.Sprintf("%s/repos/%s/compare/main...%s", githubAPIBase, repo, branch)
+	if err := ghGetJSON(ctx, cmpURL, token, &cmp); err != nil {
+		// Branch confirmed to exist via the API, but the compare call
+		// failed -- report exists=true, commits=0 rather than fail the
+		// whole snapshot; exists=true alone is still enough for the
+		// in-progress "dead run with matter" rule's any_true over
+		// [branch_has_commits, pr_exists, pr_has_commits] if either of
+		// the other two guards is independently satisfied, and a
+		// 404/network hiccup on /compare must not silently downgrade an
+		// already-confirmed remote branch back to "no matter" (exists
+		// stays true either way).
+		return true, 0
+	}
+	return true, cmp.AheadBy
 }
 
 // ghGetJSON issues an authenticated GET against the GitHub REST API and

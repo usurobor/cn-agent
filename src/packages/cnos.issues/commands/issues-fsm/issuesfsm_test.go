@@ -113,7 +113,13 @@ func TestAC3_EmptyReviewBlocked(t *testing.T) {
 	if dec.BlockedReason == "" {
 		t.Error("expected a non-empty blocked_reason")
 	}
-	wantMissing := map[string]bool{"pr_exists": true, "branch_has_commits": true, "review_request_present": true}
+	// cnos#574 AC2: the blocked "review" rule's evidence_guards now mirror
+	// the tightened valid rule's all_true set (review_request_present,
+	// pr_exists, pr_has_commits) -- branch_has_commits dropped out of the
+	// guard set entirely (replaced by pr_has_commits), so it no longer
+	// appears in missing_evidence. This is a deliberate, invariant-tied
+	// change, not a regression (see self-coherence.md §ACs AC2).
+	wantMissing := map[string]bool{"pr_exists": true, "pr_has_commits": true, "review_request_present": true}
 	if len(dec.MissingEvidence) != len(wantMissing) {
 		t.Errorf("missing_evidence = %v, want exactly %v", dec.MissingEvidence, wantMissing)
 	}
@@ -550,6 +556,132 @@ func TestAC569_InProgressReviewRequestNoMatterBlocked(t *testing.T) {
 	}
 }
 
+// --- cnos#574 AC2: status:review is valid only when REVIEW-REQUEST.yml,
+// an open PR, AND commits beyond base on that PR are ALL present --
+// review_request_present alone (or any two of the three) is no longer
+// enough. These tests are written FIRST per the issue's explicit
+// bug-fix TDD instruction and are expected to FAIL against the
+// unmodified (pre-cnos#574) transitions.json, where the "review" state's
+// valid rule uses any_true over [pr_exists, branch_has_commits,
+// review_request_present] -- see gamma-scaffold.md §Per-AC oracle list
+// AC2. ---
+
+func TestAC574_ReviewRequestAloneNoLongerValid(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/review-request-only.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "blocked" {
+		t.Fatalf("outcome = %q, want blocked (cnos#574 AC2: review_request_present alone is not deliverable matter)", dec.Outcome)
+	}
+	if dec.TargetState == "review" {
+		t.Fatal("cnos#574 AC2 regression: status:review must not validate on review_request_present alone")
+	}
+}
+
+func TestAC574_ReviewPartialEvidenceBlocked(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/review-partial-evidence.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "blocked" {
+		t.Fatalf("outcome = %q, want blocked (cnos#574 AC2: pr_exists true but pr_has_commits false is still partial evidence)", dec.Outcome)
+	}
+}
+
+func TestAC574_ReviewWithPRStillValid(t *testing.T) {
+	// Backward-compat guard: the existing full-evidence fixture must
+	// still validate under the tightened rule (untouched invariant).
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/review-with-pr.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "valid" {
+		t.Errorf("outcome = %q, want valid (PR + commits + no regression from cnos#574 tightening)", dec.Outcome)
+	}
+}
+
+// --- cnos#574 AC3: in-progress -> review is proposed only when
+// review_request_present AND pr_exists AND pr_has_commits --
+// branch-commits-only (no PR) no longer qualifies. Written FIRST per
+// bug-fix TDD; expected to FAIL against the unmodified (pre-cnos#574)
+// transitions.json, where rule 1 accepts any_true over [pr_exists,
+// pr_has_commits, branch_has_commits] -- see gamma-scaffold.md §Per-AC
+// oracle list AC3. ---
+
+func TestAC574_InProgressBranchOnlyNoLongerProposesReview(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-review-request-branch-only.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome == "proposed" && dec.TargetState == "review" {
+		t.Fatal("cnos#574 AC3 regression: branch-commits-only (no PR) must not propose in-progress -> review")
+	}
+	if dec.Outcome != "blocked" {
+		t.Errorf("outcome = %q, want blocked (review requested, but no PR -- cnos#574 AC3)", dec.Outcome)
+	}
+}
+
+func TestAC574_InProgressWithMatterStillProposesReview(t *testing.T) {
+	// Backward-compat guard: the existing #573 with-matter fixture (which
+	// sets pr_exists + pr_commit_count, not just branch_has_commits) must
+	// still propose review under the tightened rule.
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-review-request-with-matter.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.TargetState != "review" {
+		t.Errorf("outcome=%q target_state=%q, want proposed/review (PR+commits present -- no regression from cnos#574 tightening)", dec.Outcome, dec.TargetState)
+	}
+}
+
+func TestAC574_InProgressRunActiveNonGatingPreserved(t *testing.T) {
+	// cnos#569's main use case (a worker requesting its own transition
+	// while its run is still in_progress) must survive the cnos#574
+	// tightening unchanged: rules 1/2 fire before rule 3's run_active
+	// check, regardless of run_active's value.
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-review-request-with-matter.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.RunState != "in_progress" {
+		t.Fatalf("fixture precondition: expected run_state=in_progress, got %q", snap.RunState)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.Action != "propose_status_review" {
+		t.Errorf("outcome=%q action=%q, want proposed/propose_status_review despite run_active=true", dec.Outcome, dec.Action)
+	}
+}
+
 // TestApplyStatusLabel_ToleratesNotFoundOnRemove and
 // TestApplyStatusLabel_NoRemovalWhenFromStateEmpty lock the two
 // implementation-contract-adjacent decisions the γ scaffold's Friction
@@ -799,5 +931,136 @@ func TestAssembleLive_ObservesCellKindFromGammaScaffold(t *testing.T) {
 	// absent-default (DefaultedTo stays unset because Observed != "").
 	if snap.CellKind.DefaultedTo != "" {
 		t.Errorf("CellKind.DefaultedTo = %q, want empty (an observed kind must not also carry a default)", snap.CellKind.DefaultedTo)
+	}
+}
+
+// TestObserveRemoteBranch_ExistsWithCommits is cnos#574 AC4's core proof at
+// the observation-primitive level: a fake GitHub server reports the branch
+// exists (200 on /branches/{branch}) with 3 commits ahead of main (via
+// /compare's ahead_by), and observeRemoteBranch must report exactly that --
+// fully hermetic (no local git, no other assembleLive network calls; see
+// this function's doc comment in fetch.go for why it was extracted).
+func TestObserveRemoteBranch_ExistsWithCommits(t *testing.T) {
+	repo := "acme/widgets"
+	branch := "cycle/9601"
+
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/" + repo + "/branches/" + branch:
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"name":"` + branch + `"}`))
+		case "/repos/" + repo + "/compare/main..." + branch:
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"ahead_by":3}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+
+	exists, commits := observeRemoteBranch(context.Background(), repo, branch, "")
+	if !exists {
+		t.Fatal("exists = false, want true (remote branch confirmed via the GitHub API)")
+	}
+	if commits != 3 {
+		t.Errorf("commitsBeyondBase = %d, want 3 (from the /compare ahead_by response)", commits)
+	}
+}
+
+// TestObserveRemoteBranch_AbsentReportsFalse confirms a 404 on the
+// branches endpoint (branch genuinely absent on the remote too) reports
+// exists=false, commits=0 -- not an error, per this function's "kept
+// honest but deliberately simple" live-path contract.
+func TestObserveRemoteBranch_AbsentReportsFalse(t *testing.T) {
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+	exists, commits := observeRemoteBranch(context.Background(), "acme/widgets", "cycle/404", "")
+	if exists {
+		t.Error("exists = true, want false for a 404 branches response")
+	}
+	if commits != 0 {
+		t.Errorf("commitsBeyondBase = %d, want 0", commits)
+	}
+}
+
+// TestAssembleLive_RemoteOnlyBranchResolvesToDeltaRecovery composes
+// observeRemoteBranch's result (as assembleLive's fallback block would) with
+// the real transition table via Evaluate, proving the cnos#574 AC4
+// end-to-end invariant: a remote-only cycle/{N} branch (no local ref -- the
+// local-git block would report BranchExists=false) with commits beyond
+// base, a dead run (no active workflow run), and status:in-progress
+// resolves to propose_delta_recovery -- never propose_status_todo (the
+// cnos#368 blind-requeue failure mode this AC exists to prevent).
+func TestAssembleLive_RemoteOnlyBranchResolvesToDeltaRecovery(t *testing.T) {
+	repo := "acme/widgets"
+	branch := "cycle/9601"
+
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/" + repo + "/branches/" + branch:
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"name":"` + branch + `"}`))
+		case "/repos/" + repo + "/compare/main..." + branch:
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"ahead_by":3}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+
+	// Simulate the local-git-absent case (as assembleLive's guard
+	// `!snap.BranchExists` would see for a branch with no local ref):
+	// BranchExists starts false, then the fallback observation fills it.
+	exists, commits := observeRemoteBranch(context.Background(), repo, branch, "")
+
+	snap := FactSnapshot{
+		Issue:             9601,
+		Labels:            []string{"dispatch:cell", "protocol:cds", "status:in-progress"},
+		BranchExists:      exists,
+		CommitsBeyondBase: commits,
+		RunState:          "", // dead run: no active workflow run
+	}
+
+	tab := loadRealTable(t)
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.Action != "propose_delta_recovery" {
+		t.Fatalf("outcome=%q action=%q, want proposed/propose_delta_recovery (remote-only branch with commits must be recovery matter, not requeue)", dec.Outcome, dec.Action)
+	}
+	if dec.TargetState == "todo" {
+		t.Fatal("cnos#368/cnos#574 AC4 regression: a remote-only branch with commits beyond base must never propose blind requeue to status:todo")
+	}
+}
+
+// TestAssembleLive_RemoteBranchFallbackNeverRunsWithoutRepo
+// confirms the cnos#574 AC4 fallback never fires (and thus never overrides
+// or downgrades) when local git already found the branch, or when repo==""
+// -- the API call backs up local git's gap, it does not replace or
+// re-verify a local-git success, and it never runs without a repo to query.
+func TestAssembleLive_RemoteBranchFallbackNeverRunsWithoutRepo(t *testing.T) {
+	apiCalled := false
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/branches/") || strings.Contains(r.URL.Path, "/compare/") {
+			apiCalled = true
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	// repo=="" skips the whole GitHub-observation section (labels, the
+	// new branch/compare fallback, PR, runs) entirely per assembleLive's
+	// existing repo!="" guards -- this locks the "only fills the gap,
+	// never replaces, never runs without a repo" contract stated on the
+	// fallback block in fetch.go.
+	snap, err := assembleLive(context.Background(), "", 1, "")
+	if err != nil {
+		t.Fatalf("assembleLive: %v", err)
+	}
+	if apiCalled {
+		t.Fatal("expected zero GitHub API calls when repo==\"\"")
+	}
+	if snap.BranchExists {
+		t.Error("BranchExists = true, want false (no local git branch, no repo to query)")
 	}
 }
