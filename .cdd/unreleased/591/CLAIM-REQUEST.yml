@@ -1,0 +1,7 @@
+# cnos#575 AC1 claim-request marker: the dispatch wake's explicit intent to
+# move issue #591 todo -> in-progress via `cn issues fsm evaluate --apply`.
+wake: cds-dispatch
+substrate: sigma
+protocol: cds
+issue: 591
+requested_transition: "todo -> in-progress"
