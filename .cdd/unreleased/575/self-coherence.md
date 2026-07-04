@@ -16,7 +16,7 @@ section-manifest:
 
 **Closure condition.** Claim, hard-block, and release-back-to-queue are FSM-applied on passing guards (TDD fixtures), the wake requests rather than writes, the #574/#569 invariants and `cell_kind` observed-only hold, and all gates are green.
 
-**Branch:** `cycle/575`, created by γ from `origin/main`. γ's R0 scaffold (`.cdd/unreleased/575/gamma-scaffold.md`, commit `573e6bf`) is the load-bearing artifact this implementation follows — its per-AC oracle list, surfaces-to-touch table, source-of-truth table, and six named friction notes are all addressed below.
+**Branch:** `cycle/575`, created by γ from `origin/main`. γ's R0 scaffold (`.cdd/unreleased/575/gamma-scaffold.md`, commit `1db0608`) is the load-bearing artifact this implementation follows — its per-AC oracle list, surfaces-to-touch table, source-of-truth table, and six named friction notes are all addressed below.
 
 **Implementation contract (pinned by δ, restated for the record — unchanged from the scaffold, no deviation):**
 
@@ -55,7 +55,7 @@ No axis was improvised or relaxed; no unpinned row was encountered.
 
 ## §ACs
 
-Evidence below is real command output run against branch HEAD (implementation commits `11b82d2` / `489aeab`, before this readiness section), not a manual claim.
+Evidence below is real command output run against branch HEAD (implementation commits `02ef725` / `dd3e966`, before this readiness section), not a manual claim.
 
 ### AC1 — claim routed through the FSM
 
@@ -120,7 +120,7 @@ Decision:
   proposed_action: block
 ```
 
-**Doctrine evidence:** `cds-dispatch/SKILL.md` claim sequence steps 5-6 now write `CLAIM-REQUEST.yml` then request `cn issues fsm evaluate --issue {N} --apply` instead of `gh issue edit --remove-label status:todo --add-label status:in-progress` (commit `489aeab`); the "Lifecycle transitions" table's claim row no longer says "direct label write" (see AC4 below for the `rg` oracle covering this same site).
+**Doctrine evidence:** `cds-dispatch/SKILL.md` claim sequence steps 5-6 now write `CLAIM-REQUEST.yml` then request `cn issues fsm evaluate --issue {N} --apply` instead of `gh issue edit --remove-label status:todo --add-label status:in-progress` (commit `dd3e966`); the "Lifecycle transitions" table's claim row no longer says "direct label write" (see AC4 below for the `rg` oracle covering this same site).
 
 **Status: MET.** Positive and negative cases both proven at the `Evaluate()` level, the CLI `--apply` level (see `TestAC575_ApplyClaimTransitionAppliesOnGuardPass` / `TestAC575_ApplyClaimBlockedRefusesAndMutatesNothing`), and the doctrine level.
 
@@ -320,7 +320,7 @@ Yes. Every new Go symbol (`ClaimRequestPresent`, `BlockRequestPresent`, `Release
 
 **6. Rule ordering (first-match-wins, must not shadow the dead-run reconciliation rules).** The three new `in-progress` rules (hard-block, release-no-matter, release-with-matter) are positioned immediately after the two existing review-request rules and **before** the `all_true: [run_active]` valid rule and both dead-run reconciliation rules. This was verified two ways: (a) `TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules` asserts the three pre-existing dead-run/active fixtures still resolve to their original outcome/action/target_state; (b) the full pre-existing test suite (`TestAC4_DeadInProgressNoMatterProposesRequeue`, `TestAC5_DeadInProgressWithCommitsProposesDeltaRecovery`, `TestAC5_HealthyActiveInProgressIsValid`, and everything else) passes unmodified against the modified `transitions.json`.
 
-**TDD sanity check (empirical, run twice during this cycle, not part of the committed diff).** Checking out `transitions.json`'s pre-#575 content (commit `573e6bf`) into the working tree and re-running `go test ./... -run TestAC575 -v` against it produces exactly:
+**TDD sanity check (empirical, run twice during this cycle, not part of the committed diff).** Checking out `transitions.json`'s pre-#575 content (commit `1db0608`) into the working tree and re-running `go test ./... -run TestAC575 -v` against it produces exactly:
 
 ```
 --- FAIL: TestAC575_1_ClaimRoutedThroughFSM
