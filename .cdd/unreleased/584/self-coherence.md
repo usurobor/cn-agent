@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-  completed: [Gap, Skills, ACs]
+  completed: [Gap, Skills, ACs, Self-check, Debt]
 -->
 
 # Self-coherence — cnos#584
@@ -157,3 +157,21 @@ $ git diff origin/main...HEAD -- src/packages/cnos.issues/commands/issues-fsm/is
 **CI gates.** This is a docs-only diff with no code, workflow, or schema surface touched, so I1/I2/I4/I5/I6, `install-wake-golden`, dispatch guards, Go, Package, and Binary gates are structurally unaffected — there is no code path for them to exercise. I attempted to run the local frontmatter validator (`scripts/ci/validate-skill-frontmatter.sh`) as an extra check on `beta/SKILL.md`'s frontmatter (unchanged by my edit, but the file's YAML header could in principle be corrupted by a body edit); it exited with `prerequisite missing: cue` — the `cue` binary is not installed in this environment, so the check could not run locally. I manually re-read `beta/SKILL.md`'s frontmatter block (lines 1–28) after editing and confirmed it is unchanged and well-formed (no stray blank lines, closing `---` intact, no key collisions introduced by my edits, both of which were in the body well below the frontmatter). This is disclosed as known debt in §Debt — β should re-run the frontmatter validator with `cue` available, or confirm CI's own frontmatter-validation gate is green on the branch head.
 
 **AC4: met**, with the one disclosed local-tooling gap above.
+
+## §Self-check
+
+**Did this work push ambiguity onto β?**
+
+- **Canonical-home choice** is a design call, not an ambiguity — I picked `CDD.md` and gave three concrete reasons (§ACs → AC1). β can disagree with the choice, but the choice itself is not left implicit or deferred.
+- **Every AC1–AC4 claim above is backed by a literal command + its literal output**, re-run and re-verified immediately before this commit (see the verification pass above the §ACs commit). β does not have to take my word for any oracle result; each is reproducible from the branch head.
+- **The AC3 resolution for `beta/SKILL.md`** is the one place this cycle asks a reviewer (β) to judge a framing correction to β's *own* role file. I did not soften or hide this: §ACs names the exact pre-edit lines, the exact correction, and states explicitly that β's behavior is unchanged — the fact that β is reviewing a change to its own doctrine file is disclosed here, not left for β to notice unaided.
+- **Out-of-scope findings are named, not silently expanded into.** I found one additional control-implying-adjacent line (`CDD.md` line 104's pre-existing Roles pointer: "β (reviews and merges; merge is β's authority)") that reads similarly to the corrected `beta/SKILL.md` lines, but it is not one of the 5 AC3-audited files and the contract restricts my `CDD.md` edit to "new section(s) for AC1+AC2" only — touching it would be unrelated restructuring outside the pinned scope. Named as a finding in §Debt below, not fixed.
+
+**Is every claim backed by evidence in the diff?** Yes — §ACs cites the exact commit SHAs (`10700bab` for the beta/SKILL.md fix), the exact pre-edit line content, and re-runs every oracle command against the current branch head rather than against memory of an earlier run.
+
+## §Debt
+
+1. **CDD.md line 104 (pre-existing, not touched this cycle).** The Roles pointer list in `CDD.md` §Pointers reads: `[`beta/SKILL.md`](beta/SKILL.md) — β (reviews and merges; merge is β's authority)`. This is the same "skill executes the mechanical action as its own authority" phrasing pattern that AC3 required correcting in `beta/SKILL.md` itself, but `CDD.md`'s existing Roles-pointer line is not one of the 5 AC3-audited files, and my permitted `CDD.md` edit this cycle is scoped to "new section(s) for AC1+AC2" only (per the pinned implementation contract) — correcting an unrelated pre-existing line in the same file would be unrelated restructuring outside that scope. Named here per the scaffold's explicit instruction to surface (not silently fix) findings outside the prescribed audit-file list. **Disposition: γ triage** — likely a small, mechanical, one-line follow-up (either fold into a Sub 2–4 cycle or a same-cycle immediate fix if γ judges the risk of touching `CDD.md` beyond the pinned scope acceptable).
+2. **`scripts/ci/validate-skill-frontmatter.sh` could not run locally** (missing `cue` binary in this environment). I manually verified `beta/SKILL.md`'s frontmatter block is unchanged and well-formed after my body-only edits (see §ACs → AC4). β should confirm the branch-head CI run for this validator (or any package/frontmatter gate) is green before merge, per α's own pre-review gate row 10 (branch CI must be green, or the artifact must say so explicitly and β waits for green).
+3. **No design or plan artifact was produced separately from this self-coherence.md.** Per `alpha/SKILL.md` §2.2, design and plan may be marked "not required" with a concrete justification: this cycle is doctrine-only prose across 2 files plus one audited correction in a 3rd; the canonical-home decision and the AC3 resolution path were both fully pre-specified by γ's scaffold (the source-of-truth table + friction notes 2 and 3), leaving no independent design surface for α to produce beyond the placement/wording judgment recorded directly in §ACs above. Marking design and plan as "not required" for this reason.
+4. **Peer enumeration / harness audit (per `alpha/SKILL.md` §2.3–§2.4) do not apply in their code-surface form** — there is no schema-bearing parser, manifest shape, or runtime contract changed by this cycle, so there is no producer/consumer/harness family to enumerate in the code sense. The doctrine-level "peer enumeration" analog — every one of the 5 AC3-audited files, individually read and individually reported on (edited / not-edited-with-reason) — is done explicitly in §ACs → AC3 above, which is the applicable form of this rule for a docs-only, audit-shaped cycle.
