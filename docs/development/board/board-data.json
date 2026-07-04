@@ -1977,28 +1977,6 @@
     "url": "https://github.com/usurobor/cnos/issues/564"
   },
   {
-    "n": 575,
-    "t": "cds/fsm: route claim, hard-block, release-back-to-queue through the FSM (Phase 3 — Sub 2 of #583)",
-    "kind": "process",
-    "areas": [
-      "cdd",
-      "cds",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-04T02:11:23Z",
-    "updated": "2026-07-04T11:24:45Z",
-    "url": "https://github.com/usurobor/cnos/issues/575"
-  },
-  {
     "n": 576,
     "t": "process(agent): κ over-asks — blocks on decisions already covered by CAP §4.2 or the active contract",
     "kind": "process",
