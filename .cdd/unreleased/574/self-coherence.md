@@ -1,7 +1,7 @@
 # self-coherence — cycle/574
 
 manifest: sections planned = [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-completed: [Gap, Skills, ACs, Self-check, Debt]
+completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
 
 ## §Gap
 
@@ -187,3 +187,24 @@ Named CI jobs (I1/I2/I4/I5/I6, install-wake-golden, dispatch-repair-preflight, d
 2. **AC6's sweep covers the named file set as given by gamma-scaffold.md, not an independently re-derived union.** The scaffold's union was reused verbatim (per its own instruction: "reuse that list verbatim rather than re-deriving it from the PRs") rather than α re-running `gh pr view {571,572,573} --json files` from scratch. γ's list was spot-checked against a fresh `gh pr view 572 --json files` call (§ACs AC6) and matched, so this is a low-risk inherited assumption, but it is inherited, not independently re-derived from all three PRs.
 3. **The Phase 3 tracking issue (#575)'s exact acceptance-criteria shape is intentionally left thin** (three named transitions + a sketch of what a future design cell would need), since AC5 only requires *filing* Phase 3, not fully speccing it — a future γ scaffold for that issue will need to do real design work (fact-model guards for claim/hard-block/release-back-to-queue) that this cycle deliberately did not attempt (scope guardrail 1).
 4. **No provisional `alpha-closeout.md` was written at this review-readiness point.** Per alpha/SKILL.md §2.8, close-out is normally written via a γ-requested re-dispatch of α after β merge; this session's dispatch prompt explicitly instructed "do not dispatch β yourself — exit after pushing," so no close-out artifact was produced in this pass. This is expected per the standard re-dispatch path (not the provisional-fallback path), so no `alpha-closeout.md` debt marker was needed — noting it here only for completeness of the artifact inventory.
+
+## §CDD Trace
+
+1. **Issue** — cnos#574 read in full (`gh issue view 574`); mode `design-and-build`; parent wave #567.
+2. **Design** — not required as a separate artifact: the issue body + γ scaffold already fully specify AC2/AC3's target guard strings and AC1/AC5/AC6's verification/correction shape; the one real design decision (AC4) is documented inline in this file (§ACs AC4) and in `fetch.go`'s doc comments, per alpha/SKILL.md §2.2's allowance for "design not required" with concrete justification (single declarative-data + one small Go extension, no impact graph beyond what's enumerated in §Self-check's peer enumeration).
+3. **Plan** — not required as a separate artifact: implementation sequencing was linear and small (AC2/AC3 TDD → AC4 observation extension → AC1/AC5/AC6 verification/correction tasks → AC7 gate confirmation), stated here rather than in a standalone plan file.
+4. **Tests** — written first per bug-fix TDD for AC2/AC3 (3 new fixtures + 6 new test functions, confirmed red then green); AC4 added 4 new test functions (2 unit-level on the extracted `observeRemoteBranch`, 2 composition-level); all fully hermetic (no live network).
+5. **Code** — `transitions.json` (`review` + `in-progress` states' rules tightened); `fetch.go` (`observeRemoteBranch` extracted function + call site).
+6. **Docs / artifact enumeration (matches `git diff --stat origin/main..HEAD`):**
+   - `.cdd/unreleased/574/gamma-scaffold.md` — γ's pre-existing scaffold (not authored by α; present on the branch before α's dispatch).
+   - `.cdd/unreleased/574/self-coherence.md` — this artifact.
+   - `src/packages/cnos.cds/skills/cds/fsm/transitions.json` — AC2/AC3 guard tightening (§ACs AC2, AC3).
+   - `src/packages/cnos.issues/commands/issues-fsm/fetch.go` — AC4 `observeRemoteBranch` (§ACs AC4).
+   - `src/packages/cnos.issues/commands/issues-fsm/issuesfsm_test.go` — AC2/AC3/AC4 tests + one pre-existing assertion update (§ACs AC2, AC3, AC4).
+   - `src/packages/cnos.issues/commands/issues-fsm/testdata/in-progress-review-request-branch-only.json` — new AC3 fixture.
+   - `src/packages/cnos.issues/commands/issues-fsm/testdata/review-partial-evidence.json` — new AC2 fixture.
+   - `src/packages/cnos.issues/commands/issues-fsm/testdata/review-request-only.json` — new AC2 fixture.
+   - `src/packages/cnos.issues/commands/issues-fsm/testdata/review-with-pr.json` — edited AC2 backward-compat fixture (§ACs AC2's documented tension/resolution).
+   - **Caller-path trace (new module/function rule):** `observeRemoteBranch` (new function in `fetch.go`) has one non-test caller: `assembleLive`'s new fallback block (`fetch.go`, the `if repo != "" && !snap.BranchExists { exists, commits := observeRemoteBranch(...) ... }` block) — named explicitly per pre-review gate row 12.
+   - GitHub-side artifacts (not repo files, not in the diff stat, but part of AC5's evidence): correction comment on #567 (https://github.com/usurobor/cnos/issues/567#issuecomment-4880282434), linking comment on #567 (https://github.com/usurobor/cnos/issues/567#issuecomment-4880283288), new tracking issue #575 (https://github.com/usurobor/cnos/issues/575).
+7. **Self-coherence** — this file, all seven sections, written and committed incrementally per alpha/SKILL.md §2.5.
