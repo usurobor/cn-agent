@@ -2188,5 +2188,25 @@
     "created": "2026-07-04T06:07:00Z",
     "updated": "2026-07-04T06:07:00Z",
     "url": "https://github.com/usurobor/cnos/issues/586"
+  },
+  {
+    "n": 589,
+    "t": "delta/SKILL.md §9.6: align hard-block/claim-release prose with FSM-request phrasing (post-#575)",
+    "kind": "process",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T11:12:23Z",
+    "updated": "2026-07-04T11:12:23Z",
+    "url": "https://github.com/usurobor/cnos/issues/589"
   }
 ]
