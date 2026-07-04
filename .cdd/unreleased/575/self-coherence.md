@@ -6,27 +6,6 @@ section-manifest:
   completed: [gap, skills, acs]
 -->
 
-## §Skills
-
-**Tier 1 (canonical lifecycle + role contract):**
-- `src/packages/cnos.cdd/skills/cdd/CDD.md` (implicit via `alpha/SKILL.md`'s load order)
-- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — the α role surface; load order followed: CDD.md → alpha/SKILL.md → lifecycle sub-skills → Tier 2/3.
-
-**Lifecycle sub-skills loaded (per alpha/SKILL.md §2.1 step 6):**
-- `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` — AC-boundary interpretation.
-- `src/packages/cnos.cdd/skills/cdd/issue/proof/SKILL.md` — proof-plan discipline (positive/negative case shape).
-- `src/packages/cnos.cds/skills/cds/CDS.md` — canonical step table / artifact contract (referenced for location matrix; not read line-by-line given its size, consulted for §"Artifact contract" → §"Location matrix" and §"Coordination surfaces" only).
-
-**Tier 2 (always-applicable engineering skills), resolved to their actual repo location** — the dispatch prompt named `cnos.core/skills/eng/*`, but those skills live under `cnos.eng/skills/eng/*` in this repo (`cnos.core` only carries `mindsets/ENGINEERING.md`, not the `eng/*` skill tree); loaded from the correct path, not the prompt's literal path, since the governing content (not the path string) is what the prompt intends:
-- `src/packages/cnos.eng/skills/eng/ship/SKILL.md` — TDD flow (spec → failing test → code → passing test → full suite → ship); §"Bug Fix Flow (TDD)" is the operative shape here (this cycle wires new guards into an existing, working evaluator, not a from-scratch feature).
-- `src/packages/cnos.eng/skills/eng/test/SKILL.md` — invariant-first testing, positive/negative case discipline, "cover new surfaces" (§3.13).
-- `src/packages/cnos.eng/skills/eng/go/SKILL.md` — Go package/type/dispatch-boundary conventions (skimmed via table-of-contents; the existing `issuesfsm` package already conforms, and this cycle's additions follow its established patterns exactly — new guard funcs, new FactSnapshot fields, new fetch.go switch cases, mirroring the `review_request_present`/`REVIEW-REQUEST.yml` precedent named throughout the scaffold).
-- `src/packages/cnos.core/skills/write/SKILL.md` — prose/doc-authoring discipline for the `cds-dispatch/SKILL.md` and `dispatch-protocol/SKILL.md` edits.
-
-**Tier 3 (issue-specific):** the scaffold's per-AC oracle list and friction notes (`.cdd/unreleased/575/gamma-scaffold.md`) functioned as the issue-specific Tier 3 surface for this cycle — read in full before any code was written, per α's dispatch-intake rule 5.
-
-**Source files read before coding (peer enumeration of the existing implementation, per alpha/SKILL.md §2.1 step 5):** `transitions.json`, `table.go`, `snapshot.go`, `fetch.go`, `decision.go`, `issuesfsm.go`, `issuesfsm_test.go` (all existing tests + all existing `testdata/*.json` fixtures), `cmd_issues_fsm.go`, `cds-dispatch/SKILL.md` (full body), `dispatch-protocol/SKILL.md` (full body), and `delta/SKILL.md` §9.6 (grep-scoped, per Friction note 3).
-
 ## §Gap
 
 **Issue:** [usurobor/cnos#575](https://github.com/usurobor/cnos/issues/575) — "cds/fsm: route claim, hard-block, release-back-to-queue through the FSM (Phase 3 — Sub 2 of #583)".
@@ -52,6 +31,27 @@ section-manifest:
 | Backward-compat invariants | `run_active` non-gating for review-request path; #574 review-guard tightening unchanged; `cell_kind` observed-only | Yes — see §ACs AC5 |
 
 No axis was improvised or relaxed; no unpinned row was encountered.
+
+## §Skills
+
+**Tier 1 (canonical lifecycle + role contract):**
+- `src/packages/cnos.cdd/skills/cdd/CDD.md` (implicit via `alpha/SKILL.md`'s load order)
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — the α role surface; load order followed: CDD.md → alpha/SKILL.md → lifecycle sub-skills → Tier 2/3.
+
+**Lifecycle sub-skills loaded (per alpha/SKILL.md §2.1 step 6):**
+- `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` — AC-boundary interpretation.
+- `src/packages/cnos.cdd/skills/cdd/issue/proof/SKILL.md` — proof-plan discipline (positive/negative case shape).
+- `src/packages/cnos.cds/skills/cds/CDS.md` — canonical step table / artifact contract (referenced for location matrix; not read line-by-line given its size, consulted for §"Artifact contract" → §"Location matrix" and §"Coordination surfaces" only).
+
+**Tier 2 (always-applicable engineering skills), resolved to their actual repo location** — the dispatch prompt named `cnos.core/skills/eng/*`, but those skills live under `cnos.eng/skills/eng/*` in this repo (`cnos.core` only carries `mindsets/ENGINEERING.md`, not the `eng/*` skill tree); loaded from the correct path, not the prompt's literal path, since the governing content (not the path string) is what the prompt intends:
+- `src/packages/cnos.eng/skills/eng/ship/SKILL.md` — TDD flow (spec → failing test → code → passing test → full suite → ship); §"Bug Fix Flow (TDD)" is the operative shape here (this cycle wires new guards into an existing, working evaluator, not a from-scratch feature).
+- `src/packages/cnos.eng/skills/eng/test/SKILL.md` — invariant-first testing, positive/negative case discipline, "cover new surfaces" (§3.13).
+- `src/packages/cnos.eng/skills/eng/go/SKILL.md` — Go package/type/dispatch-boundary conventions (skimmed via table-of-contents; the existing `issuesfsm` package already conforms, and this cycle's additions follow its established patterns exactly — new guard funcs, new FactSnapshot fields, new fetch.go switch cases, mirroring the `review_request_present`/`REVIEW-REQUEST.yml` precedent named throughout the scaffold).
+- `src/packages/cnos.core/skills/write/SKILL.md` — prose/doc-authoring discipline for the `cds-dispatch/SKILL.md` and `dispatch-protocol/SKILL.md` edits.
+
+**Tier 3 (issue-specific):** the scaffold's per-AC oracle list and friction notes (`.cdd/unreleased/575/gamma-scaffold.md`) functioned as the issue-specific Tier 3 surface for this cycle — read in full before any code was written, per α's dispatch-intake rule 5.
+
+**Source files read before coding (peer enumeration of the existing implementation, per alpha/SKILL.md §2.1 step 5):** `transitions.json`, `table.go`, `snapshot.go`, `fetch.go`, `decision.go`, `issuesfsm.go`, `issuesfsm_test.go` (all existing tests + all existing `testdata/*.json` fixtures), `cmd_issues_fsm.go`, `cds-dispatch/SKILL.md` (full body), `dispatch-protocol/SKILL.md` (full body), and `delta/SKILL.md` §9.6 (grep-scoped, per Friction note 3).
 
 ## §ACs
 
