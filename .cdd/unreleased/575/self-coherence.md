@@ -3,7 +3,7 @@
 <!--
 section-manifest:
   planned: [gap, skills, acs, self-check, debt, cdd-trace, review-readiness]
-  completed: [gap, skills, acs]
+  completed: [gap, skills, acs, self-check, debt]
 -->
 
 ## §Gap
@@ -283,3 +283,67 @@ No new rule references `cell_kind`; the seam stays observed-only. `TestSeam_Cell
 **CI gates (I1/I2/I4/I5/I6, install-wake-golden, dispatch guards #516/#524):** not independently re-run in this sandbox (no GitHub Actions runner available locally); the golden/workflow re-render and the two `scripts/ci/*.sh` guard scripts (both invoked directly above, both exit 0) are the local proxies for `install-wake-golden` and the #516/#524 dispatch guards respectively. Branch CI on the pushed head commit is the authoritative signal β should check per the pre-review gate (§Review-readiness below) — this is recorded as a transient row, not claimed green from local evidence alone.
 
 **Status: MET** (behavioral invariants), **local proxy evidence only for the substrate CI gates** — see §Review-readiness for the explicit CI-state disclosure.
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+- Every AC has a concrete, re-runnable oracle command with output pasted in §ACs, not a narrative claim. β can re-run every `jq`, `go test -run`, and `rg` command verbatim.
+- The rule-ordering concern the scaffold's Friction note 6 raised (first-match-wins shadowing) is closed with a dedicated test (`TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules`) exercising the exact three fixtures the scaffold named, not just "the suite is green."
+- The one place this cycle leaves an open question for β to weigh, rather than closing outright, is Friction note 1's claim guard framing (see §Debt below) — a genuine design call the scaffold explicitly declined to pre-decide. It is not ambiguity α failed to resolve; it is a documented choice with a stated rationale, which is the coherent way to hand a real design call to review.
+- CI gate rows (I1/I2/I4/I5/I6, install-wake-golden, dispatch guards) are recorded as **local-proxy-only** in §ACs AC5, not claimed green — this is disclosed explicitly rather than left for β to discover was never actually checked.
+
+**Is every claim backed by evidence in the diff?**
+
+Yes. Every new Go symbol (`ClaimRequestPresent`, `BlockRequestPresent`, `ReleaseRequestPresent` fields; `claim_request_present`/`block_request_present`/`release_request_present` guard funcs; the `CLAIM-REQUEST.yml`/`BLOCK-REQUEST.yml`/`RELEASE-REQUEST.yml` fetch.go wiring) has at least one non-test caller: the guard funcs are called from `table.go`'s `evalGuard` (via the generic `ruleMatches`/`Evaluate` path, which every `go test` invocation and every real `cn issues fsm evaluate` call exercises), and the FactSnapshot fields are populated by `fetch.go`'s live path (exercised by `TestAC575_LiveObservesNewMarkerFiles`, a non-`LoadFixture` caller) in addition to `LoadFixture`'s JSON path.
+
+**Peer enumeration performed:**
+
+- **`cds-dispatch/SKILL.md` "direct label write" prose sites** — enumerated via `grep -n` before editing (5 sites: frontmatter description L3, claim steps L130-131, lifecycle-transitions intro L258, three table rows L262/264/265, responsibilities item 5 L359); all updated together in one commit, not just the first hit found. The `rg` re-check after editing (§ACs AC4) proves zero survived.
+- **Rendered-artifact peers of `cds-dispatch/SKILL.md`** — the golden fixture (`cnos-cds-dispatch.golden.yml`) and the live substrate workflow (`.github/workflows/cnos-cds-dispatch.yml`) are both machine-derived from the SKILL.md via `cn-install-wake`; both were re-rendered and verified to match a fresh render (no drift) rather than left stale. This is the harness-audit discipline (alpha/SKILL.md §2.4) applied to a non-Go, non-test harness (a shell-rendered YAML artifact).
+- **`transitions.json` existing-fixture peers** — every pre-existing fixture in `testdata/*.json` was re-evaluated against the new rule set via the full test suite (not just the six new fixtures), and `TestSeam_CellKindNotEnforced`'s fixture list was extended rather than a parallel, uncovered test created.
+- **Sibling doctrine surface `delta/SKILL.md` §9.6** — read and considered (same "direct write" prose pattern), explicitly NOT edited; see §Debt Friction note 3 for the reasoning, recorded rather than silently skipped or silently edited.
+
+## §Debt
+
+### Friction note resolutions (all six, as required by dispatch)
+
+**1. Claim guard framing ("no competing active run").** Resolved as a **hybrid**, not strictly either of γ's two offered options: reused the existing `run_active` guard unmodified (no new Go code for the run-check half — `run_active`'s existing definition, scoped to workflow runs observed against the would-be `cycle/{issue}` branch, already cannot see the requesting wake's own run, since that run executes on `main`/the dispatch workflow, not on a `cycle/{issue}` branch that doesn't exist yet at claim time) **plus** a new `claim_request_present` marker-file guard (new Go code: `FactSnapshot.ClaimRequestPresent`, the `claim_request_present` guardFunc, and `fetch.go`'s `CLAIM-REQUEST.yml` case), mirroring the `review_request_present`/`REVIEW-REQUEST.yml` precedent. Pure option (b) (drop the run-based guard entirely, treat "dispatchable contract" as satisfied structurally by the claim sequence) was rejected because it cannot produce AC1's own negative case ("a fixture with a competing active run is blocked") — dropping the run check makes that oracle unsatisfiable by construction. Pure option (a) (a new self-vs-other run-id-comparing fact) was rejected as γ predicted: nontrivial, and unneeded, because `run_active`'s existing branch-scoped definition already structurally excludes the requesting wake's own pre-branch execution — no new run-id plumbing is required to get the same discriminating power. The marker-file half was necessary regardless of which run-check option was chosen: without it, an unconditional "any evaluate on a `status:todo` issue proposes claim when `run_active` is false" rule would have made `testdata/todo.json`'s existing idempotence assertion (`TestApply_RequeueTransitionAppliesOnGuardPassAndIsIdempotent`'s second call, which evaluates a post-requeue `status:todo` fixture and expects a no-op) fail — proven empirically by the TDD sanity check below.
+
+**2. `dispatch-protocol/SKILL.md` scope (protocol-agnostic file, cds-only FSM).** Resolved as option (a) from the scaffold's framing: added a scoped "Protocol-specific FSM override" paragraph within existing §2.2 (not a new top-level numbered subsection, to avoid renumbering every downstream cross-reference to §2.3-§4.9 that this 613-line file and its external referrers carry), stating that a concrete protocol package which has shipped its own FSM (today, only `cnos.cds`) MUST route lifecycle transitions through it, while protocols without one (`cnos.cdr` today) still use the generic direct-write shape shown in the existing step-4 code block. The generic claim-sequence code block itself is untouched. This keeps the file honest for future non-cds dispatch wakes that have no FSM yet, while making the cds-specific reality (all four transitions now FSM-requested) discoverable from the generic doctrine via a cross-reference to `cds-dispatch/SKILL.md`.
+
+**3. `delta/SKILL.md` §9.6 (same "direct write" prose pattern, not in AC4's named surface list).** Read in full (via targeted `grep`) and left unedited. Reasoning: §9.6's "status:blocked + reason" and "claim release (race)" rows describe δ **signaling** the wake that a transition is needed (a semantic fact that remains true after #575: δ still decides *when* a hard-block or claim-release is needed), not δ **performing** the label write itself — the actual write-vs-request mechanism lives one layer down, in `cds-dispatch/SKILL.md` (which #575 does update). Editing §9.6's prose now would restate a mechanism detail that isn't §9.6's job to carry, and the issue's own "Out of scope" list doesn't name it. This is recorded as a candidate follow-up (not filed as a separate issue by α, since triage is γ's job per alpha/SKILL.md §2.8 "Voice: factual observations and patterns only"): a future doctrine pass could add a one-line cross-reference from §9.6 to `cds-dispatch/SKILL.md`'s mechanism, but that is a judgment call for whoever next touches `delta/SKILL.md`, not an unscoped edit to smuggle into this cycle.
+
+**4. Test-function naming.** Used `TestAC575_1_*` / `TestAC575_2_*` / `TestAC575_3_*` prefixes throughout (plus `TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules`, `TestAC575_LiveObservesNewMarkerFiles`, and five `TestAC575_Apply*` names) — zero collisions with the file's own historical `TestAC1`-`TestAC7` / `TestAC569_*` / `TestAC574_*` names, confirmed by `grep -c "^func TestAC575" issuesfsm_test.go` = 14 and by the full suite compiling/running with no duplicate-symbol error.
+
+**5. Fixture naming convention.** All six new fixtures follow `<state>-<condition>.json`: `todo-claimable.json`, `todo-competing-run.json`, `in-progress-block-with-evidence.json`, `in-progress-block-no-evidence.json`, `in-progress-release-no-matter.json`, `in-progress-release-with-matter.json` — consistent with the existing `in-progress-review-request-with-matter.json` / `changes-with-repair.json` naming.
+
+**6. Rule ordering (first-match-wins, must not shadow the dead-run reconciliation rules).** The three new `in-progress` rules (hard-block, release-no-matter, release-with-matter) are positioned immediately after the two existing review-request rules and **before** the `all_true: [run_active]` valid rule and both dead-run reconciliation rules. This was verified two ways: (a) `TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules` asserts the three pre-existing dead-run/active fixtures still resolve to their original outcome/action/target_state; (b) the full pre-existing test suite (`TestAC4_DeadInProgressNoMatterProposesRequeue`, `TestAC5_DeadInProgressWithCommitsProposesDeltaRecovery`, `TestAC5_HealthyActiveInProgressIsValid`, and everything else) passes unmodified against the modified `transitions.json`.
+
+**TDD sanity check (empirical, run twice during this cycle, not part of the committed diff).** Checking out `transitions.json`'s pre-#575 content (commit `573e6bf`) into the working tree and re-running `go test ./... -run TestAC575 -v` against it produces exactly:
+
+```
+--- FAIL: TestAC575_1_ClaimRoutedThroughFSM
+--- FAIL: TestAC575_1_ClaimBlockedOverCompetingRun
+--- PASS: TestAC575_1_ClaimNotRequestedStaysValid
+--- FAIL: TestAC575_2_HardBlockRoutedThroughFSM
+--- PASS: TestAC575_2_HardBlockRefusedWithoutEvidence
+--- FAIL: TestAC575_3_ReleaseRoutedThroughFSMWhenNoMatter
+--- FAIL: TestAC575_3_ReleaseBlockedOverMatter
+--- PASS: TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules
+--- PASS: TestAC575_LiveObservesNewMarkerFiles
+--- FAIL: TestAC575_ApplyClaimTransitionAppliesOnGuardPass
+--- FAIL: TestAC575_ApplyClaimBlockedRefusesAndMutatesNothing
+--- FAIL: TestAC575_ApplyHardBlockAppliesOnGuardPass
+--- FAIL: TestAC575_ApplyReleaseAppliesOnGuardPass
+--- PASS: TestAC575_ApplyReleaseWithMatterDoesNotRequeue
+```
+
+9 of 14 fail without the new rules — exactly the tests asserting a *positive* proposed/applied outcome (claim proposed, claim blocked-over-competing-run, hard-block proposed, release proposed, and their four `--apply`-level counterparts). The 5 that still pass without the new rules are the ones whose asserted outcome coincides with a pre-existing fallback rule's behavior even absent the #575 rules: `TestAC575_1_ClaimNotRequestedStaysValid` and `TestAC575_2_HardBlockRefusedWithoutEvidence` assert a no-op/fallback by design (their fixtures have the request marker false/absent); `TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules` and `TestAC575_LiveObservesNewMarkerFiles` don't depend on `transitions.json` content at all (the former only re-checks pre-existing fixtures, the latter tests `fetch.go`'s marker-file wiring directly); and `TestAC575_ApplyReleaseWithMatterDoesNotRequeue` happens to still observe `applied: false` under the old rule set too, because the old fallback rule (`all_true: [run_active]` → valid/none) also produces no write for that fixture's facts — a coincidental pass for the wrong reason, noted here rather than silently relied on, though the test still correctly guards the real (new) implementation's behavior once the new rules are present. Restoring the modified `transitions.json` afterward reproduces the full 51/51 green suite reported in §ACs AC5.
+
+### Known debt
+
+- **Substrate CI gates not independently verified in this sandbox.** I1/I2/I4/I5/I6, `install-wake-golden`, and the two `scripts/ci/check-dispatch-*.sh` guards' GitHub-Actions-hosted runs were not observable from this environment (no live GitHub Actions access). Local proxies were run instead (both `check-dispatch-*.sh` scripts directly; `cn-install-wake cds-dispatch` re-render diffed against the committed golden and workflow). β/the pre-review gate must confirm actual branch CI is green on the pushed head commit before merge — this is flagged, not silently assumed.
+- **`delta/SKILL.md` §9.6 cross-reference gap** (Friction note 3) — a candidate follow-up, not filed as an issue by α (triage is γ's/operator's call), recorded here per alpha/SKILL.md §2.8's "factual observations, not recommended dispositions" voice rule.
+- **`cds-dispatch/SKILL.md`'s "Surfaces" §"You MAY write to" bullet** ("Label application on the claimed cell only — the four transitions enumerated in §Lifecycle transitions above") was not reworded to mention the FSM-request indirection; it remains true at the level it's written (the wake still causes those four labels to be applied, now via the FSM rather than directly) and rewording it would be restating the same fact a third time beyond the frontmatter description and the Lifecycle transitions table/prose — judged as diminishing-return repetition rather than a required peer site, since it doesn't use the phrase "direct label write" or any of the AC4 oracle's targeted strings.
+- **CDS.md was consulted but not re-audited line-by-line** (3600 lines) — only the sections the scaffold specifically pointed to (artifact contract, location matrix, coordination surfaces) were read. No claim in this cycle depends on an unread part of CDS.md; if CDS.md's step table itself named the four lifecycle transitions with write-vs-request phrasing, that would be a peer this cycle should have caught — a targeted `rg` for the same oracle strings against CDS.md is a cheap next check β can run if this concerns review (`rg -n "direct label write|wake writes the label directly" src/packages/cnos.cds/skills/cds/CDS.md` returns zero matches at the time of this writing, run as part of closing this debt item before the review-readiness signal).
