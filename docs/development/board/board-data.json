@@ -2059,5 +2059,91 @@
     "created": "2026-07-04T04:03:17Z",
     "updated": "2026-07-04T04:03:17Z",
     "url": "https://github.com/usurobor/cnos/issues/577"
+  },
+  {
+    "n": 579,
+    "t": "wave: foundation-completion — unblock v3.83.0, mechanize κ discipline, install release-surface governance",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "cdd",
+      "cds"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T04:11:59Z",
+    "updated": "2026-07-04T04:11:59Z",
+    "url": "https://github.com/usurobor/cnos/issues/579"
+  },
+  {
+    "n": 580,
+    "t": "feat(cnos.core/agent/kappa): session-start preflight — mechanical durable-state gate before κ response",
+    "kind": "tooling",
+    "areas": [
+      "agent",
+      "cdd"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T04:12:12Z",
+    "updated": "2026-07-04T04:12:12Z",
+    "url": "https://github.com/usurobor/cnos/issues/580"
+  },
+  {
+    "n": 581,
+    "t": "feat(cnos.core): reflect-rN wake family — memory role in #Wake, three cadence orchestrators, three reflect task skills",
+    "kind": "feature",
+    "areas": [
+      "agent",
+      "coherence",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T04:12:17Z",
+    "updated": "2026-07-04T04:12:17Z",
+    "url": "https://github.com/usurobor/cnos/issues/581"
+  },
+  {
+    "n": 582,
+    "t": "wave: human-touchpoint protocol — cnos.core generic + cnos.cds software overlay",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "cds"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T04:12:22Z",
+    "updated": "2026-07-04T04:12:22Z",
+    "url": "https://github.com/usurobor/cnos/issues/582"
   }
 ]
