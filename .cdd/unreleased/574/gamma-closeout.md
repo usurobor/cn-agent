@@ -106,3 +106,18 @@ requesting the `in-progress → status:review` transition via
 4–5. That step, the post-merge CI verification, the `.cdd/unreleased/574/` → `.cdd/releases/{X.Y.Z}/574/`
 move, and the POST-RELEASE-ASSESSMENT.md are δ's/a subsequent γ-post-merge pass's actions, not
 this artifact's — γ does not perform the PR-open or transition-request step itself.
+
+## δ deliverable-evidence addendum (post-PR, closeout-integrity preflight per dispatch-protocol §2.9)
+
+Appended by δ after opening the cycle's PR and before requesting the `status:in-progress → status:review`
+transition, per the closeout-integrity preflight's requirement that the closeout name the PR number
+or a commit SHA as evidence.
+
+```yaml
+deliverable_evidence:
+  pr: "#578 (cycle/574 -> main)"
+  head_sha: "12922a8c554ccc24fb2671ed56b674bfbd7a3fb6"
+  base_sha: "914939958d5845522548795e42ecb822aa94e6f0"
+  commits_beyond_base: 14
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
