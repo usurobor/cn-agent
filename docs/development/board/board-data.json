@@ -2039,5 +2039,25 @@
     "created": "2026-07-04T03:27:53Z",
     "updated": "2026-07-04T03:27:53Z",
     "url": "https://github.com/usurobor/cnos/issues/576"
+  },
+  {
+    "n": 577,
+    "t": "cn-cdd-verify: classifyCycleType misclassifies triadic cycles as small-change before beta-review.md lands",
+    "kind": "bugfix",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T04:03:17Z",
+    "updated": "2026-07-04T04:03:17Z",
+    "url": "https://github.com/usurobor/cnos/issues/577"
   }
 ]
