@@ -1,0 +1,11 @@
+issue: 574
+protocol: cds
+cycle_branch: cycle/574
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/578"
+converge_verdict_ref: .cdd/unreleased/574/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's R0 converge
+  verdict (APPROVED, no D-level findings). All closeout artifacts
+  (gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md,
+  beta-closeout.md, gamma-closeout.md) are present on this branch.
