@@ -151,6 +151,56 @@ The essay `docs/papers/CCNF-AND-TYPED-TRUST.md` pins: *"Do not finalize CDD.md u
 
 No domain-specific evidence requirements appear in the kernel sections of this document (§Kernel, §Outcomes, §Recursion modes, §Scope-lift, §Domain packages, §Pointers). Software-specific vocabulary (test, code, branch, deploy, CI, release) has been extracted to [`cnos.cds/skills/cds/CDS.md`](../../../cnos.cds/skills/cds/CDS.md) per cnos#403; CDD.md's §"Software-specific realization → cnos.cds" section retains only the pointer list into CDS.
 
+## Mechanism and cognition
+
+**Cells are mechanical. Cognition is deferred to skills. Skills don't control anything.**
+
+The cell's runtime owns control flow and every side effect: it opens branches, writes commits, applies labels, opens pull requests, and moves an issue through its lifecycle. A skill — γ, α, β, δ, or any Tier-2/Tier-3 sub-skill a role loads — never performs those actions itself. A skill **returns a judgment**; the runtime reads that judgment and acts on it. Mechanism executes; cognition decides. A skill description that has the skill *opening* a PR, *writing* a label, or *driving* the lifecycle directly has collapsed the two — see `beta/SKILL.md`'s annotated merge-authority passage for a named instance of this collapse and how it is held open as an honest transitional state (§"Bootstrap-mode note" below).
+
+This rule is substrate-independent: it holds for a CDS cell, a CDR cell, and any future c-d-X domain package the same way the kernel itself does. The worked example and lifecycle table below instantiate it in CDS's dispatch vocabulary because that is the domain package with a running dispatch mechanism today; a CDR realization would name different concrete steps under the same split.
+
+### Worked example
+
+One mechanical step — the runtime acts alone, no skill is invoked:
+
+```text
+runtime.claim(issue) → status:todo → status:in-progress
+```
+
+The dispatch runtime re-reads the issue's labels, verifies the three-label gate, writes the label transition, and posts the claim comment — a fixed procedure with no judgment call ([`dispatch-protocol/SKILL.md`](../../../cnos.core/skills/agent/dispatch-protocol/SKILL.md) §2.2).
+
+One cognitive delegation — `[call skill]` — the runtime defers judgment and acts only on what returns:
+
+```text
+runtime.dispatch([call γ scaffold], contractₙ) → gamma-scaffold.md
+```
+
+The runtime hands the issue to γ and waits. γ returns a judgment — the selected surfaces, the AC-oracle approach, the expected diff scope — as `gamma-scaffold.md`. γ does not commit the file, does not open a branch, and does not decide when the runtime proceeds; the runtime reads γ's returned matter, commits it, and advances. The skill returned cognition; it controlled nothing.
+
+### Lifecycle classification
+
+The nine named steps of a dispatch cell, each classified `runtime-owned` or `skill-call`:
+
+| Step | Owner | Skill | Returns |
+|---|---|---|---|
+| claim | runtime-owned | — | label transition `status:todo → status:in-progress` + claim comment; no cognition ([`dispatch-protocol/SKILL.md`](../../../cnos.core/skills/agent/dispatch-protocol/SKILL.md) §2.2) |
+| scaffold | skill-call | `cdd/gamma` | scaffold judgment — selected surfaces, AC-oracle approach, expected diff scope — as `gamma-scaffold.md` |
+| checkpoint | runtime-owned *(target; not yet built as a distinct step — Subs 2–4)* | — | today folded into `implement`: α/β/γ commit each artifact section as it completes ([`alpha/SKILL.md`](alpha/SKILL.md) §2.5), not as a separately orchestrated checkpoint |
+| implement | skill-call | `cdd/alpha` | matter — diff, tests, docs, `self-coherence.md` |
+| PR-open | runtime-owned *(target; not yet built — Subs 2–4)* | — | today ad hoc: the `cds-dispatch` wake opens a PR under wake-invoked mode; the bootstrap sequential-dispatch model this cycle ran under does not open one until β converges |
+| review | skill-call | `cdd/beta` | review verdict + findings — `beta-review.md` (APPROVE / REQUEST CHANGES) |
+| transition-request | runtime-owned *(target; partially landed for one edge — Subs 2–4 for the rest)* | — | `in-progress → review` is already requested by δ and decided independently by the FSM (`cn issues fsm evaluate --issue {N} --apply`; [`delta/SKILL.md`](delta/SKILL.md) §9; [`cnos.cds/orchestrators/cds-dispatch/SKILL.md`](../../../cnos.cds/orchestrators/cds-dispatch/SKILL.md)); transition-request coverage across every other lifecycle edge is not yet built |
+| close-out | skill-call | `cdd/alpha`, `cdd/beta`, `cdd/gamma` | each role's close-out narrative — `alpha-closeout.md` / `beta-closeout.md` / `gamma-closeout.md` |
+| recover | mixed — detection is runtime-owned; the repair-or-reject judgment is skill-call | `cdd/delta` | detection: repair-re-entry classification from label/branch/artifact state ([`dispatch-protocol/SKILL.md`](../../../cnos.core/skills/agent/dispatch-protocol/SKILL.md) §2.8; mechanical, no cognition). Judgment: boundary decision `repair_dispatch` / `reject` / `override` / `accept` (§Kernel step 5 above) |
+
+PR-open and transition-request are named here as **mechanical targets** — what Subs 2–4 build — not as steps a cognitive agent owns today. Where a step is only partly built (transition-request's one landed edge), the table says so rather than rounding up to "done" or down to "cognitive."
+
+**Existing positive instances.** The split above is not new invention; two surfaces already practice it and this section names it as general doctrine for the first time. [`delta/SKILL.md`](delta/SKILL.md) §9 (wake-invoked mode) separates "δ requests the transition" from "the FSM decides whether the guards allow it." [`cnos.cds/orchestrators/cds-dispatch/SKILL.md`](../../../cnos.cds/orchestrators/cds-dispatch/SKILL.md) draws the same line between the four label transitions the dispatch wake writes directly (claim, hard-block, release-back-to-queue — mechanical, no judgment) and the one it only requests (β-converge → `status:review`, decided by the FSM's guards).
+
+### Bootstrap-mode note
+
+The runtime that mechanically executes checkpoint, PR-open, and full transition-request coverage is not yet built (Subs 2–4 of the parent wave). Until it lands, a cognitive role session sometimes performs a mechanical action itself as a stand-in — most visibly, β currently executes `git merge` directly rather than a runtime executing a merge β only judged. That collapse is named honestly as a transitional fact of the current architecture, not restated as the target: the target keeps β's merge/no-merge judgment and the runtime's `git merge` execution as two distinct things, per the split this section states.
+
 ## Non-goals
 
 CDD's kernel doctrine does not:
