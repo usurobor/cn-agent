@@ -1995,7 +1995,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-04T02:11:23Z",
-    "updated": "2026-07-04T11:24:06Z",
+    "updated": "2026-07-04T11:24:45Z",
     "url": "https://github.com/usurobor/cnos/issues/575"
   },
   {
@@ -2208,5 +2208,25 @@
     "created": "2026-07-04T11:12:23Z",
     "updated": "2026-07-04T11:12:23Z",
     "url": "https://github.com/usurobor/cnos/issues/589"
+  },
+  {
+    "n": 590,
+    "t": "beta/SKILL.md: cross-reference wake-invoked-mode PR-authority shift to δ (post-#575/#588)",
+    "kind": "process",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-04T11:24:37Z",
+    "updated": "2026-07-04T11:24:37Z",
+    "url": "https://github.com/usurobor/cnos/issues/590"
   }
 ]
