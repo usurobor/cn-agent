@@ -1977,29 +1977,6 @@
     "url": "https://github.com/usurobor/cnos/issues/564"
   },
   {
-    "n": 574,
-    "t": "fix(cds/fsm): harden review guards + remote-branch observation; correct wave-closure language (post-#567 remediation)",
-    "kind": "bugfix",
-    "areas": [
-      "cdd",
-      "cds",
-      "issues",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-04T01:49:26Z",
-    "updated": "2026-07-04T04:08:58Z",
-    "url": "https://github.com/usurobor/cnos/issues/574"
-  },
-  {
     "n": 575,
     "t": "cds/fsm Phase 3 (deferred): route claim/hard-block/release-back-to-queue through the FSM",
     "kind": "process",
