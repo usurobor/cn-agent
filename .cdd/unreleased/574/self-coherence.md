@@ -1,7 +1,7 @@
 # self-coherence — cycle/574
 
 manifest: sections planned = [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-completed: [Gap, Skills, ACs, Self-check]
+completed: [Gap, Skills, ACs, Self-check, Debt]
 
 ## §Gap
 
@@ -180,3 +180,10 @@ Named CI jobs (I1/I2/I4/I5/I6, install-wake-golden, dispatch-repair-preflight, d
 **Peer enumeration:** the family of surfaces touched is small and fully enumerated in §ACs per-AC — `transitions.json` (2 states' rules), `fetch.go` (1 new function + 1 call-site edit), `issuesfsm_test.go` (new tests + one pre-existing assertion update), 4 testdata fixture files (3 new, 1 edited). No sibling command/renderer/writer of the same schema was identified beyond what's already named: `table.go`'s `guardFuncs` registry was checked and confirmed to already contain every guard AC2/AC3 need (no new guard function required, per scope guardrail 6) and was not modified.
 
 **Harness audit:** the only non-Go harness in the wave-touched surface set is the `.github/workflows/*.yml` CI definitions (checked, unchanged — AC4 did not pick the workflow-fetch option) and the JSON transition table itself (which *is* the schema-bearing data structure this cycle's AC2/AC3 changes edit — its consumer, `table.go`'s `Evaluate`, was read and confirmed unchanged/compatible, not re-derived).
+
+## §Debt
+
+1. **CI on the pushed head commit not independently observed from within this session.** All build/test/vet/race evidence in §ACs AC7 is local (this sandbox), run per go.work module. The named CI jobs (I1/I2/I4/I5/I6, install-wake-golden, dispatch-repair-preflight, dispatch-closeout-integrity, go build/test, package-verify, binary-verify) were not polled via `gh run list --branch cycle/574` / `gh pr checks` in this session. β must confirm green on the actual pushed head commit before merge, per alpha/SKILL.md §2.6 row 10's explicit allowance for this disclosure path.
+2. **AC6's sweep covers the named file set as given by gamma-scaffold.md, not an independently re-derived union.** The scaffold's union was reused verbatim (per its own instruction: "reuse that list verbatim rather than re-deriving it from the PRs") rather than α re-running `gh pr view {571,572,573} --json files` from scratch. γ's list was spot-checked against a fresh `gh pr view 572 --json files` call (§ACs AC6) and matched, so this is a low-risk inherited assumption, but it is inherited, not independently re-derived from all three PRs.
+3. **The Phase 3 tracking issue (#575)'s exact acceptance-criteria shape is intentionally left thin** (three named transitions + a sketch of what a future design cell would need), since AC5 only requires *filing* Phase 3, not fully speccing it — a future γ scaffold for that issue will need to do real design work (fact-model guards for claim/hard-block/release-back-to-queue) that this cycle deliberately did not attempt (scope guardrail 1).
+4. **No provisional `alpha-closeout.md` was written at this review-readiness point.** Per alpha/SKILL.md §2.8, close-out is normally written via a γ-requested re-dispatch of α after β merge; this session's dispatch prompt explicitly instructed "do not dispatch β yourself — exit after pushing," so no close-out artifact was produced in this pass. This is expected per the standard re-dispatch path (not the provisional-fallback path), so no `alpha-closeout.md` debt marker was needed — noting it here only for completeness of the artifact inventory.
