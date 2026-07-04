@@ -120,6 +120,17 @@ func assembleLive(ctx context.Context, repo string, issue int, token string) (Fa
 				snap.ReviewRequestPresent = true
 			case "delta-repair.md":
 				snap.RepairContractPresent = true
+			// cnos#575: claim / hard-block / release-back-to-queue marker
+			// files, wired exactly like REVIEW-REQUEST.yml above -- the
+			// dispatch wake (claim, release) or δ (hard-block) writes the
+			// marker under .cdd/unreleased/{issue}/ before requesting the
+			// transition via `cn issues fsm evaluate --apply`.
+			case "CLAIM-REQUEST.yml":
+				snap.ClaimRequestPresent = true
+			case "BLOCK-REQUEST.yml":
+				snap.BlockRequestPresent = true
+			case "RELEASE-REQUEST.yml":
+				snap.ReleaseRequestPresent = true
 			}
 		}
 		sort.Strings(snap.CDDArtifacts)

@@ -81,6 +81,12 @@ func (d Decision) Render(w io.Writer) {
 	fmt.Fprintf(w, "  pr_commit_count: %d\n", d.Facts.PRCommitCount)
 	fmt.Fprintf(w, "  cdd_artifacts: %s\n", orNoneList(d.Facts.CDDArtifacts))
 	fmt.Fprintf(w, "  review_request_present: %v\n", d.Facts.ReviewRequestPresent)
+	// cnos#575: claim / hard-block / release-back-to-queue request markers,
+	// shown for the same operator-visibility reason as
+	// review_request_present above.
+	fmt.Fprintf(w, "  claim_request_present: %v\n", d.Facts.ClaimRequestPresent)
+	fmt.Fprintf(w, "  block_request_present: %v\n", d.Facts.BlockRequestPresent)
+	fmt.Fprintf(w, "  release_request_present: %v\n", d.Facts.ReleaseRequestPresent)
 	fmt.Fprintf(w, "  repair_contract_present: %v\n", d.Facts.RepairContractPresent)
 	fmt.Fprintf(w, "  checks_state: %s\n", orNone(d.Facts.ChecksState))
 	// cell_kind seam (cnos#568 note / cnos#570 taxonomy): observed but not

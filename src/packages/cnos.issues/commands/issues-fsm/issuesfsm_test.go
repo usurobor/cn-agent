@@ -819,6 +819,16 @@ func TestSeam_CellKindNotEnforced(t *testing.T) {
 		"testdata/changes-with-repair.json",
 		"testdata/in-progress-review-request-with-matter.json",
 		"testdata/in-progress-review-request-no-matter.json",
+		// cnos#575: extend coverage to the new claim / hard-block /
+		// release-back-to-queue fixtures per the γ scaffold's pinned
+		// backward-compat invariant ("extend the test's fixture list ...
+		// do not create a parallel un-covered test").
+		"testdata/todo-claimable.json",
+		"testdata/todo-competing-run.json",
+		"testdata/in-progress-block-with-evidence.json",
+		"testdata/in-progress-block-no-evidence.json",
+		"testdata/in-progress-release-no-matter.json",
+		"testdata/in-progress-release-with-matter.json",
 	} {
 		base, err := LoadFixture(fx)
 		if err != nil {
@@ -1062,5 +1072,416 @@ func TestAssembleLive_RemoteBranchFallbackNeverRunsWithoutRepo(t *testing.T) {
 	}
 	if snap.BranchExists {
 		t.Error("BranchExists = true, want false (no local git branch, no repo to query)")
+	}
+}
+
+// --- cnos#575 (Phase 3, Sub 2 of #583): claim, hard-block, and
+// release-back-to-queue routed through the FSM, extending the cnos#569
+// authority flip beyond in-progress -> review. Test names are prefixed
+// TestAC575_{1,2,3} (per AC1/AC2/AC3 of cnos#575) to avoid colliding with
+// this file's own historical TestAC1-TestAC7 numbering (cnos#568's own
+// ACs, unrelated to #575's), mirroring how TestAC569_* / TestAC574_*
+// already qualify by issue number. ---
+
+// TestAC575_1_ClaimRoutedThroughFSM is AC1's positive case: a claim
+// request (CLAIM-REQUEST.yml present) with no competing active run on the
+// would-be cycle/{issue} branch proposes todo -> in-progress.
+func TestAC575_1_ClaimRoutedThroughFSM(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/todo-claimable.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.TargetState != "in-progress" {
+		t.Errorf("outcome=%q target_state=%q, want proposed/in-progress", dec.Outcome, dec.TargetState)
+	}
+	if dec.Action != "propose_status_in_progress" {
+		t.Errorf("action = %q, want propose_status_in_progress", dec.Action)
+	}
+	if dec.EnabledTransition != "todo -> in-progress" {
+		t.Errorf("enabled_transition = %q, want %q", dec.EnabledTransition, "todo -> in-progress")
+	}
+}
+
+// TestAC575_1_ClaimBlockedOverCompetingRun is AC1's negative case: a claim
+// request against a would-be cycle/{issue} branch that already has an
+// active workflow run must NOT propose todo -> in-progress.
+func TestAC575_1_ClaimBlockedOverCompetingRun(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/todo-competing-run.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "blocked" {
+		t.Fatalf("outcome = %q, want blocked", dec.Outcome)
+	}
+	if dec.TargetState == "in-progress" {
+		t.Fatal("cnos#575 AC1 regression: claim must not propose todo -> in-progress over a competing active run")
+	}
+}
+
+// TestAC575_1_ClaimNotRequestedStaysValid is a backward-compat guard: a
+// plain status:todo fixture with no claim request present (the pre-#575
+// shape) must still evaluate valid/none, unmodified -- proves the new
+// rules are additive, not a behavior change for the un-requested case.
+func TestAC575_1_ClaimNotRequestedStaysValid(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/todo.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "valid" || dec.Action != "none" {
+		t.Errorf("outcome=%q action=%q, want valid/none (no claim requested)", dec.Outcome, dec.Action)
+	}
+}
+
+// TestAC575_2_HardBlockRoutedThroughFSM is AC2's positive case: a
+// hard-block request with explicit STOP/escalation evidence (BLOCK-
+// REQUEST.yml present) proposes in-progress -> blocked, even while the
+// requesting run is still active (mirrors the cnos#569 review-request
+// rule's non-gating-on-run_active shape).
+func TestAC575_2_HardBlockRoutedThroughFSM(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-block-with-evidence.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.RunState != "in_progress" {
+		t.Fatalf("fixture precondition: expected run_state=in_progress, got %q", snap.RunState)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.TargetState != "blocked" {
+		t.Errorf("outcome=%q target_state=%q, want proposed/blocked", dec.Outcome, dec.TargetState)
+	}
+	if dec.Action != "propose_status_blocked" {
+		t.Errorf("action = %q, want propose_status_blocked", dec.Action)
+	}
+}
+
+// TestAC575_2_HardBlockRefusedWithoutEvidence is AC2's negative case: no
+// BLOCK-REQUEST.yml evidence must never propose in-progress -> blocked.
+func TestAC575_2_HardBlockRefusedWithoutEvidence(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-block-no-evidence.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome == "proposed" && dec.TargetState == "blocked" {
+		t.Fatal("cnos#575 AC2 regression: hard-block must not be proposed without explicit evidence")
+	}
+}
+
+// TestAC575_3_ReleaseRoutedThroughFSMWhenNoMatter is AC3's positive case:
+// a release-back-to-queue request with no matter produced since claim
+// (no commits, no PR) proposes in-progress -> todo, even while the
+// requesting run is still active.
+func TestAC575_3_ReleaseRoutedThroughFSMWhenNoMatter(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-release-no-matter.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.RunState != "in_progress" {
+		t.Fatalf("fixture precondition: expected run_state=in_progress, got %q", snap.RunState)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.TargetState != "todo" {
+		t.Errorf("outcome=%q target_state=%q, want proposed/todo", dec.Outcome, dec.TargetState)
+	}
+	if dec.Action != "propose_status_todo" {
+		t.Errorf("action = %q, want propose_status_todo", dec.Action)
+	}
+}
+
+// TestAC575_3_ReleaseBlockedOverMatter is AC3's negative case (the
+// cnos#368 blind-requeue protection): a release-back-to-queue request
+// where matter has already been produced since claim must NEVER propose
+// in-progress -> todo -- it routes to delta-recovery instead.
+func TestAC575_3_ReleaseBlockedOverMatter(t *testing.T) {
+	tab := loadRealTable(t)
+	snap, err := LoadFixture("testdata/in-progress-release-with-matter.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.TargetState == "todo" {
+		t.Fatal("cnos#368/cnos#575 AC3 regression: release-back-to-queue must never blind-requeue over matter produced since claim")
+	}
+	if dec.Outcome != "proposed" || dec.Action != "propose_delta_recovery" {
+		t.Errorf("outcome=%q action=%q, want proposed/propose_delta_recovery (matter present routes to delta-recovery)", dec.Outcome, dec.Action)
+	}
+}
+
+// TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules is Friction
+// note 6's empirical check at the Evaluate level: the pre-existing dead-
+// run reconciliation fixtures (which never set claim/block/release
+// request markers) must still resolve to their original rules, proving
+// the new cnos#575 rules -- positioned earlier in the in-progress rule
+// list -- do not shadow them.
+func TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules(t *testing.T) {
+	tab := loadRealTable(t)
+	cases := []struct {
+		fixture         string
+		wantOutcome     string
+		wantAction      string
+		wantTargetState string
+	}{
+		{"testdata/in-progress-dead-no-matter.json", "proposed", "propose_status_todo", "todo"},
+		{"testdata/in-progress-dead-with-commits.json", "proposed", "propose_delta_recovery", ""},
+		{"testdata/in-progress-active.json", "valid", "none", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.fixture, func(t *testing.T) {
+			snap, err := LoadFixture(c.fixture)
+			if err != nil {
+				t.Fatal(err)
+			}
+			dec, err := Evaluate(tab, snap)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if dec.Outcome != c.wantOutcome || dec.Action != c.wantAction || dec.TargetState != c.wantTargetState {
+				t.Errorf("outcome=%q action=%q target_state=%q, want %q/%q/%q (cnos#575 rules must not shadow this pre-existing rule)",
+					dec.Outcome, dec.Action, dec.TargetState, c.wantOutcome, c.wantAction, c.wantTargetState)
+			}
+		})
+	}
+}
+
+// TestAC575_LiveObservesNewMarkerFiles is the harness-audit companion to
+// TestAssembleLive_ObservesCellKindFromGammaScaffold: it drives
+// assembleLive (repo="" so no network call) against a temp directory
+// carrying all three new cnos#575 marker files under
+// .cdd/unreleased/{N}/, proving fetch.go's live-path wiring (not just
+// LoadFixture's JSON path) sets the three new FactSnapshot fields.
+func TestAC575_LiveObservesNewMarkerFiles(t *testing.T) {
+	dir := t.TempDir()
+	issue := 808
+	artifactDir := filepath.Join(dir, ".cdd", "unreleased", strconv.Itoa(issue))
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"CLAIM-REQUEST.yml", "BLOCK-REQUEST.yml", "RELEASE-REQUEST.yml"} {
+		if err := os.WriteFile(filepath.Join(artifactDir, name), []byte("cnos#575 marker\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	snap, err := assembleLive(context.Background(), "", issue, "")
+	if err != nil {
+		t.Fatalf("assembleLive: %v", err)
+	}
+	if !snap.ClaimRequestPresent {
+		t.Error("ClaimRequestPresent = false, want true (CLAIM-REQUEST.yml present)")
+	}
+	if !snap.BlockRequestPresent {
+		t.Error("BlockRequestPresent = false, want true (BLOCK-REQUEST.yml present)")
+	}
+	if !snap.ReleaseRequestPresent {
+		t.Error("ReleaseRequestPresent = false, want true (RELEASE-REQUEST.yml present)")
+	}
+}
+
+// TestAC575_ApplyClaimTransitionAppliesOnGuardPass proves the --apply
+// path end-to-end for the new claim rule: a claim-requested todo fixture
+// with no competing run gets todo -> in-progress applied (remove
+// status:todo, add status:in-progress), mirroring
+// TestApply_RequeueTransitionAppliesOnGuardPassAndIsIdempotent's shape
+// for the pre-existing requeue rule.
+func TestAC575_ApplyClaimTransitionAppliesOnGuardPass(t *testing.T) {
+	var mu sync.Mutex
+	var requests []string
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodPost {
+			w.Write([]byte(`[]`))
+		}
+	})
+
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "802", "--apply",
+		"--fixture", "testdata/todo-claimable.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "applied: true") {
+		t.Errorf("expected \"applied: true\" in output, got:\n%s", stdout.String())
+	}
+
+	mu.Lock()
+	got := append([]string(nil), requests...)
+	mu.Unlock()
+	wantDelete := "DELETE /repos/acme/widgets/issues/802/labels/" + url.PathEscape("status:todo")
+	wantPost := "POST /repos/acme/widgets/issues/802/labels"
+	if len(got) != 2 || got[0] != wantDelete || got[1] != wantPost {
+		t.Fatalf("requests = %v, want [%q %q]", got, wantDelete, wantPost)
+	}
+}
+
+// TestAC575_ApplyClaimBlockedRefusesAndMutatesNothing is AC1's --apply-
+// level negative case: a claim request over a competing active run
+// refuses with a nonzero exit and zero label-write calls.
+func TestAC575_ApplyClaimBlockedRefusesAndMutatesNothing(t *testing.T) {
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("unexpected label-write request for a blocked transition: %s %s", r.Method, r.URL.Path)
+	})
+
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "803", "--apply",
+		"--fixture", "testdata/todo-competing-run.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected a nonzero-exit error for a blocked --apply transition")
+	}
+	if !strings.Contains(stdout.String(), "outcome: blocked") {
+		t.Errorf("expected \"outcome: blocked\" in rendered output, got:\n%s", stdout.String())
+	}
+}
+
+// TestAC575_ApplyHardBlockAppliesOnGuardPass proves the --apply path for
+// AC2's hard-block rule: a block-requested in-progress fixture with
+// evidence gets in-progress -> blocked applied.
+func TestAC575_ApplyHardBlockAppliesOnGuardPass(t *testing.T) {
+	var mu sync.Mutex
+	var requests []string
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodPost {
+			w.Write([]byte(`[]`))
+		}
+	})
+
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "804", "--apply",
+		"--fixture", "testdata/in-progress-block-with-evidence.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "applied: true") {
+		t.Errorf("expected \"applied: true\" in output, got:\n%s", stdout.String())
+	}
+
+	mu.Lock()
+	got := append([]string(nil), requests...)
+	mu.Unlock()
+	wantDelete := "DELETE /repos/acme/widgets/issues/804/labels/" + url.PathEscape("status:in-progress")
+	wantPost := "POST /repos/acme/widgets/issues/804/labels"
+	if len(got) != 2 || got[0] != wantDelete || got[1] != wantPost {
+		t.Fatalf("requests = %v, want [%q %q]", got, wantDelete, wantPost)
+	}
+}
+
+// TestAC575_ApplyReleaseAppliesOnGuardPass proves the --apply path for
+// AC3's positive case: a release request with no matter produced gets
+// in-progress -> todo applied.
+func TestAC575_ApplyReleaseAppliesOnGuardPass(t *testing.T) {
+	var mu sync.Mutex
+	var requests []string
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodPost {
+			w.Write([]byte(`[]`))
+		}
+	})
+
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "806", "--apply",
+		"--fixture", "testdata/in-progress-release-no-matter.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "applied: true") {
+		t.Errorf("expected \"applied: true\" in output, got:\n%s", stdout.String())
+	}
+
+	mu.Lock()
+	got := append([]string(nil), requests...)
+	mu.Unlock()
+	wantDelete := "DELETE /repos/acme/widgets/issues/806/labels/" + url.PathEscape("status:in-progress")
+	wantPost := "POST /repos/acme/widgets/issues/806/labels"
+	if len(got) != 2 || got[0] != wantDelete || got[1] != wantPost {
+		t.Fatalf("requests = %v, want [%q %q]", got, wantDelete, wantPost)
+	}
+}
+
+// TestAC575_ApplyReleaseWithMatterDoesNotRequeue is AC3's --apply-level
+// negative case (cnos#368 protection): a release request where matter is
+// already present must perform ZERO label writes under --apply -- the
+// proposed action is delta-recovery (no direct status target), not a
+// requeue, so --apply's guard-gated mutation path never fires.
+func TestAC575_ApplyReleaseWithMatterDoesNotRequeue(t *testing.T) {
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("unexpected label-write request when matter is present: %s %s", r.Method, r.URL.Path)
+	})
+
+	var stdout, stderr bytes.Buffer
+	err := Run(context.Background(), []string{
+		"evaluate", "--issue", "807", "--apply",
+		"--fixture", "testdata/in-progress-release-with-matter.json",
+		"--table", realTablePath, "--repo", "acme/widgets", "--token", "tok",
+	}, nil, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s (delta-recovery proposals are not an --apply error, just a no-op write)", err, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "applied: false") {
+		t.Errorf("expected \"applied: false\" (delta-recovery has no direct label target), got:\n%s", stdout.String())
 	}
 }
