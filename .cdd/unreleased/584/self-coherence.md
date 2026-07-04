@@ -1,7 +1,7 @@
 <!--
 section-manifest:
   planned: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-  completed: [Gap, Skills, ACs, Self-check, Debt]
+  completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
 -->
 
 # Self-coherence — cnos#584
@@ -175,3 +175,16 @@ $ git diff origin/main...HEAD -- src/packages/cnos.issues/commands/issues-fsm/is
 2. **`scripts/ci/validate-skill-frontmatter.sh` could not run locally** (missing `cue` binary in this environment). I manually verified `beta/SKILL.md`'s frontmatter block is unchanged and well-formed after my body-only edits (see §ACs → AC4). β should confirm the branch-head CI run for this validator (or any package/frontmatter gate) is green before merge, per α's own pre-review gate row 10 (branch CI must be green, or the artifact must say so explicitly and β waits for green).
 3. **No design or plan artifact was produced separately from this self-coherence.md.** Per `alpha/SKILL.md` §2.2, design and plan may be marked "not required" with a concrete justification: this cycle is doctrine-only prose across 2 files plus one audited correction in a 3rd; the canonical-home decision and the AC3 resolution path were both fully pre-specified by γ's scaffold (the source-of-truth table + friction notes 2 and 3), leaving no independent design surface for α to produce beyond the placement/wording judgment recorded directly in §ACs above. Marking design and plan as "not required" for this reason.
 4. **Peer enumeration / harness audit (per `alpha/SKILL.md` §2.3–§2.4) do not apply in their code-surface form** — there is no schema-bearing parser, manifest shape, or runtime contract changed by this cycle, so there is no producer/consumer/harness family to enumerate in the code sense. The doctrine-level "peer enumeration" analog — every one of the 5 AC3-audited files, individually read and individually reported on (edited / not-edited-with-reason) — is done explicitly in §ACs → AC3 above, which is the applicable form of this rule for a docs-only, audit-shaped cycle.
+
+## §CDD Trace
+
+| Step | Artifact | Skills loaded | Decision |
+|---|---|---|---|
+| 0 Observe | issue #584 | `cdd/issue` | γ observed parent #583 (master wave); #584 is Sub 1 of 5, doctrine-only, lands first. |
+| 1 Select | issue #584 | `cdd/gamma` (γ's prior pass) | γ selected per CDS §"Selection function" — dependency order (Sub 1 must land before Subs 2–4 build against it). |
+| 2 Branch | `cycle/584` | `cdd/gamma` | Branch created by γ from `origin/main@9309de97d7e6d90637012839163e8d0511b56ca6` per §"Branch rule" / §"Branch pre-flight"; SHA drift from the wake-invoked-δ input's stale pinned SHA logged as γ's friction note 1. |
+| 3 Bootstrap | `.cdd/unreleased/584/gamma-scaffold.md` | `cdd/gamma`, `cdd/issue` | γ authored the scaffold: AC1–AC4 oracle list, source-of-truth table, 7-axis implementation contract, scope guardrails, 5 friction notes. |
+| 4 Gap | `self-coherence.md` §Gap | `cdd/alpha`, `cdd/issue` | α named the gap: the mechanism/cognition boundary is practiced (δ §9, cds-dispatch) but not codified as general, named doctrine. Mode = design-and-build, doctrine-only. |
+| 5 Mode | `self-coherence.md` §Gap, §Skills | `cdd/alpha`, `write` | Mode confirmed design-and-build per the issue header; active skills named (Tier 1 `CDD.md` + `alpha/SKILL.md` + `issue/SKILL.md`; Tier 3 `write/SKILL.md`; no Tier 2 `eng/*` — no source code). |
+| 6 Artifacts | `CDD.md` (new §"Mechanism and cognition"), `beta/SKILL.md` (corrected lines 38/70) | `cdd/alpha`, `write` | AC1+AC2 doctrine authored in `CDD.md` (commit `c005b854`); AC3 correction applied to `beta/SKILL.md` (commit `10700bab`); AC4 diff-scope confirmed `.md`-only, `issuesfsm_test.go` untouched. |
+| 7 Self-coherence | `.cdd/unreleased/584/self-coherence.md` | `cdd/alpha` | AC-by-AC self-check completed (§ACs above); AC1, AC2, AC3, AC4 all met with cited oracle evidence; known debt named explicitly (§Debt). |
