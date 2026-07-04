@@ -2150,28 +2150,6 @@
     "url": "https://github.com/usurobor/cnos/issues/583"
   },
   {
-    "n": 584,
-    "t": "arch(cds/cdd): codify mechanical cell runtime vs cognitive skills (mechanism/cognition boundary)",
-    "kind": "doctrine",
-    "areas": [
-      "agent",
-      "cdd",
-      "cds"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-04T05:36:27Z",
-    "updated": "2026-07-04T06:12:09Z",
-    "url": "https://github.com/usurobor/cnos/issues/584"
-  },
-  {
     "n": 585,
     "t": "docs(cdd): fix collapsed-authority phrasing in CDD.md Roles-pointer (β merge line)",
     "kind": "cleanup",
