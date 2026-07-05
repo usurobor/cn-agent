@@ -179,3 +179,39 @@ Rule 7 verdict: **conforms**, no implementation-contract finding.
 - The `install-wake-golden` LIVE-leg redundancy α named as deliberately-declined debt (§Debt item 1 in `self-coherence.md`) is a reasonable, explicitly-scoped-out call — I agree with α's reasoning (path-filter exhaustiveness not fully proven; tangential to this cycle's charter) and do not require it to be resolved this cycle. Carried forward as α named it, not elevated to a finding.
 - AC1-AC6 all independently verified as met, with my own re-derivation matching α's classifications in every row. This is a well-executed audit cycle; the one blocking finding is narrow and mechanical.
 - Pre-merge gate rows not yet applicable in this session per the dispatch's own framing: Row 5 (close-keyword presence) — merge/PR-open is out of scope for β in this wake-invoked-δ dispatch (a finalizer/mechanical-runtime responsibility per cnos#591 and this dispatch's explicit instruction); not evaluated this round since no merge is being executed. Row 1 (identity truth) — asserted `beta@cdd.cnos` at review-session start; confirmed via `git config --get user.email`. Row 2 (canonical-skill freshness) — `origin/main` re-fetched synchronously at review start (`eb94445b`), matches α's own last-rebase target; no relevant canonical skill (`beta/SKILL.md`, `review/SKILL.md`, `CDD.md`, `transitions.json`) has advanced on `main` since α's scaffold/implementation time — re-checked directly, not assumed. Row 4 (γ artifact completeness) — confirmed present (§Contract Integrity above).
+
+---
+
+## Round 2
+
+**Base SHA:** `eb94445b77d13be09894b14e6f3bf359d6c57dc0` (`origin/main` — re-fetched at R2 review start; unchanged since R1, no drift). **Cycle branch head reviewed:** `c8c0654aa49dd15bee74ddee8ba3d5399e81cf59` (`cnos#600: self-coherence Fix-round R2 + Review-readiness round 2`).
+
+This round independently re-verifies α's claimed fix for R1's F1. I did not trust α's before/after quote in `self-coherence.md`'s §Fix-round R2 — I read the live `.github/workflows/build.yml` file myself, re-ran the diff and test suite myself, and re-ran my own repo-wide grep rather than accepting α's peer-enumeration claim as settled.
+
+### §Verdict
+
+F1 is resolved. The fix is scoped exactly as claimed (comment/step-name text only), the YAML remains valid, no other living surface carries the stale claim, the full test suite is still 109/109 green, and the only diff since my R1 review SHA (`dc89671c`) is my own R1 `beta-review.md` landing, α's `self-coherence.md` R2 append, and the `build.yml` fix itself — nothing else moved. All AC1-AC7 conclusions from R1 stand unchanged (this round's diff touches none of the surfaces those ACs were derived from).
+
+### §Findings
+
+| # | Finding | Status |
+|---|---------|--------|
+| F1 | Stale "self-tests the empty-review detector" claim in `build.yml`'s `dispatch-closeout-integrity` job | **Resolved.** Read the live file myself (`sed -n '318,332p' .github/workflows/build.yml`): the job's comment now reads "The empty-review detector itself is proven live by the Go FSM test suite (`TestAC3_EmptyReviewBlocked` et al.), not by a bash self-test inside this script (cnos#600 consolidation)," and the step name is now the plain `Check dispatch closeout-integrity contract` (no more parenthetical self-test claim). This accurately describes current behavior: the script proves presence-of-contract only; the empty-review invariant is proven by the cited Go tests, matching the script's own header and `dispatch-protocol/SKILL.md` §2.9/§4.9/D12 (both already fixed in R1's α round). |
+
+No new findings. No regressions found elsewhere.
+
+### §Independent re-verification performed this round
+
+1. **Live-file read of the fix (not α's quoted diff):** `sed -n '300,345p' .github/workflows/build.yml` — read the entire `dispatch-repair-preflight` and `dispatch-closeout-integrity` job bodies directly. Confirmed the stale phrase is gone and the replacement is accurate.
+2. **Fix-commit diff scope:** `git show --stat f0abadb7` and `git diff f0abadb7^..f0abadb7 -- .github/workflows/build.yml` — 1 file changed, 6 insertions/4 deletions, entirely within the job's comment block and the `name:` field. No `run:`, `uses:`, `runs-on:`, job key, or trigger changed.
+3. **YAML validity:** `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/build.yml'))"` on the current HEAD file — parses clean, no error.
+4. **Peer-enumeration re-check (my own grep, not α's):** `grep -rln "self-test" --include="*.yml" --include="*.yaml" --include="*.md" --include="*.sh" .` (excluding `.git/`). Hits fall into three buckets: (a) `.cdd/unreleased/`, `.cdd/releases/`, `docs/evidence/rca/` — historical cycle-record/RCA prose, not living surfaces, same non-blocking classification β R1 and α R2 both already reached; (b) `scripts/ci/validate-skill-frontmatter.sh` + its own `--self-test` job block in `build.yml` (lines 271-272, "Schema self-test") — a genuinely unrelated, still-live, unmodified self-test mechanism for a different guard (skill-frontmatter validation), out of this cycle's scope entirely; (c) `scripts/ci/check-dispatch-closeout-integrity.sh` (lines 16, 26) and `dispatch-protocol/SKILL.md` (lines 447, 560) and `build.yml` itself (line 330) — all three now correctly describe the fold as **history** ("the bash self-test was folded out in favor of [the Go tests]" / "not by a bash self-test inside this script (cnos#600 consolidation)"), not a live claim that a self-test still runs. Confirmed: `build.yml` was the only living surface with the *stale* (present-tense, false) claim, and it is now fixed. α's peer-enumeration claim holds.
+5. **Test suite re-run (mine, not inherited):** `go test ./src/packages/cnos.issues/commands/issues-fsm/... ./src/go/internal/cell/... -v` → 109 `--- PASS`, 0 `--- FAIL`, 0 `FAIL` package lines. Identical to the R1 baseline I recorded above, as expected for a comment-only workflow change.
+6. **Regression sweep on the R2 diff itself:** `git diff dc89671c..HEAD --stat` (from my own R1 review commit to current HEAD) shows exactly 3 files: `.cdd/unreleased/600/beta-review.md` (my own R1 review landing), `.cdd/unreleased/600/self-coherence.md` (+18 lines, α's R2 append), `.github/workflows/build.yml` (+10/-4, the F1 fix). No `.go` file, no `transitions.json`, no other workflow file, no script file appears in this delta — confirming α's claim that nothing else moved this round. AC1-AC7 from R1 are therefore untouched by this round's diff and stand as previously verified.
+7. **Rule 7 (implementation-contract conformance) re-check:** this round's diff (one workflow-comment edit + one doc append) introduces no new language, CLI surface, package, binary, runtime dependency, or schema change. Conforms, consistent with the original Implementation Contract — same conclusion as R1, unaffected by this round's changes.
+
+### §CI status note
+
+Not independently polled this round (no new GitHub Actions run triggered/observed from this sandboxed session beyond the git-level checks above); the R1 finding that drove the temporary I6 red (missing `beta-review.md` at CI-run time on `dc89671c`) is expected to have self-resolved once my R1 `beta-review.md` commit landed on the branch (this file existed before this round's fix commit), per the WARN-not-FAIL mechanism I root-caused in R1's §CI status. Not re-verified live against GitHub Actions this round since it was not part of this round's assigned scope (F1 re-verification), and R1 already established the mechanism is mechanical, not a defect in either round's diff.
+
+**verdict:** converge
