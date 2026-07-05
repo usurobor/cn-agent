@@ -2299,7 +2299,7 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2308,7 +2308,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-05T05:47:37Z",
-    "updated": "2026-07-05T10:59:58Z",
+    "updated": "2026-07-05T12:49:37Z",
     "url": "https://github.com/usurobor/cnos/issues/600"
   }
 ]
