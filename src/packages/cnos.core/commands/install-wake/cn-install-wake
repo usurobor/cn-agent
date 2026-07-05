@@ -983,13 +983,18 @@ fi
   echo "          github_token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
   echo "          bot_name: \"${bot_name}\""
   echo "          bot_id: \"${bot_id}\""
-  # Pin the model explicitly (cnos: operator directive) rather than
-  # inheriting claude-code-action@v1's default, so a change to the
-  # action's default model cannot silently alter what runs the cells.
-  # Sonnet 5 is the current de-facto default — pinning makes it
-  # deterministic ("dumb models, smart cells": authority lives in the
-  # cell/FSM, not the model tier).
-  echo "          model: \"claude-sonnet-5\""
+  # NOTE (cnos#594 reverted): do NOT emit a `model:` input here.
+  # claude-code-action@v1 does not declare `model` as an action input
+  # (GitHub warns "Unexpected input(s) 'model'"), but the value still
+  # reaches the underlying Claude Code CLI as INPUT_MODEL and IS honored.
+  # Pinning `model: "claude-sonnet-5"` made every dispatch cell error out
+  # immediately (result is_error=true, total_cost_usd=0) — the CLI ran but
+  # the model call was rejected, so no cell could claim (cnos#600 stall).
+  # The action's own default model is the working configuration; leave it
+  # unset. If an explicit pin is ever wanted, pass a VERIFIED-accessible
+  # model via `claude_args: "--model <id>"` (the declared pass-through),
+  # never a bare `model:` input, and confirm the run's result is_error is
+  # false first.
   echo "          settings: |"
   echo "            {"
   echo "              \"permissions\": {"
