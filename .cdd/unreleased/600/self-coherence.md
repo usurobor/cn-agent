@@ -1,6 +1,6 @@
 <!-- section-manifest
-completed: [Gap, Skills, ACs, Self-check, Debt]
-remaining: [CDD Trace, Review-readiness]
+completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
+remaining: [Review-readiness]
 guard-inventory: .cdd/unreleased/600/guard-inventory.md (separate file)
 -->
 
@@ -156,3 +156,52 @@ I chose **not** to make this edit, for two reasons: (a) `install-wake-golden.yml
 **5. γ's friction note 2 (does anything depend on `--self-test` as a standalone entry point) — resolved: no.** See `guard-inventory.md` row 2b for the full grep evidence; this resolved cleanly enough to proceed with the FOLD, not carried forward as debt.
 
 **No STOP conditions were hit.** Re-checked against the issue's own STOP list at cycle close: no guard removal weakened protection (the one removal — `--self-test` — has a cited, verified-green replacement that is a strict match for its 3 behaviorally-meaningful cases); no invariant is left protected only by prompt prose (the presence-of-contract scripts' own header comments now explicitly disclaim proving FSM behavior, and cite where that behavioral proof actually lives); `cell_kind` enforcement was not added; no new FSM behavior was introduced; no guard deletion created a blind spot (the debt item above is a *considered-and-declined* further narrowing, not an executed one); CI can prove every replacement cited (all tests re-run and green); Demo 0 was never approached.
+
+## §CDD Trace
+
+**Step 1 (Gap)** — cnos#600, audit-first consolidation of strand-era guards, Sub D of #583. See §Gap.
+
+**Step 2 (Skills)** — `CDD.md`, `alpha/SKILL.md`, `eng/process-economics`, `go`, `eng/test`. See §Skills.
+
+**Step 3 (Plan)** — not required; justification in §ACs (design already done in γ's scaffold; consolidation classification + narrow editing, not new design).
+
+**Step 4 (Tests)** — no new tests written (none required per the implementation contract — the invariants formerly covered by the folded bash self-test are already covered by pre-existing Go tests, confirmed to exist and pass before this cycle touched anything). Verification runs performed:
+```
+$ go test ./src/packages/cnos.issues/commands/issues-fsm/... ./src/go/internal/cell/...
+ok  	github.com/usurobor/cnos/packages/cnos.issues/commands/issues-fsm	(cached)
+ok  	github.com/usurobor/cnos/src/go/internal/cell	(cached)
+
+$ go test ./src/packages/cnos.issues/commands/issues-fsm/... ./src/go/internal/cell/... -v 2>&1 | grep -c '^--- PASS'
+109
+$ go test ./src/packages/cnos.issues/commands/issues-fsm/... ./src/go/internal/cell/... -v 2>&1 | grep -c '^--- FAIL'
+0
+```
+109 `--- PASS` assertions, 0 `--- FAIL`, across both packages, run directly by α post-consolidation (this exact count, not a manual recount or an inherited figure from γ's scaffold or a sub-agent's paraphrase).
+
+**Step 5 (Code)** — the actual consolidation diff:
+- `scripts/ci/check-dispatch-closeout-integrity.sh` — FOLD: removed `closeout_violation()`/`self_test()` and the `--self-test` CLI branch; rewrote header to cite the Go-test replacement (AC2/AC5); rewrote the exit-success message. `bash -n` clean; script re-run, exit 0.
+- `scripts/ci/check-dispatch-repair-preflight.sh` — KEEP with a documentation-only addition: header now cites `transitions.json`'s `repair_contract_present` guard and the two `TestAC6_*` tests as the live behavioral counterpart (AC5). No functional change. `bash -n` clean; script re-run, exit 0.
+- `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` — §2.9, §4.9, and D12 edited to remove the now-stale claim that the CI guard "self-tests the empty-review detector" and cite the Go FSM tests directly instead (the sibling-doc-drift the fold in the first bullet would otherwise leave behind). §2.8/§4.8/D11 (repair re-entry) left untouched — no dependency on anything folded this cycle.
+- No `.go` file, no `transitions.json`, no `.github/workflows/*.yml` file was touched (confirmed via the diff stat below).
+
+**Step 6 (Docs / artifact enumeration — every file in `git diff origin/main..HEAD --stat` named here):**
+```
+$ git diff --stat origin/main..HEAD
+ .cdd/unreleased/600/CLAIM-REQUEST.yml              |  12 ++
+ .cdd/unreleased/600/gamma-scaffold.md              | 114 +++++++++++++++
+ .cdd/unreleased/600/guard-inventory.md             |  18 +++
+ .cdd/unreleased/600/self-coherence.md              | 158 +++++++++++++++++++++ (growing incrementally; this count is pre-step-7)
+ scripts/ci/check-dispatch-closeout-integrity.sh    |  71 ++++-----
+ scripts/ci/check-dispatch-repair-preflight.sh      |  12 ++
+ .../skills/agent/dispatch-protocol/SKILL.md        |   6 +-
+ 7 files changed
+```
+- `.cdd/unreleased/600/CLAIM-REQUEST.yml` — pre-existing dispatch-intake artifact (harness-written at claim time), not authored by α this cycle; named here for enumeration completeness.
+- `.cdd/unreleased/600/gamma-scaffold.md` — γ's pre-existing scaffold (dispatch prompt + Implementation Contract), read in full per §Gap, not modified by α.
+- `.cdd/unreleased/600/guard-inventory.md` — α's AC1 oracle artifact (this cycle's primary matter, alongside the two script edits).
+- `.cdd/unreleased/600/self-coherence.md` — this file.
+- `scripts/ci/check-dispatch-closeout-integrity.sh`, `scripts/ci/check-dispatch-repair-preflight.sh`, `dispatch-protocol/SKILL.md` — the three edited files, per Step 5 above.
+
+No caller-path trace is required (pre-review gate row 12) — no new module or function was added this cycle; the diff is subtractive (self-test removed) and documentary (header/doc comments) only.
+
+**Step 7 (Self-coherence)** — this document.
