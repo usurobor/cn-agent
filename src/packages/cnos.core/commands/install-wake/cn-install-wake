@@ -886,6 +886,55 @@ fi
   echo "      - uses: actions/checkout@v4"
   echo "        with:"
   echo "          token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
+  # ---------------------------------------------------------------------
+  # Mechanical recovery scanner (cnos#593, Sub C of #583).
+  # ---------------------------------------------------------------------
+  #
+  # Reconciles OTHER stranded dispatch cells (a stale status:in-progress
+  # or status:review left behind by a dead run) BEFORE this firing
+  # attempts its own claim -- a pre-claim mechanical housekeeping pass,
+  # distinct from the post-run finalizer step below (which checkpoints
+  # THIS firing's own matter). Runs from the workflow's own pre-claim
+  # phase, never inside the cognitive work-phase step: every fact
+  # observed and every reconciliation decision traces to the SAME
+  # declarative transition table `cn issues fsm evaluate` already reads;
+  # this step only adds iteration across every active issue plus, for a
+  # dead run with matter and no pull request, invoking the cnos#591
+  # finalizer to checkpoint it into a draft PR. Every status-label
+  # mutation goes through the same guarded primitive `evaluate --apply`
+  # uses -- this step never writes a label directly and never invents a
+  # transition the table did not already propose.
+  #
+  # Gated on role == "dispatch" (the same $role variable the manifest
+  # validation block above already computed), consistent with the
+  # finalizer step's gating rationale below: this applies uniformly to
+  # any future dispatch-shaped wake, not just today's single instance.
+  #
+  # The scanned protocol qualifier is read from the manifest's `protocol`
+  # field via jq at RENDER time (baked into the emitted step as a fixed
+  # value for this wake, exactly like the selector-driven `if:` clause
+  # above) -- never a literal token in this renderer's own source, per
+  # the install-wake-golden.yml AC7/AC8 leak-audit.
+  if [ "$role" = "dispatch" ]; then
+    scan_protocol="$(jq -r '.protocol' "$manifest_path")"
+    {
+      echo ""
+      echo "      - name: Mechanical recovery scanner"
+      echo "        # Pre-claim guard per cnos#593 (Sub C of #583): reconciles"
+      echo "        # stranded dispatch cells (stale status:in-progress /"
+      echo "        # status:review left by a dead run) using the SAME"
+      echo "        # declarative transition table 'cn issues fsm evaluate'"
+      echo "        # reads, before this firing attempts its own claim. Every"
+      echo "        # label mutation routes through the guarded 'evaluate"
+      echo "        # --apply' primitive; this step never writes a label"
+      echo "        # directly."
+      echo "        shell: bash"
+      echo "        run: |"
+      echo "          set -euo pipefail"
+      echo "          (cd src/go && go build -o /tmp/cn-scan ./cmd/cn)"
+      echo "          /tmp/cn-scan issues fsm scan --protocol ${scan_protocol} --apply"
+    } >> "$tmp_out"
+  fi
   if [ "$activation_log_writer" = "false" ]; then
     echo ""
     echo "      - name: Write fence — record pre-work baseline SHA"

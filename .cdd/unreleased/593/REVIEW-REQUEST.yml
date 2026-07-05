@@ -1,0 +1,16 @@
+issue: 593
+protocol: cds
+cycle_branch: cycle/593
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/595"
+converge_verdict_ref: .cdd/unreleased/593/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's R0 converge
+  verdict (converge, zero blocking findings, all 11 ACs independently
+  re-verified, implementation-contract conforms, scope guardrails held).
+  All closeout artifacts (gamma-scaffold.md, self-coherence.md,
+  beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md)
+  are present on this branch. PR #595 was opened by `cn cell finalize`
+  (the mechanical finalizer this cycle's own hub-gate fix unblocked) --
+  the deliverable_evidence block in gamma-closeout.md records the exact
+  PR/head/base SHAs and commit count.

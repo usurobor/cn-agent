@@ -1,11 +1,29 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"os/exec"
+	"strings"
 
 	"github.com/usurobor/cnos/src/go/internal/cell"
 )
+
+// gitRepoRoot resolves the current git repository's top-level directory via
+// `git rev-parse --show-toplevel`. Used as CellFinalizeCmd's repo-root
+// fallback (cnos#593) when inv.HubPath is empty -- i.e. when running inside
+// a plain git checkout that carries no `.cn/` hub directory.
+func gitRepoRoot(ctx context.Context) (string, error) {
+	var out, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("resolve repo root (git rev-parse --show-toplevel): %w (stderr: %s)", err, strings.TrimSpace(stderr.String()))
+	}
+	return strings.TrimSpace(out.String()), nil
+}
 
 // CellReturnCmd implements "cn cell return".
 //
@@ -191,11 +209,22 @@ type CellFinalizeCmd struct{}
 
 func (c *CellFinalizeCmd) Spec() CommandSpec {
 	return CommandSpec{
-		Name:     "cell-finalize",
-		Summary:  "Mechanical checkpoint + idempotent draft-PR open/update when a cell has matter",
-		Source:   SourceKernel,
-		Tier:     TierKernel,
-		NeedsHub: true, // needs repo root to locate .cdd/unreleased/{N}/ and run git
+		Name:    "cell-finalize",
+		Summary: "Mechanical checkpoint + idempotent draft-PR open/update when a cell has matter",
+		Source:  SourceKernel,
+		Tier:    TierKernel,
+		// NeedsHub is false (cnos#593 finding): this command only needs the
+		// git REPOSITORY root (to locate .cdd/unreleased/{N}/ and run git),
+		// not a "cn hub" (a `.cn/` package-vendor directory). The cnos
+		// source repo itself -- where the cds-dispatch mechanical finalizer
+		// step actually runs, per .github/workflows/cnos-cds-dispatch.yml
+		// -- carries no `.cn/` directory, so the NeedsHub gate previously
+		// on this command made it exit "no hub found" before ever reaching
+		// Finalize, unconditionally, in exactly the environment it is
+		// meant to run in. Run() below resolves the repo root itself via
+		// `git rev-parse --show-toplevel` when inv.HubPath is empty,
+		// mirroring CellReturnCmd's existing NeedsHub:false precedent.
+		NeedsHub: false,
 	}
 }
 
@@ -264,8 +293,17 @@ func (c *CellFinalizeCmd) Run(ctx context.Context, inv Invocation) error {
 		return err
 	}
 
+	repoRoot := inv.HubPath
+	if repoRoot == "" {
+		repoRoot, err = gitRepoRoot(ctx)
+		if err != nil {
+			fmt.Fprintf(inv.Stderr, "✗ cn cell finalize: %s\n", err)
+			return err
+		}
+	}
+
 	finalizer := &cell.Finalizer{
-		RepoRoot: inv.HubPath,
+		RepoRoot: repoRoot,
 		Stdout:   inv.Stdout,
 		Stderr:   inv.Stderr,
 	}
