@@ -1,6 +1,6 @@
 <!-- section-manifest
-completed: [Gap, Skills, ACs, Self-check]
-remaining: [Debt, CDD Trace, Review-readiness]
+completed: [Gap, Skills, ACs, Self-check, Debt]
+remaining: [CDD Trace, Review-readiness]
 guard-inventory: .cdd/unreleased/600/guard-inventory.md (separate file)
 -->
 
@@ -140,3 +140,19 @@ Gates run and confirmed locally by α (CI-hosted run status is β's/the merge ga
 - The claim that `dispatch-protocol/SKILL.md`'s three `self-test` references were the *only* living-doc dependency on the folded self-test is backed by an explicit repo-wide grep (`grep -rln "check-dispatch-closeout-integrity" ...`), with every hit outside `.cdd/`/`docs/evidence/`/`dispatch-protocol/SKILL.md` classified (only `build.yml` and `.cn-sigma/logs/*`, both non-issues — `build.yml` only invokes the script, doesn't describe its internals; the activation log is append-only history).
 
 **Where ambiguity remains genuinely open (not resolved, not silently picked):** see §Debt — the `install-wake-golden` redundancy question is the one item carried forward as an explicit open question rather than a decision.
+
+## §Debt
+
+**1. `install-wake-golden` LIVE-leg redundancy — identified, deliberately NOT acted on.** Both guard scripts' presence-check loops run the identical `need()` pattern set against `$SKILL`, `$GOLDEN`, AND `$LIVE` (`.github/workflows/cnos-cds-dispatch.yml`). `install-wake-golden.yml`'s job proves `sha256(LIVE) == sha256(GOLDEN)` byte-for-byte (a hard CI gate), which makes checking `LIVE` for the same literal strings logically redundant with checking `GOLDEN` — *whichever passes, the other must too, given byte-identity*. This would be a legitimate further NARROW (drop `$LIVE` from the `for f in "$SKILL" "$GOLDEN" "$LIVE"` loop in both scripts, citing `install-wake-golden`'s sha256 step as replacement proof).
+
+I chose **not** to make this edit, for two reasons: (a) `install-wake-golden.yml`'s trigger is `paths`-filtered (`src/packages/cnos.core/commands/install-wake/**`, `src/packages/cnos.core/orchestrators/**`, `src/packages/cnos.cds/orchestrators/**`, plus the two named workflow files) — the redundancy claim depends on this job *always* firing whenever `LIVE`/`GOLDEN` could diverge, which held for every case I checked (the live workflow file itself is in the path filter, so any direct edit to it triggers the job) but I did not exhaustively prove there is no path by which `LIVE` could drift from `GOLDEN` without touching a filtered path or without `install-wake-golden` being a required status check on every PR (GitHub's required-check-with-path-filter interaction has known edge cases); (b) this redundancy is about the **renderer/golden pipeline** (cnos#467/#476 machinery), not about the **strand-era dispatch-lifecycle guards** cnos#600 is scoped to audit — pursuing it further would be scope creep beyond this cycle's charter, and the STOP conditions explicitly name "deleting a guard creates a blind spot" as a halt condition I'd rather not risk on a tangential finding. **This is not a STOP** (I did not halt the cycle over it) — it's a **known-debt, deliberately-scoped-out finding**, named here so a future cycle (or β) can pick it up with the citation already done, rather than silently deciding either way.
+
+**2. γ's friction note 1 (are #516/#524's presence-of-contract halves themselves redundant with something else) — resolved: no, not fully.** The `install-wake-golden` sha256 check (debt item 1 above) proves `LIVE == GOLDEN` but does NOT prove `GOLDEN` (or `PROTO`/`SKILL`, which are never byte-compared to anything) actually contains the required contract strings — a golden that lost the contract text would still pass byte-identity if `LIVE` lost it too in lockstep. So the `PROTO`/`SKILL`/`GOLDEN` legs of both scripts are NOT redundant with anything else in the repo; only the `LIVE` leg is (per debt item 1, not acted on). Rows 1 and 2a in `guard-inventory.md` are classified KEEP on this basis.
+
+**3. γ's friction note 4 (full-file reads of `issuesfsm.go`/`scan.go`/`table.go`) — resolved.** All three read in full (286/397/217 lines respectively). No dead scaffold found; see `guard-inventory.md` row 6 for the negative result and the one adjacent finding (the self-declared, intentionally-kept `scan.go:197-204` defensive re-check) that was considered and explicitly not removed.
+
+**4. γ's friction note 5 (cnos#391/#392/#393 relevance) — resolved: no direct dependency found.** These issues are about the implementation-contract doctrine (language/package-scoping pins), not about the strand-era guard/scaffold layer this cycle audits. No surface touched this cycle cites them, and none needed to.
+
+**5. γ's friction note 2 (does anything depend on `--self-test` as a standalone entry point) — resolved: no.** See `guard-inventory.md` row 2b for the full grep evidence; this resolved cleanly enough to proceed with the FOLD, not carried forward as debt.
+
+**No STOP conditions were hit.** Re-checked against the issue's own STOP list at cycle close: no guard removal weakened protection (the one removal — `--self-test` — has a cited, verified-green replacement that is a strict match for its 3 behaviorally-meaningful cases); no invariant is left protected only by prompt prose (the presence-of-contract scripts' own header comments now explicitly disclaim proving FSM behavior, and cite where that behavioral proof actually lives); `cell_kind` enforcement was not added; no new FSM behavior was introduced; no guard deletion created a blind spot (the debt item above is a *considered-and-declined* further narrowing, not an executed one); CI can prove every replacement cited (all tests re-run and green); Demo 0 was never approached.
