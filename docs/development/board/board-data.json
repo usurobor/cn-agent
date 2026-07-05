@@ -2248,13 +2248,13 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-05T03:20:50Z",
-    "updated": "2026-07-05T03:20:50Z",
+    "updated": "2026-07-05T03:43:54Z",
     "url": "https://github.com/usurobor/cnos/issues/596"
   },
   {
     "n": 597,
     "t": "wake-substrate Sub 0: status-truth reconciliation for #452/#453 (dispatch precondition)",
-    "kind": "",
+    "kind": "process",
     "areas": [
       "agent",
       "wake"
@@ -2269,7 +2269,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-05T03:21:12Z",
-    "updated": "2026-07-05T03:21:12Z",
+    "updated": "2026-07-05T03:43:37Z",
     "url": "https://github.com/usurobor/cnos/issues/597"
   }
 ]
