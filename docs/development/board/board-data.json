@@ -1422,7 +1422,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-06-14T21:40:16Z",
-    "updated": "2026-07-02T03:49:47Z",
+    "updated": "2026-07-05T03:44:04Z",
     "url": "https://github.com/usurobor/cnos/issues/452"
   },
   {
@@ -1443,7 +1443,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-06-15T05:30:32Z",
-    "updated": "2026-07-02T03:53:29Z",
+    "updated": "2026-07-05T03:44:07Z",
     "url": "https://github.com/usurobor/cnos/issues/453"
   },
   {
@@ -2248,7 +2248,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-05T03:20:50Z",
-    "updated": "2026-07-05T03:43:54Z",
+    "updated": "2026-07-05T04:08:06Z",
     "url": "https://github.com/usurobor/cnos/issues/596"
   },
   {
@@ -2269,7 +2269,28 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-05T03:21:12Z",
-    "updated": "2026-07-05T03:43:37Z",
+    "updated": "2026-07-05T03:44:13Z",
     "url": "https://github.com/usurobor/cnos/issues/597"
+  },
+  {
+    "n": 598,
+    "t": "wake-substrate Sub 0.25: shortest human quickstart for backend selection (design oracle)",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-05T04:07:46Z",
+    "updated": "2026-07-05T04:07:46Z",
+    "url": "https://github.com/usurobor/cnos/issues/598"
   }
 ]
