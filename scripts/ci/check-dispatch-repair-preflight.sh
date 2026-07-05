@@ -11,6 +11,18 @@
 # rendered dispatch substrate still tells the body to load the repair context
 # and forbids closeouts-without-repair_evidence on a repair re-entry.
 #
+# cnos#600 consolidation note: this script proves the PROMPT/protocol/golden/
+# live-workflow text still states the repair-re-entry contract in words. It
+# does NOT prove the FSM actually blocks a repair re-entry without repair
+# context — that behavioral half is proven live by
+# src/packages/cnos.cds/skills/cds/fsm/transitions.json's `changes -> todo`
+# rule (gated on the `repair_contract_present` guard, all_true/all_false pair)
+# and by issuesfsm_test.go's TestAC6_ChangesWithoutRepairContextBlocked /
+# TestAC6_ChangesWithRepairContextEnablesRepairPass (both green as of this
+# consolidation). Audited under cnos#600: no fold/removal target found here —
+# nothing else in the repo checks that the prompt text itself still instructs
+# the worker to load repair context, so this presence guard stays as-is.
+#
 # Exit 0 = contract present everywhere it must be; 1 = a surface lost it.
 
 set -euo pipefail

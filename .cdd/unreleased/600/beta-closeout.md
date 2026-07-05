@@ -1,0 +1,59 @@
+# β close-out — cycle #600
+
+**Mechanism note:** written per `beta/SKILL.md` Role Rule 5 "Closure discipline" — this file is the review-context + release-evidence record, kept separate from `beta-review.md` (which carries the round-by-round verdict). Merge/PR mechanics for this cycle are handled by the mechanical finalizer (`cn cell finalize`), which has already opened draft PR #604 referencing #600, under the wake-invoked-δ single-firing model this cycle ran under. This close-out does not re-litigate the verdict already recorded in `beta-review.md` — it documents what was reviewed, how it was verified, and what a release note should say.
+
+---
+
+## Review Summary
+
+Two rounds, on `origin/cycle/600`:
+
+- **Round 1 — REQUEST CHANGES (`iterate`).** Base `origin/main` = `eb94445b`, cycle head `dc89671c`. AC1-AC6 independently verified met; AC7 (all gates green) not met on the reviewed SHA (I6, CDD artifact ledger validation, red — root-caused as a mechanical artifact-classification side effect of `beta-review.md` not yet existing on the branch at CI-run time, not a defect in the diff, and not blocking on its own). The single blocking item was **F1** (C-severity, `contract`/`honest-claim`): `.github/workflows/build.yml`'s `dispatch-closeout-integrity` job retained a header comment and step name claiming the script "self-tests the empty-review detector" and "(+ empty-review self-test)" — a claim the cycle's own diff had already falsified by removing the `--self-test` mode and the `closeout_violation()`/`self_test()` functions from that exact script. Verdict was RC because `review/SKILL.md` rule 3.3 gives no "approve with follow-up" path for an unresolved finding at any severity, and this was not an explicit, pre-filed design-scope deferral.
+- **Round 2 — CONVERGE.** Base `origin/main` unchanged (`eb94445b`), cycle head `c8c0654a`. α's fix (commit `f0abadb7`, comment/step-name text only) independently re-verified — not accepted on α's quoted diff. F1 closed; no new findings; no regressions. All AC1-AC7 conclusions from R1 stood unchanged since R2's diff touched none of the surfaces those ACs were derived from.
+
+---
+
+## Implementation Assessment
+
+The guard-inventory classification work (`guard-inventory.md`, 7 rows) held up under independent re-derivation in both rounds:
+
+- Every KEEP row (1, 2a, 3, 4, 5, 7) was checked against the actual file state, not against γ's starting hypothesis or α's restatement of it — e.g. row 1's "already narrow by construction" claim was confirmed by a full 69-line read of `check-dispatch-repair-preflight.sh`, and row 4's `cell_kind`-seam KEEP was confirmed by reading the actual comments in `snapshot.go`/`fetch.go`/`decision.go`/`CELL-KINDS.md` rather than trusting the "forward-pointing, not stale" characterization.
+- The single FOLD row (2b) was the one with real removal risk, and its replacement citation was solid: all four named Go tests (`TestAC3_EmptyReviewBlocked`, `TestApply_EmptyReviewStateBlocked`, `TestAC574_ReviewPartialEvidenceBlocked`, `TestAC574_ReviewWithPRStillValid`) were confirmed to exist by name (`grep -n "^func Test"`) and confirmed passing by my own `go test -v` run, independent of α's count. The one-to-one mapping between the four hand-rolled shell predicate cases and the four existing Go tests was verified case-by-case, not accepted as an aggregate "tests still pass" claim.
+- The negative-result row (6, no dead scaffold found across `issuesfsm.go`/`scan.go`/`table.go`) required judgment, not grep, to close — I independently read the same passages α cited (including the deliberately-retained `scan.go:197-204` defensive re-check) and reached the same conclusion that the duplication protects a real concurrent-transition race rather than being strand residue.
+- Overall assessment: this was a well-scoped, evidence-backed audit. No classification in `guard-inventory.md` required correction across either review round — the only defect found (F1) was a cross-surface documentation-sync miss adjacent to, not inside, the classification table itself.
+
+---
+
+## Technical Review
+
+**Merge-tree test (R1, pre-merge gate row 3):** built the merge tree in a throwaway worktree (`git worktree add /tmp/cnos-merge-test-600/wt origin/main && cd .../wt && git merge --no-ff --no-commit origin/cycle/600`). Result: automatic merge, zero unmerged paths. Ran `go test ./src/packages/cnos.issues/commands/issues-fsm/... ./src/go/internal/cell/...` on the merge tree — both packages `ok`. Ran both guard scripts (`bash -n` + direct execution) on the merge tree — both exit 0. Worktree torn down after. `git config --worktree` was unavailable in this repo (`extensions.worktreeConfig` not enabled), so plain `git config` scoped to the throwaway directory was used for the merge test only; no commit was made in that worktree, so no identity-leak risk applied.
+
+**Live test-suite results across both rounds:**
+
+- R1 (SHA `dc89671c`): `go test ./src/packages/cnos.issues/commands/issues-fsm/... ./src/go/internal/cell/... -v` — 109 `--- PASS`, 0 `--- FAIL`, run independently by me, matching α's count. Every AC2/AC3-named fixture individually confirmed `--- PASS` by name.
+- R1 CI (`gh run view` on `dc89671c`): 9 of 10 jobs green (I1, I2, I4, I5, dispatch-repair-preflight, dispatch-closeout-integrity, Go build & test, Binary verification, Package verification). I6 (CDD artifact ledger validation) red — root-caused by building `cn` from the branch and reproducing the failure locally: the ledger's `classifyCycleType` had classified #600 as `"small-change"` (strict path) because `beta-review.md` did not yet exist on the branch at CI-run time, and `self-coherence.md`'s `## §Gap`/`## §Skills` heading convention did not exact-match the ledger's literal `"## Gap"`/`"## Skills"` prefix check. Confirmed the same WARN-not-FAIL pattern already present for sibling in-progress cycles #569/#570/#574 by placing a placeholder `beta-review.md` and re-running the same binary. Not a defect in the diff; expected to self-resolve once this review artifact landed.
+- R2 (SHA `c8c0654a`): full suite re-run, 109 `--- PASS`, 0 `--- FAIL`, identical to the R1 baseline as expected for a comment-only workflow change. R2's own regression sweep (`git diff dc89671c..HEAD --stat`) confirmed exactly 3 files moved since my R1 review commit landed: `beta-review.md` (R1, mine), `self-coherence.md` (α's R2 append), `build.yml` (the F1 fix) — no `.go`, `transitions.json`, or other workflow file in that delta.
+- R2 CI: not independently repolled against GitHub Actions (out of R2's assigned scope, which was F1 re-verification); the R1-observed I6 red was expected to have self-resolved once the R1 `beta-review.md` commit landed, per the WARN-not-FAIL mechanism root-caused in R1.
+
+**YAML/scope validity of the fix:** `git show --stat f0abadb7` — 1 file changed, 6 insertions/4 deletions, entirely within the job's comment block and `name:` field, no `run:`/`uses:`/`runs-on:`/trigger changed. `python3 -c "import yaml; yaml.safe_load(...)"` on the fixed file parsed clean.
+
+---
+
+## Process Observations
+
+**The peer-enumeration gap that produced F1.** α's round-1 diff correctly propagated the "this script no longer self-tests the empty-review detector" fact to two of three sibling surfaces that stated it: the script's own header comment, and `dispatch-protocol/SKILL.md` §2.9/§4.9/D12. The third sibling surface — `.github/workflows/build.yml`'s own inline comment and step name for the `dispatch-closeout-integrity` job, describing the identical mechanism — was not updated and was missed by α's round-1 peer-enumeration grep. α's own friction log names the root cause precisely: the round-1 grep scope was **doc/skill-surface-shaped** (it checked `dispatch-protocol/SKILL.md`'s references) rather than **CI-workflow-comment-shaped** (it did not separately grep `build.yml` for the same phrase family). This is the same finding-class `alpha/SKILL.md` §2.3 already documents from #266/#283 (one canonical fact stated in multiple sibling surfaces, fixed in some but not all), recurring here at a narrower radius (three files, not a cross-role-skill fan-out).
+
+**What closed it in R2.** α's round-2 fix (`f0abadb7`) was scoped exactly to the missed surface (comment + step-name text only, no functional change), and both α's and my own round-2 peer-enumeration re-grepped repo-wide by file extension (`.yml`/`.yaml`/`.md`/`.sh`) rather than by presumed surface category — the broader-scope grep returned a clean negative result on the first pass, finding no third occurrence of the stale claim and correctly distinguishing the now-historical "the bash self-test was folded out" phrasing (in `dispatch-protocol/SKILL.md`, the script's own header, and now `build.yml`) from a live, unrelated self-test mechanism for a different guard (`validate-skill-frontmatter.sh --self-test`, untouched, out of scope). The round-1 miss and round-2 clean result together indicate the gap was in **grep scope** (which file types/locations were searched), not in the grep technique itself once applied broadly — a reusable lesson for future guard-consolidation audits: peer-enumeration for a "does X still claim Y" sweep should be extension-based across the repo, not surface-category-based from the start.
+
+---
+
+## Release Notes
+
+This cycle is an **audit-first consolidation**, not a feature or behavior change. A release note for #600 should say, plainly:
+
+- Sub D of #583: audited the strand-era CI guards and scaffold that accreted while the FSM strand problem was open, now that #591 (`cn cell finalize`) and #593 (`cn issues fsm scan`) made checkpoint/PR-open and dead-run recovery mechanical.
+- Of 7 guard/scaffold surfaces classified, **one guard was folded**: the hand-rolled `--self-test`/`closeout_violation()` bash predicate inside `scripts/ci/check-dispatch-closeout-integrity.sh` was removed, because the invariant it proved is already proven live against the real FSM transition table by four existing Go tests (`TestAC3_EmptyReviewBlocked`, `TestApply_EmptyReviewStateBlocked`, `TestAC574_ReviewPartialEvidenceBlocked`, `TestAC574_ReviewWithPRStillValid`). The remaining six surfaces (both scripts' presence-of-contract checks, the #574 `transitions.json` review-guard tightenings, the `cell_kind` seam, the prompt-presence doctrine in `dispatch-protocol/SKILL.md`, and #591/#593 themselves) were reviewed and confirmed KEEP, with no dead scaffold found in `issuesfsm.go`/`scan.go`/`table.go`.
+- **No behavioral change and no API change:** no `.go` file, no `transitions.json`, and (after the R1→R2 fix) no `.github/workflows/build.yml` functional step changed — the diff is two shell scripts (one comment-only edit, one fold-plus-header-rewrite), one doctrine-doc edit, and CI-comment text corrections. All FSM fixtures (109/109) pass unmodified across both review rounds.
+- **No schema change:** `transitions.json` does not appear in the diff at all.
+- One discretionary further-narrowing candidate (the `install-wake-golden` LIVE-leg redundancy in both scripts' presence-check loops) was identified during the audit and deliberately deferred as out-of-charter debt, not resolved this cycle — noted for a future cycle if the path-filter-exhaustiveness question is ever revisited.
+- A transient CI artifact-classification interaction (I6 misclassifying #600 as `"small-change"` before `beta-review.md` existed, due to `self-coherence.md`'s `§`-prefixed section-heading convention not exact-matching the ledger's literal prefix check) was observed and root-caused during review; it is a pre-existing mechanical interaction in `cn cdd verify`'s ledger, not introduced by this cycle's diff, and self-resolved once the review artifact landed — worth a future cycle's attention to the ledger's heading-match logic, but out of #600's own scope.

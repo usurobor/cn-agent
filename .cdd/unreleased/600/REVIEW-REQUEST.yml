@@ -1,0 +1,19 @@
+issue: 600
+protocol: cds
+cycle_branch: cycle/600
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/604"
+converge_verdict_ref: .cdd/unreleased/600/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's Round 2 converge
+  verdict (round 1: iterate, one C-severity finding F1 -- a stale
+  "self-tests the empty-review detector" claim left in build.yml's
+  dispatch-closeout-integrity job comment/step-name after the cycle folded
+  that self-test into cited pre-existing Go FSM tests; round 2: converge,
+  F1 independently re-verified fixed, no new findings, all AC1-AC7
+  independently re-derived as met, 109/109 tests green, non-destructive
+  merge-tree test clean). All closeout artifacts (gamma-scaffold.md,
+  self-coherence.md, guard-inventory.md, beta-review.md, alpha-closeout.md,
+  beta-closeout.md, gamma-closeout.md) are present on this branch. Draft
+  PR #604 was opened by the mechanical finalizer (cn cell finalize, cnos#591)
+  referencing #600, with commits beyond base on cycle/600.

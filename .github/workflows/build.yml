@@ -325,8 +325,10 @@ jobs:
 
       # cnos#524 W4 RCA regression guard: asserts the rendered dispatch surface
       # (protocol + cds-dispatch prompt + SKILL + golden + live workflow) carries
-      # the closeout-integrity contract (deliverable proof before status:review),
-      # and self-tests the empty-review detector. Prevents the W4 failure mode: a
-      # cell setting status:review with no PR / no commits / no closeout.
-      - name: Check dispatch closeout-integrity contract (+ empty-review self-test)
+      # the closeout-integrity contract (deliverable proof before status:review).
+      # The empty-review detector itself is proven live by the Go FSM test suite
+      # (TestAC3_EmptyReviewBlocked et al.), not by a bash self-test inside this
+      # script (cnos#600 consolidation). Prevents the W4 failure mode: a cell
+      # setting status:review with no PR / no commits / no closeout.
+      - name: Check dispatch closeout-integrity contract
         run: ./scripts/ci/check-dispatch-closeout-integrity.sh
