@@ -2288,27 +2288,5 @@
     "created": "2026-07-05T04:30:33Z",
     "updated": "2026-07-05T04:30:33Z",
     "url": "https://github.com/usurobor/cnos/issues/599"
-  },
-  {
-    "n": 600,
-    "t": "cds/runtime: consolidate strand-era guards and scaffold now that the mechanical lifecycle is closed (Sub D of #583)",
-    "kind": "process",
-    "areas": [
-      "cdd",
-      "cds",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-05T05:47:37Z",
-    "updated": "2026-07-05T13:31:11Z",
-    "url": "https://github.com/usurobor/cnos/issues/600"
   }
 ]
