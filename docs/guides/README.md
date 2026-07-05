@@ -4,6 +4,7 @@
 
 ## Operator
 
+- [INSTALL-CDS.md](INSTALL-CDS.md) — install the CDS process into your repo (terminal, or GitHub-only no-terminal).
 - [HANDSHAKE.md](HANDSHAKE.md) — connect an operator to a repo.
 - [AUTOMATION.md](AUTOMATION.md) — wake/dispatch automation.
 

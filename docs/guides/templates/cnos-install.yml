@@ -1,0 +1,150 @@
+# cnos install (CDS) — no-terminal installer
+#
+# Drop this file at `.github/workflows/cnos-install.yml` in YOUR repo, then run
+# it from the Actions tab: "cnos install (CDS)" → "Run workflow". No terminal,
+# no local checkout — everything happens on a GitHub runner, and the result is
+# opened as a pull request you review and merge.
+#
+# What it installs (the "base" layer):
+#   - .cn/deps.json  — the cnos packages your repo depends on (pinned)
+#   - cn.lock        — the resolved lockfile (reproducible restore)
+#   - .gitignore     — adds .cn/vendor/ (vendored packages are rehydrated, not committed)
+#
+# It does NOT (by itself) wire up the autonomous cds-dispatch loop — that needs
+# secrets and a bot identity. See docs/guides/INSTALL-CDS.md §"Autonomous
+# dispatch (opt-in)" for that layer and why it is separate.
+#
+# The default GITHUB_TOKEN is sufficient for this base install because it does
+# not add or modify any file under .github/workflows/. (GITHUB_TOKEN is not
+# permitted to push workflow files — the dispatch layer needs a PAT with the
+# `workflow` scope.)
+
+name: cnos install (CDS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      cnos_ref:
+        description: "cnos release tag to install from (blank = latest)"
+        required: false
+        default: ""
+      packages:
+        description: "Space-separated cnos packages to install"
+        required: false
+        default: "cnos.core cnos.cdd cnos.cds"
+      branch:
+        description: "Branch to open the install PR from"
+        required: false
+        default: "cnos/install-cds"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    env:
+      CNOS_REPO: usurobor/cnos
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the cn binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://raw.githubusercontent.com/${CNOS_REPO}/main/install.sh" \
+            | BIN_DIR="$HOME/.local/bin" sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Resolve the cnos release tag
+        id: rel
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.cnos_ref }}"
+          if [ -z "$tag" ]; then
+            tag="$(gh release view -R "$CNOS_REPO" --json tagName -q .tagName)"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Using cnos release: $tag"
+
+      - name: Fetch the package index + tarballs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/packages
+          # index.json maps package -> version -> {url, sha256}. cn deps lock
+          # reads it via the local dist/packages/ walk; cn deps restore fetches
+          # each tarball (absolute release URL, or a sibling file in this dir).
+          gh release download -R "$CNOS_REPO" "${{ steps.rel.outputs.tag }}" \
+            --dir dist/packages \
+            --pattern 'index.json' \
+            --pattern '*.tar.gz' \
+            --clobber
+          echo "Downloaded:"; ls -la dist/packages
+
+      - name: Write .cn/deps.json (pinned to the index)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cn
+          # Pin each requested package to the version the index actually offers,
+          # so `cn deps lock` resolves cleanly against the fetched index.
+          entries=""
+          for p in ${{ inputs.packages }}; do
+            v="$(jq -r --arg p "$p" '.packages[$p] | keys[0] // empty' dist/packages/index.json)"
+            if [ -z "$v" ]; then
+              echo "::error::package '$p' not present in ${CNOS_REPO} ${{ steps.rel.outputs.tag }} index.json"
+              exit 1
+            fi
+            entries="${entries}    {\"name\": \"$p\", \"version\": \"$v\"},\n"
+          done
+          # Trim the trailing comma+newline and assemble the manifest.
+          entries="$(printf '%b' "$entries" | sed '$ s/,$//')"
+          {
+            echo '{'
+            echo '  "schema": "cn.deps.v1",'
+            echo '  "profile": "cds",'
+            echo '  "packages": ['
+            printf '%s\n' "$entries"
+            echo '  ]'
+            echo '}'
+          } > .cn/deps.json
+          echo "--- .cn/deps.json ---"; cat .cn/deps.json
+
+      - name: Lock + restore packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          cn deps lock
+          cn deps restore
+          # Keep vendored packages out of git — they rehydrate from cn.lock.
+          grep -qxF '.cn/vendor/' .gitignore 2>/dev/null || echo '.cn/vendor/' >> .gitignore
+
+      - name: Clean the build inputs (not part of the install)
+        shell: bash
+        run: rm -rf dist/packages
+
+      - name: Open the install pull request
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="${{ inputs.branch }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add .cn/deps.json cn.lock .gitignore
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — cnos CDS is already installed."
+            exit 0
+          fi
+          git commit -m "chore(cnos): install CDS packages (${{ steps.rel.outputs.tag }})"
+          git push -u origin "$branch" --force-with-lease
+          gh pr create \
+            --title "Install cnos CDS (${{ steps.rel.outputs.tag }})" \
+            --body "Automated by the cnos-install workflow. Adds \`.cn/deps.json\` + \`cn.lock\` pinning the cnos CDS packages. Run \`cn deps restore\` locally (or in CI) to rehydrate \`.cn/vendor/packages/\`. See docs/guides/INSTALL-CDS.md." \
+            --head "$branch" \
+            || echo "PR may already exist for $branch — check the Pull Requests tab."

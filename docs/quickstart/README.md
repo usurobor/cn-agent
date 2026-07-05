@@ -10,6 +10,7 @@
 
 ## Available now
 
+- [Install CDS into your repo](../guides/INSTALL-CDS.md) — bring the Coherence-Driven Software process into an existing repo (terminal, or GitHub-only no-terminal).
 - [Activate an agent in a repo](../../src/packages/cnos.core/skills/agent/activate/SKILL.md) — the `activate` skill.
 - [Operator handshake](../guides/HANDSHAKE.md) — connect an operator to a repo and exchange the first coordination.
 - [Automation](../guides/AUTOMATION.md) — wake/dispatch automation surfaces.
