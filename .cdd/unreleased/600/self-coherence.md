@@ -1,6 +1,7 @@
 <!-- section-manifest
-completed: [Gap, Skills, ACs]
-remaining: [Self-check, Debt, CDD Trace, guard-inventory, Review-readiness]
+completed: [Gap, Skills, ACs, Self-check]
+remaining: [Debt, CDD Trace, Review-readiness]
+guard-inventory: .cdd/unreleased/600/guard-inventory.md (separate file)
 -->
 
 # self-coherence — cycle #600
@@ -122,3 +123,20 @@ Gates run and confirmed locally by α (CI-hosted run status is β's/the merge ga
 - `go test ./src/packages/cnos.issues/commands/issues-fsm/... ./src/go/internal/cell/...` → both packages `ok`.
 - `bash -n` syntax check on both edited scripts → clean.
 - Named CI gates (I1, I2, I4, I5, I6, install-wake-golden, Go, Package, Binary) were not independently re-run by α outside of GitHub Actions (no local harness for the full workflow suite); these are the branch-CI-green rows of the pre-review gate (§CDD Trace / §Review-readiness names the head SHA whose CI status β should confirm green before merge). `install-wake-golden` is unaffected by this cycle's diff (no orchestrator/golden/live-workflow file touched — confirmed via `git diff origin/main..HEAD --stat`).
+
+## §Self-check
+
+**Did α's work push ambiguity onto β?**
+
+- The one genuinely discretionary call not fully closed out — the `install-wake-golden` LIVE-leg redundancy — is surfaced explicitly in §Debt below with the reasoning for not acting on it, rather than silently deciding either way. β does not need to re-derive this; β needs only to agree or disagree with the stated reasoning.
+- Every KEEP/FOLD classification in `guard-inventory.md` names the concrete file/line evidence α read, not a restatement of γ's hypothesis. Where α's conclusion matches γ's hypothesis (rows 3, 4, 7), the table still states what α independently re-verified, not just "confirmed" without evidence.
+- The one classification that changed from γ's hypothesis (NARROW → KEEP for rows 1 and 2a) is explained: γ's hypothesis was phrased as an open question ("should this remain a dedicated CI job"), and α's full read found the scripts already narrow, so there was nothing further to narrow out. This is a resolution, not a disagreement with γ's method.
+
+**Is every claim backed by evidence in the diff or in this document?**
+
+- Every test name cited (AC2, AC3, guard-inventory rows 1/2b) was independently confirmed to exist (via `grep -n "^func Test"`) and to pass (via a fresh `go test` run performed by α, not inherited from γ's scaffold text) — both before deciding to fold the self-test and after landing the fold.
+- Every `transitions.json` line-range citation was independently re-read by α against the current file content, not copied from γ's line numbers without verification (γ's line numbers were confirmed accurate).
+- The claim "no Go source or test file was modified this cycle" is checked against `git diff origin/main..HEAD --stat` in §CDD Trace, not asserted from memory.
+- The claim that `dispatch-protocol/SKILL.md`'s three `self-test` references were the *only* living-doc dependency on the folded self-test is backed by an explicit repo-wide grep (`grep -rln "check-dispatch-closeout-integrity" ...`), with every hit outside `.cdd/`/`docs/evidence/`/`dispatch-protocol/SKILL.md` classified (only `build.yml` and `.cn-sigma/logs/*`, both non-issues — `build.yml` only invokes the script, doesn't describe its internals; the activation log is append-only history).
+
+**Where ambiguity remains genuinely open (not resolved, not silently picked):** see §Debt — the `install-wake-golden` redundancy question is the one item carried forward as an explicit open question rather than a decision.
