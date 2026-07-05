@@ -958,6 +958,13 @@ fi
   echo "          github_token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
   echo "          bot_name: \"${bot_name}\""
   echo "          bot_id: \"${bot_id}\""
+  # Pin the model explicitly (cnos: operator directive) rather than
+  # inheriting claude-code-action@v1's default, so a change to the
+  # action's default model cannot silently alter what runs the cells.
+  # Sonnet 5 is the current de-facto default — pinning makes it
+  # deterministic ("dumb models, smart cells": authority lives in the
+  # cell/FSM, not the model tier).
+  echo "          model: \"claude-sonnet-5\""
   echo "          settings: |"
   echo "            {"
   echo "              \"permissions\": {"
