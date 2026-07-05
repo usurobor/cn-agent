@@ -2238,16 +2238,16 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-07-05T03:21:12Z",
-    "updated": "2026-07-05T03:44:13Z",
+    "updated": "2026-07-05T08:25:08Z",
     "url": "https://github.com/usurobor/cnos/issues/597"
   },
   {
