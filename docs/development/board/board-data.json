@@ -2292,5 +2292,23 @@
     "created": "2026-07-05T04:07:46Z",
     "updated": "2026-07-05T04:07:46Z",
     "url": "https://github.com/usurobor/cnos/issues/598"
+  },
+  {
+    "n": 599,
+    "t": "cdd/issue: add human-guide-first deliverable oracle to issue packs",
+    "kind": "",
+    "areas": [],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-05T04:30:33Z",
+    "updated": "2026-07-05T04:30:33Z",
+    "url": "https://github.com/usurobor/cnos/issues/599"
   }
 ]
