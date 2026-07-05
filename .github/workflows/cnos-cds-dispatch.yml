@@ -58,6 +58,7 @@ jobs:
           github_token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
           bot_name: "sigma@cnos.cn-sigma.cnos"
           bot_id: "41898282"
+          model: "claude-sonnet-5"
           settings: |
             {
               "permissions": {
