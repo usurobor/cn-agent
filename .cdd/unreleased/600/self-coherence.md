@@ -1,6 +1,6 @@
 <!-- section-manifest
-completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
-remaining: [Review-readiness]
+completed: [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
+remaining: []
 guard-inventory: .cdd/unreleased/600/guard-inventory.md (separate file)
 -->
 
@@ -205,3 +205,29 @@ $ git diff --stat origin/main..HEAD
 No caller-path trace is required (pre-review gate row 12) — no new module or function was added this cycle; the diff is subtractive (self-test removed) and documentary (header/doc comments) only.
 
 **Step 7 (Self-coherence)** — this document.
+
+## Review-readiness
+
+**Round 1.** Base SHA (merge-base with `origin/main` at pre-review-gate time): `eb94445b77d13be09894b14e6f3bf359d6c57dc0` (confirmed current — `origin/main` has not advanced since this cycle's last rebase; re-fetched and re-checked immediately before writing this section). Implementation SHA (last content commit before this readiness signal): `fc92ff8d1e684946017b33cbc56481d17816c528`.
+
+**Pre-review gate (`alpha/SKILL.md` §2.6), re-validated at signal time:**
+
+1. Cycle branch rebased onto current `origin/main` — confirmed: `git merge-base HEAD origin/main` == `origin/main` HEAD (`eb94445b`), re-checked at this moment, no drift since the earlier rebase.
+2. `self-coherence.md` carries CDD Trace through step 7 — done (§CDD Trace above).
+3. Tests present — no new tests required (justified in §CDD Trace step 4); existing strand-fixture suite re-run and green.
+4. Every AC has evidence — §ACs (AC1–AC7), each with file/line citations and command output.
+5. Known debt explicit — §Debt (one deliberately-declined further-narrowing item; all five of γ's friction notes resolved and stated).
+6. Schema/shape audit — `transitions.json` schema unchanged (file untouched this cycle, confirmed in diff stat).
+7. Peer enumeration — completed for the `--self-test` fold (dispatch-protocol/SKILL.md sibling-drift found and fixed; repo-wide grep confirmed no other living-doc dependency).
+8. Harness audit — the two CI guard scripts (shell) and their CI invocation (`build.yml:318`/`:332`, confirmed unchanged) were audited alongside the Go test suite; this is exactly the "non-primary-language writer" case §2.4 names.
+9. Post-patch re-audit — both scripts re-run (`bash -n` + direct execution) after every edit, not just once at the end.
+10. Branch CI green on head commit — **not independently observable by α in this sandboxed session** (no GitHub Actions run was triggered/polled from here); all underlying checks the CI gates wrap were run locally and are green (see immediately above and §ACs AC7). β/the merge gate should confirm the actual GitHub-hosted CI run is green on `fc92ff8d` (or later, if β requests changes) before merge.
+11. Artifact enumeration matches diff — §CDD Trace step 6 names all 7 files in `git diff origin/main..HEAD --stat`.
+12. Caller-path trace for new modules — N/A, no new module/function added (§CDD Trace step 6).
+13. Test assertion count from runner output — 109 `--- PASS`, 0 `--- FAIL`, pasted directly from `go test -v` output (§CDD Trace step 4), not manually recounted.
+14. Commit author email — per this cycle's explicit dispatch instruction ("just use whatever `git config user.email` is already set... don't block on role-identity ceremony in this single-session wake-invoked context"), the pre-existing configured identity (`41898282+sigma@cnos.cn-sigma.cnos@users.noreply.github.com`) was used as-is for all commits in this cycle; no retroactive amend to an `alpha@cdd.cnos` pattern was performed, per the dispatch's explicit override of the normal role-identity-is-git-observable ceremony. Declared here as an intentional, dispatch-authorized deviation from row 14's default path, not silent drift.
+15. γ-side artifact presence — `.cdd/unreleased/600/gamma-scaffold.md` present at the canonical §5.1 path on `origin/cycle/600` (confirmed: it is in the diff stat and was read in full at dispatch intake). §3.11b canonical configuration satisfied.
+
+**Test output summary:** `go test ./src/packages/cnos.issues/commands/issues-fsm/... ./src/go/internal/cell/...` → both packages `ok`; verbose run → 109 PASS / 0 FAIL. Both CI guard scripts exit 0 post-edit.
+
+**Ready for β.**
