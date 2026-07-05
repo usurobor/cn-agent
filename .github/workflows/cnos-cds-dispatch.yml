@@ -423,6 +423,14 @@ jobs:
         # transition; it only commits/pushes matter and ensures a draft PR.
         if: always()
         shell: bash
+        env:
+          # 'cn cell finalize' shells out to 'gh' (pr list / pr create) to
+          # open or update the cell's draft PR. The GitHub CLI requires
+          # GH_TOKEN in an Actions context; without it 'gh' exits 4 and the
+          # finalizer reds the job after checkpointing (cnos#591 PR-open path
+          # was masked while dispatch cells no-op'd). Reuse the same PR-scoped
+          # PAT the wake already uses as the checkout / github_token binding.
+          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
         run: |
           set -euo pipefail
           (cd src/go && go build -o /tmp/cn-finalize ./cmd/cn)
