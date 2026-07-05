@@ -1,0 +1,8 @@
+# cnos#569 Phase 2 -- delta's explicit request to transition
+# status:in-progress -> status:review via the CDS issue-state FSM.
+wake: cds-dispatch
+protocol: cds
+issue: 597
+requested_at: 2026-07-05T12:20:00Z
+cell_kind: audit
+run_class: first_pass
