@@ -746,8 +746,21 @@ while [ "$i" -lt "$trigger_count" ]; do
         echo "    types: [labeled]"
       } >> "$tmp_out"
       ;;
+    manual_dispatch)
+      # cnos#600: operator-invokable manual trigger. Emits a
+      # workflow_dispatch entry so the wake can be kicked from the
+      # Actions UI / API when GitHub's scheduled-cron delivery stalls
+      # (schedule is best-effort and drops fires — see the schedule
+      # trigger doc). No inputs: the manual run scans the same queue and
+      # runs the same claim path as a scheduled sweep (the job-level if:
+      # below allows workflow_dispatch unconditionally, exactly like
+      # schedule).
+      {
+        echo "  workflow_dispatch:"
+      } >> "$tmp_out"
+      ;;
     *)
-      manifest_error "$manifest_path: unknown trigger \"$trigger\" in input_contract.triggers (renderer recognizes: schedule, issues_opened_title_match, issues_labeled_selector_match)"
+      manifest_error "$manifest_path: unknown trigger \"$trigger\" in input_contract.triggers (renderer recognizes: schedule, issues_opened_title_match, issues_labeled_selector_match, manual_dispatch)"
       ;;
   esac
   i=$((i + 1))
@@ -810,6 +823,7 @@ echo "" >> "$tmp_out"
 has_schedule=0
 has_issues_title=0
 has_issues_labeled=0
+has_manual_dispatch=0
 i=0
 while [ "$i" -lt "$trigger_count" ]; do
   trigger="$(jq -r ".input_contract.triggers[$i]" "$manifest_path")"
@@ -817,9 +831,20 @@ while [ "$i" -lt "$trigger_count" ]; do
     schedule) has_schedule=1 ;;
     issues_opened_title_match) has_issues_title=1 ;;
     issues_labeled_selector_match) has_issues_labeled=1 ;;
+    manual_dispatch) has_manual_dispatch=1 ;;
   esac
   i=$((i + 1))
 done
+
+# cnos#600: workflow_dispatch (manual_dispatch trigger) must hit the same
+# claim path as schedule. Build the unconditional-run clause the job-level
+# if: uses so both events fire the sweep. When manual_dispatch is absent
+# (e.g. the admin wake), sched_clause is exactly "github.event_name ==
+# 'schedule'" — keeping every existing golden byte-identical.
+sched_clause="github.event_name == 'schedule'"
+if [ "$has_manual_dispatch" -eq 1 ]; then
+  sched_clause="${sched_clause} || github.event_name == 'workflow_dispatch'"
+fi
 
 title_pattern="$(jq -r '.input_contract.issues_opened_title_pattern // empty' "$manifest_path")"
 if [ -z "$title_pattern" ]; then
@@ -862,14 +887,14 @@ if [ "$has_schedule" -eq 1 ] && [ -n "$issue_event_match" ]; then
     # (no explicit event_name == 'issues' check; the issue-title
     # contains() returns false at schedule firing time, so the
     # schedule short-circuit is sufficient for admin).
-    job_if="    if: \${{ github.event_name == 'schedule' || ${issue_event_match} }}"
+    job_if="    if: \${{ ${sched_clause} || ${issue_event_match} }}"
   else
     # Dispatch shape — github.event.label is undefined at schedule
     # firing time, so we explicitly gate the issue clause on the
     # event being 'issues'. This is the OG-2 guardrail: schedule
     # events fire the sweep unconditionally; issue events fire only
     # when the labeled label is in the selector's include set.
-    job_if="    if: \${{ github.event_name == 'schedule' || (github.event_name == 'issues' && ${issue_event_match}) }}"
+    job_if="    if: \${{ ${sched_clause} || (github.event_name == 'issues' && ${issue_event_match}) }}"
   fi
 elif [ -n "$issue_event_match" ]; then
   job_if="    if: \${{ ${issue_event_match} }}"

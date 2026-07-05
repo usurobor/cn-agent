@@ -18,6 +18,7 @@ on:
     - cron: '53 * * * *'
   issues:
     types: [labeled]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,7 +32,7 @@ concurrency:
 
 jobs:
   wake:
-    if: ${{ github.event_name == 'schedule' || (github.event_name == 'issues' && (contains(github.event.label.name, 'dispatch:cell') || contains(github.event.label.name, 'protocol:cds') || contains(github.event.label.name, 'status:todo'))) }}
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && (contains(github.event.label.name, 'dispatch:cell') || contains(github.event.label.name, 'protocol:cds') || contains(github.event.label.name, 'status:todo'))) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
