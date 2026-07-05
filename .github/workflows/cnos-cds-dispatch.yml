@@ -38,6 +38,21 @@ jobs:
         with:
           token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
 
+      - name: Mechanical recovery scanner
+        # Pre-claim guard per cnos#593 (Sub C of #583): reconciles
+        # stranded dispatch cells (stale status:in-progress /
+        # status:review left by a dead run) using the SAME
+        # declarative transition table 'cn issues fsm evaluate'
+        # reads, before this firing attempts its own claim. Every
+        # label mutation routes through the guarded 'evaluate
+        # --apply' primitive; this step never writes a label
+        # directly.
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd src/go && go build -o /tmp/cn-scan ./cmd/cn)
+          /tmp/cn-scan issues fsm scan --protocol cds --apply
+
       - name: Write fence — record pre-work baseline SHA
         # Mechanical guard per cnos#496 / cycle/496 R1 + R2 (δ-direct iterate-narrowlies).
         # Records the local HEAD before the claude-code-action work phase so the
