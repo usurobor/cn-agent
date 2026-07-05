@@ -2217,7 +2217,7 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "",
+    "status": "review",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2228,5 +2228,48 @@
     "created": "2026-07-04T23:28:53Z",
     "updated": "2026-07-05T00:03:37Z",
     "url": "https://github.com/usurobor/cnos/issues/593"
+  },
+  {
+    "n": 596,
+    "t": "wave: wake-substrate provider boundary — model-swappable LLM runtime",
+    "kind": "",
+    "areas": [
+      "agent",
+      "runtime",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-05T03:20:50Z",
+    "updated": "2026-07-05T03:20:50Z",
+    "url": "https://github.com/usurobor/cnos/issues/596"
+  },
+  {
+    "n": 597,
+    "t": "wake-substrate Sub 0: status-truth reconciliation for #452/#453 (dispatch precondition)",
+    "kind": "",
+    "areas": [
+      "agent",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-05T03:21:12Z",
+    "updated": "2026-07-05T03:21:12Z",
+    "url": "https://github.com/usurobor/cnos/issues/597"
   }
 ]
