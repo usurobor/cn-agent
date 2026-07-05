@@ -1,0 +1,14 @@
+{
+  "issue": 9602,
+  "labels": ["dispatch:cell", "protocol:cds", "status:in-progress"],
+  "run_state": "completed",
+  "run_conclusion": "failure",
+  "branch_exists": true,
+  "commits_beyond_base": 7,
+  "pr_exists": true,
+  "pr_commit_count": 7,
+  "cdd_artifacts": ["gamma-scaffold.md", "self-coherence.md", "beta-review.md", "alpha-closeout.md", "beta-closeout.md", "gamma-closeout.md", "REVIEW-REQUEST.yml"],
+  "review_request_present": true,
+  "repair_contract_present": false,
+  "checks_state": "success"
+}

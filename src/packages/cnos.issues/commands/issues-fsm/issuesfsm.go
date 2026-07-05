@@ -44,25 +44,30 @@ import (
 // transition table (AC1: package-owned declarative data, not Go literals).
 const defaultTableRelPath = "src/packages/cnos.cds/skills/cds/fsm/transitions.json"
 
-// Run is the entry point for `cn issues fsm`. This package supports exactly
-// one sub-verb, "evaluate" — args[0] after the "issues fsm" noun-verb pair
-// is resolved by the CLI dispatcher (see cmd_issues_fsm.go). Mutation
-// authority (cnos#569 Phase 2) is a --apply FLAG on "evaluate" (parsed
-// inside runEvaluate), not a separate "apply" sub-verb — the issue's own
-// oracle line (`cn issues fsm evaluate --issue {N} --apply`) pins this
-// shape; there is still no "apply" sub-verb.
+// Run is the entry point for `cn issues fsm`. This package supports two
+// sub-verbs: "evaluate" (one issue, named by the caller) and "scan" (every
+// active dispatch:cell+protocol:{P} issue, cnos#593 Sub C's mechanical
+// recovery scanner) — args[0] after the "issues fsm" noun-verb pair is
+// resolved by the CLI dispatcher (see cmd_issues_fsm.go). Mutation authority
+// (cnos#569 Phase 2 for evaluate; cnos#593 for scan) is a --apply FLAG on
+// each sub-verb, not a separate "apply" sub-verb — the issue's own oracle
+// lines (`cn issues fsm evaluate --issue {N} --apply`, `cn issues fsm scan
+// --apply`) pin this shape.
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
 		fmt.Fprintln(stderr, "Usage: cn issues fsm evaluate --issue N [--apply] [--fixture path] [--table path]")
+		fmt.Fprintln(stderr, "       cn issues fsm scan --protocol P [--apply] [--table path]")
 		return fmt.Errorf("cn issues fsm: a subcommand is required")
 	}
 	switch args[0] {
 	case "evaluate":
 		return runEvaluate(ctx, args[1:], stdout, stderr)
+	case "scan":
+		return runScan(ctx, args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "✗ cn issues fsm: unknown subcommand %q\n\n", args[0])
-		fmt.Fprintln(stderr, "cn issues fsm supports only: evaluate")
-		fmt.Fprintln(stderr, "(mutation authority is the --apply flag on evaluate — cnos#569 Phase 2 — not a separate 'apply' subcommand.)")
+		fmt.Fprintln(stderr, "cn issues fsm supports only: evaluate, scan")
+		fmt.Fprintln(stderr, "(mutation authority is the --apply flag on each sub-verb — cnos#569 Phase 2 for evaluate, cnos#593 for scan — not a separate 'apply' subcommand.)")
 		return fmt.Errorf("cn issues fsm: unknown subcommand %q", args[0])
 	}
 }
@@ -181,6 +186,76 @@ func runEvaluate(ctx context.Context, args []string, stdout, stderr io.Writer) e
 		return applyErr
 	}
 	return nil
+}
+
+// runScan is the CLI wrapper for `cn issues fsm scan` (cnos#593 Sub C): the
+// mechanical recovery scanner that reconciles every open
+// dispatch:cell+protocol:{P} issue currently at status:in-progress or
+// status:review, per RunScan (scan.go). Mirrors runEvaluate's flag-parsing
+// shape (repo/token/table/apply) plus a required --protocol (scan has no
+// single issue to derive it from; evaluate needs no protocol at all since
+// its --issue already names the one issue to observe).
+func runScan(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("issues fsm scan", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	protocol := fs.String("protocol", "", "the dispatch wake's owning protocol qualifier (e.g. \"cds\"); required -- selects which protocol:{P} labeled issues this scan reconciles")
+	table := fs.String("table", "", "path to the transition table JSON (default: repo-root-relative "+defaultTableRelPath)
+	repo := fs.String("repo", "", "target repository as owner/name (default: $GITHUB_REPOSITORY)")
+	token := fs.String("token", "", "GitHub token (default: $GITHUB_TOKEN, then $GH_TOKEN)")
+	apply := fs.Bool("apply", false, "apply proposed reconciliations: writes status labels via the same guarded primitive `evaluate --apply` uses, and invokes `cn cell finalize` + posts a recovery comment for dead runs with matter. Off by default -- without --apply this command is read-only (reports what it would do).")
+	fs.Usage = func() {
+		fmt.Fprintln(stderr, "Usage: cn issues fsm scan --protocol P [--apply] [--table path] [--repo owner/name]")
+		fmt.Fprintln(stderr)
+		fmt.Fprintln(stderr, "Reconciles every open dispatch:cell+protocol:{P} issue currently at")
+		fmt.Fprintln(stderr, "status:in-progress or status:review, per cnos#593: no active run + no")
+		fmt.Fprintln(stderr, "matter -> requeue to status:todo; no active run + matter + no PR ->")
+		fmt.Fprintln(stderr, "checkpoint via `cn cell finalize`; PR + REVIEW-REQUEST.yml present ->")
+		fmt.Fprintln(stderr, "status:review; a live run, or a blocked/under-evidenced state, is left alone.")
+		fmt.Fprintln(stderr)
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *protocol == "" {
+		return fmt.Errorf("cn issues fsm scan: --protocol is required")
+	}
+
+	r := *repo
+	if r == "" {
+		r = os.Getenv("GITHUB_REPOSITORY")
+	}
+	tk := *token
+	if tk == "" {
+		tk = os.Getenv("GITHUB_TOKEN")
+	}
+	if tk == "" {
+		tk = os.Getenv("GH_TOKEN")
+	}
+
+	tablePath := *table
+	var err error
+	if tablePath == "" {
+		tablePath, err = resolveDefaultTablePath()
+		if err != nil {
+			return err
+		}
+	}
+	t, err := LoadTable(tablePath)
+	if err != nil {
+		return err
+	}
+
+	opts := &ScanOptions{
+		Repo:     r,
+		Token:    tk,
+		Protocol: *protocol,
+		Apply:    *apply,
+		Table:    t,
+	}
+	report, runErr := RunScan(ctx, opts)
+	renderScan(stdout, report)
+	return runErr
 }
 
 // resolveDefaultTablePath walks up from the current working directory
