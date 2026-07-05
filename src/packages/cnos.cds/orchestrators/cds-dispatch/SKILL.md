@@ -36,6 +36,7 @@ wake:
     triggers:
       - schedule
       - issues_labeled_selector_match
+      - manual_dispatch
   output:
     cycle_artifact_root: ".cdd/unreleased/{N}/"
     artifact_class_taxonomy:
