@@ -79,7 +79,7 @@ func Run(ctx context.Context, opts Options) error {
 	}
 
 	// 3. .gitignore entry for .cn/vendor/.
-	if err := ensureGitignoreEntry(opts.HubPath, opts.Stdout); err != nil {
+	if err := EnsureGitignoreEntry(opts.HubPath, opts.Stdout); err != nil {
 		return err
 	}
 
@@ -120,9 +120,14 @@ func ensureDefaultDeps(path, version string, stdout io.Writer) error {
 	return nil
 }
 
-// ensureGitignoreEntry adds ".cn/vendor/" to .gitignore if it is not
+// EnsureGitignoreEntry adds ".cn/vendor/" to .gitignore if it is not
 // already present. Creates .gitignore if it does not exist. Idempotent.
-func ensureGitignoreEntry(hubPath string, stdout io.Writer) error {
+//
+// Exported (cnos#608) so cn repo install (internal/repoinstall) can reuse
+// this exact logic rather than duplicating it — cn setup and cn repo
+// install both need the same ".cn/vendor/" gitignore invariant, and this
+// is the single canonical writer.
+func EnsureGitignoreEntry(hubPath string, stdout io.Writer) error {
 	giPath := filepath.Join(hubPath, ".gitignore")
 	entry := ".cn/vendor/"
 
