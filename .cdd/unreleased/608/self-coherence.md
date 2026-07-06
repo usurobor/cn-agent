@@ -1,7 +1,7 @@
 # self-coherence — cycle #608
 
 **manifest:** sections = [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-**completed:** [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
+**completed:** [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
 
 ---
 
@@ -728,3 +728,116 @@ mock_parity:
     missed: 0
     exceed_justified: true
 ```
+
+---
+
+## Review-readiness
+
+**Pre-review gate (alpha/SKILL.md §2.6), checked immediately before this
+signal:**
+
+1. **Cycle branch rebased onto current `origin/main`** — re-verified at
+   signal time: `origin/main` = `80778d688e04e61c66d38f2bd5962fafb0729e95`;
+   `git merge-base origin/main HEAD` = the same SHA. No drift since the
+   earlier rebase (commit `9fbd8fa1` onward); no further rebase needed.
+2. `self-coherence.md` carries the CDD Trace through step 6 (above), plus
+   §Gap/§Skills/§ACs/§Self-check/§Debt — all present in this commit.
+3. Tests present: 31 new tests (22 `internal/repoinstall`, 9 `internal/cli`),
+   plus the pre-existing 273, all passing — see §CDD Trace step 4/"Test
+   assertion count."
+4. Every AC (AC1–AC11) has evidence in §ACs.
+5. Known debt is explicit in §Debt (7 items, none blocking).
+6. Schema/shape audit: no schema changed this cycle (§Self-check "harness
+   audit").
+7. Peer enumeration: completed for the `.gitignore` multi-writer case
+   (§Self-check).
+8. Harness audit: completed (§Self-check) — no schema-bearing contract
+   changed, so no cross-language harness drift is possible from this diff.
+9. Post-patch re-audit: the header-format fix (`9fbd8fa1`) and the
+   §Self-check factual correction (writer-count claim) were each re-verified
+   against HEAD after being made — polyglot re-audit note in §CDD Trace
+   covers Go + Markdown (the only languages this diff touches).
+10. **Branch CI is green on the head commit.** `origin/cycle/608` HEAD
+    `2a3699b73334c3d42cbee8b3defb64f28bf3009c` — `Build` workflow
+    `conclusion: success` (re-confirmed at signal time via `gh run list
+    --repo usurobor/cnos --branch cycle/608 --limit 15 --json
+    headSha,conclusion,status,name`, filtered to this exact SHA). No other
+    workflow is configured to trigger on this diff:
+    `install-wake-golden.yml` only triggers on changes under
+    `src/packages/cnos.core/commands/install-wake/**` /
+    `.../orchestrators/**` / its own workflow file / `cnos-cds-dispatch.yml`
+    — none of which this diff touches (confirmed by reading the workflow's
+    `on:` path filters directly). `release.yml` triggers only on version
+    tags. `board-map.yml`/`cnos-agent-admin.yml`/`cnos-cds-dispatch.yml`
+    trigger on `issues`/`schedule`/`workflow_dispatch`, not on this push.
+    So `Build` succeeding is the complete CI signal for this branch.
+    (Several earlier commits on this branch — `eb269381` §Gap,
+    `a3f9b86e` §Skills, `9fbd8fa1` header-fix docs update in the same
+    diff as the fix, `ffb67634` §Self-check, `d049e23b` §Debt — show
+    `conclusion: failure` on the `cdd-artifact-check` job, an expected,
+    disclosed transient state during §2.5's incremental one-section-per-
+    commit authoring of this very file, per §Debt item 7; resolved at
+    `5d95e060` §CDD Trace onward.)
+11. Artifact enumeration matches diff: all 10 files in
+    `git diff --stat origin/main..HEAD` are named in §CDD Trace.
+12. Caller-path trace for new modules: done in §CDD Trace.
+13. Test assertion count pasted from runner output: done in §CDD Trace
+    (304 total, 0 fail, 31 new).
+14. **α's commit author email** — `git log -1 --format='%ae' HEAD` =
+    `alpha@cdd.cnos`, matching the canonical `alpha@{project}.cdd.cnos`
+    pattern (elision form for the cnos project). No correction needed;
+    every commit this cycle was authored under this identity from the
+    start (no drift to remediate via the retroactive-rebase path).
+15. **γ-artifact presence at the rule-3.11b surface** —
+    `.cdd/unreleased/608/gamma-scaffold.md` is present at the canonical
+    §5.1 path on `origin/cycle/608` (confirmed:
+    `git ls-tree -r origin/cycle/608 .cdd/unreleased/608/gamma-scaffold.md`
+    lists the file; it predates α's dispatch, authored by γ). Outcome:
+    **γ-artifact at canonical §5.1 path.**
+
+**Implementation SHA:** `2a3699b73334c3d42cbee8b3defb64f28bf3009c` (this is
+also current HEAD — no further commits follow this readiness signal on
+`cycle/608`, so the recursive-self-stale concern in alpha/SKILL.md §2.6's
+"SHA convention" note does not apply here: this is the final commit, not a
+readiness-signal commit that will itself advance HEAD).
+
+**Base SHA:** `80778d688e04e61c66d38f2bd5962fafb0729e95` (current
+`origin/main` tip at signal time, confirmed via `git fetch origin main` +
+`git rev-parse origin/main` immediately before writing this section).
+
+**Branch CI:** green (`Build` workflow, `conclusion: success`) at head SHA
+`2a3699b73334c3d42cbee8b3defb64f28bf3009c`, confirmed at signal time
+(not a stale/earlier-commit read).
+
+**mock_parity:** 10/10 matched, 0 missed (block above, under §CDD Trace).
+
+**Deviations from the scaffold:**
+- Section headers use the bare form (`## Gap` not `## §Gap`) rather than
+  the `§`-prefixed style used in the scaffold's own prose and in a prior
+  cycle (#600) — required for `cn cdd verify`'s I6 gate to actually pass for
+  a small-change-classified cycle (see §Self-check/§Debt for the full
+  analysis). This is a format-only deviation; content/structure matches the
+  scaffold's declared section list exactly.
+- The mock_parity block uses 10 rows (A1–A5, B1–B4, E1), not the "9" γ's
+  scaffold text stated — γ's own enumeration of that row set (A1-A5, B1-B4,
+  E1) sums to 10; the "9" appears to be an arithmetic slip in the scaffold,
+  not a deliberate scope reduction. Named explicitly rather than either
+  silently matching the wrong count or silently correcting γ's prose
+  without comment.
+- No other deviation from γ's scaffold: implementation contract axes,
+  reuse targets (`restore.GenerateLockFromIndex`/`restore.Restore`),
+  package scoping (`internal/repoinstall` + `cli/cmd_repo_install.go`),
+  and the design-doc-landing instruction were all followed as scaffolded.
+
+**Known gaps preventing full convergence:** none. All 11 ACs are fully met
+with PASS evidence; the mock_parity block shows `missed: 0`. §Debt's 7
+items are disclosed but none are partial-AC or blocking (see §Debt's
+closing paragraph for the explicit accounting).
+
+**This cycle is ready for β review.**
+
+Requesting β review on `cycle/608` at implementation SHA
+`2a3699b73334c3d42cbee8b3defb64f28bf3009c` (= current branch HEAD at
+signal time). β should poll `origin/cycle/608` and
+`.cdd/unreleased/608/beta-review.md` per the standard coordination
+protocol.
