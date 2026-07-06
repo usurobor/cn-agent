@@ -1,7 +1,7 @@
 # self-coherence — cycle #608
 
 **manifest:** sections = [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-**completed:** [Gap, Skills, ACs]
+**completed:** [Gap, Skills, ACs, Self-check]
 
 ---
 
@@ -365,3 +365,110 @@ only path.
   stale cross-reference to reconcile; adding a new nav link there is outside
   this issue's named §Docs scope (only `docs/guides/INSTALL-CDS.md` is
   named).
+
+---
+
+## Self-check
+
+**Role self-check (alpha/SKILL.md §2.5 §Self-check): did this cycle's work
+push ambiguity onto β? Is every claim backed by evidence in the diff?**
+
+- Every AC above cites either an automated test (name + PASS, independently
+  re-run at HEAD to produce this section, not copy-pasted from an earlier
+  run) or a `grep`/`git diff`/manual-command result with the literal
+  command shown. No AC claim rests on unverified prose.
+- **Reuse audit (issue's own risk control 3: "don't duplicate `cn deps
+  lock`/`restore` logic"):** `internal/repoinstall` imports
+  `internal/restore` and calls `restore.GenerateLockFromIndex` and
+  `restore.Restore` directly — zero reimplementation of lockfile generation,
+  SHA-256 verification, or tar extraction. `grep -n "sha256\|Sum256"
+  src/go/internal/repoinstall/repoinstall.go` → zero hits (only the test
+  file, which builds fixture tarballs, imports `crypto/sha256`). Confirmed
+  by reading `restore.go` in full before writing any new code, per the
+  scaffold's own instruction.
+- **Peer enumeration (alpha/SKILL.md §2.3):** the "multiple writers of the
+  same schema" case applies to the `.gitignore` `.cn/vendor/` entry — `cn
+  setup` (`hubsetup.go`) already wrote it. Peer set = {`cn setup`, `cn repo
+  install`}. Resolved by exporting `hubsetup.EnsureGitignoreEntry` and
+  calling it from `repoinstall.applyInstall` rather than writing a second,
+  independent `.gitignore`-mutation function — one writer, two callers, not
+  two writers of the same invariant. No other multi-writer schema surface
+  was found: `.cn/deps.json`/`.cn/deps.lock.json` have exactly one writer
+  each in the whole kernel (`repoinstall.writeManifest` and
+  `restore.GenerateLockFromIndex` respectively — `cn setup` writes a
+  *different* default `deps.json` shape for its own `engineer` profile, at
+  a different call site, not a second writer of `cn repo install`'s `cds`
+  profile manifest).
+- **Harness audit (alpha/SKILL.md §2.4):** this cycle does not change any
+  parser, schema-bearing type, or manifest shape — `pkg.Manifest`,
+  `pkg.Lockfile`, `pkg.PackageIndex` are all read exactly as shipped, zero
+  field additions. The only new "producer" is `repoinstall.writeManifest`,
+  which serializes the existing `pkg.Manifest` type via
+  `json.MarshalIndent` — the same mechanism `restore.GenerateLockFromIndex`
+  already uses for `pkg.Lockfile`, so there is no new ad hoc encoder to
+  audit against a schema. Grepping `*.sh` and `.github/workflows/*.yml` for
+  `deps.json` literal writes turns up two **pre-existing** hand-rolled
+  `cn.deps.v1` writers: `.github/workflows/build.yml`'s Tier-2 CI test-hub
+  setup step (heredoc, `profile: "engineer"`, pins `cnos.core`/`cnos.kata`/
+  `cnos.cdd.kata` for CI's own package-testing purposes) and
+  `scripts/kata/06-install.sh` (same shape, kata-harness purposes). Neither
+  is a consumer of `cn repo install`/`cn setup`'s specific default-package
+  logic and neither needed a change here — the `cn.deps.v1` schema itself is
+  byte-for-byte unchanged by this cycle (no field added/removed/renamed), so
+  the harness-audit trigger condition (alpha/SKILL.md §2.4: "when the branch
+  changes a parser, schema-bearing type, manifest shape, or runtime
+  contract") does not fire. Noted here because an earlier draft of this
+  section claimed "no independent writers exist," which the grep above
+  disproves — corrected before this AC evidence was finalized, per the
+  intra-doc-repetition/closure-overclaim discipline (alpha/SKILL.md §2.3):
+  `pkg.Manifest` already has multiple legitimate writers today (`hubsetup`,
+  these two harnesses, and now `repoinstall`), each producing its own
+  package list for its own purpose; that plurality is pre-existing and
+  outside this cycle's scope to consolidate.
+- **Docs reconciliation:** the design-branch draft
+  (`origin/claude/cds-install-guide-2ka54j:docs/guides/INSTALL-CDS.md`) used
+  a stale `cn.lock` filename inconsistent with the actual shipped
+  `.cn/deps.lock.json` (`cn.lock.v2`) schema this cycle confirmed by reading
+  `restore.go` directly. Rather than land that inconsistency, the new
+  `docs/guides/INSTALL-CDS.md` in this cycle's diff uses the confirmed-real
+  path throughout, and drops the draft's Track-B (`workflow_dispatch`
+  GitHub-UI installer) section entirely, since `templates/cnos-install.yml`
+  and the installer workflow do not exist anywhere on `origin/main` (confirmed
+  via `find . -iname cnos-install.yml` → no hits) — that is #611's
+  (bootstrap delegation) scope, not #608's. Documenting a workflow file that
+  does not exist would have been a false claim.
+- **CI-schema harness (post-hoc finding, folded into this section rather
+  than treated as a separate late AC):** the `cn cdd verify` I6 gate (which
+  gates merges via `.github/workflows/build.yml`'s `cdd-artifact-check`
+  job) enforces bare `## Gap` / `## Skills` (or `## Mode`) / `## ACs` (or
+  `## AC Coverage`) / `## CDD Trace` / a `##`-line containing "self-check"
+  or "debt" section headers on `self-coherence.md` — not the `§`-prefixed
+  style (`## §Gap` etc.) this cycle initially used (and which a prior cycle,
+  #600, also used without ever actually satisfying the checker — #600's
+  mismatch was merely masked by its "triadic" classification's lenient
+  in-progress warning, not actually schema-conformant). Because cycle #608
+  is classified "small-change" by `classifyCycleType` (self-coherence.md
+  present, no `beta-review.md` yet — true for any α-authored cycle before β
+  responds) it hits `checkSmallChangeArtifacts`, which hardcodes
+  `forUnreleased=false`, turning the same header mismatch into a hard CI
+  failure rather than a warning. Fixed by switching this file's headers to
+  the bare form (commit `9fbd8fa1`) rather than requesting a
+  `.cdd/exceptions.yml` entry — the bare form is what a genuinely
+  fully-green historical cycle (#593) actually uses, so this is a
+  conformance fix, not a workaround. **Pattern observed, not
+  triaged/fixed at the tool level** (per alpha/SKILL.md §2.8 "voice: factual
+  observations only, triage is γ's job"): `checkSmallChangeArtifacts`'s
+  hardcoded `forUnreleased=false` (ledger.go line 497) appears to make it
+  structurally impossible for a small-change-classified, still-in-progress
+  self-coherence.md (i.e., any α authoring §2.5's incremental one-section-
+  per-commit sequence, on any cycle without a pre-existing beta-review.md)
+  to pass I6 mid-authorship even when using the *correct* bare header
+  convention throughout, since the same "missing sections" logic fires
+  hard-fail (not warn) until every required section exists in one commit.
+  This cycle's own commits before the final section landed are a live
+  example (`eb269381`, `a3f9b86e` both show `❌ Cycle artifact verification
+  FAILED` in Actions). This is surfaced as a pattern for γ/δ, not
+  self-triaged here.
+- No ambiguity was pushed onto β regarding the implementation-contract axes
+  (all 7 were pinned by γ at dispatch; none were relaxed or reinterpreted —
+  see §Skills above).
