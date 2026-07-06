@@ -841,3 +841,234 @@ Requesting β review on `cycle/608` at implementation SHA
 signal time). β should poll `origin/cycle/608` and
 `.cdd/unreleased/608/beta-review.md` per the standard coordination
 protocol.
+
+---
+
+## R1 — fix β's R0 blocking finding (AC1 silent ancestor-`.cn` walk-up)
+
+**Trigger:** `.cdd/unreleased/608/beta-review.md` (R0, verdict `iterate`),
+Finding 1 (BLOCKING): `RepoInstallCmd.Run` used `inv.HubPath` as the
+install root whenever non-empty, completely bypassing `gitRepoRoot`. β
+reproduced this against the built binary: an unrelated ancestor `.cn/`
+directory (found by `main.go`'s unbounded upward `discoverHub()` walk)
+was silently treated as the install root even when cwd was not inside
+any git repository at all — violating AC1's own text ("does not
+silently walk up or scaffold"). β also found that no test in the R0 diff
+exercised the `inv.HubPath != ""` branch: the existing negative test
+(`TestRepoInstall_NotAGitRepo_FailsClearly`) hand-constructs
+`Invocation{HubPath: ""}`, bypassing `main.go`'s real hub-discovery path
+entirely.
+
+### What changed
+
+`src/go/internal/cli/cmd_repo_install.go`, `RepoInstallCmd.Run`
+(commit `aef74f3e103d747069abb083e75c82acb8bcca54`, pre-rebase content
+identical): repo-root resolution no longer reads `inv.HubPath` at all.
+It now unconditionally calls `gitRepoRoot(ctx)` (the existing
+`git rev-parse --show-toplevel` wrapper already used by
+`cmd_cell.go`/`CellFinalizeCmd`) and fails with the exact AC1 message
+
+```
+✗ cn repo install must be run inside a Git repository.
+```
+
+whenever that call errors — regardless of what `main.go`'s
+`discoverHub()` found. `inv.HubPath` is no longer read anywhere in this
+file; the "not inside a git repository" failure is now unconditional,
+not only reachable when `inv.HubPath` happened to be empty.
+
+**Why this is the right fix, not a narrower patch:** the alternative β
+raised as acceptable ("consult `inv.HubPath` only after confirming it
+equals the git-root value") was considered and rejected as unnecessary
+complexity — `gitRepoRoot(ctx)` is cheap (one `git rev-parse` subprocess
+call, already paid on every no-hub invocation in the pre-fix code path
+too), and there is no case where trusting a pre-computed `inv.HubPath`
+instead of asking git directly saves anything but adds a
+second code path to keep in sync. Always resolving via git directly is
+strictly simpler and closes the entire bug class, not just β's specific
+repro shape.
+
+### New tests
+
+Two tests added to `src/go/internal/cli/cmd_repo_install_test.go` that
+build the actual `cn` binary (`go build -o <tmp>/cn ./cmd/cn` from the
+module root, mirroring the existing `(cd src/go && go build -o $CN_BIN
+./cmd/cn)` convention used by the shell test harnesses under
+`src/packages/cnos.cdd/commands/cdd-verify/`) and drive it as a
+subprocess — exercising `main.go`'s real `discoverHub()`, not a
+reimplementation of it, closing exactly the gap β named:
+
+- `TestRepoInstall_RealDispatch_AncestorHubOutsideGitRepo_FailsClearly` —
+  cwd is not inside any git repository; an unrelated ancestor `.cn/`
+  exists above it (this is β's exact repro shape). Asserts: exit
+  non-zero, stderr contains the exact AC1 message, and the ancestor
+  `.cn/` directory is completely untouched (zero entries written).
+- `TestRepoInstall_RealDispatch_AncestorHubWithNestedGitRepo_UsesInnerRoot`
+  — a stronger control case: the ancestor `.cn/` exists, and cwd is
+  itself inside its *own*, different git repository nested further down
+  (a monorepo-of-repos shape). `discoverHub()` still finds the
+  unrelated ancestor `.cn/` first and returns it as `inv.HubPath`; this
+  proves the fix does not merely add an error path but actually
+  resolves the *correct* root (the inner repo, not the ancestor) even
+  when `inv.HubPath` is non-empty and points elsewhere. Asserts:
+  install succeeds, `.cn/deps.json` is written under the *inner* repo
+  root (not the ancestor), stdout reports the inner repo as the
+  resolved git root, and the ancestor `.cn/` remains empty.
+
+**Verified these tests actually catch the bug (not tautological):**
+ran both against the pre-fix code (`git stash` of the one-line
+`cmd_repo_install.go` fix only, tests still applied) —
+
+```
+--- FAIL: TestRepoInstall_RealDispatch_AncestorHubOutsideGitRepo_FailsClearly
+    stderr = "✗ package(s) not found in index: cnos.core@3.82.1, ..."
+    (proceeded past the git-repo check entirely, using the ancestor as
+    root, and failed only on release-index resolution — exactly β's
+    reported shape)
+--- FAIL: TestRepoInstall_RealDispatch_AncestorHubWithNestedGitRepo_UsesInnerRoot
+    stdout reports "Git repository root: .../outer/" (the ancestor),
+    .cn/deps.json is written under the ancestor .cn/, not the inner
+    repo — a silent wrong-directory install, exit 0
+```
+
+then re-ran against the fix: both PASS. This is the same class of
+independent-reproduction discipline β applied at R0 (build the real
+binary, don't trust the test-suite framing alone).
+
+Also added (per γ/β's non-blocking, quick-to-close item): a third test
+in `src/go/internal/repoinstall/repoinstall_test.go`,
+`TestRun_IndexHTTPURL_WithExplicitReleaseTag`, covering the previously
+untested `--index <URL>` + explicit `--release <tag>` combination (β's
+review, non-blocking observation 4). Confirms `resolveIndex`'s
+`isRemoteURL(indexArg)` branch and a non-empty `pinFromRelease` compose
+correctly (same code path as each sub-case, now proven jointly).
+
+### AC re-verification (full pass, focus on AC1)
+
+- **AC1** — re-verified end-to-end against the *built binary* using β's
+  own repro commands verbatim (`mkdir -p
+  /tmp/repro/outer-hub/nested/not-a-git-repo`, `mkdir
+  /tmp/repro/outer-hub/.cn`, `cd .../not-a-git-repo`, `./cn repo install
+  --dry-run`). Result: `✗ cn repo install must be run inside a Git
+  repository.`, exit code 1, and `/tmp/repro/outer-hub/.cn` remains
+  empty (`ls -la` → only `.`/`..`). This is the exact scenario β
+  reported previously succeeding silently (dry-run proceeding past the
+  git-repo check into release/index resolution) — it now fails at the
+  git-repo check, first, unconditionally. The "fresh git repo, no prior
+  state" positive half of AC1 (unaffected by this fix — `gitRepoRoot`
+  was already the fallback path exercised there) re-verified still
+  passes via `TestRepoInstall_FreshGitRepo_EndToEnd`.
+- **AC2–AC11** — no code path other than repo-root resolution changed;
+  re-ran the full existing suite (all AC2–AC11 tests named in R0's
+  §ACs section) and all pass unchanged. See test counts below.
+
+### Full re-verification (all four gates β/α run this cycle)
+
+Run from `src/go/` after the fix, from a clean tree, at commit
+`aef74f3e103d747069abb083e75c82acb8bcca54` (pre-rebase) / current HEAD
+(post-rebase, see rebase note below — content identical, only ancestry
+changed):
+
+- `go build ./...` — clean, exit 0.
+- `go vet ./...` — clean, exit 0.
+- `go test ./...` — **307 tests pass, 0 fail** (`go test ./... -v |
+  grep -c '^--- PASS'` → 307; `grep -c '^--- FAIL'` → 0). R0's count was
+  304; +3 new tests this round (2 real-dispatch-path tests +1
+  flag-combination test), all passing.
+- `go test -race -count=1 ./...` — clean, all 15 packages pass, no race
+  reports.
+
+No regression in any previously-passing package (`internal/cell`,
+`internal/repoinstall`, `internal/cli`, `internal/restore`,
+`internal/pkg`, etc. — full list unchanged from R0's pass, all still
+green).
+
+### Rebase note (pre-review-gate row 1)
+
+Between R0's review-readiness signal and this round, `origin/main`
+advanced by two unrelated commits (`d6bc7c70`, `c08a7483` — both sigma
+agent-admin heartbeat log appends to `.cn-sigma/logs/20260706.md`; zero
+overlap with this cycle's diff). Per alpha/SKILL.md §2.6 row 1, I
+rebased `cycle/608` onto the new `origin/main` tip
+(`c08a7483e57189760bcf5f7067904042f101bf61`) and force-pushed with
+`--force-with-lease`. This was a clean rebase (no conflicts, no content
+changes to any commit) but it rewrote every commit's SHA on the branch,
+including β's own R0 review commit and every SHA α cited in this file's
+R0 sections above. Mapping for reproducibility (rule 3.13(a)):
+
+| Pre-rebase SHA (cited above in R0 sections) | Post-rebase SHA (same content) |
+|---|---|
+| `226181f4c5a70fd6ab632e23f37ddc9cb5bf7925` (R0 review-readiness signal commit) | `1346f894...` |
+| `2a3699b73334c3d42cbee8b3defb64f28bf3009c` (R0 "Implementation SHA" cited in §Review-readiness) | `68ab7edf...` |
+| `49d0cbb2aee54c4a4dcceade99404d14c3e329af` (β's R0 review commit, cited in `beta-review.md`'s own header) | `0e67adf5...` |
+
+None of the R0 section prose above is edited in place (per
+alpha/SKILL.md §4 "never restart completed sections" / §2.7 fix-round
+convention — this R1 appendix is additive, not a rewrite); this table
+is the resolution path for any reader who tries to `git cat-file` an R0
+SHA against current `origin/cycle/608` and finds it missing.
+
+### Non-blocking items from β's R0 review — disposition
+
+1. Design doc's Mock B "Invariants B1–B3" header vs. 4 listed rows —
+   pre-existing inconsistency in verbatim-landed source content; not
+   touched (β already agreed this is correctly left as-is).
+2. γ's "9 rows total" scaffold arithmetic note — informational only, no
+   code change; α's R0 mock_parity block already used the correct
+   10-row set.
+3. CI `checkSmallChangeArtifacts` hard-fail-vs-warn asymmetry —
+   tooling/process observation for γ/δ, out of this cycle's diff scope.
+4. `--index <URL>` + explicit `--release <tag>` — **closed this round**
+   (see New tests above, `TestRun_IndexHTTPURL_WithExplicitReleaseTag`).
+5. No lockfile-level concurrency guard — inherited pre-existing
+   `restore.Restore` limitation, explicit known debt, out of scope for
+   #608 (same disposition as R0).
+6. No Windows support for the git-subprocess-based root resolution —
+   same debt class as 5, out of scope for #608 (cnos ships Go tooling
+   cross-platform in general, but this specific gap predates this
+   cycle and is not introduced by it).
+
+### Self-check
+
+Every claim above is backed by a command run this round (test output,
+binary repro transcript, `go build`/`go vet`/`go test` exit codes) —
+none is asserted from memory of R0's shape. The fix is a net *deletion*
+of a code path (the `inv.HubPath`-as-root branch), not an addition of
+conditional complexity, so there is no new ambiguity pushed onto β: β's
+re-review is a narrow AC1-focused re-check (as β's own R0 verdict
+rationale anticipated) plus confirmation that AC2–AC11 remain
+unaffected — both are directly evidenced above with concrete SHAs and
+counts.
+
+### Review-readiness — round 2 (R1)
+
+**Base SHA:** `c08a7483e57189760bcf5f7067904042f101bf61` (current
+`origin/main` tip; branch rebased onto it this round, confirmed
+`git merge-base origin/main HEAD` == `origin/main`'s tip).
+
+**Implementation SHA:** current branch HEAD after this round's fix
+commit (rebased). Run `git log -1 --format='%H' origin/cycle/608` to
+resolve — per alpha/SKILL.md §2.6 "SHA convention", omitting a
+recorded value here rather than naming a HEAD that this very commit
+would advance past (the recursive-self-stale trap named in that
+section); the commit message of the fix itself
+(`alpha-608 R1: fix silent ancestor-.cn walk-up in cn repo install (β R0
+F1)`) is the stable anchor.
+
+**Tests:** 307 pass, 0 fail (`go test ./...`); `go test -race -count=1
+./...` clean; `go build ./...` / `go vet ./...` clean.
+
+**Known debt:** unchanged from R0 (§Debt above) plus non-blocking items
+5–6 restated above; no new debt introduced by this fix (it is a
+strict simplification of the R0 code, not new surface).
+
+**This cycle is ready for β re-review**, scoped per β's own R0
+guidance: a narrow re-check of AC1 (now closed — β's exact repro
+re-tested against the built binary and fails correctly) plus a
+regression pass on AC2–AC11 (unaffected, all still pass).
+
+Requesting β re-review on `cycle/608` at current HEAD (the fix commit
+`aef74f3e103d747069abb083e75c82acb8bcca54`'s post-rebase equivalent).
+β should poll `origin/cycle/608` and
+`.cdd/unreleased/608/beta-review.md` per the standard coordination
+protocol.
