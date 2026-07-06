@@ -1992,7 +1992,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-04T04:03:17Z",
-    "updated": "2026-07-04T04:03:17Z",
+    "updated": "2026-07-06T18:16:52Z",
     "url": "https://github.com/usurobor/cnos/issues/577"
   },
   {
@@ -2386,7 +2386,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T13:08:20Z",
-    "updated": "2026-07-06T13:08:20Z",
+    "updated": "2026-07-06T18:16:54Z",
     "url": "https://github.com/usurobor/cnos/issues/612"
   },
   {
@@ -2452,5 +2452,25 @@
     "created": "2026-07-06T16:51:44Z",
     "updated": "2026-07-06T16:51:44Z",
     "url": "https://github.com/usurobor/cnos/issues/615"
+  },
+  {
+    "n": 616,
+    "t": "cdd/gamma: scaffold AC-oracle-approach must propagate negative-invariant clauses with dispatch-boundary precision (cdd-protocol-gap, cycle #608)",
+    "kind": "skill",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "cdd",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-06T18:16:39Z",
+    "updated": "2026-07-06T18:16:39Z",
+    "url": "https://github.com/usurobor/cnos/issues/616"
   }
 ]
