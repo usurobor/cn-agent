@@ -2264,5 +2264,23 @@
     "created": "2026-07-05T04:30:33Z",
     "updated": "2026-07-05T04:30:33Z",
     "url": "https://github.com/usurobor/cnos/issues/599"
+  },
+  {
+    "n": 606,
+    "t": "Customer challenge (first CDS-FSM tenant, tsc): cn deployability + tenant wake portability + CLI ergonomics gaps",
+    "kind": "",
+    "areas": [],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-06T10:47:56Z",
+    "updated": "2026-07-06T10:47:56Z",
+    "url": "https://github.com/usurobor/cnos/issues/606"
   }
 ]
