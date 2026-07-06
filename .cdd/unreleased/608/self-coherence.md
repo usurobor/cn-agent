@@ -640,3 +640,91 @@ reconciliation" entry — table-shape and cross-reference checks were manual
 (no markdown linter is wired into this repo's CI for prose docs, confirmed
 via `.github/workflows/*.yml` — only `validate-skill-frontmatter.sh`, which
 targets `SKILL.md` frontmatter specifically, not general guide prose).
+
+### Mock parity contract (design doc §"Receipt parity contract")
+
+Per this cycle's scope (Mocks A, B, E1 only — Mocks C/D/F/G belong to
+#609–#611, per γ's scaffold and the design doc's own header). **Row-count
+note:** γ's scaffold text says "9 rows total for this sub" while separately
+naming the row set as "A1-A5, B1-B4, E1" — that set is 5+4+1 = **10** rows,
+not 9; γ's arithmetic undercounted its own enumeration. This block uses the
+correct 10-row set (the named IDs are authoritative, not the miscounted
+total) rather than silently dropping a row to match "9." Separately: the
+design doc's own Mock B table header reads "**Invariants B1–B3**" but the
+table beneath it lists four rows (B1, B2, B3, **and** B4, the dispatch
+guard) — an intra-doc numbering drift in the landed-verbatim source file
+itself (not something α introduced or is authorized to silently correct,
+since the file was landed verbatim per γ's explicit instruction). Both
+observations are recorded here rather than acted on unilaterally.
+
+```yaml
+mock_parity:
+  source: docs/development/design/cn-repo-install-MOCKS.md
+  source_commit: "f22d5a78967059ba1a91a8ad1256e005d1cbc9a"  # pre-rebase landing commit; content unchanged post-rebase (verified: file untouched by any origin/main commit between base SHAs)
+  rows:
+    - id: A1
+      expectation: "Fails with a clear error if not at a git repo root (does not silently walk up or scaffold)."
+      observed: "✗ cn repo install must be run inside a Git repository. (exact stderr string; exit non-zero; no files written)"
+      evidence: "cli/cmd_repo_install_test.go::TestRepoInstall_NotAGitRepo_FailsClearly"
+      verdict: match
+      how: "gitRepoRoot(ctx) failure is caught and replaced with the exact clean message before any repoinstall.Run call; no scaffolding occurs (0 dir entries created, asserted in-test)."
+    - id: A2
+      expectation: "Prints the exact release tag it will use; --release latest resolves to a concrete tag in the output."
+      observed: "✓ Resolved cnos release: 9.9.9 (fake-GitHub-API-resolved tag printed to stdout)"
+      evidence: "repoinstall/repoinstall_test.go::TestRun_ReleaseLatest_ResolvesAndInstalls"
+      verdict: match
+      how: "Run prints the resolved tag unconditionally (both dry-run and apply paths) before any write."
+    - id: A3
+      expectation: "Lists the precise planned committed diff — exactly .cn/deps.json, .cn/deps.lock.json, .gitignore."
+      observed: "dry-run stdout 'Planned committed diff (3 files):' followed by exactly those three paths, no more."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DryRun_WritesNothing"
+      verdict: match
+      how: "printPlan's plannedFiles slice is hardcoded to exactly these three paths; no other path is ever appended to it."
+    - id: A4
+      expectation: "States dispatch mode explicitly and, in base mode, states no .github/workflows/ change."
+      observed: "'Dispatch: none (base install only — no .github/workflows/ changes)' printed in both dry-run and apply paths."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DryRun_WritesNothing (stdout assertion), TestRun_LocalIndex_EndToEnd (apply-path stdout)"
+      verdict: match
+      how: "The exact string is emitted by both printPlan (dry-run) and Run's post-applyInstall success path (apply) — one literal in each branch."
+    - id: A5
+      expectation: "Writes nothing (verified: git status --porcelain empty after --dry-run)."
+      evidence: "cli/cmd_repo_install_test.go::TestRepoInstall_DryRun_GitStatusStaysClean; repoinstall/repoinstall_test.go::TestRun_DryRun_WritesNothing (os.ReadDir empty)"
+      observed: "git status --porcelain empty; os.ReadDir(RepoRoot) returns zero entries."
+      verdict: match
+      how: "Run's DryRun branch returns before applyInstall (the sole owner of every os.MkdirAll/os.WriteFile in the non-test path) is ever called."
+    - id: B1
+      expectation: "Diff is exactly three files (.cn/deps.json, .cn/deps.lock.json, .gitignore); no .github/workflows/ file present."
+      observed: "Post-apply repo tree: exactly those three new/modified paths plus the gitignored .cn/vendor/ tree; no .github/ directory created."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_LocalIndex_EndToEnd; cli/cmd_repo_install_test.go::TestRepoInstall_FreshGitRepo_EndToEnd"
+      verdict: match
+      how: "applyInstall's only os.WriteFile/os.MkdirAll targets are .cn/, .cn/deps.json, and (via restore.Restore) .cn/vendor/packages/*, plus hubsetup.EnsureGitignoreEntry's .gitignore write — no .github/ call site exists anywhere in the diff."
+    - id: B2
+      expectation: ".cn/deps.lock.json validates against cn.lock.v2 and pins every package in deps.json by SHA-256; versions are exact, not semver ranges."
+      observed: "Schema == \"cn.lock.v2\"; every LockedDep has a non-empty SHA256; version strings are index-resolved exact matches."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_LocalIndex_EndToEnd"
+      verdict: match
+      how: "Lockfile is generated entirely by the reused restore.GenerateLockFromIndex — its exact-match resolution semantics and schema are inherited unmodified."
+    - id: B3
+      expectation: "Idempotent: a second cn repo install produces no further diff (git status --porcelain empty), with no formatting churn."
+      observed: "git status --porcelain empty after a commit + second install; .cn/deps.json and .cn/deps.lock.json byte-identical across two runs."
+      evidence: "cli/cmd_repo_install_test.go::TestRepoInstall_Idempotent_NoDiffOnSecondRun; repoinstall/repoinstall_test.go::TestRun_Idempotent_ByteIdenticalArtifacts"
+      verdict: match
+      how: "writeManifest is a pure function of resolved inputs (no timestamps); restore.GenerateLockFromIndex is independently deterministic; restore.Restore's existing version-match skip avoids vendor-tree rewrites."
+    - id: B4
+      expectation: "Dispatch guard: until the renderer is generalized (#609), cn repo install --dispatch cds fails with an explicit error and writes no partial .github/workflows/cnos-cds-dispatch.yml."
+      observed: "✗ --dispatch cds requires generalized wake renderer support (#609); os.ReadDir(RepoRoot) empty; no .github/workflows/cnos-cds-dispatch.yml."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DispatchCds_FailsWithNoPartialWrite; cli/cmd_repo_install_test.go::TestRepoInstall_DispatchCds_CliWiring"
+      verdict: match
+      how: "validateDispatch is the first statement in Run, before any I/O; a 'cds' value returns immediately."
+    - id: E1
+      expectation: "cn repo install (base) writes no agent-hub scaffold — no spec/SOUL.md, agent/, threads/, state/; only .cn/deps.json + .cn/deps.lock.json + .gitignore."
+      observed: "None of spec/SOUL.md, agent/, threads/, state/ exist post-install; internal/repoinstall does not import internal/hubinit at all."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_LocalIndex_EndToEnd; cli/cmd_repo_install_test.go::TestRepoInstall_NoAgentHubScaffold"
+      verdict: match
+      how: "repoinstall.go's import block has zero dependency on hubinit (cn init's agent-hub-scaffold package); the two commands share no scaffolding code path."
+  summary:
+    matched: 10
+    exceeded: 0
+    missed: 0
+    exceed_justified: true
+```
