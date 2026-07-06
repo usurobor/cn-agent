@@ -771,3 +771,56 @@ func TestRun_IndexHTTPURL_RelativeRewrite(t *testing.T) {
 		t.Errorf("cnos.core not restored via HTTP index flow: %v", err)
 	}
 }
+
+// AC7 combination: --index <URL> together with an explicit --release
+// <tag> (not "latest"). TestRun_IndexHTTPURL_RelativeRewrite and
+// TestRun_ReleaseTag_Pinned each exercise one of these independently;
+// this test exercises resolveIndex's isRemoteURL(indexArg) branch with a
+// non-empty pinFromRelease at the same time — the untested flag
+// combination β's R0 review flagged as narrow test-coverage debt.
+func TestRun_IndexHTTPURL_WithExplicitReleaseTag(t *testing.T) {
+	tarData, tarSHA := makeTarGz(t, map[string]string{"cn.package.json": `{"name": "cnos.core", "version": "7.7.7"}`})
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {"7.7.7": {URL: "cnos.core-7.7.7.tar.gz", SHA256: tarSHA}},
+		},
+	}
+	indexBody, err := json.Marshal(idx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/dist/packages/index.json":
+			w.Write(indexBody)
+		case "/dist/packages/cnos.core-7.7.7.tar.gz":
+			w.Write(tarData)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+	res, err := Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		IndexPath: srv.URL + "/dist/packages/index.json",
+		Release:   "7.7.7",
+		Packages:  []string{"cnos.core"},
+		Stdout:    stdout,
+		Stderr:    stderr,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if res.ReleaseTag != "7.7.7" {
+		t.Errorf("ReleaseTag = %q, want 7.7.7 (explicit --release must still pin the version even when --index is also given)", res.ReleaseTag)
+	}
+	pkgManifest := filepath.Join(pkg.VendorPath(repoRoot, "cnos.core"), "cn.package.json")
+	if _, err := os.Stat(pkgManifest); err != nil {
+		t.Errorf("cnos.core not restored via --index URL + --release combo: %v", err)
+	}
+}

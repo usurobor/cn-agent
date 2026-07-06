@@ -98,21 +98,26 @@ func (c *RepoInstallCmd) Run(ctx context.Context, inv Invocation) error {
 		return err
 	}
 
-	// Repo-root resolution: reuse the existing gitRepoRoot helper
-	// (cmd_cell.go) rather than duplicating a `git rev-parse
-	// --show-toplevel` wrapper. inv.HubPath is only populated when
-	// main.go's discoverHub found an existing .cn/ directory — the
-	// common case for a fresh repo is an empty HubPath, since this
-	// command's entire purpose is to run before .cn/ exists.
-	repoRoot := inv.HubPath
-	if repoRoot == "" {
-		root, gerr := gitRepoRoot(ctx)
-		if gerr != nil {
-			fmt.Fprintf(inv.Stderr, "✗ cn repo install must be run inside a Git repository.\n")
-			return fmt.Errorf("repo install: not inside a git repository: %w", gerr)
-		}
-		repoRoot = root
+	// Repo-root resolution: ALWAYS resolve via the actual git repository
+	// root (git rev-parse --show-toplevel, wrapped by gitRepoRoot in
+	// cmd_cell.go) — never via inv.HubPath. inv.HubPath is populated by
+	// main.go's discoverHub(), which walks upward from cwd looking for
+	// ANY ancestor .cn/ directory, with no bound at the current git
+	// repository's root and no check that the found directory is even a
+	// git repository at all. Trusting inv.HubPath here would let an
+	// unrelated ancestor .cn/ (a different project, a stale hub, a
+	// parent workspace, a monorepo-of-repos layout) silently hijack the
+	// install root — exactly the scenario `cn repo install` must guard
+	// against, since its entire premise is running in a repo that has no
+	// .cn/ yet (β R0 finding, cnos#608). Always ask git directly; this
+	// also makes the "not inside a git repository" failure unconditional
+	// instead of only reachable when inv.HubPath happens to be empty.
+	root, gerr := gitRepoRoot(ctx)
+	if gerr != nil {
+		fmt.Fprintf(inv.Stderr, "✗ cn repo install must be run inside a Git repository.\n")
+		return fmt.Errorf("repo install: not inside a git repository: %w", gerr)
 	}
+	repoRoot := root
 
 	opts := repoinstall.Options{
 		RepoRoot:  repoRoot,

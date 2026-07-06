@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -289,5 +290,164 @@ func TestRepoInstall_NoAgentHubScaffold(t *testing.T) {
 		if _, statErr := os.Stat(filepath.Join(repoDir, p)); !os.IsNotExist(statErr) {
 			t.Errorf("agent-hub path %q must not exist after cn repo install", p)
 		}
+	}
+}
+
+// --- real dispatch-path regression (cnos#608 β R0 finding) ---
+//
+// Every test above drives RepoInstallCmd.Run directly via
+// runRepoInstall, which hand-constructs an Invocation{HubPath: ""}. That
+// bypasses main.go's discoverHub() entirely — the function that
+// populates inv.HubPath in the real `cn` binary by walking upward from
+// cwd looking for ANY ancestor .cn/ directory, unbounded by the current
+// git repository's root and without ever checking that the found
+// directory is itself a git repository. β's R0 review found that
+// cmd_repo_install.go used to trust a non-empty inv.HubPath as the
+// install root outright, skipping the git-repo-root check entirely —
+// and that no test in the original diff could have caught it, because
+// the test harness never exercises the inv.HubPath != "" branch through
+// a faithful discoverHub()-shaped path.
+//
+// The tests below close that gap by building the actual cn binary and
+// invoking it as a subprocess — main.go's real discoverHub() runs, not a
+// reimplementation of it — against a cwd that (a) is not a git repo at
+// all and (b) has an unrelated ancestor .cn/ directory that discoverHub
+// would find.
+
+// buildCnBinary builds the real `cn` binary once per test (from the
+// module root, mirroring the `(cd src/go && go build -o $CN_BIN
+// ./cmd/cn)` convention already used by the shell test harnesses under
+// src/packages/cnos.cdd/commands/cdd-verify/) and returns its path.
+func buildCnBinary(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	binPath := filepath.Join(dir, "cn")
+	cmd := exec.Command("go", "build", "-o", binPath, "./cmd/cn")
+	cmd.Dir = repoGoModuleRoot(t)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("go build ./cmd/cn: %v\n%s", err, out)
+	}
+	return binPath
+}
+
+// repoGoModuleRoot resolves the src/go module root from this test file's
+// own path (runtime.Caller), independent of the process's current
+// working directory — several sibling tests in this file call
+// t.Chdir, and this helper must not depend on ordering relative to
+// those.
+func repoGoModuleRoot(t *testing.T) string {
+	t.Helper()
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller(0) failed")
+	}
+	// thisFile: .../src/go/internal/cli/cmd_repo_install_test.go
+	return filepath.Join(filepath.Dir(thisFile), "..", "..")
+}
+
+// AC1 (real dispatch path): cwd is NOT inside any git repository at all,
+// but an unrelated ancestor directory happens to contain a .cn/
+// directory (e.g. a different project, a stale hub, a parent
+// workspace). main.go's discoverHub() will find that ancestor and
+// populate inv.HubPath with it. cn repo install must still fail with
+// AC1's exact error — it must never silently treat the discovered
+// ancestor as the install root, and must not touch it.
+func TestRepoInstall_RealDispatch_AncestorHubOutsideGitRepo_FailsClearly(t *testing.T) {
+	binPath := buildCnBinary(t)
+
+	// Layout:
+	//   outer/.cn/                        <- unrelated ancestor "hub"; not a git repo itself
+	//   outer/nested/not-a-git-repo/      <- cwd; not inside any git repo
+	outer := t.TempDir()
+	ancestorHub := filepath.Join(outer, ".cn")
+	if err := os.MkdirAll(ancestorHub, 0755); err != nil {
+		t.Fatal(err)
+	}
+	cwd := filepath.Join(outer, "nested", "not-a-git-repo")
+	if err := os.MkdirAll(cwd, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command(binPath, "repo", "install", "--dry-run")
+	cmd.Dir = cwd
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	runErr := cmd.Run()
+
+	if runErr == nil {
+		t.Fatalf("expected `cn repo install` to fail outside a git repository (ancestor .cn found at %s); stdout:\n%s\nstderr:\n%s", ancestorHub, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "✗ cn repo install must be run inside a Git repository.") {
+		t.Errorf("stderr = %q, want the exact AC1 git-repo-required message", stderr.String())
+	}
+
+	// The ancestor "hub" must be completely untouched — no silent
+	// walk-up install, no write of any kind under outer/ (beyond the
+	// two directories this test itself created).
+	hubEntries, rerr := os.ReadDir(ancestorHub)
+	if rerr != nil {
+		t.Fatal(rerr)
+	}
+	if len(hubEntries) != 0 {
+		t.Errorf("ancestor .cn/ must not be written to; found: %v", hubEntries)
+	}
+	outerEntries, rerr := os.ReadDir(outer)
+	if rerr != nil {
+		t.Fatal(rerr)
+	}
+	for _, e := range outerEntries {
+		if e.Name() != ".cn" && e.Name() != "nested" {
+			t.Errorf("unexpected entry written under the ancestor directory: %s", e.Name())
+		}
+	}
+}
+
+// AC1 (real dispatch path, control case): the same ancestor-.cn/ layout,
+// but cwd IS inside its own git repository (nested under the ancestor
+// hub, mirroring a monorepo-of-repos layout). discoverHub() still finds
+// the unrelated ancestor .cn/ first (it walks up from cwd and stops at
+// the first .cn/ found, which sits above the inner git repo's root), so
+// this must also resolve to the INNER repo's root — never the
+// ancestor's — and must succeed there, not silently install into the
+// ancestor.
+func TestRepoInstall_RealDispatch_AncestorHubWithNestedGitRepo_UsesInnerRoot(t *testing.T) {
+	binPath := buildCnBinary(t)
+	indexPath := writeFixtureIndex(t, "cnos.core", "9.9.9")
+
+	outer := t.TempDir()
+	ancestorHub := filepath.Join(outer, ".cn")
+	if err := os.MkdirAll(ancestorHub, 0755); err != nil {
+		t.Fatal(err)
+	}
+	innerRepo := filepath.Join(outer, "nested", "actual-git-repo")
+	if err := os.MkdirAll(innerRepo, 0755); err != nil {
+		t.Fatal(err)
+	}
+	initGitRepo(t, innerRepo)
+
+	cmd := exec.Command(binPath, "repo", "install", "--index", indexPath, "--packages", "cnos.core")
+	cmd.Dir = innerRepo
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("cn repo install: %v\nstdout:\n%s\nstderr:\n%s", err, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Git repository root: "+innerRepo) {
+		t.Errorf("stdout should report the inner repo as the resolved root, got:\n%s", stdout.String())
+	}
+
+	if _, statErr := os.Stat(filepath.Join(innerRepo, ".cn", "deps.json")); statErr != nil {
+		t.Errorf("expected .cn/deps.json to be written under the inner repo root: %v", statErr)
+	}
+
+	ancestorEntries, rerr := os.ReadDir(ancestorHub)
+	if rerr != nil {
+		t.Fatal(rerr)
+	}
+	if len(ancestorEntries) != 0 {
+		t.Errorf("ancestor .cn/ must not be written to; found: %v", ancestorEntries)
 	}
 }
