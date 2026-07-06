@@ -2258,7 +2258,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T10:47:56Z",
-    "updated": "2026-07-06T13:10:42Z",
+    "updated": "2026-07-06T19:41:55Z",
     "url": "https://github.com/usurobor/cnos/issues/606"
   },
   {
@@ -2280,7 +2280,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:56:07Z",
-    "updated": "2026-07-06T19:40:48Z",
+    "updated": "2026-07-06T19:41:52Z",
     "url": "https://github.com/usurobor/cnos/issues/607"
   },
   {
@@ -2472,5 +2472,26 @@
     "created": "2026-07-06T18:16:39Z",
     "updated": "2026-07-06T18:16:39Z",
     "url": "https://github.com/usurobor/cnos/issues/616"
+  },
+  {
+    "n": 618,
+    "t": "release-infra: FSM-capable `cn` tooling channel — publish current cn + package index ahead of a held feature version (cnos#606 C1/C2)",
+    "kind": "tooling",
+    "areas": [
+      "ci",
+      "core"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-06T19:41:34Z",
+    "updated": "2026-07-06T19:41:34Z",
+    "url": "https://github.com/usurobor/cnos/issues/618"
   }
 ]
