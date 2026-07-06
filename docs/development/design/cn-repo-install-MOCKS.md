@@ -167,6 +167,79 @@ inputs:
 
 ---
 
+## Mock E — tenant-portable dispatch wake (dogfooding: cnos#606 C4, C5)
+
+The first external tenant (`tsc`, cnos#606) found the rendered wake does
+`cd src/go && go build ./cmd/cn` — valid only inside the cnos repo — and that
+`cn init` drops a full agent-hub (`spec/SOUL.md`, `agent/`, `threads/`,
+`state/`) into the tree. A tenant wants **labels + wakes + `.cn/` runtime**, not
+a home hub, and its wake must acquire `cn` the way a tenant can.
+
+Intended rendered dispatch wake for a tenant (identity elided; see Mock C):
+
+```yaml
+      - name: Install cn (tenant-portable — no src/go build)
+        run: curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh
+             | BIN_DIR="$HOME/.local/bin" sh
+      # ... claude-code-action work phase ...
+      - name: Mechanical checkpoint + PR finalizer
+        run: cn cell finalize --base-sha "${CN_WAKE_BASE_SHA:-}"   # installed cn, NOT go build
+```
+
+**Invariants E1–E4**
+
+| ID | Invariant |
+|---|---|
+| E1 | `cn install repo` (base) writes **no** agent-hub scaffold — no `spec/SOUL.md`, `agent/`, `threads/`, `state/`; only `.cn/` + `cn.lock` + `.gitignore` (C4). |
+| E2 | A rendered tenant dispatch wake contains **no** `cd src/go` / `go build ./cmd/cn`; it acquires `cn` via `install.sh` or a pinned release (C5). |
+| E3 | The rendered wake's finalizer/engine steps invoke the installed `cn` (e.g. `cn cell finalize`), runnable in a repo with no `src/go`. |
+| E4 | `--agent sigma` inside the cnos repo still reproduces the current `go build` self-wake byte-for-byte (backward compat; the golden is not broken by tenant mode). |
+
+---
+
+## Mock F — CLI ergonomics (dogfooding: cnos#606 C3)
+
+The tenant hit: `cn --version` → "Unknown command"; `cn init --help` **scaffolded
+a stray `cn---help/` directory**; `cn help` lists `issues-fsm` / `cell-finalize`
+but the real invocation is `cn issues fsm` / `cn cell finalize`.
+
+```console
+$ cn --version
+cn 3.82.1 (…)
+$ cn install repo --help
+cn install repo — make this repository CDS-ready …
+$ cn init --help        # a flag is never a hub name
+✗ unknown flag --help for `cn init` (did you mean `cn init <name>`?)
+```
+
+**Invariants F1–F4**
+
+| ID | Invariant |
+|---|---|
+| F1 | `cn --version` / `-V` prints the version (exit 0), not "Unknown command". |
+| F2 | `--help` / `-h` works on `cn` and every command incl. `cn install repo`. |
+| F3 | `cn init --help` (any unrecognized `--flag`) **refuses** with a clear error and scaffolds nothing — no stray `cn---help/`. |
+| F4 | `cn help` display names match real invocation (`cn issues fsm`, `cn cell finalize`), or list both forms — no name/invocation mismatch. |
+
+---
+
+## Mock G — PAT-free mechanical FSM engine + secrets runbook (dogfooding: cnos#606 C6, C7)
+
+`cn issues fsm evaluate --apply` is mechanical — it needs no agent token. The
+tenant had no fallback: every wake required `SIGMA_WORKFLOW_PAT`, and there was
+no doc naming the secrets or a hub-less label path.
+
+**Invariants G1–G4**
+
+| ID | Invariant |
+|---|---|
+| G1 | `cn install repo --dispatch cds` can render a **mechanical FSM-engine** wake that runs `cn issues fsm evaluate --apply` on the default `GITHUB_TOKEN` — no agent PAT required. |
+| G2 | The agent (claude-code-action) wake tier remains the only one that needs a `workflow`-scope PAT + `CLAUDE_CODE_OAUTH_TOKEN`; the two tiers are separable. |
+| G3 | Dispatch install ensures the canonical FSM labels **without a full hub** (hub-less `cn labels sync` / the cnos#493 mechanism) (C7). |
+| G4 | Installing dispatch emits/points to a tenant secrets runbook naming every required secret per tier. |
+
+---
+
 ## Receipt parity contract
 
 The implementing cell (`cell_kind: implementation`) MUST emit this block in its
@@ -178,7 +251,7 @@ mock_parity:
   source: docs/development/design/cn-repo-install-MOCKS.md
   source_commit: "<sha of this file the cell built against>"
   rows:
-    # one row per invariant A1..A5, B1..B3, C1..C6, D1..D4
+    # one row per invariant A1..A5, B1..B3, C1..C6, D1..D4, E1..E4, F1..F4, G1..G4
     - id: A3
       expectation: "dry-run lists exactly .cn/deps.json, cn.lock, .gitignore"
       observed: "<what the built command actually printed>"
@@ -194,8 +267,9 @@ mock_parity:
 ```
 
 **Rules**
-- **Coverage**: every invariant ID in Mocks A–D has exactly one row. A missing ID
-  is itself a `miss`.
+- **Coverage**: every invariant ID in Mocks A–G has exactly one row. A missing ID
+  is itself a `miss`. (Mocks E–G are the cnos#606 dogfooding surface — tenant
+  portability, ergonomics, PAT-free engine — and are not optional.)
 - **`exceed` is not a free pass**: an `exceed` verdict requires `how` to state the
   extra capability *and* why it does not violate a non-goal (e.g. exceeding into
   autonomous-write territory in base mode is a `miss`, not an `exceed`).
