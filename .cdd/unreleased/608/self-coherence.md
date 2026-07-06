@@ -1,7 +1,7 @@
 # self-coherence — cycle #608
 
 **manifest:** sections = [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-**completed:** [Gap, Skills, ACs, Self-check, Debt]
+**completed:** [Gap, Skills, ACs, Self-check, Debt, CDD Trace]
 
 ---
 
@@ -543,3 +543,100 @@ pre-existing (1, 5, 6), explicitly out-of-scope-by-the-issue's-own-text (4),
 narrow test-coverage gaps on a low-risk shared code path (3), a tooling
 observation for a different role to triage (2), or a transient/resolved CI
 state (7).
+
+---
+
+## CDD Trace
+
+Steps per `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ordered
+flow", as realized by this cycle:
+
+1. **Design artifact** — `docs/development/design/cn-repo-install-MOCKS.md`,
+   landed verbatim from `origin/claude/cds-install-guide-2ka54j` (not
+   re-authored; operator-reviewed per #607). Commit `f22d5a78` (pre-rebase:
+   `40a6706c`).
+2. **Coherence contract** — this file's §Gap, established before any code
+   was written.
+3. **Plan** — not a standalone artifact this cycle; γ's scaffold's own
+   "Surfaces α is expected to touch" + AC oracle table served this role (see
+   §Skills for the justification).
+4. **Tests** — written alongside each domain/cli commit (test-first within
+   each commit, not as a separate preceding commit): `repoinstall_test.go`
+   (22 tests) landed in the same commit as `repoinstall.go`;
+   `cmd_repo_install_test.go` (9 tests) landed in the same commit as
+   `cmd_repo_install.go`. Total: 31 new tests, all passing at HEAD (see
+   Test Results below).
+5. **Code** — `internal/repoinstall/repoinstall.go` (domain logic),
+   `internal/cli/cmd_repo_install.go` (thin dispatch wrapper),
+   `src/go/cmd/cn/main.go` (+1 line registration),
+   `internal/hubsetup/hubsetup.go` (export rename, no behavior change).
+6. **Docs** — `docs/guides/INSTALL-CDS.md` (new).
+
+**Artifact enumeration matches diff (pre-review gate rule 11).** Every file
+in `git diff --stat origin/main..HEAD` (against `origin/main` at
+`80778d688e04e61c66d38f2bd5962fafb0729e95`, the rebased base):
+
+| File | Status | Mentioned |
+|---|---|---|
+| `.cdd/unreleased/608/gamma-scaffold.md` | γ's pre-dispatch artifact (not α-authored; already present on the branch when α checked it out) | this row |
+| `.cdd/unreleased/608/self-coherence.md` | this file | N/A (self) |
+| `docs/development/design/cn-repo-install-MOCKS.md` | new (landed verbatim) | step 1 above |
+| `docs/guides/INSTALL-CDS.md` | new | step 6 above, AC11 |
+| `src/go/cmd/cn/main.go` | modified (+1 line) | step 5 above |
+| `src/go/internal/cli/cmd_repo_install.go` | new | step 5 above |
+| `src/go/internal/cli/cmd_repo_install_test.go` | new | step 4 above |
+| `src/go/internal/hubsetup/hubsetup.go` | modified (export rename) | step 5 above, §Self-check peer enumeration |
+| `src/go/internal/repoinstall/repoinstall.go` | new | step 5 above |
+| `src/go/internal/repoinstall/repoinstall_test.go` | new | step 4 above |
+
+All 10 files in the diff are accounted for above.
+
+**Caller-path trace for new modules (pre-review gate rule 12).** For every
+new module/function, at least one non-test caller:
+- `internal/repoinstall` package (`Run`, `ParseArgs`, `Options`, `Result`,
+  `Args`) — called from `src/go/internal/cli/cmd_repo_install.go`'s
+  `RepoInstallCmd.Run` (non-test caller: `cmd_repo_install.go` lines calling
+  `repoinstall.ParseArgs(inv.Args)` and `repoinstall.Run(ctx, opts)`).
+- `RepoInstallCmd` (`cli` package) — registered and reachable via
+  `src/go/cmd/cn/main.go`'s `reg.Register(&cli.RepoInstallCmd{})`, dispatched
+  by the existing `cli.ResolveCommand`/`main()` argv-handling loop (the same
+  non-test call path every other kernel command uses — no new dispatch
+  mechanism was added).
+- `hubsetup.EnsureGitignoreEntry` (renamed from unexported
+  `ensureGitignoreEntry`) — non-test callers: `hubsetup.Run` (pre-existing,
+  `cn setup`'s call site, unchanged behavior) AND
+  `repoinstall.applyInstall` (new call site, this cycle).
+
+**Test assertion count from runner output (pre-review gate rule 13).**
+Pasted directly from `go test ./... -v 2>&1 | grep -c "^--- PASS"` /
+`grep -c "^--- FAIL"` at HEAD:
+
+```
+$ cd src/go && go test ./... -v 2>&1 | grep -E "^--- (PASS|FAIL)" | wc -l
+304
+$ ... | grep -c FAIL
+0
+$ go test ./internal/repoinstall/... -v 2>&1 | grep -c "^--- PASS"
+22
+$ go test ./internal/cli/... -run RepoInstall -v 2>&1 | grep -c "^--- PASS"
+9
+```
+
+304 total tests pass (0 fail) across the whole `src/go` module; 31 of those
+are new this cycle (22 in `internal/repoinstall`, 9 in `internal/cli`'s
+`cmd_repo_install_test.go`); the remaining 273 are pre-existing tests,
+confirmed still passing (no regression). `go build ./...`, `go vet ./...`,
+and `go test -race ./internal/repoinstall/... ./internal/cli/...
+./internal/hubsetup/...` all exit 0 at HEAD.
+
+**Polyglot re-audit (pre-review gate rule 9 / §2.6 rule 9).** Languages
+touched by this diff: Go (production + test code), Markdown (design doc
+landed verbatim + new install guide). No shell, YAML, or other language is
+touched. Go: `go vet ./...` clean, `go test ./... -race` clean on the
+touched packages. Markdown: both new/landed `.md` files were read in full
+(not just diffed) and cross-checked against real repo state (path
+existence, command existence, schema names) per §Self-check's "docs
+reconciliation" entry — table-shape and cross-reference checks were manual
+(no markdown linter is wired into this repo's CI for prose docs, confirmed
+via `.github/workflows/*.yml` — only `validate-skill-frontmatter.sh`, which
+targets `SKILL.md` frontmatter specifically, not general guide prose).
