@@ -72,7 +72,7 @@ development; `--packages a,b,c` overrides the default set; `--dispatch none`
 ## Mock B — base-install pull request (the committed diff)
 
 Intended PR contents after `cn repo install` (no dispatch). Vendored packages
-are **not** in the diff — they rehydrate from `cn.lock`.
+are **not** in the diff — they rehydrate from `.cn/deps.lock.json`.
 
 ```diff
 +++ b/.cn/deps.json
@@ -113,7 +113,7 @@ $ cn repo install --dispatch cds \
     --bot-name "acme-bot" \
     --bot-id 12345678
 → cnos repo install — dispatch: cds (agent: acme)
-✓ base install complete (.cn/deps.json, cn.lock)
+✓ base install complete (.cn/deps.json, .cn/deps.lock.json)
 ✓ rendered .github/workflows/cnos-cds-dispatch.yml
   identity:  acme  (bot acme-bot / 12345678)
   pat secret: ACME_WORKFLOW_PAT
