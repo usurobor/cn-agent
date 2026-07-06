@@ -1,8 +1,11 @@
-# `cn install repo` — mocked human deliverables + receipt parity contract
+# `cn repo install` — mocked human deliverables + receipt parity contract
 
-> **Command name.** House style is the `cn install <target>` group (`cn install
-> wake` per cnos#549, `cn install cnos.core` per cnos#493), so the repo
-> installer is **`cn install repo`**. Earlier drafts said `cn repo install`.
+> **Command name (operator ruling).** The installer is **`cn repo install`** —
+> a `repo` noun-group that matches the noun-group command resolver and leaves
+> room for future `cn repo status` / `cn repo doctor` / `cn repo uninstall`. It
+> coexists with the `cn install <target>` group (`cn install wake` #549,
+> `cn install cnos.core` #493). An interim draft used `cn install repo`; the
+> operator verdict pinned `cn repo install`.
 
 **Status:** Design surface (pre-implementation). Author: kappa/operator review.
 **Purpose:** Lock the *human-visible* deliverables of the CDS repo-installer wave
@@ -21,13 +24,13 @@ carries the [Receipt parity contract](#receipt-parity-contract).
 
 ---
 
-## Mock A — `cn install repo --dry-run` (base mode)
+## Mock A — `cn repo install --dry-run` (base mode)
 
 Intended terminal experience, run from the root of an arbitrary repo with only
 `cn` on PATH:
 
 ```console
-$ cn install repo --dry-run
+$ cn repo install --dry-run
 → cnos repo install (dry-run) — no files will be written
 ✓ Git repository root: /home/dev/acme-api
 ✓ Resolved cnos release: v3.82.0
@@ -36,18 +39,23 @@ $ cn install repo --dry-run
       cnos.core  3.82.0
       cnos.cdd   3.82.0
       cnos.cds   3.82.0
-  Would run: cn deps lock
-  Would run: cn deps restore   → .cn/vendor/packages/ (3 packages)
+  Would run: (internal) deps lock   → .cn/deps.lock.json
+  Would run: (internal) deps restore → .cn/vendor/packages/ (3 packages)
   Would ensure .gitignore contains: .cn/vendor/
   Dispatch: none (base install only — no .github/workflows/ changes)
 
-Planned committed diff (2 files):
+Planned committed diff (3 files):
   A  .cn/deps.json
-  A  cn.lock
+  A  .cn/deps.lock.json
   M  .gitignore
 
 Run without --dry-run to apply.
 ```
+
+**Flags** (base mode): `--release latest|<tag>` resolves the CNOS release;
+`--index <path-or-url>` overrides the index for tests / local / offline
+development; `--packages a,b,c` overrides the default set; `--dispatch none`
+(default) / `cds`; `--dry-run`.
 
 **Human-deliverable invariants A1–A5**
 
@@ -55,7 +63,7 @@ Run without --dry-run to apply.
 |---|---|
 | A1 | Fails with a clear error if not at a git repo root (does not silently walk up or scaffold). |
 | A2 | Prints the exact release tag it will use; `--release latest` resolves to a concrete tag in the output. |
-| A3 | Lists the precise planned committed diff — and it is exactly `.cn/deps.json`, `cn.lock`, `.gitignore`. |
+| A3 | Lists the precise planned committed diff — and it is exactly `.cn/deps.json`, `.cn/deps.lock.json`, `.gitignore`. |
 | A4 | States dispatch mode explicitly and, in base mode, states no `.github/workflows/` change. |
 | A5 | Writes nothing (verified: `git status --porcelain` empty after `--dry-run`). |
 
@@ -63,7 +71,7 @@ Run without --dry-run to apply.
 
 ## Mock B — base-install pull request (the committed diff)
 
-Intended PR contents after `cn install repo` (no dispatch). Vendored packages
+Intended PR contents after `cn repo install` (no dispatch). Vendored packages
 are **not** in the diff — they rehydrate from `cn.lock`.
 
 ```diff
@@ -78,27 +86,28 @@ are **not** in the diff — they rehydrate from `cn.lock`.
 +  ]
 +}
 
-+++ b/cn.lock            (schema cn.lock.v2 — SHA-256-pinned entries)
-+++ b/.gitignore         (+ .cn/vendor/)
++++ b/.cn/deps.lock.json  (schema cn.lock.v2 — SHA-256-pinned entries)
++++ b/.gitignore          (+ .cn/vendor/)
 ```
 
 **Invariants B1–B3**
 
 | ID | Invariant |
 |---|---|
-| B1 | Diff is exactly three files; no `.github/workflows/` file present. |
-| B2 | `cn.lock` validates against `cn.lock.v2` and pins every package in `deps.json` by SHA-256. |
-| B3 | **Idempotent**: a second `cn install repo` produces no further diff (`git status --porcelain` empty). |
+| B1 | Diff is exactly three files (`.cn/deps.json`, `.cn/deps.lock.json`, `.gitignore`); no `.github/workflows/` file present. |
+| B2 | `.cn/deps.lock.json` validates against `cn.lock.v2` and pins every package in `deps.json` by SHA-256. Versions are **exact** (resolved from the index), not semver ranges. |
+| B3 | **Idempotent**: a second `cn repo install` produces no further diff (`git status --porcelain` empty), with no formatting churn. |
+| B4 | **Dispatch guard**: until the renderer is generalized (#609), `cn repo install --dispatch cds` fails with an explicit "not implemented until renderer generalization lands" error and writes **no** partial `.github/workflows/cnos-cds-dispatch.yml`. |
 
 ---
 
-## Mock C — `cn install repo --dispatch cds` for a **non-sigma** agent
+## Mock C — `cn repo install --dispatch cds` for a **non-sigma** agent
 
 The load-bearing mock: dispatch rendered for agent `acme` with the caller's own
 secret. This is the proof the sigma binding is gone.
 
 ```console
-$ cn install repo --dispatch cds \
+$ cn repo install --dispatch cds \
     --agent acme \
     --workflow-pat-secret ACME_WORKFLOW_PAT \
     --bot-name "acme-bot" \
@@ -146,7 +155,7 @@ concurrency:
 ## Mock D — GitHub UI (no-terminal) path
 
 `workflow_dispatch` inputs on `.github/workflows/cnos-install.yml`, delegating to
-the same `cn install repo` command (not reimplemented in YAML):
+the same `cn repo install` command (not reimplemented in YAML):
 
 ```yaml
 inputs:
@@ -162,7 +171,7 @@ inputs:
 |---|---|
 | D1 | Base run (dispatch off) opens a PR with the Mock-B diff, using the default `GITHUB_TOKEN`. |
 | D2 | Dispatch run either opens a PR containing the Mock-C workflow **or** fails with a clear message that a `workflow`-scoped PAT is required — never a half-applied state. |
-| D3 | The job body invokes `cn install repo …` — install logic is not duplicated in shell. |
+| D3 | The job body invokes `cn repo install …` — install logic is not duplicated in shell. |
 | D4 | Never pushes to `main`. |
 
 ---
@@ -190,7 +199,7 @@ Intended rendered dispatch wake for a tenant (identity elided; see Mock C):
 
 | ID | Invariant |
 |---|---|
-| E1 | `cn install repo` (base) writes **no** agent-hub scaffold — no `spec/SOUL.md`, `agent/`, `threads/`, `state/`; only `.cn/` + `cn.lock` + `.gitignore` (C4). |
+| E1 | `cn repo install` (base) writes **no** agent-hub scaffold — no `spec/SOUL.md`, `agent/`, `threads/`, `state/`; only `.cn/` + `cn.lock` + `.gitignore` (C4). |
 | E2 | A rendered tenant dispatch wake contains **no** `cd src/go` / `go build ./cmd/cn`; it acquires `cn` via `install.sh` or a pinned release (C5). |
 | E3 | The rendered wake's finalizer/engine steps invoke the installed `cn` (e.g. `cn cell finalize`), runnable in a repo with no `src/go`. |
 | E4 | `--agent sigma` inside the cnos repo still reproduces the current `go build` self-wake byte-for-byte (backward compat; the golden is not broken by tenant mode). |
@@ -206,8 +215,8 @@ but the real invocation is `cn issues fsm` / `cn cell finalize`.
 ```console
 $ cn --version
 cn 3.82.1 (…)
-$ cn install repo --help
-cn install repo — make this repository CDS-ready …
+$ cn repo install --help
+cn repo install — make this repository CDS-ready …
 $ cn init --help        # a flag is never a hub name
 ✗ unknown flag --help for `cn init` (did you mean `cn init <name>`?)
 ```
@@ -217,7 +226,7 @@ $ cn init --help        # a flag is never a hub name
 | ID | Invariant |
 |---|---|
 | F1 | `cn --version` / `-V` prints the version (exit 0), not "Unknown command". |
-| F2 | `--help` / `-h` works on `cn` and every command incl. `cn install repo`. |
+| F2 | `--help` / `-h` works on `cn` and every command incl. `cn repo install`. |
 | F3 | `cn init --help` (any unrecognized `--flag`) **refuses** with a clear error and scaffolds nothing — no stray `cn---help/`. |
 | F4 | `cn help` display names match real invocation (`cn issues fsm`, `cn cell finalize`), or list both forms — no name/invocation mismatch. |
 
@@ -233,7 +242,7 @@ no doc naming the secrets or a hub-less label path.
 
 | ID | Invariant |
 |---|---|
-| G1 | `cn install repo --dispatch cds` can render a **mechanical FSM-engine** wake that runs `cn issues fsm evaluate --apply` on the default `GITHUB_TOKEN` — no agent PAT required. |
+| G1 | `cn repo install --dispatch cds` can render a **mechanical FSM-engine** wake that runs `cn issues fsm evaluate --apply` on the default `GITHUB_TOKEN` — no agent PAT required. |
 | G2 | The agent (claude-code-action) wake tier remains the only one that needs a `workflow`-scope PAT + `CLAUDE_CODE_OAUTH_TOKEN`; the two tiers are separable. |
 | G3 | Dispatch install ensures the canonical FSM labels **without a full hub** (hub-less `cn labels sync` / the cnos#493 mechanism) (C7). |
 | G4 | Installing dispatch emits/points to a tenant secrets runbook naming every required secret per tier. |
@@ -251,9 +260,9 @@ mock_parity:
   source: docs/development/design/cn-repo-install-MOCKS.md
   source_commit: "<sha of this file the cell built against>"
   rows:
-    # one row per invariant A1..A5, B1..B3, C1..C6, D1..D4, E1..E4, F1..F4, G1..G4
+    # one row per invariant A1..A5, B1..B4, C1..C6, D1..D4, E1..E4, F1..F4, G1..G4
     - id: A3
-      expectation: "dry-run lists exactly .cn/deps.json, cn.lock, .gitignore"
+      expectation: "dry-run lists exactly .cn/deps.json, .cn/deps.lock.json, .gitignore"
       observed: "<what the built command actually printed>"
       evidence: "<test name / transcript path / commit>"
       verdict: match | exceed | miss
