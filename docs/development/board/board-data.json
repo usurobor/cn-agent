@@ -2302,7 +2302,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:56:07Z",
-    "updated": "2026-07-06T12:56:07Z",
+    "updated": "2026-07-06T12:59:08Z",
     "url": "https://github.com/usurobor/cnos/issues/607"
   },
   {
@@ -2347,5 +2347,48 @@
     "created": "2026-07-06T12:57:42Z",
     "updated": "2026-07-06T12:57:42Z",
     "url": "https://github.com/usurobor/cnos/issues/609"
+  },
+  {
+    "n": 610,
+    "t": "cds-install Sub 3: `cn install repo --dispatch cds` (dispatch layer)",
+    "kind": "tooling",
+    "areas": [
+      "cds",
+      "ci",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-06T12:57:57Z",
+    "updated": "2026-07-06T12:57:57Z",
+    "url": "https://github.com/usurobor/cnos/issues/610"
+  },
+  {
+    "n": 611,
+    "t": "cds-install Sub 4: bootstrap workflow delegates to `cn install repo` + docs flip",
+    "kind": "tooling",
+    "areas": [
+      "cds",
+      "ci"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-06T12:58:09Z",
+    "updated": "2026-07-06T12:58:09Z",
+    "url": "https://github.com/usurobor/cnos/issues/611"
   }
 ]
