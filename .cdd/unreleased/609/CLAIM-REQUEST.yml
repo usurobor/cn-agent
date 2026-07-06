@@ -1,0 +1,12 @@
+issue: 609
+protocol: cds
+cycle_branch: cycle/609
+requested_by: cds-dispatch (dispatch wake, claim step)
+head_commit: 26c3cad266d137b7e6ee35192cdfa0e3cbd10b3c
+note: >
+  Well-formedness gates verified (open, single protocol:cds, single
+  status:todo, dispatch:cell present). No prior status:changes history,
+  no prior cycle/609 branch, no prior .cdd/unreleased/609/ artifacts,
+  no bounce comments -- run_class: first_pass. Requesting the todo ->
+  in-progress transition via `cn issues fsm evaluate --issue 609 --apply`
+  per cnos#575 Phase 3.
