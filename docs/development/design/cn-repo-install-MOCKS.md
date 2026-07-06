@@ -1,4 +1,8 @@
-# `cn repo install` — mocked human deliverables + receipt parity contract
+# `cn install repo` — mocked human deliverables + receipt parity contract
+
+> **Command name.** House style is the `cn install <target>` group (`cn install
+> wake` per cnos#549, `cn install cnos.core` per cnos#493), so the repo
+> installer is **`cn install repo`**. Earlier drafts said `cn install repo`.
 
 **Status:** Design surface (pre-implementation). Author: kappa/operator review.
 **Purpose:** Lock the *human-visible* deliverables of the CDS repo-installer wave
@@ -17,13 +21,13 @@ carries the [Receipt parity contract](#receipt-parity-contract).
 
 ---
 
-## Mock A — `cn repo install --dry-run` (base mode)
+## Mock A — `cn install repo --dry-run` (base mode)
 
 Intended terminal experience, run from the root of an arbitrary repo with only
 `cn` on PATH:
 
 ```console
-$ cn repo install --dry-run
+$ cn install repo --dry-run
 → cnos repo install (dry-run) — no files will be written
 ✓ Git repository root: /home/dev/acme-api
 ✓ Resolved cnos release: v3.82.0
@@ -59,7 +63,7 @@ Run without --dry-run to apply.
 
 ## Mock B — base-install pull request (the committed diff)
 
-Intended PR contents after `cn repo install` (no dispatch). Vendored packages
+Intended PR contents after `cn install repo` (no dispatch). Vendored packages
 are **not** in the diff — they rehydrate from `cn.lock`.
 
 ```diff
@@ -84,17 +88,17 @@ are **not** in the diff — they rehydrate from `cn.lock`.
 |---|---|
 | B1 | Diff is exactly three files; no `.github/workflows/` file present. |
 | B2 | `cn.lock` validates against `cn.lock.v2` and pins every package in `deps.json` by SHA-256. |
-| B3 | **Idempotent**: a second `cn repo install` produces no further diff (`git status --porcelain` empty). |
+| B3 | **Idempotent**: a second `cn install repo` produces no further diff (`git status --porcelain` empty). |
 
 ---
 
-## Mock C — `cn repo install --dispatch cds` for a **non-sigma** agent
+## Mock C — `cn install repo --dispatch cds` for a **non-sigma** agent
 
 The load-bearing mock: dispatch rendered for agent `acme` with the caller's own
 secret. This is the proof the sigma binding is gone.
 
 ```console
-$ cn repo install --dispatch cds \
+$ cn install repo --dispatch cds \
     --agent acme \
     --workflow-pat-secret ACME_WORKFLOW_PAT \
     --bot-name "acme-bot" \
@@ -142,7 +146,7 @@ concurrency:
 ## Mock D — GitHub UI (no-terminal) path
 
 `workflow_dispatch` inputs on `.github/workflows/cnos-install.yml`, delegating to
-the same `cn repo install` command (not reimplemented in YAML):
+the same `cn install repo` command (not reimplemented in YAML):
 
 ```yaml
 inputs:
@@ -158,7 +162,7 @@ inputs:
 |---|---|
 | D1 | Base run (dispatch off) opens a PR with the Mock-B diff, using the default `GITHUB_TOKEN`. |
 | D2 | Dispatch run either opens a PR containing the Mock-C workflow **or** fails with a clear message that a `workflow`-scoped PAT is required — never a half-applied state. |
-| D3 | The job body invokes `cn repo install …` — install logic is not duplicated in shell. |
+| D3 | The job body invokes `cn install repo …` — install logic is not duplicated in shell. |
 | D4 | Never pushes to `main`. |
 
 ---
