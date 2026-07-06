@@ -688,3 +688,187 @@ jobs:
           fi
           echo "AC7 renderer-side (dispatch shape): 0 role-decision leaks."
 
+      - name: AC1 (cnos#609) — configurable identity, positive (acme render)
+        # cnos#609 / Mock C of docs/development/design/cn-repo-install-MOCKS.md.
+        # Renders cds-dispatch for a non-sigma agent with the full identity
+        # flag set and asserts the caller-supplied values land in the
+        # output. The rendered file is kept at a fixed path so later steps
+        # (AC2 scoped-grep, E2/E4) can inspect it without re-rendering.
+        run: |
+          set -eu
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch \
+            --agent acme \
+            --workflow-pat-secret ACME_WORKFLOW_PAT \
+            --bot-name acme-bot \
+            --bot-id 12345678 \
+            --out /tmp/cnos609-acme-render.yml
+          for needle in 'ACME_WORKFLOW_PAT' 'acme-bot' '12345678' 'cds-dispatch-acme'; do
+            if ! grep -qF -- "$needle" /tmp/cnos609-acme-render.yml; then
+              echo "::error::AC1 positive: acme render missing expected identity value: $needle"
+              exit 1
+            fi
+          done
+          echo "AC1 positive: acme render carries ACME_WORKFLOW_PAT / acme-bot / 12345678 / cds-dispatch-acme."
+
+      - name: AC1 (cnos#609) — configurable identity, negative (Mock C2 fail-early)
+        # Mock C2: a non-sigma agent with no --workflow-pat-secret (and no
+        # --bot-name/--bot-id) must fail early, before any --out file is
+        # written — no partial render.
+        run: |
+          set -u
+          rm -f /tmp/cnos609-ac1-neg-out.yml
+          rc=0
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch \
+            --agent acme \
+            --out /tmp/cnos609-ac1-neg-out.yml \
+            2>/tmp/cnos609-ac1-neg.err >/dev/null || rc=$?
+          if [ "$rc" = "0" ]; then
+            echo "::error::AC1 negative: renderer succeeded for agent 'acme' with no identity flags; expected a fail-early error (Mock C2)."
+            exit 1
+          fi
+          if [ -f /tmp/cnos609-ac1-neg-out.yml ]; then
+            echo "::error::AC1 negative (Mock C2): --out file was created despite the identity-resolution failure (partial render)."
+            rm -f /tmp/cnos609-ac1-neg-out.yml
+            exit 1
+          fi
+          if ! grep -qF -- '--workflow-pat-secret' /tmp/cnos609-ac1-neg.err; then
+            echo "::error::AC1 negative: stderr does not name the missing flag (--workflow-pat-secret)."
+            cat /tmp/cnos609-ac1-neg.err
+            exit 1
+          fi
+          echo "AC1 negative (Mock C2) verified: fail-early, no partial --out file, error names the missing flag."
+          rm -f /tmp/cnos609-ac1-neg.err
+
+      - name: AC2 (cnos#609, Mock C4) — zero sigma leak (synthetic fixture)
+        # Layer (a) of the two-layer AC2 oracle (per γ scaffold Friction
+        # note 2): a synthetic, fully-controlled dispatch-shape SKILL.md
+        # fixture (mirrors the AC5 / AC2-negative fixture-authoring pattern
+        # above) rendered with a non-sigma agent + full identity flags.
+        # This isolates the renderer's own leak-freedom from any given
+        # real package's prompt-body prose (which may legitimately mention
+        # "sigma" in unrelated historical/other-wake context — see layer
+        # (b) below and Friction note 2 in the γ scaffold).
+        run: |
+          set -eu
+          set -o pipefail
+          tmp=$(mktemp -d)
+          mkdir -p "$tmp/orchestrators/test-dispatch-leak"
+          cat > "$tmp/orchestrators/test-dispatch-leak/SKILL.md" <<'FIXTURE_EOF'
+          ---
+          name: test-dispatch-leak
+          description: "AC2 zero-leak synthetic fixture (cnos#609) — minimal dispatch-shape wake used to isolate the renderer's own leak-freedom from any real package's prompt-body prose."
+          governing_question: n/a
+          artifact_class: wake
+          scope: global
+          kata_surface: none
+          triggers:
+            - dispatch-wake
+          inputs:
+            - "n/a"
+          outputs:
+            - "n/a"
+          wake:
+            role: dispatch
+            package: cnos.cds
+            admin_only: false
+            activation_log_writer: false
+            input:
+              triggers:
+                - issues_labeled_selector_match
+            output:
+              cycle_artifact_root: ".cdd/unreleased"
+              artifact_class_taxonomy:
+                - gamma-scaffold
+              cell_runtime: shell
+            permission_intent:
+              - contents.write
+            concurrency:
+              serialize: true
+              group: "test-dispatch-leak-{agent}"
+            agent_variable:
+              name: agent
+              default: null
+            surfaces:
+              allowed:
+                - "n/a"
+              disallowed:
+                - "n/a"
+            protocol: "test"
+            selector:
+              include:
+                - "protocol:test"
+              exclude: []
+          ---
+
+          # AC2 zero-leak synthetic fixture body
+          FIXTURE_EOF
+          ./src/packages/cnos.core/commands/install-wake/cn-install-wake test-dispatch-leak \
+            --manifest "$tmp/orchestrators/test-dispatch-leak/SKILL.md" \
+            --agent acme --workflow-pat-secret ACME_WORKFLOW_PAT --bot-name acme-bot --bot-id 12345678 \
+            --out /tmp/cnos609-fixture-render.yml
+          leaks=$(grep -inE 'sigma|SIGMA_WORKFLOW_PAT|41898282' /tmp/cnos609-fixture-render.yml || true)
+          if [ -n "$leaks" ]; then
+            echo "::error::AC2 (synthetic fixture): sigma leak detected in non-sigma render."
+            echo "$leaks"
+            exit 1
+          fi
+          echo "AC2 (synthetic fixture) verified: zero sigma leak for agent 'acme'."
+          rm -rf "$tmp" /tmp/cnos609-fixture-render.yml
+
+      - name: AC2 (cnos#609, Mock C4) — zero sigma leak (scoped grep on live cds-dispatch acme render)
+        # Layer (b) of the two-layer AC2 oracle: a SCOPED grep against the
+        # real cds-dispatch acme-render from the AC1-positive step above,
+        # checking specifically for the renderer-controlled leak tokens.
+        # An unconditional case-insensitive `grep sigma` is deliberately
+        # NOT used here — the live cds-dispatch SKILL.md's prompt body
+        # (package-owned prose) legitimately mentions `agent-admin-sigma`
+        # (a different wake's own identity) and a dated historical log
+        # citation, neither of which is a renderer-authority leak (see
+        # Friction note 2 of .cdd/unreleased/609/gamma-scaffold.md).
+        run: |
+          set -eu
+          f=/tmp/cnos609-acme-render.yml
+          for needle in 'SIGMA_WORKFLOW_PAT' 'bot_name: "sigma' 'bot_id: "41898282"' 'cds-dispatch-sigma'; do
+            if grep -qF -- "$needle" "$f"; then
+              echo "::error::AC2 (scoped grep): renderer-controlled sigma leak token found in acme render: $needle"
+              exit 1
+            fi
+          done
+          echo "AC2 (scoped grep) verified: zero renderer-controlled sigma leak tokens in the live cds-dispatch acme render."
+
+      - name: E2/E4 (cnos#609, Mock E) — tenant-portable acquisition (acme) / sigma unchanged
+        # E2: the acme render (non-sigma agent) must contain NO
+        # `cd src/go` / `go build ./cmd/cn` and must instead acquire `cn`
+        # via install.sh.
+        # E4: the EXISTING sigma-default renders (already re-rendered by
+        # the "Re-render cds-dispatch wake" step earlier in this job) must
+        # still contain the byte-identical self-build lines — checked
+        # against the golden file already on disk, no new render needed.
+        run: |
+          set -eu
+          acme=/tmp/cnos609-acme-render.yml
+          if grep -qF -- 'cd src/go' "$acme"; then
+            echo "::error::E2: acme render still contains 'cd src/go' (tenant-portable acquisition not applied)."
+            exit 1
+          fi
+          if grep -qF -- 'go build ./cmd/cn' "$acme"; then
+            echo "::error::E2: acme render still contains 'go build ./cmd/cn' (tenant-portable acquisition not applied)."
+            exit 1
+          fi
+          if ! grep -qF -- 'install.sh' "$acme"; then
+            echo "::error::E2: acme render does not contain an install.sh-based acquisition line."
+            exit 1
+          fi
+          echo "E2 verified: acme render has no src/go build step and acquires cn via install.sh."
+          golden=src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+          if ! grep -qF -- 'cd src/go && go build -o /tmp/cn-scan ./cmd/cn' "$golden"; then
+            echo "::error::E4: sigma-default cds-dispatch golden no longer builds cn-scan from src/go (regression)."
+            exit 1
+          fi
+          if ! grep -qF -- '-o /tmp/cn-finalize' "$golden"; then
+            echo "::error::E4: sigma-default cds-dispatch golden no longer builds cn-finalize from src/go (regression)."
+            exit 1
+          fi
+          echo "E4 verified: sigma-default cds-dispatch golden still self-builds from src/go, byte-identical to today."
+          rm -f /tmp/cnos609-acme-render.yml
+
