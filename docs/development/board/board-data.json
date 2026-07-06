@@ -2292,7 +2292,7 @@
       "core"
     ],
     "pri": "P2",
-    "status": "in-progress",
+    "status": "review",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2301,7 +2301,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:57:27Z",
-    "updated": "2026-07-06T17:06:11Z",
+    "updated": "2026-07-06T18:23:01Z",
     "url": "https://github.com/usurobor/cnos/issues/608"
   },
   {
