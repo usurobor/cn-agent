@@ -1789,28 +1789,6 @@
     "url": "https://github.com/usurobor/cnos/issues/530"
   },
   {
-    "n": 532,
-    "t": "cdd/cds: require review-request proof before status:review",
-    "kind": "process",
-    "areas": [
-      "cdd",
-      "cds",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "in-progress",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-06-30T19:25:09Z",
-    "updated": "2026-07-02T05:17:03Z",
-    "url": "https://github.com/usurobor/cnos/issues/532"
-  },
-  {
     "n": 539,
     "t": "cells architecture: MCA autonomy belongs at parent/wave δ (δ₂) — post-mortem from the wake-as-skill refactor",
     "kind": "process",
@@ -2280,7 +2258,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T10:47:56Z",
-    "updated": "2026-07-06T10:47:56Z",
+    "updated": "2026-07-06T13:10:42Z",
     "url": "https://github.com/usurobor/cnos/issues/606"
   },
   {
@@ -2302,7 +2280,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:56:07Z",
-    "updated": "2026-07-06T13:09:43Z",
+    "updated": "2026-07-06T13:10:47Z",
     "url": "https://github.com/usurobor/cnos/issues/607"
   },
   {
@@ -2323,7 +2301,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:57:27Z",
-    "updated": "2026-07-06T12:57:27Z",
+    "updated": "2026-07-06T13:10:28Z",
     "url": "https://github.com/usurobor/cnos/issues/608"
   },
   {
@@ -2345,7 +2323,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:57:42Z",
-    "updated": "2026-07-06T12:57:42Z",
+    "updated": "2026-07-06T13:10:31Z",
     "url": "https://github.com/usurobor/cnos/issues/609"
   },
   {
@@ -2367,7 +2345,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:57:57Z",
-    "updated": "2026-07-06T12:57:57Z",
+    "updated": "2026-07-06T13:10:33Z",
     "url": "https://github.com/usurobor/cnos/issues/610"
   },
   {
@@ -2388,7 +2366,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:58:09Z",
-    "updated": "2026-07-06T12:58:09Z",
+    "updated": "2026-07-06T13:10:35Z",
     "url": "https://github.com/usurobor/cnos/issues/611"
   },
   {
