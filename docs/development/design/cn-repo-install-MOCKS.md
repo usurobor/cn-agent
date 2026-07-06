@@ -2,7 +2,7 @@
 
 > **Command name.** House style is the `cn install <target>` group (`cn install
 > wake` per cnos#549, `cn install cnos.core` per cnos#493), so the repo
-> installer is **`cn install repo`**. Earlier drafts said `cn install repo`.
+> installer is **`cn install repo`**. Earlier drafts said `cn repo install`.
 
 **Status:** Design surface (pre-implementation). Author: kappa/operator review.
 **Purpose:** Lock the *human-visible* deliverables of the CDS repo-installer wave
