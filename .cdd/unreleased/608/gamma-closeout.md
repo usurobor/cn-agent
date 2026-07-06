@@ -75,3 +75,20 @@ For the next reader (δ, or a resumed γ):
 ---
 
 **Cycle #608's γ process-gap audit is closed. Full cycle closure (release-time §2.10 checklist) is deferred to the merge/release step, not this converge-boundary invocation.**
+
+---
+
+## δ closeout-integrity preflight — deliverable_evidence
+
+Recorded by δ (cds-dispatch wake) before requesting `status:in-progress -> status:review`, per `cds-dispatch/SKILL.md` §"Closeout integrity preflight" (cnos#524):
+
+```yaml
+deliverable_evidence:
+  pr: "#617 (cycle/608 -> main)"
+  head_sha: "d66868317e92dfcb0e03333eb561e2b93faf230d"
+  base_sha: "c08a7483e57189760bcf5f7067904042f101bf61"
+  commits_beyond_base: 26
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+Head SHA verified via `git rev-parse origin/cycle/608` (the REVIEW-REQUEST.yml commit). All five deliverable-evidence conditions (PR exists and references #608; PR has commits beyond base; `cycle/608` exists and differs from base; all six required closeout artifacts present; this block names the PR number and commit SHA) are satisfied. `cn issues fsm evaluate --issue 608 --apply` applied `status:review` on this basis; see issue #608's δ return-token comment for the operator-facing record.
