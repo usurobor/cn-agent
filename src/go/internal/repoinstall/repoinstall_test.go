@@ -357,6 +357,54 @@ func TestRun_LocalIndex_EndToEnd(t *testing.T) {
 	}
 }
 
+// AC4 (literal default set): absent --packages, Run installs exactly the
+// default triple (cnos.core, cnos.cdd, cnos.cds) under
+// .cn/vendor/packages/<name>/, each with a validated cn.package.json.
+func TestRun_DefaultPackageSet_AllThreeRestored(t *testing.T) {
+	dir := t.TempDir()
+	idx := pkg.PackageIndex{Schema: "cn.package-index.v1", Packages: map[string]map[string]pkg.IndexEntry{}}
+	for _, name := range DefaultPackages {
+		tarData, sha := makeTarGz(t, map[string]string{
+			"cn.package.json": `{"name": "` + name + `", "version": "3.82.0"}`,
+		})
+		tarName := name + "-3.82.0.tar.gz"
+		os.WriteFile(filepath.Join(dir, tarName), tarData, 0644)
+		idx.Packages[name] = map[string]pkg.IndexEntry{"3.82.0": {URL: tarName, SHA256: sha}}
+	}
+	indexPath := filepath.Join(dir, "index.json")
+	writeJSON(t, indexPath, idx)
+
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+	res, err := Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		Release:   "3.82.0", // pins the shared version across all three, mirroring Mock A
+		IndexPath: indexPath,
+		Stdout:    stdout,
+		Stderr:    stderr,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if len(res.Manifest.Packages) != len(DefaultPackages) {
+		t.Fatalf("manifest packages = %+v, want the default triple", res.Manifest.Packages)
+	}
+	for i, name := range DefaultPackages {
+		if res.Manifest.Packages[i].Name != name {
+			t.Errorf("manifest.Packages[%d].Name = %q, want %q (default order preserved)", i, res.Manifest.Packages[i].Name, name)
+		}
+		manifestPath := filepath.Join(pkg.VendorPath(repoRoot, name), "cn.package.json")
+		data, err := os.ReadFile(manifestPath)
+		if err != nil {
+			t.Errorf("%s: cn.package.json not restored: %v", name, err)
+			continue
+		}
+		if err := pkg.ValidatePackageManifestData(data, name); err != nil {
+			t.Errorf("%s: manifest validation failed: %v", name, err)
+		}
+	}
+}
+
 // AC2/AC5: .cn/deps.json and .cn/deps.lock.json are byte-identical across
 // two successive runs with the same inputs (determinism + idempotence).
 func TestRun_Idempotent_ByteIdenticalArtifacts(t *testing.T) {
