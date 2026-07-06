@@ -1,0 +1,1074 @@
+# self-coherence — cycle #608
+
+**manifest:** sections = [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
+**completed:** [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
+
+---
+
+## Gap
+
+**Issue:** [cnos#608](https://github.com/usurobor/cnos/issues/608) — "cds-install Sub 1 (Cn=1 / PR 1): implement `cn repo install` — base installer (dispatch none)"
+
+**Mode:** `design-and-build` (per the issue body's own `**Mode:**` field).
+**cell_kind:** `implementation` (per the issue body's own `**cell_kind:**` field).
+
+**Parent:** #607 (wave master tracker — "first-class CDS repo installer"). This
+cycle is PR1 of the wave (base installer, dispatch none). PR2 (#609, renderer
+generalization), PR3 (#610, dispatch install), PR4 (#611, bootstrap delegation)
+are explicitly out of scope for this cycle — only #608 is dispatched now.
+
+**Gap being closed:** cnos ships the hub/package path (`cn init`, `cn setup`,
+`cn deps restore`, `cn doctor`, `cn build`, `cn update`) but has no first-class
+"install CNOS/CDS into this repo" command. Onboarding an arbitrary Git
+repository into the CDS method requires ~7 manual steps (install `cn`, fetch
+the release index, hand-write `.cn/deps.json`, run `cn deps lock`, run
+`cn deps restore`, edit `.gitignore`, commit) and `cn init` is the wrong tool
+for this — it scaffolds a full agent-hub (`spec/SOUL.md`, `agent/`, `threads/`,
+`state/`) into a `cn-<name>/` subdirectory, not a package-substrate install
+into the current repo (cnos#606 C4).
+
+**What closes it:** a new kernel command, `cn repo install`, that:
+- runs in a plain `git init`-only repo before any `.cn/` hub or package state
+  exists;
+- resolves a cnos release (default: latest) or an explicit `--index`
+  path/URL;
+- writes deterministic `.cn/deps.json` (schema `cn.deps.v1`) pinning the
+  default package set (`cnos.core`, `cnos.cdd`, `cnos.cds`) to exact,
+  index-resolved versions;
+- reuses the existing `internal/restore` substrate directly
+  (`restore.GenerateLockFromIndex`, `restore.Restore`) to write
+  `.cn/deps.lock.json` (schema `cn.lock.v2`, SHA-256-pinned) and restore
+  packages under `.cn/vendor/packages/<name>/` (name-based, not
+  `<name>@<version>/`);
+- ensures the target repo's `.gitignore` excludes `.cn/vendor/`;
+- supports `--release latest|<tag>`, `--index <path-or-url>`,
+  `--packages <csv>`, `--dry-run`;
+- gates autonomous dispatch install behind an explicit, currently-failing
+  `--dispatch cds` flag (default `--dispatch none`) — base install never
+  writes `.github/workflows/` and never requires a workflow/agent secret;
+  dispatch install itself is #609/#610 territory, out of scope here.
+
+**Design surface:** `docs/development/design/cn-repo-install-MOCKS.md`
+(Mocks A, B, E1 — the base-install half of the wave's design doc; Mocks
+C/D/F/G belong to later subs). This file did not exist on `origin/main` at
+cycle start; per γ's scaffold it was pulled verbatim (operator-reviewed,
+"Enacted" per #607) from `origin/claude/cds-install-guide-2ka54j` rather than
+re-authored — landed in commit `f22d5a78` (pre-rebase) / `40a6706c`
+(pre-rebase second push), now at `d783ba38`'s ancestor
+`f22d5a78` → after the rebase onto `origin/main` documented below, the
+current SHA for that commit is unchanged in content (rebase was a clean,
+non-conflicting fast-forward-style replay — no file in this cycle's diff
+overlapped the intervening `origin/main` commits).
+
+**Base SHA (original, at branch creation):** `3dad64285026582a161549b8fd10108dd67a369e`
+**Base SHA (current, after α's pre-review-gate rebase):** `80778d688e04e61c66d38f2bd5962fafb0729e95`
+(`origin/main` advanced by two unrelated automation commits — board-map
+regeneration + a sigma heartbeat log entry — during this cycle; α rebased
+`cycle/608` onto the new tip per alpha/SKILL.md §2.6 row 1. No conflicts;
+the two commits touch `docs/development/board/*` and `.cn-sigma/logs/*`,
+disjoint from every path this cycle's diff touches.)
+
+---
+
+## Skills
+
+**Tier 1 (lifecycle):**
+- `CDD.md` — canonical lifecycle/role contract.
+- `cnos.cdd/skills/cdd/alpha/SKILL.md` — this role's execution surface (§2.1
+  dispatch intake, §2.5 self-coherence, §2.6 pre-review gate, §2.7 request
+  review, §3.6 implementation-contract constraint).
+- `design/SKILL.md` not separately re-loaded as a standalone step: the design
+  artifact (`cn-repo-install-MOCKS.md`) was already operator-reviewed/pinned
+  per γ's scaffold; this cycle's "design" work was landing it verbatim, not
+  authoring new design content requiring the design skill's judgment
+  algorithm.
+- `plan/SKILL.md` not separately invoked as a standalone artifact: γ's
+  scaffold already carried a concrete "Surfaces α is expected to touch" table
+  + AC oracle mapping + expected diff scope, which functioned as the plan.
+  Sequencing was straightforward (land design doc → domain package → cli
+  wrapper → registration → tests → docs → self-coherence) with no
+  non-trivial ordering decisions requiring the plan skill's own algorithm.
+
+**Tier 2 (`cnos.eng`):**
+- `eng/go/SKILL.md` — load-bearing throughout. §2.18 ("Dispatch boundary:
+  cli/ owns dispatch only") directly shaped the repoinstall/cli split;
+  §2.17 (parse/read split, parallel-parser prohibition) governed reuse of
+  `pkg.ParsePackageIndex`/`pkg.ParseManifest`/`pkg.ParseLockfile` rather than
+  inventing new ad hoc JSON decoding; the determinism conventions (sorted
+  map-key iteration, no map-order-dependent output) shaped
+  `writeManifest`/`rewriteRelativeEntriesFromBase`.
+
+**Tier 3 (issue-specific):** none loaded beyond `eng/go` — this is a
+single-language (Go) kernel-command cycle with no CLI-ergonomics-package,
+security-review, or other Tier-3 skill named by the issue or scaffold.
+
+**Implementation contract (δ-pinned, per alpha/SKILL.md §3.6 — not
+improvised):** all 7 axes were populated in γ's scaffold (Language: Go;
+CLI integration target: kernel `cn` subcommand via noun-verb resolution;
+Package scoping: `cli/cmd_repo_install.go` + new `internal/repoinstall/`
+package, reusing `restore/`, `pkg/`, `binupdate/`; Existing-binary
+disposition: coexist, `cn init`/`setup`/`deps` unchanged; Runtime
+dependencies: none new; JSON/wire contract preservation: `cn.deps.v1` /
+`cn.lock.v2` / `cn.package-index.v1` schemas unchanged, vendor path
+name-based; Backward-compat invariant: `cn init`/`setup`/`deps` behavior
+unchanged). No row was empty or TBD at dispatch time, so no γ/δ escalation
+was needed before coding. Every diff hunk in this cycle maps to one or more
+of these pinned rows — see §CDD Trace step 6 for the file-by-file mapping.
+
+---
+
+## ACs
+
+All commands below were run against branch HEAD at commit `a3f9b86e` (the
+implementation SHA is fixed at `d783ba38` — the last pure-implementation
+commit before the rebase and before this self-coherence artifact's own
+commits; SHA convention per alpha/SKILL.md §2.6 "SHA convention for
+readiness signal" — implementation SHA, not the advancing artifact-commit
+HEAD).
+
+### AC1 — kernel command, available from a fresh Git repo, no prior state
+
+**Claim:** `cn repo install` resolves via the kernel registry
+(`RepoInstallCmd`, `Spec().Name == "repo-install"`, `Source: SourceKernel`,
+`NeedsHub: false`) and runs from a fresh `git init`-only repo with no `.cn/`
+hub, no vendor packages, no prior state.
+
+**Evidence:**
+- `src/go/internal/cli/cmd_repo_install_test.go::TestRepoInstall_ResolvesViaNounVerb`
+  — asserts `ResolveCommand(reg, []string{"repo","install",...})` resolves to
+  `repo-install` with `Source: SourceKernel`, `Tier: TierKernel`,
+  `NeedsHub: false`. PASS.
+- `src/go/internal/cli/cmd_repo_install_test.go::TestRepoInstall_FreshGitRepo_EndToEnd`
+  — `git init` in a temp dir, `t.Chdir` into it, run `RepoInstallCmd.Run`
+  with a fixture `--index`; asserts `.cn/deps.json`, `.cn/deps.lock.json`,
+  `.gitignore`, and `.cn/vendor/packages/cnos.core/cn.package.json` all
+  exist afterward. PASS.
+- Manual smoke test (built binary, real `git init`, no `.cn/` present
+  beforehand): `cn help` lists `repo-install` in the kernel-commands section
+  before any hub exists; `cn repo` (bare noun) lists the `repo install`
+  subcommand via the noun-group printer, matching the `cell`/`issues`
+  pattern exactly. Transcript captured during authoring (not persisted as a
+  file — reproducible via the commands above).
+- AC1's "not a git repo" negative half is AC1 territory too (issue's own
+  Implementation requirement 2): see `TestRepoInstall_NotAGitRepo_FailsClearly`
+  (PASS) — exact message `✗ cn repo install must be run inside a Git
+  repository.`, no scaffolding.
+
+### AC2 — deterministic `.cn/deps.json`
+
+**Claim:** stable order, no timestamps, byte-identical across two runs.
+
+**Evidence:**
+- `src/go/internal/repoinstall/repoinstall_test.go::TestRun_Idempotent_ByteIdenticalArtifacts`
+  — runs `Run` twice against the same `RepoRoot` + fixture index, asserts
+  `bytes.Equal` on both `.cn/deps.json` and `.cn/deps.lock.json` reads. PASS.
+- `writeManifest` (`repoinstall.go`) uses `json.MarshalIndent` over a typed
+  `pkg.Manifest` struct (not a map) — field order is Go struct-tag order,
+  not map-iteration order; no field carries a timestamp (`pkg.Manifest` has
+  only `Schema`, `Profile`, `Packages`).
+- `TestRun_DefaultPackageSet_AllThreeRestored` additionally asserts manifest
+  package order matches `DefaultPackages`'s declared order (not resorted),
+  confirming "manifest order is operator-controlled" (restore.go's own
+  determinism doctrine) holds for the new writer too.
+
+### AC3 — deterministic `.cn/deps.lock.json` (`cn.lock.v2`, exact versions, SHA-256 pins)
+
+**Claim:** schema `cn.lock.v2`; every entry has an exact version + non-empty
+sha256.
+
+**Evidence:**
+- `TestRun_LocalIndex_EndToEnd` parses the written lockfile via
+  `pkg.ParseLockfile`, asserts `Schema == "cn.lock.v2"` and a non-empty
+  `SHA256` field. PASS.
+- The lockfile is written by `restore.GenerateLockFromIndex` — reused
+  directly, not reimplemented (see §Self-check "reuse audit" below); its
+  existing sort-by-name-then-version determinism is inherited for free.
+
+### AC4 — restores `cnos.core`/`cnos.cdd`/`cnos.cds` under name-based vendor paths; checksums verified
+
+**Claim:** `.cn/vendor/packages/<name>/cn.package.json` exists post-restore
+for all three default packages; the existing SHA-256 verify path is
+actually wired (not bypassed).
+
+**Evidence:**
+- `TestRun_DefaultPackageSet_AllThreeRestored` — installs the literal
+  default triple from a fixture index, asserts each of
+  `.cn/vendor/packages/{cnos.core,cnos.cdd,cnos.cds}/cn.package.json`
+  exists and validates via `pkg.ValidatePackageManifestData`. PASS.
+- `TestRun_SHAMismatchPropagates` — a deliberately-corrupted fixture (tarball
+  SHA-256 does not match the index's declared SHA-256) surfaces
+  `"sha256 mismatch"` on stderr and leaves no vendor directory behind. PASS.
+  This is the proof the verify step is actually wired: a bypassed/faked
+  verify would either not error, or would leave a partial vendor tree.
+- No new SHA-256 computation exists in `internal/repoinstall` — the package
+  imports neither `crypto/sha256` nor duplicates `fileSHA256`; verification
+  is 100% `restore.Restore`'s existing code path (confirmed by reading
+  `repoinstall.go`'s import list and grepping for `sha256` — zero hits
+  outside test fixture helpers, which build fixture tarballs, not verify
+  them).
+- Vendor path is name-based: `pkg.VendorPath(hubPath, name)` is unchanged
+  (`<hubPath>/.cn/vendor/packages/<name>`) — not modified by this cycle,
+  confirmed via `git diff` showing zero hunks in `pkg.go`'s `VendorPath`.
+
+### AC5 — idempotent (second run: no diff, no churn)
+
+**Claim:** `cn repo install; git diff --exit-code; cn repo install; git diff
+--exit-code` — both exit 0.
+
+**Evidence:**
+- `TestRepoInstall_Idempotent_NoDiffOnSecondRun` — runs the literal sequence
+  from the AC's own oracle text (`git diff --exit-code` after each of two
+  installs) via real `exec.Command("git", ...)` against a real
+  `git init`-created repo, **plus** the stronger form: `git add` + `git
+  commit` after the first install, then a second install, then asserts
+  `git status --porcelain` is empty. PASS. (The stronger form is the
+  meaningful proof — a bare `git diff --exit-code` before any `git add`
+  passes trivially on any first run since nothing is tracked yet; the
+  commit-then-rerun form is what actually exercises "no churn.")
+- `TestRun_Idempotent_ByteIdenticalArtifacts` (repoinstall-level) — see AC2.
+- No "already installed" special-casing was added; `Run` always regenerates
+  `.cn/deps.json`/`.cn/deps.lock.json` deterministically from the same
+  inputs, and `restore.Restore`'s existing version-match skip (restore.go
+  lines ~169-192) prevents vendor-tree rewrites when the installed version
+  already matches the lockfile pin. Idempotence is inherited from the reused
+  substrate, not reimplemented.
+
+### AC6 — `--dry-run` writes nothing; lists the planned diff
+
+**Claim:** `git status --porcelain` empty after; stdout lists exactly
+`.cn/deps.json`, `.cn/deps.lock.json`, `.gitignore`.
+
+**Evidence:**
+- `TestRun_DryRun_WritesNothing` (repoinstall) — asserts `os.ReadDir(RepoRoot)`
+  returns zero entries after a dry-run (i.e. not even a `.cn/` directory is
+  created), and stdout contains all three planned-diff filenames plus the
+  dispatch-mode statement. PASS.
+- `TestRepoInstall_DryRun_GitStatusStaysClean` (cli, real git repo) —
+  `git status --porcelain` is empty after `--dry-run`. PASS.
+- Code-level guarantee: `Run`'s dry-run branch (`repoinstall.go`, the
+  `if opts.DryRun` block) returns immediately after `printPlan`, before
+  `applyInstall` (which owns every `os.MkdirAll`/`os.WriteFile` call in the
+  non-test code path) is ever invoked.
+
+### AC7 — `--release latest`, `--release <tag>`, `--index <path-or-url>` all work
+
+**Claim:** all three resolution modes function independently.
+
+**Evidence:**
+- `TestRun_ReleaseLatest_ResolvesAndInstalls` — a fake GitHub API
+  (`httptest.Server`) answers `/repos/{repo}/releases/latest`; a fake
+  download server serves that tag's `index.json` (relative tarball URL,
+  exactly as `cn build`'s local index shape declares it) + the tarball at
+  the release-download path. Asserts `Result.ReleaseTag == "9.9.9"` and the
+  package is restored — which is only possible if the relative URL was
+  correctly rewritten to the release-download absolute URL (an
+  un-rewritten fetch would 404 against the download server, since
+  `restore.go`'s `fetchTarball` resolves local-looking URLs relative to
+  the *local temp cache dir*, not the origin server). PASS.
+- `TestRun_ReleaseTag_Pinned` — same shape with an explicit tag; the "latest"
+  API endpoint is deliberately not wired to a distinct/reachable path,
+  proving the pinned-tag path skips latest-resolution entirely (if it had
+  called `FetchLatestRelease` regardless, the fetch would fail against the
+  unregistered path). PASS.
+- `TestRun_LocalIndex_EndToEnd` / `TestRepoInstall_FreshGitRepo_EndToEnd` —
+  `--index <local path>`. PASS.
+- `TestRun_IndexHTTPURL_RelativeRewrite` — `--index <http URL>`, relative
+  tarball URL rewritten against the URL's own directory. PASS.
+- Note: `--release latest`'s live-network path (a real call to
+  `api.github.com`) is intentionally NOT exercised in CI — only the
+  `httptest`-stubbed form is, matching the scaffold's own guidance
+  ("`--release latest` test may need to stub/mock the GitHub API call
+  rather than hitting it live in CI"). This is a deliberate test-design
+  choice, not a gap: `binupdate.FetchLatestRelease` (the function this
+  cycle reuses) already has its own live-shape unit test coverage in
+  `internal/binupdate/binupdate_test.go` from prior cycles.
+
+### AC8 — base mode never writes `.github/workflows/`, never requires a secret
+
+**Claim:** no `.github/workflows/cnos-cds-dispatch.yml`; no
+`SIGMA_WORKFLOW_PAT`/`CNOS_WORKFLOW_PAT`/`CLAUDE_CODE_OAUTH_TOKEN` reference
+outside the dispatch-guard error string (which doesn't reference any of
+these anyway).
+
+**Evidence:**
+- `grep -n "SIGMA_WORKFLOW_PAT\|CNOS_WORKFLOW_PAT\|CLAUDE_CODE_OAUTH_TOKEN" src/go/internal/repoinstall/repoinstall.go src/go/internal/cli/cmd_repo_install.go`
+  → zero matches (run at HEAD `d783ba38`, confirmed unchanged through the
+  rebase since neither file was touched by the intervening `origin/main`
+  commits).
+- `grep -n "\.github/workflows" src/go/internal/repoinstall/repoinstall.go src/go/internal/cli/cmd_repo_install.go`
+  → the only three hits are prose/stdout strings stating that nothing is
+  written there (`"Dispatch: none (base install only — no
+  .github/workflows/ changes)"`, help text, package doc comment) — no code
+  path constructs a path under `.github/workflows/` or calls `os.WriteFile`
+  /`os.MkdirAll` against one.
+- `TestRun_LocalIndex_EndToEnd` and `TestRepoInstall_FreshGitRepo_EndToEnd`
+  both assert `os.Stat(filepath.Join(repoRoot, ".github"))` is
+  `os.IsNotExist` after a full base install. PASS.
+
+### AC9 — `--dispatch cds` fails explicitly, no partial `.github/workflows/` write
+
+**Claim:** exits non-zero with a clear message; leaves zero
+`.github/workflows/` files behind.
+
+**Evidence:**
+- `TestRun_DispatchCds_FailsWithNoPartialWrite` (repoinstall) — asserts the
+  error contains `"#609"`, stderr carries the **exact** string
+  `"✗ --dispatch cds requires generalized wake renderer support (#609)"`,
+  `os.ReadDir(RepoRoot)` is empty (zero files/dirs written at all, not just
+  no `.github/`), and `.github/workflows/cnos-cds-dispatch.yml` specifically
+  does not exist. PASS.
+- `TestRepoInstall_DispatchCds_CliWiring` (cli, full wiring through
+  `RepoInstallCmd.Run`) — same assertions via the real command dispatch
+  path. PASS.
+- Code-level guarantee: `validateDispatch` is the first call in `Run`,
+  before repo-root validation, before index resolution, before any
+  `os.MkdirAll`/`os.WriteFile`. A `cds` value returns an error immediately;
+  no subsequent code in `Run` executes.
+
+### AC10 — no agent-hub scaffold (no `spec/SOUL.md`, `agent/`, `threads/`, `state/`)
+
+**Claim:** regression guard distinguishing this installer from `cn init`'s
+agent-hub scaffold (cnos#606 C4).
+
+**Evidence:**
+- `TestRun_LocalIndex_EndToEnd` and `TestRepoInstall_NoAgentHubScaffold` both
+  assert `spec/SOUL.md`, `agent`, `threads`, `state` do not exist under
+  `RepoRoot` after a full install. PASS.
+- Code-level: `internal/repoinstall` does not import `internal/hubinit`
+  (the package `cn init` uses for agent-hub scaffolding) at all — confirmed
+  by reading `repoinstall.go`'s import block. The only cross-package reuse
+  is `internal/hubsetup` (for the single `.gitignore`-entry helper),
+  `internal/pkg`, `internal/restore`, `internal/binupdate`.
+
+### AC11 — docs updated so the canonical base path is `cn repo install`
+
+**Claim:** `docs/guides/INSTALL-CDS.md` names `cn repo install` as the
+canonical base path; no lingering "7 manual steps" framing presented as the
+only path.
+
+**Evidence:**
+- `docs/guides/INSTALL-CDS.md` (new file — did not exist on `origin/main`
+  before this cycle) opens with the one-command flow
+  (`curl ... | sh` then `cn repo install`) as "the canonical way to install
+  Layer 1," under a two-layer framing (Layer 1 base / Layer 2 autonomous
+  dispatch, opt-in) matching the issue's own §Docs requirement.
+  `grep -c "cn repo install" docs/guides/INSTALL-CDS.md` → 17 occurrences,
+  all consistent with the one-command path being canonical; zero
+  occurrences of "7 manual steps" or "7 steps" framing.
+- The design-branch draft's stale `cn.lock` filename (inconsistent with the
+  actual shipped `.cn/deps.lock.json` / `cn.lock.v2` schema this cycle
+  confirmed against `restore.go`) was corrected, not carried forward — see
+  §Self-check "docs reconciliation" below.
+- `docs/guides/README.md` was deliberately NOT modified — it carries no
+  existing reference to `INSTALL-CDS.md` or the old manual-install path
+  (`grep -n "INSTALL-CDS" docs/guides/README.md` → no hits), so there is no
+  stale cross-reference to reconcile; adding a new nav link there is outside
+  this issue's named §Docs scope (only `docs/guides/INSTALL-CDS.md` is
+  named).
+
+---
+
+## Self-check
+
+**Role self-check (alpha/SKILL.md §2.5 §Self-check): did this cycle's work
+push ambiguity onto β? Is every claim backed by evidence in the diff?**
+
+- Every AC above cites either an automated test (name + PASS, independently
+  re-run at HEAD to produce this section, not copy-pasted from an earlier
+  run) or a `grep`/`git diff`/manual-command result with the literal
+  command shown. No AC claim rests on unverified prose.
+- **Reuse audit (issue's own risk control 3: "don't duplicate `cn deps
+  lock`/`restore` logic"):** `internal/repoinstall` imports
+  `internal/restore` and calls `restore.GenerateLockFromIndex` and
+  `restore.Restore` directly — zero reimplementation of lockfile generation,
+  SHA-256 verification, or tar extraction. `grep -n "sha256\|Sum256"
+  src/go/internal/repoinstall/repoinstall.go` → zero hits (only the test
+  file, which builds fixture tarballs, imports `crypto/sha256`). Confirmed
+  by reading `restore.go` in full before writing any new code, per the
+  scaffold's own instruction.
+- **Peer enumeration (alpha/SKILL.md §2.3):** the "multiple writers of the
+  same schema" case applies to the `.gitignore` `.cn/vendor/` entry — `cn
+  setup` (`hubsetup.go`) already wrote it. Peer set = {`cn setup`, `cn repo
+  install`}. Resolved by exporting `hubsetup.EnsureGitignoreEntry` and
+  calling it from `repoinstall.applyInstall` rather than writing a second,
+  independent `.gitignore`-mutation function — one writer, two callers, not
+  two writers of the same invariant. No other multi-writer schema surface
+  was found: `.cn/deps.json`/`.cn/deps.lock.json` have exactly one writer
+  each in the whole kernel (`repoinstall.writeManifest` and
+  `restore.GenerateLockFromIndex` respectively — `cn setup` writes a
+  *different* default `deps.json` shape for its own `engineer` profile, at
+  a different call site, not a second writer of `cn repo install`'s `cds`
+  profile manifest).
+- **Harness audit (alpha/SKILL.md §2.4):** this cycle does not change any
+  parser, schema-bearing type, or manifest shape — `pkg.Manifest`,
+  `pkg.Lockfile`, `pkg.PackageIndex` are all read exactly as shipped, zero
+  field additions. The only new "producer" is `repoinstall.writeManifest`,
+  which serializes the existing `pkg.Manifest` type via
+  `json.MarshalIndent` — the same mechanism `restore.GenerateLockFromIndex`
+  already uses for `pkg.Lockfile`, so there is no new ad hoc encoder to
+  audit against a schema. Grepping `*.sh` and `.github/workflows/*.yml` for
+  `deps.json` literal writes turns up two **pre-existing** hand-rolled
+  `cn.deps.v1` writers: `.github/workflows/build.yml`'s Tier-2 CI test-hub
+  setup step (heredoc, `profile: "engineer"`, pins `cnos.core`/`cnos.kata`/
+  `cnos.cdd.kata` for CI's own package-testing purposes) and
+  `scripts/kata/06-install.sh` (same shape, kata-harness purposes). Neither
+  is a consumer of `cn repo install`/`cn setup`'s specific default-package
+  logic and neither needed a change here — the `cn.deps.v1` schema itself is
+  byte-for-byte unchanged by this cycle (no field added/removed/renamed), so
+  the harness-audit trigger condition (alpha/SKILL.md §2.4: "when the branch
+  changes a parser, schema-bearing type, manifest shape, or runtime
+  contract") does not fire. Noted here because an earlier draft of this
+  section claimed "no independent writers exist," which the grep above
+  disproves — corrected before this AC evidence was finalized, per the
+  intra-doc-repetition/closure-overclaim discipline (alpha/SKILL.md §2.3):
+  `pkg.Manifest` already has multiple legitimate writers today (`hubsetup`,
+  these two harnesses, and now `repoinstall`), each producing its own
+  package list for its own purpose; that plurality is pre-existing and
+  outside this cycle's scope to consolidate.
+- **Docs reconciliation:** the design-branch draft
+  (`origin/claude/cds-install-guide-2ka54j:docs/guides/INSTALL-CDS.md`) used
+  a stale `cn.lock` filename inconsistent with the actual shipped
+  `.cn/deps.lock.json` (`cn.lock.v2`) schema this cycle confirmed by reading
+  `restore.go` directly. Rather than land that inconsistency, the new
+  `docs/guides/INSTALL-CDS.md` in this cycle's diff uses the confirmed-real
+  path throughout, and drops the draft's Track-B (`workflow_dispatch`
+  GitHub-UI installer) section entirely, since `templates/cnos-install.yml`
+  and the installer workflow do not exist anywhere on `origin/main` (confirmed
+  via `find . -iname cnos-install.yml` → no hits) — that is #611's
+  (bootstrap delegation) scope, not #608's. Documenting a workflow file that
+  does not exist would have been a false claim.
+- **CI-schema harness (post-hoc finding, folded into this section rather
+  than treated as a separate late AC):** the `cn cdd verify` I6 gate (which
+  gates merges via `.github/workflows/build.yml`'s `cdd-artifact-check`
+  job) enforces bare `## Gap` / `## Skills` (or `## Mode`) / `## ACs` (or
+  `## AC Coverage`) / `## CDD Trace` / a `##`-line containing "self-check"
+  or "debt" section headers on `self-coherence.md` — not the `§`-prefixed
+  style (`## §Gap` etc.) this cycle initially used (and which a prior cycle,
+  #600, also used without ever actually satisfying the checker — #600's
+  mismatch was merely masked by its "triadic" classification's lenient
+  in-progress warning, not actually schema-conformant). Because cycle #608
+  is classified "small-change" by `classifyCycleType` (self-coherence.md
+  present, no `beta-review.md` yet — true for any α-authored cycle before β
+  responds) it hits `checkSmallChangeArtifacts`, which hardcodes
+  `forUnreleased=false`, turning the same header mismatch into a hard CI
+  failure rather than a warning. Fixed by switching this file's headers to
+  the bare form (commit `9fbd8fa1`) rather than requesting a
+  `.cdd/exceptions.yml` entry — the bare form is what a genuinely
+  fully-green historical cycle (#593) actually uses, so this is a
+  conformance fix, not a workaround. **Pattern observed, not
+  triaged/fixed at the tool level** (per alpha/SKILL.md §2.8 "voice: factual
+  observations only, triage is γ's job"): `checkSmallChangeArtifacts`'s
+  hardcoded `forUnreleased=false` (ledger.go line 497) appears to make it
+  structurally impossible for a small-change-classified, still-in-progress
+  self-coherence.md (i.e., any α authoring §2.5's incremental one-section-
+  per-commit sequence, on any cycle without a pre-existing beta-review.md)
+  to pass I6 mid-authorship even when using the *correct* bare header
+  convention throughout, since the same "missing sections" logic fires
+  hard-fail (not warn) until every required section exists in one commit.
+  This cycle's own commits before the final section landed are a live
+  example (`eb269381`, `a3f9b86e` both show `❌ Cycle artifact verification
+  FAILED` in Actions). This is surfaced as a pattern for γ/δ, not
+  self-triaged here.
+- No ambiguity was pushed onto β regarding the implementation-contract axes
+  (all 7 were pinned by γ at dispatch; none were relaxed or reinterpreted —
+  see §Skills above).
+
+---
+
+## Debt
+
+Known gaps and observations, disclosed explicitly rather than left implicit:
+
+1. **`cn --version` is referenced in the new `docs/guides/INSTALL-CDS.md`
+   (as the install.sh-recommended verification step) but currently exits
+   non-zero with "Unknown command"** — confirmed by building the binary and
+   running it directly. This is a **pre-existing** gap (the design doc's own
+   Mock F1, cnos#606 dogfooding, explicitly out of scope for #608 — Mocks
+   C/D/F/G belong to later subs) and this cycle does not introduce or
+   worsen it; the doc text mirrors `install.sh`'s own final verification
+   step, which already invokes `cn --version` regardless of this cycle.
+   Flagging rather than silently reproducing an already-known bug's
+   symptom without comment.
+2. **`cn cdd verify`'s small-change classification (`ledger.go`
+   `checkSmallChangeArtifacts`, `forUnreleased=false` at line 497) hard-fails
+   any in-progress `self-coherence.md` missing a required section**, unlike
+   the triadic path's lenient in-progress warning — see §Self-check for the
+   full analysis. This is a friction pattern in the CDD tooling itself
+   (affecting every α cycle's authoring window before β writes
+   `beta-review.md`), not something this cycle's diff touches or is
+   positioned to fix. Surfaced as an observation for γ/δ triage, per
+   alpha/SKILL.md §2.8's "factual observations only" voice — not
+   recommending a specific tool patch here.
+3. **`--index <URL>` combined with an explicit `--release <tag>` (both set,
+   remote index) is not independently tested** — only (a) local `--index`
+   with an explicit `--release` pin (`TestRun_DefaultPackageSet_AllThreeRestored`)
+   and (b) remote `--index` URL with no `--release` (`TestRun_IndexHTTPURL_RelativeRewrite`)
+   are covered separately. The code path is the same `resolveIndex`
+   branch either way (`isRemoteURL(indexArg)` gates URL-fetch vs local-read;
+   `pinFromRelease` is computed identically regardless of which sub-branch
+   fires), so risk is low, but the exact combination (remote URL + explicit
+   release pin together) has no dedicated test.
+4. **`docs/guides/README.md` was not updated** to add a navigation link to
+   the new `docs/guides/INSTALL-CDS.md` — the issue's own §Docs section
+   names only `docs/guides/INSTALL-CDS.md` (plus `templates/cnos-install.yml`
+   + `docs/guides/README.md` as explicitly "#611"-scoped follow-ups, per the
+   issue body's own text: "`docs/guides/templates/cnos-install.yml` +
+   `docs/guides/README.md` follow (bootstrap delegation is finalized in
+   #611)"). Not adding it is issue-scope-conformant, not an oversight, but
+   named here for completeness.
+5. **No lockfile-level concurrency guard** — two simultaneous `cn repo
+   install` invocations against the same repo could race on `.cn/deps.json`
+   / `.cn/deps.lock.json` writes or the vendor tree. This matches
+   `restore.Restore`'s own pre-existing lack of a lock/mutex (confirmed by
+   reading `restore.go` — no file-lock primitive anywhere in that package
+   either), so this cycle does not introduce a new class of risk; it is
+   inherited, not new.
+6. **Windows is not a supported target** — `cn repo install` uses no
+   Windows-specific code, but the wider `cn` kernel already restricts
+   platform binaries to linux/macOS (`binupdate.go`'s
+   `platformBinaryName`); this is pre-existing scope, not new debt from
+   this cycle.
+7. **Branch CI (the `cdd-artifact-check` / I6 job specifically) was red on
+   several interim commits** during this cycle (`eb269381`, `a3f9b86e`) —
+   expected per alpha/SKILL.md §2.5's incremental one-section-per-commit
+   authoring discipline for `self-coherence.md`, and resolved once the
+   header-format fix (`9fbd8fa1`) landed and (after this §Debt section is
+   the last content section) every required section exists in one commit.
+   §Review-readiness below re-validates this transient row at signal time,
+   per alpha/SKILL.md §2.6's "transient vs durable rows" rule.
+
+No AC is partially met — all eleven (AC1–AC11) have PASS-backed evidence in
+§ACs above. No known gap in this list blocks any AC; all are either
+pre-existing (1, 5, 6), explicitly out-of-scope-by-the-issue's-own-text (4),
+narrow test-coverage gaps on a low-risk shared code path (3), a tooling
+observation for a different role to triage (2), or a transient/resolved CI
+state (7).
+
+---
+
+## CDD Trace
+
+Steps per `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ordered
+flow", as realized by this cycle:
+
+1. **Design artifact** — `docs/development/design/cn-repo-install-MOCKS.md`,
+   landed verbatim from `origin/claude/cds-install-guide-2ka54j` (not
+   re-authored; operator-reviewed per #607). Commit `f22d5a78` (pre-rebase:
+   `40a6706c`).
+2. **Coherence contract** — this file's §Gap, established before any code
+   was written.
+3. **Plan** — not a standalone artifact this cycle; γ's scaffold's own
+   "Surfaces α is expected to touch" + AC oracle table served this role (see
+   §Skills for the justification).
+4. **Tests** — written alongside each domain/cli commit (test-first within
+   each commit, not as a separate preceding commit): `repoinstall_test.go`
+   (22 tests) landed in the same commit as `repoinstall.go`;
+   `cmd_repo_install_test.go` (9 tests) landed in the same commit as
+   `cmd_repo_install.go`. Total: 31 new tests, all passing at HEAD (see
+   Test Results below).
+5. **Code** — `internal/repoinstall/repoinstall.go` (domain logic),
+   `internal/cli/cmd_repo_install.go` (thin dispatch wrapper),
+   `src/go/cmd/cn/main.go` (+1 line registration),
+   `internal/hubsetup/hubsetup.go` (export rename, no behavior change).
+6. **Docs** — `docs/guides/INSTALL-CDS.md` (new).
+
+**Artifact enumeration matches diff (pre-review gate rule 11).** Every file
+in `git diff --stat origin/main..HEAD` (against `origin/main` at
+`80778d688e04e61c66d38f2bd5962fafb0729e95`, the rebased base):
+
+| File | Status | Mentioned |
+|---|---|---|
+| `.cdd/unreleased/608/gamma-scaffold.md` | γ's pre-dispatch artifact (not α-authored; already present on the branch when α checked it out) | this row |
+| `.cdd/unreleased/608/self-coherence.md` | this file | N/A (self) |
+| `docs/development/design/cn-repo-install-MOCKS.md` | new (landed verbatim) | step 1 above |
+| `docs/guides/INSTALL-CDS.md` | new | step 6 above, AC11 |
+| `src/go/cmd/cn/main.go` | modified (+1 line) | step 5 above |
+| `src/go/internal/cli/cmd_repo_install.go` | new | step 5 above |
+| `src/go/internal/cli/cmd_repo_install_test.go` | new | step 4 above |
+| `src/go/internal/hubsetup/hubsetup.go` | modified (export rename) | step 5 above, §Self-check peer enumeration |
+| `src/go/internal/repoinstall/repoinstall.go` | new | step 5 above |
+| `src/go/internal/repoinstall/repoinstall_test.go` | new | step 4 above |
+
+All 10 files in the diff are accounted for above.
+
+**Caller-path trace for new modules (pre-review gate rule 12).** For every
+new module/function, at least one non-test caller:
+- `internal/repoinstall` package (`Run`, `ParseArgs`, `Options`, `Result`,
+  `Args`) — called from `src/go/internal/cli/cmd_repo_install.go`'s
+  `RepoInstallCmd.Run` (non-test caller: `cmd_repo_install.go` lines calling
+  `repoinstall.ParseArgs(inv.Args)` and `repoinstall.Run(ctx, opts)`).
+- `RepoInstallCmd` (`cli` package) — registered and reachable via
+  `src/go/cmd/cn/main.go`'s `reg.Register(&cli.RepoInstallCmd{})`, dispatched
+  by the existing `cli.ResolveCommand`/`main()` argv-handling loop (the same
+  non-test call path every other kernel command uses — no new dispatch
+  mechanism was added).
+- `hubsetup.EnsureGitignoreEntry` (renamed from unexported
+  `ensureGitignoreEntry`) — non-test callers: `hubsetup.Run` (pre-existing,
+  `cn setup`'s call site, unchanged behavior) AND
+  `repoinstall.applyInstall` (new call site, this cycle).
+
+**Test assertion count from runner output (pre-review gate rule 13).**
+Pasted directly from `go test ./... -v 2>&1 | grep -c "^--- PASS"` /
+`grep -c "^--- FAIL"` at HEAD:
+
+```
+$ cd src/go && go test ./... -v 2>&1 | grep -E "^--- (PASS|FAIL)" | wc -l
+304
+$ ... | grep -c FAIL
+0
+$ go test ./internal/repoinstall/... -v 2>&1 | grep -c "^--- PASS"
+22
+$ go test ./internal/cli/... -run RepoInstall -v 2>&1 | grep -c "^--- PASS"
+9
+```
+
+304 total tests pass (0 fail) across the whole `src/go` module; 31 of those
+are new this cycle (22 in `internal/repoinstall`, 9 in `internal/cli`'s
+`cmd_repo_install_test.go`); the remaining 273 are pre-existing tests,
+confirmed still passing (no regression). `go build ./...`, `go vet ./...`,
+and `go test -race ./internal/repoinstall/... ./internal/cli/...
+./internal/hubsetup/...` all exit 0 at HEAD.
+
+**Polyglot re-audit (pre-review gate rule 9 / §2.6 rule 9).** Languages
+touched by this diff: Go (production + test code), Markdown (design doc
+landed verbatim + new install guide). No shell, YAML, or other language is
+touched. Go: `go vet ./...` clean, `go test ./... -race` clean on the
+touched packages. Markdown: both new/landed `.md` files were read in full
+(not just diffed) and cross-checked against real repo state (path
+existence, command existence, schema names) per §Self-check's "docs
+reconciliation" entry — table-shape and cross-reference checks were manual
+(no markdown linter is wired into this repo's CI for prose docs, confirmed
+via `.github/workflows/*.yml` — only `validate-skill-frontmatter.sh`, which
+targets `SKILL.md` frontmatter specifically, not general guide prose).
+
+### Mock parity contract (design doc §"Receipt parity contract")
+
+Per this cycle's scope (Mocks A, B, E1 only — Mocks C/D/F/G belong to
+#609–#611, per γ's scaffold and the design doc's own header). **Row-count
+note:** γ's scaffold text says "9 rows total for this sub" while separately
+naming the row set as "A1-A5, B1-B4, E1" — that set is 5+4+1 = **10** rows,
+not 9; γ's arithmetic undercounted its own enumeration. This block uses the
+correct 10-row set (the named IDs are authoritative, not the miscounted
+total) rather than silently dropping a row to match "9." Separately: the
+design doc's own Mock B table header reads "**Invariants B1–B3**" but the
+table beneath it lists four rows (B1, B2, B3, **and** B4, the dispatch
+guard) — an intra-doc numbering drift in the landed-verbatim source file
+itself (not something α introduced or is authorized to silently correct,
+since the file was landed verbatim per γ's explicit instruction). Both
+observations are recorded here rather than acted on unilaterally.
+
+```yaml
+mock_parity:
+  source: docs/development/design/cn-repo-install-MOCKS.md
+  source_commit: "f22d5a78967059ba1a91a8ad1256e005d1cbc9a"  # pre-rebase landing commit; content unchanged post-rebase (verified: file untouched by any origin/main commit between base SHAs)
+  rows:
+    - id: A1
+      expectation: "Fails with a clear error if not at a git repo root (does not silently walk up or scaffold)."
+      observed: "✗ cn repo install must be run inside a Git repository. (exact stderr string; exit non-zero; no files written)"
+      evidence: "cli/cmd_repo_install_test.go::TestRepoInstall_NotAGitRepo_FailsClearly"
+      verdict: match
+      how: "gitRepoRoot(ctx) failure is caught and replaced with the exact clean message before any repoinstall.Run call; no scaffolding occurs (0 dir entries created, asserted in-test)."
+    - id: A2
+      expectation: "Prints the exact release tag it will use; --release latest resolves to a concrete tag in the output."
+      observed: "✓ Resolved cnos release: 9.9.9 (fake-GitHub-API-resolved tag printed to stdout)"
+      evidence: "repoinstall/repoinstall_test.go::TestRun_ReleaseLatest_ResolvesAndInstalls"
+      verdict: match
+      how: "Run prints the resolved tag unconditionally (both dry-run and apply paths) before any write."
+    - id: A3
+      expectation: "Lists the precise planned committed diff — exactly .cn/deps.json, .cn/deps.lock.json, .gitignore."
+      observed: "dry-run stdout 'Planned committed diff (3 files):' followed by exactly those three paths, no more."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DryRun_WritesNothing"
+      verdict: match
+      how: "printPlan's plannedFiles slice is hardcoded to exactly these three paths; no other path is ever appended to it."
+    - id: A4
+      expectation: "States dispatch mode explicitly and, in base mode, states no .github/workflows/ change."
+      observed: "'Dispatch: none (base install only — no .github/workflows/ changes)' printed in both dry-run and apply paths."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DryRun_WritesNothing (stdout assertion), TestRun_LocalIndex_EndToEnd (apply-path stdout)"
+      verdict: match
+      how: "The exact string is emitted by both printPlan (dry-run) and Run's post-applyInstall success path (apply) — one literal in each branch."
+    - id: A5
+      expectation: "Writes nothing (verified: git status --porcelain empty after --dry-run)."
+      evidence: "cli/cmd_repo_install_test.go::TestRepoInstall_DryRun_GitStatusStaysClean; repoinstall/repoinstall_test.go::TestRun_DryRun_WritesNothing (os.ReadDir empty)"
+      observed: "git status --porcelain empty; os.ReadDir(RepoRoot) returns zero entries."
+      verdict: match
+      how: "Run's DryRun branch returns before applyInstall (the sole owner of every os.MkdirAll/os.WriteFile in the non-test path) is ever called."
+    - id: B1
+      expectation: "Diff is exactly three files (.cn/deps.json, .cn/deps.lock.json, .gitignore); no .github/workflows/ file present."
+      observed: "Post-apply repo tree: exactly those three new/modified paths plus the gitignored .cn/vendor/ tree; no .github/ directory created."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_LocalIndex_EndToEnd; cli/cmd_repo_install_test.go::TestRepoInstall_FreshGitRepo_EndToEnd"
+      verdict: match
+      how: "applyInstall's only os.WriteFile/os.MkdirAll targets are .cn/, .cn/deps.json, and (via restore.Restore) .cn/vendor/packages/*, plus hubsetup.EnsureGitignoreEntry's .gitignore write — no .github/ call site exists anywhere in the diff."
+    - id: B2
+      expectation: ".cn/deps.lock.json validates against cn.lock.v2 and pins every package in deps.json by SHA-256; versions are exact, not semver ranges."
+      observed: "Schema == \"cn.lock.v2\"; every LockedDep has a non-empty SHA256; version strings are index-resolved exact matches."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_LocalIndex_EndToEnd"
+      verdict: match
+      how: "Lockfile is generated entirely by the reused restore.GenerateLockFromIndex — its exact-match resolution semantics and schema are inherited unmodified."
+    - id: B3
+      expectation: "Idempotent: a second cn repo install produces no further diff (git status --porcelain empty), with no formatting churn."
+      observed: "git status --porcelain empty after a commit + second install; .cn/deps.json and .cn/deps.lock.json byte-identical across two runs."
+      evidence: "cli/cmd_repo_install_test.go::TestRepoInstall_Idempotent_NoDiffOnSecondRun; repoinstall/repoinstall_test.go::TestRun_Idempotent_ByteIdenticalArtifacts"
+      verdict: match
+      how: "writeManifest is a pure function of resolved inputs (no timestamps); restore.GenerateLockFromIndex is independently deterministic; restore.Restore's existing version-match skip avoids vendor-tree rewrites."
+    - id: B4
+      expectation: "Dispatch guard: until the renderer is generalized (#609), cn repo install --dispatch cds fails with an explicit error and writes no partial .github/workflows/cnos-cds-dispatch.yml."
+      observed: "✗ --dispatch cds requires generalized wake renderer support (#609); os.ReadDir(RepoRoot) empty; no .github/workflows/cnos-cds-dispatch.yml."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DispatchCds_FailsWithNoPartialWrite; cli/cmd_repo_install_test.go::TestRepoInstall_DispatchCds_CliWiring"
+      verdict: match
+      how: "validateDispatch is the first statement in Run, before any I/O; a 'cds' value returns immediately."
+    - id: E1
+      expectation: "cn repo install (base) writes no agent-hub scaffold — no spec/SOUL.md, agent/, threads/, state/; only .cn/deps.json + .cn/deps.lock.json + .gitignore."
+      observed: "None of spec/SOUL.md, agent/, threads/, state/ exist post-install; internal/repoinstall does not import internal/hubinit at all."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_LocalIndex_EndToEnd; cli/cmd_repo_install_test.go::TestRepoInstall_NoAgentHubScaffold"
+      verdict: match
+      how: "repoinstall.go's import block has zero dependency on hubinit (cn init's agent-hub-scaffold package); the two commands share no scaffolding code path."
+  summary:
+    matched: 10
+    exceeded: 0
+    missed: 0
+    exceed_justified: true
+```
+
+---
+
+## Review-readiness
+
+**Pre-review gate (alpha/SKILL.md §2.6), checked immediately before this
+signal:**
+
+1. **Cycle branch rebased onto current `origin/main`** — re-verified at
+   signal time: `origin/main` = `80778d688e04e61c66d38f2bd5962fafb0729e95`;
+   `git merge-base origin/main HEAD` = the same SHA. No drift since the
+   earlier rebase (commit `9fbd8fa1` onward); no further rebase needed.
+2. `self-coherence.md` carries the CDD Trace through step 6 (above), plus
+   §Gap/§Skills/§ACs/§Self-check/§Debt — all present in this commit.
+3. Tests present: 31 new tests (22 `internal/repoinstall`, 9 `internal/cli`),
+   plus the pre-existing 273, all passing — see §CDD Trace step 4/"Test
+   assertion count."
+4. Every AC (AC1–AC11) has evidence in §ACs.
+5. Known debt is explicit in §Debt (7 items, none blocking).
+6. Schema/shape audit: no schema changed this cycle (§Self-check "harness
+   audit").
+7. Peer enumeration: completed for the `.gitignore` multi-writer case
+   (§Self-check).
+8. Harness audit: completed (§Self-check) — no schema-bearing contract
+   changed, so no cross-language harness drift is possible from this diff.
+9. Post-patch re-audit: the header-format fix (`9fbd8fa1`) and the
+   §Self-check factual correction (writer-count claim) were each re-verified
+   against HEAD after being made — polyglot re-audit note in §CDD Trace
+   covers Go + Markdown (the only languages this diff touches).
+10. **Branch CI is green on the head commit.** `origin/cycle/608` HEAD
+    `2a3699b73334c3d42cbee8b3defb64f28bf3009c` — `Build` workflow
+    `conclusion: success` (re-confirmed at signal time via `gh run list
+    --repo usurobor/cnos --branch cycle/608 --limit 15 --json
+    headSha,conclusion,status,name`, filtered to this exact SHA). No other
+    workflow is configured to trigger on this diff:
+    `install-wake-golden.yml` only triggers on changes under
+    `src/packages/cnos.core/commands/install-wake/**` /
+    `.../orchestrators/**` / its own workflow file / `cnos-cds-dispatch.yml`
+    — none of which this diff touches (confirmed by reading the workflow's
+    `on:` path filters directly). `release.yml` triggers only on version
+    tags. `board-map.yml`/`cnos-agent-admin.yml`/`cnos-cds-dispatch.yml`
+    trigger on `issues`/`schedule`/`workflow_dispatch`, not on this push.
+    So `Build` succeeding is the complete CI signal for this branch.
+    (Several earlier commits on this branch — `eb269381` §Gap,
+    `a3f9b86e` §Skills, `9fbd8fa1` header-fix docs update in the same
+    diff as the fix, `ffb67634` §Self-check, `d049e23b` §Debt — show
+    `conclusion: failure` on the `cdd-artifact-check` job, an expected,
+    disclosed transient state during §2.5's incremental one-section-per-
+    commit authoring of this very file, per §Debt item 7; resolved at
+    `5d95e060` §CDD Trace onward.)
+11. Artifact enumeration matches diff: all 10 files in
+    `git diff --stat origin/main..HEAD` are named in §CDD Trace.
+12. Caller-path trace for new modules: done in §CDD Trace.
+13. Test assertion count pasted from runner output: done in §CDD Trace
+    (304 total, 0 fail, 31 new).
+14. **α's commit author email** — `git log -1 --format='%ae' HEAD` =
+    `alpha@cdd.cnos`, matching the canonical `alpha@{project}.cdd.cnos`
+    pattern (elision form for the cnos project). No correction needed;
+    every commit this cycle was authored under this identity from the
+    start (no drift to remediate via the retroactive-rebase path).
+15. **γ-artifact presence at the rule-3.11b surface** —
+    `.cdd/unreleased/608/gamma-scaffold.md` is present at the canonical
+    §5.1 path on `origin/cycle/608` (confirmed:
+    `git ls-tree -r origin/cycle/608 .cdd/unreleased/608/gamma-scaffold.md`
+    lists the file; it predates α's dispatch, authored by γ). Outcome:
+    **γ-artifact at canonical §5.1 path.**
+
+**Implementation SHA:** `2a3699b73334c3d42cbee8b3defb64f28bf3009c` (this is
+also current HEAD — no further commits follow this readiness signal on
+`cycle/608`, so the recursive-self-stale concern in alpha/SKILL.md §2.6's
+"SHA convention" note does not apply here: this is the final commit, not a
+readiness-signal commit that will itself advance HEAD).
+
+**Base SHA:** `80778d688e04e61c66d38f2bd5962fafb0729e95` (current
+`origin/main` tip at signal time, confirmed via `git fetch origin main` +
+`git rev-parse origin/main` immediately before writing this section).
+
+**Branch CI:** green (`Build` workflow, `conclusion: success`) at head SHA
+`2a3699b73334c3d42cbee8b3defb64f28bf3009c`, confirmed at signal time
+(not a stale/earlier-commit read).
+
+**mock_parity:** 10/10 matched, 0 missed (block above, under §CDD Trace).
+
+**Deviations from the scaffold:**
+- Section headers use the bare form (`## Gap` not `## §Gap`) rather than
+  the `§`-prefixed style used in the scaffold's own prose and in a prior
+  cycle (#600) — required for `cn cdd verify`'s I6 gate to actually pass for
+  a small-change-classified cycle (see §Self-check/§Debt for the full
+  analysis). This is a format-only deviation; content/structure matches the
+  scaffold's declared section list exactly.
+- The mock_parity block uses 10 rows (A1–A5, B1–B4, E1), not the "9" γ's
+  scaffold text stated — γ's own enumeration of that row set (A1-A5, B1-B4,
+  E1) sums to 10; the "9" appears to be an arithmetic slip in the scaffold,
+  not a deliberate scope reduction. Named explicitly rather than either
+  silently matching the wrong count or silently correcting γ's prose
+  without comment.
+- No other deviation from γ's scaffold: implementation contract axes,
+  reuse targets (`restore.GenerateLockFromIndex`/`restore.Restore`),
+  package scoping (`internal/repoinstall` + `cli/cmd_repo_install.go`),
+  and the design-doc-landing instruction were all followed as scaffolded.
+
+**Known gaps preventing full convergence:** none. All 11 ACs are fully met
+with PASS evidence; the mock_parity block shows `missed: 0`. §Debt's 7
+items are disclosed but none are partial-AC or blocking (see §Debt's
+closing paragraph for the explicit accounting).
+
+**This cycle is ready for β review.**
+
+Requesting β review on `cycle/608` at implementation SHA
+`2a3699b73334c3d42cbee8b3defb64f28bf3009c` (= current branch HEAD at
+signal time). β should poll `origin/cycle/608` and
+`.cdd/unreleased/608/beta-review.md` per the standard coordination
+protocol.
+
+---
+
+## R1 — fix β's R0 blocking finding (AC1 silent ancestor-`.cn` walk-up)
+
+**Trigger:** `.cdd/unreleased/608/beta-review.md` (R0, verdict `iterate`),
+Finding 1 (BLOCKING): `RepoInstallCmd.Run` used `inv.HubPath` as the
+install root whenever non-empty, completely bypassing `gitRepoRoot`. β
+reproduced this against the built binary: an unrelated ancestor `.cn/`
+directory (found by `main.go`'s unbounded upward `discoverHub()` walk)
+was silently treated as the install root even when cwd was not inside
+any git repository at all — violating AC1's own text ("does not
+silently walk up or scaffold"). β also found that no test in the R0 diff
+exercised the `inv.HubPath != ""` branch: the existing negative test
+(`TestRepoInstall_NotAGitRepo_FailsClearly`) hand-constructs
+`Invocation{HubPath: ""}`, bypassing `main.go`'s real hub-discovery path
+entirely.
+
+### What changed
+
+`src/go/internal/cli/cmd_repo_install.go`, `RepoInstallCmd.Run`
+(commit `aef74f3e103d747069abb083e75c82acb8bcca54`, pre-rebase content
+identical): repo-root resolution no longer reads `inv.HubPath` at all.
+It now unconditionally calls `gitRepoRoot(ctx)` (the existing
+`git rev-parse --show-toplevel` wrapper already used by
+`cmd_cell.go`/`CellFinalizeCmd`) and fails with the exact AC1 message
+
+```
+✗ cn repo install must be run inside a Git repository.
+```
+
+whenever that call errors — regardless of what `main.go`'s
+`discoverHub()` found. `inv.HubPath` is no longer read anywhere in this
+file; the "not inside a git repository" failure is now unconditional,
+not only reachable when `inv.HubPath` happened to be empty.
+
+**Why this is the right fix, not a narrower patch:** the alternative β
+raised as acceptable ("consult `inv.HubPath` only after confirming it
+equals the git-root value") was considered and rejected as unnecessary
+complexity — `gitRepoRoot(ctx)` is cheap (one `git rev-parse` subprocess
+call, already paid on every no-hub invocation in the pre-fix code path
+too), and there is no case where trusting a pre-computed `inv.HubPath`
+instead of asking git directly saves anything but adds a
+second code path to keep in sync. Always resolving via git directly is
+strictly simpler and closes the entire bug class, not just β's specific
+repro shape.
+
+### New tests
+
+Two tests added to `src/go/internal/cli/cmd_repo_install_test.go` that
+build the actual `cn` binary (`go build -o <tmp>/cn ./cmd/cn` from the
+module root, mirroring the existing `(cd src/go && go build -o $CN_BIN
+./cmd/cn)` convention used by the shell test harnesses under
+`src/packages/cnos.cdd/commands/cdd-verify/`) and drive it as a
+subprocess — exercising `main.go`'s real `discoverHub()`, not a
+reimplementation of it, closing exactly the gap β named:
+
+- `TestRepoInstall_RealDispatch_AncestorHubOutsideGitRepo_FailsClearly` —
+  cwd is not inside any git repository; an unrelated ancestor `.cn/`
+  exists above it (this is β's exact repro shape). Asserts: exit
+  non-zero, stderr contains the exact AC1 message, and the ancestor
+  `.cn/` directory is completely untouched (zero entries written).
+- `TestRepoInstall_RealDispatch_AncestorHubWithNestedGitRepo_UsesInnerRoot`
+  — a stronger control case: the ancestor `.cn/` exists, and cwd is
+  itself inside its *own*, different git repository nested further down
+  (a monorepo-of-repos shape). `discoverHub()` still finds the
+  unrelated ancestor `.cn/` first and returns it as `inv.HubPath`; this
+  proves the fix does not merely add an error path but actually
+  resolves the *correct* root (the inner repo, not the ancestor) even
+  when `inv.HubPath` is non-empty and points elsewhere. Asserts:
+  install succeeds, `.cn/deps.json` is written under the *inner* repo
+  root (not the ancestor), stdout reports the inner repo as the
+  resolved git root, and the ancestor `.cn/` remains empty.
+
+**Verified these tests actually catch the bug (not tautological):**
+ran both against the pre-fix code (`git stash` of the one-line
+`cmd_repo_install.go` fix only, tests still applied) —
+
+```
+--- FAIL: TestRepoInstall_RealDispatch_AncestorHubOutsideGitRepo_FailsClearly
+    stderr = "✗ package(s) not found in index: cnos.core@3.82.1, ..."
+    (proceeded past the git-repo check entirely, using the ancestor as
+    root, and failed only on release-index resolution — exactly β's
+    reported shape)
+--- FAIL: TestRepoInstall_RealDispatch_AncestorHubWithNestedGitRepo_UsesInnerRoot
+    stdout reports "Git repository root: .../outer/" (the ancestor),
+    .cn/deps.json is written under the ancestor .cn/, not the inner
+    repo — a silent wrong-directory install, exit 0
+```
+
+then re-ran against the fix: both PASS. This is the same class of
+independent-reproduction discipline β applied at R0 (build the real
+binary, don't trust the test-suite framing alone).
+
+Also added (per γ/β's non-blocking, quick-to-close item): a third test
+in `src/go/internal/repoinstall/repoinstall_test.go`,
+`TestRun_IndexHTTPURL_WithExplicitReleaseTag`, covering the previously
+untested `--index <URL>` + explicit `--release <tag>` combination (β's
+review, non-blocking observation 4). Confirms `resolveIndex`'s
+`isRemoteURL(indexArg)` branch and a non-empty `pinFromRelease` compose
+correctly (same code path as each sub-case, now proven jointly).
+
+### AC re-verification (full pass, focus on AC1)
+
+- **AC1** — re-verified end-to-end against the *built binary* using β's
+  own repro commands verbatim (`mkdir -p
+  /tmp/repro/outer-hub/nested/not-a-git-repo`, `mkdir
+  /tmp/repro/outer-hub/.cn`, `cd .../not-a-git-repo`, `./cn repo install
+  --dry-run`). Result: `✗ cn repo install must be run inside a Git
+  repository.`, exit code 1, and `/tmp/repro/outer-hub/.cn` remains
+  empty (`ls -la` → only `.`/`..`). This is the exact scenario β
+  reported previously succeeding silently (dry-run proceeding past the
+  git-repo check into release/index resolution) — it now fails at the
+  git-repo check, first, unconditionally. The "fresh git repo, no prior
+  state" positive half of AC1 (unaffected by this fix — `gitRepoRoot`
+  was already the fallback path exercised there) re-verified still
+  passes via `TestRepoInstall_FreshGitRepo_EndToEnd`.
+- **AC2–AC11** — no code path other than repo-root resolution changed;
+  re-ran the full existing suite (all AC2–AC11 tests named in R0's
+  §ACs section) and all pass unchanged. See test counts below.
+
+### Full re-verification (all four gates β/α run this cycle)
+
+Run from `src/go/` after the fix, from a clean tree, at commit
+`aef74f3e103d747069abb083e75c82acb8bcca54` (pre-rebase) / current HEAD
+(post-rebase, see rebase note below — content identical, only ancestry
+changed):
+
+- `go build ./...` — clean, exit 0.
+- `go vet ./...` — clean, exit 0.
+- `go test ./...` — **307 tests pass, 0 fail** (`go test ./... -v |
+  grep -c '^--- PASS'` → 307; `grep -c '^--- FAIL'` → 0). R0's count was
+  304; +3 new tests this round (2 real-dispatch-path tests +1
+  flag-combination test), all passing.
+- `go test -race -count=1 ./...` — clean, all 15 packages pass, no race
+  reports.
+
+No regression in any previously-passing package (`internal/cell`,
+`internal/repoinstall`, `internal/cli`, `internal/restore`,
+`internal/pkg`, etc. — full list unchanged from R0's pass, all still
+green).
+
+### Rebase note (pre-review-gate row 1)
+
+Between R0's review-readiness signal and this round, `origin/main`
+advanced by two unrelated commits (`d6bc7c70`, `c08a7483` — both sigma
+agent-admin heartbeat log appends to `.cn-sigma/logs/20260706.md`; zero
+overlap with this cycle's diff). Per alpha/SKILL.md §2.6 row 1, I
+rebased `cycle/608` onto the new `origin/main` tip
+(`c08a7483e57189760bcf5f7067904042f101bf61`) and force-pushed with
+`--force-with-lease`. This was a clean rebase (no conflicts, no content
+changes to any commit) but it rewrote every commit's SHA on the branch,
+including β's own R0 review commit and every SHA α cited in this file's
+R0 sections above. Mapping for reproducibility (rule 3.13(a)):
+
+| Pre-rebase SHA (cited above in R0 sections) | Post-rebase SHA (same content) |
+|---|---|
+| `226181f4c5a70fd6ab632e23f37ddc9cb5bf7925` (R0 review-readiness signal commit) | `1346f894...` |
+| `2a3699b73334c3d42cbee8b3defb64f28bf3009c` (R0 "Implementation SHA" cited in §Review-readiness) | `68ab7edf...` |
+| `49d0cbb2aee54c4a4dcceade99404d14c3e329af` (β's R0 review commit, cited in `beta-review.md`'s own header) | `0e67adf5...` |
+
+None of the R0 section prose above is edited in place (per
+alpha/SKILL.md §4 "never restart completed sections" / §2.7 fix-round
+convention — this R1 appendix is additive, not a rewrite); this table
+is the resolution path for any reader who tries to `git cat-file` an R0
+SHA against current `origin/cycle/608` and finds it missing.
+
+### Non-blocking items from β's R0 review — disposition
+
+1. Design doc's Mock B "Invariants B1–B3" header vs. 4 listed rows —
+   pre-existing inconsistency in verbatim-landed source content; not
+   touched (β already agreed this is correctly left as-is).
+2. γ's "9 rows total" scaffold arithmetic note — informational only, no
+   code change; α's R0 mock_parity block already used the correct
+   10-row set.
+3. CI `checkSmallChangeArtifacts` hard-fail-vs-warn asymmetry —
+   tooling/process observation for γ/δ, out of this cycle's diff scope.
+4. `--index <URL>` + explicit `--release <tag>` — **closed this round**
+   (see New tests above, `TestRun_IndexHTTPURL_WithExplicitReleaseTag`).
+5. No lockfile-level concurrency guard — inherited pre-existing
+   `restore.Restore` limitation, explicit known debt, out of scope for
+   #608 (same disposition as R0).
+6. No Windows support for the git-subprocess-based root resolution —
+   same debt class as 5, out of scope for #608 (cnos ships Go tooling
+   cross-platform in general, but this specific gap predates this
+   cycle and is not introduced by it).
+
+### Self-check
+
+Every claim above is backed by a command run this round (test output,
+binary repro transcript, `go build`/`go vet`/`go test` exit codes) —
+none is asserted from memory of R0's shape. The fix is a net *deletion*
+of a code path (the `inv.HubPath`-as-root branch), not an addition of
+conditional complexity, so there is no new ambiguity pushed onto β: β's
+re-review is a narrow AC1-focused re-check (as β's own R0 verdict
+rationale anticipated) plus confirmation that AC2–AC11 remain
+unaffected — both are directly evidenced above with concrete SHAs and
+counts.
+
+### Review-readiness — round 2 (R1)
+
+**Base SHA:** `c08a7483e57189760bcf5f7067904042f101bf61` (current
+`origin/main` tip; branch rebased onto it this round, confirmed
+`git merge-base origin/main HEAD` == `origin/main`'s tip).
+
+**Implementation SHA:** current branch HEAD after this round's fix
+commit (rebased). Run `git log -1 --format='%H' origin/cycle/608` to
+resolve — per alpha/SKILL.md §2.6 "SHA convention", omitting a
+recorded value here rather than naming a HEAD that this very commit
+would advance past (the recursive-self-stale trap named in that
+section); the commit message of the fix itself
+(`alpha-608 R1: fix silent ancestor-.cn walk-up in cn repo install (β R0
+F1)`) is the stable anchor.
+
+**Tests:** 307 pass, 0 fail (`go test ./...`); `go test -race -count=1
+./...` clean; `go build ./...` / `go vet ./...` clean.
+
+**Known debt:** unchanged from R0 (§Debt above) plus non-blocking items
+5–6 restated above; no new debt introduced by this fix (it is a
+strict simplification of the R0 code, not new surface).
+
+**This cycle is ready for β re-review**, scoped per β's own R0
+guidance: a narrow re-check of AC1 (now closed — β's exact repro
+re-tested against the built binary and fails correctly) plus a
+regression pass on AC2–AC11 (unaffected, all still pass).
+
+Requesting β re-review on `cycle/608` at current HEAD (the fix commit
+`aef74f3e103d747069abb083e75c82acb8bcca54`'s post-rebase equivalent).
+β should poll `origin/cycle/608` and
+`.cdd/unreleased/608/beta-review.md` per the standard coordination
+protocol.
