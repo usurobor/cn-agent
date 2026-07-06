@@ -2263,7 +2263,7 @@
   },
   {
     "n": 607,
-    "t": "wave: first-class CDS repo installer (`cn install repo`)",
+    "t": "wave: first-class CDS repo installer (`cn repo install`)",
     "kind": "process",
     "areas": [
       "cds",
@@ -2280,7 +2280,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:56:07Z",
-    "updated": "2026-07-06T17:03:11Z",
+    "updated": "2026-07-06T19:40:48Z",
     "url": "https://github.com/usurobor/cnos/issues/607"
   },
   {
@@ -2328,7 +2328,7 @@
   },
   {
     "n": 610,
-    "t": "cds-install Sub 3: `cn install repo --dispatch cds` (dispatch layer)",
+    "t": "cds-install Sub 3: `cn repo install --dispatch cds` (dispatch layer)",
     "kind": "tooling",
     "areas": [
       "cds",
@@ -2345,12 +2345,12 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:57:57Z",
-    "updated": "2026-07-06T13:10:33Z",
+    "updated": "2026-07-06T19:41:03Z",
     "url": "https://github.com/usurobor/cnos/issues/610"
   },
   {
     "n": 611,
-    "t": "cds-install Sub 4: bootstrap workflow delegates to `cn install repo` + docs flip",
+    "t": "cds-install Sub 4: bootstrap workflow delegates to `cn repo install` + docs flip",
     "kind": "tooling",
     "areas": [
       "cds",
@@ -2366,7 +2366,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:58:09Z",
-    "updated": "2026-07-06T13:10:35Z",
+    "updated": "2026-07-06T19:41:15Z",
     "url": "https://github.com/usurobor/cnos/issues/611"
   },
   {
