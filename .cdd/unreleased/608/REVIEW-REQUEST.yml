@@ -1,0 +1,20 @@
+issue: 608
+protocol: cds
+cycle_branch: cycle/608
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/617"
+converge_verdict_ref: .cdd/unreleased/608/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's Round 1
+  converge verdict (round 0: iterate, one blocking finding F1 -- install
+  root resolution used main.go's unbounded .cn/-search HubPath instead of
+  git-repo-root detection, silently walking up past non-git ancestor
+  directories, violating AC1's no-silent-walk-up requirement; round 1:
+  converge, F1 independently re-verified fixed by reverting it in an
+  isolated worktree and confirming the new tests genuinely catch the
+  pre-fix bug, all AC1-AC11 independently re-derived as met, 307/307 tests
+  green, build/vet/test -race all clean). All closeout artifacts
+  (gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md,
+  beta-closeout.md, gamma-closeout.md) are present on this branch. PR #617
+  opened by delta referencing and closing #608, with 20 commits beyond the
+  cycle/608 <-> main merge-base.
