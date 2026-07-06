@@ -1,7 +1,7 @@
 # self-coherence — cycle #608
 
 **manifest:** sections = [Gap, Skills, ACs, Self-check, Debt, CDD Trace, Review-readiness]
-**completed:** [Gap, Skills, ACs, Self-check]
+**completed:** [Gap, Skills, ACs, Self-check, Debt]
 
 ---
 
@@ -472,3 +472,74 @@ push ambiguity onto β? Is every claim backed by evidence in the diff?**
 - No ambiguity was pushed onto β regarding the implementation-contract axes
   (all 7 were pinned by γ at dispatch; none were relaxed or reinterpreted —
   see §Skills above).
+
+---
+
+## Debt
+
+Known gaps and observations, disclosed explicitly rather than left implicit:
+
+1. **`cn --version` is referenced in the new `docs/guides/INSTALL-CDS.md`
+   (as the install.sh-recommended verification step) but currently exits
+   non-zero with "Unknown command"** — confirmed by building the binary and
+   running it directly. This is a **pre-existing** gap (the design doc's own
+   Mock F1, cnos#606 dogfooding, explicitly out of scope for #608 — Mocks
+   C/D/F/G belong to later subs) and this cycle does not introduce or
+   worsen it; the doc text mirrors `install.sh`'s own final verification
+   step, which already invokes `cn --version` regardless of this cycle.
+   Flagging rather than silently reproducing an already-known bug's
+   symptom without comment.
+2. **`cn cdd verify`'s small-change classification (`ledger.go`
+   `checkSmallChangeArtifacts`, `forUnreleased=false` at line 497) hard-fails
+   any in-progress `self-coherence.md` missing a required section**, unlike
+   the triadic path's lenient in-progress warning — see §Self-check for the
+   full analysis. This is a friction pattern in the CDD tooling itself
+   (affecting every α cycle's authoring window before β writes
+   `beta-review.md`), not something this cycle's diff touches or is
+   positioned to fix. Surfaced as an observation for γ/δ triage, per
+   alpha/SKILL.md §2.8's "factual observations only" voice — not
+   recommending a specific tool patch here.
+3. **`--index <URL>` combined with an explicit `--release <tag>` (both set,
+   remote index) is not independently tested** — only (a) local `--index`
+   with an explicit `--release` pin (`TestRun_DefaultPackageSet_AllThreeRestored`)
+   and (b) remote `--index` URL with no `--release` (`TestRun_IndexHTTPURL_RelativeRewrite`)
+   are covered separately. The code path is the same `resolveIndex`
+   branch either way (`isRemoteURL(indexArg)` gates URL-fetch vs local-read;
+   `pinFromRelease` is computed identically regardless of which sub-branch
+   fires), so risk is low, but the exact combination (remote URL + explicit
+   release pin together) has no dedicated test.
+4. **`docs/guides/README.md` was not updated** to add a navigation link to
+   the new `docs/guides/INSTALL-CDS.md` — the issue's own §Docs section
+   names only `docs/guides/INSTALL-CDS.md` (plus `templates/cnos-install.yml`
+   + `docs/guides/README.md` as explicitly "#611"-scoped follow-ups, per the
+   issue body's own text: "`docs/guides/templates/cnos-install.yml` +
+   `docs/guides/README.md` follow (bootstrap delegation is finalized in
+   #611)"). Not adding it is issue-scope-conformant, not an oversight, but
+   named here for completeness.
+5. **No lockfile-level concurrency guard** — two simultaneous `cn repo
+   install` invocations against the same repo could race on `.cn/deps.json`
+   / `.cn/deps.lock.json` writes or the vendor tree. This matches
+   `restore.Restore`'s own pre-existing lack of a lock/mutex (confirmed by
+   reading `restore.go` — no file-lock primitive anywhere in that package
+   either), so this cycle does not introduce a new class of risk; it is
+   inherited, not new.
+6. **Windows is not a supported target** — `cn repo install` uses no
+   Windows-specific code, but the wider `cn` kernel already restricts
+   platform binaries to linux/macOS (`binupdate.go`'s
+   `platformBinaryName`); this is pre-existing scope, not new debt from
+   this cycle.
+7. **Branch CI (the `cdd-artifact-check` / I6 job specifically) was red on
+   several interim commits** during this cycle (`eb269381`, `a3f9b86e`) —
+   expected per alpha/SKILL.md §2.5's incremental one-section-per-commit
+   authoring discipline for `self-coherence.md`, and resolved once the
+   header-format fix (`9fbd8fa1`) landed and (after this §Debt section is
+   the last content section) every required section exists in one commit.
+   §Review-readiness below re-validates this transient row at signal time,
+   per alpha/SKILL.md §2.6's "transient vs durable rows" rule.
+
+No AC is partially met — all eleven (AC1–AC11) have PASS-backed evidence in
+§ACs above. No known gap in this list blocks any AC; all are either
+pre-existing (1, 5, 6), explicitly out-of-scope-by-the-issue's-own-text (4),
+narrow test-coverage gaps on a low-risk shared code path (3), a tooling
+observation for a different role to triage (2), or a transient/resolved CI
+state (7).
