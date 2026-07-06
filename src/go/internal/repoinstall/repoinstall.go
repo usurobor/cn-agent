@@ -1,0 +1,557 @@
+// Package repoinstall implements `cn repo install` — the base CNOS/CDS
+// package installer (cnos#608).
+//
+// It makes an arbitrary Git repository CDS-ready with one command: it
+// resolves a cnos release (or an explicit package index), writes a
+// deterministic .cn/deps.json + .cn/deps.lock.json, restores the default
+// package set (cnos.core, cnos.cdd, cnos.cds) under .cn/vendor/packages/,
+// and ensures .gitignore excludes the vendor tree.
+//
+// This package reuses the existing lock/restore substrate directly
+// (internal/restore) rather than reimplementing SHA-256 verification or
+// lockfile generation — see restore.GenerateLockFromIndex and
+// restore.Restore. It does not write any agent-hub scaffold (cf.
+// internal/hubinit, which cn init uses) and it never touches
+// .github/workflows/ in base mode: --dispatch cds is explicitly gated
+// until #609 (renderer generalization) lands.
+//
+// This package is cli/-boundary compliant per eng/go §2.18: all domain
+// logic lives here, and cli/cmd_repo_install.go is a thin wrapper.
+package repoinstall
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/usurobor/cnos/src/go/internal/binupdate"
+	"github.com/usurobor/cnos/src/go/internal/hubsetup"
+	"github.com/usurobor/cnos/src/go/internal/pkg"
+	"github.com/usurobor/cnos/src/go/internal/restore"
+)
+
+// DefaultRepo is the GitHub "owner/repo" slug releases are resolved
+// against absent an override (tests point this at a fixture server).
+const DefaultRepo = "usurobor/cnos"
+
+const (
+	defaultAPIBaseURL  = "https://api.github.com"
+	defaultDownloadURL = "https://github.com"
+
+	// manifestSchema/manifestProfile are the exact wire values written to
+	// .cn/deps.json. Per the implementation contract these must not change
+	// shape — pkg.Manifest is the canonical type (schema "cn.deps.v1").
+	manifestSchema  = "cn.deps.v1"
+	manifestProfile = "cds"
+)
+
+// DefaultPackages is the base package set `cn repo install` pins absent
+// an explicit --packages override. Order is significant: it is the order
+// written to .cn/deps.json (manifest order is operator-controlled, per
+// restore.GenerateLockFromIndex's own doc comment; the lockfile it
+// generates is independently sorted for determinism).
+var DefaultPackages = []string{"cnos.core", "cnos.cdd", "cnos.cds"}
+
+// httpClientDefault mirrors the timeout used by restore.go/binupdate.go
+// (OCaml curl flags: --connect-timeout 10 --max-time 300).
+var httpClientDefault = &http.Client{Timeout: 300 * time.Second}
+
+// Args is the parsed flag set for `cn repo install`.
+type Args struct {
+	Release   string   // "" or "latest" resolves the newest release; anything else pins a tag
+	IndexPath string   // --index override: local path or http(s) URL
+	Packages  []string // --packages csv override; nil uses DefaultPackages
+	Dispatch  string   // "" / "none" (default) or "cds"
+	DryRun    bool
+}
+
+// ParseArgs parses the `cn repo install` flag set. Two-token
+// "--flag value" form only, matching the convention in
+// internal/cell.ParseFinalizeArgs.
+func ParseArgs(argv []string) (Args, error) {
+	var a Args
+	for i := 0; i < len(argv); i++ {
+		switch argv[i] {
+		case "--dry-run":
+			a.DryRun = true
+		case "--release":
+			v, err := takeValue(argv, &i, "--release")
+			if err != nil {
+				return a, err
+			}
+			a.Release = v
+		case "--index":
+			v, err := takeValue(argv, &i, "--index")
+			if err != nil {
+				return a, err
+			}
+			a.IndexPath = v
+		case "--packages":
+			v, err := takeValue(argv, &i, "--packages")
+			if err != nil {
+				return a, err
+			}
+			a.Packages = splitPackages(v)
+		case "--dispatch":
+			v, err := takeValue(argv, &i, "--dispatch")
+			if err != nil {
+				return a, err
+			}
+			a.Dispatch = v
+		default:
+			return a, fmt.Errorf("unknown flag %q", argv[i])
+		}
+	}
+	return a, nil
+}
+
+func takeValue(argv []string, i *int, flag string) (string, error) {
+	if *i+1 >= len(argv) {
+		return "", fmt.Errorf("%s requires a value", flag)
+	}
+	*i++
+	return argv[*i], nil
+}
+
+func splitPackages(csv string) []string {
+	var out []string
+	for _, p := range strings.Split(csv, ",") {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// Options carries the runtime configuration for a `cn repo install` run.
+type Options struct {
+	// RepoRoot is the resolved Git repository root to install into.
+	// Required — git-root detection is the caller's responsibility
+	// (cli/cmd_repo_install.go, mirroring cli/cmd_cell.go's gitRepoRoot
+	// precedent) so this package stays testable with a plain t.TempDir().
+	RepoRoot string
+
+	Release   string
+	IndexPath string
+	Packages  []string
+	Dispatch  string
+	DryRun    bool
+
+	// Repo is the "owner/repo" slug used to resolve releases and
+	// construct download URLs. Defaults to DefaultRepo.
+	Repo string
+	// HTTPClient, APIBaseURL, DownloadBase allow tests to point release
+	// resolution and index/tarball fetches at an httptest.Server, mirroring
+	// binupdate.Options' equivalent test seams.
+	HTTPClient   *http.Client
+	APIBaseURL   string
+	DownloadBase string
+
+	Stdout io.Writer
+	Stderr io.Writer
+}
+
+// Result records the outcome of a Run, for tests that want structured
+// assertions beyond stdout scraping.
+type Result struct {
+	// ReleaseTag is the resolved release tag. Empty when an explicit
+	// --index value was used with no --release override (index-only flow).
+	ReleaseTag string
+	Manifest   pkg.Manifest
+	DryRun     bool
+}
+
+// Run executes `cn repo install` against opts.RepoRoot.
+func Run(ctx context.Context, opts Options) (*Result, error) {
+	if err := validateDispatch(opts.Dispatch); err != nil {
+		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+		return nil, err
+	}
+	if opts.RepoRoot == "" {
+		return nil, fmt.Errorf("repo install: RepoRoot is required")
+	}
+
+	repo := opts.Repo
+	if repo == "" {
+		repo = DefaultRepo
+	}
+	apiBase := opts.APIBaseURL
+	if apiBase == "" {
+		apiBase = defaultAPIBaseURL
+	}
+	dlBase := opts.DownloadBase
+	if dlBase == "" {
+		dlBase = defaultDownloadURL
+	}
+	client := opts.HTTPClient
+	if client == nil {
+		client = httpClientDefault
+	}
+
+	names := opts.Packages
+	if len(names) == 0 {
+		names = append([]string(nil), DefaultPackages...)
+	}
+
+	fmt.Fprintf(opts.Stdout, "→ cn repo install")
+	if opts.DryRun {
+		fmt.Fprintf(opts.Stdout, " (dry-run) — no files will be written")
+	}
+	fmt.Fprintln(opts.Stdout)
+	fmt.Fprintf(opts.Stdout, "✓ Git repository root: %s\n", opts.RepoRoot)
+
+	idxPath, idx, releaseTag, cleanup, err := resolveIndex(ctx, client, apiBase, dlBase, repo, opts.Release, opts.IndexPath)
+	if err != nil {
+		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+		return nil, err
+	}
+	defer cleanup()
+
+	if releaseTag != "" {
+		fmt.Fprintf(opts.Stdout, "✓ Resolved cnos release: %s\n", releaseTag)
+	} else {
+		fmt.Fprintf(opts.Stdout, "✓ Using package index: %s\n", opts.IndexPath)
+	}
+
+	deps, err := resolvePins(idx, names, releaseTag)
+	if err != nil {
+		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+		return nil, err
+	}
+
+	manifest := pkg.Manifest{Schema: manifestSchema, Profile: manifestProfile, Packages: deps}
+	plannedFiles := []string{
+		filepath.Join(".cn", "deps.json"),
+		filepath.Join(".cn", "deps.lock.json"),
+		".gitignore",
+	}
+
+	if opts.DryRun {
+		printPlan(opts.Stdout, manifest, plannedFiles, releaseTag, opts.IndexPath)
+		return &Result{ReleaseTag: releaseTag, Manifest: manifest, DryRun: true}, nil
+	}
+
+	if err := applyInstall(ctx, opts, manifest, idxPath); err != nil {
+		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+		return nil, err
+	}
+
+	fmt.Fprintf(opts.Stdout, "Dispatch: none (base install only — no .github/workflows/ changes)\n")
+	fmt.Fprintf(opts.Stdout, "\n✓ cn repo install complete.\n")
+
+	return &Result{ReleaseTag: releaseTag, Manifest: manifest, DryRun: false}, nil
+}
+
+// validateDispatch enforces the base/dispatch trust-layer split (Mock B4 /
+// AC9): --dispatch cds must fail explicitly, before any write, until the
+// wake renderer is generalized (#609).
+func validateDispatch(d string) error {
+	switch d {
+	case "", "none":
+		return nil
+	case "cds":
+		return fmt.Errorf("--dispatch cds requires generalized wake renderer support (#609)")
+	default:
+		return fmt.Errorf("unknown --dispatch value %q (want \"none\" or \"cds\")", d)
+	}
+}
+
+// applyInstall performs the non-dry-run write path: .cn/deps.json,
+// .cn/deps.lock.json (via restore.GenerateLockFromIndex), package restore
+// (via restore.Restore), and the .gitignore entry (via
+// hubsetup.EnsureGitignoreEntry — reused, not duplicated).
+func applyInstall(ctx context.Context, opts Options, manifest pkg.Manifest, idxPath string) error {
+	cnDir := filepath.Join(opts.RepoRoot, ".cn")
+	if err := os.MkdirAll(cnDir, 0755); err != nil {
+		return fmt.Errorf("create .cn: %w", err)
+	}
+
+	manifestPath := filepath.Join(cnDir, "deps.json")
+	if err := writeManifest(manifestPath, manifest); err != nil {
+		return err
+	}
+	fmt.Fprintf(opts.Stdout, "✓ wrote .cn/deps.json\n")
+
+	lockResult, err := restore.GenerateLockFromIndex(opts.RepoRoot, idxPath)
+	if err != nil {
+		return fmt.Errorf("deps lock: %w", err)
+	}
+	fmt.Fprintf(opts.Stdout, "✓ wrote .cn/deps.lock.json (%d package(s))\n", lockResult.Count)
+
+	installed, err := restore.Restore(ctx, opts.RepoRoot, idxPath)
+	if err != nil {
+		return fmt.Errorf("deps restore: %w", err)
+	}
+	if restore.HasErrors(installed) {
+		for _, r := range restore.Errors(installed) {
+			fmt.Fprintf(opts.Stderr, "✗ %s@%s: %v\n", r.Name, r.Version, r.Err)
+		}
+		return fmt.Errorf("deps restore: %d package(s) failed", len(restore.Errors(installed)))
+	}
+	for _, r := range installed {
+		fmt.Fprintf(opts.Stdout, "✓ restored %s@%s\n", r.Name, r.Version)
+	}
+
+	if err := hubsetup.EnsureGitignoreEntry(opts.RepoRoot, opts.Stdout); err != nil {
+		return fmt.Errorf("gitignore: %w", err)
+	}
+
+	return nil
+}
+
+// writeManifest writes .cn/deps.json deterministically: stable field
+// order (json.MarshalIndent over a struct, not a map), the exact package
+// order Run resolved (operator-controlled, per restore.go's own
+// determinism comment), and no timestamp field.
+func writeManifest(path string, m pkg.Manifest) error {
+	data, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal deps.json: %w", err)
+	}
+	data = append(data, '\n')
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("write deps.json: %w", err)
+	}
+	return nil
+}
+
+// printPlan renders the --dry-run report (Mock A). It writes nothing to
+// disk — the caller (Run) returns immediately after this call.
+func printPlan(w io.Writer, m pkg.Manifest, plannedFiles []string, releaseTag, indexArg string) {
+	if releaseTag != "" {
+		fmt.Fprintf(w, "  Would fetch package index + tarballs for release %s (%d package(s))\n", releaseTag, len(m.Packages))
+	} else {
+		fmt.Fprintf(w, "  Would fetch package index from %s (%d package(s))\n", indexArg, len(m.Packages))
+	}
+	fmt.Fprintf(w, "  Would write .cn/deps.json:\n")
+	for _, d := range m.Packages {
+		fmt.Fprintf(w, "      %-12s %s\n", d.Name, d.Version)
+	}
+	fmt.Fprintf(w, "  Would run: (internal) deps lock    → .cn/deps.lock.json\n")
+	fmt.Fprintf(w, "  Would run: (internal) deps restore → .cn/vendor/packages/ (%d package(s))\n", len(m.Packages))
+	fmt.Fprintf(w, "  Would ensure .gitignore contains: .cn/vendor/\n")
+	fmt.Fprintf(w, "Dispatch: none (base install only — no .github/workflows/ changes)\n\n")
+	fmt.Fprintf(w, "Planned committed diff (%d files):\n", len(plannedFiles))
+	for _, f := range plannedFiles {
+		fmt.Fprintf(w, "  %s\n", f)
+	}
+	fmt.Fprintf(w, "\nRun without --dry-run to apply.\n")
+}
+
+// --- Index resolution ---
+
+// resolveIndex determines the package index to install from. It returns
+// a local file path that restore.GenerateLockFromIndex/restore.Restore can
+// read directly, the parsed index (for pin resolution), the resolved
+// release tag ("" when an explicit --index value was used with no
+// --release override), and a cleanup func removing any temp files this
+// call created (always non-nil; safe to defer unconditionally).
+func resolveIndex(ctx context.Context, client *http.Client, apiBase, dlBase, repo, release, indexArg string) (indexPath string, idx *pkg.PackageIndex, releaseTag string, cleanup func(), err error) {
+	noop := func() {}
+
+	pinFromRelease := ""
+	if release != "" && release != "latest" {
+		pinFromRelease = release
+	}
+
+	if indexArg != "" {
+		if isRemoteURL(indexArg) {
+			body, ferr := fetchBytes(ctx, client, indexArg)
+			if ferr != nil {
+				return "", nil, "", noop, fmt.Errorf("fetch package index %s: %w", indexArg, ferr)
+			}
+			parsed, perr := pkg.ParsePackageIndex(body)
+			if perr != nil {
+				return "", nil, "", noop, fmt.Errorf("parse package index %s: %w", indexArg, perr)
+			}
+			rewritten := rewriteRelativeEntries(parsed, indexArg)
+			tmpPath, tmpCleanup, werr := writeTempIndex(rewritten)
+			if werr != nil {
+				return "", nil, "", noop, werr
+			}
+			return tmpPath, rewritten, pinFromRelease, tmpCleanup, nil
+		}
+
+		data, rerr := os.ReadFile(indexArg)
+		if rerr != nil {
+			return "", nil, "", noop, fmt.Errorf("read package index %s: %w", indexArg, rerr)
+		}
+		parsed, perr := pkg.ParsePackageIndex(data)
+		if perr != nil {
+			return "", nil, "", noop, fmt.Errorf("parse package index %s: %w", indexArg, perr)
+		}
+		// Local path: used directly, exactly like the existing
+		// cn build → dist/ → cn deps restore dev workflow — relative
+		// tarball URLs are resolved by restore.go against indexPath's
+		// own directory, so no rewriting is needed here.
+		return indexArg, parsed, pinFromRelease, noop, nil
+	}
+
+	// No explicit --index: resolve a release and fetch its index.
+	tag := release
+	if tag == "" || tag == "latest" {
+		rel, rerr := binupdate.FetchLatestRelease(ctx, client, apiBase, repo)
+		if rerr != nil {
+			return "", nil, "", noop, fmt.Errorf("resolve latest cnos release: %w", rerr)
+		}
+		tag = rel.Tag
+	}
+
+	base := fmt.Sprintf("%s/%s/releases/download/%s/", dlBase, repo, tag)
+	indexURL := base + "index.json"
+	body, ferr := fetchBytes(ctx, client, indexURL)
+	if ferr != nil {
+		return "", nil, "", noop, fmt.Errorf("fetch package index for release %s: %w", tag, ferr)
+	}
+	parsed, perr := pkg.ParsePackageIndex(body)
+	if perr != nil {
+		return "", nil, "", noop, fmt.Errorf("parse package index for release %s: %w", tag, perr)
+	}
+
+	rewritten := rewriteRelativeEntriesFromBase(parsed, base)
+	tmpPath, tmpCleanup, werr := writeTempIndex(rewritten)
+	if werr != nil {
+		return "", nil, "", noop, werr
+	}
+	return tmpPath, rewritten, tag, tmpCleanup, nil
+}
+
+// isRemoteURL returns true if the URL has an http:// or https:// scheme.
+// Mirrors restore.go's unexported helper of the same name/behavior — kept
+// local rather than exported cross-package because it is a one-line
+// string check, not a shared parser (eng/go §2.17 governs parser
+// duplication, not trivial scheme checks).
+func isRemoteURL(s string) bool {
+	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+}
+
+// fetchBytes GETs url and returns the response body. Used for both
+// index.json fetches (release + explicit --index URL forms).
+func fetchBytes(ctx context.Context, client *http.Client, rawURL string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("http get: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("http status %d", resp.StatusCode)
+	}
+	return io.ReadAll(resp.Body)
+}
+
+// rewriteRelativeEntries rewrites relative tarball URLs in idx against
+// the directory of indexURL (an http(s) URL the index itself was fetched
+// from). Absolute (http/https) entries are left untouched.
+func rewriteRelativeEntries(idx *pkg.PackageIndex, indexURL string) *pkg.PackageIndex {
+	u, err := url.Parse(indexURL)
+	if err != nil {
+		// indexURL was already successfully fetched via this exact string,
+		// so a parse failure here would be unreachable in practice; fall
+		// back to leaving entries untouched rather than panicking.
+		return idx
+	}
+	dir := *u
+	dir.Path = path.Dir(u.Path) + "/"
+	dir.RawQuery = ""
+	dir.Fragment = ""
+	return rewriteRelativeEntriesFromBase(idx, dir.String())
+}
+
+// rewriteRelativeEntriesFromBase returns a copy of idx with every
+// relative (non-http, non-absolute-path) tarball URL prefixed with base.
+// Implementation requirement 4 (issue #608): normalize the index into a
+// form restore.Restore's existing fetchTarball can consume — after this
+// rewrite, every entry is an absolute http(s) URL, so fetchTarball's
+// isRemoteURL branch always fires regardless of indexDir.
+func rewriteRelativeEntriesFromBase(idx *pkg.PackageIndex, base string) *pkg.PackageIndex {
+	out := &pkg.PackageIndex{Schema: idx.Schema, Packages: make(map[string]map[string]pkg.IndexEntry, len(idx.Packages))}
+	for name, versions := range idx.Packages {
+		outVersions := make(map[string]pkg.IndexEntry, len(versions))
+		for v, e := range versions {
+			if !isRemoteURL(e.URL) && !filepath.IsAbs(e.URL) {
+				e.URL = base + e.URL
+			}
+			outVersions[v] = e
+		}
+		out.Packages[name] = outVersions
+	}
+	return out
+}
+
+// writeTempIndex marshals idx to a temp file outside the target repo's
+// working tree (so it never appears in `git status`) and returns its
+// path plus a cleanup func.
+func writeTempIndex(idx *pkg.PackageIndex) (string, func(), error) {
+	dir, err := os.MkdirTemp("", "cn-repo-install-index-*")
+	if err != nil {
+		return "", func() {}, fmt.Errorf("create temp index dir: %w", err)
+	}
+	cleanup := func() { os.RemoveAll(dir) }
+
+	data, merr := json.MarshalIndent(idx, "", "  ")
+	if merr != nil {
+		cleanup()
+		return "", func() {}, fmt.Errorf("marshal package index: %w", merr)
+	}
+	p := filepath.Join(dir, "index.json")
+	if werr := os.WriteFile(p, data, 0644); werr != nil {
+		cleanup()
+		return "", func() {}, fmt.Errorf("write temp package index: %w", werr)
+	}
+	return p, cleanup, nil
+}
+
+// --- Pin resolution ---
+
+// resolvePins resolves an exact version for each requested package name
+// against idx. When pinVersion is set (a resolved release tag or an
+// explicit --release value), every package must be present at exactly
+// that version. Otherwise (index-only flow, no --release), a package
+// with exactly one version in the index resolves unambiguously to that
+// version; zero or multiple versions is an error naming the package.
+func resolvePins(idx *pkg.PackageIndex, names []string, pinVersion string) ([]pkg.ManifestDep, error) {
+	deps := make([]pkg.ManifestDep, 0, len(names))
+	var missing []string
+	var ambiguous []string
+
+	for _, name := range names {
+		versions := idx.Packages[name]
+		switch {
+		case pinVersion != "":
+			if _, ok := versions[pinVersion]; !ok {
+				missing = append(missing, fmt.Sprintf("%s@%s", name, pinVersion))
+				continue
+			}
+			deps = append(deps, pkg.ManifestDep{Name: name, Version: pinVersion})
+		case len(versions) == 1:
+			for v := range versions {
+				deps = append(deps, pkg.ManifestDep{Name: name, Version: v})
+			}
+		case len(versions) == 0:
+			missing = append(missing, name)
+		default:
+			ambiguous = append(ambiguous, name)
+		}
+	}
+
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("package(s) not found in index: %s", strings.Join(missing, ", "))
+	}
+	if len(ambiguous) > 0 {
+		return nil, fmt.Errorf("package(s) have multiple versions in index; pass --release to pin one: %s", strings.Join(ambiguous, ", "))
+	}
+	return deps, nil
+}
