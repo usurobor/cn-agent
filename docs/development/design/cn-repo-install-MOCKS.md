@@ -199,7 +199,7 @@ Intended rendered dispatch wake for a tenant (identity elided; see Mock C):
 
 | ID | Invariant |
 |---|---|
-| E1 | `cn repo install` (base) writes **no** agent-hub scaffold — no `spec/SOUL.md`, `agent/`, `threads/`, `state/`; only `.cn/` + `cn.lock` + `.gitignore` (C4). |
+| E1 | `cn repo install` (base) writes **no** agent-hub scaffold — no `spec/SOUL.md`, `agent/`, `threads/`, `state/`; only `.cn/deps.json` + `.cn/deps.lock.json` + `.gitignore` (C4). |
 | E2 | A rendered tenant dispatch wake contains **no** `cd src/go` / `go build ./cmd/cn`; it acquires `cn` via `install.sh` or a pinned release (C5). |
 | E3 | The rendered wake's finalizer/engine steps invoke the installed `cn` (e.g. `cn cell finalize`), runnable in a repo with no `src/go`. |
 | E4 | `--agent sigma` inside the cnos repo still reproduces the current `go build` self-wake byte-for-byte (backward compat; the golden is not broken by tenant mode). |
