@@ -2282,5 +2282,27 @@
     "created": "2026-07-06T10:47:56Z",
     "updated": "2026-07-06T10:47:56Z",
     "url": "https://github.com/usurobor/cnos/issues/606"
+  },
+  {
+    "n": 607,
+    "t": "wave: first-class CDS repo installer (`cn install repo`)",
+    "kind": "process",
+    "areas": [
+      "cds",
+      "cli",
+      "core"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-06T12:56:07Z",
+    "updated": "2026-07-06T12:56:07Z",
+    "url": "https://github.com/usurobor/cnos/issues/607"
   }
 ]
