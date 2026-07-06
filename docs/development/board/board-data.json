@@ -2304,5 +2304,48 @@
     "created": "2026-07-06T12:56:07Z",
     "updated": "2026-07-06T12:56:07Z",
     "url": "https://github.com/usurobor/cnos/issues/607"
+  },
+  {
+    "n": 608,
+    "t": "cds-install Sub 1: `cn install repo` base installer (dispatch none)",
+    "kind": "tooling",
+    "areas": [
+      "cli",
+      "core"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-06T12:57:27Z",
+    "updated": "2026-07-06T12:57:27Z",
+    "url": "https://github.com/usurobor/cnos/issues/608"
+  },
+  {
+    "n": 609,
+    "t": "cds-install Sub 2: generalize `cn install wake` identity (agent/PAT/bot) — successor to #549",
+    "kind": "tooling",
+    "areas": [
+      "ci",
+      "cli",
+      "wake"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-06T12:57:42Z",
+    "updated": "2026-07-06T12:57:42Z",
+    "url": "https://github.com/usurobor/cnos/issues/609"
   }
 ]
