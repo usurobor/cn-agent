@@ -325,3 +325,32 @@ as a sequencing deviation from the canonical tests-before-code order; both were 
 together in practice and verified passing before either commit landed, so no code shipped
 untested at any point on the branch).
 
+## §Review-readiness
+
+| Pre-review gate row (alpha/SKILL.md §2.6) | Status |
+|---|---|
+| 1. Cycle branch rebased onto current `origin/main` | **Done, re-verified at signal time.** Base at dispatch: `48d561e` (γ's HEAD). `origin/main` advanced to `f7e9aaa` (one unrelated `board-map` regen commit, no overlap with any file this cell touches — confirmed via `git diff --stat 922cc5c..origin/main` against the touched paths, 0 hits) while α worked; rebased via `git rebase origin/main` (clean, no conflicts) and force-pushed with `--force-with-lease`. Re-checked immediately before this section: `git merge-base --is-ancestor origin/main HEAD` → true, at `origin/main = f7e9aaad34793dbea80c603e315e0ecc0760fdfa`, observed 2026-07-07 ~02:30 UTC. |
+| 2. CDD Trace through step 7 | Done (§CDD Trace above). |
+| 3. Tests present | Done — 26 tests in `internal/repoinstall`, 39 in `internal/cli`, all passing (§ACs + runner output below). |
+| 4. Every AC has evidence | Done (§ACs: AC1–AC5, each with automated test name + manual e2e transcript). |
+| 5. Known debt explicit | Done (§Debt, 5 items). |
+| 6. Schema/shape audit | `.cn/deps.json` (`cn.deps.v1`) / `.cn/deps.lock.json` (`cn.lock.v2`) schemas untouched — no field added, no writer changed; `pkg.Manifest`/`pkg.Lockfile` types untouched in this diff (confirmed: `git diff origin/main..HEAD -- src/go/internal/pkg/` is empty). |
+| 7. Peer enumeration | Done — role-skill/lifecycle-skill split not applicable (no role skills touched); CI-workflow-file-comment class checked (`install-wake-golden.yml` grepped for the stale "#609"/"fails explicitly" phrasing — 0 hits, that file was never wrong); doc-surface peer enumeration found and fixed `docs/guides/INSTALL-CDS.md` (a third sibling surface beyond the help text, see §CDD Trace note). |
+| 8. Harness audit | The one non-Go harness this cell's contract touches is the renderer script `cn-install-wake` (shell) — NOT modified in this diff (confirmed: `git diff origin/main..HEAD -- src/packages/cnos.core/commands/install-wake/` is empty); α only invokes it via `os/exec`, per the pinned "reuse the renderer" contract axis. The golden + live-workflow YAML outputs it produces are the only generated artifacts, both re-rendered and verified in sync (§ACs AC5). |
+| 9. Polyglot re-audit | Languages in this diff: Go (`go build`/`go vet`/`go test` all clean, see below) + Markdown (`SKILL.md`, `INSTALL-CDS.md` — both read back for structure/cross-reference correctness) + YAML (golden + live workflow — both parsed with `python3 -c "import yaml; yaml.safe_load(...)"`, both pass; both re-verified in sync via sha256). No shell was touched, so no shell-specific audit applies. |
+| 10. Branch CI green | **No CI runner available in this environment** (no GitHub Actions access from this sandbox). Stated explicitly, per row 10's fallback: β must wait for `install-wake-golden.yml` + the Go test workflow to go green on this branch's HEAD before merge. All checks that workflow runs were reproduced manually above (§ACs; the "Re-render both" / structural-shape / AC7-AC8-leak-audit / AC1-AC2/E2-E4 steps all pass locally against this HEAD). |
+| 11. Artifact enumeration matches diff | Done (§CDD Trace step 6 table; 12 files, all named). |
+| 12. Caller-path trace for new modules | Done (§CDD Trace: `runDispatchCds`, `ensureCanonicalDispatchLabels`, `resolveDispatchAgent`, `dispatchWorkflowPath`, each with a named non-test caller). |
+| 13. Test assertion count from runner output | `go test ./internal/repoinstall/... ./internal/cli/... -v` → 26 + 39 = **65 test functions, 65 PASS, 0 FAIL** (full `--- PASS:` list captured; not manually enumerated). |
+| 14. α git identity | `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` (canonical elision form). Configured at session start before any commit; no retroactive rebase-for-identity was needed. |
+| 15. γ-artifact-of-record presence | **§5.1 canonical dispatch** — `.cdd/unreleased/610/gamma-scaffold.md` present at the literal path on `origin/cycle/610` (confirmed: it was read in full before any code was written, and is unmodified by α). |
+
+**Final verification commands (paste-able):**
+```
+cd src/go && go build ./... && go vet ./... && go test ./internal/repoinstall/... ./internal/cli/...
+```
+All green at HEAD `a5ed0f2` (implementation SHA — this section's own commit will advance
+HEAD past it, per the SHA-citation convention in alpha/SKILL.md §2.6).
+
+**Ready for β.**
+
