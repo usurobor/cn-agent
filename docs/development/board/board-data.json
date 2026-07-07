@@ -2493,5 +2493,25 @@
     "created": "2026-07-07T09:38:30Z",
     "updated": "2026-07-07T09:38:30Z",
     "url": "https://github.com/usurobor/cnos/issues/627"
+  },
+  {
+    "n": 628,
+    "t": "S1 (doctrine): settle CM↔V, WC/PC/CC-as-lens, and α/β/γ namespace discipline (sub of #627)",
+    "kind": "doctrine",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "P1",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-07T10:17:10Z",
+    "updated": "2026-07-07T10:17:10Z",
+    "url": "https://github.com/usurobor/cnos/issues/628"
   }
 ]
