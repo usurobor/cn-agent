@@ -1,0 +1,18 @@
+issue: 615
+protocol: cds
+cycle_branch: cycle/615
+requested_by: cds-dispatch (dispatch wake, claim step)
+head_commit: 69a6a3dcd27e4460914ccf41e1eb31a128e62c37
+note: >
+  Well-formedness gates verified (open, single protocol:cds, single
+  status:todo, dispatch:cell present). Body text carries a stale
+  "Not dispatched -- status:ready" line from issue creation
+  (2026-07-06T16:51:46Z), but the operator (usurobor) personally flipped
+  status:ready -> status:todo at 2026-07-07T02:18:07Z (confirmed via
+  issue timeline), which is the authoritative dispatch-authorization
+  signal per label-doctrine/SKILL.md S1.1 -- the label, not the stale
+  body prose, is the source of truth. No prior status:changes history,
+  no prior cycle/615 branch, no prior .cdd/unreleased/615/ artifacts,
+  no bounce comments -- run_class: first_pass. Requesting the todo ->
+  in-progress transition via `cn issues fsm evaluate --issue 615 --apply`
+  per cnos#575 Phase 3.
