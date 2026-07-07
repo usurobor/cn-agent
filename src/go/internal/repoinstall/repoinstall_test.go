@@ -12,7 +12,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -90,25 +92,25 @@ func noopStdio() (*bytes.Buffer, *bytes.Buffer) {
 
 // --- validateDispatch ---
 
+// cnos#610: "cds" is no longer unconditionally refused — validateDispatch
+// only rejects unrecognized --dispatch values now. The old
+// TestValidateDispatch asserted "cds" always errors mentioning #609; that
+// assertion is exactly the behavior this cell removes (see
+// TestRun_DispatchCds_* below for the new per-precondition contract).
 func TestValidateDispatch(t *testing.T) {
 	cases := []struct {
 		in      string
 		wantErr bool
-		want609 bool
 	}{
-		{"", false, false},
-		{"none", false, false},
-		{"cds", true, true},
-		{"bogus", true, false},
+		{"", false},
+		{"none", false},
+		{"cds", false},
+		{"bogus", true},
 	}
 	for _, c := range cases {
 		err := validateDispatch(c.in)
 		if (err != nil) != c.wantErr {
 			t.Errorf("validateDispatch(%q) err = %v, wantErr %v", c.in, err, c.wantErr)
-			continue
-		}
-		if c.want609 && (err == nil || !strings.Contains(err.Error(), "#609")) {
-			t.Errorf("validateDispatch(%q) = %v, want mention of #609", c.in, err)
 		}
 	}
 }
@@ -562,9 +564,19 @@ func TestRun_SHAMismatchPropagates(t *testing.T) {
 	}
 }
 
-// AC9: --dispatch cds fails explicitly, before any write, with no partial
-// .github/workflows/ file.
-func TestRun_DispatchCds_FailsWithNoPartialWrite(t *testing.T) {
+// cnos#610: this test previously asserted --dispatch cds always failed
+// unconditionally, naming #609 (the pre-generalization guard). That
+// guard is exactly what this cell removes — TestRun_DispatchCds_
+// RendersWorkflow_ThenSurfacesLabelGap above proves cds now renders
+// successfully once the renderer + identity preconditions are met. The
+// genuine failure path this fixture still exercises: --packages here
+// carries only "cnos.core" (a minimal fixture manifest with no actual
+// command content, mirroring writeLocalIndex's other callers) — the
+// dispatch renderer script itself is therefore never vendored, so
+// runDispatchCds's own defensive existence check fires before any
+// subprocess is even spawned, and — matching Mock C2 "no partial
+// render" — no .github/workflows/ file or directory may exist.
+func TestRun_DispatchCds_RendererNotVendored_FailsWithNoPartialWrite(t *testing.T) {
 	indexPath := writeLocalIndex(t, "cnos.core", "9.9.9", `{"name": "cnos.core", "version": "9.9.9"}`)
 	repoRoot := t.TempDir()
 	stdout, stderr := noopStdio()
@@ -577,23 +589,21 @@ func TestRun_DispatchCds_FailsWithNoPartialWrite(t *testing.T) {
 		Stderr:    stderr,
 	})
 	if err == nil {
-		t.Fatal("expected --dispatch cds to fail")
+		t.Fatal("expected --dispatch cds to fail when the renderer script is not vendored")
 	}
-	if !strings.Contains(err.Error(), "#609") {
-		t.Errorf("error should name #609, got: %v", err)
+	if !strings.Contains(err.Error(), "dispatch renderer not found") {
+		t.Errorf("error should name the missing renderer, got: %v", err)
 	}
-	if !strings.Contains(stderr.String(), "✗ --dispatch cds requires generalized wake renderer support (#609)") {
-		t.Errorf("stderr should carry the exact dispatch-guard message, got: %q", stderr.String())
+	if !strings.Contains(stderr.String(), "dispatch renderer not found") {
+		t.Errorf("stderr should carry the same diagnostic, got: %q", stderr.String())
 	}
-	entries, rerr := os.ReadDir(repoRoot)
-	if rerr != nil {
-		t.Fatal(rerr)
+	if _, statErr := os.Stat(filepath.Join(repoRoot, ".github")); !os.IsNotExist(statErr) {
+		t.Error("no .github/ directory may exist after a missing-renderer failure (no partial render)")
 	}
-	if len(entries) != 0 {
-		t.Errorf("--dispatch cds must write nothing; found: %v", entries)
-	}
-	if _, statErr := os.Stat(filepath.Join(repoRoot, ".github", "workflows", "cnos-cds-dispatch.yml")); !os.IsNotExist(statErr) {
-		t.Error("no partial .github/workflows/cnos-cds-dispatch.yml may exist")
+	// Base install artifacts, by contrast, are unaffected — base install
+	// (C1) always precedes the dispatch render attempt.
+	if _, statErr := os.Stat(filepath.Join(repoRoot, ".cn", "deps.json")); statErr != nil {
+		t.Errorf("expected base install artifact .cn/deps.json to still exist: %v", statErr)
 	}
 }
 
@@ -822,5 +832,354 @@ func TestRun_IndexHTTPURL_WithExplicitReleaseTag(t *testing.T) {
 	pkgManifest := filepath.Join(pkg.VendorPath(repoRoot, "cnos.core"), "cn.package.json")
 	if _, err := os.Stat(pkgManifest); err != nil {
 		t.Errorf("cnos.core not restored via --index URL + --release combo: %v", err)
+	}
+}
+
+// --- Dispatch install (cnos#610: cn repo install --dispatch cds) ---
+
+// repoSrcRoot resolves the actual repository root (the directory
+// containing src/packages/) from this test file's own path, independent
+// of process cwd. The dispatch tests below vendor the REAL cn-install-wake
+// renderer script and the REAL (post-cnos#610) cds-dispatch/SKILL.md
+// prose into fixture package tarballs, so they exercise the actual
+// renderer + actual prose this cycle shipped, not a synthetic stand-in.
+func repoSrcRoot(t *testing.T) string {
+	t.Helper()
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller(0) failed")
+	}
+	// thisFile: <repoRoot>/src/go/internal/repoinstall/repoinstall_test.go
+	return filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "..")
+}
+
+func readRealFile(t *testing.T, repoRoot string, relPath ...string) []byte {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(append([]string{repoRoot}, relPath...)...))
+	if err != nil {
+		t.Fatalf("read %s: %v", filepath.Join(relPath...), err)
+	}
+	return data
+}
+
+// tarEntry is a single file to write into a fixture tarball, with an
+// explicit mode — unlike makeTarGz above (always 0644), the renderer
+// script fixture below needs its real executable bit preserved so
+// os/exec can run it once restore.Restore extracts it.
+type tarEntry struct {
+	name string
+	mode int64
+	data []byte
+}
+
+func makeTarGzEntries(t *testing.T, entries []tarEntry) ([]byte, string) {
+	t.Helper()
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gw)
+	for _, e := range entries {
+		hdr := &tar.Header{Name: e.name, Mode: e.mode, Size: int64(len(e.data))}
+		if err := tw.WriteHeader(hdr); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write(e.data); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tw.Close()
+	gw.Close()
+	data := buf.Bytes()
+	h := sha256.Sum256(data)
+	return data, hex.EncodeToString(h[:])
+}
+
+// writeDispatchFixtureIndex builds a package index + two tarballs:
+// cnos.core (carrying the REAL commands/install-wake/cn-install-wake
+// renderer script, executable bit preserved) and cnos.cds (carrying the
+// REAL orchestrators/cds-dispatch/SKILL.md this cycle edited). Returns
+// the index path.
+func writeDispatchFixtureIndex(t *testing.T) string {
+	t.Helper()
+	root := repoSrcRoot(t)
+	rendererScript := readRealFile(t, root, "src", "packages", "cnos.core", "commands", "install-wake", "cn-install-wake")
+	skillMD := readRealFile(t, root, "src", "packages", "cnos.cds", "orchestrators", "cds-dispatch", "SKILL.md")
+
+	dir := t.TempDir()
+
+	coreTar, coreSHA := makeTarGzEntries(t, []tarEntry{
+		{name: "cn.package.json", mode: 0644, data: []byte(`{"name": "cnos.core", "version": "9.9.9"}`)},
+		{name: "commands/install-wake/cn-install-wake", mode: 0755, data: rendererScript},
+	})
+	coreTarName := "cnos.core-9.9.9.tar.gz"
+	if err := os.WriteFile(filepath.Join(dir, coreTarName), coreTar, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cdsTar, cdsSHA := makeTarGzEntries(t, []tarEntry{
+		{name: "cn.package.json", mode: 0644, data: []byte(`{"name": "cnos.cds", "version": "9.9.9"}`)},
+		{name: "orchestrators/cds-dispatch/SKILL.md", mode: 0644, data: skillMD},
+	})
+	cdsTarName := "cnos.cds-9.9.9.tar.gz"
+	if err := os.WriteFile(filepath.Join(dir, cdsTarName), cdsTar, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {"9.9.9": {URL: coreTarName, SHA256: coreSHA}},
+			"cnos.cds":  {"9.9.9": {URL: cdsTarName, SHA256: cdsSHA}},
+		},
+	}
+	indexPath := filepath.Join(dir, "index.json")
+	writeJSON(t, indexPath, idx)
+	return indexPath
+}
+
+// AC1/C1/C3 + AC3 + AC4/C4/C6 + AC5-positive: a non-sigma agent with
+// full identity flags drives the real renderer end-to-end through Run.
+// AC1's oracle ("writes exactly .github/workflows/cnos-cds-dispatch.yml
+// after ... base artifacts present") and AC3's oracle ("the
+// dispatch-install path returns a named, non-silent error surfacing the
+// cnos#493 dependency") describe the SAME observed behavior today: the
+// base install and the render both complete (this is what AC1 checks),
+// and only AFTER that Run surfaces the still-open cnos#493 label gap as
+// its returned error (this is what AC3 checks) — not a silent skip, and
+// not a partial/rolled-back render. See
+// .cdd/unreleased/610/self-coherence.md §ACs for why these two ACs are
+// verified by one test rather than two independent scenarios.
+func TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap(t *testing.T) {
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	res, err := Run(context.Background(), Options{
+		RepoRoot:          repoRoot,
+		IndexPath:         indexPath,
+		Packages:          []string{"cnos.core", "cnos.cds"},
+		Dispatch:          "cds",
+		Agent:             "acme",
+		WorkflowPatSecret: "ACME_WORKFLOW_PAT",
+		BotName:           "acme-bot",
+		BotID:             "12345678",
+		Stdout:            stdout,
+		Stderr:            stderr,
+	})
+
+	// AC1/C1: base install artifacts exist regardless of the AC3 gap.
+	for _, f := range []string{filepath.Join(".cn", "deps.json"), filepath.Join(".cn", "deps.lock.json")} {
+		if _, statErr := os.Stat(filepath.Join(repoRoot, f)); statErr != nil {
+			t.Errorf("expected base install artifact %s: %v", f, statErr)
+		}
+	}
+
+	// AC1/C3: the workflow renders to exactly this path.
+	workflowPath := filepath.Join(repoRoot, ".github", "workflows", "cnos-cds-dispatch.yml")
+	data, statErr := os.ReadFile(workflowPath)
+	if statErr != nil {
+		t.Fatalf("expected rendered workflow at %s: %v\nstdout: %s\nstderr: %s", workflowPath, statErr, stdout, stderr)
+	}
+
+	// AC3: cnos#493's label-install mechanism does not exist yet — Run
+	// surfaces this as a named, actionable error (not a silent skip),
+	// even though the render itself (checked above) succeeded.
+	if err == nil {
+		t.Fatal("expected Run to surface the cnos#493 label gap as an error")
+	}
+	if !strings.Contains(err.Error(), "cnos#493") {
+		t.Errorf("error should name cnos#493, got: %v", err)
+	}
+	if res != nil {
+		t.Errorf("Run should return a nil Result on the AC3 error path (matching every other error path in this file), got %+v", res)
+	}
+	if !strings.Contains(stderr.String(), "cnos#493") {
+		t.Errorf("stderr should also carry the cnos#493 diagnostic, got: %q", stderr.String())
+	}
+
+	// AC4/C4: zero sigma substrate-binding leak in the acme render.
+	content := string(data)
+	for _, leak := range []string{"SIGMA_WORKFLOW_PAT", "41898282", "cds-dispatch-sigma", "sigma@cnos.cn-sigma.cnos"} {
+		if strings.Contains(content, leak) {
+			t.Errorf("acme render leaks sigma-bound substrate token %q", leak)
+		}
+	}
+
+	// AC5 positive: no tenant-visible/confusing sigma prose leak.
+	for _, leak := range []string{"today: `sigma`", "agent-admin-sigma", "cn-sigma:"} {
+		if strings.Contains(content, leak) {
+			t.Errorf("acme render leaks tenant-visible sigma prose: %q", leak)
+		}
+	}
+	if !strings.Contains(content, "cds-dispatch-acme") {
+		t.Error("acme render should bind its own concurrency group (cds-dispatch-acme)")
+	}
+
+	// AC4/C6: workflow-scope PAT requirement + never-pushes-main fact
+	// stated in stdout.
+	out := stdout.String()
+	if !strings.Contains(out, "needs `workflow` scope") {
+		t.Errorf("stdout should state the workflow-scope PAT requirement:\n%s", out)
+	}
+	if !strings.Contains(out, "never pushes to main") {
+		t.Errorf("stdout should state the never-pushes-main fact:\n%s", out)
+	}
+}
+
+// AC5 positive (Go-level identity resolution): a bare --dispatch cds
+// with no --agent/--workflow-pat-secret must NOT trip the identity gate
+// (agent resolves to "sigma", which has a default substrate PAT
+// binding) — preserving the implicit sigma-bound behavior AC5 requires
+// as backward-compat. The render still ends in the same AC3 label-gap
+// error as the acme case above; what this test isolates is that the
+// identity gate itself does not fire for the sigma default.
+func TestRun_DispatchCds_SigmaDefault_NoIdentityFlagsRequired(t *testing.T) {
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, err := Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		IndexPath: indexPath,
+		Packages:  []string{"cnos.core", "cnos.cds"},
+		Dispatch:  "cds",
+		Stdout:    stdout,
+		Stderr:    stderr,
+	})
+
+	workflowPath := filepath.Join(repoRoot, ".github", "workflows", "cnos-cds-dispatch.yml")
+	data, statErr := os.ReadFile(workflowPath)
+	if statErr != nil {
+		t.Fatalf("expected rendered workflow at %s (sigma default should render, not fail identity): %v\nstdout: %s\nstderr: %s", workflowPath, statErr, stdout, stderr)
+	}
+	if !strings.Contains(string(data), "cds-dispatch-sigma") {
+		t.Error("default (no --agent) render should bind the sigma concurrency group")
+	}
+	// The only error expected today is the AC3 label gap, not an
+	// identity error.
+	if err == nil || !strings.Contains(err.Error(), "cnos#493") {
+		t.Errorf("expected the AC3 cnos#493 label-gap error (not an identity error), got: %v", err)
+	}
+	if strings.Contains(stderr.String(), "--workflow-pat-secret is required") {
+		t.Errorf("sigma default must not trip the identity gate, stderr: %q", stderr.String())
+	}
+}
+
+// AC2/C2 (Mock C2 "no partial render"): a non-sigma --agent with no
+// --workflow-pat-secret must fail early, before the renderer ever runs
+// — nonzero exit, no .github/workflows/ directory created at all.
+func TestRun_DispatchCds_MissingIdentity_FailsEarlyNoPartialWrite(t *testing.T) {
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, err := Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		IndexPath: indexPath,
+		Packages:  []string{"cnos.core", "cnos.cds"},
+		Dispatch:  "cds",
+		Agent:     "acme", // non-sigma, no --workflow-pat-secret
+		Stdout:    stdout,
+		Stderr:    stderr,
+	})
+
+	if err == nil {
+		t.Fatal("expected --dispatch cds with a non-sigma agent and no --workflow-pat-secret to fail")
+	}
+	if !strings.Contains(err.Error(), "--workflow-pat-secret") {
+		t.Errorf("error should name the missing flag, got: %v", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(repoRoot, ".github")); !os.IsNotExist(statErr) {
+		t.Error("no .github/ directory may exist after a missing-identity failure (no partial render)")
+	}
+
+	// Base install artifacts, by contrast, are unaffected by this
+	// dispatch-specific gate (C1 layering: base install already ran).
+	for _, f := range []string{filepath.Join(".cn", "deps.json"), filepath.Join(".cn", "deps.lock.json")} {
+		if _, statErr := os.Stat(filepath.Join(repoRoot, f)); statErr != nil {
+			t.Errorf("expected base install artifact %s to still exist: %v", f, statErr)
+		}
+	}
+}
+
+// AC5 negative case (non-vacuous oracle): the leak grep must actually
+// be capable of catching a violation, not just pass on the (now-fixed)
+// real prose by construction. This renders a synthetic dispatch-shaped
+// SKILL.md fixture carrying the EXACT pre-cnos#610 hardcoded-sigma
+// phrasing (the "(today: `sigma`; ...)" parenthetical + the
+// "agent-admin-sigma" / "cn-sigma:" citation this cycle removed from
+// the real cds-dispatch/SKILL.md) for a non-sigma agent, and asserts
+// the leak grep DOES find hits — proving the grep oracle used by the
+// positive-case test above is a real detector, not one that would pass
+// on anything.
+func TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing(t *testing.T) {
+	root := repoSrcRoot(t)
+	rendererPath := filepath.Join(root, "src", "packages", "cnos.core", "commands", "install-wake", "cn-install-wake")
+	if _, err := os.Stat(rendererPath); err != nil {
+		t.Fatalf("renderer script not found at %s: %v", rendererPath, err)
+	}
+
+	fixtureDir := t.TempDir()
+	skillPath := filepath.Join(fixtureDir, "SKILL.md")
+	preFixBody := "---\n" +
+		"name: test-pre-fix-leak\n" +
+		"description: \"AC5 negative-case fixture — pre-cnos#610 hardcoded-sigma prose\"\n" +
+		"governing_question: n/a\n" +
+		"artifact_class: wake\n" +
+		"scope: global\n" +
+		"kata_surface: none\n" +
+		"triggers:\n  - dispatch-wake\n" +
+		"inputs:\n  - \"n/a\"\n" +
+		"outputs:\n  - \"n/a\"\n" +
+		"wake:\n" +
+		"  role: dispatch\n" +
+		"  package: cnos.cds\n" +
+		"  admin_only: false\n" +
+		"  activation_log_writer: false\n" +
+		"  input:\n    triggers:\n      - issues_labeled_selector_match\n" +
+		"  output:\n" +
+		"    cycle_artifact_root: \".cdd/unreleased\"\n" +
+		"    artifact_class_taxonomy:\n      - gamma-scaffold\n" +
+		"    cell_runtime: shell\n" +
+		"  permission_intent:\n    - contents.write\n" +
+		"  concurrency:\n    serialize: true\n    group: \"test-pre-fix-leak-{agent}\"\n" +
+		"  agent_variable:\n    name: agent\n    default: null\n" +
+		"  surfaces:\n    allowed:\n      - \"n/a\"\n    disallowed:\n      - \"n/a\"\n" +
+		"  protocol: \"test\"\n" +
+		"  selector:\n    include:\n      - \"protocol:test\"\n    exclude: []\n" +
+		"---\n\n" +
+		"# AC5 negative-case fixture body (pre-cnos#610 prose)\n\n" +
+		"You substrate-execute as `{agent}` (today: `sigma`; future: per-package bot accounts per cnos#449 follow-up).\n\n" +
+		"The admin wake's `agent-admin-sigma` concurrency group runs in parallel. Empirical motivator: the 2026-06-24 mixed log entries (`cn-sigma:.cn-sigma/logs/20260624.md`, four selector-scan no-ops).\n"
+	if err := os.WriteFile(skillPath, []byte(preFixBody), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	outPath := filepath.Join(t.TempDir(), "pre-fix-render.yml")
+	cmd := exec.Command(rendererPath, "test-pre-fix-leak",
+		"--manifest", skillPath,
+		"--agent", "acme", "--workflow-pat-secret", "ACME_WORKFLOW_PAT",
+		"--bot-name", "acme-bot", "--bot-id", "12345678",
+		"--out", outPath)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("render pre-fix fixture: %v\nstdout: %s\nstderr: %s", err, stdout.String(), stderr.String())
+	}
+
+	data, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read pre-fix render: %v", err)
+	}
+	content := string(data)
+
+	var found []string
+	for _, leak := range []string{"today: `sigma`", "agent-admin-sigma", "cn-sigma:"} {
+		if strings.Contains(content, leak) {
+			found = append(found, leak)
+		}
+	}
+	if len(found) != 3 {
+		t.Fatalf("expected the pre-fix fixture to trip ALL three leak strings for a non-sigma agent (proving the grep oracle is real, not vacuous); found only %v in:\n%s", found, content)
 	}
 }
