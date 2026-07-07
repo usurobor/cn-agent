@@ -1,0 +1,18 @@
+issue: 609
+protocol: cds
+cycle_branch: cycle/609
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/619"
+converge_verdict_ref: .cdd/unreleased/609/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's Round 0
+  converge verdict (round 0: converge, zero findings -- AC1 positive/
+  negative, AC2 two-layer zero-sigma-leak audit, AC3/Mock-C5/E4 sigma
+  byte-identical regression, E2 tenant-portable acquisition, and AC4 gates
+  all independently re-derived as met by beta re-running every check from
+  scratch against the built renderer and CI YAML, not by trusting alpha's
+  self-coherence.md claims). All closeout artifacts (gamma-scaffold.md,
+  self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md,
+  gamma-closeout.md) are present on this branch. PR #619 opened by delta
+  referencing and closing #609, with 9 commits beyond the cycle/609 <->
+  main merge-base.

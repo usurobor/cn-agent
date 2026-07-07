@@ -18,6 +18,7 @@
 # Usage:
 #   cn install-wake <wake-name> [--agent <agent>] [--out <path>] [--manifest <path>]
 #                               [--activation-state-override <state>]
+#                               [--workflow-pat-secret <NAME>] [--bot-name <name>] [--bot-id <id>]
 #
 # Arguments:
 #   <wake-name>       The wake's identifier (e.g. `agent-admin`).
@@ -27,7 +28,29 @@
 #                     `{agent}` in the prompt template + concurrency
 #                     group). Required when manifest's agent_variable
 #                     has no default. Today only `sigma` is recognized
-#                     for substrate-side bot_name / bot_id binding.
+#                     as a default for substrate-side bot_name / bot_id /
+#                     workflow-pat-secret binding; any other agent MUST
+#                     supply --workflow-pat-secret, and (unless it wants
+#                     to hit the existing agent_bot_name()/agent_bot_id()
+#                     die-on-unknown-agent path) --bot-name and --bot-id.
+#   --workflow-pat-secret <NAME>
+#                     GitHub Actions secret name bound to the checkout
+#                     token / claude-code-action github_token input /
+#                     finalizer GH_TOKEN (renderer authority — see Mock C
+#                     of docs/development/design/cn-repo-install-MOCKS.md).
+#                     Defaults to SIGMA_WORKFLOW_PAT when --agent is
+#                     "sigma" (or omitted, since sigma is the default
+#                     agent). For any other agent this flag is REQUIRED;
+#                     omitting it dies before any output is written
+#                     (fail-early, no partial --out file per Mock C2).
+#   --bot-name <name> Override the substrate bot_name binding (the
+#                     claude-code-action `bot_name` input). Defaults to
+#                     agent_bot_name() below, which only recognizes
+#                     "sigma" and dies on any other agent.
+#   --bot-id <id>     Override the substrate bot_id binding (the
+#                     claude-code-action `bot_id` input). Defaults to
+#                     agent_bot_id() below, which only recognizes
+#                     "sigma" and dies on any other agent.
 #   --out <path>      Override the default output path. The default is
 #                     ${CN_PACKAGE_ROOT}/orchestrators/<wake-name>/cnos-<wake-name>.golden.yml
 #                     (the per-package golden fixture; γ-pinned per
@@ -282,6 +305,9 @@ agent=""
 out_path=""
 manifest_override=""
 activation_state_override=""
+workflow_pat_secret_flag=""
+bot_name_flag=""
+bot_id_flag=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -290,6 +316,21 @@ while [ $# -gt 0 ]; do
       agent="$2"; shift 2 ;;
     --agent=*)
       agent="${1#--agent=}"; shift ;;
+    --workflow-pat-secret)
+      [ $# -ge 2 ] || die "--workflow-pat-secret requires a value"
+      workflow_pat_secret_flag="$2"; shift 2 ;;
+    --workflow-pat-secret=*)
+      workflow_pat_secret_flag="${1#--workflow-pat-secret=}"; shift ;;
+    --bot-name)
+      [ $# -ge 2 ] || die "--bot-name requires a value"
+      bot_name_flag="$2"; shift 2 ;;
+    --bot-name=*)
+      bot_name_flag="${1#--bot-name=}"; shift ;;
+    --bot-id)
+      [ $# -ge 2 ] || die "--bot-id requires a value"
+      bot_id_flag="$2"; shift 2 ;;
+    --bot-id=*)
+      bot_id_flag="${1#--bot-id=}"; shift ;;
     --out)
       [ $# -ge 2 ] || die "--out requires a value"
       out_path="$2"; shift 2 ;;
@@ -651,9 +692,36 @@ else
   cancel_in_progress="false"
 fi
 
+# Workflow PAT secret resolution (Mock C2 — fail-early identity binding).
+# Resolution order: explicit --workflow-pat-secret flag; else
+# SIGMA_WORKFLOW_PAT when --agent is "sigma" (today's only agent with a
+# default substrate PAT binding); else die BEFORE any render/write phase
+# runs (out_path is not touched until the very end of this script, so
+# dying here leaves no partial --out file per Mock C2).
+if [ -n "$workflow_pat_secret_flag" ]; then
+  workflow_pat_secret="$workflow_pat_secret_flag"
+elif [ "$agent" = "sigma" ]; then
+  workflow_pat_secret="SIGMA_WORKFLOW_PAT"
+else
+  die "--workflow-pat-secret is required for agent '$agent' (no default substrate PAT-secret binding for non-sigma agents; pass --workflow-pat-secret <NAME> naming the GitHub Actions secret that holds this agent's workflow-scoped PAT)"
+fi
+
 # Substrate bot identity (renderer authority — see helpers above).
-bot_name="$(agent_bot_name "$agent")"
-bot_id="$(agent_bot_id "$agent")"
+# --bot-name / --bot-id override the agent_bot_name()/agent_bot_id()
+# lookup tables, which already `die` on unknown non-sigma agents — the
+# override path in front of them is the only new behavior; the
+# existing die-on-unknown-agent fallback already satisfies fail-early
+# for this axis.
+if [ -n "$bot_name_flag" ]; then
+  bot_name="$bot_name_flag"
+else
+  bot_name="$(agent_bot_name "$agent")"
+fi
+if [ -n "$bot_id_flag" ]; then
+  bot_id="$bot_id_flag"
+else
+  bot_id="$(agent_bot_id "$agent")"
+fi
 
 # Substrate cron slots — substrate authority per
 # wake-provider/SKILL.md §2.5 right column. Today's selection
@@ -910,7 +978,7 @@ fi
   echo "    steps:"
   echo "      - uses: actions/checkout@v4"
   echo "        with:"
-  echo "          token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
+  echo "          token: \${{ secrets.${workflow_pat_secret} }}"
   # ---------------------------------------------------------------------
   # Mechanical recovery scanner (cnos#593, Sub C of #583).
   # ---------------------------------------------------------------------
@@ -942,23 +1010,65 @@ fi
   # the install-wake-golden.yml AC7/AC8 leak-audit.
   if [ "$role" = "dispatch" ]; then
     scan_protocol="$(jq -r '.protocol' "$manifest_path")"
-    {
-      echo ""
-      echo "      - name: Mechanical recovery scanner"
-      echo "        # Pre-claim guard per cnos#593 (Sub C of #583): reconciles"
-      echo "        # stranded dispatch cells (stale status:in-progress /"
-      echo "        # status:review left by a dead run) using the SAME"
-      echo "        # declarative transition table 'cn issues fsm evaluate'"
-      echo "        # reads, before this firing attempts its own claim. Every"
-      echo "        # label mutation routes through the guarded 'evaluate"
-      echo "        # --apply' primitive; this step never writes a label"
-      echo "        # directly."
-      echo "        shell: bash"
-      echo "        run: |"
-      echo "          set -euo pipefail"
-      echo "          (cd src/go && go build -o /tmp/cn-scan ./cmd/cn)"
-      echo "          /tmp/cn-scan issues fsm scan --protocol ${scan_protocol} --apply"
-    } >> "$tmp_out"
+    if [ "$agent" = "sigma" ]; then
+      # sigma renders self-build from source, exactly as today (Mock E4 —
+      # byte-identical backward compat; this branch must never change for
+      # agent == sigma).
+      {
+        echo ""
+        echo "      - name: Mechanical recovery scanner"
+        echo "        # Pre-claim guard per cnos#593 (Sub C of #583): reconciles"
+        echo "        # stranded dispatch cells (stale status:in-progress /"
+        echo "        # status:review left by a dead run) using the SAME"
+        echo "        # declarative transition table 'cn issues fsm evaluate'"
+        echo "        # reads, before this firing attempts its own claim. Every"
+        echo "        # label mutation routes through the guarded 'evaluate"
+        echo "        # --apply' primitive; this step never writes a label"
+        echo "        # directly."
+        echo "        shell: bash"
+        echo "        run: |"
+        echo "          set -euo pipefail"
+        echo "          (cd src/go && go build -o /tmp/cn-scan ./cmd/cn)"
+        echo "          /tmp/cn-scan issues fsm scan --protocol ${scan_protocol} --apply"
+      } >> "$tmp_out"
+    else
+      # Tenant-portable acquisition (cnos#609, Mock E2/E4 of
+      # docs/development/design/cn-repo-install-MOCKS.md): a non-sigma
+      # agent's rendered wake cannot assume src/go/ exists in the
+      # installing repo (cnos#606's tsc tenant dogfooding finding — "cd
+      # src/go && go build ./cmd/cn" is valid only inside the cnos repo
+      # itself). Acquires the prebuilt `cn` binary via the repo's own
+      # install.sh instead of building from source, installing to a
+      # fixed path that this run's later dispatch-shape steps (the PR
+      # finalizer below) invoke directly — no reliance on PATH.
+      {
+        echo ""
+        echo "      - name: Install cn (tenant-portable — no src/go build)"
+        echo "        # Tenant-portable acquisition per Mock E of"
+        echo "        # docs/development/design/cn-repo-install-MOCKS.md —"
+        echo "        # acquires the prebuilt 'cn' binary from GitHub"
+        echo "        # Releases via install.sh rather than assuming"
+        echo "        # src/go/ exists in the installing repo."
+        echo "        shell: bash"
+        echo "        run: |"
+        echo "          set -euo pipefail"
+        echo "          curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | BIN_DIR=/tmp/cnos-cn-609 sh"
+        echo ""
+        echo "      - name: Mechanical recovery scanner"
+        echo "        # Pre-claim guard per cnos#593 (Sub C of #583): reconciles"
+        echo "        # stranded dispatch cells (stale status:in-progress /"
+        echo "        # status:review left by a dead run) using the SAME"
+        echo "        # declarative transition table 'cn issues fsm evaluate'"
+        echo "        # reads, before this firing attempts its own claim. Every"
+        echo "        # label mutation routes through the guarded 'evaluate"
+        echo "        # --apply' primitive; this step never writes a label"
+        echo "        # directly."
+        echo "        shell: bash"
+        echo "        run: |"
+        echo "          set -euo pipefail"
+        echo "          /tmp/cnos-cn-609/cn issues fsm scan --protocol ${scan_protocol} --apply"
+      } >> "$tmp_out"
+    fi
   fi
   if [ "$activation_log_writer" = "false" ]; then
     echo ""
@@ -980,7 +1090,7 @@ fi
   echo "      - uses: anthropics/claude-code-action@v1"
   echo "        with:"
   echo "          claude_code_oauth_token: \${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}"
-  echo "          github_token: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
+  echo "          github_token: \${{ secrets.${workflow_pat_secret} }}"
   echo "          bot_name: \"${bot_name}\""
   echo "          bot_id: \"${bot_id}\""
   # NOTE (cnos#594 reverted): do NOT emit a `model:` input here.
@@ -1175,30 +1285,65 @@ fi
 # renderer cannot know the issue number in advance for an arbitrary future
 # dispatch-shaped wake.
 if [ "$role" = "dispatch" ]; then
-  {
-    echo ""
-    echo "      - name: Mechanical checkpoint + PR finalizer"
-    echo "        # Runtime/finalizer guard per cnos#591: if this run ends with matter"
-    echo "        # (uncommitted changes, commits beyond base, CDD artifacts, or an"
-    echo "        # existing cycle branch), there must be a checkpoint + an open pull"
-    echo "        # request — never a cell silently stranded with matter and no PR."
-    echo "        # This step never mutates a lifecycle label and never requests a"
-    echo "        # transition; it only commits/pushes matter and ensures a draft PR."
-    echo "        if: always()"
-    echo "        shell: bash"
-    echo "        env:"
-    echo "          # 'cn cell finalize' shells out to 'gh' (pr list / pr create) to"
-    echo "          # open or update the cell's draft PR. The GitHub CLI requires"
-    echo "          # GH_TOKEN in an Actions context; without it 'gh' exits 4 and the"
-    echo "          # finalizer reds the job after checkpointing (cnos#591 PR-open path"
-    echo "          # was masked while dispatch cells no-op'd). Reuse the same PR-scoped"
-    echo "          # PAT the wake already uses as the checkout / github_token binding."
-    echo "          GH_TOKEN: \${{ secrets.SIGMA_WORKFLOW_PAT }}"
-    echo "        run: |"
-    echo "          set -euo pipefail"
-    echo "          (cd src/go && go build -o /tmp/cn-finalize ./cmd/cn)"
-    echo "          /tmp/cn-finalize cell finalize --base-sha \"\${CN_WAKE_BASE_SHA:-}\""
-  } >> "$tmp_out"
+  if [ "$agent" = "sigma" ]; then
+    # sigma renders self-build from source, exactly as today (Mock E4 —
+    # byte-identical backward compat; this branch must never change for
+    # agent == sigma).
+    {
+      echo ""
+      echo "      - name: Mechanical checkpoint + PR finalizer"
+      echo "        # Runtime/finalizer guard per cnos#591: if this run ends with matter"
+      echo "        # (uncommitted changes, commits beyond base, CDD artifacts, or an"
+      echo "        # existing cycle branch), there must be a checkpoint + an open pull"
+      echo "        # request — never a cell silently stranded with matter and no PR."
+      echo "        # This step never mutates a lifecycle label and never requests a"
+      echo "        # transition; it only commits/pushes matter and ensures a draft PR."
+      echo "        if: always()"
+      echo "        shell: bash"
+      echo "        env:"
+      echo "          # 'cn cell finalize' shells out to 'gh' (pr list / pr create) to"
+      echo "          # open or update the cell's draft PR. The GitHub CLI requires"
+      echo "          # GH_TOKEN in an Actions context; without it 'gh' exits 4 and the"
+      echo "          # finalizer reds the job after checkpointing (cnos#591 PR-open path"
+      echo "          # was masked while dispatch cells no-op'd). Reuse the same PR-scoped"
+      echo "          # PAT the wake already uses as the checkout / github_token binding."
+      echo "          GH_TOKEN: \${{ secrets.${workflow_pat_secret} }}"
+      echo "        run: |"
+      echo "          set -euo pipefail"
+      echo "          (cd src/go && go build -o /tmp/cn-finalize ./cmd/cn)"
+      echo "          /tmp/cn-finalize cell finalize --base-sha \"\${CN_WAKE_BASE_SHA:-}\""
+    } >> "$tmp_out"
+  else
+    # Tenant-portable acquisition (Mock E2/E4): the 'cn' binary was
+    # already installed to the fixed path by the "Install cn
+    # (tenant-portable — no src/go build)" step emitted above (same
+    # role == "dispatch" gate, same job/runner filesystem) — invoke it
+    # directly rather than building from src/go, which a tenant repo
+    # does not have.
+    {
+      echo ""
+      echo "      - name: Mechanical checkpoint + PR finalizer"
+      echo "        # Runtime/finalizer guard per cnos#591: if this run ends with matter"
+      echo "        # (uncommitted changes, commits beyond base, CDD artifacts, or an"
+      echo "        # existing cycle branch), there must be a checkpoint + an open pull"
+      echo "        # request — never a cell silently stranded with matter and no PR."
+      echo "        # This step never mutates a lifecycle label and never requests a"
+      echo "        # transition; it only commits/pushes matter and ensures a draft PR."
+      echo "        if: always()"
+      echo "        shell: bash"
+      echo "        env:"
+      echo "          # 'cn cell finalize' shells out to 'gh' (pr list / pr create) to"
+      echo "          # open or update the cell's draft PR. The GitHub CLI requires"
+      echo "          # GH_TOKEN in an Actions context; without it 'gh' exits 4 and the"
+      echo "          # finalizer reds the job after checkpointing (cnos#591 PR-open path"
+      echo "          # was masked while dispatch cells no-op'd). Reuse the same PR-scoped"
+      echo "          # PAT the wake already uses as the checkout / github_token binding."
+      echo "          GH_TOKEN: \${{ secrets.${workflow_pat_secret} }}"
+      echo "        run: |"
+      echo "          set -euo pipefail"
+      echo "          /tmp/cnos-cn-609/cn cell finalize --base-sha \"\${CN_WAKE_BASE_SHA:-}\""
+    } >> "$tmp_out"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
