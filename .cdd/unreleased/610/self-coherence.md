@@ -1,6 +1,6 @@
 # α self-coherence — cnos#610
 
-## §Gap
+## Gap
 
 **Issue:** [cnos#610](https://github.com/usurobor/cnos/issues/610) — "cds-install Sub 3:
 `cn repo install --dispatch cds` (dispatch layer)". Mode (issue header): `design-and-build`.
@@ -27,7 +27,7 @@ PR #619), cnos#493 (canonical label install, **still OPEN** — confirmed via
 **Branch:** `cycle/610`. HEAD at review-readiness time: `f334807` (implementation SHA;
 rebased onto `origin/main` at `f7e9aaa` — see §Review-readiness for the rebase record).
 
-## §Skills
+## Skills
 
 - **Tier 1:** `CDD.md` (canonical lifecycle/role contract) + `cnos.cdd/skills/cdd/alpha/SKILL.md`
   (this file's own role surface, followed for load order, peer enumeration, self-coherence
@@ -49,7 +49,7 @@ rebased onto `origin/main` at `f7e9aaa` — see §Review-readiness for the rebas
     already exist; confirming cnos#493's mechanism is genuinely absent via `find`/`rg`) was
     reused rather than re-derived, per the scaffold's own instruction.
 
-## §ACs
+## ACs
 
 Implementation commits: `0b717f4` (Go wiring), `f8fd1c4` (tests), `f334807` (prose +
 golden re-render). All command output below was captured against the pre-rebase tree
@@ -191,7 +191,7 @@ $ grep -n "today: \`sigma\`\|agent-admin-sigma\|cn-sigma:" .github/workflows/cno
 NO PROSE LEAKS FOUND
 ```
 
-**Positive (sigma) — sha256 evidence:**
+**Positive (sigma) — sha256 evidence (R0 value, superseded — see §R1):**
 ```
 $ sha256sum .github/workflows/cnos-cds-dispatch.yml   # from a fresh scratch repo, --agent sigma (default)
 822bb9ec7119d3fc027c5a4b521a5046663df15278ef05603bd51686fd8c8b91
@@ -199,7 +199,12 @@ $ sha256sum src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.g
 822bb9ec7119d3fc027c5a4b521a5046663df15278ef05603bd51686fd8c8b91
 ```
 Matches — **this cycle's own golden**, not the pre-cycle golden (see §Self-check for the
-explicit backward-compat deviation this required, and why).
+explicit backward-compat deviation this required, and why). **R1 note:** the line-101
+prose fix (β Finding 5) changed the rendered body, so this exact SHA no longer matches
+current HEAD — both the golden and the live workflow were re-rendered together and remain
+byte-identical to each other under the NEW SHA; see §R1 for the current value. This R0
+entry is left as the historical record of the round it was captured in, per the
+role's append-don't-rewrite convention.
 
 **Negative (non-vacuous oracle) — automated:**
 `TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing` constructs a synthetic
@@ -215,7 +220,7 @@ $ grep -nE 'today: `sigma`|agent-admin-sigma|cn-sigma:' /tmp/old-leak-render.yml
 **Verdict: MATCH**, with an explicit, documented deviation from the pinned byte-identical
 floor for the line-296 fix only (see §Self-check).
 
-## §Self-check
+## Self-check
 
 **Did α push ambiguity onto β?** Two genuine judgment calls were required where the issue
 text and γ's scaffold under-determine the answer; both are written up in
@@ -248,7 +253,7 @@ static, always-erroring function (not a runtime probe) because there is genuinel
 to probe yet — cnos#493 does not exist as any command, flag, or file in this repo. This is
 disclosed as debt (§Debt) rather than dressed up as a "check."
 
-## §Debt
+## Debt
 
 1. **cnos#493 is unimplemented (by design/Non-goals).** `--dispatch cds` cannot fully
    succeed (exit 0) today — it always ends by naming the cnos#493 gap. This is the
@@ -279,7 +284,7 @@ disclosed as debt (§Debt) rather than dressed up as a "check."
    contract-bearing (no AC names their exact wording), so I did not pin them with a golden
    string test; a future prose tweak to these two lines would not need a test update.
 
-## §CDD Trace
+## CDD Trace
 
 **Step 6 — artifact enumeration (matches `git diff --stat origin/main..HEAD`):**
 
@@ -325,13 +330,91 @@ as a sequencing deviation from the canonical tests-before-code order; both were 
 together in practice and verified passing before either commit landed, so no code shipped
 untested at any point on the branch).
 
-## §Review-readiness
+### Mock parity contract (design doc §"Receipt parity contract")
+
+Per this cycle's scope: Mock C's invariants C1–C6 (Mocks A/B belong to #608, D/F/G to
+#611/later, E1 to #608, E2/E4 to #609 — all already covered by their own cycles' parity
+blocks) plus the issue's own operator-directive AC5 tenant-prose-clean requirement, which
+is not a numbered Mock-C invariant (Mock C4's "zero sigma leak" oracle is the
+`SIGMA_WORKFLOW_PAT`/`41898282`/`sigma` token family only) but is explicitly named by the
+issue text and by β's Finding 2 as a required row in its own right. Every row below cites
+evidence already present in §ACs above — no new evidence was derived to write this block.
+
+```yaml
+mock_parity:
+  source: docs/development/design/cn-repo-install-MOCKS.md
+  source_commit: "ac2990f9854dc980d5b2eee0657b37c4e3366cf0"  # current origin/main landing commit for this file; unchanged since (git log --follow shows one commit)
+  rows:
+    - id: C1
+      expectation: "Base install runs first; dispatch is layered on top."
+      observed: "Base artifacts (.cn/deps.json, .cn/deps.lock.json) present and asserted BEFORE the dispatch-specific render/gate runs, in both the automated test and the manual e2e transcript."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap (§ACs AC1); manual e2e transcript §ACs AC1 (`✓ wrote .cn/deps.json` / `✓ wrote .cn/deps.lock.json` precede the `cn-install-wake` render line)"
+      verdict: match
+      how: "runDispatchCds is only reached from Run() after applyInstall (base install) returns success; the cited test explicitly asserts base-artifact existence before checking .github/, and the e2e transcript shows the same ordering in real stdout."
+    - id: C2
+      expectation: "Missing --workflow-pat-secret/identity fails early, with a message naming what's required, no partial render."
+      observed: "Non-sigma agent without --workflow-pat-secret: exit=1, stderr names --workflow-pat-secret, .github/ does not exist (os.IsNotExist), .cn/deps.json still exists."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DispatchCds_MissingIdentity_FailsEarlyNoPartialWrite; cli/cmd_repo_install_test.go::TestRepoInstall_DispatchCds_MissingIdentity_CliWiring (§ACs AC2); manual e2e transcript §ACs AC2"
+      verdict: match
+      how: "The identity gate in runDispatchCds runs and returns before any os.MkdirAll/os.WriteFile under .github/ is reached; both cited tests assert the whole .github directory is absent, not just the .yml file."
+    - id: C3
+      expectation: "Rendered file writes exactly to .github/workflows/cnos-cds-dispatch.yml."
+      observed: "find .cn/deps.json .cn/deps.lock.json .github → all three present at exactly that path; no other file under .github/ created."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap (§ACs AC1); manual e2e transcript §ACs AC1"
+      verdict: match
+      how: "dispatchWorkflowPath hardcodes the single output path passed as --out to the renderer; no other write call site touches .github/ anywhere in the diff."
+    - id: C4
+      expectation: "Zero sigma leak — grep -iE 'sigma|SIGMA_WORKFLOW_PAT|41898282' on the rendered file returns nothing when agent != sigma."
+      observed: "grep -inE 'sigma|SIGMA_WORKFLOW_PAT|41898282' .github/workflows/cnos-cds-dispatch.yml (acme render) → 0 hits."
+      evidence: "repoinstall/repoinstall_test.go::TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap; cli/cmd_repo_install_test.go::TestRepoInstall_DispatchCds_IdentityFlagsWireThrough (§ACs AC4); manual e2e transcript §ACs AC4"
+      verdict: match
+      how: "The #609 renderer's {agent}-substitution + this cycle's caller-supplied identity flags (--agent/--workflow-pat-secret/--bot-name/--bot-id) replace every one of the four leak tokens for a non-sigma agent; both automated tests and the manual grep independently confirm zero occurrences."
+    - id: C5
+      expectation: "--agent sigma still reproduces the current sigma-bound output (backward compat; existing golden fixture still passes)."
+      observed: "sha256 of a fresh --agent sigma (default) render matches this cycle's own committed golden (`b80906ec...ad07fd53`, current as of R1's line-101 re-render — see §R1), independently recomputed — both identical."
+      evidence: "§ACs AC5 'Positive (sigma) — sha256 evidence'"
+      verdict: match
+      how: "ACCEPTED DEVIATION (per β's §Judgment calls, this file's §Self-check item 2): byte-identical holds against *this cycle's own* golden, not the *pre-cycle* golden — the one un-templatable line-296 historical citation moved to a non-rendered appendix as part of the AC5 prose-clean fix, and the committed golden was re-rendered in the same commit. No caller re-running the install today observes a diff, since the artifact CI gates against is the updated one; this is a documented, β-accepted narrowing of 'byte-for-byte' from 'vs. pre-cycle golden' to 'vs. this-cycle golden', not a silent miss."
+    - id: C6
+      expectation: "Dispatch never pushes to main; PR-only, and the CLI states the workflow-scope PAT requirement."
+      observed: "grep for git push / exec.Command(\"git\") in repoinstall/*.go (non-test) → 0 hits; stdout carries 'needs `workflow` scope' and 'never pushes to main'."
+      evidence: "§ACs AC4 (grep evidence + stdout transcript)"
+      verdict: match
+      how: "Holds by construction, not by runtime guard — repoinstall.go never imports os/exec for git, and the cn-install-wake renderer's only side effect is writing --out; both facts were verified by reading the source, not assumed."
+    - id: AC5
+      expectation: "(Operator #610 directive, explicit row per β Finding 2) Non-sigma render contains no \"today: `sigma`\" / agent-admin-sigma / cn-sigma: prose leaks; --agent sigma still renders correctly; the negative oracle is non-vacuous (proven to actually catch the pre-fix phrasing, not just assumed)."
+      observed: "grep -n 'today: `sigma`|agent-admin-sigma|cn-sigma:' on the acme render → 0 hits. Synthetic pre-fix-phrasing fixture run through the real renderer → all three leak strings found (proves the grep is a real detector)."
+      evidence: "repoinstall/repoinstall_test.go::TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing (negative oracle); §ACs AC5 positive + negative evidence"
+      verdict: match
+      how: "The line-101 and line-296 SKILL.md prose fixes (§CDD Trace: cds-dispatch/SKILL.md) remove both tenant-visible sigma-prose leaks from the rendered body; the negative-oracle test independently proves the detector would have caught the pre-fix text, so the zero-hit positive result is not a vacuous pass."
+  summary:
+    matched: 7
+    exceeded: 0
+    missed: 0
+    exceed_justified: true
+```
+
+**On β's Notes (`resolveDispatchAgent` sigma default vs. the "no sigma default" non-goal
+phrase):** reviewed and acknowledged, not changed. β judged (Notes, not a blocking finding)
+that defaulting an empty `--agent` to `"sigma"` is consistent with the pre-existing
+`cn-install-wake` renderer's own established default-agent convention (not invented by this
+cycle) and with AC5's own requirement that `--agent sigma` continue to render correctly —
+i.e. a sigma-identified path must keep working, which is incompatible with treating "no
+sigma default" as "the flag may never resolve to sigma." The wave-level non-goals doc's
+parallel phrase ("sigma-only default") reads as being about the *system* not being
+sigma-exclusive (dispatch now works for any agent), not about this one flag's blank-value
+resolution. I did not change `resolveDispatchAgent`'s behavior in response to this Note —
+no code change was requested, and the stricter reading would need is an operator/γ call on
+scope, not an α-side unilateral behavior change during a fix round for a different set of
+(mechanical) findings.
+
+## Review-readiness
 
 | Pre-review gate row (alpha/SKILL.md §2.6) | Status |
 |---|---|
 | 1. Cycle branch rebased onto current `origin/main` | **Done, re-verified at signal time.** Base at dispatch: `48d561e` (γ's HEAD). `origin/main` advanced to `f7e9aaa` (one unrelated `board-map` regen commit, no overlap with any file this cell touches — confirmed via `git diff --stat 922cc5c..origin/main` against the touched paths, 0 hits) while α worked; rebased via `git rebase origin/main` (clean, no conflicts) and force-pushed with `--force-with-lease`. Re-checked immediately before this section: `git merge-base --is-ancestor origin/main HEAD` → true, at `origin/main = f7e9aaad34793dbea80c603e315e0ecc0760fdfa`, observed 2026-07-07 ~02:30 UTC. |
 | 2. CDD Trace through step 7 | Done (§CDD Trace above). |
-| 3. Tests present | Done — 26 tests in `internal/repoinstall`, 39 in `internal/cli`, all passing (§ACs + runner output below). |
+| 3. Tests present | Done — 27 tests in `internal/repoinstall`, 45 in `internal/cli`, all passing (§ACs + runner output below; corrected in R1, see §R1 — β Finding 4). |
 | 4. Every AC has evidence | Done (§ACs: AC1–AC5, each with automated test name + manual e2e transcript). |
 | 5. Known debt explicit | Done (§Debt, 5 items). |
 | 6. Schema/shape audit | `.cn/deps.json` (`cn.deps.v1`) / `.cn/deps.lock.json` (`cn.lock.v2`) schemas untouched — no field added, no writer changed; `pkg.Manifest`/`pkg.Lockfile` types untouched in this diff (confirmed: `git diff origin/main..HEAD -- src/go/internal/pkg/` is empty). |
@@ -341,7 +424,7 @@ untested at any point on the branch).
 | 10. Branch CI green | **No CI runner available in this environment** (no GitHub Actions access from this sandbox). Stated explicitly, per row 10's fallback: β must wait for `install-wake-golden.yml` + the Go test workflow to go green on this branch's HEAD before merge. All checks that workflow runs were reproduced manually above (§ACs; the "Re-render both" / structural-shape / AC7-AC8-leak-audit / AC1-AC2/E2-E4 steps all pass locally against this HEAD). |
 | 11. Artifact enumeration matches diff | Done (§CDD Trace step 6 table; 12 files, all named). |
 | 12. Caller-path trace for new modules | Done (§CDD Trace: `runDispatchCds`, `ensureCanonicalDispatchLabels`, `resolveDispatchAgent`, `dispatchWorkflowPath`, each with a named non-test caller). |
-| 13. Test assertion count from runner output | `go test ./internal/repoinstall/... ./internal/cli/... -v` → 26 + 39 = **65 test functions, 65 PASS, 0 FAIL** (full `--- PASS:` list captured; not manually enumerated). |
+| 13. Test assertion count from runner output | `go test ./internal/repoinstall/... -v \| grep -c '^--- PASS'` → 27; `go test ./internal/cli/... -v \| grep -c '^--- PASS'` → 45; combined = **72 test functions, 72 PASS, 0 FAIL** (full `--- PASS:` list captured via runner output, not manually enumerated; corrected in R1 from an earlier miscounted 26+39=65 — see §R1 — β Finding 4). |
 | 14. α git identity | `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` (canonical elision form). Configured at session start before any commit; no retroactive rebase-for-identity was needed. |
 | 15. γ-artifact-of-record presence | **§5.1 canonical dispatch** — `.cdd/unreleased/610/gamma-scaffold.md` present at the literal path on `origin/cycle/610` (confirmed: it was read in full before any code was written, and is unmodified by α). |
 
