@@ -2473,5 +2473,25 @@
     "created": "2026-07-07T07:03:44Z",
     "updated": "2026-07-07T07:03:44Z",
     "url": "https://github.com/usurobor/cnos/issues/626"
+  },
+  {
+    "n": 627,
+    "t": "wave: coherence-cell runtime — generic cell runner + wave-level coherence pulse (WC/PC/CC as axis-dominance lens over CELL-KINDS)",
+    "kind": "wave",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "P1",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-07T09:38:30Z",
+    "updated": "2026-07-07T09:38:30Z",
+    "url": "https://github.com/usurobor/cnos/issues/627"
   }
 ]
