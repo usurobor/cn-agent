@@ -2399,7 +2399,7 @@
       "coherence"
     ],
     "pri": "P1",
-    "status": "ready",
+    "status": "todo",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2408,29 +2408,8 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T16:51:31Z",
-    "updated": "2026-07-06T16:51:31Z",
+    "updated": "2026-07-07T05:01:07Z",
     "url": "https://github.com/usurobor/cnos/issues/614"
-  },
-  {
-    "n": 615,
-    "t": "cds/reconciler: clear terminal lifecycle labels on closed dispatch cells",
-    "kind": "process",
-    "areas": [
-      "cds",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-06T16:51:44Z",
-    "updated": "2026-07-07T04:49:22Z",
-    "url": "https://github.com/usurobor/cnos/issues/615"
   },
   {
     "n": 616,
