@@ -2315,16 +2315,16 @@
       "cli"
     ],
     "pri": "P2",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T12:57:57Z",
-    "updated": "2026-07-06T19:41:03Z",
+    "updated": "2026-07-07T01:48:06Z",
     "url": "https://github.com/usurobor/cnos/issues/610"
   },
   {
