@@ -1,0 +1,24 @@
+issue: 610
+protocol: cds
+cycle_branch: cycle/610
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/620"
+converge_verdict_ref: .cdd/unreleased/610/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's R1 converge
+  verdict (R0: iterate, 5 findings -- non-canonical self-coherence.md
+  section headers breaking cn cdd verify/CI, missing mock_parity block,
+  missing gamma-clarification.md ratifying an out-of-pinned-scope doc
+  touch, incorrect test counts, redundant AC5 prose; R1: alpha fixed all
+  five, beta independently re-derived every fix from scratch including a
+  real CI poll to green, and converged). All closeout artifacts
+  (gamma-scaffold.md, self-coherence.md with R0+R1, beta-review.md with
+  R0+R1, alpha-closeout.md, beta-closeout.md, gamma-closeout.md) are
+  present on this branch. Gamma's closeout also landed an immediate skill
+  patch (53f03f5) promoting cnos#608's header-convention lesson into
+  alpha/SKILL.md + gamma/SKILL.md so future cycles don't re-pay this
+  discovery cost. PR #620 (draft, opened by the mechanical finalizer,
+  cnos#591) references and will close #610 on merge, carrying 20 commits
+  beyond the cycle/610 <-> main merge-base. cnos#493 (canonical dispatch
+  label install) remains open upstream and is explicitly named as
+  deferred, pre-existing debt, not owned by this cell.
