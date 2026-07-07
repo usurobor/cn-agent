@@ -279,3 +279,43 @@ disclosed as debt (§Debt) rather than dressed up as a "check."
    contract-bearing (no AC names their exact wording), so I did not pin them with a golden
    string test; a future prose tweak to these two lines would not need a test update.
 
+## §CDD Trace
+
+**Step 6 — artifact enumeration (matches `git diff --stat origin/main..HEAD`):**
+
+| File | Authored by | Class | Maps to |
+|---|---|---|---|
+| `.cdd/unreleased/610/CLAIM-REQUEST.yml` | γ (pre-existing on branch, not α) | dispatch marker | cycle bookkeeping, not an AC |
+| `.cdd/unreleased/610/gamma-scaffold.md` | γ (pre-existing on branch, not α) | scaffold | α's work order (read, not authored) |
+| `.cdd/unreleased/610/alpha-clarification-needed.md` | α | clarification note | §Self-check items 1–2 |
+| `.cdd/unreleased/610/self-coherence.md` | α | self-coherence | this file |
+| `.github/workflows/cnos-cds-dispatch.yml` | α | rendered substrate (live) | AC5 (re-rendered after the SKILL.md prose fix; kept in sync with the golden per `install-wake-golden.yml`'s sha256 check) |
+| `src/go/internal/cli/cmd_repo_install.go` | α | code (CLI flag wiring + help text) | AC1/AC2/AC4 (flag pass-through); stale-help-text fix named in the dispatch prompt |
+| `src/go/internal/cli/cmd_repo_install_test.go` | α | tests | AC1–AC5 (CLI-level: `TestRepoInstall_DispatchCds_RendererNotVendored_CliWiring`, `TestRepoInstall_DispatchCds_MissingIdentity_CliWiring`, `TestRepoInstall_DispatchCds_IdentityFlagsWireThrough`) |
+| `src/go/internal/repoinstall/repoinstall.go` | α | code (domain logic) | AC1/AC2/AC3/AC4 (`runDispatchCds`, `ensureCanonicalDispatchLabels`, `resolveDispatchAgent`, `dispatchWorkflowPath`, `validateDispatch` rewrite, `printPlan` dispatch-awareness) |
+| `src/go/internal/repoinstall/repoinstall_test.go` | α | tests | AC1–AC5 (package-level: `TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap`, `TestRun_DispatchCds_SigmaDefault_NoIdentityFlagsRequired`, `TestRun_DispatchCds_MissingIdentity_FailsEarlyNoPartialWrite`, `TestRun_DispatchCds_RendererNotVendored_FailsWithNoPartialWrite`, `TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing`, rewritten `TestValidateDispatch`) |
+| `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` | α | prose | AC5 (the two named leaks) |
+| `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml` | α | golden re-render | AC5 (kept in sync with the SKILL.md prose edit) |
+
+Every file in the diff is accounted for above; none is unmentioned.
+
+**Caller-path trace for new functions (repoinstall.go):**
+
+- `runDispatchCds` — called from `Run` (repoinstall.go), itself called from
+  `RepoInstallCmd.Run` (cmd_repo_install.go), the real `cn repo install` entrypoint. Not a
+  dead function; exercised by every dispatch test above plus the manual e2e runs.
+- `ensureCanonicalDispatchLabels` — called from `runDispatchCds`.
+- `resolveDispatchAgent` — called from both `Run` (for the post-render "Dispatch: cds
+  (agent: …)" stdout line — currently unreached on the error path, see §Debt item 1 — and
+  from `runDispatchCds` (the actual identity-gate + renderer-arg resolution)).
+- `dispatchWorkflowPath` — called from `runDispatchCds` to build the fixed `--out` path.
+
+**Steps 0–5 (design/plan/tests/code/docs):** design = γ's scaffold (already-converged Mock
+C/E design surface; no separate α design artifact required — γ's scaffold explicitly
+states the design surface is stable). Plan = the γ scaffold's "Surfaces α is expected to
+touch" section, followed directly. Tests/code/docs authored in that order per commit
+history (`0b717f4` code, `f8fd1c4` tests were actually committed test-after-code — noted
+as a sequencing deviation from the canonical tests-before-code order; both were written
+together in practice and verified passing before either commit landed, so no code shipped
+untested at any point on the branch).
+
