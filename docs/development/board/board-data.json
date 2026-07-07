@@ -2449,5 +2449,29 @@
     "created": "2026-07-07T04:21:48Z",
     "updated": "2026-07-07T04:21:48Z",
     "url": "https://github.com/usurobor/cnos/issues/621"
+  },
+  {
+    "n": 626,
+    "t": "arch(cds): isolate the dispatch cell-worker from substrate/agent identity + hub state",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "cdd",
+      "cds",
+      "coherence",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-07T07:03:44Z",
+    "updated": "2026-07-07T07:03:44Z",
+    "url": "https://github.com/usurobor/cnos/issues/626"
   }
 ]
