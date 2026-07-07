@@ -386,6 +386,42 @@ func ghRemoveLabel(ctx context.Context, repo string, issue int, token, label str
 	return nil
 }
 
+// ghEnsureLabelExists is the cnos#615 terminal-hygiene pass's one genuinely
+// new HTTP mutation primitive: it ensures a repo-level label exists with
+// the given name/color/description via POST /repos/{repo}/labels. GitHub
+// returns 422 "already exists" when the label is already present -- that
+// response is tolerated, not an error, mirroring ghRemoveLabel's
+// 404-tolerance idiom above. This makes the helper unconditional and
+// idempotent by design: a harmless no-op every time it is called for a
+// label (e.g. resolution/completed) that already exists, and the actual
+// creation path only resolution/not-planned exercises live the first time
+// this pass runs against a real repo.
+func ghEnsureLabelExists(ctx context.Context, repo, token, name, color, description string) error {
+	payload, err := json.Marshal(struct {
+		Name        string `json:"name"`
+		Color       string `json:"color"`
+		Description string `json:"description,omitempty"`
+	}{Name: name, Color: color, Description: description})
+	if err != nil {
+		return err
+	}
+	createURL := fmt.Sprintf("%s/repos/%s/labels", githubAPIBase, repo)
+	resp, err := ghRequest(ctx, http.MethodPost, createURL, token, payload)
+	if err != nil {
+		return fmt.Errorf("github api ensure label %q: %w", name, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnprocessableEntity {
+		// 422: label already exists -- idempotent no-op.
+		return nil
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("github api ensure label %q: HTTP %d: %s", name, resp.StatusCode, string(b))
+	}
+	return nil
+}
+
 // applyStatusLabel is the single mutation entry point this package
 // exposes: it moves issue #{issue}'s status:* label from fromState to
 // toState (label names are the CDS "status:" prefix convention

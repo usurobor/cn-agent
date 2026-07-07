@@ -1,0 +1,22 @@
+issue: 615
+protocol: cds
+cycle_branch: cycle/615
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/622"
+converge_verdict_ref: .cdd/unreleased/615/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's Round 0
+  converge verdict (round 0: converge, zero findings -- AC1-AC6 all
+  independently re-derived by beta from the actual diff/tests/live CI,
+  not from alpha's self-coherence.md narrative alone: AC2's
+  not_planned -> resolution/not-planned mapping re-verified against the
+  live label API and the test's explicit rejection of wrong alternatives;
+  AC4's transitions.json/labels.json/scan.go zero-diff re-confirmed; AC6
+  re-run locally (go build/vet/test, cn cdd verify --unreleased) AND
+  independently confirmed green on live GitHub Actions via
+  `gh run view` against the actual head commit). All closeout artifacts
+  (gamma-scaffold.md, self-coherence.md, beta-review.md,
+  alpha-closeout.md, beta-closeout.md, gamma-closeout.md) are present on
+  this branch. PR #622 opened via `cn cell finalize --issue 615`
+  (mechanical finalizer, cnos#591), referencing #615, with commits beyond
+  the cycle/615 <-> main merge-base.

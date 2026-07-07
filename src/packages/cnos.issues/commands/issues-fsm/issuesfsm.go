@@ -44,19 +44,26 @@ import (
 // transition table (AC1: package-owned declarative data, not Go literals).
 const defaultTableRelPath = "src/packages/cnos.cds/skills/cds/fsm/transitions.json"
 
-// Run is the entry point for `cn issues fsm`. This package supports two
-// sub-verbs: "evaluate" (one issue, named by the caller) and "scan" (every
+// Run is the entry point for `cn issues fsm`. This package supports three
+// sub-verbs: "evaluate" (one issue, named by the caller), "scan" (every
 // active dispatch:cell+protocol:{P} issue, cnos#593 Sub C's mechanical
-// recovery scanner) — args[0] after the "issues fsm" noun-verb pair is
-// resolved by the CLI dispatcher (see cmd_issues_fsm.go). Mutation authority
-// (cnos#569 Phase 2 for evaluate; cnos#593 for scan) is a --apply FLAG on
+// recovery scanner), and "terminal" (every CLOSED dispatch:cell+
+// protocol:{P} issue still carrying stale status:*/dispatch:cell/
+// protocol:{P} labels, cnos#615's terminal-hygiene reconciler) — args[0]
+// after the "issues fsm" noun-verb pair is resolved by the CLI dispatcher
+// (see cmd_issues_fsm.go). Mutation authority (cnos#569 Phase 2 for
+// evaluate; cnos#593 for scan; cnos#615 for terminal) is a --apply FLAG on
 // each sub-verb, not a separate "apply" sub-verb — the issue's own oracle
 // lines (`cn issues fsm evaluate --issue {N} --apply`, `cn issues fsm scan
-// --apply`) pin this shape.
+// --apply`, `cn issues fsm terminal --apply`) pin this shape. "terminal" is
+// a sibling reconciler to "scan", not a mode of it: it never evaluates an
+// FSM state and never touches Evaluate/Table/transitions.json (see
+// terminal.go's package doc).
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
 		fmt.Fprintln(stderr, "Usage: cn issues fsm evaluate --issue N [--apply] [--fixture path] [--table path]")
 		fmt.Fprintln(stderr, "       cn issues fsm scan --protocol P [--apply] [--table path]")
+		fmt.Fprintln(stderr, "       cn issues fsm terminal --protocol P [--apply]")
 		return fmt.Errorf("cn issues fsm: a subcommand is required")
 	}
 	switch args[0] {
@@ -64,10 +71,12 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return runEvaluate(ctx, args[1:], stdout, stderr)
 	case "scan":
 		return runScan(ctx, args[1:], stdout, stderr)
+	case "terminal":
+		return runTerminal(ctx, args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "✗ cn issues fsm: unknown subcommand %q\n\n", args[0])
-		fmt.Fprintln(stderr, "cn issues fsm supports only: evaluate, scan")
-		fmt.Fprintln(stderr, "(mutation authority is the --apply flag on each sub-verb — cnos#569 Phase 2 for evaluate, cnos#593 for scan — not a separate 'apply' subcommand.)")
+		fmt.Fprintln(stderr, "cn issues fsm supports only: evaluate, scan, terminal")
+		fmt.Fprintln(stderr, "(mutation authority is the --apply flag on each sub-verb — cnos#569 Phase 2 for evaluate, cnos#593 for scan, cnos#615 for terminal — not a separate 'apply' subcommand.)")
 		return fmt.Errorf("cn issues fsm: unknown subcommand %q", args[0])
 	}
 }
@@ -255,6 +264,63 @@ func runScan(ctx context.Context, args []string, stdout, stderr io.Writer) error
 	}
 	report, runErr := RunScan(ctx, opts)
 	renderScan(stdout, report)
+	return runErr
+}
+
+// runTerminal is the CLI wrapper for `cn issues fsm terminal` (cnos#615):
+// the terminal-hygiene reconciler that reconciles every CLOSED
+// dispatch:cell+protocol:{P} issue still carrying stale status:*/
+// dispatch:cell/protocol:{P} labels, per RunTerminalSweep (terminal.go).
+// Mirrors runScan's flag-parsing shape (repo/token/apply plus a required
+// --protocol) but takes no --table -- this pass never loads or evaluates
+// the transition table (AC4: transitions.json is untouched by this file
+// and by terminal.go).
+func runTerminal(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("issues fsm terminal", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	protocol := fs.String("protocol", "", "the dispatch wake's owning protocol qualifier (e.g. \"cds\"); required -- selects which protocol:{P} labeled issues this sweep reconciles")
+	repo := fs.String("repo", "", "target repository as owner/name (default: $GITHUB_REPOSITORY)")
+	token := fs.String("token", "", "GitHub token (default: $GITHUB_TOKEN, then $GH_TOKEN)")
+	apply := fs.Bool("apply", false, "apply the terminal-hygiene reconciliation: removes stale status:*/dispatch:cell/protocol:{P} labels (via the same ghRemoveLabel primitive evaluate/scan use) and adds the resolution/* label GitHub's own state_reason resolves to. Off by default -- without --apply this command is read-only (reports what it would do).")
+	fs.Usage = func() {
+		fmt.Fprintln(stderr, "Usage: cn issues fsm terminal --protocol P [--apply] [--repo owner/name]")
+		fmt.Fprintln(stderr)
+		fmt.Fprintln(stderr, "Reconciles every CLOSED dispatch:cell+protocol:{P} issue still carrying")
+		fmt.Fprintln(stderr, "stale status:*/dispatch:cell/protocol:{P} labels: removes those labels and")
+		fmt.Fprintln(stderr, "adds resolution/completed or resolution/not-planned, keyed off GitHub's")
+		fmt.Fprintln(stderr, "own state_reason on the Issue resource. Never evaluates an FSM state and")
+		fmt.Fprintln(stderr, "never touches transitions.json -- this pass reacts only to issues GitHub")
+		fmt.Fprintln(stderr, "already reports closed; it has no close authority of its own.")
+		fmt.Fprintln(stderr)
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *protocol == "" {
+		return fmt.Errorf("cn issues fsm terminal: --protocol is required")
+	}
+
+	r := *repo
+	if r == "" {
+		r = os.Getenv("GITHUB_REPOSITORY")
+	}
+	tk := *token
+	if tk == "" {
+		tk = os.Getenv("GITHUB_TOKEN")
+	}
+	if tk == "" {
+		tk = os.Getenv("GH_TOKEN")
+	}
+
+	opts := &TerminalOptions{
+		Repo:     r,
+		Token:    tk,
+		Protocol: *protocol,
+		Apply:    *apply,
+	}
+	report, runErr := RunTerminalSweep(ctx, opts)
+	renderTerminal(stdout, report)
 	return runErr
 }
 
