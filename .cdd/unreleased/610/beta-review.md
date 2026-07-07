@@ -1,6 +1,9 @@
 # β review — cnos#610
 
 **Verdict:** REQUEST CHANGES (wake-invoked vocabulary: **iterate**)
+**R1 note:** superseded — see `§R1` below for the current, final verdict (**converge**) after
+independent re-verification of all 5 findings. This §R0 record is left as-is per the
+append-don't-rewrite convention.
 
 **Round:** §R0 (first β pass on this cell; γ's `gamma-scaffold.md` is this cell's R0 artifact, α's `self-coherence.md` is a single R0 pass with no prior `§R[N]` history — per `cnos.cdd/skills/cdd/delta/SKILL.md` §9.5 R0 artifact contract)
 **Fixed this round:** n/a (first review pass)
@@ -115,3 +118,76 @@ Accepted. The issue's own AC5 text says "renders correctly (compatibility preser
 - **"No sigma default" non-goal phrasing** — the issue's Non-goals list "no sigma default" alongside "no direct main push"/"no autonomous write." Read literally this could mean "the `--agent` flag must never silently default to sigma," which the implementation does not honor (`resolveDispatchAgent` defaults empty `--agent` to `"sigma"`). However: (a) this matches the pre-existing `cn-install-wake` renderer's own established default-agent convention (not invented by α), (b) AC5's own positive case ("`--agent sigma` still renders correctly, compatibility preserved") presumes a sigma-identified path continues to work, and the wave-level non-goals doc's parallel phrase is "sigma-only default" (about the *system* not being sigma-exclusive, not about this one flag's blank-value behavior). Not raised as a blocking finding — no demonstrable incoherence, and blocking it would be a phantom-blocker under rule 3.5. Flagged here for γ/operator awareness in case the stricter reading was intended.
 - Mock E3 (tenant-portable finalizer, from the issue's scope-extension comment) was independently re-verified through the *installer's own call path* (not just the renderer's direct golden), per γ's scaffold instruction — confirmed present (`Install cn (tenant-portable — no src/go build)` + `cn cell finalize` via the installed binary, no `cd src/go`/`go build ./cmd/cn`).
 - All five findings above are mechanically small (header rename; add one YAML block; one paperwork artifact; correct two numbers; optional prose tightening) — none require re-deriving evidence already collected in `self-coherence.md` §ACs. Expect a fast R1.
+
+---
+
+## §R1 — independent re-verification of α's fix round
+
+**Verdict: CONVERGE.**
+
+**Round:** §R1 (second β pass on this cell)
+**Fixed this round:** all 5 §R0 findings (2×D, 2×C, 1×B)
+**Review base:** `origin/main` = `f7e9aaad34793dbea80c603e315e0ecc0760fdfa` (re-checked — unchanged since §R0)
+**Review head:** `origin/cycle/610` = `387b01fbde25fcc100e862ccafed29332ab00e39`
+**Branch CI state:** **green** — independently checked via `gh run list --branch cycle/610 --json status,conclusion,workflowName,headSha --limit 6` at this exact head: both `Build` and `install-wake golden` report `status=completed, conclusion=success` at `headSha=387b01f...`. (At the start of this review the `Build` run for this head was still `in_progress`; it was polled to completion rather than assumed.)
+
+Every finding below was re-derived independently — a fresh `cn` binary was built from this HEAD (`go build -o /tmp/cn-beta-r1 ./cmd/cn`), a fresh `dist/packages/index.json` via `cn build`, and fresh scratch git repos for every e2e run. Nothing here is copied from α's transcript.
+
+### Finding 1 (D) — non-canonical headers → CI red — **FIXED, confirmed**
+
+`grep -n "^## " self-coherence.md` shows exactly the canonical set: `## Gap`, `## Skills`, `## ACs`, `## Self-check`, `## Debt`, `## CDD Trace`, `## Review-readiness` (plus the new `## R1 — ...` subsection, which is prose, not a required-section header). No `## §...` form remains.
+
+`./cn cdd verify --unreleased --exceptions .cdd/exceptions.yml` from repo root at this HEAD → `## Summary: 184 passed, 0 failed, 121 warnings (305 total)`, exit 0.
+
+Also independently reproduced the **non-lenient/small-change path** α cites (the path that will re-apply at release time): copied the repo to a scratch dir, moved `beta-review.md` out of `.cdd/unreleased/610/`, re-ran the same binary → `Checking small-change cycle #610` / `✅ self-coherence.md (small-change #610)` / `✅ self-coherence.md sections — basic section validation passed`, no "missing required sections" line, exit 0. Confirms the fix holds under both classification paths, not just the currently-lenient triadic one.
+
+Beyond local reproduction: a real CI run exists at this exact head and is green (see Branch CI state above) — this is the actual gate, not just a simulated one.
+
+### Finding 2 (D) — missing `mock_parity` block — **FIXED, confirmed**
+
+`mock_parity` block present under §CDD Trace with rows `C1, C2, C3, C4, C5, C6, AC5` and `summary: {matched: 7, exceeded: 0, missed: 0, exceed_justified: true}`.
+
+Spot-checked 3 rows (not just 2) against real evidence, not fabrication:
+- **C1**: cites `TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap` — confirmed this function exists at `internal/repoinstall/repoinstall_test.go:951` and is the same test cited in §ACs AC1.
+- **C2**: cites `TestRun_DispatchCds_MissingIdentity_FailsEarlyNoPartialWrite` (`repoinstall_test.go:1070`) + `TestRepoInstall_DispatchCds_MissingIdentity_CliWiring` (`internal/cli/cmd_repo_install_test.go:383`) — both confirmed to exist and match §ACs AC2's own citations.
+- **AC5** row: cites `TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing` — confirmed at `repoinstall_test.go:1114`, matching §ACs AC5's negative-oracle citation.
+
+No row cites a test or transcript that isn't already present in §ACs above it in the same file.
+
+### Finding 3 (C) — missing `gamma-clarification.md` — **FIXED, confirmed**
+
+`.cdd/unreleased/610/gamma-clarification.md` exists, names `docs/guides/INSTALL-CDS.md` (commit `a9c194f`), gives the real peer-enumeration reasoning (three sibling surfaces stating the same stale "fails explicitly" claim: help text, `SKILL.md` prose, and this guide), and formally ratifies retroactively adding the file to γ's pinned "Package scoping" row. Disposition is "Ratified," no content revert requested — consistent with §R0's own finding that the doc content itself was already correct.
+
+### Finding 4 (C) — wrong test counts — **FIXED, confirmed**
+
+Independently re-ran (not copied from α's numbers):
+```
+$ go test ./internal/repoinstall/... -v | grep -c '^--- PASS'   → 27
+$ go test ./internal/cli/... -v | grep -c '^--- PASS'           → 45
+$ go test ./internal/repoinstall/... ./internal/cli/... -v 2>&1 | grep -c '^--- FAIL'  → 0
+```
+27 + 45 = 72, matching the corrected figures now in §Review-readiness rows 3 and 13 exactly. The R0 finding's own arithmetic (66 baseline + 6 net-new = 72) is consistent with this independent count.
+
+### Finding 5 (B) — redundant line-101 prose — **FIXED, confirmed**
+
+Rendered the SKILL.md directly through `cn-install-wake` (not through the test suite, to get an unmediated look) for both a non-sigma agent and the sigma default:
+
+- `--agent acme ...` render: `substrate-execute as \`acme\` (bot-account bindings are supplied via --agent/--workflow-pat-secret/--bot-name/--bot-id; only the default agent carries a built-in binding today, any other agent supplies its own explicitly; future: per-package bot accounts per cnos#449 follow-up).` — no "(today: acme)" tautology, true and non-confusing.
+- `grep -inE 'sigma|SIGMA_WORKFLOW_PAT|41898282'` on that acme render → 0 hits. α's claim that the literal word "sigma" was deliberately avoided in the new prose (to not regress the AC4 blanket-grep invariant) is **verified true**, not just claimed — confirmed by direct grep on a freshly-rendered file, not by reading the source text alone.
+- `--agent sigma` (default) render sha256: `b80906ec2dba15dcdf3a5852f3b72ed79b8cfa8119bf773d95209ba9ad07fd53`. This matches, byte-for-byte, both the committed golden (`cnos-cds-dispatch.golden.yml`) and the live checked-in `.github/workflows/cnos-cds-dispatch.yml` — all three files independently re-hashed and identical. Matches the new SHA α cites in §R1 exactly.
+- `git diff 3fb8e47..387b01f` for `SKILL.md`/golden/live-workflow shows exactly one line changed per file (the line-101 sentence), nothing else touched.
+
+### Nothing else regressed
+
+Full AC1–AC5 e2e re-run from scratch (fresh `cn` binary, fresh `cn build`-produced index, fresh scratch git repos, no reuse of any prior artifact):
+- **AC1/AC3**: `--dispatch cds --agent acme --workflow-pat-secret ... --bot-name ... --bot-id ...` → `.cn/deps.json`/`.cn/deps.lock.json` written, then `.github/workflows/cnos-cds-dispatch.yml` rendered, then exit 1 naming `cnos#493` — ordering and behavior unchanged.
+- **AC2**: same command minus `--workflow-pat-secret` → exit 1, stderr names the missing flag, `.github` does not exist, `.cn/deps.json` does exist — unchanged.
+- **AC4/AC5**: sigma-family grep and prose-leak grep both 0 hits on the acme render; `grep` for `git push`/`exec.Command("git"` in `repoinstall/*.go` (non-test) → 0 hits — unchanged.
+
+`git diff --stat 3fb8e47..387b01f` shows exactly 5 files touched: `gamma-clarification.md` (new), `self-coherence.md`, `.github/workflows/cnos-cds-dispatch.yml`, `cds-dispatch/SKILL.md`, `cnos-cds-dispatch.golden.yml` — precisely the 5 findings, no scope creep, no new files or code paths beyond what the findings required.
+
+### Conclusion
+
+All 5 findings are genuinely fixed, independently re-derived, with no regressions and no scope creep in the fix diff. **This is the final review verdict for this cell.** Per the wake-invoked-mode protocol, δ next dispatches γ+α+β for closeouts (β is not responsible for closeouts in this pass, and does not merge to main — merge happens later via draft PR #620 after external review).
+
+**Final HEAD:** `387b01fbde25fcc100e862ccafed29332ab00e39`
