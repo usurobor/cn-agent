@@ -2472,5 +2472,25 @@
     "created": "2026-07-06T19:41:34Z",
     "updated": "2026-07-06T19:41:34Z",
     "url": "https://github.com/usurobor/cnos/issues/618"
+  },
+  {
+    "n": 621,
+    "t": "sigma: stand up a shared \"everyone\" coordination topic for sigma activations",
+    "kind": "process",
+    "areas": [
+      "agent"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-07T04:21:48Z",
+    "updated": "2026-07-07T04:21:48Z",
+    "url": "https://github.com/usurobor/cnos/issues/621"
   }
 ]
