@@ -437,3 +437,192 @@ HEAD past it, per the SHA-citation convention in alpha/SKILL.md §2.6).
 
 **Ready for β.**
 
+## R1 — fix β's §R0 REQUEST CHANGES (5 findings)
+
+β's `beta-review.md` §R0 verdict was REQUEST CHANGES/iterate on 5 mechanical/procedural
+findings (all 5 ACs and both documented judgment calls were independently re-verified as
+MATCH/accepted and are **not** revisited here per β's own instruction and the fix-round
+scope). This section documents what was fixed, the evidence, and the renewed
+review-readiness signal.
+
+### Finding 1 (D) — non-canonical section headers → CI red
+
+**Fix:** renamed every `## §<Name>` header in this file to the literal `## <Name>` form
+`cn cdd verify`'s `sectionPresent()` requires (`## Gap`, `## Skills`, `## ACs`,
+`## Self-check`, `## Debt`, `## CDD Trace`, `## Review-readiness`), following the
+precedent already established in `.cdd/unreleased/608/self-coherence.md` (bare `## Gap`
+form, no `§`). Prose references to `§Gap`/`§ACs`/etc. elsewhere in running text are
+untouched — only literal header lines matter to the check.
+
+**Commit:** `d8fb469` (bundled with Findings 2/4, same file).
+
+**Evidence — regression pair, run against a locally built `cn` binary
+(`go build -o /tmp/cn ./cmd/cn` from `src/go/`):**
+
+- Before the fix (`origin/cycle/610` HEAD `b140664`, the review SHA β cited): `cn cdd
+  verify --unreleased --exceptions .cdd/exceptions.yml` → `missing required sections: Gap
+  Skills/Mode ACs/AC Coverage CDD Trace` (reproduced by β and independently re-confirmed
+  here by checking out that commit).
+- After the fix, checked under **both** classification paths `cdd-verify/ledger.go`
+  can take for this cycle directory (since which path applies depends on whether
+  `beta-review.md` is present, and the defect must not resurface at release time when
+  `checkTriadicArtifacts` re-applies the same non-lenient check):
+  - **Triadic / lenient path** (current state, `beta-review.md` present): `✅
+    self-coherence.md sections — basic section validation passed`, `Summary: 184 passed,
+    0 failed, 121 warnings`, exit 0.
+  - **Small-change / strict path** (reproduced by temporarily removing `beta-review.md`
+    in a scratch copy, simulating the exact review-SHA condition): `✅ self-coherence.md
+    (small-change #610)` with **no** "missing required sections" warning/fail line
+    following it, `Summary: 182 passed, 0 failed, 119 warnings`, exit 0 — confirming the
+    fix holds under the exact non-lenient path that produced the original CI failure, not
+    just the currently-lenient one.
+
+No live GitHub Actions run could be triggered from this sandbox (no CI runner access);
+the exact CI invocation (`.github/workflows/build.yml` line 301: `./cn cdd verify
+--unreleased --exceptions .cdd/exceptions.yml`) was reproduced directly against a locally
+built `cn` binary, per the task's own fallback instruction.
+
+### Finding 2 (D) — missing `mock_parity` block
+
+**Fix:** added a `mock_parity` YAML block (schema per
+`docs/development/design/cn-repo-install-MOCKS.md` §"Receipt parity contract", same shape
+as `.cdd/unreleased/608/self-coherence.md`'s precedent block) under §CDD Trace, covering
+Mock C1–C6 plus an explicit `AC5` tenant-prose-clean row (7 rows total — the issue's own
+"Parity requirement" text names exactly this set: "C1–C6 ... plus an explicit AC5
+tenant-prose-clean row"). `summary: {matched: 7, exceeded: 0, missed: 0, exceed_justified:
+true}`. Every row's `evidence` field cites a test name or manual-transcript location
+already present in this file's own §ACs section — no new evidence was derived to write
+this block, per the finding's own instruction not to fabricate.
+
+**Commit:** `d8fb469`.
+
+**Evidence:** `grep -n "mock_parity" .cdd/unreleased/610/self-coherence.md` now hits (the
+block itself, immediately before §Review-readiness); each row was cross-checked against
+its cited §ACs evidence before being written (e.g. row C5 cites the AC5 sha256 evidence
+and explicitly carries forward the same accepted-deviation language β's §Judgment calls
+already ratified, rather than re-litigating it).
+
+### Finding 3 (C) — missing `gamma-clarification.md` for Rule 7
+
+**Fix:** authored `.cdd/unreleased/610/gamma-clarification.md`, naming
+`docs/guides/INSTALL-CDS.md` as the touched file, the peer-enumeration reasoning (per
+`alpha/SKILL.md` §2.3) for why it was in-bounds, and ratifying the addition to δ's pinned
+"Package scoping" row retroactively in R1, per β's finding. No content revert — β already
+verified the doc fix itself is correct.
+
+**Commit:** `9d2572f`.
+
+**Evidence:** `git show 9d2572f --stat` → `.cdd/unreleased/610/gamma-clarification.md`
+created; `find .cdd/unreleased/610 -name gamma-clarification.md` now resolves (previously
+0 hits, as β's finding cited).
+
+### Finding 4 (C) — wrong test counts
+
+**Fix:** corrected §Review-readiness rows 3 and 13 from "26 tests in `internal/repoinstall`,
+39 in `internal/cli`... 65 test functions, 65 PASS" to the actual re-derived counts.
+
+**Commit:** `d8fb469`.
+
+**Evidence — re-derived independently, not copied from β's numbers:**
+```
+$ cd src/go
+$ go test ./internal/repoinstall/... -v | grep -c '^--- PASS'
+27
+$ go test ./internal/cli/... -v | grep -c '^--- PASS'
+45
+$ go test ./internal/repoinstall/... ./internal/cli/... -v 2>&1 | grep -c '^--- FAIL'
+0
+```
+27 + 45 = **72 test functions, 72 PASS, 0 FAIL** — matches β's independently-derived
+figure exactly (β: "27 (not 26)... 45 (not 39)... total 72, 0 FAIL"). Re-run again at the
+final R1 HEAD (post all 5 fixes) with the identical result — see §Final re-verification
+below.
+
+### Finding 5 (B, non-blocking) — prose redundancy at line 101
+
+**Fix:** rephrased the line-101 sentence in `cds-dispatch/SKILL.md` from `"You
+substrate-execute as `{agent}` (today: `{agent}`; future: per-package bot accounts per
+cnos#449 follow-up)."` to `"You substrate-execute as `{agent}` (bot-account bindings are
+supplied via `--agent`/`--workflow-pat-secret`/`--bot-name`/`--bot-id`; only the default
+agent carries a built-in binding today, any other agent supplies its own explicitly;
+future: per-package bot accounts per cnos#449 follow-up)."`
+
+**Judgment call made in this fix:** β's finding offered two options (drop the
+parenthetical entirely, or rephrase agent-neutrally) and gave an illustrative example
+text that named `sigma` explicitly ("bot-account bindings are currently sigma-specific").
+I did **not** use that literal wording, because Mock C4's own invariant (design doc
+`cn-repo-install-MOCKS.md`: `grep -iE 'sigma|SIGMA_WORKFLOW_PAT|41898282'` must return
+nothing for a non-sigma render) is a blanket, case-insensitive check on the bare word
+"sigma" — reintroducing that word into the rendered body for a non-sigma agent, even in
+otherwise-accurate explanatory prose, would have regressed an already-MATCH-verified hard
+invariant that β independently re-ran and confirmed at 0 hits in R0. The chosen phrasing
+preserves the original meaning (a default agent has a built-in binding; others supply
+their own; future work generalizes this) without naming any specific agent, keeping it
+genuinely agent-neutral rather than merely non-tautological.
+
+**Commit:** `1455004`.
+
+**Evidence:**
+```
+$ ./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch \
+    --agent acme --workflow-pat-secret ACME_WORKFLOW_PAT --bot-name acme-bot \
+    --bot-id 12345678 --out /tmp/acme-out.yml
+$ grep -n "substrate-execute" /tmp/acme-out.yml
+111:  ... You substrate-execute as `acme` (bot-account bindings are supplied via
+    --agent/--workflow-pat-secret/--bot-name/--bot-id; only the default agent carries a
+    built-in binding today, any other agent supplies its own explicitly; future:
+    per-package bot accounts per cnos#449 follow-up).
+$ grep -inE 'sigma|SIGMA_WORKFLOW_PAT|41898282' /tmp/acme-out.yml
+(0 hits)
+$ grep -n 'today: `sigma`|agent-admin-sigma|cn-sigma:' /tmp/acme-out.yml
+(0 hits)
+$ go test ./internal/repoinstall/... -run TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing -v
+--- PASS: TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing (0.25s)
+```
+Re-rendered both `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml`
+and the live `.github/workflows/cnos-cds-dispatch.yml` (sigma default) so both stay in
+sync; new sha256 (both files identical):
+`b80906ec2dba15dcdf3a5852f3b72ed79b8cfa8119bf773d95209ba9ad07fd53` (supersedes R0's
+`822bb9ec...c8f8b91` — the R0 self-coherence.md AC5 section is left as-is with an inline
+note pointing here, per the append-don't-rewrite convention). AC5's byte-identical-for-
+`--agent sigma` claim still holds — it now holds against this new sha, verified above by
+directly diffing the golden against the live workflow (0 diff).
+
+### β's Notes — `resolveDispatchAgent` sigma default (acknowledged, not changed)
+
+See the paragraph appended to §CDD Trace's Mock-parity subsection ("On β's Notes") for the
+one-line-plus acknowledgment requested: reviewed, reasoning recorded, no behavior change,
+consistent with β's own non-blocking framing of this observation.
+
+### Final re-verification (post all 5 fixes, this commit's parent HEAD)
+
+```
+$ cd src/go
+$ go build ./...                                    # exit 0
+$ go vet ./...                                       # exit 0
+$ go test ./internal/repoinstall/... ./internal/cli/... -v 2>&1 | grep -c '^--- PASS'
+72
+$ go test ./internal/repoinstall/... ./internal/cli/... -v 2>&1 | grep -c '^--- FAIL'
+0
+$ go build -o /tmp/cn ./cmd/cn
+$ cd .. && /tmp/cn cdd verify --unreleased --exceptions .cdd/exceptions.yml
+...
+✅ self-coherence.md (issue #610)
+✅ self-coherence.md sections — basic section validation passed
+✅ beta-review.md (issue #610)
+✅ beta-review.md sections — basic section validation passed
+## Summary: 184 passed, 0 failed, 121 warnings (305 total)
+$ echo $?
+0
+```
+
+`origin/main` re-checked at R1 signal time: still `f7e9aaad34793dbea80c603e315e0ecc0760fdfa`
+(unchanged since β's review base) — `git merge-base --is-ancestor origin/main HEAD` → true;
+no rebase needed this round.
+
+**Review-readiness (R1):** all 5 findings fixed and independently re-verified against the
+exact commands cited in β's "Regressions Required" section; test counts corrected and
+re-derived from scratch (not trusted from β's numbers); the one prose-redundancy fix
+(Finding 5) is re-rendered and re-verified against both leak-oracle families with no
+regression. **Ready for β round 1.**
+
