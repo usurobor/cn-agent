@@ -214,3 +214,68 @@ $ grep -nE 'today: `sigma`|agent-admin-sigma|cn-sigma:' /tmp/old-leak-render.yml
 
 **Verdict: MATCH**, with an explicit, documented deviation from the pinned byte-identical
 floor for the line-296 fix only (see §Self-check).
+
+## §Self-check
+
+**Did α push ambiguity onto β?** Two genuine judgment calls were required where the issue
+text and γ's scaffold under-determine the answer; both are written up in
+`.cdd/unreleased/610/alpha-clarification-needed.md` with the exact reasoning, the
+assumption made, and the narrow fix if the assumption is wrong — rather than silently
+picking one reading and hoping β doesn't notice:
+
+1. Whether AC3's "actionable error" means `Run()` returns non-nil (my reading) or a
+   printed warning with a 0 exit. I implemented the stronger (nonzero-exit) reading, since
+   it is the more defensible parse of "an actionable error is returned" and matches the
+   Proof plan's parallel framing of "missing labels" alongside "missing identity" as
+   negative cases.
+2. Whether AC5's prose-clean requirement can override the pinned byte-identical backward-
+   compat floor for the one leak (line 296's historical citation) that γ's own scaffold
+   says cannot be templated honestly. I chose prose-clean, moving the specific citation to
+   the non-rendered appendix; `--agent sigma` is byte-identical to *this cycle's own*
+   golden (committed), not to the pre-cycle golden.
+
+**Is every claim backed by evidence in the diff?** Yes — every AC row above cites either
+an automated test name (all runnable via `go test ./src/go/internal/repoinstall/...
+./src/go/internal/cli/...`) or a manual e2e transcript captured against the real `cn`
+binary + a `cn build`-produced real package index + a scratch git repo (not against unit
+fixtures alone). The AC5 negative case specifically constructs a before/after fixture
+(the synthetic pre-fix-phrasing `SKILL.md`) rather than asserting "the grep would have
+caught it" without running it — per the α role's explicit rule against exactly that
+overclaim.
+
+**Known-debt-relevant self-check:** `ensureCanonicalDispatchLabels()` is intentionally a
+static, always-erroring function (not a runtime probe) because there is genuinely nothing
+to probe yet — cnos#493 does not exist as any command, flag, or file in this repo. This is
+disclosed as debt (§Debt) rather than dressed up as a "check."
+
+## §Debt
+
+1. **cnos#493 is unimplemented (by design/Non-goals).** `--dispatch cds` cannot fully
+   succeed (exit 0) today — it always ends by naming the cnos#493 gap. This is the
+   issue's own explicit contract (AC3), not an oversight, but it means the Mock C
+   transcript's fully-green console experience is not yet achievable end-to-end. Tracked
+   upstream at cnos#493 (open, P1); this cell does not own closing it.
+2. **Two interpretive judgment calls** (AC1/AC3 relationship; AC5-vs-byte-identical
+   precedence) are documented in `alpha-clarification-needed.md` rather than silently
+   resolved. Both are reversible with a narrow, named code change if β/δ/operator disagree
+   with the reading I chose.
+3. **`--dry-run --dispatch cds` is new behavior, not covered by any AC.** I extended
+   `printPlan` to state the pending render (previously it silently said "Dispatch: none"
+   even when `--dispatch cds` was requested, which pre-dated this cycle as a latent
+   dry-run inaccuracy masked by the old unconditional-failure guard). No AC names dry-run
+   + cds explicitly; I verified it manually (see the dry-run e2e transcript in the
+   `alpha-clarification-needed.md`-adjacent manual runs) but there is no dedicated
+   automated test for this specific combination. Low risk: the change is additive and the
+   `--dispatch none` dry-run branch is untouched (verified byte-identical via
+   `TestRun_DryRun_WritesNothing`, unchanged).
+4. **The renderer's identity/label vocabulary (agent/PAT-secret/bot-name/bot-id) is not
+   validated beyond presence.** E.g. a malformed `--bot-id` (non-numeric) is passed through
+   to the renderer as-is; the renderer itself does not validate its shape either. Out of
+   scope per the pinned "reuse the #609 renderer" contract axis (no new validation logic
+   invented on top of what the renderer already enforces).
+5. **No test asserts the exact stdout identity/PAT-secret display lines
+   (`identity: <agent>` / `pat secret: <name>`) beyond substring checks for the
+   PAT-scope/never-pushes-main facts.** These display lines are informational, not
+   contract-bearing (no AC names their exact wording), so I did not pin them with a golden
+   string test; a future prose tweak to these two lines would not need a test update.
+
