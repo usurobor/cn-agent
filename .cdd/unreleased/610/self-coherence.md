@@ -296,8 +296,14 @@ disclosed as debt (§Debt) rather than dressed up as a "check."
 | `src/go/internal/repoinstall/repoinstall_test.go` | α | tests | AC1–AC5 (package-level: `TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap`, `TestRun_DispatchCds_SigmaDefault_NoIdentityFlagsRequired`, `TestRun_DispatchCds_MissingIdentity_FailsEarlyNoPartialWrite`, `TestRun_DispatchCds_RendererNotVendored_FailsWithNoPartialWrite`, `TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing`, rewritten `TestValidateDispatch`) |
 | `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` | α | prose | AC5 (the two named leaks) |
 | `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml` | α | golden re-render | AC5 (kept in sync with the SKILL.md prose edit) |
+| `docs/guides/INSTALL-CDS.md` | α | peer doc fix | §2.3 peer enumeration (not in the δ-pinned package-scoping list; a third sibling surface — beyond `cmd_repo_install.go`'s help text — stating the same stale "`--dispatch cds` fails until #609" fact; grepped for the phrase repo-wide and fixed the one hit outside `.cdd/unreleased/608/` and `.cdd/unreleased/610/`, which are historical/self-authored records, not live docs) |
 
-Every file in the diff is accounted for above; none is unmentioned.
+Every file in the diff is accounted for above; none is unmentioned. **Implementation-
+contract note:** `docs/guides/INSTALL-CDS.md` is not named in δ's pinned "Package scoping"
+row. I judged this an in-bounds peer-enumeration fix (alpha/SKILL.md §2.3 — a sibling doc
+surface describing the same mechanism, not an architectural/package-scoping change to the
+code) rather than a contract violation; flagging it explicitly per rule 3.6 rather than
+silently expanding scope.
 
 **Caller-path trace for new functions (repoinstall.go):**
 
