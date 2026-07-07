@@ -70,6 +70,102 @@ func writeFixtureIndex(t *testing.T, name, version string) string {
 	return indexPath
 }
 
+// tarEntry is a single file to write into a fixture tarball, with an
+// explicit mode — unlike makeRepoInstallTarGz above (always 0644), the
+// dispatch fixture below needs the real cn-install-wake renderer
+// script's executable bit preserved so the installed cn binary can
+// exec it once restore.Restore extracts it.
+type tarEntry struct {
+	name string
+	mode int64
+	data []byte
+}
+
+func makeRepoInstallTarGzEntries(t *testing.T, entries []tarEntry) ([]byte, string) {
+	t.Helper()
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gw)
+	for _, e := range entries {
+		hdr := &tar.Header{Name: e.name, Mode: e.mode, Size: int64(len(e.data))}
+		if err := tw.WriteHeader(hdr); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write(e.data); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tw.Close()
+	gw.Close()
+	data := buf.Bytes()
+	h := sha256.Sum256(data)
+	return data, hex.EncodeToString(h[:])
+}
+
+// writeCliDispatchFixtureIndex builds a package index + two tarballs:
+// cnos.core (carrying the REAL commands/install-wake/cn-install-wake
+// renderer script, executable bit preserved) and cnos.cds (carrying the
+// REAL orchestrators/cds-dispatch/SKILL.md this cycle edited) — read
+// live from the repository source tree via repoGoModuleRoot's sibling
+// resolver, so this CLI-level test exercises the actual shipped
+// renderer + prose, not a synthetic stand-in. Mirrors
+// repoinstall_test.go's writeDispatchFixtureIndex (test-fixture
+// duplication across packages, not production parser duplication — per
+// eng/go §2.17, already the convention this file's own
+// makeRepoInstallTarGz follows relative to repoinstall_test.go's
+// makeTarGz).
+func writeCliDispatchFixtureIndex(t *testing.T) string {
+	t.Helper()
+	// repoGoModuleRoot resolves <repoRoot>/src/go; go up two more levels
+	// for <repoRoot> itself (src/go -> src -> repoRoot).
+	repoRoot := filepath.Join(repoGoModuleRoot(t), "..", "..")
+	rendererScript, err := os.ReadFile(filepath.Join(repoRoot, "src", "packages", "cnos.core", "commands", "install-wake", "cn-install-wake"))
+	if err != nil {
+		t.Fatalf("read renderer script: %v", err)
+	}
+	skillMD, err := os.ReadFile(filepath.Join(repoRoot, "src", "packages", "cnos.cds", "orchestrators", "cds-dispatch", "SKILL.md"))
+	if err != nil {
+		t.Fatalf("read cds-dispatch SKILL.md: %v", err)
+	}
+
+	dir := t.TempDir()
+
+	coreTar, coreSHA := makeRepoInstallTarGzEntries(t, []tarEntry{
+		{name: "cn.package.json", mode: 0644, data: []byte(`{"name": "cnos.core", "version": "9.9.9"}`)},
+		{name: "commands/install-wake/cn-install-wake", mode: 0755, data: rendererScript},
+	})
+	coreTarName := "cnos.core-9.9.9.tar.gz"
+	if err := os.WriteFile(filepath.Join(dir, coreTarName), coreTar, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cdsTar, cdsSHA := makeRepoInstallTarGzEntries(t, []tarEntry{
+		{name: "cn.package.json", mode: 0644, data: []byte(`{"name": "cnos.cds", "version": "9.9.9"}`)},
+		{name: "orchestrators/cds-dispatch/SKILL.md", mode: 0644, data: skillMD},
+	})
+	cdsTarName := "cnos.cds-9.9.9.tar.gz"
+	if err := os.WriteFile(filepath.Join(dir, cdsTarName), cdsTar, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {"9.9.9": {URL: coreTarName, SHA256: coreSHA}},
+			"cnos.cds":  {"9.9.9": {URL: cdsTarName, SHA256: cdsSHA}},
+		},
+	}
+	indexPath := filepath.Join(dir, "index.json")
+	data, err := json.MarshalIndent(idx, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(indexPath, data, 0644); err != nil {
+		t.Fatal(err)
+	}
+	return indexPath
+}
+
 // initGitRepo runs `git init` (+ minimal identity config) in dir.
 func initGitRepo(t *testing.T, dir string) {
 	t.Helper()
@@ -253,24 +349,119 @@ func TestRepoInstall_DryRun_GitStatusStaysClean(t *testing.T) {
 	}
 }
 
-// AC9: --dispatch cds fails explicitly through the full CLI wiring, with
-// no partial .github/workflows/cnos-cds-dispatch.yml.
-func TestRepoInstall_DispatchCds_CliWiring(t *testing.T) {
+// cnos#610: this test previously asserted --dispatch cds always failed
+// through the CLI, naming #609. That guard is exactly what this cell
+// removes (see TestRepoInstall_DispatchCds_IdentityFlagsWireThrough
+// below for the new positive contract). The fixture here
+// (writeFixtureIndex) is a minimal single-package manifest with no
+// actual renderer script content, so --dispatch cds still fails today
+// — but for a different, still-genuine reason: the renderer binary
+// itself was never vendored. No partial .github/workflows/ may exist
+// either way.
+func TestRepoInstall_DispatchCds_RendererNotVendored_CliWiring(t *testing.T) {
 	indexPath := writeFixtureIndex(t, "cnos.core", "9.9.9")
 
 	repoDir := t.TempDir()
 	initGitRepo(t, repoDir)
 	t.Chdir(repoDir)
 
-	_, stderr, err := runRepoInstall(t, []string{"--index", indexPath, "--dispatch", "cds"})
+	_, stderr, err := runRepoInstall(t, []string{"--index", indexPath, "--packages", "cnos.core", "--dispatch", "cds"})
 	if err == nil {
-		t.Fatal("expected --dispatch cds to fail")
+		t.Fatal("expected --dispatch cds to fail when the renderer script is not vendored")
 	}
-	if !strings.Contains(stderr, "#609") {
-		t.Errorf("stderr should name #609, got: %q", stderr)
+	if !strings.Contains(stderr, "dispatch renderer not found") {
+		t.Errorf("stderr should name the missing renderer, got: %q", stderr)
 	}
 	if _, statErr := os.Stat(filepath.Join(repoDir, ".github")); !os.IsNotExist(statErr) {
 		t.Error(".github must not exist after --dispatch cds fails")
+	}
+}
+
+// AC2/C2: --agent acme with no --workflow-pat-secret fails early through
+// the full CLI wiring, before any renderer invocation — no partial
+// .github/workflows/ directory.
+func TestRepoInstall_DispatchCds_MissingIdentity_CliWiring(t *testing.T) {
+	indexPath := writeFixtureIndex(t, "cnos.core", "9.9.9")
+
+	repoDir := t.TempDir()
+	initGitRepo(t, repoDir)
+	t.Chdir(repoDir)
+
+	_, stderr, err := runRepoInstall(t, []string{"--index", indexPath, "--packages", "cnos.core", "--dispatch", "cds", "--agent", "acme"})
+	if err == nil {
+		t.Fatal("expected --dispatch cds --agent acme (no --workflow-pat-secret) to fail")
+	}
+	if !strings.Contains(stderr, "--workflow-pat-secret") {
+		t.Errorf("stderr should name the missing flag, got: %q", stderr)
+	}
+	if _, statErr := os.Stat(filepath.Join(repoDir, ".github")); !os.IsNotExist(statErr) {
+		t.Error(".github must not exist after a missing-identity failure")
+	}
+}
+
+// AC1/C1/C3 + AC4/C4/C6 + AC5-positive, through the FULL CLI flag
+// surface (--agent / --workflow-pat-secret / --bot-name / --bot-id),
+// proving cmd_repo_install.go's Args→Options pass-through actually
+// wires these four new flags through to repoinstall.Run, not just that
+// repoinstall.Run itself accepts them (repoinstall_test.go already
+// covers that at the package-internal level). Builds the real cn
+// binary and drives it as a subprocess against a fixture vendoring the
+// REAL cn-install-wake renderer + the REAL cds-dispatch/SKILL.md.
+func TestRepoInstall_DispatchCds_IdentityFlagsWireThrough(t *testing.T) {
+	binPath := buildCnBinary(t)
+	indexPath := writeCliDispatchFixtureIndex(t)
+
+	repoDir := t.TempDir()
+	initGitRepo(t, repoDir)
+
+	cmd := exec.Command(binPath, "repo", "install",
+		"--index", indexPath,
+		"--packages", "cnos.core,cnos.cds",
+		"--dispatch", "cds",
+		"--agent", "acme",
+		"--workflow-pat-secret", "ACME_WORKFLOW_PAT",
+		"--bot-name", "acme-bot",
+		"--bot-id", "12345678",
+	)
+	cmd.Dir = repoDir
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	runErr := cmd.Run()
+
+	// AC3's cnos#493 label gap is still expected today (see
+	// repoinstall_test.go's TestRun_DispatchCds_RendersWorkflow_
+	// ThenSurfacesLabelGap for why this is the correct current
+	// behavior) — what THIS test proves is that the CLI flags actually
+	// reached the renderer, which only happens if Args→Options
+	// pass-through works.
+	if runErr == nil {
+		t.Fatalf("expected the cnos#493 label-gap error, got success\nstdout: %s", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "cnos#493") {
+		t.Errorf("stderr should carry the cnos#493 diagnostic, got: %q", stderr.String())
+	}
+
+	workflowPath := filepath.Join(repoDir, ".github", "workflows", "cnos-cds-dispatch.yml")
+	data, statErr := os.ReadFile(workflowPath)
+	if statErr != nil {
+		t.Fatalf("expected rendered workflow at %s: %v\nstdout: %s\nstderr: %s", workflowPath, statErr, stdout.String(), stderr.String())
+	}
+	content := string(data)
+
+	// The four CLI flags must have reached the render (proves Args→
+	// Options wiring, not just that repoinstall.Run accepts them).
+	for _, want := range []string{"ACME_WORKFLOW_PAT", "acme-bot", "12345678", "cds-dispatch-acme"} {
+		if !strings.Contains(content, want) {
+			t.Errorf("rendered workflow missing identity value %q (CLI flag did not reach the renderer):\n%s", want, content)
+		}
+	}
+
+	// AC4/C4 + AC5 positive: zero sigma leak for this non-sigma agent.
+	for _, leak := range []string{"SIGMA_WORKFLOW_PAT", "41898282", "cds-dispatch-sigma", "today: `sigma`", "agent-admin-sigma", "cn-sigma:"} {
+		if strings.Contains(content, leak) {
+			t.Errorf("acme render (via full CLI wiring) leaks %q", leak)
+		}
 	}
 }
 

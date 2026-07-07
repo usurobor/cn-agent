@@ -24,8 +24,15 @@ DESCRIPTION:
 
   Base install never writes .github/workflows/ and never requires a
   workflow/agent PAT. Autonomous dispatch install (--dispatch cds) is a
-  separate, explicit opt-in gated on renderer generalization (#609); until
-  that lands, --dispatch cds fails explicitly and writes nothing.
+  separate, explicit opt-in (cnos#610): after the base install, it
+  renders .github/workflows/cnos-cds-dispatch.yml via the cnos.core wake
+  renderer (cnos#609), requires an explicit caller identity, is PR-only
+  (this command never pushes to main), and requires the installing
+  token to hold workflow scope. It does not install the canonical
+  dispatch labels itself (cnos#493 owns that mechanism, not yet
+  shipped) — until cnos#493 lands, --dispatch cds still renders the
+  workflow but exits nonzero naming cnos#493, and labels must be
+  applied manually.
 
 FLAGS:
   --release V     "latest" (default) or a pinned release tag (e.g. 3.82.0)
@@ -33,7 +40,17 @@ FLAGS:
                    (local/offline/test workflows; skips release resolution)
   --packages CSV  Comma-separated package names (default: cnos.core,cnos.cdd,cnos.cds)
   --dispatch D    "none" (default) — base install only.
-                  "cds" — NOT implemented until #609; fails explicitly.
+                  "cds" — also renders the dispatch workflow (see above).
+  --agent NAME    Caller identity for --dispatch cds (default: sigma).
+                  Any non-sigma agent requires --workflow-pat-secret.
+  --workflow-pat-secret NAME
+                  GitHub Actions secret name holding the dispatch agent's
+                  workflow-scoped PAT. Required for --dispatch cds with a
+                  non-sigma --agent (sigma defaults to SIGMA_WORKFLOW_PAT).
+  --bot-name NAME Overrides the rendered claude-code-action bot_name input
+                  (--dispatch cds only).
+  --bot-id ID     Overrides the rendered claude-code-action bot_id input
+                  (--dispatch cds only).
   --dry-run       Report the intended writes/fetches/restores; write nothing
 
 EXAMPLES:
@@ -41,11 +58,14 @@ EXAMPLES:
   cn repo install --release latest --packages cnos.core,cnos.cdd,cnos.cds --dispatch none
   cn repo install --dry-run
   cn repo install --index ./dist/packages/index.json --packages cnos.core,cnos.cdd,cnos.cds
+  cn repo install --dispatch cds --agent acme --workflow-pat-secret ACME_WORKFLOW_PAT \
+    --bot-name acme-bot --bot-id 12345678
 
 EXIT CODES:
   0  Success (installed, or --dry-run reported the plan)
   1  Error (not a git repo, package/index resolution failure, restore
-     failure, or --dispatch cds)
+     failure, or a --dispatch cds precondition: missing identity, or the
+     cnos#493 canonical-label mechanism still being unavailable)
 
 INVARIANTS:
   - .cn/deps.json / .cn/deps.lock.json: deterministic (stable order, no
@@ -120,14 +140,18 @@ func (c *RepoInstallCmd) Run(ctx context.Context, inv Invocation) error {
 	repoRoot := root
 
 	opts := repoinstall.Options{
-		RepoRoot:  repoRoot,
-		Release:   args.Release,
-		IndexPath: args.IndexPath,
-		Packages:  args.Packages,
-		Dispatch:  args.Dispatch,
-		DryRun:    args.DryRun,
-		Stdout:    inv.Stdout,
-		Stderr:    inv.Stderr,
+		RepoRoot:          repoRoot,
+		Release:           args.Release,
+		IndexPath:         args.IndexPath,
+		Packages:          args.Packages,
+		Dispatch:          args.Dispatch,
+		DryRun:            args.DryRun,
+		Agent:             args.Agent,
+		WorkflowPatSecret: args.WorkflowPatSecret,
+		BotName:           args.BotName,
+		BotID:             args.BotID,
+		Stdout:            inv.Stdout,
+		Stderr:            inv.Stderr,
 	}
 
 	_, err = repoinstall.Run(ctx, opts)

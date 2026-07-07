@@ -1,0 +1,12 @@
+issue: 610
+protocol: cds
+cycle_branch: cycle/610
+requested_by: cds-dispatch (dispatch wake, claim step)
+head_commit: ac2990f9854dc980d5b2eee0657b37c4e3366cf0
+note: >
+  Well-formedness gates verified (open, single protocol:cds, single
+  status:todo, dispatch:cell present). No prior status:changes history,
+  no prior cycle/610 branch, no prior .cdd/unreleased/610/ artifacts,
+  no bounce comments -- run_class: first_pass. Requesting the todo ->
+  in-progress transition via `cn issues fsm evaluate --issue 610 --apply`
+  per cnos#575 Phase 3.

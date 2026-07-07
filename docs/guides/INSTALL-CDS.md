@@ -142,26 +142,26 @@ contract, and opens PRs with receipts. See the
 [dispatch orchestrator skill](../../src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md)
 for the full protocol.
 
-`cn repo install --dispatch cds` is the intended entry point for installing
-this layer, but **it is not implemented yet** — the wake renderer must be
-generalized away from its current sigma-specific binding first (tracked as a
-separate cell). Today, `cn repo install --dispatch cds` fails explicitly with
-a clear error and writes nothing; it does not partially render a workflow
-file. Once the renderer generalization lands, this guide's Layer 2 section
-will cover the full opt-in flow (required secrets: a `workflow`-scoped PAT and
-a model OAuth token; standing write access implications; the mechanical
-FSM-engine tier that needs no agent token).
-
-Until then, the renderer is available as a package command once packages are
-restored:
+`cn repo install --dispatch cds` (cnos#610) is the entry point for installing
+this layer:
 
 ```sh
-cn install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml
+cn repo install --dispatch cds \
+  --agent acme --workflow-pat-secret ACME_WORKFLOW_PAT \
+  --bot-name acme-bot --bot-id 12345678
 ```
 
-with the caveats named in the
-[dispatch orchestrator skill](../../src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md)
-(today it is bound to the `sigma` agent identity/secret).
+This runs the base install, then renders `.github/workflows/cnos-cds-dispatch.yml`
+for the given agent identity — no sigma binding required; any non-sigma
+`--agent` requires `--workflow-pat-secret` (fails early, before any render,
+if it is missing). The installing token needs `workflow` scope to write
+`.github/workflows/`; the command itself never pushes to `main` (PR-only).
+
+**One precondition is still open:** the canonical dispatch labels
+(`dispatch:cell` / `protocol:cds` / `status:todo`) are not yet installed by
+any command — that mechanism is tracked separately (cnos#493). Until it
+ships, `--dispatch cds` still renders the workflow but exits non-zero naming
+cnos#493, and you must apply the labels to your repo manually.
 
 ---
 
@@ -188,7 +188,8 @@ placed it.
 | `package(s) not found in index` | The requested `--packages` entry isn't published in the resolved release/index. Check spelling, or pin `--release` to a tag that publishes it. |
 | `package(s) have multiple versions in index; pass --release to pin one` | You passed `--index` pointing at a multi-version index with no `--release`; add `--release <tag>` to disambiguate. |
 | `cn: command not found` after install | `install.sh` put `cn` outside your `PATH`. Re-run with `BIN_DIR="$HOME/.local/bin"` and add that dir to `PATH`. |
-| `--dispatch cds` fails with "requires generalized wake renderer support (#609)" | Expected today — Layer 2 dispatch install is gated on renderer generalization. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
+| `--dispatch cds` fails with "canonical dispatch labels not ensured: cnos#493 ..." | Expected today — the workflow still renders; apply the dispatch labels to your repo manually until cnos#493 ships. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
+| `--dispatch cds` fails with "--workflow-pat-secret is required for --agent ..." | Pass `--workflow-pat-secret <NAME>` (and, for a non-sigma agent, `--bot-name`/`--bot-id`) naming the GitHub Actions secret holding that agent's workflow-scoped PAT. |
 
 ## Related
 

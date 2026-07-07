@@ -208,14 +208,14 @@ Write `.cdd/unreleased/{N}/self-coherence.md` **incrementally, one section at a 
 3. Report progress after each commit (e.g. "self-coherence §Gap committed")
 4. If resuming after a failure, read what exists on the branch first and continue from the last committed section — do not restart
 
-**Sections (in order):**
+**Sections (in order).** The `§` below is this skill file's own cross-reference notation (as in "§2.5") for *referring to* a section — it is **not** part of the markdown header text to write. Each header MUST be the bare canonical form shown in parens:
 
-1. **§Gap** — issue, version/mode
-2. **§Skills** — active skills (Tier 1/2/3)
-3. **§ACs** — AC-by-AC check with evidence
-4. **§Self-check** — role self-check: did α's work push ambiguity onto β? Is every claim backed by evidence in the diff?
-5. **§Debt** — known debt
-6. **§CDD Trace** — CDD Trace through step 7
+1. **Gap** (write `## Gap`) — issue, version/mode
+2. **Skills** (write `## Skills`) — active skills (Tier 1/2/3)
+3. **ACs** (write `## ACs`) — AC-by-AC check with evidence
+4. **Self-check** (write `## Self-check`) — role self-check: did α's work push ambiguity onto β? Is every claim backed by evidence in the diff?
+5. **Debt** (write `## Debt`) — known debt
+6. **CDD Trace** (write `## CDD Trace`) — CDD Trace through step 7
 
 Minimum contents (across all sections):
 
@@ -232,8 +232,12 @@ Rules:
 - if an AC is only partially met, say so explicitly
 - if a loaded skill would have prevented remaining debt, name it
 
+**Canonical section-header form is binding, not stylistic.** `cn cdd verify`'s `sectionPresent()` (`src/packages/cnos.cdd/commands/cdd-verify/ledger.go`) does an exact-line-or-`## X `-prefix match against the literal header string — `## §Gap`, `## Gap (issue)`, or any other decorated variant does **not** match `## Gap` and `validateSections` reports the section missing. This applies on *both* paths `classifyCycleType` can select: the lenient path (once `beta-review.md` exists, `forUnreleased=true`) only warns, but the non-lenient path — used before `beta-review.md` exists (cycle classified `"small-change"`) and again at release-time triadic-artifact validation (`checkTriadicArtifacts`, `forUnreleased=false`) — hard-FAILs. A decorated header can therefore look fine in a first local read and still fail CI. *Derives from: cnos#608's `self-coherence.md` discovering and fixing this exact `## §Gap`-vs-`## Gap` defect in its own artifact; cnos#610 R0 F1 — the #608 fix was never promoted out of #608's own cycle-scoped artifact into this skill file, so #610's γ (scaffold time) and α (implementation time) both re-hit the identical failure three cycles later in the same design-doc family, producing a real `Build` CI red (`181 passed, 1 failed`) at the review SHA and costing a full R0→R1 review round a loaded rule would have prevented. This paragraph is that promotion.*
+
 - ❌ Writing the entire self-coherence file in one commit
+- ❌ `## §Gap` / `## §Skills` / `## §ACs` / `## §CDD Trace` — decorative section markers `sectionPresent()` does not recognize
 - ✅ One section per commit, pushed incrementally, resumable after failure
+- ✅ `## Gap` / `## Skills` / `## ACs` / `## CDD Trace` — bare canonical form, matches `sectionPresent()`'s literal/prefix check
 
 ### 2.6. Pre-review gate
 
