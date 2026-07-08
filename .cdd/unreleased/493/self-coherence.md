@@ -359,3 +359,76 @@ session's matter was preserved, not discarded, per
    --json name,color,description` → all 8 canonical labels present,
    color+description byte-equal to `labels.json` (case-insensitive on
    hex) — full transcript in §ACs AC2/AC3 and `label-audit.md`.
+
+## Review-readiness | round 1 | base SHA: 90e9c8b2 | head SHA: d504ef3a | branch CI: green at 20:00:44 UTC | ready for β
+
+Pre-review gate (`alpha/SKILL.md` §2.6), all 15 rows, re-validated
+immediately before this signal (§2.6's "transient vs durable rows" rule
+— rows 1 and 10 re-checked at signal time, not left at their
+original-observation state):
+
+1. **Branch rebased onto current `origin/main`.** `git fetch origin main`
+   → `origin/main@90e9c8b2` (22 commits ahead of the γ-scaffold-time base
+   `31d7ddfa5`). `git rebase origin/main` completed clean, zero
+   conflicts, at the start of this resumption; `git merge-base
+   --is-ancestor origin/main HEAD` → true, re-confirmed at signal time
+   (`git fetch origin main` just now → no new commits since the rebase).
+   Force-pushed with `--force-with-lease`.
+2. **CDD Trace through step 7.** Present — §CDD Trace above, steps 1–7.
+3. **Tests present.** Yes — 32 tests in the new `label-doctor` module,
+   plus existing `src/go/internal/cli` and `internal/repoinstall` suites
+   updated for the stub-replacement behavior change (15/15 `src/go`
+   package suites green).
+4. **Every AC has evidence.** AC1–AC5 all have concrete
+   command-output/test-name evidence in §ACs (AC2 additionally carries a
+   resumption-pass correction, see §Self-check).
+5. **Known debt explicit.** §Debt, 6 items, one explicitly marked
+   resolved-not-carried-forward.
+6. **Schema/shape audit.** N/A — no schema change (`labels.json`'s
+   `cn.labels.v1` schema shape is unchanged; only one data value edited,
+   see §Debt item 1 / AC2).
+7. **Peer enumeration.** Completed at original implementation time
+   (doctrine SKILL.md, `INSTALL-CDS.md`, `cmd_repo_install.go` doc
+   comment, CLI ergonomics smoke-test family) — re-confirmed present in
+   this resumption's §CDD Trace step 6 file-by-file table.
+8. **Harness audit.** N/A — no parser/schema-bearing contract changed;
+   the CI-workflow-file peer (`build.yml`'s smoke-test loop and dispatch
+   boundary check) was itself enumerated per `alpha/SKILL.md` §2.3's
+   CI-workflow-comment peer class, and reconfirmed working live in this
+   resumption (green CI at head).
+9. **Post-patch re-audit, all languages in the diff.** This diff spans
+   Go, YAML, JSON, and Markdown. Go: `go build ./... && go test ./...`
+   (both modules) + `gofmt -l` (clean). YAML: `build.yml` parsed with
+   `yaml.safe_load` (`YAML OK`). JSON: `labels.json` parsed with `jq`
+   (valid) and diffed against live GitHub state (byte-equal, all 8
+   entries). Markdown: `INSTALL-CDS.md` / `label-doctrine/SKILL.md`
+   diffs read in full (§CDD Trace step 6); no other Markdown/prose
+   surface names the old stub error string or the old 149-byte
+   description (grepped, see §Self-check / §Debt item 1).
+10. **Branch CI green on the head commit.** Confirmed: `gh run list
+    --repo usurobor/cnos --branch cycle/493` for head `d504ef3a` —
+    both the `push` and `pull_request` "Build" workflow runs report
+    `success`, including the specific "CDD artifact ledger validation
+    (I6)" job this resumption exists to turn green (job-level
+    `conclusion: success`, re-checked via `gh run view <id> --json
+    jobs` at signal time, not just the aggregate workflow conclusion).
+11. **Artifact enumeration matches diff.** §CDD Trace step 6 enumerates
+    all 26 files in `git diff --stat origin/main..HEAD`; each maps to an
+    AC row, a §Debt item, or is itself the trace/scaffold/claim artifact.
+12. **Caller-path trace for new modules.** §CDD Trace step 6 names both
+    non-test callers of `labeldoctor` (`cmd_label_doctor.go`,
+    `repoinstall.go`) with call sites.
+13. **Test-runner output line count.** §CDD Trace step 7 pastes the
+    actual `grep -c` counts from a real run: 32 (label-doctor), 15
+    (src/go package suites) — not manually enumerated.
+14. **Commit author email.** `sigma@cnos.cn-sigma.cnos` — per this
+    cycle's explicit dispatch instructions (bootstrap/single-operator
+    context, not a multi-role-identity cnos deployment), the
+    `alpha@{project}.cdd.cnos` canonical-role-email requirement is
+    explicitly waived for this cycle; disclosed in §Debt item 6 rather
+    than silently accepted.
+15. **γ-side artifact presence (rule 3.11b surface).** `git cat-file -e
+    origin/cycle/493:.cdd/unreleased/493/gamma-scaffold.md` → present.
+    **γ-artifact at canonical §5.1 path.**
+
+All 15 rows pass or are explicitly disclosed. Ready for β.
