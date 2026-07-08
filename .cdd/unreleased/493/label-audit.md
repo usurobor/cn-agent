@@ -128,3 +128,53 @@ remains empty live and cannot be set to the canonical value until
 characters. This is named as known debt in `self-coherence.md` §Debt —
 a small, well-scoped follow-up against `labels.json` itself (owned by
 cnos.core's label doctrine, not this issue) would close it completely.
+
+## Update (resumption pass, 2026-07-08): residual gap closed
+
+The "residual gap" above is now resolved and this section records how,
+rather than silently rewriting the account above (per `alpha/SKILL.md`
+§2.3's commit-message/intra-doc-repetition rule — the fact appeared at
+three sites: this file's "Before"/"After" transcripts and "Residual gap"
+prose, plus `self-coherence.md`'s AC2 evidence; all three are addressed
+here and in a corresponding `self-coherence.md` correction note rather
+than edited in place).
+
+Commit `0135b30b` ("fix over-100 dispatch:cell label description
+(GitHub API limit)") shortened `labels.json`'s `dispatch:cell.description`
+from the 149-byte string quoted above to a 92-byte string ("Executable
+cell; claimable by a dispatch wake with status:todo and a matching
+protocol:{id}."), and updated `label-doctrine/SKILL.md`'s doc table to
+match. That commit landed on the branch but its downstream effect — the
+*live* `usurobor/cnos` label was never re-repaired against the new,
+now-installable description — was not yet re-verified against the real
+repo.
+
+Re-verified live during this resumption pass:
+
+```
+$ cn label doctor --repo usurobor/cnos --dry-run
+...
+  drifted  dispatch:cell        color: 1d76db -> 1d76db; description: "" -> "Executable cell; claimable by a dispatch wake with status:todo and a matching protocol:{id}."
+✗ label-doctor: drift detected (1 finding(s) not canonical) — rerun without --dry-run to repair
+
+$ cn label doctor --repo usurobor/cnos
+... (exit 0, no error)
+
+$ gh label list --repo usurobor/cnos --json name,color,description | jq -c '.[] | select(.name=="dispatch:cell")'
+{"color":"1d76db","description":"Executable cell; claimable by a dispatch wake with status:todo and a matching protocol:{id}.","name":"dispatch:cell"}
+
+$ cn label doctor --repo usurobor/cnos --dry-run
+... (all 8 labels report "match", exit 0)
+```
+
+**All 8/8 canonical labels are now fully canonical live** (color AND
+description byte-equal to `labels.json`), including `dispatch:cell`.
+AC2 is fully MET, not partially MET — see the corresponding correction
+note in `self-coherence.md` §ACs. The "known debt" this section
+originally pointed at (`labels.json`'s `dispatch:cell` description
+being un-settable via the API) is resolved, not merely worked around;
+see `self-coherence.md` §Debt for the residual debt that legitimately
+remains (the manual `gh api` color-only PATCH performed earlier in this
+same cycle, before commit `0135b30b` landed, was itself superseded by
+the full `cn label doctor` repair above — no separate cleanup needed,
+the tool's own repair overwrote it).

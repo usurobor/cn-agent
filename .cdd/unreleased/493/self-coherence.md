@@ -63,6 +63,8 @@ $ gh label list --repo usurobor/cnos --limit 200 --json name,color,description |
 
 **Status: MET for 7/8; PARTIALLY MET for `dispatch:cell`** (color canonical, description structurally inapplicable — genuine `labels.json` data defect, out of this issue's pinned scope to silently edit; see §Debt).
 
+**Correction (resumption pass, 2026-07-08):** the above was accurate at original write time (implementation SHA `a73e1f38`) but is now stale. A later commit on this same branch, `0135b30b` ("fix over-100 dispatch:cell label description (GitHub API limit)"), shortened `labels.json`'s `dispatch:cell.description` from 149 bytes to 92 bytes (under GitHub's 100-character API limit), removing the "structurally inapplicable" blocker this AC's original text names. During this resumption pass, `cn label doctor --repo usurobor/cnos --dry-run` showed the live label still carried the old (empty) description — the manifest fix had landed but the live repair had not yet been re-applied — so `cn label doctor --repo usurobor/cnos` (no `--dry-run`) was run against the real repo, and a follow-up `--dry-run` confirmed all 8/8 canonical labels, including `dispatch:cell`, now report `match` (color `1d76db`, description byte-equal to `labels.json`'s new 92-byte string). Full transcript in `.cdd/unreleased/493/label-audit.md` §"Update (resumption pass, 2026-07-08): residual gap closed". **AC2 status is corrected to fully MET (8/8), not 7/8 partial.**
+
 ### AC3 — `status:review` corrected
 
 **Oracle:** `status:review.color == "5319e7"`, checked independently of AC2.
