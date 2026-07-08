@@ -37,7 +37,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -101,12 +101,12 @@ jobs:
           token: ${{ steps.token.outputs.token }}
           commit-message: "chore(cnos): install CDS packages"
           branch: cnos-install/${{ github.run_id }}
-          title: "cnos install (${{ inputs.install_dispatch == 'true' && format('base + dispatch, agent: {0}', inputs.agent) || 'base' }})"
+          title: "cnos install (${{ inputs.install_dispatch && format('base + dispatch, agent: {0}', inputs.agent) || 'base' }})"
           body: |
             Opened by the `cnos install` GitHub UI workflow (`cnos-install.yml`).
 
             - release: `${{ inputs.release }}`
-            - dispatch: ${{ inputs.install_dispatch == 'true' && format('cds (agent: {0})', inputs.agent) || 'none' }}
+            - dispatch: ${{ inputs.install_dispatch && format('cds (agent: {0})', inputs.agent) || 'none' }}
 
             See `docs/guides/INSTALL-CDS.md` for what this installs and which
             secrets each mode needs.
