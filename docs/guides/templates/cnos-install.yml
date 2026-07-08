@@ -1,0 +1,113 @@
+# Copy this file into <your-repo>/.github/workflows/cnos-install.yml to get
+# a no-terminal, GitHub-UI install path for CDS. Trigger it from the Actions
+# tab ("Run workflow") — it never runs automatically (no push/schedule
+# trigger) and it never pushes to `main` directly.
+#
+# This workflow is a thin wrapper, not a reimplementation: all install logic
+# lives in `cn repo install` (see docs/guides/INSTALL-CDS.md). This file only
+# (1) installs the `cn` binary, (2) calls `cn repo install` with the chosen
+# inputs, and (3) opens a pull request with the result.
+#
+# See docs/guides/INSTALL-CDS.md § GitHub UI (no-terminal) install for what
+# each input does and which secrets each mode needs.
+name: cnos install
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "cnos release to install (a tag, or 'latest')"
+        default: latest
+        required: false
+        type: string
+      install_dispatch:
+        description: "Also install the autonomous dispatch workflow (needs a workflow-scoped PAT — see workflow_pat_secret)"
+        default: false
+        required: false
+        type: boolean
+      workflow_pat_secret:
+        description: "Name of the repo secret holding a workflow-scoped PAT. Required when install_dispatch is true — both to push .github/workflows/ here, and as the identity the rendered dispatch workflow uses at its own runtime."
+        default: CNOS_WORKFLOW_PAT
+        required: false
+        type: string
+      agent:
+        description: "Dispatch agent identity (used only when install_dispatch is true)"
+        default: cnos
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve installing token
+        id: token
+        # Base mode (install_dispatch=false): the diff never touches
+        # .github/workflows/, so the default GITHUB_TOKEN is enough (Mock D1).
+        # Dispatch mode (install_dispatch=true) writes a NEW
+        # .github/workflows/cnos-cds-dispatch.yml, which GITHUB_TOKEN cannot
+        # push (no `workflow` scope) — that mode requires the caller to have
+        # already set the named secret. Fail here, before any checkout or
+        # write, rather than let a later push fail opaquely (Mock D2/D3).
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.install_dispatch }}" = "true" ]; then
+            SECRET_VALUE="${{ secrets[inputs.workflow_pat_secret] }}"
+            if [ -z "$SECRET_VALUE" ]; then
+              echo "::error::install_dispatch=true requires a workflow-scoped PAT in the repo secret named by workflow_pat_secret (got '${{ inputs.workflow_pat_secret }}', which is unset or empty). Set this secret first, then re-run 'Run workflow'. No files were written." >&2
+              exit 1
+            fi
+            echo "token=$SECRET_VALUE" >> "$GITHUB_OUTPUT"
+          else
+            echo "token=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.token.outputs.token }}
+
+      - name: Install cn (tenant-portable — no src/go build)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh \
+            | BIN_DIR="$HOME/.local/bin" sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: cn repo install
+        # Delegates entirely to the installer command — no deps.json /
+        # deps.lock.json / vendor-restore logic is reimplemented here
+        # (Mock D3).
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.install_dispatch }}" = "true" ]; then
+            cn repo install --release "${{ inputs.release }}" \
+              --dispatch cds \
+              --agent "${{ inputs.agent }}" \
+              --workflow-pat-secret "${{ inputs.workflow_pat_secret }}"
+          else
+            cn repo install --release "${{ inputs.release }}"
+          fi
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ steps.token.outputs.token }}
+          commit-message: "chore(cnos): install CDS packages"
+          branch: cnos-install/${{ github.run_id }}
+          title: "cnos install (${{ inputs.install_dispatch && format('base + dispatch, agent: {0}', inputs.agent) || 'base' }})"
+          body: |
+            Opened by the `cnos install` GitHub UI workflow (`cnos-install.yml`).
+
+            - release: `${{ inputs.release }}`
+            - dispatch: ${{ inputs.install_dispatch && format('cds (agent: {0})', inputs.agent) || 'none' }}
+
+            See `docs/guides/INSTALL-CDS.md` for what this installs and which
+            secrets each mode needs.
+          delete-branch: true

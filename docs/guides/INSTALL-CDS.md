@@ -165,6 +165,60 @@ cnos#493, and you must apply the labels to your repo manually.
 
 ---
 
+## GitHub UI (no-terminal) install
+
+Both layers above assume a terminal. If you'd rather install from the GitHub
+web UI — no local shell, no `cn` binary on your machine — copy
+[`docs/guides/templates/cnos-install.yml`](templates/cnos-install.yml) into
+your repo at `.github/workflows/cnos-install.yml`, then trigger it from the
+**Actions** tab ("Run workflow").
+
+This is a **thin wrapper**, not a second install path: the workflow's job
+body installs the `cn` binary and calls the exact same `cn repo install`
+command described above — install logic is not duplicated in YAML. It never
+runs automatically (`workflow_dispatch` only) and never pushes to `main`;
+it opens a pull request with the result, same as a human running the CLI by
+hand and opening a PR themselves.
+
+Inputs:
+
+| Input | Default | Meaning |
+|---|---|---|
+| `release` | `latest` | Same as `cn repo install --release`. |
+| `install_dispatch` | `false` | `true` installs Layer 2 (`--dispatch cds`) on top of the base install. |
+| `workflow_pat_secret` | `CNOS_WORKFLOW_PAT` | Name of the repo secret holding a workflow-scoped PAT. Required (and must already be set) when `install_dispatch: true` — see below. |
+| `agent` | `cnos` | Dispatch agent identity; only used when `install_dispatch: true`. |
+
+**Base run** (`install_dispatch: false`) needs nothing beyond the default
+`GITHUB_TOKEN` GitHub Actions already provides — the diff never touches
+`.github/workflows/`.
+
+**Dispatch run** (`install_dispatch: true`) writes a *new*
+`.github/workflows/cnos-cds-dispatch.yml`, which the default `GITHUB_TOKEN`
+cannot push (GitHub blocks `workflow`-scope writes from the default token).
+You must set the secret named by `workflow_pat_secret` to a `workflow`-scoped
+PAT **before** running the workflow. If it's unset or empty, the run fails
+immediately with a clear error naming the missing secret — it never opens a
+half-applied PR.
+
+## Tenant secrets, by tier
+
+What you provision depends on how far up the automation ladder you go:
+
+| Tier | What it is | Secrets needed |
+|---|---|---|
+| **Tier 1 — base install** | `cn repo install` (this guide's Layer 1). Just the CDS method, no automation. | None beyond what GitHub Actions already provides (`GITHUB_TOKEN`), and only if you use the GitHub UI path above — the plain CLI path needs no secrets at all. |
+| **Tier 2 — mechanical, label-driven** | A PAT-free mechanical engine (the CDS issue-state FSM, `cn issues fsm evaluate`) that reconciles label state without an agent in the loop. Forthcoming — tracked in cnos#613 (mechanical FSM-engine wake) and gated on cnos#493 (canonical dispatch labels). | `GITHUB_TOKEN` only (mechanical, no agent credential). |
+| **Tier 3 — autonomous dispatch** | This guide's Layer 2 (`--dispatch cds`): a scheduled agent that claims cells and opens PRs. | A `workflow`-scope PAT (named by `--workflow-pat-secret` / `workflow_pat_secret`) **and** `CLAUDE_CODE_OAUTH_TOKEN` for the agent runtime. |
+
+Tier 2's full runbook (per-secret setup steps, rotation guidance) is Sub 6's
+deliverable (cnos#613) and is not yet merged; this table names what each tier
+needs today so you can provision ahead of it, without duplicating content
+that issue will eventually own — once #613 lands, this table should point at
+its runbook rather than restate it.
+
+---
+
 ## Verifying the install
 
 ```sh
@@ -177,8 +231,9 @@ cat .cn/vendor/packages/cnos.cds/skills/cds/SKILL.md   # the CDS loader skill
 
 Remove `.cn/deps.json`, `.cn/deps.lock.json`, the `.cn/vendor/` gitignore
 line, and (if you enabled Layer 2) `.github/workflows/cnos-cds-dispatch.yml`.
-The `cn` binary is just a file on your `PATH`; delete it wherever `install.sh`
-placed it.
+If you adopted the GitHub UI path, also remove
+`.github/workflows/cnos-install.yml`. The `cn` binary is just a file on your
+`PATH`; delete it wherever `install.sh` placed it.
 
 ## Troubleshooting
 
@@ -190,9 +245,11 @@ placed it.
 | `cn: command not found` after install | `install.sh` put `cn` outside your `PATH`. Re-run with `BIN_DIR="$HOME/.local/bin"` and add that dir to `PATH`. |
 | `--dispatch cds` fails with "canonical dispatch labels not ensured: cnos#493 ..." | Expected today — the workflow still renders; apply the dispatch labels to your repo manually until cnos#493 ships. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
 | `--dispatch cds` fails with "--workflow-pat-secret is required for --agent ..." | Pass `--workflow-pat-secret <NAME>` (and, for a non-sigma agent, `--bot-name`/`--bot-id`) naming the GitHub Actions secret holding that agent's workflow-scoped PAT. |
+| GitHub UI install run fails with "`install_dispatch=true` requires a workflow-scoped PAT ..." | Set the repo secret named by the `workflow_pat_secret` input (default `CNOS_WORKFLOW_PAT`) to a `workflow`-scoped PAT before re-running "Run workflow" — see [§ GitHub UI (no-terminal) install](#github-ui-no-terminal-install). |
 
 ## Related
 
 - [`docs/reference/cli/CLI.md`](../reference/cli/CLI.md) — CLI reference.
 - [`docs/development/design/cn-repo-install-MOCKS.md`](../development/design/cn-repo-install-MOCKS.md) — the design surface `cn repo install` was built against.
 - [dispatch orchestrator skill](../../src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md) — the autonomous dispatch loop (Layer 2).
+- [`docs/guides/templates/cnos-install.yml`](templates/cnos-install.yml) — the GitHub UI install workflow template.
