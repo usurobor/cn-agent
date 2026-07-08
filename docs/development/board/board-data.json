@@ -2420,7 +2420,7 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "review",
+    "status": "ready",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2429,7 +2429,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-07T07:03:44Z",
-    "updated": "2026-07-08T21:02:11Z",
+    "updated": "2026-07-08T21:15:14Z",
     "url": "https://github.com/usurobor/cnos/issues/626"
   },
   {
