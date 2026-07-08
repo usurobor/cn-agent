@@ -262,3 +262,18 @@ pass. The external human operator reviews and merges PR #634 later;
 the post-merge steps this closeout explicitly declines to take (issue
 close assertion, PRA, cycle-directory move, hub-memory update,
 branch cleanup) follow at that point, not now.
+
+## Deliverable evidence (δ, cnos#524 closeout-integrity preflight)
+
+Per `cds-dispatch/SKILL.md` §"Closeout integrity preflight" — recorded here, on the cycle's closeout, immediately before δ requests the `status:in-progress → status:review` transition:
+
+```yaml
+deliverable_evidence:
+  pr: "#634 (cycle/493 -> main)"
+  head_sha: "682f815dd372511ef82b89c3b98e9e89ab6ec610"
+  base_sha: "90e9c8b2272052381848d1787441e7d12d994627"
+  commits_beyond_base: 23
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+All five checks named in the closeout-integrity preflight hold: (1) PR #634 exists and its body opens with `Closes #493`; (2) `cycle/493` HEAD (`682f815d`) differs from `base_sha` by 23 commits; (3) the `cycle/493` branch exists and differs from base (confirmed by the same commit count); (4) all six required `.cdd/unreleased/493/` closeout artifacts are present on the branch (listed above; independently confirmed via `git ls-tree -r origin/cycle/493 .cdd/unreleased/493/`); (5) this block itself names the PR number as evidence. PR #634 was marked ready-for-review (undrafted) and its title/body updated to reflect the converged cycle (previously an automated draft-checkpoint placeholder) as part of this same δ pass, per `delta/SKILL.md` §9.6's "δ opens (or updates) a cycle-PR scoped to the claimed cell."
