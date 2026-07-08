@@ -2471,5 +2471,26 @@
     "created": "2026-07-07T10:17:10Z",
     "updated": "2026-07-08T08:11:39Z",
     "url": "https://github.com/usurobor/cnos/issues/628"
+  },
+  {
+    "n": 633,
+    "t": "cds/fsm: lock rule ordering so `propose_status_todo_with_matter` can't shadow the in-progress→review transition",
+    "kind": "process",
+    "areas": [
+      "cds",
+      "wake"
+    ],
+    "pri": "P2",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-08T16:04:48Z",
+    "updated": "2026-07-08T16:04:48Z",
+    "url": "https://github.com/usurobor/cnos/issues/633"
   }
 ]
