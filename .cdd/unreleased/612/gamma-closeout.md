@@ -38,3 +38,20 @@ No new issues filed. The one process-gap identified above is already covered by 
 ---
 
 **Cycle #612's γ process-gap audit is closed. Full cycle closure is deferred to the merge/release step.**
+
+---
+
+## δ closeout-integrity preflight — deliverable_evidence
+
+Recorded by δ (cds-dispatch wake) before requesting `status:in-progress -> status:review`, per `cds-dispatch/SKILL.md` §"Closeout integrity preflight" (cnos#524):
+
+```yaml
+deliverable_evidence:
+  pr: "#631 (cycle/612 -> main)"
+  head_sha: "8db8ff4b4a41d35112f86ac5fa7775743ee8a4f6"
+  base_sha: "407e942a309922e102b88ed96a83ba47c8e93c6d"
+  commits_beyond_base: 1
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+All five deliverable-evidence conditions (PR exists and references #612; PR has commits beyond base; `cycle/612` exists and differs from base; all six required closeout artifacts present; this block names the PR number and commit SHA) are satisfied.
