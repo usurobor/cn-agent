@@ -65,7 +65,7 @@ Closed issue = done. There is no `status:done` (closing the issue is the termina
 
 | Label | Meaning |
 |---|---|
-| `dispatch:cell` | this issue is an executable implementation cell. Eligible to be claimed by a dispatch wake when paired with `status:todo` and a matching `protocol:{id}`. |
+| `dispatch:cell` | executable cell; claimable by a dispatch wake with `status:todo` and a matching `protocol:{id}`. |
 
 Issues that are NOT cells (master trackers, RFCs, planning issues, design notes, conversations) MUST NOT carry `dispatch:cell`. A `kind/wave` (or `tracking`) master that coordinates cells is not itself a cell — sub-issues are.
 
