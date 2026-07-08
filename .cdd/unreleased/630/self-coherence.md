@@ -79,7 +79,7 @@ Implementation SHA for all evidence below: `a2e9e7dcb0078947a99fe8891c1d68ab1cfb
 1. `TestScan_DeadWithPRNoReviewRequest_FinalizeNoOpNoComment` → `TestScan_DeadWithCheckpointedPR_RequeuesToTodoPreservingMatter` (rename + behavior-assertion flip). Why: this test's old assertions were a literal specification of the wedge bug against the exact fixture this issue fixes; asserting the fix's behavior against the same fixture is AC2's own requirement, not an incidental behavior change.
 2. `TestScan_Idempotent` (kept its name; assertions updated in place for the `checkpointed` sub-case only — the `deadNoMatter` and `blocked` sub-cases are unchanged). Why: the `checkpointed` fixture's old expected idempotence shape ("finalize re-invoked forever, no new comment") was the wedge's own steady-state; the new expected shape ("reconciles once, absent from the next scan's active-issue listing") is the correct idempotence property of the fix, using the exact same "drop from listing once reconciled" convention this test already applied to its other sub-case.
 
-No other pre-existing test's assertions changed. Confirmed by re-running the full suite (§Self-check) and by the fixture-level audit in §Skills/§Design-call-1 showing only one fixture (`scan-died-after-pr-before-review-request.json`, issue #9601) in the entire `testdata/` directory has `pr_exists: true` + dead-run + `review_request_present: false` + no release/block markers — i.e. the new rule's guard combination is provably reachable by exactly one pre-existing fixture, confirmed by a table scan of every fixture's `pr_exists`/`run_state`/`review_request_present`/`release_request_present`/`block_request_present` fields (all 22 pre-existing fixtures under `testdata/` enumerated; only issue #9601's fixture matches).
+No other pre-existing test's assertions changed. Confirmed by re-running the full suite (§Self-check) and by the fixture-level audit above (§ACs, Design call 1) showing only one fixture (`scan-died-after-pr-before-review-request.json`, issue #9601) in the entire `testdata/` directory has `pr_exists: true` + dead-run + `review_request_present: false` + no release/block markers — i.e. the new rule's guard combination is provably reachable by exactly one pre-existing fixture, confirmed by a table scan of every fixture's `pr_exists`/`run_state`/`review_request_present`/`release_request_present`/`block_request_present` fields (all 22 pre-existing fixtures under `testdata/` enumerated; only issue #9601's fixture matches).
 
 `TestSeam_CellKindNotEnforced` — located via `grep -rn TestSeam_CellKindNotEnforced src/` → `issuesfsm_test.go:810`; included in the full-suite run above; passes.
 
@@ -94,3 +94,92 @@ No other pre-existing test's assertions changed. Confirmed by re-running the ful
 **Oracle:** running the new reconciliation path twice against the same fixture state produces zero new mutations/comments/PRs on the second pass.
 
 **Evidence:** `TestScan_Idempotent` (`scan_test.go`, updated per AC5 above) now covers this directly: first `RunScan` pass against `{deadNoMatter, checkpointed, blocked}` produces exactly 2 comments (one per requeue path, including the new with-matter requeue) and 0 finalize calls; the second pass — simulating the post-reconciliation world by dropping both reconciled issues from the active-issue listing, exactly mirroring the convention the test already used for `deadNoMatter` — produces zero new comments, zero new finalize calls, and zero new label requests (`secondLabelCount == 0`, asserted). This is the same "state moved out of the active-scan set" idempotence proof the pre-existing `deadNoMatter` case already used, extended to the new with-matter requeue path per the scaffold's explicit instruction not to duplicate the finalizer's own idempotence coverage (already proven by `TestScan_DeltaRecoveryObserveApplyRace_FinalizeNoOpNoComment` and the pre-existing `TestScan_DeadWithMatterNoPR_FinalizesAndComments`) and to test only the new requeue/resume path's idempotence.
+
+## Self-check
+
+**Role self-check.** Did this round push ambiguity onto β? Both open design calls the scaffold flagged are resolved and documented above with concrete rationale tied to the actual guard vocabulary (not restated scaffold text) — β should not need to re-derive either decision from scratch, only verify it. Every AC claim above cites a specific test name and file; β can re-run each one independently rather than trusting narrative. The one area of judgment β should specifically re-examine: whether the `resumed_from_matter` / §9.11 doctrine addition is *sufficiently* load-bearing to satisfy AC3, since (per the scaffold's own Friction note 2) this is a doctrine-quality question, not a code-coverage one, and reasonable readers could disagree on how explicit is explicit enough.
+
+**Exact commands run and their output** (all from `/home/runner/work/cnos/cnos` unless noted; SHA at time of this run: `a2e9e7dcb0078947a99fe8891c1d68ab1cfb17b3` plus this document's own commits on top):
+
+```
+$ cd src/packages/cnos.issues/commands/issues-fsm && go build ./... && go vet ./...
+(no output; exit 0)
+
+$ go test ./... -v 2>&1 | grep -c '^--- PASS'
+77
+$ go test ./... -v 2>&1 | grep -c '^--- FAIL'
+0
+$ go test ./...
+ok  	github.com/usurobor/cnos/packages/cnos.issues/commands/issues-fsm	0.042s -0.187s (varies by cache state)
+
+$ go test ./... -race
+ok  	github.com/usurobor/cnos/packages/cnos.issues/commands/issues-fsm	1.196s
+
+$ go test ./... -v 2>&1 | grep -E 'TestAC630|TestScan_Dead(WithCheckpointedPR|NoMatter)|TestScan_DeltaRecoveryObserveApplyRace|TestScan_Idempotent|TestSeam_CellKindNotEnforced'
+--- PASS: TestScan_DeadNoMatter_RequeuesToTodo (0.00s)
+--- PASS: TestScan_DeltaRecoveryObserveApplyRace_FinalizeNoOpNoComment (0.00s)
+--- PASS: TestScan_DeadWithCheckpointedPR_RequeuesToTodoPreservingMatter (0.00s)
+--- PASS: TestScan_Idempotent (0.00s)
+--- PASS: TestAC630_WedgePreFixRuleReproducesStrand (0.00s)
+--- PASS: TestAC630_WedgeFixResolvesToTodoWithMatterPreserved (0.00s)
+--- PASS: TestAC630_AuditNoteReasonNamesMechanicalReversion (0.00s)
+--- PASS: TestAC630_TodoWithExistingBranchAndPRResumesNotDeferred (0.00s)
+--- PASS: TestSeam_CellKindNotEnforced (0.00s)
+```
+
+```
+$ bash scripts/ci/check-dispatch-repair-preflight.sh
+cnos#516 repair-preflight guard: dispatch surface carries the repair re-entry contract (protocol + prompt + golden + live workflow).
+(exit 0)
+
+$ bash scripts/ci/check-dispatch-closeout-integrity.sh
+cnos#524 closeout-integrity guard: dispatch surface carries the deliverable-proof contract (protocol + prompt + SKILL + golden + live). The empty-review detector itself is proven live by the Go FSM test suite (see header note) rather than by a bash self-test.
+(exit 0)
+```
+
+```
+$ for d in src/go src/packages/cnos.cdd/commands/cdd-verify src/packages/cnos.issues/commands/issues-map src/packages/cnos.issues/commands/issues-fsm; do (cd "$d" && go build ./... && go vet ./...); done
+(all four modules: no output, exit 0)
+
+$ cd src/go && go test ./...
+ok  	github.com/usurobor/cnos/src/go/internal/activate	0.038s
+ok  	github.com/usurobor/cnos/src/go/internal/activation	0.069s
+ok  	github.com/usurobor/cnos/src/go/internal/binupdate	0.018s
+ok  	github.com/usurobor/cnos/src/go/internal/cell	0.017s
+ok  	github.com/usurobor/cnos/src/go/internal/cli	2.631s
+ok  	github.com/usurobor/cnos/src/go/internal/discover	0.014s
+ok  	github.com/usurobor/cnos/src/go/internal/dispatch	0.006s
+ok  	github.com/usurobor/cnos/src/go/internal/doctor	0.308s
+ok  	github.com/usurobor/cnos/src/go/internal/hubinit	0.039s
+ok  	github.com/usurobor/cnos/src/go/internal/hubsetup	0.008s
+ok  	github.com/usurobor/cnos/src/go/internal/hubstatus	0.016s
+ok  	github.com/usurobor/cnos/src/go/internal/pkg	0.004s
+ok  	github.com/usurobor/cnos/src/go/internal/pkgbuild	0.110s
+ok  	github.com/usurobor/cnos/src/go/internal/repoinstall	0.974s
+ok  	github.com/usurobor/cnos/src/go/internal/restore	0.036s
+(cmd/cn: [no test files])
+```
+
+```
+$ sha256sum .github/workflows/cnos-cds-dispatch.yml src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+78711c5c5aaaef3270d532dfd1daeda750b24c22124ecb6bf40f620d9465c817  .github/workflows/cnos-cds-dispatch.yml
+78711c5c5aaaef3270d532dfd1daeda750b24c22124ecb6bf40f620d9465c817  src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+(byte-identical, confirms the render committed matches the live workflow)
+```
+
+**Artifact-enumeration-matches-diff check (pre-review gate row 11).** `git diff --stat origin/main..HEAD` (run just before this section was written) against this section's + §ACs' coverage:
+
+| File | Named above? |
+|---|---|
+| `src/packages/cnos.cds/skills/cds/fsm/transitions.json` | Yes — §ACs Design call 1, AC1-AC6 |
+| `src/packages/cnos.issues/commands/issues-fsm/table.go` | Yes — §ACs Design call 1 (Action doc comment) |
+| `src/packages/cnos.issues/commands/issues-fsm/scan.go` | Yes — §ACs AC1/AC4 (comment updates only, no new branch) |
+| `src/packages/cnos.issues/commands/issues-fsm/scan_test.go` | Yes — §ACs AC2/AC5/AC6 (redirected + new tests) |
+| `src/packages/cnos.issues/commands/issues-fsm/issuesfsm_test.go` | Yes — §ACs AC1/AC2/AC3/AC4 (new `TestAC630_*` tests) |
+| `src/packages/cnos.issues/commands/issues-fsm/testdata/todo-resume-existing-matter.json` | Yes — §ACs AC3 |
+| `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` | Yes — §ACs Design call 2 / AC3 / AC4 |
+| `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml` | Yes — §ACs AC5 (install-wake-golden gate) |
+| `.github/workflows/cnos-cds-dispatch.yml` | Yes — §ACs AC5 (install-wake-golden gate) |
+| `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` | Yes — §ACs Design call 2 / AC3 |
+
+**Caller-path trace for new modules (pre-review gate row 12).** No new Go module or package was added this cycle — `propose_status_todo_with_matter` is a new *action-id string* (data, not code), consumed by `scan.go`'s pre-existing generic reconcile branch (`scanOne`, the `case dec.Outcome == "proposed" && dec.TargetState != ""` arm, unchanged code, already the caller for Cases 2/5). No new Go function was added without a non-test caller; every new test function's caller is the Go test runner itself (the standard, expected caller for `Test*` functions).
