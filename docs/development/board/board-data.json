@@ -2369,27 +2369,6 @@
     "url": "https://github.com/usurobor/cnos/issues/613"
   },
   {
-    "n": 614,
-    "t": "cdd: amend CELL-KINDS (#570) — add `planning` cell kind + mandatory terminal learning / ε-observations section",
-    "kind": "process",
-    "areas": [
-      "cdd",
-      "coherence"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-06T16:51:31Z",
-    "updated": "2026-07-08T06:52:32Z",
-    "url": "https://github.com/usurobor/cnos/issues/614"
-  },
-  {
     "n": 616,
     "t": "cdd/gamma: scaffold AC-oracle-approach must propagate negative-invariant clauses with dispatch-boundary precision (cdd-protocol-gap, cycle #608)",
     "kind": "skill",
