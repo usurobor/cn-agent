@@ -1,0 +1,12 @@
+claim_request:
+  issue: 493
+  wake: cds-dispatch
+  protocol: cds
+  requested_transition: "todo -> in-progress"
+  requested_by: sigma
+  base_sha: 31d7ddfa53efb67f2d996b085f4d92986b585ef9
+  reason: >
+    cds-dispatch wake claim per cnos#454 dispatch-protocol §2 claim
+    mechanism / cnos#575 Phase 3: explicit request to move status:todo ->
+    status:in-progress via `cn issues fsm evaluate --issue 493 --apply`,
+    instead of a direct label write.
