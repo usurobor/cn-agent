@@ -1,0 +1,91 @@
+# ONE-OFF, SELF-DELETING. Builds + publishes the 3.82.2 release onto the
+# existing 3.82.2 tag, then removes itself. The tag exists but release.yml did
+# not fire (the workflow-PAT-pushed tag doesn't trigger workflows), so this
+# does the build+publish inline. cn is pure-stdlib/no-cgo, so all four target
+# binaries cross-compile from a single ubuntu runner.
+name: oneoff publish 3.82.2
+
+on:
+  push:
+    paths:
+      - '.github/workflows/oneoff-publish-3822.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '3.82.2'
+          fetch-depth: 0
+          token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Cross-compile binaries (no cgo)
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          cd src/go
+          b() { GOOS="$1" GOARCH="$2" CGO_ENABLED=0 go build -ldflags "-X main.version=3.82.2" -o "$GITHUB_WORKSPACE/artifacts/$3" ./cmd/cn; echo "built $3"; }
+          b linux  amd64 cn-linux-x64
+          b linux  arm64 cn-linux-arm64
+          b darwin amd64 cn-macos-x64
+          b darwin arm64 cn-macos-arm64
+
+      - name: Checksums
+        run: |
+          set -euo pipefail
+          cd artifacts
+          sha256sum cn-linux-x64 cn-linux-arm64 cn-macos-x64 cn-macos-arm64 > checksums.txt
+          cat checksums.txt
+
+      - name: Build package tarballs + index
+        run: |
+          set -euo pipefail
+          (cd src/go && CGO_ENABLED=0 go build -o /tmp/cn ./cmd/cn)
+          /tmp/cn build
+          cp dist/packages/*.tar.gz  artifacts/ 2>/dev/null || true
+          cp dist/packages/index.json artifacts/ 2>/dev/null || true
+          ls -la artifacts
+
+      - name: Publish release 3.82.2
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: '3.82.2'
+          name: '3.82.2 — cn repo install (CDS repo installer + ergonomics)'
+          body: |
+            Tooling patch cutting the current `main` `cn` — with the first-class
+            `cn repo install` / `cn repo install --dispatch cds` repo installer
+            (cnos#608/#609/#610), the GitHub-UI bootstrap wrapper (cnos#611), and
+            the `cn --version`/help/init ergonomics fixes (cnos#612) — plus the
+            refreshed package index + tarballs. 3.83.0 remains held per D14.
+          prerelease: false
+          make_latest: true
+          files: |
+            artifacts/cn-linux-x64
+            artifacts/cn-linux-arm64
+            artifacts/cn-macos-x64
+            artifacts/cn-macos-arm64
+            artifacts/checksums.txt
+            artifacts/*.tar.gz
+            artifacts/index.json
+
+      - name: Self-delete this one-off workflow
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          if [ -f .github/workflows/oneoff-publish-3822.yml ]; then
+            git rm .github/workflows/oneoff-publish-3822.yml
+            git commit -m "chore: self-delete one-off publish-3.82.2 workflow"
+            for i in 1 2 3; do git push origin HEAD:main && break; git fetch origin main && git rebase origin/main || true; done
+          fi
