@@ -1,0 +1,7 @@
+claimed_by: cds-dispatch/local-run-20260708
+protocol: cds
+requested_at: 2026-07-08
+issue: 626
+note: >
+  Clean first dispatch -- no cycle/626 branch or prior claim exists.
+  Operator authorized dispatch 2026-07-08 (issue comment "Dispatch authorized").
