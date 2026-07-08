@@ -217,6 +217,30 @@ func TestPrintGroup(t *testing.T) {
 	}
 }
 
+// cnos#612 AC4: names shadowed by a noun-group collision (only reachable
+// via the noun-verb space form, per TestResolveCommandFlatHyphenatedRejected
+// above) must render in the space form; names with no such collision are
+// unaffected.
+func TestInvocationName(t *testing.T) {
+	reg := newTestRegistry()
+
+	cases := []struct {
+		name string
+		want string
+	}{
+		{"kata-run", "kata run"},
+		{"kata-list", "kata list"},
+		{"doctor", "doctor"},   // no hyphen at all
+		{"deps", "deps"},       // no hyphen at all
+		{"bogus-thing", "bogus-thing"}, // hyphenated but no sibling group member
+	}
+	for _, c := range cases {
+		if got := InvocationName(reg, c.name); got != c.want {
+			t.Errorf("InvocationName(%q) = %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
 func TestPrintGroupUnknownPrefix(t *testing.T) {
 	reg := newTestRegistry()
 

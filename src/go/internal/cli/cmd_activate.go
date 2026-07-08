@@ -46,6 +46,13 @@ func (c *ActivateCmd) Spec() CommandSpec {
 	}
 }
 
+// Help implements HelpProvider (cnos#612 AC2) so main.go's generic
+// --help/-h interception, which runs before Run, surfaces this text
+// instead of the generic invocation+summary fallback.
+func (c *ActivateCmd) Help() string {
+	return activateHelp
+}
+
 func (c *ActivateCmd) Run(ctx context.Context, inv Invocation) error {
 	// Parse args: --help/-h, --claude, --codex, and a single positional HUB_DIR.
 	var claudeFlag, codexFlag bool

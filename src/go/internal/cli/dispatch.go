@@ -87,6 +87,28 @@ func ResolveCommand(reg *Registry, args []string) Resolution {
 	return Resolution{}
 }
 
+// InvocationName returns the user-facing invocation form of a registered
+// command name.
+//
+// Names whose prefix before the first hyphen collides with a noun group
+// (e.g. "issues-fsm", sibling to "issues-map") are only reachable via the
+// noun-verb space form ("issues fsm") — ResolveCommand's flat-form reject
+// rule (see above) means the literal hyphenated token is never dispatched
+// to the command itself, only to the group listing. Displaying such a name
+// hyphenated (as `cn help` did before cnos#612) shows an invocation that
+// does not actually run the command. Names with no such collision (e.g. a
+// repo-local command with an incidental hyphen in its name) are returned
+// unchanged, since the flat form does dispatch them.
+func InvocationName(reg *Registry, name string) string {
+	if i := strings.IndexByte(name, '-'); i > 0 {
+		prefix := name[:i]
+		if len(GroupMembers(reg, prefix)) > 0 {
+			return prefix + " " + name[i+1:]
+		}
+	}
+	return name
+}
+
 // GroupMembers returns commands whose name starts with prefix+"-".
 // Results are returned in registry order so help output is deterministic.
 func GroupMembers(reg *Registry, prefix string) []Command {

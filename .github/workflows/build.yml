@@ -69,6 +69,68 @@ jobs:
         run: |
           ./cn help
 
+      # cnos#612 Mock F (docs/development/design/cn-repo-install-MOCKS.md
+      # §Mock F) — CLI ergonomics for onboarding. Exercises the real binary
+      # end to end, the same way a first-time tenant would (cnos#606 C3).
+      - name: CLI ergonomics smoke test (cnos#612 F1-F4)
+        working-directory: src/go
+        run: |
+          set -euo pipefail
+
+          # F1 — cn --version / -V prints the version, exit 0.
+          ./cn --version | grep -q '^cn v'
+          ./cn -V | grep -q '^cn v'
+
+          # F2 — --help/-h works on cn and every command incl. cn repo install.
+          ./cn --help >/dev/null
+          ./cn -h >/dev/null
+          for c in "doctor" "status" "deps" "build" "update" "setup" "dispatch" \
+                   "cell finalize" "cell return" "cell resume" \
+                   "issues fsm" "issues map" "cdd verify" "activate" "repo install"; do
+            ./cn $c --help >/dev/null || { echo "FAIL: cn $c --help did not exit 0"; exit 1; }
+          done
+          ./cn repo install --help | grep -q -- '--dry-run'
+
+          # F3 — cn init refuses an unrecognized flag; scaffolds nothing.
+          # Covers both the general case (--bogus) and the literal cnos#606
+          # C3 repro (--help previously created a stray "cn---help/" dir).
+          CN_BIN="$PWD/cn"
+          rm -rf /tmp/cn-init-smoke && mkdir -p /tmp/cn-init-smoke
+          cd /tmp/cn-init-smoke
+          if "$CN_BIN" init --bogus >/dev/null 2>&1; then
+            echo "FAIL: cn init --bogus should have failed"; exit 1
+          fi
+          if [ -n "$(ls -A /tmp/cn-init-smoke)" ]; then
+            echo "FAIL: cn init --bogus scaffolded something"; ls -la /tmp/cn-init-smoke; exit 1
+          fi
+          "$CN_BIN" init --help >/dev/null 2>&1  # AC2: exit 0, usage text
+          if [ -d "cn---help" ] || [ -n "$(ls -A /tmp/cn-init-smoke)" ]; then
+            echo "FAIL: cn init --help scaffolded something"; ls -la /tmp/cn-init-smoke; exit 1
+          fi
+          cd - >/dev/null
+          rm -rf /tmp/cn-init-smoke
+
+          # F4 — cn help and cn status display names match real invocation
+          # (space form, not the internal hyphenated registry key).
+          HELP_OUT="$(./cn help)"
+          echo "$HELP_OUT" | grep -q 'issues fsm'
+          echo "$HELP_OUT" | grep -q 'cell finalize'
+          if echo "$HELP_OUT" | grep -qE 'issues-fsm|cell-finalize|cell-return|cell-resume|repo-install|cdd-verify|issues-map'; then
+            echo "FAIL: cn help leaked a non-invocable hyphenated name"; exit 1
+          fi
+
+          rm -rf /tmp/cn-status-smoke && mkdir -p /tmp/cn-status-smoke && cd /tmp/cn-status-smoke
+          "$CN_BIN" init statushub >/dev/null
+          cd cn-statushub
+          STATUS_OUT="$("$CN_BIN" status)"
+          if echo "$STATUS_OUT" | grep -qE 'issues-fsm|cell-finalize|cell-return|cell-resume|repo-install|cdd-verify|issues-map'; then
+            echo "FAIL: cn status leaked a non-invocable hyphenated name"; echo "$STATUS_OUT"; exit 1
+          fi
+          cd - >/dev/null
+          rm -rf /tmp/cn-status-smoke
+
+          echo "PASS: cnos#612 F1-F4"
+
   binary-verify:
     name: Binary verification
     runs-on: ubuntu-latest

@@ -1,0 +1,18 @@
+issue: 612
+protocol: cds
+cycle_branch: cycle/612
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/631"
+converge_verdict_ref: .cdd/unreleased/612/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's Round 0
+  converge verdict (one blocking finding: cn status printed the same
+  non-invocable hyphenated command names cn help was fixing for AC4,
+  found by independent rebuild + re-drive of the binary, not named in
+  the issue's own AC text; fixed same round via the same InvocationName
+  helper, re-verified against a rebuilt binary). All closeout artifacts
+  (gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md,
+  beta-closeout.md, gamma-closeout.md) are present on this branch.
+  go build/vet/test clean across src/go and the three co-located modules
+  (issues-fsm, issues-map, cdd-verify). PR #631 opened by delta referencing
+  and closing #612, 1 commit beyond the cycle/612 <-> main merge-base.

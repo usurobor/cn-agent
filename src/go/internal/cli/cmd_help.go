@@ -64,7 +64,11 @@ func (c *HelpCmd) Run(_ context.Context, inv Invocation) error {
 			if !hasHub && spec.NeedsHub {
 				suffix = "  (requires hub)"
 			}
-			fmt.Fprintf(inv.Stdout, "  %-12s %s%s\n", spec.Name, spec.Summary, suffix)
+			// InvocationName (cnos#612 AC4): display the form that actually
+			// dispatches the command. Hyphenated names shadowed by a noun
+			// group (e.g. "issues-fsm") render as "issues fsm" — the
+			// hyphenated flat token only ever resolves to the group listing.
+			fmt.Fprintf(inv.Stdout, "  %-12s %s%s\n", InvocationName(c.Registry, spec.Name), spec.Summary, suffix)
 		}
 	}
 
@@ -72,7 +76,7 @@ func (c *HelpCmd) Run(_ context.Context, inv Invocation) error {
 		fmt.Fprintf(inv.Stdout, "\nRepo-local commands:\n")
 		for _, cmd := range repoLocalCmds {
 			spec := cmd.Spec()
-			fmt.Fprintf(inv.Stdout, "  %-12s %s\n", spec.Name, spec.Summary)
+			fmt.Fprintf(inv.Stdout, "  %-12s %s\n", InvocationName(c.Registry, spec.Name), spec.Summary)
 		}
 	}
 
@@ -80,7 +84,7 @@ func (c *HelpCmd) Run(_ context.Context, inv Invocation) error {
 		fmt.Fprintf(inv.Stdout, "\nPackage commands:\n")
 		for _, cmd := range packageCmds {
 			spec := cmd.Spec()
-			fmt.Fprintf(inv.Stdout, "  %-12s %s", spec.Name, spec.Summary)
+			fmt.Fprintf(inv.Stdout, "  %-12s %s", InvocationName(c.Registry, spec.Name), spec.Summary)
 			if spec.Package != "" {
 				fmt.Fprintf(inv.Stdout, "  [%s]", spec.Package)
 			}
