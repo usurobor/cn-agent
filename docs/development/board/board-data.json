@@ -1625,16 +1625,16 @@
       "core"
     ],
     "pri": "P1",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-06-24T05:06:19Z",
-    "updated": "2026-07-02T03:47:09Z",
+    "updated": "2026-07-08T15:27:53Z",
     "url": "https://github.com/usurobor/cnos/issues/493"
   },
   {
@@ -2376,16 +2376,16 @@
       "core"
     ],
     "pri": "P1",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T19:41:34Z",
-    "updated": "2026-07-06T19:41:34Z",
+    "updated": "2026-07-08T15:27:44Z",
     "url": "https://github.com/usurobor/cnos/issues/618"
   },
   {
