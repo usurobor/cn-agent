@@ -246,6 +246,70 @@ func TestDoctor_Apply_RepairsDriftAndIsIdempotent(t *testing.T) {
 	}
 }
 
+// TestDoctor_Apply_ContinuesPastPerLabelFailure is a regression test for
+// a real bug found live against usurobor/cnos: labels.json's
+// dispatch:cell description is 149 bytes, over GitHub's 100-character
+// label-description cap, so PATCHing it 422s. The original apply loop
+// returned immediately on the first per-label error, which would have
+// silently skipped repairing every finding that happened to sort AFTER
+// the failing one in manifest order. This test manufactures the same
+// shape with a synthetic manifest (one label GitHub's fake server
+// rejects, sandwiched between two it accepts) and asserts both
+// neighbors still get applied, and the failing one is reported in
+// res.Failed (not silently dropped) with a non-nil returned error.
+func TestDoctor_Apply_ContinuesPastPerLabelFailure(t *testing.T) {
+	manifest := `{
+  "schema": "cn.labels.v1",
+  "owner": "cnos.core",
+  "labels": [
+    {"name": "a-first", "color": "111111", "description": "first"},
+    {"name": "b-rejected", "color": "222222", "description": "this one 422s"},
+    {"name": "c-last", "color": "333333", "description": "last"}
+  ]
+}`
+	dir := t.TempDir()
+	labelsPath := filepath.Join(dir, "labels.json")
+	writeFile(t, labelsPath, manifest)
+
+	var applied []string
+	var mu sync.Mutex
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet:
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode([]ghLabel{}) // all three missing
+		case r.Method == http.MethodPost:
+			var l ghLabel
+			json.NewDecoder(r.Body).Decode(&l)
+			if l.Name == "b-rejected" {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				w.Write([]byte(`{"message":"Validation Failed","errors":[{"field":"description","message":"description is too long (maximum is 100 characters)"}]}`))
+				return
+			}
+			mu.Lock()
+			applied = append(applied, l.Name)
+			mu.Unlock()
+			w.WriteHeader(http.StatusCreated)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+
+	res, err := Doctor(context.Background(), Options{Repo: "usurobor/cnos", Token: "tok", LabelsPath: labelsPath})
+	if err == nil {
+		t.Fatal("expected a non-nil error (one label's repair failed)")
+	}
+	if len(applied) != 2 {
+		t.Fatalf("expected both neighbors to still be created despite the middle one's 422, got: %v", applied)
+	}
+	if len(res.Applied) != 2 || res.Applied[0] != "a-first" || res.Applied[1] != "c-last" {
+		t.Errorf("res.Applied = %v, want [a-first c-last]", res.Applied)
+	}
+	if len(res.Failed) != 1 || res.Failed[0] != "b-rejected" {
+		t.Errorf("res.Failed = %v, want [b-rejected]", res.Failed)
+	}
+}
+
 func TestDoctor_ResolvesRepoAndManifestFromRepoRoot(t *testing.T) {
 	store := newFakeLabelStore([]ghLabel{
 		{Name: "status:backlog", Color: "ededed", Description: "Well-formed scope but not yet refined."},

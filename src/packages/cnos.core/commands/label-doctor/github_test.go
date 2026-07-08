@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -78,6 +79,27 @@ func TestGhCreateLabel_Tolerates422AlreadyExists(t *testing.T) {
 	err := ghCreateLabel(context.Background(), "usurobor/cnos", "tok", ghLabel{Name: "status:blocked", Color: "b60205"})
 	if err != nil {
 		t.Fatalf("ghCreateLabel should tolerate 422 as a no-op, got: %v", err)
+	}
+}
+
+// TestGhCreateLabel_422WithoutAlreadyExistsCode_IsHardError is a
+// regression test for a real bug found live against usurobor/cnos:
+// ghCreateLabel originally tolerated ANY 422 as "already exists" — but
+// GitHub also returns 422 for other validation failures (e.g. a
+// description over 100 characters), which must NOT be silently
+// swallowed as a false success.
+func TestGhCreateLabel_422WithoutAlreadyExistsCode_IsHardError(t *testing.T) {
+	withFakeGitHub(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte(`{"message":"Validation Failed","errors":[{"resource":"Label","code":"custom","field":"description","message":"description is too long (maximum is 100 characters)"}]}`))
+	})
+
+	err := ghCreateLabel(context.Background(), "usurobor/cnos", "tok", ghLabel{Name: "dispatch:cell", Color: "1d76db", Description: "way too long"})
+	if err == nil {
+		t.Fatal("expected a 422 with a non-already_exists code to be a hard error, not a tolerated no-op")
+	}
+	if !strings.Contains(err.Error(), "too long") {
+		t.Errorf("error should surface the underlying GitHub validation message, got: %v", err)
 	}
 }
 

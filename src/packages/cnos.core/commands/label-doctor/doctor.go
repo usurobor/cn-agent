@@ -122,6 +122,13 @@ type Result struct {
 	// Applied holds the names of labels actually created/updated. Empty
 	// when DryRun is true (report-only) or when no drift existed.
 	Applied []string
+	// Failed holds the names of labels whose repair was attempted but
+	// failed (e.g. GitHub rejecting a manifest value, as opposed to a
+	// network/auth failure that aborts Doctor entirely before any
+	// attempt). Always empty when DryRun is true. A non-empty Failed
+	// does not stop other findings from being attempted — see Doctor's
+	// apply-loop doc comment.
+	Failed []string
 }
 
 // Doctor audits opts.Repo's live labels against opts.LabelsPath (or
@@ -182,21 +189,42 @@ func Doctor(ctx context.Context, opts Options) (*Result, error) {
 		return res, nil
 	}
 
+	// One label's repair failing (e.g. GitHub rejecting a manifest value
+	// outright — empirically hit live: labels.json's dispatch:cell
+	// description is 149 bytes, over GitHub's 100-character label-
+	// description cap, so PATCHing it 422s) must not block every OTHER
+	// label's repair. Every finding gets its own attempt; errors are
+	// collected and joined into a single returned error at the end, so
+	// Doctor still tells the caller exactly what succeeded (res.Applied)
+	// and what didn't (res.Failed) rather than aborting mid-manifest.
+	var errs []error
 	for _, f := range findings {
 		if !f.NeedsRepair() {
 			continue
 		}
+		var err error
 		switch f.Status {
 		case StatusMissing:
-			if err := ghCreateLabel(ctx, repo, token, ghLabel{Name: f.Name, Color: f.CanonicalColor, Description: f.CanonicalDescription}); err != nil {
-				return res, fmt.Errorf("label-doctor: create %q: %w", f.Name, err)
+			err = ghCreateLabel(ctx, repo, token, ghLabel{Name: f.Name, Color: f.CanonicalColor, Description: f.CanonicalDescription})
+			if err != nil {
+				err = fmt.Errorf("label-doctor: create %q: %w", f.Name, err)
 			}
 		case StatusDrifted:
-			if err := ghUpdateLabel(ctx, repo, token, f.Name, f.CanonicalColor, f.CanonicalDescription); err != nil {
-				return res, fmt.Errorf("label-doctor: repair %q: %w", f.Name, err)
+			err = ghUpdateLabel(ctx, repo, token, f.Name, f.CanonicalColor, f.CanonicalDescription)
+			if err != nil {
+				err = fmt.Errorf("label-doctor: repair %q: %w", f.Name, err)
 			}
 		}
+		if err != nil {
+			errs = append(errs, err)
+			res.Failed = append(res.Failed, f.Name)
+			fmt.Fprintf(stdoutOrDiscard(opts.Stdout), "  ✗ %s: %s\n", f.Name, err)
+			continue
+		}
 		res.Applied = append(res.Applied, f.Name)
+	}
+	if len(errs) > 0 {
+		return res, errors.Join(errs...)
 	}
 	return res, nil
 }

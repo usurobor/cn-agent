@@ -85,10 +85,17 @@ func ghListLabels(ctx context.Context, repo, token string) ([]ghLabel, error) {
 }
 
 // ghCreateLabel creates a repo-level label via POST /repos/{repo}/labels.
-// A 422 ("already exists") is tolerated as a no-op, mirroring issues-fsm/
-// fetch.go's ghEnsureLabelExists (cnos#615) idiom exactly — this keeps
-// the primitive idempotent-by-construction even if the audit's own
-// live-state read raced with an external creator.
+// A 422 whose error body names code "already_exists" is tolerated as a
+// no-op — this keeps the primitive idempotent-by-construction even if
+// the audit's own live-state read raced with an external creator,
+// mirroring issues-fsm/fetch.go's ghEnsureLabelExists (cnos#615) idiom.
+// Unlike that precedent (which tolerates ANY 422 unconditionally), this
+// function inspects the error body's code first: GitHub returns 422 for
+// OTHER validation failures too (e.g. a description over 100
+// characters — found live against a real canonical-manifest value,
+// src/packages/cnos.core/labels.json's dispatch:cell description is 149
+// bytes), and treating every 422 as a harmless "already exists" no-op
+// would silently swallow those as false successes.
 func ghCreateLabel(ctx context.Context, repo, token string, l ghLabel) error {
 	payload, err := json.Marshal(l)
 	if err != nil {
@@ -101,13 +108,39 @@ func ghCreateLabel(ctx context.Context, repo, token string, l ghLabel) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusUnprocessableEntity {
-		return nil
+		b, _ := io.ReadAll(resp.Body)
+		if isAlreadyExistsError(b) {
+			return nil
+		}
+		return fmt.Errorf("github api create label %q: HTTP 422: %s", l.Name, string(b))
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		b, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("github api create label %q: HTTP %d: %s", l.Name, resp.StatusCode, string(b))
 	}
 	return nil
+}
+
+// isAlreadyExistsError reports whether a GitHub 422 response body's
+// errors[] array names code "already_exists" (the create-label
+// endpoint's shape for "a label with this name already exists" —
+// distinct from other 422 causes such as an over-length description or
+// an invalid color).
+func isAlreadyExistsError(body []byte) bool {
+	var parsed struct {
+		Errors []struct {
+			Code string `json:"code"`
+		} `json:"errors"`
+	}
+	if err := json.Unmarshal(body, &parsed); err != nil {
+		return false
+	}
+	for _, e := range parsed.Errors {
+		if e.Code == "already_exists" {
+			return true
+		}
+	}
+	return false
 }
 
 // ghUpdateLabel repairs an existing label's color/description via PATCH
