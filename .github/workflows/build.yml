@@ -46,6 +46,22 @@ jobs:
         working-directory: src/packages/cnos.issues/commands/issues-fsm
         run: go test ./... -v
 
+      # cnos#493 AC4/AC5: src/packages/cnos.core/commands/label-doctor is
+      # its own go.work module (same reason as issues-fsm/issues-map
+      # above — NOT covered by the `Test` step's `go test ./...` from
+      # src/go). This is also the AC5 CI guard: TestDoctor_DryRun_
+      # FailsOnDrift / TestRun_DryRun_FailsOnDrift assert --dry-run
+      # exits nonzero against an httptest fixture carrying injected
+      # label drift (color/description mismatch + a missing label);
+      # TestDoctor_DryRun_PassesOnClean / TestRun_DryRun_PassesOnClean
+      # assert the same code path exits 0 against a fixture whose live
+      # labels already match labels.json exactly. Both directions run
+      # every time this step runs, so a regression in either turns CI
+      # red — a guard that only ever passes is not a guard.
+      - name: Test label-doctor module (cnos#493 AC4/AC5)
+        working-directory: src/packages/cnos.core/commands/label-doctor
+        run: go test ./... -v
+
       - name: Dispatch boundary check (INVARIANTS.md T-002)
         working-directory: src/go
         run: |
@@ -86,7 +102,8 @@ jobs:
           ./cn -h >/dev/null
           for c in "doctor" "status" "deps" "build" "update" "setup" "dispatch" \
                    "cell finalize" "cell return" "cell resume" \
-                   "issues fsm" "issues map" "cdd verify" "activate" "repo install"; do
+                   "issues fsm" "issues map" "cdd verify" "activate" "repo install" \
+                   "label doctor"; do
             ./cn $c --help >/dev/null || { echo "FAIL: cn $c --help did not exit 0"; exit 1; }
           done
           ./cn repo install --help | grep -q -- '--dry-run'
@@ -115,7 +132,8 @@ jobs:
           HELP_OUT="$(./cn help)"
           echo "$HELP_OUT" | grep -q 'issues fsm'
           echo "$HELP_OUT" | grep -q 'cell finalize'
-          if echo "$HELP_OUT" | grep -qE 'issues-fsm|cell-finalize|cell-return|cell-resume|repo-install|cdd-verify|issues-map'; then
+          echo "$HELP_OUT" | grep -q 'label doctor'
+          if echo "$HELP_OUT" | grep -qE 'issues-fsm|cell-finalize|cell-return|cell-resume|repo-install|cdd-verify|issues-map|label-doctor'; then
             echo "FAIL: cn help leaked a non-invocable hyphenated name"; exit 1
           fi
 
@@ -123,7 +141,7 @@ jobs:
           "$CN_BIN" init statushub >/dev/null
           cd cn-statushub
           STATUS_OUT="$("$CN_BIN" status)"
-          if echo "$STATUS_OUT" | grep -qE 'issues-fsm|cell-finalize|cell-return|cell-resume|repo-install|cdd-verify|issues-map'; then
+          if echo "$STATUS_OUT" | grep -qE 'issues-fsm|cell-finalize|cell-return|cell-resume|repo-install|cdd-verify|issues-map|label-doctor'; then
             echo "FAIL: cn status leaked a non-invocable hyphenated name"; echo "$STATUS_OUT"; exit 1
           fi
           cd - >/dev/null
