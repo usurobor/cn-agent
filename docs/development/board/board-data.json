@@ -2496,7 +2496,7 @@
   },
   {
     "n": 628,
-    "t": "S1 (doctrine): settle CM↔V, WC/PC/CC-as-lens, and α/β/γ namespace discipline (sub of #627)",
+    "t": "S1 (doctrine): supersede cell-kind ontology with the CCNF-kernel + WC/PC/CC deployment classes; settle CM↔V (sub of #627)",
     "kind": "doctrine",
     "areas": [
       "cdd"
@@ -2511,7 +2511,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-07T10:17:10Z",
-    "updated": "2026-07-07T10:17:10Z",
+    "updated": "2026-07-08T03:09:22Z",
     "url": "https://github.com/usurobor/cnos/issues/628"
   }
 ]
