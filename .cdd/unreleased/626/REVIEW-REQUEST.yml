@@ -1,0 +1,36 @@
+issue: 626
+protocol: cds
+cycle_branch: cycle/626
+head_commit: f3d2c59b29bb3b9beab5f403a46e5c30e29603cb
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+converge_verdict_ref: .cdd/unreleased/626/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's Round 0
+  converge verdict (round 0: converge, zero findings). This is a
+  supervised design-first cell (operator-narrowed, dated 2026-07-08):
+  AC1 and AC2's first disjunct are implemented and independently
+  re-derived by beta from the actual diff and re-run gates, not from
+  alpha's self-coherence.md narrative alone -- AC1's new delta/SKILL.md
+  Sec 9.12 boundary doctrine independently read and confirmed to state
+  both required halves plus the Sec 9.2 intentional-omission
+  cross-reference; AC2's removal of the fused six-step activation
+  instruction independently grepped (0 hits) and both rendered mirrors
+  (golden fixture + live workflow) independently re-rendered from
+  source and confirmed byte-identical (sha256 match), not merely
+  sha256-compared between two already-committed files. AC3/AC4
+  (capability removal / write-fence retirement) are correctly and
+  honestly deferred to the operator per the operator's own
+  design-first STOP condition, with a substantive doctrine+plan section
+  in self-coherence.md naming both candidate mechanisms, their
+  tradeoffs, and four concrete prerequisites for a follow-on cell --
+  this is the designed outcome of a supervised design-first cell, not a
+  dropped scope item. AC5/AC6 hold as pure-regression guardrails: zero
+  Go source changed, zero FSM/transitions.json changes, write-fence
+  code and .cn-sigma/ contents byte-identical to main, activate/SKILL.md
+  itself unmodified -- all independently re-verified by beta. All
+  closeout artifacts (gamma-scaffold.md, self-coherence.md,
+  beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md)
+  are present on this branch as of this request. No PR has been opened
+  for cycle/626 yet -- per delta/SKILL.md Sec 9.6, opening the cycle-PR
+  and running `cn issues fsm evaluate --issue 626 --apply` is delta's
+  next action following this request, not part of this artifact.

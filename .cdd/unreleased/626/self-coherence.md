@@ -1,0 +1,417 @@
+# self-coherence.md — cnos#626 (α, R0)
+
+## Gap
+
+cnos#626 — "arch(cds): isolate the dispatch cell-worker from substrate/agent
+identity + hub state." Per `.cdd/unreleased/626/gamma-scaffold.md` this is a
+**supervised design-first cell** (operator-narrowed, dated 2026-07-08):
+implement ONLY the bounded/safe mechanism (γ's "Recommended design" move
+(3) — drop full six-step sigma activation for cell-execution cognition,
+load Kernel + CA skills only); write doctrine + plan for the unbounded
+part (AC3/AC4 — capability removal / write-fence retirement) and STOP.
+
+Mode: doctrine → implementation (partial, per the bounded/unbounded split
+γ already reasoned through). Base SHA: `86042ec5be4b5fb45b213c27dfcf635958f60aac`
+(cycle/626 created from this `main` HEAD). Branch: `cycle/626`.
+
+## Skills
+
+- `src/packages/cnos.cdd/skills/cdd/alpha/SKILL.md` — α role contract (this
+  round's execution surface: §2.1 dispatch intake, §2.2 produce-in-order,
+  §2.5 self-coherence incremental-write discipline, §2.6 pre-review gate,
+  §3.6 implementation-contract constraint).
+- `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` §9 (dispatch-wake-invoked
+  mode), specifically §9.2 (five-input contract), §9.10/§9.11 (sibling
+  resume-shape subsections whose heading/prose style the new §9.12 follows).
+- `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` (the wake
+  prompt this cell edits) — read in full before editing, including
+  "Claim mechanism," "Disallowed surfaces," "Lifecycle transitions," and the
+  write-fence description in §"Disallowed surfaces" (left untouched by
+  design).
+- `src/packages/cnos.core/skills/agent/activate/SKILL.md` §2.1 (six-item
+  load order; the "soul vs identity" layering rule quoted verbatim in the
+  new doctrine prose) and §2.5 (containerized-path / `.cn-{agent}/`
+  detection) — read-only cross-reference, NOT edited.
+- The issue body for cnos#626 itself, including the "Operator directive —
+  run #626 as a supervised design-first cell" and "Authority — A2/CAP
+  (narrowed for a design-first cell)" sections (read via `gh issue view 626`
+  before starting; both sections match the scaffold's restatement of them
+  and impose no additional constraint beyond what the scaffold already
+  encodes).
+- No Tier-2/Tier-3 engineering skills loaded — this cell is a pure
+  Markdown/prose skill-file edit (per the implementation contract's
+  "Language: N/A ... Markdown/prose skill-file edits only" row); no
+  code-authoring skill applies.
+
+## ACs
+
+Oracle list per `gamma-scaffold.md` §"Per-AC oracle list."
+
+- **AC1** — "A doctrine statement exists, on `main` after merge, naming:
+  (a) the cell carries no substrate identity and no hub-state scope, (b)
+  the wake owns identity + channel logs." **MET.** New
+  `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` §9.12 "cell/substrate
+  identity boundary (cnos#626)" states both halves explicitly in its
+  opening bold sentence: *"the cell carries no substrate identity and no
+  hub-state scope. The wake/substrate owns identity, channel logs, and
+  reporting; δ and the roles it dispatches (γ/α/β) do not."* The
+  "Who owns what" paragraph names the wake/substrate's ownership of
+  substrate identity, `.cn-{agent}/logs/`, and operator-facing reporting
+  explicitly, and cross-references AGENT-ACTIVATION-LOG-v0 §0. Evidence:
+  `git diff src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` — new §9.12
+  block (19 lines in the unified diff's insertion count, sited after §9.11
+  at the file's end).
+- **AC2** (first disjunct — "no longer performs a full sigma activation")
+  — **MET.** `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md`
+  §"Identity and activation" no longer contains the "Activate per
+  activate/SKILL.md: Kernel → CA skills → Persona → Operator → hub state →
+  identity confirmation" instruction. Oracle run:
+  `grep -n "Activate per.*activate/SKILL.md" src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md`
+  → **0 hits** (exit code 1). The replacement paragraph states doctrine:
+  cell-execution cognition loads Kernel + CA skills only; does NOT load
+  Persona/Operator/hub-state; does NOT read `.cn-{agent}/` or thread
+  surfaces; the wake's self-identification is manifest-declared (`{agent}`
+  variable + bot-account binding), not file-discovered. The existing "You
+  do NOT attach to a channel like the admin wake does" sentence is
+  preserved verbatim as its own paragraph immediately after (not
+  duplicated, not rewritten). AC2's second disjunct (checkout-scope
+  exclusion / `.cn-{agent}/` no longer in working scope) is **NOT**
+  implemented this cell — see "AC3/AC4" section below; AC2's "and/or"
+  wording means the first disjunct alone is a legitimate pass (per
+  gamma-scaffold.md Friction note 1).
+- **AC2** (rendered-mirror regeneration requirement) — **MET.** Both
+  mirrors were regenerated via the renderer, never hand-edited:
+  - `./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch`
+    (default `--out`, i.e. the per-package golden at
+    `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml`)
+  - `./src/packages/cnos.core/commands/install-wake/cn-install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml`
+  Verification: `diff .github/workflows/cnos-cds-dispatch.yml src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml`
+  → **no output** (byte-identical). `sha256sum` of both files also
+  matched (see CDD Trace below for the exact hashes) — this reproduces the
+  `install-wake-golden.yml` job "Verify live cds-dispatch workflow matches
+  golden (sha256)" step's own check. Idempotence also verified: a second
+  invocation of the live-target render produced a byte-identical file
+  (`diff` empty), matching that workflow's own "Verify idempotence"
+  step's invariant.
+
+  Note on the CLI invocation form: `gamma-scaffold.md`'s α prompt and the
+  "Implementation contract" table both say `cn install-wake cds-dispatch
+  --out <path>`. The actual renderer on this branch is a standalone shell
+  script at `src/packages/cnos.core/commands/install-wake/cn-install-wake`
+  (invoked directly, e.g. `./src/.../cn-install-wake cds-dispatch`), not a
+  subcommand of the `cn` Go binary built from `src/go/cmd/cn` — `cn help`
+  on that binary lists no `install-wake` verb. `install-wake-golden.yml`
+  itself invokes the tool the same way (`./src/packages/cnos.core/commands/install-wake/cn-install-wake
+  cds-dispatch`, see its "Re-render cds-dispatch wake" step). This is a
+  naming/packaging discrepancy between the scaffold's prose and the
+  on-branch tooling, not a functional gap — the correct renderer was
+  invoked with the correct arguments and produced the correct output,
+  verified byte-identical against both the golden and the live mirror.
+  Flagged here for β/γ visibility rather than silently reconciled.
+- **AC3** — "A code cell cannot see or write `.cn-*/logs/` — the
+  capability is removed." **NOT implemented this cell — doctrine + plan
+  only, per operator STOP condition.** See "AC3/AC4 — doctrine + plan,
+  deferred to operator" section below. This is the deliberate, scaffolded
+  outcome, not a dropped AC.
+- **AC4** — "Once AC3 holds, the write-fence is removed as redundant."
+  **NOT applicable this cell** — hard-gated on AC3, not proven this cycle.
+  The write-fence code (`.github/workflows/cnos-cds-dispatch.yml`
+  `dispatch_activation_log_write_violation` step, formerly lines
+  ~358–439) was NOT touched. Evidence: `git diff .github/workflows/cnos-cds-dispatch.yml`
+  shows exactly one hunk (the "Identity and activation" prompt-body
+  paragraph swap at what was line 100); `grep -c
+  dispatch_activation_log_write_violation` on both the pre-edit
+  (`git show HEAD:.github/workflows/cnos-cds-dispatch.yml`) and post-edit
+  file returns the same count, and a byte-diff of just that step's region
+  is empty (see CDD Trace).
+- **AC5** — "No regression: FSM ownership, finalizer, reconciler, dispatch
+  guards, and all gates stay green." **In scope, MET at the level this
+  cell can verify locally.** Zero Go source files changed
+  (`git diff --name-only | grep -E '\.go$'` → no output) — the diff is
+  prose/Markdown plus the two regenerated YAML mirrors, so `go test ./...`
+  is a pure no-new-behavior regression check, not exercised further by
+  this cell's own diff. `src/packages/cnos.cds/skills/cds/fsm/transitions.json`
+  is untouched (`git diff --stat -- src/packages/cnos.cds/skills/cds/fsm/transitions.json`
+  → no output). The `install-wake-golden` sha256/idempotence checks this
+  cell reproduced locally (see AC2 above) are the mechanical proof the
+  golden/live sync + renderer determinism invariant AC5 depends on for
+  this surface still holds. `#516`/`#524` dispatch guard scripts
+  (`check-dispatch-repair-preflight.sh`, `check-dispatch-closeout-integrity.sh`)
+  are not referenced anywhere in this diff (`git diff --name-only` does
+  not list them) — they read `cds-dispatch/SKILL.md` prose sections this
+  cell did not touch (the "Repair re-entry preflight" and "Closeout
+  integrity preflight" sections are untouched; only "Identity and
+  activation" changed).
+- **AC6** — "`cell_kind` stays observed-only; no new taxonomy; no Demo 0."
+  **MET (guardrail, not a build target).** The diff introduces no new
+  `cell_kind` value, no `status:*` label, no Demo-0-shaped artifact — it
+  is exactly four files: two SKILL.md prose files and their two
+  regenerated rendered mirrors.
+
+## Self-check
+
+Did α's work push ambiguity onto β? Reviewed against the β prompt's
+"Independent AC walk" in `gamma-scaffold.md`:
+
+- AC1 walk: β is asked to confirm the new §9.12 subsection "explicitly
+  states (a)...(b)..." and "cross-references §9.2's five-input contract
+  and explicitly names the Persona/Operator/hub-state omission as
+  intentional." Both are present verbatim in §9.12's second paragraph
+  ("§9.2's silence is intentional, not an oversight") — this is not an
+  implied statement β has to infer; it is a stated claim with a stated
+  reason ("the absence is doctrine, not debt"). No ambiguity pushed here.
+- AC2 walk: β is asked to grep for "Activate per" / "Persona" / "Operator"
+  / "hub state" in the "Identity and activation" section. Note: my new
+  paragraph **does** contain the strings "Persona," "Operator," and "hub
+  state" (it names them as things that are NOT loaded) — a naive grep-hit
+  count is not zero. β's own instruction already anticipates this
+  ("confirm the six-step full-activation instruction is gone or narrowed
+  to Kernel+CA-skills-only for cell execution" — a hit is not
+  automatically a fail, the six-step *chain* instruction has to be gone).
+  I flag this explicitly here rather than let β discover a grep hit and
+  wonder whether it's a miss: the words "Persona," "Operator," "hub
+  state" appear only in the negation ("does NOT load"), not as an
+  instruction to load them. The literal `"Activate per.*activate/SKILL.md"`
+  grep β is told to run (mirroring the scaffold's own AC2 oracle) returns
+  0 hits, which is the actual pass condition.
+- AC2 walk: β is asked to confirm `activate/SKILL.md` itself is
+  unchanged. Confirmed via `git diff --stat -- src/packages/cnos.core/skills/agent/activate/SKILL.md`
+  → no output.
+- AC3/AC4 walk: β is asked to confirm no checkout-isolation mechanism was
+  built and the write-fence is untouched. Both hold; see AC3/AC4 evidence
+  above and the dedicated section below. I did not weaken the STOP by
+  writing a "partial" sparse-checkout stub or similar — the two candidate
+  mechanisms are named as plan text only, with zero corresponding diff
+  hunks anywhere outside the two prose files.
+- The renderer invocation-path discrepancy (shell script vs. `cn`
+  subcommand) is disclosed above rather than silently smoothed over,
+  since a future reader diffing my commands against the scaffold's
+  literal `cn install-wake ...` text could otherwise wonder whether I
+  ran the wrong tool.
+- Is every claim backed by evidence in the diff? Yes — every AC row above
+  cites either a specific grep/diff command and its actual output, or a
+  specific file/line the diff touches. No claim rests on "I read it and
+  it looked right" without a corresponding shell-verifiable check.
+
+## Debt
+
+- **Git author identity.** This session's commits carry the pre-existing
+  session git identity (`sigma@cnos.cn-sigma.cnos` /
+  `41898282+sigma@cnos.cn-sigma.cnos@users.noreply.github.com`), not the
+  canonical `alpha@cdd.cnos` pattern named in `alpha/SKILL.md` §2.6 row
+  14. Per that row's path (b) ("configure correctly going forward and
+  accept existing commits as legacy — permitted only with explicit
+  known-debt disclosure"), this is disclosed as known debt rather than
+  rewritten: this cell runs inside a wrapper session whose git identity
+  was set by the dispatching harness before α-role work began, and
+  amending authorship here was judged out of scope for a prose-only,
+  narrowly-bounded design-first cell (rewriting history was not named as
+  a requirement anywhere in the α prompt, and doing so unprompted risks
+  a destructive-git-op the operator did not ask for).
+- **AC3/AC4 are deferred, not closed** — see dedicated section below.
+  This is declared debt by design (the scaffold's own framing), not an
+  oversight.
+- **`cn install-wake` naming discrepancy** — the scaffold and the α
+  prompt both cite `cn install-wake <wake> --out <path>` as the
+  invocation form; the actual on-branch tool is a standalone shell
+  script, not a `cn` Go-binary subcommand. Named above under AC2 and
+  here for visibility; does not affect the correctness of what was
+  rendered (verified byte-identical against both mirrors + sha256).
+- No test suite exists for prose/Markdown skill-file content beyond the
+  `install-wake-golden` CI gate (sha256 + idempotence), which this cell
+  reproduced locally rather than via a live GitHub Actions run — a live
+  CI run on the pushed branch is the actual gate; local reproduction is
+  strong evidence but not identical to the CI environment. No behavior
+  difference is expected (the renderer is a pure function of the
+  manifest + prompt-body text and the same shell script executes in
+  both places), but this is named as a residual gap between "locally
+  reproduced" and "CI-observed."
+
+## CDD Trace
+
+Step 7 (self-coherence) trace, mapped against
+`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" step table:
+
+1. **Gap** — cnos#626, supervised design-first cell, bounded/unbounded
+   split per `gamma-scaffold.md`. Documented above.
+2. **Mode** — doctrine → implementation (partial). Documented above.
+3. **Artifacts touched** (full `git diff --stat` against `origin/main`):
+
+   ```
+   .github/workflows/cnos-cds-dispatch.yml                                    |  2 +-
+   src/packages/cnos.cdd/skills/cdd/delta/SKILL.md                            | 19 +++++++++++++++++++
+   src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md                  |  2 +-
+   src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml |  2 +-
+   4 files changed, 22 insertions(+), 3 deletions(-)
+   ```
+
+   Every file above is named in an AC row above (AC1: `delta/SKILL.md`;
+   AC2: `cds-dispatch/SKILL.md` + both rendered mirrors). No file in the
+   diff is unmentioned.
+4. **Self-coherence** — this document.
+5. **Renderer verification (mechanical, standing in for CI until the
+   branch's own `install-wake-golden` run is observed):**
+
+   ```
+   $ diff .github/workflows/cnos-cds-dispatch.yml \
+          src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+   (no output — byte-identical)
+
+   $ sha256sum .github/workflows/cnos-cds-dispatch.yml
+   8f6897164af05bcb1fc405490c45c8721c74c5c7f301555b00ca802813e76ff1  .github/workflows/cnos-cds-dispatch.yml
+   $ sha256sum src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+   8f6897164af05bcb1fc405490c45c8721c74c5c7f301555b00ca802813e76ff1  src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml
+   ```
+
+   Idempotence: a second render of the live target
+   (`./src/packages/cnos.core/commands/install-wake/cn-install-wake
+   cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml`) produced a
+   file byte-identical to the first render (`diff` empty).
+6. **Guardrail confirmations** (see "What I did NOT touch" below for the
+   full list with commands).
+7. **Review-readiness** — see below.
+
+## What I did NOT touch (guardrail confirmations)
+
+Per the α prompt's guardrails and "When done" §(d):
+
+- **Write-fence code** (`dispatch_activation_log_write_violation`,
+  `.github/workflows/cnos-cds-dispatch.yml`) — untouched. The only hunk
+  in that file's diff is the "Identity and activation" paragraph swap;
+  `git diff .github/workflows/cnos-cds-dispatch.yml | grep -i
+  "write.fence\|dispatch_activation_log_write_violation"` returns no
+  hits.
+- **`.cn-sigma/` contents** — untouched. `git diff --stat -- .cn-sigma/`
+  returns no output.
+- **The checkout step / any sparse-checkout mechanism** — not added.
+  Confirmed by the same file-list check above (only 4 files changed, none
+  of them a checkout-step region).
+- **`activate/SKILL.md`** — untouched. `git diff --stat -- src/packages/cnos.core/skills/agent/activate/SKILL.md`
+  returns no output. It was read (Key finding 2 / §2.1 / §2.5) but never
+  edited — only *who is required to run it* narrows, not the procedure.
+- **`src/packages/cnos.cds/skills/cds/fsm/transitions.json`** (#633's
+  surface) — untouched. `git diff --stat -- src/packages/cnos.cds/skills/cds/fsm/transitions.json`
+  returns no output. I found no evidence anywhere in the issue body, the
+  scaffold, or the diff's own surfaces that #633's FSM rule-ordering fix
+  is directly required by this cell's bounded scope — the bounded scope
+  is entirely prose in two SKILL.md files plus their rendered mirrors,
+  none of which the FSM consumes.
+- **No Go source changed** — `git diff --name-only | grep -E '\.go$'`
+  returns no output. The bounded mechanism required zero Go/infra
+  changes, matching the "Implementation contract" table's "Zero Go
+  source changes expected" pin; I did not need to escalate the "if you
+  find you need one, STOP" guardrail.
+- **No new `status:*` label, no new `cell_kind`, no FSM/transitions.json
+  change, no Demo 0** — confirmed by the same 4-file diff scope; nothing
+  in the diff touches label definitions, cell-kind taxonomy, or the FSM.
+- **No hand-edit of either rendered mirror** — both were produced
+  exclusively via the `cn-install-wake` renderer invocations documented
+  under AC2 above; I did not open either YAML file in an editor at any
+  point in this cycle.
+
+## AC3/AC4 — doctrine + plan, deferred to operator
+
+Per the α prompt's explicit requirement ("This is a REQUIRED deliverable
+of this cell, not optional narrative"), restating and confirming
+γ's "Recommended design" analysis from `gamma-scaffold.md` rather than
+re-deriving it from scratch — the analysis was already done at scaffold
+time and nothing observed during implementation changes it:
+
+**What AC3/AC4 require.** AC3: "a code cell cannot see or write
+`.cn-*/logs/` — the capability is removed (e.g. not present in the
+checkout, or checkout is scoped), not merely guarded post-hoc." AC4
+(hard-gated on AC3): "once AC3 holds, the `dispatch_activation_log_write_violation`
+write-fence is removed as redundant."
+
+**Why neither is implemented this cell.** The operator's own STOP
+condition governs directly: *"if the safe mechanism is not clearly
+bounded, STOP at doctrine + implementation plan and hand back to the
+operator rather than force an implementation."* γ's scaffold evaluated
+all three candidate boundary moves the issue names and found exactly one
+(move 3 — drop full activation for cell-execution cognition; the AC1/AC2
+work completed above) cleanly boundable inside this single cell. The
+other two (candidates 1 and 2 below) are not.
+
+**Candidate mechanism 1 — isolated checkout / sparse worktree excluding
+`.cn-sigma/`.** Add a post-checkout `git sparse-checkout` step
+(non-cone mode: `/*` + `!/.cn-sigma/`) to the rendered workflow, gated by
+a new wake-manifest field (e.g. `wake.surfaces.excluded_checkout_paths`),
+requiring `cn install-wake` renderer (Go... or, per the discrepancy noted
+above, shell-script) changes.
+
+- *Tradeoff:* This changes the checkout shape of a **live production**
+  wake (`activation_state: live` since cnos#487) that other in-flight and
+  future cells depend on for reading the full codebase, opening PRs, and
+  running the finalizer (`cn cell finalize`, cnos#591). The operator's own
+  STOP conditions name exactly this risk: "isolating the cell would break
+  its ability to read the codebase or the issue contract"; sparse-checkout
+  could silently break a doc cross-reference or a Tier-3 skill path
+  lookup that happens to resolve through a path pattern not anticipated
+  at design time. Validating this safely needs its own regression pass
+  (see "What a follow-on cell would need" below) that this single cell
+  cannot responsibly absorb alongside AC1/AC2.
+
+**Candidate mechanism 2 — move `.cn-sigma/` out of the product repo
+entirely.** Relocate Sigma's per-context state (the mailbox, the channel
+logs) to a separate repo/location; cnos becomes pure-codebase from the
+dispatch wake's perspective.
+
+- *Tradeoff:* Explicit STOP condition in the operator directive: "Moving
+  the hub out of the repo requires new infra/permissions not available →
+  escalate." This is an infra/ownership decision (where does the new
+  location live, who has write access, does `activate/SKILL.md`'s
+  Tier 1b pure-product-hub path already cover the read side) that the
+  operator, not this cell, must authorize. Note (per gamma-scaffold.md
+  Friction note 5): `.cn-sigma/README.md` already documents that
+  *identity* files (PERSONA.md/OPERATOR.md) live at Sigma's home hub, not
+  in `.cn-sigma/` at cnos — only per-context state (mailbox, logs)
+  remains in-repo by design. This nuance doesn't change the bounded/
+  unbounded split; it just means candidate 2, if ever pursued, is a
+  narrower move than it might first appear (per-context state only, not
+  identity).
+
+**What this cell does NOT do.** No sparse-checkout step, no new manifest
+field, no relocation of any `.cn-sigma/` content, no change to the
+checkout step in either rendered workflow. Confirmed under "What I did
+NOT touch" above.
+
+**What a follow-on cell would need to prove AC3 safely.** Before
+attempting candidate 1 (sparse-checkout) on the live production wake, a
+follow-on cell needs:
+
+1. A **regression matrix over every existing cell type's checkout-path
+   needs** — enumerate every doc cross-reference, Tier-2/Tier-3 skill
+   path, and issue-body-linked artifact any live cell class has ever
+   consumed from the working tree, and confirm none of them resolve
+   through a path a `.cn-sigma/`-excluding sparse-checkout would hide.
+   This needs to be built empirically (e.g. instrument a dry-run cell
+   against the proposed sparse pattern) rather than reasoned about in the
+   abstract, because the failure mode the operator flagged
+   ("could silently break a... lookup that happens to resolve through a
+   path pattern not anticipated at design time") is precisely a
+   not-anticipated-in-advance failure.
+2. A **decision on the manifest surface** — whether checkout scoping is
+   a per-wake manifest field (`wake.surfaces.excluded_checkout_paths` or
+   similar) or a renderer-global default, and whether it needs an
+   escape hatch for cell types that legitimately need `.cn-{agent}/`
+   read access (none identified today, but the regression matrix in (1)
+   is the mechanism that would surface one if it exists).
+3. **A live-fire validation window** — because this is a production wake,
+   the operator will likely want at least one full cycle run under the
+   new checkout shape, observed end-to-end (claim → scaffold → implement
+   → review → merge), before trusting it as the default for all future
+   `protocol:cds` cells.
+4. **Only then** does AC4 (write-fence retirement) become safe to attempt
+   — AC4 is explicitly gated on AC3 being proven, not merely attempted;
+   removing the fence before the capability-removal is validated would
+   leave a real gap (a regression in the sparse-checkout mechanism could
+   silently reintroduce `.cn-{agent}/logs/` visibility with no guard left
+   to catch it).
+
+This section is the required doctrine+plan deliverable; it is a
+first-class output of this cell, not a placeholder for future work no
+one has thought through.
+
+## Review-readiness | round 0 | base SHA: 86042ec5be4b5fb45b213c27dfcf635958f60aac | head SHA: (this commit) | branch CI: not yet observed (local sha256/idempotence checks reproduced the install-wake-golden gate's logic; live CI on push not yet polled by α) | ready for β
+
+## Review-ready — R0 complete, ready for β
