@@ -1,0 +1,15 @@
+issue: 630
+protocol: cds
+cycle_branch: cycle/630
+requested_by: cds-dispatch (dispatch wake, claim step)
+head_commit: 313cb1f3a4e5d809f09e5c51660351ec1ed189c1
+note: >
+  Well-formedness gates verified (open, single protocol:cds, single
+  status:todo, dispatch:cell present). No prior status:changes history
+  (label timeline: status:ready -> status:todo only, operator flip at
+  2026-07-08T14:44:10Z), no prior cycle/630 branch, no prior
+  .cdd/unreleased/630/ artifacts, zero issue comments -- run_class:
+  first_pass. Issue body carries explicit operator dispatch-authorization
+  ("Dispatch authorized (operator, 2026-07-08)") confirming clean first
+  dispatch. Requesting the todo -> in-progress transition via
+  `cn issues fsm evaluate --issue 630 --apply` per cnos#575 Phase 3.
