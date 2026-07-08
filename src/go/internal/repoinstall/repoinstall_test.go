@@ -623,7 +623,16 @@ func newFakeGitHub(t *testing.T, repo, tag string, indexBody []byte, tarballs ma
 	t.Cleanup(api.Close)
 
 	prefix := "/" + repo + "/releases/download/" + tag + "/"
+	latestPath := "/" + repo + "/releases/latest"
 	dl := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Mirror github.com's /releases/latest redirect so the
+		// redirect-first resolution path (resolveLatestTag) is exercised
+		// against the download host, not only the API fallback.
+		if r.URL.Path == latestPath {
+			w.Header().Set("Location", "/"+repo+"/releases/tag/"+tag)
+			w.WriteHeader(http.StatusFound)
+			return
+		}
 		if r.URL.Path == prefix+"index.json" {
 			w.Write(indexBody)
 			return
@@ -692,6 +701,62 @@ func TestRun_ReleaseLatest_ResolvesAndInstalls(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "9.9.9") {
 		t.Errorf("stdout should print the resolved release tag:\n%s", stdout.String())
+	}
+}
+
+// Regression (release-tag-is-not-a-package-pin): a real cnos release tag
+// (e.g. 3.82.3) is the asset *bucket* name; the packages inside it carry
+// their own, different versions (cnos.core@3.82.0, cnos.cds@0.1.0). The
+// resolver must read each package's version from the release index, NOT
+// pin every package to the release tag — the earlier bug passed the tag as
+// the pin, so the default `cn repo install` deterministically failed with
+// "package(s) not found in index". This test would fail under that bug.
+func TestRun_ReleaseTag_PackageVersionsDifferFromTag(t *testing.T) {
+	coreTar, coreSHA := makeTarGz(t, map[string]string{"cn.package.json": `{"name": "cnos.core", "version": "3.82.0"}`})
+	cdsTar, cdsSHA := makeTarGz(t, map[string]string{"cn.package.json": `{"name": "cnos.cds", "version": "0.1.0"}`})
+	idx := pkg.PackageIndex{
+		Schema: "cn.package-index.v1",
+		Packages: map[string]map[string]pkg.IndexEntry{
+			"cnos.core": {"3.82.0": {URL: "cnos.core-3.82.0.tar.gz", SHA256: coreSHA}},
+			"cnos.cds":  {"0.1.0": {URL: "cnos.cds-0.1.0.tar.gz", SHA256: cdsSHA}},
+		},
+	}
+	indexBody, err := json.Marshal(idx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := "acme/widgets"
+	tag := "3.82.3"
+	api, dl := newFakeGitHub(t, repo, tag, indexBody, map[string][]byte{
+		"cnos.core-3.82.0.tar.gz": coreTar,
+		"cnos.cds-0.1.0.tar.gz":   cdsTar,
+	})
+
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+	res, err := Run(context.Background(), Options{
+		RepoRoot:     repoRoot,
+		Release:      "latest",
+		Packages:     []string{"cnos.core", "cnos.cds"},
+		Repo:         repo,
+		APIBaseURL:   api.URL,
+		DownloadBase: dl.URL,
+		Stdout:       stdout,
+		Stderr:       stderr,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
+	}
+	if res.ReleaseTag != tag {
+		t.Errorf("ReleaseTag = %q, want %q (the asset bucket)", res.ReleaseTag, tag)
+	}
+	want := map[string]string{"cnos.core": "3.82.0", "cnos.cds": "0.1.0"}
+	for _, dep := range res.Manifest.Packages {
+		if want[dep.Name] != dep.Version {
+			t.Errorf("%s pinned to %q, want %q (version from index, not the %q release tag)",
+				dep.Name, dep.Version, want[dep.Name], tag)
+		}
 	}
 }
 

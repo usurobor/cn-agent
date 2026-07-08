@@ -260,7 +260,7 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	fmt.Fprintln(opts.Stdout)
 	fmt.Fprintf(opts.Stdout, "✓ Git repository root: %s\n", opts.RepoRoot)
 
-	idxPath, idx, releaseTag, cleanup, err := resolveIndex(ctx, client, apiBase, dlBase, repo, opts.Release, opts.IndexPath)
+	idxPath, idx, releaseTag, pinVersion, cleanup, err := resolveIndex(ctx, client, apiBase, dlBase, repo, opts.Release, opts.IndexPath)
 	if err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
 		return nil, err
@@ -273,7 +273,7 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 		fmt.Fprintf(opts.Stdout, "✓ Using package index: %s\n", opts.IndexPath)
 	}
 
-	deps, err := resolvePins(idx, names, releaseTag)
+	deps, err := resolvePins(idx, names, pinVersion)
 	if err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
 		return nil, err
@@ -542,9 +542,22 @@ func printPlan(w io.Writer, m pkg.Manifest, plannedFiles []string, releaseTag, i
 // a local file path that restore.GenerateLockFromIndex/restore.Restore can
 // read directly, the parsed index (for pin resolution), the resolved
 // release tag ("" when an explicit --index value was used with no
-// --release override), and a cleanup func removing any temp files this
-// call created (always non-nil; safe to defer unconditionally).
-func resolveIndex(ctx context.Context, client *http.Client, apiBase, dlBase, repo, release, indexArg string) (indexPath string, idx *pkg.PackageIndex, releaseTag string, cleanup func(), err error) {
+// --release override) used only for reporting and asset-base rewriting, a
+// package pin version ("" when package versions should be resolved from
+// the index itself), and a cleanup func removing any temp files this call
+// created (always non-nil; safe to defer unconditionally).
+//
+// The release tag and the package pin version are deliberately distinct: a
+// GitHub release tag (e.g. 3.82.3) names the asset *bucket* the index and
+// tarballs are published under, and does NOT imply every package in that
+// release carries that same version string (cnos.core@3.82.0,
+// cnos.cds@0.1.0, ... can all ship inside release 3.82.3). So for the
+// release-download flow the pin version is "" — each package's version is
+// read out of the release's own index. Only an explicit --index that
+// carries multiple versions per package leans on --release as a
+// disambiguator (see resolvePins), and there the caller is explicitly
+// requesting a version pin.
+func resolveIndex(ctx context.Context, client *http.Client, apiBase, dlBase, repo, release, indexArg string) (indexPath string, idx *pkg.PackageIndex, releaseTag string, pinVersion string, cleanup func(), err error) {
 	noop := func() {}
 
 	pinFromRelease := ""
@@ -556,62 +569,135 @@ func resolveIndex(ctx context.Context, client *http.Client, apiBase, dlBase, rep
 		if isRemoteURL(indexArg) {
 			body, ferr := fetchBytes(ctx, client, indexArg)
 			if ferr != nil {
-				return "", nil, "", noop, fmt.Errorf("fetch package index %s: %w", indexArg, ferr)
+				return "", nil, "", "", noop, fmt.Errorf("fetch package index %s: %w", indexArg, ferr)
 			}
 			parsed, perr := pkg.ParsePackageIndex(body)
 			if perr != nil {
-				return "", nil, "", noop, fmt.Errorf("parse package index %s: %w", indexArg, perr)
+				return "", nil, "", "", noop, fmt.Errorf("parse package index %s: %w", indexArg, perr)
 			}
 			rewritten := rewriteRelativeEntries(parsed, indexArg)
 			tmpPath, tmpCleanup, werr := writeTempIndex(rewritten)
 			if werr != nil {
-				return "", nil, "", noop, werr
+				return "", nil, "", "", noop, werr
 			}
-			return tmpPath, rewritten, pinFromRelease, tmpCleanup, nil
+			return tmpPath, rewritten, pinFromRelease, pinFromRelease, tmpCleanup, nil
 		}
 
 		data, rerr := os.ReadFile(indexArg)
 		if rerr != nil {
-			return "", nil, "", noop, fmt.Errorf("read package index %s: %w", indexArg, rerr)
+			return "", nil, "", "", noop, fmt.Errorf("read package index %s: %w", indexArg, rerr)
 		}
 		parsed, perr := pkg.ParsePackageIndex(data)
 		if perr != nil {
-			return "", nil, "", noop, fmt.Errorf("parse package index %s: %w", indexArg, perr)
+			return "", nil, "", "", noop, fmt.Errorf("parse package index %s: %w", indexArg, perr)
 		}
 		// Local path: used directly, exactly like the existing
 		// cn build → dist/ → cn deps restore dev workflow — relative
 		// tarball URLs are resolved by restore.go against indexPath's
 		// own directory, so no rewriting is needed here.
-		return indexArg, parsed, pinFromRelease, noop, nil
+		return indexArg, parsed, pinFromRelease, pinFromRelease, noop, nil
 	}
 
 	// No explicit --index: resolve a release and fetch its index.
 	tag := release
 	if tag == "" || tag == "latest" {
-		rel, rerr := binupdate.FetchLatestRelease(ctx, client, apiBase, repo)
+		resolved, rerr := resolveLatestTag(ctx, client, dlBase, apiBase, repo)
 		if rerr != nil {
-			return "", nil, "", noop, fmt.Errorf("resolve latest cnos release: %w", rerr)
+			return "", nil, "", "", noop, fmt.Errorf("resolve latest cnos release: %w", rerr)
 		}
-		tag = rel.Tag
+		tag = resolved
 	}
 
 	base := fmt.Sprintf("%s/%s/releases/download/%s/", dlBase, repo, tag)
 	indexURL := base + "index.json"
 	body, ferr := fetchBytes(ctx, client, indexURL)
 	if ferr != nil {
-		return "", nil, "", noop, fmt.Errorf("fetch package index for release %s: %w", tag, ferr)
+		return "", nil, "", "", noop, fmt.Errorf("fetch package index for release %s: %w", tag, ferr)
 	}
 	parsed, perr := pkg.ParsePackageIndex(body)
 	if perr != nil {
-		return "", nil, "", noop, fmt.Errorf("parse package index for release %s: %w", tag, perr)
+		return "", nil, "", "", noop, fmt.Errorf("parse package index for release %s: %w", tag, perr)
 	}
 
 	rewritten := rewriteRelativeEntriesFromBase(parsed, base)
 	tmpPath, tmpCleanup, werr := writeTempIndex(rewritten)
 	if werr != nil {
-		return "", nil, "", noop, werr
+		return "", nil, "", "", noop, werr
 	}
-	return tmpPath, rewritten, tag, tmpCleanup, nil
+	// pinVersion "" — resolve each package's version from the release's
+	// own index, not from the release tag (they are not the same thing).
+	return tmpPath, rewritten, tag, "", tmpCleanup, nil
+}
+
+// resolveLatestTag resolves the newest release tag the way install.sh does:
+// a single request to <dlBase>/<repo>/releases/latest, which GitHub answers
+// with a 3xx redirect to .../releases/tag/<tag>. This path only needs the
+// public github.com host (the same host that serves release-download
+// assets) and avoids api.github.com entirely, which some networks / egress
+// proxies block. If the redirect cannot be read (non-GitHub download base,
+// unexpected response, offline mirror), it falls back to the GitHub API
+// via binupdate.FetchLatestRelease so existing API-reachable setups keep
+// working.
+func resolveLatestTag(ctx context.Context, client *http.Client, dlBase, apiBase, repo string) (string, error) {
+	tag, rerr := latestTagViaRedirect(ctx, client, dlBase, repo)
+	if rerr == nil && tag != "" {
+		return tag, nil
+	}
+
+	rel, aerr := binupdate.FetchLatestRelease(ctx, client, apiBase, repo)
+	if aerr != nil {
+		if rerr != nil {
+			return "", fmt.Errorf("releases/latest redirect: %v; github api: %w", rerr, aerr)
+		}
+		return "", aerr
+	}
+	return rel.Tag, nil
+}
+
+// latestTagViaRedirect issues a redirect-suppressed request to the
+// /releases/latest endpoint and extracts the tag from the Location header
+// (…/releases/tag/<tag>), mirroring install.sh's `curl -fsSI … | grep
+// location` step. It does not follow the redirect (no asset is fetched
+// here) so it stays a single cheap round-trip.
+func latestTagViaRedirect(ctx context.Context, client *http.Client, dlBase, repo string) (string, error) {
+	latestURL := fmt.Sprintf("%s/%s/releases/latest", dlBase, repo)
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, latestURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("create request: %w", err)
+	}
+
+	// Copy the client so suppressing redirects here never mutates shared
+	// state (the Transport, timeout, etc. are inherited by value copy).
+	noFollow := *client
+	noFollow.CheckRedirect = func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	resp, err := noFollow.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("http head: %w", err)
+	}
+	defer resp.Body.Close()
+
+	loc := resp.Header.Get("Location")
+	if loc == "" {
+		return "", fmt.Errorf("no Location header (status %d)", resp.StatusCode)
+	}
+	marker := "/releases/tag/"
+	i := strings.LastIndex(loc, marker)
+	if i < 0 {
+		return "", fmt.Errorf("unexpected redirect target %q", loc)
+	}
+	tag := loc[i+len(marker):]
+	// Strip any trailing query/fragment/slash the redirect might carry.
+	if j := strings.IndexAny(tag, "?#/"); j >= 0 {
+		tag = tag[:j]
+	}
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return "", fmt.Errorf("empty tag in redirect target %q", loc)
+	}
+	return tag, nil
 }
 
 // isRemoteURL returns true if the URL has an http:// or https:// scheme.
