@@ -62,6 +62,16 @@ package cdd
 	ref:    string
 }
 
+// Doctrine cross-reference (documentation-only; no field/type added here):
+// every terminal cell closeout is required, by doctrine, to carry a
+// `learning` / `epsilon_observations` section (`observations`,
+// `process_deltas`, `reusable_patterns`, `followups`, `operator_burden`) —
+// see cnos.cdd/skills/cdd/CELL-KINDS.md §"Mandatory terminal learning
+// section" (cnos#614). This is ε-shaped content (γ binds it into the
+// receipt at closeout) but is not yet a typed #Receipt field; mechanical
+// verifier enforcement is explicitly deferred to a follow-up, so no schema
+// change accompanies this comment.
+
 // #Receipt is the parent-facing trust surface. Every field below is required
 // (no `?`) unless explicitly marked optional. Missing any required field
 // fails `cue vet -c -d '#Receipt' {schemas} {fixture}.yaml`.

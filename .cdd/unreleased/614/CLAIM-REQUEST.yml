@@ -1,0 +1,5 @@
+claimed_by: cds-dispatch/local-run-20260708
+protocol: cds
+requested_at: 2026-07-08
+issue: 614
+resumed_from: cycle/614 @ 93883eec (prior firing 2026-07-07T05:03, write-fence false-positive, fixed in #625)

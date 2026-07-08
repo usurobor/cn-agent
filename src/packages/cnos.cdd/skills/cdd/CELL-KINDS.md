@@ -27,7 +27,7 @@ These are two different, non-interchangeable classifications:
 
 An issue labeled `kind/feature` can be worked by an `implementation` cell (the common case) or, earlier in its life, be *itself* the matter of an `issue_authoring` cell that drafted it. The GitHub label and the `cell_kind` value travel on different axes and must not be conflated.
 
-## The 10 cell kinds
+## The 11 cell kinds
 
 ### 1. `issue_authoring`
 
@@ -118,6 +118,17 @@ An issue labeled `kind/feature` can be worked by an `implementation` cell (the c
 - **Closeout / projection:** projects a recommendation or a follow-up `issue_authoring` cell — an experiment cell's output must not silently become production implementation.
 - **FSM implication:** should not silently become production implementation; a follow-on `implementation` cell is a separate, explicitly dispatched cell.
 
+### 11. `planning`
+
+- **Purpose:** produce issue/wave contracts as matter. Planning is work, not "chat before work" — therefore a cell.
+- **Required input:** a scope, sequencing question, or wave-shaped gap that has not yet been decomposed into executable issue(s).
+- **Matter produced:** issue body · wave master issue · subissue list · sequencing · scope · ACs · STOP conditions · dispatch plan.
+- **Lifecycle (α/β/γ):** α produces the plan / issue / wave. β reviews the plan for coherence, scope, proof, and design boundary. γ closes the planning cell: posts/links issues, verifies labels, records the sequence, captures decisions, and binds learning/follow-ups into the receipt.
+- **Role-vs-model note:** the Greek letter names the **role**, not the model/agent. κ (human-interface herald) commonly acts as **α of a planning cell**; a reviewing activation acts as **β**; either may be a different activation. Do **not** mint a new Greek identity per model — the role is the invariant.
+- **Relationship to neighbors:** `issue_authoring` produces one executable issue; `wave` composes child-cell receipts; `planning` produces the *plan/wave contract + sequencing* and may spawn `issue_authoring` + `implementation` children. β resolves exact boundaries during review.
+- **Worked example:** operator review of #570 surfaced two gaps (this cell kind, and the mandatory learning section) that were not cleanly captured by `issue_authoring` (a single issue) or `wave` (child-receipt composition) — a planning-shaped pass would have filed a scoped issue with explicit AC/scope up front, then handed off to a `doctrine`-kind `implementation` cell, illustrating the planning → issue_authoring/implementation handoff this entry formalizes.
+- **FSM implication:** a planning cell may **create or update issues**, but does **not** imply immediate dispatch unless the plan explicitly says so (mirrors `issue_authoring`).
+
 ## FSM awareness: `cell kind -> valid matter -> allowed transition request`
 
 The issue FSM (`cnos.issues/commands/issues-fsm`) should evaluate transitions differently depending on which cell kind is running against an issue. This table names the mapping at the doctrine level; it is **not yet consumed by any transition rule** — see "Observation, not enforcement" below.
@@ -134,6 +145,7 @@ The issue FSM (`cnos.issues/commands/issues-fsm`) should evaluate transitions di
 | `release` | tag / release notes / deploy branch / release receipt | boundary-only; requires δ, not a normal β content review |
 | `doctrine` | doc / SKILL.md / glossary / schema doctrine diff | `status:todo -> status:in-progress -> status:review` (same shape as `implementation`, docs-only matter) |
 | `experiment` | spike result / prototype / recommendation | `status:todo -> status:review` with a recommendation or follow-up issue as matter, not a merge-to-main implementation |
+| `planning` | issue body / wave master issue / subissue list / sequencing / dispatch plan | `selected gap -> plan contract -> status:ready` (mirrors `issue_authoring`); does not imply `status:todo -> status:in-progress` unless the plan explicitly says so |
 
 ## Recording point (AC8)
 
@@ -152,6 +164,28 @@ cell_kind: doctrine
 This cell's own scaffold, `.cdd/unreleased/570/gamma-scaffold.md`, is the worked example — γ names the cell kind at dispatch time, before α ever starts producing matter. This is the **first canonical recording point** per the issue's own recommendation: "document the field and require new cells to record it in the CDD receipt / self-coherence surface. Do not make verifier enforcement mandatory yet." No existing cells are required to backfill `cell_kind`; its absence defaults to `implementation` (the current CDS dispatch cell kind) wherever it is observed.
 
 **Future typed field (deferred, Phase B).** The generic-kernel + typed-refinement shape here mirrors the CUE unification pattern already used across `schemas/cdd/receipt.cue` (generic `#Receipt`) and `schemas/cds/receipt.cue` (`#CDSReceipt: cdd.#Receipt & {...}`). A future `schemas/cdd/cell.cue` could define `#Cell` and per-kind refinements as a closed disjunction discriminated by `cell_kind`, validated via `cdd-verify`'s `cuevet.go`. That CUE schema, its verifier enforcement, and any codegen of Go types from it are explicitly **out of scope for this doctrine-first cell** (see #570 Deferred list).
+
+## Mandatory terminal learning section
+
+Every terminal cell closeout MUST include a `learning` (equivalently `epsilon_observations`) section — a general rule across **all** cell kinds, not just `planning`. This is not a giant postmortem; it is a small, always-present artifact:
+
+```yaml
+learning:
+  observations:        # what surprised us
+    - ...
+  process_deltas:      # what should change next time
+    - ...
+  reusable_patterns:   # what can become doctrine / tooling
+    - ...
+  followups:           # issues to file / link
+    - issue: ...
+  operator_burden:     # what required unnecessary operator intervention
+    - ...
+```
+
+This is **ε captured by γ**: ε observes patterns across runs; γ binds the observation into the receipt at closeout (see `gamma/SKILL.md` — γ's closeout responsibility now states this explicitly). Every terminal closeout answers: *what did we produce? what did we validate? what did we decide? what did we learn? what should change?* Learning becomes part of the system, not a chat side effect.
+
+**Required by doctrine; mechanical verifier enforcement deferred to a follow-up** — consistent with this document's own "document first, enforce later" stance (see "Observation, not enforcement" below, and #570's original doctrine-first framing). No existing cells are required to backfill a `learning` section retroactively.
 
 ## Observation, not enforcement
 
