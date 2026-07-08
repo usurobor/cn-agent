@@ -2334,7 +2334,7 @@
       "cli"
     ],
     "pri": "P2",
-    "status": "in-progress",
+    "status": "review",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2343,7 +2343,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T13:08:20Z",
-    "updated": "2026-07-08T14:41:19Z",
+    "updated": "2026-07-08T15:01:24Z",
     "url": "https://github.com/usurobor/cnos/issues/612"
   },
   {
