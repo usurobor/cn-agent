@@ -28,3 +28,77 @@ Full detail, the pinned 7-axis implementation contract, the per-AC oracle, and t
 - Structural precedent: `src/packages/cnos.issues/commands/issues-fsm/` (Go-module co-location shape, `fetch.go`'s net/http idiom — `ghGetJSON`/`ghRequest`/`ghAddLabel`/`ghRemoveLabel`/`ghEnsureLabelExists`, `githubAPIBase` test-seam var, `resolveDefaultTablePath`'s directory-walk idiom, `withFakeGitHub` test helper) and `src/go/internal/cli/cmd_issues_fsm.go` (thin-wrapper shape: `Run` delegates entirely to the domain package, no `Help()` method, generic `--help` fallback via `PrintCommandHelp`).
 - `src/go/internal/cli/dispatch.go`'s `ResolveCommand`/`GroupMembers`/`InvocationName` — read in full after an initial `cn label-doctor --help` smoke check surfaced that a hyphenated `Spec().Name` is *always* routed through the noun-verb space form (`cn label doctor`), never a flat single hyphenated token, by design ("Hyphenated flat forms ... are NOT supported" — dispatch.go's own doc comment). See §ACs AC4 for the full write-up; this is not an improvisation on the pinned CLI-integration axis, it is dispatch.go's pre-existing, documented behavior for the Name value the contract pinned.
 - `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" / §"Artifact contract" (cycle-branch-as-coordination-surface, `.cdd/unreleased/{N}/` conventions).
+
+## ACs
+
+All AC-by-AC verification below was run against implementation SHA `a73e1f38` (the last implementation commit before this self-coherence.md's own commits — `git log --oneline origin/main..HEAD` at write time), against the real `usurobor/cnos` repo unless noted otherwise.
+
+### AC1 — Audit complete
+
+**Oracle (γ scaffold):** an artifact exists listing all 8 `labels.json` entries and their live state (present-and-matching / present-but-drifted / missing); re-running the audit gets the same classification, modulo repairs this PR itself made.
+
+**Evidence:** `.cdd/unreleased/493/label-audit.md` (committed `a73e1f38`) — the "Before" section reproduces the γ scaffold's live-audit table exactly (7 of 8 drifted, `status:blocked` missing), captured via `cn label doctor --dry-run` run against the real repo before any repair. The "After" section shows the post-repair state (7 of 8 fully canonical; `dispatch:cell`'s color corrected, description blocked by a real GitHub API constraint — see below). The audit is generic by construction: `Audit()` (`src/packages/cnos.core/commands/label-doctor/doctor.go`) diffs every `manifest.Labels` entry against the live set by name/color/description with no per-label special-casing — `status:review` (the issue's originally-cited finding) is not treated differently from any other entry (`TestAudit_ClassifiesMatchDriftedMissing`, `TestAudit_ColorCaseInsensitive_DescriptionExact`).
+
+**Status: MET.**
+
+### AC2 — All canonical labels exist with canonical color+description
+
+**Oracle:** `gh label list --repo usurobor/cnos --json name,color,description` shows all 8 entries present, color+description byte-equal (case-insensitive on hex) to `labels.json`.
+
+**Evidence (live re-verification at write time):**
+
+```
+$ gh label list --repo usurobor/cnos --limit 200 --json name,color,description | jq -c '.[] | select(.name|test("^(status:|dispatch:cell)"))'
+{"color":"ededed","description":"Well-formed scope but not yet refined to dispatch readiness.","name":"status:backlog"}
+{"color":"c2e0c6","description":"Spec'd; ACs converged; awaiting operator authorization.","name":"status:ready"}
+{"color":"0e8a16","description":"Operator-authorized; dispatch wake may claim.","name":"status:todo"}
+{"color":"fbca04","description":"Claimed by a dispatch wake; cycle running.","name":"status:in-progress"}
+{"color":"5319e7","description":"Cell complete; awaiting external/operator review of the receipt/result.","name":"status:review"}
+{"color":"d93f0b","description":"External review requested changes; issue must be revised before re-dispatch.","name":"status:changes"}
+{"color":"b60205","description":"Gated on external input (operator, infra, external authority).","name":"status:blocked"}
+{"color":"1d76db","description":null,"name":"dispatch:cell"}
+```
+
+7 of 8 are byte-equal to `labels.json`. `dispatch:cell`'s color is now canonical (`1d76db`); its description is `null` (empty), not the canonical 149-byte string. This is not a bug in the shipped tool — GitHub's label API rejects any description over 100 characters (`HTTP 422: "description is too long (maximum is 100 characters)"`), and `labels.json`'s own `dispatch:cell.description` is 149 bytes. See `.cdd/unreleased/493/label-audit.md` §"Residual gap" for the full account and §Debt below.
+
+**Status: MET for 7/8; PARTIALLY MET for `dispatch:cell`** (color canonical, description structurally inapplicable — genuine `labels.json` data defect, out of this issue's pinned scope to silently edit; see §Debt).
+
+### AC3 — `status:review` corrected
+
+**Oracle:** `status:review.color == "5319e7"`, checked independently of AC2.
+
+**Evidence:** confirmed live above — `status:review` color is `5319e7`, description byte-equal to canonical. Also directly exercised by `TestGhUpdateLabel_PatchesColorAndDescription` (unit-level PATCH-body assertion) and `TestDoctor_Apply_RepairsDriftAndIsIdempotent` (end-to-end repair against a fixture carrying `status:review` drift).
+
+**Status: MET.**
+
+### AC4 — Command exists, idempotent
+
+**Oracle:** (a) source directory exists under `src/packages/cnos.core/commands/`; (b) running it against drifted/missing labels produces the canonical set (fixture-based, no live network required for CI); (c) running it a second time performs zero mutating API calls.
+
+**Evidence:**
+
+- (a) `src/packages/cnos.core/commands/label-doctor/` exists, own `go.mod` (`module github.com/usurobor/cnos/packages/cnos.core/commands/label-doctor`, `go 1.24`), added to root `go.work`'s `use (...)` block (5th entry).
+- (b) `TestDoctor_Apply_RepairsDriftAndIsIdempotent` and `TestRun_Apply_RepairsLiveState` (`doctor_test.go`, `cli_test.go`) drive a fixture with drifted + missing labels through an `httptest.Server` and assert the live-store mock ends up canonical. No live network call in any test (`withFakeGitHub` redirects `githubAPIBase`, mirroring `issues-fsm`'s idiom).
+- (c) `TestDoctor_Apply_RepairsDriftAndIsIdempotent`'s second `Doctor()` call against the now-repaired fixture asserts `store.posts == 1 && store.patches == 1` (unchanged from the first call) and `len(res2.Applied) == 0` — idempotence is asserted on the fake server's actual request counts, not just "exit 0 twice" (per the γ scaffold's explicit oracle wording).
+- **Command registration + CLI integration:** `src/go/internal/cli/cmd_label_doctor.go` (`LabelDoctorCmd`), registered in `src/go/cmd/cn/main.go` (`reg.Register(&cli.LabelDoctorCmd{})`, same block as `IssuesFsmCmd`/`RepoInstallCmd`). `Run` delegates entirely to `labeldoctor.Run(ctx, inv.Args, inv.Stdin, inv.Stdout, inv.Stderr)` — no `os`/`net/http`/`encoding/json`/`path/filepath` import in `cmd_label_doctor.go` (verified: the CI "Dispatch boundary check" grep pattern run locally against `internal/cli/cmd_*.go` reports zero violations, see §Self-check).
+- **Invocation-shape finding (real, not improvised):** because `Spec().Name = "label-doctor"` contains a hyphen, `cli/dispatch.go`'s `ResolveCommand` routes it through the noun-verb path — `cn label doctor` (two argv tokens), not a flat single hyphenated token `cn label-doctor`. This was empirically confirmed (`./cn label-doctor --help` resolves to a *group listing*, not the command; `./cn label doctor --help` resolves correctly, exit 0) and traced to `dispatch.go`'s own documented invariant: "Hyphenated flat forms (e.g., 'kata-run') are NOT supported. The canonical form is noun-verb." This governs **every** existing hyphenated-Name kernel command identically (`issues-fsm` → `issues fsm`, `cdd-verify` → `cdd verify`, `repo-install` → `repo install`, `cell-finalize`/`cell-return`/`cell-resume` → space forms) — `label-doctor` is not a special case, and this is not α relaxing the pinned CLI-integration axis: the `Spec().Name` string is registered exactly as pinned (`"label-doctor"`), and the resulting invocation shape is a deterministic, pre-existing consequence of that value passing through unmodified shared dispatch code. The contract's "single-token, matching `cn doctor`/`cn build`/`cn status` naming" framing was an inexact analogy (those three are genuinely flat, non-hyphenated Names) alongside its own, more specific and load-bearing instruction to "mirror `cmd_issues_fsm.go` exactly" — and `issues-fsm` is itself only reachable via its noun-verb space form, not a flat token. The two exemplars conflict; this cycle resolved the conflict in favor of the more specific, structurally-detailed instruction rather than pausing for a γ/δ round-trip over a downstream, fully-explained, zero-latitude mechanical consequence (see `cmd_label_doctor.go`'s doc comment for the same write-up at the code site). `cell.go`'s existing runtime error text ("Run label-doctor before retrying") uses the hyphenated form as operator-facing prose/mnemonic, not a literal invocable token — flagged in §Debt.
+- CLI ergonomics smoke test (`.github/workflows/build.yml`) now includes `"label doctor"` in its `--help` exercise loop and `"label-doctor"` in both `cn help`/`cn status` leaked-hyphenated-name negative checks (peer enumeration of the existing family: `issues-fsm|cell-finalize|cell-return|cell-resume|repo-install|cdd-verify|issues-map`).
+- **`ensureCanonicalDispatchLabels()` stub replaced, not paralleled:** `src/go/internal/repoinstall/repoinstall.go` now calls `labeldoctor.Doctor(ctx, labeldoctor.Options{RepoRoot: opts.RepoRoot, Stdout: opts.Stdout, Stderr: opts.Stderr})` in-process (both packages are `go.work`-linked; import mirrors `cmd_issues_fsm.go`'s cross-module `issuesfsm` import). No parallel/dead path remains — `grep -n "cnos#493 label-install mechanism is not yet available" src/go/internal/repoinstall/repoinstall.go` returns zero hits (verified).
+- **Existing "cnos#493" stub-string tests updated, not deleted/weakened:** `repoinstall_test.go`'s `TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap` and `TestRun_DispatchCds_SigmaDefault_NoIdentityFlagsRequired`, and `cmd_repo_install_test.go`'s `TestRepoInstall_DispatchCds_IdentityFlagsWireThrough`, now assert on `labeldoctor`'s real target-resolution failure (`"canonical dispatch labels not ensured"` + `"could not resolve target repo"`) instead of the literal `"cnos#493"` stub string — and each test explicitly asserts `"cnos#493"` no longer appears in that error, proving the stub is gone, not just relabeled. These three fixtures' `RepoRoot`/`repoDir` genuinely have no configured git remote (a bare `t.TempDir()`, or `initGitRepo` which never adds "origin"), so this exercises `labeldoctor`'s real resolution-failure path with **zero live network calls** — deterministic and CI-safe.
+
+**Status: MET.**
+
+### AC5 — CI guard
+
+**Oracle:** a CI job/step runs the tool in dry-run/diff mode; fails on injected/fixture drift, passes on clean state; both directions actually exercised via test fixtures, not just described.
+
+**Evidence:**
+
+- `.github/workflows/build.yml`'s new `"Test label-doctor module (cnos#493 AC4/AC5)"` step (`working-directory: src/packages/cnos.core/commands/label-doctor`, `go test ./... -v`) mirrors the existing `"Test issues-fsm module (cnos#568 AC9)"` step exactly, for the same reason (a `go.work` sibling module is not covered by `src/go`'s own `go test ./...`).
+- **Both directions are exercised through the actual `Run()` CLI entry point** (the same code path `cn label-doctor --dry-run` runs in production), not just the lower-level `Doctor`/`Audit` functions:
+  - `TestRun_DryRun_FailsOnDrift` (`cli_test.go`): fixture with injected color drift + a missing label → `Run(..., []string{"--token","tok","--dry-run"}, ...)` returns a non-nil error, stderr names "drift detected", zero mutating calls on the fake server.
+  - `TestRun_DryRun_PassesOnClean` (`cli_test.go`): fixture whose live labels already match `labels.json` exactly → `Run(...)` returns nil, zero mutating calls.
+  - (Lower-level equivalents `TestDoctor_DryRun_FailsOnDrift`/`TestDoctor_DryRun_PassesOnClean` in `doctor_test.go` cover the same two directions one layer down, against `Doctor` directly.)
+- Every CI run of this step exercises both directions unconditionally (they're both in the default `go test ./...` set) — a regression in either direction turns CI red on the next push, satisfying "a guard that only ever passes is not a guard."
+
+**Status: MET.**
