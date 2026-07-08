@@ -1273,6 +1273,131 @@ func TestAC575_RuleOrderingDoesNotShadowExistingDeadRunRules(t *testing.T) {
 	}
 }
 
+// --- cnos#630 (partial-matter in-progress wedge): a dead in-progress cell
+// whose matter is already checkpointed into a PR, with no REVIEW-
+// REQUEST.yml, previously re-matched propose_delta_recovery forever (the
+// #614 wedge). These tests lock in AC1/AC2 (the FSM-level oracle for the
+// mechanical exit) and AC3 (claim-time resume over pre-existing matter,
+// already true at the FSM layer per the γ scaffold's Key finding 2). ---
+
+// TestAC630_WedgePreFixRuleReproducesStrand is AC2's "must fail before the
+// fix" half. A single-branch cycle cannot literally run "the old code"
+// against the new fixture once the fix has replaced it, so this test
+// preserves the PRE-cnos#630 in-progress dead-with-matter rule shape
+// inline (the exact rule transitions.json carried before this cycle --
+// all_false:[run_active], any_true:[branch_has_commits, pr_exists,
+// pr_has_commits] -> propose_delta_recovery, target_state "") and proves
+// it reproduces the #614 wedge against the exact fixture AC2 names: no
+// TargetState is ever proposed, so the cell can never advance, requeue, or
+// be re-claimed -- it strands permanently pending a human. This is the
+// RED half of the red/green pair; TestAC630_WedgeFixResolvesToTodoWithMatterPreserved
+// is the GREEN half, run against the real (fixed) table.
+func TestAC630_WedgePreFixRuleReproducesStrand(t *testing.T) {
+	preFixTable := &Table{
+		States: []string{"in-progress"},
+		Transitions: []StateTransition{
+			{
+				State:   "in-progress",
+				Trigger: "evaluate",
+				Rules: []Rule{
+					{
+						AllFalse:    []string{"run_active"},
+						AnyTrue:     []string{"branch_has_commits", "pr_exists", "pr_has_commits"},
+						Outcome:     "proposed",
+						Action:      "propose_delta_recovery",
+						TargetState: "",
+						Reason:      "dead run with matter (pre-cnos#630 rule shape, preserved here only to prove the #614 wedge reproduces)",
+					},
+				},
+			},
+		},
+	}
+	snap := mustLoadFixture(t, "testdata/scan-died-after-pr-before-review-request.json")
+	dec, err := Evaluate(preFixTable, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.Action != "propose_delta_recovery" || dec.TargetState != "" {
+		t.Fatalf("pre-fix rule shape did not reproduce the #614 wedge: outcome=%q action=%q target_state=%q (want proposed/propose_delta_recovery/\"\" -- a permanent no-TargetState no-op)", dec.Outcome, dec.Action, dec.TargetState)
+	}
+	// dec.TargetState == "" here IS the strand: scan.go's propose_delta_
+	// recovery case never applies a status-label move for this action, so
+	// under the pre-cnos#630 table this exact fixture would re-evaluate to
+	// the identical decision on every future scan tick, forever.
+}
+
+// TestAC630_WedgeFixResolvesToTodoWithMatterPreserved is AC2's "reaches a
+// valid next state" half (GREEN), run against the real, current
+// transitions.json: the same #614-wedge fixture now resolves to
+// propose_status_todo_with_matter (in-progress -> todo), the cnos#630
+// mechanical exit -- and AC1's oracle (a concrete non-"" TargetState on
+// first tick, not the permanent no-op).
+func TestAC630_WedgeFixResolvesToTodoWithMatterPreserved(t *testing.T) {
+	tab := loadRealTable(t)
+	snap := mustLoadFixture(t, "testdata/scan-died-after-pr-before-review-request.json")
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.Action != "propose_status_todo_with_matter" || dec.TargetState != "todo" {
+		t.Fatalf("outcome=%q action=%q target_state=%q, want proposed/propose_status_todo_with_matter/todo (cnos#630 AC1/AC2: the wedge must resolve to a concrete next state, not the permanent no-op)", dec.Outcome, dec.Action, dec.TargetState)
+	}
+	if dec.EnabledTransition != "in-progress -> todo" {
+		t.Errorf("enabled_transition = %q, want %q", dec.EnabledTransition, "in-progress -> todo")
+	}
+}
+
+// TestAC630_AuditNoteReasonNamesMechanicalReversion is AC4's documentation
+// oracle: the rule's Reason text (verbatim, the text scan.go's generic
+// reconcile branch posts as the recovery-scan comment body) must
+// explicitly name this as a MECHANICAL reversion and state that the
+// branch/PR are preserved -- so a subsequent claim/scan pass reading this
+// comment does not misclassify it as an unexplained orphan (the #368
+// blind-requeue protection extended to the reconciler's own action).
+func TestAC630_AuditNoteReasonNamesMechanicalReversion(t *testing.T) {
+	tab := loadRealTable(t)
+	snap := mustLoadFixture(t, "testdata/scan-died-after-pr-before-review-request.json")
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"MECHANICAL reversion", "PRESERVED", "cnos#368"} {
+		if !strings.Contains(dec.Reason, want) {
+			t.Errorf("rule Reason missing %q (AC4 audit-note requirement) -- got: %s", want, dec.Reason)
+		}
+	}
+}
+
+// TestAC630_TodoWithExistingBranchAndPRResumesNotDeferred is AC3's FSM-
+// level oracle: a status:todo cell carrying a pre-existing cycle/{issue}
+// branch + open PR (exactly the shape the new propose_status_todo_with_matter
+// rule produces, per AC1/AC2 above) with a fresh claim request and no
+// competing run must still cleanly propose todo -> in-progress -- i.e.
+// claiming RESUMES over existing matter rather than being blocked or
+// deferred as an ambiguous/orphaned state. Mirrors testdata/todo-
+// competing-run.json's shape but with run_active: false and
+// branch_exists/pr_exists: true (per the γ scaffold's Key finding 2: the
+// todo rule already gates only on claim_request_present/run_active, never
+// on branch/PR presence, so this is a regression-lock, not new FSM
+// behavior).
+func TestAC630_TodoWithExistingBranchAndPRResumesNotDeferred(t *testing.T) {
+	tab := loadRealTable(t)
+	snap := mustLoadFixture(t, "testdata/todo-resume-existing-matter.json")
+	if !snap.BranchExists || !snap.PRExists {
+		t.Fatalf("fixture precondition: expected branch_exists and pr_exists both true, got branch_exists=%v pr_exists=%v", snap.BranchExists, snap.PRExists)
+	}
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.TargetState != "in-progress" {
+		t.Fatalf("outcome=%q target_state=%q, want proposed/in-progress (cnos#630 AC3: claim must RESUME over pre-existing branch/PR, not defer as an orphan)", dec.Outcome, dec.TargetState)
+	}
+	if dec.Action != "propose_status_in_progress" {
+		t.Errorf("action = %q, want propose_status_in_progress", dec.Action)
+	}
+}
+
 // TestAC575_LiveObservesNewMarkerFiles is the harness-audit companion to
 // TestAssembleLive_ObservesCellKindFromGammaScaffold: it drives
 // assembleLive (repo="" so no network call) against a temp directory

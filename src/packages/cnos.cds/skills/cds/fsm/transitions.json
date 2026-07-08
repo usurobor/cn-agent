@@ -183,12 +183,21 @@
         },
         {
           "all_false": ["run_active"],
+          "all_true": ["pr_exists"],
+          "outcome": "proposed",
+          "action": "propose_status_todo_with_matter",
+          "target_state": "todo",
+          "repair_pass": false,
+          "reason": "cnos#630: partial-matter in-progress wedge fix -- dead run with matter already checkpointed (a PR exists; cn cell finalize's own idempotent no-op already confirmed no further checkpointing is possible) and no REVIEW-REQUEST.yml. Without this rule the cell stalls forever: it cannot advance (no REVIEW-REQUEST.yml), cannot be re-claimed (dispatch only claims status:todo), and the pre-cnos#630 propose_delta_recovery rule below re-matches identically on every scan tick. This rule breaks the wedge by proposing in-progress -> todo -- the cycle/{issue} branch and its PR are PRESERVED, never deleted (the cnos#368 blind-requeue protection restated for the reconciler's OWN action, not just the wake's RELEASE-REQUEST.yml path), so a fresh claim resumes from the existing matter instead of starting over. This is a MECHANICAL reversion, not an operator/kappa action -- the recovery-scan comment this rule's reconciliation posts documents that explicitly so a subsequent claim/scan pass does not misread it as an unexplained orphan (cnos#630 AC4). Positioned after the release-request and run_active rules above (so it never shadows a live release request or an active run) and before the pre-cnos#630 dead-with-matter rule below, which now only matches the 'matter produced but not yet checkpointed into a PR' sub-case (pr_exists still false) -- see cnos#630 self-coherence.md's open-design-call writeup for why this is a distinct action rather than an in-place edit of that rule."
+        },
+        {
+          "all_false": ["run_active"],
           "any_true": ["branch_has_commits", "pr_exists", "pr_has_commits"],
           "outcome": "proposed",
           "action": "propose_delta_recovery",
           "target_state": "",
           "repair_pass": false,
-          "reason": "dead run with matter: no active run, but cycle/{issue} has commits beyond base and/or a PR exists. Never re-dispatch blind over existing work (cnos#368 failure mode) -- propose delta-recovery (open/request a recovery PR) instead."
+          "reason": "dead run with matter: no active run, but cycle/{issue} has commits beyond base and/or a PR exists. Never re-dispatch blind over existing work (cnos#368 failure mode) -- propose delta-recovery (open/request a recovery PR) instead. cnos#630: once a PR exists, the new propose_status_todo_with_matter rule above matches first, so this rule now only fires for the 'commits exist, no PR yet' sub-case (finalize still needs to run to checkpoint into a PR)."
         },
         {
           "outcome": "proposed",

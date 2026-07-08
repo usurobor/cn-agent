@@ -134,6 +134,8 @@ jobs:
             8. **Re-read** the cell's labels (fresh fetch again). Confirm `status:in-progress` and `protocol:cds` still hold; if drift occurred between steps 6 and 7 (another firing or a manual edit raced), **release the claim** — request `status:in-progress → status:todo` via `cn issues fsm evaluate --issue {N} --apply` (see §Lifecycle transitions; requires a fresh `RELEASE-REQUEST.yml`), post a race-detection comment, and do NOT invoke δ.
             9. **Invoke δ** in wake-invoked mode (see next section).
 
+            **cnos#630 — resume from pre-existing matter, not defer as an orphan.** A `status:todo` candidate picked at step 2 may already carry a `cycle/{N}` branch and an open (draft) pull request. This is now a **normal, expected** shape, not label drift or an ambiguous conflict: the recovery scanner's `propose_status_todo_with_matter` rule (`transitions.json`'s `in-progress` state; `src/packages/cnos.issues/commands/issues-fsm/scan.go`) mechanically moves a dead-run-with-checkpointed-matter cell back to `status:todo` specifically so a fresh claim can pick it up and continue, instead of leaving it invisible to the claim queue forever (the "partial-matter in-progress wedge" cnos#630 closes). Steps 1–9 above are UNCHANGED by this: the well-formedness gates (step 4) and the FSM's `todo -> in-progress` guard (step 6) already gate only on `claim_request_present` + no competing active run, never on branch/PR absence (`transitions.json`'s `todo` rules do not check `branch_exists`/`pr_exists`) — so claiming proceeds exactly as it would for a brand-new cell. What differs is what happens **after** the claim, inside δ: δ MUST detect the pre-existing matter and resume from it (read what is already on `cycle/{N}` — including an existing `gamma-scaffold.md` — rather than re-scaffolding from scratch) per [`cnos.cdd/skills/cdd/delta/SKILL.md`](../../../cnos.cdd/skills/cdd/delta/SKILL.md) §9.11 "resumed-from-mechanical-reversion shape." No new Go surface is required for this detection: `cn issues fsm evaluate --issue {N} --json` already exposes `branch_exists`, `pr_exists`, and `cdd_artifacts` (`FactSnapshot`, `snapshot.go`) at claim time.
+
             This is a **serialized claim operation**, not a CAS. The serialization comes from:
             - the substrate's concurrency group (`cds-dispatch-sigma`), which prevents two firings of THIS wake from racing
             - the claim-time re-read + verify gate (step 3+4), which catches label drift visible at claim time
@@ -150,14 +152,17 @@ jobs:
 
             ### Step A — classify the run (`run_class`)
 
-            Determine whether this claim is a **first pass** or a **repair re-entry**. It is a repair re-entry if ANY of these hold for the claimed issue `#{N}`:
+            Determine whether this claim is a **first pass**, a **repair re-entry**, or a **cnos#630 resume from mechanical matter**. Check in this order — the cnos#630 check MUST run before the repair-re-entry check, because both can look similar at a shallow glance (pre-existing `cycle/{N}` branch with commits) and misclassifying a mechanical resume as a repair re-entry sends Step B looking for a rejection that never happened:
 
-            - the issue has prior `status:changes` history (a `review → changes` then `changes → todo` round in its timeline/label events or comments);
-            - the `cycle/{N}` branch already exists with commits beyond its base;
-            - `.cdd/unreleased/{N}/` already contains prior cell artifacts (any of `gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`, `*-closeout.md`, `delta-repair.md`);
-            - prior β/δ bounce comments exist on the issue.
+            1. **cnos#630 resume from mechanical matter** — the `cycle/{N}` branch and/or PR already exist AND there is **no** operator-rejection evidence (no prior `status:changes` history, no `operator-review.md`, no β/δ bounce comment) AND an issue comment names this as a mechanical reversion (the recovery scanner's audit-note comment, produced by `transitions.json`'s `propose_status_todo_with_matter` rule — recognizable by the phrase "MECHANICAL reversion" in the comment body; see `scan.go`'s reconciliation-comment shape). This is NOT a repair re-entry: nothing was rejected, there is no repair checklist to load, and Steps B–E's rejected-findings machinery does not apply. See [`cnos.cdd/skills/cdd/delta/SKILL.md`](../../../cnos.cdd/skills/cdd/delta/SKILL.md) §9.11 for δ's resume routing.
+            2. **repair re-entry** — otherwise, it is a repair re-entry if ANY of these hold for the claimed issue `#{N}`:
+               - the issue has prior `status:changes` history (a `review → changes` then `changes → todo` round in its timeline/label events or comments);
+               - the `cycle/{N}` branch already exists with commits beyond its base;
+               - `.cdd/unreleased/{N}/` already contains prior cell artifacts (any of `gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`, `*-closeout.md`, `delta-repair.md`);
+               - prior β/δ bounce comments exist on the issue.
+            3. **first pass** — otherwise.
 
-            Record the classification as the cycle's `run_class` (see below). If first pass, skip to §Invoke δ. If repair re-entry, Steps B–E are **mandatory**.
+            Record the classification as the cycle's `run_class` (see below). If first pass, skip to §Invoke δ. If cnos#630 resume, δ resumes per `delta/SKILL.md` §9.11 (not Steps B–E). If repair re-entry, Steps B–E are **mandatory**.
 
             ### Step B — load the repair context (repair re-entry only; before any file write)
 
@@ -204,6 +209,7 @@ jobs:
             One of:
 
             - `first_pass` — no prior rejection; normal δ cycle;
+            - `resumed_from_matter` — cnos#630: pre-existing `cycle/{N}` branch/PR checkpointed by the recovery scanner's mechanical reversion, no operator rejection; δ resumes per `delta/SKILL.md` §9.11 rather than running Steps B–E;
             - `repair_pass` — repair re-entry handled by this wake per Steps A–E;
             - `manual_delta_repair` — repaired by manual δ intervention on the branch (not this wake), as in cnos#514's rescue;
             - `blocked` — repair could not proceed (missing context, unrepairable finding); the wake defers to operator and does **not** write closeouts.
