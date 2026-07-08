@@ -40,7 +40,7 @@ fail() {
 
 # --- Cleanup trap ---
 TMPFILE=""
-cleanup() { [ -n "$TMPFILE" ] && rm -f "$TMPFILE"; }
+cleanup() { [ -n "$TMPFILE" ] && rm -f "$TMPFILE"; return 0; }
 trap cleanup EXIT INT TERM
 
 # --- Prerequisites ---
