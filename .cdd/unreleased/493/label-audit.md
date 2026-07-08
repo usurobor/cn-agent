@@ -47,8 +47,10 @@ order) and then hard-failed on `dispatch:cell`'s PATCH with:
 ```
 
 This surfaced two real defects in the shipped tool, both fixed on this
-branch (see commit `baab9367` "fix two bugs found live against
-usurobor/cnos"):
+branch (see commit `1f800c2e` "fix two bugs found live against
+usurobor/cnos" — post-rebase equivalent of the pre-rebase `baab9367`;
+re-stamped during the resumption pass's row-1 rebase per
+`alpha/SKILL.md` §2.6 "SHA citations across path (a) rebase"):
 
 1. **Doctor's apply loop aborted entirely on the first per-label
    failure.** `dispatch:cell` happens to sort last in `labels.json`, so
