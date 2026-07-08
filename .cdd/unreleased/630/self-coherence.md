@@ -10,7 +10,7 @@
 
 **Round:** R0 (first implementation pass on `cycle/630`, `run_class: first_pass` per the γ scaffold — clean first dispatch, no prior claim history).
 
-**Base:** `cycle/630`, created from `main@6143b53c9098e415c4e7e83791843bcad2313314` per `.cdd/unreleased/630/gamma-scaffold.md`.
+**Base:** `cycle/630` was created from `main@6143b53c9098e415c4e7e83791843bcad2313314` per `.cdd/unreleased/630/gamma-scaffold.md`. `origin/main` advanced during this α round (PR #631/cycle/612, PR #624/cycle/611, and an unrelated "cn CLI ergonomics" commit `8db8ff4b` all merged) to `e059014804229c43f0595af19916e12a86a3e198`; per `alpha/SKILL.md` §2.6 row 1, α rebased `cycle/630` onto `origin/main` (`git rebase origin/main`, clean — confirmed zero commits on `main@6143b53c..main@e0590148` touch any path this cycle's diff intersects: `git log --oneline 6143b53c..origin/main -- src/packages/cnos.issues/ src/packages/cnos.cds/skills/cds/fsm/ src/packages/cnos.cds/orchestrators/cds-dispatch/ src/packages/cnos.cdd/skills/cdd/delta/ .github/workflows/cnos-cds-dispatch.yml` returned zero lines), then force-pushed. All evidence in this document was re-verified post-rebase (§Self-check).
 
 ## Skills
 
@@ -27,7 +27,7 @@
 
 ## ACs
 
-Implementation SHA for all evidence below: `a2e9e7dcb0078947a99fe8891c1d68ab1cfb17b3` (the implementation commit; this self-coherence write continues on top of it).
+Implementation SHA for all evidence below: `79fc8565c1f52572fd38ca8ffc5be3018140bcf0` (the implementation commit; this self-coherence write continues on top of it).
 
 ### Open design calls (resolved first, since AC evidence below depends on both)
 
@@ -99,7 +99,7 @@ No other pre-existing test's assertions changed. Confirmed by re-running the ful
 
 **Role self-check.** Did this round push ambiguity onto β? Both open design calls the scaffold flagged are resolved and documented above with concrete rationale tied to the actual guard vocabulary (not restated scaffold text) — β should not need to re-derive either decision from scratch, only verify it. Every AC claim above cites a specific test name and file; β can re-run each one independently rather than trusting narrative. The one area of judgment β should specifically re-examine: whether the `resumed_from_matter` / §9.11 doctrine addition is *sufficiently* load-bearing to satisfy AC3, since (per the scaffold's own Friction note 2) this is a doctrine-quality question, not a code-coverage one, and reasonable readers could disagree on how explicit is explicit enough.
 
-**Exact commands run and their output** (all from `/home/runner/work/cnos/cnos` unless noted; SHA at time of this run: `a2e9e7dcb0078947a99fe8891c1d68ab1cfb17b3` plus this document's own commits on top):
+**Exact commands run and their output** (all from `/home/runner/work/cnos/cnos` unless noted; SHA at time of this run: `79fc8565c1f52572fd38ca8ffc5be3018140bcf0` plus this document's own commits on top):
 
 ```
 $ cd src/packages/cnos.issues/commands/issues-fsm && go build ./... && go vet ./...
