@@ -429,17 +429,23 @@ func TestRepoInstall_DispatchCds_IdentityFlagsWireThrough(t *testing.T) {
 	cmd.Stderr = &stderr
 	runErr := cmd.Run()
 
-	// AC3's cnos#493 label gap is still expected today (see
-	// repoinstall_test.go's TestRun_DispatchCds_RendersWorkflow_
-	// ThenSurfacesLabelGap for why this is the correct current
-	// behavior) — what THIS test proves is that the CLI flags actually
-	// reached the renderer, which only happens if Args→Options
-	// pass-through works.
+	// cnos#493: repoDir is git-initialized (initGitRepo) but has no
+	// "origin" remote configured, so label-doctor cannot resolve the
+	// installing repo's "owner/repo" target and Run surfaces that as a
+	// named error (see repoinstall_test.go's
+	// TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap for why
+	// this is the correct current behavior — no live network call is
+	// possible or attempted here) — what THIS test proves is that the
+	// CLI flags actually reached the renderer, which only happens if
+	// Args→Options pass-through works.
 	if runErr == nil {
-		t.Fatalf("expected the cnos#493 label-gap error, got success\nstdout: %s", stdout.String())
+		t.Fatalf("expected the label-doctor target-resolution error, got success\nstdout: %s", stdout.String())
 	}
-	if !strings.Contains(stderr.String(), "cnos#493") {
-		t.Errorf("stderr should carry the cnos#493 diagnostic, got: %q", stderr.String())
+	if !strings.Contains(stderr.String(), "canonical dispatch labels not ensured") {
+		t.Errorf("stderr should carry the canonical-dispatch-labels diagnostic, got: %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "could not resolve target repo") {
+		t.Errorf("stderr should explain WHY (no git remote), got: %q", stderr.String())
 	}
 
 	workflowPath := filepath.Join(repoDir, ".github", "workflows", "cnos-cds-dispatch.yml")

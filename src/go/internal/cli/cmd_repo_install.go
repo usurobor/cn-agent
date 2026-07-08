@@ -28,11 +28,15 @@ DESCRIPTION:
   renders .github/workflows/cnos-cds-dispatch.yml via the cnos.core wake
   renderer (cnos#609), requires an explicit caller identity, is PR-only
   (this command never pushes to main), and requires the installing
-  token to hold workflow scope. It does not install the canonical
-  dispatch labels itself (cnos#493 owns that mechanism, not yet
-  shipped) — until cnos#493 lands, --dispatch cds still renders the
-  workflow but exits nonzero naming cnos#493, and labels must be
-  applied manually.
+  token to hold workflow scope. It also ensures the canonical cnos.core
+  labels via label-doctor (cnos#493): it audits the installing repo's
+  GitHub labels against cnos.core's labels.json and creates/repairs any
+  missing or drifted one. This requires the installing repo to have a
+  resolvable "origin" git remote and a GitHub token
+  ($GITHUB_TOKEN/$GH_TOKEN) with permission to manage labels; if either
+  is unavailable, --dispatch cds still renders the workflow but exits
+  nonzero naming the label-doctor failure, and labels must be applied
+  manually (e.g. via "cn label doctor").
 
 FLAGS:
   --release V     "latest" (default) or a pinned release tag (e.g. 3.82.0)
@@ -65,7 +69,8 @@ EXIT CODES:
   0  Success (installed, or --dry-run reported the plan)
   1  Error (not a git repo, package/index resolution failure, restore
      failure, or a --dispatch cds precondition: missing identity, or the
-     cnos#493 canonical-label mechanism still being unavailable)
+     cnos#493 label-doctor mechanism failing to resolve the installing
+     repo's target/token or to reach the GitHub API)
 
 INVARIANTS:
   - .cn/deps.json / .cn/deps.lock.json: deterministic (stable order, no

@@ -20,10 +20,12 @@
 // wake manifest, requiring an explicit caller identity (--agent /
 // --workflow-pat-secret / --bot-name / --bot-id) for any non-sigma
 // agent. It never pushes to a remote (PR-only, by construction — this
-// package never calls git). It does not implement the cnos#493
-// canonical-label-install mechanism; until that ships, it detects the
-// gap and returns a named, actionable error rather than silently
-// skipping the labels obligation.
+// package never calls git). It ensures the canonical cnos.core labels
+// via an in-process call into packages/cnos.core/commands/label-doctor
+// (cnos#493); if that mechanism cannot resolve the installing repo's
+// target (no git remote) or cannot reach the GitHub API, it surfaces a
+// named, actionable error rather than silently skipping the labels
+// obligation.
 //
 // This package is cli/-boundary compliant per eng/go §2.18: all domain
 // logic lives here, and cli/cmd_repo_install.go is a thin wrapper.
@@ -43,6 +45,7 @@ import (
 	"strings"
 	"time"
 
+	labeldoctor "github.com/usurobor/cnos/packages/cnos.core/commands/label-doctor"
 	"github.com/usurobor/cnos/src/go/internal/binupdate"
 	"github.com/usurobor/cnos/src/go/internal/hubsetup"
 	"github.com/usurobor/cnos/src/go/internal/pkg"
@@ -366,12 +369,15 @@ func dispatchWorkflowPath(repoRoot string) string {
 //  3. State the workflow-scope PAT requirement + "never pushes to main"
 //     fact in stdout (AC4/C6 — this package never calls git/gh; the
 //     never-pushes-main property holds by construction, not by a guard).
-//  4. Ensure the canonical dispatch labels via the cnos#493 mechanism
-//     (AC3) — that mechanism does not exist yet (cnos#493 is open); this
-//     function does not implement it (Non-goals) and does not silently
-//     skip the obligation: it always surfaces a named, actionable error
-//     naming cnos#493 once identity resolution + the render themselves
-//     succeed.
+//  4. Ensure the canonical dispatch labels via the cnos#493
+//     label-doctor mechanism (AC3): an in-process call into
+//     packages/cnos.core/commands/label-doctor (both packages are
+//     go.work-linked, mirroring cmd_issues_fsm.go's cross-module
+//     issuesfsm import). Does not silently skip the obligation: if the
+//     installing repo's target (owner/repo, resolved from its git
+//     "origin" remote) or a GitHub token cannot be resolved, or the
+//     GitHub API call itself fails, this surfaces a named, actionable
+//     error once identity resolution + the render themselves succeed.
 func runDispatchCds(ctx context.Context, opts Options) error {
 	agent := resolveDispatchAgent(opts.Agent)
 
@@ -425,24 +431,46 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 	fmt.Fprintf(opts.Stdout, "  This changes .github/workflows/ — the installing token needs `workflow` scope.\n")
 	fmt.Fprintf(opts.Stdout, "  Dispatch never pushes to main (PR-only).\n")
 
-	if err := ensureCanonicalDispatchLabels(); err != nil {
+	if err := ensureCanonicalDispatchLabels(ctx, opts); err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
 		return err
 	}
 	return nil
 }
 
-// ensureCanonicalDispatchLabels ensures the canonical dispatch labels
-// (dispatch:cell / protocol:cds / status:todo) exist on the installing
-// repo, via the cnos#493 label-install mechanism ("cn install
-// cnos.core" / label-doctor). That mechanism is not implemented
-// anywhere in this repo yet — cnos#493 is open (P1) — confirmed absent
-// by repo-wide search, not assumed. This cell does NOT implement
-// cnos#493 (Non-goals); it only detects the absence and returns a
-// named, actionable error, so the caller is never told "labels
-// ensured" when they were not (AC3 — "not a silent skip").
-func ensureCanonicalDispatchLabels() error {
-	return fmt.Errorf("canonical dispatch labels not ensured: cnos#493 label-install mechanism is not yet available; labels must be applied manually until it ships")
+// ensureCanonicalDispatchLabels ensures every canonical label in
+// src/packages/cnos.core/labels.json (the 7 status:* lifecycle labels +
+// dispatch:cell) exists on the installing repo (opts.RepoRoot's git
+// "origin" remote), with canonical color/description, via the cnos#493
+// label-doctor mechanism (packages/cnos.core/commands/label-doctor),
+// called in-process — not a subprocess/vendored-binary exec, unlike
+// runDispatchCds's cn-install-wake invocation above: label-doctor is
+// pure API+diff logic with no templating/file-artifact constraint
+// requiring a separate process (see the γ scaffold's Implementation
+// contract → Existing-binary disposition row).
+//
+// labeldoctor.Doctor resolves its own target repo (from opts.RepoRoot's
+// git remote) and its own GitHub token ($GITHUB_TOKEN then $GH_TOKEN);
+// this function passes RepoRoot/Stdout/Stderr through and otherwise
+// leaves resolution to that package, so a caller with no configured git
+// remote (as every existing repoinstall_test.go dispatch-cds fixture
+// uses — a plain t.TempDir() or a git-init'd repo with no "origin") gets
+// a named, actionable error rather than any live network call.
+func ensureCanonicalDispatchLabels(ctx context.Context, opts Options) error {
+	res, err := labeldoctor.Doctor(ctx, labeldoctor.Options{
+		RepoRoot: opts.RepoRoot,
+		Stdout:   opts.Stdout,
+		Stderr:   opts.Stderr,
+	})
+	if err != nil {
+		return fmt.Errorf("canonical dispatch labels not ensured: %w", err)
+	}
+	if len(res.Applied) > 0 {
+		fmt.Fprintf(opts.Stdout, "✓ label-doctor repaired %d canonical label(s): %s\n", len(res.Applied), strings.Join(res.Applied, ", "))
+	} else {
+		fmt.Fprintf(opts.Stdout, "✓ label-doctor: all canonical labels already present and matching\n")
+	}
+	return nil
 }
 
 // applyInstall performs the non-dry-run write path: .cn/deps.json,

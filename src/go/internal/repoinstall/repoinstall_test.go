@@ -936,18 +936,23 @@ func writeDispatchFixtureIndex(t *testing.T) string {
 	return indexPath
 }
 
-// AC1/C1/C3 + AC3 + AC4/C4/C6 + AC5-positive: a non-sigma agent with
-// full identity flags drives the real renderer end-to-end through Run.
-// AC1's oracle ("writes exactly .github/workflows/cnos-cds-dispatch.yml
-// after ... base artifacts present") and AC3's oracle ("the
-// dispatch-install path returns a named, non-silent error surfacing the
-// cnos#493 dependency") describe the SAME observed behavior today: the
-// base install and the render both complete (this is what AC1 checks),
-// and only AFTER that Run surfaces the still-open cnos#493 label gap as
-// its returned error (this is what AC3 checks) — not a silent skip, and
-// not a partial/rolled-back render. See
-// .cdd/unreleased/610/self-coherence.md §ACs for why these two ACs are
-// verified by one test rather than two independent scenarios.
+// AC1/C1/C3 + AC4/C4/C6 + AC5-positive: a non-sigma agent with full
+// identity flags drives the real renderer end-to-end through Run. AC1's
+// oracle ("writes exactly .github/workflows/cnos-cds-dispatch.yml after
+// ... base artifacts present") and the cnos#493 label-doctor
+// integration's oracle ("the dispatch-install path returns a named,
+// non-silent error when the label mechanism cannot resolve its target")
+// describe the SAME observed behavior here: the base install and the
+// render both complete (this is what AC1 checks), and only AFTER that
+// Run surfaces label-doctor's target-repo-resolution failure as its
+// returned error (repoRoot here is a plain t.TempDir() with no git
+// remote configured, so label-doctor cannot resolve "owner/repo" to
+// call the GitHub API — this is expected, not a live network call) —
+// not a silent skip, and not a partial/rolled-back render. See
+// .cdd/unreleased/610/self-coherence.md §ACs for why these two ACs were
+// originally verified by one test rather than two independent
+// scenarios (cnos#493 replaced the label-install stub this test
+// originally pinned; see .cdd/unreleased/493/self-coherence.md).
 func TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap(t *testing.T) {
 	indexPath := writeDispatchFixtureIndex(t)
 	repoRoot := t.TempDir()
@@ -980,20 +985,27 @@ func TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap(t *testing.T) {
 		t.Fatalf("expected rendered workflow at %s: %v\nstdout: %s\nstderr: %s", workflowPath, statErr, stdout, stderr)
 	}
 
-	// AC3: cnos#493's label-install mechanism does not exist yet — Run
+	// cnos#493: repoRoot has no git remote configured, so label-doctor
+	// cannot resolve the installing repo's "owner/repo" target — Run
 	// surfaces this as a named, actionable error (not a silent skip),
 	// even though the render itself (checked above) succeeded.
 	if err == nil {
-		t.Fatal("expected Run to surface the cnos#493 label gap as an error")
+		t.Fatal("expected Run to surface the label-doctor target-resolution error")
 	}
-	if !strings.Contains(err.Error(), "cnos#493") {
-		t.Errorf("error should name cnos#493, got: %v", err)
+	if !strings.Contains(err.Error(), "canonical dispatch labels not ensured") {
+		t.Errorf("error should name the canonical-dispatch-labels failure, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "could not resolve target repo") {
+		t.Errorf("error should explain WHY (no git remote), got: %v", err)
+	}
+	if strings.Contains(err.Error(), "cnos#493") {
+		t.Errorf("error should no longer name cnos#493 as an unshipped-mechanism stub (the mechanism now exists), got: %v", err)
 	}
 	if res != nil {
-		t.Errorf("Run should return a nil Result on the AC3 error path (matching every other error path in this file), got %+v", res)
+		t.Errorf("Run should return a nil Result on this error path (matching every other error path in this file), got %+v", res)
 	}
-	if !strings.Contains(stderr.String(), "cnos#493") {
-		t.Errorf("stderr should also carry the cnos#493 diagnostic, got: %q", stderr.String())
+	if !strings.Contains(stderr.String(), "canonical dispatch labels not ensured") {
+		t.Errorf("stderr should also carry the diagnostic, got: %q", stderr.String())
 	}
 
 	// AC4/C4: zero sigma substrate-binding leak in the acme render.
@@ -1029,9 +1041,10 @@ func TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap(t *testing.T) {
 // with no --agent/--workflow-pat-secret must NOT trip the identity gate
 // (agent resolves to "sigma", which has a default substrate PAT
 // binding) — preserving the implicit sigma-bound behavior AC5 requires
-// as backward-compat. The render still ends in the same AC3 label-gap
-// error as the acme case above; what this test isolates is that the
-// identity gate itself does not fire for the sigma default.
+// as backward-compat. The render still ends in the same label-doctor
+// target-resolution error as the acme case above (cnos#493 — repoRoot
+// has no git remote); what this test isolates is that the identity gate
+// itself does not fire for the sigma default.
 func TestRun_DispatchCds_SigmaDefault_NoIdentityFlagsRequired(t *testing.T) {
 	indexPath := writeDispatchFixtureIndex(t)
 	repoRoot := t.TempDir()
@@ -1054,10 +1067,11 @@ func TestRun_DispatchCds_SigmaDefault_NoIdentityFlagsRequired(t *testing.T) {
 	if !strings.Contains(string(data), "cds-dispatch-sigma") {
 		t.Error("default (no --agent) render should bind the sigma concurrency group")
 	}
-	// The only error expected today is the AC3 label gap, not an
-	// identity error.
-	if err == nil || !strings.Contains(err.Error(), "cnos#493") {
-		t.Errorf("expected the AC3 cnos#493 label-gap error (not an identity error), got: %v", err)
+	// The only error expected here is label-doctor's target-resolution
+	// failure (cnos#493 — no git remote on repoRoot), not an identity
+	// error.
+	if err == nil || !strings.Contains(err.Error(), "canonical dispatch labels not ensured") {
+		t.Errorf("expected the canonical-dispatch-labels error (not an identity error), got: %v", err)
 	}
 	if strings.Contains(stderr.String(), "--workflow-pat-secret is required") {
 		t.Errorf("sigma default must not trip the identity gate, stderr: %q", stderr.String())

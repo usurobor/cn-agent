@@ -157,11 +157,16 @@ for the given agent identity — no sigma binding required; any non-sigma
 if it is missing). The installing token needs `workflow` scope to write
 `.github/workflows/`; the command itself never pushes to `main` (PR-only).
 
-**One precondition is still open:** the canonical dispatch labels
-(`dispatch:cell` / `protocol:cds` / `status:todo`) are not yet installed by
-any command — that mechanism is tracked separately (cnos#493). Until it
-ships, `--dispatch cds` still renders the workflow but exits non-zero naming
-cnos#493, and you must apply the labels to your repo manually.
+**The canonical dispatch labels are ensured automatically:** after
+rendering the workflow, `--dispatch cds` audits the installing repo's
+GitHub labels against `cnos.core`'s `labels.json` and creates/repairs any
+missing or drifted one — the `label-doctor` mechanism (cnos#493), invoked
+in-process (no separate command required). This needs the installing
+repo to have a resolvable `origin` git remote and a GitHub token
+(`$GITHUB_TOKEN`/`$GH_TOKEN`) with permission to manage labels. If
+either is unavailable, `--dispatch cds` still renders the workflow but
+exits non-zero naming the label-doctor failure, and you can apply the
+labels yourself with `cn label doctor` (or manually).
 
 ---
 
@@ -208,7 +213,7 @@ What you provision depends on how far up the automation ladder you go:
 | Tier | What it is | Secrets needed |
 |---|---|---|
 | **Tier 1 — base install** | `cn repo install` (this guide's Layer 1). Just the CDS method, no automation. | None beyond what GitHub Actions already provides (`GITHUB_TOKEN`), and only if you use the GitHub UI path above — the plain CLI path needs no secrets at all. |
-| **Tier 2 — mechanical, label-driven** | A PAT-free mechanical engine (the CDS issue-state FSM, `cn issues fsm evaluate`) that reconciles label state without an agent in the loop. Forthcoming — tracked in cnos#613 (mechanical FSM-engine wake) and gated on cnos#493 (canonical dispatch labels). | `GITHUB_TOKEN` only (mechanical, no agent credential). |
+| **Tier 2 — mechanical, label-driven** | A PAT-free mechanical engine (the CDS issue-state FSM, `cn issues fsm evaluate`) that reconciles label state without an agent in the loop. Forthcoming — tracked in cnos#613 (mechanical FSM-engine wake); its canonical-dispatch-labels precondition (cnos#493) now ships via `cn label doctor` / `--dispatch cds`. | `GITHUB_TOKEN` only (mechanical, no agent credential). |
 | **Tier 3 — autonomous dispatch** | This guide's Layer 2 (`--dispatch cds`): a scheduled agent that claims cells and opens PRs. | A `workflow`-scope PAT (named by `--workflow-pat-secret` / `workflow_pat_secret`) **and** `CLAUDE_CODE_OAUTH_TOKEN` for the agent runtime. |
 
 Tier 2's full runbook (per-secret setup steps, rotation guidance) is Sub 6's
@@ -243,7 +248,7 @@ If you adopted the GitHub UI path, also remove
 | `package(s) not found in index` | The requested `--packages` entry isn't published in the resolved release/index. Check spelling, or pin `--release` to a tag that publishes it. |
 | `package(s) have multiple versions in index; pass --release to pin one` | You passed `--index` pointing at a multi-version index with no `--release`; add `--release <tag>` to disambiguate. |
 | `cn: command not found` after install | `install.sh` put `cn` outside your `PATH`. Re-run with `BIN_DIR="$HOME/.local/bin"` and add that dir to `PATH`. |
-| `--dispatch cds` fails with "canonical dispatch labels not ensured: cnos#493 ..." | Expected today — the workflow still renders; apply the dispatch labels to your repo manually until cnos#493 ships. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
+| `--dispatch cds` fails with "canonical dispatch labels not ensured: ..." | The workflow still rendered; label-doctor could not resolve the repo's `origin` git remote, a GitHub token, or reach the GitHub API. Run `cn label doctor` yourself (or apply the labels manually) once the underlying issue (missing remote/token/scope) is fixed. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
 | `--dispatch cds` fails with "--workflow-pat-secret is required for --agent ..." | Pass `--workflow-pat-secret <NAME>` (and, for a non-sigma agent, `--bot-name`/`--bot-id`) naming the GitHub Actions secret holding that agent's workflow-scoped PAT. |
 | GitHub UI install run fails with "`install_dispatch=true` requires a workflow-scoped PAT ..." | Set the repo secret named by the `workflow_pat_secret` input (default `CNOS_WORKFLOW_PAT`) to a `workflow`-scoped PAT before re-running "Run workflow" — see [§ GitHub UI (no-terminal) install](#github-ui-no-terminal-install). |
 
