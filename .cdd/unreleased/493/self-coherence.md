@@ -250,3 +250,112 @@ uncritically re-read the prior claims.
    per row 14's disclosure requirement rather than silently omitted.
 
 No other known debt. Test coverage, CI wiring, and the `ensureCanonicalDispatchLabels()` stub replacement were all independently re-verified this resumption (see §Self-check) and found sound.
+
+## CDD Trace
+
+Step 7 (Self-coherence) trace, mapped against `cnos.cds/skills/cds/CDS.md`
+§"Development lifecycle" → §"Step table" (the 0–13 canonical ordering).
+This cycle spans two α sessions: the original implementation session and
+this resumption (per `alpha/SKILL.md` §4 "Resumption" — the prior
+session's matter was preserved, not discarded, per
+`delta/SKILL.md` §9.11 "resumed-from-mechanical-reversion").
+
+1. **Step 1 — Select (γ).** cnos#493 selected as the next gap: a
+   live-discovery follow-up to cnos#491 (`status:review`'s color drift),
+   generalized once γ's own live audit found 7/8 canonical labels
+   drifted and 1 missing outright. Evidence: `.cdd/unreleased/493/gamma-scaffold.md`
+   §"Live audit."
+2. **Step 2 — Branch (γ).** `cycle/493` created from `origin/main` at
+   `31d7ddfa53efb67f2d996b085f4d92986b585ef9` (γ scaffold time). Rebased
+   onto `origin/main` twice during this cycle's life: once implicitly
+   (the branch tracked `origin/main` advancing under it between the
+   original implementation session and this resumption — 22 commits,
+   `board-map` regenerations plus unrelated infra/dispatch fixes) — the
+   row-1 pre-review-gate rebase performed at the start of this
+   resumption (`git rebase origin/main`, clean, zero conflicts,
+   `git push --force-with-lease origin cycle/493`). Current base:
+   `origin/main@90e9c8b2` (see §Review-readiness for the exact SHA at
+   signal time).
+3. **Step 3 — Bootstrap (γ).** `.cdd/unreleased/493/gamma-scaffold.md`
+   (221 lines) — full 7-axis Implementation contract, per-AC oracle,
+   α/β prompts, scope guardrails, 5 friction notes. Committed
+   `a703808a`.
+4. **Step 4 — Gap (α).** `.cdd/unreleased/493/self-coherence.md` §Gap
+   (this document, above).
+5. **Step 5 — Mode (α).** `design-and-build`, documented in §Gap; active
+   skills documented in §Skills.
+6. **Step 6 — Artifacts (α).** Full `git diff --stat origin/main...HEAD`
+   (26 files, 2377 insertions / 75 deletions) — every file below maps to
+   an AC row in §ACs, a §Debt item, or this trace:
+
+   ```
+   .cdd/unreleased/493/CLAIM-REQUEST.yml                        |  18 ++      — cds-dispatch claim record (pre-α, γ/wake artifact)
+   .cdd/unreleased/493/gamma-scaffold.md                        | 221 +++++   — Step 3, above
+   .cdd/unreleased/493/label-audit.md                           | 182 +++++   — AC1 evidence artifact (+ resumption-pass update)
+   .cdd/unreleased/493/self-coherence.md                        | 252 +++++   — this document
+   .github/workflows/build.yml                                  |  24 +-      — AC5 (module test step, CLI ergonomics smoke entries, dispatch-boundary-check coverage)
+   docs/guides/INSTALL-CDS.md                                   |  19 +-      — AC4 peer doc: replaces the "still open, apply manually" precondition prose with the shipped label-doctor mechanism; also updates the Tier-2 troubleshooting row
+   go.work                                                      |   1 +      — AC4 (package scoping axis: 5th `use` entry)
+   src/go/cmd/cn/main.go                                        |   1 +      — AC4 (kernel registration, `reg.Register(&cli.LabelDoctorCmd{})`)
+   src/go/internal/cli/cmd_label_doctor.go                      |  47 +++    — AC4 (thin wrapper; caller-path trace below)
+   src/go/internal/cli/cmd_repo_install.go                      |  17 +-      — AC4 peer doc: `repoInstallHelp`'s DESCRIPTION/EXIT CODES prose updated to describe the real (non-stub) behavior
+   src/go/internal/cli/cmd_repo_install_test.go                 |  24 +-      — AC4 (existing "cnos#493" stub-string assertion updated to assert the stub string is GONE)
+   src/go/internal/repoinstall/repoinstall.go                   |  72 ++--    — AC4 (`ensureCanonicalDispatchLabels()` stub replaced with in-process `labeldoctor.Doctor` call; caller-path trace below)
+   src/go/internal/repoinstall/repoinstall_test.go              |  66 ++--    — AC4 (same stub-string-gone assertion pattern)
+   src/packages/cnos.core/commands/label-doctor/cli.go          |  68 ++++    — AC4 (`Run` entry point: flag parsing, --dry-run, --help)
+   src/packages/cnos.core/commands/label-doctor/cli_test.go     | 137 ++++    — AC4/AC5 (Run-level fixture tests, both CI-guard directions)
+   src/packages/cnos.core/commands/label-doctor/doctor.go       | 269 ++++    — AC1/AC4 (Audit/Doctor domain logic)
+   src/packages/cnos.core/commands/label-doctor/doctor_test.go  | 344 ++++    — AC1/AC4/AC5 (domain-level tests, both CI-guard directions)
+   src/packages/cnos.core/commands/label-doctor/github.go       | 172 ++++    — AC4 (ghListLabels/ghCreateLabel/ghUpdateLabel REST primitives)
+   src/packages/cnos.core/commands/label-doctor/github_test.go  | 148 ++++    — AC4 (REST primitive unit tests, incl. 422-code discrimination)
+   src/packages/cnos.core/commands/label-doctor/go.mod          |   3 +      — AC4 (package scoping axis: new module)
+   src/packages/cnos.core/commands/label-doctor/manifest.go     |  91 ++++    — AC1/AC4 (labels.json parse + directory-walk resolution)
+   src/packages/cnos.core/commands/label-doctor/manifest_test.go| 141 ++++    — AC1/AC4 (manifest parse/resolution tests)
+   src/packages/cnos.core/commands/label-doctor/resolve.go      |  45 +++    — AC4 (git-remote → owner/repo resolution utility; §Debt item 2)
+   src/packages/cnos.core/commands/label-doctor/resolve_test.go |  86 ++++    — AC4 (git-remote resolution tests)
+   src/packages/cnos.core/labels.json                           |   2 +-      — AC2 (dispatch:cell description shortened ≤100 chars, commit 0135b30b)
+   .../cnos.core/skills/agent/label-doctrine/SKILL.md           |   2 +-      — AC2 peer doc: doctrine table's dispatch:cell row aligned to the shortened description
+   26 files changed, 2377 insertions(+), 75 deletions(-)
+   ```
+
+   Every file is accounted for. No file in the diff is unmentioned in
+   either §ACs or this table (pre-review-gate row 11).
+
+   **Caller-path trace for the new module (pre-review-gate row 12):**
+   `src/packages/cnos.core/commands/label-doctor` (package `labeldoctor`)
+   has two non-test callers, both confirmed via
+   `grep -rn "labeldoctor\.\(Run\|Doctor\)" src/go/internal`:
+   - `src/go/internal/cli/cmd_label_doctor.go` — `LabelDoctorCmd.Run`
+     calls `labeldoctor.Run(ctx, inv.Args, inv.Stdin, inv.Stdout, inv.Stderr)`.
+     This is the `cn label doctor` CLI entry point (registered in
+     `src/go/cmd/cn/main.go`).
+   - `src/go/internal/repoinstall/repoinstall.go` —
+     `ensureCanonicalDispatchLabels()` calls `labeldoctor.Doctor(ctx,
+     labeldoctor.Options{RepoRoot: opts.RepoRoot, Stdout: opts.Stdout,
+     Stderr: opts.Stderr})`. This is the `cn repo install --dispatch cds`
+     path.
+
+   Neither call site is test-only; both are reached from a real kernel
+   command a human/CI operator invokes.
+
+7. **Step 7 — Self-coherence (α).** This document, `.cdd/unreleased/493/self-coherence.md`,
+   through this CDD Trace section. Test-runner output line counts
+   (pre-review-gate row 13), pasted from actual runs during this
+   resumption, not manually enumerated:
+
+   ```
+   $ cd src/packages/cnos.core/commands/label-doctor && go test ./... -v 2>&1 | grep -c '^--- PASS'
+   32
+   $ cd src/go && go test ./... 2>&1 | grep -c '^ok'
+   15
+   ```
+
+   32 passing tests in the new `label-doctor` module; 15 passing package
+   suites in `src/go` (`internal/cli`, `internal/repoinstall`, and 13
+   other unaffected packages all green — no regression). `gofmt -l`
+   against every changed `.go` file: zero output (clean).
+   `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/build.yml'))"`
+   → `YAML OK`. Live re-verification: `gh label list --repo usurobor/cnos
+   --json name,color,description` → all 8 canonical labels present,
+   color+description byte-equal to `labels.json` (case-insensitive on
+   hex) — full transcript in §ACs AC2/AC3 and `label-audit.md`.
