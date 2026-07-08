@@ -177,3 +177,76 @@ uncritically re-read the prior claims.
   said so."
 
 ## Debt
+
+1. **`dispatch:cell` residual gap — RESOLVED this resumption, not open
+   debt.** The original α run's self-coherence.md (and `label-audit.md`)
+   named `dispatch:cell`'s over-100-character description as debt
+   requiring a follow-up `labels.json` edit. That edit landed on this
+   same branch (commit `0135b30b`) before this resumption began, but the
+   live repair was never re-applied. This resumption applied it
+   (`cn label doctor --repo usurobor/cnos`) and confirmed 8/8 canonical
+   labels live. **Closed, not carried forward** — see §ACs AC2 correction
+   and §Self-check above.
+
+2. **Git-remote-parsing utility (`resolveRepoFromGitRemote`,
+   `resolve.go`) is narrowly scoped — `github.com` only, `origin` only.**
+   `githubRemotePattern` hardcodes the literal host `github.com` (no GitHub
+   Enterprise / custom-domain support), and `resolveRepoFromGitRemote`
+   only ever reads `git remote get-url origin` (no fallback to a
+   differently-named remote, no `--repo` env-var default beyond the
+   explicit CLI flag). This matches the γ scaffold's own framing of this
+   utility as "a small, scoped utility, not a design blocker" and the
+   issue's actual scope (auditing `usurobor/cnos` and generic GitHub.com
+   tenant repos installing via `cn repo install --dispatch cds`) — GHE
+   support was never in scope. Named here so a future GHE-hosted
+   `cn repo install` user hits a clear, anticipated gap rather than a
+   silent surprise.
+
+3. **`githubAPIBase` is likewise hardcoded to `https://api.github.com`**
+   (package-level var, test-seam only — mirrors `issues-fsm/fetch.go`'s
+   identical idiom exactly, so this is inherited scope, not new debt
+   introduced by this issue). Same GHE caveat as item 2.
+
+4. **The `.cn/vendor/packages/cnos.core/labels.json` (vendored-install)
+   manifest-resolution path is unit-tested via fixture
+   (`TestResolveDefaultManifestPath_Vendored`) but not live-verified
+   against a real tenant repo that has actually run `cn repo install`.**
+   Only the source-tree path (`src/packages/cnos.core/labels.json`,
+   this repo dogfooding itself) was live-exercised this cycle, since
+   `usurobor/cnos` itself is the only repo this cycle had live GitHub
+   API access to. The fixture test gives reasonable confidence the
+   directory-walk logic is correct, but "verified against a real
+   `cn repo install`'d tenant repo" remains an open item for whoever
+   next exercises the `--dispatch cds` path end-to-end against a fresh
+   external repo.
+
+5. **`cell.go`'s existing runtime error text ("Run label-doctor before
+   retrying") uses the hyphenated flat form as operator-facing
+   prose/mnemonic, not a literal invocable token** — the actual
+   invocation is `cn label doctor` (noun-verb; see §ACs AC4's
+   invocation-shape finding). This is a small, cosmetic
+   prose/documentation drift (the error text is still directionally
+   correct — an operator reading "label-doctor" and typing
+   `cn label-doctor` gets routed to a group listing showing `label doctor`
+   as the real subcommand, so the gap is self-correcting on first use,
+   not a dead end). Not fixed this cycle because `cell.go`'s
+   `gh`-shellout label-transition path is explicitly out of scope per the
+   γ scaffold's guardrails ("do not touch internal/cell/cell.go's
+   gh-shellout label-transition path"); a one-line string edit to that
+   file's error text would arguably be a documentation-only exception to
+   that guardrail, but this resumption chose not to touch that file at
+   all, preferring to name the drift here for γ/δ triage rather than
+   improvise an exception to an explicit scope guardrail.
+
+6. **Git author identity.** Per this cycle's explicit dispatch
+   instructions (this is a bootstrap/single-operator context, not a
+   multi-role-identity cnos deployment), commits on this branch — both
+   the original implementation commits and this resumption's — carry
+   the `sigma`/`sigma@cnos.cn-sigma.cnos` identity rather than the
+   canonical `alpha@cdd.cnos` role-identity pattern `alpha/SKILL.md`
+   §2.6 row 14 names for a multi-role-identity deployment. This was an
+   explicit, named exemption from the dispatching context for this
+   bootstrap cycle, not an oversight; recorded here for completeness
+   per row 14's disclosure requirement rather than silently omitted.
+
+No other known debt. Test coverage, CI wiring, and the `ensureCanonicalDispatchLabels()` stub replacement were all independently re-verified this resumption (see §Self-check) and found sound.
