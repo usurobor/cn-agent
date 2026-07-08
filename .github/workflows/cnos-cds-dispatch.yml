@@ -49,6 +49,16 @@ jobs:
         # --apply' primitive; this step never writes a label
         # directly.
         shell: bash
+        env:
+          # 'cn issues fsm scan --apply' writes labels via the GitHub API
+          # (e.g. the cnos#630 propose_status_todo_with_matter requeue removes
+          # status:in-progress from a wedged cell). Those writes require GH_TOKEN
+          # in an Actions context; without it the API returns HTTP 401 and the
+          # pre-claim scan exits non-zero, aborting the whole run BEFORE the work
+          # phase — so no firing can claim anything (reads succeed on a public
+          # repo, only writes 401; surfaced once cnos#630's rule drove the first
+          # real scanner write). Reuse the same PR-scoped PAT the finalizer binds.
+          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
         run: |
           set -euo pipefail
           (cd src/go && go build -o /tmp/cn-scan ./cmd/cn)
