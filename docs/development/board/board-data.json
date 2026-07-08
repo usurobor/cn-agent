@@ -2503,7 +2503,7 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2512,7 +2512,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-08T07:47:29Z",
-    "updated": "2026-07-08T14:44:10Z",
+    "updated": "2026-07-08T15:07:56Z",
     "url": "https://github.com/usurobor/cnos/issues/630"
   }
 ]
