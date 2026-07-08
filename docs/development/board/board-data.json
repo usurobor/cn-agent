@@ -2377,7 +2377,7 @@
       "coherence"
     ],
     "pri": "P1",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2386,7 +2386,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T16:51:31Z",
-    "updated": "2026-07-08T06:31:06Z",
+    "updated": "2026-07-08T06:52:03Z",
     "url": "https://github.com/usurobor/cnos/issues/614"
   },
   {
