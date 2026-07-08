@@ -27,7 +27,9 @@ type Rule struct {
 
 	// Action is a short machine-readable action id, e.g. "none", "block",
 	// "propose_status_todo", "propose_delta_recovery",
-	// "propose_repair_dispatch".
+	// "propose_repair_dispatch", "propose_status_todo_with_matter" (cnos#630:
+	// dead run whose matter is already checkpointed into a PR -- distinct
+	// from propose_delta_recovery, which covers matter not yet checkpointed).
 	Action string `json:"action"`
 
 	// TargetState is the proposed next CDS status (label suffix, no

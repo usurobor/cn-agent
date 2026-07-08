@@ -1,0 +1,14 @@
+{
+  "issue": 630,
+  "labels": ["dispatch:cell", "protocol:cds", "status:todo"],
+  "run_state": "",
+  "branch_exists": true,
+  "commits_beyond_base": 5,
+  "pr_exists": true,
+  "pr_commit_count": 5,
+  "cdd_artifacts": ["gamma-scaffold.md", "self-coherence.md"],
+  "review_request_present": false,
+  "claim_request_present": true,
+  "repair_contract_present": false,
+  "checks_state": ""
+}

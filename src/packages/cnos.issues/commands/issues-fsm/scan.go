@@ -140,6 +140,18 @@ func (o *ScanOptions) setDefaults() {
 // so a dead run's matter is checkpointed into a draft PR without a human
 // having to notice the strand first.
 //
+// cnos#630: once matter is checkpointed (a PR exists) and no
+// REVIEW-REQUEST.yml has followed, the table proposes
+// "propose_status_todo_with_matter" (in-progress -> todo) instead of
+// re-matching propose_delta_recovery forever -- this is the mechanical exit
+// from the "partial-matter in-progress wedge": the cell re-enters the
+// status:todo claim queue with its branch/PR PRESERVED (never deleted, the
+// cnos#368 protection restated for the reconciler's own action), so a fresh
+// claim resumes from the existing matter instead of leaving the cell
+// invisible to the claim queue forever. That decision flows through the
+// same generic "proposed with a TargetState" reconciliation branch below
+// that Cases 2/5 already use -- no separate code path.
+//
 // No status-label mutation happens anywhere in this function except through
 // applyStatusLabel -- the same primitive `evaluate --apply` uses. RunScan
 // never calls gh issue edit directly and never invents a transition the
@@ -220,15 +232,22 @@ func scanOne(ctx context.Context, opts *ScanOptions, issue int) ScanIssueResult 
 		res.Note = dec.Reason
 
 	case dec.Outcome == "proposed" && dec.Action == "propose_delta_recovery":
-		// Cases 3/4: matter exists (commits and/or a PR) with no active
-		// run. Checkpoint via the cnos#591 finalizer -- idempotent: opens
-		// the draft PR once, a clean no-op on every subsequent scan tick
-		// against the same state -- and leave the status label untouched.
+		// Case 3: matter (commits) exists but is not yet checkpointed into
+		// a PR, with no active run. Checkpoint via the cnos#591 finalizer.
 		// delta-recovery has no TargetState because the correct next step
 		// is "matter is now checkpointed, awaiting REVIEW-REQUEST.yml or
 		// an operator/δ decision," never a blind status move (the
 		// cnos#368 protection this same rule already encodes for
 		// `evaluate`).
+		//
+		// cnos#630: once a PR exists, transitions.json's new
+		// "propose_status_todo_with_matter" rule matches BEFORE this one
+		// (see transitions.json's in-progress rule ordering), so this case
+		// is reached only pre-checkpoint (branch commits, no PR yet) --
+		// the "PR already existed" else-branch below is now a defensive
+		// fallback for an observe-vs-apply race (facts observed with
+		// pr_exists==false, but a PR appeared between observation and this
+		// finalize call), not the steady-state path it used to be.
 		stdout, ferr := opts.RunFinalize(ctx, issue)
 		if ferr != nil {
 			res.Error = fmt.Sprintf("finalize: %v", ferr)
@@ -250,18 +269,31 @@ func scanOne(ctx context.Context, opts *ScanOptions, issue int) ScanIssueResult 
 				res.Commented = true
 			}
 		} else {
-			// A PR (or the branch/commits it depends on) already existed;
-			// cn cell finalize's own idempotent no-op path ran. Nothing
-			// new happened this tick -- do not re-comment.
-			res.Note = "dead run with matter: PR (or commits) already checkpointed; cn cell finalize confirmed idempotent no-op. Status remains in-progress -- awaiting REVIEW-REQUEST.yml or operator/δ follow-up."
+			// A PR (or the branch/commits it depends on) already existed
+			// at finalize time despite this tick's facts observing
+			// pr_exists==false (observe-vs-apply race -- see the case
+			// comment above); cn cell finalize's own idempotent no-op path
+			// ran. Nothing new happened this tick -- do not re-comment.
+			// The next scan tick will re-observe pr_exists==true and
+			// route through transitions.json's propose_status_todo_with_matter
+			// rule (the generic "proposed with a TargetState" case below),
+			// which is the cnos#630 mechanical exit from this state.
+			res.Note = "dead run with matter: PR (or commits) already checkpointed; cn cell finalize confirmed idempotent no-op. Status remains in-progress -- awaiting the next scan tick's propose_status_todo_with_matter reconciliation."
 		}
 
 	case dec.Outcome == "proposed" && dec.TargetState != "":
-		// Cases 2 and 5: dead-in-progress-no-matter -> todo, or
-		// PR+REVIEW-REQUEST.yml present -> review. Apply through the SAME
-		// applyStatusLabel primitive `evaluate --apply` uses -- the FSM
-		// (this package) remains the only label-writer; scan never
-		// bypasses it with a direct gh issue edit.
+		// Cases 2 and 5, plus cnos#630's propose_status_todo_with_matter:
+		// dead-in-progress-no-matter -> todo, PR+REVIEW-REQUEST.yml
+		// present -> review, or dead-in-progress-with-checkpointed-PR ->
+		// todo (matter preserved, cnos#630 AC1/AC2). Apply through the
+		// SAME applyStatusLabel primitive `evaluate --apply` uses -- the
+		// FSM (this package) remains the only label-writer; scan never
+		// bypasses it with a direct gh issue edit. The comment posted
+		// below (built from dec.Reason, the transitions.json rule's own
+		// prose) is the cnos#630 AC4 audit note: every mechanical
+		// reversion this branch performs is documented on the issue so a
+		// subsequent claim/scan pass does not misread it as an
+		// unexplained orphan.
 		if !opts.Apply {
 			res.Note = fmt.Sprintf("would reconcile %s (%s) -- rerun with --apply", dec.EnabledTransition, dec.Reason)
 			break

@@ -565,3 +565,41 @@ This subsection names the `resumed-from-changes` wake-invoked mode shape: what �
 - `src/go/internal/cell/` — Go implementation of `cn cell return` (label transition) and `cn cell resume` (cycle re-arm).
 - `.cdd/unreleased/497/operator-review.md` — canonical first-use `cn.operator-review.v1` witness.
 - `.cdd/unreleased/497/gamma-closeout.md §5` — canonical first `degraded_recovery` declaration.
+
+### 9.11. resumed-from-mechanical-reversion shape (cnos#630)
+
+This subsection names a second, structurally distinct resume shape, sibling to §9.10: what δ does when a claimed `status:todo` cell carries pre-existing `cycle/{N}` matter (a branch + an open draft PR) checkpointed by the **recovery scanner's own mechanical reversion**, not by an operator rejection. This is the AC3/AC1 "resume, not defer" behavior cnos#630 requires: the partial-matter in-progress wedge fix (`transitions.json`'s `propose_status_todo_with_matter` rule; `src/packages/cnos.issues/commands/issues-fsm/scan.go`) mechanically moves a dead-run-with-checkpointed-matter cell back to `status:todo` specifically so the NEXT claim resumes from it — but only if δ actually recognizes the shape instead of treating the pre-existing branch/PR as an unexplained anomaly.
+
+**Trigger.** A prior wake firing claimed this cell, ran to some partial point (at minimum a `cycle/{N}` branch + a checkpointed draft PR, per the cnos#591 finalizer), and its run died before `REVIEW-REQUEST.yml` was written. A later scheduled scan (`cn issues fsm scan --apply`) observed the dead run + checkpointed matter + no `REVIEW-REQUEST.yml` and mechanically reconciled `status:in-progress -> status:todo`, preserving the branch/PR and posting an audit-note comment naming this as a MECHANICAL reversion (`transitions.json`'s `propose_status_todo_with_matter` rule `reason` text, posted verbatim by `scan.go`'s existing reconciliation-comment path). The cell is now `status:todo` again, and the next dispatch-wake firing that scans the open-issue queue claims it — this is the `resumed-from-mechanical-reversion` shape.
+
+**How this differs from §9.10's resumed-from-changes shape.** Both shapes hand δ a cell whose `cycle/{N}` branch already carries prior-round matter, but the *cause* and the *correct response* differ:
+
+| | §9.10 resumed-from-changes | §9.11 resumed-from-mechanical-reversion (this section) |
+|---|---|---|
+| Cause | Operator read the PR at `status:review` and returned `iterate`/`reject` via `cn cell return` | The prior run died mid-cycle (infra failure, timeout) before reaching `status:review`; the recovery scanner's own reconciliation requeued it |
+| Evidence on the branch | `operator-review.md` present; `self-coherence.md` carries `§R[N]` for N≥1; explicit rejection findings | No `operator-review.md`; the branch may carry only a partial R0 (e.g. `gamma-scaffold.md` alone, or `gamma-scaffold.md` + a partial `self-coherence.md`); the issue carries the scanner's "MECHANICAL reversion" audit-note comment, not an operator verdict |
+| What "resume" means | Address `operator-review.md`'s findings; append a NEW `§R[N+1]` round | Continue the SAME round from wherever it stopped — do not re-scaffold, do not treat the partial state as a rejection to address |
+| Repair-contract machinery (`cds-dispatch/SKILL.md` §Repair re-entry preflight Steps B–E) | Does not apply (no `status:changes` involved) | Does not apply — Step A of that preflight explicitly checks for and excludes this shape (`run_class: resumed_from_matter`) before ever reaching the repair-re-entry classification, precisely so this shape's absence of a rejection is not mistaken for one |
+
+**Detection.** δ detects the resumed-from-mechanical-reversion shape from the same five-input contract §9.2 already supplies — no new Go surface or additional wake-to-δ input is required. `cn issues fsm evaluate --issue {N} --json` (already run at claim time per `cds-dispatch/SKILL.md` §"Claim mechanism") exposes `branch_exists`, `pr_exists`, and `cdd_artifacts` (`FactSnapshot`, `src/packages/cnos.issues/commands/issues-fsm/snapshot.go`) — δ reads the cycle branch state directly (`git ls-tree -r origin/cycle/{N} .cdd/unreleased/{N}/`) at spawn time, exactly as §9.4's "wake-observable without chat-state" mechanism already does for R[N] tracking. Indicators (any one is sufficient, and `cds-dispatch/SKILL.md` §Repair re-entry preflight Step A already runs this check before δ is even invoked):
+- `cycle/{N}` branch and/or an open PR already exist for this issue at claim time (`branch_exists`/`pr_exists` true in the fresh `FactSnapshot`)
+- an issue comment contains the scanner's "MECHANICAL reversion" audit-note phrase (the `propose_status_todo_with_matter` rule's `reason` text)
+- NO `operator-review.md` is present and NO prior `status:changes` label-history exists (the negative check that rules out §9.10 instead)
+
+**Routing sequence (resumed-from-mechanical-reversion).** Follows §9.3 with one structural difference from a first-claim cell: δ does not unconditionally dispatch γ for a fresh R0 scaffold.
+
+1. **δ reads the existing cycle-branch state first** — before dispatching any role, δ reads `.cdd/unreleased/{N}/` on the resumed `cycle/{N}` branch. If `gamma-scaffold.md` already exists, δ does NOT overwrite it and does NOT dispatch γ for a new R0 scaffold — the existing scaffold is still the cell's contract.
+2. **δ dispatches the next incomplete role** per whatever artifacts are already present, following the same completed-sections-preserved discipline named in `alpha/SKILL.md` §4 "Resumption": if only `gamma-scaffold.md` exists, dispatch α exactly as a first-claim cell would (α's own resumption protocol, §4, handles a partially-written `self-coherence.md` if one exists); if `self-coherence.md` already carries a review-readiness signal with no `beta-review.md`, dispatch β directly. δ never re-dispatches γ for a fresh scaffold when one is already present and no operator rejection occurred.
+3. **From that point, §9.3 applies unmodified** — α/β iterate, β's verdict routes convergence or another α round, and closeouts land exactly as a first-claim cell's would.
+
+**Preserved invariants.** Identical in spirit to §9.10's list, restated for this shape's cause:
+- `cycle/{N}` branch — not recreated, not discarded, not rebased onto main during resume (the cnos#368 protection this cell's own fix restates for the reconciler's own action)
+- the checkpointed draft PR — not closed, not replaced; `cn cell finalize`'s own idempotence keeps re-invocation safe if a later step needs to re-checkpoint
+- `.cdd/unreleased/{N}/` artifact directory — not emptied; any partial R0 artifacts already present are read, not discarded
+- `gamma-scaffold.md`, if present — unchanged; δ does not re-author it
+
+**Cross-references.**
+- [`cnos.cds/orchestrators/cds-dispatch/SKILL.md`](../../../../cnos.cds/orchestrators/cds-dispatch/SKILL.md) §"Claim mechanism" (cnos#630 paragraph after step 9) — the wake-side claim behavior this section's routing continues from; §"Repair re-entry preflight" Step A — the `run_class: resumed_from_matter` classification that keeps this shape from being misrouted into the repair-contract machinery.
+- `src/packages/cnos.cds/skills/cds/fsm/transitions.json` — the `propose_status_todo_with_matter` rule (`in-progress` state) that produces this shape's trigger condition.
+- `src/packages/cnos.issues/commands/issues-fsm/scan.go` — the recovery scanner that applies the rule and posts the audit-note comment this section's detection reads.
+- §9.10 above — the sibling resume shape (operator-driven, not mechanical); read together, the two sections cover the full "cell shows up at claim time with pre-existing matter" space this framework currently names.
