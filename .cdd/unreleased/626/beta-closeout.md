@@ -110,3 +110,16 @@ one — every AC and guardrail was independently re-derived and held.
 findings survived independent re-derivation. This is a first-pass
 (`run_class: first_pass`) converge at R0 — no `iterate` round occurred,
 no RC was returned, and no re-dispatch of α was needed.
+
+---
+
+## §R1 amendment — AC3/AC4 continuation review (cnos#626)
+
+Independently re-derived every claim in α's R1 round rather than trusting
+its narrative: re-rendered both manifests, sabotage-tested the new Go
+test's non-vacuity, re-ran the sparse-checkout proof against a fresh real
+clone, confirmed the write-fence untouched byte-for-byte modulo line
+offset, and re-ran the full test suite. Zero findings. `verdict: converge`
+at R1, first review pass this round (no iterate needed). AC4's deferral
+is correct, not a gap — endorsed as consistent with the operator's own
+gate and R0's stated prerequisites.

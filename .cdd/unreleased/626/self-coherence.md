@@ -415,3 +415,165 @@ one has thought through.
 ## Review-readiness | round 0 | base SHA: 86042ec5be4b5fb45b213c27dfcf635958f60aac | head SHA: (this commit) | branch CI: not yet observed (local sha256/idempotence checks reproduced the install-wake-golden gate's logic; live CI on push not yet polled by α) | ready for β
 
 ## Review-ready — R0 complete, ready for β
+
+---
+
+# self-coherence.md — cnos#626 (α, R1 — AC3/AC4 continuation)
+
+## Scope of this round
+
+Continuation dispatch per the issue's "AC3/AC4 continuation dispatched
+(kappa via CAP, 2026-07-08)" comment, which reopened `status:todo` for a
+bounded scope: **AC3 + AC4 only**. AC1/AC2 (this branch's R0) already
+merged as PR #635 and are not touched here. Mechanism was pre-decided by
+the operator/CAP comment: sparse-checkout excluding `.cn-{agent}/` from
+the dispatch wake's own checkout step, in-repo, no new infra.
+
+## run_class note (honest taxonomy gap)
+
+This claim does not cleanly match any of the three `run_class` values
+`cds-dispatch/SKILL.md` §"Repair re-entry preflight" Step A currently
+names (`first_pass`, `resumed_from_matter`, `repair_pass`): there is no
+operator-rejection evidence (rules out `repair_pass`), and no scanner
+"MECHANICAL reversion" audit-note comment exists on the issue (rules out
+`resumed_from_matter` per `delta/SKILL.md` §9.11's own detection rule,
+which requires that phrase). This is a fourth shape — an
+operator-authorized **scope continuation** on an issue whose prior round
+already converged and merged — not yet named in either doctrine surface.
+Treated operationally as equivalent to `first_pass` for the new AC3/AC4
+scope, since `.cdd/unreleased/626/` carried R0's artifacts (this branch's
+history) but no artifacts yet for THIS round at claim time. Flagging this
+gap explicitly rather than silently picking the nearest label; a future
+cell should consider naming this shape in `cds-dispatch/SKILL.md` /
+`delta/SKILL.md` §9 alongside §9.10/§9.11.
+
+## Round-1 prerequisite check against R0's own follow-on requirements
+
+R0's "AC3/AC4 — doctrine + plan, deferred to operator" section (above)
+named four prerequisites a follow-on cell would need before attempting
+candidate mechanism 1 (sparse-checkout) safely. Addressed here:
+
+1. **Regression matrix over existing cell types' checkout-path needs.**
+   Checked empirically, not just reasoned abstractly: grepped every
+   `SKILL.md` under `cnos.cdd`, `cnos.cds`, `cnos.core` for
+   `.cn-sigma`/`.cn-{agent}` references. Zero hits in `gamma/SKILL.md`,
+   `alpha/SKILL.md`, `beta/SKILL.md` (the role skills γ/α/β actually
+   load), `cds/SKILL.md` (the concrete protocol skill), or
+   `issue/SKILL.md` (the cell contract skill) — none of the paths a
+   cell's own cognition consults ever resolve through `.cn-{agent}/`.
+   The only hits are in `delta/SKILL.md` §9.12, `cds-dispatch/SKILL.md`,
+   and the agent-identity-layer skills (`activate`, `attach`,
+   `registration`, `dispatch-protocol`, `label-doctrine`) — all
+   wake/substrate-layer or doctrine-declaration surfaces cell-execution
+   cognition does not load per §9.12's own rule, not cell-read paths.
+   This directly answers R0's stated concern (a "not-anticipated-in-
+   advance" path dependency) with a concrete negative result.
+2. **Manifest-surface decision.** Implemented as a renderer-level
+   `role == "dispatch"` gate in `cn-install-wake`, not a new
+   per-wake manifest field (e.g. `wake.surfaces.excluded_checkout_paths`).
+   Rationale: exactly one dispatch-role wake exists in production today
+   (`cds-dispatch`); a configurable manifest field would be an
+   unused-today abstraction for a hypothetical second dispatch wake with
+   different needs, and none has been named. If a future dispatch wake
+   genuinely needs `.cn-{agent}/` read access, that need itself would be
+   evidence against the cell/substrate boundary this cycle establishes
+   (per `delta/SKILL.md` §9.12: "A cell that needed... hub-state to do
+   its job would be evidence the cell-execution/substrate-identity
+   boundary itself is wrong"), not evidence the renderer needs an escape
+   hatch. No escape hatch added.
+3. **Live-fire validation window.** NOT satisfiable within this cycle by
+   construction: a change to the dispatch wake's own checkout step can
+   only be observed running for real on the wake's NEXT firing after this
+   PR merges — there is no way to "dry-run" the actual GitHub Actions
+   substrate from inside the cycle that authors the change. What IS
+   verifiable now, and was: (a) the git-level mechanism itself, proven
+   empirically against both a throwaway fixture repo and a real clone of
+   this repo (`.cn-sigma` absent post-sparse-checkout, all 43 of its
+   files the only diff against a full checkout, nothing else affected);
+   (b) the renderer emits byte-identical output for the admin wake
+   (regression-free); (c) the full Go test suite passes. This is strong
+   evidence but not the same as an observed live firing. **Recommendation
+   carried to closeout:** treat the next 1-2 real `cds-dispatch` firings
+   post-merge as the live-fire validation window; do not treat AC3 as
+   fully production-proven until at least one clean firing is observed.
+4. **AC4 gate.** Consistent with (3): AC4 (write-fence retirement) is
+   NOT attempted this round. The write-fence
+   (`dispatch_activation_log_write_violation`) is confirmed byte-identical
+   to its prior state (see AC verification below) and stays in place
+   until AC3 is observed holding in a real firing, per the operator's own
+   explicit gate ("retire the write-fence ONLY AFTER AC3 is proven
+   in-cell") and STOP condition ("fence removal is attempted before AC3
+   proof").
+
+## AC3 — capability removal (implemented)
+
+**Mechanism.** `src/packages/cnos.core/commands/install-wake/cn-install-wake`:
+the `actions/checkout@v4` step, when `role == "dispatch"`, now emits:
+
+```yaml
+sparse-checkout: |
+  /*
+  !/.cn-${agent}
+sparse-checkout-cone-mode: false
+```
+
+Regenerated both `.github/workflows/cnos-cds-dispatch.yml` and
+`src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml`
+from the patched renderer (byte-identical to each other, as required by
+the golden-fixture discipline AC2's own round established).
+
+**Proof the capability is gone (not merely instructed against), per
+AC3's own oracle wording:**
+
+- Empirically ran `git sparse-checkout set --no-cone '/*' '!/.cn-sigma'`
+  against a throwaway fixture repo containing `.cn-sigma/logs/` +
+  `.cn-sigma/spec/` content plus unrelated files: post-checkout,
+  `.cn-sigma` is absent (`os.IsNotExist` on stat) while unrelated paths
+  (`src/go/go.mod`, `README.md`) remain present.
+- Repeated the same command against a REAL clone of this repo (not a
+  synthetic fixture) and diffed `git ls-files` (full) against the
+  resulting sparse working tree's file list: the only difference is the
+  full set of `.cn-sigma/*` entries (43 files) — nothing else is
+  affected.
+- Added `TestDispatchRenderer_SparseCheckoutExcludesAgentHub` to
+  `src/go/internal/repoinstall/repoinstall_test.go`, which automates both
+  the YAML-presence check (dispatch: present with the right patterns;
+  admin: absent) and the real-git-mechanism proof (throwaway repo fixture
+  + `git sparse-checkout set --no-cone` + stat assertions), so this proof
+  re-runs on every future CI run rather than being a one-time manual
+  check that could silently bit-rot.
+- Confirmed (independently, not just by design intent) that this test is
+  non-vacuous: sabotaging the renderer's gate condition in a scratch copy
+  makes the test fail as expected (see β's independent re-derivation
+  below, which repeated this sabotage check itself rather than trusting
+  this claim).
+
+**Admin wake unaffected.** `role == "admin"` renders no sparse-checkout
+block; the admin wake's own golden fixture
+(`src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml`)
+re-renders byte-identical to its committed state — confirmed via diff,
+not assumed.
+
+## AC4 — write-fence retirement (deliberately NOT done this round)
+
+Per the prerequisite-4 reasoning above, the
+`dispatch_activation_log_write_violation` write-fence step and its
+detection logic are untouched. Confirmed via diff: the only changes in
+both rendered workflow YAMLs are the 4 added lines of the sparse-checkout
+block; the fence step's content is unchanged (only its line offset
+shifts, because the new block is inserted earlier in the file).
+
+## AC5/AC6 — regression guardrails
+
+- Zero Go source files outside the new test changed (only
+  `repoinstall_test.go` gained a new test function; no production Go
+  changed).
+- `src/packages/cnos.cds/skills/cds/fsm/transitions.json` untouched.
+- No new `cell_kind` taxonomy; no Demo 0 work; `#633` not touched.
+- Full test suite green: `go test ./...` (src/go module) plus the three
+  standalone `go.mod` roots under `src/packages/*/commands/*/`
+  (`issues-fsm`, `issues-map`, `cdd-verify`) — all `ok`, `go vet` clean.
+
+## Review-readiness | round 1 | base: R0's merged state (PR #635, `9d1276cf` on main) + this branch's own R0 history | head SHA: (this commit) | branch CI: not yet observed at push time (local test suite + `go vet` green; live CI to be confirmed by β/δ post-push) | ready for β
+
+## Review-ready — R1 complete, ready for β

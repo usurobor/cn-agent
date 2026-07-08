@@ -191,3 +191,20 @@ substantively deferred to the operator per the operator's own
 design-first STOP condition — this is the designed outcome of a
 supervised design-first cell, not a partial failure. It is ready for δ
 to proceed to the `status:review` transition.
+
+---
+
+## §R1 amendment — AC3/AC4 continuation (cnos#626)
+
+R1 implemented AC3 (sparse-checkout excluding `.cn-{agent}/` from the
+dispatch wake's own checkout, gated to `role == "dispatch"`) with
+empirical proof at both the git-mechanism level and a new automated Go
+test (`TestDispatchRenderer_SparseCheckoutExcludesAgentHub`). AC4 (write-
+fence retirement) was deliberately NOT attempted, per the operator's
+explicit gate and R0's own follow-on-cell prerequisite list (a live-fire
+validation window this cycle cannot self-supply). Zero regressions: full
+test suite green, admin wake's golden fixture re-renders byte-identical.
+`run_class` for this continuation does not cleanly match
+`cds-dispatch/SKILL.md`'s current taxonomy (`first_pass` /
+`resumed_from_matter` / `repair_pass`) — flagged explicitly in
+self-coherence.md rather than silently mislabeled.

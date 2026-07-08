@@ -38,6 +38,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+          sparse-checkout: |
+            /*
+            !/.cn-sigma
+          sparse-checkout-cone-mode: false
 
       - name: Mechanical recovery scanner
         # Pre-claim guard per cnos#593 (Sub C of #583): reconciles

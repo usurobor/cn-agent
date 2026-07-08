@@ -265,3 +265,72 @@ deliverable_evidence:
 ```
 
 PR #635 opened via `cn cell finalize --issue 626` (mechanical finalizer, cnos#591), retitled and marked ready for review by δ. All five closeout-integrity preflight conditions (`cds-dispatch/SKILL.md` §"Closeout integrity preflight") hold: PR exists and references `#626`; `cycle/626` HEAD (`418daa0`) differs from base (`86042ec`, 5 commits); branch exists and diverges from base; all six required artifacts present; this block names the PR + SHA as evidence. δ now requests `status:in-progress -> status:review` via `cn issues fsm evaluate --issue 626 --apply`.
+
+---
+
+## §R1 amendment — AC3/AC4 continuation (cnos#626)
+
+**R1 round summary.** Bounded continuation dispatch (operator/CAP
+comment "AC3/AC4 continuation dispatched") on the same `cycle/626`
+branch whose R0 (AC1/AC2) already merged as PR #635. Scope: AC3
+(sparse-checkout excluding `.cn-{agent}/` from the dispatch wake's own
+checkout) + AC4 (write-fence retirement, gated on AC3). Mechanism was
+pre-decided by the operator; this round's job was implementation +
+empirical proof, not re-litigating the mechanism choice.
+
+**What was addressed.** AC3 fully implemented and evidenced (renderer
+change, regenerated golden fixture + live workflow, new automated Go
+test proving the git-level mechanism against both a synthetic fixture
+and a real clone of this repo). R0's own four follow-on-cell
+prerequisites were checked against: (1) regression matrix — done,
+zero cell-read paths resolve through `.cn-{agent}/`; (2) manifest-surface
+decision — resolved as a renderer-level role gate, no new manifest field,
+with explicit rationale against premature configurability; (3) live-fire
+validation window — structurally deferred to the next real firing (named
+explicitly, not silently skipped); (4) AC4 gate — respected, fence
+untouched.
+
+**Calibrated success claim.** AC3 is implemented and strongly evidenced
+at the mechanism level (real git behavior, both synthetic and real-repo
+proof, automated regression test) but has NOT yet been observed running
+in a live GitHub Actions firing of the dispatch wake itself — that
+observation is structurally only possible after this change merges and
+the wake fires for real. This is named as a residual gap, not glossed
+over. AC4 is correctly NOT claimed this round.
+
+**Updated triage carryforward.** R0's "Recommendation — a follow-on cell
+to prove AC3 safely" is now: AC3 implemented; carry forward a NEW
+recommendation for a follow-up cell (not filed, per the same restraint
+R0 exercised) to (a) confirm the next 1-2 real `cds-dispatch` firings
+complete cleanly under the new sparse-checkout shape, and (b) only then
+open an AC4 cell to retire the write-fence with that live-fire evidence
+named explicitly as the AC3-proof this round could not itself supply.
+
+**`run_class` taxonomy gap.** This continuation's claim shape does not
+match `cds-dispatch/SKILL.md`'s current `run_class` enum
+(`first_pass`/`resumed_from_matter`/`repair_pass`). Named explicitly
+in `.cdd/unreleased/626/self-coherence.md` §R1 rather than silently
+mislabeled; recommend a future doctrine cell add a fourth value (e.g.
+`scope_continuation`) to `cds-dispatch/SKILL.md` §"Repair re-entry
+preflight" Step A and `delta/SKILL.md` §9, sibling to §9.10/§9.11.
+
+## δ deliverable_evidence — R1 (post-PR-open, cnos#524)
+
+```yaml
+deliverable_evidence:
+  pr: "#637 (cycle/626 -> main)"
+  head_sha: "fd3543971d50fe143854b0d665f37fad8ce81802"
+  base_sha: "fd0ca100953013cbabca4010f5ca7a705fc9da7d"
+  commits_beyond_base: 1
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+PR #637 opened directly (referencing `#626` via `Refs`, not `Closes` —
+the issue stays open pending AC4). All five closeout-integrity preflight
+conditions (`cds-dispatch/SKILL.md` §"Closeout integrity preflight")
+hold: PR exists and references `#626`; `cycle/626` HEAD (`fd354397`)
+differs from base (`fd0ca100`, 1 new commit this round); branch exists
+and diverges from base; all six required R1 artifacts present; CI green
+on all checks including "Re-render + diff per-package goldens". δ now
+requests `status:in-progress -> status:review` via
+`cn issues fsm evaluate --issue 626 --apply`.

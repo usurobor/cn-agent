@@ -1,36 +1,48 @@
 issue: 626
 protocol: cds
 cycle_branch: cycle/626
-head_commit: f3d2c59b29bb3b9beab5f403a46e5c30e29603cb
+head_commit: fd3543971d50fe143854b0d665f37fad8ce81802
 requested_by: delta (cds-dispatch wake, wake-invoked mode)
 converge_verdict_ref: .cdd/unreleased/626/beta-review.md
 note: >
-  Requesting the in-progress -> review transition per beta's Round 0
-  converge verdict (round 0: converge, zero findings). This is a
-  supervised design-first cell (operator-narrowed, dated 2026-07-08):
-  AC1 and AC2's first disjunct are implemented and independently
-  re-derived by beta from the actual diff and re-run gates, not from
-  alpha's self-coherence.md narrative alone -- AC1's new delta/SKILL.md
-  Sec 9.12 boundary doctrine independently read and confirmed to state
-  both required halves plus the Sec 9.2 intentional-omission
-  cross-reference; AC2's removal of the fused six-step activation
-  instruction independently grepped (0 hits) and both rendered mirrors
-  (golden fixture + live workflow) independently re-rendered from
-  source and confirmed byte-identical (sha256 match), not merely
-  sha256-compared between two already-committed files. AC3/AC4
-  (capability removal / write-fence retirement) are correctly and
-  honestly deferred to the operator per the operator's own
-  design-first STOP condition, with a substantive doctrine+plan section
-  in self-coherence.md naming both candidate mechanisms, their
-  tradeoffs, and four concrete prerequisites for a follow-on cell --
-  this is the designed outcome of a supervised design-first cell, not a
-  dropped scope item. AC5/AC6 hold as pure-regression guardrails: zero
-  Go source changed, zero FSM/transitions.json changes, write-fence
-  code and .cn-sigma/ contents byte-identical to main, activate/SKILL.md
-  itself unmodified -- all independently re-verified by beta. All
-  closeout artifacts (gamma-scaffold.md, self-coherence.md,
-  beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md)
-  are present on this branch as of this request. No PR has been opened
-  for cycle/626 yet -- per delta/SKILL.md Sec 9.6, opening the cycle-PR
-  and running `cn issues fsm evaluate --issue 626 --apply` is delta's
-  next action following this request, not part of this artifact.
+  Requesting the in-progress -> review transition per beta's Round 1
+  converge verdict (round 1: converge, zero findings). This round is a
+  bounded continuation of the same issue/branch: AC1/AC2 already merged
+  via PR #635 (R0, untouched here); this round's scope is AC3 + AC4 only,
+  per the operator/CAP "AC3/AC4 continuation dispatched" comment.
+
+  AC3 (sparse-checkout excluding .cn-{agent}/ from the dispatch wake's
+  own checkout, gated to role == "dispatch") is implemented and
+  independently re-derived by beta -- not merely read from alpha's
+  self-coherence.md narrative: beta independently re-rendered both the
+  cds-dispatch and agent-admin manifests from the patched renderer,
+  independently re-ran the real git sparse-checkout mechanism against a
+  fresh clone of this repo (not just the new Go test's synthetic
+  fixture), independently sabotage-tested the new Go test
+  (TestDispatchRenderer_SparseCheckoutExcludesAgentHub) to confirm it is
+  not vacuous, and independently confirmed the write-fence
+  (dispatch_activation_log_write_violation) is byte-identical modulo a
+  line-offset shift.
+
+  AC4 (write-fence retirement) is correctly and deliberately NOT
+  attempted this round -- gated on a live-fire validation window that is
+  structurally unavailable before this PR merges and the wake fires for
+  real at least once under the new checkout shape. This is named
+  explicitly as a residual gap in gamma-closeout.md's SS R1 amendment, not
+  glossed over.
+
+  run_class for this continuation does not cleanly match
+  cds-dispatch/SKILL.md's current taxonomy (first_pass /
+  resumed_from_matter / repair_pass) -- named explicitly in
+  self-coherence.md SS R1 "run_class note" rather than silently
+  mislabeled; a fourth shape (scope_continuation) is recommended for a
+  future doctrine cell.
+
+  All R1 closeout artifacts (self-coherence.md SS R1, beta-review.md SS
+  R1, alpha-closeout.md / beta-closeout.md / gamma-closeout.md SS R1
+  amendments) are present on this branch as of this request.
+  Pull request #637 (https://github.com/usurobor/cnos/pull/637) is open,
+  head commit fd354397 (7 commits beyond the cycle/626 base), CI green
+  (all checks pass including "Re-render + diff per-package goldens").
+  `cn issues fsm evaluate --issue 626 --apply` is delta's next action
+  following this request.

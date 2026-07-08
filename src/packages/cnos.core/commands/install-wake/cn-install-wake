@@ -979,6 +979,30 @@ fi
   echo "      - uses: actions/checkout@v4"
   echo "        with:"
   echo "          token: \${{ secrets.${workflow_pat_secret} }}"
+  # -----------------------------------------------------------------------
+  # cell/substrate checkout isolation (cnos#626 AC3).
+  # -----------------------------------------------------------------------
+  #
+  # A dispatch wake's cell-execution cognition (delta/gamma/alpha/beta) is
+  # doctrinally forbidden from reading or writing the agent hub
+  # (.cn-{agent}/, including .cn-{agent}/logs/ -- the admin wake's
+  # channel-log writer-locality per AGENT-ACTIVATION-LOG-v0 SS0) -- see
+  # cnos.cdd/skills/cdd/delta/SKILL.md SS9.12. Before cnos#626 that rule was
+  # behavioral only (the wake prompt instructs the cognition not to read
+  # it); this sparse-checkout makes it structural -- the path is absent
+  # from the checkout, not merely off-limits by instruction. Gated to
+  # role == "dispatch" only: the admin wake owns .cn-{agent}/logs/ and
+  # keeps its full checkout (its own concurrency group runs independently
+  # of this wake's, so admin writes are unaffected). Non-cone mode is
+  # required here (not the default cone mode) because the goal is "include
+  # everything except one path", the inverse of cone mode's "include only
+  # these paths" shape.
+  if [ "$role" = "dispatch" ]; then
+    echo "          sparse-checkout: |"
+    echo "            /*"
+    echo "            !/.cn-${agent}"
+    echo "          sparse-checkout-cone-mode: false"
+  fi
   # ---------------------------------------------------------------------
   # Mechanical recovery scanner (cnos#593, Sub C of #583).
   # ---------------------------------------------------------------------

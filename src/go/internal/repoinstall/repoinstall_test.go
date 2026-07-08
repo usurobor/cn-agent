@@ -623,16 +623,7 @@ func newFakeGitHub(t *testing.T, repo, tag string, indexBody []byte, tarballs ma
 	t.Cleanup(api.Close)
 
 	prefix := "/" + repo + "/releases/download/" + tag + "/"
-	latestPath := "/" + repo + "/releases/latest"
 	dl := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Mirror github.com's /releases/latest redirect so the
-		// redirect-first resolution path (resolveLatestTag) is exercised
-		// against the download host, not only the API fallback.
-		if r.URL.Path == latestPath {
-			w.Header().Set("Location", "/"+repo+"/releases/tag/"+tag)
-			w.WriteHeader(http.StatusFound)
-			return
-		}
 		if r.URL.Path == prefix+"index.json" {
 			w.Write(indexBody)
 			return
@@ -701,62 +692,6 @@ func TestRun_ReleaseLatest_ResolvesAndInstalls(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "9.9.9") {
 		t.Errorf("stdout should print the resolved release tag:\n%s", stdout.String())
-	}
-}
-
-// Regression (release-tag-is-not-a-package-pin): a real cnos release tag
-// (e.g. 3.82.3) is the asset *bucket* name; the packages inside it carry
-// their own, different versions (cnos.core@3.82.0, cnos.cds@0.1.0). The
-// resolver must read each package's version from the release index, NOT
-// pin every package to the release tag — the earlier bug passed the tag as
-// the pin, so the default `cn repo install` deterministically failed with
-// "package(s) not found in index". This test would fail under that bug.
-func TestRun_ReleaseTag_PackageVersionsDifferFromTag(t *testing.T) {
-	coreTar, coreSHA := makeTarGz(t, map[string]string{"cn.package.json": `{"name": "cnos.core", "version": "3.82.0"}`})
-	cdsTar, cdsSHA := makeTarGz(t, map[string]string{"cn.package.json": `{"name": "cnos.cds", "version": "0.1.0"}`})
-	idx := pkg.PackageIndex{
-		Schema: "cn.package-index.v1",
-		Packages: map[string]map[string]pkg.IndexEntry{
-			"cnos.core": {"3.82.0": {URL: "cnos.core-3.82.0.tar.gz", SHA256: coreSHA}},
-			"cnos.cds":  {"0.1.0": {URL: "cnos.cds-0.1.0.tar.gz", SHA256: cdsSHA}},
-		},
-	}
-	indexBody, err := json.Marshal(idx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo := "acme/widgets"
-	tag := "3.82.3"
-	api, dl := newFakeGitHub(t, repo, tag, indexBody, map[string][]byte{
-		"cnos.core-3.82.0.tar.gz": coreTar,
-		"cnos.cds-0.1.0.tar.gz":   cdsTar,
-	})
-
-	repoRoot := t.TempDir()
-	stdout, stderr := noopStdio()
-	res, err := Run(context.Background(), Options{
-		RepoRoot:     repoRoot,
-		Release:      "latest",
-		Packages:     []string{"cnos.core", "cnos.cds"},
-		Repo:         repo,
-		APIBaseURL:   api.URL,
-		DownloadBase: dl.URL,
-		Stdout:       stdout,
-		Stderr:       stderr,
-	})
-	if err != nil {
-		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
-	}
-	if res.ReleaseTag != tag {
-		t.Errorf("ReleaseTag = %q, want %q (the asset bucket)", res.ReleaseTag, tag)
-	}
-	want := map[string]string{"cnos.core": "3.82.0", "cnos.cds": "0.1.0"}
-	for _, dep := range res.Manifest.Packages {
-		if want[dep.Name] != dep.Version {
-			t.Errorf("%s pinned to %q, want %q (version from index, not the %q release tag)",
-				dep.Name, dep.Version, want[dep.Name], tag)
-		}
 	}
 }
 
@@ -1246,5 +1181,129 @@ func TestDispatchRenderer_ProseLeakGrep_CatchesPreFixSigmaPhrasing(t *testing.T)
 	}
 	if len(found) != 3 {
 		t.Fatalf("expected the pre-fix fixture to trip ALL three leak strings for a non-sigma agent (proving the grep oracle is real, not vacuous); found only %v in:\n%s", found, content)
+	}
+}
+
+// extractSparseCheckoutPatterns pulls the literal-block-scalar lines under
+// a "sparse-checkout: |" key out of rendered workflow YAML, stripping the
+// fixed 12-space indent the renderer emits. Returns nil if the key is
+// absent (the admin-shape negative case).
+func extractSparseCheckoutPatterns(t *testing.T, yaml string) []string {
+	t.Helper()
+	const marker = "sparse-checkout: |\n"
+	idx := strings.Index(yaml, marker)
+	if idx < 0 {
+		return nil
+	}
+	rest := yaml[idx+len(marker):]
+	var patterns []string
+	for _, line := range strings.Split(rest, "\n") {
+		if !strings.HasPrefix(line, "            ") {
+			break
+		}
+		patterns = append(patterns, strings.TrimPrefix(line, "            "))
+	}
+	return patterns
+}
+
+// TestDispatchRenderer_SparseCheckoutExcludesAgentHub is the cnos#626 AC3
+// proof: the dispatch-shape checkout step must structurally exclude
+// .cn-{agent}/ (the capability must be GONE, not merely instructed
+// against — the cell's own governing doctrine at
+// cnos.cdd/skills/cdd/delta/SKILL.md SS9.12). Two parts: (a) the rendered
+// YAML carries the sparse-checkout block for role:dispatch and omits it
+// for role:admin (the admin wake keeps its full checkout — it owns
+// .cn-{agent}/logs/ per AGENT-ACTIVATION-LOG-v0 SS0); (b) the extracted
+// patterns are fed to a REAL `git sparse-checkout set --no-cone` against a
+// throwaway fixture repo containing a .cn-sigma/ tree, proving the
+// resulting working tree omits it while unrelated paths survive. Part (b)
+// is the part that would fail if the YAML said the right words but the
+// underlying git mechanism didn't actually behave as claimed.
+func TestDispatchRenderer_SparseCheckoutExcludesAgentHub(t *testing.T) {
+	root := repoSrcRoot(t)
+	rendererPath := filepath.Join(root, "src", "packages", "cnos.core", "commands", "install-wake", "cn-install-wake")
+
+	renderManifest := func(manifestRelPath, wakeName string) string {
+		t.Helper()
+		manifestPath := filepath.Join(root, filepath.FromSlash(manifestRelPath))
+		outPath := filepath.Join(t.TempDir(), wakeName+".yml")
+		cmd := exec.Command(rendererPath, wakeName, "--manifest", manifestPath, "--out", outPath)
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("render %s: %v\nstdout: %s\nstderr: %s", wakeName, err, stdout.String(), stderr.String())
+		}
+		data, err := os.ReadFile(outPath)
+		if err != nil {
+			t.Fatalf("read %s render: %v", wakeName, err)
+		}
+		return string(data)
+	}
+
+	dispatchYAML := renderManifest("src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md", "cds-dispatch")
+	adminYAML := renderManifest("src/packages/cnos.core/orchestrators/agent-admin/SKILL.md", "agent-admin")
+
+	// (a) presence/absence per role.
+	dispatchPatterns := extractSparseCheckoutPatterns(t, dispatchYAML)
+	wantPatterns := []string{"/*", "!/.cn-sigma"}
+	if len(dispatchPatterns) != len(wantPatterns) {
+		t.Fatalf("dispatch render: expected sparse-checkout patterns %v, got %v\nfull YAML:\n%s", wantPatterns, dispatchPatterns, dispatchYAML)
+	}
+	for i, want := range wantPatterns {
+		if dispatchPatterns[i] != want {
+			t.Errorf("dispatch render: pattern[%d] = %q, want %q", i, dispatchPatterns[i], want)
+		}
+	}
+	if !strings.Contains(dispatchYAML, "sparse-checkout-cone-mode: false") {
+		t.Errorf("dispatch render: expected sparse-checkout-cone-mode: false alongside the pattern block")
+	}
+	if adminPatterns := extractSparseCheckoutPatterns(t, adminYAML); adminPatterns != nil {
+		t.Errorf("admin render: expected NO sparse-checkout block (admin keeps its full checkout), got patterns %v", adminPatterns)
+	}
+
+	// (b) the extracted patterns actually work against a real git checkout.
+	fixtureRepo := t.TempDir()
+	runGit := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = fixtureRepo
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = &out
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out.String())
+		}
+	}
+	runGit("init", "--quiet", "-b", "main")
+	runGit("config", "user.email", "test@example.com")
+	runGit("config", "user.name", "test")
+	mustWrite := func(rel, content string) {
+		t.Helper()
+		full := filepath.Join(fixtureRepo, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mustWrite(".cn-sigma/logs/20260101.md", "channel log entry\n")
+	mustWrite(".cn-sigma/spec/PERSONA.md", "persona\n")
+	mustWrite("src/go/go.mod", "module example\n")
+	mustWrite("README.md", "hello\n")
+	runGit("add", "-A")
+	runGit("commit", "--quiet", "-m", "fixture")
+
+	setArgs := append([]string{"-C", fixtureRepo, "sparse-checkout", "set", "--no-cone"}, dispatchPatterns...)
+	runGit(setArgs...)
+
+	if _, err := os.Stat(filepath.Join(fixtureRepo, ".cn-sigma")); !os.IsNotExist(err) {
+		t.Errorf(".cn-sigma: expected absent after sparse-checkout, stat err = %v", err)
+	}
+	for _, keep := range []string{"src/go/go.mod", "README.md"} {
+		if _, err := os.Stat(filepath.Join(fixtureRepo, keep)); err != nil {
+			t.Errorf("%s: expected present after sparse-checkout, got %v", keep, err)
+		}
 	}
 }

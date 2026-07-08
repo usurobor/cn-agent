@@ -189,3 +189,93 @@ pure-regression guardrails (zero Go changes, zero FSM changes, zero new
 taxonomy). All named guardrails (#633, write-fence, `.cn-sigma/`,
 `activate/SKILL.md`) are confirmed untouched by independent inspection,
 not by trusting α's own claims.
+
+---
+
+# beta-review.md — cnos#626 (β, R1 — AC3/AC4 continuation)
+
+## Scope of this review
+
+α's R1 round (AC3 implementation + AC4 deliberate deferral). Independent
+re-derivation, not a read of α's self-coherence.md narrative alone.
+
+## AC3 — capability removal
+
+Independently verified, not trusted from α's report:
+
+1. **Renderer scoping.** Read `cn-install-wake` directly. `role` (enum-
+   validated `admin|dispatch|observer`) and `agent` (default `"sigma"`)
+   are plain script variables in scope, unchanged, at the point the new
+   block is emitted. The new block is correctly gated
+   `if [ "$role" = "dispatch" ]`.
+2. **Rendered both real manifests** (`cds-dispatch`, `agent-admin`)
+   independently: dispatch gets the sparse-checkout block with the
+   correct patterns (`/*`, `!/.cn-sigma`) + `sparse-checkout-cone-mode:
+   false`; admin gets none. Confirmed the admin golden fixture re-renders
+   byte-identical to its committed state (diff, not assumption).
+3. **Non-vacuity check on the new Go test.** Ran
+   `TestDispatchRenderer_SparseCheckoutExcludesAgentHub` — passes.
+   Independently sabotaged a scratch copy of the renderer (changed the
+   gate to `role = "dispatch-DISABLED"`) and re-ran: the test fails as
+   expected. This is real evidence the test detects a regression, not a
+   tautological check of its own fixture.
+4. **Real-git-mechanism proof, repeated independently.** Cloned the
+   actual repo (not the Go test's synthetic fixture) and ran
+   `git sparse-checkout set --no-cone '/*' '!/.cn-sigma'`; diffed
+   `git ls-files` (full checkout) against the resulting working tree's
+   file list. The only difference: all `.cn-sigma/*` entries (43 files)
+   absent. Nothing else affected — no unintended exclusion.
+5. **Other `role: dispatch` manifests.** Grepped
+   `src/packages/*/orchestrators/*/SKILL.md` for `role:`. Only one other
+   exists (`test-fixtures/log-writer-misdeclaration/SKILL.md`),
+   deliberately mis-declared so the renderer refuses at exit 4 before
+   reaching checkout-emission — never renders a workflow, correctly out
+   of scope, not a gap.
+6. **No leak via another step.** Confirmed only one checkout step exists
+   in the rendered workflow; the write-fence's own `git fetch` step only
+   updates refs/objects (no working-tree materialization), and the
+   mechanical-recovery-scanner step talks to the GitHub API only — neither
+   can reintroduce `.cn-sigma` into the working tree.
+7. **Full test suite.** `go test ./...` (src/go) plus the three
+   standalone module roots — all green, `go vet` clean.
+
+## AC4 — write-fence retirement correctly NOT attempted
+
+Confirmed the `dispatch_activation_log_write_violation` fence step and
+its detection logic are byte-identical aside from the line-offset shift
+caused by the new block's insertion point. No fence code, message text,
+or `if: always()` condition touched. This matches — and correctly
+respects — the operator's explicit gate ("retire ONLY AFTER AC3 is
+proven in-cell") and R0's own follow-on-cell prerequisite list, which
+named a live-fire validation window as a precondition AC4 doesn't yet
+have (a workflow-checkout change cannot be observed running for real
+before the PR that authors it merges — structurally true, not an
+excuse). α's self-coherence.md names this honestly rather than silently
+attempting the retirement anyway; that restraint is itself a review point
+in α's favor, not a gap.
+
+## Regression-matrix check (R0's prerequisite 1)
+
+Independently re-ran α's grep sweep for `.cn-sigma`/`.cn-{agent}` across
+`SKILL.md` files under `cnos.cdd`/`cnos.cds`/`cnos.core`. Confirms: zero
+references in `gamma/SKILL.md`, `alpha/SKILL.md`, `beta/SKILL.md`,
+`cds/SKILL.md`, `issue/SKILL.md` — the actual set of skills cell-execution
+cognition loads per `delta/SKILL.md` §9.12. The only references are in
+`delta/SKILL.md` §9.12 itself (the doctrine statement), the wake prompt
+(`cds-dispatch/SKILL.md`), the admin wake manifest, and agent-identity-
+layer skills cells never load. This is real evidence against the failure
+mode R0 flagged, not an assumption.
+
+## Findings
+
+None. Zero blocking or non-blocking findings survived independent
+re-derivation.
+
+## Verdict
+
+**`verdict: converge`.** AC3 is correctly and completely implemented and
+evidenced for this bounded round; AC4 is correctly and honestly deferred,
+consistent with both the operator's explicit gate and R0's own stated
+prerequisites. Recommend the closeout carry forward R0's own
+recommendation: treat the next 1-2 real `cds-dispatch` firings post-merge
+as the live-fire validation window before any future cell attempts AC4.
