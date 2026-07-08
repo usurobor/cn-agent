@@ -104,3 +104,76 @@ $ gh label list --repo usurobor/cnos --limit 200 --json name,color,description |
 - Every CI run of this step exercises both directions unconditionally (they're both in the default `go test ./...` set) — a regression in either direction turns CI red on the next push, satisfying "a guard that only ever passes is not a guard."
 
 **Status: MET.**
+
+## Self-check
+
+This section is written as part of a **resumption** (per `alpha/SKILL.md`
+§4 "Resumption"): a prior α run implemented all 5 ACs and wrote `## Gap`
+/ `## Skills` / `## ACs` but died mid-write before `## Self-check` /
+`## Debt` / `## CDD Trace`, leaving CI's "CDD artifact ledger validation
+(I6)" check red (`self-coherence.md sections — missing required
+sections: CDD Trace Self-check or Debt`). This resumption re-verified
+every AC claim against real command runs rather than trusting the
+existing prose, per the dispatch's explicit instruction not to
+uncritically re-read the prior claims.
+
+**Did this cycle's work push ambiguity onto β?**
+
+- **No new ambiguity was introduced.** All 5 ACs were independently
+  re-run against real state during this resumption pass (not merely
+  re-read): `cd src/packages/cnos.core/commands/label-doctor && go test
+  ./... -v` → 29/29 tests pass (`PASS`, `ok
+  github.com/usurobor/cnos/packages/cnos.core/commands/label-doctor
+  0.078s`); `cd src/go && go build ./... && go test ./...` → builds
+  clean, 15/15 packages `ok`; `gofmt -l` against every `.go` file in
+  `git diff --name-only origin/main...HEAD` → zero output (clean);
+  `go.work` confirmed to list the new module as its 5th `use` entry;
+  `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/build.yml'))"`
+  → `YAML OK`; `./cn label doctor --help` (noun-verb form) exits 0,
+  `./cn label-doctor --help` (flat form) resolves to the `label` group
+  listing, exactly matching the existing self-coherence.md's AC4 claim
+  about `dispatch.go`'s hyphenated-Name routing — independently
+  reproduced, not assumed.
+- **One claim was found stale and was corrected, not silently
+  overwritten.** AC2's original text (written before commit `0135b30b`
+  landed on this same branch) said `dispatch:cell`'s canonical
+  description was "structurally inapplicable" due to GitHub's 100-char
+  API limit. Live re-verification during this resumption found the
+  underlying blocker had already been fixed on-branch (description
+  shortened to 92 bytes) but never re-applied to the live
+  `usurobor/cnos` repo. This resumption ran `cn label doctor --repo
+  usurobor/cnos` (apply, not dry-run) against the real repo and
+  confirmed via a follow-up `--dry-run` that all 8/8 canonical labels
+  now report `match`. Both `self-coherence.md` (AC2's own subsection)
+  and `label-audit.md` (the AC1 evidence artifact) carry an explicit
+  correction note (§2.3 intra-doc-repetition rule — grepped both sites
+  carrying the stale "149-byte"/"structurally inapplicable" claim) rather
+  than a silent rewrite, so β can see exactly what changed and why. This
+  means the branch now hands β a **fully-met** 8/8 AC2/AC3 state rather
+  than a 7/8-partial one the prior claim would have left for β to either
+  accept as "good enough" or independently discover was stale — either
+  outcome would have been ambiguity pushed onto β.
+- **Rebase disclosure.** `origin/main` had advanced by 22 commits since
+  the γ scaffold's base SHA (`31d7ddfa5...`) — considerably more than
+  "board-map regeneration only." `git rebase origin/main` completed
+  cleanly with zero conflicts (`Successfully rebased and updated
+  refs/heads/cycle/493`); the diff content is unchanged, only every
+  commit's SHA and the base moved. Force-pushed with `--force-with-lease`.
+  No β-facing ambiguity here since the rebase was mechanical and the
+  post-rebase diff was re-diffed against `origin/main` to confirm
+  identical file list/content (see §CDD Trace step 3).
+- **Caller-path / dead-code check.** `labeldoctor.Doctor` is called from
+  two live call sites, not zero: (1) `src/go/internal/cli/cmd_label_doctor.go`
+  (`LabelDoctorCmd.Run` → `labeldoctor.Run`, the `cn label doctor` CLI
+  entry point) and (2) `src/go/internal/repoinstall/repoinstall.go`'s
+  `ensureCanonicalDispatchLabels()` (the `cn repo install --dispatch cds`
+  path) — confirmed by `grep -rn "labeldoctor\.\(Run\|Doctor\)" src/go/internal`.
+  Neither is a new module left uncalled.
+- **Is every claim backed by evidence I just re-ran?** Yes for every AC
+  row above and for this section's own claims — each cites either a
+  command actually run during this resumption pass (with its actual
+  output quoted or paraphrased faithfully) or a specific file/line/grep
+  result. No claim in this section rests on "the prior self-coherence.md
+  said so."
+
+## Debt
