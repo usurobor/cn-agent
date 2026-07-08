@@ -1625,7 +1625,7 @@
       "core"
     ],
     "pri": "P1",
-    "status": "in-progress",
+    "status": "review",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -1634,7 +1634,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-06-24T05:06:19Z",
-    "updated": "2026-07-08T19:51:28Z",
+    "updated": "2026-07-08T20:24:53Z",
     "url": "https://github.com/usurobor/cnos/issues/493"
   },
   {
