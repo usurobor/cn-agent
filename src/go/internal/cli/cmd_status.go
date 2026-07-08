@@ -42,7 +42,11 @@ func registryToCommandInfo(reg *Registry) []hubstatus.CommandInfo {
 	for _, cmd := range reg.All() {
 		spec := cmd.Spec()
 		cmds = append(cmds, hubstatus.CommandInfo{
-			Name:    spec.Name,
+			// InvocationName (cnos#612 AC4): same fix as cmd_help.go — a
+			// hyphenated name shadowed by a noun group (e.g. "issues-fsm")
+			// is only reachable via the space form ("issues fsm"); status
+			// must not display the non-invocable hyphenated key either.
+			Name:    InvocationName(reg, spec.Name),
 			Summary: spec.Summary,
 			Tier:    tierLabel[spec.Tier],
 			Package: spec.Package,

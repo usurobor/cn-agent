@@ -72,6 +72,19 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Top-level --version/-V and --help/-h (cnos#612 AC1/AC2). These are
+	// not registered commands — ResolveCommand has no entry for them and
+	// would otherwise fall through to "Unknown command".
+	switch os.Args[1] {
+	case "--version", "-V":
+		fmt.Fprintf(os.Stdout, "cn v%s\n", version)
+		os.Exit(0)
+	case "--help", "-h":
+		inv := makeInvocation(hubPath, nil)
+		helpCmd.Run(ctx, inv)
+		os.Exit(0)
+	}
+
 	// Resolve the command — supports noun-verb form (cn kata run),
 	// flat form (cn kata-run), and noun-group listing (cn kata).
 	// See docs/architecture/DESIGN-CONSTRAINTS.md §3.1.
@@ -98,6 +111,15 @@ func main() {
 
 	cmd := res.Command
 	args := res.Remaining
+
+	// Per-command --help/-h (cnos#612 AC2). Checked before the hub-
+	// requirement gate below so --help works even on commands that need a
+	// hub to actually run (e.g. "cn doctor --help" previously errored with
+	// "requires a hub" instead of printing usage).
+	if len(args) > 0 && (args[0] == "--help" || args[0] == "-h") {
+		cli.PrintCommandHelp(os.Stdout, reg, cmd)
+		os.Exit(0)
+	}
 
 	// Check hub requirement.
 	spec := cmd.Spec()
