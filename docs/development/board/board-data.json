@@ -2472,29 +2472,6 @@
     "url": "https://github.com/usurobor/cnos/issues/639"
   },
   {
-    "n": 640,
-    "t": "process/dispatch: the \"Not dispatched\" body-hold vs `status:todo` label defer trap keeps recurring — and the meta-gap that lets it",
-    "kind": "process",
-    "areas": [
-      "cdd",
-      "cds",
-      "coherence",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-09T02:11:56Z",
-    "updated": "2026-07-09T05:17:10Z",
-    "url": "https://github.com/usurobor/cnos/issues/640"
-  },
-  {
     "n": 642,
     "t": "process: give ε a concrete detect-recurrence pass over closeout learning: blocks",
     "kind": "process",
