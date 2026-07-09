@@ -2491,5 +2491,26 @@
     "created": "2026-07-09T05:05:17Z",
     "updated": "2026-07-09T05:05:17Z",
     "url": "https://github.com/usurobor/cnos/issues/642"
+  },
+  {
+    "n": 644,
+    "t": "pc: mechanize planning cell — κ/α produces wave graph, β reviews, γ closes (S6 of #627)",
+    "kind": "feature",
+    "areas": [
+      "cdd",
+      "cds"
+    ],
+    "pri": "P1",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T05:38:32Z",
+    "updated": "2026-07-09T05:38:32Z",
+    "url": "https://github.com/usurobor/cnos/issues/644"
   }
 ]
