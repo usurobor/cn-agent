@@ -2489,5 +2489,125 @@
     "created": "2026-07-09T05:38:32Z",
     "updated": "2026-07-09T06:17:39Z",
     "url": "https://github.com/usurobor/cnos/issues/644"
+  },
+  {
+    "n": 648,
+    "t": "wave: CNOS Installer GitHub App — native install surface for existing repos",
+    "kind": "process",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T09:07:48Z",
+    "updated": "2026-07-09T09:07:48Z",
+    "url": "https://github.com/usurobor/cnos/issues/648"
+  },
+  {
+    "n": 649,
+    "t": "App installer Sub A — register CNOS App + webhook forwarder + secrets (infra)",
+    "kind": "process",
+    "areas": [
+      "cds"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T09:08:02Z",
+    "updated": "2026-07-09T09:08:02Z",
+    "url": "https://github.com/usurobor/cnos/issues/649"
+  },
+  {
+    "n": 650,
+    "t": "App installer Sub B — Tier-1 base render engine: harden + live-test",
+    "kind": "",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T09:08:10Z",
+    "updated": "2026-07-09T09:08:10Z",
+    "url": "https://github.com/usurobor/cnos/issues/650"
+  },
+  {
+    "n": 651,
+    "t": "App installer Sub C — Tier-2 label doctor via App (Issues: write)",
+    "kind": "",
+    "areas": [
+      "cds"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T09:08:21Z",
+    "updated": "2026-07-09T09:08:21Z",
+    "url": "https://github.com/usurobor/cnos/issues/651"
+  },
+  {
+    "n": 652,
+    "t": "App installer Sub D — Tier-3 dispatch render + secrets (Workflows/Secrets: write)",
+    "kind": "",
+    "areas": [
+      "cds"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T09:08:27Z",
+    "updated": "2026-07-09T09:08:27Z",
+    "url": "https://github.com/usurobor/cnos/issues/652"
+  },
+  {
+    "n": 653,
+    "t": "App installer Sub E — process fix: installation-surface checklist + ownership",
+    "kind": "process",
+    "areas": [],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T09:08:40Z",
+    "updated": "2026-07-09T09:08:40Z",
+    "url": "https://github.com/usurobor/cnos/issues/653"
   }
 ]
