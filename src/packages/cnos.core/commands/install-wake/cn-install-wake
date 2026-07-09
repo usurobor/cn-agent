@@ -724,8 +724,8 @@ fi
 # Token binding + bot identity resolution, split by tier (cnos#613).
 #
 # The engine tier is PAT-free by construction: every Actions token
-# binding (checkout token, recovery-scanner GH_TOKEN, mechanical-engine
-# GITHUB_TOKEN, finalizer GH_TOKEN) resolves to the default
+# binding it emits (checkout token, recovery-scanner GH_TOKEN,
+# mechanical-engine GITHUB_TOKEN) resolves to the default
 # secrets.GITHUB_TOKEN, which `cn issues fsm evaluate/scan --apply` need
 # and nothing more. It has NO workflow-scoped PAT and NO agent bot
 # identity (bot_name/bot_id are agent-tier substrate bindings only). So
