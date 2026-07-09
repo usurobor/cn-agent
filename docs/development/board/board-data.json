@@ -1616,28 +1616,6 @@
     "url": "https://github.com/usurobor/cnos/issues/478"
   },
   {
-    "n": 493,
-    "t": "label-doctor: install + verify cnos.core canonical labels in repos (cnos#491 live-discovery follow-up)",
-    "kind": "tooling",
-    "areas": [
-      "agent",
-      "ci",
-      "core"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-06-24T05:06:19Z",
-    "updated": "2026-07-08T20:24:53Z",
-    "url": "https://github.com/usurobor/cnos/issues/493"
-  },
-  {
     "n": 495,
     "t": "package-isolation: enforce package boundaries across agent surfaces (logs, artifacts, providers)",
     "kind": "process",
@@ -2591,24 +2569,6 @@
     "created": "2026-07-09T09:08:27Z",
     "updated": "2026-07-09T09:08:27Z",
     "url": "https://github.com/usurobor/cnos/issues/652"
-  },
-  {
-    "n": 653,
-    "t": "App installer Sub E — process fix: installation-surface checklist + ownership",
-    "kind": "process",
-    "areas": [],
-    "pri": "P2",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-09T09:08:40Z",
-    "updated": "2026-07-09T09:08:40Z",
-    "url": "https://github.com/usurobor/cnos/issues/653"
   },
   {
     "n": 654,
