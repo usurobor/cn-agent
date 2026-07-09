@@ -1,0 +1,26 @@
+claimed_by: cds-dispatch/sigma
+protocol: cds
+requested_at: 2026-07-09
+issue: 633
+note: >
+  First claim on this cell. No prior cycle/633 branch, no prior PR, no
+  prior .cdd/unreleased/633/ artifacts, and no status:changes history in
+  the issue timeline -- run_class: first_pass.
+
+  Skipped cnos#618 this firing (older by creation date, would otherwise be
+  the FIFO candidate): its body states "Filing-only -- operator holds
+  dispatch", which directly conflicts with status:todo's label-doctrine
+  meaning. Nine prior firings already posted this exact deferral on #618
+  without resolution, so this firing does not repeat the comment; it
+  proceeds directly to the next well-formed, unambiguous candidate (#633),
+  which carries an explicit "Dispatched (operator, 2026-07-09)" note lifting
+  its own prior hold and directing a clean first dispatch.
+
+  Scope per the operator's 2026-07-09 dispatch comment: add explicit
+  all_false:[review_request_present] guard to the propose_status_todo_with_matter
+  rule in src/packages/cnos.cds/skills/cds/fsm/transitions.json (rule [6] in
+  the in-progress state), plus a regression test proving a review-request-
+  bearing in-progress cell with matter never resolves to
+  propose_status_todo_with_matter. Authority: A2/CAP for this small in-scope
+  fix; do not weaken the cnos#630 recovery behavior; do not touch #626/#639
+  or the sparse-checkout/write-fence work.

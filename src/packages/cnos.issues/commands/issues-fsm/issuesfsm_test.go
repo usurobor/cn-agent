@@ -1610,3 +1610,122 @@ func TestAC575_ApplyReleaseWithMatterDoesNotRequeue(t *testing.T) {
 		t.Errorf("expected \"applied: false\" (delta-recovery has no direct label target), got:\n%s", stdout.String())
 	}
 }
+
+// --- cnos#633 (lock rule ordering so propose_status_todo_with_matter can't
+// shadow in-progress -> review): the cnos#630 wedge-fix rule
+// (propose_status_todo_with_matter) previously avoided reverting a
+// review-ready cell purely because it is positioned AFTER the
+// review_request_present rules ([0]/[1]) in transitions.json's in-progress
+// state -- an implicit, order-dependent protection. This cell adds
+// "review_request_present" to that rule's own all_false guard, making it
+// self-guarding independent of table ordering, plus these two regression
+// tests locking the invariant in. ---
+
+// findRuleByAction locates the first rule in state's Rules whose Action
+// matches, by name rather than index -- deliberately order-independent,
+// since this test exists specifically because ordering is not a safe
+// thing to hardcode against for this rule.
+func findRuleByAction(t *testing.T, tab *Table, state, action string) Rule {
+	t.Helper()
+	for _, tr := range tab.Transitions {
+		if tr.State != state {
+			continue
+		}
+		for _, r := range tr.Rules {
+			if r.Action == action {
+				return r
+			}
+		}
+	}
+	t.Fatalf("no rule with action %q found in state %q", action, state)
+	return Rule{}
+}
+
+// TestAC633_TodoWithMatterRuleIsSelfGuardedAgainstReviewRequest is AC1's
+// order-independence oracle: propose_status_todo_with_matter, extracted
+// into a single-rule table with NO other rule ahead of it (i.e. none of
+// rule [0]/[1]'s review_request_present-gated protection is present to
+// rely on), must still refuse to match when review_request_present is
+// true. This proves the guard is self-contained on the rule itself, not an
+// emergent effect of where the rule happens to sit in the table -- exactly
+// what the issue asks for ("enforced independent of rule ordering").
+func TestAC633_TodoWithMatterRuleIsSelfGuardedAgainstReviewRequest(t *testing.T) {
+	real := loadRealTable(t)
+	rule := findRuleByAction(t, real, "in-progress", "propose_status_todo_with_matter")
+
+	isolated := &Table{
+		States: []string{"in-progress"},
+		Transitions: []StateTransition{
+			{State: "in-progress", Trigger: "evaluate", Rules: []Rule{rule}},
+		},
+	}
+
+	snap := mustLoadFixture(t, "testdata/in-progress-review-request-with-matter.json")
+	// Force run_active false so the guard under test (review_request_present)
+	// is the only thing that can block a match -- pr_exists is already true
+	// on this fixture, which would otherwise satisfy the rule's all_true.
+	snap.RunState = "completed"
+	if !snap.ReviewRequestPresent || !snap.PRExists {
+		t.Fatalf("fixture precondition: expected review_request_present and pr_exists both true, got review_request_present=%v pr_exists=%v", snap.ReviewRequestPresent, snap.PRExists)
+	}
+
+	dec, err := Evaluate(isolated, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome == "proposed" && dec.Action == "propose_status_todo_with_matter" {
+		t.Fatalf("propose_status_todo_with_matter matched in isolation against a review_request_present fixture -- the rule's own guard is not self-contained (outcome=%q action=%q)", dec.Outcome, dec.Action)
+	}
+}
+
+// TestAC633_ReviewReadyCellNeverResolvesToTodoWithMatter is AC1's
+// full-table oracle: a review-request-bearing in-progress cell with matter
+// (pr_exists + pr_has_commits) resolves to propose_status_review (rule
+// [0]), and explicitly never to propose_status_todo_with_matter -- named
+// as its own assertion (not merely implied by asserting the positive
+// action) per the issue's "resolves to review/block, never
+// propose_status_todo_with_matter" requirement.
+func TestAC633_ReviewReadyCellNeverResolvesToTodoWithMatter(t *testing.T) {
+	tab := loadRealTable(t)
+	snap := mustLoadFixture(t, "testdata/in-progress-review-request-with-matter.json")
+	if !snap.ReviewRequestPresent || !snap.PRExists || snap.PRCommitCount == 0 {
+		t.Fatalf("fixture precondition: expected review_request_present, pr_exists, and pr_commit_count>0, got review_request_present=%v pr_exists=%v pr_commit_count=%d", snap.ReviewRequestPresent, snap.PRExists, snap.PRCommitCount)
+	}
+
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Action == "propose_status_todo_with_matter" {
+		t.Fatalf("review-request-bearing cell with matter resolved to propose_status_todo_with_matter (target_state=%q) -- must resolve to review or block instead", dec.TargetState)
+	}
+	if dec.Outcome != "proposed" || dec.Action != "propose_status_review" || dec.TargetState != "review" {
+		t.Fatalf("outcome=%q action=%q target_state=%q, want proposed/propose_status_review/review", dec.Outcome, dec.Action, dec.TargetState)
+	}
+}
+
+// TestAC633_WedgeFixStillRequeuesWithoutReviewRequest is AC2's regression
+// check: the cnos#630 wedge fixture (review_request_present: false) must
+// still resolve to propose_status_todo_with_matter/todo after the
+// review_request_present guard is added -- the guard must fire only when
+// review_request_present is true, never as a side effect on the
+// no-review-request case #630 depends on. Duplicates the assertion
+// TestAC630_WedgeFixResolvesToTodoWithMatterPreserved already makes
+// (kept, unchanged, further up this file); this test names the cnos#633
+// regression intent explicitly rather than relying solely on reading the
+// pre-existing #630 test as implicit coverage.
+func TestAC633_WedgeFixStillRequeuesWithoutReviewRequest(t *testing.T) {
+	tab := loadRealTable(t)
+	snap := mustLoadFixture(t, "testdata/scan-died-after-pr-before-review-request.json")
+	if snap.ReviewRequestPresent {
+		t.Fatalf("fixture precondition: expected review_request_present false, got true")
+	}
+
+	dec, err := Evaluate(tab, snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.Outcome != "proposed" || dec.Action != "propose_status_todo_with_matter" || dec.TargetState != "todo" {
+		t.Fatalf("outcome=%q action=%q target_state=%q, want proposed/propose_status_todo_with_matter/todo (cnos#633 must not regress cnos#630's wedge-fix behavior)", dec.Outcome, dec.Action, dec.TargetState)
+	}
+}
