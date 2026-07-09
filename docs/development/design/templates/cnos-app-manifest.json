@@ -1,0 +1,20 @@
+{
+  "name": "cnos",
+  "url": "https://github.com/usurobor/cnos",
+  "description": "Installs CNOS/CDS into an existing repository by opening a reviewable pull request. Base install writes .cn/deps.json + .cn/deps.lock.json; it never touches .github/workflows or secrets.",
+  "public": true,
+  "redirect_url": "https://github.com/usurobor/cnos/blob/main/docs/development/design/cnos-installer-github-app.md",
+  "hook_attributes": {
+    "url": "https://REPLACE-ME.example.com/webhook/github",
+    "active": true
+  },
+  "default_events": [
+    "installation",
+    "installation_repositories"
+  ],
+  "default_permissions": {
+    "contents": "write",
+    "pull_requests": "write",
+    "metadata": "read"
+  }
+}

@@ -173,6 +173,15 @@ web UI — no local shell, no `cn` binary on your machine — copy
 your repo at `.github/workflows/cnos-install.yml`, then trigger it from the
 **Actions** tab ("Run workflow").
 
+> **Heads up — a more native install surface is coming.** This Action path is
+> the **zero-backend fallback**: it works with nothing but GitHub, but you
+> must first commit a workflow file before GitHub shows its "Run workflow"
+> button. The polished, App-first surface is a **CNOS Installer GitHub App**
+> you install onto a repo, which opens the install PR for you — no workflow to
+> bootstrap. Its architecture and per-tier permission model are specified in
+> [`docs/development/design/cnos-installer-github-app.md`](../development/design/cnos-installer-github-app.md);
+> this Action remains the supported fallback once the App ships.
+
 This is a **thin wrapper**, not a second install path: the workflow's job
 body installs the `cn` binary and calls the exact same `cn repo install`
 command described above — install logic is not duplicated in YAML. It never
