@@ -394,3 +394,37 @@ jobs:
       # setting status:review with no PR / no commits / no closeout.
       - name: Check dispatch closeout-integrity contract
         run: ./scripts/ci/check-dispatch-closeout-integrity.sh
+
+  workflow-and-template-validity:
+    name: Workflow + design-template parse guard (cnos#648)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # cnos#648 artifact-validity guard. The GitHub App wave ships two
+      # machine-consumed artifacts an operator registers/runs from:
+      #   - docs/development/design/templates/cnos-app-manifest.json (App manifest)
+      #   - .github/workflows/cnos-app-install.yml (Option-A render engine)
+      # A malformed manifest/workflow would only surface at registration time.
+      # This turns "does it parse?" into an always-on gate: every workflow YAML
+      # and every design-template JSON must load, so a raw newline in a JSON
+      # string or a flattened workflow fails CI here, not in the operator's face.
+      - name: Parse all workflow YAML
+        run: |
+          set -euo pipefail
+          for f in .github/workflows/*.yml .github/workflows/*.yaml; do
+            [ -f "$f" ] || continue
+            python3 -c "import sys,yaml; yaml.safe_load(open(sys.argv[1]))" "$f" \
+              && echo "✓ YAML $f" \
+              || { echo "❌ invalid workflow YAML: $f"; exit 1; }
+          done
+
+      - name: Parse all design-template JSON
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for f in docs/development/design/templates/*.json; do
+            python3 -m json.tool "$f" >/dev/null \
+              && echo "✓ JSON $f" \
+              || { echo "❌ invalid design-template JSON: $f"; exit 1; }
+          done
