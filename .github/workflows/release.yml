@@ -13,9 +13,22 @@ on:
         type: boolean
         default: true
       tag:
-        description: "Release tag to smoke-test (default: triggering tag)"
+        description: >-
+          Tag to publish/smoke-test (default: triggering tag/ref). For a
+          tooling-channel publish (cnos#618 AC1/AC3), pass an explicit tag
+          such as tooling-20260709-937f275 — action-gh-release otherwise
+          targets github.ref, which for workflow_dispatch is a branch, not
+          a tag.
         required: false
         type: string
+      prerelease:
+        description: >-
+          Publish as a GitHub prerelease (tooling channel, cnos#618 AC1).
+          Prereleases are excluded from the /releases/latest redirect, so
+          this input never changes install.sh's default resolution.
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -56,6 +69,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # cnos#618 AC4: the historical tag-push auth failure (run
+          # 26340314834, tag 3.82.0, "could not read Username for
+          # 'https://github.com'") happened inside a raw commit-SHA fetch
+          # (`git fetch ... +<sha>:refs/tags/<tag>`) — the shape
+          # actions/checkout emits by default for a tag-triggered ref when
+          # fetch-tags is left false. fetch-tags: true makes checkout
+          # fetch the tag by ref instead of by bare SHA, avoiding that
+          # code path. persist-credentials/token are pinned explicitly
+          # (matching the action's own defaults) so this job's auth setup
+          # can't be silently changed by an upstream default or an
+          # org-level override — see self-coherence.md for the full RCA,
+          # including why cnos#429 already ruled out a permissions-scope
+          # cause.
+          fetch-tags: true
+          persist-credentials: true
+          token: ${{ github.token }}
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -70,10 +100,18 @@ jobs:
         # the binary's compile-time `version` stays "dev", which `cn
         # setup` then writes into deps.json, breaking `cn deps lock`
         # against the released package index.
+        #
+        # cnos#618 AC3: for a workflow_dispatch run, github.ref_name is
+        # the dispatched *branch* (e.g. "main"), not the tag this run
+        # publishes to — prefer the explicit tag input when set so the
+        # stamped version matches the tag the binary actually ships
+        # under.
         working-directory: src/go
         run: |
+          VERSION="${{ inputs.tag }}"
+          VERSION="${VERSION:-${{ github.ref_name }}}"
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-            go build -ldflags "-X main.version=${{ github.ref_name }}" \
+            go build -ldflags "-X main.version=${VERSION}" \
             -o cn ./cmd/cn
 
       - name: Test
@@ -125,6 +163,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
+          persist-credentials: true
+          token: ${{ github.token }}
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -172,6 +212,14 @@ jobs:
         if: steps.notes.outputs.exists == 'true'
         uses: softprops/action-gh-release@v1
         with:
+          # cnos#618 AC3: pass the dispatched tag explicitly so this
+          # targets that tag instead of github.ref (a branch for
+          # workflow_dispatch runs). Empty string on a real tag-push
+          # falls back to the pushed tag (action-gh-release's own
+          # `input_tag_name || derive-from-ref` fallback), so tag-push
+          # behavior is unchanged.
+          tag_name: ${{ inputs.tag }}
+          prerelease: ${{ inputs.prerelease }}
           files: |
             artifacts/*/cn-*
             artifacts/checksums.txt
@@ -183,6 +231,8 @@ jobs:
         if: steps.notes.outputs.exists != 'true'
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ inputs.tag }}
+          prerelease: ${{ inputs.prerelease }}
           files: |
             artifacts/*/cn-*
             artifacts/checksums.txt
