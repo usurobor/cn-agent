@@ -208,3 +208,27 @@ test suite green, admin wake's golden fixture re-renders byte-identical.
 `cds-dispatch/SKILL.md`'s current taxonomy (`first_pass` /
 `resumed_from_matter` / `repair_pass`) — flagged explicitly in
 self-coherence.md rather than silently mislabeled.
+
+## §R2 amendment — AC4 write-fence proof-first round (cnos#626)
+
+R2 implemented AC4 (write-fence retirement decision) with proof-first
+discipline: two new Go tests (`TestRealCheckpoint_NewAgentHubFile_FailsLoudNoPersistence`,
+`TestRealCheckpoint_ModifiedTrackedAgentHubFile_SilentlyExcludedNoPersistence`)
+exercise the REAL `realCheckpoint` finalizer code path (not the no-op
+`Checkpoint` fake every other test in the suite injects) against a real
+bare origin + real sparse clone, proving a `.cn-sigma` write can be
+transiently created on disk but never staged or reach `origin` through
+the finalizer's actual `git add -A` / `git commit` / `git push`
+sequence. Outcome B selected: the old post-run
+`dispatch_activation_log_write_violation` fence is retired specifically
+for `role == "dispatch"` manifests (narrowed by role, not by
+`activation_log_writer` alone — a hypothetical future non-dispatch
+non-writer wake without the sparse-checkout boundary keeps the old
+fence). Zero regressions: full local test suite green across all four
+go.work modules, `install-wake-golden`-equivalent checks green, real CI
+(`Build` + `install-wake golden`, all jobs including I4/I5 not runnable
+in-session) green on the pushed commit. AC10 (live-fire validation)
+correctly deferred to the next real post-merge firing, per the same
+precedent R1 established for AC3. `run_class` taxonomy gap re-flagged
+(same fourth shape R1 already named); not re-filed as a new issue, per
+the operator's own instruction.

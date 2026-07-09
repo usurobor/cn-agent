@@ -334,3 +334,76 @@ and diverges from base; all six required R1 artifacts present; CI green
 on all checks including "Re-render + diff per-package goldens". δ now
 requests `status:in-progress -> status:review` via
 `cn issues fsm evaluate --issue 626 --apply`.
+
+## §R2 amendment — AC4 write-fence proof-first round (cnos#626)
+
+**R2 round summary.** Bounded continuation dispatch (operator/CAP
+comment "AC4 dispatched — proof-first", posted 2026-07-09T00:42:46Z,
+superseding R1's "reverting to status:ready" note) on the same
+`cycle/626` branch, reset to current main per the operator's "clean-base
+start" framing. Scope: AC4 only (write-fence retirement/narrowing
+decision, gated on negative proof). R0 (AC1/AC2, PR #635) and R1 (AC3,
+PR #637, `e5a3abe5`) are merged and untouched this round.
+
+**What was addressed.** AC4 fully addressed via the operator's
+proof-first required checklist: (1) extended sparse-checkout test
+coverage with two new tests exercising the REAL `realCheckpoint` code
+path (not a mock); (2) finalizer behavior verified by the same two
+tests; (3) generated workflow re-rendered and verified (golden==live
+sha256, idempotent, structural-shape assertions, AC5 refusal fixture);
+(4) live-firing validation explicitly named as deferred to the next
+real post-merge firing, per the same v0 single-firing constraint R1's
+AC3 already established as precedent. Outcome B selected (fence
+retired for `role=="dispatch"` specifically, narrowed rather than
+unconditionally deleted, so a hypothetical future non-dispatch
+non-writer wake shape is not silently left unguarded).
+
+**Calibrated success claim.** AC4's decision (retire the fence for
+`role=="dispatch"`) is strongly evidenced at the mechanism level: two
+new automated tests against the real finalizer code path, a negative
+control proving those tests discriminate on the sparse-checkout
+mechanism specifically, and real CI green (not just local
+reproduction) on every check named in the operator's AC1-AC9 walk,
+including the two (I4 link-check, I5 frontmatter validation) that
+could not run in-session for lack of the `lychee`/`cue` binaries. AC10
+(live firing after the change) is NOT claimed this round — it is
+structurally deferred to the next real `cds-dispatch` firing after
+this cycle's PR merges, named explicitly rather than glossed over.
+
+**Updated triage carryforward.** With AC1-AC9 addressed, the only
+remaining open item on cnos#626 is AC10's live-fire observation. Per
+R1's own precedent, this does not require a new dispatch cell — it is
+satisfied passively by the next real firing after merge. Recommend the
+issue stay open (not closed by this PR) until an operator or a future
+admin-wake cycle-complete observation confirms a clean post-merge
+firing, then closes cnos#626 citing that observation alongside this
+PR and PR #635/#637.
+
+**`run_class` taxonomy gap — reconfirmed, not re-filed.** Same fourth
+shape (`scope_continuation`, tentative name) R1's artifacts already
+flagged. Recording again per the operator's own instruction rather
+than filing a duplicate issue.
+
+## δ deliverable_evidence — R2 (post-PR-open, cnos#524)
+
+```yaml
+deliverable_evidence:
+  pr: "#638 (cycle/626 -> main)"
+  head_sha: "e0ad5230eefa0ce2e1deee261d780a168b7b1b81"
+  base_sha: "8e0ed7cf19f86bec3fe314c29fad313e44e88edd"
+  commits_beyond_base: 3
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+PR #638 opened by the mechanical finalizer (`cn cell finalize`,
+cnos#591) directly (referencing `#626` via `Refs`, not `Closes` — the
+issue stays open pending AC10's post-merge live-fire observation, per
+the "Updated triage carryforward" note above). All five
+closeout-integrity preflight conditions
+(`cds-dispatch/SKILL.md` §"Closeout integrity preflight") hold: PR
+exists and references `#626`; `cycle/626` HEAD (`e0ad5230`) differs
+from base (`8e0ed7cf`, 3 new commits this round); branch exists and
+diverges from base; all six required R2 artifacts present; real CI
+green on both `Build` (all 10 jobs) and `install-wake golden` for the
+pushed commit. δ now requests `status:in-progress -> status:review`
+via `cn issues fsm evaluate --issue 626 --apply`.
