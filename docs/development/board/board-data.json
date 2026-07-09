@@ -2376,7 +2376,7 @@
       "core"
     ],
     "pri": "P1",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2385,7 +2385,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T19:41:34Z",
-    "updated": "2026-07-09T08:05:28Z",
+    "updated": "2026-07-09T08:20:39Z",
     "url": "https://github.com/usurobor/cnos/issues/618"
   },
   {
