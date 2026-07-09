@@ -313,7 +313,7 @@ jobs:
             You MUST NOT write to:
 
             - `.github/workflows/` — substrate is rendered, not hand-edited by the wake. You never modify your own carrier or other wake artifacts.
-            - `.cn-sigma/logs/` and other `.cn-sigma/` surfaces — channel logs are the admin wake's writer-locality per AGENT-ACTIVATION-LOG-v0 §0 + §0.1 (the wake-class writer-ownership partition). You do NOT write channel entries. **The prohibition on writing `.cn-sigma/logs/` is mechanically enforced — the rendered workflow includes a post-run write fence that emits `dispatch_activation_log_write_violation` on breach. This is not advisory; it is structural.** The fence checks LOCAL writes (this wake's staged + committed paths under `.cn-sigma/logs/`) and explicitly NOT remote-state delta on `main` (which would false-positive on legitimate concurrent admin-wake writes — the admin wake's `agent-admin-sigma` concurrency group runs in parallel with this wake's `cds-dispatch-sigma` group). A prior firing once wrote channel-log entries despite this being a prompt-only prohibition (see §Responsibilities item 9 below for the incident record) — prompt-only prohibition is empirically falsified; mechanical enforcement is the rule. (The admin wake reads your cell artifacts after the cycle merges and writes a `class: cycle-complete` channel entry per cnos#467 Sub 6; you do not pre-empt that.)
+            - `.cn-sigma/logs/` and other `.cn-sigma/` surfaces — channel logs are the admin wake's writer-locality per AGENT-ACTIVATION-LOG-v0 §0 + §0.1 (the wake-class writer-ownership partition). You do NOT write channel entries. **The prohibition on writing `.cn-sigma/logs/` is mechanically enforced — not advisory, structural.** Since cnos#626 AC3, your checkout is rendered with a `git sparse-checkout` block (`/*` + `!/.cn-sigma`, non-cone) that omits `.cn-sigma/` from the working tree entirely: the capability to read or write it is absent, not merely instructed against. Since cnos#626 AC4, the post-run `dispatch_activation_log_write_violation` write-fence step this section used to name is **retired for this wake** — negative proof (`TestRealCheckpoint_NewAgentHubFile_FailsLoudNoPersistence` and `TestRealCheckpoint_ModifiedTrackedAgentHubFile_SilentlyExcludedNoPersistence` in `src/go/internal/cell/cell_test.go`) shows a `.cn-sigma/` write can still be transiently created on disk but can never be staged or reach `origin` through the finalizer's real `git add -A` / `git commit` / `git push` sequence, under the sparse-checkout boundary — so the old post-hoc detector was fully redundant for this wake shape. (A hypothetical future non-dispatch, non-writer wake without the sparse-checkout boundary still gets the old fence; the renderer narrows its retirement to `role == "dispatch"` specifically.) A prior firing once wrote channel-log entries despite this being a prompt-only prohibition before cnos#496 mechanized it (see §Responsibilities item 9 below for the incident record) — prompt-only prohibition is empirically falsified; mechanical enforcement (now checkout-level, not post-hoc detection) is the rule. (The admin wake reads your cell artifacts after the cycle merges and writes a `class: cycle-complete` channel entry per cnos#467 Sub 6; you do not pre-empt that.)
             - Label definition — you APPLY lifecycle labels on your claimed cell per cnos#468 §4.1 but never DEFINE new labels per cnos#468 §4.2.
             - Cells outside your protocol — cross-protocol claims are a protocol violation per cnos#468 §2.1. If the verify gate surfaces a wrong-protocol label, do NOT claim (silent skip on scheduled sweep; `dispatch_protocol_mismatch` comment on targeted claim).
             - Issues not matching the selector — you never edit, label, or comment on issues that do not match your claim criteria, EXCEPT for diagnostic comments on `dispatch_protocol_missing` / `dispatch_label_drift` cases where you're explaining why a malformed candidate was rejected.
@@ -368,88 +368,6 @@ jobs:
             5. No labels were defined or label semantics altered.
 
             If you reach a state where you cannot complete the above (capability mismatch, ambiguous claim state, missing precondition, ambiguous directive), defer to operator per the relevant skill's defer rule. Release any claim you took. Post an issue comment naming the deferral. Then terminate; do not improvise.
-
-      - name: Write fence — dispatch_activation_log_write_violation
-        # Mechanical guard per cnos#496 / cycle/496 (AGENT-ACTIVATION-LOG-v0 §0.1).
-        # Package-dispatch wakes are non-writers of .cn-{agent}/logs/. This step
-        # inspects this wake's LOCAL writes (working-tree state + this run's local
-        # commit graph) and fails the workflow if any path under .cn-*/logs/ was
-        # touched by a commit UNIQUE to this run's branch. Commits reachable from
-        # canonical main (concurrent admin-wake heartbeats, board-map-bot) are
-        # EXCLUDED: the wake did not author them, it only rebased/branched onto
-        # them. A plain baseline..HEAD range false-positived on such pulled-in
-        # admin log commits (RCA cnos#614: a 05:03 agent-admin heartbeat landed on
-        # main mid-run and entered the cycle branch's ancestry). The fence now
-        # fetches the current main tip and excludes it. Author-filtering cannot
-        # discriminate — admin wake and dispatch worker share the same git identity.
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          # Pathspec uses git's :(glob) magic — a bare '.cn-*/logs/' is
-          # treated literally by git and matches nothing. The :(glob)
-          # prefix enables shell-style globbing and the trailing /**
-          # matches files at any depth under .cn-{agent}/logs/.
-          pathspec=':(glob).cn-*/logs/**'
-          violation=0
-          # Layer 1: working-tree state (staged + unstaged uncommitted writes).
-          wt="$(git status --porcelain -- "$pathspec" 2>/dev/null || true)"
-          if [ -n "$wt" ]; then
-            violation=1
-            echo "::error::dispatch_activation_log_write_violation: local working-tree writes detected under .cn-*/logs/"
-            echo "$wt"
-          fi
-          # Layer 2: local commit graph this run added — $CN_WAKE_BASE_SHA..HEAD.
-          # cycle/496 R1 (operator iterate-narrowly): the primary baseline is
-          # $CN_WAKE_BASE_SHA, captured by the 'Write fence — record pre-work
-          # baseline SHA' step BEFORE the claude-code-action work phase. This is
-          # the stable, explicit baseline — reliable for ANY commit shape the work
-          # phase produces (one commit, many commits, no commits). Fallback chain:
-          #   (1) $CN_WAKE_BASE_SHA — primary; recorded by the pre-work baseline step.
-          #   (2) $GITHUB_SHA       — fallback; the commit checked out at job start.
-          #   (3) HEAD@{1}          — last resort; reflog-derived; UNSAFE for multi-
-          #                           commit work phases (catches only the most
-          #                           recent commit's parent, NOT the pre-work baseline).
-          # On none-of-the-above, log a notice but do NOT false-fail; the working-
-          # tree check above is the primary fence.
-          # cycle/496 R2 (operator iterate-narrowly): NO --diff-filter is applied.
-          # A committed DELETE of a tracked .cn-*/logs/ path is a write/ownership
-          # violation per AGENT-ACTIVATION-LOG-v0 §0.1 and per cnos#496's framing
-          # ('any path under .cn-{agent}/logs/ changed by the dispatch wake must
-          # fail'). Default `git log --name-only` (no diff-filter) catches
-          # additions, copies, modifications, renames, deletions, AND type changes.
-          # Exclude commits that are part of canonical main history: a genuine
-          # worker log write is UNIQUE to this run's branch, whereas concurrent
-          # admin-wake heartbeats / board-map commits the worker rebased onto are
-          # reachable from main (RCA cnos#614). Fetch the current main tip and
-          # exclude it; fall back to the local tracking ref, then to no exclusion
-          # (degraded — the working-tree layer above is still the primary fence).
-          main_excl=""
-          if git fetch --quiet --no-tags origin main >/dev/null 2>&1; then
-            main_excl="^FETCH_HEAD"
-          elif git rev-parse --verify origin/main >/dev/null 2>&1; then
-            main_excl="^origin/main"
-          fi
-          commits=""
-          if [ -n "${CN_WAKE_BASE_SHA:-}" ] && git rev-parse --verify "$CN_WAKE_BASE_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$CN_WAKE_BASE_SHA" ]; then
-            commits="$(git log "${CN_WAKE_BASE_SHA}..HEAD" $main_excl --name-only --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
-          elif [ -n "${GITHUB_SHA:-}" ] && git rev-parse --verify "$GITHUB_SHA" >/dev/null 2>&1 && [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
-            commits="$(git log "${GITHUB_SHA}..HEAD" $main_excl --name-only --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
-          elif git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
-            commits="$(git log HEAD@{1}..HEAD $main_excl --name-only --pretty=format: -- "$pathspec" 2>/dev/null | grep -v '^$' || true)"
-          else
-            echo "::notice::write-fence: local commit-graph baseline unavailable (no CN_WAKE_BASE_SHA, no GITHUB_SHA divergence, no HEAD@{1} reflog); working-tree check is the primary fence."
-          fi
-          if [ -n "$commits" ]; then
-            violation=1
-            echo "::error::dispatch_activation_log_write_violation: local commit-graph writes detected under .cn-*/logs/"
-            echo "$commits"
-          fi
-          if [ "$violation" -ne 0 ]; then
-            echo "dispatch_activation_log_write_violation: package-dispatch wakes are non-writers of .cn-{agent}/logs/ per AGENT-ACTIVATION-LOG-v0 §0.1." >&2
-            exit 1
-          fi
-          echo "write-fence: no local writes under .cn-*/logs/ — green."
 
       - name: Mechanical checkpoint + PR finalizer
         # Runtime/finalizer guard per cnos#591: if this run ends with matter

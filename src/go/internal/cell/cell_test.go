@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -1210,5 +1211,215 @@ func TestFinalize_NeverTouchesLabelsOrFSM(t *testing.T) {
 	combined := stdout.String() + stderr.String()
 	if strings.Contains(combined, "REVIEW-REQUEST.yml") {
 		t.Errorf("Finalizer must never reference REVIEW-REQUEST.yml, got output: %q", combined)
+	}
+}
+
+// --- cnos#626 AC4: realCheckpoint under sparse-checkout — .cn-sigma
+// writes cannot be staged or persisted through the REAL git subprocess
+// path (not the injected no-op Checkpoint fake every test above uses).
+//
+// This is the "verify finalizer behavior" leg of AC4's required proof
+// (cds-dispatch/SKILL.md AC3's sparse-checkout capability removal is
+// proven by TestDispatchRenderer_SparseCheckoutExcludesAgentHub in
+// src/go/internal/repoinstall/repoinstall_test.go — that test proves the
+// checkout step omits .cn-sigma. It does NOT prove what happens if
+// something writes a .cn-sigma path anyway from inside a checked-out
+// working tree, which is exactly the finalizer's own `git add -A` +
+// `git commit` sequence in realCheckpoint above.) These two tests set up
+// a real bare "origin" + a real sparse clone against it (the same `/*` +
+// `!/.cn-sigma` non-cone pattern the renderer emits), simulate a
+// .cn-sigma write, invoke the REAL realCheckpoint (Checkpoint left nil),
+// and inspect the pushed remote branch — not just the local working
+// tree — to prove nothing under .cn-sigma ever reaches origin.
+
+// newSparseOriginAndClone builds a bare "origin" repo with a tracked
+// .cn-sigma/logs/ tree (mirrors the real cnos repo's shape: 40 tracked
+// channel-log files existed before AC3's sparse-checkout exclusion
+// landed) plus a tracked code file, then clones it with the exact
+// non-cone sparse-checkout pattern the renderer emits for role:dispatch
+// (cn-install-wake lines ~1000-1004). Returns the clone's working
+// directory and the bare origin's path (for post-push inspection).
+func newSparseOriginAndClone(t *testing.T) (cloneDir, originDir string) {
+	t.Helper()
+	base := t.TempDir()
+	originDir = filepath.Join(base, "origin.git")
+	seedDir := filepath.Join(base, "seed")
+	cloneDir = filepath.Join(base, "clone")
+
+	runIn := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v (in %s): %v\n%s", args, dir, err, out)
+		}
+	}
+
+	if err := os.MkdirAll(originDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	runIn(originDir, "init", "--quiet", "--bare", "-b", "main")
+
+	if err := os.MkdirAll(seedDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	runIn(seedDir, "init", "--quiet", "-b", "main")
+	runIn(seedDir, "config", "user.email", "test@example.com")
+	runIn(seedDir, "config", "user.name", "test")
+	mustWriteSeed := func(rel, content string) {
+		full := filepath.Join(seedDir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mustWriteSeed(".cn-sigma/logs/20260101.md", "pre-existing channel log entry\n")
+	mustWriteSeed("src/other/file.go", "package other\n")
+	runIn(seedDir, "add", "-A")
+	runIn(seedDir, "commit", "--quiet", "-m", "seed: sigma log + code tracked")
+	runIn(seedDir, "remote", "add", "origin", originDir)
+	runIn(seedDir, "push", "--quiet", "origin", "main")
+
+	runIn(base, "clone", "--quiet", "--no-checkout", originDir, cloneDir)
+	runIn(cloneDir, "config", "user.email", "test@example.com")
+	runIn(cloneDir, "config", "user.name", "test")
+	runIn(cloneDir, "sparse-checkout", "init", "--no-cone")
+	sparseFile := filepath.Join(cloneDir, ".git", "info", "sparse-checkout")
+	if err := os.WriteFile(sparseFile, []byte("/*\n!/.cn-sigma\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	runIn(cloneDir, "checkout", "--quiet", "main")
+
+	if _, err := os.Stat(filepath.Join(cloneDir, ".cn-sigma")); !os.IsNotExist(err) {
+		t.Fatalf(".cn-sigma: expected absent from clone after sparse-checkout, stat err = %v", err)
+	}
+	return cloneDir, originDir
+}
+
+// remoteBranchContainsPath fetches branch from origin into a scratch
+// clone and reports whether path was touched by a commit UNIQUE to
+// branch (i.e. reachable from branch but not from main) — not merely
+// present anywhere in the repo's history, since main already carries
+// the pre-existing tracked .cn-sigma seed content and a naive --all
+// scan would false-positive on that unrelated history.
+func remoteBranchTouchedPath(t *testing.T, originDir, branch, path string) bool {
+	t.Helper()
+	scratch := t.TempDir()
+	cmd := exec.Command("git", "clone", "--quiet", "--no-checkout", originDir, scratch)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("clone origin: %v\n%s", err, out)
+	}
+	verify := exec.Command("git", "rev-parse", "--verify", "origin/"+branch)
+	verify.Dir = scratch
+	if err := verify.Run(); err != nil {
+		// Branch never got pushed at all — path cannot have touched origin.
+		return false
+	}
+	logCmd := exec.Command("git", "log", "origin/main..origin/"+branch, "--name-only", "--pretty=format:", "--", path)
+	logCmd.Dir = scratch
+	out, err := logCmd.Output()
+	if err != nil {
+		t.Fatalf("git log -- %s: %v", path, err)
+	}
+	return strings.TrimSpace(string(out)) != ""
+}
+
+func TestRealCheckpoint_NewAgentHubFile_FailsLoudNoPersistence(t *testing.T) {
+	cloneDir, originDir := newSparseOriginAndClone(t)
+	issue := 62601
+
+	runIn := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = cloneDir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runIn("checkout", "--quiet", "-b", fmt.Sprintf("cycle/%d", issue))
+
+	// Legit in-cone change, exactly like real dispatch work.
+	if err := os.WriteFile(filepath.Join(cloneDir, "src", "other", "file.go"), []byte("package other\n\n// real work\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	// Accidental/malicious NEW file under the excluded path.
+	probeDir := filepath.Join(cloneDir, ".cn-sigma", "logs")
+	if err := os.MkdirAll(probeDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(probeDir, "probe.md"), []byte("accidental write\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stderr strings.Builder
+	f := &Finalizer{RepoRoot: cloneDir, Stdout: io.Discard, Stderr: &stderr}
+	err := f.realCheckpoint(t.Context(), issue, FinalizeFacts{BranchExists: true, UncommittedChanges: true})
+
+	// realCheckpoint MUST fail loud here — git add -A exits nonzero
+	// when an out-of-cone new path is present, so the whole checkpoint
+	// (including the legit change) aborts rather than silently
+	// succeeding with the .cn-sigma write quietly dropped. This is a
+	// stronger guarantee than "the write is dropped" — an operator
+	// SEES the failed step in the run, per AC4's "fails loud" bar.
+	if err == nil {
+		t.Fatalf("expected realCheckpoint to fail when a new path outside the sparse-checkout cone exists, got nil error; stderr=%q", stderr.String())
+	}
+
+	if remoteBranchTouchedPath(t, originDir, fmt.Sprintf("cycle/%d", issue), ".cn-sigma") {
+		t.Errorf(".cn-sigma: expected to never reach origin's cycle/%d branch, but it did", issue)
+	}
+}
+
+func TestRealCheckpoint_ModifiedTrackedAgentHubFile_SilentlyExcludedNoPersistence(t *testing.T) {
+	cloneDir, originDir := newSparseOriginAndClone(t)
+	issue := 62602
+	branch := fmt.Sprintf("cycle/%d", issue)
+
+	runIn := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = cloneDir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	runIn("checkout", "--quiet", "-b", branch)
+
+	// Legit in-cone change.
+	if err := os.WriteFile(filepath.Join(cloneDir, "src", "other", "file.go"), []byte("package other\n\n// real work v2\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	// Overwrite an ALREADY-TRACKED sparse-hidden path directly on disk —
+	// the shape a stray process write (not a `git` operation) would
+	// take. Unlike the brand-new-file case, git's skip-worktree
+	// bookkeeping notices this in `git status` (the bit gets cleared),
+	// but `git add -A` still will not stage a path outside the
+	// sparse-checkout cone.
+	existing := filepath.Join(cloneDir, ".cn-sigma", "logs", "20260101.md")
+	if err := os.MkdirAll(filepath.Dir(existing), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(existing, []byte("MALICIOUS OVERWRITE\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stderr strings.Builder
+	f := &Finalizer{RepoRoot: cloneDir, Stdout: io.Discard, Stderr: &stderr}
+	err := f.realCheckpoint(t.Context(), issue, FinalizeFacts{BranchExists: true, UncommittedChanges: true})
+	if err != nil {
+		t.Fatalf("realCheckpoint: unexpected error for a modified-tracked-file-only scenario: %v; stderr=%q", err, stderr.String())
+	}
+
+	if remoteBranchTouchedPath(t, originDir, branch, ".cn-sigma") {
+		t.Errorf(".cn-sigma: expected to never reach origin's %s branch, but it did", branch)
+	}
+	// The legit change MUST still have made it through — proving the
+	// .cn-sigma exclusion doesn't collaterally block real work in this
+	// (no-new-path) shape.
+	if !remoteBranchTouchedPath(t, originDir, branch, "src/other/file.go") {
+		t.Errorf("src/other/file.go: expected the legit change to reach origin's %s branch, it did not", branch)
 	}
 }

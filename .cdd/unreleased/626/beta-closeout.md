@@ -123,3 +123,22 @@ offset, and re-ran the full test suite. Zero findings. `verdict: converge`
 at R1, first review pass this round (no iterate needed). AC4's deferral
 is correct, not a gap — endorsed as consistent with the operator's own
 gate and R0's stated prerequisites.
+
+## §R2 amendment — AC4 write-fence proof-first round review (cnos#626)
+
+Independently re-derived every claim in α's R2 round, including a
+negative control α's own narrative did not supply: built a third scratch
+repo cloned WITHOUT the sparse-checkout exclusion and replayed the
+identical write, confirming it DOES get staged and DOES reach origin
+absent the AC3 boundary — proof the new tests actually discriminate on
+the mechanism under test rather than being vacuously true. Re-rendered
+both manifests from a clean state myself, recomputed sha256 independently
+(matched), confirmed `agent-admin`'s golden is byte-identical (unaffected),
+confirmed the renderer diff is exactly one condition change plus
+explanatory comments (no syntax breakage, matching `fi` still correctly
+scoped), and observed real CI (not just local reproduction) green on
+both `Build` (all 10 jobs) and `install-wake golden` for the pushed
+commit. Zero findings. `verdict: converge` at R2, first review pass this
+round (no iterate needed). AC10's deferral is correct, not a gap —
+structurally unavailable within a single firing per `delta/SKILL.md`
+§9.7's v0 constraint, named explicitly rather than glossed over.
