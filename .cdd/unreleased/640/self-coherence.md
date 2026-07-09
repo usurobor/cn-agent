@@ -8,3 +8,23 @@
 - **Governing constraints (restated, not re-derived):** Kernel §1.2 "MCA over MCI — 'Won't repeat' without a mechanism is not a fix" and Kernel §2.2 "one source of truth per fact" (`src/packages/cnos.core/doctrine/KERNEL.md`). Scope guardrails per `gamma-scaffold.md` §5: do NOT weaken operator hold authority; do NOT add new status labels; do NOT change `transitions.json`'s transition rules; do NOT change #630's recovery behavior; do NOT touch #626, #618, #639 (do not dispatch); do NOT start "Demo 0". The new primitive is operator/human-invoked only — no dispatch wake or scan/reconciler calls it on its own initiative.
 - **Base SHA:** γ's scaffold pinned `cycle/640` from `59e7fdb7` (per δ's claim comment citing `2114d649`, with γ's own friction note 6 recording the one-commit drift to `59e7fdb7`). `origin/main` advanced two further commits during α's session, to `2eeb4032` (`87c60c28` board-map regen + `2eeb4032` a sigma agent-admin heartbeat commit) — neither touches any surface this cell changes (`src/packages/cnos.issues/`, `src/go/`, the three doctrine files, or the issue template). Per α SKILL.md §2.6 rule 1, α rebased `cycle/640` onto `origin/main` at `2eeb4032` before requesting review (`git fetch origin main && git rebase origin/main && git push --force-with-lease origin cycle/640`); the rebase was conflict-free.
 - **Branch:** `cycle/640`.
+
+## Skills
+
+- **Tier 1:** `CDD.md` (canonical lifecycle) + `cnos.cdd/skills/cdd/alpha/SKILL.md` (this role's surface). No β/γ role skills loaded.
+- **Tier 2:** `eng/go` (implicit — new Go package mirroring an existing sibling's shape; no new toolchain).
+- **Tier 3 (per `gamma-scaffold.md` §3 α prompt):**
+  - `src/packages/cnos.core/skills/write/SKILL.md` — applied to every doctrine paragraph written (front-load the point, one fact one home, cut throat-clearing).
+  - `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` — read in full before editing; §1.2 "Human dispatch gate" is the edit site for AC1/AC2; §1.3/§5's D-numbered failure-mode catalogue is where the new D13 entry landed (see §ACs AC2 for why D13 and not the D8/D9 slot γ's friction note 2 flagged as free — that premise was checked against the live file and found incorrect).
+  - `src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md` — read in full; got a one-line cross-reference (not a restatement) in §7.
+  - `src/packages/cnos.cdd/skills/cdd/CELL-KINDS.md` — read in full; the AC3 loop doctrine landed as a new section extending "Mandatory terminal learning section", per γ's landing-candidate guidance.
+  - `src/packages/cnos.core/doctrine/KERNEL.md` §1.2, §2.2 — cited directly (not restated) in both the dispatch-protocol doctrine addition and the CELL-KINDS.md loop section, per the prompt's "cite, do not restate" instruction.
+- **Also loaded (not in the Tier-3 list but load-bearing for the implementation contract):** `src/packages/cnos.issues/commands/issues-fsm/fetch.go`, `terminal.go`, `terminal_test.go`, `issuesfsm.go` — read in full to mirror the injectable-`*Options`-struct test pattern, the `ghRequest`/`ghAddLabel`/`ghRemoveLabel`/`ghGetJSON` HTTP-primitive shapes, and the `withFakeGitHub` httptest-server test idiom, per `gamma-scaffold.md` §2's explicit pointer.
+- **Implementation contract (per α SKILL.md §3.6, all 7 axes pinned by γ, none required escalation):**
+  - Language = Go (the CLI primitive) + Markdown (the doctrine changes). No other language used.
+  - CLI integration target = `cn issues dispatch` as a `cn` subcommand, sibling of `cn issues fsm`/`cn issues map`, same registry/routing (verified live: `cn issues` group listing shows all three siblings; `cn issues dispatch --issue N` resolves via noun-verb routing to the `"issues-dispatch"` registry key — see §ACs AC1 for the transcript).
+  - Package scoping = `src/go/internal/cli/cmd_issues_dispatch.go` (thin wiring only — 34 lines, delegates to `issuesdispatch.Run`) + `src/packages/cnos.issues/commands/issues-dispatch/` (domain logic, own `go.mod`), registered in `src/go/cmd/cn/main.go` beside `IssuesMapCmd`/`IssuesFsmCmd`.
+  - Existing-binary disposition = additive; nothing replaced or deprecated.
+  - Runtime dependencies = GitHub REST API only, via the same dependency-free `net/http` idiom as `issues-fsm/fetch.go`; the one new call is `ghEditIssueBody` (PATCH), modeled on `ghAddLabel`'s shape as instructed.
+  - JSON/wire contract preservation = N/A/additive — new command, no existing wire contract touched.
+  - Backward-compat invariant = `status:*` label semantics, `transitions.json`'s transition rules, and existing claim/dispatch mechanics are unchanged (verified: `transitions.json` byte-identical to `origin/main`, see §ACs AC4).
