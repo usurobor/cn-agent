@@ -1,23 +1,34 @@
-claimed_by: cds-dispatch/local-run-20260708-continuation
+claimed_by: cds-dispatch/local-run-20260709-ac4
 protocol: cds
-requested_at: 2026-07-08
+requested_at: 2026-07-09
 issue: 626
 note: >
-  Continuation claim for the bounded AC3+AC4 scope named in the operator/
-  CAP comment "AC3/AC4 continuation dispatched (kappa via CAP, 2026-07-08)"
-  which flipped status:ready -> status:todo. AC1/AC2 already merged via
-  PR #635 on this same cycle/626 branch; that work is NOT being redone.
-  run_class: this does not cleanly match any of {first_pass,
+  Continuation claim for the bounded AC4-only scope named in the operator/
+  CAP comment "AC4 dispatched — proof-first (operator directive via
+  kappa/CAP, 2026-07-08)" posted 2026-07-09T00:42:46Z, which superseded
+  the prior "reverting to status:ready" note and flipped
+  status:ready -> status:todo. AC1/AC2 (PR #635) and AC3 (PR #637,
+  e5a3abe5) are already merged on this same cycle/626 branch, which the
+  operator's comment confirms was reset to current main ("clean-base
+  start"); neither AC1/AC2 nor AC3 is being redone here.
+
+  run_class: same taxonomy gap the prior AC3 round's CLAIM-REQUEST.yml
+  already flagged -- this does not cleanly match any of {first_pass,
   resumed_from_matter, repair_pass} as currently named in
-  cds-dispatch/SKILL.md Sec Repair re-entry preflight Step A -- there is
-  no operator-rejection evidence (rules out repair_pass) and no
-  "MECHANICAL reversion" scanner audit-note comment (rules out
-  resumed_from_matter per delta/SKILL.md Sec9.11's own detection rule).
-  This is a fourth shape not yet named in either doctrine surface: an
-  operator-authorized SCOPE CONTINUATION on an issue whose prior round
-  already converged and merged. Treated operationally as equivalent to
-  first_pass for the NEW scope (AC3/AC4 only), since .cdd/unreleased/626/
-  carried no artifacts for this round at claim time (prior round's
-  artifacts were archived off the branch after the PR #635 merge).
-  Flagging this taxonomy gap explicitly rather than silently picking a
-  label; see self-coherence.md Sec "run_class note" for detail.
+  cds-dispatch/SKILL.md Sec"Repair re-entry preflight" Step A. No
+  operator-rejection evidence exists (rules out repair_pass); no
+  "MECHANICAL reversion" scanner audit-note comment exists (rules out
+  resumed_from_matter per delta/SKILL.md Sec9.11's detection rule);
+  branch content is verified identical to main modulo a trivial
+  board-map diff (git diff origin/main origin/cycle/626 --stat: 2 files,
+  board-data.json + index.html only), consistent with the operator's
+  "clean-base start" characterization. Treated operationally as
+  equivalent to first_pass for the NEW scope (AC4 only). This is the
+  SAME fourth shape (tentatively "scope_continuation") the AC3 round's
+  claim already named as a doctrine gap for cds-dispatch/SKILL.md +
+  delta/SKILL.md Sec9 to formally adopt; not re-litigated here, just
+  reconfirmed as still open.
+
+  Round numbering: this is R2 on cycle/626 (R0 = AC1/AC2 doctrine +
+  activation-scope change; R1 = AC3 sparse-checkout capability removal;
+  R2 = this round, AC4 write-fence retirement decision, proof-first).
