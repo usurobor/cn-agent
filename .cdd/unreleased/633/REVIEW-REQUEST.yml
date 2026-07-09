@@ -1,0 +1,24 @@
+issue: 633
+protocol: cds
+cycle_branch: cycle/633
+head_commit: 7acab4967c8e1b389d655ebb6b5c6eb7ce7b66d1
+requested_by: delta (cds-dispatch wake, wake-invoked mode, sigma)
+converge_verdict_ref: .cdd/unreleased/633/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's Round 0
+  converge verdict (verdict: converge, zero blocking findings). AC1-AC3
+  implemented and independently re-derived by beta: beta re-ran every
+  cited test from a clean shell, and additionally reverted the
+  all_false guard via a scoped sed (not git stash) to independently
+  confirm the isolated-rule regression test fails red without the fix
+  and passes green with it, before restoring the fix and re-confirming
+  all green.
+
+  All closeout artifacts (gamma-scaffold.md, self-coherence.md §R0,
+  beta-review.md §R0, alpha-closeout.md, beta-closeout.md,
+  gamma-closeout.md) are present on this branch as of this request.
+
+  Pull request #641 (https://github.com/usurobor/cnos/pull/641) opened
+  via `cn cell finalize`, head commit 7acab496 (2 commits beyond the
+  cycle/633 base 32decae9). `cn issues fsm evaluate --issue 633 --apply`
+  is delta's next action following this request.
