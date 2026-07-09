@@ -1455,6 +1455,15 @@ func TestRun_DispatchCds_EngineTier_RendersPatFreeMechanicalWake(t *testing.T) {
 		"41898282",
 		"bot_name",
 		"bot_id",
+		// cnos#613 (operator review): the engine tier is contract-clean — it
+		// opens no PR, so it must not emit the PR finalizer step, the
+		// cn cell finalize invocation, a gh pr call, or the "PR-scoped PAT"
+		// comment prose. Its permissions (contents:read/pull-requests:read)
+		// could not fulfill that step's contract anyway.
+		"Mechanical checkpoint + PR finalizer",
+		"cn cell finalize",
+		"gh pr",
+		"PR-scoped PAT",
 	} {
 		if strings.Contains(content, leak) {
 			t.Errorf("engine render must NOT contain agent-tier binding %q\nfull YAML:\n%s", leak, content)

@@ -1182,7 +1182,12 @@ fi
         echo "          # pre-claim scan exits non-zero, aborting the whole run BEFORE the work"
         echo "          # phase — so no firing can claim anything (reads succeed on a public"
         echo "          # repo, only writes 401; surfaced once cnos#630's rule drove the first"
-        echo "          # real scanner write). Reuse the same PR-scoped PAT the finalizer binds."
+        if [ "$tier" = "engine" ]; then
+          echo "          # real scanner write). The engine tier runs on the default"
+          echo "          # GITHUB_TOKEN — no workflow-scoped PAT, and no PR finalizer step."
+        else
+          echo "          # real scanner write). Reuse the same PR-scoped PAT the finalizer binds."
+        fi
         echo "          GH_TOKEN: \${{ secrets.${token_secret_ref} }}"
         echo "        run: |"
         echo "          set -euo pipefail"
@@ -1502,7 +1507,16 @@ fi
 # CDD artifact directory under .cdd/unreleased/ carries matter, since the
 # renderer cannot know the issue number in advance for an arbitrary future
 # dispatch-shaped wake.
-if [ "$role" = "dispatch" ]; then
+#
+# cnos#613 (operator review): the engine tier is contract-clean — it opens no
+# PR and renders contents:read / pull-requests:read. A finalizer step whose
+# stated purpose is to open/update a draft PR would contradict that
+# least-privilege block (it lacks contents:write / pull-requests:write to
+# fulfill its own contract if any local matter ever appears), even though
+# `cn cell finalize` no-ops when there is no matter. So the whole finalizer
+# is gated on tier != engine — the engine wake advances issue-label state
+# only. The agent tier (sigma or non-sigma) is unchanged.
+if [ "$role" = "dispatch" ] && [ "$tier" != "engine" ]; then
   if [ "$agent" = "sigma" ] && [ "$tier" != "engine" ]; then
     # sigma renders self-build from source, exactly as today (Mock E4 —
     # byte-identical backward compat; this branch must never change for
