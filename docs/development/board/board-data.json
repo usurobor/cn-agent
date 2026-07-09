@@ -2457,7 +2457,7 @@
       "wake"
     ],
     "pri": "P2",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2466,7 +2466,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-08T16:04:48Z",
-    "updated": "2026-07-09T02:08:20Z",
+    "updated": "2026-07-09T02:11:51Z",
     "url": "https://github.com/usurobor/cnos/issues/633"
   },
   {
@@ -2491,5 +2491,28 @@
     "created": "2026-07-09T01:57:16Z",
     "updated": "2026-07-09T01:57:16Z",
     "url": "https://github.com/usurobor/cnos/issues/639"
+  },
+  {
+    "n": 640,
+    "t": "process/dispatch: the \"Not dispatched\" body-hold vs `status:todo` label defer trap keeps recurring — and the meta-gap that lets it",
+    "kind": "process",
+    "areas": [
+      "cdd",
+      "cds",
+      "coherence",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T02:11:56Z",
+    "updated": "2026-07-09T02:11:56Z",
+    "url": "https://github.com/usurobor/cnos/issues/640"
   }
 ]
