@@ -1,0 +1,11 @@
+wake: cds-dispatch
+protocol: cds
+issue: 640
+requested_transition: in-progress -> review
+run_class: first_pass
+reason: >
+  beta-review.md R0 verdict: converge, no findings requiring iteration.
+  All four ACs independently re-verified by beta (tests re-run, greps
+  re-derived, transitions.json byte-identical confirmed). alpha-closeout.md,
+  beta-closeout.md, gamma-closeout.md all present. delta requests the
+  status:in-progress -> status:review transition per delta/SKILL.md §9.6.
