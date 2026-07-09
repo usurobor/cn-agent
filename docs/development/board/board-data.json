@@ -2449,27 +2449,6 @@
     "url": "https://github.com/usurobor/cnos/issues/628"
   },
   {
-    "n": 633,
-    "t": "cds/fsm: lock rule ordering so `propose_status_todo_with_matter` can't shadow the in-progress→review transition",
-    "kind": "process",
-    "areas": [
-      "cds",
-      "wake"
-    ],
-    "pri": "P2",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-08T16:04:48Z",
-    "updated": "2026-07-09T02:21:32Z",
-    "url": "https://github.com/usurobor/cnos/issues/633"
-  },
-  {
     "n": 639,
     "t": "cds/doctrine: clarify the dispatch `run_class` taxonomy (first-pass / repair / recovery / continuation / scope-continuation)",
     "kind": "process",
