@@ -199,6 +199,7 @@ The skill format:
   The distinction matters because a sweep over a heterogeneous queue is expected behavior, but a targeted claim attempt landing on a wrong-protocol cell signals upstream label drift or a misrouted trigger and must surface for repair.
 - **Sigma defines new label.** Sigma adds a label not declared by any package's doctrine. _Fix:_ this is a Sigma-admin boundary violation; new labels must originate from a package's doctrine update + manifest change.
 - **Lifecycle skip.** An issue moves from `status:ready` directly to `status:in-progress` without `status:todo`. _Fix:_ dispatch wakes require `status:todo` for claim; transition discipline is enforced by the dispatch protocol (cnos#454 AC4 + AC7).
+- **Body/label authorization drift.** A design-first issue's body carries stale hold-state prose ("Not dispatched — status:ready ... dispatch on explicit operator authorization.") that contradicts its actual `status:*` label (cnos#614 → cnos#633 recurrence). _Fix:_ the `status:*` label alone is the source of truth for dispatch readiness — see `dispatch-protocol/SKILL.md` §1.2 "Labels are the sole source of truth for dispatch readiness" (this skill does not restate that doctrine; §1.2 is its one canonical home) and its D13 failure-mode entry. `cn issues dispatch --issue N` (cnos#640) performs the authorization label flip and the legacy body cleanup as one operator-invoked operation.
 
 ---
 

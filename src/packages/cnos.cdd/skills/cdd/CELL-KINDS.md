@@ -187,6 +187,26 @@ This is **ε captured by γ**: ε observes patterns across runs; γ binds the ob
 
 **Required by doctrine; mechanical verifier enforcement deferred to a follow-up** — consistent with this document's own "document first, enforce later" stance (see "Observation, not enforcement" below, and #570's original doctrine-first framing). No existing cells are required to backfill a `learning` section retroactively.
 
+## Process self-improvement loop (cnos#640)
+
+Capturing a `learning:` block (above) is not the same as preventing the failure it names from recurring. [cnos#614](https://github.com/usurobor/cnos/issues/614) captured an RCA for a design-first issue's body-hold prose drifting out of sync with its `status:*` label; [cnos#633](https://github.com/usurobor/cnos/issues/633) hit the **identical** failure in the same session because the #614 learning lived only as a captured observation, never as a mechanism — the Kernel's own §1.2 names this precisely: *"'Won't repeat' without a mechanism is not a fix."* [cnos#640](https://github.com/usurobor/cnos/issues/640) is the mechanization of the #614/#633 recurrence itself, and its seed content is κ's meta-comment on that issue (["Meta: how does process self-improvement actually work here?"](https://github.com/usurobor/cnos/issues/640#issuecomment-4920935086), 2026-07-09) — the honest self-audit this section formalizes rather than re-derives.
+
+The full loop has **five** named steps (κ's comment folds "detect-recurrence" in as step 3, between capture and mechanize):
+
+```text
+observe -> capture -> detect-recurrence -> mechanize -> verify-non-recurrence
+```
+
+| Step | What happens | Owner today |
+|---|---|---|
+| **Observe** | Friction surfaces during a firing, a review, or supervision. | Whoever encounters it — any role, any session. No single owner by design; observation is incidental to doing the work, not a scheduled pass. |
+| **Capture** | The friction is written into the terminal closeout's `learning:` block (`observations` / `process_deltas` / `reusable_patterns` / `followups` / `operator_burden`) — see "Mandatory terminal learning section" above. | **γ** — already doctrine, landed by [cnos#614](https://github.com/usurobor/cnos/issues/614)/[cnos#630](https://github.com/usurobor/cnos/issues/630). γ binds the observation into the receipt at close-out; this is "ε captured by γ" per the section above. |
+| **Detect recurrence** | A pass scans captured learnings + issue history for a repeated failure signature (e.g. the same `process_deltas` text across ≥2 closeouts, or a rising `operator_burden` count) and flags it before a third occurrence costs another firing. | **No current owner.** κ's comment names this explicitly: *"nobody/nothing actually runs it."* ε is the candidate role (`ROLES.md §4b`, "cross-cell receipt-stream observer") but ε is a role name, not a running process today — there is no scheduled pass, no CI gate, and no reconciler that reads `learning:` blocks across cells. **This is the gap.** Next step: **ε made concrete** — a periodic pass that scans closeout `learning:` blocks and issue history for repeated signatures. Filing the issue that builds that pass is a follow-up action for γ/κ, not part of this cell (building a full ε pass was explicitly out of scope for cnos#640's sizing — see its γ scaffold's scope guardrails); this section names the gap and the shape of its fix rather than asserting it is solved. |
+| **Mechanize** | A repeated or high-burden signature is promoted to a `kind/process`-labeled issue whose acceptance bar is an MCA (a gate, a tool, a single-source-of-truth fix) — never a second prose reminder. | Whoever files and dispatches the promoted issue (operator, κ, or a future detect-recurrence pass once one exists). The bar itself — MCA required, "try harder" rejected — is Kernel §1.2/§2.3 doctrine, already binding; what is missing is the trigger (detect-recurrence, above), not the bar. |
+| **Verify non-recurrence** | The shipped mechanism carries a test or gate that would fail if the pattern reappeared. Recurrence after mechanization is itself a signal the mechanism was wrong, not that the fix should be re-explained. | Whoever ships the mechanizing cell — this is standard α/β test-coverage discipline (`alpha/SKILL.md` §2.2 "tests must prove the actual claim"), applied to the specific failure signature the mechanism targets. cnos#640's own `cn issues dispatch` fixture tests (`src/packages/cnos.issues/commands/issues-dispatch/dispatch_test.go`) are a worked instance: they prove the #614/#633 body/label contradiction is corrected and cannot silently reappear unnoticed. |
+
+**Honest state as of cnos#640:** observe and capture are established; mechanize's bar and verify's discipline are established; **detect-recurrence has no running owner.** cnos#640 mechanizes one specific recurring failure (body/label authorization drift) directly — it does not close the general detect-recurrence gap. A future occurrence of a *different* repeated failure signature will not be automatically caught until a detect-recurrence pass exists. This section documents that gap rather than asserting it is closed — an assertion that ε "now runs this" without a shipped ε pass would be the exact false-closure failure mode `issue/SKILL.md` names.
+
 ## Observation, not enforcement
 
 `src/packages/cnos.issues/commands/issues-fsm` carries an observation seam for `cell_kind`: `FactSnapshot.CellKind{Observed, Source, DefaultedTo}` (`snapshot.go`). As of this cell, `fetch.go`'s live-assembly path (`assembleLive`) parses the `cell_kind:` line out of `.cdd/unreleased/{N}/gamma-scaffold.md` when present and sets `CellKind.Observed` / `CellKind.Source = "cdd_artifact"`. This is **observation only** — no transition rule in `table.go` consumes `CellKind`, so its value cannot change any FSM decision. `TestSeam_CellKindNotEnforced` locks this: evaluating the same facts under every defined cell kind must yield a byte-identical decision. Consuming `cell_kind` in transition guards (the "valid transition" column above becoming enforced behavior) is deferred to a future, explicitly scoped FSM Phase 2 issue.
@@ -194,7 +214,9 @@ This is **ε captured by γ**: ε observes patterns across runs; γ binds the ob
 ## Cross-references
 
 - [`CDD.md`](CDD.md) — the generic kernel this taxonomy refines.
-- [`issue/SKILL.md`](issue/SKILL.md) — issue-authoring doctrine; states an issue can itself be a cell's matter.
+- [`issue/SKILL.md`](issue/SKILL.md) — issue-authoring doctrine; states an issue can itself be a cell's matter; its "false closure" failure mode is what §"Process self-improvement loop" refuses to commit (asserting the detect-recurrence gap is closed when it isn't).
 - `docs/reference/governance/GLOSSARY.md` §"Cell" — glossary entry for the generic term.
 - `src/packages/cnos.issues/commands/issues-fsm/snapshot.go` — the `CellKind` observation struct.
 - `src/packages/cnos.issues/commands/issues-fsm/fetch.go` — the `assembleLive` parse path.
+- `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` §1.2 "Labels are the sole source of truth for dispatch readiness" + its D13 failure-mode entry ([cnos#640](https://github.com/usurobor/cnos/issues/640)) — the mechanize/verify worked example §"Process self-improvement loop" cites.
+- `ROLES.md` §4b — ε's generic role doctrine ("cross-cell receipt-stream observer"); §"Process self-improvement loop" names ε as the candidate (not-yet-concrete) owner of the detect-recurrence step.
