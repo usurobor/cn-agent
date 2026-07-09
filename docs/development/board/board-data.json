@@ -2493,5 +2493,26 @@
     "created": "2026-07-09T02:11:56Z",
     "updated": "2026-07-09T04:27:32Z",
     "url": "https://github.com/usurobor/cnos/issues/640"
+  },
+  {
+    "n": 642,
+    "t": "process: give ε a concrete detect-recurrence pass over closeout learning: blocks",
+    "kind": "process",
+    "areas": [
+      "cdd",
+      "coherence"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T05:05:17Z",
+    "updated": "2026-07-09T05:05:17Z",
+    "url": "https://github.com/usurobor/cnos/issues/642"
   }
 ]
