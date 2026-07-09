@@ -2324,27 +2324,6 @@
     "url": "https://github.com/usurobor/cnos/issues/616"
   },
   {
-    "n": 618,
-    "t": "release-infra: FSM-capable `cn` tooling channel — publish current cn + package index ahead of a held feature version (cnos#606 C1/C2)",
-    "kind": "tooling",
-    "areas": [
-      "ci",
-      "core"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-06T19:41:34Z",
-    "updated": "2026-07-09T09:07:40Z",
-    "url": "https://github.com/usurobor/cnos/issues/618"
-  },
-  {
     "n": 621,
     "t": "sigma: stand up a shared \"everyone\" coordination topic for sigma activations",
     "kind": "process",
