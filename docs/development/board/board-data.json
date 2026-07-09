@@ -2609,5 +2609,26 @@
     "created": "2026-07-09T09:08:40Z",
     "updated": "2026-07-09T09:08:40Z",
     "url": "https://github.com/usurobor/cnos/issues/653"
+  },
+  {
+    "n": 654,
+    "t": "Harden Planning Cell with customer-facing (D0) contract gate before implementation waves (PC hardening, sub of #627)",
+    "kind": "doctrine",
+    "areas": [
+      "cdd",
+      "cds"
+    ],
+    "pri": "P1",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T09:29:00Z",
+    "updated": "2026-07-09T09:29:00Z",
+    "url": "https://github.com/usurobor/cnos/issues/654"
   }
 ]
