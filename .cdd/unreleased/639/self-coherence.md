@@ -18,3 +18,15 @@ On top of the divergence, the taxonomy was **incomplete**: cnos#626 hit an opera
 **γ's scaffold** (`.cdd/unreleased/639/gamma-scaffold.md`) is the primary spec for this round: it names the per-AC oracle list (§1), the source-of-truth table (§2), the α/β prompts (§3/§4), the scope guardrails (§5), and pre-identified friction (§6). This file follows that scaffold precisely; nothing below re-derives what γ already pinned.
 
 **Scope guardrails honored (restated from γ's scaffold §5, verified against the actual diff in §ACs below):** no `.go` file changes; no `transitions.json` diff (byte-identical); no dispatch-behavior change; no new status labels; no `cell_kind` enforcement; no Demo 0; no changes to #626/sparse-checkout/write-fence content; `#642` was not dispatched; `scripts/ci/*.sh` was not edited; `cnos-cds-dispatch.golden.yml` and `.github/workflows/cnos-cds-dispatch.yml` were regenerated mechanically via `cn-install-wake`, never hand-edited.
+
+## Skills
+
+**Tier 1:** `CDD.md` (canonical lifecycle/role contract) + `alpha/SKILL.md` (this role surface, load order §"Load Order").
+
+**Tier 3 (issue-specific, per γ's α prompt §3):**
+- `src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md` — one of the three surfaces reconciled; §2.8 "Repair re-entry detection and preflight" is the framework-level edit target.
+- `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` — the second surface; §"Repair re-entry preflight" Step A is the canonical home γ's source-of-truth table designates for the ordered decision procedure and the full `run_class` enum (this is also the wake's live prompt body — the actual dispatch wake that claimed cnos#639 renders from this file).
+- `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` §9.10–§9.12 (read in full for structural/citation precedent) — the third surface; §9.13 is new, added as a sibling subsection.
+- `src/packages/cnos.core/doctrine/KERNEL.md` §1.2 ("MCA over MCI"; "derive, do not duplicate") + §2.2 ("one source of truth per fact") — cited (not restated) as the doctrinal basis for making `cds-dispatch/SKILL.md` the single canonical enum and having `dispatch-protocol/SKILL.md` cross-reference it rather than carry a second, independently-maintained list.
+
+**Applied as generation constraints, not post-hoc checks:** every edit to `dispatch-protocol/SKILL.md` and `delta/SKILL.md` was written to *point at* the canonical procedure in `cds-dispatch/SKILL.md` rather than restate a competing enumeration — this is KERNEL §2.2 applied directly to the diff's own shape, not asserted after the fact. `delta/SKILL.md` §9.13 was written strictly additive (no edits to §9.10/§9.11/§9.12's existing content) per γ's scaffold Friction note 5 and the α prompt's explicit "Do not renumber or edit" instruction.
