@@ -1,0 +1,26 @@
+issue: 618
+protocol: cds
+cycle_branch: cycle/618
+requested_by: cds-dispatch (dispatch wake, claim step)
+head_commit: 937f2755d02b8e2cfb35845ac7b78213e5c229b1
+note: >
+  Well-formedness gates verified (open, single protocol:cds, single
+  status:todo, dispatch:cell present). No prior status:changes history,
+  no prior cycle/618 branch, no prior .cdd/unreleased/618/ artifacts,
+  no bounce/rejection comments -- run_class: first_pass.
+
+  This issue's body carries a "Filing-only -- operator holds dispatch"
+  hold sentence contradicting the current status:todo label. Per
+  dispatch-protocol/SKILL.md section 1.2 (cnos#640, "Labels are the sole
+  source of truth for dispatch readiness"), a wake encountering a
+  body-hold sentence that contradicts the current status:* label MUST
+  trust the label and MUST NOT defer, re-litigate, or treat the prose as
+  a competing signal. Eleven prior firings (2026-07-08T15:27Z through
+  2026-07-09T08:05Z) deferred on this exact contradiction under the
+  pre-cnos#640 doctrine; the last of those deferrals (08:05Z) postdates
+  cnos#640's merge (05:17Z), indicating the rendered wake prompt had not
+  yet picked up the doctrine update at that firing. This firing verified
+  the current dispatch-protocol/SKILL.md text directly and is claiming
+  per the landed, authoritative rule rather than repeating the stale
+  deferral. Requesting the todo -> in-progress transition via
+  `cn issues fsm evaluate --issue 618 --apply` per cnos#575 Phase 3.

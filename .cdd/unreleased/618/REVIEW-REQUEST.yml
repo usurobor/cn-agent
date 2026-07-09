@@ -1,0 +1,22 @@
+issue: 618
+protocol: cds
+cycle_branch: cycle/618
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/647"
+converge_verdict_ref: .cdd/unreleased/618/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's R0 converge
+  verdict (converge, zero blocking findings; AC1-AC4 independently
+  re-verified against action-gh-release's actual source, a locally-run
+  install.sh channel-selector driver harness, and a live redirect probe
+  against the real repo). All closeout artifacts (gamma-scaffold.md,
+  self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md,
+  gamma-closeout.md) are present on this branch. run_class: first_pass --
+  no prior cycle/618 branch, no prior rejection/bounce history, single R0
+  round, no iteration. PR #647 opened by  (cnos#591)
+  after the closeout artifacts landed. Two non-blocking follow-ups
+  recommended by the closeouts (scaffold oracle-snippet shell-correctness
+  gate; doctrine for authorizing live production-side-effecting
+  verification in release-infra cells) -- not filed as new issues this
+  session per the wake's minimal-surface discipline; named here for
+  operator triage.
