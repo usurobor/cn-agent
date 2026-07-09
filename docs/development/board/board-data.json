@@ -2459,7 +2459,7 @@
       "wake"
     ],
     "pri": "P2",
-    "status": "in-progress",
+    "status": "review",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2468,7 +2468,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-09T01:57:16Z",
-    "updated": "2026-07-09T06:18:45Z",
+    "updated": "2026-07-09T07:00:51Z",
     "url": "https://github.com/usurobor/cnos/issues/639"
   },
   {
