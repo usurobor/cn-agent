@@ -28,6 +28,11 @@ labels: ''
 - **kind:** <!-- kind/bugfix | kind/cleanup | kind/process | kind/feature | kind/tooling | kind/doctrine | kind/audit | kind/tracking | kind/research | kind/skill | kind/spike -->
 - **area:** <!-- area/* (one or more) -->
 - **dispatchable:** <!-- yes → dispatch:cell + protocol:cds/cdd + status:ready|todo ; no → design/tracking/research -->
+  <!-- The status:* label alone gates dispatch readiness (cnos#640). Do NOT add a body
+       sentence like "Not dispatched — status:ready ... dispatch on explicit operator
+       authorization." — that duplicate hold-state prose is what cnos#614/#633 showed can
+       drift out of sync with the label. Use `cn issues dispatch --issue N` to authorize
+       dispatch; see dispatch-protocol/SKILL.md §1.2. -->
 
 ## Scope
 

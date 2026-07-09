@@ -1,0 +1,14 @@
+wake: cds-dispatch
+protocol: cds
+issue: 640
+run_class: first_pass
+requested_transition: todo -> in-progress
+reason: >
+  Claim sequence step 5/6 (cds-dispatch/SKILL.md). Well-formedness gates
+  verified: issue open, dispatch:cell present, exactly one protocol label
+  (protocol:cds), exactly one status label (status:todo). Body carries an
+  explicit, unambiguous operator-authorized dispatch release with no
+  body/label contradiction (contrast #618, deferred). No prior status:changes
+  history, no cycle/640 branch, no .cdd/unreleased/640/ artifacts, no prior
+  bounce comments -- classified first_pass per repair re-entry preflight
+  Step A.
