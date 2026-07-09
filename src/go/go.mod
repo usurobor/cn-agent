@@ -28,3 +28,13 @@ replace github.com/usurobor/cnos/packages/cnos.issues/commands/issues-map => ../
 require github.com/usurobor/cnos/packages/cnos.issues/commands/issues-fsm v0.0.0-00010101000000-000000000000
 
 replace github.com/usurobor/cnos/packages/cnos.issues/commands/issues-fsm => ../packages/cnos.issues/commands/issues-fsm
+
+// cnos#640: issues-dispatch (the `cn issues dispatch` domain
+// implementation) is co-located with the cnos.issues package, mirroring
+// the cnos#568 issues-fsm precedent above exactly. The workspace file
+// (../../go.work) and this replace directive both ensure the local
+// module is used; the replace makes `go mod tidy` work without network
+// resolution.
+require github.com/usurobor/cnos/packages/cnos.issues/commands/issues-dispatch v0.0.0-00010101000000-000000000000
+
+replace github.com/usurobor/cnos/packages/cnos.issues/commands/issues-dispatch => ../packages/cnos.issues/commands/issues-dispatch
