@@ -54,7 +54,7 @@
     },
     {
       "name": "dispatch:cell",
-      "description": "This issue is an executable implementation cell. Eligible to be claimed by a dispatch wake when paired with status:todo and a matching protocol:{id}.",
+      "description": "Executable cell; claimable by a dispatch wake with status:todo and a matching protocol:{id}.",
       "color": "1d76db",
       "owner": "cnos.core",
       "group": "dispatchability"
