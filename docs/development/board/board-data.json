@@ -2304,28 +2304,6 @@
     "url": "https://github.com/usurobor/cnos/issues/612"
   },
   {
-    "n": 613,
-    "t": "cds-install Sub 6: PAT-free mechanical FSM-engine wake + tenant secrets runbook",
-    "kind": "tooling",
-    "areas": [
-      "agent",
-      "cds",
-      "ci"
-    ],
-    "pri": "P2",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-06T13:08:34Z",
-    "updated": "2026-07-06T13:08:34Z",
-    "url": "https://github.com/usurobor/cnos/issues/613"
-  },
-  {
     "n": 616,
     "t": "cdd/gamma: scaffold AC-oracle-approach must propagate negative-invariant clauses with dispatch-boundary precision (cdd-protocol-gap, cycle #608)",
     "kind": "skill",
