@@ -624,6 +624,18 @@ func TestRepoInstall_RealDispatch_AncestorHubWithNestedGitRepo_UsesInnerRoot(t *
 	}
 	initGitRepo(t, innerRepo)
 
+	// The CLI reports the git root via `git rev-parse --show-toplevel`,
+	// which canonicalizes symlinks. On macOS t.TempDir() lives under /var,
+	// a symlink to /private/var, so the reported root carries the /private
+	// prefix while innerRepo does not — resolve the expected path the same
+	// way so the string assertion below is not brittle to that platform
+	// difference (this test only failed on the macOS runner for that
+	// reason; the product behavior — picking the inner repo — is correct).
+	resolvedInner, evalErr := filepath.EvalSymlinks(innerRepo)
+	if evalErr != nil {
+		t.Fatal(evalErr)
+	}
+
 	cmd := exec.Command(binPath, "repo", "install", "--index", indexPath, "--packages", "cnos.core")
 	cmd.Dir = innerRepo
 	var stdout, stderr bytes.Buffer
@@ -632,7 +644,7 @@ func TestRepoInstall_RealDispatch_AncestorHubWithNestedGitRepo_UsesInnerRoot(t *
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("cn repo install: %v\nstdout:\n%s\nstderr:\n%s", err, stdout.String(), stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Git repository root: "+innerRepo) {
+	if !strings.Contains(stdout.String(), "Git repository root: "+resolvedInner) {
 		t.Errorf("stdout should report the inner repo as the resolved root, got:\n%s", stdout.String())
 	}
 
