@@ -2468,5 +2468,28 @@
     "created": "2026-07-08T16:04:48Z",
     "updated": "2026-07-08T16:04:48Z",
     "url": "https://github.com/usurobor/cnos/issues/633"
+  },
+  {
+    "n": 639,
+    "t": "cds/doctrine: clarify the dispatch `run_class` taxonomy (first-pass / repair / recovery / continuation / scope-continuation)",
+    "kind": "process",
+    "areas": [
+      "cdd",
+      "cds",
+      "coherence",
+      "wake"
+    ],
+    "pri": "P2",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-09T01:57:16Z",
+    "updated": "2026-07-09T01:57:16Z",
+    "url": "https://github.com/usurobor/cnos/issues/639"
   }
 ]
