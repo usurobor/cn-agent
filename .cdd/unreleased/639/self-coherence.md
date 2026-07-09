@@ -124,3 +124,24 @@ Exactly the three γ-named files — no fourth active doctrine surface under `sr
 4. **CELL-KINDS.md / CDD.md cross-reference — confirmed not required, not added.** γ's scaffold §2 read: `run_class` is a δ/dispatch-runtime classification, structurally distinct from `cell_kind` (`FactSnapshot.CellKind`, a separate, already-defined observation seam), and does not belong in `CELL-KINDS.md`/`CDD.md`. α's independent check: `grep -n "run_class" src/packages/cnos.cdd/skills/cdd/CELL-KINDS.md docs/development/cdd/CDD.md src/packages/cnos.cdd/skills/cdd/CDD.md` → 0 hits in all three, and no genuinely-cheap natural insertion point was found in either file's existing structure that wouldn't itself require judgment calls about where in an unrelated document's flow to insert a pointer. α confirms γ's read rather than overriding it: no cross-reference added. This is a confirmed decision, not a silently skipped one.
 
 5. **Repair-contract machinery (Steps B–E) untouched by this cell.** `scope_continuation`'s routing (§9.13) explicitly bypasses Steps B–E, mirroring §9.11's pattern — this cell did not add or modify any Steps-B–E logic, consistent with the issue's "no dispatch-behavior change" non-goal. Steps B–E's own literal text is unchanged in this diff.
+
+## CDD Trace
+
+Per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" (Steps 0–13); Steps 0–3 are pre-α γ work, Steps 4–7 are α's rows:
+
+| Step | Name | Actor | Evidence (this cycle) |
+|---|---|---|---|
+| 0 | Observe | γ | `.cdd/unreleased/639/gamma-scaffold.md` L1–9 (family/authority/branch preamble) — γ's selection-input read of the issue + the #626 taxonomy-gap history |
+| 1 | Select | γ | Issue #639 selected per operator dispatch (κ's 2026-07-09 comment, A2/CAP authority); `gamma-scaffold.md` names the decisive scope |
+| 2 | Branch | γ | `cycle/639` created from `origin/main`@`7313caea3b6b9901cc02e797be9c929393b971ee` (γ's scaffold §"Branch," confirmed no drift — γ's Friction note 6); this round verified the branch is still tracking `origin/cycle/639` at session start (`git status` → "up to date with 'origin/cycle/639'") |
+| 3 | Bootstrap | γ | `.cdd/unreleased/639/gamma-scaffold.md` (per-AC oracle list §1, source-of-truth table §2, α/β prompts §3/§4, scope guardrails §5, friction notes §6) + `CLAIM-REQUEST.yml` — both pre-existing on the branch at α's dispatch |
+| 4 | Gap | α | `self-coherence.md §Gap` (this file, commit `25df0188`) — names the three-surface divergence + the incomplete-taxonomy gap, cites γ's scaffold as primary spec |
+| 5 | Mode | α | `self-coherence.md §Skills` (commit `ab08101a`) — Tier 1 (`CDD.md` + `alpha/SKILL.md`) + Tier 3 (the three doctrine surfaces + `KERNEL.md` §1.2/§2.2) named explicitly; mode = doctrine-prose-only, no design/plan artifacts required (single coordinated 3-surface prose reconciliation with a scaffold-provided oracle list — no independent design/impact-graph beyond what γ's scaffold already produced) |
+| 6 | Artifacts | α | Doctrine edits landed in commit `aabfdd49` (`cds-dispatch/SKILL.md` Step A rewrite + enum; `dispatch-protocol/SKILL.md` §2.8 Detection/Receipt reconciliation; `delta/SKILL.md` §9.13 addition) + mechanically-regenerated `cnos-cds-dispatch.golden.yml` and `.github/workflows/cnos-cds-dispatch.yml` (same commit). No design/plan/tests/code artifacts — doctrine-only cell; "tests" are the CI guard scripts + grep oracles run in §ACs above, which is the closest analog this cell type has and is treated as satisfying the "tests" artifact-order slot by substitution, named explicitly rather than silently skipped. |
+| 7 | Self-coherence | α | This file, complete through this section as of commit (see §Review-readiness below for the head SHA at signal time) — AC1–AC5 individually mapped to evidence in §ACs, self-check performed in §Self-check, debt disclosed in §Debt |
+
+**Artifact enumeration matches diff (alpha/SKILL.md §2.6 row 11).** Every file in `git diff --stat origin/main..HEAD` is named in this trace's Step 3/6 rows or in §ACs' AC5 evidence: `cds-dispatch/SKILL.md`, `dispatch-protocol/SKILL.md`, `delta/SKILL.md`, `cnos-cds-dispatch.golden.yml`, `.github/workflows/cnos-cds-dispatch.yml` (Step 6), `CLAIM-REQUEST.yml` + `gamma-scaffold.md` (Step 3, γ's), `self-coherence.md` (this file, Step 7). No file appears in the diff without a named row above.
+
+**Caller-path trace for new modules (alpha/SKILL.md §2.6 row 12).** Not applicable — this cell adds no new module or function (doctrine-only, `cell_kind: doctrine`, zero `.go` files in the diff per AC5).
+
+**Test-assertion-count-from-runner-output (alpha/SKILL.md §2.6 row 13).** Not applicable in the unit-test sense (no test suite exists for prose doctrine); the closest analog is the two CI guard scripts' own pass/fail output, both pasted verbatim in §ACs AC4/AC5 evidence above (not manually enumerated — the scripts' own stdout is the evidence).
