@@ -2482,16 +2482,16 @@
       "wake"
     ],
     "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-07-09T02:11:56Z",
-    "updated": "2026-07-09T05:08:43Z",
+    "updated": "2026-07-09T05:17:10Z",
     "url": "https://github.com/usurobor/cnos/issues/640"
   },
   {
