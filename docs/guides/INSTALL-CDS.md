@@ -168,6 +168,36 @@ either is unavailable, `--dispatch cds` still renders the workflow but
 exits non-zero naming the label-doctor failure, and you can apply the
 labels yourself with `cn label doctor` (or manually).
 
+### `--engine`: the PAT-free mechanical tier
+
+`cn repo install --dispatch cds` renders **two separable wake tiers** from
+the same command; you pick one with the `--engine` flag:
+
+| Tier | Flag | Work phase | Runtime credential |
+|---|---|---|---|
+| **Agent** (default) | *(no flag)* | `anthropics/claude-code-action@v1` — an agent claims cells and writes code. | `workflow`-scope PAT **and** `CLAUDE_CODE_OAUTH_TOKEN`. |
+| **Engine** | `--engine` | Mechanical CDS issue-state FSM (`cn issues fsm scan/evaluate --apply`) — advances label state deterministically, no agent in the loop. | The default `GITHUB_TOKEN` only. |
+
+```sh
+cn repo install --dispatch cds --engine
+```
+
+The engine tier (cnos#613) needs **no** `--workflow-pat-secret`,
+`--bot-name`, `--bot-id`, or `CLAUDE_CODE_OAUTH_TOKEN`: every token binding
+in the rendered workflow resolves to `${{ secrets.GITHUB_TOKEN }}`, which
+`cn issues fsm ... --apply` is all that is required. `--agent` is optional
+and only names the workflow's concurrency group. `--engine` is only valid
+with `--dispatch cds` (it is a rendering variant of the cds workflow); on a
+base or `--dispatch none` install it fails early with a clear error.
+
+Note the split between *install* time and *run* time: writing the workflow
+file itself still touches `.github/workflows/`, so the **installing** token
+(the human/CI running `cn repo install`, or the GitHub UI path's
+`workflow_pat_secret`) still needs `workflow` scope — but the rendered
+workflow's own **runtime** is PAT-free. If GitHub Actions is to open the
+recovery/finalizer PRs, enable *Settings → Actions → General → Allow GitHub
+Actions to create and approve pull requests* so `GITHUB_TOKEN` can open them.
+
 ---
 
 ## GitHub UI (no-terminal) install
@@ -219,17 +249,51 @@ half-applied PR.
 
 What you provision depends on how far up the automation ladder you go:
 
-| Tier | What it is | Secrets needed |
-|---|---|---|
-| **Tier 1 — base install** | `cn repo install` (this guide's Layer 1). Just the CDS method, no automation. | None beyond what GitHub Actions already provides (`GITHUB_TOKEN`), and only if you use the GitHub UI path above — the plain CLI path needs no secrets at all. |
-| **Tier 2 — mechanical, label-driven** | A PAT-free mechanical engine (the CDS issue-state FSM, `cn issues fsm evaluate`) that reconciles label state without an agent in the loop. Forthcoming — tracked in cnos#613 (mechanical FSM-engine wake); its canonical-dispatch-labels precondition (cnos#493) now ships via `cn label doctor` / `--dispatch cds`. | `GITHUB_TOKEN` only (mechanical, no agent credential). |
-| **Tier 3 — autonomous dispatch** | This guide's Layer 2 (`--dispatch cds`): a scheduled agent that claims cells and opens PRs. | A `workflow`-scope PAT (named by `--workflow-pat-secret` / `workflow_pat_secret`) **and** `CLAUDE_CODE_OAUTH_TOKEN` for the agent runtime. |
+| Tier | What it is | Install command | Runtime secrets |
+|---|---|---|---|
+| **Tier 1 — base install** | `cn repo install` (this guide's Layer 1). Just the CDS method, no automation. | `cn repo install` | None beyond what GitHub Actions already provides (`GITHUB_TOKEN`), and only if you use the GitHub UI path above — the plain CLI path needs no secrets at all. |
+| **Tier 2 — mechanical FSM engine** | A PAT-free mechanical engine (the CDS issue-state FSM, `cn issues fsm scan/evaluate --apply`) that reconciles label state without an agent in the loop. | `cn repo install --dispatch cds --engine` | `GITHUB_TOKEN` only (the default Actions token — no secret to provision). |
+| **Tier 3 — autonomous dispatch** | This guide's Layer 2 (`--dispatch cds`): a scheduled agent that claims cells and opens PRs. | `cn repo install --dispatch cds` | A `workflow`-scope PAT (named by `--workflow-pat-secret` / `workflow_pat_secret`) **and** `CLAUDE_CODE_OAUTH_TOKEN` for the agent runtime. |
 
-Tier 2's full runbook (per-secret setup steps, rotation guidance) is Sub 6's
-deliverable (cnos#613) and is not yet merged; this table names what each tier
-needs today so you can provision ahead of it, without duplicating content
-that issue will eventually own — once #613 lands, this table should point at
-its runbook rather than restate it.
+Both Tier 2 and Tier 3 write `.github/workflows/cnos-cds-dispatch.yml`, so
+the **installing** token (or the GitHub UI path's `workflow_pat_secret`)
+needs `workflow` scope *at install time* regardless of tier — that is a
+one-time cost of committing the workflow file, distinct from the *runtime*
+secrets above.
+
+### Tier 2 runbook (mechanical FSM engine — `GITHUB_TOKEN` only)
+
+The engine tier provisions **no runtime secret of its own**. The one setup
+choice is whether GitHub Actions may open the recovery/finalizer PRs.
+
+1. Ensure the install target has a resolvable `origin` git remote and that
+   your local `$GITHUB_TOKEN`/`$GH_TOKEN` can manage labels (the
+   `label-doctor` precondition, cnos#493).
+2. Run `cn repo install --dispatch cds --engine`. This renders
+   `.github/workflows/cnos-cds-dispatch.yml` with every token binding set to
+   `${{ secrets.GITHUB_TOKEN }}` and ensures the canonical dispatch labels.
+3. In the repo, enable **Settings → Actions → General → Allow GitHub Actions
+   to create and approve pull requests** so the workflow's built-in
+   `GITHUB_TOKEN` can open the mechanical recovery/finalizer PRs.
+4. Review and merge the install PR. No repo secret needs to be set — the
+   scheduled workflow runs on `GITHUB_TOKEN` alone.
+
+### Tier 3 runbook (autonomous dispatch — PAT + OAuth token)
+
+The agent tier runs `claude-code-action`, which needs two credentials:
+
+1. Create a **`workflow`-scope PAT** and store it as a repo Actions secret.
+   Name it whatever you pass to `--workflow-pat-secret` (e.g.
+   `ACME_WORKFLOW_PAT`); for the default `sigma` agent the renderer expects
+   `SIGMA_WORKFLOW_PAT`.
+2. Create a **`CLAUDE_CODE_OAUTH_TOKEN`** repo Actions secret holding the
+   agent runtime's OAuth token.
+3. Run `cn repo install --dispatch cds --agent <name> --workflow-pat-secret
+   <SECRET_NAME> --bot-name <name> --bot-id <id>` (a non-sigma agent
+   requires all four; a bare `--dispatch cds` uses the sigma defaults).
+4. Review and merge the install PR. Rotate both secrets on your normal
+   credential-rotation cadence; the PAT must retain `workflow` scope or the
+   scheduled wake cannot check out and push.
 
 ---
 
@@ -258,7 +322,9 @@ If you adopted the GitHub UI path, also remove
 | `package(s) have multiple versions in index; pass --release to pin one` | You passed `--index` pointing at a multi-version index with no `--release`; add `--release <tag>` to disambiguate. |
 | `cn: command not found` after install | `install.sh` put `cn` outside your `PATH`. Re-run with `BIN_DIR="$HOME/.local/bin"` and add that dir to `PATH`. |
 | `--dispatch cds` fails with "canonical dispatch labels not ensured: ..." | The workflow still rendered; label-doctor could not resolve the repo's `origin` git remote, a GitHub token, or reach the GitHub API. Run `cn label doctor` yourself (or apply the labels manually) once the underlying issue (missing remote/token/scope) is fixed. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
-| `--dispatch cds` fails with "--workflow-pat-secret is required for --agent ..." | Pass `--workflow-pat-secret <NAME>` (and, for a non-sigma agent, `--bot-name`/`--bot-id`) naming the GitHub Actions secret holding that agent's workflow-scoped PAT. |
+| `--dispatch cds` fails with "--workflow-pat-secret is required for --agent ..." | Pass `--workflow-pat-secret <NAME>` (and, for a non-sigma agent, `--bot-name`/`--bot-id`) naming the GitHub Actions secret holding that agent's workflow-scoped PAT. Or, if you want the mechanical (no-agent) tier, add `--engine` — it needs no PAT. |
+| `--engine is only valid with --dispatch cds` | `--engine` selects the mechanical tier of the *cds dispatch* render; it is meaningless on a base or `--dispatch none` install. Add `--dispatch cds`, or drop `--engine`. |
+| Engine-tier workflow runs but opens no recovery/finalizer PR | The built-in `GITHUB_TOKEN` cannot open PRs until you enable **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests**. |
 | GitHub UI install run fails with "`install_dispatch=true` requires a workflow-scoped PAT ..." | Set the repo secret named by the `workflow_pat_secret` input (default `CNOS_WORKFLOW_PAT`) to a `workflow`-scoped PAT before re-running "Run workflow" — see [§ GitHub UI (no-terminal) install](#github-ui-no-terminal-install). |
 
 ## Related

@@ -95,6 +95,16 @@ type Args struct {
 	WorkflowPatSecret string // required for any non-sigma Agent
 	BotName           string // overrides the renderer's agent_bot_name() lookup
 	BotID             string // overrides the renderer's agent_bot_id() lookup
+
+	// Engine selects the PAT-free mechanical FSM-engine wake tier
+	// (cnos#613 Mock G). Only valid with Dispatch == "cds". When set, the
+	// rendered wake runs `cn issues fsm ... --apply` on the default
+	// GITHUB_TOKEN — no workflow-scoped PAT, no CLAUDE_CODE_OAUTH_TOKEN, no
+	// agent bot identity (Agent/WorkflowPatSecret/BotName/BotID identity
+	// bindings are unused; Agent still names the concurrency group). The
+	// default (false) renders the agent tier (claude-code-action),
+	// byte-for-byte unchanged.
+	Engine bool
 }
 
 // ParseArgs parses the `cn repo install` flag set. Two-token
@@ -130,6 +140,8 @@ func ParseArgs(argv []string) (Args, error) {
 				return a, err
 			}
 			a.Dispatch = v
+		case "--engine":
+			a.Engine = true
 		case "--agent":
 			v, err := takeValue(argv, &i, "--agent")
 			if err != nil {
@@ -200,6 +212,9 @@ type Options struct {
 	BotName           string
 	BotID             string
 
+	// Engine — see Args.Engine. Only valid with Dispatch == "cds".
+	Engine bool
+
 	// Repo is the "owner/repo" slug used to resolve releases and
 	// construct download URLs. Defaults to DefaultRepo.
 	Repo string
@@ -227,6 +242,10 @@ type Result struct {
 // Run executes `cn repo install` against opts.RepoRoot.
 func Run(ctx context.Context, opts Options) (*Result, error) {
 	if err := validateDispatch(opts.Dispatch); err != nil {
+		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+		return nil, err
+	}
+	if err := validateEngine(opts.Dispatch, opts.Engine); err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
 		return nil, err
 	}
@@ -290,7 +309,7 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	}
 
 	if opts.DryRun {
-		printPlan(opts.Stdout, manifest, plannedFiles, releaseTag, opts.IndexPath, opts.Dispatch)
+		printPlan(opts.Stdout, manifest, plannedFiles, releaseTag, opts.IndexPath, opts.Dispatch, opts.Engine)
 		return &Result{ReleaseTag: releaseTag, Manifest: manifest, DryRun: true}, nil
 	}
 
@@ -331,6 +350,25 @@ func validateDispatch(d string) error {
 	default:
 		return fmt.Errorf("unknown --dispatch value %q (want \"none\" or \"cds\")", d)
 	}
+}
+
+// validateEngine enforces that the PAT-free mechanical FSM-engine wake
+// tier (--engine, cnos#613) is only requested alongside --dispatch cds:
+// --engine selects a rendering variant of the cds dispatch workflow, so
+// it is meaningless without a dispatch render to vary. A clear refusal
+// here beats silently ignoring the flag on a base (or non-cds) install.
+func validateEngine(dispatch string, engine bool) error {
+	if !engine {
+		return nil
+	}
+	if dispatch != "cds" {
+		shown := dispatch
+		if shown == "" {
+			shown = "none"
+		}
+		return fmt.Errorf("--engine is only valid with --dispatch cds (got --dispatch %q); the engine tier is a variant of the cds dispatch render", shown)
+	}
+	return nil
 }
 
 // resolveDispatchAgent returns the effective --agent value for
@@ -381,8 +419,14 @@ func dispatchWorkflowPath(repoRoot string) string {
 func runDispatchCds(ctx context.Context, opts Options) error {
 	agent := resolveDispatchAgent(opts.Agent)
 
+	// PAT-secret identity resolution is an AGENT-tier concern only. The
+	// engine tier (cnos#613 G2) is PAT-free: the rendered wake binds every
+	// token to the default GITHUB_TOKEN, so it needs no --workflow-pat-secret
+	// and no agent bot identity, and a non-sigma --agent must NOT trip the
+	// identity gate here. patSecret is resolved (and printed) for the agent
+	// tier only.
 	patSecret := opts.WorkflowPatSecret
-	if patSecret == "" {
+	if !opts.Engine && patSecret == "" {
 		if agent != "sigma" {
 			err := fmt.Errorf("--workflow-pat-secret is required for --agent %q (no default substrate PAT-secret binding for non-sigma agents); pass --workflow-pat-secret <NAME> naming the GitHub Actions secret that holds this agent's workflow-scoped PAT", agent)
 			fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
@@ -404,14 +448,22 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 	outPath := dispatchWorkflowPath(opts.RepoRoot)
 
 	args := []string{"cds-dispatch", "--out", outPath, "--agent", agent}
-	if opts.WorkflowPatSecret != "" {
-		args = append(args, "--workflow-pat-secret", opts.WorkflowPatSecret)
-	}
-	if opts.BotName != "" {
-		args = append(args, "--bot-name", opts.BotName)
-	}
-	if opts.BotID != "" {
-		args = append(args, "--bot-id", opts.BotID)
+	if opts.Engine {
+		// Engine tier: the only renderer arg beyond the output path and the
+		// concurrency-group agent name is --tier engine. The identity flags
+		// (workflow-pat-secret / bot-name / bot-id) are deliberately not
+		// forwarded — the engine tier binds nothing to them.
+		args = append(args, "--tier", "engine")
+	} else {
+		if opts.WorkflowPatSecret != "" {
+			args = append(args, "--workflow-pat-secret", opts.WorkflowPatSecret)
+		}
+		if opts.BotName != "" {
+			args = append(args, "--bot-name", opts.BotName)
+		}
+		if opts.BotID != "" {
+			args = append(args, "--bot-id", opts.BotID)
+		}
 	}
 
 	cmd := exec.CommandContext(ctx, rendererPath, args...)
@@ -426,7 +478,12 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 
 	fmt.Fprintf(opts.Stdout, "✓ rendered .github/workflows/cnos-cds-dispatch.yml\n")
 	fmt.Fprintf(opts.Stdout, "  identity: %s\n", agent)
-	fmt.Fprintf(opts.Stdout, "  pat secret: %s\n", patSecret)
+	if opts.Engine {
+		fmt.Fprintf(opts.Stdout, "  tier: engine (mechanical FSM engine — PAT-free runtime)\n")
+		fmt.Fprintf(opts.Stdout, "  runtime token: GITHUB_TOKEN (no workflow-scoped PAT, no CLAUDE_CODE_OAUTH_TOKEN)\n")
+	} else {
+		fmt.Fprintf(opts.Stdout, "  pat secret: %s\n", patSecret)
+	}
 	fmt.Fprintf(opts.Stdout, "⚠ dispatch grants scheduled write access on merge. Review before merging.\n")
 	fmt.Fprintf(opts.Stdout, "  This changes .github/workflows/ — the installing token needs `workflow` scope.\n")
 	fmt.Fprintf(opts.Stdout, "  Dispatch never pushes to main (PR-only).\n")
@@ -538,7 +595,7 @@ func writeManifest(path string, m pkg.Manifest) error {
 // the pre-cnos#610 text (pinned backward-compat); dispatch == "cds"
 // prints a distinct line so --dry-run --dispatch cds does not falsely
 // claim no .github/workflows/ change is planned.
-func printPlan(w io.Writer, m pkg.Manifest, plannedFiles []string, releaseTag, indexArg, dispatch string) {
+func printPlan(w io.Writer, m pkg.Manifest, plannedFiles []string, releaseTag, indexArg, dispatch string, engine bool) {
 	if releaseTag != "" {
 		fmt.Fprintf(w, "  Would fetch package index + tarballs for release %s (%d package(s))\n", releaseTag, len(m.Packages))
 	} else {
@@ -552,8 +609,13 @@ func printPlan(w io.Writer, m pkg.Manifest, plannedFiles []string, releaseTag, i
 	fmt.Fprintf(w, "  Would run: (internal) deps restore → .cn/vendor/packages/ (%d package(s))\n", len(m.Packages))
 	fmt.Fprintf(w, "  Would ensure .gitignore contains: .cn/vendor/\n")
 	if dispatch == "cds" {
-		fmt.Fprintf(w, "  Would render: .github/workflows/cnos-cds-dispatch.yml (via cn-install-wake)\n")
-		fmt.Fprintf(w, "Dispatch: cds (would render .github/workflows/cnos-cds-dispatch.yml)\n\n")
+		if engine {
+			fmt.Fprintf(w, "  Would render: .github/workflows/cnos-cds-dispatch.yml (via cn-install-wake, tier=engine — PAT-free mechanical FSM)\n")
+			fmt.Fprintf(w, "Dispatch: cds (engine tier; would render .github/workflows/cnos-cds-dispatch.yml)\n\n")
+		} else {
+			fmt.Fprintf(w, "  Would render: .github/workflows/cnos-cds-dispatch.yml (via cn-install-wake)\n")
+			fmt.Fprintf(w, "Dispatch: cds (would render .github/workflows/cnos-cds-dispatch.yml)\n\n")
+		}
 	} else {
 		fmt.Fprintf(w, "Dispatch: none (base install only — no .github/workflows/ changes)\n\n")
 	}

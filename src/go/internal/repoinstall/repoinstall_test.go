@@ -1321,3 +1321,251 @@ func TestDispatchRenderer_SparseCheckoutExcludesAgentHub(t *testing.T) {
 		}
 	}
 }
+
+// --- cnos#613: PAT-free mechanical FSM-engine wake tier (Mock G) ---
+
+// TestParseArgs_Engine covers the --engine boolean flag: it parses to
+// Args.Engine and defaults to false when absent.
+func TestParseArgs_Engine(t *testing.T) {
+	a, err := ParseArgs([]string{"--dispatch", "cds", "--engine"})
+	if err != nil {
+		t.Fatalf("ParseArgs: %v", err)
+	}
+	if !a.Engine {
+		t.Error("Engine = false, want true after --engine")
+	}
+	if a.Dispatch != "cds" {
+		t.Errorf("Dispatch = %q, want cds", a.Dispatch)
+	}
+
+	b, err := ParseArgs([]string{"--dispatch", "cds"})
+	if err != nil {
+		t.Fatalf("ParseArgs: %v", err)
+	}
+	if b.Engine {
+		t.Error("Engine = true, want false when --engine absent")
+	}
+}
+
+// TestValidateEngine pins the cross-field guard: --engine is only valid
+// with --dispatch cds. It is meaningless on a base (or non-cds) install
+// and must be refused with a clear, named error rather than silently
+// ignored.
+func TestValidateEngine(t *testing.T) {
+	cases := []struct {
+		dispatch string
+		engine   bool
+		wantErr  bool
+	}{
+		{"cds", true, false},  // the one valid combination
+		{"cds", false, false}, // engine off is always fine
+		{"", false, false},
+		{"none", false, false},
+		{"", true, true},     // --engine with base install
+		{"none", true, true}, // --engine with --dispatch none
+	}
+	for _, c := range cases {
+		err := validateEngine(c.dispatch, c.engine)
+		if (err != nil) != c.wantErr {
+			t.Errorf("validateEngine(%q, %v) err = %v, wantErr %v", c.dispatch, c.engine, err, c.wantErr)
+		}
+	}
+}
+
+// TestRun_Engine_WithoutDispatchCds_Rejected proves the guard fires
+// through the real Run entry point (not just the unit above): --engine on
+// a base install (--dispatch none) fails early with a named error and
+// writes no .github/workflows/ at all.
+func TestRun_Engine_WithoutDispatchCds_Rejected(t *testing.T) {
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, err := Run(context.Background(), Options{
+		RepoRoot: repoRoot,
+		Dispatch: "none",
+		Engine:   true,
+		Stdout:   stdout,
+		Stderr:   stderr,
+	})
+	if err == nil {
+		t.Fatal("expected --engine with --dispatch none to be rejected")
+	}
+	if !strings.Contains(err.Error(), "--engine is only valid with --dispatch cds") {
+		t.Errorf("error should name the guard, got: %v", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(repoRoot, ".github")); !os.IsNotExist(statErr) {
+		t.Error("no .github/ directory may exist after an --engine misuse rejection")
+	}
+}
+
+// TestRun_DispatchCds_EngineTier_RendersPatFreeMechanicalWake is the G1/G2
+// render proof: --dispatch cds --engine drives the REAL vendored renderer +
+// REAL cds-dispatch SKILL.md end-to-end through Run (mirroring the agent-tier
+// TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap fixture), and the
+// emitted .github/workflows/cnos-cds-dispatch.yml (a) runs the mechanical FSM
+// engine on the default GITHUB_TOKEN, (b) carries NONE of the agent-tier
+// PAT/OAuth/bot substrate bindings. As with the agent-tier test, Run still
+// ends by surfacing label-doctor's target-resolution error (repoRoot is a
+// plain t.TempDir() with no git remote) — the render itself (asserted here)
+// completed first.
+func TestRun_DispatchCds_EngineTier_RendersPatFreeMechanicalWake(t *testing.T) {
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, err := Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		IndexPath: indexPath,
+		Packages:  []string{"cnos.core", "cnos.cds"},
+		Dispatch:  "cds",
+		Engine:    true,
+		Stdout:    stdout,
+		Stderr:    stderr,
+	})
+
+	workflowPath := filepath.Join(repoRoot, ".github", "workflows", "cnos-cds-dispatch.yml")
+	data, statErr := os.ReadFile(workflowPath)
+	if statErr != nil {
+		t.Fatalf("expected rendered engine-tier workflow at %s: %v\nstdout: %s\nstderr: %s", workflowPath, statErr, stdout, stderr)
+	}
+	content := string(data)
+
+	// G1: the mechanical FSM engine runs on the default GITHUB_TOKEN.
+	for _, want := range []string{
+		"cn issues fsm scan --protocol cds --apply",
+		"cn issues fsm evaluate",
+		"--apply",
+		"${{ secrets.GITHUB_TOKEN }}",
+		"Mechanical FSM engine (PAT-free)",
+	} {
+		if !strings.Contains(content, want) {
+			t.Errorf("engine render should contain %q\nfull YAML:\n%s", want, content)
+		}
+	}
+
+	// G2: the agent tier's PAT / OAuth / bot substrate bindings are the
+	// SOLE domain of the agent tier — none of them may appear in an engine
+	// render. (claude_code_oauth_token is the lower-cased action-input form;
+	// asserting both it and the secret name closes the case fully.)
+	for _, leak := range []string{
+		"claude-code-action",
+		"CLAUDE_CODE_OAUTH_TOKEN",
+		"claude_code_oauth_token",
+		"SIGMA_WORKFLOW_PAT",
+		"41898282",
+		"bot_name",
+		"bot_id",
+	} {
+		if strings.Contains(content, leak) {
+			t.Errorf("engine render must NOT contain agent-tier binding %q\nfull YAML:\n%s", leak, content)
+		}
+	}
+
+	// The engine render must not fabricate a git remote to reach the API;
+	// the only error expected is label-doctor's target-resolution failure
+	// (no origin on repoRoot), exactly as the agent-tier fixture sees.
+	if err == nil || !strings.Contains(err.Error(), "canonical dispatch labels not ensured") {
+		t.Errorf("expected the canonical-dispatch-labels error (render succeeded, label step reached), got: %v", err)
+	}
+
+	// stdout states the PAT-free runtime fact for this tier.
+	out := stdout.String()
+	if !strings.Contains(out, "tier: engine") {
+		t.Errorf("stdout should name the engine tier:\n%s", out)
+	}
+	if !strings.Contains(out, "GITHUB_TOKEN") {
+		t.Errorf("stdout should state the GITHUB_TOKEN-only runtime:\n%s", out)
+	}
+}
+
+// TestRun_DispatchCds_AgentTier_StillRendersClaudeCodeAction is the G2
+// separability proof from the other side: with NO --engine flag, the
+// default cds dispatch render remains the agent (claude-code-action) tier —
+// the two tiers render independently, and adding the engine tier did not
+// perturb the agent path.
+func TestRun_DispatchCds_AgentTier_StillRendersClaudeCodeAction(t *testing.T) {
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, _ = Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		IndexPath: indexPath,
+		Packages:  []string{"cnos.core", "cnos.cds"},
+		Dispatch:  "cds",
+		// Engine deliberately false — this is the agent tier.
+		Stdout: stdout,
+		Stderr: stderr,
+	})
+
+	workflowPath := filepath.Join(repoRoot, ".github", "workflows", "cnos-cds-dispatch.yml")
+	data, statErr := os.ReadFile(workflowPath)
+	if statErr != nil {
+		t.Fatalf("expected rendered agent-tier workflow at %s: %v", workflowPath, statErr)
+	}
+	content := string(data)
+	for _, want := range []string{
+		"anthropics/claude-code-action@v1",
+		"claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+	} {
+		if !strings.Contains(content, want) {
+			t.Errorf("agent-tier (no --engine) render should still contain %q", want)
+		}
+	}
+	if strings.Contains(content, "Mechanical FSM engine (PAT-free)") {
+		t.Error("agent-tier render must NOT contain the engine-tier mechanical step")
+	}
+}
+
+// TestRun_DispatchCds_Engine_HubLessLabelReconcile is the G3 proof: the
+// dispatch install ensures canonical FSM labels HUB-LESSLY. The install
+// target here is a plain t.TempDir() with a base install but NO agent hub
+// (no .cn/spec, .cn/agent, .cn/threads — cn repo install never scaffolds
+// one, unlike cn init) and no git "origin" remote. The label step is still
+// REACHED (label-doctor is hub-less — it needs only a git remote +
+// GITHUB_TOKEN, not a hub), and surfaces the actionable target-resolution
+// error, NOT a "hub missing" error. That distinction is the whole point:
+// the labels obligation runs off git+API, so it is never silently skipped
+// for want of a hub.
+func TestRun_DispatchCds_Engine_HubLessLabelReconcile(t *testing.T) {
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, err := Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		IndexPath: indexPath,
+		Packages:  []string{"cnos.core", "cnos.cds"},
+		Dispatch:  "cds",
+		Engine:    true,
+		Stdout:    stdout,
+		Stderr:    stderr,
+	})
+
+	// No agent hub was scaffolded by the install (hub-less by construction).
+	for _, hubPath := range []string{
+		filepath.Join(".cn", "spec"),
+		filepath.Join(".cn", "agent"),
+		filepath.Join(".cn", "threads"),
+	} {
+		if _, statErr := os.Stat(filepath.Join(repoRoot, hubPath)); !os.IsNotExist(statErr) {
+			t.Errorf("cn repo install must not scaffold an agent hub; found %s", hubPath)
+		}
+	}
+
+	// The label step was REACHED (label-doctor is hub-less): the error names
+	// the canonical-labels obligation and the git-remote target-resolution
+	// cause — not a hub-missing failure, and not a silent skip.
+	if err == nil {
+		t.Fatal("expected the hub-less label-doctor reconcile to surface its target-resolution error")
+	}
+	if !strings.Contains(err.Error(), "canonical dispatch labels not ensured") {
+		t.Errorf("error should name the labels obligation (label-doctor reached), got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "could not resolve target repo") {
+		t.Errorf("error should name the git-remote (hub-less) target cause, got: %v", err)
+	}
+	if strings.Contains(err.Error(), "hub") {
+		t.Errorf("error must be a labels/target-resolution error, not a hub-missing error, got: %v", err)
+	}
+}

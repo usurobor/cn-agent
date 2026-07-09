@@ -17,7 +17,7 @@
 #
 # Usage:
 #   cn install-wake <wake-name> [--agent <agent>] [--out <path>] [--manifest <path>]
-#                               [--activation-state-override <state>]
+#                               [--activation-state-override <state>] [--tier <agent|engine>]
 #                               [--workflow-pat-secret <NAME>] [--bot-name <name>] [--bot-id <id>]
 #
 # Arguments:
@@ -60,6 +60,17 @@
 #   --manifest <path> Override the default SKILL.md lookup (used by CI
 #                     fixture smokes). Accepts a path to a wake
 #                     SKILL.md file directly.
+#   --tier <agent|engine>
+#                     Wake tier (cnos#613). Default `agent`: the
+#                     claude-code-action work phase, needing a
+#                     workflow-scoped PAT + CLAUDE_CODE_OAUTH_TOKEN.
+#                     `engine`: a PAT-free mechanical FSM-engine work
+#                     phase that runs `cn issues fsm ... --apply` on the
+#                     default GITHUB_TOKEN only — no agent PAT, no OAuth
+#                     token, no agent bot identity (--workflow-pat-secret
+#                     / --bot-name / --bot-id are unused). The agent tier
+#                     is byte-for-byte unchanged when --tier is agent (or
+#                     omitted).
 #   --activation-state-override <state>
 #                     TEST-ONLY override of the manifest's
 #                     activation_state gate (per wake-provider/SKILL.md
@@ -308,6 +319,7 @@ activation_state_override=""
 workflow_pat_secret_flag=""
 bot_name_flag=""
 bot_id_flag=""
+tier="agent"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -331,6 +343,11 @@ while [ $# -gt 0 ]; do
       bot_id_flag="$2"; shift 2 ;;
     --bot-id=*)
       bot_id_flag="${1#--bot-id=}"; shift ;;
+    --tier)
+      [ $# -ge 2 ] || die "--tier requires a value"
+      tier="$2"; shift 2 ;;
+    --tier=*)
+      tier="${1#--tier=}"; shift ;;
     --out)
       [ $# -ge 2 ] || die "--out requires a value"
       out_path="$2"; shift 2 ;;
@@ -372,6 +389,18 @@ done
 
 # Default agent: sigma (the only agent with substrate bindings today).
 [ -n "$agent" ] || agent="sigma"
+
+# Wake tier (cnos#613). "agent" (default) renders the claude-code-action
+# work phase and needs a workflow-scoped PAT + CLAUDE_CODE_OAUTH_TOKEN.
+# "engine" renders a PAT-free mechanical FSM-engine work phase that runs
+# `cn issues fsm ... --apply` on the default GITHUB_TOKEN — no agent PAT,
+# no OAuth token, no agent bot identity. The two tiers are separable and
+# render independently; the agent tier is byte-for-byte unchanged when
+# tier=agent (the install-wake-golden.yml safety net).
+case "$tier" in
+  agent|engine) ;;
+  *) die "--tier must be one of agent/engine (got \"$tier\")" ;;
+esac
 
 # ---------------------------------------------------------------------------
 # Resolve package root + manifest + prompt paths
@@ -692,35 +721,64 @@ else
   cancel_in_progress="false"
 fi
 
-# Workflow PAT secret resolution (Mock C2 — fail-early identity binding).
-# Resolution order: explicit --workflow-pat-secret flag; else
-# SIGMA_WORKFLOW_PAT when --agent is "sigma" (today's only agent with a
-# default substrate PAT binding); else die BEFORE any render/write phase
-# runs (out_path is not touched until the very end of this script, so
-# dying here leaves no partial --out file per Mock C2).
-if [ -n "$workflow_pat_secret_flag" ]; then
-  workflow_pat_secret="$workflow_pat_secret_flag"
-elif [ "$agent" = "sigma" ]; then
-  workflow_pat_secret="SIGMA_WORKFLOW_PAT"
+# Token binding + bot identity resolution, split by tier (cnos#613).
+#
+# The engine tier is PAT-free by construction: every Actions token
+# binding (checkout token, recovery-scanner GH_TOKEN, mechanical-engine
+# GITHUB_TOKEN, finalizer GH_TOKEN) resolves to the default
+# secrets.GITHUB_TOKEN, which `cn issues fsm evaluate/scan --apply` need
+# and nothing more. It has NO workflow-scoped PAT and NO agent bot
+# identity (bot_name/bot_id are agent-tier substrate bindings only). So
+# the engine tier skips the workflow-pat-secret requirement and the
+# agent_bot_name()/agent_bot_id() lookups entirely — a non-sigma --agent
+# never trips the identity gate here, because engine wakes carry no agent
+# identity beyond concurrency-group naming.
+if [ "$tier" = "engine" ]; then
+  # token_secret_ref is the GitHub Actions secret name every token
+  # binding in this rendered workflow references. The default GITHUB_TOKEN
+  # is provided by Actions automatically — the engine tier provisions no
+  # secret of its own.
+  token_secret_ref="GITHUB_TOKEN"
+  workflow_pat_secret=""
+  bot_name=""
+  bot_id=""
 else
-  die "--workflow-pat-secret is required for agent '$agent' (no default substrate PAT-secret binding for non-sigma agents; pass --workflow-pat-secret <NAME> naming the GitHub Actions secret that holds this agent's workflow-scoped PAT)"
-fi
+  # Workflow PAT secret resolution (Mock C2 — fail-early identity binding).
+  # Resolution order: explicit --workflow-pat-secret flag; else
+  # SIGMA_WORKFLOW_PAT when --agent is "sigma" (today's only agent with a
+  # default substrate PAT binding); else die BEFORE any render/write phase
+  # runs (out_path is not touched until the very end of this script, so
+  # dying here leaves no partial --out file per Mock C2).
+  if [ -n "$workflow_pat_secret_flag" ]; then
+    workflow_pat_secret="$workflow_pat_secret_flag"
+  elif [ "$agent" = "sigma" ]; then
+    workflow_pat_secret="SIGMA_WORKFLOW_PAT"
+  else
+    die "--workflow-pat-secret is required for agent '$agent' (no default substrate PAT-secret binding for non-sigma agents; pass --workflow-pat-secret <NAME> naming the GitHub Actions secret that holds this agent's workflow-scoped PAT)"
+  fi
 
-# Substrate bot identity (renderer authority — see helpers above).
-# --bot-name / --bot-id override the agent_bot_name()/agent_bot_id()
-# lookup tables, which already `die` on unknown non-sigma agents — the
-# override path in front of them is the only new behavior; the
-# existing die-on-unknown-agent fallback already satisfies fail-early
-# for this axis.
-if [ -n "$bot_name_flag" ]; then
-  bot_name="$bot_name_flag"
-else
-  bot_name="$(agent_bot_name "$agent")"
-fi
-if [ -n "$bot_id_flag" ]; then
-  bot_id="$bot_id_flag"
-else
-  bot_id="$(agent_bot_id "$agent")"
+  # Substrate bot identity (renderer authority — see helpers above).
+  # --bot-name / --bot-id override the agent_bot_name()/agent_bot_id()
+  # lookup tables, which already `die` on unknown non-sigma agents — the
+  # override path in front of them is the only new behavior; the
+  # existing die-on-unknown-agent fallback already satisfies fail-early
+  # for this axis.
+  if [ -n "$bot_name_flag" ]; then
+    bot_name="$bot_name_flag"
+  else
+    bot_name="$(agent_bot_name "$agent")"
+  fi
+  if [ -n "$bot_id_flag" ]; then
+    bot_id="$bot_id_flag"
+  else
+    bot_id="$(agent_bot_id "$agent")"
+  fi
+
+  # token_secret_ref: for the agent tier this is exactly workflow_pat_secret,
+  # so every downstream `secrets.${token_secret_ref}` binding is
+  # byte-identical to the pre-cnos#613 `secrets.${workflow_pat_secret}`
+  # emission (the golden safety net).
+  token_secret_ref="$workflow_pat_secret"
 fi
 
 # Substrate cron slots — substrate authority per
@@ -978,7 +1036,7 @@ fi
   echo "    steps:"
   echo "      - uses: actions/checkout@v4"
   echo "        with:"
-  echo "          token: \${{ secrets.${workflow_pat_secret} }}"
+  echo "          token: \${{ secrets.${token_secret_ref} }}"
   # -----------------------------------------------------------------------
   # cell/substrate checkout isolation (cnos#626 AC3).
   # -----------------------------------------------------------------------
@@ -1034,10 +1092,12 @@ fi
   # the install-wake-golden.yml AC7/AC8 leak-audit.
   if [ "$role" = "dispatch" ]; then
     scan_protocol="$(jq -r '.protocol' "$manifest_path")"
-    if [ "$agent" = "sigma" ]; then
+    if [ "$agent" = "sigma" ] && [ "$tier" != "engine" ]; then
       # sigma renders self-build from source, exactly as today (Mock E4 —
       # byte-identical backward compat; this branch must never change for
-      # agent == sigma).
+      # agent == sigma). The engine tier (cnos#613) is excluded even for
+      # agent == sigma: it is tenant-portable by design, so it takes the
+      # install.sh acquisition path below (a tenant repo has no src/go/).
       {
         echo ""
         echo "      - name: Mechanical recovery scanner"
@@ -1059,7 +1119,7 @@ fi
         echo "          # phase — so no firing can claim anything (reads succeed on a public"
         echo "          # repo, only writes 401; surfaced once cnos#630's rule drove the first"
         echo "          # real scanner write). Reuse the same PR-scoped PAT the finalizer binds."
-        echo "          GH_TOKEN: \${{ secrets.${workflow_pat_secret} }}"
+        echo "          GH_TOKEN: \${{ secrets.${token_secret_ref} }}"
         echo "        run: |"
         echo "          set -euo pipefail"
         echo "          (cd src/go && go build -o /tmp/cn-scan ./cmd/cn)"
@@ -1107,13 +1167,58 @@ fi
         echo "          # phase — so no firing can claim anything (reads succeed on a public"
         echo "          # repo, only writes 401; surfaced once cnos#630's rule drove the first"
         echo "          # real scanner write). Reuse the same PR-scoped PAT the finalizer binds."
-        echo "          GH_TOKEN: \${{ secrets.${workflow_pat_secret} }}"
+        echo "          GH_TOKEN: \${{ secrets.${token_secret_ref} }}"
         echo "        run: |"
         echo "          set -euo pipefail"
         echo "          /tmp/cnos-cn-609/cn issues fsm scan --protocol ${scan_protocol} --apply"
       } >> "$tmp_out"
     fi
   fi
+  if [ "$tier" = "engine" ]; then
+  # -------------------------------------------------------------------------
+  # Mechanical FSM-engine work phase (cnos#613 G1 — PAT-free tier).
+  # -------------------------------------------------------------------------
+  #
+  # Replaces the agent (claude-code-action) work phase entirely. The engine
+  # tier advances CDS cells by running the deterministic FSM transition
+  # engine (`cn issues fsm`), which needs only the default GITHUB_TOKEN
+  # (secrets.GITHUB_TOKEN) — no workflow-scoped PAT, no
+  # CLAUDE_CODE_OAUTH_TOKEN, no agent bot identity. Every status-label write
+  # routes through the same guarded `--apply` primitive the agent tier's
+  # recovery scanner uses; this step never writes a label directly.
+  #
+  # The activation-log write fence (pre-work baseline SHA) is OMITTED for
+  # this tier: a mechanical FSM run writes no .cn-{agent}/logs/ channel
+  # entries (that surface is the admin wake's, and this dispatch checkout
+  # already sparse-excludes .cn-{agent}/ above), so there is no agent-log
+  # write to fence. The 'cn' binary was placed at the fixed path by the
+  # tenant-portable "Install cn" step the recovery scanner emitted above.
+  scan_protocol="$(jq -r '.protocol' "$manifest_path")"
+  {
+    echo ""
+    echo "      - name: Mechanical FSM engine (PAT-free)"
+    echo "        # cnos#613 G1: PAT-free mechanical wake tier. Advances CDS cells via"
+    echo "        # the declarative FSM transition engine ('cn issues fsm'), on nothing"
+    echo "        # but the default GITHUB_TOKEN — no workflow-scoped PAT, no agent OAuth"
+    echo "        # token, no agent bot identity. First reconciles the whole protocol"
+    echo "        # queue ('scan --apply'), then, when this firing is an issue event,"
+    echo "        # evaluates the triggering issue ('evaluate --apply'). Both write status"
+    echo "        # labels only through the guarded transition table."
+    echo "        shell: bash"
+    echo "        env:"
+    echo "          # The default GitHub Actions token is all the FSM engine needs: 'cn"
+    echo "          # issues fsm evaluate/scan --apply' resolve their token from"
+    echo "          # GITHUB_TOKEN (then GH_TOKEN). No workflow-scoped PAT is provisioned"
+    echo "          # for this tier."
+    echo "          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}"
+    echo "        run: |"
+    echo "          set -euo pipefail"
+    echo "          /tmp/cnos-cn-609/cn issues fsm scan --protocol ${scan_protocol} --apply"
+    echo "          if [ \"\${{ github.event_name }}\" = \"issues\" ]; then"
+    echo "            /tmp/cnos-cn-609/cn issues fsm evaluate --issue \"\${{ github.event.issue.number }}\" --apply"
+    echo "          fi"
+  } >> "$tmp_out"
+  else
   if [ "$activation_log_writer" = "false" ]; then
     echo ""
     echo "      - name: Write fence — record pre-work baseline SHA"
@@ -1156,6 +1261,7 @@ fi
   echo "              }"
   echo "            }"
   echo "          prompt: |"
+  fi
 } >> "$tmp_out"
 
 # Inline the prompt template body verbatim, with {agent} substitution
@@ -1163,7 +1269,13 @@ fi
 # line is indented 12 spaces (4 of `prompt: |` block + 8 to keep YAML
 # readable inside the steps[].with: scope). This matches the
 # substrate's `prompt: |` literal-block-scalar convention.
-sed "s/{agent}/${agent}/g" "$prompt_path" | sed 's/^/            /; s/[[:space:]]*$//' >> "$tmp_out"
+#
+# Engine tier (cnos#613) has no agent prompt — its work phase is the
+# mechanical FSM step emitted above, not a claude-code-action `prompt: |`
+# block — so the body inline is skipped entirely for tier=engine.
+if [ "$tier" != "engine" ]; then
+  sed "s/{agent}/${agent}/g" "$prompt_path" | sed 's/^/            /; s/[[:space:]]*$//' >> "$tmp_out"
+fi
 
 # ---------------------------------------------------------------------------
 # Append the activation-log write fence step when the manifest declares
@@ -1375,10 +1487,12 @@ fi
 # renderer cannot know the issue number in advance for an arbitrary future
 # dispatch-shaped wake.
 if [ "$role" = "dispatch" ]; then
-  if [ "$agent" = "sigma" ]; then
+  if [ "$agent" = "sigma" ] && [ "$tier" != "engine" ]; then
     # sigma renders self-build from source, exactly as today (Mock E4 —
     # byte-identical backward compat; this branch must never change for
-    # agent == sigma).
+    # agent == sigma). The engine tier (cnos#613) takes the tenant-portable
+    # branch below even for agent == sigma (it reuses the install.sh-placed
+    # binary the recovery-scanner step installed).
     {
       echo ""
       echo "      - name: Mechanical checkpoint + PR finalizer"
@@ -1397,7 +1511,7 @@ if [ "$role" = "dispatch" ]; then
       echo "          # finalizer reds the job after checkpointing (cnos#591 PR-open path"
       echo "          # was masked while dispatch cells no-op'd). Reuse the same PR-scoped"
       echo "          # PAT the wake already uses as the checkout / github_token binding."
-      echo "          GH_TOKEN: \${{ secrets.${workflow_pat_secret} }}"
+      echo "          GH_TOKEN: \${{ secrets.${token_secret_ref} }}"
       echo "        run: |"
       echo "          set -euo pipefail"
       echo "          (cd src/go && go build -o /tmp/cn-finalize ./cmd/cn)"
@@ -1428,7 +1542,7 @@ if [ "$role" = "dispatch" ]; then
       echo "          # finalizer reds the job after checkpointing (cnos#591 PR-open path"
       echo "          # was masked while dispatch cells no-op'd). Reuse the same PR-scoped"
       echo "          # PAT the wake already uses as the checkout / github_token binding."
-      echo "          GH_TOKEN: \${{ secrets.${workflow_pat_secret} }}"
+      echo "          GH_TOKEN: \${{ secrets.${token_secret_ref} }}"
       echo "        run: |"
       echo "          set -euo pipefail"
       echo "          /tmp/cnos-cn-609/cn cell finalize --base-sha \"\${CN_WAKE_BASE_SHA:-}\""

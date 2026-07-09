@@ -45,6 +45,13 @@ FLAGS:
   --packages CSV  Comma-separated package names (default: cnos.core,cnos.cdd,cnos.cds)
   --dispatch D    "none" (default) — base install only.
                   "cds" — also renders the dispatch workflow (see above).
+  --engine        Render the PAT-free mechanical FSM-engine wake tier
+                  (cnos#613): the rendered workflow runs "cn issues fsm
+                  ... --apply" on the default GITHUB_TOKEN only — no
+                  workflow-scoped PAT, no CLAUDE_CODE_OAUTH_TOKEN, no
+                  agent bot identity. Only valid with --dispatch cds;
+                  --agent/--workflow-pat-secret/--bot-* identity flags are
+                  unused (--agent still names the concurrency group).
   --agent NAME    Caller identity for --dispatch cds (default: sigma).
                   Any non-sigma agent requires --workflow-pat-secret.
   --workflow-pat-secret NAME
@@ -155,6 +162,7 @@ func (c *RepoInstallCmd) Run(ctx context.Context, inv Invocation) error {
 		WorkflowPatSecret: args.WorkflowPatSecret,
 		BotName:           args.BotName,
 		BotID:             args.BotID,
+		Engine:            args.Engine,
 		Stdout:            inv.Stdout,
 		Stderr:            inv.Stderr,
 	}
