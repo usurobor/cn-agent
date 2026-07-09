@@ -91,3 +91,24 @@ Each row's classification was derived by walking the actual artifact text (read 
 **I1/I2/I4/I5/I6, install-wake-golden — not independently runnable in this session** (no `lychee`/`cue` binaries; `cn cdd verify`/`cn build --check` binaries not locally invocable outside the full `cn` CLI harness in this environment — same named gap class #626's own R1 self-coherence.md disclosed for I4/I5, not glossed over here either). The `install-wake-golden` invariant specifically (golden == live byte-identical) WAS verified locally (AC4 evidence above) even though the full `cn cdd verify` / `cn build --check` wrapper commands were not run. Branch CI on the pushed commit is the authoritative confirmation for the remaining gates; β/δ observe it post-push per the pre-review gate's transient-row discipline (§Review-readiness below).
 
 **Non-goal check (κ's escalation boundary + issue's Do-NOT list).** No diff touches #626 content, sparse-checkout/write-fence material (`delta/SKILL.md` §9.12 and `cds-dispatch/SKILL.md` §"Disallowed surfaces" — both untouched, confirmed via `git diff` hunk boundaries), `scripts/ci/*.sh` (untouched — read-only reference per γ's source-of-truth table), any `.go` file, `transitions.json`, or any label definition. `#642` was not dispatched (no Agent/Task invocation targeting it occurred in this session). No escalation to δ/γ was required — the reconciliation shipped entirely within the A2/CAP grant.
+
+## Self-check
+
+**Did α's work push ambiguity onto β?** Walked each of the five AC oracles' specific verification instructions from γ's β prompt (`gamma-scaffold.md` §4) against the actual diff before writing this file, rather than trusting my own framing: re-ran both CI guard scripts fresh (not reused output from mid-edit), re-grepped `run_class` across all three surfaces post-edit, and re-derived each of the five shapes' classifications by reading the cited artifacts' literal text rather than summarizing from the scaffold's own paraphrase of them. β is instructed by γ's scaffold to "not trust α's self-coherence.md framing; re-derive" — every citation above (file + line range) is precise enough that β's re-derivation does not require locating evidence α merely asserted existed.
+
+**Is every claim backed by evidence in the diff?** Yes, with three explicit exceptions named as known debt below (I4/I5 tool unavailability; `cn cdd verify`/`cn build --check` not independently invocable in this session) — both inherited the same disclosure pattern #626's own R1 self-coherence.md used for the identical gap, rather than silently assuming green.
+
+**Peer enumeration (alpha/SKILL.md §2.3).** The family here is "doctrine surfaces stating the `run_class` enum." Enumerated via a repo-wide check for any surface that might restate the enum, not limited to the three γ-named files:
+```
+grep -rln "run_class" --include="*.md" src/packages/
+→ src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md
+  src/packages/cnos.cdd/skills/cdd/delta/SKILL.md
+  src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md
+```
+Exactly the three γ-named files — no fourth active doctrine surface under `src/packages/` mentions `run_class` at all, so no fourth surface can carry a divergent list.
+
+**Commit-message closure claims (alpha/SKILL.md §2.3).** The implementation commit (`aabfdd49`) states the diff footprint ("No .go files, no transitions.json diff, no label changes") — verified true by the AC5 evidence above at the time of this self-coherence write, not merely asserted at commit time and left unchecked.
+
+**Intra-doc repetition (alpha/SKILL.md §2.3).** `cds-dispatch/SKILL.md` now states the `run_class` enum twice within the same file: once narratively across Step A's four numbered checks (L153–L200) and once as the flat bracketed list (L242–L249). Both were checked for consistency: the flat list's six values (`first_pass, resumed_from_matter, scope_continuation, repair_pass, manual_delta_repair, blocked`) match exactly the four Step A branches plus the two Steps-B–E-outcome values named in the Step A note — no drift between the two same-file restatements.
+
+**Known debt disclosed below, not silently pushed to β.**
