@@ -2385,7 +2385,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-06T19:41:34Z",
-    "updated": "2026-07-09T04:26:00Z",
+    "updated": "2026-07-09T08:05:28Z",
     "url": "https://github.com/usurobor/cnos/issues/618"
   },
   {
@@ -2436,7 +2436,7 @@
       "cdd"
     ],
     "pri": "P1",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2445,7 +2445,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-07T10:17:10Z",
-    "updated": "2026-07-09T06:27:24Z",
+    "updated": "2026-07-09T08:08:09Z",
     "url": "https://github.com/usurobor/cnos/issues/628"
   },
   {
