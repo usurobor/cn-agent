@@ -1168,7 +1168,8 @@ sed "s/{agent}/${agent}/g" "$prompt_path" | sed 's/^/            /; s/[[:space:]
 # ---------------------------------------------------------------------------
 # Append the activation-log write fence step when the manifest declares
 # activation_log_writer:false (per cnos#496 / cycle/496 D2(a); AGENT-
-# ACTIVATION-LOG-v0 §0.1 wake-class writer ownership).
+# ACTIVATION-LOG-v0 §0.1 wake-class writer ownership) -- narrowed per
+# cnos#626 AC4 (see the role=="dispatch" carve-out below).
 # ---------------------------------------------------------------------------
 #
 # The fence is workflow-level: a final `run:` step (after the claude-
@@ -1211,12 +1212,40 @@ sed "s/{agent}/${agent}/g" "$prompt_path" | sed 's/^/            /; s/[[:space:]
 # The fence does NOT run `git fetch` first — by design, it inspects
 # only what this wake's local execution touched, never remote state.
 #
+# cnos#626 AC4 -- role=="dispatch" carve-out (fence retired, outcome B).
+# A role:dispatch manifest ALSO gets the AC3 sparse-checkout block above
+# ('/*' + '!/.cn-{agent}', non-cone), which structurally removes the
+# .cn-{agent}/ CAPABILITY from the checkout rather than merely
+# instructing against writing it. Negative proof that this makes the
+# local-write fence redundant for role:dispatch specifically (transient
+# local file creation != substrate write access, i.e. it can never be
+# staged or reach origin through the finalizer's real `git add -A` +
+# `git commit` + `git push` sequence):
+#   - src/go/internal/repoinstall/repoinstall_test.go
+#     TestDispatchRenderer_SparseCheckoutExcludesAgentHub (AC3: the
+#     checkout omits .cn-{agent}/ against a real git sparse-checkout)
+#   - src/go/internal/cell/cell_test.go
+#     TestRealCheckpoint_NewAgentHubFile_FailsLoudNoPersistence (a NEW
+#     path under .cn-{agent}/ makes the real realCheckpoint fail loud;
+#     nothing reaches origin)
+#     TestRealCheckpoint_ModifiedTrackedAgentHubFile_SilentlyExcludedNoPersistence
+#     (a write to an ALREADY-TRACKED, sparse-hidden .cn-{agent}/ path is
+#     silently excluded from staging by git itself; legit co-located
+#     changes still reach origin; the .cn-{agent}/ write does not)
+# activation_log_writer:false without role:dispatch is legal per the
+# manifest schema (only role:dispatch->activation_log_writer:false is
+# enforced above, not the converse) but currently has no real manifest
+# instance; such a hypothetical shape has NOT earned the sparse-checkout
+# boundary, so it keeps the old fence -- this carve-out narrows by
+# role, not by activation_log_writer alone, precisely so a future
+# non-dispatch non-writer wake is not silently left unguarded.
+#
 # Implementation note (sh-shape consistency with the rest of the
 # rendered file): the fence step uses `bash -euo pipefail` explicitly
 # (the GHA default is `bash -e {0}` per cycle/485 FN; explicit
 # pipefail + nounset matches the install-wake-golden.yml strict-mode
 # pattern).
-if [ "$activation_log_writer" = "false" ]; then
+if [ "$activation_log_writer" = "false" ] && [ "$role" != "dispatch" ]; then
   {
     echo ""
     echo "      - name: Write fence — dispatch_activation_log_write_violation"

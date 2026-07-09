@@ -577,3 +577,75 @@ shifts, because the new block is inserted earlier in the file).
 ## Review-readiness | round 1 | base: R0's merged state (PR #635, `9d1276cf` on main) + this branch's own R0 history | head SHA: (this commit) | branch CI: not yet observed at push time (local test suite + `go vet` green; live CI to be confirmed by β/δ post-push) | ready for β
 
 ## Review-ready — R1 complete, ready for β
+
+---
+
+# self-coherence.md — cnos#626 (α, R2 — AC4 write-fence proof-first round)
+
+## Scope
+
+This round addresses **AC4 only** (write-fence retirement/narrowing decision), per the operator/CAP comment posted 2026-07-09T00:42:46Z ("AC4 dispatched — proof-first"), which superseded R1's "reverting to status:ready" note. R0 (AC1/AC2, PR #635) and R1 (AC3, PR #637, `e5a3abe5`) are merged and untouched. `cycle/626` was reset to current main (`e7277e00`) before this round, per the operator's "clean-base start" framing — content-verified: `git diff origin/main origin/cycle/626 --stat` showed only a trivial 2-file board-map diff before this round's commits.
+
+## Required-proof checklist (operator's 2026-07-09 comment) — evidence
+
+### 1. Extend the sparse-checkout test — proves persistence, not just presence/absence
+
+`TestDispatchRenderer_SparseCheckoutExcludesAgentHub` (existing, `src/go/internal/repoinstall/repoinstall_test.go`) proves AC3's presence/absence claim (the checkout omits `.cn-sigma`) but never exercised what happens if something writes a `.cn-sigma` path anyway. Two new tests close that gap, in `src/go/internal/cell/cell_test.go`:
+
+- `TestRealCheckpoint_NewAgentHubFile_FailsLoudNoPersistence` — builds a real bare "origin" + a real sparse clone (same `/*` + `!/.cn-sigma` non-cone pattern the renderer emits), creates a brand-new file at `.cn-sigma/logs/probe.md` alongside a legit in-cone change, invokes the REAL `realCheckpoint` (not the no-op `Checkpoint` fake every other Finalizer test injects), and asserts (a) `realCheckpoint` returns a non-nil error (git's own `git add -A` exits 1 on an out-of-cone new path — fails LOUD, not silent), and (b) nothing under `.cn-sigma` ever reaches origin's `cycle/62601` branch.
+- `TestRealCheckpoint_ModifiedTrackedAgentHubFile_SilentlyExcludedNoPersistence` — same setup, but instead overwrites an ALREADY-TRACKED, sparse-hidden path (`.cn-sigma/logs/20260101.md`, mirroring the real cnos repo's 40 pre-existing tracked channel-log files) directly on disk. Asserts `realCheckpoint` succeeds with no error (the legit change is not collaterally blocked), the `.cn-sigma` modification never reaches origin, AND the legit change DOES reach origin (proving the exclusion doesn't silently eat real work in this shape).
+
+Both tests pass (see `go test ./internal/cell/... -run TestRealCheckpoint -v`, R2 run log). Building this required one iteration: the first draft of the remote-inspection helper used `git log --all` and false-positived on `main`'s own pre-existing tracked `.cn-sigma` seed content; fixed to `git log origin/main..origin/<branch>` (commits unique to the cycle branch only), matching the same exclusion the OLD write-fence itself already used for its own commit-graph layer.
+
+### 2. Verify finalizer behavior
+
+Covered by the same two tests above — they invoke the production `realCheckpoint` directly (not a mock), which is the exact code the rendered `Mechanical checkpoint + PR finalizer` step runs (`cn cell finalize` → `Finalizer.Finalize` → `realCheckpoint` when `Checkpoint` is nil).
+
+### 3. Verify generated workflow
+
+- `cn-install-wake` (the renderer, `src/packages/cnos.core/commands/install-wake/cn-install-wake`) changed: the `Write fence — dispatch_activation_log_write_violation` step's emission condition narrowed from `[ "$activation_log_writer" = "false" ]` to `[ "$activation_log_writer" = "false" ] && [ "$role" != "dispatch" ]`. The `Write fence — record pre-work baseline SHA` step (which the finalizer's `--base-sha` flag also consumes) is UNCHANGED — still emitted whenever `activation_log_writer` is false, regardless of role.
+- Re-rendered both golden fixtures + the live workflow:
+  - `cn-install-wake agent-admin` → **unchanged** (`activation_log_writer: true` for agent-admin; unaffected by the role-gated carve-out).
+  - `cn-install-wake cds-dispatch` (golden) and `cn-install-wake cds-dispatch --out .github/workflows/cnos-cds-dispatch.yml` (live) → both changed identically; sha256 of live == sha256 of golden (`b1f801c7...38fe`).
+  - Idempotence re-checked: a second `cn-install-wake cds-dispatch` run reports `(unchanged)` and produces a byte-identical sha256.
+  - `python3 -c "import yaml; yaml.safe_load(...)"` — both goldens parse.
+  - Substrate structural-shape assertions from `install-wake-golden.yml` (on/permissions/concurrency/jobs/claude-code-action/labeled-event/concurrency-group-name/OG-2 schedule gate) re-run inline against the new golden — all pass.
+  - AC5 declaration-only refusal fixture — re-run, exit 3, correct stderr content.
+
+### 4. Live firing after the change
+
+**Not attempted in this round — structurally cannot be, same as R1's AC3 proof.** Per δ wake-invoked mode's own v0 substrate constraint (`delta/SKILL.md` §9.7): a single firing does not plan multi-firing continuations. AC10 ("live firing validates checkout/scanner/finalizer after the change") is satisfied by the NEXT real `cds-dispatch` firing after this cycle's PR merges — exactly the same "live-fire window" mechanism R1's closeout named for AC3 ("the next 1-2 real cds-dispatch firings are the AC3 live-fire window"). This is named explicitly here, not glossed over, per the operator's "Do NOT: ... proof requires new infra/permissions" framing — AC10 requires no new infra, just a subsequent real firing, which this round cannot manufacture.
+
+## Outcome selected: **B**
+
+> "local files can be created but cannot be staged/persisted: retire the old local-write fence only if the durable boundary is proven; document the distinction (transient local file creation ≠ substrate write access)."
+
+Both new tests confirm the "transient local file creation" half (a `.cn-sigma` file/modification CAN appear on disk — `git status --porcelain` sees it) and the "cannot be staged/persisted" half (git's own sparse-checkout enforcement at `git add -A` time refuses the new-file case loudly and silently excludes the modified-tracked-file case) — for the exact code path (`realCheckpoint`) production uses. Outcome A (unconditional full removal) was NOT selected because the fence's underlying shell logic remains valid protection for a hypothetical future `activation_log_writer:false` wake without `role:dispatch` (legal per the manifest schema — only the reverse implication is enforced) — narrowing by `role` rather than deleting unconditionally avoids silently leaving such a hypothetical wake unguarded. Outcome C (keep the fence, do not remove) was ruled out by the negative proof itself.
+
+## AC1–AC10 verification (independent per-AC walk, α's own pass before handing to β)
+
+| AC | Oracle | Status | Evidence |
+|---|---|---|---|
+| AC1 | sparse-checkout boundary test proves `.cn-sigma` absent from dispatch checkout | ✅ | `TestDispatchRenderer_SparseCheckoutExcludesAgentHub` (unchanged, still passing — R1's AC3 proof, re-verified this round) |
+| AC2 | attempted `.cn-sigma/logs` write cannot persist through dispatch/finalizer | ✅ | `TestRealCheckpoint_NewAgentHubFile_FailsLoudNoPersistence` + `TestRealCheckpoint_ModifiedTrackedAgentHubFile_SilentlyExcludedNoPersistence` |
+| AC3 | old fence removed only if AC2 passes | ✅ | AC2 passed → fence removed for `role=="dispatch"` (renderer conditional) |
+| AC4 | if fence remains/narrows, receipt explains why | ✅ | Fence NARROWS (kept for hypothetical non-dispatch `activation_log_writer:false`); explained in renderer comments + `cds-dispatch/SKILL.md` doctrine update + this section |
+| AC5 | CDS golden/live match | ✅ | sha256 identical (`b1f801c7...`) |
+| AC6 | install-wake-golden green | ✅ | All install-wake-golden.yml steps reproduced locally: golden diff clean, live==golden sha, idempotence, YAML parse, structural shape, AC5 refusal fixture, AC2 negative fixture |
+| AC7 | dispatch-repair-preflight green | ✅ | `./scripts/ci/check-dispatch-repair-preflight.sh` passed |
+| AC8 | dispatch-closeout-integrity green | ✅ | `./scripts/ci/check-dispatch-closeout-integrity.sh` passed |
+| AC9 | Go/Package/Binary and I1/I2/I4/I5/I6 green | ✅ (I4/I5 not runnable locally — see note) | `go build ./...`, `go vet ./...`, `go test ./...` (all 4 go.work modules) green; I1 (`cn build --check`) green; I2 (protocol-contract diff) green; I6 (`cn cdd verify --unreleased`) green (0 failed, pre-existing warnings only). I4 (lychee link-check) and I5 (cue frontmatter validation) tools are not installed in this session's environment — NOT run locally. No repo links were added/changed by this round's edits (prose-only additions inside existing files) and the SKILL.md frontmatter block itself was not touched (only body prose), so both are expected green in real CI, but this is a **named gap**, not a silent assumption. |
+| AC10 | live firing validates checkout/scanner/finalizer after the change | ⏳ deferred | Structurally requires a firing after this cycle's PR merges (see "4. Live firing" above); consistent with R1/AC3 precedent |
+
+## Files changed this round
+
+- `src/go/internal/cell/cell_test.go` — two new tests + one new helper (`newSparseOriginAndClone`) + one new assertion helper (`remoteBranchTouchedPath`); +`os/exec` import.
+- `src/packages/cnos.core/commands/install-wake/cn-install-wake` — narrowed the write-fence emission condition; added explanatory comment block naming the AC4 decision and its evidence.
+- `src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md` — updated the "Disallowed surfaces" prose (line ~302) and the "Responsibilities (body reference)" item 9 (line ~370) to describe the retired-for-dispatch fence and point at the new tests.
+- `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml` + `.github/workflows/cnos-cds-dispatch.yml` — regenerated (mechanical; not hand-edited).
+
+## run_class note (repeat of the taxonomy gap named at claim time)
+
+This round is the SAME "fourth shape" the R1/AC3 round's artifacts already flagged: an operator-authorized scope-continuation on an issue whose prior rounds already converged and merged, run against a branch reset to a clean base. `cds-dispatch/SKILL.md`'s current taxonomy (`first_pass` / `resumed_from_matter` / `repair_pass`) still has no name for it. Recording again here per the operator's own instruction ("a future doctrine cell should add a named fourth shape... recorded in self-coherence.md, not filed as a separate issue") rather than filing a new issue for it a second time.
+
+## Review-readiness | round 2 | base: cycle/626 reset to main@e7277e00 (R0 = PR #635, R1 = PR #637 both already merged into that base) | head SHA: (this commit) | branch CI: not yet observed at push time (local test suite + go vet + install-wake-golden-equivalent checks + dispatch-repair-preflight + dispatch-closeout-integrity all green; live CI to be confirmed by β/δ post-push) | ready for β
