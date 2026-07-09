@@ -277,20 +277,25 @@ secrets above.
 
 ### Tier 2 runbook (mechanical FSM engine — `GITHUB_TOKEN` only)
 
-The engine tier provisions **no runtime secret of its own**. The one setup
-choice is whether GitHub Actions may open the recovery/finalizer PRs.
+The engine tier provisions **no runtime secret of its own** and needs **no
+repository setting changes**: it advances issue-label state only, opens no
+pull request, and runs entirely on the default `GITHUB_TOKEN`.
 
 1. Ensure the install target has a resolvable `origin` git remote and that
    your local `$GITHUB_TOKEN`/`$GH_TOKEN` can manage labels (the
    `label-doctor` precondition, cnos#493).
 2. Run `cn repo install --dispatch cds --engine`. This renders
    `.github/workflows/cnos-cds-dispatch.yml` with every token binding set to
-   `${{ secrets.GITHUB_TOKEN }}` and ensures the canonical dispatch labels.
-3. In the repo, enable **Settings → Actions → General → Allow GitHub Actions
-   to create and approve pull requests** so the workflow's built-in
-   `GITHUB_TOKEN` can open the mechanical recovery/finalizer PRs.
-4. Review and merge the install PR. No repo secret needs to be set — the
-   scheduled workflow runs on `GITHUB_TOKEN` alone.
+   `${{ secrets.GITHUB_TOKEN }}`, a least-privilege permissions block
+   (`contents: read`, `issues: write`, `pull-requests: read`), and ensures
+   the canonical dispatch labels.
+3. Review and merge the install PR. Nothing else to provision — the
+   scheduled workflow runs on `GITHUB_TOKEN` alone and only advances
+   issue-label FSM state through the GitHub API. You do **not** enable
+   *Allow GitHub Actions to create and approve pull requests* for this tier:
+   the engine wake opens no PR (`contents` and `pull-requests` are both
+   read-only), so that setting would grant permissions it never uses. (It is
+   the Tier 3 agent tier — which writes code and opens PRs — that needs it.)
 
 ### Tier 3 runbook (autonomous dispatch — PAT + OAuth token)
 
@@ -338,7 +343,7 @@ If you adopted the GitHub UI path, also remove
 | `--dispatch cds` fails with "canonical dispatch labels not ensured: ..." | The workflow still rendered; label-doctor could not resolve the repo's `origin` git remote, a GitHub token, or reach the GitHub API. Run `cn label doctor` yourself (or apply the labels manually) once the underlying issue (missing remote/token/scope) is fixed. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
 | `--dispatch cds` fails with "--workflow-pat-secret is required for --agent ..." | Pass `--workflow-pat-secret <NAME>` (and, for a non-sigma agent, `--bot-name`/`--bot-id`) naming the GitHub Actions secret holding that agent's workflow-scoped PAT. Or, if you want the mechanical (no-agent) tier, add `--engine` — it needs no PAT. |
 | `--engine is only valid with --dispatch cds` | `--engine` selects the mechanical tier of the *cds dispatch* render; it is meaningless on a base or `--dispatch none` install. Add `--dispatch cds`, or drop `--engine`. |
-| Engine-tier workflow runs but opens no recovery/finalizer PR | The built-in `GITHUB_TOKEN` cannot open PRs until you enable **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests**. |
+| Engine-tier workflow advances labels but opens no PR | Expected — by design. The `--engine` tier is label-FSM only: it renders `contents: read` + `pull-requests: read` and never opens a pull request. If you want a tier that opens PRs, that is the Tier 3 agent tier (`--dispatch cds` without `--engine`), which needs a `workflow`-scope PAT + `CLAUDE_CODE_OAUTH_TOKEN`. |
 | GitHub UI install run fails with "`install_dispatch=true` requires a workflow-scoped PAT ..." | Set the repo secret named by the `workflow_pat_secret` input (default `CNOS_WORKFLOW_PAT`) to a `workflow`-scoped PAT before re-running "Run workflow" — see [§ GitHub UI (no-terminal) install](#github-ui-no-terminal-install). |
 
 ## Related
