@@ -898,20 +898,36 @@ echo "" >> "$tmp_out"
 # permissions per wake-provider/SKILL.md §2.5; renderer maps to GHA
 # kebab-case keys).
 echo "permissions:" >> "$tmp_out"
-perm_count="$(jq -r '.permission_intent | length // 0' "$manifest_path")"
-if [ "$perm_count" -eq 0 ]; then
-  # Renderer fallback for minimum-for-role defaults per §2.2.
-  # admin role: contents.write + issues.write per the agent-admin
-  # reference instance.
-  gha_permission_line "contents.write" >> "$tmp_out"
+if [ "$tier" = "engine" ]; then
+  # cnos#613: the PAT-free mechanical FSM-engine tier runs on the default
+  # GITHUB_TOKEN with LEAST PRIVILEGE, and names it explicitly rather than
+  # inheriting the agent tier's broad permission_intent. The mechanical work
+  # phase mutates only issue-label state through the guarded FSM
+  # (issues:write), reads repo contents for the checkout (contents:read), and
+  # reads PRs (pull-requests:read). It runs no agent, opens no agent PR,
+  # produces no local git matter (label writes go via the GitHub API), and
+  # needs no id-token/OIDC. This deliberately narrows the manifest's
+  # agent-tier permission_intent for the mechanical tier; the agent tier
+  # (below) keeps the manifest-declared block, byte-for-byte unchanged.
+  gha_permission_line "contents.read" >> "$tmp_out"
   gha_permission_line "issues.write" >> "$tmp_out"
+  gha_permission_line "pull-requests.read" >> "$tmp_out"
 else
-  i=0
-  while [ "$i" -lt "$perm_count" ]; do
-    intent="$(jq -r ".permission_intent[$i]" "$manifest_path")"
-    gha_permission_line "$intent" >> "$tmp_out"
-    i=$((i + 1))
-  done
+  perm_count="$(jq -r '.permission_intent | length // 0' "$manifest_path")"
+  if [ "$perm_count" -eq 0 ]; then
+    # Renderer fallback for minimum-for-role defaults per §2.2.
+    # admin role: contents.write + issues.write per the agent-admin
+    # reference instance.
+    gha_permission_line "contents.write" >> "$tmp_out"
+    gha_permission_line "issues.write" >> "$tmp_out"
+  else
+    i=0
+    while [ "$i" -lt "$perm_count" ]; do
+      intent="$(jq -r ".permission_intent[$i]" "$manifest_path")"
+      gha_permission_line "$intent" >> "$tmp_out"
+      i=$((i + 1))
+    done
+  fi
 fi
 
 echo "" >> "$tmp_out"

@@ -1461,6 +1461,22 @@ func TestRun_DispatchCds_EngineTier_RendersPatFreeMechanicalWake(t *testing.T) {
 		}
 	}
 
+	// cnos#613 (operator review): the engine tier must name an EXPLICIT
+	// least-privilege permissions block, not inherit the agent tier's broad
+	// permission_intent. Enough to mutate issue-label state (issues:write),
+	// check out (contents:read), and read PRs (pull-requests:read) — and NO
+	// contents:write / pull-requests:write / id-token:write.
+	for _, want := range []string{"contents: read", "issues: write", "pull-requests: read"} {
+		if !strings.Contains(content, want) {
+			t.Errorf("engine render permissions must include %q\nfull YAML:\n%s", want, content)
+		}
+	}
+	for _, over := range []string{"contents: write", "pull-requests: write", "id-token: write"} {
+		if strings.Contains(content, over) {
+			t.Errorf("engine render must NOT grant %q (least privilege)\nfull YAML:\n%s", over, content)
+		}
+	}
+
 	// The engine render must not fabricate a git remote to reach the API;
 	// the only error expected is label-doctor's target-resolution failure
 	// (no origin on repoRoot), exactly as the agent-tier fixture sees.

@@ -184,19 +184,33 @@ cn repo install --dispatch cds --engine
 
 The engine tier (cnos#613) needs **no** `--workflow-pat-secret`,
 `--bot-name`, `--bot-id`, or `CLAUDE_CODE_OAUTH_TOKEN`: every token binding
-in the rendered workflow resolves to `${{ secrets.GITHUB_TOKEN }}`, which
-`cn issues fsm ... --apply` is all that is required. `--agent` is optional
-and only names the workflow's concurrency group. `--engine` is only valid
-with `--dispatch cds` (it is a rendering variant of the cds workflow); on a
-base or `--dispatch none` install it fails early with a clear error.
+in the rendered workflow resolves to `${{ secrets.GITHUB_TOKEN }}`, and the
+workflow declares an explicit **least-privilege** permissions block — not
+the agent tier's broader one:
+
+```yaml
+permissions:
+  contents: read        # checkout only
+  issues: write         # the only writes — issue-label FSM transitions
+  pull-requests: read
+```
+
+That is all `cn issues fsm ... --apply` requires. The engine tier grants no
+`contents: write`, no `pull-requests: write`, and no `id-token`: it advances
+label state only (through the guarded FSM, via the GitHub API), produces no
+local commits, and opens no pull request. `--agent` is optional and only
+names the workflow's concurrency group. `--engine` is only valid with
+`--dispatch cds` (a rendering variant of the cds workflow); on a base or
+`--dispatch none` install it fails early with a clear error.
 
 Note the split between *install* time and *run* time: writing the workflow
 file itself still touches `.github/workflows/`, so the **installing** token
 (the human/CI running `cn repo install`, or the GitHub UI path's
 `workflow_pat_secret`) still needs `workflow` scope — but the rendered
-workflow's own **runtime** is PAT-free. If GitHub Actions is to open the
-recovery/finalizer PRs, enable *Settings → Actions → General → Allow GitHub
-Actions to create and approve pull requests* so `GITHUB_TOKEN` can open them.
+workflow's own **runtime** is PAT-free and least-privilege. (The agent tier,
+by contrast, both writes code and opens PRs from its work phase — enable
+*Settings → Actions → General → Allow GitHub Actions to create and approve
+pull requests* for that tier.)
 
 ---
 
