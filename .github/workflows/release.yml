@@ -93,6 +93,23 @@ jobs:
           go-version: '1.24'
           cache-dependency-path: src/go/go.sum
 
+      - name: Set up Python + pyyaml (cn-install-wake renderer dep)
+        # The Test step below runs the full Go suite, including the
+        # dispatch-render tests that vendor the real cn-install-wake
+        # renderer. That renderer parses the wake SKILL.md frontmatter via
+        # python3 + pyyaml. GitHub's macOS runners do NOT ship pyyaml
+        # (ubuntu does), so without this the native macOS Test leg fails at
+        # the render tests with "SKILL.md manifest parsing requires the
+        # python3 pyyaml package" — surfaced by the first cnos#618
+        # workflow_dispatch validation run (29033621010). setup-python
+        # provides a pip-writable interpreter on every matrix OS.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install renderer deps (pyyaml)
+        run: python3 -m pip install pyyaml
+
       - name: Build binary
         # Stamp the release tag into the binary so `cn setup` writes a
         # default deps.json pinning packages to the matching version
