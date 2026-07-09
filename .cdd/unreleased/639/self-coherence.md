@@ -145,3 +145,20 @@ Per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" (S
 **Caller-path trace for new modules (alpha/SKILL.md §2.6 row 12).** Not applicable — this cell adds no new module or function (doctrine-only, `cell_kind: doctrine`, zero `.go` files in the diff per AC5).
 
 **Test-assertion-count-from-runner-output (alpha/SKILL.md §2.6 row 13).** Not applicable in the unit-test sense (no test suite exists for prose doctrine); the closest analog is the two CI guard scripts' own pass/fail output, both pasted verbatim in §ACs AC4/AC5 evidence above (not manually enumerated — the scripts' own stdout is the evidence).
+
+## Review-readiness
+
+**Rebase note (transient row, re-validated at signal time per alpha/SKILL.md §2.7).** `origin/main` advanced by 4 commits (`board-map` regeneration, doc-only) while this round was in progress. `cycle/639` was rebased onto `origin/main` cleanly (no conflicts; `git rebase origin/main` completed with no manual resolution). All prior commit SHAs in this file were re-stamped to their post-rebase values per §2.6's SHA-citation rule (grep-verified: no stale pre-rebase SHA remains — `grep -n "25df0188\|ab08101a\|aabfdd49\|43153d04\|3ac3f8c7\|8c7241ff\|186e918b" self-coherence.md` → 0 hits post-fix). `git merge-base cycle/639 origin/main` now equals `origin/main` HEAD exactly (`f2959e150c0a308db460afe4fcec4b6c4429ee34`) — fully rebased, zero drift.
+
+**Identity (row 14).** `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos` — matches the canonical role-identity pattern; no correction needed.
+
+**γ-artifact presence (row 15).** `.cdd/unreleased/639/gamma-scaffold.md` present on `origin/cycle/639` at the canonical §5.1 path (`git ls-tree -r origin/cycle/639 .cdd/unreleased/639/gamma-scaffold.md` confirms presence) — §5.1 canonical dispatch configuration satisfied.
+
+**Diff footprint (re-confirmed post-rebase).** `git diff --stat origin/main..HEAD`: 8 files, 653 insertions / 29 deletions — three doctrine `.md` files, two mechanically-regenerated YAML files (golden == live, byte-identical), and three `.cdd/unreleased/639/` cell artifacts (γ's `CLAIM-REQUEST.yml` + `gamma-scaffold.md`, this file). Zero `.go` files. Zero diff to `transitions.json`. Both CI guard scripts (`check-dispatch-repair-preflight.sh`, `check-dispatch-closeout-integrity.sh`) re-run locally post-rebase: both exit 0.
+
+**Branch CI (row 10, transient, re-validated at signal time).** `origin/cycle/639` HEAD `beccf0987c5432ae13429a179fa774c5b9be5fd1` — both the `Build` workflow and the `install-wake golden` workflow completed with `conclusion: success` on this exact SHA (`gh run list --branch cycle/639`, confirmed 06:40 UTC 2026-07-09, after the rebase and the SHA-restamp fix). Earlier intermediate commits in this round's incremental self-coherence.md authoring (`25df0188`/`ab08101a`/`43153d04`/`3ac3f8c7`/`8c7241ff`, pre-rebase) show `Build: failure` — expected and non-blocking: `cn cdd verify`'s I6 gate classifies `#639` as a `small-change` cycle (no `beta-review.md` yet) and hard-fails on a `self-coherence.md` missing the `CDD Trace` section, which was genuinely absent until the §CDD Trace commit landed. HEAD is green; the transient failures were self-resolving artifacts of the mandated one-section-per-commit discipline (`alpha/SKILL.md` §2.5), not a real defect.
+
+**Base SHA:** `f2959e150c0a308db460afe4fcec4b6c4429ee34` (`origin/main`, post-rebase merge-base).
+**Head SHA:** `beccf0987c5432ae13429a179fa774c5b9be5fd1` (this commit — the SHA-restamp fix; the last implementation-bearing commit before this readiness signal itself).
+
+## Review-readiness | round 1 | base SHA: f2959e150c0a308db460afe4fcec4b6c4429ee34 | head SHA: beccf0987c5432ae13429a179fa774c5b9be5fd1 | branch CI: green (Build + install-wake golden both `success`) at 06:40:48 UTC 2026-07-09 | ready for β
