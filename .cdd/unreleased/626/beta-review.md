@@ -279,3 +279,48 @@ consistent with both the operator's explicit gate and R0's own stated
 prerequisites. Recommend the closeout carry forward R0's own
 recommendation: treat the next 1-2 real `cds-dispatch` firings post-merge
 as the live-fire validation window before any future cell attempts AC4.
+
+---
+
+# beta-review.md — cnos#626 (β, R2 — AC4 write-fence proof-first round)
+
+## Independent re-derivation (not a read of α's narrative)
+
+Beyond reading `self-coherence.md §R2`, independently re-ran/re-derived:
+
+1. **Re-ran both new tests fresh**, isolated: `go test ./internal/cell/... -run TestRealCheckpoint -v` → both PASS. Also ran the full `go test ./...` across all four go.work modules (src/go, cdd-verify, issues-map, issues-fsm) independently → all `ok`, `go vet ./...` clean.
+2. **Sabotage-tested the discriminating power of the new tests** (the thing α's self-coherence.md does not itself demonstrate — R1's own beta-review named this exact independence bar for its own AC3 test). Built a THIRD scratch repo, this time cloned WITHOUT the sparse-checkout exclusion (the pre-AC3 shape), replayed the identical write + `git add -A` + `git commit` + `git push` sequence: the `.cn-sigma/logs/probe.md` write **DID** get staged (`git add -A` exit 0, file listed under `--name-only`) and **DID** reach `origin`'s `cycle/9999` branch. This is the negative control: it proves the two new tests are actually discriminating on the sparse-checkout mechanism specifically, not vacuously true regardless of setup.
+3. **Re-verified the renderer diff is minimal and correctly scoped.** `git diff` on `cn-install-wake` shows exactly one condition change (`if [ "$activation_log_writer" = "false" ]` → `if [ "$activation_log_writer" = "false" ] && [ "$role" != "dispatch" ]`) plus the added comment block; `bash -n` on the full script confirms no syntax breakage; the matching `fi` is unchanged and still correctly scoped to the same block (confirmed by reading the full if/fi span, not just the opening line).
+4. **Independently confirmed the role-gating is correct for both real manifests**: `agent-admin/SKILL.md` declares `role: admin` + `activation_log_writer: true` (fence step was never emitted for it regardless — the carve-out is inert for this manifest, confirmed by its unchanged golden sha256); `cds-dispatch/SKILL.md` declares `role: dispatch` + `activation_log_writer: false` (exactly the case the carve-out retires the fence for).
+5. **Independently re-rendered from a clean state** (not trusting α's already-rendered output): ran `cn-install-wake agent-admin` and `cn-install-wake cds-dispatch` (both golden and `--out .github/workflows/cnos-cds-dispatch.yml`) myself; recomputed sha256 of live vs golden — identical; ran a second render for idempotence — unchanged.
+6. **Independently confirmed no other surface still names the removed step**: `grep -rn "Write fence — dispatch_activation_log_write_violation"` across the repo shows the step name gone from both rendered YAMLs; the only remaining occurrences are the historical/doctrine prose in the golden/live prompt bodies themselves (expected — that prose narrates the change, it does not emit the step).
+7. **Observed real CI, not just local reproductions**: `gh run list --branch cycle/626` shows both `Build` (all 10 jobs: Go build & test, Binary verification, Package verification, Package/source drift I1, Protocol contract schema sync I2, Repo link validation I4, SKILL.md frontmatter validation I5, CDD artifact ledger validation I6, Dispatch repair-preflight guard cnos#516, Dispatch closeout-integrity guard cnos#524) and `install-wake golden` green on the pushed R2 commit (`fb05b61f`). This closes the two AC9 sub-checks (I4 lychee link-check, I5 cue frontmatter validation) that were not runnable in-session for lack of the `lychee`/`cue` binaries — real CI ran them for real and both are green.
+
+## AC oracle walk (independent, not copied from α's table)
+
+| AC | Verdict | Independent basis |
+|---|---|---|
+| AC1 | ✅ | Existing test re-run fresh, passes |
+| AC2 | ✅ | New tests re-run fresh, passes; sabotage/negative-control test confirms discriminating power |
+| AC3 | ✅ | Renderer diff correctly conditions removal on AC2's pass |
+| AC4 | ✅ | Fence narrows (not fully deleted); rationale present in renderer comments, SKILL.md doctrine, and self-coherence.md |
+| AC5 | ✅ | sha256 independently recomputed, matches |
+| AC6 | ✅ | install-wake-golden equivalent steps independently re-run; real CI `install-wake golden` job green |
+| AC7 | ✅ | `check-dispatch-repair-preflight.sh` independently re-run, passes; real CI job green |
+| AC8 | ✅ | `check-dispatch-closeout-integrity.sh` independently re-run, passes; real CI job green |
+| AC9 | ✅ | Real CI `Build` workflow green on all 10 jobs including I4/I5 (not locally runnable but CI-confirmed) |
+| AC10 | ⏳ deferred, correctly so | No mechanism exists to manufacture a second wake firing from within one firing (per `delta/SKILL.md` §9.7 v0 constraint); explicitly named, not silently skipped |
+
+## Guardrail verification
+
+- Scope held to AC4 only: no `cell_kind` taxonomy change, no Demo 0, `#633` untouched, no admin-wake checkout change (`agent-admin` golden byte-identical, confirmed independently).
+- `src/packages/cnos.cds/skills/cds/fsm/transitions.json` untouched (confirmed via `git diff --stat` — file not in the changed-files list).
+- No status/FSM semantics changed by this round's code (only `cn-install-wake`, `cell_test.go`, and `SKILL.md` prose touched).
+
+## Findings
+
+None. Zero blocking or non-blocking findings survived independent re-derivation, including the deliberate sabotage/negative-control check.
+
+## Verdict
+
+**`verdict: converge`.** AC1–AC9 are correctly and completely implemented and evidenced, independently re-derived (not merely read from α's narrative), including a negative control proving the new tests actually discriminate on the mechanism under test. AC10 is correctly and explicitly deferred to the next real post-merge firing, consistent with R1's own AC3 precedent and the framework's v0 single-firing constraint. Recommend δ proceed to closeouts and request `status:review`.
