@@ -1,0 +1,6 @@
+# cds-dispatch wake claim request (cnos#575 AC1 / cnos#454 dispatch-protocol §2.2 step 5)
+issue: 628
+protocol: cds
+wake: cds-dispatch
+requested_transition: "status:todo -> status:in-progress"
+run_class: first_pass
