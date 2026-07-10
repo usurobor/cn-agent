@@ -227,6 +227,66 @@ float, sync-to-lock but **print a warning** recommending `cn repo update`;
 **vNext+1** — make lock-preserving the silent default. Gate the flip on the
 `status`/ledger work landing first.
 
+## Phase-contract precision (pre-dispatch review — normative)
+
+*These tighten the phase contracts so a worker cell cannot implement unsafe
+lifecycle behavior by accident. They are requirements, not suggestions.*
+
+**P1 — Durable ledger schema + validation gate (Phase 1).** `cn.repo.state.v1`
+must ship as a **checked-in schema** (e.g. `schemas/cdd/repo_state.cue` or the
+repo's chosen location) with a CI validation gate + tests asserting: a valid
+`repo.state.json` passes; **timestamp fields are rejected** (deterministic,
+timestamp-free); **package `version`/`sha256` duplication is rejected** (A1 —
+those live in the lock); `managed_files` records require `path`/`kind`/`id`/
+`sha256`; workflow records carry enough render contract to reproduce drift
+classification (P2 below). The ledger is the basis for uninstall, so it needs
+schema enforcement from Phase 1.
+
+**P2 — Workflow records store the render contract, not just the tier (Phase
+1).** `path`/`kind`/`id`/`tier`/`sha256` is **not enough** to fresh-render the
+same workflow, so A2's drift classification (matches-ledger / user-edit /
+renderer-moved) is not implementable without the non-secret render inputs.
+A dispatch-workflow record must carry, e.g.:
+```json
+{ "kind": "workflow", "id": "cnos-cds-dispatch",
+  "path": ".github/workflows/cnos-cds-dispatch.yml", "tier": "engine",
+  "renderer": "cnos.core/install-wake", "renderer_package": "cnos.core",
+  "renderer_version_source": "lock",
+  "agent": "cnos", "workflow_pat_secret": "CNOS_WORKFLOW_PAT",
+  "bot_name": "cnos-bot", "bot_id": "12345678", "sha256": "..." }
+```
+**Store secret *names* and render identity only — never secret values.**
+
+**P3 — `cn repo status` is read-only by default (Phase 1).** Status is
+truth/reporting: it **never writes `.cn/repo.state.json`** by default. It may
+emit a *reconstructed ledger candidate* under `--json` (A3 backfill source),
+but only `install`/`update`/`repair` — on an explicit backfill path — persist
+the ledger.
+
+**P4 — Existing-lock install is no-network / no-latest by default (Phase 2).**
+Do not make the "would float" decision depend on discovering whether latest
+changed (that reintroduces the network dependency convergence is meant to
+remove). Contract: if a lock exists and no explicit `--release`/`--index`/
+`update` intent is present, `cn repo install` **syncs from the lock without
+resolving latest** and prints an informational line —
+`using existing .cn/deps.lock.json; run cn repo update to move to a newer release`.
+
+**P5 — `--locked` = no resolution / no lock mutation, but fetch is allowed
+(Phase 2).** `--locked` must not perform dependency resolution or mutate
+`deps.json`/`deps.lock.json`; it **may** fetch the package tarball URLs the
+existing lock references. "No network at all" is a *future* `--offline` flag,
+not implied by `--locked`.
+
+**P6 — `cn repo repair` v1 = delete+reinstall (Phase 4).** The lock `sha256`
+is the **package tarball** digest, not a canonical expanded-tree digest, so
+"hash the vendored dir against the lock sha" (as loosely stated) is invalid.
+v1 default: **delete + reinstall** the locked package dirs. A `--verify` mode
+requires either (Option A) Phase 1 storing a post-extract **tree digest** in
+the ledger that `--verify` checks, or (Option B) `--verify` checks only
+manifest presence/version and reports `content verification unavailable` when
+no tree digest exists. Do not compare an expanded directory against a tarball
+hash.
+
 ## Comparators (why this shape)
 
 - **npm / pnpm** — lockfile-driven reproducibility; `install` honors the lock;
@@ -245,6 +305,10 @@ CNOS managed-surface ledger** for workflows and labels.
 
 ## Related
 
-- [`cn-repo-install-MOCKS.md`](cn-repo-install-MOCKS.md) — the installer design surface + receipt-parity contract this wave should mirror.
-- [`cnos-installer-github-app.md`](cnos-installer-github-app.md) — the App surface whose per-tier permission model the ledger's `external_expectations` (labels) aligns with.
-- [`../../guides/INSTALL-CDS.md`](../../guides/INSTALL-CDS.md) — the human install guide (Phase 6 extends it with the lifecycle section).
+- [`cn-repo-install-MOCKS.md`](cn-repo-install-MOCKS.md) — the installer
+  design surface + receipt-parity contract this wave should mirror.
+- [`cnos-installer-github-app.md`](cnos-installer-github-app.md) — the App
+  surface whose per-tier permission model the ledger's `external_expectations`
+  (labels) aligns with.
+- [`../../guides/INSTALL-CDS.md`](../../guides/INSTALL-CDS.md) — the human
+  install guide (Phase 6 extends it with the lifecycle section).
