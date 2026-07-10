@@ -2371,7 +2371,7 @@
       "cdd"
     ],
     "pri": "P1",
-    "status": "in-progress",
+    "status": "review",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2380,7 +2380,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-07T10:17:10Z",
-    "updated": "2026-07-10T08:28:30Z",
+    "updated": "2026-07-10T08:34:56Z",
     "url": "https://github.com/usurobor/cnos/issues/628"
   },
   {
