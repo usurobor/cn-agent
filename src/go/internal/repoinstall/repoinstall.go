@@ -33,6 +33,8 @@ package repoinstall
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -49,6 +51,7 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/binupdate"
 	"github.com/usurobor/cnos/src/go/internal/hubsetup"
 	"github.com/usurobor/cnos/src/go/internal/pkg"
+	"github.com/usurobor/cnos/src/go/internal/repostate"
 	"github.com/usurobor/cnos/src/go/internal/restore"
 )
 
@@ -332,6 +335,20 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	} else {
 		fmt.Fprintf(opts.Stdout, "Dispatch: none (base install only — no .github/workflows/ changes)\n")
 	}
+
+	// cnos#656 P1: write/update the managed-surface ledger last, once
+	// every write this run performs (base install + optional dispatch
+	// render) has already landed on disk — the ledger's managed_files
+	// sha256s are content hashes of what Run actually wrote, read back
+	// rather than recomputed from in-memory state, so the ledger can
+	// never drift from the files it describes even if a future change
+	// alters how one of those files is serialized.
+	if err := writeRepoState(opts, manifest, repo, dlBase, releaseTag); err != nil {
+		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+		return nil, err
+	}
+	fmt.Fprintf(opts.Stdout, "✓ wrote .cn/repo.state.json\n")
+
 	fmt.Fprintf(opts.Stdout, "\n✓ cn repo install complete.\n")
 
 	return &Result{ReleaseTag: releaseTag, Manifest: manifest, DryRun: false}, nil
@@ -571,6 +588,127 @@ func applyInstall(ctx context.Context, opts Options, manifest pkg.Manifest, idxP
 	}
 
 	return nil
+}
+
+// writeRepoState builds and writes .cn/repo.state.json (schema
+// cn.repo.state.v1) — the cnos#656 Phase-1 managed-surface ledger. Called
+// once, at the end of Run's non-dry-run path, after every write this run
+// performs (applyInstall's base install + runDispatchCds's optional
+// workflow render) has already landed on disk. Every managed_files sha256
+// is a content hash of the file read back from opts.RepoRoot, never
+// recomputed from in-memory state — so the ledger is always an accurate
+// description of what is actually on disk, and a same-input rerun (same
+// packages, same release, same dispatch flags) produces byte-identical
+// deps.json/deps.lock.json/gitignore/workflow content and therefore a
+// byte-identical ledger (RepoState.Marshal's own Path-sort makes the
+// managed_files/managed_dirs ORDER deterministic on top of that).
+//
+// Running `cn repo install` again on a repo with no prior
+// .cn/repo.state.json backfills one — this is A3's "backfill on next
+// install" for every lifecycle-write command that exists today (`update`/
+// `repair` do not exist yet; see gamma-scaffold.md "Non-goals").
+func writeRepoState(opts Options, manifest pkg.Manifest, repo, dlBase, releaseTag string) error {
+	source := repostate.Source{Channel: "stable", Release: releaseTag}
+	if opts.IndexPath != "" {
+		source.Channel = "index"
+		source.Index = opts.IndexPath
+	} else {
+		source.Index = fmt.Sprintf("%s/%s/releases/download/%s/index.json", dlBase, repo, releaseTag)
+	}
+
+	var managedFiles []repostate.ManagedFile
+
+	depsJSONSHA, err := sha256File(filepath.Join(opts.RepoRoot, ".cn", "deps.json"))
+	if err != nil {
+		return err
+	}
+	managedFiles = append(managedFiles, repostate.ManagedFile{
+		Path: ".cn/deps.json", Kind: repostate.KindManifest, ID: "deps-manifest", SHA256: depsJSONSHA,
+	})
+
+	depsLockSHA, err := sha256File(filepath.Join(opts.RepoRoot, ".cn", "deps.lock.json"))
+	if err != nil {
+		return err
+	}
+	managedFiles = append(managedFiles, repostate.ManagedFile{
+		Path: ".cn/deps.lock.json", Kind: repostate.KindLockfile, ID: "deps-lockfile", SHA256: depsLockSHA,
+	})
+
+	gitignoreSHA, err := sha256File(filepath.Join(opts.RepoRoot, ".gitignore"))
+	if err != nil {
+		return err
+	}
+	managedFiles = append(managedFiles, repostate.ManagedFile{
+		Path: ".gitignore", Kind: repostate.KindGitignore, ID: "gitignore", SHA256: gitignoreSHA,
+	})
+
+	if opts.Dispatch == "cds" {
+		workflowRel := ".github/workflows/cnos-cds-dispatch.yml"
+		workflowSHA, err := sha256File(dispatchWorkflowPath(opts.RepoRoot))
+		if err != nil {
+			return err
+		}
+		tier := repostate.TierAgent
+		if opts.Engine {
+			tier = repostate.TierEngine
+		}
+		agent := resolveDispatchAgent(opts.Agent)
+		patSecret := opts.WorkflowPatSecret
+		if !opts.Engine && patSecret == "" && agent == "sigma" {
+			patSecret = "SIGMA_WORKFLOW_PAT"
+		}
+		wf := repostate.ManagedFile{
+			Path: workflowRel, Kind: repostate.KindWorkflow, ID: "cnos-cds-dispatch", SHA256: workflowSHA,
+			Tier: tier, Renderer: "cnos.core/install-wake", RendererPackage: "cnos.core",
+			RendererVersionSource: "lock", Agent: agent,
+		}
+		if !opts.Engine {
+			wf.WorkflowPatSecret = patSecret
+			wf.BotName = opts.BotName
+			wf.BotID = opts.BotID
+		}
+		managedFiles = append(managedFiles, wf)
+	}
+
+	managedDirs := make([]repostate.ManagedDir, 0, len(manifest.Packages))
+	for _, dep := range manifest.Packages {
+		managedDirs = append(managedDirs, repostate.ManagedDir{
+			Path: path.Join(".cn", "vendor", "packages", dep.Name), Package: dep.Name,
+		})
+	}
+
+	state := repostate.RepoState{
+		Schema:       repostate.Schema,
+		Profile:      manifestProfile,
+		Source:       source,
+		ManagedFiles: managedFiles,
+		ManagedDirs:  managedDirs,
+		ExternalExpectations: repostate.ExternalExpectations{
+			Labels: repostate.LabelExpectations{
+				Mode: repostate.LabelModeEnsure, Source: "cnos.core/labels.json", DeleteOnUninstall: false,
+			},
+		},
+	}
+
+	data, err := state.Marshal()
+	if err != nil {
+		return fmt.Errorf("repo state: %w", err)
+	}
+	statePath := filepath.Join(opts.RepoRoot, ".cn", "repo.state.json")
+	if err := os.WriteFile(statePath, data, 0644); err != nil {
+		return fmt.Errorf("write repo.state.json: %w", err)
+	}
+	return nil
+}
+
+// sha256File returns the lowercase hex SHA-256 of path's content.
+func sha256File(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("hash %s: %w", path, err)
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:]), nil
 }
 
 // writeManifest writes .cn/deps.json deterministically: stable field
