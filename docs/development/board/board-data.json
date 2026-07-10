@@ -2547,5 +2547,68 @@
     "created": "2026-07-09T09:29:00Z",
     "updated": "2026-07-09T09:29:00Z",
     "url": "https://github.com/usurobor/cnos/issues/654"
+  },
+  {
+    "n": 655,
+    "t": "wave: cn repo lifecycle commands (ledger → sync-install → update → repair/prune → uninstall)",
+    "kind": "tooling",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-10T01:45:25Z",
+    "updated": "2026-07-10T01:45:25Z",
+    "url": "https://github.com/usurobor/cnos/issues/655"
+  },
+  {
+    "n": 656,
+    "t": "repo lifecycle Phase 1 — state ledger (.cn/repo.state.json) + cn repo status",
+    "kind": "",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-10T01:45:39Z",
+    "updated": "2026-07-10T01:45:39Z",
+    "url": "https://github.com/usurobor/cnos/issues/656"
+  },
+  {
+    "n": 657,
+    "t": "repo lifecycle Phase 2 — install-semantics hardening (sync-from-lock; --locked, --clean)",
+    "kind": "",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-10T01:45:46Z",
+    "updated": "2026-07-10T01:45:46Z",
+    "url": "https://github.com/usurobor/cnos/issues/657"
   }
 ]
