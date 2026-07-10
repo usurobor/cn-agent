@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -107,7 +106,7 @@ func (c *RepoStatusCmd) Run(ctx context.Context, inv Invocation) error {
 	}
 
 	if jsonOut {
-		data, merr := json.MarshalIndent(st, "", "  ")
+		data, merr := st.JSON()
 		if merr != nil {
 			return fmt.Errorf("repo status: marshal json: %w", merr)
 		}

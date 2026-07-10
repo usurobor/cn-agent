@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -146,6 +147,15 @@ type Status struct {
 	UpdateAvailable UpdateAvailable  `json:"update_available"`
 	Ledger          LedgerInfo       `json:"ledger"`
 	Drift           bool             `json:"drift"`
+}
+
+// JSON renders s as indented JSON (schema cn.repo.status.v1), the `--json`
+// output shape. Kept here (not in cli/cmd_repo_status.go) so the thin CLI
+// wrapper never imports encoding/json itself — INVARIANTS.md T-002 /
+// eng/go §2.18's dispatch-boundary discipline: cmd_*.go files are thin
+// wrappers, domain packages own domain-shaped serialization.
+func (s *Status) JSON() ([]byte, error) {
+	return json.MarshalIndent(s, "", "  ")
 }
 
 // Options carries Run's configuration. Every field beyond RepoRoot is
