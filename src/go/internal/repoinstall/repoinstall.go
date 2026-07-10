@@ -322,6 +322,7 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	}
 
 	var dispatchErr error
+	rendered := false
 	if opts.Dispatch == "cds" {
 		// Base install (above) has already completed and written its
 		// files (AC1/C1) — the dispatch render layers on top of it, not
@@ -332,7 +333,11 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 		// error is captured (not returned immediately) so the ledger
 		// write below still runs when the render itself succeeded and
 		// only the label step failed — see the ledger-write comment.
-		dispatchErr = runDispatchCds(ctx, opts)
+		// `rendered` (not "an error occurred") is what decides whether
+		// THIS run actually produced/overwrote the workflow file — see
+		// canWriteLedger below for why that distinction, not mere file
+		// existence, is load-bearing.
+		rendered, dispatchErr = runDispatchCds(ctx, opts)
 		if dispatchErr == nil {
 			fmt.Fprintf(opts.Stdout, "Dispatch: cds (agent: %s)\n", resolveDispatchAgent(opts.Agent))
 		}
@@ -343,22 +348,25 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	// cnos#656 P1: write/update the managed-surface ledger once every
 	// write this run performs has landed on disk. This runs even when
 	// dispatchErr is non-nil, as long as the workflow render itself
-	// produced a file: the ledger describes what IS on disk, and losing
-	// that record because an orthogonal obligation (cnos#493 label
-	// reconciliation) failed would defeat A3's "backfill on next
-	// install" contract for a repo whose base install (and, for
-	// --dispatch cds, workflow render) otherwise succeeded. Skipped only
-	// when --dispatch cds failed before ever writing a workflow file
-	// (the AC2 "no partial render" precondition-failure path, e.g.
-	// missing identity flags) — there is nothing new to describe there,
-	// and hashing a nonexistent file would only produce a confusing
-	// secondary error masking the real one.
-	canWriteLedger := true
-	if opts.Dispatch == "cds" && dispatchErr != nil {
-		if _, statErr := os.Stat(dispatchWorkflowPath(opts.RepoRoot)); statErr != nil {
-			canWriteLedger = false
-		}
-	}
+	// actually ran THIS run (rendered == true): the ledger describes what
+	// IS on disk, and losing that record because an orthogonal
+	// obligation (cnos#493 label reconciliation) failed would defeat A3's
+	// "backfill on next install" contract for a repo whose base install
+	// (and, for --dispatch cds, workflow render) otherwise succeeded.
+	//
+	// Deliberately gated on `rendered`, NOT on "does dispatchWorkflowPath
+	// exist on disk" — the latter is also true when a PRIOR successful
+	// run rendered the file and THIS run's identity gate failed before
+	// ever calling the renderer (e.g. `--dispatch cds --agent acme` with
+	// no --workflow-pat-secret, on a repo an earlier `sigma` install
+	// already rendered). Writing the ledger in that case would describe
+	// an untouched file using THIS run's (different, possibly invalid)
+	// opts.Agent/opts.WorkflowPatSecret/opts.BotName/opts.BotID — silently
+	// corrupting the render-contract metadata for a file nothing this run
+	// touched. Skipping the ledger write when !rendered leaves any
+	// existing ledger exactly as it was, which is correct: nothing on
+	// disk changed, so nothing about the ledger should either.
+	canWriteLedger := opts.Dispatch != "cds" || rendered
 	if canWriteLedger {
 		if err := writeRepoState(opts, manifest, repo, dlBase, releaseTag); err != nil {
 			fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
@@ -458,7 +466,15 @@ func dispatchWorkflowPath(repoRoot string) string {
 //     "origin" remote) or a GitHub token cannot be resolved, or the
 //     GitHub API call itself fails, this surfaces a named, actionable
 //     error once identity resolution + the render themselves succeed.
-func runDispatchCds(ctx context.Context, opts Options) error {
+// runDispatchCds's rendered return value distinguishes "the render itself
+// produced/overwrote the workflow file THIS run" from "runDispatchCds
+// returned an error" — cnos#656's ledger write needs exactly this
+// distinction (see Run's canWriteLedger comment): a stale workflow file
+// left over from a PRIOR successful run must not be mistaken for
+// evidence that THIS run's render happened, or the ledger would be
+// rewritten with this run's (possibly different, possibly invalid)
+// identity/tier fields describing a file nothing here actually touched.
+func runDispatchCds(ctx context.Context, opts Options) (rendered bool, err error) {
 	agent := resolveDispatchAgent(opts.Agent)
 
 	// PAT-secret identity resolution is an AGENT-tier concern only. The
@@ -472,7 +488,7 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 		if agent != "sigma" {
 			err := fmt.Errorf("--workflow-pat-secret is required for --agent %q (no default substrate PAT-secret binding for non-sigma agents); pass --workflow-pat-secret <NAME> naming the GitHub Actions secret that holds this agent's workflow-scoped PAT", agent)
 			fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
-			return err
+			return false, err
 		}
 		// sigma's default substrate PAT binding, mirroring
 		// cn-install-wake's own default (renderer authority; this is
@@ -498,7 +514,7 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 		Stderr:            opts.Stderr,
 	}); err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
-		return err
+		return false, err
 	}
 
 	fmt.Fprintf(opts.Stdout, "✓ rendered .github/workflows/cnos-cds-dispatch.yml\n")
@@ -513,11 +529,15 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 	fmt.Fprintf(opts.Stdout, "  This changes .github/workflows/ — the installing token needs `workflow` scope.\n")
 	fmt.Fprintf(opts.Stdout, "  Dispatch never pushes to main (PR-only).\n")
 
+	// The render itself succeeded — rendered is true from here on
+	// regardless of what ensureCanonicalDispatchLabels does below; a
+	// label-reconciliation failure is a distinct, orthogonal obligation
+	// (cnos#493), not evidence the render didn't happen.
 	if err := ensureCanonicalDispatchLabels(ctx, opts); err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
-		return err
+		return true, err
 	}
-	return nil
+	return true, nil
 }
 
 // ensureCanonicalDispatchLabels ensures every canonical label in

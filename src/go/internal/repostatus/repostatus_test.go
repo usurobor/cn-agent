@@ -469,3 +469,60 @@ func TestDispatchStatus_Removed(t *testing.T) {
 		t.Error("Drift = false, want true when the ledger-recorded workflow was removed")
 	}
 }
+
+// TestDispatchStatus_Unclassified pins the fix for an adversarial-review
+// finding: when the live file's sha256 is CONFIRMED to differ from the
+// ledger (a real, known drift), but the fresh-render comparison that would
+// further classify it (user_edit vs renderer_moved) itself fails — here,
+// simulated by pointing RendererPackage at a package that was never
+// vendored, so dispatchrender.Render can't find the renderer script — the
+// result must NOT be DriftUnknown (which is excluded from the top-level
+// Drift bool and would silently report a confirmed mismatch as clean).
+func TestDispatchStatus_Unclassified(t *testing.T) {
+	root, _ := setupDispatchFixture(t)
+
+	// Hand-edit the live file so its sha256 no longer matches the ledger.
+	workflowPath := filepath.Join(root, ".github", "workflows", "cnos-cds-dispatch.yml")
+	data, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(workflowPath, append(data, []byte("\n# edited\n")...), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Corrupt the ledger's recorded renderer_package so the fresh-render
+	// comparison itself can't run (renderer script not found at that
+	// package's vendored path) — this is the "classification step fails"
+	// case, independent of the file having genuinely changed (confirmed
+	// above).
+	statePath := filepath.Join(root, ".cn", "repo.state.json")
+	stateData, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, err := repostate.Parse(stateData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wfRecord := state.FindManagedFile(".github/workflows/cnos-cds-dispatch.yml")
+	wfRecord.RendererPackage = "cnos.nonexistent-package"
+	newStateData, err := state.Marshal()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(statePath, newStateData, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := Run(context.Background(), Options{RepoRoot: root, SkipNetwork: true})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if st.Dispatch.Drift != DriftUnclassified {
+		t.Errorf("Dispatch.Drift = %q, want %q", st.Dispatch.Drift, DriftUnclassified)
+	}
+	if !st.Drift {
+		t.Error("Drift = false, want true — a confirmed sha256 mismatch must count as drift even when further classification fails")
+	}
+}

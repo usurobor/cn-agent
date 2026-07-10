@@ -44,16 +44,30 @@ const StatusSchema = "cn.repo.status.v1"
 // single stable constant).
 const DefaultRepo = "usurobor/cnos"
 
-// Drift classification values (design doc A2). DriftRemoved is this
-// package's own addition beyond A2's three-way split: the ledger records
-// a workflow that no longer exists on disk at all (distinct from "never
-// had one," which reports Present: false with no Drift value).
+// Drift classification values (design doc A2). DriftRemoved and
+// DriftUnclassified are this package's own additions beyond A2's
+// three-way split:
+//   - DriftRemoved: the ledger records a workflow that no longer exists
+//     on disk at all (distinct from "never had one," which reports
+//     Present: false with no Drift value).
+//   - DriftUnclassified: the live file's sha256 is CONFIRMED to differ
+//     from the ledger's recorded sha256 (a real, known drift), but the
+//     fresh-render comparison that would classify it as user_edit vs.
+//     renderer_moved could not run (temp-dir creation failed, the
+//     renderer errored, or the fresh render's output couldn't be read).
+//     This is deliberately NOT DriftUnknown — DriftUnknown means "nothing
+//     to compare against" (no ledger record); here a mismatch is already
+//     an established fact, so it counts toward the top-level Drift bool
+//     even though which KIND of drift it is remains unresolved. Silently
+//     reporting a confirmed mismatch as non-drift would defeat the whole
+//     point of a drift reporter.
 const (
 	DriftMatchesLedger = "matches_ledger"
 	DriftUserEdit      = "user_edit"
 	DriftRendererMoved = "renderer_moved"
 	DriftUnknown       = "unknown"
 	DriftRemoved       = "removed"
+	DriftUnclassified  = "unclassified"
 )
 
 // Label status values.
@@ -199,7 +213,7 @@ func Run(ctx context.Context, opts Options) (*Status, error) {
 			drift = true
 		}
 	}
-	if dispatch.Drift == DriftUserEdit || dispatch.Drift == DriftRendererMoved || dispatch.Drift == DriftRemoved {
+	if dispatch.Drift == DriftUserEdit || dispatch.Drift == DriftRendererMoved || dispatch.Drift == DriftRemoved || dispatch.Drift == DriftUnclassified {
 		drift = true
 	}
 	if labels.Status == LabelsDrifted {
@@ -321,12 +335,15 @@ func dispatchStatus(ctx context.Context, repoRoot string, ledger *repostate.Repo
 		return status
 	}
 
-	// Differs from ledger — classify user_edit vs renderer_moved by
-	// re-rendering fresh into a temp file with the SAME render contract
-	// the ledger recorded (P2) and comparing.
+	// Differs from ledger — drift is now a CONFIRMED fact (liveSHA !=
+	// wf.SHA256 above); everything from here on only refines which KIND
+	// of drift it is. Every failure branch below falls back to
+	// DriftUnclassified, never DriftUnknown, so a confirmed mismatch can
+	// never be silently reported as "no drift" just because the
+	// classification step itself couldn't run.
 	tmpDir, err := os.MkdirTemp("", "cn-repo-status-render-*")
 	if err != nil {
-		status.Drift = DriftUnknown
+		status.Drift = DriftUnclassified
 		return status
 	}
 	defer os.RemoveAll(tmpDir)
@@ -343,12 +360,12 @@ func dispatchStatus(ctx context.Context, repoRoot string, ledger *repostate.Repo
 		OutPath:           tmpOut,
 	})
 	if renderErr != nil {
-		status.Drift = DriftUnknown
+		status.Drift = DriftUnclassified
 		return status
 	}
 	freshSHA, err := sha256File(tmpOut)
 	if err != nil {
-		status.Drift = DriftUnknown
+		status.Drift = DriftUnclassified
 		return status
 	}
 	if freshSHA == liveSHA {

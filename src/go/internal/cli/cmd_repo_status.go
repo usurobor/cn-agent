@@ -163,6 +163,8 @@ func renderStatus(w io.Writer, repoRoot string, st *repostatus.Status) {
 			fmt.Fprintf(w, "⚠ dispatch: %s — %s differs from ledger (renderer_moved: matches a fresh re-render; run `cn repo repair`)\n", st.Dispatch.ID, st.Dispatch.Path)
 		case repostatus.DriftUserEdit:
 			fmt.Fprintf(w, "✗ dispatch: %s — %s differs from ledger (user_edit)\n", st.Dispatch.ID, st.Dispatch.Path)
+		case repostatus.DriftUnclassified:
+			fmt.Fprintf(w, "✗ dispatch: %s — %s differs from ledger (could not classify further: re-render comparison failed)\n", st.Dispatch.ID, st.Dispatch.Path)
 		default:
 			fmt.Fprintf(w, "○ dispatch: %s present, drift unknown (no ledger record)\n", st.Dispatch.Path)
 		}
