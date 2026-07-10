@@ -166,6 +166,8 @@ func renderStatus(w io.Writer, repoRoot string, st *repostatus.Status) {
 		default:
 			fmt.Fprintf(w, "○ dispatch: %s present, drift unknown (no ledger record)\n", st.Dispatch.Path)
 		}
+	} else if st.Dispatch.Drift == repostatus.DriftRemoved {
+		fmt.Fprintf(w, "⚠ dispatch: %s is recorded in the ledger but no longer exists on disk (removed)\n", st.Dispatch.Path)
 	} else {
 		fmt.Fprintf(w, "✓ dispatch: none\n")
 	}

@@ -44,12 +44,16 @@ const StatusSchema = "cn.repo.status.v1"
 // single stable constant).
 const DefaultRepo = "usurobor/cnos"
 
-// Drift classification values (design doc A2).
+// Drift classification values (design doc A2). DriftRemoved is this
+// package's own addition beyond A2's three-way split: the ledger records
+// a workflow that no longer exists on disk at all (distinct from "never
+// had one," which reports Present: false with no Drift value).
 const (
 	DriftMatchesLedger = "matches_ledger"
-	DriftUserEdit       = "user_edit"
-	DriftRendererMoved  = "renderer_moved"
-	DriftUnknown        = "unknown"
+	DriftUserEdit      = "user_edit"
+	DriftRendererMoved = "renderer_moved"
+	DriftUnknown       = "unknown"
+	DriftRemoved       = "removed"
 )
 
 // Label status values.
@@ -195,7 +199,7 @@ func Run(ctx context.Context, opts Options) (*Status, error) {
 			drift = true
 		}
 	}
-	if dispatch.Drift == DriftUserEdit || dispatch.Drift == DriftRendererMoved {
+	if dispatch.Drift == DriftUserEdit || dispatch.Drift == DriftRendererMoved || dispatch.Drift == DriftRemoved {
 		drift = true
 	}
 	if labels.Status == LabelsDrifted {
@@ -302,11 +306,16 @@ func dispatchStatus(ctx context.Context, repoRoot string, ledger *repostate.Repo
 		return DispatchStatus{Present: true, ID: "cnos-cds-dispatch", Path: workflowRelPath, Drift: DriftUnknown}
 	}
 
-	status := DispatchStatus{Present: true, Tier: wf.Tier, ID: wf.ID, Path: wf.Path}
 	if liveErr != nil {
-		status.Drift = DriftUnknown
-		return status
+		// The ledger records a workflow that no longer exists on disk —
+		// distinct from "never had one" (wf == nil above): Present is
+		// false (nothing is actually active), but Tier/ID/Path are still
+		// surfaced for context, and Drift names what happened so this
+		// doesn't get silently treated as "no dispatch, no drift".
+		return DispatchStatus{Present: false, Tier: wf.Tier, ID: wf.ID, Path: wf.Path, Drift: DriftRemoved}
 	}
+
+	status := DispatchStatus{Present: true, Tier: wf.Tier, ID: wf.ID, Path: wf.Path}
 	if liveSHA == wf.SHA256 {
 		status.Drift = DriftMatchesLedger
 		return status

@@ -442,3 +442,30 @@ func TestDispatchStatus_UserEdit(t *testing.T) {
 		t.Error("Drift = false, want true for a hand-edited dispatch workflow")
 	}
 }
+
+// TestDispatchStatus_Removed covers the ledger-recorded-but-file-missing
+// case: distinct from "never had a workflow" (Present: false, no Drift
+// value) — here Present is also false (nothing is active), but Drift names
+// what happened (DriftRemoved) so it isn't silently indistinguishable from
+// "no dispatch, no drift" and still counts toward the top-level Drift bool.
+func TestDispatchStatus_Removed(t *testing.T) {
+	root, _ := setupDispatchFixture(t)
+	workflowPath := filepath.Join(root, ".github", "workflows", "cnos-cds-dispatch.yml")
+	if err := os.Remove(workflowPath); err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := Run(context.Background(), Options{RepoRoot: root, SkipNetwork: true})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if st.Dispatch.Present {
+		t.Error("Dispatch.Present = true, want false for a removed workflow")
+	}
+	if st.Dispatch.Drift != DriftRemoved {
+		t.Errorf("Dispatch.Drift = %q, want %q", st.Dispatch.Drift, DriftRemoved)
+	}
+	if !st.Drift {
+		t.Error("Drift = false, want true when the ledger-recorded workflow was removed")
+	}
+}
