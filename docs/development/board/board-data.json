@@ -2371,7 +2371,7 @@
       "cdd"
     ],
     "pri": "P1",
-    "status": "todo",
+    "status": "in-progress",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2380,7 +2380,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-07T10:17:10Z",
-    "updated": "2026-07-10T08:22:17Z",
+    "updated": "2026-07-10T08:28:30Z",
     "url": "https://github.com/usurobor/cnos/issues/628"
   },
   {
@@ -2406,7 +2406,7 @@
   },
   {
     "n": 644,
-    "t": "pc: mechanize planning cell — κ/α produces wave graph, β reviews, γ closes (S6 of #627)",
+    "t": "pc: mechanize planning cell — α produces wave graph from κ/operator input, β reviews, γ closes (S6 of #627)",
     "kind": "feature",
     "areas": [
       "cdd",
@@ -2422,7 +2422,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-09T05:38:32Z",
-    "updated": "2026-07-09T06:17:39Z",
+    "updated": "2026-07-10T08:28:15Z",
     "url": "https://github.com/usurobor/cnos/issues/644"
   },
   {
