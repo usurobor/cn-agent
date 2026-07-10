@@ -2578,16 +2578,16 @@
       "cli"
     ],
     "pri": "P2",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-07-10T01:45:39Z",
-    "updated": "2026-07-10T02:10:07Z",
+    "updated": "2026-07-10T02:10:51Z",
     "url": "https://github.com/usurobor/cnos/issues/656"
   },
   {
@@ -2608,7 +2608,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-10T01:45:46Z",
-    "updated": "2026-07-10T01:45:46Z",
+    "updated": "2026-07-10T02:10:16Z",
     "url": "https://github.com/usurobor/cnos/issues/657"
   },
   {
@@ -2650,7 +2650,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-10T01:46:02Z",
-    "updated": "2026-07-10T01:46:02Z",
+    "updated": "2026-07-10T02:10:29Z",
     "url": "https://github.com/usurobor/cnos/issues/659"
   },
   {
