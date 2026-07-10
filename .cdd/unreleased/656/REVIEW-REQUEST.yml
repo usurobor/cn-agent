@@ -1,0 +1,15 @@
+issue: 656
+protocol: cds
+cycle_branch: cycle/656
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+pr: "https://github.com/usurobor/cnos/pull/663"
+converge_verdict_ref: .cdd/unreleased/656/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's R0 converge
+  verdict (converge, zero blocking findings remaining). All closeout
+  artifacts (gamma-scaffold.md, self-coherence.md, beta-review.md,
+  alpha-closeout.md, beta-closeout.md, gamma-closeout.md) are present on
+  this branch. run_class: first_pass. Three real bugs were found during
+  review (one by alpha's own pre-review self-check, two by an independent
+  adversarial-review subagent) and fixed with regression tests before this
+  request — see beta-review.md for full writeups.
