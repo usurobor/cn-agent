@@ -142,14 +142,30 @@ classification step to fail on a confirmed mismatch).
   elsewhere in this codebase either); the underlying `repostatus.Status`
   struct IS exhaustively tested.
 
+## One more finding, caught by CI rather than review — disclosed for completeness
+
+After this review's findings 1–3 were fixed and the PR (#663) was opened,
+the `Go build & test` CI job failed on a check this review hadn't run
+locally: the dispatch-boundary guard (INVARIANTS.md T-002 / eng/go §2.18 —
+`cmd_*.go` CLI wrapper files must not import `os`/`net/http`/
+`encoding/json`/etc. directly; that logic belongs in the domain package).
+`cli/cmd_repo_status.go` imported `encoding/json` directly for the
+`--json` output path. Fixed by adding `(*repostatus.Status).JSON()` and
+having the CLI wrapper call it instead. This is disclosed here rather than
+silently folded into the commit history because it is exactly the kind of
+gap a code-only review (however adversarial) can miss when it doesn't also
+run every CI-gate script locally — recorded honestly as "caught by CI,
+not by this review."
+
 ## Verdict rationale
 
 All P1/P2/P3 acceptance criteria are met with real (not just fixture-only)
 evidence, including a genuine end-to-end proof that a real `cn repo
 install` output validates against the checked-in CUE schema. Three real
-correctness bugs were found by adversarial review and self-check; all
-three are fixed with targeted regression tests that fail on the
-pre-fix code and pass on the post-fix code (verified by reading the
-diff's test additions against the bug descriptions, not just trusting
-green CI). No known-but-unfixed correctness gap remains in this cycle's
-scope. Converge.
+correctness bugs were found by adversarial review and self-check, plus one
+dispatch-boundary convention violation caught by CI; all four are fixed
+with targeted regression tests/re-verification (the three correctness bugs
+each have a test proven to fail on pre-fix code; the boundary-convention
+fix is verified by the CI job itself plus a local re-scan of every
+`cmd_*.go` file for the same forbidden-import pattern). No known-but-
+unfixed correctness gap remains in this cycle's scope. Converge.

@@ -172,14 +172,15 @@ mock_parity:
 ```yaml
 deliverable_evidence:
   pr: "#663 (cycle/656 -> main)"
-  head_sha: "bbea03673f0eea5bbb7a3f4d4aac0c4dd6180660"
+  head_sha: "c06f93618b9a8ba11719b06b31ae56c08d36ed8a"
   base_sha: "e7bf83ca033c40078abd41f0eb0af3817aceb4cd"
-  commits_beyond_base: 7
+  commits_beyond_base: 9
   closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+  ci: "all 12 required checks pass at this head SHA (gh pr checks 663), including the new repo.state.json schema validation (cnos#656) job and the pre-existing Go build & test job (which caught and required the T-002 dispatch-boundary fix folded into this head)"
 ```
 
 All five deliverable-evidence conditions satisfied: PR #663 exists and
-references #656; PR has 7 commits beyond base; `cycle/656` exists and
+references #656; PR has 9 commits beyond base; `cycle/656` exists and
 differs from base; all six required closeout artifacts present (this
 file included); this block names the PR number and head/base SHAs.
 
