@@ -3,4 +3,14 @@ issue: 628
 protocol: cds
 wake: cds-dispatch
 requested_transition: "status:todo -> status:in-progress"
-run_class: first_pass
+run_class: repair_pass
+round: R1
+round_note: >
+  R0 (6f9c22cd) converged on verdict: iterate, blocking on PR #629's stale
+  base silently deleting cnos#639 content. κ rebased PR #629 onto current
+  main (new head 68797cf9) and re-applied status:todo on 2026-07-10 to
+  re-claim. This R1 round re-verifies the rebase independently and re-runs
+  the independent β review per the cds-dispatch/SKILL.md "Repair re-entry
+  preflight" Step A classification: repair_pass (prior beta-review.md §R0
+  non-converge verdict + prior block-reason bounce comment naming the
+  rejected finding satisfy the check-3 discriminator).
