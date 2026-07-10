@@ -41,7 +41,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -49,6 +48,7 @@ import (
 
 	labeldoctor "github.com/usurobor/cnos/packages/cnos.core/commands/label-doctor"
 	"github.com/usurobor/cnos/src/go/internal/binupdate"
+	"github.com/usurobor/cnos/src/go/internal/dispatchrender"
 	"github.com/usurobor/cnos/src/go/internal/hubsetup"
 	"github.com/usurobor/cnos/src/go/internal/pkg"
 	"github.com/usurobor/cnos/src/go/internal/repostate"
@@ -455,40 +455,23 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 		patSecret = "SIGMA_WORKFLOW_PAT"
 	}
 
-	rendererPath := filepath.Join(pkg.VendorPath(opts.RepoRoot, "cnos.core"), "commands", "install-wake", "cn-install-wake")
-	if _, statErr := os.Stat(rendererPath); statErr != nil {
-		err := fmt.Errorf("dispatch renderer not found at %s (the cnos.core package must be installed for --dispatch cds): %w", rendererPath, statErr)
-		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
-		return err
-	}
-
 	outPath := dispatchWorkflowPath(opts.RepoRoot)
-
-	args := []string{"cds-dispatch", "--out", outPath, "--agent", agent}
+	tier := repostate.TierAgent
 	if opts.Engine {
-		// Engine tier: the only renderer arg beyond the output path and the
-		// concurrency-group agent name is --tier engine. The identity flags
-		// (workflow-pat-secret / bot-name / bot-id) are deliberately not
-		// forwarded — the engine tier binds nothing to them.
-		args = append(args, "--tier", "engine")
-	} else {
-		if opts.WorkflowPatSecret != "" {
-			args = append(args, "--workflow-pat-secret", opts.WorkflowPatSecret)
-		}
-		if opts.BotName != "" {
-			args = append(args, "--bot-name", opts.BotName)
-		}
-		if opts.BotID != "" {
-			args = append(args, "--bot-id", opts.BotID)
-		}
+		tier = repostate.TierEngine
 	}
-
-	cmd := exec.CommandContext(ctx, rendererPath, args...)
-	cmd.Dir = opts.RepoRoot
-	cmd.Stdout = opts.Stdout
-	cmd.Stderr = opts.Stderr
-	if err := cmd.Run(); err != nil {
-		err = fmt.Errorf("render dispatch workflow: %w", err)
+	if err := dispatchrender.Render(ctx, dispatchrender.Options{
+		RepoRoot:          opts.RepoRoot,
+		RendererPackage:   "cnos.core",
+		Tier:              tier,
+		Agent:             agent,
+		WorkflowPatSecret: opts.WorkflowPatSecret,
+		BotName:           opts.BotName,
+		BotID:             opts.BotID,
+		OutPath:           outPath,
+		Stdout:            opts.Stdout,
+		Stderr:            opts.Stderr,
+	}); err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
 		return err
 	}

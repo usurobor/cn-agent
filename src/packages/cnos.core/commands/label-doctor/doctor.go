@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -129,6 +130,14 @@ type Result struct {
 	// does not stop other findings from being attempted — see Doctor's
 	// apply-loop doc comment.
 	Failed []string
+	// LiveLabels is every label name present on Repo at audit time
+	// (sorted), independent of manifest membership. Findings/Audit only
+	// reports canonical (manifest) labels — a caller that additionally
+	// needs "present but not canonical" names (e.g. cnos#656's
+	// `cn repo status`, which reports unknown/extra labels as
+	// informational) computes that by set-differencing LiveLabels
+	// against Manifest.Labels rather than Doctor re-listing them.
+	LiveLabels []string
 }
 
 // Doctor audits opts.Repo's live labels against opts.LabelsPath (or
@@ -178,7 +187,12 @@ func Doctor(ctx context.Context, opts Options) (*Result, error) {
 	}
 
 	findings := Audit(manifest, live)
-	res := &Result{Repo: repo, Manifest: manifest, Findings: findings}
+	liveNames := make([]string, 0, len(liveList))
+	for _, l := range liveList {
+		liveNames = append(liveNames, l.Name)
+	}
+	sort.Strings(liveNames)
+	res := &Result{Repo: repo, Manifest: manifest, Findings: findings, LiveLabels: liveNames}
 
 	renderReport(stdoutOrDiscard(opts.Stdout), repo, findings, opts.DryRun)
 

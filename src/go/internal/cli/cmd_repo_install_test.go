@@ -311,7 +311,7 @@ func TestRepoInstall_Idempotent_NoDiffOnSecondRun(t *testing.T) {
 	}
 	runGit(t, repoDir, "diff", "--exit-code")
 
-	runGit(t, repoDir, "add", ".cn/deps.json", ".cn/deps.lock.json", ".gitignore")
+	runGit(t, repoDir, "add", ".cn/deps.json", ".cn/deps.lock.json", ".cn/repo.state.json", ".gitignore")
 	runGit(t, repoDir, "commit", "-q", "-m", "install cds base layer")
 
 	if _, stderr, err := runRepoInstall(t, args); err != nil {
