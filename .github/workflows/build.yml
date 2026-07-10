@@ -354,6 +354,25 @@ jobs:
       - name: Validate every SKILL.md frontmatter
         run: ./scripts/ci/validate-skill-frontmatter.sh
 
+  repo-state-schema-check:
+    name: repo.state.json schema validation (cnos#656)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # cue-lang/setup-cue: action tag pinned, same as skill-frontmatter-check
+      # above (#301 design constraint); CUE version pinned for deterministic CI.
+      - name: Setup CUE
+        uses: cue-lang/setup-cue@v1.0.1
+        with:
+          version: v0.13.2
+
+      - name: Schema self-test (positive + negative fixtures)
+        run: ./scripts/ci/validate-repo-state.sh --self-test
+
+      - name: Validate this repo's own .cn/repo.state.json (no-op if absent)
+        run: ./scripts/ci/validate-repo-state.sh
+
   cdd-artifact-check:
     name: CDD artifact ledger validation (I6)
     runs-on: ubuntu-latest
