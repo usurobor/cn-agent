@@ -2693,5 +2693,26 @@
     "created": "2026-07-10T01:46:20Z",
     "updated": "2026-07-10T01:46:20Z",
     "url": "https://github.com/usurobor/cnos/issues/661"
+  },
+  {
+    "n": 662,
+    "t": "pc-d0: Cell Classes and Mechanical FSM architecture note (expected output = docs/architecture/CELL-RUNTIME-CLASSES.md; sub of #627)",
+    "kind": "doctrine",
+    "areas": [
+      "cdd",
+      "cds"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-10T02:50:56Z",
+    "updated": "2026-07-10T02:50:56Z",
+    "url": "https://github.com/usurobor/cnos/issues/662"
   }
 ]
