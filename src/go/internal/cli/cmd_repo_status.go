@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/usurobor/cnos/src/go/internal/repostatus"
 )
@@ -173,16 +174,23 @@ func renderStatus(w io.Writer, repoRoot string, st *repostatus.Status) {
 	case repostatus.LabelsOK:
 		fmt.Fprintf(w, "✓ labels: ok\n")
 	case repostatus.LabelsDrifted:
-		fmt.Fprintf(w, "✗ labels: drifted (missing: %v; drifted: %v)\n", st.Labels.Missing, st.Labels.Drifted)
+		var parts []string
+		if len(st.Labels.Missing) > 0 {
+			parts = append(parts, "missing: "+strings.Join(st.Labels.Missing, ", "))
+		}
+		if len(st.Labels.Drifted) > 0 {
+			parts = append(parts, "drifted: "+strings.Join(st.Labels.Drifted, ", "))
+		}
+		fmt.Fprintf(w, "✗ labels: drifted (%s)\n", strings.Join(parts, "; "))
 	default:
 		fmt.Fprintf(w, "○ labels: unknown (could not resolve repo target or GitHub token)\n")
 	}
 	if len(st.Labels.Unknown) > 0 {
-		fmt.Fprintf(w, "  unknown (non-canonical, informational): %v\n", st.Labels.Unknown)
+		fmt.Fprintf(w, "  unknown (non-canonical, informational): %s\n", strings.Join(st.Labels.Unknown, ", "))
 	}
 
 	if len(st.OrphanPackages) > 0 {
-		fmt.Fprintf(w, "⚠ orphan vendored packages: %v\n", st.OrphanPackages)
+		fmt.Fprintf(w, "⚠ orphan vendored packages: %s\n", strings.Join(st.OrphanPackages, ", "))
 	} else {
 		fmt.Fprintf(w, "✓ orphan vendored packages: none\n")
 	}

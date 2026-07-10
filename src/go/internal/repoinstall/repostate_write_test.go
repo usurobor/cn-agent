@@ -126,16 +126,11 @@ func TestRun_WritesRepoState_DispatchWorkflowRenderContract(t *testing.T) {
 		t.Fatalf("dispatch workflow was not rendered: %v", statErr)
 	}
 
-	// The ledger write happens after runDispatchCds returns nil — with no
-	// git remote, label-doctor errors, so repo.state.json is never
-	// reached this run. Directly exercise writeRepoState the same way Run
-	// would, to assert the workflow record shape in isolation.
-	manifest := pkg.Manifest{Schema: manifestSchema, Profile: manifestProfile, Packages: []pkg.ManifestDep{{Name: "cnos.core", Version: "9.9.9"}, {Name: "cnos.cds", Version: "9.9.9"}}}
-	opts := Options{RepoRoot: repoRoot, Dispatch: "cds", Engine: true, Stdout: stdout, Stderr: stderr}
-	if err := writeRepoState(opts, manifest, DefaultRepo, defaultDownloadURL, "9.9.9"); err != nil {
-		t.Fatalf("writeRepoState: %v", err)
-	}
-
+	// The render succeeded even though label-doctor (checked above) then
+	// failed — Run still writes the ledger in this case (the fix this
+	// test exists to pin): losing the ledger because an orthogonal
+	// obligation failed would defeat A3's backfill contract for an
+	// otherwise-successful install.
 	data, err := os.ReadFile(filepath.Join(repoRoot, ".cn", "repo.state.json"))
 	if err != nil {
 		t.Fatalf("read repo.state.json: %v", err)

@@ -321,33 +321,58 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 		return nil, err
 	}
 
+	var dispatchErr error
 	if opts.Dispatch == "cds" {
 		// Base install (above) has already completed and written its
 		// files (AC1/C1) — the dispatch render layers on top of it, not
 		// instead of it. runDispatchCds prints its own identity/PAT-scope
 		// stdout lines and, today, always ends by surfacing the cnos#493
 		// canonical-label gap as a returned error (AC3) — it does not
-		// silently report success while that obligation is unmet.
-		if err := runDispatchCds(ctx, opts); err != nil {
-			return nil, err
+		// silently report success while that obligation is unmet. The
+		// error is captured (not returned immediately) so the ledger
+		// write below still runs when the render itself succeeded and
+		// only the label step failed — see the ledger-write comment.
+		dispatchErr = runDispatchCds(ctx, opts)
+		if dispatchErr == nil {
+			fmt.Fprintf(opts.Stdout, "Dispatch: cds (agent: %s)\n", resolveDispatchAgent(opts.Agent))
 		}
-		fmt.Fprintf(opts.Stdout, "Dispatch: cds (agent: %s)\n", resolveDispatchAgent(opts.Agent))
 	} else {
 		fmt.Fprintf(opts.Stdout, "Dispatch: none (base install only — no .github/workflows/ changes)\n")
 	}
 
-	// cnos#656 P1: write/update the managed-surface ledger last, once
-	// every write this run performs (base install + optional dispatch
-	// render) has already landed on disk — the ledger's managed_files
-	// sha256s are content hashes of what Run actually wrote, read back
-	// rather than recomputed from in-memory state, so the ledger can
-	// never drift from the files it describes even if a future change
-	// alters how one of those files is serialized.
-	if err := writeRepoState(opts, manifest, repo, dlBase, releaseTag); err != nil {
-		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
-		return nil, err
+	// cnos#656 P1: write/update the managed-surface ledger once every
+	// write this run performs has landed on disk. This runs even when
+	// dispatchErr is non-nil, as long as the workflow render itself
+	// produced a file: the ledger describes what IS on disk, and losing
+	// that record because an orthogonal obligation (cnos#493 label
+	// reconciliation) failed would defeat A3's "backfill on next
+	// install" contract for a repo whose base install (and, for
+	// --dispatch cds, workflow render) otherwise succeeded. Skipped only
+	// when --dispatch cds failed before ever writing a workflow file
+	// (the AC2 "no partial render" precondition-failure path, e.g.
+	// missing identity flags) — there is nothing new to describe there,
+	// and hashing a nonexistent file would only produce a confusing
+	// secondary error masking the real one.
+	canWriteLedger := true
+	if opts.Dispatch == "cds" && dispatchErr != nil {
+		if _, statErr := os.Stat(dispatchWorkflowPath(opts.RepoRoot)); statErr != nil {
+			canWriteLedger = false
+		}
 	}
-	fmt.Fprintf(opts.Stdout, "✓ wrote .cn/repo.state.json\n")
+	if canWriteLedger {
+		if err := writeRepoState(opts, manifest, repo, dlBase, releaseTag); err != nil {
+			fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+			if dispatchErr == nil {
+				return nil, err
+			}
+		} else {
+			fmt.Fprintf(opts.Stdout, "✓ wrote .cn/repo.state.json\n")
+		}
+	}
+
+	if dispatchErr != nil {
+		return nil, dispatchErr
+	}
 
 	fmt.Fprintf(opts.Stdout, "\n✓ cn repo install complete.\n")
 

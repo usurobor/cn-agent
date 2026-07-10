@@ -1113,6 +1113,18 @@ func TestRun_DispatchCds_MissingIdentity_FailsEarlyNoPartialWrite(t *testing.T) 
 			t.Errorf("expected base install artifact %s to still exist: %v", f, statErr)
 		}
 	}
+
+	// cnos#656: a precondition failure BEFORE any render (no workflow
+	// file was ever written) must not produce a ledger either — there is
+	// nothing new on disk for it to describe, and writing one here would
+	// have to either omit the promised workflow record or fabricate one
+	// for a file that doesn't exist. Contrast with
+	// TestRun_WritesRepoState_DispatchWorkflowRenderContract, where the
+	// render DID succeed and the ledger IS written despite a later
+	// (label-doctor) failure.
+	if _, statErr := os.Stat(filepath.Join(repoRoot, ".cn", "repo.state.json")); !os.IsNotExist(statErr) {
+		t.Error("no .cn/repo.state.json may exist after a missing-identity failure (no partial render, nothing new to describe)")
+	}
 }
 
 // AC5 negative case (non-vacuous oracle): the leak grep must actually
