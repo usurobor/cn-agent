@@ -86,3 +86,76 @@ independent β can converge.
 **Merge disposition:** per the issue body's explicit framing ("Merge of #629 stays gated: it lands
 only on that β receipt"), this receipt does **not** authorize merging PR #629. Findings posted as
 a PR review on #629 directly.
+
+## §R1 (repair re-entry — `run_class: repair_pass`)
+
+**Repair context:** κ rebased `sigma/cell-runtime-arch-note` onto current `main` (new head
+`68797cf9`, parent `44aa9f84`) and re-applied `status:todo` on 2026-07-10T08:22:17Z, per the
+issue comment naming the resolved staleness. This round re-verifies that repair independently
+(`.cdd/unreleased/628/REPAIR-PLAN.md`) rather than trusting the claim.
+
+### Independent re-verification of the headline finding
+
+```
+$ git merge-base --is-ancestor origin/main origin/sigma/cell-runtime-arch-note
+main IS ancestor of the PR branch (exit 0)          # was: NOT an ancestor, in §R0
+```
+
+Note: `main`'s tip had advanced one further commit (`b33bc822`, an unrelated automated
+`board-map` regeneration of `docs/development/board/{board-data.json,index.html}`) after κ's
+rebase point (`44aa9f84`). The two-dot diff (`main..PR-branch`) therefore shows that incidental
+board-data delta as noise; the **three-dot** (merge-base) diff is the correct comparison and
+shows exactly the 5 originally-intended doctrine files, matching κ's own accounting:
+
+```
+$ git diff --stat origin/main...origin/sigma/cell-runtime-arch-note
+ docs/architecture/CELL-RUNTIME.md                  | 111 +++++++++++++++++++++
+ docs/architecture/README.md                        |   4 +
+ src/packages/cnos.cdd/skills/cdd/CDD.md            |   2 +-
+ src/packages/cnos.cdd/skills/cdd/CELL-KINDS.md     |  43 +++++---
+ .../skills/cdd/COHERENCE-CELL-NORMAL-FORM.md       |   9 +-
+ 5 files changed, 149 insertions(+), 20 deletions(-)
+```
+
+Confirmed present and unchanged on the rebased branch tip (independently, not by trusting the PR
+body): `src/packages/cnos.cdd/skills/cdd/delta/SKILL.md` §9.13 "scope-continuation shape
+(cnos#639)" (grep hit at its expected line); all 8 `.cdd/unreleased/639/*` files (`git ls-tree`);
+all 4 previously-deleted dispatch-substrate files (`cnos-cds-dispatch.yml`, `cds-dispatch/SKILL.md`,
+`cds-dispatch.golden.yml`, `dispatch-protocol/SKILL.md`). **Zero false deletions — the headline
+finding is resolved.**
+
+### Independent re-verification of AC1–AC8 substance
+
+The 5-file diff scope and net change (`+149/-20`) are identical to what §R0 already reviewed
+line-by-line; this round spot-checked (not re-derived) the specific citations §R0's per-AC table
+relies on directly against the rebased branch tip, and all are present verbatim:
+
+- AC1/AC2 — `docs/architecture/README.md`'s new "## Runtime" section citing `CELL-RUNTIME.md`;
+  `COHERENCE-CELL-NORMAL-FORM.md`'s new "Proposed operating-scale realization" paragraph naming
+  WC/PC/CC as classes of the kernel (not a fork) and pointing back to #628.
+- AC3 — `CELL-KINDS.md` banner still reads "Legacy Cell-Kind Taxonomy, now Domain Vocabulary" with
+  the "Demoted (proposed, #628)" status line; `Mandatory terminal learning section` (#614) and
+  `Process self-improvement loop (cnos#640)` (#640) both still present, untouched.
+- AC4 — `COHERENCE-CELL-NORMAL-FORM.md`'s `V` diff still reads "`PASS` or `FAIL`" with the
+  explicit "`WARN` is **not** a verdict value in the shipped schema" sentence; `schemas/` still
+  untouched in the three-dot diff.
+- AC5 — `CELL-RUNTIME.md` still present (111 lines) and still cross-linked from README + CCNF +
+  CELL-KINDS.
+- AC6/AC7/AC8 — unaffected by the rebase (no diff-scope change); §R0's findings carry over
+  unmodified, including the non-blocking `human_gate`/`waiting_human_gate` terminology nit (still
+  present, still non-blocking).
+
+No new content drift, no additional deletions beyond the 5-file intended scope. §R0's per-AC table
+is not re-derived from scratch — REPAIR-PLAN.md's scope-discipline note applies — it is confirmed
+still accurate against the rebased tip.
+
+### Verdict
+
+**`verdict: converge`**
+
+The single dispositive blocker from §R0 (silent deletion of landed cnos#639 content via a stale
+base) is resolved by κ's rebase, independently re-verified above. AC1–AC8 substance, already
+independently sound per §R0, is confirmed unchanged. The non-blocking `human_gate` terminology nit
+from §R0 remains open as a non-blocking follow-up, not a convergence condition. This receipt
+authorizes merging PR #629 per the issue body's Path-A framing ("Merge of #629 stays gated: it
+lands only on that β receipt").

@@ -20,3 +20,13 @@ is correct"; that assertion is β's (`beta-review.md`), verified independently.
 
 Ready for independent β review as of `cycle/628` R0 (this commit). See `beta-review.md §R0` for
 the independent verdict.
+
+## R1 — repair re-entry (`run_class: repair_pass`)
+
+α-matter reference updated: PR #629's branch head advanced to `68797cf9` (κ's rebase onto current
+`main`, resolving `beta-review.md §R0`'s dispositive headline finding — the branch had silently
+deleted landed cnos#639 content via a stale base). See `REPAIR-PLAN.md` for the rejected-finding →
+planned-repair mapping and `beta-review.md §R1` for the independent re-verification and converge
+verdict. This document's pointer nature (§ above) is unchanged by the repair round: the assertion
+that the rebase actually resolved the finding is β's, verified independently in `beta-review.md
+§R1`, not asserted here.
