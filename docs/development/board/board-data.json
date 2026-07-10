@@ -2610,5 +2610,88 @@
     "created": "2026-07-10T01:45:46Z",
     "updated": "2026-07-10T01:45:46Z",
     "url": "https://github.com/usurobor/cnos/issues/657"
+  },
+  {
+    "n": 658,
+    "t": "repo lifecycle Phase 3 — cn repo update (move desired state forward)",
+    "kind": "",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-10T01:45:55Z",
+    "updated": "2026-07-10T01:45:55Z",
+    "url": "https://github.com/usurobor/cnos/issues/658"
+  },
+  {
+    "n": 659,
+    "t": "repo lifecycle Phase 4 — cn repo repair + cn repo prune",
+    "kind": "",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-10T01:46:02Z",
+    "updated": "2026-07-10T01:46:02Z",
+    "url": "https://github.com/usurobor/cnos/issues/659"
+  },
+  {
+    "n": 660,
+    "t": "repo lifecycle Phase 5 — cn repo uninstall (conservative, ledger-driven)",
+    "kind": "",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-10T01:46:15Z",
+    "updated": "2026-07-10T01:46:15Z",
+    "url": "https://github.com/usurobor/cnos/issues/660"
+  },
+  {
+    "n": 661,
+    "t": "repo lifecycle Phase 6 — docs: lifecycle section in INSTALL-CDS.md",
+    "kind": "process",
+    "areas": [
+      "cds"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-10T01:46:20Z",
+    "updated": "2026-07-10T01:46:20Z",
+    "url": "https://github.com/usurobor/cnos/issues/661"
   }
 ]
