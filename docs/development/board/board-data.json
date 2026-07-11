@@ -2734,5 +2734,25 @@
     "created": "2026-07-11T06:48:13Z",
     "updated": "2026-07-11T06:48:13Z",
     "url": "https://github.com/usurobor/cnos/issues/665"
+  },
+  {
+    "n": 666,
+    "t": "cdd/spec: a skill for authoring normative destination-state specifications (distinct from design / issue / document)",
+    "kind": "doctrine",
+    "areas": [
+      "cdd"
+    ],
+    "pri": "none",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-11T10:36:49Z",
+    "updated": "2026-07-11T10:36:49Z",
+    "url": "https://github.com/usurobor/cnos/issues/666"
   }
 ]
