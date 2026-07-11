@@ -2364,26 +2364,6 @@
     "url": "https://github.com/usurobor/cnos/issues/627"
   },
   {
-    "n": 628,
-    "t": "S1 (doctrine): supersede cell-kind ontology with the CCNF-kernel + WC/PC/CC deployment classes; settle CM↔V (sub of #627)",
-    "kind": "doctrine",
-    "areas": [
-      "cdd"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-07T10:17:10Z",
-    "updated": "2026-07-10T08:34:56Z",
-    "url": "https://github.com/usurobor/cnos/issues/628"
-  },
-  {
     "n": 642,
     "t": "process: give ε a concrete detect-recurrence pass over closeout learning: blocks",
     "kind": "process",
