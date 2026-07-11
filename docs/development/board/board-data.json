@@ -2714,5 +2714,45 @@
     "created": "2026-07-10T02:50:56Z",
     "updated": "2026-07-10T08:26:39Z",
     "url": "https://github.com/usurobor/cnos/issues/662"
+  },
+  {
+    "n": 664,
+    "t": "cds-dispatch: separate bot identity for dispatch-wake execution — structurally enforce the α≠β firebreak on same-account review",
+    "kind": "feature",
+    "areas": [
+      "cds"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-11T06:47:52Z",
+    "updated": "2026-07-11T06:47:52Z",
+    "url": "https://github.com/usurobor/cnos/issues/664"
+  },
+  {
+    "n": 665,
+    "t": "cds-dispatch FSM: scope the run_active guard to cds-dispatch runs, not any branch workflow",
+    "kind": "feature",
+    "areas": [
+      "cds"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-11T06:48:13Z",
+    "updated": "2026-07-11T06:48:13Z",
+    "url": "https://github.com/usurobor/cnos/issues/665"
   }
 ]
