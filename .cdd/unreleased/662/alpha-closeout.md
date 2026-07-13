@@ -1,7 +1,7 @@
 # α closeout — cnos#662 (PC-D0: Cell Classes and Mechanical FSM)
 
 **Cell class:** planning (PC), PC-D0 mode · **matter_domain:** doctrine · **doctrine_affecting:** true
-**Run class:** `first_pass` (single R0; δ-resumed from checkpointed matter, see below)
+**Run class:** `first_pass` (R0 → R1; δ-resumed from checkpointed matter, see below)
 **Matter produced:** exactly one normative planning artifact — `docs/architecture/CELL-RUNTIME-CLASSES.md` (Status: **Draft**).
 
 ## What α produced
@@ -12,7 +12,14 @@
 
 ## AC + decision coverage
 
-Full per-AC walk (cell-level AC1–AC7, note-level AC1–AC8) and per-decision walk (D1–D10) is in `self-coherence.md §R0`, with file/section citations. Every AC and decision holds against the written file. β independently re-walked the same oracle and converged (`beta-review.md`, verdict: converge).
+Full per-AC walk (cell-level AC1–AC7, note-level AC1–AC8) and per-decision walk (D1–D10) is in `self-coherence.md §R0` (with §R1 repair note), with file/section citations. β re-walked the same oracle across two independent passes; the reconciled **R0 verdict was `iterate`** (finding F1 = AC5/F4 protocol-package State-A truth absent; F2 = a §9 citation nit), and **β converged at R1** after α's repair (`beta-review.md`).
+
+## R1 repair (against β R0 findings)
+
+- **F1 (AC5/F4):** added the "Protocol Package state truth (F4)" paragraph to §11.2 — `cnos.cds` shipped (#403), `cnos.cdr` shipped v0.1 (#376), `cnos.cdw` illustrative-only; every worked example uses `protocol: cds`. The R0 spec had omitted the protocol-package half of AC5 (only the `cn cell`/#500/#504 half was present); the omission was caught by a concurrent independent β pass (preserved at `d66d761b`) and is now closed.
+- **F2 (§9):** re-cited `doctrine_affecting: true` to the operator-authorization comment's contract block (§2's snippet quotes only `matter_domain: doctrine`).
+
+Both repairs are verbatim/mechanical fixes of the enumerated findings; no other AC changed.
 
 ## δ-resume adjustments (R0.1)
 
@@ -32,4 +39,4 @@ No true contradiction was found among D1–D10, the issue draft, and shipped sta
 
 No Go/runtime/schema/FSM code; no wake changes; no child issues filed or dispatched; no PC-Wave; no child `status:todo` labels; no separate PC/CC provider; no CCNF role-semantics change. The only filesystem writes are the spec file and this cell's own `.cdd/unreleased/662/` artifacts (confirmed by β via `git diff --stat`).
 
-**α → β handoff:** review-ready. β converged at R0.
+**α → β handoff:** review-ready. β R0 iterate → α R1 repair → β converged at R1.

@@ -197,7 +197,7 @@ Formally: `Jₖ := CC.evaluate(I₀, Stateₖ, Receiptsₖ)`; PC/WC produce on `
 
 Human authority sits at **irreversible or scope-expanding boundaries**, not between internal phases:
 
-**Default gates (always human):** intent acceptance · wave authorization (first dispatch of a wave, not every child in it) · production/release boundary · final acceptance of doctrine-affecting or otherwise system-doctrine-changing matter · explicit hold/block/escalation resolution. The doctrine-affecting condition fires off a **typed contract flag** (`matter_domain: doctrine` / `doctrine_affecting: true`, as #662's own contract carries — §2) — mechanical systems consume declarations, they never classify prose to decide whether a gate applies.
+**Default gates (always human):** intent acceptance · wave authorization (first dispatch of a wave, not every child in it) · production/release boundary · final acceptance of doctrine-affecting or otherwise system-doctrine-changing matter · explicit hold/block/escalation resolution. The doctrine-affecting condition fires off a **typed contract flag** (`matter_domain: doctrine` / `doctrine_affecting: true`, as #662's own contract carries — the full flag pair is in the operator-authorization comment's contract block, 2026-07-13; §2's worked snippet quotes the `matter_domain: doctrine` half) — mechanical systems consume declarations, they never classify prose to decide whether a gate applies.
 
 **No default gate between:** `CC → requested PC/WC` · PC's internal α/β/γ · WC's internal α/β/γ · safe mechanical recovery (stale-claim resume, repair-dispatch re-entry). A wave, once operator-authorized at its boundary, may pre-authorize its own dependency-respecting internal nodes — `operator → authorize wave → wave executable → FSM routes children by dependencies without further operator intervention`, re-entering only at a named boundary (human gate, blocked, review, release). **The operator must not become the scheduler for every child** — that failure mode is exactly what wave-boundary (not per-child) authorization exists to prevent.
 
@@ -251,6 +251,8 @@ cn issues dispatch                            Authorize one design-first issue: 
 
 **Review-return (#500, closed/shipped):** `status:review → status:changes → status:in-progress → status:review` — the operator-iterate path is live.
 **Stale-claim recovery (#504, open):** genuinely open, tracked as "Sub C of #583." The dead-run reconciliation rules in §11.1 (`cn issues fsm scan`) exist and cover the mechanical sweep; #504's fuller resume-or-escalate design remains unshipped.
+
+**Protocol Package state truth (F4).** The draft's §4.4 "Protocol Package" term — the package that owns concrete protocol semantics for a matter domain — has an uneven shipped status that this note's own State-A grounding must carry, not just the `cn cell`/#500/#504 material above: **`cnos.cds`** (software) is shipped (#403); **`cnos.cdr`** (research) is shipped at v0.1 (#376); **`cnos.cdw`** (writing) is **illustrative only** — `CDD.md` v4.0.0 names `cdo`/`cdh` as *future* domain bindings, and `cdw` is not a shipped package today. Every worked example in this note that names a protocol package (§2's envelope, §3's class contracts) uses `protocol: cds` — the one shipped protocol this note's own bootstrap instance (#662) runs under; `cdr` and `cdw` are named here only for State-A completeness, not as protocols this note's contracts were validated against.
 
 ### 11.3 Specified (this note) — promoting `CellKind` from observation to evaluation
 

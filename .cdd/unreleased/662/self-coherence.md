@@ -52,6 +52,15 @@ The R0 matter above was committed by an earlier firing of this interactive boots
 
 No AC-level claim in §R0 changed; these are directive-alignment and internal-consistency fixes on the same matter. Every §R0 AC citation above still holds against the adjusted file.
 
+## §R1 — α repair against β R0 findings
+
+β's reconciled R0 verdict was **iterate** (two findings; see `beta-review.md`). α repaired both:
+
+- **F1 (AC5 / F4) — Protocol-Package State-A truth was absent.** The R0 spec carried the shipped `cn cell`/#500/#504 State-A truth but omitted the protocol-package half AC5/F4 explicitly requires (CDS shipped #403 / CDR shipped v0.1 #376 / CDW illustrative). My §R0 AC5 walk above had narrowed AC5 to the command-surface + #500/#504 half without flagging the omission — that narrowing was itself an overclaim, and I withdraw it. **Repair:** §11.2 now carries a "Protocol Package state truth (F4)" paragraph naming `cnos.cds` shipped (#403), `cnos.cdr` shipped v0.1 (#376), `cnos.cdw` illustrative-only (`CDD.md` v4.0.0 names `cdo`/`cdh` as future bindings), and that every worked example uses `protocol: cds`. AC5 now fully met (both halves).
+- **F2 (§9 citation) — `doctrine_affecting: true` was mis-cited to §2.** §2's worked snippet quotes only `matter_domain: doctrine`; the full flag pair lives in the operator-authorization comment's contract block. **Repair:** §9 now cites that comment's contract block for the `doctrine_affecting` half.
+
+No other AC/decision citation in §R0 changed; the R1 delta is scoped to F1/F2. AC5 is now satisfied in full.
+
 ## Review-ready signal
 
-`docs/architecture/CELL-RUNTIME-CLASSES.md` is written, self-verified against every cell-level AC1–AC7, every note-level AC1–AC8, and every D1–D10 decision above, and adjusted per §R0.1 to the binding directive. **This cell is ready for β independent review.**
+`docs/architecture/CELL-RUNTIME-CLASSES.md` is written, self-verified against every cell-level AC1–AC7, every note-level AC1–AC8, and every D1–D10 decision above, adjusted per §R0.1 to the binding directive, and repaired per §R1 against β's R0 findings. β converged at R1. **The cell is ready for closeout.**

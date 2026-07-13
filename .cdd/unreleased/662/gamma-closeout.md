@@ -1,19 +1,23 @@
 # γ closeout — cnos#662 (PC-D0 planning receipt)
 
 **Cell:** cnos#662 — PC-D0 Planning Cell · **class:** planning · **mode:** D0 · **matter_domain:** doctrine · **doctrine_affecting:** true
-**Wake:** `cds-dispatch` (δ wake-invoked mode) · **run_class:** `first_pass` (single R0 cycle; δ-resumed from checkpointed matter)
+**Wake:** `cds-dispatch` (δ wake-invoked mode) · **run_class:** `first_pass` (R0 → R1; δ-resumed from checkpointed matter)
 **Matter:** one normative planning artifact — `docs/architecture/CELL-RUNTIME-CLASSES.md` (Status: **Draft**).
-**β verdict:** `converge` (R0, 0 blocking findings).
+**β verdict:** R0 `iterate` (F1 = AC5/F4 protocol-package State-A truth absent; F2 = §9 citation nit) → **R1 `converge`** after α repair.
 
 ## Cycle outcome
 
-A Planning Cell in PC-D0 mode formalized the already-pinned Cell-Classes-and-Mechanical-FSM architecture into `docs/architecture/CELL-RUNTIME-CLASSES.md`. α authored the spec; a separate β activation independently reviewed it and converged; γ closes with this planning receipt. The cell produced exactly one architecture note and dispatched, filed, or labeled nothing downstream.
+A Planning Cell in PC-D0 mode formalized the already-pinned Cell-Classes-and-Mechanical-FSM architecture into `docs/architecture/CELL-RUNTIME-CLASSES.md`. α authored the spec; two independent β passes (bootstrap concurrency) reviewed it, the reconciled R0 verdict was `iterate` on an AC5/F4 gap, α repaired, and β converged at R1; γ closes with this planning receipt. The cell produced exactly one architecture note and dispatched, filed, or labeled nothing downstream.
 
-- **α matter:** the spec (Status: Draft), carrying operator-pinned decisions D1–D10 as settled input.
-- **α self-check:** `self-coherence.md` (§R0 AC/decision walk + §R0.1 δ-resume adjustments).
+- **α matter:** the spec (Status: Draft), carrying operator-pinned decisions D1–D10 as settled input; R1 added the §11.2 Protocol-Package State-A paragraph and fixed a §9 citation.
+- **α self-check:** `self-coherence.md` (§R0 AC/decision walk + §R0.1 δ-resume adjustments + §R1 repair note).
 - **α closeout:** `alpha-closeout.md`.
-- **β review:** `beta-review.md` (verdict: converge; six-dimension attestation A–F).
+- **β review:** `beta-review.md` (reconciled over two independent passes; R0 iterate → R1 converge; six-dimension attestation A–F; concurrent β-pass-B preserved at `d66d761b`).
 - **β closeout:** `beta-closeout.md`.
+
+## Coherence-loop integrity note (the R0→R1 that mattered)
+
+The AC5/F4 gap is the receipt's most load-bearing honesty item. The alpha-R0 spec carried the shipped-command State-A truth but omitted the protocol-package State-A truth (CDR shipped #376 / CDW illustrative) that AC5 explicitly requires. The **separate β activation the δ driver spawned returned `converge` and missed it** (filed it as a non-blocking under-claim); a **concurrent independent β pass caught it as AC5 FAIL** and drove the iterate. This is recorded, not smoothed over: it is direct empirical support for #664 (hosting-layer α≠β/β-independence matters — a single lenient pass was rescued only by a second independent one), and it is exactly the kind of coherence-restoring correction a Cohering Cell would later warrant. R1 convergence on the two enumerated findings is δ-attested (verbatim/mechanical repairs), disclosed as a bootstrap-β limitation.
 
 ## Bootstrap calibration (REQUIRED — recorded explicitly per the operator authorization)
 
@@ -35,7 +39,7 @@ deliverable_evidence:
   pr: "cycle/662 -> main (Refs #662); PR number recorded in the status:review wake comment"
   head_sha: "branch HEAD at push (exact SHA recorded in the status:review wake comment)"
   base_sha: "5ca785cd39f3913bbc31997cb9c2d2469cac21ae"   # merge-base with origin/main
-  commits_beyond_base: 5   # claim-request, gamma-scaffold+R0 self-coherence, alpha R0 spec, alpha R0.1 resume-adjust, closeouts
+  commits_beyond_base: ">0 (claim-request → gamma-scaffold+R0 self-coherence → alpha R0 spec → concurrent beta R0 + finalize → alpha R0.1 → gamma closeout → reconcile-merge → R1 repair; exact HEAD in the status:review wake comment)"
   closeout_artifacts: [CLAIM-REQUEST.yml, gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
 ```
 
