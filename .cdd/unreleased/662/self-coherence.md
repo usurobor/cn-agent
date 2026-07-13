@@ -1,0 +1,47 @@
+# self-coherence — cnos#662 (α, R0)
+
+## §R0 — AC and pinned-decision walk
+
+Target artifact: `docs/architecture/CELL-RUNTIME-CLASSES.md` (new file, only file besides this one written by this cell).
+
+### Cell-level ACs (issue #662 body, "Acceptance criteria")
+
+- **AC1** — Note formalized at `docs/architecture/CELL-RUNTIME-CLASSES.md`, sibling of `CELL-RUNTIME.md` (status header explicitly parallels it: "Proposed architecture note (realization layer). Not ratified."). Note's own AC1–AC8 (draft §20) held — see the note-level walk below.
+- **AC2** — §4 "CC ↔ ε — settled (D3, F1)" carries the operator's reconciliation wording verbatim (the fenced block matches the issue's §CC↔ε reconciliation text word-for-word) and states "**#530 owns the typed scope-lift / ε-projection artifact.** This note depends on that lineage; it does not redefine it, and it files no work against #530."
+- **AC3** — §6 "`cell_class` as an FSM dimension (D6, F2)" pins `cell_class` as post-claim routing/authority metadata; states dispatch readiness stays solely `dispatch:cell + protocol:{P} + status:todo` (the shipped #643 rule); states contract-incompleteness routes to `status:blocked` + `degraded_reason: cell_contract_incomplete`. No contradiction asserted with #640/#643; §2 also states this ("Labels vs typed contract").
+- **AC4** — §8 "κ remains outside the cell (D2, F3)" states plainly "κ is a **control-plane** slot, not a cell role... κ must not author the specification as α" and the actor-collapse declaration rule. No section of the note implies κ=α; §16's authoring note explicitly narrates κ (issue author) and α (this file's author) as distinct cell instances.
+- **AC5** — §11 "FSM — State A (shipped) vs specified vs illustrative-future (D10)" is the dedicated three-way partition: §11.1–§11.2 ground State A in `transitions.json` and the built `cn` binary (`cn cell return/resume/finalize`; `cn issues fsm evaluate/scan`; `cn issues dispatch`); §11.2 states #500 review-return is "closed/shipped" and #504 stale-claim recovery is "genuinely open"; §11.5 explicitly labels `cn cell pulse/run` etc. as "Illustrative-future" and "not shipped."
+- **AC6** — §14 "Reconciliation map" is the recorded cohering pass; its rows explicitly cover #627, #628, #530, #500, #504, #644, #654, #583, #584, the κ boundary, and the "Go mechanical-orchestration target" row (partially shipped/partially specified, citing exactly which parts are which).
+- **AC7** — §15 "Non-goals" states explicitly: "filing, labeling, or dispatching any child issue as a side effect of writing this note (§3.2's own guard applies reflexively to the cell that produced this note)." No `gh issue create`, `gh issue edit`, or label mutation was run by this cell; the only filesystem writes are this file and the architecture note.
+
+### Note-level ACs (draft §20, must hold in the formalized doc)
+
+- **AC1** — §1 "Relationship to CELL-RUNTIME.md and the kernel" table + D1 restated: WC/PC/CC are output-telos classes of one CCNF kernel, confirmed not re-derived.
+- **AC2** — §3's per-class sections and §6 both distinguish artifact *shape* from cell *class* (e.g. §3.3 "Architecture note ... PC or CC" ambiguity is resolved by telos, not by filename) — no section treats an artifact name as a cell-class identifier.
+- **AC3** — §3.1/§3.2/§3.3 give WC/PC/CC each a distinct, example-backed contract (§3.2 includes #662's own worked `cell.class: planning` YAML instance via §2; §3.3 gives the CC result shape and disposition vocabulary).
+- **AC4** — §7 "The Coherence Loop" states the CC→PC→CC→WC loop formally (`Jₖ := CC.evaluate(...)`) and names both anti-patterns from `CELL-RUNTIME.md`.
+- **AC5** — §6 and §11.3 name the FSM extension point (`cell_class` promoted from the shipped `FactSnapshot.CellKind` observation seam to an evaluated dimension) explicitly, citing `TestSeam_CellKindNotEnforced` as the current lock this note's extension targets.
+- **AC6** — §11.1 verifies against the actual shipped `transitions.json` (declared states `ready, todo, in-progress, review, changes`; `blocked` as a target_state, not a declared state; the full shipped guard vocabulary and the request-marker-file table) rather than restating the draft's illustrative §11 table as shipped. §11.6-equivalent (folded into §11.5) explicitly relabels that draft table as illustrative-future.
+- **AC7** — §12 "Mechanical guards against role/class collapse" lists all eight guards from the draft (PC self-dispatch, CC self-implementation, WC self-contract-mutation, κ editing cell-owned artifacts, α/β/γ/δ firebreak) and ties each to a `V` predicate or CCNF firebreak citation rather than leaving them narrative-only.
+- **AC8** — §11's three explicit subsection groups (11.1–11.2 shipped; 11.3–11.4 specified; 11.5 illustrative-future) are State A and State B made explicit, plus a third "specified-but-unshipped" middle category the draft's binary State-A/State-B framing didn't separately name (needed because §11.3/§11.4 are neither shipped today nor merely illustrative — they are this note's own specification).
+
+### D1–D10 (operator authorization comment, 2026-07-13T19:14:52Z)
+
+- **D1** — §1 states it directly under a "**D1 (one CCNF kernel)**" heading; confirmed, not re-derived.
+- **D2** — §8 "κ remains outside the cell (D2, F3)" carries this as its section title and body.
+- **D3** — §4 carries the CC↔ε wording verbatim, as required.
+- **D4** — §10 "Wake topology (D4)" states v0 = one generic runner per protocol, no separate PC/CC provider, CC runs as a claimed cell in v0, scheduled pulses are a future extension — matching D4's wording point for point.
+- **D5** — §9 "Human gates (D5)" reproduces the default-gate list, the no-default-gate list, the doctrine-affecting typed-flag mechanism, and the wave-boundary-not-per-child authorization granularity, plus the "operator must not become the scheduler for every child" line verbatim in substance.
+- **D6** — §6 states the `(status, protocol, cell_class)` triple, the label-vs-contract split, and that dispatch readiness remains solely label-gated.
+- **D7** — §11.4 states "CC owns the wave-state judgment; the mechanical FSM owns the wave-state transition" as a named subsection heading and body, including the typed `wave_transition_request` shape.
+- **D8** — §5 "Class-specific V" table reproduces the common floor plus WC/PC/CC additions exactly as pinned, including the two mechanically-checkable "structural invariant" predicates (no child auto-dispatched; no implementation surface modified).
+- **D9** — §13 "Schema-first destination (D9)" names all four schemas in the pinned order and states explicitly that none is implemented; §2 and §11.4 give worked-but-unimplemented shapes for two of them.
+- **D10** — §11's entire three-way structure is the D10 execution; §10 and §16 (authoring note) additionally restate the bootstrap-calibration requirement — that #662 itself proves a planning contract can run on the generic runner, not that class-aware routing already ships.
+
+## Hard-STOP check
+
+No irreconcilable contradiction was found between D1–D10, the issue draft, and shipped state. The one nuance requiring explicit exposition rather than a flat restatement — the shipped FSM's declared `states` array omitting `blocked` while `blocked` is still a reachable `target_state` — is resolved by exposition in §11.1, not by inventing a resolution; it is not a contradiction between the draft and shipped reality, only an imprecision in the draft's shorthand that shipped-state grounding corrects.
+
+## Review-ready signal
+
+`docs/architecture/CELL-RUNTIME-CLASSES.md` is written, self-verified against every cell-level AC1–AC7, every note-level AC1–AC8, and every D1–D10 decision above. **This cell is ready for β independent review.**
