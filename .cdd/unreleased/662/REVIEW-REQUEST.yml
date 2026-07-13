@@ -1,0 +1,23 @@
+schema: cn.cds.review-request.v1
+issue: 662
+cell_class: planning
+mode: PC-D0
+protocol: cds
+requests: in-progress -> review
+requested_by: cds-dispatch (delta wake-invoked mode; interactive cn-sigma substrate)
+beta_verdict: converge
+beta_round: R0
+deliverable:
+  matter: docs/architecture/CELL-RUNTIME-CLASSES.md
+  closeout_artifacts:
+    - CLAIM-REQUEST.yml
+    - gamma-scaffold.md
+    - self-coherence.md
+    - beta-review.md
+    - alpha-closeout.md
+    - beta-closeout.md
+    - gamma-closeout.md
+note: >
+  Bootstrap PC-D0 realization on the shipped generic CDS/CCNF runner (no cell_class-aware
+  routing). No operator-gate hold raised. Merge is gated on a separate CC ratification per
+  the operator authorization exit sequence; this request advances the cell to status:review only.
