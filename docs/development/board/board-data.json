@@ -2683,16 +2683,16 @@
       "cds"
     ],
     "pri": "P1",
-    "status": "ready",
-    "dispatch": false,
-    "protocol": "",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-07-10T02:50:56Z",
-    "updated": "2026-07-13T18:21:51Z",
+    "updated": "2026-07-13T19:15:03Z",
     "url": "https://github.com/usurobor/cnos/issues/662"
   },
   {
