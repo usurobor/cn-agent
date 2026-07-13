@@ -252,6 +252,8 @@ cn issues dispatch                            Authorize one design-first issue: 
 **Review-return (#500, closed/shipped):** `status:review → status:changes → status:in-progress → status:review` — the operator-iterate path is live.
 **Stale-claim recovery (#504, open):** genuinely open, tracked as "Sub C of #583." The dead-run reconciliation rules in §11.1 (`cn issues fsm scan`) exist and cover the mechanical sweep; #504's fuller resume-or-escalate design remains unshipped.
 
+**Protocol Package state truth (F4).** The draft's §4.4 "Protocol Package" term — the package that owns concrete protocol semantics for a matter domain — has an uneven shipped status that this note's own State-A grounding must carry, not just the `cn cell`/#500/#504 material above: **`cnos.cds`** (software) is shipped (#403); **`cnos.cdr`** (research) is shipped at v0.1 (#376); **`cnos.cdw`** (writing) is **illustrative only** — `CDD.md` v4.0.0 names `cdo`/`cdh` as *future* domain bindings, and `cdw` is not a shipped package today. Every worked example in this note that names a protocol package (§2's envelope, §3's class contracts) uses `protocol: cds` — the one shipped protocol this note's own bootstrap instance (#662) runs under; `cdr` and `cdw` are named here only for State-A completeness, not as protocols this note's contracts were validated against.
+
 ### 11.3 Specified (this note) — promoting `CellKind` from observation to evaluation
 
 §6 above is this note's own specified extension: `cell_class` becomes an *evaluated* FSM dimension, not merely an observed one. This is not shipped; it is what `TestSeam_CellKindNotEnforced` currently locks as future work.
