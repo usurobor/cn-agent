@@ -1,6 +1,6 @@
 # Cell Runtime Classes — Contracts, FSM, and Routing
 
-**Status:** Proposed architecture note (realization layer). Not ratified. Formalized by a Planning Cell in PC-D0 mode (cnos#662), under the operator-authorization comment of 2026-07-13T19:14:52Z. Ratification is **not** this cell's job: the exit sequence is a separate Cohering Cell (CC) review, then operator-final-read, then merge, then a separate CDD `doctrine` cell — see §16.
+**Status:** Draft (realization layer). Not ratified. Formalized by a Planning Cell in PC-D0 mode (cnos#662), under the operator-authorization comment of 2026-07-13T19:14:52Z. Ratification is **not** this cell's job: the exit sequence is a separate Cohering Cell (CC) review, then operator-final-read, then merge, then a separate CDD `doctrine` cell — see §16.
 **Owns:** How the WC/PC/CC output-telos classes named by `docs/architecture/CELL-RUNTIME.md` (#628) route through a common cell contract envelope, class-specific `V` predicates, the CC↔ε lineage, the cell FSM and the (not-yet-shipped) wave FSM, the command surface, and the human-gate/wake-topology policy that makes class-aware dispatch mechanical.
 **Does-not-own:** The kernel algorithm (`COHERENCE-CELL-NORMAL-FORM.md`, #370), the WC/PC/CC class definitions themselves (`CELL-RUNTIME.md`, #628 — cited throughout, never restated), the receipt rule and four surfaces (`COHERENCE-CELL.md`), the CUE schema implementation (`schemas/cdd/`), or any Go runtime/FSM code. This note **names** schemas and FSM extensions (D9); it does not implement them.
 
@@ -217,7 +217,7 @@ Per **D10**, this section is deliberately three-way partitioned. Nothing below p
 
 ### 11.1 State A — shipped cell FSM (`src/packages/cnos.cds/skills/cds/fsm/transitions.json`)
 
-The actual shipped FSM is data-driven, package-owned, and evaluated by a generic engine (`src/packages/cnos.issues/commands/issues-fsm/table.go`) that never hardcodes a CDS state name. It is **not** the illustrative table `CELL-RUNTIME.md`'s embedded draft sketched (§11.6 corrects that table explicitly).
+The actual shipped FSM is data-driven, package-owned, and evaluated by a generic engine (`src/packages/cnos.issues/commands/issues-fsm/table.go`) that never hardcodes a CDS state name. It is **not** the illustrative table `CELL-RUNTIME.md`'s embedded draft sketched — this subsection grounds the actual shipped table, and §11.5 relabels that draft's simplified FSM-events sketch as illustrative-future.
 
 **Shipped declared states:** `ready, todo, in-progress, review, changes`. **`blocked` is reachable but not a declared top-level state** — it is a `target_state` from `in-progress` when `block_request_present` is true (a nuance load-bearing enough to name: the states array is `["ready","todo","in-progress","review","changes"]`; `blocked` is a transition target, not an enum member, in the shipped table today).
 
@@ -236,7 +236,7 @@ Also shipped: `changes → todo` repair re-entry, gated on `repair_contract_pres
 
 ### 11.2 State A — shipped command surface
 
-Confirmed directly against the built binary (`cn --help`, this cycle):
+Confirmed against the shipped command definitions in `src/go/internal/cli` and `src/go/internal/cell` (`cmd_cell.go`, `cmd_issues_dispatch.go`, `cmd_issues_fsm*.go`, and the `cmd_help_test.go` command-registry assertions), this cycle:
 
 ```text
 cn cell return    Deliver operator verdict; status:review → status:changes on iterate/reject
@@ -247,7 +247,7 @@ cn issues fsm scan --protocol P [--apply]    Sweep dead in-progress cells for re
 cn issues dispatch                            Authorize one design-first issue: status:ready → status:todo
 ```
 
-`cn issues dispatch` is the shipped mechanism behind the "authorize dispatch: `ready → todo`" event the note's illustrative FSM-events sketch names (§11.6) — it is not illustrative, it ships today. `cn cell return/resume/finalize` are shipped (#500/#593); **`run`, `pulse`, `measure`, `bundle`, `act` are not shipped commands** (§11.6).
+`cn issues dispatch` is the shipped mechanism behind the "authorize dispatch: `ready → todo`" event the note's illustrative FSM-events sketch names (§11.5) — it is not illustrative, it ships today. `cn cell return/resume/finalize` are shipped (#500/#593); **`run`, `pulse`, `measure`, `bundle`, `act` are not shipped commands** (§11.5).
 
 **Review-return (#500, closed/shipped):** `status:review → status:changes → status:in-progress → status:review` — the operator-iterate path is live.
 **Stale-claim recovery (#504, open):** genuinely open, tracked as "Sub C of #583." The dead-run reconciliation rules in §11.1 (`cn issues fsm scan`) exist and cover the mechanical sweep; #504's fuller resume-or-escalate design remains unshipped.
@@ -361,4 +361,4 @@ Most of the embedded draft's original open-question list (its own §19) is resol
 
 ---
 
-*Authoring note.* Formalized under cnos#662, a Planning Cell in PC-D0 mode, dispatched by the `cds-dispatch` wake in δ wake-invoked mode (bootstrap realization on the currently shipped generic CDS/CCNF runner — §10, §11 — not evidence that `cell_class`-aware routing already ships). α reconciled the issue's embedded κ-corrected draft (§1–§20 of #662) against: the ten operator-pinned decisions (D1–D10) from the 2026-07-13T19:14:52Z authorization comment and the two preceding pinned-decisions comments (2026-07-11, 2026-07-12) that supersede the draft's own open-question wording; `CELL-RUNTIME.md` (#628) for structure and framing; `COHERENCE-CELL-NORMAL-FORM.md` for the kernel and scope-lift vocabulary; and the shipped `transitions.json` / built `cn` binary for State-A ground truth (§11), correcting the draft's illustrative FSM-events table against the actual request-marker-file mechanism rather than restating it as shipped. No implementation, schema, FSM code, or child issue was produced or dispatched by this cell. Proposed, not ratified — a separate Cohering Cell review, operator-final-read, and a CDD `doctrine` cell are the remaining steps in the exit sequence the authorization comment names.
+*Authoring note.* Formalized under cnos#662, a Planning Cell in PC-D0 mode, dispatched by the `cds-dispatch` wake in δ wake-invoked mode (bootstrap realization on the currently shipped generic CDS/CCNF runner — §10, §11 — not evidence that `cell_class`-aware routing already ships). α reconciled the issue's embedded κ-corrected draft (§1–§20 of #662) against: the ten operator-pinned decisions (D1–D10) from the 2026-07-13T19:14:52Z authorization comment and the two preceding pinned-decisions comments (2026-07-11, 2026-07-12) that supersede the draft's own open-question wording; `CELL-RUNTIME.md` (#628) for structure and framing; `COHERENCE-CELL-NORMAL-FORM.md` for the kernel and scope-lift vocabulary; and the shipped `transitions.json` / the shipped `cn` command surface (`src/go/internal/cli`, `src/go/internal/cell`) for State-A ground truth (§11), correcting the draft's illustrative FSM-events table against the actual request-marker-file mechanism rather than restating it as shipped. No implementation, schema, FSM code, or child issue was produced or dispatched by this cell. Draft, not ratified — a separate Cohering Cell review, operator-final-read, and a CDD `doctrine` cell are the remaining steps in the exit sequence the authorization comment names.
