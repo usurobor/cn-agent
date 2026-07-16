@@ -2692,7 +2692,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-10T02:50:56Z",
-    "updated": "2026-07-13T19:52:17Z",
+    "updated": "2026-07-16T11:23:42Z",
     "url": "https://github.com/usurobor/cnos/issues/662"
   },
   {
@@ -2754,5 +2754,25 @@
     "created": "2026-07-11T10:36:49Z",
     "updated": "2026-07-12T10:15:06Z",
     "url": "https://github.com/usurobor/cnos/issues/666"
+  },
+  {
+    "n": 668,
+    "t": "dispatch/claim-lineage-lock: prevent concurrent active executions for one cell lineage",
+    "kind": "feature",
+    "areas": [
+      "cds"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-16T11:24:09Z",
+    "updated": "2026-07-16T11:24:09Z",
+    "url": "https://github.com/usurobor/cnos/issues/668"
   }
 ]
