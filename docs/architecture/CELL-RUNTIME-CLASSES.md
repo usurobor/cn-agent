@@ -29,17 +29,17 @@ This note is a **sibling** of `docs/architecture/CELL-RUNTIME.md`, not a replace
 
 ## 2. The cell contract envelope (`cn.cell.contract.v1`)
 
-All three classes consume one typed envelope. Only *input admissibility, matter type, class-specific acceptance, and post-closure routing* differ by class (§3, §5). Per **D9 (schema-first destination)**, this note **names** the schema; it does not implement it — no CUE, no Go struct, no validator.
+All three classes consume one typed envelope. Only *input admissibility, matter type, class-specific acceptance, and post-closure routing* differ by class (§3, §5). Per **D9 (schema-first destination)**, this note **names** the schema; it does not implement it — no CUE, no Go struct, no validator. This block is the **one canonical shape** — the schema template and the worked instance below are the same object, field-for-field and nesting-for-nesting:
 
 ```yaml
 schema: cn.cell.contract.v1
 cell:   { id: <issue>, class: working | planning | cohering, mode: <class-specific>, protocol: cds, matter_domain: <CELL-KINDS.md vocabulary> }
 scope:  { repo: <owner/name>, wave: <parent wave issue, if any>, parent_cell: <parent cell issue, if any> }
-intent: { source: issue, source_ref: <issue>, operator_directive_ref: <issue comment anchor>, summary: <one line> }
+intent_ref: { schema: cn.intent.v1, id: <intent id>, carrier: { kind: github_issue, ref: <issue> } }
 inputs:
   required: [ <artifacts/issues this cell depends on> ]
   optional: [ prior_receipts ]
-requested_output: { kind: <artifact|relation_graph|judgment>, path: <where the matter lands> }
+requested_output: { kind: <artifact | relation_graph | judgment>, path: <where the matter lands> }
 acceptance:
   predicates: [ <class-specific acceptance predicates, §5> ]
 constraints:
@@ -50,19 +50,30 @@ gates: { operator_authorization_required: <bool>, operator_acceptance_required: 
 stop_conditions: [ <typed STOP triggers, e.g. source_doctrine_conflicts, required_decision_unresolved> ]
 ```
 
-This is a worked, not hypothetical, template: #662's own γ-scaffold (`.cdd/unreleased/662/gamma-scaffold.md §1`) instantiates it —
+**Intent is referenced, not inlined (D9, §13).** The contract does not *contain* intent; it **references the first-class `cn.intent.v1` object** (§13) via `intent_ref: { schema, id, carrier }`. A GitHub issue is a **carrier / control-plane projection** of that intent — `carrier: { kind: github_issue, ref: <issue> }` — **not** intent identity. `cn.intent.v1` is produced by κ *before any cell exists* (§13's dependency order: `cn.intent.v1 → cn.cell.contract.v1 → …`); the cell contract points back at it. This is the §2 ↔ §13 reconciliation: there is exactly one intent object, and the issue is one of its carriers.
+
+This is a worked, not hypothetical, instance — **#662's own cell contract, expressed in the canonical envelope above** (the same top-level keys, the same nesting):
 
 ```yaml
-cell:
-  class: planning
-  protocol: cds
-  matter_domain: doctrine
-  issue: 662
-  requested_output: [ "docs/architecture/CELL-RUNTIME-CLASSES.md" ]
+schema: cn.cell.contract.v1
+cell:   { id: 662, class: planning, mode: d0, protocol: cds, matter_domain: doctrine }
+scope:  { repo: usurobor/cnos, wave: 627, parent_cell: null }
+intent_ref: { schema: cn.intent.v1, id: intent-2026-0711-662, carrier: { kind: github_issue, ref: cnos#662 } }
+inputs:
+  required: [ "docs/architecture/CELL-RUNTIME.md", cnos#627, cnos#530, cnos#644 ]
+  optional: [ prior_receipts ]
+requested_output: { kind: artifact, path: docs/architecture/CELL-RUNTIME-CLASSES.md }
+acceptance:
+  predicates: [ wc_pc_cc_are_one_kernel_classes, cc_epsilon_reconciliation_preserved, fsm_states_and_events_specified, kappa_outside_cell, current_and_target_state_distinguished ]
+constraints:
+  allowed_paths:   [ "docs/architecture/CELL-RUNTIME-CLASSES.md", ".cdd/unreleased/662/**" ]
+  forbidden_paths: [ "src/go/**", ".github/workflows/**" ]
   non_goals: [ implement_cell_runner, alter_ccnf, add_new_role_letters, replace_cdd_or_cds, file_or_dispatch_child_issues ]
-  gates: { operator_authorization_required: true, operator_acceptance_required: true }
-  stop_conditions: [ source_doctrine_conflicts, required_decision_unresolved ]
+gates: { operator_authorization_required: true, operator_acceptance_required: true }
+stop_conditions: [ source_doctrine_conflicts, required_decision_unresolved ]
 ```
+
+Every field and nesting level here validates against the envelope above verbatim: `cell.id` (not `cell.issue`); `requested_output` an **object** `{ kind, path }` (not a list); `non_goals` **under `constraints`** (not `cell.non_goals`); `gates` and `stop_conditions` **top-level** (not `cell.gates`). The schema block and this instance are one shape, not two. (`matter_domain: doctrine` is the domain half of the doctrine-gate flag pair; the companion `doctrine_affecting: true` lives in the operator-authorization contract block and is cited in §9.)
 
 **Labels vs typed contract.** Per **D6/D9** and #643 (shipped): GitHub **labels** carry only coarse mechanical state — `dispatch:cell`, `protocol:cds`, `status:*` — and answer *is this dispatchable, which protocol, where in the lifecycle*. The **typed contract** (above) carries semantics — `cell.class`, `mode`, `matter_domain`, `requested_output`, `acceptance`, `constraints`, `gates`, `stop_conditions` — and is *not* itself a label. #662 was authorized without a `cell_class:*` label for exactly this reason (operator-authorization comment, 2026-07-13): "the issue contract remains the source" for `cell.class`.
 
@@ -91,7 +102,16 @@ Each class is the *same* kernel cell with a different output telos (`CELL-RUNTIM
 
 **Guard, both modes:** a Planning Cell creates and refines its own children; it does not apply `status:todo` to them. Dispatching a PC's own children requires operator authorization (or a typed policy gate at the wave-authorization boundary, §9) — never an automatic action taken by the PC itself. This is the same guard #662 itself operates under: it produces exactly one artifact and files or dispatches nothing.
 
-**Result shape:** `{ class: planning, mode: d0|wave, wave_ref, graph: { nodes, edges }, dispatchable: false, requires_operator_gate: true }`.
+**Result shape — a tagged union by `mode`, not one shape.** PC-D0 produces a spec/architecture artifact; PC-Wave produces a wave graph. Forcing `wave_ref`/`graph` onto a D0 result would quietly turn every Planning Cell into a wave-producer, which it is not:
+
+```yaml
+# mode: d0
+{ class: planning, mode: d0,   artifact_ref, readiness: ready_for_coherence_review, requires_operator_gate: true }
+# mode: wave
+{ class: planning, mode: wave, wave_ref, graph: { nodes, edges }, readiness: ready_for_wave_review, requires_operator_gate: true }
+```
+
+A PC-D0 result carries an `artifact_ref` and is `ready_for_coherence_review` (its next step is a Cohering Cell review, then operator-final-read — the exit sequence §16 names). Only a PC-Wave result carries `wave_ref` + `graph` and is `ready_for_wave_review`. Both are `requires_operator_gate: true`; neither is self-dispatchable. #662, a PC-D0, produces the `artifact_ref` form.
 
 ### 3.3 Cohering Cell (CC)
 
@@ -187,7 +207,14 @@ Formally: `Jₖ := CC.evaluate(I₀, Stateₖ, Receiptsₖ)`; PC/WC produce on `
 
 ## 8. κ remains outside the cell (D2, F3)
 
-κ is a **control-plane** slot, not a cell role — it does not appear beside α/β/γ/δ/ε in CCNF and this note adds no new role letter. **κ supplies operator/control-plane input; the cell's α owns and writes the specification or implementation matter.** κ must not author the specification as α. If a single model body performs both κ and α in a bootstrap case (as happened structurally across #662's own drafting and dispatch history), that is **actor collapse** and must be **declared explicitly** as a configuration-floor consequence — never silently assumed as equivalence. κ speaks through issues and issue comments; cells work through typed contracts and receipts. This aligns with #583 and #584 (both landed doctrine: the mechanism/cognition boundary — mechanical dispatch is fully separated from the cognitive skills that run inside a claimed cell).
+κ is a **control-plane** slot, not a cell role — it does not appear beside α/β/γ/δ/ε in CCNF and this note adds no new role letter. **κ supplies operator/control-plane input; the cell's α owns and writes the specification or implementation matter.** κ must not author the specification as α. κ speaks through issues and issue comments; cells work through typed contracts and receipts. This aligns with #583 and #584 (both landed doctrine: the mechanism/cognition boundary — mechanical dispatch is fully separated from the cognitive skills that run inside a claimed cell).
+
+**Two distinct collapse modes — do not conflate them.**
+
+- **Actor collapse** — *one activation* performs *two roles inside one cell boundary* (e.g. the same running agent authoring α matter and then reviewing it as β). This is the firebreak-defeating case CCNF's β-independence rule (`COHERENCE-CELL.md`) exists to prevent, and it is the collapse that must never be silently assumed as equivalence.
+- **Hosting-identity collapse** — *separate activations* (distinct κ / α / β runs, each in its own role) that nonetheless **share one account / model lineage** (here, one "Sigma" GitHub identity). The roles are genuinely separated at the protocol layer; only the *hosting identity* is shared. This is a real but lesser limitation, **tracked by #664**, not a defeat of the firebreak.
+
+**What happened in #662 was primarily hosting-identity collapse, not actor collapse.** κ (issue/comment authorship), α (spec authorship), and β (independent review) ran as **separate activations**; **protocol-level κ≠α held — κ did not author the spec, α did** — and β authored none of the matter it reviewed. What was shared was the Sigma hosting identity across those separate activations. That shared *hosting identity* must be **declared explicitly** (the γ bootstrap declaration does so) and is exactly the structural gap #664 tracks; it must not be described as "actor collapse," which would overstate the defect and mislabel a preserved firebreak as a broken one.
 
 **Guard consequence (§12):** "κ editing cell-owned artifacts" is a forbidden action precisely because κ ≠ α/β/γ/δ. κ carries intent into control-plane artifacts (issues, labels, PR-review surfaces); it does not produce, review, or close a cell's matter.
 
@@ -207,7 +234,7 @@ Human authority sits at **irreversible or scope-expanding boundaries**, not betw
 
 **v0:** one generic package runner per protocol. The `cds-dispatch` wake claims `protocol:cds` work and, in the specified (not-yet-shipped) target, reads `cell.class` and routes Working/Planning/Cohering internally. There is **no separate PC or CC wake provider in v0** — that would multiply providers, schedules, concurrency groups, secrets, and recovery paths before evidence requires it. **A CC runs as a claimed cell in v0**, exactly like WC/PC (`dispatch:cell + protocol:{P} + status:todo`); a **scheduled** coherence pulse (CC firing on a timer or on wave/receipt events rather than on an explicit claim) is a **future extension**, not part of the v0 architecture. This is the mode #662 itself runs in: a bootstrap Planning Cell realization on the currently shipped generic CDS/CCNF runner, **not** evidence that a `cell_class`-routing runtime already exists (§11.1's bootstrap-calibration note is the same fact stated for the record).
 
-**State B (specified, not shipped):** one generic Cell Runner, potentially several wake-provider *profiles* over it — not because there are three kernels, but because trigger shapes differ (WC: issue/event-driven; PC: operator-authorized, infrequent; CC: scheduled | receipt-triggered | wave-triggered | operator-triggered). Whether that is realized as one manifest that reads `cell.class` and routes, or as three provider manifests sharing one runner binary, is an **open sub-decision** (§17) — not settled by this note.
+**State B (specified, not shipped):** one generic Cell Runner, potentially several wake-provider *profiles* over it — not because there are three kernels, but because trigger shapes differ (WC: issue/event-driven; PC: operator-authorized, infrequent; CC: scheduled | receipt-triggered | wave-triggered | operator-triggered). Whether that is realized as one manifest that reads `cell.class` and routes, or as three provider manifests sharing one runner binary, is an **open sub-decision** (§16 Q1) — not settled by this note.
 
 ---
 
@@ -291,7 +318,7 @@ cn cell run   --class planning  --issue <id>  → note + wave graph + subissues 
 cn cell run   --class working   --issue <id>  → implementation PR + receipt + status:review
 ```
 
-Exact naming, argv shape, and sequencing (§17 Q6 — should a pulse command land before or after #504 stale-claim recovery) are explicitly unresolved and not decided by this note.
+Exact naming, argv shape, and sequencing (§16 Q3 — should a pulse command land before or after #504 stale-claim recovery) are explicitly unresolved and not decided by this note.
 
 ---
 
@@ -317,8 +344,8 @@ This note **names, without implementing**, four schemas in a stated dependency o
 cn.intent.v1  →  cn.cell.contract.v1  →  cn.next-mca.v1  →  cn.wave.v1
 ```
 
-- `cn.intent.v1` — the typed object κ produces from operator intent before any cell exists (`{ id, source: operator, captured_by: kappa, statement, scope, constraints, desired_outcome }`).
-- `cn.cell.contract.v1` — §2 above.
+- `cn.intent.v1` — the typed object κ produces from operator intent **before any cell exists** (`{ id, source: operator, captured_by: kappa, statement, scope, constraints, desired_outcome }`). It has its own identity; a GitHub issue is one *carrier* of it, not the intent itself. The dependency order above (`cn.intent.v1 → cn.cell.contract.v1`) is why §2's envelope carries `intent_ref` rather than an inline `intent` block.
+- `cn.cell.contract.v1` — §2 above. It **references** `cn.intent.v1` via `intent_ref: { schema, id, carrier }`; it does not restate or own intent identity (the §2 ↔ §13 reconciliation).
 - `cn.next-mca.v1` — the typed handoff CC emits (`{ class, mode, reason_code, requested_output, input_refs, requires_operator_authorization }`), consumed by whichever class the disposition names.
 - `cn.wave.v1` — a typed, mechanically inspectable wave graph (`{ wave, goal, nodes: [{issue, class, protocol, depends_on}], edges, gates, completion }`) that GitHub sub-issues *mirror*, not define.
 
@@ -340,7 +367,7 @@ A PC-Wave cycle (#644, once dispatched) derives the exact implementation depende
 | `#654` (PC D0-contract hardening) | Open | §3.2's D0 admissibility criteria are the D0 contract #654 hardens; §3.3's anti-pattern list names exactly the failure #654 exists to prevent. |
 | `#583` (fully-mechanical dispatch) | Closed/landed | Cited in §8/§10 as the doctrine establishing the mechanism/cognition boundary this note's κ-outside-the-cell rule depends on. |
 | `#584` (mechanism/cognition boundary codified) | Closed/landed | Same as #583; cited alongside it in §8. |
-| κ boundary | Settled by D2/F3 | §8 carries it forward without re-litigation; #662's own dispatch history (κ authored the issue and its comments; α, in a separate cell instance, authors this file) is the worked example of declared, non-collapsed actor separation. |
+| κ boundary | Settled by D2/F3 | §8 carries it forward without re-litigation; #662's own dispatch history (κ authored the issue and its comments; α, in a separate activation, authors this file) is the worked example of preserved κ≠α under **hosting-identity collapse** (one Sigma identity across separate activations, #664) — *not* actor collapse (§8). The firebreak held at the protocol layer; only the hosting identity was shared. |
 | Go mechanical-orchestration target | Partially shipped, partially specified | §11.1–§11.2 name exactly what's shipped (`transitions.json`, the evaluator, `cn cell`/`cn issues` commands); §11.3–§11.5 name what's specified or illustrative; none of it is implemented by this cycle. |
 
 ---

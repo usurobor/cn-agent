@@ -6,18 +6,26 @@ protocol: cds
 requests: in-progress -> review
 requested_by: cds-dispatch (delta wake-invoked mode; interactive cn-sigma substrate)
 beta_verdict: converge
-beta_round: R0
+beta_round: R2
+beta_round_history: R0 iterate -> R1 converge -> R2 converge (fresh independent beta; two corroborating passes)
+review_return: operator-final-read on PR #667 = ITERATE NARROWLY (6 blockers); repaired R2
 deliverable:
   matter: docs/architecture/CELL-RUNTIME-CLASSES.md
   closeout_artifacts:
     - CLAIM-REQUEST.yml
     - gamma-scaffold.md
     - self-coherence.md
+    - operator-review.md
     - beta-review.md
+    - beta-review-R2.md
     - alpha-closeout.md
     - beta-closeout.md
     - gamma-closeout.md
 note: >
-  Bootstrap PC-D0 realization on the shipped generic CDS/CCNF runner (no cell_class-aware
-  routing). No operator-gate hold raised. Merge is gated on a separate CC ratification per
-  the operator authorization exit sequence; this request advances the cell to status:review only.
+  R2 review-return / repair pass. Bootstrap PC-D0 realization on the shipped generic CDS/CCNF
+  runner (no cell_class-aware routing). kappa's operator-final-read on PR #667 returned ITERATE
+  NARROWLY with six typed-contract-surface blockers; alpha repaired 1-5 and a fresh independent
+  beta R2 (plus a corroborating second pass) converged with all six resolved and no operator-gate
+  hold. Merge stays gated on a separate CC ratification per the operator authorization exit
+  sequence; PR #667 stays DRAFT; this request advances the cell to status:review only for a
+  second operator-final-read.

@@ -8,7 +8,7 @@
 
 `docs/architecture/CELL-RUNTIME-CLASSES.md` — the realization-layer spec that operationalizes the WC/PC/CC output-telos classes named by `docs/architecture/CELL-RUNTIME.md` (#628) into a cell contract envelope, class-specific `V` predicates, the CC↔ε lineage, the cell FSM (grounded in the shipped `transitions.json`) and the specified-but-unshipped wave FSM, the human-gate and wake-topology policy, and the schema-first destination — carrying the ten operator-pinned decisions D1–D10 as settled input, not re-deriving them.
 
-α owns and wrote this specification matter. **κ did not author it** (κ≠α, D2/F3): κ authored the #662 issue and its operator comments (the control-plane input); α authored the spec file (the cell matter). Bootstrap actor-collapse is declared, not silently assumed — see the γ receipt's bootstrap-calibration section.
+α owns and wrote this specification matter. **κ did not author it** (κ≠α, D2/F3): κ authored the #662 issue and its operator comments (the control-plane input); α authored the spec file (the cell matter). The bootstrap **hosting-identity collapse** (one Sigma lineage across separate κ/α/β activations, tracked by #664 — *not* actor collapse, per R2 blocker 4) is declared explicitly, not silently assumed — see the γ receipt's bootstrap-calibration section and spec §8.
 
 ## AC + decision coverage
 
@@ -39,4 +39,18 @@ No true contradiction was found among D1–D10, the issue draft, and shipped sta
 
 No Go/runtime/schema/FSM code; no wake changes; no child issues filed or dispatched; no PC-Wave; no child `status:todo` labels; no separate PC/CC provider; no CCNF role-semantics change. The only filesystem writes are the spec file and this cell's own `.cdd/unreleased/662/` artifacts (confirmed by β via `git diff --stat`).
 
-**α → β handoff:** review-ready. β R0 iterate → α R1 repair → β converged at R1.
+## R2 repair (against κ's operator-final-read verdict on PR #667 — ITERATE NARROWLY)
+
+κ's operator-final-read (issue comment 2026-07-16, materialized verbatim as `operator-review.md`, `schema: cn.operator-review.v1`) returned **iterate narrowly**: the architecture converges but the typed-contract surface carried six load-bearing blockers. α repaired blockers 1–5 (blocker 6 = a fresh independent β R2, spawned separately). Full per-blocker walk in `self-coherence.md §R2`; summary:
+
+1. **Canonicalized `cn.cell.contract.v1` (§2)** — one governing envelope; the worked instance (#662's own contract) rewritten to validate against it verbatim (`cell.id`; `requested_output` object; `non_goals` under `constraints`; `gates`/`stop_conditions` top-level).
+2. **Reconciled intent (§2 ↔ §13)** — envelope now carries `intent_ref → cn.intent.v1`; the GitHub issue is a **carrier/projection**, not intent identity; the inline `intent: { source: issue }` is removed.
+3. **Split PC result by mode (§3.2)** — tagged union: PC-D0 `{ mode: d0, artifact_ref, readiness: ready_for_coherence_review, … }` vs PC-Wave `{ mode: wave, wave_ref, graph, readiness: ready_for_wave_review, … }`. D0 no longer forced to carry `wave_ref`/`graph`.
+4. **Corrected actor-collapse terminology (§8, §14)** — distinguished **actor collapse** (one activation, two roles in one cell boundary) from **hosting-identity collapse** (separate activations, one Sigma lineage; #664). #662 was **hosting-identity collapse, not actor collapse**; **protocol-level κ≠α held — κ did not author the spec.** The γ bootstrap declaration is updated to match.
+5. **Repaired stale §17 / §17 Q6 references** — §10 → §16 Q1 (wake-provider realization); §11.5 → §16 Q3 (command-surface sequencing vs #504). Both targets exist and match; pure renumber, no new policy.
+
+**R2 Hard-STOP check:** no blocker required an unpinned architecture decision; **no operator-gate hold raised by α in R2.** Every operator-named "already good" part is preserved. The only spec write is `CELL-RUNTIME-CLASSES.md`; the only other writes are this cell's own `.cdd/unreleased/662/` receipts (incl. the new `operator-review.md`). No code, schema, FSM, wake, or child issue.
+
+**Terminology note (R2):** the "What α produced" line above and the γ bootstrap declaration now use **hosting-identity collapse** (#664), not "actor collapse," per blocker 4; κ≠α held at the protocol layer. The frozen R0 scaffold text (`gamma-scaffold.md:72`) is left as historical R0 record.
+
+**α → β handoff (R2):** review-ready for a **fresh independent β R2** over the entire revised contract surface. (R0 iterate → R1 converge → R2 repair per κ's six-blocker contract.) β R2 returned **converge** — two fresh separate activations (both protocol-independent, bootstrap-limited under one Sigma lineage, #664) independently converged, all six blockers RESOLVED, no operator-gate holds.

@@ -34,3 +34,26 @@ No TRUE contradiction in the pinned architecture. No candidate operator-gate hol
 β ran as a **separate Agent activation** spawned by the δ/dispatch driver, under the **same account/session lineage** as the authoring cell. Therefore: **α≠β holds at the protocol layer** (β did not author the matter, re-verified all State-A claims directly against source, and formed its view before reading `self-coherence.md`) but is **bootstrap-limited at the hosting layer** (same session lineage — the exact structural gap #664 tracks). This is recorded honestly rather than presented as full independence. The later CC ratification in the exit sequence provides the additional external warrant.
 
 **β → γ handoff:** converge at R1; the cell may close and request `status:review`.
+
+## R2 — fresh independent β review (post operator-final-read repair)
+
+**Verdict:** `converge` at **R2** · **fresh independent pass** (NOT δ-attestation), corroborated by a second independent pass · **findings:** 2 (both non-blocking) · **operator-gate holds:** none.
+
+After κ's operator-final-read of PR #667 returned **ITERATE NARROWLY** with six typed-contract-surface blockers, α repaired blockers 1–5 and a **fresh, separate β activation** reviewed the *entire revised contract surface* (blocker 6). This was a real independent read — δ-attestation was explicitly ruled out for substantive contract/schema corrections. Full record: `beta-review.md §R2`; a second corroborating independent pass: `beta-review-R2.md`.
+
+| Blocker | Disposition | Evidence |
+|---|---|---|
+| 1 — canonical `cn.cell.contract.v1` (§2) | RESOLVED | Field-by-field diff: schema block and worked instance are one shape; `cell.id`, `requested_output` object, `non_goals` under `constraints`, top-level `gates`/`stop_conditions`. |
+| 2 — intent reconciliation (§2↔§13) | RESOLVED | `intent_ref → cn.intent.v1` in both sections; issue = carrier; no residual `intent:{source:issue}`. |
+| 3 — PC result tagged union (§3.2) | RESOLVED | D0 → `{mode:d0, artifact_ref, ready_for_coherence_review}`; Wave → `{mode:wave, wave_ref, graph, ready_for_wave_review}`; D0 not forced to carry `wave_ref`/`graph`. |
+| 4 — actor-collapse terminology (§8/§14/γ decl.) | RESOLVED | Two-mode distinction; #662 = hosting-identity collapse (#664), not actor collapse; κ≠α preserved. |
+| 5 — stale §17/§17 Q6 refs | RESOLVED | §10→§16 Q1, §11.5→§16 Q3; both targets exist and match; no §17/§18 remains. |
+| 6 — fresh independent β R2 | RESOLVED | This pass (+ a second corroborating pass). |
+
+**No regression** in the operator-named "already good" parts; **every class-specific V predicate remains mechanically expressible** (§5, §12); **State-A re-verified against source** (`transitions.json` states array + `blocked`-as-target + guard vocabulary; `cn cell pulse`/`run` confirmed absent; `TestSeam_CellKindNotEnforced` observation-only).
+
+**Non-blocking findings:** F-R2.1 (receipt hygiene — a couple of frozen/superseded historical receipt lines still say "actor-collapse"; the normative spec §8 and the operator-named γ declaration are correct; `alpha-closeout.md` line cleaned up in R2); F-R2.2 (process — corroborates κ's separately-filed P1 substrate race; a deliberate review quorum, not accidental duplicate activation, is the right model).
+
+**β independence disclosure (#664):** both R2 passes ran as **separate Agent activations** but under the **same Sigma account/model lineage** — **α≠β holds at the protocol layer** (neither authored the matter; both re-verified State-A against source; both formed their view before reading `self-coherence.md`), **bootstrap-limited at the hosting layer** (hosting-identity collapse, #664). The exit sequence's separate, non-Sigma CC ratification supplies the hosting-independent warrant.
+
+**β → γ handoff (R2):** converge; the cell may re-close and re-request `status:review` for a second operator-final-read. **Do NOT merge; do NOT mark PR #667 ready; do NOT dispatch CC ratification** — those are operator-gated per the exit sequence.
