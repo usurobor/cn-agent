@@ -1,3 +1,5 @@
+> ⚠️ **SUPERSEDED FOR CURRENT STATE** — external-β ITERATE (R3) on PR #667 reopened this cell; current state is in `self-coherence.md` §R4 + `REVIEW-REQUEST.yml`. Historical content retained below.
+
 # γ closeout — cnos#662 (PC-D0 planning receipt)
 
 **Cell:** cnos#662 — PC-D0 Planning Cell · **class:** planning · **mode:** D0 · **matter_domain:** doctrine · **doctrine_affecting:** true

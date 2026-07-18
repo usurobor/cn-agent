@@ -1,3 +1,5 @@
+> ⚠️ **SUPERSEDED FOR CURRENT STATE** — external-β ITERATE (R3) on PR #667 reopened this cell; current state is in `self-coherence.md` §R4 + `REVIEW-REQUEST.yml`. Historical content retained below.
+
 verdict: converge   # R1 (R0 was iterate — see §R0 findings and §R1 repair attestation)
 
 # β review — cnos#662 (`docs/architecture/CELL-RUNTIME-CLASSES.md`)

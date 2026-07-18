@@ -5,10 +5,19 @@ mode: PC-D0
 protocol: cds
 requests: in-progress -> review
 requested_by: cds-dispatch (delta wake-invoked mode; interactive cn-sigma substrate)
-beta_verdict: converge
-beta_round: R2
-beta_round_history: R0 iterate -> R1 converge -> R2 converge (fresh independent beta; two corroborating passes)
-review_return: operator-final-read on PR #667 = ITERATE NARROWLY (6 blockers); repaired R2
+beta_verdict: iterate          # external-β ITERATE on the R3 matter; α repaired -> R4 (pending exact-SHA re-review)
+beta_round: R4
+matter_sha_m: ce310a334081831fa52c287a342c527a5236c369   # immutable spec-only R4 matter, offered for exact-SHA external-β re-review
+external_beta:
+  reviewer: external-beta (outside Sigma lineage, #664)
+  verdict: iterate
+  findings: 6 (1 BLOCKER + 4 REQUIRED + 1 DISPUTED)
+  disposition: findings 1/3/4/5 repaired; finding 2 disputed-and-hardened (not reversed); finding 6 receipts
+  bound_to: ce310a334081831fa52c287a342c527a5236c369
+  durable_record: https://github.com/usurobor/cnos/pull/667   # PR review comments (not in committed tree)
+  state: pending exact-SHA external-β re-review on SHA_M
+beta_round_history: R0 iterate -> R1 converge -> R2 (internal) -> operator-final-read ITERATE -> R3 operator-settled -> external-β ITERATE -> R4 repair (pending re-review)
+review_return: external-β ITERATE on PR #667 (6 findings); alpha repaired 1/3/4/5, hardened disputed 2, receipts 6 -> R4 at SHA_M
 deliverable:
   matter: docs/architecture/CELL-RUNTIME-CLASSES.md
   closeout_artifacts:
@@ -22,10 +31,13 @@ deliverable:
     - beta-closeout.md
     - gamma-closeout.md
 note: >
-  R2 review-return / repair pass. Bootstrap PC-D0 realization on the shipped generic CDS/CCNF
-  runner (no cell_class-aware routing). kappa's operator-final-read on PR #667 returned ITERATE
-  NARROWLY with six typed-contract-surface blockers; alpha repaired 1-5 and a fresh independent
-  beta R2 (plus a corroborating second pass) converged with all six resolved and no operator-gate
-  hold. Merge stays gated on a separate CC ratification per the operator authorization exit
-  sequence; PR #667 stays DRAFT; this request advances the cell to status:review only for a
-  second operator-final-read.
+  R4 external-β repair pass. Bootstrap PC-D0 realization on the shipped generic CDS/CCNF runner
+  (no cell_class-aware routing). A genuinely-independent external β (outside the Sigma lineage,
+  #664) reviewed the R3 matter and returned ITERATE on PR #667 with six findings; alpha repaired
+  findings 1/3/4/5, hardened the disputed finding 2 without reversing operator framing, and
+  repaired the receipt projections (finding 6). The repair landed as a spec-only immutable matter
+  commit SHA_M ce310a33, offered back to the external β for exact-SHA re-review. The cell is NOT
+  converged and NOT ratified; convergence is not claimed here. Merge stays gated on the operator
+  exit sequence (§16): external-β re-review -> gamma binds SHA_M + review + evidence -> separate CC
+  ratification -> operator-final-read -> merge -> separate PC-Wave. PR #667 stays DRAFT; alpha did
+  not merge, invite the external beta, touch the PR body, or write gamma binding.
