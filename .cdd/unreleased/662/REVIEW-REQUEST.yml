@@ -5,9 +5,9 @@ mode: PC-D0
 protocol: cds
 requests: in-progress -> review
 requested_by: cds-dispatch (delta wake-invoked mode; interactive cn-sigma substrate)
-beta_verdict: pending          # R5 matter offered for exact-SHA external-β review; NO verdict bound yet
-beta_round: R5
-matter_sha_m: eb627874725647dae69ec6331d9bd9f597136ca3   # immutable spec-only R5 matter, offered for exact-SHA external-β review
+beta_verdict: pending          # R6 matter offered for exact-SHA external-β review; NO verdict bound yet
+beta_round: R6
+matter_sha_m: 64d94e717d0ddfe790ba1dd21aae148e922b8847   # immutable spec-only R6 matter, offered for exact-SHA external-β review
 
 # External-β history SPLIT BY ROUND so that no verdict binds to a SHA it did not review.
 # Each round points at its own review comment (or a clearly-marked ref), never a bare PR-root URL.
@@ -29,24 +29,38 @@ external_beta:
       review_comment_url: https://github.com/usurobor/cnos/pull/667#issuecomment-5012790037   # external-β R4 exact-revision review, names ce310a33
     - round: R5
       sha: eb627874725647dae69ec6331d9bd9f597136ca3
+      verdict: iterate
+      findings: 2 (2 REQUIRED, no blocker)
+      review_comment_url: https://github.com/usurobor/cnos/pull/667#issuecomment-5012900197   # external-β R5 exact-revision review, names eb627874
+    - round: R6
+      sha: 64d94e717d0ddfe790ba1dd21aae148e922b8847
       state: pending          # offered for exact-SHA external-β review on this SHA; NO verdict bound yet
       # no review_comment_url and no verdict until the external β reviews this exact SHA
 
 disposition: >
-  R5 repairs the four external-β R4 ITERATE findings (PR #667 comment 5012790037): finding 1
-  [BLOCKER] dependency-ref model made representable in cn.cell.contract.v1 (provenance-tagged
-  external/sibling_output input union + stable requested_output.id; edges over sibling_output only;
-  external roots create no edge and are accepted); finding 2 [REQUIRED] SHA-provenance made
-  revision-neutral (exact matter-only review SHA_M, not a named superseded round); finding 3
-  [REQUIRED] gates.reason made always-present scalar-or-null; finding 4 [REQUIRED] §16 Q1 subject
-  moved to State-B/post-v0 with no open v0 manifest-count decision left in the artifact.
+  R6 repairs the two external-β R5 ITERATE findings (PR #667 comment 5012900197; no blocker — β
+  confirmed the R4/R5 sibling-dependency model sound): finding 1 [REQUIRED] external refs now ENCODE
+  the immutability they claim — the overloaded `target` scalar is replaced by a locator-classed
+  external union (repo_artifact = repo + immutable commit/tree/blob + path; control_plane =
+  issue/comment/receipt + immutable revision; prior_receipt = receipt identity + immutable
+  artifact/hash binding), the §2 worked instance updated to revision-pinned illustrative values, and
+  positive/negative external-immutability fixtures added (§2, §13); finding 2 [REQUIRED] the canonical
+  ref/output vocabulary is closed across inputs.optional (now { refs (external-locator, immutable,
+  edge-free), annotations (non-authoritative) }, never sibling_output, no readiness edge) and the
+  cn.next-mca.v1 handoff (input_refs + requested_output reuse the exact canonical cn.cell.contract.v1
+  shapes), pinned by a projection/round-trip invariant (§2, §3.3, §13). Exact field storage types stay
+  deferred to §16 Q4 (D9 named-not-implemented).
 beta_round_history: >
   R0 iterate -> R1 converge -> R2 (internal) -> operator-final-read ITERATE -> R3 operator-settled
   -> external-β R3 ITERATE (014c75ff, 6 findings) -> R4 repair -> external-β R4 ITERATE (ce310a33,
-  4 findings) -> R5 repair (eb627874, pending exact-SHA re-review)
+  4 findings) -> R5 repair -> external-β R5 ITERATE (eb627874, 2 findings, no blocker) -> R6 repair
+  (64d94e71, pending exact-SHA re-review). Convergence trajectory: R3 6 -> R4 4 -> R5 2 findings; no
+  blocker at R5.
 review_return: >
-  external-β R4 ITERATE on PR #667 (4 findings, comment 5012790037); alpha repaired all four
-  (1 BLOCKER + 3 REQUIRED) -> R5 spec-only matter at SHA_M eb627874, offered for exact-SHA re-review.
+  external-β R5 ITERATE on PR #667 (2 REQUIRED findings, no blocker, comment 5012900197); alpha
+  repaired both (external-ref immutability encoded per locator class; canonical ref/output vocabulary
+  closed across optional inputs + cn.next-mca.v1 with a projection invariant) -> R6 spec-only matter
+  at SHA_M 64d94e71, offered for exact-SHA re-review.
 deliverable:
   matter: docs/architecture/CELL-RUNTIME-CLASSES.md
   closeout_artifacts:
@@ -60,15 +74,16 @@ deliverable:
     - beta-closeout.md
     - gamma-closeout.md
 note: >
-  R5 external-β repair pass. Bootstrap PC-D0 realization on the shipped generic CDS/CCNF runner
+  R6 external-β repair pass. Bootstrap PC-D0 realization on the shipped generic CDS/CCNF runner
   (no cell_class-aware routing). A genuinely-independent external β (outside the Sigma lineage,
-  #664) reviewed the R4 matter (ce310a33) and returned ITERATE on PR #667 with four findings
-  (comment 5012790037); alpha repaired all four as spec-surface / receipt-projection repairs
-  consistent with pinned D1-D10, and split this review-request per round so no verdict binds to a
-  SHA it did not review (R3 -> 014c75ff/iterate/comment 5012130583; R4 -> ce310a33/iterate/comment
-  5012790037; R5 -> eb627874/pending). The repair landed as a spec-only immutable matter commit
-  SHA_M eb627874, offered back to the external β for exact-SHA re-review. The cell is NOT converged
-  and NOT ratified; convergence is not claimed here. Merge stays gated on the operator exit sequence
-  (§16): external-β re-review -> gamma binds SHA_M + review + evidence -> separate CC ratification ->
-  operator-final-read -> merge -> separate PC-Wave. PR #667 stays DRAFT; alpha did not merge, invite
-  the external beta, touch the PR body, or write gamma binding.
+  #664) reviewed the R5 matter (eb627874) and returned ITERATE on PR #667 with two REQUIRED findings
+  and no blocker (comment 5012900197; β confirmed the R4/R5 sibling-dependency model sound); alpha
+  repaired both as spec-surface / receipt-projection repairs consistent with pinned D1-D10, and kept
+  this review-request split per round so no verdict binds to a SHA it did not review (R3 ->
+  014c75ff/iterate/comment 5012130583; R4 -> ce310a33/iterate/comment 5012790037; R5 ->
+  eb627874/iterate/comment 5012900197; R6 -> 64d94e71/pending). The repair landed as a spec-only
+  immutable matter commit SHA_M 64d94e71, offered back to the external β for exact-SHA re-review. The
+  cell is NOT converged and NOT ratified; convergence is not claimed here. Merge stays gated on the
+  operator exit sequence (§16): external-β re-review -> gamma binds SHA_M + review + evidence ->
+  separate CC ratification -> operator-final-read -> merge -> separate PC-Wave. PR #667 stays DRAFT;
+  alpha did not merge, invite the external beta, touch the PR body, or write gamma binding.
