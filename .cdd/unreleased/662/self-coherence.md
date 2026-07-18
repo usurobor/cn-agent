@@ -75,6 +75,29 @@ No other AC/decision citation in §R0 changed; the R1 delta is scoped to F1/F2. 
 
 **§R2 note on earlier AC walks.** The §R0 AC4 walk described the note as stating "the actor-collapse declaration rule"; after the blocker-4 repair the note instead states the *actor-collapse vs hosting-identity-collapse distinction* and that #662 was hosting-identity collapse. The §R0 record stands as the R0 receipt; this §R2 note is the correction of that surface against the current file. All other §R0/§R1 AC citations still hold against the R2 file.
 
+## §R3 — α repair: §8 reframed to operator-authorized-transitional (operator-settled)
+
+**Matter SHA_M (this repair):** `014c75ff05570be877026b36e7f74c0abfa68d0e` (spec-only amend of the prior R3 spec commit `fdcf4233`; `docs/architecture/CELL-RUNTIME-CLASSES.md` only).
+
+**Trigger — operator control-plane instruction (verbatim).** The operator directly settled the κ/α doctrine framing: *"You're K in sigma world executing the role of alpha of cnos planning cell since we haven't yet made planning cell operational. We're moving to the world of three cells agent operating in this GH autonomously. We're bootstrapping that three-cells agent."* This supersedes the earlier "disclosed nonconformance" framing that R3's first spec commit (and the external-β R3 review-input note) carried. Because this is a direct operator control-plane settlement, it is a mechanical reframe, not an α architecture decision — **no operator-gate hold raised by α; no unpinned decision made.**
+
+**What changed (characterization only).** §8 (and its mirror statements in the Thesis, §1 table, §14 reconciliation-map rows, §15 non-goal, §16 authoring note) were rewritten from **"disclosed nonconformance / assurance limitation / not a valid topology"** to **"operator-authorized transitional bootstrap posture (State A)"**:
+
+1. **State A (κ=α)** is now framed as the **operator-authorized transitional topology** — legitimate because the mechanical Planning-Cell runtime that would execute α does not exist yet, so the operator authorized κ (Sigma) to execute the α role during bootstrap. It is a designed, explicitly transitional stage retired at State B, **not** a nonconformance/violation, **not** a licensed permanent topology. It still carries a reduced *independent* warrant (hosting-identity, #664) requiring external-β discharge — authorized ≠ self-warranting.
+2. **`CELL-KINDS.md:137`** reframed from "stale/wrong prose" to **"State-A-accurate, scoped, superseded at State B."** The downstream doctrine-migration issue **repoints/scopes** line 137, it does not "correct an error."
+3. **Guard-consequence closing sentence** now reads "operator-authorized transitional posture disclosed on the receipts," not "disclosed nonconformance."
+
+**Invariant claims held UNCHANGED under the reframe (identical either way):**
+
+- κ is a control-plane slot, not a cell role; adds no new role letter.
+- The **State-B invariant, unqualified**: κ supplies control-plane input; the cell's α owns and writes the spec/impl matter; κ does not author α matter, does not perform β/γ; role functions must not be silently collapsed; κ≠α is the unconditional target the three-cell agent is built toward — not softened, relativized, or made optional by the bootstrap.
+- **Actor collapse** (one activation performing two cell roles inside one cell boundary — the firebreak-defeating case) remains **forbidden**; the bootstrap limitation is the weaker **hosting-identity collapse** (separate activations, one Sigma lineage), tracked by **#664** — distinction kept crisp, #664 pointer kept.
+- **Provenance:** internal same-lineage passes do not constitute independent-β warrant; the independent warrant is the **external β (outside the Sigma lineage) bound to the matter-only R3 SHA it reviewed (§11.6)** + the later γ receipt binding that same SHA + external review.
+- **This PC-D0 does not edit `CELL-KINDS.md`** (§14 dependency+owner; §15 non-goal); reconciling line 137 is bound to a bounded downstream doctrine-migration issue (PC-Wave / later doctrine wave).
+- Guard consequence (§12): "κ editing cell-owned artifacts" forbidden because κ≠α/β/γ/δ.
+
+**§R3 Hard-STOP check.** No unpinned architecture decision; the reframe is a direct operator control-plane settlement mechanically applied to the characterization surface only. Section length, structure, cross-references (#583/#584, #664, §11.6, §12, §14, §15), and doctrinal force preserved. `CELL-KINDS.md` not edited; only the spec (matter commit) and this receipt + `alpha-closeout.md` (this receipts commit) were written. The external-β R3 review-input note (`external-beta-review-R2.md`) is left as-is; its embedded "κ operator-directive note" recorded the earlier nonconformance framing and is superseded by this operator settlement — no fabricated new external review was written, and γ closeout is not written here (γ binds later, separately, after external β converges on SHA_M).
+
 ## Review-ready signal
 
 `docs/architecture/CELL-RUNTIME-CLASSES.md` is written, self-verified against every cell-level AC1–AC7, every note-level AC1–AC8, and every D1–D10 decision above, adjusted per §R0.1 to the binding directive, repaired per §R1 against β's R0 findings, and repaired per §R2 against κ's operator-final-read six-blocker contract. **The cell is ready for a fresh independent β R2** (blocker 6) over the entire revised contract surface, per κ's verdict.
