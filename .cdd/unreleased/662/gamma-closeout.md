@@ -1,4 +1,155 @@
-> ⚠️ **SUPERSEDED FOR CURRENT STATE** — external-β ITERATE (R3) on PR #667 reopened this cell; current state is in `self-coherence.md` §R4 + `REVIEW-REQUEST.yml`. Historical content retained below.
+# γ closeout — cnos#662 (PC-D0 planning receipt) — **FINAL (external-β CONVERGE binding)**
+
+> ✅ **CURRENT AUTHORITATIVE γ CLOSEOUT.** This top section is the definitive γ binding of the
+> converged R7 matter SHA, the external-β CONVERGE review, and the cell evidence. It **supersedes**
+> the pre-external-β closeout retained below (`## Historical (superseded) — pre-external-β closeout`),
+> which carried a "SUPERSEDED FOR CURRENT STATE" banner from R4. γ **closes** the cell; γ does **not**
+> ratify — CC ratification and the operator gates are separate downstream steps (see Exit).
+
+**Cell:** cnos#662 — PC-D0 Planning Cell · **class:** planning · **mode:** D0 · **matter_domain:** doctrine · **doctrine_affecting:** true
+**Deliverable:** one normative planning artifact — `docs/architecture/CELL-RUNTIME-CLASSES.md` (Status: **Draft**, realization layer, not ratified).
+
+## 1. Verdict
+
+**External-β CONVERGE** on the exact immutable matter SHA `2d6b93cc4e69e5b413a80bd8e352cb0a004da460`
+(spec-only). **No BLOCKER, REQUIRED, HOLD, or REFINEMENT condition remains.** The reviewer is a
+review entity **outside the Sigma lineage (#664)** with **findings-and-verdict-only** authority (no
+approval / ratification / dispatch / merge / issue-state authority). The verdict was formed against
+the complete exact R7 matter, not by δ-attestation.
+
+## 2. Evidence binding (§11.6 — hashes, not prose)
+
+The binding chain is explicit and content-addressed at every link:
+
+```yaml
+gamma_binding:
+  schema_note: "§11.6 evidence-binding rule — bind hashes, not prose"
+  matter_commit_sha_m: 2d6b93cc4e69e5b413a80bd8e352cb0a004da460   # immutable, spec-only (docs/architecture/CELL-RUNTIME-CLASSES.md only)
+  matter_only: true                                                # only file in SHA_M is the spec; verified untouched by the receipt commits above it
+  external_beta_review:
+    reviewer: external-beta (outside Sigma lineage, #664)
+    authority: findings_and_verdict_only
+    verdict: CONVERGE
+    review_target_sha: 2d6b93cc4e69e5b413a80bd8e352cb0a004da460   # names the exact SHA it reviewed
+    review_comment_id: 5013028527
+    review_comment_url: https://github.com/usurobor/cnos/pull/667#issuecomment-5013028527
+    conditions_remaining: "No BLOCKER, REQUIRED, or HOLD condition remains"
+    recommended_next_action: "Run γ closeout binding R7 matter SHA 2d6b93cc + this external-β review + the cell evidence"
+  gamma_binds: [matter_commit_sha_m, external_beta_review, evidence_set]   # this receipt
+  receipt_head_at_binding: 40ad738523cf36d9495e40e95537e42416e4390e         # R7 α receipts, on top of SHA_M; matter bytes unchanged
+```
+
+**Binding chain (the load-bearing links):**
+**matter commit SHA_M `2d6b93cc`** (spec-only) → **external-β review naming that exact SHA**
+(verdict CONVERGE, comment `#issuecomment-5013028527`) → **γ binds both** + the evidence set (this
+receipt). No verdict binds to a SHA it did not review; the external β reviewed `2d6b93cc` and this γ
+closeout binds `2d6b93cc`.
+
+## 3. Round history (findings narrowed monotonically; no blocker since R4)
+
+```
+internal  R0 iterate → R1 converge → R2 converge (internal, same-lineage; hosting-identity-limited)
+          → operator-final-read ITERATE → R3 operator-settled (§8 authorized-transitional reframe)
+external  R3 ITERATE  (014c75ff)  6 findings (1 BLOCKER + 4 REQUIRED + 1 DISPUTED)
+          R4 ITERATE  (ce310a33)  4 findings (1 BLOCKER + 3 REQUIRED)
+          R5 ITERATE  (eb627874)  2 findings (2 REQUIRED, no blocker)
+          R6 ITERATE  (64d94e71)  3 findings (2 REQUIRED + 1 REFINEMENT, no blocker)
+          R7 CONVERGE (2d6b93cc)  0 findings — external-β CONVERGE, no BLOCKER/REQUIRED/HOLD/REFINEMENT
+```
+
+External-β finding count per round: **6 → 4 → 2 → 2+1-refinement → 0**. Monotonic narrowing;
+**no blocker since R4**. Each round's verdict is bound to its own exact review SHA in
+`REVIEW-REQUEST.yml` (R3→014c75ff, R4→ce310a33, R5→eb627874, R6→64d94e71, R7→2d6b93cc) — no verdict
+binds a SHA it did not review.
+
+## 4. Independence / warrant (the load-bearing honesty item)
+
+- The internal α and β passes (R0–R2) were **separate activations** but **hosting-identity-limited**
+  under one **Sigma lineage (#664)** — protocol-level role separation held, but they shared one
+  account/model lineage, so they do **not** by themselves constitute a hosting-independent
+  independent-β warrant.
+- The **hosting-independent warrant is the external β**: a reviewer **outside the Sigma lineage**,
+  **bound to the exact matter SHA it reviewed** (`2d6b93cc`), returning CONVERGE — exactly as the
+  exit sequence intended. That is the warrant this γ closeout binds.
+- **κ ≠ α held at the protocol layer throughout.** κ authored the issue and control-plane comments;
+  α authored the spec matter; β authored **none** of the matter it reviewed. The firebreak that
+  matters (κ did not author the spec; β authored no matter) was never defeated.
+- The bootstrap **κ = α** posture is the **operator-authorized transitional State-A posture (§8)** —
+  legitimate because the mechanical Planning-Cell runtime that would execute α does not exist yet, so
+  the operator authorized κ (Sigma) to execute the α role during bootstrap. It is **disclosed, not
+  silently assumed as equivalence**, and is retired at State B where κ ≠ α is unconditional. This is
+  **hosting-identity collapse (#664)**, not **actor collapse** (one activation performing two roles
+  inside one cell boundary — the firebreak-defeating case, which did NOT occur here).
+
+## 5. Bootstrap calibration (REQUIRED — recorded explicitly)
+
+This cycle proves that **a planning contract can run to a converged spec through the currently-shipped
+generic CDS/CCNF runner.** It does **NOT** prove that a mechanical Planning-Cell runtime exists.
+Specifically, it does **not** prove that:
+
+- `cell_class`-aware routing exists (the shipped runner claimed #662 via the ordinary generic
+  `dispatch:cell + protocol:cds + status:todo` path; `FactSnapshot.CellKind` remains an
+  observation-only seam, `TestSeam_CellKindNotEnforced`);
+- a wave FSM exists;
+- per-class `V` validators exist;
+- scheduled CC pulses exist.
+
+Those are **specified-not-shipped** (spec §11.3–§11.5). The cell ran γ→α→β as a normal CDS cell; its
+planning telos lived in the contract and the matter, not in any class-aware runtime behavior.
+
+## 6. Deliverable evidence
+
+```yaml
+deliverable_evidence:
+  artifact: docs/architecture/CELL-RUNTIME-CLASSES.md    # the ONE deliverable, at SHA_M 2d6b93cc (Status: Draft)
+  artifact_at_sha_m: 2d6b93cc4e69e5b413a80bd8e352cb0a004da460
+  artifact_spec_only: true                               # SHA_M changes the spec file only; verified untouched by receipt commits
+  receipt_set: ".cdd/unreleased/662/*"                   # CLAIM-REQUEST, gamma-scaffold, self-coherence, operator-review,
+                                                          # beta-review, beta-review-R2, alpha-closeout, beta-closeout,
+                                                          # gamma-closeout, REVIEW-REQUEST.yml
+  base_merge_base_with_origin_main: 5ca785cd39f3913bbc31997cb9c2d2469cac21ae
+  pr: "usurobor/cnos#667 (cycle/662 → main; Refs #662) — DRAFT"
+  ci: "22/22 exact-SHA checks PASS on 2d6b93cc (as recorded by the external-β CONVERGE review,
+       comment 5013028527, verdict + invariant/mechanical-enforceability audit; receipt head 40ad7385
+       carries no separate combined status, expected — CI is bound to the exact matter SHA)"
+  receipt_head_at_binding: 40ad738523cf36d9495e40e95537e42416e4390e
+```
+
+## 7. Exit / authority boundary
+
+This cell's authority **ends at `status:review`**. γ **closes** the cell (binds SHA_M + review +
+evidence); γ does **NOT** ratify. The remaining exit-sequence steps are **separate and NOT performed
+by this cell**:
+
+```
+external-β CONVERGE on 2d6b93cc  →  γ binds SHA_M + review + evidence  (THIS RECEIPT — cell closes here)
+  →  separate Cohering Cell (CC) ratification   (non-Sigma warrant; NOT dispatched by this cell)
+  →  operator second final-read
+  →  merge of the D0
+  →  separate PC-Wave
+  →  CC wave review
+  →  operator wave authorization
+```
+
+**Do NOT merge; do NOT dispatch CC; PR #667 stays DRAFT.** No mark-ready, no CC dispatch, no
+ratification claim by this cell.
+
+## 8. Operator-gate holds
+
+**None raised by this cell.** No true contradiction was found in the pinned architecture. The genuine
+downstream operator decision points (CC ratification of this spec; authorization of a PC-Wave) are
+named in spec §16 and are **out of scope for this cell** by construction; the still-open questions
+(§16 Q1–Q5) are downstream questions, not blocking operator decisions gating this Draft.
+
+---
+
+## Historical (superseded) — pre-external-β closeout
+
+> ⚠️ **SUPERSEDED FOR CURRENT STATE** — retained for the round record only. The authoritative γ
+> closeout is the **FINAL (external-β CONVERGE binding)** section above. The content below predates
+> the external-β round (R3–R7 on PR #667) and its "Exit"/"§R2" text describes an earlier state; do not
+> read it as current. The current per-round external-β bindings live in `REVIEW-REQUEST.yml` and the
+> round history in `self-coherence.md` §R3–§R7.
 
 # γ closeout — cnos#662 (PC-D0 planning receipt)
 

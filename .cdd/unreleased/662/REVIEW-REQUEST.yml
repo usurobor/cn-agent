@@ -5,7 +5,7 @@ mode: PC-D0
 protocol: cds
 requests: in-progress -> review
 requested_by: cds-dispatch (delta wake-invoked mode; interactive cn-sigma substrate)
-beta_verdict: pending          # R7 matter offered for exact-SHA external-β review; NO verdict bound yet
+beta_verdict: converge         # external-β CONVERGE on the exact R7 SHA 2d6b93cc; no BLOCKER/REQUIRED/HOLD remains
 beta_round: R7
 matter_sha_m: 2d6b93cc4e69e5b413a80bd8e352cb0a004da460   # immutable spec-only R7 matter, offered for exact-SHA external-β review
 
@@ -39,8 +39,9 @@ external_beta:
       review_comment_url: https://github.com/usurobor/cnos/pull/667#issuecomment-5012973128   # external-β R6 exact-revision review, names 64d94e71 (confirmed R6 resolved both R5 findings at the right altitude)
     - round: R7
       sha: 2d6b93cc4e69e5b413a80bd8e352cb0a004da460
-      state: pending          # offered for exact-SHA external-β review on this SHA; NO verdict bound yet
-      # no review_comment_url and no verdict until the external β reviews this exact SHA
+      verdict: converge       # external-β CONVERGE on this exact SHA; No BLOCKER, REQUIRED, or HOLD condition remains
+      findings: 0 (no BLOCKER/REQUIRED/REFINEMENT/HOLD remains)
+      review_comment_url: https://github.com/usurobor/cnos/pull/667#issuecomment-5013028527   # external-β R7 exact-SHA review, names 2d6b93cc, verdict CONVERGE, recommends γ closeout binding 2d6b93cc
 
 disposition: >
   R7 repairs the external-β R6 ITERATE findings (PR #667 comment 5012973128; ITERATE with 2 REQUIRED
@@ -64,9 +65,9 @@ beta_round_history: >
   R0 iterate -> R1 converge -> R2 (internal) -> operator-final-read ITERATE -> R3 operator-settled
   -> external-β R3 ITERATE (014c75ff, 6 findings) -> R4 repair -> external-β R4 ITERATE (ce310a33,
   4 findings) -> R5 repair -> external-β R5 ITERATE (eb627874, 2 findings, no blocker) -> R6 repair
-  -> external-β R6 ITERATE (64d94e71, 2 REQUIRED + 1 REFINEMENT, no blocker) -> R7 repair (2d6b93cc,
-  pending exact-SHA re-review). Convergence trajectory: R3 6 -> R4 4 -> R5 2 -> R6 2+1-refinement;
-  no blocker since R4.
+  -> external-β R6 ITERATE (64d94e71, 2 REQUIRED + 1 REFINEMENT, no blocker) -> R7 repair (2d6b93cc)
+  -> external-β R7 CONVERGE (2d6b93cc, 0 findings, no BLOCKER/REQUIRED/HOLD; comment 5013028527).
+  Convergence trajectory: R3 6 -> R4 4 -> R5 2 -> R6 2+1-refinement -> R7 0; no blocker since R4.
 review_return: >
   external-β R6 ITERATE on PR #667 (2 REQUIRED + 1 REFINEMENT, no blocker, comment 5012973128;
   β confirmed R6 resolved both R5 findings at the right altitude); alpha repaired all three
@@ -86,17 +87,19 @@ deliverable:
     - beta-closeout.md
     - gamma-closeout.md
 note: >
-  R7 external-β repair pass. Bootstrap PC-D0 realization on the shipped generic CDS/CCNF runner
+  R7 external-β CONVERGE. Bootstrap PC-D0 realization on the shipped generic CDS/CCNF runner
   (no cell_class-aware routing). A genuinely-independent external β (outside the Sigma lineage,
-  #664) reviewed the R6 matter (64d94e71) and returned ITERATE on PR #667 with two REQUIRED findings
-  and one REFINEMENT, no blocker (comment 5012973128; β confirmed R6 resolved both R5 findings at the
-  right altitude); alpha repaired all three as spec-surface / receipt-projection repairs consistent
-  with pinned D1-D10, and kept this review-request split per round so no verdict binds to a SHA it did
-  not review (R3 -> 014c75ff/iterate/comment 5012130583; R4 -> ce310a33/iterate/comment 5012790037;
-  R5 -> eb627874/iterate/comment 5012900197; R6 -> 64d94e71/iterate/comment 5012973128; R7 ->
-  2d6b93cc/pending). The repair landed as a spec-only immutable matter commit SHA_M 2d6b93cc, offered
-  back to the external β for exact-SHA re-review. The cell is NOT converged and NOT ratified;
-  convergence is not claimed here. Merge stays gated on the operator exit sequence (§16): external-β
-  re-review -> gamma binds SHA_M + review + evidence -> separate CC ratification -> operator-final-read
-  -> merge -> separate PC-Wave. PR #667 stays DRAFT; alpha did not merge, invite the external beta,
-  touch the PR body, or write gamma binding.
+  #664) reviewed the R6 matter (64d94e71) and returned ITERATE (two REQUIRED + one REFINEMENT, no
+  blocker, comment 5012973128); alpha repaired all three as spec-surface / receipt-projection repairs
+  consistent with pinned D1-D10 and landed the spec-only immutable matter commit SHA_M 2d6b93cc; the
+  external β then reviewed that exact SHA and returned CONVERGE (0 findings, no BLOCKER/REQUIRED/HOLD;
+  comment 5013028527), recommending γ closeout binding 2d6b93cc. This review-request stays split per
+  round so no verdict binds to a SHA it did not review (R3 -> 014c75ff/iterate/comment 5012130583;
+  R4 -> ce310a33/iterate/comment 5012790037; R5 -> eb627874/iterate/comment 5012900197; R6 ->
+  64d94e71/iterate/comment 5012973128; R7 -> 2d6b93cc/converge/comment 5013028527). The cell CONVERGES
+  at the external-β layer but is NOT ratified; ratification is downstream and not claimed here. γ has
+  bound SHA_M + this review + evidence (gamma-closeout.md). Merge stays gated on the operator exit
+  sequence (§16): external-β CONVERGE -> gamma binds SHA_M + review + evidence -> separate CC
+  ratification -> operator-final-read -> merge -> separate PC-Wave -> CC wave review -> operator wave
+  authorization. PR #667 stays DRAFT; γ did not merge, mark the PR ready, dispatch CC, or touch the
+  matter (2d6b93cc left byte-for-byte untouched).
