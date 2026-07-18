@@ -10,6 +10,13 @@
 
 `CELL-RUNTIME.md` established that CNOS has one CCNF kernel, deployed in three output-telos shapes — WC (artifact), PC (relation graph), CC (process judgment) — executed by one generic runner. That note stops at the class definitions. It does not say what a cell contract looks like as a typed object, what a Cohering Cell consumes and emits, how `cell_class` interacts with the shipped label-driven FSM, or which parts of the "mechanical FSM" sketch are running in production today versus still design. This note is the **operationalization layer**: it takes the classes as given and specifies the routing, contracts, and FSM extension that let a generic runner dispatch them without inventing policy at runtime. It carries ten operator-pinned decisions (D1–D10, §16) as settled input, not as open questions to re-derive.
 
+**What this note bootstraps, and the identity model it assumes.** The larger objective is to **bootstrap a three-cell agent** — Working / Planning / Cohering — that operates this repository autonomously. That mechanical three-cell runtime does **not** exist yet (no `cell_class`-aware routing, no wave FSM, no per-class `V` validators, no scheduled CC pulse); this note *specifies* it. Throughout, two levels are kept distinct:
+
+- **"Sigma" is an activation / agent lineage** — one model identity operating this repo.
+- **κ, α, β, γ, δ and the cell classes WC / PC / CC are functional roles.** One activation can carry several roles; a role is not an identity.
+
+This distinction frames the κ/α discussion in §8. The note's target — **State B**, where α is a distinct runtime-executed role and κ sits outside the cell — is the design and holds **unconditionally**. During bootstrap the operator **authorized κ (Sigma) to execute the α role** (State A) only because the mechanical Planning-Cell runtime that would execute α does not exist yet; that is an **operator-authorized, explicitly transitional posture retired by the very migration this note specifies**, not a licensed permanent way to run a Planning Cell (§8).
+
 ---
 
 ## 1. Relationship to CELL-RUNTIME.md and the kernel
@@ -21,7 +28,7 @@ This note is a **sibling** of `docs/architecture/CELL-RUNTIME.md`, not a replace
 | `COHERENCE-CELL-NORMAL-FORM.md` (#370) | The five-step kernel `α→β→γ→V→δ`, the four cell outcomes, the two recursion modes, the three scope-lift projections | Cited; §4 below is a direct instance of Projection 3 (ε) |
 | `CELL-RUNTIME.md` (#628) | WC/PC/CC as output-telos classes of one kernel; the four orthogonal axes (kernel cell / roles / output-telos / matter domain); CM measures, V gates, δ effects | Consumed as fixed input; this note does not re-derive the classes |
 | `CELL-KINDS.md` (#570) | The matter/contract domain vocabulary (axis 4) | Unaffected; `cell_class` (this note) and `matter_domain` (`CELL-KINDS.md`) are orthogonal fields on the same contract |
-| **This note** (#662) | The cell contract envelope; class-specific `V`; CC↔ε; the FSM extension point for `cell_class`; State A/State B honesty; the wave FSM sketch | — |
+| **This note** (#662) | The cell contract envelope; class-specific `V`; CC↔ε; the distinct-`CellClass` FSM extension point; the unconditional κ≠α invariant (State B) + the operator-authorized transitional bootstrap posture (State A, §8); the wave FSM sketch | — |
 
 **D1 (one CCNF kernel).** WC, PC, and CC are output-telos classes of the *same* kernel — already `CELL-RUNTIME.md`'s own thesis. This note confirms it and does not re-derive it: every class below still runs its own internal, independent `α→β→γ→V→δ`; nothing here forks the kernel, adds a role letter, or changes α/β/γ/δ semantics.
 
@@ -29,51 +36,93 @@ This note is a **sibling** of `docs/architecture/CELL-RUNTIME.md`, not a replace
 
 ## 2. The cell contract envelope (`cn.cell.contract.v1`)
 
-All three classes consume one typed envelope. Only *input admissibility, matter type, class-specific acceptance, and post-closure routing* differ by class (§3, §5). Per **D9 (schema-first destination)**, this note **names** the schema; it does not implement it — no CUE, no Go struct, no validator. This block is the **one canonical shape** — the schema template and the worked instance below are the same object, field-for-field and nesting-for-nesting:
+All three classes consume one typed envelope. Only *input admissibility, matter type, class-specific acceptance, and post-closure routing* differ by class (§3, §5). Per **D9 (schema-first destination)**, this note **names** the schema; it does not implement it — no CUE, no Go struct, no validator. The two blocks below are **one canonical shape**: a placeholder template and an illustrative worked instance that **normalize to identical key paths, types, and cardinalities**. To keep that property machine-checkable, the template uses **quoted scalar placeholders and comment annotations only** — no bare commas inside flow scalars, so both blocks parse to the same structure under an ordinary YAML parser:
 
 ```yaml
-schema: cn.cell.contract.v1
-cell:   { id: <issue>, class: working | planning | cohering, mode: <class-specific>, protocol: cds, matter_domain: <CELL-KINDS.md vocabulary> }
-scope:  { repo: <owner/name>, wave: <parent wave issue, if any>, parent_cell: <parent cell issue, if any> }
-intent_ref: { schema: cn.intent.v1, id: <intent id>, carrier: { kind: github_issue, ref: <issue> } }
+schema: cn.cell.contract.v1               # const
+cell:
+  id: "<issue>"                           # scalar cell id
+  class: "working"                        # enum: working | planning | cohering
+  mode: "<class-specific>"                # scalar (e.g. d0 | wave for planning)
+  protocol: "cds"                         # scalar
+  matter_domain: "<CELL-KINDS.md-vocab>"  # scalar
+scope:
+  repo: "<owner/name>"                    # scalar
+  wave: "<parent-wave-issue-or-null>"     # scalar-or-null
+  parent_cell: "<parent-cell-issue-or-null>"  # scalar-or-null
+intent_ref:
+  schema: "cn.intent.v1"                  # const
+  id: "<intent-id>"                       # scalar
+  carrier:
+    kind: "github_issue"                  # scalar
+    ref: "<issue>"                        # scalar
 inputs:
-  required: [ <artifacts/issues this cell depends on> ]
-  optional: [ prior_receipts ]
-requested_output: { kind: <artifact | relation_graph | judgment>, path: <where the matter lands> }
+  required: [ "<dependency-ref>" ]        # seq<scalar>, 1+
+  optional: [ "prior_receipts" ]          # seq<scalar>, 0+
+requested_output:
+  kind: "<artifact | relation_graph | judgment>"   # enum scalar
+  path: "<where-the-matter-lands>"        # scalar
 acceptance:
-  predicates: [ <class-specific acceptance predicates, §5> ]
+  predicates: [ "<class-specific-predicate>" ]     # seq<scalar>, 1+ (§5)
 constraints:
-  allowed_paths:   [ <surfaces this cell's matter may touch> ]
-  forbidden_paths: [ <surfaces this cell's matter must not touch> ]
-  non_goals: [ <explicit non-goals> ]
-gates: { operator_authorization_required: <bool>, operator_acceptance_required: <bool> }
-stop_conditions: [ <typed STOP triggers, e.g. source_doctrine_conflicts, required_decision_unresolved> ]
+  allowed_paths:   [ "<surface-glob>" ]   # seq<scalar>, 1+
+  forbidden_paths: [ "<surface-glob>" ]   # seq<scalar>, 0+
+  non_goals:       [ "<explicit-non-goal>" ]        # seq<scalar>, 0+
+gates:
+  operator_authorization_required: false  # bool
+  operator_acceptance_required: false     # bool
+  reason: "<why-acceptance-is-gated>"     # scalar, present when a gate bool is true
+doctrine_affecting: false                 # bool — the doctrine-gate discriminator (§9)
+stop_conditions: [ "<typed-STOP-trigger>" ]         # seq<scalar>, 0+
 ```
 
-**Intent is referenced, not inlined (D9, §13).** The contract does not *contain* intent; it **references the first-class `cn.intent.v1` object** (§13) via `intent_ref: { schema, id, carrier }`. A GitHub issue is a **carrier / control-plane projection** of that intent — `carrier: { kind: github_issue, ref: <issue> }` — **not** intent identity. `cn.intent.v1` is produced by κ *before any cell exists* (§13's dependency order: `cn.intent.v1 → cn.cell.contract.v1 → …`); the cell contract points back at it. This is the §2 ↔ §13 reconciliation: there is exactly one intent object, and the issue is one of its carriers.
+**Canonical key paths and cardinalities (stated once).** The contract is exactly these paths, and nothing normalizes to any other shape: `schema` (const) · `cell.{id, class, mode, protocol, matter_domain}` (scalars; `class` an enum) · `scope.{repo, wave, parent_cell}` (`wave`/`parent_cell` scalar-or-null) · `intent_ref.{schema, id, carrier.{kind, ref}}` (scalars) · `inputs.{required (1+), optional (0+)}` (seq<scalar>) · `requested_output.{kind (enum), path}` (scalars) · `acceptance.predicates` (seq<scalar>, 1+) · `constraints.{allowed_paths (1+), forbidden_paths (0+), non_goals (0+)}` (seq<scalar>) · `gates.{operator_authorization_required, operator_acceptance_required}` (bool) with optional `gates.reason` (scalar) · `doctrine_affecting` (bool) · `stop_conditions` (seq<scalar>, 0+). A future CUE/Go schema pins these types; a mechanical fixture that parses both blocks and diffs their normalized key-path/type/cardinality sets is the verification for this section.
 
-This is a worked, not hypothetical, instance — **#662's own cell contract, expressed in the canonical envelope above** (the same top-level keys, the same nesting):
+**Intent is referenced, not inlined (D9, §13).** The contract does not *contain* intent; it **references** a first-class `cn.intent.v1` object (§13) via `intent_ref: { schema, id, carrier }`. A GitHub issue is a **carrier / control-plane projection** of that intent — `carrier: { kind: github_issue, ref: <issue> }` — **not** intent identity. Per the D9 dependency order (`cn.intent.v1 → cn.cell.contract.v1 → …`), a durable `cn.intent.v1` object is produced by κ *before any cell exists*, and the cell contract points back at it. **`cn.intent.v1` is named-not-implemented in this note (D9): no durable intent object exists on a pinned surface today.** Materializing a durable `cn.intent.v1` object (and making `intent_ref.id` resolve to it immutably) is therefore a **schema-implementation deliverable** owned by the schema/PC-Wave work (§13, S2 of #627 / #644), not a claim of this Draft.
+
+**Doctrine gate lives in the contract (D5, §9).** The doctrine gate is determinable from this canonical contract *alone*: `matter_domain` plus the top-level `doctrine_affecting` boolean (and, when a gate fires, `gates.reason`) are the discriminator. There is no companion operator-comment block that the mechanical gate selection must also read — the contract is the single authority surface (§9).
+
+**This worked instance is illustrative, not a resolved live object.** It shows the shape **#662's own cell contract takes once `cn.cell.contract.v1` and `cn.intent.v1` are implemented** — it is *not* an assertion that a durable `cn.intent.v1` with id `intent-2026-0711-662` exists in the repository today (it does not; see the paragraph above and §13). It normalizes to the same key paths, types, and cardinalities as the template:
 
 ```yaml
 schema: cn.cell.contract.v1
-cell:   { id: 662, class: planning, mode: d0, protocol: cds, matter_domain: doctrine }
-scope:  { repo: usurobor/cnos, wave: 627, parent_cell: null }
-intent_ref: { schema: cn.intent.v1, id: intent-2026-0711-662, carrier: { kind: github_issue, ref: cnos#662 } }
+cell:
+  id: "662"
+  class: "planning"
+  mode: "d0"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "627"
+  parent_cell: null
+intent_ref:
+  schema: "cn.intent.v1"                  # illustrative id — not yet a durable object (§13)
+  id: "intent-2026-0711-662"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#662"
 inputs:
-  required: [ "docs/architecture/CELL-RUNTIME.md", cnos#627, cnos#530, cnos#644 ]
-  optional: [ prior_receipts ]
-requested_output: { kind: artifact, path: docs/architecture/CELL-RUNTIME-CLASSES.md }
+  required: [ "docs/architecture/CELL-RUNTIME.md", "cnos#627", "cnos#530", "cnos#644" ]
+  optional: [ "prior_receipts" ]
+requested_output:
+  kind: "artifact"
+  path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
 acceptance:
-  predicates: [ wc_pc_cc_are_one_kernel_classes, cc_epsilon_reconciliation_preserved, fsm_states_and_events_specified, kappa_outside_cell, current_and_target_state_distinguished ]
+  predicates: [ "wc_pc_cc_are_one_kernel_classes", "cc_epsilon_reconciliation_preserved", "fsm_states_and_events_specified", "kappa_outside_cell", "current_and_target_state_distinguished" ]
 constraints:
   allowed_paths:   [ "docs/architecture/CELL-RUNTIME-CLASSES.md", ".cdd/unreleased/662/**" ]
   forbidden_paths: [ "src/go/**", ".github/workflows/**" ]
-  non_goals: [ implement_cell_runner, alter_ccnf, add_new_role_letters, replace_cdd_or_cds, file_or_dispatch_child_issues ]
-gates: { operator_authorization_required: true, operator_acceptance_required: true }
-stop_conditions: [ source_doctrine_conflicts, required_decision_unresolved ]
+  non_goals:       [ "implement_cell_runner", "alter_ccnf", "add_new_role_letters", "replace_cdd_or_cds", "file_or_dispatch_child_issues" ]
+gates:
+  operator_authorization_required: true
+  operator_acceptance_required: true
+  reason: "doctrine-affecting architecture matter; operator final-read required"
+doctrine_affecting: true
+stop_conditions: [ "source_doctrine_conflicts", "required_decision_unresolved" ]
 ```
 
-Every field and nesting level here validates against the envelope above verbatim: `cell.id` (not `cell.issue`); `requested_output` an **object** `{ kind, path }` (not a list); `non_goals` **under `constraints`** (not `cell.non_goals`); `gates` and `stop_conditions` **top-level** (not `cell.gates`). The schema block and this instance are one shape, not two. (`matter_domain: doctrine` is the domain half of the doctrine-gate flag pair; the companion `doctrine_affecting: true` lives in the operator-authorization contract block and is cited in §9.)
+Both blocks carry the same key paths at the same nesting: `cell.id` (not `cell.issue`); `requested_output` an **object** `{ kind, path }` (not a list); `non_goals` **under `constraints`** (not `cell.non_goals`); `gates` / `doctrine_affecting` / `stop_conditions` **top-level** (not `cell.*`). The template's placeholders are quoted scalars, so no comma-in-flow-scalar splits a value into extra keys or elements — the two blocks are one shape, not two. (`matter_domain: doctrine` + `doctrine_affecting: true` are the doctrine-gate pair, both now canonical contract fields — §9.)
 
 **Labels vs typed contract.** Per **D6/D9** and #643 (shipped): GitHub **labels** carry only coarse mechanical state — `dispatch:cell`, `protocol:cds`, `status:*` — and answer *is this dispatchable, which protocol, where in the lifecycle*. The **typed contract** (above) carries semantics — `cell.class`, `mode`, `matter_domain`, `requested_output`, `acceptance`, `constraints`, `gates`, `stop_conditions` — and is *not* itself a label. #662 was authorized without a `cell_class:*` label for exactly this reason (operator-authorization comment, 2026-07-13): "the issue contract remains the source" for `cell.class`.
 
@@ -98,7 +147,7 @@ Each class is the *same* kernel cell with a different output telos (`CELL-RUNTIM
 *Telos:* increase executable relational structure — matter targets relation (TSC-β), output is a relation graph. Two modes, not one contract:
 
 - **PC-D0** — `operator intent → product/architecture/spec contract`. Admissible if operator intent is captured, the problem boundary is named, existing state is linked, unresolved product/architecture questions are made explicit, the requested artifact is specified, and **no implementation is requested.** Output passes only if it establishes: who the user/operator is; what relation must become true; State A (current); State B (target); primary surface and fallbacks; authority/permission boundaries; explicit decisions; genuinely open questions; non-goals; and criteria to begin wave planning. **#662 is itself the first bootstrap instance of a PC-D0 contract** (operator-authorization comment, 2026-07-13) — see §11's bootstrap-calibration note.
-- **PC-Wave** — `validated D0 → executable wave`. Admissible only once the D0 is validated, the target is sufficiently defined, scope/non-goals are stable, major decisions have owners, and surfaces are known. Output passes only if: the graph is acyclic; every node carries `class` + `protocol` + `matter_domain` + `requested_output` + acceptance criteria; dependencies are explicit; the critical path is explicit; parallel cells don't share write surfaces; human gates are located; **no child is auto-dispatched**; STOP conditions exist at cell *and* wave level; a wave-completion predicate is defined. #644 is the open implementation target for PC-Wave mechanization; **this note specifies its contract, it does not build it.**
+- **PC-Wave** — `validated D0 → executable wave`. Admissible only once the D0 is validated, the target is sufficiently defined, scope/non-goals are stable, major decisions have owners, and surfaces are known. Output passes only if: the graph is acyclic; **every node embeds or immutably references a complete `cn.cell.contract.v1` (§2)** — the full envelope, carrying `class` + `protocol` + `matter_domain` + `requested_output` + acceptance predicates + dependencies + gates + `doctrine_affecting` + STOP conditions + completion semantics (a node does **not** re-declare a partial subset of those fields); edges are keyed by stable cell ids; the critical path is explicit; parallel cells don't share write surfaces; human gates are located; **no child is auto-dispatched**; STOP conditions exist at cell *and* wave level; a wave-completion predicate is defined. The child's `cn.cell.contract.v1` is the single source of truth for its class/protocol/dependencies; the wave graph references it, it does not duplicate it (§13, `cn.wave.v1`). #644 is the open implementation target for PC-Wave mechanization; **this note specifies its contract, it does not build it.**
 
 **Guard, both modes:** a Planning Cell creates and refines its own children; it does not apply `status:todo` to them. Dispatching a PC's own children requires operator authorization (or a typed policy gate at the wave-authorization boundary, §9) — never an automatic action taken by the PC itself. This is the same guard #662 itself operates under: it produces exactly one artifact and files or dispatches nothing.
 
@@ -125,7 +174,23 @@ A PC-D0 result carries an `artifact_ref` and is `ready_for_coherence_review` (it
 
 **Dispositions:** `request_planning | request_working | hold | request_human | continue_wave | complete | complete_with_residuals | block`.
 
-**Result shape:** `{ class: cohering, judgment, disposition, next_mca, requires_operator_gate }`. CC recommends; `V` validates the judgment's structural shape; the FSM (not CC) applies any resulting transition (**D7**, §7).
+**Result shape — a tagged union by `disposition`, not one overloaded shape.** A single result carrying `next_mca` *and* `requires_operator_gate` *and* an optional reason lets impossible combinations (e.g. `complete` with a `next_mca`, or `request_human` with no gate) stay contract-valid. Instead, every CC result carries a common head and exactly one disposition tag; the tag fixes which payload fields are **required** and which are **forbidden**, so `V` can prove *exactly one coherent disposition*:
+
+```yaml
+# common head (every tag): { class: cohering, judgment, disposition, requires_operator_gate }
+```
+
+| Disposition tag | Requires | Forbids |
+|---|---|---|
+| `request_planning`, `request_working` | `next_mca` (typed `cn.next-mca.v1`, names the class) | `residuals`, `gate` |
+| `continue_wave` | `next_mca` (the continuation MCA) | `residuals`, `gate` |
+| `hold` | `reason` | `next_mca`, `residuals` |
+| `block` | `reason` | `next_mca`, `residuals` |
+| `request_human` | `gate` (typed human-gate, §9) | `next_mca`, `residuals` |
+| `complete` | — | `next_mca`, `residuals`, `gate` |
+| `complete_with_residuals` | `residuals` (typed residual list) | `next_mca`, `gate` |
+
+CC recommends; `V` validates the judgment's structural shape **and** that the emitted tag's required/forbidden field contract holds (positive and negative fixtures: reject `complete` + `next_mca`, reject `request_human` without a gate); the FSM (not CC) applies any resulting transition (**D7**, §7). This is the `cn.next-mca.v1`-adjacent result contract §13 names as `cn.cc-result.v1`.
 
 **Anti-patterns, both directions (`CELL-RUNTIME.md`'s runtime-loop invariant, restated as a guard):** CC writing the architecture note directly blurs CC into PC. PC turning vague intent directly into implementation issues without a D0/product note skips the customer-facing contract PC-D0 exists to produce (this is exactly what #654 hardens against).
 
@@ -167,7 +232,7 @@ This matches CCNF's own §Scope-Lift Projection 3 (`εₙ receipt-stream observa
 | **Common `V`** (all classes) | Receipt complete · evidence present · role ownership valid · contract fields satisfied · no unresolved blocking finding |
 | **WC `V`** adds | Executable acceptance criteria pass · tests/checks pass · allowed-surface and non-goal guards hold |
 | **PC `V`** adds | Requested planning artifacts exist · relation graph acyclic · every child cell has ACs + dependencies + gates + STOP conditions · unresolved decisions explicitly gated (not hidden) · **no child auto-dispatched** (mechanically checkable: the PC applied no `status:todo` to any child) |
-| **CC `V`** adds | Judgment is evidence-backed · exactly one disposition emitted · a typed next-MCA is present **or** a typed human-gate/hold is named · **no implementation surface modified** (mechanically checkable as an allowed-surface check on the CC's own matter: matter paths ⊆ judgment artifacts, no code/product diff) |
+| **CC `V`** adds | Judgment is evidence-backed · exactly one disposition emitted · the emitted disposition tag's required/forbidden field contract holds (§3.3 tagged union — e.g. `complete` carries no `next_mca`, `request_human` carries a typed gate) · **no implementation surface modified** (mechanically checkable as an allowed-surface check on the CC's own matter: matter paths ⊆ judgment artifacts, no code/product diff) |
 
 These predicates are the seed for the future per-class `cell.cue` validators (`CELL-RUNTIME.md`'s Reconciliation map, `#369`/#627 S2–S3). This note names them as the destination `V` extends toward; it implements none of them.
 
@@ -183,7 +248,14 @@ The runtime eventually evaluates the triple **`(status, protocol, cell_class)`**
 
 **Dispatch readiness stays solely label-gated:** `dispatch:cell + protocol:{P} + status:todo` — exactly the shipped #643 rule. `cell_class` is **post-claim** routing/authority metadata sourced from the typed contract, not a second readiness gate. If a claimed cell's contract is missing `cell.class`, `requested_output`, or acceptance criteria, the runtime routes it to `status:blocked` with `degraded_reason: cell_contract_incomplete` — a post-claim validation failure, not a pre-claim admission failure. This answers `CELL-RUNTIME.md`'s Open-Q1/Open-Q2 without contradicting #643 or #640.
 
-**Grounding in the shipped seam.** The shipped FSM already carries an observation-only seam for exactly this purpose: `FactSnapshot.CellKind{Observed, Source, DefaultedTo}`, locked as *observation, not enforcement* by `TestSeam_CellKindNotEnforced` (see `src/packages/cnos.cds/skills/cds/fsm/transitions.json` and its adjacent Go evaluator). This note's `cell_class` dimension is the **specified promotion of that seam from observation to evaluation** — the deferred "FSM Phase 2" `CELL-KINDS.md` names — keyed on `cell_class` for behavior/authority, with `matter_domain` remaining the separate domain refinement (`CELL-KINDS.md`, unaffected). The exact source mechanics (contract field vs. observation seam vs. eventual label) are for schema work to pin (§13); the decision that `cell_class` is an evaluated FSM dimension is settled here.
+**Grounding in the shipped seam — a distinct field, not a repurposing.** The shipped FSM carries one observation-only seam: `FactSnapshot.CellKind{Observed, Source, DefaultedTo}`, populated from the `cell_kind:` line of `gamma-scaffold.md` (`src/packages/cnos.issues/commands/issues-fsm/fetch.go`) and locked as *observation, not enforcement* by `TestSeam_CellKindNotEnforced`. **That seam observes `matter_domain`, not class** — `CELL-KINDS.md` §"FSM awareness" is explicit that the legacy `cell_kind` field *is* `matter_domain`. This note therefore does **not** repurpose `CellKind` to evaluate `cell_class`; doing so would collapse the two orthogonal axes (`CELL-RUNTIME.md` Open-Q1: *"add both, keep `cell_kind` as a compat alias"* — add both fields, do not overload one).
+
+The specified extension is a **dual-field migration**:
+
+- **`CellClass`** — a **distinct, new** observation/evaluation field, sourced from `cell.class` in the typed contract (§2). Class guards (authority: can it create/dispatch children, modify implementation surfaces, emit a next-MCA?) evaluate `CellClass`.
+- **`CellKind`** — retained **unchanged** as the `MatterDomain` compatibility adapter (legacy alias). Domain refinements continue to evaluate `MatterDomain` (legacy `CellKind`); its observation is *not* lost.
+
+The two fields are populated and evaluated independently, so model tests can vary class and domain orthogonally and prove class guards read `CellClass` while domain refinements read `MatterDomain`. This is the deferred "FSM Phase 2" `CELL-KINDS.md` names — realized as *two* fields, not a promotion of one into the other. The exact source mechanics of `CellClass` (contract field vs. a new observation seam vs. eventual label) are for schema work to pin (§13); the settled decisions here are that `cell_class` is an evaluated FSM dimension **and** that it gets its own field distinct from the matter-domain seam.
 
 ---
 
@@ -205,18 +277,21 @@ Formally: `Jₖ := CC.evaluate(I₀, Stateₖ, Receiptsₖ)`; PC/WC produce on `
 
 ---
 
-## 8. κ remains outside the cell (D2, F3)
+## 8. κ remains outside the cell; κ ≠ α (D2, F3) — with an operator-authorized transitional bootstrap posture
 
-κ is a **control-plane** slot, not a cell role — it does not appear beside α/β/γ/δ/ε in CCNF and this note adds no new role letter. **κ supplies operator/control-plane input; the cell's α owns and writes the specification or implementation matter.** κ must not author the specification as α. κ speaks through issues and issue comments; cells work through typed contracts and receipts. This aligns with #583 and #584 (both landed doctrine: the mechanism/cognition boundary — mechanical dispatch is fully separated from the cognitive skills that run inside a claimed cell).
+κ is a **control-plane** slot, not a cell role — it does not appear beside α/β/γ/δ/ε in CCNF, and this note adds no new role letter. The invariant, stated **without qualification**, is the design:
 
-**Two distinct collapse modes — do not conflate them.**
+> **κ supplies operator/control-plane input; the cell's α owns and writes the specification or implementation matter. κ does not author α matter, does not perform β or γ, and role functions must not be silently collapsed.** κ speaks through issues and comments; cells work through typed contracts and receipts.
 
-- **Actor collapse** — *one activation* performs *two roles inside one cell boundary* (e.g. the same running agent authoring α matter and then reviewing it as β). This is the firebreak-defeating case CCNF's β-independence rule (`COHERENCE-CELL.md`) exists to prevent, and it is the collapse that must never be silently assumed as equivalence.
-- **Hosting-identity collapse** — *separate activations* (distinct κ / α / β runs, each in its own role) that nonetheless **share one account / model lineage** (here, one "Sigma" GitHub identity). The roles are genuinely separated at the protocol layer; only the *hosting identity* is shared. This is a real but lesser limitation, **tracked by #664**, not a defeat of the firebreak.
+This is **State B** — the target the three-cell agent is being built toward — and it is **not softened, relativized, or made optional by the bootstrap.** It aligns with #583/#584 (landed doctrine: the mechanism/cognition boundary — mechanical dispatch separated from the cognitive skills that run inside a claimed cell).
 
-**What happened in #662 was primarily hosting-identity collapse, not actor collapse.** κ (issue/comment authorship), α (spec authorship), and β (independent review) ran as **separate activations**; **protocol-level κ≠α held — κ did not author the spec, α did** — and β authored none of the matter it reviewed. What was shared was the Sigma hosting identity across those separate activations. That shared *hosting identity* must be **declared explicitly** (the γ bootstrap declaration does so) and is exactly the structural gap #664 tracks; it must not be described as "actor collapse," which would overstate the defect and mislabel a preserved firebreak as a broken one.
+**State A — the operator-authorized transitional bootstrap posture.** The mechanical Planning-Cell runtime that would execute α **does not exist yet**. Because there is no runtime to run α mechanically, the operator **authorized κ (Sigma) to execute the α role of the Planning Cell during bootstrap.** This is State A: κ = α **by operator authorization** — a legitimate, explicitly transitional posture, a designed stage on the path to State B, **not** a nonconformance, **not** a violation, and **not** a second valid role topology licensed to persist. It is **retired the moment the Planning Cell runs mechanically** — its own α executed by the runtime — at which point the κ/α collapse is gone and κ≠α holds unconditionally. Because State A is transitional **by construction**, it does **not** soften, relativize, or make optional the State-B invariant above: authorized-transitional is a bootstrap stage, not a licensed *permanent* topology. Using the identity model from the Thesis ("Sigma" = activation lineage; κ/α/β/γ/δ + WC/PC/CC = functional roles): the migration from State A to State B **is** the operationalization of the three-cell (WC/PC/CC) agent — once the Planning Cell runs mechanically, its own α is executed by the runtime. Authorization is **not** self-warrant, and it does **not** relax the firebreak: **actor collapse** — one activation performing two cell roles inside one cell boundary (e.g. acting as α and β at once), the case that defeats CCNF's β-independence firebreak — remains **forbidden** in State A exactly as in State B. What the bootstrap actually carries is the weaker **hosting-identity collapse**: the separate α/β/γ activations run under one shared Sigma lineage (separate activations, one hosting identity), tracked by **#664** — a distinct, weaker limitation than actor collapse, and the reason the State-A *independent* warrant is reduced.
 
-**Guard consequence (§12):** "κ editing cell-owned artifacts" is a forbidden action precisely because κ ≠ α/β/γ/δ. κ carries intent into control-plane artifacts (issues, labels, PR-review surfaces); it does not produce, review, or close a cell's matter.
+**Provenance / warrant of this bootstrap.** Operator authorization of the State-A posture settles that κ=α is *permitted* during bootstrap; it does **not** by itself supply the cell's *independent* warrant. Because any *internal* β pass is the same Sigma lineage (the hosting-identity limitation tracked by **#664**), **the internal passes do not by themselves constitute independent-β warrant.** The independent warrant for this matter is the **external β — a review entity outside the Sigma lineage — bound to the matter-only R3 commit SHA it reviewed (§11.6)**, plus the later γ receipt that binds that same SHA and the external review. The reduced *independent* warrant of the authorized State-A posture is discharged by that external review, not by any internal attestation: authorized ≠ self-warranting.
+
+**`CELL-KINDS.md:137` is State-A-accurate, scoped, and superseded at State B.** `CELL-KINDS.md:137` ("κ … commonly acts as **α of a planning cell**") **correctly describes the authorized State-A bootstrap posture**: during bootstrap, κ (Sigma) does execute the α role of the Planning Cell, exactly as line 137 says. It is **accurate for State A and scoped to it** — and it is **superseded at State B**, where the Planning Cell runs mechanically, its own α is runtime-executed, and κ≠α holds, so line 137 no longer describes the operating topology. Reconciling that prose — marking line 137 as State-A-bootstrap wording and repointing it to the operational, mechanically-separated α role — is bound to a **bounded downstream doctrine-migration issue** owned by the PC-Wave / later doctrine wave; that issue **repoints and scopes** the line, it does not correct an error. **This PC-D0 does not edit `CELL-KINDS.md`** (§14 records the dependency and owner; §15 non-goal).
+
+**Guard consequence (§12):** "κ editing cell-owned artifacts" is a forbidden action precisely because κ ≠ α/β/γ/δ. κ carries intent into control-plane artifacts (issues, labels, PR-review surfaces); it does not produce, review, or close a cell's matter. In State A, Sigma executes the α role of the Planning Cell under explicit operator authorization — an **operator-authorized transitional posture disclosed on the receipts**, not a relaxation of the guard and not a disclosed nonconformance.
 
 ---
 
@@ -224,7 +299,7 @@ Formally: `Jₖ := CC.evaluate(I₀, Stateₖ, Receiptsₖ)`; PC/WC produce on `
 
 Human authority sits at **irreversible or scope-expanding boundaries**, not between internal phases:
 
-**Default gates (always human):** intent acceptance · wave authorization (first dispatch of a wave, not every child in it) · production/release boundary · final acceptance of doctrine-affecting or otherwise system-doctrine-changing matter · explicit hold/block/escalation resolution. The doctrine-affecting condition fires off a **typed contract flag** (`matter_domain: doctrine` / `doctrine_affecting: true`, as #662's own contract carries — the full flag pair is in the operator-authorization comment's contract block, 2026-07-13; §2's worked snippet quotes the `matter_domain: doctrine` half) — mechanical systems consume declarations, they never classify prose to decide whether a gate applies.
+**Default gates (always human):** intent acceptance · wave authorization (first dispatch of a wave, not every child in it) · production/release boundary · final acceptance of doctrine-affecting or otherwise system-doctrine-changing matter · explicit hold/block/escalation resolution. **The doctrine gate is determinable from the canonical `cn.cell.contract.v1` (§2) alone** — it fires off the contract's own **typed fields**: `matter_domain` plus the top-level `doctrine_affecting` boolean (with `gates.reason` recording why), exactly as §2's worked instance carries (`matter_domain: doctrine`, `doctrine_affecting: true`). There is **no companion operator-comment contract block** the gate selection must also read; the discriminator lives in the contract. Mechanical systems consume these declarations — they never classify prose to decide whether a gate applies.
 
 **No default gate between:** `CC → requested PC/WC` · PC's internal α/β/γ · WC's internal α/β/γ · safe mechanical recovery (stale-claim resume, repair-dispatch re-entry). A wave, once operator-authorized at its boundary, may pre-authorize its own dependency-respecting internal nodes — `operator → authorize wave → wave executable → FSM routes children by dependencies without further operator intervention`, re-entering only at a named boundary (human gate, blocked, review, release). **The operator must not become the scheduler for every child** — that failure mode is exactly what wave-boundary (not per-child) authorization exists to prevent.
 
@@ -281,9 +356,9 @@ cn issues dispatch                            Authorize one design-first issue: 
 
 **Protocol Package state truth (F4).** The draft's §4.4 "Protocol Package" term — the package that owns concrete protocol semantics for a matter domain — has an uneven shipped status that this note's own State-A grounding must carry, not just the `cn cell`/#500/#504 material above: **`cnos.cds`** (software) is shipped (#403); **`cnos.cdr`** (research) is shipped at v0.1 (#376); **`cnos.cdw`** (writing) is **illustrative only** — `CDD.md` v4.0.0 names `cdo`/`cdh` as *future* domain bindings, and `cdw` is not a shipped package today. Every worked example in this note that names a protocol package (§2's envelope, §3's class contracts) uses `protocol: cds` — the one shipped protocol this note's own bootstrap instance (#662) runs under; `cdr` and `cdw` are named here only for State-A completeness, not as protocols this note's contracts were validated against.
 
-### 11.3 Specified (this note) — promoting `CellKind` from observation to evaluation
+### 11.3 Specified (this note) — a distinct `CellClass` field alongside `CellKind`
 
-§6 above is this note's own specified extension: `cell_class` becomes an *evaluated* FSM dimension, not merely an observed one. This is not shipped; it is what `TestSeam_CellKindNotEnforced` currently locks as future work.
+§6 above is this note's own specified extension: `cell_class` becomes an *evaluated* FSM dimension via a **new, distinct `CellClass` field**, sourced from `cell.class` in the typed contract — **not** a repurposing of the shipped `CellKind` (matter-domain) seam, which is retained unchanged as the `MatterDomain` compatibility adapter. Class guards evaluate `CellClass`; domain refinements evaluate `MatterDomain`/legacy `CellKind`; the two axes stay orthogonal (a dual-field migration). None of this is shipped: `TestSeam_CellKindNotEnforced` currently locks even the existing `CellKind` seam as observation-only, and no `CellClass` field exists yet.
 
 ### 11.4 Specified (this note) — the wave FSM
 
@@ -320,6 +395,10 @@ cn cell run   --class working   --issue <id>  → implementation PR + receipt + 
 
 Exact naming, argv shape, and sequencing (§16 Q3 — should a pulse command land before or after #504 stale-claim recovery) are explicitly unresolved and not decided by this note.
 
+### 11.6 Review evidence binds to an immutable matter SHA (CCNF evidence-binding)
+
+A β review is evidence about *a specific revision of the matter*, so it must bind to the exact matter commit SHA it reviewed. Per the CCNF evidence-binding rule: **a β review references the immutable commit SHA of the matter it reviewed; γ binds that same SHA together with the review artifact; and any matter edit after the reviewed SHA invalidates that β and requires a fresh review against the new SHA.** Mechanically this means the review-return / closeout chain must show, on hashes not prose, `matter commit (SHA_M) → β review naming SHA_M → γ binding SHA_M + review` — a review record that names no reviewed SHA/tree, or a γ receipt whose `head_sha` is a pointer phrase ("branch HEAD at push") rather than an actual SHA, does not satisfy it. This is why a matter revision is committed **on its own** (spec-only), reviewed at that exact SHA, and only then bound: co-committing the matter, the review, and the closeout in one commit destroys the ability to prove the review saw the ratified bytes and that nothing changed afterward. (State-A note: the shipped FSM does not yet enforce this binding mechanically; it is honored by commit discipline and receipt fields until a schema/FSM check pins it — a specified, not shipped, guarantee.)
+
 ---
 
 ## 12. Mechanical guards against role/class collapse
@@ -344,10 +423,11 @@ This note **names, without implementing**, four schemas in a stated dependency o
 cn.intent.v1  →  cn.cell.contract.v1  →  cn.next-mca.v1  →  cn.wave.v1
 ```
 
-- `cn.intent.v1` — the typed object κ produces from operator intent **before any cell exists** (`{ id, source: operator, captured_by: kappa, statement, scope, constraints, desired_outcome }`). It has its own identity; a GitHub issue is one *carrier* of it, not the intent itself. The dependency order above (`cn.intent.v1 → cn.cell.contract.v1`) is why §2's envelope carries `intent_ref` rather than an inline `intent` block.
-- `cn.cell.contract.v1` — §2 above. It **references** `cn.intent.v1` via `intent_ref: { schema, id, carrier }`; it does not restate or own intent identity (the §2 ↔ §13 reconciliation).
+- `cn.intent.v1` — the typed object κ produces from operator intent **before any cell exists** (`{ id, source: operator, captured_by: kappa, statement, scope, constraints, desired_outcome }`). It has its own identity; a GitHub issue is one *carrier* of it, not the intent itself. The dependency order above (`cn.intent.v1 → cn.cell.contract.v1`) is why §2's envelope carries `intent_ref` rather than an inline `intent` block. **Named-not-implemented (D9):** no durable `cn.intent.v1` object exists on a pinned surface today, so §2's `intent_ref.id` is illustrative, not a resolvable reference. **Materializing a durable `cn.intent.v1` object (on a pinned, immutable surface) so `intent_ref.id` resolves is a schema-implementation deliverable** owned by the schema/PC-Wave work (S2 of #627 / #644) — it must land *before* `cn.cell.contract.v1` per the dependency order, and this note does not build it.
+- `cn.cell.contract.v1` — §2 above. It **references** `cn.intent.v1` via `intent_ref: { schema, id, carrier }`; it does not restate or own intent identity (the §2 ↔ §13 reconciliation). It carries the doctrine-gate discriminator (`matter_domain` + `doctrine_affecting`) so the gate is determinable from the contract alone (§9).
 - `cn.next-mca.v1` — the typed handoff CC emits (`{ class, mode, reason_code, requested_output, input_refs, requires_operator_authorization }`), consumed by whichever class the disposition names.
-- `cn.wave.v1` — a typed, mechanically inspectable wave graph (`{ wave, goal, nodes: [{issue, class, protocol, depends_on}], edges, gates, completion }`) that GitHub sub-issues *mirror*, not define.
+- `cn.cc-result.v1` — the **tagged disposition union** a Cohering Cell emits (§3.3): a common head `{ class: cohering, judgment, disposition, requires_operator_gate }` plus a per-`disposition` payload with required/forbidden fields (`complete` forbids `next_mca`; `request_human` requires a typed gate; `hold`/`block` require a reason; `complete_with_residuals` requires residuals). Its `next_mca` payload, when present, is a `cn.next-mca.v1`.
+- `cn.wave.v1` — a typed, mechanically inspectable wave graph in which **every node carries a complete child contract**: `{ wave, goal, nodes: [ { id: <stable cell id>, contract_ref: <immutable ref to a complete cn.cell.contract.v1> } ], edges: [ { from: <cell id>, to: <cell id>, kind: depends_on } ], gates, completion }`. Each node's `contract_ref` resolves the full §2 envelope (class, protocol, matter_domain, requested_output, acceptance, dependencies, gates, doctrine_affecting, stop_conditions) — the node does **not** duplicate a partial subset of those fields. Edges are keyed by stable cell `id`s (so `depends_on` is an edge, not a per-node partial field), giving one source of truth for each child: its own `cn.cell.contract.v1`. GitHub sub-issues *mirror* this graph, they do not define it. A schema fixture rejects a node with an unresolved or incomplete `contract_ref`, and a graph resolver proves every node has a complete executable contract before wave authorization.
 
 A PC-Wave cycle (#644, once dispatched) derives the exact implementation dependency order for these schemas from the finalized version of this note; **this note does not file, order, or dispatch that implementation work.**
 
@@ -367,14 +447,15 @@ A PC-Wave cycle (#644, once dispatched) derives the exact implementation depende
 | `#654` (PC D0-contract hardening) | Open | §3.2's D0 admissibility criteria are the D0 contract #654 hardens; §3.3's anti-pattern list names exactly the failure #654 exists to prevent. |
 | `#583` (fully-mechanical dispatch) | Closed/landed | Cited in §8/§10 as the doctrine establishing the mechanism/cognition boundary this note's κ-outside-the-cell rule depends on. |
 | `#584` (mechanism/cognition boundary codified) | Closed/landed | Same as #583; cited alongside it in §8. |
-| κ boundary | Settled by D2/F3 | §8 carries it forward without re-litigation; #662's own dispatch history (κ authored the issue and its comments; α, in a separate activation, authors this file) is the worked example of preserved κ≠α under **hosting-identity collapse** (one Sigma identity across separate activations, #664) — *not* actor collapse (§8). The firebreak held at the protocol layer; only the hosting identity was shared. |
+| κ boundary (κ ≠ α, κ outside the cell) | Invariant (D2/F3) — unconditional target (State B) | §8 states it without qualification. During bootstrap the operator **authorized κ (Sigma) to execute the α role** (State A, no mechanical Planning-Cell runtime yet) — an **operator-authorized, explicitly transitional posture**, not a nonconformance and not a licensed permanent topology; it is retired at State B and does not soften the invariant. Authorization ≠ self-warrant: the reduced *independent* warrant is discharged by the **external β bound to the matter-only R3 SHA (§11.6)** + the later γ receipt, not by the internal passes. Actor collapse stays forbidden; the bootstrap carries only the weaker hosting-identity collapse across separate Sigma activations, tracked by #664. |
+| `CELL-KINDS.md:137` ("κ commonly acts as α of a planning cell") | **State-A-accurate, scoped, superseded at State B** | Correctly describes the authorized State-A bootstrap posture (κ executes α during bootstrap); accurate for State A and superseded at State B, where κ≠α once the PC runs mechanically. The **bounded downstream doctrine-migration issue** (PC-Wave / later doctrine wave) **repoints and scopes** line 137 to State-A-bootstrap wording pointing at the mechanically-separated α role — it does not correct an error. **This PC-D0 does not edit `CELL-KINDS.md`** (§8, §15). |
 | Go mechanical-orchestration target | Partially shipped, partially specified | §11.1–§11.2 name exactly what's shipped (`transitions.json`, the evaluator, `cn cell`/`cn issues` commands); §11.3–§11.5 name what's specified or illustrative; none of it is implemented by this cycle. |
 
 ---
 
 ## 15. Non-goals
 
-Redefining CCNF or its role semantics; adding a new role letter; replacing CDD or CDS; implementing the WC/PC/CC runtime, the wave FSM, or any of the named schemas in Go, CUE, or any other code; changing α/β/γ/δ semantics; filing, labeling, or dispatching any child issue as a side effect of writing this note (§3.2's own guard applies reflexively to the cell that produced this note); a runner-per-class or a wake-per-class in v0 (D4); auto-merge or gate-crossing authority; a global cross-repo scheduler; rewriting `CDD.md` (Phase 7 of #366, unaffected); new agent-personality doctrine.
+Redefining CCNF or its role semantics; adding a new role letter; replacing CDD or CDS; implementing the WC/PC/CC runtime, the wave FSM, or any of the named schemas in Go, CUE, or any other code; changing α/β/γ/δ semantics; filing, labeling, or dispatching any child issue as a side effect of writing this note (§3.2's own guard applies reflexively to the cell that produced this note); a runner-per-class or a wake-per-class in v0 (D4); auto-merge or gate-crossing authority; a global cross-repo scheduler; rewriting `CDD.md` (Phase 7 of #366, unaffected); **editing `CELL-KINDS.md`** (its `:137` κ-as-α line is State-A-accurate, scoped, superseded-at-State-B prose whose reconciliation is a bounded downstream doctrine-migration dependency, §8/§14 — not this cell's work); new agent-personality doctrine.
 
 ---
 
@@ -390,4 +471,4 @@ Most of the embedded draft's original open-question list (its own §19) is resol
 
 ---
 
-*Authoring note.* Formalized under cnos#662, a Planning Cell in PC-D0 mode, dispatched by the `cds-dispatch` wake in δ wake-invoked mode (bootstrap realization on the currently shipped generic CDS/CCNF runner — §10, §11 — not evidence that `cell_class`-aware routing already ships). α reconciled the issue's embedded κ-corrected draft (§1–§20 of #662) against: the ten operator-pinned decisions (D1–D10) from the 2026-07-13T19:14:52Z authorization comment and the two preceding pinned-decisions comments (2026-07-11, 2026-07-12) that supersede the draft's own open-question wording; `CELL-RUNTIME.md` (#628) for structure and framing; `COHERENCE-CELL-NORMAL-FORM.md` for the kernel and scope-lift vocabulary; and the shipped `transitions.json` / the shipped `cn` command surface (`src/go/internal/cli`, `src/go/internal/cell`) for State-A ground truth (§11), correcting the draft's illustrative FSM-events table against the actual request-marker-file mechanism rather than restating it as shipped. No implementation, schema, FSM code, or child issue was produced or dispatched by this cell. Draft, not ratified — a separate Cohering Cell review, operator-final-read, and a CDD `doctrine` cell are the remaining steps in the exit sequence the authorization comment names.
+*Authoring note.* Formalized under cnos#662, a Planning Cell in PC-D0 mode, dispatched by the `cds-dispatch` wake in δ wake-invoked mode (bootstrap realization on the currently shipped generic CDS/CCNF runner — §10, §11 — not evidence that `cell_class`-aware routing already ships). α reconciled the issue's embedded κ-corrected draft (§1–§20 of #662) against: the ten operator-pinned decisions (D1–D10) from the 2026-07-13T19:14:52Z authorization comment and the two preceding pinned-decisions comments (2026-07-11, 2026-07-12); `CELL-RUNTIME.md` (#628) for structure and framing; `COHERENCE-CELL-NORMAL-FORM.md` for the kernel and scope-lift vocabulary; and the shipped `transitions.json` / the shipped `cn` command surface (`src/go/internal/cli`, `src/go/internal/cell`) for State-A ground truth (§11), correcting the draft's illustrative FSM-events table against the actual request-marker-file mechanism rather than restating it as shipped. **R3 repaired the typed-contract and reconciliation surface against an external-β ITERATE (PR #667):** canonical envelope now parses to the worked instance's shape (§2); the worked instance is marked illustrative and a durable `cn.intent.v1` is named a schema deliverable (§2, §13); `cell_class` gets a distinct `CellClass` field, not a repurposing of the matter-domain `CellKind` seam (§6, §11.3); `cn.wave.v1` nodes carry a complete child contract by `contract_ref` (§13); review evidence binds to an immutable matter SHA (§11.6); the doctrine gate is determinable from the canonical contract alone (§2, §9); the CC result is a tagged disposition union (§3.3, §13); and §8 states κ≠α as an unconditional State-B target while framing the bootstrap κ=α as the **operator-authorized transitional posture (State A)** — a legitimate, explicitly transitional bootstrap stage the operator settled directly, not a nonconformance and not a licensed permanent topology, still carrying a reduced *independent* warrant (hosting-identity, #664) that the external β discharges, with `CELL-KINDS.md:137` marked State-A-accurate/scoped/superseded-at-State-B and its repointing bound to a downstream doctrine-migration issue. The R3 matter is committed **spec-only** at an immutable SHA for exact-SHA external-β review (§11.6). No implementation, schema, FSM code, or child issue was produced or dispatched by this cell; `CELL-KINDS.md` was not edited. Draft, not ratified — external-β review, γ evidence binding, a separate Cohering Cell ratification, operator-final-read, and a CDD `doctrine` cell are the remaining steps in the exit sequence the authorization comment names.
