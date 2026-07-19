@@ -340,6 +340,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # I5 resolves the recursive-cell calibration corpus against this exact
+      # historical receipt and matter commits. Keep the main checkout shallow
+      # and fetch only the two pinned objects needed by target validation and
+      # the State-A preflight.
+      - name: Fetch pinned recursive-cell calibration revisions
+        run: |
+          revisions=(
+            a0d39293a27cfe57b49dacff696345b1ee2cdb40
+            2d6b93cc4e69e5b413a80bd8e352cb0a004da460
+          )
+          for revision in "${revisions[@]}"; do
+            git fetch --no-tags --no-recurse-submodules --depth=1 origin "$revision"
+            git cat-file -e "${revision}^{commit}"
+          done
+
       # cue-lang/setup-cue: action tag pinned (#301 design constraint).
       # CUE version pinned for deterministic CI; bump only when the schema
       # is re-tested against the new release.
@@ -353,6 +368,9 @@ jobs:
 
       - name: Validate every SKILL.md frontmatter
         run: ./scripts/ci/validate-skill-frontmatter.sh
+
+      - name: Exercise recursive-cell State-A runner end to end
+        run: ./scripts/ci/test-recursive-cell-runner.sh
 
   cdd-artifact-check:
     name: CDD artifact ledger validation (I6)

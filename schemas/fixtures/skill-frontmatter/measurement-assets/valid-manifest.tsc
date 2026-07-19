@@ -1,0 +1,8 @@
+format = "tsc-target/0.1"
+name = "fixture-target"
+kind = "aggregate"
+description = "valid fixture"
+include = [
+  "schemas/skill.cue"
+]
+exclude = []

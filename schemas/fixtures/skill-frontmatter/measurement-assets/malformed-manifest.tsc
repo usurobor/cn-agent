@@ -1,0 +1,6 @@
+format = "tsc-target/0.1"
+name = "fixture-target"
+kind = "invented"
+include = [
+  "schemas/skill.cue"
+]

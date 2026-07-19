@@ -1,0 +1,13 @@
+{
+  "schema": "cnos-recursive-cell-calibration-supersession/0.1",
+  "status": "superseded-after-r3",
+  "historical_evidence_revision": "c8d680bf822b46b9f931d62b07d68f50ade1b07e",
+  "historical_matter_revision": "9cc9c3bbe97b11a94dbab6e47bdc95a2fb0a418c",
+  "historical_instruction_sha256": "0b7e26a2fce364c2f89bbd04a72e8e1068cb7339de9e9b9e9d33e520eff75645",
+  "historical_prompt_sha256": "4ccef013f935b1733df82400c0b7eda9e05c04ba5f90ea8afb8ebd6df7ebeaa2",
+  "r3_instruction_sha256": "de0414bac1a086d6ed3ac5c7d84cd6293517eb83c920f6c4a0723f5dfac06a3a",
+  "semantic_samples": 1,
+  "eligible_for_future_k3": false,
+  "reason": "The R3 composite instruction, six-target orchestration, and separate invariant-assessment instrument changed after this same-author exploratory sample.",
+  "r3_semantic_sample_generated": false
+}

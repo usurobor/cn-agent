@@ -1,0 +1,27 @@
+format = "tsc-target/0.1"
+name = "cc662-system"
+kind = "aggregate"
+description = "Recursive L0-L4 cell-architecture ratification corpus for frozen #662."
+include = [
+  "docs/architecture/CELL-RUNTIME.md",
+  "docs/architecture/CELL-RUNTIME-CLASSES.md",
+  "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md",
+  "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md",
+  "src/packages/cnos.cdd/skills/cdd/CELL-KINDS.md",
+  "src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md",
+  "schemas/cdd/contract.cue",
+  "schemas/cdd/receipt.cue",
+  "schemas/cdd/boundary_decision.cue",
+  "schemas/cds/receipt.cue",
+  "src/packages/cnos.cds/skills/cds/fsm/transitions.json",
+  "src/packages/cnos.issues/commands/issues-fsm/table.go",
+  "src/packages/cnos.issues/commands/issues-fsm/issuesfsm_test.go",
+  "src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md",
+  "src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md",
+  "src/go/internal/cell/**",
+  "src/go/internal/cli/cmd_cell.go",
+  "src/go/internal/cli/cmd_issues_fsm*.go",
+  "src/go/internal/cli/cmd_issues_dispatch.go",
+  ".cdd/unreleased/662/**"
+]
+exclude = []

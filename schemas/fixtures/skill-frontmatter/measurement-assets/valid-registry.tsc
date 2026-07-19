@@ -1,0 +1,5 @@
+format = "tsc-target-registry/0.1"
+default_target = "fixture-target"
+
+[target.fixture-target]
+manifest = "schemas/fixtures/skill-frontmatter/measurement-assets/valid-manifest.tsc"

@@ -1,0 +1,92 @@
+{
+  "target": "cc662-system",
+  "alpha": 0.88,
+  "beta": 0.77,
+  "gamma": 0.66,
+  "delta_alpha_beta": 0.1,
+  "delta_beta_gamma": 0.2,
+  "delta_gamma_alpha": 0.3,
+  "bottleneck_axis": "gamma",
+  "confidence": 0.9,
+  "summary": "Deterministic validated fixture for cc662-system.",
+  "axis_evidence": {
+    "alpha": {
+      "positive": [
+        "Fixture alpha evidence."
+      ],
+      "negative": [],
+      "reason": "Fixture alpha reason.",
+      "checklist": {
+        "naming-drift": {
+          "count": 0,
+          "severity": "none"
+        },
+        "duplicate-definition": {
+          "count": 0,
+          "severity": "none"
+        },
+        "internal-contradiction": {
+          "count": 0,
+          "severity": "none"
+        },
+        "unstable-boundary": {
+          "count": 0,
+          "severity": "none"
+        }
+      }
+    },
+    "beta": {
+      "positive": [
+        "Fixture beta evidence."
+      ],
+      "negative": [],
+      "reason": "Fixture beta reason.",
+      "checklist": {
+        "broken-reference": {
+          "count": 0,
+          "severity": "none"
+        },
+        "authority-conflict": {
+          "count": 0,
+          "severity": "none"
+        },
+        "fact-drift": {
+          "count": 0,
+          "severity": "none"
+        },
+        "undeclared-relationship": {
+          "count": 0,
+          "severity": "none"
+        }
+      }
+    },
+    "gamma": {
+      "positive": [
+        "Fixture gamma evidence."
+      ],
+      "negative": [],
+      "reason": "Fixture gamma reason.",
+      "checklist": {
+        "unowned-change-path": {
+          "count": 0,
+          "severity": "none"
+        },
+        "generated-canonical-confusion": {
+          "count": 0,
+          "severity": "none"
+        },
+        "missing-migration-rule": {
+          "count": 0,
+          "severity": "none"
+        },
+        "stale-transitional-marker": {
+          "count": 0,
+          "severity": "none"
+        }
+      }
+    }
+  },
+  "defect_cards": [],
+  "unresolved_ambiguity": [],
+  "next_fixes": []
+}
