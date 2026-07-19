@@ -1,0 +1,117 @@
+{
+  "target": "direct",
+  "mode": "hybrid",
+  "alpha": 0.9399999999999999,
+  "beta": 0.84,
+  "gamma": 0.6,
+  "bottleneck_axis": "gamma",
+  "mechanical": {
+    "alpha": 1.0,
+    "beta": 1.0,
+    "gamma": 0.7675,
+    "evidence_kind": "structural-proxy",
+    "confidence": 1.0,
+    "bottleneck_axis": "gamma",
+    "provenance": {
+      "discrepancy_symbol": "delta",
+      "discrepancy_range": "[0,1]",
+      "coherence_link": "barrier_exponential",
+      "barrier_phi": "delta/(1-delta)",
+      "barrier_clip_eta_phi": null,
+      "endpoint_policy": "delta=1 -> D=infinity -> Coh=0",
+      "energy_variable": "D_ab",
+      "link_lipschitz_constants": {
+        "alpha_beta": null,
+        "beta_gamma": null,
+        "gamma_alpha": null
+      },
+      "aggregate_math": {
+        "C_sigma_math": 0.9155726157872258,
+        "zero_component_present": false
+      },
+      "aggregate_numeric": {
+        "C_sigma_num": 0.9155726157872258,
+        "epsilon": 1e-05,
+        "numeric_floor_applied": false
+      },
+      "gauge_witness": {
+        "w_gauge_ref": 0.0,
+        "w_gauge_spread": 0.0,
+        "tau_gauge_spread": 0.05,
+        "canonical_remap_procedure": "lexicographic ascending by score value (lowest->alpha, middle->beta, highest->gamma)"
+      }
+    }
+  },
+  "llm": {
+    "alpha": 0.9399999999999999,
+    "beta": 0.84,
+    "gamma": 0.6,
+    "evidence_kind": "semantic-judgment",
+    "confidence": 0.93,
+    "bottleneck_axis": "gamma",
+    "provenance": {
+      "discrepancy_symbol": "delta",
+      "discrepancy_range": "[0,1]",
+      "coherence_link": "barrier_exponential",
+      "barrier_phi": "delta/(1-delta)",
+      "barrier_clip_eta_phi": null,
+      "endpoint_policy": "delta=1 -> D=infinity -> Coh=0",
+      "energy_variable": "D_ab",
+      "link_lipschitz_constants": {
+        "alpha_beta": null,
+        "beta_gamma": null,
+        "gamma_alpha": null
+      },
+      "aggregate_math": {
+        "C_sigma_math": 0.7795658333279667,
+        "zero_component_present": false
+      },
+      "aggregate_numeric": {
+        "C_sigma_num": 0.7795658333279667,
+        "epsilon": 1e-05,
+        "numeric_floor_applied": false
+      },
+      "gauge_witness": {
+        "w_gauge_ref": 0.0,
+        "w_gauge_spread": 0.0,
+        "tau_gauge_spread": 0.05,
+        "canonical_remap_procedure": "lexicographic ascending by score value (lowest->alpha, middle->beta, highest->gamma)"
+      }
+    }
+  },
+  "final": {
+    "source": "llm",
+    "alpha": 0.9399999999999999,
+    "beta": 0.84,
+    "gamma": 0.6
+  },
+  "provenance": {
+    "discrepancy_symbol": "delta",
+    "discrepancy_range": "[0,1]",
+    "coherence_link": "barrier_exponential",
+    "barrier_phi": "delta/(1-delta)",
+    "barrier_clip_eta_phi": null,
+    "endpoint_policy": "delta=1 -> D=infinity -> Coh=0",
+    "energy_variable": "D_ab",
+    "link_lipschitz_constants": {
+      "alpha_beta": null,
+      "beta_gamma": null,
+      "gamma_alpha": null
+    },
+    "aggregate_math": {
+      "C_sigma_math": 0.7795658333279667,
+      "zero_component_present": false
+    },
+    "aggregate_numeric": {
+      "C_sigma_num": 0.7795658333279667,
+      "epsilon": 1e-05,
+      "numeric_floor_applied": false
+    },
+    "gauge_witness": {
+      "w_gauge_ref": 0.0,
+      "w_gauge_spread": 0.0,
+      "tau_gauge_spread": 0.05,
+      "canonical_remap_procedure": "lexicographic ascending by score value (lowest->alpha, middle->beta, highest->gamma)"
+    }
+  }
+}

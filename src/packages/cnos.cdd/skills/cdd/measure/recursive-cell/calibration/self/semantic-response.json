@@ -1,0 +1,100 @@
+{
+  "target": "direct",
+  "alpha": 0.94,
+  "beta": 0.84,
+  "gamma": 0.60,
+  "delta_alpha_beta": 0.16,
+  "delta_beta_gamma": 0.32,
+  "delta_gamma_alpha": 0.30,
+  "bottleneck_axis": "gamma",
+  "confidence": 0.93,
+  "summary": "The candidate CM, its cnos schema projection, validator, recursive manifests, and fail-closed historical preflight describe one stable methodology package. It remains a candidate rather than a deployed instrument because current TSC cannot consume its arbitrary methodology declaration first-class and its calibration, held-out, and consistency program has no standing yet.",
+  "axis_evidence": {
+    "alpha": {
+      "positive": [
+        "SKILL.md applies one L0-L4 recursion and one alpha/beta/gamma vocabulary across cell classes, kernels, typed surfaces, FSMs, and executions.",
+        "The classifier, CM-to-V-to-delta boundary, thirteen hard invariants, and disposition rules are stable across the authority, instruction, README, and calibration record.",
+        "schemas/coherence_methodology.cue types the methodology essence as a pinned projection of the named TSC revision."
+      ],
+      "negative": [],
+      "reason": "The bundle has a stable local pattern language and no detected internal definitional contradiction.",
+      "checklist": {
+        "naming-drift": {"count": 0, "severity": "none"},
+        "duplicate-definition": {"count": 0, "severity": "none"},
+        "internal-contradiction": {"count": 0, "severity": "none"},
+        "unstable-boundary": {"count": 0, "severity": "none"}
+      }
+    },
+    "beta": {
+      "positive": [
+        "The cnos skill validator recognizes artifact_class measurement, vets the generic methodology block, resolves local authority paths, and verifies every declared target is registered.",
+        "The registry resolves six manifests whose L0-L4 contents match the methodology's recursion.",
+        "verify-target.sh binds the historical calibration to receipt head a0d39293, matter revision 2d6b93cc, and exact matter SHA-256, failing on other checkouts.",
+        "README.md and the calibration record distinguish the candidate CM, historical corpus, and current repository state."
+      ],
+      "negative": [
+        "The present TSC CLI executes the manifests only through its built-in instruction; it cannot consume this methodology declaration and INSTRUCTION.md as one arbitrary pinned instrument."
+      ],
+      "reason": "All in-repository authority and calibration edges are materialized; the remaining systemic relation gap is between the declared third-party CM and the generic TSC executor.",
+      "checklist": {
+        "broken-reference": {"count": 0, "severity": "none"},
+        "authority-conflict": {"count": 0, "severity": "none"},
+        "fact-drift": {"count": 0, "severity": "none"},
+        "undeclared-relationship": {"count": 1, "severity": "systemic"}
+      }
+    },
+    "gamma": {
+      "positive": [
+        "The status section forbids self-warrant and lists explicit prerequisites for standing.",
+        "The historical target preflight prevents a later #662 revision from silently replacing R7 calibration bytes.",
+        "The calibration commons section names positive, adversarial, comparative, and held-out cases required for promotion."
+      ],
+      "negative": [
+        "No owned cycle or durable transition is named for producing the public calibration commons, three-sample semantic consistency, and held-out anchor.",
+        "No versioned executor migration connects the essence-only declaration to future arbitrary-CM execution.",
+        "This self-measure is one same-author semantic sample, so it confers no independent or consistency standing."
+      ],
+      "reason": "The methodology is evolution-honest and fail-closed, but its promotion and executor paths are specified rather than owned or shipped.",
+      "checklist": {
+        "unowned-change-path": {"count": 1, "severity": "systemic"},
+        "generated-canonical-confusion": {"count": 0, "severity": "none"},
+        "missing-migration-rule": {"count": 1, "severity": "systemic"},
+        "stale-transitional-marker": {"count": 0, "severity": "none"}
+      }
+    }
+  },
+  "defect_cards": [
+    {
+      "id": "CM-B1",
+      "primary_axis": "beta",
+      "category": "undeclared-relationship",
+      "severity": "systemic",
+      "evidence": "SKILL.md status boundary; README.md application procedure",
+      "summary": "Current TSC cannot execute the declaration, target projection, and semantic instruction as one arbitrary pinned CM.",
+      "secondary_axes": ["gamma"]
+    },
+    {
+      "id": "CM-G1",
+      "primary_axis": "gamma",
+      "category": "unowned-change-path",
+      "severity": "systemic",
+      "evidence": "SKILL.md status prerequisites and calibration commons",
+      "summary": "Independent calibration, consistency sampling, and held-out validation have requirements but no owned cycle.",
+      "secondary_axes": ["beta"]
+    },
+    {
+      "id": "CM-G2",
+      "primary_axis": "gamma",
+      "category": "missing-migration-rule",
+      "severity": "systemic",
+      "evidence": "SKILL.md current CLI limitation",
+      "summary": "No versioned migration turns the essence-only candidate into a deployed arbitrary-CM instrument.",
+      "secondary_axes": ["beta"]
+    }
+  ],
+  "unresolved_ambiguity": [],
+  "next_fixes": [
+    {"axis": "beta", "fix": "Implement and version TSC arbitrary-CM loading so the declaration, projection, instruction, and report provenance become one executable edge."},
+    {"axis": "gamma", "fix": "Open owned calibration and held-out cycles, obtain three frozen-prompt semantic samples, and measure consistency before granting standing."}
+  ]
+}
