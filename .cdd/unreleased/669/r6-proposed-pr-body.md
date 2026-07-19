@@ -14,10 +14,13 @@ State-A route described by the tracked methodology:
 - validates exact defect-card and `next_fixes` shapes, computes the unweighted
   L0-L4 aggregate, carries the selected canonical bottleneck axis, and applies
   all thirteen invariant gates;
-- refuses changed, missing, reused, raced, or partially published inputs and
-  outputs; rejects a symlink in the output root or any existing output-path
-  component before creation, and requires all response/invariant inputs to be
-  regular files with no symlink component before snapshot;
+- refuses missing or non-regular response/invariant inputs, changed canonical
+  target or assessment prompts, response bytes inconsistent with the
+  assessment's bound digests, canonical emission/publication reuse, and
+  publication-lock contention; publishes from private staging by atomic rename
+  so refusal leaves no partial canonical publication; and statically rejects
+  any symlink component in the output path or response/invariant paths before
+  snapshot;
 - binds the active runner, pinned coh executable, schema, instruction,
   assessment, registry, preflight, manifests, prompts, responses, reports,
   target, and caller-declared revisions and time; and
@@ -26,7 +29,8 @@ State-A route described by the tracked methodology:
   witnesses.
 
 R6 repairs provenance without changing that product matter. It begins at
-current-main base `e8ba9954764d58e7b808104d633504e25aa615cc`; γ's scaffold
+the main tip frozen when R6 reconstruction began,
+`e8ba9954764d58e7b808104d633504e25aa615cc`; γ's scaffold
 `6e07b4cc42a851a3b35499212f624264ff49557a` is the first cycle commit;
 and all six superseded matter patches were freshly committed with both author
 and committer `alpha <alpha@cdd.cnos>`. Their replay boundary is
@@ -48,9 +52,12 @@ additive repair. These are patch-stream statements, not final-tree or direct-
 diff equality claims.
 
 The retained R2 and R5 β/γ records are historical snapshots only. Their
-verdicts and closeouts do not authorize this reconstructed lineage. The exact
-immutable R6/R2 α commit containing the updated canonical self-coherence
-artifact and this proposed body requires a fresh context-isolated β review.
+verdicts and closeouts do not authorize this reconstructed lineage. The
+current review-ready R6/R2 α artifact is exact commit
+`8df927352c2f323e7ac109a847abd547a225caed`, tree
+`ed802cb3dc738614fbc822b8c1b6ceb7b44af7e7`; it contains the updated
+canonical self-coherence artifact and this proposed body and requires a fresh
+context-isolated β review.
 Only a fresh R6/R2 β convergence may precede new γ binding and CC
 re-adjudication.
 

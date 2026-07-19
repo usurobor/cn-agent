@@ -268,3 +268,93 @@ reviewed SHA; D1 and C2 are repaired here but only a fresh context-isolated β
 review of the final immutable R6/R2 α head can issue a new verdict. No α action
 performs β/γ/CC judgment, comment projection, ready mark, merge, label change,
 operator acceptance, standing promotion, or cell/wave FSM transition.
+
+# R6/R3 Fix Round — precise custody claims
+
+### Binding
+
+This α projection repair starts from exact γ clarification commit
+`0a871512c812e25fa7c0d3557c6229c74ad0e3fa`, whose parent is the independent
+β R6/R2 REQUEST CHANGES receipt
+`6b2e75a75c599b734d7984631c16fb914770e8f5`. β reviewed exact R6/R2 α
+commit `8df927352c2f323e7ac109a847abd547a225caed`, tree
+`ed802cb3dc738614fbc822b8c1b6ceb7b44af7e7`, and found only D3: the current
+tracked/live PR body's phrase `raced ... inputs and outputs` generalized beyond
+the implemented filesystem boundary.
+
+γ selected the precise-claim repair rather than a new concurrency mechanism.
+No runner, test, schema, witness, aggregate, CUE, H01-H13, TSC, State-A/B, or
+standing behavior changes here. Product matter remains exact commit
+`db9ce95b1beb025d24f43fba2df58692665f80be`, tree
+`2e4f08e1d2632a8a5fd008a08187a1b42d231152`, with additive patch-stream
+SHA-256 `23749673b9fa678ad832b5b4f6915f5bed2b2865896555daf3504e2dd4e62796`
+and corrected full patch-stream SHA-256
+`055c1b52ea5e83e64cca7a3dd8efe7c054b76f9e170c3fa90e9484a05d81c6a1`.
+
+### Projection repair and grep audit
+
+The current proposal no longer claims universal refusal of raced inputs and
+outputs. It now names only these implemented classes:
+
+- missing or non-regular response and invariant inputs;
+- canonical target and invariant-assessment prompts changed after emission;
+- response bytes inconsistent with the invariant assessment's bound digests;
+- reuse of canonical emission or publication;
+- contention for the exclusive publication lock;
+- private publication staging followed by atomic rename, so refusal leaves no
+  partial canonical publication; and
+- static no-symlink-component checks for the output path and the six response
+  plus invariant paths before snapshot.
+
+Repository-wide tracked grep found the superseded broad wording in the current
+proposal, the historical R5 proposal snapshot, β's D3 finding, and γ's binding
+clarification. The current-proposal hit is removed; R5 and the β/γ hits remain
+immutable historical/review evidence. Other `raced` hits concern unrelated
+dispatch, issue-scan, label-doctor, CI-comment, and historical log behavior.
+The historical R5 proposal snapshot is preserved byte-for-byte.
+
+The recursive-cell `SKILL.md` and `README.md` already state the exact static
+boundary: the lexical output path must contain no symlink component, and the
+six response plus invariant paths must be regular and contain no symlink
+component before staging and immediately before snapshot. Their independent
+internal emission/publication/staging/lock guards remain specifically scoped;
+the earlier R6/R2 shorthand `symlink/race guards remain intact` denotes only
+those named internal guards, not a universal pre-snapshot external-pathname
+race guarantee.
+
+At the starting SHA, live draft PR #670 was open at exact head
+`0a871512c812e25fa7c0d3557c6229c74ad0e3fa`. Its prior κ projection already
+carried the exact R6/R2 α artifact identity and the clarified frozen-main-base
+description; those live semantics are back-projected here so they do not
+regress in the canonical tracked proposal. After this edit, the full tracked
+proposal's only semantic delta from the live body is the narrowed custody
+bullet; κ live-body projection is deliberately pending.
+
+### R6/R3 validation and self-check
+
+The repair changes exactly two α-owned artifacts:
+
+- `.cdd/unreleased/669/r6-proposed-pr-body.md`; and
+- `.cdd/unreleased/669/self-coherence.md`.
+
+`git diff --check` passes. Diff and tree checks confirm no source, runner,
+test, schema, or matter delta from `db9ce95b...`; the matter tree remains
+`2e4f08e1...`. Current-authority grep confirms the proposal, `SKILL.md`, and
+`README.md` contain no universal pre-snapshot pathname-race promise. The live
+body comparison confirms all non-D3 proposal semantics already match and only
+the κ-owned live projection remains pending. No real-coh rerun is warranted for
+a two-Markdown claim repair over unchanged product bytes.
+
+### R6/R3 debt and handoff
+
+State-A remains source-checkout-only and fail-closed. State-B arbitrary loading
+and installed activation remain unshipped. The candidate retains standing
+`none`; synthetic real-coh compatibility evidence remains neither semantic
+calibration nor ratification.
+
+β's R6/R2 REQUEST CHANGES verdict remains historical authority over its exact
+reviewed SHA. A fresh context-isolated β must bind the final immutable R6/R3 α
+head and verify both tracked wording and the pending live-body projection. No
+State-A or State-B transition, γ closeout, CC judgment, operator final read,
+comment/body mutation, ready mark, merge, label change, standing promotion, or
+cell/wave FSM transition is authorized by this artifact.
