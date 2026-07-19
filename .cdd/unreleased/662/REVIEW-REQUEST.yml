@@ -5,9 +5,9 @@ mode: PC-D0
 protocol: cds
 requests: in-progress -> review
 requested_by: cds-dispatch (delta wake-invoked mode; interactive cn-sigma substrate)
-beta_verdict: converge         # external-β CONVERGE on the exact R7 SHA 2d6b93cc; no BLOCKER/REQUIRED/HOLD remains
-beta_round: R7
-matter_sha_m: 2d6b93cc4e69e5b413a80bd8e352cb0a004da460   # immutable spec-only R7 matter, offered for exact-SHA external-β review
+beta_verdict: superseded       # external-β CONVERGE on R7 2d6b93cc NO LONGER HOLDS — external-CC ratification returned `hold` (two blocking findings) and the R8 matter changed the bytes; a fresh exact-SHA external-β is required on SHA_M below
+beta_round: R8
+matter_sha_m: 30a9455afaf7f9f63ca0c60b5c91477b321ca49f   # immutable spec-only R8 matter (external-CC hold repairs); offered for a FRESH exact-SHA external-β review (prior R7 CONVERGE invalidated by this matter change)
 
 # External-β history SPLIT BY ROUND so that no verdict binds to a SHA it did not review.
 # Each round points at its own review comment (or a clearly-marked ref), never a bare PR-root URL.
@@ -39,41 +39,61 @@ external_beta:
       review_comment_url: https://github.com/usurobor/cnos/pull/667#issuecomment-5012973128   # external-β R6 exact-revision review, names 64d94e71 (confirmed R6 resolved both R5 findings at the right altitude)
     - round: R7
       sha: 2d6b93cc4e69e5b413a80bd8e352cb0a004da460
-      verdict: converge       # external-β CONVERGE on this exact SHA; No BLOCKER, REQUIRED, or HOLD condition remains
+      verdict: converge       # external-β CONVERGE on this exact SHA; No BLOCKER, REQUIRED, or HOLD condition remains — but SUPERSEDED downstream: the external-CC ratification (below) then returned `hold` and the R8 matter changed the bytes, so this CONVERGE no longer binds the current matter.
       findings: 0 (no BLOCKER/REQUIRED/REFINEMENT/HOLD remains)
       review_comment_url: https://github.com/usurobor/cnos/pull/667#issuecomment-5013028527   # external-β R7 exact-SHA review, names 2d6b93cc, verdict CONVERGE, recommends γ closeout binding 2d6b93cc
+    - round: CC-ratification-R7
+      stage: cc_ratification
+      sha: 2d6b93cc4e69e5b413a80bd8e352cb0a004da460
+      verdict: hold
+      findings: 2 BLOCKING (CC-1 κ firebreak both affirmed AND negated — matter asserts κ≠α unconditionally and also literal `κ = α`; CC-2 γ does not content-bind the external-β review artifact — bound by mutable comment id/URL, not a content hash + snapshot)
+      review_comment_url: https://github.com/usurobor/cnos/pull/667#issuecomment-5015281024   # External CC Ratification — cnos#662 (PC-D0), DISPOSITION `hold`, names exact SHA 2d6b93cc; independent CC outside the Sigma lineage; authority = coherence findings + disposition only (no merge/label/FSM/ratify)
+    - round: R8
+      stage: external_beta
+      sha: 30a9455afaf7f9f63ca0c60b5c91477b321ca49f
+      state: pending
+      # NO verdict — fresh exact-SHA external-β review of the R8 matter (external-CC hold repairs: CC-1 κ≠α unconditional + State-A hosting-identity collapse not role-equality; CC-2 §11.6 requires content-bound review artifact) has NOT yet run. The R7 CONVERGE does not carry to this SHA.
 
 disposition: >
-  R7 repairs the external-β R6 ITERATE findings (PR #667 comment 5012973128; ITERATE with 2 REQUIRED
-  + 1 REFINEMENT, no blocker — β confirmed R6 resolved both R5 findings at the right altitude):
-  finding 1 [REQUIRED] the control_plane locator's `revision` must bind IMMUTABLE CONTENT (content
-  hash + retrievable snapshot / immutable repository artifact containing the snapshot / a substrate
-  revision that cannot be rewritten under the same identifier), and a bare comment/issue id (stable
-  object identity, not content) is rejected as a revision — bare "comment id" removed from the
-  acceptable immutable-revision examples, the worked-instance control_plane roots and the external-
-  immutability fixtures updated (identity-only / edited-body / edited-comment negatives; a
-  repeat-resolution / fails-stale positive) (§2, §13); finding 2 [REQUIRED] the unbackable
-  inputs.optional.annotations behavioral-inertness claim is removed — inputs.optional is now a seq of
-  external-locator refs only (immutable, content-bound, edge-free, never sibling_output), the contract
-  carries only authoritative immutable refs, and any human presentation lives on the control-plane
-  surface outside the typed contract (prompt-only prohibitions falsified in cnos, #583/#584;
-  mechanism-over-cognition) (§2); finding 3 [REFINEMENT] the retired external `target` scalar is
-  deleted from the §13 projection/round-trip invariant (`locator` only). Template↔worked-instance
-  key-path identity re-verified after the inputs.optional reshape. Exact field storage types stay
-  deferred to §16 Q4 (D9 named-not-implemented); §8 untouched.
+  R8 repairs the external-CC ratification `hold` (PR #667 comment 5015281024; DISPOSITION hold on
+  exact SHA 2d6b93cc; two BLOCKING coherence findings, both valid, none disputed — the operator
+  confirmed the CC-1 reframing directly). CC-1 [BLOCKING] the κ firebreak was both affirmed AND
+  negated — §8 asserted κ≠α as the unconditional invariant and also said "State A is literally κ = α,"
+  which cannot both hold as role propositions; repaired so κ≠α holds UNCONDITIONALLY as role
+  propositions in State A and State B alike, and State A's bootstrap fact is HOSTING-IDENTITY COLLAPSE
+  (one Sigma lineage hosts both the κ and α roles across SEPARATE activations — κ activation outside
+  the cell, a distinct Sigma α activation producing inside; only the hosting lineage shared, #664),
+  NOT role-equality; what is transitional is the hosting, not the κ/α relation; actor collapse stays
+  forbidden (§8, §12, §14, Thesis, §1 table). CC-2 [BLOCKING, matter side] γ bound the external-β
+  review by a bare GitHub comment id/URL (mutable object identity, not immutable content); §11.6 now
+  requires the review ARTIFACT to be content-bound — a content hash + retrievable snapshot — self-
+  consistent with §2/§13's rejection of an identity-only control_plane revision; the full chain is
+  SHA_M (content) → β review (content-hash + snapshot) → γ binds both by content (§11.6). No `κ = α`
+  role-equality assertion remains anywhere in the matter. §8 IS touched this round (CC-1). The
+  external-β R7 CONVERGE on 2d6b93cc is invalidated by this matter change; a fresh exact-SHA external-β
+  + content-bound γ + fresh CC are required on the new SHA_M 30a9455a.
 beta_round_history: >
   R0 iterate -> R1 converge -> R2 (internal) -> operator-final-read ITERATE -> R3 operator-settled
   -> external-β R3 ITERATE (014c75ff, 6 findings) -> R4 repair -> external-β R4 ITERATE (ce310a33,
   4 findings) -> R5 repair -> external-β R5 ITERATE (eb627874, 2 findings, no blocker) -> R6 repair
   -> external-β R6 ITERATE (64d94e71, 2 REQUIRED + 1 REFINEMENT, no blocker) -> R7 repair (2d6b93cc)
-  -> external-β R7 CONVERGE (2d6b93cc, 0 findings, no BLOCKER/REQUIRED/HOLD; comment 5013028527).
-  Convergence trajectory: R3 6 -> R4 4 -> R5 2 -> R6 2+1-refinement -> R7 0; no blocker since R4.
+  -> external-β R7 CONVERGE (2d6b93cc, 0 findings; comment 5013028527) -> γ closeout binding 2d6b93cc
+  -> external-CC ratification HOLD (2d6b93cc, 2 BLOCKING findings CC-1/CC-2; comment 5015281024)
+  -> R8 repair (30a9455a, external-CC hold repairs). The external-β R7 CONVERGE is SUPERSEDED: the
+  scope-n+1 CC coherence judgment caught a role-logic contradiction and an identity-only review binding
+  that the matter-focused β passes structurally could not, and the R8 matter change invalidates it.
+  Convergence trajectory (β): R3 6 -> R4 4 -> R5 2 -> R6 2+1-refinement -> R7 0. A FRESH exact-SHA
+  external-β on 30a9455a is now required (pending).
 review_return: >
-  external-β R6 ITERATE on PR #667 (2 REQUIRED + 1 REFINEMENT, no blocker, comment 5012973128;
-  β confirmed R6 resolved both R5 findings at the right altitude); alpha repaired all three
-  (control_plane revision binds immutable content, not object identity; unbackable annotations bucket
-  removed — optional inputs are external-locator refs only; retired target deleted from the projection
-  invariant) -> R7 spec-only matter at SHA_M 2d6b93cc, offered for exact-SHA re-review.
+  external-CC ratification `hold` on PR #667 (2 BLOCKING findings, comment 5015281024; independent CC
+  outside the Sigma lineage, on exact SHA 2d6b93cc): CC-1 the κ firebreak is both affirmed and negated
+  (κ≠α asserted unconditionally AND literal κ = α); CC-2 γ does not content-bind the external-β review
+  artifact (bound by mutable comment id/URL, not a content hash + snapshot). Operator confirmed the
+  CC-1 reframing directly; both findings valid, none disputed. alpha repaired both matter-side defects
+  (CC-1: κ≠α unconditional as roles + State-A hosting-identity collapse not role-equality, §8/§12/§14;
+  CC-2 matter side: §11.6 now requires the review artifact content-bound) -> R8 spec-only matter at
+  SHA_M 30a9455a, offered for a FRESH exact-SHA external-β review. The receipt-side CC-2 fix (γ binding
+  the review by content hash + snapshot) lands when a fresh content-bound γ re-closes downstream.
 deliverable:
   matter: docs/architecture/CELL-RUNTIME-CLASSES.md
   closeout_artifacts:
@@ -87,19 +107,29 @@ deliverable:
     - beta-closeout.md
     - gamma-closeout.md
 note: >
-  R7 external-β CONVERGE. Bootstrap PC-D0 realization on the shipped generic CDS/CCNF runner
-  (no cell_class-aware routing). A genuinely-independent external β (outside the Sigma lineage,
-  #664) reviewed the R6 matter (64d94e71) and returned ITERATE (two REQUIRED + one REFINEMENT, no
-  blocker, comment 5012973128); alpha repaired all three as spec-surface / receipt-projection repairs
-  consistent with pinned D1-D10 and landed the spec-only immutable matter commit SHA_M 2d6b93cc; the
-  external β then reviewed that exact SHA and returned CONVERGE (0 findings, no BLOCKER/REQUIRED/HOLD;
-  comment 5013028527), recommending γ closeout binding 2d6b93cc. This review-request stays split per
-  round so no verdict binds to a SHA it did not review (R3 -> 014c75ff/iterate/comment 5012130583;
-  R4 -> ce310a33/iterate/comment 5012790037; R5 -> eb627874/iterate/comment 5012900197; R6 ->
-  64d94e71/iterate/comment 5012973128; R7 -> 2d6b93cc/converge/comment 5013028527). The cell CONVERGES
-  at the external-β layer but is NOT ratified; ratification is downstream and not claimed here. γ has
-  bound SHA_M + this review + evidence (gamma-closeout.md). Merge stays gated on the operator exit
-  sequence (§16): external-β CONVERGE -> gamma binds SHA_M + review + evidence -> separate CC
-  ratification -> operator-final-read -> merge -> separate PC-Wave -> CC wave review -> operator wave
-  authorization. PR #667 stays DRAFT; γ did not merge, mark the PR ready, dispatch CC, or touch the
-  matter (2d6b93cc left byte-for-byte untouched).
+  R8 external-CC HOLD repair — cell REOPENED after external-β CONVERGE. Bootstrap PC-D0 realization
+  on the shipped generic CDS/CCNF runner (no cell_class-aware routing). The exit sequence had reached
+  external-β R7 CONVERGE on 2d6b93cc (comment 5013028527) and a γ closeout binding 2d6b93cc; a
+  separate, independent external Cohering Cell (CC, scope n+1, outside the Sigma lineage) then
+  ratified that exact SHA and returned DISPOSITION `hold` (comment 5015281024) with two BLOCKING
+  findings: CC-1 the κ firebreak is both affirmed and negated (matter asserts κ≠α unconditionally AND
+  literal κ = α — role-equality that operator authorization + shared hosting identity cannot make
+  true); CC-2 γ does not content-bind the external-β review artifact (bound by a mutable comment
+  id/URL — stable object identity, not immutable content — contradicting the matter's own §2/§13
+  content-binding rule). This is exactly what the scope-n+1 coherence judgment catches that the
+  matter-focused β passes, structurally, could not. The operator confirmed the CC-1 reframing
+  directly; both findings are valid, none disputed. alpha repaired the two MATTER-side defects in R8
+  (CC-1: κ≠α unconditional as role propositions in State A and State B alike + State A reframed to
+  hosting-identity collapse, not role-equality, §8/§12/§14/Thesis/§1; CC-2 matter side: §11.6 now
+  requires the β review artifact to be content-bound — content hash + retrievable snapshot — not a
+  bare comment id/URL) and landed the spec-only immutable matter commit SHA_M 30a9455a. This
+  review-request stays split per round so no verdict binds to a SHA it did not review (R3 ->
+  014c75ff/iterate/5012130583; R4 -> ce310a33/iterate/5012790037; R5 -> eb627874/iterate/5012900197;
+  R6 -> 64d94e71/iterate/5012973128; R7 -> 2d6b93cc/converge/5013028527; CC ratification ->
+  2d6b93cc/hold/5015281024; R8 -> 30a9455a/external_beta/pending). The external-β R7 CONVERGE on
+  2d6b93cc is SUPERSEDED (matter changed); the cell is NOT converged and NOT ratified. The prior γ
+  closeout binding 2d6b93cc is superseded by this matter change — a FRESH exact-SHA external-β review
+  of 30a9455a, then a fresh CONTENT-BOUND γ (binding SHA_M + the review by content hash + snapshot),
+  then a fresh separate CC ratification are required (§16 exit sequence). This α round authored only
+  the matter (commit 1) and these receipts (commit 2); it did not merge, mark the PR ready, dispatch
+  CC, invite reviewers, touch the PR #667 body, or rewrite the γ closeout. PR #667 stays DRAFT.
