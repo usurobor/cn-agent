@@ -1,22 +1,38 @@
-<!-- wave-revision: R6 -->
-# Wave: cell-runtime-doctrine (cnos#671 — R6)
+<!-- wave-revision: R7 -->
+# Wave: cell-runtime-doctrine (cnos#671 — R7)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
 single-purpose Working-Cell contracts, grounded in an immutable coherence measurement. **R2** repaired
-the external-β ITERATE (PR/issue #672); **R3** repaired a second external-β ITERATE (sound validator,
-honest intent provenance, honestly-classified oracles); **R4** added per-WC oracle ownership; **R5**
-moved that ownership into the separate content-bound `oracle-registry.yaml` (exact §2 contracts) and
-made check (h) a total+singular bijection over the mechanically-verifiable predicates. **R6** (this
-revision) closes the one remaining gap: R5 bijected only the **30 mechanically-verifiable** predicates,
-so a *classified* obligation could be quietly dropped from the registry + both Markdown surfaces + the
-count while surviving in the contract (a coordinated omission) with all checks green. R6 makes
-`oracle-registry.yaml` **TOTAL** — an `assurance:` entry for **every** scalar in **every** child
-contract's `acceptance.predicates`, classified into **exactly one** of the four categories — and adds
-`validate.py` check **(j)**, which proves a **total + singular bijection** between
-`union(acceptance.predicates)` and the child-owned registry entries (each predicate classified exactly
-once), with four new adversarial coverage tests (incl. the coordinated omission). The accepted
-decomposition graph shape is **unchanged** across R2–R6 (WC-2 root → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5).
+the external-β ITERATE (PR/issue #672); **R3** repaired a second external-β ITERATE (validator + negative
+fixtures, honest intent provenance, honestly-classified oracles); **R4** added per-WC oracle ownership;
+**R5** moved that ownership into the separate content-bound `oracle-registry.yaml` (exact §2 contracts)
+and made check (h) a total+singular bijection over the mechanically-verifiable predicates; **R6** made
+`oracle-registry.yaml` **TOTAL** and added check **(j)** (a total+singular bijection over the complete
+child acceptance set). **R7** (this revision) closes two remaining blockers in the validator itself:
+
+1. **The wave envelope was not validated as a whole (BLOCKER-1).** The validator checked contracts
+   deeply but extracted only selected wave node/edge fields, so a mutated wave object survived
+   (`schema: nonsense`, `stop_conditions: []`, `gates: {}`, a truncated critical path, a node
+   `output_path` that diverged from its contract, an `edge.kind: nonsense`, and a duplicate `schema:`
+   key that `yaml.safe_load` silently collapsed). R7 adds a YAML loader that **rejects duplicate mapping
+   keys anywhere**, and check **(k)** — the **full `cn.wave.v1` constraint surface**: exact top-level
+   key set + `schema` const + types; per-node shape with `output_path`/`output_id` **parity** to the
+   owning contract; per-edge exact key-set + `kind` enum; the sole-root and critical-path (root→terminal)
+   rules; typed gates; a non-empty typed STOP set; and the completion shape.
+2. **Whole-wave completion was a naked boolean (BLOCKER-2).** `child_complete(n)` was fed as a fixture
+   boolean, so a `child_complete` that ignored output/acceptance/V/receipt passed. R7 makes completion
+   **evidence-derived**: `child_complete(n)` is now the AND over node n's own bound constituent record
+   (`requested_output_produced`, `acceptance_all_pass`, `class_v_pass`, `receipt_bound`, and content-bound
+   β/γ `evidence_bound`); `wc5_ready`/`wc5_complete`/`wave_complete` are derived from those records. Check
+   **(g)** evaluates the derivation and **rejects** a definition that ignores a required constituent, a
+   record missing a constituent, and any supplied `child_complete: true` not backed by its constituents.
+
+`validate_test.py` grows from 15 to **29** adversarial mutations (the 7 envelope + 7 completion negatives
+added); each fails for its own named predicate while the clean tree passes. The accepted decomposition
+graph shape is **unchanged** across R2–R7 (WC-2 root → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), as are the
+six-node graph, D9-four, intent provenance, grounding, the §2 contracts, and the (a)–(j) clean-tree
+behavior.
 
 **This is a plan, not doctrine.** The `docs/` artifacts named as `requested_output` paths are the
 **future output of the Working Cells** — they are *not* authored here. This wave authors the
@@ -95,16 +111,23 @@ key (incl. `oracles`) now FAILS check (a). Reverse-consumer information is **der
 the #627 map). Child completion uses the **canonical derived rule** (requested output produced ·
 acceptance predicates pass · V PASS · bound receipt), not a per-contract `completion_signal`.
 
-## Non-recursive whole-wave completion (BLOCKER-1 repair)
+## Non-recursive, EVIDENCE-DERIVED whole-wave completion (original finding-1 + R7 BLOCKER-2)
 
 `wave.cn-wave-v1.yaml` `completion` defines a **non-recursive construction set**
-`N = {wc-1, wc-2, wc-3a, wc-3b, wc-4}` (excludes wc-5). **WC-5 readiness** = a completion receipt
-exists for every node in N. **WC-5 completion** = wc-5's own output + acceptance + V PASS + bound
-receipt (it does **not** quantify over itself or the wave predicate). **Whole-wave completion** =
-`all(N complete) AND wc5_complete`. The completion-predicate dependency graph is **acyclic**
-(`validate.py` check (g)). Four fixtures pin the behavior: all-N-incomplete (seal not ready);
-all-N-complete/WC-5-absent (seal ready, wave incomplete); WC-5 FAIL (wave incomplete); all-N + WC-5
-PASS (wave complete).
+`N = {wc-1, wc-2, wc-3a, wc-3b, wc-4}` (excludes wc-5), a terminal `wc-5`, and — the R7 repair —
+`child_complete(n)` as a **derived predicate over bound constituents, not a naked boolean**. Its
+`definition` is the AND over node n's own constituent record: `requested_output_produced` (content
+identity) · `acceptance_all_pass` (every acceptance/oracle result) · `class_v_pass` (class-WC V verdict)
+· `receipt_bound` (receipt identity/hash) · `evidence_bound` (content-bound β/γ evidence). **WC-5
+readiness** = `all(n in N) child_complete(n)`; **WC-5 completion** = `child_complete(wc-5)` derived from
+wc-5's own record (it does **not** quantify over itself or the wave predicate); **whole-wave completion**
+= `all(N) AND wc5_complete`. `validate.py` check (g) builds the predicate graph by AST-walk and proves it
+acyclic, then **evaluates the derivation** over each fixture's per-node `records` and rejects a
+definition that ignores a required constituent, a record missing a constituent, and any supplied
+`child_complete: true` not backed by its constituents. Four fixtures pin the behavior: all-incomplete
+(seal not ready); all-N-complete/WC-5-absent (seal ready, wave incomplete); WC-5 V-FAIL (wave
+incomplete); all-complete (wave complete) — each also carrying a `claimed_child_complete` the validator
+checks against the constituent-derived value.
 
 ## D9 — four-schema boundary SETTLED (finding 6)
 
@@ -124,39 +147,55 @@ states the rule: every `contract_ref` resolves **relative to the immutable autho
 operator authorization is **revision-bound**; re-resolution at a changed tree **fails stale**. Each
 node also carries `contract_sha256` for independent content-addressable resolution.
 
-## SOUND pre-authorization validator + negative fixtures (finding 1) + honest oracles (finding 3)
+## Pre-authorization validator — the enumerated guarantees it proves (findings 1/3 + R7 blockers)
 
-- [`validate.py`](./validate.py) — credential-free (stdlib + PyYAML + local `git`), **fail-closed and
-  genuinely SOUND**. It derives every fact from the authored data (no hard-coded node/edge/predicate
-  list) and checks: (a) the **full §2 constraint model** — key paths + **enums** (`cell.class`,
-  `ref_kind`, locator `kind`, `requested_output.kind`) + types + cardinalities; (b) **real ref
-  resolution** — each contract's `intent_ref.id`/`schema` compared to the actual intent object, every
-  repo-artifact locator resolved with `git cat-file -e <commit>:<path>`, every `sha256:h@path`
-  content-hash verified, the grounding source hash == `9d1ab3a5…`; (c) **derive-from-authored-data** —
-  nodes/outputs/edges/roots/critical-path derived and cross-checked (authored == derived); (d) DAG;
-  (e) parallel write surfaces; (f) gate invariants; (g) the **authored completion relation evaluated
-  as structured data** — the predicate dependency graph is built by **walking the `expr` ASTs** and
-  proved acyclic (a tautology → self-cycle → FAIL), and **each fixture is computed and compared to its
-  authored `expected`** (a flipped expectation → FAIL); (h) the **mechanically-verifiable oracle-ownership
-  TOTAL + SINGULAR bijection** (registry ⇄ each child's `acceptance` ⇄ the mv projection); (i) **ledger
-  consistency** (revision labels agree · reported counts == total-registry child totals == mv ownership
-  size · every category a single enum member); (j) the **classification TOTALITY + SINGULARITY over the
-  COMPLETE child acceptance set** — `union(acceptance.predicates)` ⇄ the total `assurance:` registry, each
-  predicate classified **exactly once** across all four categories (rejects an unclassified predicate left
-  in a contract, a double-classified predicate, a phantom entry, a bad category, or a projection parity
-  break). **Exits non-zero on any violation; passes at this tree (all ten checks a–j green;
-  69 child acceptance predicates: 11 enforced · 30 mechanically-verifiable · 7 evidenced · 21 cognitive-review).**
+- [`validate.py`](./validate.py) — credential-free (stdlib + PyYAML + local `git`). It is **not** a
+  blanket soundness certificate: it exits non-zero on any violation of the **enumerated checks (a)–(k)
+  below** and warrants exactly those properties — nothing beyond them. All YAML is parsed with a loader
+  that **rejects duplicate mapping keys anywhere** (closing `yaml.safe_load`'s silent last-wins masking).
+  It derives every fact from the authored data (no hard-coded node/edge/predicate list) and proves:
+  - **(a) §2 contract shape** — key paths + enums (`cell.class`, `ref_kind`, locator `kind`,
+    `requested_output.kind`) + types + cardinalities (an added top-level key FAILS).
+  - **(b) ref/hash resolution** — each contract's `intent_ref.id`/`schema` vs the actual intent object;
+    every repo-artifact locator resolved with `git cat-file -e <commit>:<path>`; every `sha256:h@path`
+    content-hash verified (incl. the oracle-registry ref); the grounding source hash == `9d1ab3a5…`.
+  - **(c) derive-from-authored-data** — nodes/outputs/edges/roots/critical-path derived and cross-checked
+    (authored == derived); **(d)** the dependency graph is a **DAG**; **(e)** parallel nodes share no
+    write surface; **(f)** gate invariants.
+  - **(g) EVIDENCE-DERIVED completion** — the predicate dependency graph is built by walking the `expr`
+    ASTs and proved acyclic (a tautology → self-cycle → FAIL); `child_complete(n)` is **derived** from
+    node n's own constituent record (output produced · acceptance all-PASS · class-V PASS · receipt bound
+    · content-bound β/γ evidence), and `wc5_ready`/`wc5_complete`/`wave_complete` from those records. It
+    **rejects** a definition that ignores a required constituent, a record missing a constituent, a
+    supplied `child_complete: true` not backed by its constituents, and any fixture whose computed value
+    ≠ authored `expected`.
+  - **(h) mechanically-verifiable oracle-ownership** total+singular bijection (registry ⇄ each child's
+    `acceptance` ⇄ the mv projection); **(i) ledger consistency** (revision labels agree · reported counts
+    == total-registry child totals == mv ownership size · every category a single enum member); **(j)
+    classification totality+singularity** over the **complete** child acceptance set (`union(acceptance.
+    predicates)` ⇄ the total `assurance:` registry, each classified exactly once across all four
+    categories; rejects unclassified/double-classified/phantom/bad-category/parity-break).
+  - **(k) full `cn.wave.v1` envelope** — exact wave top-level key set + `schema` const + field types; each
+    node's required shape with `output_path`/`output_id` **parity** to the owning contract; each edge's
+    exact key-set + `kind ∈ {depends_on}` over known nodes; the sole-root rule and the critical-path
+    (root→terminal) rule; typed gates; a non-empty typed STOP set (allowed effect + receipt fields); and
+    the completion shape.
+
+  **Passes at this tree (all eleven checks a–k green; 69 child acceptance predicates: 11 enforced · 30
+  mechanically-verifiable · 7 evidenced · 21 cognitive-review), exits non-zero on any violation.**
 - [`validate_test.py`](./validate_test.py) — executable adversarial-mutation harness. Materializes the
-  **fifteen** mutations (six originals: wrong intent id; nonsense `cell.class`; nonexistent artifact
-  path; tautological whole-wave predicate; flipped fixture expectation; placeholder oracle operand —
-  the five mechanically-verifiable bijection mutations: remove a registry entry; duplicate an owner;
-  reclassify an entry; leave an mv predicate unowned; add an owner entry absent from acceptance — and
-  the **four R6 total-classification mutations**: the **coordinated omission** (drop a predicate from the
-  registry + both md surfaces + the count, leave it in the contract — (h)/(i) stay green, (j) catches it);
-  double-classify; phantom entry; category-without-required-fields) in temp trees — honestly re-pinning
-  every changed `contract_sha256` and the registry hash — and asserts **each exits non-zero for its own
-  named predicate** while the clean tree exits 0. **Verified: harness passes** (clean 0; all 15 fail for
-  their own predicate).
+  **twenty-nine** mutations — the six originals (wrong intent id; nonsense `cell.class`; nonexistent
+  artifact path; tautological whole-wave predicate; flipped fixture expectation; placeholder oracle
+  operand); the five mechanically-verifiable bijection mutations; the four R6 total-classification
+  mutations (incl. the coordinated omission — (h)/(i) stay green, (j) catches it); the **seven R7 wave-
+  envelope mutations** (`schema: nonsense`; `stop_conditions: []`; `gates: {}`; a truncated critical
+  path; a node `output_path` diverging from its contract; an `edge.kind: nonsense`; a duplicate `schema:`
+  key → all check (k)); and the **seven R7 evidence-derived-completion mutations** (a `child_complete`
+  definition set to constant `true`; flip each of output/acceptance/V/receipt with a `child_complete:
+  true` claim; remove a constituent from a record; a wc-5 completion naked boolean → all check (g)) —
+  each in a temp tree, honestly re-pinning every changed `contract_sha256` and the registry hash, and
+  asserts **each exits non-zero for its own named predicate** while the clean tree exits 0. **Verified:
+  harness passes** (clean 0; all 29 fail for their own predicate).
 - [`oracle-registry.yaml`](./oracle-registry.yaml) — the authoritative **TOTAL** registry: an `assurance:`
   entry for **every** one of the 69 child acceptance predicates (30 mechanically-verifiable with concrete
   ownership fields + 11 enforced + 7 evidenced + 21 cognitive-review), plus a **separate** `wave_predicates:`
@@ -200,6 +239,14 @@ Note: R2 finding-2's phrasing above ("materialized … exists before any cell") 
 finding 2** — the intent is honestly a transitional bootstrap projection authored during the cell; it
 does not exist before the cell.
 
+## Per-finding disposition (R7 — validate the complete wave envelope; evidence-derived completion)
+
+| # | Finding | Repair in this R7 |
+|---|---|---|
+| 1 | **[BLOCKER]** the validator checked contracts deeply but extracted only selected wave node/edge fields, so a mutated wave object passed: `schema: nonsense`, `stop_conditions: []`, `gates: {}`, a critical path truncated to `[wc-2, wc-1]`, a WC-2 node `output_path: docs/WRONG.md`, a first edge `kind: nonsense`, and a duplicate `schema:` key (`yaml.safe_load` silently collapsed it). | Added a `StrictSafeLoader` that **rejects duplicate mapping keys anywhere** (wave, contracts, registry, intent) and check **(k)** — the full `cn.wave.v1` constraint surface: exact top-level key set + `schema` const + field types; per-node shape with `output_path`/`output_id` **parity** to the owning contract's `requested_output`; per-edge exact key-set + `kind ∈ {depends_on}` over known nodes; the sole-root and critical-path (root→terminal) rules; typed gates; a non-empty typed STOP set (allowed effect + receipt fields); and the completion shape. Each of the 7 mutations now fails for its own named predicate (added to `validate_test.py`); the clean wave passes and resolves every bound field. |
+| 2 | **[BLOCKER]** whole-wave completion was a **naked boolean**: `child_complete`/`wc5_complete` were fed as fixture booleans and check (g) only proved the boolean expressions acyclic + matching authored expected, so a `child_complete` that "ignores output, acceptance, V, receipt" passed. | Made completion **evidence-derived**: `child_complete(n)` is now the AND over node n's own bound constituent record (`requested_output_produced` · `acceptance_all_pass` · `class_v_pass` · `receipt_bound` · content-bound β/γ `evidence_bound`); `wc5_ready`/`wc5_complete`/`wave_complete` are derived from those records. Check (g) evaluates the derivation over each fixture's per-node `records` and **rejects** a `child_complete` definition that ignores/omits a required constituent, a record missing a constituent, contradictory evidence, and any supplied `child_complete: true` not backed by its constituents. Positive + negative regression pairs (flip/remove each of output/acceptance/V/receipt; the constant-`true` definition; a wc-5 completion naked boolean) added to `validate_test.py` — all fail for their own predicate. |
+| 3 | **[REQUIRED]** the README described the validator as "genuinely SOUND / fail-closed", exceeding the proven surface; the revision + mutation ledger was R6/15. | README now describes the validator **exactly by the enumerated guarantees (a)–(k)** it proves and states it is not a blanket soundness certificate. Every `wave-revision:` marker advanced to **R7** (check (i) proves they agree); the harness ledger is now **29** mutations (15 prior + 7 envelope + 7 completion), and the registry adds a `wave_envelope_constraints_enforced` wave-only predicate for check (k). |
+
 ## Per-finding disposition (R6 — total + singular assurance-classification bijection)
 
 | # | Finding | Repair in this R6 |
@@ -220,7 +267,7 @@ does not exist before the cell.
 
 | # | Finding | Repair in this R3 |
 |---|---|---|
-| 1 | **[BLOCKER]** `validate.py` false-passed five adversarial mutations | Rewrote the validator to be genuinely **sound**: full §2 constraint model (enums/types/cardinalities), real ref resolution (intent id/schema vs the intent object; every repo-artifact locator resolved with `git cat-file -e`; grounding source hash), derive-from-authored-data (nodes/edges/roots/critical-path), and **evaluation** of the authored completion predicates + fixtures as structured data (AST-walked predicate-graph acyclicity + per-fixture computation vs `expected`). Added [`validate_test.py`](./validate_test.py); **all five now exit non-zero for their own predicate; clean tree exits 0** (verified). |
+| 1 | **[BLOCKER]** `validate.py` false-passed five adversarial mutations | Rewrote the validator to actually **evaluate** (not shape-check) the tree: full §2 constraint model (enums/types/cardinalities), real ref resolution (intent id/schema vs the intent object; every repo-artifact locator resolved with `git cat-file -e`; grounding source hash), derive-from-authored-data (nodes/edges/roots/critical-path), and **evaluation** of the authored completion predicates + fixtures as structured data (AST-walked predicate-graph acyclicity + per-fixture computation vs `expected`). Added [`validate_test.py`](./validate_test.py); **all five now exit non-zero for their own predicate; clean tree exits 0** (verified). |
 | 2 | **[BLOCKER]** intent masqueraded as pre-cell κ/operator intent | Rewrote `intent.cn-intent-v1.yaml` as an explicitly **transitional bootstrap projection** authored during the cell (no pre-cell existence claim); `statement` carries only operator matter (#627 + the operator verbatim doctrine line); α conclusions moved to [`decision-provenance.md`](./decision-provenance.md); identity vs carrier kept distinct; README no longer says the intent existed before the cell. |
 | 3 | **[REQUIRED]** oracles mislabeled cognitive review as mechanical | Rewrote `acceptance-oracles.md`: every predicate classified **enforced / mechanically-verifiable / evidenced / cognitive-review**; mechanically-verifiable rows name the fixture path + command + expected positive/negative the child WC must emit (added `.cdd/unreleased/<wc>/fixtures/**` allowed-paths + a receipt-evidence acceptance predicate to each contract); semantic-absence claims are cognitive-review, not grep. |
 
@@ -236,9 +283,9 @@ does not exist before the cell.
 - [`reconcile-627.md`](./reconcile-627.md) — the #627 S1–S8 refinement map + derived reverse-consumers.
 - [`oracle-registry.yaml`](./oracle-registry.yaml) — AUTHORITATIVE, **TOTAL** assurance registry: an `assurance:` entry for every one of the 69 child acceptance predicates (30 mechanically-verifiable + 11 enforced + 7 evidenced + 21 cognitive-review) plus a separate `wave_predicates:` section; consumed by each contract via a content-bound `inputs.required[].external` ref.
 - [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the total registry (incl. the complete-projection table, 69 rows); every predicate classified enforced / mechanically-verifiable / evidenced / cognitive-review (single-kind).
-- [`validate.py`](./validate.py) — SOUND pre-authorization validator (checks a–j; exits non-zero on violation).
-- [`validate_test.py`](./validate_test.py) — executable adversarial-mutation harness (15 mutations each fail for their own predicate; clean tree passes).
+- [`validate.py`](./validate.py) — pre-authorization validator; proves the enumerated checks (a)–(k) and exits non-zero on any violation (scoped to those guarantees, not a blanket soundness claim).
+- [`validate_test.py`](./validate_test.py) — executable adversarial-mutation harness (29 mutations each fail for their own predicate; clean tree passes).
 
 ---
-*Status: R6 wave, α matter — under operator review; external-β and CC review next. No child WCs
+*Status: R7 wave, α matter — under operator review; external-β and CC review next. No child WCs
 dispatched; no control-plane action taken by this cell.*

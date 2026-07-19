@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# wave-revision: R6
+# wave-revision: R7
 """
-Executable adversarial-mutation harness for validate.py (wave cnos#671 R6).
+Executable adversarial-mutation harness for validate.py (wave cnos#671 R7).
 
-Materializes FIFTEEN adversarial mutations, each in its own temp copy of the wave tree, HONESTLY
+Materializes TWENTY-NINE adversarial mutations, each in its own temp copy of the wave tree, HONESTLY
 re-pinning every changed contract_sha256 and the oracle-registry content hash (via resync_all), runs
 validate.py on each, and asserts EACH exits non-zero FOR ITS OWN NAMED PREDICATE — while the UNMODIFIED
 tree exits 0.
@@ -25,7 +25,7 @@ The FIVE mechanically-verifiable bijection mutations (check (h)):
  10. leave one mechanically-verifiable acceptance predicate unowned                   -> (h): MISSING entry
  11. add a registry owner entry absent from the contract's acceptance predicates      -> (h): extra owner entry
 
-The FOUR R6 TOTAL-classification mutations (check (j)) — the finding this revision closes:
+The FOUR R6 TOTAL-classification mutations (check (j)):
  12. COORDINATED OMISSION — remove a predicate from the registry + BOTH md surfaces + adjust the mv count,
      LEAVE it in the child contract. checks (h) and (i) STILL PASS (this is exactly the R5-breaking
      mutation); (j) MUST fail: an acceptance predicate absent from the assurance registry (UNCLASSIFIED).
@@ -33,7 +33,27 @@ The FOUR R6 TOTAL-classification mutations (check (j)) — the finding this revi
  14. PHANTOM registry entry for a predicate no contract declares                      -> (j): PHANTOM
  15. category-without-required-fields (change a category, omit its required fields)   -> (j): missing required field
 
-Run:  python3 validate_test.py   (exit 0 iff all 15 fail for their own predicate AND clean passes)
+The SEVEN R7 cn.wave.v1 ENVELOPE mutations (check (k)) — Blocker-1; β mutated the wave object and the
+selective pre-R7 extractor passed them all:
+ 16. schema: nonsense                 -> (k): wave.schema != cn.wave.v1
+ 17. stop_conditions: []              -> (k): STOP conditions must be a NON-EMPTY seq
+ 18. gates: {}                        -> (k): wave.gates MISSING keys
+ 19. critical_path truncated [wc-2,wc-1] -> (k): critical_path does not terminate at the terminal node
+ 20. wc-2 node output_path docs/WRONG.md -> (k): node.output_path != contract.requested_output.path (parity)
+ 21. first edge kind: nonsense        -> (k): edge kind not in {depends_on}
+ 22. duplicate `schema:` key          -> (k): StrictSafeLoader rejects a DUPLICATE mapping key
+
+The SEVEN R7 EVIDENCE-DERIVED-completion mutations (check (g)) — Blocker-2; β set child_complete to a
+constant that ignored output/acceptance/V/receipt and the boolean-only model passed:
+ 23. child_complete.definition = constant `true` (ignores constituents) -> (g): definition IGNORES a required constituent
+ 24. flip requested_output_produced (claim child_complete: true)        -> (g): naked boolean not backed by constituents
+ 25. flip acceptance_all_pass                                           -> (g): naked boolean not backed by constituents
+ 26. flip class_v_pass                                                  -> (g): naked boolean not backed by constituents
+ 27. flip receipt_bound                                                 -> (g): naked boolean not backed by constituents
+ 28. remove a constituent from a record                                 -> (g): record missing constituent
+ 29. wc-5 completion: flip receipt_bound (claim true)                   -> (g): naked boolean (completion, not just readiness)
+
+Run:  python3 validate_test.py   (exit 0 iff all 29 fail for their own predicate AND clean passes)
 """
 import os, sys, re, shutil, tempfile, subprocess, hashlib, copy
 import yaml
@@ -101,7 +121,7 @@ def dump_registry(tree, data):
     # stays isolated to its intended check (a stripped marker would incidentally trip check (i)).
     body = yaml.safe_dump(data, sort_keys=False, width=100000, allow_unicode=True)
     with open(os.path.join(tree, "oracle-registry.yaml"), "w") as f:
-        f.write("# wave-revision: R6\n" + body)
+        f.write("# wave-revision: R7\n" + body)
 
 def find_entry(d, owner, pred):
     return next(e for e in d["assurance"] if e.get("owner") == owner and e.get("predicate") == pred)
@@ -253,6 +273,77 @@ def mut_category_without_fields(tree):
     e.pop("receipt_evidence", None)
     dump_registry(tree, d)
 
+# ---- the seven R7 cn.wave.v1 ENVELOPE mutations (check (k)) -----------------------
+def wave_path(tree):
+    return os.path.join(tree, "wave.cn-wave-v1.yaml")
+
+def mut_wave_schema_nonsense(tree):
+    edit(wave_path(tree), 'schema: cn.wave.v1\nwave: "671"', 'schema: nonsense\nwave: "671"')
+
+def mut_wave_dup_schema_key(tree):
+    # a SECOND `schema:` mapping key — yaml.safe_load would silently collapse it; StrictSafeLoader rejects.
+    edit(wave_path(tree), 'schema: cn.wave.v1\nwave: "671"',
+         'schema: cn.wave.v1\nschema: cn.wave.v1\nwave: "671"')
+
+def mut_wave_empty_stop(tree):
+    p = wave_path(tree); s = open(p).read()
+    start = s.index("stop_conditions:")
+    end = s.index("# Non-recursive whole-wave completion")
+    open(p, "w").write(s[:start] + "stop_conditions: []\n\n" + s[end:])
+
+def mut_wave_empty_gates(tree):
+    p = wave_path(tree); s = open(p).read()
+    start = s.index("gates:\n  wave_authorization:")
+    end = s.index("# Wave-level STOP conditions")
+    open(p, "w").write(s[:start] + "gates: {}\n\n" + s[end:])
+
+def mut_wave_critpath_truncated(tree):
+    edit(wave_path(tree), 'critical_path: [ "wc-2", "wc-1", "wc-3b", "wc-5" ]',
+         'critical_path: [ "wc-2", "wc-1" ]')
+
+def mut_wave_node_output_path(tree):
+    edit(wave_path(tree),
+         'output_id: "coherence-measurement-contract"\n    output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"',
+         'output_id: "coherence-measurement-contract"\n    output_path: "docs/WRONG.md"')
+
+def mut_wave_edge_kind_nonsense(tree):
+    edit(wave_path(tree), '{ from: "wc-2",  to: "wc-1",  kind: "depends_on" }',
+         '{ from: "wc-2",  to: "wc-1",  kind: "nonsense" }')
+
+# ---- the seven R7 EVIDENCE-DERIVED-completion mutations (check (g)) ---------------
+D_WC1 = ("{ requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, "
+         "receipt_bound: true, evidence_bound: true }  # all-complete wc-1")
+D_WC5 = ("{ requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, "
+         "receipt_bound: true, evidence_bound: true }  # all-complete wc-5")
+
+def mut_cc_definition_constant_true(tree):
+    # the exact Codex mutation: child_complete becomes constant `true`, ignoring output/acceptance/V/receipt.
+    edit(wave_path(tree),
+         ('    definition:\n      all:\n'
+          '        - { record: "requested_output_produced" }\n'
+          '        - { record: "acceptance_all_pass" }\n'
+          '        - { record: "class_v_pass" }\n'
+          '        - { record: "receipt_bound" }\n'
+          '        - { record: "evidence_bound" }   # content-bound β/γ evidence present where required'),
+         '    definition:\n      all:\n        - { lit: true }')
+
+def _flip_D_wc1(tree, field):
+    edit(wave_path(tree), D_WC1, D_WC1.replace(f"{field}: true", f"{field}: false", 1))
+
+def mut_flip_output(tree):     _flip_D_wc1(tree, "requested_output_produced")
+def mut_flip_acceptance(tree): _flip_D_wc1(tree, "acceptance_all_pass")
+def mut_flip_classv(tree):     _flip_D_wc1(tree, "class_v_pass")
+def mut_flip_receipt(tree):    _flip_D_wc1(tree, "receipt_bound")
+
+def mut_remove_constituent(tree):
+    # drop the requested_output_produced constituent from wc-1's all-complete record (still valid YAML).
+    edit(wave_path(tree), D_WC1, D_WC1.replace("requested_output_produced: true, ", "", 1))
+
+def mut_wc5_completion_naked(tree):
+    # flip wc-5's receipt_bound false while its claimed child_complete stays true -> completion (not just
+    # readiness) fails: the naked boolean is not backed by wc-5's own constituents.
+    edit(wave_path(tree), D_WC5, D_WC5.replace("receipt_bound: true", "receipt_bound: false", 1))
+
 CASES = [
     ("wrong-intent-id",       mut_wrong_intent_id,        "b", "intent_ref.id"),
     ("nonsense-class",        mut_nonsense_class,          "a", "cell.class not in"),
@@ -269,6 +360,22 @@ CASES = [
     ("double-classify",       mut_double_classify,         "j", "DOUBLE-CLASSIFIED"),
     ("phantom-entry",         mut_phantom,                 "j", "PHANTOM"),
     ("category-no-fields",    mut_category_without_fields, "j", "missing required field"),
+    # --- R7 cn.wave.v1 envelope (check (k)) ---
+    ("wave-schema-nonsense",  mut_wave_schema_nonsense,    "k", "wave.schema != cn.wave.v1"),
+    ("wave-empty-stop",       mut_wave_empty_stop,         "k", "STOP conditions must be a NON-EMPTY"),
+    ("wave-empty-gates",      mut_wave_empty_gates,        "k", "wave.gates: MISSING"),
+    ("wave-critpath-trunc",   mut_wave_critpath_truncated, "k", "does not terminate at the terminal node"),
+    ("wave-node-outputpath",  mut_wave_node_output_path,   "k", "docs/WRONG.md"),
+    ("wave-edge-kind",        mut_wave_edge_kind_nonsense, "k", "kind not in ['depends_on']"),
+    ("wave-dup-schema-key",   mut_wave_dup_schema_key,     "k", "DUPLICATE mapping key"),
+    # --- R7 evidence-derived completion (check (g)) ---
+    ("cc-def-constant-true",  mut_cc_definition_constant_true, "g", "IGNORES required constituent"),
+    ("cc-flip-output",        mut_flip_output,             "g", "naked boolean"),
+    ("cc-flip-acceptance",    mut_flip_acceptance,         "g", "naked boolean"),
+    ("cc-flip-classv",        mut_flip_classv,             "g", "naked boolean"),
+    ("cc-flip-receipt",       mut_flip_receipt,            "g", "naked boolean"),
+    ("cc-remove-constituent", mut_remove_constituent,      "g", "missing constituent"),
+    ("cc-wc5-naked",          mut_wc5_completion_naked,    "g", "naked boolean"),
 ]
 
 def main():
@@ -308,7 +415,7 @@ def main():
         for x in failures:
             print("  -", x)
         sys.exit(1)
-    print("ADVERSARIAL-MUTATION HARNESS: PASS — clean tree exits 0; all 15 adversarial "
+    print("ADVERSARIAL-MUTATION HARNESS: PASS — clean tree exits 0; all 29 adversarial "
           "mutations exit non-zero for their own named predicate.")
     sys.exit(0)
 

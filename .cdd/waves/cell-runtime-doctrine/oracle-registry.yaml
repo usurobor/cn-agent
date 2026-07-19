@@ -1,5 +1,5 @@
 # oracle-registry.yaml — AUTHORITATIVE, TOTAL assurance-classification registry (cnos#671)
-# wave-revision: R6
+# wave-revision: R7
 #
 # R6 repair. Through R5 this registry held ONLY the 30 mechanically-verifiable predicates, and the
 # validator bijected that subset. Neither check proved that EVERY scalar in EVERY child contract's
@@ -20,7 +20,7 @@
 # registry via a canonical inputs.required[].external control_plane ref (content-hash pinned).
 schema: cn.assurance-registry.v1
 wave: "671"
-revision: "R6"
+revision: "R7"
 # ---- assurance: TOTAL over every child acceptance predicate (owner, predicate) ----
 assurance:
   # ---- WC-1 — cell classes & typed cell contract (12) ----
@@ -490,6 +490,9 @@ wave_predicates:
   - predicate: "wave_classification_totality_bijection_enforced"
     classification: "enforced"
     enforced_by: "validate.py check (j)"
+  - predicate: "wave_envelope_constraints_enforced"
+    classification: "enforced"
+    enforced_by: "validate.py check (k)"
   - predicate: "wave_adversarial_mutation_coverage_enforced"
     classification: "enforced"
     enforced_by: "validate_test.py (clean passes; every mutation fails for its own predicate)"

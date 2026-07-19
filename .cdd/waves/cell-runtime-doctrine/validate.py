@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-# wave-revision: R6
+# wave-revision: R7
 """
-Planning-Cell PRE-AUTHORIZATION validator for wave cnos#671 (cell-runtime-doctrine), R6.
+Planning-Cell PRE-AUTHORIZATION validator for wave cnos#671 (cell-runtime-doctrine), R7.
 
-SOUND, FAIL-CLOSED. Credential-free (Python stdlib + PyYAML + local `git`). It derives every fact
-from the AUTHORED wave/contract/intent data — it hard-codes no node list, edge list, or predicate
-graph — and rejects any tree that violates the §2 constraint model, ref resolution, derived-graph
-consistency, gate invariants, or the AUTHORED completion semantics. Exit status 0 iff ALL checks
-pass; non-zero (1) on ANY violation (2 on a harness error).
+Credential-free (Python stdlib + PyYAML + local `git`). It derives every fact from the AUTHORED
+wave/contract/intent data — it hard-codes no node list, edge list, or predicate graph — and checks
+the ENUMERATED properties (a)–(k) below, exiting non-zero on ANY violation (fail-closed FOR THOSE
+PROPERTIES; exit 0 iff every enumerated check passes, 2 on a harness error). It is NOT a blanket
+soundness certificate: it warrants exactly the enumerated guarantees — the §2 contract shape, ref/
+hash resolution, the derived graph (DAG + write-isolation), gate invariants, evidence-derived
+completion, the total assurance-classification bijection, and the complete cn.wave.v1 envelope — and
+nothing beyond them. All YAML is parsed with a loader that REJECTS DUPLICATE MAPPING KEYS anywhere
+(yaml.safe_load silently keeps the last of a duplicate; that masking is closed here).
 
 Checks:
   (a) FULL §2 cn.cell.contract.v1 CONSTRAINT MODEL — not just key sets: exact key paths, ENUMS
@@ -33,12 +37,19 @@ Checks:
   (e) no two PARALLEL (concurrent) nodes share a write surface (requested_output.path / allowed_paths).
   (f) GATE invariants (doctrine_affecting ⇒ operator_acceptance_required; reason present iff a gate
       bool is true, null iff both false; reason key always present).
-  (g) EVALUATE THE AUTHORED COMPLETION RELATION AS STRUCTURED DATA. The predicate dependency graph is
-      built by WALKING the authored `expr` ASTs (no substring scan, no hard-coded graph); acyclicity
-      is proved by real topological analysis (a tautology `wave_complete := wave_complete` becomes a
-      self-edge → cycle → FAIL). Each authored fixture is EVALUATED (each predicate computed over the
-      fixture inputs) and compared to the authored `expected` (a flipped expectation → FAIL). The
-      non-recursive construction set N is derived (all nodes minus terminal) and cross-checked.
+  (g) EVALUATE THE AUTHORED COMPLETION RELATION AS EVIDENCE-DERIVED STRUCTURED DATA. The predicate
+      dependency graph is built by WALKING the authored `expr` ASTs (no substring scan, no hard-coded
+      graph); acyclicity is proved by real topological analysis (a tautology `wave_complete :=
+      wave_complete` becomes a self-edge → cycle → FAIL). The non-recursive construction set N is
+      derived (all nodes minus terminal) and cross-checked. Crucially, per-node `child_complete(n)` is
+      NOT a naked fixture boolean: it is a DERIVED predicate — the AND, over node n's OWN bound
+      constituent record, of {requested_output_produced, acceptance_all_pass, class_v_pass,
+      receipt_bound, and content-bound β/γ evidence}. `wc5_ready`, `wc5_complete`, and `wave_complete`
+      are derived from those records. This check EVALUATES the derivation over each fixture's per-node
+      `records` and compares every predicate to the authored `expected`; it REJECTS a `child_complete`
+      DEFINITION that ignores/omits a required constituent (output/acceptance/V/receipt), a fixture
+      `records` entry that is missing a constituent, and any supplied `claimed_child_complete: true`
+      NOT backed by its constituents (a naked boolean, or contradictory evidence).
   (h) ORACLE OWNERSHIP — TOTAL + SINGULAR BIJECTION (R5). The §2 contract shape is restored (no
       top-level `oracles` key); oracle ownership lives in the SEPARATE content-bound registry
       `oracle-registry.yaml`, which each child contract consumes via a canonical
@@ -76,6 +87,17 @@ Checks:
       and any registry <-> `Complete assurance classification` md-projection parity break. Wave-only
       predicates live in a SEPARATE `wave_predicates:` section so they can neither inflate nor mask child
       coverage. Fail-closed; reports the derived count of child acceptance predicates and per-category totals.
+  (k) FULL cn.wave.v1 AUTHORITY ENVELOPE (R7). Beyond the node/edge/root/critical-path facts (k) proves the
+      COMPLETE wave object against its constraint model: the EXACT wave top-level key set + `schema` const
+      (cn.wave.v1) + field types; each NODE has the required shape (id, contract_ref, output_id, output_path,
+      contract_sha256; optional role) with output_path/output_id PARITY to the owning contract's
+      requested_output; each EDGE has the exact key set {from,to,kind} with kind ∈ {depends_on} over known
+      nodes; the ROOT rule (exactly one derived root) and the CRITICAL-PATH rule (starts at the root, ENDS at
+      the terminal node); wave GATES typed/shaped (wave_authorization + per_child bool/bool/reason); the STOP
+      set NON-EMPTY with typed entries carrying an allowed effect ∈ {hold,replan,escalate} + trigger/detect/
+      transition/receipt; and the completion section shape present. (A mutated wave object — `schema:
+      nonsense`, `stop_conditions: []`, `gates: {}`, a truncated critical path, a node output_path that
+      diverges from its contract, an `edge.kind: nonsense`, or a duplicate mapping key — FAILS here.)
 
 RESOLUTION MODEL (so the negative-fixture harness can validate a mutated COPY of the tree):
   * WAVE_DIR   — the wave matter dir (contracts/, wave.yaml, intent, grounding snapshots). All AUTHORED
@@ -95,6 +117,25 @@ try:
 except ImportError:
     print("FATAL: PyYAML required (pip install pyyaml)", file=sys.stderr)
     sys.exit(2)
+
+# ---- strict YAML loader: REJECT DUPLICATE MAPPING KEYS anywhere -------------------
+# yaml.safe_load silently keeps the LAST of a duplicate key (so `schema: cn.wave.v1` … `schema:
+# nonsense` collapses to one, masking the mutation). A custom loader overriding construct_mapping
+# detects a repeated key in any mapping and raises — every wave/contract/registry/intent load below
+# goes through it, so a duplicate key ANYWHERE fails validation.
+class DuplicateKeyError(Exception):
+    pass
+
+class StrictSafeLoader(yaml.SafeLoader):
+    def construct_mapping(self, node, deep=False):
+        seen = set()
+        for key_node, _val_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if key in seen:
+                raise DuplicateKeyError(
+                    f"DUPLICATE mapping key {key!r} (line {key_node.start_mark.line + 1})")
+            seen.add(key)
+        return super().construct_mapping(node, deep=deep)
 
 # ---- resolution model ------------------------------------------------------------
 WAVE_REL = ".cdd/waves/cell-runtime-doctrine"   # canonical repo-relative location of this wave dir
@@ -133,7 +174,7 @@ def sha256_file(path):
 
 def load_yaml(path):
     with open(path) as f:
-        return yaml.safe_load(f)
+        return yaml.load(f, Loader=StrictSafeLoader)
 
 # ---- git object resolution -------------------------------------------------------
 def git_commit_exists(commit):
@@ -176,6 +217,23 @@ LOCATOR_SHAPES = {
     "control_plane": {"kind", "ref", "revision"},
     "prior_receipt": {"kind", "receipt", "binding"},
 }
+
+# ---- (k) cn.wave.v1 envelope constants -------------------------------------------
+WAVE_TOP_KEYS = {"schema", "wave", "revision", "goal", "intent", "grounding", "external_roots",
+                 "contract_ref_resolution", "nodes", "edges", "edge_derivation", "gates",
+                 "stop_conditions", "completion"}
+WAVE_NODE_REQUIRED = {"id", "contract_ref", "output_id", "output_path", "contract_sha256"}
+WAVE_NODE_OPTIONAL = {"role"}
+WAVE_EDGE_KEYS  = {"from", "to", "kind"}
+EDGE_KIND_ENUM  = {"depends_on"}
+WAVE_INTENT_KEYS = {"schema", "id", "locator"}
+WAVE_GATES_KEYS  = {"wave_authorization", "per_child"}
+WAVE_PERCHILD_KEYS = {"operator_authorization_required", "operator_acceptance_required", "reason"}
+STOP_KEYS = {"trigger", "detect", "effect", "transition", "receipt"}
+STOP_EFFECT_ENUM = {"hold", "replan", "escalate"}
+COMPLETION_REQUIRED_KEYS = {"construction_set_N", "terminal_node", "child_complete", "predicates", "fixtures"}
+# the mandatory constituents an evidence-derived child_complete MUST read (check (g), Blocker-2)
+MANDATORY_CONSTITUENTS = {"requested_output_produced", "acceptance_all_pass", "class_v_pass", "receipt_bound"}
 
 def check_keyset(check, where, got, expected):
     got = set(got)
@@ -415,6 +473,8 @@ if not os.path.isfile(WAVE):
 else:
     try:
         wave = load_yaml(WAVE)
+    except DuplicateKeyError as e:
+        fail("k", f"wave.cn-wave-v1.yaml: {e}")
     except Exception as e:
         fail("c", f"wave YAML parse error: {e}")
 
@@ -566,7 +626,7 @@ for nid, (p, c) in contracts.items():
     if not any_gate and reason is not None:
         fail("f", f"{nid}: both gate bools false but reason is non-null")
 
-# ---- (g) evaluate the AUTHORED completion relation as structured data -------------
+# ---- (g) evaluate the AUTHORED, EVIDENCE-DERIVED completion relation as structured data -----------
 comp = wave.get("completion", {}) or {}
 terminal = comp.get("terminal_node")
 N = comp.get("construction_set_N") or []
@@ -581,19 +641,87 @@ if terminal in N:
 preds = {pr["name"]: pr for pr in (comp.get("predicates") or []) if isinstance(pr, dict) and "name" in pr}
 CHILD = "child_complete"
 
+# ---- child_complete is a DERIVED predicate over bound constituents, NOT a naked boolean (Blocker-2)
+# The authored `completion.child_complete.definition` is the AND over node n's OWN constituent record.
+# It MUST read every required constituent (output/acceptance/V/receipt); a definition that ignores one
+# — the exact `constant true; ignores output, acceptance, V, receipt` mutation — fails closed here.
+cc_spec = comp.get("child_complete") or {}
+cc_def = cc_spec.get("definition")
+cc_required = list(cc_spec.get("required_constituents") or [])
+cc_def_ok = True
+
+def record_reads(expr):
+    """Constituent fields the child_complete definition READS (walk the def AST — no substring scan)."""
+    if not isinstance(expr, dict):
+        raise ValueError(f"child_complete.definition node must be a mapping, got {expr!r}")
+    if "record" in expr:
+        return {expr["record"]}
+    if "lit" in expr:
+        return set()
+    for op in ("all", "any"):
+        if op in expr:
+            s = set()
+            for e in expr[op]:
+                s |= record_reads(e)
+            return s
+    if "not" in expr:
+        return record_reads(expr["not"])
+    raise ValueError(f"unknown child_complete.definition node keys {sorted(expr.keys())}")
+
+if not isinstance(cc_spec, dict) or cc_def is None:
+    fail("g", "completion.child_complete.definition missing — child_complete must be a DERIVED predicate "
+              "over bound constituents (output/acceptance/V/receipt), not a naked boolean")
+    cc_def_ok = False
+else:
+    if not MANDATORY_CONSTITUENTS <= set(cc_required):
+        fail("g", f"completion.child_complete.required_constituents missing mandatory "
+                  f"{sorted(MANDATORY_CONSTITUENTS - set(cc_required))}")
+    try:
+        cc_def_reads = record_reads(cc_def)
+    except ValueError as e:
+        fail("g", f"completion.child_complete.definition malformed: {e}"); cc_def_ok = False
+    else:
+        ignored = set(cc_required) - cc_def_reads
+        if ignored:
+            fail("g", f"completion.child_complete.definition IGNORES required constituent(s) "
+                      f"{sorted(ignored)} — completion is not evidence-derived (naked-boolean equivalent)")
+
+def eval_record_expr(expr, rec, node):
+    if "record" in expr:
+        k = expr["record"]
+        if k not in rec:
+            raise KeyError(f"record[{node}] missing constituent {k!r}")
+        return bool(rec[k])
+    if "lit" in expr: return bool(expr["lit"])
+    if "all" in expr: return all(eval_record_expr(e, rec, node) for e in expr["all"])
+    if "any" in expr: return any(eval_record_expr(e, rec, node) for e in expr["any"])
+    if "not" in expr: return not eval_record_expr(expr["not"], rec, node)
+    raise ValueError(f"unknown child_complete.definition node keys {sorted(expr.keys())}")
+
+def eval_child_complete(node, records):
+    """Derive child_complete(node) from its bound constituent record — never a naked boolean."""
+    rec = records.get(node)
+    if not isinstance(rec, dict):
+        raise KeyError(f"fixture missing completion record for node {node!r}")
+    for k in cc_required:            # a MISSING constituent fails closed
+        if k not in rec:
+            raise KeyError(f"record[{node}] missing constituent {k!r}")
+    return eval_record_expr(cc_def, rec, node)
+
 def ast_edges(expr):
     """Dependency targets this expr READS — derived by walking the AST (no substring scan)."""
     out = []
     if not isinstance(expr, dict):
         raise ValueError(f"expr must be a mapping, got {expr!r}")
-    if "lit" in expr or "input" in expr:
+    if "lit" in expr:
         return out
-    if "input_map" in expr:
-        node = expr.get("node")
-        out.append(f"{expr['input_map']}({node})"); return out
+    if "child_complete" in expr:
+        out.append(f"{CHILD}({expr['child_complete']})"); return out
     if "all_over_N" in expr:
         base = expr["all_over_N"]
-        for n in N: out.append(f"{base}({n})")
+        if base != CHILD:
+            raise ValueError(f"all_over_N base {base!r} unsupported (only child_complete)")
+        for n in N: out.append(f"{CHILD}({n})")
         return out
     if "pred" in expr:
         out.append(expr["pred"]); return out
@@ -629,46 +757,56 @@ for (a, b) in pedges:
 if graph_ok and not is_dag(pnodes, pedges):
     fail("g", "completion-predicate dependency graph has a CYCLE (recursive completion, e.g. a tautology)")
 
-# evaluate each fixture: compute every predicate over the fixture inputs, compare to authored expected
-def eval_expr(expr, inputs, stack):
+# evaluate each predicate over a fixture's per-node RECORDS (child_complete derived from constituents)
+def eval_expr(expr, records, stack):
     if "lit" in expr:   return bool(expr["lit"])
-    if "input" in expr:
-        if expr["input"] not in inputs:
-            raise KeyError(f"fixture missing input {expr['input']!r}")
-        return bool(inputs[expr["input"]])
-    if "input_map" in expr:
-        return bool(inputs[expr["input_map"]][expr["node"]])
+    if "child_complete" in expr:
+        return eval_child_complete(expr["child_complete"], records)
     if "all_over_N" in expr:
         base = expr["all_over_N"]
-        m = inputs.get(base, {})
-        return all(bool(m[n]) for n in N)
+        if base != CHILD:
+            raise ValueError(f"all_over_N base {base!r} unsupported (only child_complete)")
+        return all(eval_child_complete(n, records) for n in N)
     if "pred" in expr:
-        return eval_pred(expr["pred"], inputs, stack)
-    if "and" in expr: return all(eval_expr(e, inputs, stack) for e in expr["and"])
-    if "or" in expr:  return any(eval_expr(e, inputs, stack) for e in expr["or"])
-    if "not" in expr: return not eval_expr(expr["not"], inputs, stack)
+        return eval_pred(expr["pred"], records, stack)
+    if "and" in expr: return all(eval_expr(e, records, stack) for e in expr["and"])
+    if "or" in expr:  return any(eval_expr(e, records, stack) for e in expr["or"])
+    if "not" in expr: return not eval_expr(expr["not"], records, stack)
     raise ValueError(f"unknown expr node keys {sorted(expr.keys())}")
 
-def eval_pred(name, inputs, stack):
+def eval_pred(name, records, stack):
     if name in stack:
         raise RecursionError(f"recursive predicate {name!r}")
     if name not in preds:
         raise KeyError(f"undefined predicate {name!r}")
-    return eval_expr(preds[name]["expr"], inputs, stack | {name})
+    return eval_expr(preds[name]["expr"], records, stack | {name})
 
 fixtures = comp.get("fixtures") or []
-if graph_ok:
+if graph_ok and cc_def_ok:
     if not fixtures:
-        fail("g", "completion.fixtures: at least one truth-table fixture required")
+        fail("g", "completion.fixtures: at least one evidence-record fixture required")
     for fx in fixtures:
         nm = fx.get("name", "<unnamed>")
-        inputs = fx.get("inputs") or {}
+        records = fx.get("records") or {}
         expected = fx.get("expected") or {}
+        claimed = fx.get("claimed_child_complete") or {}
+        if not records:
+            fail("g", f"fixture {nm!r}: no per-node `records` (completion must be evidence-derived, not naked booleans)"); continue
         if not expected:
             fail("g", f"fixture {nm!r}: no authored `expected` outputs"); continue
+        # (1) a supplied child_complete claim MUST be backed by its constituents (naked boolean rejected)
+        for node, claim in claimed.items():
+            try:
+                derived = eval_child_complete(node, records)
+            except Exception as e:
+                fail("g", f"fixture {nm!r}: child_complete({node}) could not be derived: {e}"); continue
+            if bool(claim) != bool(derived):
+                fail("g", f"fixture {nm!r}: supplied child_complete[{node}]={claim} is a naked boolean "
+                          f"rejected — NOT backed by its constituents (constituent-derived={derived})")
+        # (2) each predicate computes (over the records) to the authored expected
         for pname, exp in expected.items():
             try:
-                got = eval_pred(pname, inputs, set())
+                got = eval_pred(pname, records, set())
             except Exception as e:
                 fail("g", f"fixture {nm!r}: predicate {pname!r} could not be evaluated: {e}"); continue
             if bool(got) != bool(exp):
@@ -1027,9 +1165,140 @@ if os.path.isfile(acc_oracles):
 
 J_TOTAL = len(contract_pairs)
 
+# ---- (k) FULL cn.wave.v1 AUTHORITY ENVELOPE --------------------------------------
+# The wave object is checked deeply against its constraint model — the exact top-level key set +
+# schema const + field types; per-node shape + output_path/output_id parity to the owning contract;
+# per-edge exact key set + kind enum over known nodes; the sole-root + critical-path (root→terminal)
+# rules; typed gates; a non-empty typed STOP set; and the completion shape. (Duplicate mapping keys are
+# rejected at load by StrictSafeLoader; a duplicate `schema:` surfaces above under (k).)
+if not isinstance(wave, dict) or not wave:
+    fail("k", "wave.cn-wave-v1.yaml did not load as a mapping (empty/parse failure)")
+else:
+    check_keyset("k", "wave top-level", wave.keys(), WAVE_TOP_KEYS)
+    if wave.get("schema") != "cn.wave.v1":
+        fail("k", f"wave.schema != cn.wave.v1 (got {wave.get('schema')!r})")
+    if not is_scalar(wave.get("wave")):
+        fail("k", "wave.wave: must be a scalar")
+    if not is_str(wave.get("revision")):
+        fail("k", "wave.revision: must be a scalar string")
+    if not is_str(wave.get("goal")):
+        fail("k", "wave.goal: must be a scalar string")
+    # intent mapping
+    wi = wave.get("intent")
+    if not isinstance(wi, dict):
+        fail("k", "wave.intent: must be a mapping")
+    elif check_keyset("k", "wave.intent", wi.keys(), WAVE_INTENT_KEYS):
+        if wi.get("schema") != "cn.intent.v1":
+            fail("k", f"wave.intent.schema != cn.intent.v1 (got {wi.get('schema')!r})")
+        if not is_str(wi.get("id")):
+            fail("k", "wave.intent.id: must be a scalar string")
+        if not is_str(wi.get("locator")):
+            fail("k", "wave.intent.locator: must be a scalar string")
+    for kk in ("grounding", "contract_ref_resolution", "edge_derivation"):
+        if not isinstance(wave.get(kk), dict):
+            fail("k", f"wave.{kk}: must be a mapping")
+    if not is_seq(wave.get("external_roots")):
+        fail("k", "wave.external_roots: must be a seq")
+    # nodes: required shape + parity to the owning contract's requested_output
+    wns = wave.get("nodes")
+    if not is_seq(wns) or not wns:
+        fail("k", "wave.nodes: must be a non-empty seq")
+    else:
+        for i, n in enumerate(wns):
+            if not isinstance(n, dict):
+                fail("k", f"wave.nodes[{i}]: must be a mapping"); continue
+            ks = set(n.keys())
+            extra = ks - (WAVE_NODE_REQUIRED | WAVE_NODE_OPTIONAL)
+            missing = WAVE_NODE_REQUIRED - ks
+            if extra:
+                fail("k", f"wave.nodes[{i}] ({n.get('id')}): NON-CANONICAL node key(s) {sorted(extra)}")
+            if missing:
+                fail("k", f"wave.nodes[{i}] ({n.get('id')}): MISSING node key(s) {sorted(missing)}")
+            for f2 in ("id", "contract_ref", "output_id", "output_path", "contract_sha256"):
+                if f2 in n and not is_str(n.get(f2)):
+                    fail("k", f"wave.nodes[{i}].{f2}: must be a scalar string")
+            nid = n.get("id")
+            if nid in contracts:
+                ro = (contracts[nid][1].get("requested_output") or {})
+                if n.get("output_path") != ro.get("path"):
+                    fail("k", f"node {nid}.output_path {n.get('output_path')!r} != contract.requested_output.path {ro.get('path')!r} (parity)")
+                if n.get("output_id") != ro.get("id"):
+                    fail("k", f"node {nid}.output_id {n.get('output_id')!r} != contract.requested_output.id {ro.get('id')!r} (parity)")
+    # edges: exact key set + kind enum over known nodes
+    wes = wave.get("edges")
+    if not is_seq(wes) or not wes:
+        fail("k", "wave.edges: must be a non-empty seq")
+    else:
+        for i, e in enumerate(wes):
+            if not isinstance(e, dict):
+                fail("k", f"wave.edges[{i}]: must be a mapping"); continue
+            if set(e.keys()) != WAVE_EDGE_KEYS:
+                fail("k", f"wave.edges[{i}]: edge key set must be {sorted(WAVE_EDGE_KEYS)} (got {sorted(e.keys())})")
+            if e.get("kind") not in EDGE_KIND_ENUM:
+                fail("k", f"wave.edges[{i}].kind not in {sorted(EDGE_KIND_ENUM)} (got {e.get('kind')!r})")
+            for endp in ("from", "to"):
+                if e.get(endp) not in wave_nodes:
+                    fail("k", f"wave.edges[{i}].{endp} {e.get(endp)!r} is not a wave node")
+    # root rule: exactly ONE derived root
+    if len(derived_roots) != 1:
+        fail("k", f"wave root rule: expected exactly ONE root, derived {sorted(derived_roots)}")
+    # gates typed/shaped
+    wg = wave.get("gates")
+    if not isinstance(wg, dict):
+        fail("k", "wave.gates: must be a mapping")
+    elif check_keyset("k", "wave.gates", wg.keys(), WAVE_GATES_KEYS):
+        wa = wg.get("wave_authorization")
+        if not isinstance(wa, dict) or not wa:
+            fail("k", "wave.gates.wave_authorization: must be a non-empty mapping")
+        elif not is_str(wa.get("authority")):
+            fail("k", "wave.gates.wave_authorization.authority: must be a scalar string")
+        pc = wg.get("per_child")
+        if not isinstance(pc, dict):
+            fail("k", "wave.gates.per_child: must be a mapping")
+        elif check_keyset("k", "wave.gates.per_child", pc.keys(), WAVE_PERCHILD_KEYS):
+            for b in ("operator_authorization_required", "operator_acceptance_required"):
+                if not is_bool(pc.get(b)):
+                    fail("k", f"wave.gates.per_child.{b}: must be bool")
+            if not (is_str(pc.get("reason")) and pc.get("reason").strip()):
+                fail("k", "wave.gates.per_child.reason: must be a non-empty string")
+    # STOP: non-empty, typed entries with an allowed effect + receipt fields
+    ws = wave.get("stop_conditions")
+    if not is_seq(ws) or len(ws) < 1:
+        fail("k", f"wave.stop_conditions: STOP conditions must be a NON-EMPTY seq (got {ws!r})")
+    else:
+        for i, s in enumerate(ws):
+            if not isinstance(s, dict):
+                fail("k", f"wave.stop_conditions[{i}]: must be a mapping"); continue
+            if set(s.keys()) != STOP_KEYS:
+                fail("k", f"wave.stop_conditions[{i}]: key set must be {sorted(STOP_KEYS)} (got {sorted(s.keys())})")
+            if s.get("effect") not in STOP_EFFECT_ENUM:
+                fail("k", f"wave.stop_conditions[{i}].effect not in {sorted(STOP_EFFECT_ENUM)} (got {s.get('effect')!r})")
+            for f2 in ("trigger", "detect", "transition", "receipt"):
+                if not (is_str(s.get(f2)) and s.get(f2).strip()):
+                    fail("k", f"wave.stop_conditions[{i}].{f2}: must be a non-empty string")
+    # completion shape present
+    wc = wave.get("completion")
+    if not isinstance(wc, dict):
+        fail("k", "wave.completion: must be a mapping")
+    else:
+        cmiss = COMPLETION_REQUIRED_KEYS - set(wc.keys())
+        if cmiss:
+            fail("k", f"wave.completion: MISSING key(s) {sorted(cmiss)}")
+    # critical-path rule: starts at the root, terminates at the terminal node
+    cp_k = (wave.get("edge_derivation") or {}).get("critical_path") or []
+    term_k = (wave.get("completion") or {}).get("terminal_node")
+    if not cp_k:
+        fail("k", "wave.edge_derivation.critical_path: must be a non-empty path")
+    else:
+        if derived_roots and cp_k[0] not in derived_roots:
+            fail("k", f"critical_path start {cp_k[0]!r} is not the wave root {sorted(derived_roots)}")
+        if term_k is not None and cp_k[-1] != term_k:
+            fail("k", f"critical_path does not terminate at the terminal node: ends at {cp_k[-1]!r}, terminal is {term_k!r}")
+
 # ---- report ----------------------------------------------------------------------
 print("=" * 78)
-print("Pre-authorization validator — wave cnos#671 (cell-runtime-doctrine) R6 — SOUND")
+print("Pre-authorization validator — wave cnos#671 (cell-runtime-doctrine) R7")
+print("  scope: exits non-zero on any violation of the enumerated checks (a)-(k); not a blanket soundness certificate")
 print(f"  WAVE_DIR={WAVE_DIR}")
 print(f"  REPO_ROOT={REPO_ROOT}")
 print("=" * 78)
@@ -1040,10 +1309,11 @@ checks = {
  "d": "dependency graph is a DAG",
  "e": "parallel nodes share no write surface",
  "f": "gate invariants (doctrine_affecting ⇒ acceptance; reason present iff a gate bool true)",
- "g": "AUTHORED completion evaluated (predicate-graph acyclic by walk; fixtures computed vs expected)",
+ "g": "EVIDENCE-DERIVED completion (predicate-graph acyclic by walk; child_complete derived from output+acceptance+V+receipt records; naked/contradictory booleans rejected; fixtures computed vs expected)",
  "h": "oracle-ownership TOTAL+SINGULAR bijection over the mechanically-verifiable subset (registry ⇄ each child's acceptance ⇄ mv projection; reject missing/duplicate/extra owner, classification mismatch, placeholder, parity break)",
  "i": "ledger consistency (revision labels agree; reported counts == total-registry child totals == mv ownership size; every category a single enum member)",
  "j": "classification TOTALITY+SINGULARITY over the COMPLETE child acceptance set (union(acceptance.predicates) ⇄ total registry, each classified exactly once across all four categories; reject unclassified/double/phantom/bad-category/parity-break)",
+ "k": "FULL cn.wave.v1 envelope (exact top-level keys + schema const + types; node shape + output parity; edge key-set + kind enum; sole-root + critical-path root→terminal; typed gates; non-empty typed STOP; completion shape; duplicate mapping keys rejected)",
 }
 by = {k: [e for e in errors if e.startswith(f"[{k}")] for k in checks}
 for k, desc in checks.items():
@@ -1063,5 +1333,5 @@ print("-" * 78)
 if errors:
     print(f"RESULT: FAIL ({len(errors)} violation(s))")
     sys.exit(1)
-print("RESULT: PASS — all ten checks (a–j) green at this wave tree.")
+print("RESULT: PASS — all eleven enumerated checks (a–k) green at this wave tree.")
 sys.exit(0)

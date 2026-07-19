@@ -1,4 +1,4 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R6)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R7)
 #
 # Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
 # resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
@@ -8,8 +8,8 @@
 # readability but MUST hold exact parity with the derived set (validate.py check (c) proves it).
 schema: cn.wave.v1
 wave: "671"
-# wave-revision: R6
-revision: "R6"
+# wave-revision: R7
+revision: "R7"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -80,33 +80,33 @@ nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
-    contract_sha256: "e610b736b26ccb8d58b2f00401fc922368dddfcc8261ce3d097cc938a4dd2e79"
+    contract_sha256: "80e9eb91410f9072c0189b110e85a1f07166b80afdd42082fb0386c294c9d86d"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
-    contract_sha256: "d9f9a048a5fa93568a0abef231dcd1304f64316a1748b736171a7083b65b1101"
+    contract_sha256: "0a69ca7c55ed8f4a3ae3d8ecfc8b52bf1829e77e2023664240220ae8cf9e98a5"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
-    contract_sha256: "18890212f175e5cbb86a2dc6c45a85293c1448d39711273cb1ecc606be085421"
+    contract_sha256: "6dd9c44ea5c4d93190a6016fddef0c0dfbcc25ebaa8196afd923902fd89752cb"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
-    contract_sha256: "2ba299e23fe807e8016c582600118472a9b83ca6f290c37dfda0c4ba94b9cc42"
+    contract_sha256: "f8aa30c7feeb87743b5dc7bc87964fe70b80f29492089a8aeaeb56ddc6242cc7"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
-    contract_sha256: "c96743d25d403deec4cb5d371e771a71e17caefca1d84b5321dec7b227555034"
+    contract_sha256: "c1d413b0300da6dc1092fb6b882815727daaf64467a6ed39ab634b1cbb874db1"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
-    contract_sha256: "9a70b1b2df3ee99580d1e020852417548cc15e9ada30eab3cfad35ac92144e86"
+    contract_sha256: "615eaeea67d8b20f93c8d2c22017733c9a0321e9ff56c0894ab780cbf1d317d0"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 
@@ -177,34 +177,47 @@ stop_conditions:
     transition: "any → holding (operator decision required to reopen a settled boundary)"
     receipt: "stop-receipt{type: unresolved_d9_at_wave_scope, node: wave, evidence: fifth_schema_proposal}"
 
-# Non-recursive whole-wave completion (finding-1 repair). The predicates and the truth-table fixtures
-# below are AUTHORED AS STRUCTURED DATA (not prose): validate.py check (g) builds the predicate
-# dependency graph FROM the `expr` ASTs (deriving edges by walking each AST — not from a hard-coded or
-# prose graph), proves it acyclic by real topological analysis (a tautology `wave_complete := wave_complete`
-# becomes a self-edge → cycle → FAIL), and EVALUATES every fixture (computes each predicate over the
-# fixture inputs and compares to the authored `expected` — a flipped expectation → FAIL).
+# Non-recursive whole-wave completion (BLOCKER-1/2 repair). The predicates and the fixtures below are
+# AUTHORED AS EVIDENCE-DERIVED STRUCTURED DATA (not prose, not naked booleans): validate.py check (g)
+# builds the predicate dependency graph FROM the `expr` ASTs (deriving edges by walking each AST — not
+# a hard-coded or prose graph), proves it acyclic by real topological analysis (a tautology
+# `wave_complete := wave_complete` becomes a self-edge → cycle → FAIL), and EVALUATES every fixture.
 #
-# Atoms (fixture-provided inputs): child_complete[<node>] (bool per node) and wc5_complete (bool).
-# Expression AST grammar (evaluated by validate.py):
-#   {input: "<name>"}                     -> reads fixture input scalar (leaf; no dependency edge)
-#   {input_map: "child_complete", node: "<n>"}  -> reads fixture input child_complete[n] (leaf)
-#   {all_over_N: "child_complete"}        -> AND of child_complete[n] for n in construction_set_N
-#                                            (adds a dependency edge to child_complete(n) for each n in N)
-#   {pred: "<name>"}                      -> evaluate predicate <name> (adds edge self -> <name>)
+# child_complete(n) is NOT a fixture boolean — it is DERIVED, per node, as the AND over node n's OWN
+# bound constituent record: {requested_output_produced (content identity), acceptance_all_pass (every
+# acceptance/oracle result), class_v_pass (class-WC V verdict), receipt_bound (receipt identity/hash),
+# evidence_bound (content-bound β/γ evidence)}. wc5_ready, wc5_complete, and wave_complete are DERIVED
+# from those records. A supplied `claimed_child_complete: true` NOT backed by the constituents, a
+# definition that ignores a required constituent, or a record missing a constituent → FAIL (g).
+#
+# Predicate AST grammar (evaluated by validate.py over a fixture's per-node `records`):
+#   {child_complete: "<n>"}         -> DERIVE child_complete(n) from records[n] via the definition below
+#   {all_over_N: "child_complete"}  -> AND of derived child_complete(n) for n in construction_set_N
+#   {pred: "<name>"}                -> evaluate predicate <name> (adds edge self -> <name>)
 #   {and: [expr, ...]}  {or: [expr, ...]}  {not: expr}  {lit: true|false}
+# child_complete.definition AST (evaluated over a node's record): {record: "<field>"} | {all|any|not} | {lit}
 completion:
   construction_set_N: [ "wc-1", "wc-2", "wc-3a", "wc-3b", "wc-4" ]   # NON-recursive: excludes wc-5
   terminal_node: "wc-5"
   note: "four/six child closures do NOT by themselves prove the objective — wave_complete = all(N) AND wc5_complete."
 
-  # child_complete(n) is a per-node LEAF predicate: it reads only node n's OWN surfaces
-  # (requested_output(n) produced · acceptance.predicates(n) all PASS · class-WC V verdict(n) PASS ·
-  # a bound receipt(n) exists · exact-SHA external-β + content-bound γ). Defined for n in N ∪ {wc-5}.
-  # It never reads the wave predicate. Mechanically it is a fixture input; it introduces no outgoing edge.
+  # child_complete(n) DERIVATION — the AND over node n's OWN constituent record. Defined for n in
+  # N ∪ {wc-5}. It never reads the wave predicate. The definition MUST read every required constituent;
+  # a definition that ignores output/acceptance/V/receipt (a naked-`true` equivalent) FAILS check (g).
   child_complete:
-    kind: "leaf-per-node-input"
-    defined_over: "N_and_terminal"     # n in construction_set_N ∪ {terminal_node}
-    reads: "only node n's own surfaces (see note above); never the wave predicate"
+    kind: "derived-per-node-predicate"
+    required_constituents:
+      - "requested_output_produced"     # node n's requested_output was produced (content identity bound)
+      - "acceptance_all_pass"           # every acceptance.predicate / oracle result for n is PASS
+      - "class_v_pass"                  # class-WC V verdict for n is PASS (gates on the imported CM ref)
+      - "receipt_bound"                 # a receipt for n is bound by identity/hash
+    definition:
+      all:
+        - { record: "requested_output_produced" }
+        - { record: "acceptance_all_pass" }
+        - { record: "class_v_pass" }
+        - { record: "receipt_bound" }
+        - { record: "evidence_bound" }   # content-bound β/γ evidence present where required
 
   # Named predicates, each with an evaluatable `expr`. The dependency graph is DERIVED from these ASTs.
   predicates:
@@ -212,8 +225,8 @@ completion:
       # seal readiness: every child in N has completed. Quantifies over N only; never over wc-5 or the wave.
       expr: { all_over_N: "child_complete" }
     - name: "wc5_complete"
-      # wc-5's OWN completion: a leaf over wc-5's own surfaces (fixture input). Reads nothing recursive.
-      expr: { input: "wc5_complete" }
+      # wc-5's OWN completion: DERIVED from wc-5's own constituent record. Reads nothing recursive.
+      expr: { child_complete: "wc-5" }
     - name: "wave_complete"
       # the ONLY predicate over both N and wc-5; nothing reads it back.
       expr:
@@ -221,30 +234,51 @@ completion:
           - { all_over_N: "child_complete" }
           - { pred: "wc5_complete" }
 
-  # Fixtures: inputs + AUTHORED expected. validate.py computes each predicate over `inputs` and asserts
-  # it equals `expected` (reject on mismatch). These are the finding-1 required set.
+  # Fixtures: per-node constituent `records` + an optional `claimed_child_complete` (which MUST agree
+  # with the constituent-derived value) + AUTHORED `expected`. validate.py derives child_complete(n)
+  # from each record, computes every predicate, and asserts it equals `expected` (reject on mismatch).
   fixtures:
-    - name: "all-N-incomplete"
-      note: "no child_complete(n) holds for any n in N; wc-5 not complete"
-      inputs:
-        child_complete: { "wc-1": false, "wc-2": false, "wc-3a": false, "wc-3b": false, "wc-4": false, "wc-5": false }
-        wc5_complete: false
+    - name: "all-incomplete"
+      note: "no node's constituents hold; wc-5 not complete"
+      records:
+        wc-1:  { requested_output_produced: false, acceptance_all_pass: false, class_v_pass: false, receipt_bound: false, evidence_bound: false }  # all-incomplete wc-1
+        wc-2:  { requested_output_produced: false, acceptance_all_pass: false, class_v_pass: false, receipt_bound: false, evidence_bound: false }  # all-incomplete wc-2
+        wc-3a: { requested_output_produced: false, acceptance_all_pass: false, class_v_pass: false, receipt_bound: false, evidence_bound: false }  # all-incomplete wc-3a
+        wc-3b: { requested_output_produced: false, acceptance_all_pass: false, class_v_pass: false, receipt_bound: false, evidence_bound: false }  # all-incomplete wc-3b
+        wc-4:  { requested_output_produced: false, acceptance_all_pass: false, class_v_pass: false, receipt_bound: false, evidence_bound: false }  # all-incomplete wc-4
+        wc-5:  { requested_output_produced: false, acceptance_all_pass: false, class_v_pass: false, receipt_bound: false, evidence_bound: false }  # all-incomplete wc-5
+      claimed_child_complete: { "wc-1": false, "wc-2": false, "wc-3a": false, "wc-3b": false, "wc-4": false, "wc-5": false }
       expected: { wc5_ready: false, wc5_complete: false, wave_complete: false }
     - name: "all-N-complete__WC-5-absent"
-      note: "child_complete(n) holds for every n in N; wc-5 produced no receipt (seal ready, wave incomplete)"
-      inputs:
-        child_complete: { "wc-1": true, "wc-2": true, "wc-3a": true, "wc-3b": true, "wc-4": true, "wc-5": false }
-        wc5_complete: false
+      note: "every node in N satisfies output+acceptance+V+receipt(+evidence); wc-5 produced no receipt (seal ready, wave incomplete)"
+      records:
+        wc-1:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # N-complete wc-1
+        wc-2:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # N-complete wc-2
+        wc-3a: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # N-complete wc-3a
+        wc-3b: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # N-complete wc-3b
+        wc-4:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # N-complete wc-4
+        wc-5:  { requested_output_produced: false, acceptance_all_pass: false, class_v_pass: false, receipt_bound: false, evidence_bound: false }  # N-complete wc-5
+      claimed_child_complete: { "wc-1": true, "wc-2": true, "wc-3a": true, "wc-3b": true, "wc-4": true, "wc-5": false }
       expected: { wc5_ready: true, wc5_complete: false, wave_complete: false }
-    - name: "WC-5-FAIL"
-      note: "every child in N complete; wc-5 ran but integration V verdict = FAIL (seal ready, wave incomplete)"
-      inputs:
-        child_complete: { "wc-1": true, "wc-2": true, "wc-3a": true, "wc-3b": true, "wc-4": true, "wc-5": false }
-        wc5_complete: false
+    - name: "WC-5-V-FAIL"
+      note: "every child in N complete; wc-5 produced output + receipt but its class-V verdict FAILED (seal ready, wave incomplete)"
+      records:
+        wc-1:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # V-fail wc-1
+        wc-2:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # V-fail wc-2
+        wc-3a: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # V-fail wc-3a
+        wc-3b: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # V-fail wc-3b
+        wc-4:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # V-fail wc-4
+        wc-5:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: false, receipt_bound: true, evidence_bound: true }  # V-fail wc-5
+      claimed_child_complete: { "wc-1": true, "wc-2": true, "wc-3a": true, "wc-3b": true, "wc-4": true, "wc-5": false }
       expected: { wc5_ready: true, wc5_complete: false, wave_complete: false }
-    - name: "all-N__WC-5-PASS"
-      note: "every child in N complete and wc-5 complete (wave complete)"
-      inputs:
-        child_complete: { "wc-1": true, "wc-2": true, "wc-3a": true, "wc-3b": true, "wc-4": true, "wc-5": true }
-        wc5_complete: true
+    - name: "all-complete__wave-complete"
+      note: "every node's constituents hold and wc-5 seals — the wave completes"
+      records:
+        wc-1:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # all-complete wc-1
+        wc-2:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # all-complete wc-2
+        wc-3a: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # all-complete wc-3a
+        wc-3b: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # all-complete wc-3b
+        wc-4:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # all-complete wc-4
+        wc-5:  { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }  # all-complete wc-5
+      claimed_child_complete: { "wc-1": true, "wc-2": true, "wc-3a": true, "wc-3b": true, "wc-4": true, "wc-5": true }
       expected: { wc5_ready: true, wc5_complete: true, wave_complete: true }

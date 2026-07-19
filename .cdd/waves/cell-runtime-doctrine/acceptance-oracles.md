@@ -1,5 +1,5 @@
-<!-- wave-revision: R6 -->
-# Acceptance oracles — honestly classified, registry-projected (cnos#671 R6)
+<!-- wave-revision: R7 -->
+# Acceptance oracles — honestly classified, registry-projected (cnos#671 R7)
 
 Every load-bearing acceptance predicate (wave + WC-1..WC-5) is classified as **exactly one** of four
 honest kinds. Nothing cognitive is dressed up as mechanical; a semantic-absence claim is **never**
@@ -47,8 +47,8 @@ evidenced **7** · cognitive-review **21** — **69** total, one classification 
 per-category totals over the **69** child acceptance predicates, derived from the TOTAL
 `oracle-registry.yaml` `assurance:` list; the mechanically-verifiable count equals the 30 ownership
 entries. `validate.py` check (i) recomputes these from the registry and fails closed on any drift, and
-check (j) proves the registry bijects with `union(acceptance.predicates)` exactly once each.) The **11**
-wave-only enforced predicates (checks (a)–(j) + the mutation harness) are held **separately** in
+check (j) proves the registry bijects with `union(acceptance.predicates)` exactly once each.) The **12**
+wave-only enforced predicates (checks (a)–(k) + the mutation harness) are held **separately** in
 `wave_predicates:` so they can neither inflate nor mask child coverage; the wave-level table just below
 documents them for the reader.
 
@@ -87,7 +87,8 @@ check (h) (see the *Registry projection* table at the bottom).
 | **oracle-ownership bijection** — total + singular map (registry ⇄ each child's `acceptance` ⇄ this projection); every mechanically-verifiable predicate owned exactly once | enforced | `validate.py` (h) | 0 / a removed entry, a duplicate owner, an unowned mv predicate, an extra owner absent from acceptance, a reclassified entry, a placeholder, or a projection parity break → exit 1 | check-(h) PASS |
 | **ledger consistency** — revision labels agree; reported counts == total-registry child totals == mv ownership size; every category a single enum member | enforced | `validate.py` (i) | 0 / a disagreeing revision label, a miscount, or a compound category → exit 1 | check-(i) PASS |
 | **classification totality + singularity** — `union(acceptance.predicates)` ⇄ the total `assurance:` registry, every child predicate classified exactly once across all four categories | enforced | `validate.py` (j) | 0 / a predicate in a contract but absent from the registry (a coordinated omission), a double-classified/phantom entry, a bad category, or a projection parity break → exit 1 | check-(j) PASS |
-| the fifteen adversarial mutations each fail for their own predicate; clean passes | enforced | `python3 validate_test.py` | harness exit 0 (15 fail, clean passes) | harness receipt |
+| **full `cn.wave.v1` envelope** — exact top-level keys + `schema` const + types; node shape + output_path/output_id parity; edge key-set + `kind` enum; sole-root + critical-path (root→terminal); typed gates; non-empty typed STOP; completion shape; **duplicate mapping keys rejected** | enforced | `validate.py` (k) | 0 / `schema: nonsense`, `stop_conditions: []`, `gates: {}`, a truncated critical path, a node `output_path` diverging from its contract, an `edge.kind: nonsense`, or a duplicate `schema:` key → exit 1 | check-(k) PASS |
+| the twenty-nine adversarial mutations each fail for their own predicate; clean passes | enforced | `python3 validate_test.py` | harness exit 0 (29 fail, clean passes) | harness receipt |
 
 ---
 
