@@ -1,11 +1,13 @@
-# Wave: cell-runtime-doctrine (cnos#671 — R2)
+# Wave: cell-runtime-doctrine (cnos#671 — R3)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
-single-purpose Working-Cell contracts, grounded in an immutable coherence measurement. It is the
-**R2 repair** of the wave against the external-β ITERATE (PR/issue #672): six exact-contract +
-assurance repairs. The accepted decomposition graph shape is **unchanged**
-(WC-2 root → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5); R2 repairs the contracts and adds assurance.
+single-purpose Working-Cell contracts, grounded in an immutable coherence measurement. **R2** was the
+repair against the external-β ITERATE (PR/issue #672): six exact-contract + assurance repairs. **R3**
+(this revision) is the repair against a second external-β ITERATE — three findings: a genuinely
+**sound** fail-closed validator, **honest transitional intent provenance** (no pre-cell/κ-authored
+claim), and **honestly-classified acceptance oracles**. The accepted decomposition graph shape is
+**unchanged** across R2/R3 (WC-2 root → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5).
 
 **This is a plan, not doctrine.** The `docs/` artifacts named as `requested_output` paths are the
 **future output of the Working Cells** — they are *not* authored here. This wave authors the
@@ -38,15 +40,25 @@ provider/runtime op, e.g. tsc — **not** CC). A **CC's output is a JUDGMENT tha
 refs**; CM and CC-judgment are **distinct tagged objects**. **V gates on CM.** A **PC's wave is
 grounded in / references an immutable CM.** WC-2 encodes exactly this.
 
-## Intent (durable `cn.intent.v1`, materialized)
+## Intent (TRANSITIONAL bootstrap projection — honest provenance, finding-2 repair)
 
-[`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) is the durable, first-class planning object
-(id, source: operator, captured_by: kappa, statement, scope, constraints, desired_outcome) — SHA-256
-`f3f484132c819c2a184df06ba99317bd032678f2cc6e47be74446f222005cb5c`. Per the D9 dependency order
-(`cn.intent.v1 → cn.cell.contract.v1 → …`) it exists **before** any cell. Every child `intent_ref`
-resolves to it by an **immutable, content-bound** locator (`sha256:<hash>@<path>`) through a typed
-**bootstrap adapter** (`carrier.kind: repo_artifact_bootstrap`), **not** the mutable issue carrier
-`cnos#671`. The §2 `intent_ref: {schema, id, carrier{kind, ref}}` key-path shape is preserved.
+[`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) is an **explicitly transitional bootstrap
+projection** of operator intent, authored **during** this cell — SHA-256
+`1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e`. It does **not** claim to have
+existed before any cell: D9 **names** `cn.intent.v1` but does not implement it, and **no durable
+pre-cell `cn.intent.v1` existed** in this manual bootstrap (the file first appeared mid-cell). Its
+`statement` carries **only authoritative operator matter** — the objective as the operator directed it
+in the #627 wave master, including the operator's **verbatim final doctrine line** — and its carriers
+point to the real operator-intent sources (**#627**, the operator verbatim line). `captured_by: kappa`
+records the intent-capture **role**, with an honest transitional note and a stated **supersession**
+relation to a future durable object (#627 S2 / #644). Every **α-derived conclusion** (the WC graph, the
+D9 realization detail, the β-repair outcomes) has been **moved out** of intent into
+[`decision-provenance.md`](./decision-provenance.md), each citing its actual α/β/settled-doctrine
+source. **Identity vs carrier are kept distinct:** identity is `intent_ref.id`; the child contracts'
+`carrier.kind: repo_artifact_bootstrap` is a **projection pointer** to this transitional snapshot, not
+the identity-authoring mechanism. `validate.py` (b) now checks each contract's `intent_ref.id`/`schema`
+resolves to this object's `id`/`schema`. The §2 `intent_ref: {schema, id, carrier{kind, ref}}`
+key-path shape is preserved.
 
 ## Corrected dependency graph (WC-2 keystone root) — unchanged shape
 
@@ -100,16 +112,31 @@ states the rule: every `contract_ref` resolves **relative to the immutable autho
 operator authorization is **revision-bound**; re-resolution at a changed tree **fails stale**. Each
 node also carries `contract_sha256` for independent content-addressable resolution.
 
-## Pre-authorization validator + decidable oracles (finding 4)
+## SOUND pre-authorization validator + negative fixtures (finding 1) + honest oracles (finding 3)
 
-- [`validate.py`](./validate.py) — credential-free (stdlib + PyYAML) Planning-Cell pre-authorization
-  validator. Checks (a) §2 key-path shape, (b) immutable refs resolve incl. intent + grounding source
-  hash, (c) output/ref edge parity, (d) DAG, (e) parallel nodes share no write surface, (f) gate
-  invariants, (g) completion-predicate acyclicity. **Exits non-zero on any violation.** Passes at this
-  wave tree (all seven checks green). Negative-fixture notes are in its docstring and verified
-  deterministic.
-- [`acceptance-oracles.md`](./acceptance-oracles.md) — for each load-bearing acceptance predicate
-  (wave + WC-1..WC-5), a decidable oracle: fixture/schema/command, expected rejection cases, evidence.
+- [`validate.py`](./validate.py) — credential-free (stdlib + PyYAML + local `git`), **fail-closed and
+  genuinely SOUND**. It derives every fact from the authored data (no hard-coded node/edge/predicate
+  list) and checks: (a) the **full §2 constraint model** — key paths + **enums** (`cell.class`,
+  `ref_kind`, locator `kind`, `requested_output.kind`) + types + cardinalities; (b) **real ref
+  resolution** — each contract's `intent_ref.id`/`schema` compared to the actual intent object, every
+  repo-artifact locator resolved with `git cat-file -e <commit>:<path>`, every `sha256:h@path`
+  content-hash verified, the grounding source hash == `9d1ab3a5…`; (c) **derive-from-authored-data** —
+  nodes/outputs/edges/roots/critical-path derived and cross-checked (authored == derived); (d) DAG;
+  (e) parallel write surfaces; (f) gate invariants; (g) the **authored completion relation evaluated
+  as structured data** — the predicate dependency graph is built by **walking the `expr` ASTs** and
+  proved acyclic (a tautology → self-cycle → FAIL), and **each fixture is computed and compared to its
+  authored `expected`** (a flipped expectation → FAIL). **Exits non-zero on any violation; passes at
+  this tree (all seven green).**
+- [`validate_test.py`](./validate_test.py) — executable negative-fixture harness. Materializes the
+  **five** adversarial mutations (wrong intent id; nonsense `cell.class`; nonexistent artifact path;
+  tautological whole-wave predicate; flipped fixture expectation) in temp trees — updating
+  `contract_sha256` honestly each time — and asserts **each exits non-zero for its own named
+  predicate** while the clean tree exits 0. **Verified: harness passes** (clean 0; 5 fail on
+  (b)/(a)/(b)/(g)/(g) respectively).
+- [`acceptance-oracles.md`](./acceptance-oracles.md) — every predicate classified as **exactly one**
+  of **enforced** / **mechanically-verifiable** (named fixture + command + expected positive/negative
+  the child WC must emit) / **evidenced** / **cognitive-review** (honestly not mechanical). No
+  semantic-absence claim is implemented as grep-and-called-mechanical.
 
 ## Node list (derived edges)
 
@@ -142,18 +169,32 @@ from WC-2 rather than re-deriving CM. The κ≠α role logic and content-bound-r
 | 5 | **[REQUIRED]** no wave STOP conditions; `contract_ref` not immutable | Added typed wave-level `stop_conditions`; `contract_ref_resolution` binds to the immutable authorized wave commit (revision-bound authorization; stale on changed tree); per-node `contract_sha256`. |
 | 6 | **[REQUIRED]** WC-2 4-vs-5 schema contradiction | D9 four-schema boundary kept **settled**; CM realized **within** the four schemas (typed CM field/edge + `cm_ref`); 4-vs-5 choice predicate removed; WC-1/WC-4 consume the same shape; reject-a-fifth negative fixture. |
 
+Note: R2 finding-2's phrasing above ("materialized … exists before any cell") is **superseded by R3
+finding 2** — the intent is honestly a transitional bootstrap projection authored during the cell; it
+does not exist before the cell.
+
+## Per-finding disposition (second external-β ITERATE — R3)
+
+| # | Finding | Repair in this R3 |
+|---|---|---|
+| 1 | **[BLOCKER]** `validate.py` false-passed five adversarial mutations | Rewrote the validator to be genuinely **sound**: full §2 constraint model (enums/types/cardinalities), real ref resolution (intent id/schema vs the intent object; every repo-artifact locator resolved with `git cat-file -e`; grounding source hash), derive-from-authored-data (nodes/edges/roots/critical-path), and **evaluation** of the authored completion predicates + fixtures as structured data (AST-walked predicate-graph acyclicity + per-fixture computation vs `expected`). Added [`validate_test.py`](./validate_test.py); **all five now exit non-zero for their own predicate; clean tree exits 0** (verified). |
+| 2 | **[BLOCKER]** intent masqueraded as pre-cell κ/operator intent | Rewrote `intent.cn-intent-v1.yaml` as an explicitly **transitional bootstrap projection** authored during the cell (no pre-cell existence claim); `statement` carries only operator matter (#627 + the operator verbatim doctrine line); α conclusions moved to [`decision-provenance.md`](./decision-provenance.md); identity vs carrier kept distinct; README no longer says the intent existed before the cell. |
+| 3 | **[REQUIRED]** oracles mislabeled cognitive review as mechanical | Rewrote `acceptance-oracles.md`: every predicate classified **enforced / mechanically-verifiable / evidenced / cognitive-review**; mechanically-verifiable rows name the fixture path + command + expected positive/negative the child WC must emit (added `.cdd/unreleased/<wc>/fixtures/**` allowed-paths + a receipt-evidence acceptance predicate to each contract); semantic-absence claims are cognitive-review, not grep. |
+
 ## Files
 
 - [`README.md`](./README.md) — this overview.
-- [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — durable `cn.intent.v1` planning object.
-- [`wave.cn-wave-v1.yaml`](./wave.cn-wave-v1.yaml) — the `cn.wave.v1` instance (nodes, derived edges, gates, STOP conditions, `contract_ref` resolution, non-recursive completion).
+- [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — transitional bootstrap intent projection (operator matter only; honest provenance).
+- [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions moved out of intent (WC graph, D9 realization, β-repair outcomes), each citing its actual source.
+- [`wave.cn-wave-v1.yaml`](./wave.cn-wave-v1.yaml) — the `cn.wave.v1` instance (nodes, derived edges, gates, STOP conditions, `contract_ref` resolution, **structured** non-recursive completion).
 - [`contracts/wc-1..wc-5.cn-cell-contract-v1.yaml`](./contracts/) — the six §2-conformant child contracts.
 - [`grounding-source-5015460988.md`](./grounding-source-5015460988.md) — byte-exact source snapshot (SHA `9d1ab3a5…`).
 - [`grounding-cm.md`](./grounding-cm.md) — α's derivative FAIL-classification (references the snapshot).
 - [`reconcile-627.md`](./reconcile-627.md) — the #627 S1–S8 refinement map + derived reverse-consumers.
-- [`acceptance-oracles.md`](./acceptance-oracles.md) — decidable oracle per load-bearing predicate.
-- [`validate.py`](./validate.py) — pre-authorization validator (checks a–g; exits non-zero on violation).
+- [`acceptance-oracles.md`](./acceptance-oracles.md) — every predicate classified enforced / mechanically-verifiable / evidenced / cognitive-review.
+- [`validate.py`](./validate.py) — SOUND pre-authorization validator (checks a–g; exits non-zero on violation).
+- [`validate_test.py`](./validate_test.py) — executable negative-fixture harness (5 adversarial mutations each fail for their own predicate; clean tree passes).
 
 ---
-*Status: R2 wave, α matter — under operator review; external-β and CC review next. No child WCs
+*Status: R3 wave, α matter — under operator review; external-β and CC review next. No child WCs
 dispatched; no control-plane action taken by this cell.*

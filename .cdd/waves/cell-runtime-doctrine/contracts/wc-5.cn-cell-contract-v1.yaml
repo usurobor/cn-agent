@@ -14,10 +14,10 @@ scope:
   parent_cell: "671"
 intent_ref:
   schema: "cn.intent.v1"
-  id: "intent-2026-0719-671-cell-runtime-doctrine"        # resolves to the durable cn.intent.v1 object
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
   carrier:
-    kind: "repo_artifact_bootstrap"                       # typed bootstrap adapter: intent is a durable repo artifact (not an issue-hosted object); §2 carrier {kind, ref} shape preserved
-    ref: "sha256:f3f484132c819c2a184df06ba99317bd032678f2cc6e47be74446f222005cb5c@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
 inputs:
   required:
     - ref_kind: "external"          # grounding CM (content-bound) — the residual-debt trace WC-5 re-checks
@@ -62,10 +62,12 @@ acceptance:
     - "final_integration_v_fails_closed_on__a_conflicting_cm_ref_a_conflicting_fsm_state_a_conflicting_schema_field_a_missing_adapter_case_or_an_unmapped_627_node"
     - "wc5_readiness_over_non_recursive_construction_set_N__a_completion_receipt_exists_for_every_node_in_N_where_N_equals_wc1_wc2_wc3a_wc3b_wc4_and_excludes_wc5"
     - "wc5_own_completion_is_non_recursive__wc5_requested_output_produced_plus_wc5_acceptance_pass_plus_integration_v_pass_plus_bound_receipt__does_not_quantify_over_wc5_itself_nor_over_the_whole_wave_predicate"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__reconcile_627_audit_json__fail_disposition_audit_json__vocab_consistency_json__schema_fixture_log_json__for_the_integration_seal_oracles"
 constraints:
   allowed_paths:
     - "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
     - ".cdd/unreleased/wc-5/**"
+    - ".cdd/unreleased/wc-5/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
   forbidden_paths:
     - "schemas/**"
     - "src/**"

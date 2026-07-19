@@ -15,10 +15,10 @@ scope:
   parent_cell: "671"
 intent_ref:
   schema: "cn.intent.v1"
-  id: "intent-2026-0719-671-cell-runtime-doctrine"        # resolves to the durable cn.intent.v1 object
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
   carrier:
-    kind: "repo_artifact_bootstrap"                       # typed bootstrap adapter: intent is a durable repo artifact (not an issue-hosted object); §2 carrier {kind, ref} shape preserved
-    ref: "sha256:f3f484132c819c2a184df06ba99317bd032678f2cc6e47be74446f222005cb5c@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
 inputs:
   required:
     - ref_kind: "external"          # #628/S1 — the runtime coherence-loop the wave FSM mechanizes
@@ -62,10 +62,12 @@ acceptance:
     - "wave_transition_request_shape_pinned__mirrors_the_cell_fsm_request_marker_pattern_with_guards"
     - "separate_authority_from_the_cell_fsm__two_independently_total_machines_one_shared_transition_algebra_or_two_tagged_instances"
     - "child_and_whole_wave_completion_predicates_defined__derived_from_child_acceptance_v_receipt_surfaces_not_a_new_contract_field"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__wave_fsm_state_table_json__and_eight_disposition_to_transition_map_json__for_totality_and_mapping_oracles"
 constraints:
   allowed_paths:
     - "docs/architecture/WAVE-FSM.md"
     - ".cdd/unreleased/wc-3b/**"
+    - ".cdd/unreleased/wc-3b/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
   forbidden_paths:
     - "schemas/**"
     - "src/**"

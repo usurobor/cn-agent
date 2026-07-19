@@ -15,10 +15,10 @@ scope:
   parent_cell: "671"
 intent_ref:
   schema: "cn.intent.v1"
-  id: "intent-2026-0719-671-cell-runtime-doctrine"        # resolves to the durable cn.intent.v1 object
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
   carrier:
-    kind: "repo_artifact_bootstrap"                       # typed bootstrap adapter: intent is a durable repo artifact (not an issue-hosted object); §2 carrier {kind, ref} shape preserved
-    ref: "sha256:f3f484132c819c2a184df06ba99317bd032678f2cc6e47be74446f222005cb5c@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
 inputs:
   required:
     # --- external roots (immutable, revision-pinned; create no wave edge) ---
@@ -69,10 +69,12 @@ acceptance:
     - "negative_fixture_reject_fifth_canonical_schema__a_proposed_fifth_cn_cm_v1_canonical_schema_is_rejected_while_the_four_schema_boundary_remains_settled"
     - "reproducible__same_frozen_inputs_plus_provider_version_reproduce_the_mechanically_claimed_cm_result"
     - "cm_ref_field_shape_is_the_single_interface_all_other_nodes_import__no_second_cm_shape_introduced_downstream"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__cm_object_json__cc_judgment_json__receipt_core_json__final_receipt_json__reject_fifth_schema_json__each_validated_by_the_named_acceptance_oracle_command"
 constraints:
   allowed_paths:
     - "docs/architecture/COHERENCE-MEASUREMENT.md"
     - ".cdd/unreleased/wc-2/**"
+    - ".cdd/unreleased/wc-2/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
   forbidden_paths:
     - "schemas/**"                 # implementing CM *fields* in CUE is #627 S2; building the CM *engine* is S3
     - "src/**"

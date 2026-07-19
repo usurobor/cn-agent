@@ -16,10 +16,10 @@ scope:
   parent_cell: "671"
 intent_ref:
   schema: "cn.intent.v1"
-  id: "intent-2026-0719-671-cell-runtime-doctrine"        # resolves to the durable cn.intent.v1 object
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
   carrier:
-    kind: "repo_artifact_bootstrap"                       # typed bootstrap adapter: intent is a durable repo artifact (not an issue-hosted object); §2 carrier {kind, ref} shape preserved
-    ref: "sha256:f3f484132c819c2a184df06ba99317bd032678f2cc6e47be74446f222005cb5c@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
 inputs:
   required:
     - ref_kind: "external"          # shipped contract schema (the State-A source shape)
@@ -60,10 +60,12 @@ acceptance:
     - "round_trip_oracle__lossless_paths_proven_lossless_and_lossy_points_named"
     - "negative_fixtures__reject_unknown_field_dropped_required_field_mutable_root_input_identity_only_revision_missing_adapter_case"
     - "migration_is_doctrine_schema_boundary_only__no_cue_or_go_adapter_implemented_here"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__field_map_json__round_trip_fixtures__five_negative_fixtures__for_field_preservation_and_round_trip_oracles"
 constraints:
   allowed_paths:
     - "docs/architecture/CONTRACT-MIGRATION.md"
     - ".cdd/unreleased/wc-4/**"
+    - ".cdd/unreleased/wc-4/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
   forbidden_paths:
     - "schemas/**"                 # writing the CUE adapter is #627 S2
     - "src/**"
