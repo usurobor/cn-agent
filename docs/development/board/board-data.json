@@ -2796,5 +2796,23 @@
     "created": "2026-07-19T11:19:37Z",
     "updated": "2026-07-19T11:19:37Z",
     "url": "https://github.com/usurobor/cnos/issues/669"
+  },
+  {
+    "n": 671,
+    "t": "PC — plan the cell-runtime doctrine wave (CM-grounded)",
+    "kind": "",
+    "areas": [],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-19T12:15:45Z",
+    "updated": "2026-07-19T12:15:45Z",
+    "url": "https://github.com/usurobor/cnos/issues/671"
   }
 ]
