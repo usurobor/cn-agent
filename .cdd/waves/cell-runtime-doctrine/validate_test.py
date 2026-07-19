@@ -2,18 +2,20 @@
 """
 Executable negative-fixture harness for validate.py (wave cnos#671 R3).
 
-Materializes the FIVE adversarial mutations the external β used to false-pass the R2 validator, each in
-its own temp copy of the wave tree (honestly updating node.contract_sha256 when a contract is mutated,
-exactly as β did), runs validate.py on each, and asserts EACH exits non-zero FOR ITS OWN NAMED
-PREDICATE — while the UNMODIFIED tree exits 0.
+Materializes the SIX adversarial mutations (the FIVE the external β used to false-pass the R2 validator,
+plus the R4 oracle-ownership fixture), each in its own temp copy of the wave tree (honestly updating
+node.contract_sha256 when a contract is mutated, exactly as β did), runs validate.py on each, and asserts
+EACH exits non-zero FOR ITS OWN NAMED PREDICATE — while the UNMODIFIED tree exits 0.
 
   1. wrong intent id           -> check (b): intent_ref.id != the actual intent object id
   2. nonsense cell.class       -> check (a): enum cell.class ∈ {working,planning,cohering}
   3. nonexistent artifact path -> check (b): git cannot resolve <commit>:<path> (DOES-NOT-EXIST.md)
   4. tautological whole-wave   -> check (g): predicate dependency graph has a CYCLE
   5. flipped fixture expected  -> check (g): fixture computed result != authored `expected`
+  6. placeholder oracle operand-> check (h): a mechanically-verifiable oracle's checker left as a
+                                  placeholder (unowned/non-concrete) → oracle ownership fails
 
-Run:  python3 validate_test.py         (exit 0 iff all 5 fail for their own predicate AND clean passes)
+Run:  python3 validate_test.py         (exit 0 iff all 6 fail for their own predicate AND clean passes)
 """
 import os, sys, re, shutil, tempfile, subprocess, hashlib
 
@@ -87,12 +89,22 @@ def mut_flipped_expected(tree):
     edit(f, 'expected: { wc5_ready: true, wc5_complete: true, wave_complete: true }',
             'expected: { wc5_ready: true, wc5_complete: true, wave_complete: false }')
 
+def mut_placeholder_oracle(tree):
+    # Leave a mechanically-verifiable oracle's checker as a PLACEHOLDER operand (unowned / non-concrete):
+    # check (h) must reject it (placeholder operand + not in allowed_paths + command mismatch).
+    f = os.path.join(tree, "contracts", "wc-2.cn-cell-contract-v1.yaml")
+    old = sha256_file(f)
+    edit(f, 'checker: ".cdd/unreleased/wc-2/fixtures/check_v_signature.py"',
+            'checker: "<checker-to-be-decided>"')
+    repin_contract(tree, "wc-2", old)
+
 CASES = [
-    ("wrong-intent-id",       mut_wrong_intent_id,  "b", "intent_ref.id"),
-    ("nonsense-class",        mut_nonsense_class,   "a", "cell.class not in"),
-    ("nonexistent-artifact",  mut_nonexistent_path, "b", "DOES-NOT-EXIST.md"),
-    ("tautological-wave",     mut_tautology,        "g", "CYCLE"),
-    ("flipped-fixture",       mut_flipped_expected, "g", "authored expected"),
+    ("wrong-intent-id",       mut_wrong_intent_id,   "b", "intent_ref.id"),
+    ("nonsense-class",        mut_nonsense_class,    "a", "cell.class not in"),
+    ("nonexistent-artifact",  mut_nonexistent_path,  "b", "DOES-NOT-EXIST.md"),
+    ("tautological-wave",     mut_tautology,         "g", "CYCLE"),
+    ("flipped-fixture",       mut_flipped_expected,  "g", "authored expected"),
+    ("placeholder-oracle",    mut_placeholder_oracle, "h", "placeholder operand"),
 ]
 
 def main():
@@ -131,7 +143,7 @@ def main():
         for x in failures:
             print("  -", x)
         sys.exit(1)
-    print("NEGATIVE-FIXTURE HARNESS: PASS — clean tree exits 0; all 5 adversarial "
+    print("NEGATIVE-FIXTURE HARNESS: PASS — clean tree exits 0; all 6 adversarial "
           "mutations exit non-zero for their own named predicate.")
     sys.exit(0)
 

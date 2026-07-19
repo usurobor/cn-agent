@@ -61,6 +61,7 @@ acceptance:
     - "negative_fixtures__reject_unknown_field_dropped_required_field_mutable_root_input_identity_only_revision_missing_adapter_case"
     - "migration_is_doctrine_schema_boundary_only__no_cue_or_go_adapter_implemented_here"
     - "emits_machine_readable_acceptance_fixtures_into_receipt__field_map_json__round_trip_fixtures__five_negative_fixtures__for_field_preservation_and_round_trip_oracles"
+    - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
 constraints:
   allowed_paths:
     - "docs/architecture/CONTRACT-MIGRATION.md"
@@ -87,3 +88,34 @@ stop_conditions:
   - "source_doctrine_conflicts"
   - "predecessor_output_unavailable"           # WC-1 or WC-2 output absent (readiness fails)
   - "target_cm_edge_semantics_unresolved"
+# Oracle ownership (R4 finding repair): migration oracles owned at concrete emitted checker paths; the
+# field-coverage checker vets against the shipped schemas/cdd/contract.cue pinned as an input above.
+oracles:
+  spec_ref: "sha256:dc6e8e456a32fa1e30237653cbf2ef3391da276bc1539d2f4fbb2540368f0b3b@.cdd/waves/cell-runtime-doctrine/acceptance-oracles.md"
+  ownership_predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
+  receipt_evidence_predicate: "emits_machine_readable_acceptance_fixtures_into_receipt__field_map_json__round_trip_fixtures__five_negative_fixtures__for_field_preservation_and_round_trip_oracles"
+  mechanically_verifiable:
+    - predicate: "field_by_field_preservation_rules__every_shipped_field_mapped_or_explicitly_marked_added_or_deprecated"
+      ownership: "emitted"
+      checker: ".cdd/unreleased/wc-4/fixtures/field_coverage.py"
+      positive_fixture: ".cdd/unreleased/wc-4/fixtures/field-map.positive.json"
+      negative_fixture: ".cdd/unreleased/wc-4/fixtures/field-map-unmapped.negative.json"
+      command: "python3 .cdd/unreleased/wc-4/fixtures/field_coverage.py .cdd/unreleased/wc-4/fixtures/field-map.positive.json schemas/cdd/contract.cue"
+    - predicate: "round_trip_oracle__lossless_paths_proven_lossless_and_lossy_points_named"
+      ownership: "emitted"
+      checker: ".cdd/unreleased/wc-4/fixtures/round_trip.py"
+      positive_fixture: ".cdd/unreleased/wc-4/fixtures/round-trip.positive.json"
+      negative_fixture: ".cdd/unreleased/wc-4/fixtures/round-trip-lossy.negative.json"
+      command: "python3 .cdd/unreleased/wc-4/fixtures/round_trip.py .cdd/unreleased/wc-4/fixtures/round-trip.positive.json"
+    - predicate: "negative_fixtures__reject_unknown_field_dropped_required_field_mutable_root_input_identity_only_revision_missing_adapter_case"
+      ownership: "emitted"
+      checker: ".cdd/unreleased/wc-4/fixtures/run_negatives.py"
+      positive_fixture: ".cdd/unreleased/wc-4/fixtures/negatives-manifest.positive.json"
+      negative_fixture: ".cdd/unreleased/wc-4/fixtures/negatives-regression.negative.json"
+      command: "python3 .cdd/unreleased/wc-4/fixtures/run_negatives.py .cdd/unreleased/wc-4/fixtures/negatives-manifest.positive.json"
+    - predicate: "cm_edge_representation_consumed_from_wc2__the_target_contract_cm_ref_shape_is_wc2_output_realized_within_the_four_schemas_not_a_fifth_schema_not_re_derived"
+      ownership: "emitted"
+      checker: ".cdd/unreleased/wc-4/fixtures/cm_ref_parity.py"
+      positive_fixture: ".cdd/unreleased/wc-4/fixtures/cm-ref-parity.positive.json"
+      negative_fixture: ".cdd/unreleased/wc-4/fixtures/cm-ref-rederived.negative.json"
+      command: "python3 .cdd/unreleased/wc-4/fixtures/cm_ref_parity.py .cdd/unreleased/wc-4/fixtures/cm-ref-parity.positive.json"

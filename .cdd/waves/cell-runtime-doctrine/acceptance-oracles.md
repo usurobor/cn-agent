@@ -8,12 +8,20 @@ as mechanical; a semantic-absence claim is **never** implemented as grep-and-cal
 
 - **enforced** — checked by `validate.py` **now**, at this wave tree (credential-free; exits non-zero
   on violation). The wave-level pre-authorization predicates are all here.
-- **mechanically-verifiable** — a **real command** over a **named structured fixture the child WC must
-  produce**. Each row gives the command, the fixture path, and the expected **positive** and
-  **negative** outputs. These run against the child's fixtures (which do not exist yet — they are the
-  mechanical acceptance contract each Working Cell inherits and must emit, per its
-  `emits_machine_readable_acceptance_fixtures_into_receipt__…` predicate and its
-  `.cdd/unreleased/<wc>/fixtures/**` allowed-path).
+- **mechanically-verifiable** — a **real command** over a **concretely-located checker/schema + named
+  structured fixtures the child WC must produce**. Each row gives the command, the checker/schema path,
+  the positive and negative fixture paths, and the expected **positive** (exit 0) and **negative** (exit
+  non-zero) outputs. These are not free-floating: **every** mechanically-verifiable predicate is
+  **owned by exactly one child contract** — its checker/schema/positive-fixture/negative-fixture paths
+  are pinned in that contract's `oracles.mechanically_verifiable` slice at **concrete, specifically-located
+  paths** (repo-root-relative, NO placeholders, NO implicit CWD), added to the contract's
+  `constraints.allowed_paths` (the WC may write them) or resolved as an existing pinned immutable input,
+  required by the contract's `acceptance.predicates` (exist + positive-exit-0 + named-negative-exit-nonzero),
+  and bound (bytes + results) in the receipt via the child's
+  `emits_machine_readable_acceptance_fixtures_into_receipt__…` predicate. `validate.py` check **(h)**
+  enforces this ownership. The child WC emits the checkers/schemas/fixtures under
+  `.cdd/unreleased/wc-N/fixtures/` (its allowed-path); they do not exist yet — they are the mechanical
+  acceptance contract each Working Cell inherits and must emit.
 - **evidenced** — verified by **bound evidence in the receipt**, not self-report (e.g. a reproduction
   diff, a receipt binding the emitted fixtures). Not a static credential-free command.
 - **cognitive-review** — an **independent β / CC doctrine judgment**, honestly **NOT mechanical**. A
@@ -24,13 +32,28 @@ as mechanical; a semantic-absence claim is **never** implemented as grep-and-cal
 cognitive-review **17**. (Per-row below; every acceptance predicate in the six contracts and every
 wave-level predicate is assigned exactly one kind.)
 
-## How the mechanically-verifiable rows become real commands
+## How the mechanically-verifiable rows become real commands — owned, concretely located
 
-The child WC emits the named fixtures into `.cdd/unreleased/<wc>/fixtures/` (allowed_path) and binds
-them in its receipt (`emits_machine_readable_acceptance_fixtures_into_receipt__…` acceptance
-predicate). The commands below are then credential-free: `cue vet <fixture> <schema>` for the shipped
-`schemas/cdd/*.cue` surfaces, or `python3 <check>` over a JSON/YAML fixture. "Expected negative" is the
-mutated fixture the command must reject; the WC's own V runs these and binds PASS/FAIL.
+Every checker, schema, and fixture named below is **owned by exactly one child contract** and lives at a
+**concrete path** under that WC's fixtures dir `.cdd/unreleased/wc-N/fixtures/` (repo-root-relative; no
+placeholder operands; no implicit CWD). The owning contract's `oracles.mechanically_verifiable` slice
+pins, per predicate: the checker or schema path, the positive fixture path (command exits 0), and the
+named negative fixture path (command exits non-zero). Two ownership modes:
+
+- **emitted** — the WC emits the checker/schema itself (a `python3 .cdd/unreleased/wc-N/fixtures/CHECKER.py`
+  invocation, or `cue vet FIXTURE.json .cdd/unreleased/wc-N/fixtures/NAME.schema.cue` for a fixture schema
+  the WC writes — never editing shipped `schemas/**`). The checker/schema and both fixtures are in the
+  contract's `allowed_paths`.
+- **existing** — the command vets against an **existing shipped schema at a pinned commit** (e.g.
+  `schemas/cdd/receipt.cue`, `schemas/cdd/contract.cue`) that is a pinned immutable input of the owning
+  contract; only the positive/negative fixtures are emitted.
+
+The commands are credential-free: `cue vet FIXTURE.json SCHEMA.cue` (schema = an emitted fixture schema or
+a pinned shipped schema) or `python3 CHECKER.py FIXTURE.json`. "Expected negative" is the mutated fixture the
+command must reject; the WC's own V runs both and binds PASS/FAIL bytes into the receipt. `validate.py`
+check **(h)** proves, from each contract alone plus its resolved immutable inputs, that every
+mechanically-verifiable predicate is so owned (concrete path, in `allowed_paths` or a pinned input,
+required by `acceptance`, bound in the receipt) — and fails closed on any placeholder operand.
 
 ---
 
@@ -46,7 +69,8 @@ mutated fixture the command must reject; the WC's own V runs these and binds PAS
 | gate invariants | enforced | `validate.py` (f) | 0 / `doctrine_affecting:true` + `operator_acceptance_required:false`, or missing `reason` → exit 1 | check-(f) PASS |
 | completion-predicate graph acyclic (built by AST walk) | enforced | `validate.py` (g) | 0 / tautology `wave_complete := wave_complete` → cycle → exit 1 | predicate-DAG topo |
 | completion **fixtures evaluate to their authored `expected`** | enforced | `validate.py` (g) | 0 / a flipped `expected` (computed≠authored) → exit 1 | per-fixture eval |
-| the five adversarial mutations each fail for their own predicate; clean passes | enforced | `python3 validate_test.py` | harness exit 0 (5 fail, clean passes) | harness receipt |
+| **oracle ownership** — every mechanically-verifiable predicate binds a concrete checker/schema (no placeholder) in the owning contract's `allowed_paths` or a pinned input, with positive/negative fixtures required by `acceptance` and bound in the receipt | enforced | `validate.py` (h) | 0 / a placeholder operand, a checker outside `allowed_paths`, or a missing ownership/receipt predicate → exit 1 | check-(h) PASS |
+| the six adversarial mutations each fail for their own predicate; clean passes | enforced | `python3 validate_test.py` | harness exit 0 (6 fail, clean passes) | harness receipt |
 
 ---
 
@@ -55,11 +79,11 @@ mutated fixture the command must reject; the WC's own V runs these and binds PAS
 | Predicate | Kind | Oracle | Expected positive / negative | Evidence |
 |---|---|---|---|---|
 | CM producer is a provider/runtime op (e.g. tsc), **not** CC | mechanically-verifiable | `cue vet cm-object.json schemas/cdd/*.cue` (producer.kind ∈ provider set) | valid CM accepted / producer = cohering-cell → reject | cm-object fixture |
-| CM object fields typed (`s_α,s_β,s_γ,C_Σ,bottleneck,witnesses,defects,provenance,…`) | mechanically-verifiable | `cue vet cm-object.json <cm-schema>` | full CM accepted / CM missing `bottleneck`/`provenance` → reject | cm-object fixture |
+| CM object fields typed (`s_α,s_β,s_γ,C_Σ,bottleneck,witnesses,defects,provenance,…`) | mechanically-verifiable | `cue vet .cdd/unreleased/wc-2/fixtures/cm-object.positive.json .cdd/unreleased/wc-2/fixtures/cm-object.schema.cue` (emitted schema) | full CM accepted (exit 0) / `.cdd/unreleased/wc-2/fixtures/cm-object.missing-bottleneck.negative.json` → reject | cm-object.schema.cue + pos/neg fixtures |
 | CM and CC-judgment are **distinct tagged objects** (CC consumes immutable `cm_ref`) | mechanically-verifiable | `cue vet cm-object.json + cc-judgment.json` as distinct tags | two distinct tags accepted / one object tagged both → reject | two-fixture log |
 | CM→V edge pinned (V consumes a named immutable `cm_ref`) | mechanically-verifiable | `python3 check_v_signature.py cm-object.json` | V input carries `cm_ref` / V invocation with no `cm_ref` → reject | V-signature fixture |
 | `receipt_core → CM → V → δ → final_receipt` type path | mechanically-verifiable | `cue vet receipt-core.json receipt.cue`; `cue vet final-receipt.json receipt.cue` | core (no validation/boundary_decision) + final validate / a "final" receipt with no V/δ outputs → reject | round-trip receipts |
-| CM realized **within** the four schemas (typed CM field/edge + `cm_ref` resolving within them) | mechanically-verifiable | `cue vet cm-ref-embedded.json <extended receipt.cue>` | `cm_ref` resolves within the four schemas / a `cm_ref` needing a fifth schema → reject | four-schema fixture |
+| CM realized **within** the four schemas (typed CM field/edge + `cm_ref` resolving within them) | mechanically-verifiable | `cue vet .cdd/unreleased/wc-2/fixtures/cm-ref-embedded.positive.json .cdd/unreleased/wc-2/fixtures/receipt-with-cmref.schema.cue` (emitted fixture schema; NOT a shipped-schema edit) | `cm_ref` resolves within the four schemas (exit 0) / `.cdd/unreleased/wc-2/fixtures/cm-ref-needs-fifth.negative.json` → reject | receipt-with-cmref.schema.cue + pos/neg fixtures |
 | negative fixture: reject a **fifth** canonical `cn.cm.v1` schema | mechanically-verifiable | `python3 reject_fifth.py reject-fifth-schema.json` | four-schema proposal accepted / a fifth-canonical-schema proposal → reject | reject-fifth fixture |
 | `cm_ref` field shape is the single interface all nodes import (no second shape) | mechanically-verifiable | `python3 cm_ref_parity.py wc2 wc1 wc4` | identical `cm_ref` shape across nodes / a divergent downstream `cm_ref` → reject | cm_ref-parity log |
 | CM is a runner/provider object and **not** the CC's judgment (no clause equates them) | cognitive-review | independent β/CC read | β confirms no clause collapses CM into a CC judgment | β judgment |
@@ -97,7 +121,7 @@ The cell FSM is emitted as a machine-readable state table `cell-fsm-state-table.
 | total event/guard/action relation (every non-terminal state has owned exits) | mechanically-verifiable | `python3 fsm_totality.py cell-fsm-state-table.json` | every non-terminal has ≥1 exit / a non-terminal with no exit → reject | totality report |
 | reachability proved (BFS from initial covers all states) | mechanically-verifiable | `python3 fsm_reach.py cell-fsm-state-table.json` | reachable set == declared states / an unreachable declared state → reject | reachability set |
 | deterministic / normatively-prioritized transition selection (same bundle hash → same decision) | mechanically-verifiable | `python3 fsm_determinism.py cell-fsm-state-table.json` | no unresolved (state,event) ambiguity / two equal-priority exits on one (state,event) → reject | determinism report |
-| CC-disposition→transition-request adapter (CC never mutates state) | mechanically-verifiable | `cue vet cc-transition-request.json <request-schema>` | CC emits a request the FSM validates / a CC transition mutating state directly → reject | adapter fixture |
+| CC-disposition→transition-request adapter (CC never mutates state) | mechanically-verifiable | `cue vet .cdd/unreleased/wc-3a/fixtures/cc-transition-request.positive.json .cdd/unreleased/wc-3a/fixtures/cell-transition-request.schema.cue` (emitted schema) | CC emits a request the FSM validates (exit 0) / `.cdd/unreleased/wc-3a/fixtures/cc-mutates-state.negative.json` → reject | cell-transition-request.schema.cue + pos/neg fixtures |
 | exactly one authority per edge (reconciles `transitions.json` / dispatch / resume / spec) | cognitive-review | independent β read | β confirms each edge has a single owning authority | β judgment |
 | invalid-transition semantics defined | cognitive-review | independent β read | β confirms the invalid-transition rule is coherent | β judgment |
 | review-return conflict resolved (§11.1 `→todo` vs §11.2 `→in-progress` settled to one edge) | cognitive-review | independent β read | β confirms one settled edge | β judgment |
@@ -116,8 +140,8 @@ Emitted machine-readable: `wave-fsm-state-table.json` and `disposition-to-transi
 | wave state set closed (enumerated states = declared set) | mechanically-verifiable | `python3 fsm_closure.py wave-fsm-state-table.json` | every target ∈ declared set / a target outside the set → reject | closure report |
 | total event/guard/action relation (distinct state space from the cell FSM) | mechanically-verifiable | `python3 fsm_totality.py wave-fsm-state-table.json` | every non-terminal has owned exits / a non-terminal with no exit → reject | totality report |
 | total mapping of all **8** CC dispositions → wave transition requests | mechanically-verifiable | `python3 disposition_totality.py disposition-to-transition-map.json` | all 8 dispositions mapped / a disposition with no transition → reject | mapping table |
-| child-receipt aggregation rule (child completion predicates aggregate; CC does not mutate state) | mechanically-verifiable | `cue vet wave-transition-request.json <request-schema>` | aggregation request validates / a CC mutating wave state → reject | aggregation fixture |
-| wave-transition-request shape pinned (mirrors the cell request-marker pattern + guards) | mechanically-verifiable | `cue vet wave-transition-request.json <request-schema>` | request with `{from,to,guard}` validates / a request missing a guard → reject | request fixture |
+| child-receipt aggregation rule (child completion predicates aggregate; CC does not mutate state) | mechanically-verifiable | `cue vet .cdd/unreleased/wc-3b/fixtures/wave-aggregation-request.positive.json .cdd/unreleased/wc-3b/fixtures/wave-transition-request.schema.cue` (emitted schema) | aggregation request validates (exit 0) / `.cdd/unreleased/wc-3b/fixtures/cc-mutates-wave-state.negative.json` → reject | wave-transition-request.schema.cue + pos/neg fixtures |
+| wave-transition-request shape pinned (mirrors the cell request-marker pattern + guards) | mechanically-verifiable | `cue vet .cdd/unreleased/wc-3b/fixtures/wave-transition-request.positive.json .cdd/unreleased/wc-3b/fixtures/wave-transition-request.schema.cue` (emitted schema) | request with `{from,to,guard}` validates (exit 0) / `.cdd/unreleased/wc-3b/fixtures/wave-request-missing-guard.negative.json` → reject | wave-transition-request.schema.cue + pos/neg fixtures |
 | child & whole-wave completion predicates **derived** (not a contract field); acyclic | enforced | `validate.py` (g) | as wave-level (g) / a per-contract `completion_signal` field or recursive completion → exit 1 | check-(g) |
 | holding/replanning exits & terminal semantics defined | cognitive-review | independent β read | β confirms exits and terminals coherent | β judgment |
 | invalid-transition semantics defined | cognitive-review | independent β read | β confirms the invalid-transition rule | β judgment |

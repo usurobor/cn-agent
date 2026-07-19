@@ -63,6 +63,7 @@ acceptance:
     - "wc5_readiness_over_non_recursive_construction_set_N__a_completion_receipt_exists_for_every_node_in_N_where_N_equals_wc1_wc2_wc3a_wc3b_wc4_and_excludes_wc5"
     - "wc5_own_completion_is_non_recursive__wc5_requested_output_produced_plus_wc5_acceptance_pass_plus_integration_v_pass_plus_bound_receipt__does_not_quantify_over_wc5_itself_nor_over_the_whole_wave_predicate"
     - "emits_machine_readable_acceptance_fixtures_into_receipt__reconcile_627_audit_json__fail_disposition_audit_json__vocab_consistency_json__schema_fixture_log_json__for_the_integration_seal_oracles"
+    - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
 constraints:
   allowed_paths:
     - "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
@@ -91,3 +92,34 @@ stop_conditions:
   - "any_child_artifact_missing_or_unbound"
   - "cross_artifact_conflict_detected"          # WC-5 holds/blocks and names the conflicting node
   - "reconcile_627_map_incomplete_or_double_owned"
+# Oracle ownership (R4 finding repair): integration-seal audit oracles owned at concrete emitted
+# checker paths under this WC's fixtures allowed_path. validate.py check (h) enforces it.
+oracles:
+  spec_ref: "sha256:dc6e8e456a32fa1e30237653cbf2ef3391da276bc1539d2f4fbb2540368f0b3b@.cdd/waves/cell-runtime-doctrine/acceptance-oracles.md"
+  ownership_predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
+  receipt_evidence_predicate: "emits_machine_readable_acceptance_fixtures_into_receipt__reconcile_627_audit_json__fail_disposition_audit_json__vocab_consistency_json__schema_fixture_log_json__for_the_integration_seal_oracles"
+  mechanically_verifiable:
+    - predicate: "schema_fixtures_pass__every_worked_instance_validates_against_the_selected_cn_cell_contract_v1_shape"
+      ownership: "emitted"
+      checker: ".cdd/unreleased/wc-5/fixtures/schema_fixture_run.py"
+      positive_fixture: ".cdd/unreleased/wc-5/fixtures/schema-fixture-log.positive.json"
+      negative_fixture: ".cdd/unreleased/wc-5/fixtures/schema-fixture-nonconformant.negative.json"
+      command: "python3 .cdd/unreleased/wc-5/fixtures/schema_fixture_run.py .cdd/unreleased/wc-5/fixtures/schema-fixture-log.positive.json"
+    - predicate: "reconcile_627_mapping_complete__every_S_node_classified_exactly_once_no_duplicate_owner_no_omitted_executable_child"
+      ownership: "emitted"
+      checker: ".cdd/unreleased/wc-5/fixtures/reconcile_audit.py"
+      positive_fixture: ".cdd/unreleased/wc-5/fixtures/reconcile-627-audit.positive.json"
+      negative_fixture: ".cdd/unreleased/wc-5/fixtures/reconcile-627-double-owner.negative.json"
+      command: "python3 .cdd/unreleased/wc-5/fixtures/reconcile_audit.py .cdd/unreleased/wc-5/fixtures/reconcile-627-audit.positive.json"
+    - predicate: "residual_debt_disposed__every_grounding_fail_is_closed_by_or_retired_instance_defect_or_tracked_follow_up_exactly_once"
+      ownership: "emitted"
+      checker: ".cdd/unreleased/wc-5/fixtures/fail_disposition_audit.py"
+      positive_fixture: ".cdd/unreleased/wc-5/fixtures/fail-disposition-audit.positive.json"
+      negative_fixture: ".cdd/unreleased/wc-5/fixtures/fail-disposed-twice.negative.json"
+      command: "python3 .cdd/unreleased/wc-5/fixtures/fail_disposition_audit.py .cdd/unreleased/wc-5/fixtures/fail-disposition-audit.positive.json"
+    - predicate: "migration_round_trips__wc4_round_trip_oracle_is_green_on_the_named_fixtures"
+      ownership: "emitted"
+      checker: ".cdd/unreleased/wc-5/fixtures/round_trip.py"
+      positive_fixture: ".cdd/unreleased/wc-5/fixtures/migration-round-trip.positive.json"
+      negative_fixture: ".cdd/unreleased/wc-5/fixtures/migration-round-trip-lossy.negative.json"
+      command: "python3 .cdd/unreleased/wc-5/fixtures/round_trip.py .cdd/unreleased/wc-5/fixtures/migration-round-trip.positive.json"

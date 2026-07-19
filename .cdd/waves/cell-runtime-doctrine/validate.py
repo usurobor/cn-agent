@@ -38,6 +38,13 @@ Checks:
       self-edge → cycle → FAIL). Each authored fixture is EVALUATED (each predicate computed over the
       fixture inputs) and compared to the authored `expected` (a flipped expectation → FAIL). The
       non-recursive construction set N is derived (all nodes minus terminal) and cross-checked.
+  (h) ORACLE OWNERSHIP (R4). Every mechanically-verifiable predicate is OWNED by its contract's inlined
+      `oracles` slice at a CONCRETE checker/schema path — no placeholder operand, no implicit CWD —
+      that is either EMITTED (in the contract's `allowed_paths`, so the WC may write it) or EXISTING
+      (a pinned immutable input). Each oracle names a positive fixture (command exits 0) and a named
+      negative fixture (command exits non-zero), both concretely located; the contract's acceptance
+      must carry the ownership + receipt-evidence predicates; the pinned oracle spec resolves
+      content-bound and carries no placeholder operand. Fully derivable from the contract alone.
 
 RESOLUTION MODEL (so the negative-fixture harness can validate a mutated COPY of the tree):
   * WAVE_DIR   — the wave matter dir (contracts/, wave.yaml, intent, grounding snapshots). All AUTHORED
@@ -120,7 +127,8 @@ LOCATOR_ENUM = {"repo_artifact", "control_plane", "prior_receipt"}
 OUTPUT_KIND_ENUM = {"artifact", "relation_graph", "judgment"}
 
 TOP_KEYS   = {"schema", "cell", "scope", "intent_ref", "inputs", "requested_output",
-              "acceptance", "constraints", "gates", "doctrine_affecting", "stop_conditions"}
+              "acceptance", "constraints", "gates", "doctrine_affecting", "stop_conditions",
+              "oracles"}   # R4: per-WC oracle-ownership slice (check (h))
 CELL_KEYS  = {"id", "class", "mode", "protocol", "matter_domain"}
 SCOPE_KEYS = {"repo", "wave", "parent_cell"}
 INTENT_KEYS   = {"schema", "id", "carrier"}
@@ -631,6 +639,113 @@ if graph_ok:
             if bool(got) != bool(exp):
                 fail("g", f"fixture {nm!r}: predicate {pname!r} authored expected={exp} but COMPUTED={got}")
 
+# ---- (h) ORACLE OWNERSHIP ---------------------------------------------------------
+# Every mechanically-verifiable predicate must be OWNED by its contract at a CONCRETE checker/schema
+# path (no placeholder operand, no implicit CWD): either EMITTED (path in allowed_paths, so the WC may
+# write it) or EXISTING (the checker/schema is a pinned immutable input). The contract's acceptance must
+# require the ownership + receipt-evidence predicates, and each oracle's positive fixture (exit 0) and
+# named negative fixture (exit non-zero) must be concretely located. Derivable from the contract alone.
+PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
+ALLOWED_PATH_ROOTS = (".cdd/", "schemas/", "docs/", "src/")
+ORACLES_KEYS = {"spec_ref", "ownership_predicate", "receipt_evidence_predicate", "mechanically_verifiable"}
+ORACLE_ENTRY_KEYS = {"predicate", "ownership", "checker", "schema",
+                     "positive_fixture", "negative_fixture", "command"}
+
+def path_concrete(val):
+    """A concrete repo-root-relative path: non-empty str, no placeholder operand, not absolute,
+    contains '/', and rooted at a known repo top-level dir (rejects implicit-CWD bare filenames)."""
+    if not isinstance(val, str) or not val.strip():
+        return False, "empty/non-string"
+    if PLACEHOLDER_RE.search(val):
+        return False, "contains placeholder operand"
+    if val.startswith("/"):
+        return False, "absolute path"
+    if "/" not in val:
+        return False, "bare filename (implicit CWD)"
+    if not val.startswith(ALLOWED_PATH_ROOTS):
+        return False, "not repo-root-relative (unknown root)"
+    return True, ""
+
+def path_in_allowed(val, allowed_globs):
+    return isinstance(val, str) and any(fnmatch.fnmatch(val, g) for g in allowed_globs)
+
+for nid, (p, c) in contracts.items():
+    O = c.get("oracles")
+    if not isinstance(O, dict):
+        fail("h", f"{nid}.oracles: oracle-ownership block missing or not a mapping"); continue
+    if set(O.keys()) != ORACLES_KEYS:
+        extra = set(O.keys()) - ORACLES_KEYS; missing = ORACLES_KEYS - set(O.keys())
+        if extra:   fail("h", f"{nid}.oracles: unexpected key(s) {sorted(extra)}")
+        if missing: fail("h", f"{nid}.oracles: missing key(s) {sorted(missing)}")
+    # the pinned oracle spec (acceptance-oracles.md) resolves content-bound
+    resolve_content_locator("h", f"{nid}.oracles.spec_ref", str(O.get("spec_ref", "")))
+    accpreds = set(((c.get("acceptance") or {}).get("predicates")) or [])
+    if O.get("ownership_predicate") not in accpreds:
+        fail("h", f"{nid}.oracles.ownership_predicate not present in acceptance.predicates")
+    if O.get("receipt_evidence_predicate") not in accpreds:
+        fail("h", f"{nid}.oracles.receipt_evidence_predicate not present in acceptance.predicates")
+    allowed = list(((c.get("constraints") or {}).get("allowed_paths")) or [])
+    # existing immutable inputs available to bind against (pinned repo_artifact locator paths)
+    input_paths = set()
+    for el in ((c.get("inputs") or {}).get("required") or []):
+        if isinstance(el, dict) and el.get("ref_kind") == "external":
+            loc = el.get("locator") or {}
+            if loc.get("kind") == "repo_artifact" and loc.get("path"):
+                input_paths.add(loc["path"])
+    mv = O.get("mechanically_verifiable")
+    if not isinstance(mv, list) or not mv:
+        fail("h", f"{nid}.oracles.mechanically_verifiable: must be a non-empty list"); continue
+    for i, e in enumerate(mv):
+        where = f"{nid}.oracles.mechanically_verifiable[{i}]"
+        if not isinstance(e, dict):
+            fail("h", f"{where}: must be a mapping"); continue
+        extra = set(e.keys()) - ORACLE_ENTRY_KEYS
+        if extra:
+            fail("h", f"{where}: unexpected key(s) {sorted(extra)}")
+        if e.get("predicate") not in accpreds:
+            fail("h", f"{where}: predicate {e.get('predicate')!r} not in acceptance.predicates")
+        own = e.get("ownership")
+        if own not in {"emitted", "existing"}:
+            fail("h", f"{where}: ownership must be 'emitted'|'existing' (got {own!r})")
+        checker, schema = e.get("checker"), e.get("schema")
+        if bool(checker) == bool(schema):
+            fail("h", f"{where}: must name EXACTLY one of checker|schema")
+        primary = checker or schema
+        posf, negf, cmd = e.get("positive_fixture"), e.get("negative_fixture"), e.get("command")
+        # (i) concreteness — no placeholder operand, no implicit CWD — for every path field
+        for label, val in (("checker/schema", primary), ("positive_fixture", posf), ("negative_fixture", negf)):
+            ok, why = path_concrete(val)
+            if not ok:
+                fail("h", f"{where}.{label}: {why} ({val!r})")
+        if not isinstance(cmd, str) or not cmd.strip():
+            fail("h", f"{where}.command: must be a non-empty command string")
+        elif PLACEHOLDER_RE.search(cmd):
+            fail("h", f"{where}.command: contains placeholder operand ({cmd!r})")
+        # (ii) ownership resolution
+        if own == "emitted":
+            for label, val in (("checker/schema", primary), ("positive_fixture", posf), ("negative_fixture", negf)):
+                if isinstance(val, str) and not path_in_allowed(val, allowed):
+                    fail("h", f"{where}.{label}: emitted path not in this contract's allowed_paths ({val!r})")
+        elif own == "existing":
+            if isinstance(primary, str) and primary not in input_paths:
+                fail("h", f"{where}: 'existing' checker/schema {primary!r} is not a pinned immutable input of this contract")
+            for label, val in (("positive_fixture", posf), ("negative_fixture", negf)):
+                if isinstance(val, str) and not path_in_allowed(val, allowed):
+                    fail("h", f"{where}.{label}: emitted fixture not in this contract's allowed_paths ({val!r})")
+        # (iii) command binds the concrete checker/schema + positive fixture (no implicit CWD)
+        if isinstance(cmd, str):
+            if isinstance(primary, str) and primary not in cmd:
+                fail("h", f"{where}.command: does not reference the concrete checker/schema {primary!r}")
+            if isinstance(posf, str) and posf not in cmd:
+                fail("h", f"{where}.command: does not reference the positive fixture {posf!r}")
+
+# the pinned oracle spec (acceptance-oracles.md) must itself carry NO placeholder operand
+acc_oracles = os.path.join(WAVE_DIR, "acceptance-oracles.md")
+if os.path.isfile(acc_oracles):
+    _m = PLACEHOLDER_RE.search(open(acc_oracles, encoding="utf-8").read())
+    if _m:
+        fail("h", f"acceptance-oracles.md carries a placeholder operand {_m.group(0)!r}")
+
 # ---- report ----------------------------------------------------------------------
 print("=" * 78)
 print("Pre-authorization validator — wave cnos#671 (cell-runtime-doctrine) R3 — SOUND")
@@ -645,6 +760,7 @@ checks = {
  "e": "parallel nodes share no write surface",
  "f": "gate invariants (doctrine_affecting ⇒ acceptance; reason present iff a gate bool true)",
  "g": "AUTHORED completion evaluated (predicate-graph acyclic by walk; fixtures computed vs expected)",
+ "h": "oracle ownership (every mechanically-verifiable predicate binds a concrete checker/schema in allowed_paths or a pinned input; positive/negative fixtures + receipt evidence required; no placeholder operands)",
 }
 by = {k: [e for e in errors if e.startswith(f"[{k}")] for k in checks}
 for k, desc in checks.items():
@@ -660,5 +776,5 @@ print("-" * 78)
 if errors:
     print(f"RESULT: FAIL ({len(errors)} violation(s))")
     sys.exit(1)
-print("RESULT: PASS — all seven checks green at this wave tree.")
+print("RESULT: PASS — all eight checks green at this wave tree.")
 sys.exit(0)
