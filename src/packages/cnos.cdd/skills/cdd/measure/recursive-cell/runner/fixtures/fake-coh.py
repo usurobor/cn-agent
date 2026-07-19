@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import sys
 
@@ -59,6 +60,12 @@ if args.emit_prompt:
 if args.mode != "hybrid" or not args.llm_response or not args.output:
     print("fixture coh ingest route requires --mode hybrid, --llm-response, and --output", file=sys.stderr)
     raise SystemExit(2)
+if os.environ.get("FAKE_COH_REQUIRE_SNAPSHOT") and "inputs/responses" not in Path(args.llm_response).as_posix():
+    print("fixture coh requires a staged response snapshot", file=sys.stderr)
+    raise SystemExit(8)
+if os.environ.get("FAKE_COH_FAIL_TARGET") == args.target:
+    print(f"fixture coh forced failure for {args.target}", file=sys.stderr)
+    raise SystemExit(9)
 
 with Path(args.llm_response).open(encoding="utf-8") as stream:
     witness = json.load(stream)
@@ -70,7 +77,7 @@ report = {
     "alpha": scores[0],
     "beta": scores[1],
     "gamma": scores[2],
-    "bottleneck_axis": min(["alpha", "beta", "gamma"], key=lambda axis: (witness[axis], ["alpha", "beta", "gamma"].index(axis))),
+    "bottleneck_axis": witness["bottleneck_axis"],
     "provenance": {
         "aggregate_math": {"C_sigma_math": aggregate},
         "aggregate_numeric": {"C_sigma_num": aggregate, "epsilon": 0.00001},

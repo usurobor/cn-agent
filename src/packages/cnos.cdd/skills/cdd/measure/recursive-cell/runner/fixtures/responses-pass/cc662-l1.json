@@ -88,5 +88,10 @@
   },
   "defect_cards": [],
   "unresolved_ambiguity": [],
-  "next_fixes": []
+  "next_fixes": [
+    {
+      "axis": "beta",
+      "fix": "Repair the fixture relation."
+    }
+  ]
 }

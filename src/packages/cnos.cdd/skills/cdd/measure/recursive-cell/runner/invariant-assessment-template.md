@@ -6,7 +6,7 @@ separate JSON object with this exact shape:
 
 ```json
 {
-  "schema": "cnos-recursive-cell-invariants/0.1",
+  "schema": "cnos-recursive-cell-invariants/0.2",
   "target": "cc662-system",
   "assessment_prompt_sha256": "<sha256 of this materialized prompt>",
   "prompt_sha256": {
@@ -16,6 +16,14 @@ separate JSON object with this exact shape:
     "cc662-l2": "<sha256>",
     "cc662-l3": "<sha256>",
     "cc662-l4": "<sha256>"
+  },
+  "response_sha256": {
+    "cc662-system": "<sha256 of exact witness bytes>",
+    "cc662-l0": "<sha256 of exact witness bytes>",
+    "cc662-l1": "<sha256 of exact witness bytes>",
+    "cc662-l2": "<sha256 of exact witness bytes>",
+    "cc662-l3": "<sha256 of exact witness bytes>",
+    "cc662-l4": "<sha256 of exact witness bytes>"
   },
   "items": [
     {
@@ -36,6 +44,10 @@ specific evidence and a null `next_mca`. `fail` and `unknown` require a concrete
 card in the standard witness for the stated level (or system), on the stated
 primary axis, with `[Hxx]` in its evidence or summary. This cross-reference does
 not change the standard TSC witness schema.
+
+Fill `response_sha256` only after all six witness files are frozen. Hash the
+exact bytes ingested by the runner. The assessment is invalid if either its
+six-prompt map or six-response map differs from the run inputs.
 
 Assess these stable invariants:
 

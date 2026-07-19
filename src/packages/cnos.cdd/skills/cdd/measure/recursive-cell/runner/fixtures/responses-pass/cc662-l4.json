@@ -6,7 +6,7 @@
   "delta_alpha_beta": 0.1,
   "delta_beta_gamma": 0.2,
   "delta_gamma_alpha": 0.3,
-  "bottleneck_axis": "beta",
+  "bottleneck_axis": "alpha",
   "confidence": 0.9,
   "summary": "Deterministic validated fixture for cc662-l4.",
   "axis_evidence": {

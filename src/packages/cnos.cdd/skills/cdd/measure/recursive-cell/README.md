@@ -65,24 +65,38 @@ not an extension to any TSC witness. Then ingest all seven inputs together:
   --responses "$RESPONSES" --invariants "$INVARIANTS"
 ```
 
-The output root contains the six prompts, `prompt-digests.json`, the generated
-invariant-assessment prompt, six canonical reports under `reports/`, and one
-schema-validated `recursive-cell-run.json`. The latter binds the actual coh
-executable, active runner, schema, template, prompts, responses, reports,
-assessment, and target bytes. `declared_cm_revision` and
-`declared_engine_revision` are explicitly caller assertions; byte identity is
-carried by individual SHA-256 fields and `cm_authority_bundle_sha256`. That
+Prompt emission requires a fresh run root and atomically creates one immutable
+`emission/` bundle containing the six prompts, `prompt-digests.json`, and the
+generated invariant-assessment prompt. Successful ingestion snapshots that
+bundle, the six response objects, and the invariant assessment; runs coh only
+from the response snapshots; and atomically publishes one immutable
+`publication/` directory. The publication contains the replay inputs, six
+canonical reports, `recursive-cell-run.json`, and a CUE-validated
+`publication-success.json` that binds every exact path and SHA-256 digest. A
+failed or reused emission or ingestion never replaces a canonical directory.
+The result binds the actual coh executable, active runner, schema, template,
+prompts, responses, reports,
+assessment, and target bytes. The invariant assessment independently binds the
+exact six response digests as well as all prompt digests.
+`declared_cm_revision` and `declared_engine_revision` are explicitly caller
+assertions; byte identity is carried by individual SHA-256 fields and
+`cm_authority_bundle_sha256`. That
 bundle hashes, in sorted CM-relative path order, each path, NUL, byte length,
-NUL, file bytes, NUL across the instruction, runner, schema, assessment
-template, registry, preflight, and six manifests. The result also computes the
-unweighted L0-L4 geometric aggregate, applies H01-H13, and emits exactly one
-deterministic bottleneck and disposition.
+NUL, file bytes, NUL across `SKILL.md`, the instruction and its assembly script,
+runner, schema, assessment template, registry, preflight, and six manifests.
+The result also computes the unweighted L0-L4 geometric aggregate, applies
+H01-H13, and emits exactly one deterministic bottleneck and disposition. The
+bottleneck level is the lowest numeric L0-L4 `C_sigma`; its axis is that
+level's canonical TSC `bottleneck_axis`, rather than a recomputation from raw
+axis scores.
 
 `scripts/ci/test-recursive-cell-runner.sh` covers this orchestration, schema,
-math, gating, provenance, and refusal behavior with deterministic fixture
-responses and a strict fake CLI. It does not claim real-engine integration or
-semantic calibration. The earlier bundled self target separately preserves one
-real pinned-engine external-response smoke ingestion and three mechanical runs.
+math, gating, provenance, atomic emission/publication, and refusal behavior with
+deterministic fixture responses and a strict fake CLI. A separate local
+compatibility check exercises the same six-target route against the pinned coh
+binary; neither check is semantic calibration. The earlier bundled self target
+separately preserves one real pinned-engine external-response smoke ingestion
+and three mechanical runs.
 
 ## Path-base boundary
 

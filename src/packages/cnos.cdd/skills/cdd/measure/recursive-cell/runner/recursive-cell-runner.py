@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 
 TARGETS = [
@@ -79,6 +80,14 @@ def load_json(path: Path):
 def write_json(path: Path, value) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def snapshot_file(source: Path, destination: Path, label: str) -> None:
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+    except OSError as error:
+        raise Refusal(f"could not snapshot {label}: {error}") from error
 
 
 def run(command, *, cwd: Path | None = None, capture: bool = False) -> str:
@@ -184,23 +193,40 @@ def validate_witness(witness, target: str) -> None:
                 raise Refusal(f"witness {target} checklist/card mismatch for {axis}/{category}")
     if (
         not isinstance(witness["unresolved_ambiguity"], list)
-        or not isinstance(witness["next_fixes"], list)
-        or any(not isinstance(item, str) for item in witness["unresolved_ambiguity"] + witness["next_fixes"])
+        or any(not isinstance(item, str) for item in witness["unresolved_ambiguity"])
     ):
-        raise Refusal(f"witness {target} ambiguity/fix fields must be lists")
+        raise Refusal(f"witness {target} unresolved_ambiguity must be a string list")
+    if not isinstance(witness["next_fixes"], list):
+        raise Refusal(f"witness {target} next_fixes must be a list")
+    for fix in witness["next_fixes"]:
+        if not isinstance(fix, dict) or set(fix) != {"axis", "fix"}:
+            raise Refusal(f"witness {target} next_fixes entries must be exact axis/fix objects")
+        if fix["axis"] not in AXES or not isinstance(fix["fix"], str) or not fix["fix"].strip():
+            raise Refusal(f"witness {target} has an invalid next_fixes entry")
     reject_computed_fields(witness)
 
 
-def validate_invariants(document, assessment_prompt_sha: str, prompt_digests: dict, witnesses: dict) -> list:
-    required = {"schema", "target", "assessment_prompt_sha256", "prompt_sha256", "items"}
+def validate_invariants(
+    document,
+    assessment_prompt_sha: str,
+    prompt_digests: dict,
+    response_digests: dict,
+    witnesses: dict,
+) -> list:
+    required = {
+        "schema", "target", "assessment_prompt_sha256", "prompt_sha256",
+        "response_sha256", "items",
+    }
     if not isinstance(document, dict) or set(document) != required:
         raise Refusal("invariant assessment has incorrect top-level shape")
-    if document["schema"] != "cnos-recursive-cell-invariants/0.1" or document["target"] != "cc662-system":
+    if document["schema"] != "cnos-recursive-cell-invariants/0.2" or document["target"] != "cc662-system":
         raise Refusal("invariant assessment schema/target mismatch")
     if document["assessment_prompt_sha256"] != assessment_prompt_sha:
         raise Refusal("invariant assessment does not bind the emitted assessment prompt")
     if document["prompt_sha256"] != prompt_digests:
         raise Refusal("invariant assessment does not bind all six emitted TSC prompts")
+    if document["response_sha256"] != response_digests:
+        raise Refusal("invariant assessment does not bind all six TSC response witnesses")
     items = document["items"]
     if not isinstance(items, list) or [item.get("id") for item in items if isinstance(item, dict)] != INVARIANTS:
         raise Refusal("invariant assessment must contain H01-H13 exactly once in order")
@@ -239,6 +265,9 @@ def report_facts(report, target: str):
         raise Refusal(f"TSC report target mismatch for {target}")
     for axis in AXES:
         require_unit_interval(report.get(axis), f"report.{target}.{axis}")
+    bottleneck_axis = report.get("bottleneck_axis")
+    if bottleneck_axis not in AXES:
+        raise Refusal(f"TSC report for {target} has invalid bottleneck_axis")
     try:
         c_math = report["provenance"]["aggregate_math"]["C_sigma_math"]
         c_num = report["provenance"]["aggregate_numeric"]["C_sigma_num"]
@@ -246,7 +275,14 @@ def report_facts(report, target: str):
         raise Refusal(f"TSC report for {target} lacks canonical aggregate provenance") from error
     require_unit_interval(c_math, f"report.{target}.C_sigma_math")
     require_unit_interval(c_num, f"report.{target}.C_sigma_num")
-    return {"alpha": report["alpha"], "beta": report["beta"], "gamma": report["gamma"], "C_sigma_math": c_math, "C_sigma_num": c_num}
+    return {
+        "alpha": report["alpha"],
+        "beta": report["beta"],
+        "gamma": report["gamma"],
+        "bottleneck_axis": bottleneck_axis,
+        "C_sigma_math": c_math,
+        "C_sigma_num": c_num,
+    }
 
 
 def prepare(args):
@@ -254,7 +290,9 @@ def prepare(args):
     cm = root / "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell"
     registry = cm / "calibration/662/registry.tsc"
     instruction = cm / "INSTRUCTION.md"
+    skill = cm / "SKILL.md"
     preflight = cm / "calibration/662/verify-target.sh"
+    assembler = cm / "instruction/assemble-instruction.sh"
     schema = cm / "runner/recursive-cell-run.schema.cue"
     assessment_template = cm / "runner/invariant-assessment-template.md"
     active_runner = Path(__file__).resolve()
@@ -268,7 +306,8 @@ def prepare(args):
         cm / "calibration/662/targets/l4-instance.tsc",
     ]
     authority_paths = [
-        instruction, cm_runner, schema, assessment_template, registry, preflight,
+        skill, instruction, cm_runner, schema, assessment_template, registry,
+        preflight, assembler,
         *manifests,
     ]
     coh_executable = args.coh.resolve()
@@ -293,7 +332,7 @@ def prepare(args):
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     return (
-        root, cm, registry, instruction, schema, assessment_template,
+        root, cm, registry, instruction, skill, schema, assessment_template,
         active_runner, authority_paths, coh_executable, output,
     )
 
@@ -308,34 +347,95 @@ def coh_base(args, target, registry, instruction, root):
     ]
 
 
+def require_unpublished(output: Path) -> None:
+    publication = output / "publication"
+    if publication.exists() or publication.is_symlink():
+        raise Refusal(f"canonical publication already exists and is immutable: {publication}")
+    lock = output / ".publication-lock"
+    if lock.exists() or lock.is_symlink():
+        raise Refusal(f"publication is already in progress or recovery is required: {lock}")
+    emit_lock = output / ".emission-lock"
+    if emit_lock.exists() or emit_lock.is_symlink():
+        raise Refusal(f"prompt emission is already in progress or recovery is required: {emit_lock}")
+
+
+def acquire_publication_lock(output: Path) -> Path:
+    lock = output / ".publication-lock"
+    try:
+        lock.mkdir()
+    except OSError as error:
+        raise Refusal(f"could not acquire atomic publication lock: {error}") from error
+    publication = output / "publication"
+    if publication.exists() or publication.is_symlink():
+        lock.rmdir()
+        raise Refusal(f"canonical publication already exists and is immutable: {publication}")
+    return lock
+
+
+def acquire_emission_lock(output: Path) -> Path:
+    lock = output / ".emission-lock"
+    try:
+        lock.mkdir()
+    except OSError as error:
+        raise Refusal(f"could not acquire atomic emission lock: {error}") from error
+    unexpected = [path for path in output.iterdir() if path != lock]
+    if unexpected:
+        lock.rmdir()
+        raise Refusal(f"emit requires a fresh run root; found existing path: {unexpected[0]}")
+    return lock
+
+
 def emit(args) -> None:
-    root, _, registry, instruction, _, assessment_template, _, _, _, output = prepare(args)
-    prompt_dir = output / "prompts"
-    prompt_dir.mkdir(parents=True, exist_ok=True)
-    prompts = []
-    for target in TARGETS:
-        path = prompt_dir / f"{target}.md"
-        run(coh_base(args, target, registry, instruction, root) + ["--mode", "llm", "--emit-prompt", path])
-        prompts.append({"target": target, "path": str(path.relative_to(output)), "sha256": sha256(path), "bytes": path.stat().st_size})
-    assessment_prompt = output / "invariant-assessment-prompt.md"
-    digest_lines = "\n".join(f"- `{row['target']}`: `{row['sha256']}`" for row in prompts)
-    assessment_prompt.write_text(
-        assessment_template.read_text(encoding="utf-8").rstrip()
-        + "\n\n## Bound TSC prompt digests\n\n"
-        + digest_lines
-        + "\n",
-        encoding="utf-8",
-    )
-    write_json(output / "prompt-digests.json", {
-        "schema": "cnos-recursive-cell-prompts/0.1",
-        "targets": prompts,
-        "invariant_assessment": {
-            "path": str(assessment_prompt.relative_to(output)),
-            "sha256": sha256(assessment_prompt),
-            "bytes": assessment_prompt.stat().st_size,
-        },
-    })
-    print(f"PASS emitted {len(prompts)} recursive-cell prompts to {prompt_dir}")
+    root, _, registry, instruction, _, _, assessment_template, _, _, _, output = prepare(args)
+    require_unpublished(output)
+    lock = acquire_emission_lock(output)
+    stage = None
+    emitted = False
+    try:
+        stage = Path(tempfile.mkdtemp(prefix=".emission-stage-", dir=output))
+        prompt_dir = stage / "prompts"
+        prompt_dir.mkdir(parents=True)
+        prompts = []
+        for target in TARGETS:
+            path = prompt_dir / f"{target}.md"
+            run(coh_base(args, target, registry, instruction, root) + ["--mode", "llm", "--emit-prompt", path])
+            prompts.append({
+                "target": target,
+                "path": str(path.relative_to(stage)),
+                "sha256": sha256(path),
+                "bytes": path.stat().st_size,
+            })
+        assessment_prompt = stage / "invariant-assessment-prompt.md"
+        digest_lines = "\n".join(f"- `{row['target']}`: `{row['sha256']}`" for row in prompts)
+        assessment_prompt.write_text(
+            assessment_template.read_text(encoding="utf-8").rstrip()
+            + "\n\n## Bound TSC prompt digests\n\n"
+            + digest_lines
+            + "\n",
+            encoding="utf-8",
+        )
+        write_json(stage / "prompt-digests.json", {
+            "schema": "cnos-recursive-cell-prompts/0.1",
+            "targets": prompts,
+            "invariant_assessment": {
+                "path": str(assessment_prompt.relative_to(stage)),
+                "sha256": sha256(assessment_prompt),
+                "bytes": assessment_prompt.stat().st_size,
+            },
+        })
+        emission = output / "emission"
+        if emission.exists() or emission.is_symlink():
+            raise Refusal(f"canonical emission appeared while the lock was held: {emission}")
+        try:
+            stage.rename(emission)
+        except OSError as error:
+            raise Refusal(f"atomic emission failed: {error}") from error
+        emitted = True
+        print(f"PASS emitted {len(prompts)} recursive-cell prompts to {emission / 'prompts'}")
+    finally:
+        if not emitted and stage is not None and stage.exists():
+            shutil.rmtree(stage)
+        lock.rmdir()
 
 
 def select_report(directory: Path) -> Path:
@@ -359,149 +459,241 @@ def disposition_for(items):
 
 def ingest(args) -> None:
     (
-        root, cm, registry, instruction, schema, assessment_template,
+        root, cm, registry, instruction, skill, schema, assessment_template,
         active_runner, authority_paths, coh_executable, output,
     ) = prepare(args)
-    prompt_manifest = load_json(output / "prompt-digests.json")
-    if not isinstance(prompt_manifest, dict) or prompt_manifest.get("schema") != "cnos-recursive-cell-prompts/0.1":
-        raise Refusal("prompt digest manifest missing or malformed; run emit first")
-    prompt_rows = prompt_manifest.get("targets")
-    row_keys = {"target", "path", "sha256", "bytes"}
-    if (
-        not isinstance(prompt_rows, list)
-        or any(not isinstance(row, dict) or set(row) != row_keys for row in prompt_rows)
-        or [row["target"] for row in prompt_rows] != TARGETS
-    ):
-        raise Refusal("prompt digest manifest target order mismatch")
-    prompt_by_target = {}
-    for row in prompt_rows:
+    require_unpublished(output)
+    emission_source = output / "emission"
+    if not emission_source.is_dir() or emission_source.is_symlink():
+        raise Refusal("canonical emission missing or malformed; run emit in a fresh root")
+    lock = acquire_publication_lock(output)
+    stage = None
+    published = False
+    try:
+        stage = Path(tempfile.mkdtemp(prefix=".publication-stage-", dir=output))
+        emission = stage / "emission"
+        try:
+            shutil.copytree(emission_source, emission, symlinks=True)
+        except OSError as error:
+            raise Refusal(f"could not snapshot canonical emission: {error}") from error
+        if any(path.is_symlink() for path in emission.rglob("*")):
+            raise Refusal("canonical emission contains a symlink")
+
+        response_paths = {}
+        for target in TARGETS:
+            response_path = stage / "inputs" / "responses" / f"{target}.json"
+            snapshot_file(args.responses / f"{target}.json", response_path, f"response {target}")
+            response_paths[target] = response_path
+        invariant_path = stage / "inputs" / "invariant-assessment.json"
+        snapshot_file(args.invariants, invariant_path, "invariant assessment")
+
+        prompt_manifest_path = emission / "prompt-digests.json"
+        prompt_manifest = load_json(prompt_manifest_path)
+        if not isinstance(prompt_manifest, dict) or prompt_manifest.get("schema") != "cnos-recursive-cell-prompts/0.1":
+            raise Refusal("prompt digest manifest missing or malformed; run emit first")
+        prompt_rows = prompt_manifest.get("targets")
+        row_keys = {"target", "path", "sha256", "bytes"}
         if (
-            not isinstance(row["path"], str)
-            or not isinstance(row["sha256"], str)
-            or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])
-            or isinstance(row["bytes"], bool)
-            or not isinstance(row["bytes"], int)
-            or row["bytes"] < 1
+            not isinstance(prompt_rows, list)
+            or any(not isinstance(row, dict) or set(row) != row_keys for row in prompt_rows)
+            or [row["target"] for row in prompt_rows] != TARGETS
         ):
-            raise Refusal(f"prompt digest row is malformed: {row['target']}")
-        path = (output / row["path"]).resolve()
-        if output not in path.parents:
-            raise Refusal(f"prompt path escapes output root: {row['target']}")
-        if not path.is_file() or sha256(path) != row["sha256"] or path.stat().st_size != row["bytes"]:
-            raise Refusal(f"emitted prompt changed before ingestion: {row['target']}")
-        prompt_by_target[row["target"]] = row
-    assessment_row = prompt_manifest.get("invariant_assessment")
-    if not isinstance(assessment_row, dict) or set(assessment_row) != {"path", "sha256", "bytes"}:
-        raise Refusal("prompt digest manifest lacks the invariant-assessment prompt")
-    if (
-        not isinstance(assessment_row["path"], str)
-        or not isinstance(assessment_row["sha256"], str)
-        or not re.fullmatch(r"[0-9a-f]{64}", assessment_row["sha256"])
-        or isinstance(assessment_row["bytes"], bool)
-        or not isinstance(assessment_row["bytes"], int)
-        or assessment_row["bytes"] < 1
-    ):
-        raise Refusal("invariant-assessment prompt digest row is malformed")
-    assessment_prompt = (output / assessment_row["path"]).resolve()
-    if output not in assessment_prompt.parents:
-        raise Refusal("invariant-assessment prompt path escapes output root")
-    if (
-        not assessment_prompt.is_file()
-        or sha256(assessment_prompt) != assessment_row["sha256"]
-        or assessment_prompt.stat().st_size != assessment_row["bytes"]
-    ):
-        raise Refusal("emitted invariant-assessment prompt changed before ingestion")
+            raise Refusal("prompt digest manifest target order mismatch")
+        prompt_by_target = {}
+        for row in prompt_rows:
+            if (
+                not isinstance(row["path"], str)
+                or not isinstance(row["sha256"], str)
+                or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])
+                or isinstance(row["bytes"], bool)
+                or not isinstance(row["bytes"], int)
+                or row["bytes"] < 1
+            ):
+                raise Refusal(f"prompt digest row is malformed: {row['target']}")
+            path = (emission / row["path"]).resolve()
+            if emission not in path.parents:
+                raise Refusal(f"prompt path escapes canonical emission: {row['target']}")
+            if not path.is_file() or sha256(path) != row["sha256"] or path.stat().st_size != row["bytes"]:
+                raise Refusal(f"emitted prompt changed before ingestion: {row['target']}")
+            prompt_by_target[row["target"]] = row
+        assessment_row = prompt_manifest.get("invariant_assessment")
+        if not isinstance(assessment_row, dict) or set(assessment_row) != {"path", "sha256", "bytes"}:
+            raise Refusal("prompt digest manifest lacks the invariant-assessment prompt")
+        if (
+            not isinstance(assessment_row["path"], str)
+            or not isinstance(assessment_row["sha256"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", assessment_row["sha256"])
+            or isinstance(assessment_row["bytes"], bool)
+            or not isinstance(assessment_row["bytes"], int)
+            or assessment_row["bytes"] < 1
+        ):
+            raise Refusal("invariant-assessment prompt digest row is malformed")
+        assessment_prompt = (emission / assessment_row["path"]).resolve()
+        if emission not in assessment_prompt.parents:
+            raise Refusal("invariant-assessment prompt path escapes canonical emission")
+        if (
+            not assessment_prompt.is_file()
+            or sha256(assessment_prompt) != assessment_row["sha256"]
+            or assessment_prompt.stat().st_size != assessment_row["bytes"]
+        ):
+            raise Refusal("emitted invariant-assessment prompt changed before ingestion")
 
-    responses = {}
-    for target in TARGETS:
-        path = args.responses / f"{target}.json"
-        witness = load_json(path)
-        validate_witness(witness, target)
-        responses[target] = witness
-    invariant_path = args.invariants
-    invariant_document = load_json(invariant_path)
-    prompt_digests = {target: prompt_by_target[target]["sha256"] for target in TARGETS}
-    invariant_items = validate_invariants(
-        invariant_document,
-        assessment_row["sha256"],
-        prompt_digests,
-        responses,
-    )
+        responses = {}
+        response_digests = {}
+        for target in TARGETS:
+            witness = load_json(response_paths[target])
+            validate_witness(witness, target)
+            responses[target] = witness
+            response_digests[target] = sha256(response_paths[target])
+        invariant_document = load_json(invariant_path)
+        prompt_digests = {target: prompt_by_target[target]["sha256"] for target in TARGETS}
+        invariant_items = validate_invariants(
+            invariant_document,
+            assessment_row["sha256"],
+            prompt_digests,
+            response_digests,
+            responses,
+        )
 
-    report_dir = output / "reports"
-    report_dir.mkdir(parents=True, exist_ok=True)
-    report_rows = []
-    facts = {}
-    for target in TARGETS:
-        scratch = output / ".coh" / target
-        if scratch.exists():
-            shutil.rmtree(scratch)
-        scratch.mkdir(parents=True)
-        response_path = args.responses / f"{target}.json"
-        run(coh_base(args, target, registry, instruction, root) + [
-            "--mode", "hybrid", "--llm-response", response_path, "--output", scratch,
-        ])
-        generated = select_report(scratch)
-        canonical = report_dir / f"{target}.json"
-        shutil.copyfile(generated, canonical)
-        report = load_json(canonical)
-        facts[target] = report_facts(report, target)
-        report_rows.append({
-            "target": target,
-            "prompt_sha256": prompt_by_target[target]["sha256"],
-            "response_sha256": sha256(response_path),
-            "report_sha256": sha256(canonical),
-            "report_path": str(canonical.relative_to(output)),
-        })
-    shutil.rmtree(output / ".coh")
+        report_dir = stage / "reports"
+        report_dir.mkdir(parents=True)
+        report_rows = []
+        facts = {}
+        for target in TARGETS:
+            scratch = stage / ".coh" / target
+            scratch.mkdir(parents=True)
+            run(coh_base(args, target, registry, instruction, root) + [
+                "--mode", "hybrid", "--llm-response", response_paths[target], "--output", scratch,
+            ])
+            generated = select_report(scratch)
+            canonical = report_dir / f"{target}.json"
+            shutil.copyfile(generated, canonical)
+            report = load_json(canonical)
+            facts[target] = report_facts(report, target)
+            report_rows.append({
+                "target": target,
+                "prompt_sha256": prompt_by_target[target]["sha256"],
+                "response_sha256": response_digests[target],
+                "report_sha256": sha256(canonical),
+                "report_path": str(canonical.relative_to(stage)),
+            })
+        shutil.rmtree(stage / ".coh")
 
-    level_facts = [facts[target] for target in LEVEL_TARGETS]
-    c_math = 0.0 if any(row["C_sigma_math"] == 0 for row in level_facts) else math.prod(row["C_sigma_math"] for row in level_facts) ** (1.0 / 5.0)
-    c_num = math.prod(row["C_sigma_num"] for row in level_facts) ** (1.0 / 5.0)
-    level_index = min(range(5), key=lambda index: (level_facts[index]["C_sigma_num"], index))
-    axis = min(AXES, key=lambda name: (level_facts[level_index][name], AXES.index(name)))
-    gate_passed = all(item["status"] == "pass" for item in invariant_items)
-    disposition, reason = disposition_for(invariant_items)
-    engine_version = run([args.coh, "--version"], capture=True)
-    result = {
-        "schema": "cnos-recursive-cell-run/0.1",
-        "target": "cc662-r7-recursive",
-        "status": "calibration-source-zero-standing",
-        "targets": report_rows,
-        "cross_level": {
-            "levels": [
-                {"level": LEVEL_NAMES[index], "target": LEVEL_TARGETS[index], **level_facts[index]}
-                for index in range(5)
+        level_facts = [facts[target] for target in LEVEL_TARGETS]
+        c_math = 0.0 if any(row["C_sigma_math"] == 0 for row in level_facts) else math.prod(row["C_sigma_math"] for row in level_facts) ** (1.0 / 5.0)
+        c_num = math.prod(row["C_sigma_num"] for row in level_facts) ** (1.0 / 5.0)
+        level_index = min(range(5), key=lambda index: (level_facts[index]["C_sigma_num"], index))
+        axis = level_facts[level_index]["bottleneck_axis"]
+        gate_passed = all(item["status"] == "pass" for item in invariant_items)
+        disposition, reason = disposition_for(invariant_items)
+        engine_version = run([args.coh, "--version"], capture=True)
+        result = {
+            "schema": "cnos-recursive-cell-run/0.2",
+            "target": "cc662-r7-recursive",
+            "status": "calibration-source-zero-standing",
+            "targets": report_rows,
+            "cross_level": {
+                "levels": [
+                    {"level": LEVEL_NAMES[index], "target": LEVEL_TARGETS[index], **level_facts[index]}
+                    for index in range(5)
+                ],
+                "C_sigma_cross_math": c_math,
+                "C_sigma_cross_num": c_num,
+                "semantics": "unweighted-geometric-mean-of-L0-L4-canonical-TSC-C_sigma",
+            },
+            "hard_invariant_gate": {"passed": gate_passed, "items": invariant_items},
+            "bottleneck": {
+                "level": LEVEL_NAMES[level_index],
+                "axis": axis,
+                "tie_break": "lowest-level-index-then-TSC-bottleneck-axis",
+            },
+            "disposition": {"value": disposition, "reason": reason, "standing": "none"},
+            "provenance": {
+                "declared_cm_revision": args.cm_revision,
+                "target_revision": run(["git", "-C", root, "rev-parse", "HEAD"], capture=True),
+                "cm_authority_bundle_sha256": path_framed_sha256(cm, authority_paths),
+                "skill_sha256": sha256(skill),
+                "registry_sha256": sha256(registry),
+                "instruction_sha256": sha256(instruction),
+                "runner_sha256": sha256(active_runner),
+                "output_schema_sha256": sha256(schema),
+                "invariant_assessment_template_sha256": sha256(assessment_template),
+                "invariant_assessment_prompt_sha256": assessment_row["sha256"],
+                "invariant_assessment_sha256": sha256(invariant_path),
+                "response_sha256": response_digests,
+                "declared_engine_revision": args.engine_revision,
+                "coh_executable_sha256": sha256(coh_executable),
+                "engine_version": engine_version,
+                "run_time_utc": args.timestamp,
+                "mode": "State-A external-response hybrid ingestion",
+            },
+        }
+        result_path = stage / "recursive-cell-run.json"
+        write_json(result_path, result)
+        run(["cue", "vet", "-d", "#RecursiveCellRun", schema, result_path])
+
+        success = {
+            "schema": "cnos-recursive-cell-publication/0.2",
+            "target": "cc662-r7-recursive",
+            "status": "complete",
+            "result": {"path": "recursive-cell-run.json", "sha256": sha256(result_path)},
+            "reports": [
+                {"target": row["target"], "path": row["report_path"], "sha256": row["report_sha256"]}
+                for row in report_rows
             ],
-            "C_sigma_cross_math": c_math,
-            "C_sigma_cross_num": c_num,
-            "semantics": "unweighted-geometric-mean-of-L0-L4-canonical-TSC-C_sigma",
-        },
-        "hard_invariant_gate": {"passed": gate_passed, "items": invariant_items},
-        "bottleneck": {"level": LEVEL_NAMES[level_index], "axis": axis, "tie_break": "lowest-level-index-then-alpha-beta-gamma"},
-        "disposition": {"value": disposition, "reason": reason, "standing": "none"},
-        "provenance": {
-            "declared_cm_revision": args.cm_revision,
-            "target_revision": run(["git", "-C", root, "rev-parse", "HEAD"], capture=True),
-            "cm_authority_bundle_sha256": path_framed_sha256(cm, authority_paths),
-            "registry_sha256": sha256(registry),
-            "instruction_sha256": sha256(instruction),
-            "runner_sha256": sha256(active_runner),
-            "output_schema_sha256": sha256(schema),
-            "invariant_assessment_template_sha256": sha256(assessment_template),
-            "invariant_assessment_prompt_sha256": assessment_row["sha256"],
-            "invariant_assessment_sha256": sha256(invariant_path),
-            "declared_engine_revision": args.engine_revision,
-            "coh_executable_sha256": sha256(coh_executable),
-            "engine_version": engine_version,
-            "run_time_utc": args.timestamp,
-            "mode": "State-A external-response hybrid ingestion",
-        },
-    }
-    output_path = output / "recursive-cell-run.json"
-    write_json(output_path, result)
-    run(["cue", "vet", "-d", "#RecursiveCellRun", schema, output_path])
-    print(f"PASS recursive-cell aggregate: {output_path} disposition={disposition} bottleneck={LEVEL_NAMES[level_index]}/{axis}")
+            "emission": {
+                "prompt_manifest": {
+                    "path": str(prompt_manifest_path.relative_to(stage)),
+                    "sha256": sha256(prompt_manifest_path),
+                },
+                "invariant_assessment_prompt": {
+                    "path": str(assessment_prompt.relative_to(stage)),
+                    "sha256": assessment_row["sha256"],
+                },
+                "prompts": [
+                    {
+                        "target": row["target"],
+                        "path": str((emission / row["path"]).relative_to(stage)),
+                        "sha256": row["sha256"],
+                    }
+                    for row in prompt_rows
+                ],
+            },
+            "inputs": {
+                "responses": [
+                    {
+                        "target": target,
+                        "path": str(response_paths[target].relative_to(stage)),
+                        "sha256": response_digests[target],
+                    }
+                    for target in TARGETS
+                ],
+                "invariant_assessment": {
+                    "path": str(invariant_path.relative_to(stage)),
+                    "sha256": sha256(invariant_path),
+                },
+            },
+        }
+        success_path = stage / "publication-success.json"
+        write_json(success_path, success)
+        run(["cue", "vet", "-d", "#PublicationSuccess", schema, success_path])
+
+        publication = output / "publication"
+        if publication.exists() or publication.is_symlink():
+            raise Refusal(f"canonical publication appeared while the lock was held: {publication}")
+        try:
+            stage.rename(publication)
+        except OSError as error:
+            raise Refusal(f"atomic publication failed: {error}") from error
+        published = True
+        print(
+            f"PASS recursive-cell publication: {publication} "
+            f"disposition={disposition} bottleneck={LEVEL_NAMES[level_index]}/{axis}"
+        )
+    finally:
+        if not published and stage is not None and stage.exists():
+            shutil.rmtree(stage)
+        lock.rmdir()
 
 
 def parser() -> argparse.ArgumentParser:

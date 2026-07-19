@@ -24,9 +24,9 @@ inputs:
   - "Cell/wave contracts, schemas, FSM tables, implementation seams, and receipts"
   - "Control-plane evidence snapshotted or content-hashed"
 outputs:
-  - "Six TSC prompts, one invariant-assessment prompt, plus prompt-digests.json"
-  - "Six validated canonical TSC reports: system and L0-L4"
-  - "One recursive-cell-run.json with L0-L4 aggregate, H01-H13 outcomes, exactly one bottleneck, disposition, and provenance"
+  - "One immutable emission/ with six TSC prompts, one invariant-assessment prompt, and prompt-digests.json"
+  - "One immutable publication/ snapshot with replay inputs and six validated canonical TSC reports"
+  - "One publication/recursive-cell-run.json plus publication-success.json binding every exact path and digest"
 visibility: public
 methodology:
   registry: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/662/registry.tsc"
@@ -47,7 +47,7 @@ methodology:
     invariant_assessment_template: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/runner/invariant-assessment-template.md"
     emits: ["prompts/cc662-system.md", "prompts/cc662-l0.md", "prompts/cc662-l1.md", "prompts/cc662-l2.md", "prompts/cc662-l3.md", "prompts/cc662-l4.md", "invariant-assessment-prompt.md", "prompt-digests.json"]
     ingests: ["cc662-system.json", "cc662-l0.json", "cc662-l1.json", "cc662-l2.json", "cc662-l3.json", "cc662-l4.json", "invariant-assessment.json"]
-    produces: ["reports/cc662-system.json", "reports/cc662-l0.json", "reports/cc662-l1.json", "reports/cc662-l2.json", "reports/cc662-l3.json", "reports/cc662-l4.json", "recursive-cell-run.json"]
+    produces: ["publication/emission/", "publication/inputs/responses/", "publication/inputs/invariant-assessment.json", "publication/reports/cc662-system.json", "publication/reports/cc662-l0.json", "publication/reports/cc662-l1.json", "publication/reports/cc662-l2.json", "publication/reports/cc662-l3.json", "publication/reports/cc662-l4.json", "publication/recursive-cell-run.json", "publication/publication-success.json"]
     state_b: unshipped
   consistency:
     mechanical: identical
@@ -334,7 +334,8 @@ State-A output contract:
 The six TSC witnesses remain exact, unextended TSC v3.2.4 objects. A separate
 invariant assessment contains exactly H01-H13 with `pass`, `fail`, or `unknown`,
 specific evidence, level, primary axis, and next MCA. It binds the generated
-assessment prompt and all six TSC prompt digests. `unknown` is nonaccepting.
+assessment prompt, all six TSC prompt digests, and the exact six response
+digests. `unknown` is nonaccepting.
 A failed item must cross-reference a systemic defect card in the standard
 witness for its stated level and primary axis using `[Hxx]`.
 
@@ -344,7 +345,8 @@ TSC computes canonical `C_sigma` for system and L0-L4. The declared cross-level
 aggregate is the **unweighted geometric mean of L0-L4 canonical `C_sigma`**;
 the system report is retained but not averaged into that value. The runner
 emits exactly one bottleneck: the lowest numeric L0-L4 `C_sigma`, ties resolved
-by level order L0→L4, then the lowest axis value, ties resolved α→β→γ.
+by level order L0→L4, with the axis taken directly from that level's canonical
+TSC `bottleneck_axis`. It does not re-derive the axis from raw axis scores.
 
 State-A disposition rules are deterministic:
 
