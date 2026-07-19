@@ -1,0 +1,94 @@
+# WC-5 — Integration / seal (whole-wave proof)
+# New node the external-β required: four/six child closures do NOT by themselves prove the
+# objective. WC-5 is the whole-wave proof. Depends on WC-1, WC-2, WC-3a, WC-3b, WC-4.
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-5"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#671"
+inputs:
+  required:
+    - ref_kind: "external"          # grounding CM (content-bound) — the residual-debt trace WC-5 re-checks
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:585955d8cdd4aa0556aa0daa0f955a00d1fdf69921c9cadea2abf25b620aebd3@.cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+    - ref_kind: "external"          # the #627 refinement map (content-bound) — parity source for the seal
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#reconcile-627"
+        revision: "sha256:2ee657692ac82bfead75827772559e6145024172b201b47fb7e1813d7783f4d2@.cdd/waves/cell-runtime-doctrine/reconcile-627.md"
+    # --- sibling_output (edges WC-1,2,3a,3b,4 → WC-5) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-1"
+      output_id: "cell-classes-and-contract"
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"
+    - ref_kind: "sibling_output"
+      producer: "wc-3a"
+      output_id: "cell-fsm"
+    - ref_kind: "sibling_output"
+      producer: "wc-3b"
+      output_id: "wave-fsm"
+    - ref_kind: "sibling_output"
+      producer: "wc-4"
+      output_id: "contract-migration"
+  optional: []
+requested_output:
+  id: "cell-runtime-integration-seal"
+  kind: "artifact"
+  path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
+acceptance:
+  predicates:
+    - "cross_artifact_vocabulary_consistent__one_canonical_input_ref_and_requested_output_vocabulary_one_cm_object_one_kappa_neq_alpha_logic_across_wc1_through_wc4"
+    - "schema_fixtures_pass__every_worked_instance_validates_against_the_selected_cn_cell_contract_v1_shape"
+    - "graph_parity__wave_edges_equal_the_sibling_output_relations_exactly_no_missing_or_spurious_edge"
+    - "migration_round_trips__wc4_round_trip_oracle_is_green_on_the_named_fixtures"
+    - "reconcile_627_mapping_complete__every_S_node_classified_exactly_once_no_duplicate_owner_no_omitted_executable_child"
+    - "residual_debt_disposed__every_grounding_fail_is_closed_by_or_retired_instance_defect_or_tracked_follow_up_exactly_once"
+    - "final_integration_v_fails_closed_on__a_conflicting_cm_ref_a_conflicting_fsm_state_a_conflicting_schema_field_a_missing_adapter_case_or_an_unmapped_627_node"
+    - "whole_wave_completion_predicate__every_child_completion_predicate_holds_and_the_wave_level_completion_predicate_holds"
+constraints:
+  allowed_paths:
+    - "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
+    - ".cdd/unreleased/wc-5/**"
+  forbidden_paths:
+    - "schemas/**"
+    - "src/**"
+    - ".github/workflows/**"
+    - "docs/architecture/CELL-RUNTIME-CLASSES.md"
+    - "docs/architecture/COHERENCE-MEASUREMENT.md"
+    - "docs/architecture/CELL-FSM.md"
+    - "docs/architecture/WAVE-FSM.md"
+    - "docs/architecture/CONTRACT-MIGRATION.md"
+  non_goals:
+    - "author_new_doctrine__wc5_only_validates_and_seals_the_child_artifacts"
+    - "edit_any_child_artifact__it_reports_conflicts_it_does_not_repair_them"
+    - "implement_any_runtime_schema_or_fsm_code"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting whole-wave seal; operator final-read closes the wave"
+doctrine_affecting: true
+stop_conditions:
+  - "any_child_artifact_missing_or_unbound"
+  - "cross_artifact_conflict_detected"          # WC-5 holds/blocks and names the conflicting node
+  - "reconcile_627_map_incomplete_or_double_owned"
+consumers:
+  - "operator:final-read / wave-authorization boundary (§9)"
+  - "coordination-index:627"
+completion_signal: "whole-wave seal receipt: every child-completion predicate holds AND the wave-level completion predicate holds; final integration V verdict PASS; exact-SHA external-β + content-bound γ; merged to docs/architecture/CELL-RUNTIME-INTEGRATION.md — this is the wave terminal signal"

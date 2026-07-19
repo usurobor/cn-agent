@@ -1,0 +1,112 @@
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R1)
+#
+# Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under
+# contracts/). Edges are the MECHANICAL PROJECTION of the child contracts' sibling_output refs:
+# an edge A→B exists iff B's contract carries a sibling_output ref whose producer+output_id
+# resolves to A's requested_output.id. `external` refs (incl. the grounding CM and #628/S1)
+# create NO edge. Edges here are authored for readability but MUST hold exact parity with the
+# derived set (see `edge_derivation` below); WC-5 proves that parity.
+schema: cn.wave.v1
+wave: "671"
+goal: >-
+  A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
+  cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
+  migration — decomposed so each artifact is single-purpose and individually coherent, grounded in
+  an immutable coherence measurement, such that a Working Cell can implement the runtime (Go/CUE)
+  from these artifacts without inventing dependency, measurement, authority, or gate policy.
+
+grounding:
+  cm_ref:
+    ref_kind: "external"
+    locator:
+      kind: "control_plane"
+      ref: "cnos#667#issuecomment-5015460988"
+      revision: "sha256:585955d8cdd4aa0556aa0daa0f955a00d1fdf69921c9cadea2abf25b620aebd3@.cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+  reconcile_627_ref:
+    ref_kind: "external"
+    locator:
+      kind: "control_plane"
+      ref: "cnos#671#reconcile-627"
+      revision: "sha256:2ee657692ac82bfead75827772559e6145024172b201b47fb7e1813d7783f4d2@.cdd/waves/cell-runtime-doctrine/reconcile-627.md"
+
+# External roots (immutable; consumed by nodes, create no wave edge)
+external_roots:
+  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:docs/architecture/CELL-RUNTIME.md   # #628/S1 landed doctrine"
+  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/receipt.cue"
+  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/contract.cue"
+  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/boundary_decision.cue"
+  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md"
+  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:src/packages/cnos.cds/skills/cds/fsm/transitions.json"
+  - "repo_artifact usurobor/cnos@30a9455afaf7f9f63ca0c60b5c91477b321ca49f:docs/architecture/CELL-RUNTIME-CLASSES.md   # #662 converged shape to re-land"
+  - "control_plane cnos#667#issuecomment-5015460988 (grounding CM, content-bound)"
+
+nodes:
+  - id: "wc-2"
+    role: "keystone-root"
+    contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
+    output_id: "coherence-measurement-contract"
+    output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
+  - id: "wc-1"
+    contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
+    output_id: "cell-classes-and-contract"
+    output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
+  - id: "wc-3a"
+    contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
+    output_id: "cell-fsm"
+    output_path: "docs/architecture/CELL-FSM.md"
+  - id: "wc-3b"
+    contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
+    output_id: "wave-fsm"
+    output_path: "docs/architecture/WAVE-FSM.md"
+  - id: "wc-4"
+    contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
+    output_id: "contract-migration"
+    output_path: "docs/architecture/CONTRACT-MIGRATION.md"
+  - id: "wc-5"
+    role: "integration-seal"
+    contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
+    output_id: "cell-runtime-integration-seal"
+    output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
+
+# Edges derived over sibling_output refs only (kind: depends_on).
+edges:
+  - { from: "wc-2",  to: "wc-1",  kind: "depends_on" }   # wc-1  ← sibling_output(wc-2, coherence-measurement-contract)
+  - { from: "wc-1",  to: "wc-3a", kind: "depends_on" }   # wc-3a ← sibling_output(wc-1, cell-classes-and-contract)
+  - { from: "wc-2",  to: "wc-3a", kind: "depends_on" }   # wc-3a ← sibling_output(wc-2, coherence-measurement-contract)
+  - { from: "wc-1",  to: "wc-3b", kind: "depends_on" }   # wc-3b ← sibling_output(wc-1, cell-classes-and-contract)
+  - { from: "wc-2",  to: "wc-3b", kind: "depends_on" }   # wc-3b ← sibling_output(wc-2, coherence-measurement-contract)
+  - { from: "wc-1",  to: "wc-4",  kind: "depends_on" }   # wc-4  ← sibling_output(wc-1, cell-classes-and-contract)
+  - { from: "wc-2",  to: "wc-4",  kind: "depends_on" }   # wc-4  ← sibling_output(wc-2, coherence-measurement-contract)
+  - { from: "wc-1",  to: "wc-5",  kind: "depends_on" }   # wc-5  ← sibling_output(wc-1, cell-classes-and-contract)
+  - { from: "wc-2",  to: "wc-5",  kind: "depends_on" }   # wc-5  ← sibling_output(wc-2, coherence-measurement-contract)
+  - { from: "wc-3a", to: "wc-5",  kind: "depends_on" }   # wc-5  ← sibling_output(wc-3a, cell-fsm)
+  - { from: "wc-3b", to: "wc-5",  kind: "depends_on" }   # wc-5  ← sibling_output(wc-3b, wave-fsm)
+  - { from: "wc-4",  to: "wc-5",  kind: "depends_on" }   # wc-5  ← sibling_output(wc-4, contract-migration)
+
+edge_derivation:
+  rule: "edge A→B iff B's cn.cell.contract.v1 carries a sibling_output ref resolving producer=A + output_id=A.requested_output.id"
+  external_refs_create_no_edge: true
+  parity_required: true            # authored edge set must equal the derived set exactly (WC-5 proves it)
+  acyclic: true
+  roots: [ "wc-2" ]                # sole keystone root; all cm_ref fields import from wc-2's stable output
+  critical_path: [ "wc-2", "wc-1", "wc-3b", "wc-5" ]
+
+gates:
+  wave_authorization:
+    authority: "operator"
+    boundary: "once at the wave boundary (§9); children then scheduled by dependencies, no per-child operator gate"
+  per_child:
+    operator_authorization_required: false
+    operator_acceptance_required: true        # every child is doctrine_affecting: true
+    reason: "doctrine-affecting children require operator acceptance at merge (gate invariant 1)"
+
+completion:
+  child_completion_predicate: >-
+    for each node: requested_output produced · acceptance.predicates all PASS · class-WC V verdict PASS ·
+    a bound receipt exists · exact-SHA external-β + content-bound γ.
+  wave_level_completion_predicate: >-
+    every child_completion_predicate holds AND WC-5's integration V verdict is PASS
+    (cross-artifact vocabulary consistent · schema fixtures pass · graph parity · migration round-trips ·
+    reconcile-627 map complete · residual grounding-FAIL debt disposed exactly once).
+  terminal_node: "wc-5"
+  note: "four/six child closures do NOT by themselves prove the objective — WC-5 is the whole-wave proof."

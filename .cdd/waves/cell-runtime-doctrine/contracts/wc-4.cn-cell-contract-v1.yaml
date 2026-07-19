@@ -1,0 +1,91 @@
+# WC-4 — Shipped→specified contract migration (doctrine/schema-boundary design)
+# Closes L2-B2 (no shipped→specified adapter). It is the S2 migration sub-contract
+# (design only; the CUE/Go adapter implementation stays in #627 S2).
+# Depends on WC-1 (specified contract shape) + WC-2 (CM edge representation) —
+# resolves the missing WC-2 → WC-4 dependency the external-β flagged.
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-4"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#671"
+inputs:
+  required:
+    - ref_kind: "external"          # shipped contract schema (the State-A source shape)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "schemas/cdd/contract.cue"
+    - ref_kind: "external"          # shipped receipt schema (migration must preserve receipt semantics)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "schemas/cdd/receipt.cue"
+    - ref_kind: "external"          # grounding CM (content-bound) — L2-B2 finding this node closes
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:585955d8cdd4aa0556aa0daa0f955a00d1fdf69921c9cadea2abf25b620aebd3@.cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+    # --- sibling_output (edges WC-1 → WC-4, WC-2 → WC-4) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-1"
+      output_id: "cell-classes-and-contract"       # the specified cn.cell.contract.v1 target shape
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"  # the target contract's CM edge semantics/representation
+  optional: []
+requested_output:
+  id: "contract-migration"
+  kind: "artifact"
+  path: "docs/architecture/CONTRACT-MIGRATION.md"
+acceptance:
+  predicates:
+    - "versioned_projection_specified__cnos_cdd_contract_v1_to_cn_cell_contract_v1_with_a_named_version_and_direction"
+    - "field_by_field_preservation_rules__every_shipped_field_mapped_or_explicitly_marked_added_or_deprecated"
+    - "cm_edge_representation_consumed_from_wc2__the_target_contract_cm_ref_shape_is_wc2_output_not_re_derived"
+    - "state_a_state_b_field_enumeration__shipped_commands_and_schema_fields_vs_target_fields_enumerated_per_field"
+    - "round_trip_oracle__lossless_paths_proven_lossless_and_lossy_points_named"
+    - "negative_fixtures__reject_unknown_field_dropped_required_field_mutable_root_input_identity_only_revision_missing_adapter_case"
+    - "migration_is_doctrine_schema_boundary_only__no_cue_or_go_adapter_implemented_here"
+constraints:
+  allowed_paths:
+    - "docs/architecture/CONTRACT-MIGRATION.md"
+    - ".cdd/unreleased/wc-4/**"
+  forbidden_paths:
+    - "schemas/**"                 # writing the CUE adapter is #627 S2
+    - "src/**"
+    - ".github/workflows/**"
+    - "docs/architecture/CELL-RUNTIME-CLASSES.md"
+    - "docs/architecture/COHERENCE-MEASUREMENT.md"
+  non_goals:
+    - "implement_the_adapter_in_cue_or_go__that_is_627_S2"
+    - "edit_shipped_schemas"
+    - "redefine_the_target_contract_shape__that_is_wc1"
+    - "redefine_the_cm_edge__that_is_wc2"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting migration/preservation rules; operator final-read required at merge"
+doctrine_affecting: true
+stop_conditions:
+  - "source_doctrine_conflicts"
+  - "predecessor_output_unavailable"           # WC-1 or WC-2 output absent (readiness fails)
+  - "target_cm_edge_semantics_unresolved"
+consumers:
+  - "wc-5"
+  - "downstream:627/S2(migration-adapter-impl)"
+completion_signal: "receipt bound to output SHA; acceptance predicates all PASS; class-WC V verdict PASS; exact-SHA external-β + content-bound γ; merged to docs/architecture/CONTRACT-MIGRATION.md"

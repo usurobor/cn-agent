@@ -1,0 +1,93 @@
+# WC-3b — Wave FSM (multi-child wave orchestration lifecycle)
+# Split from the draft's single WC-3. Different state space / events / aggregation / terminals
+# from the cell FSM; a separate authority. Closes L3-G1 (wave "FSM" is a sketch, not executable).
+# Depends on WC-1 (typed contract) + WC-2 (CM, for V-gating dispatchability).
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-3b"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#671"
+inputs:
+  required:
+    - ref_kind: "external"          # #628/S1 — the runtime coherence-loop the wave FSM mechanizes
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "docs/architecture/CELL-RUNTIME.md"
+    - ref_kind: "external"          # CCNF scope-lift (wave = scope n+1 coordination)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md"
+    - ref_kind: "external"          # grounding CM (content-bound) — L3-G1 finding this node closes
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:585955d8cdd4aa0556aa0daa0f955a00d1fdf69921c9cadea2abf25b620aebd3@.cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+    # --- sibling_output (edges WC-1 → WC-3b, WC-2 → WC-3b) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-1"
+      output_id: "cell-classes-and-contract"       # child-contract shape the wave graph carries per node
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"  # CM the CC consumes; dispatchability V gates on it
+  optional: []
+requested_output:
+  id: "wave-fsm"
+  kind: "artifact"
+  path: "docs/architecture/WAVE-FSM.md"
+acceptance:
+  predicates:
+    - "wave_fsm_state_set_closed__intent_planning_required_d0_review_wave_planning_wave_review_dispatchable_executing_holding_replanning_completing_complete_complete_with_residuals"
+    - "total_event_guard_action_relation__distinct_from_the_cell_fsm_state_space_and_events"
+    - "invalid_transition_semantics_defined"
+    - "child_receipt_aggregation_rule__child_completion_predicates_aggregate_into_wave_state_without_cc_mutating_state"
+    - "total_mapping_all_eight_cc_dispositions_to_wave_transition_requests__request_planning_request_working_hold_request_human_continue_wave_complete_complete_with_residuals_block"
+    - "dependency_and_gate_dispatch_rules__wave_boundary_authorization_once_then_children_scheduled_by_dependencies_no_per_child_operator_gate"
+    - "holding_and_replanning_exits_and_terminal_semantics_defined"
+    - "wave_transition_request_shape_pinned__mirrors_the_cell_fsm_request_marker_pattern_with_guards"
+    - "separate_authority_from_the_cell_fsm__two_independently_total_machines_one_shared_transition_algebra_or_two_tagged_instances"
+    - "child_and_whole_wave_completion_predicates_defined__derived_from_child_acceptance_v_receipt_surfaces_not_a_new_contract_field"
+constraints:
+  allowed_paths:
+    - "docs/architecture/WAVE-FSM.md"
+    - ".cdd/unreleased/wc-3b/**"
+  forbidden_paths:
+    - "schemas/**"
+    - "src/**"
+    - ".github/workflows/**"
+    - "docs/architecture/CELL-FSM.md"   # WC-3a's surface
+  non_goals:
+    - "author_the_cell_fsm__that_is_wc3a"
+    - "implement_the_wave_fsm_in_go"
+    - "auto_dispatch_any_child__operator_authorizes_the_wave_boundary"
+    - "own_cm_internals_or_the_contract_envelope"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting wave-orchestration FSM; operator final-read required at merge"
+doctrine_affecting: true
+stop_conditions:
+  - "source_doctrine_conflicts"
+  - "predecessor_output_unavailable"
+  - "cc_disposition_vocabulary_incomplete"
+consumers:
+  - "wc-5"
+  - "downstream:627/S4(cc-observer-mvp)"
+  - "downstream:627/S6(planning-adapter)"
+completion_signal: "receipt bound to output SHA; acceptance predicates all PASS; class-WC V verdict PASS; exact-SHA external-β + content-bound γ; merged to docs/architecture/WAVE-FSM.md"

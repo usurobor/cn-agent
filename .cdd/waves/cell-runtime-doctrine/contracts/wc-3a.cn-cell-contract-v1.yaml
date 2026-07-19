@@ -1,0 +1,92 @@
+# WC-3a — Cell FSM (one cell instance's lifecycle)
+# Split from the draft's single WC-3 (external-β finding: cell and wave lifecycles are
+# different state spaces). Closes L3-A1/B1 (cell lifecycle authority split).
+# Depends on WC-1 (typed contract) + WC-2 (CM, for V-gating).
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-3a"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#671"
+inputs:
+  required:
+    - ref_kind: "external"          # the shipped cell-status FSM table (State A ground truth)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "src/packages/cnos.cds/skills/cds/fsm/transitions.json"
+    - ref_kind: "external"          # CCNF (repair-dispatch recursion mode, role firebreak)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md"
+    - ref_kind: "external"          # grounding CM (content-bound) — L3-A1/B1 finding this node closes
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:585955d8cdd4aa0556aa0daa0f955a00d1fdf69921c9cadea2abf25b620aebd3@.cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+    # --- sibling_output (edges WC-1 → WC-3a, WC-2 → WC-3a) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-1"
+      output_id: "cell-classes-and-contract"       # cell.class/guards + the typed contract the FSM reads
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"  # V-gating on cm_ref at the review/close edges
+  optional: []
+requested_output:
+  id: "cell-fsm"
+  kind: "artifact"
+  path: "docs/architecture/CELL-FSM.md"
+acceptance:
+  predicates:
+    - "cell_fsm_state_set_closed_and_declared__blocked_is_a_declared_member_not_only_a_transition_target"
+    - "exactly_one_authority_per_edge__reconciles_transitions_json_and_cn_issues_dispatch_and_cn_cell_resume_and_spec"
+    - "total_event_guard_action_relation__every_nonterminal_state_has_owned_exits"
+    - "invalid_transition_semantics_defined"
+    - "deterministic_or_normatively_prioritized_transition_selection__same_bundle_hash_same_decision"
+    - "review_return_conflict_resolved__the_11_1_changes_to_todo_vs_11_2_changes_to_in_progress_ambiguity_settled_to_one_edge"
+    - "cc_disposition_to_cell_transition_request_adapter__cc_selects_a_judgment_the_fsm_validates_and_effects_the_transition__cc_never_mutates_state_directly"
+    - "command_table_parity__cn_cell_and_cn_issues_surfaces_map_onto_declared_table_edges"
+    - "request_marker_pattern_pinned__typed_marker_plus_evidentiary_guards"
+    - "reachability_proved__every_declared_state_reachable_from_the_initial_state"
+constraints:
+  allowed_paths:
+    - "docs/architecture/CELL-FSM.md"
+    - ".cdd/unreleased/wc-3a/**"
+  forbidden_paths:
+    - "schemas/**"
+    - "src/**"                       # editing transitions.json / Go is #627 S4–S7 implementation
+    - ".github/workflows/**"
+    - "docs/architecture/WAVE-FSM.md"   # WC-3b's surface
+  non_goals:
+    - "author_the_wave_fsm__that_is_wc3b"
+    - "implement_the_fsm_in_go_or_edit_transitions_json"
+    - "own_cm_internals_or_the_contract_envelope"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting cell-lifecycle FSM; operator final-read required at merge"
+doctrine_affecting: true
+stop_conditions:
+  - "source_doctrine_conflicts"
+  - "predecessor_output_unavailable"           # WC-1 or WC-2 output absent
+  - "review_return_authority_unresolvable"
+consumers:
+  - "wc-5"
+  - "downstream:627/S5(worker-adapter)"
+  - "downstream:627/S7(thin-wakes)"
+completion_signal: "receipt bound to output SHA; acceptance predicates all PASS; class-WC V verdict PASS; exact-SHA external-β + content-bound γ; merged to docs/architecture/CELL-FSM.md"
