@@ -45,7 +45,7 @@ methodology:
     runner: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/runner/recursive-cell-runner.py"
     output_schema: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/runner/recursive-cell-run.schema.cue"
     invariant_assessment_template: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/runner/invariant-assessment-template.md"
-    emits: ["prompts/cc662-system.md", "prompts/cc662-l0.md", "prompts/cc662-l1.md", "prompts/cc662-l2.md", "prompts/cc662-l3.md", "prompts/cc662-l4.md", "invariant-assessment-prompt.md", "prompt-digests.json"]
+    emits: ["emission/prompts/cc662-system.md", "emission/prompts/cc662-l0.md", "emission/prompts/cc662-l1.md", "emission/prompts/cc662-l2.md", "emission/prompts/cc662-l3.md", "emission/prompts/cc662-l4.md", "emission/invariant-assessment-prompt.md", "emission/prompt-digests.json"]
     ingests: ["cc662-system.json", "cc662-l0.json", "cc662-l1.json", "cc662-l2.json", "cc662-l3.json", "cc662-l4.json", "invariant-assessment.json"]
     produces: ["publication/emission/", "publication/inputs/responses/", "publication/inputs/invariant-assessment.json", "publication/reports/cc662-system.json", "publication/reports/cc662-l0.json", "publication/reports/cc662-l1.json", "publication/reports/cc662-l2.json", "publication/reports/cc662-l3.json", "publication/reports/cc662-l4.json", "publication/recursive-cell-run.json", "publication/publication-success.json"]
     state_b: unshipped

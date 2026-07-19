@@ -43,8 +43,8 @@
       "reason": "Fixture beta reason.",
       "checklist": {
         "broken-reference": {
-          "count": 0,
-          "severity": "none"
+          "count": 1,
+          "severity": "cosmetic"
         },
         "authority-conflict": {
           "count": 0,
@@ -86,7 +86,16 @@
       }
     }
   },
-  "defect_cards": [],
+  "defect_cards": [
+    {
+      "id": "OPTIONAL-OMITTED",
+      "primary_axis": "beta",
+      "category": "broken-reference",
+      "severity": "cosmetic",
+      "evidence": "Fixture evidence for an optional-field compatibility card.",
+      "summary": "Fixture card intentionally omits optional secondary_axes."
+    }
+  ],
   "unresolved_ambiguity": [],
   "next_fixes": [
     {

@@ -142,8 +142,13 @@ def validate_witness(witness, target: str) -> None:
         raise Refusal(f"witness {target} defect_cards must be a list")
     aggregates = {axis: {category: [] for category in CHECKLISTS[axis]} for axis in AXES}
     for card in witness["defect_cards"]:
-        keys = {"id", "primary_axis", "category", "severity", "evidence", "summary", "secondary_axes"}
-        if not isinstance(card, dict) or set(card) != keys:
+        required_card_keys = {"id", "primary_axis", "category", "severity", "evidence", "summary"}
+        allowed_card_keys = required_card_keys | {"secondary_axes"}
+        if (
+            not isinstance(card, dict)
+            or not required_card_keys.issubset(card)
+            or not set(card).issubset(allowed_card_keys)
+        ):
             raise Refusal(f"witness {target} has malformed defect card")
         axis = card["primary_axis"]
         category = card["category"]
@@ -160,10 +165,12 @@ def validate_witness(witness, target: str) -> None:
             raise Refusal(f"witness {target} defect card lacks evidence")
         if not isinstance(card["summary"], str) or not card["summary"].strip():
             raise Refusal(f"witness {target} defect card lacks summary")
+        secondary_axes = card.get("secondary_axes", [])
         if (
-            not isinstance(card["secondary_axes"], list)
-            or len(card["secondary_axes"]) != len(set(card["secondary_axes"]))
-            or any(a not in AXES or a == axis for a in card["secondary_axes"])
+            not isinstance(secondary_axes, list)
+            or any(not isinstance(a, str) for a in secondary_axes)
+            or len(secondary_axes) != len(set(secondary_axes))
+            or any(a not in AXES or a == axis for a in secondary_axes)
         ):
             raise Refusal(f"witness {target} has invalid secondary_axes")
         aggregates[axis][category].append(severity)

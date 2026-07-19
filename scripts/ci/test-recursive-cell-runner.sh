@@ -92,6 +92,38 @@ publication_digest() {
 pass_output="$test_root/pass"
 emit_run "$pass_output"
 
+# The authoritative output-root-relative emission declaration matches the
+# complete fresh tree, README assessor path, and self-contained smoke snippet.
+declared_emits=(
+  emission/prompts/cc662-system.md
+  emission/prompts/cc662-l0.md
+  emission/prompts/cc662-l1.md
+  emission/prompts/cc662-l2.md
+  emission/prompts/cc662-l3.md
+  emission/prompts/cc662-l4.md
+  emission/invariant-assessment-prompt.md
+  emission/prompt-digests.json
+)
+for path in "${declared_emits[@]}"; do
+  [[ -f "$pass_output/$path" ]] || {
+    echo "FAIL declared emission path missing: $path" >&2
+    exit 1
+  }
+done
+[[ "$(find "$pass_output/emission" -type f | wc -l)" -eq "${#declared_emits[@]}" ]]
+expected_emits='    emits: ["emission/prompts/cc662-system.md", "emission/prompts/cc662-l0.md", "emission/prompts/cc662-l1.md", "emission/prompts/cc662-l2.md", "emission/prompts/cc662-l3.md", "emission/prompts/cc662-l4.md", "emission/invariant-assessment-prompt.md", "emission/prompt-digests.json"]'
+grep -Fxq "$expected_emits" "$repo_root/$cm_rel/SKILL.md"
+grep -Fq '`$RUN_ROOT/emission/invariant-assessment-prompt.md`' "$repo_root/$cm_rel/README.md"
+sed -n '/^## Path-base boundary$/,$p' "$repo_root/$cm_rel/README.md" |
+  grep -Fxq 'CM=src/packages/cnos.cdd/skills/cdd/measure/recursive-cell'
+
+# Positive standard witness: one nonempty card omits optional secondary_axes.
+jq -e '
+  (.defect_cards | length) == 1 and
+  (.defect_cards[0].id == "OPTIONAL-OMITTED") and
+  (.defect_cards[0] | has("secondary_axes") | not)
+' "$fixtures/responses-pass/cc662-l1.json" >/dev/null
+
 # Mirror the real coh path contract: authority arguments are root-relative.
 if "$fake_coh" --target cc662-system \
   --registry "$pinned_root/$cm_rel/calibration/662/registry.tsc" \
@@ -278,11 +310,40 @@ for variant in invalid-axis extra-field missing-fix; do
       jq '.next_fixes = [{"axis":"beta"}]' \
         "$fixtures/responses-pass/cc662-l1.json" >"$malformed/cc662-l1.json" ;;
   esac
-  malformed_output="$test_root/malformed-$variant"
+  malformed_output="$test_root/malformed-next-fixes-$variant"
   emit_run "$malformed_output"
   expect_refusal "malformed next_fixes $variant" \
     ingest_run "$malformed_output" "$malformed" "$fixtures/invariants-pass.json"
   assert_unpublished "$malformed_output" "malformed next_fixes $variant"
+done
+
+# Refuse malformed optional-card shapes while omission remains valid above.
+for variant in secondary-nonlist secondary-primary secondary-invalid secondary-duplicate extra-field; do
+  malformed="$test_root/secondary-axes-$variant"
+  mkdir -p "$malformed"
+  cp "$fixtures"/responses-pass/*.json "$malformed/"
+  case "$variant" in
+    secondary-nonlist)
+      jq '.defect_cards[0].secondary_axes = "gamma"' \
+        "$fixtures/responses-pass/cc662-l1.json" >"$malformed/cc662-l1.json" ;;
+    secondary-primary)
+      jq '.defect_cards[0].secondary_axes = ["beta"]' \
+        "$fixtures/responses-pass/cc662-l1.json" >"$malformed/cc662-l1.json" ;;
+    secondary-invalid)
+      jq '.defect_cards[0].secondary_axes = ["delta"]' \
+        "$fixtures/responses-pass/cc662-l1.json" >"$malformed/cc662-l1.json" ;;
+    secondary-duplicate)
+      jq '.defect_cards[0].secondary_axes = ["gamma","gamma"]' \
+        "$fixtures/responses-pass/cc662-l1.json" >"$malformed/cc662-l1.json" ;;
+    extra-field)
+      jq '.defect_cards[0].unexpected = true' \
+        "$fixtures/responses-pass/cc662-l1.json" >"$malformed/cc662-l1.json" ;;
+  esac
+  malformed_output="$test_root/malformed-card-$variant"
+  emit_run "$malformed_output"
+  expect_refusal "malformed optional defect-card field $variant" \
+    ingest_run "$malformed_output" "$malformed" "$fixtures/invariants-pass.json"
+  assert_unpublished "$malformed_output" "malformed optional defect-card field $variant"
 done
 
 # Refuse a witness whose standard target identity moved.

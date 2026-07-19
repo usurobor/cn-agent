@@ -54,8 +54,9 @@ RUNNER="$TARGET/$CM_REL/runner/recursive-cell-runner.py"
 Produce one exact standard TSC v3.2.4 response for each emitted target prompt,
 named `cc662-system.json` and `cc662-l0.json` through `cc662-l4.json` under
 `$RESPONSES`. Produce `$INVARIANTS` from
-`$RUN_ROOT/invariant-assessment-prompt.md`; it is a separate typed document,
-not an extension to any TSC witness. Then ingest all seven inputs together:
+`$RUN_ROOT/emission/invariant-assessment-prompt.md`; it is a separate typed
+document, not an extension to any TSC witness. Then ingest all seven inputs
+together:
 
 ```bash
 "$RUNNER" ingest \
@@ -105,6 +106,7 @@ root. Installed-package activation is deliberately refused until TSC supports
 separate authority and target bases:
 
 ```bash
+CM=src/packages/cnos.cdd/skills/cdd/measure/recursive-cell
 "$CM/resolve-authority.sh" --source-root "$PWD"
 ./scripts/ci/smoke-recursive-cell-package.sh
 ```
