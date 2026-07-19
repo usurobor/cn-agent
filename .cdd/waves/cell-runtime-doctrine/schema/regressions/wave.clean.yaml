@@ -1,0 +1,40 @@
+# A MINIMAL but COMPLETE cn.wave.v1 instance that PASSES `cue vet ./.. ./wave.clean.yaml -d '#Wave'`.
+# The bad fixtures beside it each apply exactly ONE R7-blocker mutation to this base and are REJECTED
+# by cue vet. (The real wave.cn-wave-v1.yaml is also vetted by the Makefile `clean` target.)
+schema: cn.wave.v1
+wave: "671"
+revision: "R8"
+goal: "minimal valid wave"
+intent: { schema: "cn.intent.v1", id: "intent-x", locator: "sha256:0@intent.yaml" }
+grounding:
+  source_snapshot: { ref_kind: "external", locator: { kind: "control_plane", ref: "cnos#667", revision: "sha256:9d@src.md" } }
+  alpha_derivative: { ref_kind: "external", locator: { kind: "repo_artifact", repo: "usurobor/cnos", resolved_at: "authorized_wave_commit", path: "grounding-cm.md", content_hash: "sha256:d6", references_source: "sha256:9d" } }
+  reconcile_627_ref: { ref_kind: "external", locator: { kind: "repo_artifact", repo: "usurobor/cnos", resolved_at: "authorized_wave_commit", path: "reconcile-627.md", content_hash: "sha256:d0" } }
+external_roots:
+  - "repo_artifact usurobor/cnos@6e40d93:docs/architecture/CELL-RUNTIME.md"
+contract_ref_resolution: { rule: "resolve relative to the authorized wave commit", authorized_wave_commit: "tip", per_child_content_binding: "node.contract_sha256", stale_on: "changed blob" }
+nodes:
+  - { id: "wc-2", role: "keystone-root", contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml", contract_sha256: "80e9eb91410f9072c0189b110e85a1f07166b80afdd42082fb0386c294c9d86d", output_id: "coherence-measurement-contract", output_path: "docs/architecture/COHERENCE-MEASUREMENT.md" }
+  - { id: "wc-1", contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml", contract_sha256: "0a69ca7c55ed8f4a3ae3d8ecfc8b52bf1829e77e2023664240220ae8cf9e98a5", output_id: "cell-classes-and-contract", output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md" }
+edges:
+  - { from: "wc-2", to: "wc-1", kind: "depends_on" }
+edge_derivation: { rule: "edge A->B iff B has sibling_output(A)", external_refs_create_no_edge: true, parity_required: true, acyclic: true, roots: [ "wc-2" ], critical_path: [ "wc-2", "wc-1" ] }
+gates:
+  wave_authorization: { authority: "operator", boundary: "once at the wave boundary", revision_bound: "binds to the authorized wave commit" }
+  per_child: { operator_authorization_required: false, operator_acceptance_required: true, reason: "doctrine-affecting" }
+stop_conditions:
+  - { trigger: "stale_grounding", detect: "source no longer resolves", effect: "hold", transition: "executing -> holding", receipt: "stop-receipt{...}" }
+completion:
+  construction_set_N: [ "wc-1", "wc-2" ]
+  terminal_node: "wc-5"
+  wave_complete: "all(N child_complete) AND child_complete(terminal)"
+  note: "wave_complete = all(N) AND wc5_complete"
+  child_complete: { kind: "derived-per-node-predicate", required_constituents: [ "requested_output_produced", "acceptance_all_pass", "class_v_pass", "receipt_bound" ], definition: { all: [ { record: "requested_output_produced" }, { record: "acceptance_all_pass" }, { record: "class_v_pass" }, { record: "receipt_bound" }, { record: "evidence_bound" } ] } }
+  predicates:
+    - { name: "wave_complete", expr: { and: [ { all_over_N: "child_complete" }, { pred: "wc5_complete" } ] } }
+  fixtures:
+    - name: "all-complete"
+      records:
+        wc-1: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true, evidence_bound: true }
+      claimed_child_complete: { wc-1: true }
+      expected: { wc5_ready: true, wc5_complete: true, wave_complete: true }

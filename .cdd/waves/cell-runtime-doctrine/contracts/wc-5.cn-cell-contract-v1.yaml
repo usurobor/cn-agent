@@ -29,7 +29,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#reconcile-627"
-        revision: "sha256:d01e23b2fbe3bb197a8b421d62fcf31f85da3743fb3a8a83661b088da086d857@.cdd/waves/cell-runtime-doctrine/reconcile-627.md"
+        revision: "sha256:795ef4a8b9b1010a92b2bbdc17624bfb19637e350b277582be685be87bbf5c54@.cdd/waves/cell-runtime-doctrine/reconcile-627.md"
     # --- sibling_output (edges WC-1,2,3a,3b,4 → WC-5) ---
     - ref_kind: "sibling_output"
       producer: "wc-1"
@@ -50,7 +50,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:65bf64e35d31742a2fbff5950bfe71978ac5e8dfe645a1fae4a6f98c6b44fa84@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:99cd008da97dc4faf8c14cb9790d6a1f8187840f621c62554df27d27457a4013@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "cell-runtime-integration-seal"

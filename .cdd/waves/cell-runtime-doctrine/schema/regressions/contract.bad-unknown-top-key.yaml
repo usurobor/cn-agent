@@ -102,3 +102,4 @@ stop_conditions:
   - "source_doctrine_conflicts"
   - "fifth_canonical_schema_proposed__d9_four_schema_boundary_is_settled_no_authorized_reopening"
   - "grounding_cm_ref_unresolvable_or_stale"
+oracles: []

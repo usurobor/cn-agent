@@ -59,7 +59,7 @@ inputs:
   optional: []
 requested_output:
   id: "coherence-measurement-contract"     # the cm_ref interface every other node imports
-  kind: "artifact"
+  kind: "nonsense"
   path: "docs/architecture/COHERENCE-MEASUREMENT.md"
 acceptance:
   predicates:

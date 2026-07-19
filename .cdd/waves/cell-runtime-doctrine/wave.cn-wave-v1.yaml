@@ -1,15 +1,24 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R7)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R8)
 #
 # Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
 # resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
 # MECHANICAL PROJECTION of the child contracts' sibling_output refs: an edge A→B exists iff B's
 # contract carries a sibling_output ref whose producer+output_id resolves to A's requested_output.id.
 # `external` refs (incl. the grounding CM and #628/S1) create NO edge. Edges here are authored for
-# readability but MUST hold exact parity with the derived set (validate.py check (c) proves it).
+# readability; exact parity with the derived set is a DEFERRED-GO check (WC-3b/WC-5; see schema/README.md).
+#
+# STRUCTURAL pre-authorization validation of THIS file is `cue vet ./schema/ ./wave.cn-wave-v1.yaml
+# -d '#Wave'` (Go+CUE repo — no Python). The closed #Wave definition natively rejects the R7
+# wave-envelope + completion blockers (unknown/mutated top-level key, empty external_roots, missing
+# revision-bound authorization fields, empty contract_ref_resolution, a deleted/flipped edge_derivation
+# constant, a deleted/literal-mutated completion formula, a record missing evidence_bound, a bool given
+# as a string, a duplicate node/edge). PROCEDURAL checks (DAG acyclicity, edge parity, ref/hash
+# resolution, completion-evidence derivation) are named-and-deferred to the Go validators WC-1/WC-3b
+# and #627 S2–S3 ship.
 schema: cn.wave.v1
 wave: "671"
-# wave-revision: R7
-revision: "R7"
+# wave-revision: R8
+revision: "R8"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -48,7 +57,7 @@ grounding:
       repo: "usurobor/cnos"
       resolved_at: "authorized_wave_commit"
       path: ".cdd/waves/cell-runtime-doctrine/reconcile-627.md"
-      content_hash: "sha256:d01e23b2fbe3bb197a8b421d62fcf31f85da3743fb3a8a83661b088da086d857"
+      content_hash: "sha256:795ef4a8b9b1010a92b2bbdc17624bfb19637e350b277582be685be87bbf5c54"
 
 # External roots (immutable; consumed by nodes, create no wave edge)
 external_roots:
@@ -72,41 +81,41 @@ contract_ref_resolution:
   authorized_wave_commit: "tip of wave/671-cell-runtime-doctrine at operator authorization (bound by κ at the wave boundary)"
   per_child_content_binding: >-
     Each node additionally carries node.contract_sha256 — the SHA-256 of the contract blob at the
-    authorized commit — so resolution is independently content-addressable and validate.py check (b)
-    can prove every contract_ref resolves to its pinned bytes.
+    authorized commit — so resolution is independently content-addressable and the DEFERRED-GO ref/hash
+    resolver (WC-1/#627 S2) can prove every contract_ref resolves to its pinned bytes.
   stale_on: "any contract_ref path resolving to a different blob (different SHA-256) than at the authorized commit"
 
 nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
-    contract_sha256: "80e9eb91410f9072c0189b110e85a1f07166b80afdd42082fb0386c294c9d86d"
+    contract_sha256: "74614fbcc0f66ec4527f3b37f336965a2e4e8914fbe238cacbf16046af6b2ede"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
-    contract_sha256: "0a69ca7c55ed8f4a3ae3d8ecfc8b52bf1829e77e2023664240220ae8cf9e98a5"
+    contract_sha256: "986c9cf84558373006e0821f22f90e43c597ff03a8520d56f08e8737d54fbd3b"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
-    contract_sha256: "6dd9c44ea5c4d93190a6016fddef0c0dfbcc25ebaa8196afd923902fd89752cb"
+    contract_sha256: "04470fe13c0a371196d712d23b36717ea5ee43b367f9c2427bb2de95d29b420d"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
-    contract_sha256: "f8aa30c7feeb87743b5dc7bc87964fe70b80f29492089a8aeaeb56ddc6242cc7"
+    contract_sha256: "d27ffbb3355906845d65f08b7396c5aee618242f6d1077cdc7dcb2307cdf150e"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
-    contract_sha256: "c1d413b0300da6dc1092fb6b882815727daaf64467a6ed39ab634b1cbb874db1"
+    contract_sha256: "f19d0458eaa8a928dcc09069c010c2950ddda5d2e5b6ad078bbb7602354496eb"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
-    contract_sha256: "615eaeea67d8b20f93c8d2c22017733c9a0321e9ff56c0894ab780cbf1d317d0"
+    contract_sha256: "8cca31e9953232643b0364202753e7e3883e2a41cc038234c1c146ce6928ee36"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 
@@ -128,7 +137,7 @@ edges:
 edge_derivation:
   rule: "edge A→B iff B's cn.cell.contract.v1 carries a sibling_output ref resolving producer=A + output_id=A.requested_output.id"
   external_refs_create_no_edge: true
-  parity_required: true            # authored edge set must equal the derived set exactly (validate.py check (c))
+  parity_required: true            # authored edge set must equal the derived set exactly (DEFERRED-GO edge-parity validator)
   acyclic: true
   roots: [ "wc-2" ]                # sole keystone root; all cm_ref fields import from wc-2's stable output
   critical_path: [ "wc-2", "wc-1", "wc-3b", "wc-5" ]
@@ -157,7 +166,7 @@ stop_conditions:
     transition: "executing → holding"
     receipt: "stop-receipt{type: failed_predecessor, node: <successor>, evidence: missing_or_failed_producer}"
   - trigger: "invalid_graph"
-    detect: "edge parity break OR a cycle appears (validate.py check (c)/(d) would fail)"
+    detect: "edge parity break OR a cycle appears (the DEFERRED-GO parity/DAG validator would FAIL)"
     effect: "replan"
     transition: "executing → replanning"
     receipt: "stop-receipt{type: invalid_graph, node: wave, evidence: parity_diff_or_cycle}"
@@ -177,20 +186,26 @@ stop_conditions:
     transition: "any → holding (operator decision required to reopen a settled boundary)"
     receipt: "stop-receipt{type: unresolved_d9_at_wave_scope, node: wave, evidence: fifth_schema_proposal}"
 
-# Non-recursive whole-wave completion (BLOCKER-1/2 repair). The predicates and the fixtures below are
-# AUTHORED AS EVIDENCE-DERIVED STRUCTURED DATA (not prose, not naked booleans): validate.py check (g)
-# builds the predicate dependency graph FROM the `expr` ASTs (deriving edges by walking each AST — not
-# a hard-coded or prose graph), proves it acyclic by real topological analysis (a tautology
-# `wave_complete := wave_complete` becomes a self-edge → cycle → FAIL), and EVALUATES every fixture.
+# Non-recursive whole-wave completion (BLOCKER-1/2 repair).
 #
-# child_complete(n) is NOT a fixture boolean — it is DERIVED, per node, as the AND over node n's OWN
-# bound constituent record: {requested_output_produced (content identity), acceptance_all_pass (every
-# acceptance/oracle result), class_v_pass (class-WC V verdict), receipt_bound (receipt identity/hash),
-# evidence_bound (content-bound β/γ evidence)}. wc5_ready, wc5_complete, and wave_complete are DERIVED
-# from those records. A supplied `claimed_child_complete: true` NOT backed by the constituents, a
-# definition that ignores a required constituent, or a record missing a constituent → FAIL (g).
+# STRUCTURE (enforced NOW by `cue vet` against #Wave, R8):
+#   * `wave_complete` is a FIXED required governing-formula const (all(N) AND terminal) — a deleted or
+#     literal-mutated formula is rejected natively (required + pinned value), not by a validator;
+#   * each fixture's per-node `records` value is a CLOSED 5-bool struct #ChildRecord — every constituent
+#     {requested_output_produced, acceptance_all_pass, class_v_pass, receipt_bound, evidence_bound} is
+#     required and typed bool, so a record MISSING evidence_bound, or a bool given as the string "false"
+#     (e.g. receipt_bound: "false"), is rejected by the schema.
 #
-# Predicate AST grammar (evaluated by validate.py over a fixture's per-node `records`):
+# DERIVATION (named-and-deferred to Go — WC-3b/WC-5, #627 S2–S3): that child_complete(n) is the AND over
+# node n's OWN bound constituent record; that wc5_ready/wc5_complete/wave_complete are DERIVED from those
+# records; that the predicate dependency graph (walked from the `expr` ASTs) is acyclic (a tautology
+# `wave_complete := wave_complete` -> self-cycle -> FAIL); and that each fixture's computed value equals
+# its authored `expected`. These are procedural evaluations CUE does not express; the Go completion-
+# evidence validator (WC-3b/WC-5) computes them when the wave executes. The predicate/fixture data below
+# is the authored input to that validator (structurally typed by #Wave: predicates[].{name,expr};
+# fixtures[].{records,claimed_child_complete,expected}).
+#
+# Predicate AST grammar (input to the deferred-Go evaluator, over a fixture's per-node `records`):
 #   {child_complete: "<n>"}         -> DERIVE child_complete(n) from records[n] via the definition below
 #   {all_over_N: "child_complete"}  -> AND of derived child_complete(n) for n in construction_set_N
 #   {pred: "<name>"}                -> evaluate predicate <name> (adds edge self -> <name>)
@@ -199,6 +214,8 @@ stop_conditions:
 completion:
   construction_set_N: [ "wc-1", "wc-2", "wc-3a", "wc-3b", "wc-4" ]   # NON-recursive: excludes wc-5
   terminal_node: "wc-5"
+  # PINNED governing formula (const; #Wave requires this exact string). NON-recursive: all(N) AND terminal.
+  wave_complete: "all(N child_complete) AND child_complete(terminal)"
   note: "four/six child closures do NOT by themselves prove the objective — wave_complete = all(N) AND wc5_complete."
 
   # child_complete(n) DERIVATION — the AND over node n's OWN constituent record. Defined for n in
@@ -235,8 +252,9 @@ completion:
           - { pred: "wc5_complete" }
 
   # Fixtures: per-node constituent `records` + an optional `claimed_child_complete` (which MUST agree
-  # with the constituent-derived value) + AUTHORED `expected`. validate.py derives child_complete(n)
-  # from each record, computes every predicate, and asserts it equals `expected` (reject on mismatch).
+  # with the constituent-derived value) + AUTHORED `expected`. The DEFERRED-GO completion-evidence
+  # validator derives child_complete(n) from each record, computes every predicate, and asserts it
+  # equals `expected` (reject on mismatch). #Wave (cue vet) fixes the SHAPE of records/expected now.
   fixtures:
     - name: "all-incomplete"
       note: "no node's constituents hold; wc-5 not complete"

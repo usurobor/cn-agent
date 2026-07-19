@@ -5,7 +5,7 @@
 schema: cn.cell.contract.v1
 cell:
   id: "wc-2"
-  class: "working"                 # WC — its output is a repo doctrine artifact (per the settled telos rule)
+  class: "nonsense"                 # WC — its output is a repo doctrine artifact (per the settled telos rule)
   mode: "doctrine"                 # spec-authoring WC mode
   protocol: "cds"
   matter_domain: "doctrine"

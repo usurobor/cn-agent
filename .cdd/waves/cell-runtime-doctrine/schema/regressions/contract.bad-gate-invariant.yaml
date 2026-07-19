@@ -95,7 +95,7 @@ constraints:
     - "file_or_dispatch_child_issues"
 gates:
   operator_authorization_required: false     # pre-authorized at the wave boundary (§9), not per-child
-  operator_acceptance_required: true         # doctrine_affecting ⇒ acceptance required (gate invariant 1)
+  operator_acceptance_required: false         # doctrine_affecting ⇒ acceptance required (gate invariant 1)
   reason: "doctrine-affecting CM backbone; operator final-read required at merge"
 doctrine_affecting: true
 stop_conditions:

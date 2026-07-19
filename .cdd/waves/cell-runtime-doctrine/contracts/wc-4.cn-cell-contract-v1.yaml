@@ -50,7 +50,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:65bf64e35d31742a2fbff5950bfe71978ac5e8dfe645a1fae4a6f98c6b44fa84@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:99cd008da97dc4faf8c14cb9790d6a1f8187840f621c62554df27d27457a4013@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "contract-migration"
