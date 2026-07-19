@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Enforce the v0.2 authority path-base and activation contract.
+# Enforce the v0.3 authority path-base and activation contract.
 
 set -euo pipefail
 
@@ -33,5 +33,8 @@ cm="$root/$relative"
 [[ -f "$cm/calibration/662/registry.tsc" ]] || { echo "FAIL missing registry" >&2; exit 1; }
 [[ -f "$cm/INSTRUCTION.md" ]] || { echo "FAIL missing instruction" >&2; exit 1; }
 [[ -x "$cm/calibration/662/verify-target.sh" ]] || { echo "FAIL preflight is not executable" >&2; exit 1; }
+[[ -x "$cm/runner/recursive-cell-runner.py" ]] || { echo "FAIL State-A runner is not executable" >&2; exit 1; }
+[[ -f "$cm/runner/recursive-cell-run.schema.cue" ]] || { echo "FAIL missing State-A output schema" >&2; exit 1; }
+[[ -f "$cm/runner/invariant-assessment-template.md" ]] || { echo "FAIL missing invariant-assessment template" >&2; exit 1; }
 "$cm/instruction/assemble-instruction.sh" --check
 printf 'PASS source authority base=repository-root cm=%s\n' "$relative"

@@ -5,11 +5,11 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 core="$here/TSC-SELF-MEASURE-v3.2.4.md"
-supplement="$here/CNOS-SUPPLEMENT-v0.2.0.md"
+supplement="$here/CNOS-SUPPLEMENT-v0.3.0.md"
 canonical="$here/../INSTRUCTION.md"
 expected_core="ca26d7a1a4dc6bd73e0afff558ed0342d42daeee193d4169de2c51b762759391"
-expected_supplement="27700ac9e84bbc2cec9655ec67e6f2bf447064406766b8f34494bb94035682f6"
-expected_composite="0b7e26a2fce364c2f89bbd04a72e8e1068cb7339de9e9b9e9d33e520eff75645"
+expected_supplement="3ad7c80ad318b2f736738a444da189b72712dc61914a52f183c7c7c584e377ee"
+expected_composite="de0414bac1a086d6ed3ac5c7d84cd6293517eb83c920f6c4a0723f5dfac06a3a"
 
 mode="emit"
 output=""

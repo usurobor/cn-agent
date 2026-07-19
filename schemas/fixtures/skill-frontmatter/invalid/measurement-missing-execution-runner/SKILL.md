@@ -1,6 +1,6 @@
 ---
-name: valid-measurement
-description: Measurement fixture for TSC-compatible methodology validation.
+name: measurement-missing-execution-runner
+description: Measurement fixture for State-A execution path validation.
 governing_question: Does the bounded methodology fixture resolve?
 artifact_class: measurement
 kata_surface: none
@@ -21,11 +21,11 @@ methodology:
   default_mode: hybrid
   execution:
     state: State-A
-    runner: "schemas/fixtures/skill-frontmatter/measurement-assets/preflight.sh"
+    runner: "schemas/fixtures/skill-frontmatter/measurement-assets/absent-runner.sh"
     output_schema: "schemas/fixtures/skill-frontmatter/measurement-assets/output.cue"
     invariant_assessment_template: "schemas/fixtures/skill-frontmatter/measurement-assets/invariant-template.md"
-    emits: ["fixture.prompt", "prompt-digests.json"]
-    ingests: ["fixture-response.json", "invariants.json"]
+    emits: ["fixture.prompt"]
+    ingests: ["fixture-response.json"]
     produces: ["fixture-report.json"]
     state_b: unshipped
   consistency:

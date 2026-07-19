@@ -2,6 +2,11 @@
 
 Status: calibration source only; not held out; no standing conferred.
 
+All semantic rows below are historical exploratory readings produced before
+the R3 instrument. They remain defect evidence but are superseded for
+consistency sampling and cannot count toward a later R3 k=3 claim. R3 generated
+no new semantic sample.
+
 - Originating external-CC addendum: PR #667 comment `5015460988`
 - Scope boundary: this calibration judges frozen R7 only; R8 and later matter
   are different targets and are not covered by these readings.

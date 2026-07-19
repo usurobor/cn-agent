@@ -15,56 +15,74 @@ From the cnos source root:
 CM=src/packages/cnos.cdd/skills/cdd/measure/recursive-cell
 "$CM/instruction/assemble-instruction.sh" --check
 sha256sum "$CM/INSTRUCTION.md"
-# 0b7e26a2fce364c2f89bbd04a72e8e1068cb7339de9e9b9e9d33e520eff75645
+# de0414bac1a086d6ed3ac5c7d84cd6293517eb83c920f6c4a0723f5dfac06a3a
 ```
 
 `assemble-instruction.sh --output <path>` is the exact checked assembly
 command. It refuses changed core, supplement, or composite bytes.
 
-## Exact #662 R7 route
+## Exact #662 R7 State-A route
 
 The TSC CLI resolves manifest paths from `--root`. Materialize the source CM
-inside the frozen target checkout, then run its fail-closed preflight:
+inside the frozen target checkout. The runner then emits all six registered
+prompts plus the separate H01-H13 assessment prompt in one clean step:
 
 ```bash
 CNOS_SOURCE=/path/to/cnos-cycle-669
 TSC_SOURCE=/path/to/tsc-at-26aab5023f03dc7d0abf82e5fdba20134fc6adad
 TARGET=/tmp/cnos-662-r7
-PROMPT=/tmp/cc662-system.prompt.md
-RESPONSE=/tmp/cc662-system.response.json
-REPORTS=/tmp/cc662-system-reports
+RUN_ROOT=/tmp/cnos-662-r7-run
+RESPONSES=/tmp/cnos-662-r7-responses
+INVARIANTS=/tmp/cnos-662-r7-invariant-assessment.json
 CM_REL=src/packages/cnos.cdd/skills/cdd/measure/recursive-cell
 COH="$TSC_SOURCE/engine/ocaml/_build/default/bin/main.exe"
+CM_REVISION="$(git -C "$CNOS_SOURCE" rev-parse HEAD)"
+TSC_REVISION=26aab5023f03dc7d0abf82e5fdba20134fc6adad
 
 git -C "$CNOS_SOURCE" worktree add --detach "$TARGET" \
   a0d39293a27cfe57b49dacff696345b1ee2cdb40
 mkdir -p "$TARGET/$(dirname "$CM_REL")"
 cp -a "$CNOS_SOURCE/$CM_REL" "$TARGET/$(dirname "$CM_REL")/"
+RUNNER="$TARGET/$CM_REL/runner/recursive-cell-runner.py"
 
-"$TARGET/$CM_REL/calibration/662/verify-target.sh" "$TARGET"
-"$CNOS_SOURCE/scripts/ci/validate-tsc-targets.sh" \
-  --registry "$TARGET/$CM_REL/calibration/662/registry.tsc" \
-  --target-root "$TARGET" --target cc662-system
-
-"$COH" --mode llm --target cc662-system \
-  --registry "$TARGET/$CM_REL/calibration/662/registry.tsc" \
-  --instruction "$TARGET/$CM_REL/INSTRUCTION.md" --root "$TARGET" \
-  --emit-prompt "$PROMPT"
-sha256sum "$PROMPT" >"$PROMPT.sha256"
-sha256sum -c "$PROMPT.sha256"
-
-# Produce RESPONSE from exactly PROMPT, then reverify before ingestion.
-sha256sum -c "$PROMPT.sha256"
-"$COH" --mode hybrid --target cc662-system \
-  --registry "$TARGET/$CM_REL/calibration/662/registry.tsc" \
-  --instruction "$TARGET/$CM_REL/INSTRUCTION.md" --root "$TARGET" \
-  --llm-response "$RESPONSE" --output "$REPORTS"
+"$RUNNER" emit \
+  --coh "$COH" --root "$TARGET" --output "$RUN_ROOT" \
+  --engine-revision "$TSC_REVISION" --cm-revision "$CM_REVISION" \
+  --timestamp 2026-07-19T00:00:00Z
 ```
 
-Repeat the mechanical command three times and use `coh consistency-spread`
-for three semantic responses before making any consistency claim. The bundled
-self target demonstrates prompt emission, digest verification, three raw
-mechanical runs, and external-response smoke ingestion.
+Produce one exact standard TSC v3.2.4 response for each emitted target prompt,
+named `cc662-system.json` and `cc662-l0.json` through `cc662-l4.json` under
+`$RESPONSES`. Produce `$INVARIANTS` from
+`$RUN_ROOT/invariant-assessment-prompt.md`; it is a separate typed document,
+not an extension to any TSC witness. Then ingest all seven inputs together:
+
+```bash
+"$RUNNER" ingest \
+  --coh "$COH" --root "$TARGET" --output "$RUN_ROOT" \
+  --engine-revision "$TSC_REVISION" --cm-revision "$CM_REVISION" \
+  --timestamp 2026-07-19T00:00:00Z \
+  --responses "$RESPONSES" --invariants "$INVARIANTS"
+```
+
+The output root contains the six prompts, `prompt-digests.json`, the generated
+invariant-assessment prompt, six canonical reports under `reports/`, and one
+schema-validated `recursive-cell-run.json`. The latter binds the actual coh
+executable, active runner, schema, template, prompts, responses, reports,
+assessment, and target bytes. `declared_cm_revision` and
+`declared_engine_revision` are explicitly caller assertions; byte identity is
+carried by individual SHA-256 fields and `cm_authority_bundle_sha256`. That
+bundle hashes, in sorted CM-relative path order, each path, NUL, byte length,
+NUL, file bytes, NUL across the instruction, runner, schema, assessment
+template, registry, preflight, and six manifests. The result also computes the
+unweighted L0-L4 geometric aggregate, applies H01-H13, and emits exactly one
+deterministic bottleneck and disposition.
+
+`scripts/ci/test-recursive-cell-runner.sh` covers this orchestration, schema,
+math, gating, provenance, and refusal behavior with deterministic fixture
+responses and a strict fake CLI. It does not claim real-engine integration or
+semantic calibration. The earlier bundled self target separately preserves one
+real pinned-engine external-response smoke ingestion and three mechanical runs.
 
 ## Path-base boundary
 
@@ -77,5 +95,7 @@ separate authority and target bases:
 ./scripts/ci/smoke-recursive-cell-package.sh
 ```
 
-Arbitrary methodology declaration loading remains unshipped. Do not use #662
-as a held-out target: it designed this CM and confers no standing.
+Arbitrary State-B methodology and target loading remains unshipped. Do not use
+#662 as a held-out target: it designed this CM and confers no standing. The
+historical N=1 semantic sample was produced with the prior instrument and is
+superseded after R3; it cannot count toward any later k=3 consistency claim.

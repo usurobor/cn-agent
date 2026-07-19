@@ -1,7 +1,8 @@
-# Candidate CM self-measurement — v0.2 repair
+# Historical candidate CM self-measurement — v0.2 repair
 
 Status: same-author diagnostic only; no independent, consistency,
-admissibility, or held-out standing.
+admissibility, or held-out standing. R3 supersedes this instrument and sample;
+see `supersession-r3.json`.
 
 `target.tsc` is the exact ordered 55-file source bundle and intentionally
 excludes every measurement output in this directory. `receipt.json` binds the
@@ -20,15 +21,18 @@ engine revision/version, witness boundary, and UTC run times.
 - Semantic N=1: alpha `0.94`, beta `0.64`, gamma `0.44`, C-sigma
   `0.6420765882044609`, gamma bottleneck; zero standing.
 
-Replay from the cnos root with the pinned engine:
+Replay requires the historical cnos evidence revision; current R3 bytes use a
+different instruction and must not be mixed with this response:
 
 ```bash
 COH=/path/to/tsc/engine/ocaml/_build/default/bin/main.exe
+HISTORICAL_REVISION=c8d680bf822b46b9f931d62b07d68f50ade1b07e
 BASE=src/packages/cnos.cdd/skills/cdd/measure/recursive-cell
 REGISTRY="$BASE/calibration/self/registry.tsc"
 INSTRUCTION="$BASE/INSTRUCTION.md"
 PROMPT=/tmp/recursive-cell-self.prompt.md
 
+test "$(git rev-parse HEAD)" = "$HISTORICAL_REVISION"
 "$BASE/instruction/assemble-instruction.sh" --check
 "$COH" --mode llm --target recursive-cell-self --registry "$REGISTRY" \
   --instruction "$INSTRUCTION" --root . --emit-prompt "$PROMPT"
@@ -45,3 +49,5 @@ sha256sum "$PROMPT"
 The semantic response was produced by a same-author OpenAI Codex hosted
 activation; the host exposes the GPT-5 family but no immutable model revision.
 That limitation is recorded rather than promoted into a provenance claim.
+No R3 semantic sample was generated. The historical N=1 response cannot count
+toward a later k=3 consistency claim because R3 changed the instrument.

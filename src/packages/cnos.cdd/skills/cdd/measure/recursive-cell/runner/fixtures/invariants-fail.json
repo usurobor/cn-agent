@@ -1,0 +1,119 @@
+{
+  "schema": "cnos-recursive-cell-invariants/0.1",
+  "target": "cc662-system",
+  "assessment_prompt_sha256": "2c633ba136501c08449d3514f82876faabeaec9c8cd6379c0fc3bd9b50ce2445",
+  "prompt_sha256": {
+    "cc662-system": "7f57a995198e7e254d8fb51a5799000bb923a7a613c485af2131a4cff994cba5",
+    "cc662-l0": "0e5561e27cd4f2bddf49ddb1026aa2f848a469cd2538e21ce79487a0c24be6ee",
+    "cc662-l1": "407b3d05235f7fb5176d18bed1f5a5a63abd4f49c8a66c6791953b5510a1daf0",
+    "cc662-l2": "9a5b2d25435c0bc36af774640be084c7103b55a3697ef9ba4c70a64a9a82ce6a",
+    "cc662-l3": "55ea996b3e93e88d19fae8bf57ae7c886cf2a52a704e784f7e78cc2b990041b0",
+    "cc662-l4": "75269de545f1cef965d347b9dbfea28126c2cef055dd661b822e94cc8b491c70"
+  },
+  "items": [
+    {
+      "id": "H01",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H01.",
+      "level": "system",
+      "primary_axis": "alpha",
+      "next_mca": null
+    },
+    {
+      "id": "H02",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H02.",
+      "level": "L0",
+      "primary_axis": "alpha",
+      "next_mca": null
+    },
+    {
+      "id": "H03",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H03.",
+      "level": "L0",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H04",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H04.",
+      "level": "L1",
+      "primary_axis": "alpha",
+      "next_mca": null
+    },
+    {
+      "id": "H05",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H05.",
+      "level": "L1",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H06",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H06.",
+      "level": "L2",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H07",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H07.",
+      "level": "L2",
+      "primary_axis": "gamma",
+      "next_mca": null
+    },
+    {
+      "id": "H08",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H08.",
+      "level": "L2",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H09",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H09.",
+      "level": "L3",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H10",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H10.",
+      "level": "L3",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H11",
+      "status": "fail",
+      "evidence": "Deterministic fixture evidence for H11.",
+      "level": "L3",
+      "primary_axis": "gamma",
+      "next_mca": "Repair H11 before disposition."
+    },
+    {
+      "id": "H12",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H12.",
+      "level": "L4",
+      "primary_axis": "gamma",
+      "next_mca": null
+    },
+    {
+      "id": "H13",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H13.",
+      "level": "L4",
+      "primary_axis": "gamma",
+      "next_mca": null
+    }
+  ]
+}

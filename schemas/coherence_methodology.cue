@@ -27,6 +27,19 @@ package skill
 	output_root:  string & =~"^\\.tsc(/|$)"
 	default_mode: "mechanical" | "llm" | "hybrid" | "auto"
 
+	// Optional until generic TSC exports this surface. When declared, cnos
+	// validates the source-checkout State-A implementation and typed output.
+	execution?: {
+		state:                         "State-A"
+		runner:                        !=""
+		output_schema:                 !=""
+		invariant_assessment_template: !=""
+		emits:                         [...string]
+		ingests:                       [...string]
+		produces:                      [...string]
+		state_b:                       "unshipped"
+	}
+
 	consistency: {
 		mechanical: "identical"
 		llm_repeats: int & >=2

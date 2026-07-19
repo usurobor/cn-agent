@@ -24,9 +24,9 @@ inputs:
   - "Cell/wave contracts, schemas, FSM tables, implementation seams, and receipts"
   - "Control-plane evidence snapshotted or content-hashed"
 outputs:
-  - "Per-level TSC measurement reports for L0-L4"
-  - "Cross-level projection and hard-invariant report"
-  - "Overall measurement with exactly one bottleneck and provenance"
+  - "Six TSC prompts, one invariant-assessment prompt, plus prompt-digests.json"
+  - "Six validated canonical TSC reports: system and L0-L4"
+  - "One recursive-cell-run.json with L0-L4 aggregate, H01-H13 outcomes, exactly one bottleneck, disposition, and provenance"
 visibility: public
 methodology:
   registry: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/662/registry.tsc"
@@ -40,6 +40,15 @@ methodology:
   target_revision: "a0d39293a27cfe57b49dacff696345b1ee2cdb40"
   output_root: ".tsc/cnos-recursive-cell"
   default_mode: hybrid
+  execution:
+    state: State-A
+    runner: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/runner/recursive-cell-runner.py"
+    output_schema: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/runner/recursive-cell-run.schema.cue"
+    invariant_assessment_template: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/runner/invariant-assessment-template.md"
+    emits: ["prompts/cc662-system.md", "prompts/cc662-l0.md", "prompts/cc662-l1.md", "prompts/cc662-l2.md", "prompts/cc662-l3.md", "prompts/cc662-l4.md", "invariant-assessment-prompt.md", "prompt-digests.json"]
+    ingests: ["cc662-system.json", "cc662-l0.json", "cc662-l1.json", "cc662-l2.json", "cc662-l3.json", "cc662-l4.json", "invariant-assessment.json"]
+    produces: ["reports/cc662-system.json", "reports/cc662-l0.json", "reports/cc662-l1.json", "reports/cc662-l2.json", "reports/cc662-l3.json", "reports/cc662-l4.json", "recursive-cell-run.json"]
+    state_b: unshipped
   consistency:
     mechanical: identical
     llm_repeats: 3
@@ -86,7 +95,7 @@ methodology:
       write no other artifact. Do not compute Coh or C-sigma.
 ---
 
-# cnos Recursive Cell Coherence Methodology v0.2.0
+# cnos Recursive Cell Coherence Methodology v0.3.0
 
 ## 0. Status and epistemic boundary
 
@@ -102,13 +111,14 @@ requires at minimum:
 5. CM-of-CMs/admissibility measurement of this artifact.
 
 The current TSC CLI cannot consume this arbitrary CM declaration as a
-first-class instrument. The executable manual route instead supplies one
-materialized `INSTRUCTION.md` containing the pinned TSC v3.2.4 core plus the
-cnos supplement to the CLI's single `--instruction` flag. Arbitrary declaration
-loading remains unshipped.
+first-class instrument. The shipped deterministic State-A runner invokes the
+six registered #662 targets through one materialized `INSTRUCTION.md`, validates
+the six standard TSC witnesses, emits canonical TSC reports, validates a
+separate typed H01-H13 assessment, and produces one CUE-validated aggregate.
+Arbitrary State-B declaration and target loading remains explicitly unshipped.
 
 All declared authority paths use `path_base: repository-root`; `--root` names
-the explicit cnos target checkout. This v0.2 candidate is therefore
+the explicit cnos target checkout. This v0.3 candidate is therefore
 `source-checkout-only`: an installed `cnos.cdd` package must refuse activation
 because TSC does not yet expose separate authority-root and target-root bases.
 `resolve-authority.sh` enforces that boundary and the package smoke tests the
@@ -304,28 +314,48 @@ snapshots, PR/issue history snapshots, checks, and state timeline. Check:
 
 ## 7. Cross-level hard invariants
 
-These are gating, not averaged:
+These are gating, not averaged. Their stable identifiers are part of the
+State-A output contract:
 
-1. one CCNF kernel for all classes;
-2. class determined by canonical output telos;
-3. class and matter domain orthogonal;
-4. α≠β;
-5. κ outside and κ≠α/β/γ/δ;
-6. ε is an observation/projection, not a cell role or CC itself;
-7. immutable matter, review, CM, target-bundle, measurement, and receipt links;
-8. CM/V/δ separation with a type-correct data path;
-9. single dependency authority;
-10. single transition authority per FSM edge;
-11. complete wave-FSM semantics before “executable” claims;
-12. honest shipped/specified/illustrative partition;
-13. CC judgment distinct from FSM transition and operator acceptance.
+1. **H01:** one CCNF kernel for all classes;
+2. **H02:** class determined by canonical output telos;
+3. **H03:** class and matter domain orthogonal;
+4. **H04:** α≠β;
+5. **H05:** κ outside and κ≠α/β/γ/δ;
+6. **H06:** ε is an observation/projection, not a cell role or CC itself;
+7. **H07:** immutable matter, review, CM, target-bundle, measurement, and receipt links;
+8. **H08:** CM/V/δ separation with a type-correct data path;
+9. **H09:** single dependency authority;
+10. **H10:** single transition authority per FSM edge;
+11. **H11:** complete wave-FSM semantics before “executable” claims;
+12. **H12:** honest shipped/specified/illustrative partition;
+13. **H13:** CC judgment distinct from FSM transition and operator acceptance.
+
+The six TSC witnesses remain exact, unextended TSC v3.2.4 objects. A separate
+invariant assessment contains exactly H01-H13 with `pass`, `fail`, or `unknown`,
+specific evidence, level, primary axis, and next MCA. It binds the generated
+assessment prompt and all six TSC prompt digests. `unknown` is nonaccepting.
+A failed item must cross-reference a systemic defect card in the standard
+witness for its stated level and primary axis using `[Hxx]`.
 
 ## 8. Aggregation and disposition
 
-For each level, TSC computes `C_sigma`. Cross-level aggregate is the geometric
-mean of L0-L4. Report the lowest level and axis as the dominant bottleneck.
+TSC computes canonical `C_sigma` for system and L0-L4. The declared cross-level
+aggregate is the **unweighted geometric mean of L0-L4 canonical `C_sigma`**;
+the system report is retained but not averaged into that value. The runner
+emits exactly one bottleneck: the lowest numeric L0-L4 `C_sigma`, ties resolved
+by level order L0→L4, then the lowest axis value, ties resolved α→β→γ.
 
-Disposition rules:
+State-A disposition rules are deterministic:
+
+- any failed H09-H11 emits `request_planning`;
+- failed H12 emits `request_working` unless the planning rule already applies;
+- any other failure or any `unknown` emits `hold`;
+- all thirteen passing still emits `hold`, because this calibration source has
+  zero independent standing.
+
+The broader methodology vocabulary remains reserved for a future route with
+standing:
 
 - `complete`: every hard invariant passes and formal TSC Operational ACCEPT
   has standing.

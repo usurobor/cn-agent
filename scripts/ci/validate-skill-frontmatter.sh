@@ -243,6 +243,26 @@ validate_skill_file() {
         fi
       done
 
+      local execution_runner
+      execution_runner=$(jq -r '.methodology.execution.runner // ""' "$methodology_json")
+      if [[ -n "$execution_runner" ]]; then
+        for key in runner output_schema invariant_assessment_template; do
+          declared_path=$(jq -r --arg k "$key" '.methodology.execution[$k] // ""' "$methodology_json")
+          if [[ -z "$declared_path" || ! -f "$REPO_ROOT/$declared_path" ]]; then
+            emit_finding "$rel" "methodology.execution.${key}" "regular-file" \
+              "declared path does not resolve to a regular file from repository-root: ${declared_path:-<empty>}" \
+              "point methodology.execution.${key} at a repository-root-relative canonical file"
+            local_fail=1
+          fi
+        done
+        if [[ -f "$REPO_ROOT/$execution_runner" && ! -x "$REPO_ROOT/$execution_runner" ]]; then
+          emit_finding "$rel" "methodology.execution.runner" "executable" \
+            "declared runner is not executable: $execution_runner" \
+            "set its executable mode and retain a fail-closed shebang"
+          local_fail=1
+        fi
+      fi
+
       local preflight
       preflight=$(jq -r '.methodology.calibration_preflight // ""' "$methodology_json")
       if [[ -n "$preflight" ]]; then

@@ -17,6 +17,9 @@ required=(
   "skills/cdd/measure/recursive-cell/resolve-authority.sh"
   "skills/cdd/measure/recursive-cell/instruction/assemble-instruction.sh"
   "skills/cdd/measure/recursive-cell/calibration/662/registry.tsc"
+  "skills/cdd/measure/recursive-cell/runner/recursive-cell-runner.py"
+  "skills/cdd/measure/recursive-cell/runner/recursive-cell-run.schema.cue"
+  "skills/cdd/measure/recursive-cell/runner/invariant-assessment-template.md"
 )
 listing="$(tar -tzf "$tarball")"
 for path in "${required[@]}"; do
