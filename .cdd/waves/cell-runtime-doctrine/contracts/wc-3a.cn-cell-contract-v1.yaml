@@ -45,6 +45,11 @@ inputs:
     - ref_kind: "sibling_output"
       producer: "wc-2"
       output_id: "coherence-measurement-contract"  # V-gating on cm_ref at the review/close edges
+    - ref_kind: "external"          # AUTHORITATIVE oracle registry (content-bound); this WC's oracle slice
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#oracle-registry"
+        revision: "sha256:b475b9f4df9245605f8a5be4dca5ee306f579d0bfc4a19812335016799a29450@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "cell-fsm"
@@ -88,46 +93,3 @@ stop_conditions:
   - "source_doctrine_conflicts"
   - "predecessor_output_unavailable"           # WC-1 or WC-2 output absent
   - "review_return_authority_unresolvable"
-# Oracle ownership (R4 finding repair): FSM oracles owned at concrete emitted paths under this WC's
-# fixtures allowed_path; the CC-transition-request schema is an emitted fixture schema (no shipped edit).
-oracles:
-  spec_ref: "sha256:dc6e8e456a32fa1e30237653cbf2ef3391da276bc1539d2f4fbb2540368f0b3b@.cdd/waves/cell-runtime-doctrine/acceptance-oracles.md"
-  ownership_predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
-  receipt_evidence_predicate: "emits_machine_readable_acceptance_fixtures_into_receipt__cell_fsm_state_table_json__for_state_set_closure_totality_and_reachability_oracles"
-  mechanically_verifiable:
-    - predicate: "cell_fsm_state_set_closed_and_declared__blocked_is_a_declared_member_not_only_a_transition_target"
-      ownership: "emitted"
-      checker: ".cdd/unreleased/wc-3a/fixtures/fsm_closure.py"
-      positive_fixture: ".cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json"
-      negative_fixture: ".cdd/unreleased/wc-3a/fixtures/cell-fsm-blocked-undeclared.negative.json"
-      command: "python3 .cdd/unreleased/wc-3a/fixtures/fsm_closure.py .cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json"
-    - predicate: "total_event_guard_action_relation__every_nonterminal_state_has_owned_exits"
-      ownership: "emitted"
-      checker: ".cdd/unreleased/wc-3a/fixtures/fsm_totality.py"
-      positive_fixture: ".cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json"
-      negative_fixture: ".cdd/unreleased/wc-3a/fixtures/cell-fsm-nonterminal-noexit.negative.json"
-      command: "python3 .cdd/unreleased/wc-3a/fixtures/fsm_totality.py .cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json"
-    - predicate: "deterministic_or_normatively_prioritized_transition_selection__same_bundle_hash_same_decision"
-      ownership: "emitted"
-      checker: ".cdd/unreleased/wc-3a/fixtures/fsm_determinism.py"
-      positive_fixture: ".cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json"
-      negative_fixture: ".cdd/unreleased/wc-3a/fixtures/cell-fsm-ambiguous.negative.json"
-      command: "python3 .cdd/unreleased/wc-3a/fixtures/fsm_determinism.py .cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json"
-    - predicate: "cc_disposition_to_cell_transition_request_adapter__cc_selects_a_judgment_the_fsm_validates_and_effects_the_transition__cc_never_mutates_state_directly"
-      ownership: "emitted"
-      schema: ".cdd/unreleased/wc-3a/fixtures/cell-transition-request.schema.cue"
-      positive_fixture: ".cdd/unreleased/wc-3a/fixtures/cc-transition-request.positive.json"
-      negative_fixture: ".cdd/unreleased/wc-3a/fixtures/cc-mutates-state.negative.json"
-      command: "cue vet .cdd/unreleased/wc-3a/fixtures/cc-transition-request.positive.json .cdd/unreleased/wc-3a/fixtures/cell-transition-request.schema.cue"
-    - predicate: "command_table_parity__cn_cell_and_cn_issues_surfaces_map_onto_declared_table_edges"
-      ownership: "emitted"
-      checker: ".cdd/unreleased/wc-3a/fixtures/fsm_command_parity.py"
-      positive_fixture: ".cdd/unreleased/wc-3a/fixtures/command-map.positive.json"
-      negative_fixture: ".cdd/unreleased/wc-3a/fixtures/command-map-orphan.negative.json"
-      command: "python3 .cdd/unreleased/wc-3a/fixtures/fsm_command_parity.py .cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json .cdd/unreleased/wc-3a/fixtures/command-map.positive.json"
-    - predicate: "reachability_proved__every_declared_state_reachable_from_the_initial_state"
-      ownership: "emitted"
-      checker: ".cdd/unreleased/wc-3a/fixtures/fsm_reach.py"
-      positive_fixture: ".cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json"
-      negative_fixture: ".cdd/unreleased/wc-3a/fixtures/cell-fsm-unreachable.negative.json"
-      command: "python3 .cdd/unreleased/wc-3a/fixtures/fsm_reach.py .cdd/unreleased/wc-3a/fixtures/cell-fsm-state-table.positive.json"

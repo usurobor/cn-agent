@@ -1,4 +1,4 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R3)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R5)
 #
 # Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
 # resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
@@ -8,7 +8,8 @@
 # readability but MUST hold exact parity with the derived set (validate.py check (c) proves it).
 schema: cn.wave.v1
 wave: "671"
-revision: "R3"
+# wave-revision: R5
+revision: "R5"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -79,33 +80,33 @@ nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
-    contract_sha256: "776c093e16a257e2c097bd34ac260ebaf180adcda63491a02a12e374b1da101a"
+    contract_sha256: "2b1fc1d7e67910e5bed9de73e82c07895d7a5b993617bd1707470c915eb49196"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
-    contract_sha256: "7bf4b4591b27eca20cfe0b6e79c6a2fd171b289c7be347494f35da528a3bf942"
+    contract_sha256: "7f2df7d42c3e7dff752a1dd93c6ee0f89b138014ebf4e8ebe0190d3379347edc"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
-    contract_sha256: "8f8d5b9d8efcbc3c979567f5878e1b5d92d5c89c06f98c7dd81355f5ba42dc5e"
+    contract_sha256: "8cf1ebe69c1a2026c55ecfb799100c9d5d6a1668c99957cbcb8ded24e1e3447a"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
-    contract_sha256: "d9b116fdf5be71ac5e3f80d81f5e2546a5a34a4bfe5260c0ece947addbe3b4c8"
+    contract_sha256: "14155c5741d5a9a6d7a076772740eafac9f0d1900812d68e17ca7759a5c719c9"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
-    contract_sha256: "3587b71242b73a082c6bffa7208ed221ccd52f6e146c8203f4c5854aec6a5a7d"
+    contract_sha256: "d492a62940a8352f09dba7f45bc6e800fcf669ad6045d2a133423bec55321c40"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
-    contract_sha256: "5ff39eaefd0d82d4db9f7d4e01067379d4c279cd81774809bacfe9e553c01a16"
+    contract_sha256: "e1c50f0b71fc0b7709979f7e1e8c088fbcf5d6f538786349fccdb29a0182035f"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 

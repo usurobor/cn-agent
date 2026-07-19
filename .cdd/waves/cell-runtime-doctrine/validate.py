@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+# wave-revision: R5
 """
-Planning-Cell PRE-AUTHORIZATION validator for wave cnos#671 (cell-runtime-doctrine), R3.
+Planning-Cell PRE-AUTHORIZATION validator for wave cnos#671 (cell-runtime-doctrine), R5.
 
 SOUND, FAIL-CLOSED. Credential-free (Python stdlib + PyYAML + local `git`). It derives every fact
 from the AUTHORED wave/contract/intent data — it hard-codes no node list, edge list, or predicate
@@ -38,13 +39,29 @@ Checks:
       self-edge → cycle → FAIL). Each authored fixture is EVALUATED (each predicate computed over the
       fixture inputs) and compared to the authored `expected` (a flipped expectation → FAIL). The
       non-recursive construction set N is derived (all nodes minus terminal) and cross-checked.
-  (h) ORACLE OWNERSHIP (R4). Every mechanically-verifiable predicate is OWNED by its contract's inlined
-      `oracles` slice at a CONCRETE checker/schema path — no placeholder operand, no implicit CWD —
-      that is either EMITTED (in the contract's `allowed_paths`, so the WC may write it) or EXISTING
-      (a pinned immutable input). Each oracle names a positive fixture (command exits 0) and a named
-      negative fixture (command exits non-zero), both concretely located; the contract's acceptance
-      must carry the ownership + receipt-evidence predicates; the pinned oracle spec resolves
-      content-bound and carries no placeholder operand. Fully derivable from the contract alone.
+  (h) ORACLE OWNERSHIP — TOTAL + SINGULAR BIJECTION (R5). The §2 contract shape is restored (no
+      top-level `oracles` key); oracle ownership lives in the SEPARATE content-bound registry
+      `oracle-registry.yaml`, which each child contract consumes via a canonical
+      `inputs.required[].external` control_plane ref (content-hash pinned; resolved in (b)).
+      `acceptance-oracles.md` is a human-readable PROJECTION of the registry. This check proves a
+      TOTAL + SINGULAR mapping across three sources — the registry (authoritative), each child's
+      `acceptance.predicates`, and the md projection:
+        * every mechanically-verifiable predicate (in the registry / the md projection) maps to
+          EXACTLY ONE child `owner` entry;
+        * every registry `owner` entry maps to EXACTLY ONE child `acceptance` predicate;
+        * REJECT — a missing entry (an mv predicate with no owner), a duplicate owner, an extra owner
+          entry absent from the owning contract's acceptance, a classification mismatch
+          (registry vs md-projection vs contract), and ANY placeholder operand; and REJECT any
+          registry↔md-projection parity break.
+      Each entry's checker/schema is CONCRETE (no placeholder, no implicit CWD) and either EMITTED
+      (in the owner's `allowed_paths`) or EXISTING (a pinned immutable input of the owner). Fully
+      derivable from the registry + the contracts + the projection.
+  (i) LEDGER CONSISTENCY (R5). (1) every declared wave-revision marker line across the wave artifacts
+      AGREES (and equals the authored wave revision); (2) the classification counts reported in
+      `acceptance-oracles.md` EQUAL the counts derived from its own classification-table rows, and its
+      mechanically-verifiable count EQUALS the number of registry entries; (3) every classification-cell
+      value is EXACTLY ONE enum member (enforced | mechanically-verifiable | evidenced | cognitive-review)
+      — a compound category (e.g. `enforced + evidenced`) fails closed.
 
 RESOLUTION MODEL (so the negative-fixture harness can validate a mutated COPY of the tree):
   * WAVE_DIR   — the wave matter dir (contracts/, wave.yaml, intent, grounding snapshots). All AUTHORED
@@ -127,8 +144,10 @@ LOCATOR_ENUM = {"repo_artifact", "control_plane", "prior_receipt"}
 OUTPUT_KIND_ENUM = {"artifact", "relation_graph", "judgment"}
 
 TOP_KEYS   = {"schema", "cell", "scope", "intent_ref", "inputs", "requested_output",
-              "acceptance", "constraints", "gates", "doctrine_affecting", "stop_conditions",
-              "oracles"}   # R4: per-WC oracle-ownership slice (check (h))
+              "acceptance", "constraints", "gates", "doctrine_affecting", "stop_conditions"}
+# R5: EXACT §2 top-level key set — NO `oracles` (or any other) extra key. Oracle ownership lives in the
+# separate content-bound oracle-registry.yaml, consumed via inputs.required[].external (check (h)).
+# An added top-level key (incl. `oracles`) now FAILS check (a).
 CELL_KEYS  = {"id", "class", "mode", "protocol", "matter_domain"}
 SCOPE_KEYS = {"repo", "wave", "parent_cell"}
 INTENT_KEYS   = {"schema", "id", "carrier"}
@@ -639,17 +658,17 @@ if graph_ok:
             if bool(got) != bool(exp):
                 fail("g", f"fixture {nm!r}: predicate {pname!r} authored expected={exp} but COMPUTED={got}")
 
-# ---- (h) ORACLE OWNERSHIP ---------------------------------------------------------
-# Every mechanically-verifiable predicate must be OWNED by its contract at a CONCRETE checker/schema
-# path (no placeholder operand, no implicit CWD): either EMITTED (path in allowed_paths, so the WC may
-# write it) or EXISTING (the checker/schema is a pinned immutable input). The contract's acceptance must
-# require the ownership + receipt-evidence predicates, and each oracle's positive fixture (exit 0) and
-# named negative fixture (exit non-zero) must be concretely located. Derivable from the contract alone.
+# ---- (h) ORACLE OWNERSHIP — TOTAL + SINGULAR BIJECTION ----------------------------
+# Three sources: (1) the AUTHORITATIVE registry oracle-registry.yaml; (2) each child's
+# acceptance.predicates; (3) the md PROJECTION (acceptance-oracles.md "Registry projection" table).
+# Proves a total, singular map: every mechanically-verifiable predicate ⇄ exactly one child owner
+# entry ⇄ exactly one acceptance predicate; rejects a missing/duplicate/extra entry, a classification
+# mismatch, a placeholder operand, and any registry↔projection parity break.
 PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
 ALLOWED_PATH_ROOTS = (".cdd/", "schemas/", "docs/", "src/")
-ORACLES_KEYS = {"spec_ref", "ownership_predicate", "receipt_evidence_predicate", "mechanically_verifiable"}
-ORACLE_ENTRY_KEYS = {"predicate", "ownership", "checker", "schema",
-                     "positive_fixture", "negative_fixture", "command"}
+KIND_ENUM = {"enforced", "mechanically-verifiable", "evidenced", "cognitive-review"}
+REGISTRY_ENTRY_KEYS = {"owner", "predicate", "classification", "ownership", "checker", "schema",
+                       "positive_fixture", "negative_fixture", "command", "receipt_evidence_predicate"}
 
 def path_concrete(val):
     """A concrete repo-root-relative path: non-empty str, no placeholder operand, not absolute,
@@ -669,86 +688,222 @@ def path_concrete(val):
 def path_in_allowed(val, allowed_globs):
     return isinstance(val, str) and any(fnmatch.fnmatch(val, g) for g in allowed_globs)
 
+def md_table_rows(text):
+    """Yield lists-of-stripped-cells for every markdown table body row (drops header + separator)."""
+    for line in text.splitlines():
+        s = line.strip()
+        if not s.startswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if not cells:
+            continue
+        if all(set(c) <= set("-: ") for c in cells):   # separator row
+            continue
+        yield cells
+
+# ---- load the authoritative registry ---------------------------------------------
+REG_PATH = os.path.join(WAVE_DIR, "oracle-registry.yaml")
+registry = {}
+reg_entries = []
+if not os.path.isfile(REG_PATH):
+    fail("h", "oracle-registry.yaml missing")
+else:
+    try:
+        registry = load_yaml(REG_PATH) or {}
+    except Exception as e:
+        fail("h", f"oracle-registry.yaml YAML parse error: {e}")
+    reg_entries = registry.get("oracles") or []
+
+# per-owner: acceptance predicate set, allowed globs, pinned-input paths, and that the contract
+# actually CONSUMES the registry via a canonical inputs.required[].external control_plane ref.
+acc_by_owner, allowed_by_owner, inputpaths_by_owner = {}, {}, {}
 for nid, (p, c) in contracts.items():
-    O = c.get("oracles")
-    if not isinstance(O, dict):
-        fail("h", f"{nid}.oracles: oracle-ownership block missing or not a mapping"); continue
-    if set(O.keys()) != ORACLES_KEYS:
-        extra = set(O.keys()) - ORACLES_KEYS; missing = ORACLES_KEYS - set(O.keys())
-        if extra:   fail("h", f"{nid}.oracles: unexpected key(s) {sorted(extra)}")
-        if missing: fail("h", f"{nid}.oracles: missing key(s) {sorted(missing)}")
-    # the pinned oracle spec (acceptance-oracles.md) resolves content-bound
-    resolve_content_locator("h", f"{nid}.oracles.spec_ref", str(O.get("spec_ref", "")))
-    accpreds = set(((c.get("acceptance") or {}).get("predicates")) or [])
-    if O.get("ownership_predicate") not in accpreds:
-        fail("h", f"{nid}.oracles.ownership_predicate not present in acceptance.predicates")
-    if O.get("receipt_evidence_predicate") not in accpreds:
-        fail("h", f"{nid}.oracles.receipt_evidence_predicate not present in acceptance.predicates")
-    allowed = list(((c.get("constraints") or {}).get("allowed_paths")) or [])
-    # existing immutable inputs available to bind against (pinned repo_artifact locator paths)
-    input_paths = set()
+    acc_by_owner[nid] = set(((c.get("acceptance") or {}).get("predicates")) or [])
+    allowed_by_owner[nid] = list(((c.get("constraints") or {}).get("allowed_paths")) or [])
+    ips = set(); consumes_registry = False
     for el in ((c.get("inputs") or {}).get("required") or []):
         if isinstance(el, dict) and el.get("ref_kind") == "external":
             loc = el.get("locator") or {}
             if loc.get("kind") == "repo_artifact" and loc.get("path"):
-                input_paths.add(loc["path"])
-    mv = O.get("mechanically_verifiable")
-    if not isinstance(mv, list) or not mv:
-        fail("h", f"{nid}.oracles.mechanically_verifiable: must be a non-empty list"); continue
-    for i, e in enumerate(mv):
-        where = f"{nid}.oracles.mechanically_verifiable[{i}]"
-        if not isinstance(e, dict):
-            fail("h", f"{where}: must be a mapping"); continue
-        extra = set(e.keys()) - ORACLE_ENTRY_KEYS
-        if extra:
-            fail("h", f"{where}: unexpected key(s) {sorted(extra)}")
-        if e.get("predicate") not in accpreds:
-            fail("h", f"{where}: predicate {e.get('predicate')!r} not in acceptance.predicates")
-        own = e.get("ownership")
-        if own not in {"emitted", "existing"}:
-            fail("h", f"{where}: ownership must be 'emitted'|'existing' (got {own!r})")
-        checker, schema = e.get("checker"), e.get("schema")
-        if bool(checker) == bool(schema):
-            fail("h", f"{where}: must name EXACTLY one of checker|schema")
-        primary = checker or schema
-        posf, negf, cmd = e.get("positive_fixture"), e.get("negative_fixture"), e.get("command")
-        # (i) concreteness — no placeholder operand, no implicit CWD — for every path field
-        for label, val in (("checker/schema", primary), ("positive_fixture", posf), ("negative_fixture", negf)):
-            ok, why = path_concrete(val)
-            if not ok:
-                fail("h", f"{where}.{label}: {why} ({val!r})")
-        if not isinstance(cmd, str) or not cmd.strip():
-            fail("h", f"{where}.command: must be a non-empty command string")
-        elif PLACEHOLDER_RE.search(cmd):
-            fail("h", f"{where}.command: contains placeholder operand ({cmd!r})")
-        # (ii) ownership resolution
-        if own == "emitted":
-            for label, val in (("checker/schema", primary), ("positive_fixture", posf), ("negative_fixture", negf)):
-                if isinstance(val, str) and not path_in_allowed(val, allowed):
-                    fail("h", f"{where}.{label}: emitted path not in this contract's allowed_paths ({val!r})")
-        elif own == "existing":
-            if isinstance(primary, str) and primary not in input_paths:
-                fail("h", f"{where}: 'existing' checker/schema {primary!r} is not a pinned immutable input of this contract")
-            for label, val in (("positive_fixture", posf), ("negative_fixture", negf)):
-                if isinstance(val, str) and not path_in_allowed(val, allowed):
-                    fail("h", f"{where}.{label}: emitted fixture not in this contract's allowed_paths ({val!r})")
-        # (iii) command binds the concrete checker/schema + positive fixture (no implicit CWD)
-        if isinstance(cmd, str):
-            if isinstance(primary, str) and primary not in cmd:
-                fail("h", f"{where}.command: does not reference the concrete checker/schema {primary!r}")
-            if isinstance(posf, str) and posf not in cmd:
-                fail("h", f"{where}.command: does not reference the positive fixture {posf!r}")
+                ips.add(loc["path"])
+            rev = str(loc.get("revision", ""))
+            if "oracle-registry.yaml" in rev:
+                consumes_registry = True
+    inputpaths_by_owner[nid] = ips
+    if not consumes_registry:
+        fail("h", f"{nid}: does not consume oracle-registry.yaml via a canonical inputs.required[].external ref")
 
-# the pinned oracle spec (acceptance-oracles.md) must itself carry NO placeholder operand
+# ---- (h.1) validate registry entries + build the predicate->entry map -------------
+pred_owner = {}          # predicate -> owner (must be singular)
+pred_entry = {}          # predicate -> normalized entry tuple (for md-parity)
+for i, e in enumerate(reg_entries):
+    where = f"oracle-registry.oracles[{i}]"
+    if not isinstance(e, dict):
+        fail("h", f"{where}: must be a mapping"); continue
+    extra = set(e.keys()) - REGISTRY_ENTRY_KEYS
+    if extra:
+        fail("h", f"{where}: unexpected key(s) {sorted(extra)}")
+    owner = e.get("owner"); pred = e.get("predicate")
+    if owner not in contracts:
+        fail("h", f"{where}: owner {owner!r} is not a known child contract"); continue
+    if e.get("classification") != "mechanically-verifiable":
+        fail("h", f"{where}: classification must be 'mechanically-verifiable' (got {e.get('classification')!r}) — registry vs classification mismatch")
+    # extra owner entry absent from the owning contract's acceptance predicates
+    if pred not in acc_by_owner.get(owner, set()):
+        fail("h", f"{where}: owner entry predicate {pred!r} is ABSENT from {owner}.acceptance.predicates (extra owner entry)")
+    if e.get("receipt_evidence_predicate") not in acc_by_owner.get(owner, set()):
+        fail("h", f"{where}: receipt_evidence_predicate not in {owner}.acceptance.predicates")
+    # duplicate owner: a mechanically-verifiable predicate mapped to more than one entry
+    if pred in pred_owner:
+        fail("h", f"{where}: DUPLICATE owner entry for predicate {pred!r} (already owned by {pred_owner[pred]}) — mapping not singular")
+    own = e.get("ownership")
+    if own not in {"emitted", "existing"}:
+        fail("h", f"{where}: ownership must be 'emitted'|'existing' (got {own!r})")
+    checker, schema = e.get("checker"), e.get("schema")
+    if bool(checker) == bool(schema):
+        fail("h", f"{where}: must name EXACTLY one of checker|schema")
+    primary = checker or schema
+    posf, negf, cmd = e.get("positive_fixture"), e.get("negative_fixture"), e.get("command")
+    for label, val in (("checker/schema", primary), ("positive_fixture", posf), ("negative_fixture", negf)):
+        ok, why = path_concrete(val)
+        if not ok:
+            fail("h", f"{where}.{label}: {why} ({val!r})")
+    if not isinstance(cmd, str) or not cmd.strip():
+        fail("h", f"{where}.command: must be a non-empty command string")
+    elif PLACEHOLDER_RE.search(cmd):
+        fail("h", f"{where}.command: contains placeholder operand ({cmd!r})")
+    allowed = allowed_by_owner.get(owner, [])
+    if own == "emitted":
+        for label, val in (("checker/schema", primary), ("positive_fixture", posf), ("negative_fixture", negf)):
+            if isinstance(val, str) and not path_in_allowed(val, allowed):
+                fail("h", f"{where}.{label}: emitted path not in {owner} allowed_paths ({val!r})")
+    elif own == "existing":
+        if isinstance(primary, str) and primary not in inputpaths_by_owner.get(owner, set()):
+            fail("h", f"{where}: 'existing' checker/schema {primary!r} is not a pinned immutable input of {owner}")
+        for label, val in (("positive_fixture", posf), ("negative_fixture", negf)):
+            if isinstance(val, str) and not path_in_allowed(val, allowed):
+                fail("h", f"{where}.{label}: emitted fixture not in {owner} allowed_paths ({val!r})")
+    if isinstance(cmd, str):
+        if isinstance(primary, str) and primary not in cmd:
+            fail("h", f"{where}.command: does not reference the concrete checker/schema {primary!r}")
+        if isinstance(posf, str) and posf not in cmd:
+            fail("h", f"{where}.command: does not reference the positive fixture {posf!r}")
+    if isinstance(pred, str):
+        pred_owner[pred] = owner
+        pred_entry[pred] = (owner, "mechanically-verifiable", own, primary, posf, negf)
+
+# ---- (h.2) TOTALITY: every mv acceptance predicate declared in a contract is owned once ----
+# The mechanically-verifiable set is authoritatively the registry; the md projection (h.3) proves the
+# classification is not silently dropped. Every registry-owned predicate having been checked ∈ acceptance
+# above, totality reduces to: no owner contract carries an acceptance predicate CLASSIFIED mechanically-
+# verifiable (by the projection) without a registry entry — proven in (h.3) by set equality.
+
+# ---- (h.3) registry ⇄ md-projection PARITY ---------------------------------------
 acc_oracles = os.path.join(WAVE_DIR, "acceptance-oracles.md")
+proj = {}   # predicate -> (owner, classification, ownership, primary, pos, neg)
+if not os.path.isfile(acc_oracles):
+    fail("h", "acceptance-oracles.md missing (registry projection unreadable)")
+else:
+    md_text = open(acc_oracles, encoding="utf-8").read()
+    md_scan = re.sub(r"<!--.*?-->", "", md_text, flags=re.S)   # HTML comments (e.g. the marker) are not operands
+    if PLACEHOLDER_RE.search(md_scan):
+        fail("h", f"acceptance-oracles.md carries a placeholder operand {PLACEHOLDER_RE.search(md_scan).group(0)!r}")
+    # isolate the "Registry projection" section (from its heading to the next heading)
+    lines = md_text.splitlines()
+    sec = []
+    in_sec = False
+    for ln in lines:
+        if ln.startswith("#") and "Registry projection" in ln:
+            in_sec = True; continue
+        if in_sec and ln.startswith("## "):
+            break
+        if in_sec:
+            sec.append(ln)
+    if not sec:
+        fail("h", "acceptance-oracles.md: no 'Registry projection' section found")
+    for cells in md_table_rows("\n".join(sec)):
+        if len(cells) < 7:
+            continue
+        owner, pred, classification, ownership, primary, pos, neg = cells[:7]
+        if owner == "owner" or pred == "predicate":   # header
+            continue
+        pred = pred.strip("`"); primary = primary.strip("`"); pos = pos.strip("`"); neg = neg.strip("`")
+        if pred in proj:
+            fail("h", f"acceptance-oracles.md projection: DUPLICATE row for predicate {pred!r}")
+        proj[pred] = (owner, classification, ownership, primary, pos, neg)
+
+# set equality: registry predicates == projection predicates
+reg_preds, proj_preds = set(pred_entry), set(proj)
+for pred in sorted(proj_preds - reg_preds):
+    fail("h", f"mechanically-verifiable predicate {pred!r} classified in acceptance-oracles.md projection but has NO registry owner entry (missing entry)")
+for pred in sorted(reg_preds - proj_preds):
+    fail("h", f"registry owner entry {pred!r} is ABSENT from the acceptance-oracles.md projection (parity break)")
+# field-by-field parity for predicates present in both
+for pred in sorted(reg_preds & proj_preds):
+    r = pred_entry[pred]     # (owner, classification, ownership, primary, pos, neg)
+    m = proj[pred]           # (owner, classification, ownership, primary, pos, neg)
+    if r != m:
+        fail("h", f"registry↔projection MISMATCH for {pred!r}: registry {r} != md {m}")
+
+# ---- (i) LEDGER CONSISTENCY -------------------------------------------------------
+# (1) revision labels agree; (2) reported classification counts == derived table counts (and mv ==
+# registry size); (3) every classification cell is EXACTLY ONE enum member (no compound category).
+REQUIRED_LABELLED = ["README.md", "acceptance-oracles.md", "validate.py", "validate_test.py",
+                     "oracle-registry.yaml", "wave.cn-wave-v1.yaml"]
+# line-anchored marker match ONLY (so prose that merely mentions the marker name is not miscounted);
+# the literal is split so this source file contains exactly ONE contiguous marker (the top-of-file one).
+REV_RE = re.compile(r"(?m)^\s*(?:#|//|<!--)?\s*wave-" + r"revision:\s*(\S+)")
+truth_rev = wave.get("revision")
+if not truth_rev:
+    fail("i", "wave.cn-wave-v1.yaml carries no authored `revision`")
+label_vals = set()
+for fn in REQUIRED_LABELLED:
+    fp = os.path.join(WAVE_DIR, fn)
+    if not os.path.isfile(fp):
+        fail("i", f"revision-labelled artifact missing: {fn}"); continue
+    ms = REV_RE.findall(open(fp, encoding="utf-8").read())
+    if len(ms) != 1:
+        fail("i", f"{fn}: expected exactly one `wave-revision:` label (found {len(ms)})"); continue
+    label_vals.add(ms[0])
+    if truth_rev is not None and ms[0] != str(truth_rev):
+        fail("i", f"{fn}: wave-revision {ms[0]!r} != authored wave revision {truth_rev!r}")
+if len(label_vals) > 1:
+    fail("i", f"revision labels DISAGREE across artifacts: {sorted(label_vals)}")
+
+# derive classification counts from the acceptance-oracles.md classification tables (col-2 kind cells)
 if os.path.isfile(acc_oracles):
-    _m = PLACEHOLDER_RE.search(open(acc_oracles, encoding="utf-8").read())
-    if _m:
-        fail("h", f"acceptance-oracles.md carries a placeholder operand {_m.group(0)!r}")
+    md_text = open(acc_oracles, encoding="utf-8").read()
+    derived = {k: 0 for k in KIND_ENUM}
+    for cells in md_table_rows(md_text):
+        if len(cells) < 2:
+            continue
+        cell = cells[1].strip().lower().strip("*` ")
+        # a classification cell: tokenize on separators; every token must be a kind enum member
+        toks = [t for t in re.split(r"[\s+/,]+|\band\b", cell) if t]
+        if not toks or not all(t in KIND_ENUM for t in toks):
+            continue                       # not a classification row (e.g. a projection predicate name)
+        if len(set(toks)) != 1 or len(toks) != 1:
+            fail("i", f"acceptance-oracles.md: classification cell is not a single enum member: {cells[1]!r}")
+            continue
+        derived[toks[0]] += 1
+    # reported summary line
+    msum = re.search(
+        r"enforced\s*\*\*(\d+)\*\*.*?mechanically-verifiable\s*\*\*(\d+)\*\*.*?evidenced\s*\*\*(\d+)\*\*.*?cognitive-review\s*\*\*(\d+)\*\*",
+        md_text, re.S)
+    if not msum:
+        fail("i", "acceptance-oracles.md: no parseable 'Summary counts' line")
+    else:
+        reported = {"enforced": int(msum.group(1)), "mechanically-verifiable": int(msum.group(2)),
+                    "evidenced": int(msum.group(3)), "cognitive-review": int(msum.group(4))}
+        for k in KIND_ENUM:
+            if reported[k] != derived[k]:
+                fail("i", f"acceptance-oracles.md reported {k}={reported[k]} != derived table count {derived[k]}")
+    if derived["mechanically-verifiable"] != len(reg_entries):
+        fail("i", f"acceptance-oracles.md mechanically-verifiable table count {derived['mechanically-verifiable']} != registry entry count {len(reg_entries)}")
 
 # ---- report ----------------------------------------------------------------------
 print("=" * 78)
-print("Pre-authorization validator — wave cnos#671 (cell-runtime-doctrine) R3 — SOUND")
+print("Pre-authorization validator — wave cnos#671 (cell-runtime-doctrine) R5 — SOUND")
 print(f"  WAVE_DIR={WAVE_DIR}")
 print(f"  REPO_ROOT={REPO_ROOT}")
 print("=" * 78)
@@ -760,7 +915,8 @@ checks = {
  "e": "parallel nodes share no write surface",
  "f": "gate invariants (doctrine_affecting ⇒ acceptance; reason present iff a gate bool true)",
  "g": "AUTHORED completion evaluated (predicate-graph acyclic by walk; fixtures computed vs expected)",
- "h": "oracle ownership (every mechanically-verifiable predicate binds a concrete checker/schema in allowed_paths or a pinned input; positive/negative fixtures + receipt evidence required; no placeholder operands)",
+ "h": "oracle-ownership TOTAL+SINGULAR bijection (registry ⇄ each child's acceptance ⇄ md projection; reject missing/duplicate/extra owner, classification mismatch, placeholder, parity break)",
+ "i": "ledger consistency (revision labels agree; reported counts == derived table counts == registry size; every category a single enum member)",
 }
 by = {k: [e for e in errors if e.startswith(f"[{k}")] for k in checks}
 for k, desc in checks.items():
@@ -776,5 +932,5 @@ print("-" * 78)
 if errors:
     print(f"RESULT: FAIL ({len(errors)} violation(s))")
     sys.exit(1)
-print("RESULT: PASS — all eight checks green at this wave tree.")
+print("RESULT: PASS — all nine checks green at this wave tree.")
 sys.exit(0)

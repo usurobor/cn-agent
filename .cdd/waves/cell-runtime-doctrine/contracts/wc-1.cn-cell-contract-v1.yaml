@@ -49,6 +49,11 @@ inputs:
     - ref_kind: "sibling_output"
       producer: "wc-2"
       output_id: "coherence-measurement-contract"    # imports the cm_ref interface; V predicates gate on it
+    - ref_kind: "external"          # AUTHORITATIVE oracle registry (content-bound); this WC's oracle slice
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#oracle-registry"
+        revision: "sha256:b475b9f4df9245605f8a5be4dca5ee306f579d0bfc4a19812335016799a29450@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "cell-classes-and-contract"
@@ -94,28 +99,3 @@ stop_conditions:
   - "source_doctrine_conflicts"
   - "cm_ref_shape_unresolved"                 # blocks if WC-2 output absent (readiness fails)
   - "required_decision_unresolved"
-# Oracle ownership (R4 finding repair): each mechanically-verifiable predicate owned at a concrete
-# emitted-checker path under this WC's fixtures allowed_path. validate.py check (h) enforces it.
-oracles:
-  spec_ref: "sha256:dc6e8e456a32fa1e30237653cbf2ef3391da276bc1539d2f4fbb2540368f0b3b@.cdd/waves/cell-runtime-doctrine/acceptance-oracles.md"
-  ownership_predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
-  receipt_evidence_predicate: "emits_machine_readable_acceptance_fixtures_into_receipt__contract_template_yaml__worked_instance_yaml__input_union_fixtures__each_validated_by_the_named_acceptance_oracle_command"
-  mechanically_verifiable:
-    - predicate: "key_path_parity__template_and_worked_instance_normalize_to_identical_key_path_sets"
-      ownership: "emitted"
-      checker: ".cdd/unreleased/wc-1/fixtures/keypath_diff.py"
-      positive_fixture: ".cdd/unreleased/wc-1/fixtures/contract-worked-instance.yaml"
-      negative_fixture: ".cdd/unreleased/wc-1/fixtures/contract-extra-key.negative.yaml"
-      command: "python3 .cdd/unreleased/wc-1/fixtures/keypath_diff.py .cdd/unreleased/wc-1/fixtures/contract-template.yaml .cdd/unreleased/wc-1/fixtures/contract-worked-instance.yaml"
-    - predicate: "input_reference_model_is_the_provenance_tagged_union__external_locator_classed_or_sibling_output_producer_output_id"
-      ownership: "emitted"
-      checker: ".cdd/unreleased/wc-1/fixtures/union_validate.py"
-      positive_fixture: ".cdd/unreleased/wc-1/fixtures/input-union.positive.yaml"
-      negative_fixture: ".cdd/unreleased/wc-1/fixtures/input-union-opaque-scalar.negative.yaml"
-      command: "python3 .cdd/unreleased/wc-1/fixtures/union_validate.py .cdd/unreleased/wc-1/fixtures/input-union.positive.yaml"
-    - predicate: "cm_ref_field_shape_is_imported_verbatim_from_wc2_output_realized_within_the_four_schemas__no_re_derivation_no_fifth_schema"
-      ownership: "emitted"
-      checker: ".cdd/unreleased/wc-1/fixtures/cm_ref_parity.py"
-      positive_fixture: ".cdd/unreleased/wc-1/fixtures/cm-ref-parity.positive.json"
-      negative_fixture: ".cdd/unreleased/wc-1/fixtures/cm-ref-rederived.negative.json"
-      command: "python3 .cdd/unreleased/wc-1/fixtures/cm_ref_parity.py .cdd/unreleased/wc-1/fixtures/cm-ref-parity.positive.json"
