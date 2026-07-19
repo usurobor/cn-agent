@@ -301,3 +301,172 @@ are closed, and no other blocker was found in this bounded round. D3 remains an
 exact-SHA honest-claim blocker. This review authorizes no matter edit, PR-body
 edit, label/state change, ready mark, merge, γ/CC action, standing promotion,
 operator acceptance, or cell/wave FSM transition.
+
+---
+
+# R6/R3 Review
+
+**Verdict:** CONVERGE
+
+**Reviewed α artifact SHA:** `56b08ea3326bf2849a2564860f08045d56d7d054`
+
+**Reviewed tree:** `544afc24bb51a814f9a8d8b0bed8a27197a62196`
+
+**Immutable product matter:**
+`db9ce95b1beb025d24f43fba2df58692665f80be`
+(`2e4f08e1d2632a8a5fd008a08187a1b42d231152`)
+
+**Current review base:** `origin/main` at
+`d79f6fbd8388a1685ab38683ef98ed7d162c94a7`
+
+**Fixed this round:** `0a871512...` binds γ's precise-claim choice;
+`0c56ed72...` narrows the current proposal and appends α's R6/R3 receipt;
+`56b08ea3...` removes the recursively stale review-head claim. Together these
+close R6/R2 D3 without changing product matter.
+
+**Branch CI state:** green: 22/22 exposed checks completed successfully on the
+exact reviewed SHA; push run
+[`29702782541`](https://github.com/usurobor/cnos/actions/runs/29702782541) and
+pull-request run
+[`29702783847`](https://github.com/usurobor/cnos/actions/runs/29702783847).
+
+**Merge instruction:** withheld. This exact-SHA convergence permits only the
+separately authorized next γ binding and CC re-adjudication; PR #670 remains
+draft and this round does not authorize a ready mark, merge, label change,
+operator acceptance, standing promotion, or cell/wave FSM transition.
+
+## Contract integrity and D3 closure
+
+| Check | Result | Evidence |
+|---|---|---|
+| Status truth preserved | yes | Current tracked/live body is source-checkout-only, zero-standing, State-A only; State-B and installed activation remain unshipped. |
+| Canonical sources/paths verified | yes | `SKILL.md`, README, runner, schema, registry/manifests, preflight, instruction, fixtures, and CI paths resolve and agree. |
+| Scope/non-goals consistent | yes | No product/runtime change occurs after `db9ce95b...`; #662 remains design/calibration source, not held out. |
+| Constraint strata consistent | yes | H01–H13 gate independently; all-pass remains `hold` at standing `none`. |
+| Path resolution base explicit | yes | `repository-root`, `explicit-coh-root`, and `source-checkout-only` remain explicit and tested. |
+| Proof shape adequate | yes | Full runner positive/refusal suite, I5 positive/negative corpus, package smoke, pinned real-coh route, CUE validation, and exact CI all pass. |
+| Cross-surface projections updated | yes | Current proposal, live body, `SKILL.md`, and README describe the implemented snapshot/static-path/publication boundary consistently. |
+| No witness theater / false closure | yes | Synthetic real-coh witnesses are compatibility evidence only; no semantic sample, calibration, ratification, or standing is inferred. |
+| PR body matches branch files | yes | Live body is byte-identical to tracked `r6-proposed-pr-body.md` after omitting its repository-only heading. |
+| γ artifact completeness | yes | `gamma-scaffold.md` remains the immutable first R6 commit at `6e07b4cc...`; clarifications append without rewriting it. |
+
+R6/R2 D3 offered two coherent repairs. R6/R3 selects the second: precisely
+narrow the claim rather than add a universal filesystem concurrency mechanism.
+The current body no longer says the runner refuses all raced inputs and
+outputs. It names only the behavior the runner implements: regular/no-symlink
+external-input preflight, immutable copied snapshots, emitted-prompt and bound
+response-digest checks, canonical reuse refusal, exclusive publication-lock
+contention, private staging, and atomic publication rename. No current
+authoritative projection makes the broader pre-snapshot pathname-race promise.
+Historical R5 and review/clarification occurrences remain immutable evidence.
+No adversarial race reproducer is needed to verify this honest narrowing.
+
+The current proposal also contains no stale self-SHA. It identifies product
+matter and explains that the containing R6/R3 review head is bound externally;
+κ's handoff, live PR head, remote branch, and this intake all bind that head as
+`56b08ea3326bf2849a2564860f08045d56d7d054`.
+
+## Issue ACs and exact behavior
+
+| AC | Result | Independent evidence |
+|---|---|---|
+| AC1 — public measurement skill in canonical cnos.cdd source | pass | `measure/recursive-cell/SKILL.md` is public with `artifact_class: measurement`; package smoke contains it and installed activation refuses as declared. |
+| AC2 — CUE essence plus I5 authority/target validation | pass | Frontmatter self-test passes all positive/negative measurement fixtures; full corpus reports `100 SKILL.md validated; no findings`. |
+| AC3 — six exact R7 manifests and readings | pass | Fresh pinned coh resolves system/L0/L1/L2/L3/L4 to `30/4/4/8/12/11`, emits six prompts, ingests six exact witnesses, and retains six reports. |
+| AC4 — exact frozen calibration preflight | pass | Receipt `a0d39293...`, matter `2d6b93cc...`, and matter SHA-256 `80e0d8c6...` pass; the current checkout is not substituted for the frozen target. |
+| AC5 — same-author evidence and standing boundary | pass | Historical same-author semantic evidence remains superseded; the fresh synthetic route emits `hold` with standing `none`. |
+| AC6 — fixtures and full skill corpus green | pass | Positive/negative self-test, all 100 skills, full runner, and both exact-head workflows pass. |
+
+The runner/skill/README/body claims align code-first:
+
+- emission creates six registered prompts, one prompt manifest, and one
+  H01–H13 assessment prompt in a private stage, then renames to immutable
+  `emission/`;
+- ingestion requires six exact standard witness objects plus the separate
+  assessment, snapshots them, verifies all prompt and response bindings,
+  retains six canonical reports, and validates both publication JSON objects
+  with CUE before the atomic `publication/` rename;
+- exact defect-card and nonempty `next_fixes` shapes, H01–H13 ordering and
+  scoped defect correlation, the unweighted L0–L4 geometric aggregate, the
+  canonical bottleneck axis, and zero-standing disposition are all exercised;
+- the complete deterministic runner suite passes the R6/R2 static symlink
+  regression family: output root, output ancestor, every one of six response
+  paths, response-directory component, and invariant path, plus reuse,
+  contention, mutation, replay, mid-target failure, and final-CUE cleanup; and
+- package layout/source resolution pass while installed activation and
+  arbitrary State-B loading remain deliberately unavailable.
+
+A fresh real-engine compatibility run used pinned
+`coh 0.12.0 (26aab50)` at
+`26aab5023f03dc7d0abf82e5fdba20134fc6adad`. It produced six reports, a
+passing H01–H13 gate, CUE-valid result/marker, aggregate
+`0.5667621299882342`, bottleneck `L4/beta`, and disposition `hold` / standing
+`none`. These tracked synthetic witnesses prove CLI/schema compatibility, not
+semantic calibration or independent warrant.
+
+## Provenance, topology, and append-only channel
+
+The parent chain is linear and exact at the review boundary:
+
+`8df92735...` (α R6/R2 receipt) → `6b2e75a7...` (β R6/R2 RC) →
+`0a871512...` (γ R6/R3 clarification) → `0c56ed72...` (α projection
+repair) → `56b08ea3...` (α receipt-truth correction).
+
+The full R6 log is role-correct for both author and committer: γ owns the
+scaffold/clarifications/snapshots, all six reconstructed matter commits and all
+α receipts are α/α, and both predecessor canonical review rounds are
+β/β. `gamma-scaffold.md` has one creating commit only;
+`gamma-clarification.md`, `beta-review.md`, and `self-coherence.md` advance by
+append-only additions; no predecessor artifact was overwritten or cross-owned.
+
+Product source outside `.cdd/unreleased/669/**` is byte-unchanged from
+`db9ce95b...`; its tree remains
+`2e4f08e1d2632a8a5fd008a08187a1b42d231152`. R6/R3 changes only the current
+γ clarification and α proposal/self-coherence artifacts before this review.
+
+The replay digests reproduce with their stated scopes:
+
+- historical and reconstructed pre-repair binary patch streams, excluding the
+  cycle directory: both
+  `4c42826034a446e0953e0934085dbfd8ee6bb71febff39254c7a34c44a65d9c0`;
+- exact additive `3144369b...db9ce95b` product stream:
+  `23749673b9fa678ad832b5b4f6915f5bed2b2865896555daf3504e2dd4e62796`;
+- corrected full `e8ba9954...db9ce95b` stream and the superseded-base replay
+  after applying that additive repair: both
+  `055c1b52ea5e83e64cca7a3dd8efe7c054b76f9e170c3fa90e9484a05d81c6a1`.
+
+These are binary patch-stream claims, not final-tree or direct-diff equality.
+All six old/new replay commit pairs also reproduce identical stable patch IDs.
+
+## Diff, CI, and architecture
+
+`git diff --check origin/main...56b08ea3...` passes. A non-destructive
+`git merge-tree --write-tree origin/main 56b08ea3...` succeeds without an
+unmerged path. GitHub reports PR #670 `OPEN`, `DRAFT`, `MERGEABLE`, and
+`CLEAN`; main has no protected required contexts, so the review fallback is
+every exposed cycle-head workflow. Both exact-head Build runs are successful,
+and all 22/22 rollup checks are completed/successful.
+
+| Architecture check | Result | Evidence |
+|---|---|---|
+| Reason to change preserved | yes | Methodology, runner, schema, validator, and docs remain separately scoped. |
+| Policy above detail preserved | yes | H01–H13 and disposition policy remain authoritative above runner mechanics. |
+| Interface truthful | yes | Current projections promise only the implemented static-path, snapshot, lock, reuse, digest, and atomic-publication boundaries. |
+| Registry normalized | yes | Six targets resolve through one pinned registry/manifest model. |
+| Source/artifact/installed boundary | yes | Source checkout executes; package layout is inspectable; installed activation explicitly refuses. |
+| Runtime surfaces distinct | yes | Measurement, TSC scoring, CUE validation, CC/FSM judgment, and operator effects remain separate. |
+| Degraded paths visible/testable | yes | Refusal paths are explicit and regression-tested; zero standing remains visible in the typed result. |
+
+## Findings and verdict
+
+No unresolved finding remains in this exact-SHA round. R6/R1 D1/C2 are closed
+by the additive static-path repair and γ oracle correction; R6/R2 D3 is closed
+by the honest, byte-matched projection narrowing verified here. The relevant
+issue contract, R6 provenance contract, implementation boundary, artifact
+channel, CI fallback, and draft/state/standing boundaries are coherent.
+
+**CONVERGE.** This verdict binds only reviewed α SHA
+`56b08ea3326bf2849a2564860f08045d56d7d054` and tree
+`544afc24bb51a814f9a8d8b0bed8a27197a62196`. It authorizes no matter or PR-body
+edit, label/state change, ready mark, merge, γ closeout itself, CC judgment,
+operator acceptance, standing promotion, or cell/wave FSM transition.
