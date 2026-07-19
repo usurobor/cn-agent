@@ -358,3 +358,21 @@ head and verify both tracked wording and the pending live-body projection. No
 State-A or State-B transition, γ closeout, CC judgment, operator final read,
 comment/body mutation, ready mark, merge, label change, standing promotion, or
 cell/wave FSM transition is authorized by this artifact.
+
+### R6/R3 receipt-truth correction
+
+The proposal no longer presents predecessor `8df92735...` and its tree as the
+current review-ready artifact. Those identifiers remain only the historical
+R6/R2 α receipt reviewed by β. This supersedes the earlier R6/R3 statement
+that back-projected that predecessor identity as a current proposal semantic.
+
+The immutable product matter remains `db9ce95b...`, tree `2e4f08e1...`. The
+exact R6/R3 α review head is necessarily the commit containing the final
+proposal and self-coherence bytes; the artifact does not attempt to embed its
+own not-yet-known SHA. κ's handoff and fresh β intake must bind that head
+externally. Current pending-review references now say R6/R3; historical R6/R2
+round labels and receipts remain unchanged.
+
+This receipt-only correction changes the same two α-owned Markdown artifacts,
+leaves all product matter and other custody evidence byte-identical, and
+authorizes no κ, β, γ, CC, PR-state, standing, or FSM action.

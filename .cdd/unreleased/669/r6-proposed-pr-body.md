@@ -53,12 +53,13 @@ diff equality claims.
 
 The retained R2 and R5 β/γ records are historical snapshots only. Their
 verdicts and closeouts do not authorize this reconstructed lineage. The
-current review-ready R6/R2 α artifact is exact commit
-`8df927352c2f323e7ac109a847abd547a225caed`, tree
-`ed802cb3dc738614fbc822b8c1b6ceb7b44af7e7`; it contains the updated
-canonical self-coherence artifact and this proposed body and requires a fresh
-context-isolated β review.
-Only a fresh R6/R2 β convergence may precede new γ binding and CC
+immutable product matter remains exact commit
+`db9ce95b1beb025d24f43fba2df58692665f80be`, tree
+`2e4f08e1d2632a8a5fd008a08187a1b42d231152`. The exact R6/R3 α review head
+is the commit containing the final canonical self-coherence artifact and this
+proposed body; it is not self-identified here and must instead be bound
+externally by κ's handoff and fresh β intake.
+Only a fresh R6/R3 β convergence may precede new γ binding and CC
 re-adjudication.
 
 State-B arbitrary methodology/target loading and installed activation remain
