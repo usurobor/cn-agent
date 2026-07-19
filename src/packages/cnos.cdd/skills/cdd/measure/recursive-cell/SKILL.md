@@ -126,6 +126,13 @@ refusal. A new application must materialize its own immutable registry by
 specializing these manifests; the bundled registry is calibration evidence,
 not a wildcard production target.
 
+State-A also treats filesystem path identity as evidence custody. The output
+root and every existing component in its lexical path must be nonsymlinked
+before the root is created. Each of the six response paths and the separate
+invariant-assessment path must be a regular file with no symlink component
+before staging and immediately before snapshot. Internal emission,
+publication, staging, and lock paths retain their independent symlink guards.
+
 I5 parses the 0.1 registry/manifests with the pinned TSC semantics, checks exact
 target/name/path equality, expands each target to a non-empty bundle at the
 declared historical revision, and checks the exact v3.2.4 top-level semantic

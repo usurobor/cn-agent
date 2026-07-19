@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import shutil
@@ -82,7 +83,31 @@ def write_json(path: Path, value) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def require_no_symlink_components(path: Path, label: str) -> Path:
+    """Return an absolute lexical path after refusing every symlink component."""
+    lexical = path if path.is_absolute() else Path.cwd() / path
+    current = Path(lexical.anchor)
+    candidates = [current]
+    for part in lexical.parts[1:]:
+        if part in {"", "."}:
+            continue
+        current = current.parent if part == ".." else current / part
+        candidates.append(current)
+    for candidate in candidates:
+        if candidate.is_symlink():
+            raise Refusal(f"{label} path contains a symlink component: {candidate}")
+    return Path(os.path.abspath(os.fspath(lexical)))
+
+
+def require_regular_input(path: Path, label: str) -> Path:
+    absolute = require_no_symlink_components(path, label)
+    if not absolute.is_file():
+        raise Refusal(f"{label} missing or not a regular file: {absolute}")
+    return absolute
+
+
 def snapshot_file(source: Path, destination: Path, label: str) -> None:
+    source = require_regular_input(source, label)
     try:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
@@ -336,8 +361,14 @@ def prepare(args):
     if parsed_time.tzinfo is None or parsed_time.utcoffset() != timezone.utc.utcoffset(parsed_time):
         raise Refusal("timestamp must be an RFC3339 UTC timestamp")
     run([preflight, root])
-    output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=True)
+    output = require_no_symlink_components(args.output, "output root")
+    try:
+        output.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise Refusal(f"could not create output root: {error}") from error
+    require_no_symlink_components(output, "output root")
+    if not output.is_dir():
+        raise Refusal(f"output root is not a directory: {output}")
     return (
         root, cm, registry, instruction, skill, schema, assessment_template,
         active_runner, authority_paths, coh_executable, output,
@@ -473,6 +504,11 @@ def ingest(args) -> None:
     emission_source = output / "emission"
     if not emission_source.is_dir() or emission_source.is_symlink():
         raise Refusal("canonical emission missing or malformed; run emit in a fresh root")
+    response_sources = {
+        target: require_regular_input(args.responses / f"{target}.json", f"response {target}")
+        for target in TARGETS
+    }
+    invariant_source = require_regular_input(args.invariants, "invariant assessment")
     lock = acquire_publication_lock(output)
     stage = None
     published = False
@@ -489,10 +525,10 @@ def ingest(args) -> None:
         response_paths = {}
         for target in TARGETS:
             response_path = stage / "inputs" / "responses" / f"{target}.json"
-            snapshot_file(args.responses / f"{target}.json", response_path, f"response {target}")
+            snapshot_file(response_sources[target], response_path, f"response {target}")
             response_paths[target] = response_path
         invariant_path = stage / "inputs" / "invariant-assessment.json"
-        snapshot_file(args.invariants, invariant_path, "invariant assessment")
+        snapshot_file(invariant_source, invariant_path, "invariant assessment")
 
         prompt_manifest_path = emission / "prompt-digests.json"
         prompt_manifest = load_json(prompt_manifest_path)

@@ -36,6 +36,7 @@ common=(
   --cm-revision "$cm_revision"
   --timestamp "2026-07-19T00:00:00Z"
 )
+targets=(cc662-system cc662-l0 cc662-l1 cc662-l2 cc662-l3 cc662-l4)
 
 emit_run() {
   local output="$1"
@@ -90,6 +91,11 @@ publication_digest() {
 }
 
 pass_output="$test_root/pass"
+[[ -d "$fixtures/responses-pass" && ! -L "$fixtures/responses-pass" ]]
+for target in "${targets[@]}"; do
+  [[ -f "$fixtures/responses-pass/$target.json" && ! -L "$fixtures/responses-pass/$target.json" ]]
+done
+[[ -f "$fixtures/invariants-pass.json" && ! -L "$fixtures/invariants-pass.json" ]]
 emit_run "$pass_output"
 
 # The authoritative output-root-relative emission declaration matches the
@@ -227,6 +233,65 @@ expect_refusal "symlink publication path" \
   ingest_run "$symlink_output" "$fixtures/responses-pass" "$fixtures/invariants-pass.json"
 [[ -L "$symlink_output/publication" ]]
 [[ ! -e "$test_root/redirect-target" ]]
+
+# The output root and every existing ancestor are lexical custody boundaries:
+# neither may redirect canonical emission before the runner creates anything.
+symlink_root_target="$test_root/symlink-root-target"
+mkdir "$symlink_root_target"
+symlink_root="$test_root/symlink-root"
+ln -s "$symlink_root_target" "$symlink_root"
+expect_refusal "symlink output root" emit_run "$symlink_root"
+[[ -L "$symlink_root" ]]
+[[ -z "$(find "$symlink_root_target" -mindepth 1 -print -quit)" ]]
+
+symlink_ancestor_target="$test_root/symlink-ancestor-target"
+mkdir "$symlink_ancestor_target"
+symlink_ancestor="$test_root/symlink-ancestor"
+ln -s "$symlink_ancestor_target" "$symlink_ancestor"
+expect_refusal "symlink output ancestor" emit_run "$symlink_ancestor/run"
+[[ -L "$symlink_ancestor" ]]
+[[ -z "$(find "$symlink_ancestor_target" -mindepth 1 -print -quit)" ]]
+
+# Every one of the six external response paths is preflighted before staging.
+for linked_target in "${targets[@]}"; do
+  linked_responses="$test_root/symlink-response-$linked_target"
+  mkdir "$linked_responses"
+  for target in "${targets[@]}"; do
+    if [[ "$target" == "$linked_target" ]]; then
+      ln -s "$fixtures/responses-pass/$target.json" "$linked_responses/$target.json"
+    else
+      cp "$fixtures/responses-pass/$target.json" "$linked_responses/$target.json"
+    fi
+  done
+  linked_output="$test_root/symlink-response-output-$linked_target"
+  emit_run "$linked_output"
+  expect_refusal "symlink response $linked_target" \
+    ingest_run "$linked_output" "$linked_responses" "$fixtures/invariants-pass.json"
+  [[ -L "$linked_responses/$linked_target.json" ]]
+  assert_unpublished "$linked_output" "symlink response $linked_target"
+done
+
+# A symlinked response-directory component is also refused before staging.
+regular_response_parent="$test_root/regular-response-parent"
+mkdir "$regular_response_parent"
+cp "$fixtures"/responses-pass/*.json "$regular_response_parent/"
+linked_response_parent="$test_root/linked-response-parent"
+ln -s "$regular_response_parent" "$linked_response_parent"
+linked_parent_output="$test_root/linked-response-parent-output"
+emit_run "$linked_parent_output"
+expect_refusal "symlink response ancestor" \
+  ingest_run "$linked_parent_output" "$linked_response_parent" "$fixtures/invariants-pass.json"
+assert_unpublished "$linked_parent_output" "symlink response ancestor"
+
+# The invariant input has the same regular-file, no-symlink custody boundary.
+linked_invariants="$test_root/linked-invariants.json"
+ln -s "$fixtures/invariants-pass.json" "$linked_invariants"
+linked_invariant_output="$test_root/linked-invariant-output"
+emit_run "$linked_invariant_output"
+expect_refusal "symlink invariant assessment" \
+  ingest_run "$linked_invariant_output" "$fixtures/responses-pass" "$linked_invariants"
+[[ -L "$linked_invariants" ]]
+assert_unpublished "$linked_invariant_output" "symlink invariant assessment"
 
 # A competing conforming publisher holds an atomic lock and is never raced.
 locked_output="$test_root/locked-publication"

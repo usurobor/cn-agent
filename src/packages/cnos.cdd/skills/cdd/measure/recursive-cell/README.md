@@ -91,6 +91,14 @@ bottleneck level is the lowest numeric L0-L4 `C_sigma`; its axis is that
 level's canonical TSC `bottleneck_axis`, rather than a recomputation from raw
 axis scores.
 
+The output root is a lexical custody boundary: before resolving or creating
+it, the runner refuses the root itself or any existing path component that is
+a symlink. Before publication staging and again immediately before each copy,
+ingestion requires all six response paths and the invariant-assessment path to
+be regular files with no symlink component. These external-input checks are in
+addition to the internal emission, publication, staging, and lock symlink
+guards; a refusal leaves no redirected or mixed canonical output.
+
 `scripts/ci/test-recursive-cell-runner.sh` covers this orchestration, schema,
 math, gating, provenance, atomic emission/publication, and refusal behavior with
 deterministic fixture responses and a strict fake CLI. A separate local
