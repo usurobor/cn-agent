@@ -140,3 +140,131 @@ scaffold, clarification, and historical snapshots remained byte-identical.
   warrant.
 - PR #670 must remain draft; merge, ready mark, standing promotion, and FSM
   transition remain outside this artifact's authority.
+
+# R6/R2 Fix Round — β D1 and γ C2
+
+### Binding
+
+This α repair starts from exact γ clarification commit
+`3144369b9066b6fbc25c54b20fc241e4a64c5046`, whose parent is canonical β
+R6/R1 REQUEST CHANGES receipt
+`62135222a4de8d078cfb5cb1108532252dd19366`. The γ commit supersedes the
+scaffold's false tree/direct-diff oracle; α did not edit `gamma-scaffold.md`,
+`gamma-clarification.md`, or `beta-review.md`.
+
+The new R6/R2 product-matter commit is
+`db9ce95b1beb025d24f43fba2df58692665f80be`, tree
+`2e4f08e1d2632a8a5fd008a08187a1b42d231152`, with exact parent
+`3144369b9066b6fbc25c54b20fc241e4a64c5046`. Both its author and committer
+are `alpha <alpha@cdd.cnos>`. It changes exactly four files:
+
+- `recursive-cell-runner.py` — fail-closed lexical path validation;
+- `test-recursive-cell-runner.sh` — positive and symlink regression family;
+- recursive-cell `SKILL.md` — authoritative custody boundary; and
+- recursive-cell `README.md` — executable path behavior.
+
+Design and a separate plan artifact were not required: β D1 prescribed one
+bounded filesystem membrane and its exact regression family. The implementation
+order was tests/peer enumeration, runner membrane, authority/docs projection,
+then full revalidation.
+
+### D1 resolution — filesystem evidence custody
+
+The runner now checks the lexical output path before resolving or creating it.
+The output root itself and every existing traversed component must be
+nonsymlinked. In ingestion, all six response paths and the invariant-assessment
+path are preflighted as regular files with no symlink component before the
+publication lock or stage exists, then rechecked immediately before each copy.
+The pre-existing canonical `emission/`, `publication/`, staging, and lock
+symlink/race guards remain intact.
+
+The regression peer set is complete:
+
+- one regular output root, six regular responses, and one regular invariant
+  still produce six reports, the aggregate, and the success marker;
+- a direct output-root symlink and a symlinked output ancestor each refuse
+  before creating canonical or redirected output;
+- each of `cc662-system` and `cc662-l0` through `cc662-l4` is independently
+  replaced by a symlink and refuses before staging/publication;
+- a symlinked response-directory component and a symlinked invariant input
+  also refuse; and
+- every refusal leaves no publication, stage, lock, redirected emission, or
+  mixed canonical output.
+
+The CUE result/publication schemas and tracked JSON witness fixtures were
+audited and intentionally remain unchanged: D1 changes filesystem custody,
+not the typed witness or publication shape. Symlink cases are created
+deterministically in the shell harness because a symlink is filesystem
+metadata, not JSON fixture content. The tracked and live PR claim is now backed
+by runtime enforcement; the tracked proposal below narrows the sentence to the
+exact output-component and external-input behavior.
+
+### C2 resolution — corrected patch-stream oracle
+
+The appended γ clarification at `3144369b...` is binding. No R6 acceptance
+claim uses whole-tree equality with `ccaf356...` or a direct diff from that
+commit.
+
+The immutable replay prefix remains proven by two byte-identical binary patch
+streams, excluding `.cdd/unreleased/669/**`:
+
+- superseded `90287522...ccaf356...`; and
+- reconstructed `e8ba9954...b2aafc79...`.
+
+Both retain SHA-256
+`4c42826034a446e0953e0934085dbfd8ee6bb71febff39254c7a34c44a65d9c0`.
+That digest is provenance for the pre-repair prefix, not a constraint against
+β's required additive repair.
+
+The exact additive product patch
+`3144369b9066b6fbc25c54b20fc241e4a64c5046..db9ce95b1beb025d24f43fba2df58692665f80be`
+has binary patch-stream SHA-256
+`23749673b9fa678ad832b5b4f6915f5bed2b2865896555daf3504e2dd4e62796`.
+Applying that exact stream to a detached superseded R5 matter checkout and
+diffing from `90287522...` produces bytes identical to the canonical corrected
+R6 stream `e8ba9954...db9ce95b...`; both full streams hash to
+`055c1b52ea5e83e64cca7a3dd8efe7c054b76f9e170c3fa90e9484a05d81c6a1`.
+This is patch-stream equivalence over the intended replay plus reviewed
+additive repair, not final-tree or direct-diff equivalence.
+
+### R6/R2 validation and self-check
+
+Validation on the repaired bytes passes:
+
+- `git diff --check`;
+- the targeted symlink family and the complete deterministic runner suite
+  (`96` captured output lines), including every inherited custody, witness,
+  atomic publication, replay, gate, math, and refusal case;
+- frozen composite instruction SHA-256
+  `de0414bac1a086d6ed3ac5c7d84cd6293517eb83c920f6c4a0723f5dfac06a3a`
+  and exact #662 target preflight with `30/4/4/8/12/11` files;
+- frontmatter positive/negative self-test and all `100 SKILL.md` files;
+- `cnos.cdd` package layout and installed-activation refusal;
+- Python and shell syntax plus all seven workflow YAML files;
+- a depth-one checkout of the new R6/R2 α history after fetching only pinned
+  objects `a0d39293...` and `2d6b93cc...`, with all skills and the complete
+  runner green; and
+- pinned real `coh 0.12.0 (26aab50)` six-target emit/ingest using the regular
+  tracked synthetic witnesses, producing six reports, 13 passing invariants,
+  `hold`, and standing `none`.
+
+The change does not push ambiguity to β: the producer/consumer set is the CLI
+output argument, six response paths, invariant path, snapshot function,
+runner stage, deterministic harness, SKILL authority, README projection, and
+tracked PR projection; every member is enforced, tested, or explicitly
+unchanged because its typed shape is unaffected. Remote CI on the resulting
+review-ready SHA is still a β input and is not preclaimed here.
+
+### R6/R2 debt and handoff
+
+State-A remains source-checkout-only and fail-closed. State-B arbitrary
+methodology/target loading and installed activation remain unshipped. The
+candidate retains standing `none`; real-coh output is synthetic compatibility
+evidence, not a semantic sample, consistency/admissibility claim, held-out
+anchor, ratification, or standing promotion.
+
+The R6/R1 β verdict remains REQUEST CHANGES historical authority over its exact
+reviewed SHA; D1 and C2 are repaired here but only a fresh context-isolated β
+review of the final immutable R6/R2 α head can issue a new verdict. No α action
+performs β/γ/CC judgment, comment projection, ready mark, merge, label change,
+operator acceptance, standing promotion, or cell/wave FSM transition.
