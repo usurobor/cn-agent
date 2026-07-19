@@ -15,10 +15,10 @@ scope:
   parent_cell: "671"
 intent_ref:
   schema: "cn.intent.v1"
-  id: "intent-2026-0719-671-cell-runtime-doctrine"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # resolves to the durable cn.intent.v1 object
   carrier:
-    kind: "github_issue"
-    ref: "cnos#671"
+    kind: "repo_artifact_bootstrap"                       # typed bootstrap adapter: intent is a durable repo artifact (not an issue-hosted object); §2 carrier {kind, ref} shape preserved
+    ref: "sha256:f3f484132c819c2a184df06ba99317bd032678f2cc6e47be74446f222005cb5c@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
 inputs:
   required:
     # --- external roots (immutable, revision-pinned; create no wave edge) ---
@@ -50,7 +50,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#667#issuecomment-5015460988"
-        revision: "sha256:585955d8cdd4aa0556aa0daa0f955a00d1fdf69921c9cadea2abf25b620aebd3@.cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
   optional: []
 requested_output:
   id: "coherence-measurement-contract"     # the cm_ref interface every other node imports
@@ -64,7 +64,9 @@ acceptance:
     - "cm_to_v_edge_pinned__v_consumes_an_immutable_cm_ref_as_a_named_input_the_frozen_contract_times_receipt_signature_is_extended_to_carry"
     - "receipt_core_to_cm_to_v_to_delta_to_final_receipt_type_path_declared__provisional_receipt_core_without_validation_or_boundary_decision_then_measurement_then_final_receipt_satisfying_shipped_receipt_cue"
     - "cm_producers_and_consumers_pinned__producer_provider_runtime_op__consumers_v_gates_on_it_cc_judgment_consumes_refs_pc_wave_grounded_in_it"
-    - "d9_cm_location_decided__fifth_schema_cn_cm_v1_vs_cm_inside_receipt_or_next_mca__decided_as_a_design_contract_preceding_every_consumer_not_reopening_a_pinned_four_schema_boundary"
+    - "d9_four_schema_boundary_settled__cm_is_realized_within_the_authorized_four_schemas_not_as_a_fifth_canonical_cn_cm_v1__operator_settled_no_authorized_reopening"
+    - "cm_realized_within_four_schemas__a_typed_cm_field_or_edge_in_the_receipt_plus_a_cm_ref_resolving_within_the_existing_four_schemas__wc1_and_wc4_consume_this_same_cm_ref_shape"
+    - "negative_fixture_reject_fifth_canonical_schema__a_proposed_fifth_cn_cm_v1_canonical_schema_is_rejected_while_the_four_schema_boundary_remains_settled"
     - "reproducible__same_frozen_inputs_plus_provider_version_reproduce_the_mechanically_claimed_cm_result"
     - "cm_ref_field_shape_is_the_single_interface_all_other_nodes_import__no_second_cm_shape_introduced_downstream"
 constraints:
@@ -90,14 +92,5 @@ gates:
 doctrine_affecting: true
 stop_conditions:
   - "source_doctrine_conflicts"
-  - "required_decision_unresolved"           # e.g. D9 CM-location if operator has not pinned it
+  - "fifth_canonical_schema_proposed__d9_four_schema_boundary_is_settled_no_authorized_reopening"
   - "grounding_cm_ref_unresolvable_or_stale"
-consumers:                                    # extension key (schema is open with `...`)
-  - "wc-1"
-  - "wc-3a"
-  - "wc-3b"
-  - "wc-4"
-  - "wc-5"
-  - "downstream:627/S2(CM fields)"
-  - "downstream:627/S3(CM engine)"
-completion_signal: "receipt bound to output SHA; acceptance predicates all PASS; class-WC V verdict PASS; exact-SHA external-β + content-bound γ; merged to docs/architecture/COHERENCE-MEASUREMENT.md"

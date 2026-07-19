@@ -42,6 +42,41 @@ The wave's newly-executable children are **WC-1, WC-2, WC-3a, WC-3b, WC-4, WC-5*
 WC-5 (integration/seal) has no #627 S-counterpart: it is the whole-wave proof node this wave adds,
 not a refinement of any single S-node.
 
+## Derived reverse-consumers (replaces the non-canonical per-contract `consumers` field)
+
+The §2 `cn.cell.contract.v1` key-path set has **no** `consumers` key. Reverse-consumer information is
+therefore **derived**, never authored as a contract field. Two derivations, both mechanical:
+
+**(a) In-wave consumers** — derived from the child contracts' `sibling_output` refs (an edge
+`producer → consumer` exists iff the consumer carries a `sibling_output` ref resolving to the
+producer's `requested_output.id`). This is the exact inverse of `wave.cn-wave-v1.yaml`'s derived edge
+set:
+
+| Producer node | `requested_output.id` | Derived in-wave consumers (reverse edges) |
+|---|---|---|
+| WC-2 | `coherence-measurement-contract` | WC-1, WC-3a, WC-3b, WC-4, WC-5 |
+| WC-1 | `cell-classes-and-contract` | WC-3a, WC-3b, WC-4, WC-5 |
+| WC-3a | `cell-fsm` | WC-5 |
+| WC-3b | `wave-fsm` | WC-5 |
+| WC-4 | `contract-migration` | WC-5 |
+| WC-5 | `cell-runtime-integration-seal` | — (terminal; consumed off-wave at the operator final-read / wave-authorization boundary and by the #627 coordination index — a control-plane surface, not a wave node) |
+
+**(b) Downstream #627 consumers** — derived from the **design-input** rows of the S-node table
+above (`refined-by <WC-n>`), not from any contract field. Reading those rows in reverse:
+
+| Producer node | Downstream #627 S-nodes it feeds (design input) |
+|---|---|
+| WC-1 | S2 (contract envelope), S5 (worker adapter), S6 (planning adapter) |
+| WC-2 | S2 (CM fields), S3 (CM engine — contract only), S4 (CM the CC consumes), S6 (grounding CM) |
+| WC-3a | S5 (worker adapter) |
+| WC-3b | S4 (CC observer MVP), S6 (planning adapter) |
+| WC-4 | S2 (migration adapter impl) |
+| WC-5 | #627 coordination index (whole-wave seal; no single S-owner) |
+
+Neither derivation is stored on a contract; both are recomputed from the `sibling_output` refs and
+this #627 map. The validator (`validate.py`, check (c)) proves derivation (a) matches the authored
+wave edges exactly.
+
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 
 Keeping #627 the single authority requires one immutable coordination index recording this mapping

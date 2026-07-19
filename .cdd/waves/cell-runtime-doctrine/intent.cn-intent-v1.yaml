@@ -1,0 +1,47 @@
+# cn.intent.v1 — durable, first-class planning object for the cell-runtime doctrine wave.
+#
+# Materializes the operator-settled objective this wave decomposes. Per the D9 dependency order
+# (cn.intent.v1 → cn.cell.contract.v1 → …), this durable object is produced by κ BEFORE any cell
+# exists; every child cell contract's `intent_ref` points back at it by an IMMUTABLE, content-bound
+# locator (this file's path + its SHA-256), NOT merely the mutable GitHub-issue carrier cnos#671.
+# A GitHub issue is only a control-plane projection of this intent; this file is the intent identity.
+schema: cn.intent.v1
+id: "intent-2026-0719-671-cell-runtime-doctrine"
+source: "operator"
+captured_by: "kappa"
+captured_at: "2026-07-19"
+statement: >-
+  Settle the cnos cell-runtime doctrine as a coherent, mechanically-checkable specification: the
+  typed cell contract (cn.cell.contract.v1), the coherence-measurement (CM) backbone that V gates
+  on, the cell and wave finite-state machines, and the shipped→specified contract migration — so a
+  Working Cell can implement the runtime (Go/CUE) without inventing dependency, measurement,
+  authority, or gate policy. The doctrine must be grounded in an immutable coherence measurement
+  (the external-CC recursive TSC measurement of frozen #662 R7), not in prose assertion.
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_wave: "627"
+  in_scope:
+    - "the typed cell contract envelope and its input/edge/gate model (doctrine only)"
+    - "the CM measurement object contract and the receipt_core → CM → V → δ → final_receipt type path"
+    - "the cell FSM and the wave FSM as separate total machines"
+    - "the shipped→specified contract migration as a doctrine/schema-boundary design"
+    - "an integration seal proving the artifacts compose"
+  out_of_scope:
+    - "implementing the CM engine, CUE schemas, or Go runtime (that is #627 S2–S7)"
+    - "reopening the D9 four-schema boundary to a fifth canonical schema"
+    - "forking or replacing #627 as the single implementation authority"
+    - "any control-plane action (filing/dispatching/commenting/merging)"
+constraints:
+  - "grounding must be an immutable, content-bound measurement (source SHA-256, retrievable snapshot)"
+  - "CM is a runner/provider-produced object; a CC output is a JUDGMENT that consumes CM refs; the two are distinct tagged objects"
+  - "the accepted decomposition graph shape is fixed: WC-2 root → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5"
+  - "D9's four-schema boundary stays SETTLED; CM is realized WITHIN the four schemas, not as a fifth"
+  - "operator authorization binds once at the wave boundary, to this exact wave revision"
+  - "every doctrine-affecting child requires operator acceptance at merge (gate invariant 1)"
+desired_outcome: >-
+  Six single-purpose Working-Cell contracts (WC-1, WC-2, WC-3a, WC-3b, WC-4, WC-5) plus a validated
+  cn.wave.v1 graph, each contract a canonical cn.cell.contract.v1 §2 instance, whose edges are the
+  mechanical projection of sibling_output refs, whose completion predicate is acyclic and
+  non-recursive, and which, when executed, yield the doctrine artifacts under docs/architecture/ that
+  close every measured FAIL exactly once — proven whole by the WC-5 integration seal.

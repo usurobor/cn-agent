@@ -14,22 +14,22 @@ scope:
   parent_cell: "671"
 intent_ref:
   schema: "cn.intent.v1"
-  id: "intent-2026-0719-671-cell-runtime-doctrine"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # resolves to the durable cn.intent.v1 object
   carrier:
-    kind: "github_issue"
-    ref: "cnos#671"
+    kind: "repo_artifact_bootstrap"                       # typed bootstrap adapter: intent is a durable repo artifact (not an issue-hosted object); §2 carrier {kind, ref} shape preserved
+    ref: "sha256:f3f484132c819c2a184df06ba99317bd032678f2cc6e47be74446f222005cb5c@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
 inputs:
   required:
     - ref_kind: "external"          # grounding CM (content-bound) — the residual-debt trace WC-5 re-checks
       locator:
         kind: "control_plane"
         ref: "cnos#667#issuecomment-5015460988"
-        revision: "sha256:585955d8cdd4aa0556aa0daa0f955a00d1fdf69921c9cadea2abf25b620aebd3@.cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
     - ref_kind: "external"          # the #627 refinement map (content-bound) — parity source for the seal
       locator:
         kind: "control_plane"
         ref: "cnos#671#reconcile-627"
-        revision: "sha256:2ee657692ac82bfead75827772559e6145024172b201b47fb7e1813d7783f4d2@.cdd/waves/cell-runtime-doctrine/reconcile-627.md"
+        revision: "sha256:d01e23b2fbe3bb197a8b421d62fcf31f85da3743fb3a8a83661b088da086d857@.cdd/waves/cell-runtime-doctrine/reconcile-627.md"
     # --- sibling_output (edges WC-1,2,3a,3b,4 → WC-5) ---
     - ref_kind: "sibling_output"
       producer: "wc-1"
@@ -60,7 +60,8 @@ acceptance:
     - "reconcile_627_mapping_complete__every_S_node_classified_exactly_once_no_duplicate_owner_no_omitted_executable_child"
     - "residual_debt_disposed__every_grounding_fail_is_closed_by_or_retired_instance_defect_or_tracked_follow_up_exactly_once"
     - "final_integration_v_fails_closed_on__a_conflicting_cm_ref_a_conflicting_fsm_state_a_conflicting_schema_field_a_missing_adapter_case_or_an_unmapped_627_node"
-    - "whole_wave_completion_predicate__every_child_completion_predicate_holds_and_the_wave_level_completion_predicate_holds"
+    - "wc5_readiness_over_non_recursive_construction_set_N__a_completion_receipt_exists_for_every_node_in_N_where_N_equals_wc1_wc2_wc3a_wc3b_wc4_and_excludes_wc5"
+    - "wc5_own_completion_is_non_recursive__wc5_requested_output_produced_plus_wc5_acceptance_pass_plus_integration_v_pass_plus_bound_receipt__does_not_quantify_over_wc5_itself_nor_over_the_whole_wave_predicate"
 constraints:
   allowed_paths:
     - "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
@@ -88,7 +89,3 @@ stop_conditions:
   - "any_child_artifact_missing_or_unbound"
   - "cross_artifact_conflict_detected"          # WC-5 holds/blocks and names the conflicting node
   - "reconcile_627_map_incomplete_or_double_owned"
-consumers:
-  - "operator:final-read / wave-authorization boundary (§9)"
-  - "coordination-index:627"
-completion_signal: "whole-wave seal receipt: every child-completion predicate holds AND the wave-level completion predicate holds; final integration V verdict PASS; exact-SHA external-β + content-bound γ; merged to docs/architecture/CELL-RUNTIME-INTEGRATION.md — this is the wave terminal signal"

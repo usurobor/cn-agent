@@ -1,13 +1,14 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R1)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R2)
 #
-# Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under
-# contracts/). Edges are the MECHANICAL PROJECTION of the child contracts' sibling_output refs:
-# an edge A→B exists iff B's contract carries a sibling_output ref whose producer+output_id
-# resolves to A's requested_output.id. `external` refs (incl. the grounding CM and #628/S1)
-# create NO edge. Edges here are authored for readability but MUST hold exact parity with the
-# derived set (see `edge_derivation` below); WC-5 proves that parity.
+# Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
+# resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
+# MECHANICAL PROJECTION of the child contracts' sibling_output refs: an edge A→B exists iff B's
+# contract carries a sibling_output ref whose producer+output_id resolves to A's requested_output.id.
+# `external` refs (incl. the grounding CM and #628/S1) create NO edge. Edges here are authored for
+# readability but MUST hold exact parity with the derived set (validate.py check (c) proves it).
 schema: cn.wave.v1
 wave: "671"
+revision: "R2"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -15,19 +16,38 @@ goal: >-
   an immutable coherence measurement, such that a Working Cell can implement the runtime (Go/CUE)
   from these artifacts without inventing dependency, measurement, authority, or gate policy.
 
+# The durable planning object this wave decomposes (D9: cn.intent.v1 precedes every contract).
+intent:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"
+  locator: "sha256:f3f484132c819c2a184df06ba99317bd032678f2cc6e47be74446f222005cb5c@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+
+# Grounding points to BOTH the immutable byte-for-byte source snapshot AND α's derivative mapping.
 grounding:
-  cm_ref:
+  source_snapshot:                 # the EXACT bytes of the source measurement (content-bound, immutable)
     ref_kind: "external"
     locator:
       kind: "control_plane"
       ref: "cnos#667#issuecomment-5015460988"
-      revision: "sha256:585955d8cdd4aa0556aa0daa0f955a00d1fdf69921c9cadea2abf25b620aebd3@.cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+      revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
+      note: "true source SHA-256; 150-line comment body; the authoritative grounding measurement"
+  alpha_derivative:                # α's derived FAIL-classification (REFERENCES the snapshot; NOT the exact bytes)
+    ref_kind: "external"
+    locator:
+      kind: "repo_artifact"
+      repo: "usurobor/cnos"
+      resolved_at: "authorized_wave_commit"
+      path: ".cdd/waves/cell-runtime-doctrine/grounding-cm.md"
+      content_hash: "sha256:d6ce02d99518a6df6e1995ac425719490c934f84b4745401cd24a823202e379e"
+      references_source: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb"
   reconcile_627_ref:
     ref_kind: "external"
     locator:
-      kind: "control_plane"
-      ref: "cnos#671#reconcile-627"
-      revision: "sha256:2ee657692ac82bfead75827772559e6145024172b201b47fb7e1813d7783f4d2@.cdd/waves/cell-runtime-doctrine/reconcile-627.md"
+      kind: "repo_artifact"
+      repo: "usurobor/cnos"
+      resolved_at: "authorized_wave_commit"
+      path: ".cdd/waves/cell-runtime-doctrine/reconcile-627.md"
+      content_hash: "sha256:d01e23b2fbe3bb197a8b421d62fcf31f85da3743fb3a8a83661b088da086d857"
 
 # External roots (immutable; consumed by nodes, create no wave edge)
 external_roots:
@@ -38,37 +58,58 @@ external_roots:
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md"
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:src/packages/cnos.cds/skills/cds/fsm/transitions.json"
   - "repo_artifact usurobor/cnos@30a9455afaf7f9f63ca0c60b5c91477b321ca49f:docs/architecture/CELL-RUNTIME-CLASSES.md   # #662 converged shape to re-land"
-  - "control_plane cnos#667#issuecomment-5015460988 (grounding CM, content-bound)"
+  - "control_plane cnos#667#issuecomment-5015460988 @ sha256:9d1ab3a5… (grounding CM source, content-bound)"
+
+# contract_ref resolution is revision-bound: operator authorization binds to THIS EXACT wave revision.
+contract_ref_resolution:
+  rule: >-
+    Every node.contract_ref is a repo-relative path resolved RELATIVE TO THE IMMUTABLE AUTHORIZED
+    WAVE COMMIT — the exact git tree the operator authorizes. Resolution is the pair
+    (authorized_wave_commit, contract_ref). Operator authorization is revision-bound, not path-bound:
+    re-resolving any contract_ref against a changed tree (a different blob at the path) MUST FAIL
+    STALE and re-enter the wave-authorization gate. A changed contract is a new, unauthorized wave.
+  authorized_wave_commit: "tip of wave/671-cell-runtime-doctrine at operator authorization (bound by κ at the wave boundary)"
+  per_child_content_binding: >-
+    Each node additionally carries node.contract_sha256 — the SHA-256 of the contract blob at the
+    authorized commit — so resolution is independently content-addressable and validate.py check (b)
+    can prove every contract_ref resolves to its pinned bytes.
+  stale_on: "any contract_ref path resolving to a different blob (different SHA-256) than at the authorized commit"
 
 nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
+    contract_sha256: "3728d5c51218443d93ed415aab7cb31e36bf0cd7f1b387afed1105f0a6866173"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
+    contract_sha256: "dcabe468abac1f8685fdfb7d090b1b442eb866c6452a7caf83697e27fed1c79e"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
+    contract_sha256: "9ebc86fbd1e542efee855eabcb0c44bd7c4597bfc1c5e38009d40b2263463d70"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
+    contract_sha256: "5c38047b78a0a25a97d1691467b834ebff9bf636cc503ed8fb8664c640e21354"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
+    contract_sha256: "632cd8415fb228e0e9a9f74ab10baded789aafee24be257c27f86bd439f6aecb"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
+    contract_sha256: "b189c95f989e0b904e531a6662c09f6c22cb20daf6e2ccf7b835ba37c73fec03"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 
-# Edges derived over sibling_output refs only (kind: depends_on).
+# Edges derived over sibling_output refs only (kind: depends_on). Accepted graph shape (β): unchanged.
 edges:
   - { from: "wc-2",  to: "wc-1",  kind: "depends_on" }   # wc-1  ← sibling_output(wc-2, coherence-measurement-contract)
   - { from: "wc-1",  to: "wc-3a", kind: "depends_on" }   # wc-3a ← sibling_output(wc-1, cell-classes-and-contract)
@@ -86,7 +127,7 @@ edges:
 edge_derivation:
   rule: "edge A→B iff B's cn.cell.contract.v1 carries a sibling_output ref resolving producer=A + output_id=A.requested_output.id"
   external_refs_create_no_edge: true
-  parity_required: true            # authored edge set must equal the derived set exactly (WC-5 proves it)
+  parity_required: true            # authored edge set must equal the derived set exactly (validate.py check (c))
   acyclic: true
   roots: [ "wc-2" ]                # sole keystone root; all cm_ref fields import from wc-2's stable output
   critical_path: [ "wc-2", "wc-1", "wc-3b", "wc-5" ]
@@ -95,18 +136,85 @@ gates:
   wave_authorization:
     authority: "operator"
     boundary: "once at the wave boundary (§9); children then scheduled by dependencies, no per-child operator gate"
+    revision_bound: "binds to the authorized wave commit (see contract_ref_resolution); a changed tree fails stale"
   per_child:
     operator_authorization_required: false
     operator_acceptance_required: true        # every child is doctrine_affecting: true
     reason: "doctrine-affecting children require operator acceptance at merge (gate invariant 1)"
 
+# Wave-level STOP conditions — each produces exactly one typed non-dispatch transition + receipt.
+# effect ∈ {hold, replan, escalate}. None dispatches a child; each writes a typed stop receipt.
+stop_conditions:
+  - trigger: "stale_grounding"
+    detect: "grounding source_snapshot no longer resolves to sha256:9d1ab3a5… (or the derivative/reconcile content_hash mismatches)"
+    effect: "hold"
+    transition: "dispatchable|executing → holding"
+    receipt: "stop-receipt{type: stale_grounding, node: wave, evidence: expected_vs_actual_hash}"
+  - trigger: "failed_predecessor"
+    detect: "a predecessor node's completion predicate is FAIL / its receipt is absent when a successor becomes ready"
+    effect: "hold"
+    transition: "executing → holding"
+    receipt: "stop-receipt{type: failed_predecessor, node: <successor>, evidence: missing_or_failed_producer}"
+  - trigger: "invalid_graph"
+    detect: "edge parity break OR a cycle appears (validate.py check (c)/(d) would fail)"
+    effect: "replan"
+    transition: "executing → replanning"
+    receipt: "stop-receipt{type: invalid_graph, node: wave, evidence: parity_diff_or_cycle}"
+  - trigger: "revoked_authorization"
+    detect: "operator authorization for THIS wave revision is revoked, or contract_ref re-resolves stale at a changed tree"
+    effect: "escalate"
+    transition: "any → holding (awaiting re-authorization)"
+    receipt: "stop-receipt{type: revoked_authorization, node: wave, evidence: authorized_commit_vs_current_tree}"
+  - trigger: "integration_conflict"
+    detect: "WC-5 seal detects a cross-artifact conflict (conflicting cm_ref / FSM state / schema field / missing adapter case / unmapped 627 node)"
+    effect: "hold"
+    transition: "completing → holding"
+    receipt: "stop-receipt{type: integration_conflict, node: wc-5, evidence: conflicting_node_named}"
+  - trigger: "unresolved_d9_at_wave_scope"
+    detect: "a proposal to realize CM as a fifth canonical schema surfaces at wave scope (D9 four-schema boundary is settled)"
+    effect: "escalate"
+    transition: "any → holding (operator decision required to reopen a settled boundary)"
+    receipt: "stop-receipt{type: unresolved_d9_at_wave_scope, node: wave, evidence: fifth_schema_proposal}"
+
+# Non-recursive whole-wave completion (finding-1 repair). Dependency graph of predicates is ACYCLIC.
 completion:
+  construction_set_N: [ "wc-1", "wc-2", "wc-3a", "wc-3b", "wc-4" ]   # NON-recursive: excludes wc-5
   child_completion_predicate: >-
-    for each node: requested_output produced · acceptance.predicates all PASS · class-WC V verdict PASS ·
-    a bound receipt exists · exact-SHA external-β + content-bound γ.
-  wave_level_completion_predicate: >-
-    every child_completion_predicate holds AND WC-5's integration V verdict is PASS
-    (cross-artifact vocabulary consistent · schema fixtures pass · graph parity · migration round-trips ·
-    reconcile-627 map complete · residual grounding-FAIL debt disposed exactly once).
+    child_complete(n) := requested_output(n) produced · acceptance.predicates(n) all PASS ·
+    class-WC V verdict(n) PASS · a bound receipt(n) exists · exact-SHA external-β + content-bound γ.
+    Defined per node; references only that node's own surfaces. Does NOT reference the wave predicate.
+  wc5_readiness_predicate: >-
+    wc5_ready := for every n in construction_set_N, a completion receipt exists (child_complete(n) holds).
+    Quantifies over N only (wc-1,wc-2,wc-3a,wc-3b,wc-4); it does NOT reference wc-5 or the wave predicate.
+  wc5_completion_predicate: >-
+    wc5_complete := requested_output(wc-5) produced · acceptance.predicates(wc-5) all PASS ·
+    integration V verdict(wc-5) PASS · a bound receipt(wc-5) exists. It does NOT quantify over wc-5
+    itself, over child_completion of wc-5, or over the whole-wave predicate.
+  whole_wave_completion_predicate: >-
+    wave_complete := ( for all n in construction_set_N: child_complete(n) ) AND wc5_complete.
+    This is the ONLY predicate that references both N and wc-5; nothing references it back.
+  dependency_graph:
+    # completion-predicate dependency edges (P depends on Q iff evaluating P reads Q). ACYCLIC.
+    edges:
+      - "child_complete(n) -> own surfaces of n only (leaves; n in N and wc-5)"
+      - "wc5_ready -> child_complete(n) for n in N (not wc-5)"
+      - "wc5_complete -> own surfaces of wc-5 only (leaf; does not read wc5_ready or wave_complete)"
+      - "wave_complete -> child_complete(n) for n in N, and wc5_complete"
+    acyclic: true
+    note: "No predicate reads wave_complete; wc5_complete reads nothing recursive; wc5_ready is over N only. DAG."
   terminal_node: "wc-5"
-  note: "four/six child closures do NOT by themselves prove the objective — WC-5 is the whole-wave proof."
+  note: "four/six child closures do NOT by themselves prove the objective — wave_complete = all(N) AND wc5_complete."
+  # Fixtures the wave FSM / validator exercise (finding-1 required set):
+  fixtures:
+    - name: "all-N-incomplete"
+      state: "no child_complete(n) holds for any n in N"
+      expect: "wc5_ready = false (seal not ready); wave_complete = false"
+    - name: "all-N-complete / WC-5-absent"
+      state: "child_complete(n) holds for every n in N; wc-5 has produced no receipt"
+      expect: "wc5_ready = true (seal ready); wc5_complete = false; wave_complete = false (wave incomplete)"
+    - name: "WC-5-FAIL"
+      state: "child_complete(n) holds for every n in N; wc-5 ran but integration V verdict = FAIL"
+      expect: "wc5_ready = true; wc5_complete = false; wave_complete = false (wave incomplete)"
+    - name: "all-N + WC-5-PASS"
+      state: "child_complete(n) holds for every n in N; wc5_complete holds"
+      expect: "wave_complete = true (wave complete)"
