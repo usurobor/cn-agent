@@ -208,3 +208,96 @@ CI all pass at the immutable α SHA. D1 and C2 remain unresolved, so this round
 cannot converge. No merge, ready mark, label/state change, γ closeout,
 standing promotion, CC judgment, operator acceptance, or FSM transition is
 authorized by this review.
+
+---
+
+# R6/R2 Review
+
+**Verdict:** REQUEST CHANGES
+
+**Reviewed α artifact SHA:** `8df927352c2f323e7ac109a847abd547a225caed`
+
+**Reviewed tree:** `ed802cb3dc738614fbc822b8c1b6ceb7b44af7e7`
+
+**Product-matter boundary:** `db9ce95b1beb025d24f43fba2df58692665f80be`
+(`2e4f08e1d2632a8a5fd008a08187a1b42d231152`)
+
+**Current review base:** `origin/main` at
+`d79f6fbd8388a1685ab38683ef98ed7d162c94a7`
+
+**Fixed this round:** `db9ce95b...` closes R6/R1 D1's static symlink
+classes; `3144369b...` closes R6/R1 C2's replay-oracle conflict.
+
+**Branch CI state:** green: 22/22 checks completed successfully on the exact
+reviewed SHA.
+
+**Merge instruction:** withheld while this REQUEST CHANGES verdict is open.
+
+## Contract and repair closure
+
+The issue ACs, source-checkout-only State-A boundary, unshipped State-B and
+installed activation, synthetic-only pinned-coh evidence, and standing `none`
+remain coherent. The live PR is OPEN+DRAFT and makes no merge, label, ready,
+standing, acceptance, or FSM claim.
+
+R6 topology is linear. The scaffold is owned only by γ at `6e07b4cc...`;
+both clarification appends are γ/γ; the repaired matter and readiness
+record are α/α. The static regressions cover the output root and ancestor,
+all six response paths, a response-directory component, and the invariant
+path. The complete deterministic runner suite passes.
+
+The corrected provenance statements also reproduce exactly:
+
+- both pre-repair patch streams are byte-identical at SHA-256
+  `4c42826034a446e0953e0934085dbfd8ee6bb71febff39254c7a34c44a65d9c0`;
+- the additive `3144369b...db9ce95b` stream hashes to
+  `23749673b9fa678ad832b5b4f6915f5bed2b2865896555daf3504e2dd4e62796`;
+- the corrected full stream and the superseded-base replay are byte-identical
+  at `055c1b52ea5e83e64cca7a3dd8efe7c054b76f9e170c3fa90e9484a05d81c6a1`.
+
+GitHub reports no protected required contexts, so the review fallback is every
+workflow exposed for the cycle head. Both exact-SHA Build runs pass—push
+`29701663997` and pull request `29701664916`—with 22/22 successful checks.
+
+## Finding
+
+### D3 — The broad race-refusal guarantee is not established for filesystem inputs
+
+**Severity:** D
+
+**Type:** contract, honest-claim, judgment, runtime
+
+The live/tracked body broadly says the runner refuses “raced ... inputs and
+outputs.” The new symlink checks establish the named static pathname classes,
+and the existing lock/publication logic establishes specific output race
+classes. They do not establish that broad guarantee for response and invariant
+inputs.
+
+`require_regular_input()` checks the pathname for symlink components and then
+uses `is_file()` (`recursive-cell-runner.py` lines 102–106). `snapshot_file()`
+calls that check and then calls `shutil.copyfile(source, destination)`
+(lines 109–115). `copyfile` opens the source pathname separately from the
+validation. The pathname is checked, then reopened for copying, so the
+documented broad race-refusal guarantee is not established. The passing static
+symlink regressions and complete runner suite do not exercise or close that
+identity gap.
+
+**Required repair:** choose one coherent boundary:
+
+1. snapshot through the already-validated open file object/descriptor, with
+   identity/type checks bound to that same object; or
+2. narrow every live and tracked race-refusal statement to the implemented
+   publication, lock, reuse, and other specifically proven race classes.
+
+**Regression pair:** a stable regular input remains snapshot-able and
+content-bound; a detected source-identity/type change across validation and
+snapshot must either explicitly refuse without publication (choice 1) or fall
+outside a narrowly documented guarantee (choice 2).
+
+## Verdict
+
+**REQUEST CHANGES.** R6/R1 D1's static symlink gap and C2's replay-oracle gap
+are closed, and no other blocker was found in this bounded round. D3 remains an
+exact-SHA honest-claim blocker. This review authorizes no matter edit, PR-body
+edit, label/state change, ready mark, merge, γ/CC action, standing promotion,
+operator acceptance, or cell/wave FSM transition.
