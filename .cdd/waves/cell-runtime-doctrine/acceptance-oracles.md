@@ -1,19 +1,28 @@
-<!-- wave-revision: R5 -->
-# Acceptance oracles — honestly classified, registry-projected (cnos#671 R5)
+<!-- wave-revision: R6 -->
+# Acceptance oracles — honestly classified, registry-projected (cnos#671 R6)
 
 Every load-bearing acceptance predicate (wave + WC-1..WC-5) is classified as **exactly one** of four
 honest kinds. Nothing cognitive is dressed up as mechanical; a semantic-absence claim is **never**
 implemented as grep-and-called-mechanical. **Every category value is a single enum member** — no
 compound `enforced + evidenced` rows (`validate.py` check (i) fails closed on a compound cell).
 
-**This document is a PROJECTION.** The authoritative machine-readable source of the mechanically-verifiable
-oracles is [`oracle-registry.yaml`](./oracle-registry.yaml) — a separate content-bound registry that each
-child contract consumes via a canonical `inputs.required[].external` control_plane ref (no non-canonical
-contract key). `validate.py` check **(h)** proves a **total + singular bijection** between the
-mechanically-verifiable predicates (registry ⇄ each child's `acceptance.predicates` ⇄ the *Registry
-projection* table at the bottom of this file). The R4 regression — carrying oracle ownership as an extra
-top-level `oracles` key that broke the exact §2 contract shape — is repaired: the key is gone, the
-contracts are exact §2 again, and an added top-level key now FAILS check (a).
+**This document is a PROJECTION.** The authoritative machine-readable source is now the **TOTAL**
+[`oracle-registry.yaml`](./oracle-registry.yaml) — a separate content-bound registry that each child
+contract consumes via a canonical `inputs.required[].external` control_plane ref (no non-canonical
+contract key). Its `assurance:` list carries an entry for **every** scalar in **every** child contract's
+`acceptance.predicates`, classified into **exactly one** of the four categories with that category's
+required fields; wave-only enforced predicates live in a **separate** `wave_predicates:` section.
+
+- `validate.py` check **(h)** proves a total + singular bijection over the **mechanically-verifiable
+  subset** (registry ⇄ each child's `acceptance.predicates` ⇄ the *Registry projection* table below).
+- `validate.py` check **(j)** proves a **total + singular bijection over the COMPLETE child acceptance
+  set**: `union(acceptance.predicates)` ⇄ the child-owned `assurance:` entries, each classified **exactly
+  once** across all four categories — rejecting a predicate present in a contract but absent from the
+  registry (the coordinated-omission the pre-R6 checks missed), a double-classified predicate, a phantom
+  entry, a bad category, or a break against the *Complete assurance classification* table below.
+
+The R4 regression — carrying oracle ownership as an extra top-level `oracles` key that broke the exact §2
+contract shape — remains repaired: the contracts are exact §2, and an added top-level key FAILS check (a).
 
 ## Classification kinds
 
@@ -33,10 +42,15 @@ contracts are exact §2 again, and an added top-level key now FAILS check (a).
   human/independent reviewer decides it (e.g. "no clause equates CM with a CC judgment", "exactly one
   κ≠α logic", "exactly one authority per FSM edge"). Grep can *locate* text; it cannot *decide* these.
 
-**Summary counts:** enforced **16** · mechanically-verifiable **30** · evidenced **7** ·
-cognitive-review **20**. (Derived from the classification-table rows below; the mechanically-verifiable
-count equals the 30 entries in `oracle-registry.yaml`. `validate.py` check (i) recomputes these from the
-tables and fails closed on any drift.)
+**Summary counts (child acceptance predicates):** enforced **11** · mechanically-verifiable **30** ·
+evidenced **7** · cognitive-review **21** — **69** total, one classification each. (These are the
+per-category totals over the **69** child acceptance predicates, derived from the TOTAL
+`oracle-registry.yaml` `assurance:` list; the mechanically-verifiable count equals the 30 ownership
+entries. `validate.py` check (i) recomputes these from the registry and fails closed on any drift, and
+check (j) proves the registry bijects with `union(acceptance.predicates)` exactly once each.) The **11**
+wave-only enforced predicates (checks (a)–(j) + the mutation harness) are held **separately** in
+`wave_predicates:` so they can neither inflate nor mask child coverage; the wave-level table just below
+documents them for the reader.
 
 ## How the mechanically-verifiable rows become real commands — owned in the registry
 
@@ -71,8 +85,9 @@ check (h) (see the *Registry projection* table at the bottom).
 | completion-predicate graph acyclic (built by AST walk) | enforced | `validate.py` (g) | 0 / tautology `wave_complete := wave_complete` → cycle → exit 1 | predicate-DAG topo |
 | completion **fixtures evaluate to their authored `expected`** | enforced | `validate.py` (g) | 0 / a flipped `expected` (computed≠authored) → exit 1 | per-fixture eval |
 | **oracle-ownership bijection** — total + singular map (registry ⇄ each child's `acceptance` ⇄ this projection); every mechanically-verifiable predicate owned exactly once | enforced | `validate.py` (h) | 0 / a removed entry, a duplicate owner, an unowned mv predicate, an extra owner absent from acceptance, a reclassified entry, a placeholder, or a projection parity break → exit 1 | check-(h) PASS |
-| **ledger consistency** — revision labels agree; reported counts == derived table counts == registry size; every category a single enum member | enforced | `validate.py` (i) | 0 / a disagreeing revision label, a miscount, or a compound category → exit 1 | check-(i) PASS |
-| the eleven adversarial mutations each fail for their own predicate; clean passes | enforced | `python3 validate_test.py` | harness exit 0 (11 fail, clean passes) | harness receipt |
+| **ledger consistency** — revision labels agree; reported counts == total-registry child totals == mv ownership size; every category a single enum member | enforced | `validate.py` (i) | 0 / a disagreeing revision label, a miscount, or a compound category → exit 1 | check-(i) PASS |
+| **classification totality + singularity** — `union(acceptance.predicates)` ⇄ the total `assurance:` registry, every child predicate classified exactly once across all four categories | enforced | `validate.py` (j) | 0 / a predicate in a contract but absent from the registry (a coordinated omission), a double-classified/phantom entry, a bad category, or a projection parity break → exit 1 | check-(j) PASS |
+| the fifteen adversarial mutations each fail for their own predicate; clean passes | enforced | `python3 validate_test.py` | harness exit 0 (15 fail, clean passes) | harness receipt |
 
 ---
 
@@ -187,6 +202,88 @@ Emitted machine-readable: `reconcile-627-audit.json`, `fail-disposition-audit.js
 | cross-artifact vocabulary consistent (one `cm_ref` vocab, one CM object, one κ≠α logic across WC-1..WC-4) | cognitive-review | independent β/CC read | β confirms one vocabulary, one κ≠α logic (semantic consistency, not grep) | β judgment |
 | final integration V fails-closed on a conflicting `cm_ref`/FSM-state/schema-field/missing-adapter/unmapped-627-node | cognitive-review | independent β/CC read | β confirms the seal fails closed on each conflict class | β judgment |
 | emits machine-readable fixtures into receipt (reconcile audit, FAIL audit, vocab, schema-fixture log) | evidenced | receipt binds the emitted fixtures | receipt lists + hashes each fixture / missing → V FAIL | receipt evidence |
+
+---
+
+## Complete assurance classification — projection of the total registry (check (j))
+
+This table is the human-readable PROJECTION of the **complete** `assurance:` list: **one row per every**
+child acceptance predicate (all six contracts, 69 rows), each classified into **exactly one** category.
+`validate.py` check (j) parses it and proves it is set-identical to the registry (same `(owner, predicate)`
+pairs, same classification) AND that this set equals `union(acceptance.predicates)` exactly once each.
+A predicate left in a contract but dropped from the registry + this table (a coordinated omission) FAILS (j).
+
+| owner | predicate | classification |
+|---|---|---|
+| wc-1 | `wc_pc_cc_classes_defined_by_canonical_output_telos__wc_artifact_pc_relation_graph_cc_judgment__closes_L0_B1` | cognitive-review |
+| wc-1 | `cn_cell_contract_v1_envelope_specified__cell_id_class_mode_protocol_matter_domain__inputs_required_provenance_tagged_union__requested_output_id_kind_path__acceptance__constraints__gates__doctrine_affecting__stop_conditions` | cognitive-review |
+| wc-1 | `input_reference_model_is_the_provenance_tagged_union__external_locator_classed_or_sibling_output_producer_output_id` | mechanically-verifiable |
+| wc-1 | `class_specific_v_predicates_reference_an_imported_cm_ref__wc1_does_not_inline_cm_internals` | cognitive-review |
+| wc-1 | `cm_ref_field_shape_is_imported_verbatim_from_wc2_output_realized_within_the_four_schemas__no_re_derivation_no_fifth_schema` | mechanically-verifiable |
+| wc-1 | `kappa_neq_alpha_role_logic_unconditional__state_a_is_hosting_identity_collapse_not_role_equality__carries_repaired_CC_1_as_settled_input` | cognitive-review |
+| wc-1 | `review_evidence_content_bound_not_identity_bound__carries_repaired_CC_2_as_settled_input` | cognitive-review |
+| wc-1 | `gate_invariants_hold__doctrine_affecting_true_implies_operator_acceptance_required_true__reason_present_iff_a_gate_bool_true` | enforced |
+| wc-1 | `key_path_parity__template_and_worked_instance_normalize_to_identical_key_path_sets` | mechanically-verifiable |
+| wc-1 | `scope_guard__no_cm_internals_no_cell_or_wave_fsm_no_migration_authored_here` | cognitive-review |
+| wc-1 | `emits_machine_readable_acceptance_fixtures_into_receipt__contract_template_yaml__worked_instance_yaml__input_union_fixtures__each_validated_by_the_named_acceptance_oracle_command` | evidenced |
+| wc-1 | `mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt` | enforced |
+| wc-2 | `cm_defined_as_runner_or_provider_produced_object__producer_is_cm_provider_or_runtime_op_eg_tsc_not_cc` | mechanically-verifiable |
+| wc-2 | `cm_object_fields_typed__s_alpha_s_beta_s_gamma_c_sigma_geom_mean_degeneracy_bottleneck_witnesses_defects_mode_target_bundle_digest_thresholds_standing_provenance` | mechanically-verifiable |
+| wc-2 | `cc_class_result_is_a_separate_tagged_object_that_consumes_immutable_cm_refs__cm_and_cc_judgment_validate_as_distinct_tagged_objects` | mechanically-verifiable |
+| wc-2 | `cm_to_v_edge_pinned__v_consumes_an_immutable_cm_ref_as_a_named_input_the_frozen_contract_times_receipt_signature_is_extended_to_carry` | mechanically-verifiable |
+| wc-2 | `receipt_core_to_cm_to_v_to_delta_to_final_receipt_type_path_declared__provisional_receipt_core_without_validation_or_boundary_decision_then_measurement_then_final_receipt_satisfying_shipped_receipt_cue` | mechanically-verifiable |
+| wc-2 | `cm_producers_and_consumers_pinned__producer_provider_runtime_op__consumers_v_gates_on_it_cc_judgment_consumes_refs_pc_wave_grounded_in_it` | cognitive-review |
+| wc-2 | `d9_four_schema_boundary_settled__cm_is_realized_within_the_authorized_four_schemas_not_as_a_fifth_canonical_cn_cm_v1__operator_settled_no_authorized_reopening` | cognitive-review |
+| wc-2 | `cm_realized_within_four_schemas__a_typed_cm_field_or_edge_in_the_receipt_plus_a_cm_ref_resolving_within_the_existing_four_schemas__wc1_and_wc4_consume_this_same_cm_ref_shape` | mechanically-verifiable |
+| wc-2 | `negative_fixture_reject_fifth_canonical_schema__a_proposed_fifth_cn_cm_v1_canonical_schema_is_rejected_while_the_four_schema_boundary_remains_settled` | mechanically-verifiable |
+| wc-2 | `reproducible__same_frozen_inputs_plus_provider_version_reproduce_the_mechanically_claimed_cm_result` | evidenced |
+| wc-2 | `cm_ref_field_shape_is_the_single_interface_all_other_nodes_import__no_second_cm_shape_introduced_downstream` | mechanically-verifiable |
+| wc-2 | `emits_machine_readable_acceptance_fixtures_into_receipt__cm_object_json__cc_judgment_json__receipt_core_json__final_receipt_json__reject_fifth_schema_json__each_validated_by_the_named_acceptance_oracle_command` | evidenced |
+| wc-2 | `mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt` | enforced |
+| wc-3a | `cell_fsm_state_set_closed_and_declared__blocked_is_a_declared_member_not_only_a_transition_target` | mechanically-verifiable |
+| wc-3a | `exactly_one_authority_per_edge__reconciles_transitions_json_and_cn_issues_dispatch_and_cn_cell_resume_and_spec` | cognitive-review |
+| wc-3a | `total_event_guard_action_relation__every_nonterminal_state_has_owned_exits` | mechanically-verifiable |
+| wc-3a | `invalid_transition_semantics_defined` | cognitive-review |
+| wc-3a | `deterministic_or_normatively_prioritized_transition_selection__same_bundle_hash_same_decision` | mechanically-verifiable |
+| wc-3a | `review_return_conflict_resolved__the_11_1_changes_to_todo_vs_11_2_changes_to_in_progress_ambiguity_settled_to_one_edge` | cognitive-review |
+| wc-3a | `cc_disposition_to_cell_transition_request_adapter__cc_selects_a_judgment_the_fsm_validates_and_effects_the_transition__cc_never_mutates_state_directly` | mechanically-verifiable |
+| wc-3a | `command_table_parity__cn_cell_and_cn_issues_surfaces_map_onto_declared_table_edges` | mechanically-verifiable |
+| wc-3a | `request_marker_pattern_pinned__typed_marker_plus_evidentiary_guards` | cognitive-review |
+| wc-3a | `reachability_proved__every_declared_state_reachable_from_the_initial_state` | mechanically-verifiable |
+| wc-3a | `emits_machine_readable_acceptance_fixtures_into_receipt__cell_fsm_state_table_json__for_state_set_closure_totality_and_reachability_oracles` | evidenced |
+| wc-3a | `mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt` | enforced |
+| wc-3b | `wave_fsm_state_set_closed__intent_planning_required_d0_review_wave_planning_wave_review_dispatchable_executing_holding_replanning_completing_complete_complete_with_residuals` | mechanically-verifiable |
+| wc-3b | `total_event_guard_action_relation__distinct_from_the_cell_fsm_state_space_and_events` | mechanically-verifiable |
+| wc-3b | `invalid_transition_semantics_defined` | cognitive-review |
+| wc-3b | `child_receipt_aggregation_rule__child_completion_predicates_aggregate_into_wave_state_without_cc_mutating_state` | mechanically-verifiable |
+| wc-3b | `total_mapping_all_eight_cc_dispositions_to_wave_transition_requests__request_planning_request_working_hold_request_human_continue_wave_complete_complete_with_residuals_block` | mechanically-verifiable |
+| wc-3b | `dependency_and_gate_dispatch_rules__wave_boundary_authorization_once_then_children_scheduled_by_dependencies_no_per_child_operator_gate` | cognitive-review |
+| wc-3b | `holding_and_replanning_exits_and_terminal_semantics_defined` | cognitive-review |
+| wc-3b | `wave_transition_request_shape_pinned__mirrors_the_cell_fsm_request_marker_pattern_with_guards` | mechanically-verifiable |
+| wc-3b | `separate_authority_from_the_cell_fsm__two_independently_total_machines_one_shared_transition_algebra_or_two_tagged_instances` | cognitive-review |
+| wc-3b | `child_and_whole_wave_completion_predicates_defined__derived_from_child_acceptance_v_receipt_surfaces_not_a_new_contract_field` | enforced |
+| wc-3b | `emits_machine_readable_acceptance_fixtures_into_receipt__wave_fsm_state_table_json__and_eight_disposition_to_transition_map_json__for_totality_and_mapping_oracles` | evidenced |
+| wc-3b | `mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt` | enforced |
+| wc-4 | `versioned_projection_specified__cnos_cdd_contract_v1_to_cn_cell_contract_v1_with_a_named_version_and_direction` | cognitive-review |
+| wc-4 | `field_by_field_preservation_rules__every_shipped_field_mapped_or_explicitly_marked_added_or_deprecated` | mechanically-verifiable |
+| wc-4 | `cm_edge_representation_consumed_from_wc2__the_target_contract_cm_ref_shape_is_wc2_output_realized_within_the_four_schemas_not_a_fifth_schema_not_re_derived` | mechanically-verifiable |
+| wc-4 | `state_a_state_b_field_enumeration__shipped_commands_and_schema_fields_vs_target_fields_enumerated_per_field` | cognitive-review |
+| wc-4 | `round_trip_oracle__lossless_paths_proven_lossless_and_lossy_points_named` | mechanically-verifiable |
+| wc-4 | `negative_fixtures__reject_unknown_field_dropped_required_field_mutable_root_input_identity_only_revision_missing_adapter_case` | mechanically-verifiable |
+| wc-4 | `migration_is_doctrine_schema_boundary_only__no_cue_or_go_adapter_implemented_here` | cognitive-review |
+| wc-4 | `emits_machine_readable_acceptance_fixtures_into_receipt__field_map_json__round_trip_fixtures__five_negative_fixtures__for_field_preservation_and_round_trip_oracles` | evidenced |
+| wc-4 | `mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt` | enforced |
+| wc-5 | `cross_artifact_vocabulary_consistent__one_canonical_input_ref_and_requested_output_vocabulary_one_cm_object_one_kappa_neq_alpha_logic_across_wc1_through_wc4` | cognitive-review |
+| wc-5 | `schema_fixtures_pass__every_worked_instance_validates_against_the_selected_cn_cell_contract_v1_shape` | mechanically-verifiable |
+| wc-5 | `graph_parity__wave_edges_equal_the_sibling_output_relations_exactly_no_missing_or_spurious_edge` | enforced |
+| wc-5 | `migration_round_trips__wc4_round_trip_oracle_is_green_on_the_named_fixtures` | mechanically-verifiable |
+| wc-5 | `reconcile_627_mapping_complete__every_S_node_classified_exactly_once_no_duplicate_owner_no_omitted_executable_child` | mechanically-verifiable |
+| wc-5 | `residual_debt_disposed__every_grounding_fail_is_closed_by_or_retired_instance_defect_or_tracked_follow_up_exactly_once` | mechanically-verifiable |
+| wc-5 | `final_integration_v_fails_closed_on__a_conflicting_cm_ref_a_conflicting_fsm_state_a_conflicting_schema_field_a_missing_adapter_case_or_an_unmapped_627_node` | cognitive-review |
+| wc-5 | `wc5_readiness_over_non_recursive_construction_set_N__a_completion_receipt_exists_for_every_node_in_N_where_N_equals_wc1_wc2_wc3a_wc3b_wc4_and_excludes_wc5` | enforced |
+| wc-5 | `wc5_own_completion_is_non_recursive__wc5_requested_output_produced_plus_wc5_acceptance_pass_plus_integration_v_pass_plus_bound_receipt__does_not_quantify_over_wc5_itself_nor_over_the_whole_wave_predicate` | enforced |
+| wc-5 | `emits_machine_readable_acceptance_fixtures_into_receipt__reconcile_627_audit_json__fail_disposition_audit_json__vocab_consistency_json__schema_fixture_log_json__for_the_integration_seal_oracles` | evidenced |
+| wc-5 | `mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt` | enforced |
 
 ---
 

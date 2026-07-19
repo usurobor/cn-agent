@@ -1,18 +1,22 @@
-<!-- wave-revision: R5 -->
-# Wave: cell-runtime-doctrine (cnos#671 — R5)
+<!-- wave-revision: R6 -->
+# Wave: cell-runtime-doctrine (cnos#671 — R6)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
 single-purpose Working-Cell contracts, grounded in an immutable coherence measurement. **R2** repaired
 the external-β ITERATE (PR/issue #672); **R3** repaired a second external-β ITERATE (sound validator,
-honest intent provenance, honestly-classified oracles); **R4** added per-WC oracle ownership. **R5**
-(this revision) repairs how R4 added that ownership: R4 carried oracle ownership as a **non-canonical
-top-level `oracles` key**, breaking the exact §2 contract shape, and its check (h) was not a true
-bijection. R5 restores the exact §2 contracts, moves oracle ownership into a separate **content-bound
-`oracle-registry.yaml`** each contract consumes via a canonical `inputs.required[].external` ref, makes
-check (h) a **total + singular bijection** with adversarial coverage, and corrects the revision +
-classification ledger. The accepted decomposition graph shape is **unchanged** across R2–R5
-(WC-2 root → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5).
+honest intent provenance, honestly-classified oracles); **R4** added per-WC oracle ownership; **R5**
+moved that ownership into the separate content-bound `oracle-registry.yaml` (exact §2 contracts) and
+made check (h) a total+singular bijection over the mechanically-verifiable predicates. **R6** (this
+revision) closes the one remaining gap: R5 bijected only the **30 mechanically-verifiable** predicates,
+so a *classified* obligation could be quietly dropped from the registry + both Markdown surfaces + the
+count while surviving in the contract (a coordinated omission) with all checks green. R6 makes
+`oracle-registry.yaml` **TOTAL** — an `assurance:` entry for **every** scalar in **every** child
+contract's `acceptance.predicates`, classified into **exactly one** of the four categories — and adds
+`validate.py` check **(j)**, which proves a **total + singular bijection** between
+`union(acceptance.predicates)` and the child-owned registry entries (each predicate classified exactly
+once), with four new adversarial coverage tests (incl. the coordinated omission). The accepted
+decomposition graph shape is **unchanged** across R2–R6 (WC-2 root → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5).
 
 **This is a plan, not doctrine.** The `docs/` artifacts named as `requested_output` paths are the
 **future output of the Working Cells** — they are *not* authored here. This wave authors the
@@ -133,24 +137,33 @@ node also carries `contract_sha256` for independent content-addressable resoluti
   (e) parallel write surfaces; (f) gate invariants; (g) the **authored completion relation evaluated
   as structured data** — the predicate dependency graph is built by **walking the `expr` ASTs** and
   proved acyclic (a tautology → self-cycle → FAIL), and **each fixture is computed and compared to its
-  authored `expected`** (a flipped expectation → FAIL); (h) the **oracle-ownership TOTAL + SINGULAR
-  bijection** (registry ⇄ each child's `acceptance` ⇄ the md projection); (i) **ledger consistency**
-  (revision labels agree · reported counts == derived table counts == registry size · every category a
-  single enum member). **Exits non-zero on any violation; passes at this tree (all nine green).**
+  authored `expected`** (a flipped expectation → FAIL); (h) the **mechanically-verifiable oracle-ownership
+  TOTAL + SINGULAR bijection** (registry ⇄ each child's `acceptance` ⇄ the mv projection); (i) **ledger
+  consistency** (revision labels agree · reported counts == total-registry child totals == mv ownership
+  size · every category a single enum member); (j) the **classification TOTALITY + SINGULARITY over the
+  COMPLETE child acceptance set** — `union(acceptance.predicates)` ⇄ the total `assurance:` registry, each
+  predicate classified **exactly once** across all four categories (rejects an unclassified predicate left
+  in a contract, a double-classified predicate, a phantom entry, a bad category, or a projection parity
+  break). **Exits non-zero on any violation; passes at this tree (all ten checks a–j green;
+  69 child acceptance predicates: 11 enforced · 30 mechanically-verifiable · 7 evidenced · 21 cognitive-review).**
 - [`validate_test.py`](./validate_test.py) — executable adversarial-mutation harness. Materializes the
-  **eleven** mutations (six originals: wrong intent id; nonsense `cell.class`; nonexistent artifact
+  **fifteen** mutations (six originals: wrong intent id; nonsense `cell.class`; nonexistent artifact
   path; tautological whole-wave predicate; flipped fixture expectation; placeholder oracle operand —
-  plus the five R5 bijection mutations: remove a registry entry; duplicate an owner; reclassify an
-  entry; leave an mv predicate unowned; add an owner entry absent from acceptance) in temp trees —
-  honestly re-pinning every changed `contract_sha256` and the registry hash — and asserts **each exits
-  non-zero for its own named
-  predicate** while the clean tree exits 0. **Verified: harness passes** (clean 0; the six originals
-  fail on (b)/(a)/(b)/(g)/(g)/(h) and the five bijection mutations on (h)).
-- [`oracle-registry.yaml`](./oracle-registry.yaml) — the authoritative registry (30 mechanically-verifiable
-  entries); [`acceptance-oracles.md`](./acceptance-oracles.md) is its projection, every predicate classified
-  as **exactly one** of **enforced** / **mechanically-verifiable** / **evidenced** / **cognitive-review**
-  (single-kind; check (i) fails closed on a compound category). No semantic-absence claim is implemented
-  as grep-and-called-mechanical.
+  the five mechanically-verifiable bijection mutations: remove a registry entry; duplicate an owner;
+  reclassify an entry; leave an mv predicate unowned; add an owner entry absent from acceptance — and
+  the **four R6 total-classification mutations**: the **coordinated omission** (drop a predicate from the
+  registry + both md surfaces + the count, leave it in the contract — (h)/(i) stay green, (j) catches it);
+  double-classify; phantom entry; category-without-required-fields) in temp trees — honestly re-pinning
+  every changed `contract_sha256` and the registry hash — and asserts **each exits non-zero for its own
+  named predicate** while the clean tree exits 0. **Verified: harness passes** (clean 0; all 15 fail for
+  their own predicate).
+- [`oracle-registry.yaml`](./oracle-registry.yaml) — the authoritative **TOTAL** registry: an `assurance:`
+  entry for **every** one of the 69 child acceptance predicates (30 mechanically-verifiable with concrete
+  ownership fields + 11 enforced + 7 evidenced + 21 cognitive-review), plus a **separate** `wave_predicates:`
+  section for the wave-only enforced predicates. [`acceptance-oracles.md`](./acceptance-oracles.md) is its
+  projection, every predicate classified as **exactly one** of **enforced** / **mechanically-verifiable** /
+  **evidenced** / **cognitive-review** (single-kind; check (i) fails closed on a compound category). No
+  semantic-absence claim is implemented as grep-and-called-mechanical.
 
 ## Node list (derived edges)
 
@@ -187,6 +200,14 @@ Note: R2 finding-2's phrasing above ("materialized … exists before any cell") 
 finding 2** — the intent is honestly a transitional bootstrap projection authored during the cell; it
 does not exist before the cell.
 
+## Per-finding disposition (R6 — total + singular assurance-classification bijection)
+
+| # | Finding | Repair in this R6 |
+|---|---|---|
+| 1 | **[BLOCKER]** classification totality was not proved: R5's checks (h)/(i) bijected only the **30 mechanically-verifiable** predicates and counted rows, so a *classified* obligation could be removed from the registry + both Markdown surfaces + the count while surviving in the contract (a coordinated omission), leaving an unclassified prose obligation with all nine checks green. | Made [`oracle-registry.yaml`](./oracle-registry.yaml) **TOTAL** — an `assurance:` entry for **every** scalar in **every** child `acceptance.predicates` (69 entries) classified into **exactly one** of `enforced` / `mechanically-verifiable` / `evidenced` / `cognitive-review`, each with that category's required fields; wave-only enforced predicates held in a **separate** `wave_predicates:` section. Added `validate.py` check **(j)**: it derives `union(acceptance.predicates)` as `(owner, predicate)` pairs and proves it **equals** the child-owned registry entries, each mapping **exactly once** — rejecting an UNCLASSIFIED predicate (in a contract, absent from the registry), a DOUBLE-CLASSIFIED predicate, a PHANTOM entry, a non-enum category, a missing category field, and any break against the *Complete assurance classification* md projection. `acceptance-oracles.md` gains a complete-projection table (69 rows) and reports the true per-category child totals (11 · 30 · 7 · 21). check (h) keeps the mechanically-verifiable bijection; check (i) now derives counts from the total registry. |
+| 2 | **[REQUIRED]** adversarial coverage did not include the coordinated omission or the totality failure modes. | Extended [`validate_test.py`](./validate_test.py) from 11 to **15** mutations: the **coordinated omission** (drop a predicate from the registry + both md surfaces + the mv count, leave it in the contract — (h) and (i) STILL PASS, (j) fails UNCLASSIFIED — the exact R5-breaking mutation), double-classify, phantom entry, and category-without-required-fields. The original 11 still fail for their own predicate; the clean tree still exits 0. |
+| 3 | **[REQUIRED]** the revision + classification ledger was R5 and reported wave+child mixed counts. | Advanced every `wave-revision:` marker to **R6** (check (i) proves they agree with the authored wave revision); the reported counts are now the true per-category totals over the **69 child** acceptance predicates derived from the total registry, held apart from the **11** wave-only enforced predicates. |
+
 ## Per-finding disposition (R5 — repair of the R4 oracle-ownership method)
 
 | # | Finding | Repair in this R5 |
@@ -213,11 +234,11 @@ does not exist before the cell.
 - [`grounding-source-5015460988.md`](./grounding-source-5015460988.md) — byte-exact source snapshot (SHA `9d1ab3a5…`).
 - [`grounding-cm.md`](./grounding-cm.md) — α's derivative FAIL-classification (references the snapshot).
 - [`reconcile-627.md`](./reconcile-627.md) — the #627 S1–S8 refinement map + derived reverse-consumers.
-- [`oracle-registry.yaml`](./oracle-registry.yaml) — AUTHORITATIVE machine-readable oracle registry (30 mechanically-verifiable entries), consumed by each contract via a content-bound `inputs.required[].external` ref.
-- [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the registry; every predicate classified enforced / mechanically-verifiable / evidenced / cognitive-review (single-kind).
-- [`validate.py`](./validate.py) — SOUND pre-authorization validator (checks a–i; exits non-zero on violation).
-- [`validate_test.py`](./validate_test.py) — executable adversarial-mutation harness (11 mutations each fail for their own predicate; clean tree passes).
+- [`oracle-registry.yaml`](./oracle-registry.yaml) — AUTHORITATIVE, **TOTAL** assurance registry: an `assurance:` entry for every one of the 69 child acceptance predicates (30 mechanically-verifiable + 11 enforced + 7 evidenced + 21 cognitive-review) plus a separate `wave_predicates:` section; consumed by each contract via a content-bound `inputs.required[].external` ref.
+- [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the total registry (incl. the complete-projection table, 69 rows); every predicate classified enforced / mechanically-verifiable / evidenced / cognitive-review (single-kind).
+- [`validate.py`](./validate.py) — SOUND pre-authorization validator (checks a–j; exits non-zero on violation).
+- [`validate_test.py`](./validate_test.py) — executable adversarial-mutation harness (15 mutations each fail for their own predicate; clean tree passes).
 
 ---
-*Status: R5 wave, α matter — under operator review; external-β and CC review next. No child WCs
+*Status: R6 wave, α matter — under operator review; external-β and CC review next. No child WCs
 dispatched; no control-plane action taken by this cell.*

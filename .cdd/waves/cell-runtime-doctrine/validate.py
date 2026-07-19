@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# wave-revision: R5
+# wave-revision: R6
 """
-Planning-Cell PRE-AUTHORIZATION validator for wave cnos#671 (cell-runtime-doctrine), R5.
+Planning-Cell PRE-AUTHORIZATION validator for wave cnos#671 (cell-runtime-doctrine), R6.
 
 SOUND, FAIL-CLOSED. Credential-free (Python stdlib + PyYAML + local `git`). It derives every fact
 from the AUTHORED wave/contract/intent data — it hard-codes no node list, edge list, or predicate
@@ -56,12 +56,26 @@ Checks:
       Each entry's checker/schema is CONCRETE (no placeholder, no implicit CWD) and either EMITTED
       (in the owner's `allowed_paths`) or EXISTING (a pinned immutable input of the owner). Fully
       derivable from the registry + the contracts + the projection.
-  (i) LEDGER CONSISTENCY (R5). (1) every declared wave-revision marker line across the wave artifacts
+  (i) LEDGER CONSISTENCY (R6). (1) every declared wave-revision marker line across the wave artifacts
       AGREES (and equals the authored wave revision); (2) the classification counts reported in
-      `acceptance-oracles.md` EQUAL the counts derived from its own classification-table rows, and its
-      mechanically-verifiable count EQUALS the number of registry entries; (3) every classification-cell
-      value is EXACTLY ONE enum member (enforced | mechanically-verifiable | evidenced | cognitive-review)
-      — a compound category (e.g. `enforced + evidenced`) fails closed.
+      `acceptance-oracles.md` EQUAL the per-category totals DERIVED FROM THE TOTAL registry (`assurance:`),
+      and the mechanically-verifiable count EQUALS the number of ownership entries; (3) every
+      classification-cell value is EXACTLY ONE enum member (enforced | mechanically-verifiable | evidenced
+      | cognitive-review) — a compound category (e.g. `enforced + evidenced`) fails closed.
+  (j) CLASSIFICATION TOTALITY + SINGULARITY over the COMPLETE child acceptance set (R6). The authoritative
+      artifact is now the TOTAL `assurance:` registry — an entry for EVERY scalar in EVERY child contract's
+      `acceptance.predicates`, each classified into EXACTLY ONE of {enforced, mechanically-verifiable,
+      evidenced, cognitive-review} with that category's required fields (enforced->enforced_by;
+      mechanically-verifiable->the ownership fields; evidenced->receipt_evidence;
+      cognitive-review->independent_review). This check derives the set of (owner, predicate) pairs from the
+      UNION of every child's `acceptance.predicates` and proves it EQUALS the set of child-owned registry
+      entries, each mapping EXACTLY ONCE. REJECTS: a predicate in a contract but absent from the registry
+      (UNCLASSIFIED — the exact coordinated-omission the R5 checks missed); a predicate with >1 registry
+      entry (DOUBLE-CLASSIFIED); a registry entry for a predicate no contract declares (PHANTOM); a
+      classification that is not exactly one enum member; an entry missing its category's required fields;
+      and any registry <-> `Complete assurance classification` md-projection parity break. Wave-only
+      predicates live in a SEPARATE `wave_predicates:` section so they can neither inflate nor mask child
+      coverage. Fail-closed; reports the derived count of child acceptance predicates and per-category totals.
 
 RESOLUTION MODEL (so the negative-fixture harness can validate a mutated COPY of the tree):
   * WAVE_DIR   — the wave matter dir (contracts/, wave.yaml, intent, grounding snapshots). All AUTHORED
@@ -142,6 +156,8 @@ CLASS_ENUM   = {"working", "planning", "cohering"}
 REFKIND_ENUM = {"external", "sibling_output"}
 LOCATOR_ENUM = {"repo_artifact", "control_plane", "prior_receipt"}
 OUTPUT_KIND_ENUM = {"artifact", "relation_graph", "judgment"}
+# the four assurance-classification categories (checks h, i, j)
+KIND_ENUM = {"enforced", "mechanically-verifiable", "evidenced", "cognitive-review"}
 
 TOP_KEYS   = {"schema", "cell", "scope", "intent_ref", "inputs", "requested_output",
               "acceptance", "constraints", "gates", "doctrine_affecting", "stop_conditions"}
@@ -658,7 +674,27 @@ if graph_ok:
             if bool(got) != bool(exp):
                 fail("g", f"fixture {nm!r}: predicate {pname!r} authored expected={exp} but COMPUTED={got}")
 
-# ---- (h) ORACLE OWNERSHIP — TOTAL + SINGULAR BIJECTION ----------------------------
+# ---- shared: load the AUTHORITATIVE, TOTAL assurance registry (used by checks h, i, j) -------------
+REG_PATH = os.path.join(WAVE_DIR, "oracle-registry.yaml")
+registry = {}
+assurance = []
+wave_predicates = []
+if not os.path.isfile(REG_PATH):
+    fail("h", "oracle-registry.yaml missing")
+else:
+    try:
+        registry = load_yaml(REG_PATH) or {}
+    except Exception as e:
+        fail("h", f"oracle-registry.yaml YAML parse error: {e}")
+    assurance = registry.get("assurance") or []
+    wave_predicates = registry.get("wave_predicates") or []
+# mechanically-verifiable subset: identical entry shape to the pre-R6 `oracles` list; check (h) owns it.
+reg_entries = [e for e in assurance if isinstance(e, dict) and e.get("classification") == "mechanically-verifiable"]
+from collections import Counter as _Counter
+child_cat_counts = _Counter(e.get("classification") for e in assurance
+                            if isinstance(e, dict) and e.get("classification") in KIND_ENUM)
+
+# ---- (h) ORACLE OWNERSHIP — TOTAL + SINGULAR BIJECTION over the mechanically-verifiable subset ------
 # Three sources: (1) the AUTHORITATIVE registry oracle-registry.yaml; (2) each child's
 # acceptance.predicates; (3) the md PROJECTION (acceptance-oracles.md "Registry projection" table).
 # Proves a total, singular map: every mechanically-verifiable predicate ⇄ exactly one child owner
@@ -666,7 +702,6 @@ if graph_ok:
 # mismatch, a placeholder operand, and any registry↔projection parity break.
 PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
 ALLOWED_PATH_ROOTS = (".cdd/", "schemas/", "docs/", "src/")
-KIND_ENUM = {"enforced", "mechanically-verifiable", "evidenced", "cognitive-review"}
 REGISTRY_ENTRY_KEYS = {"owner", "predicate", "classification", "ownership", "checker", "schema",
                        "positive_fixture", "negative_fixture", "command", "receipt_evidence_predicate"}
 
@@ -701,19 +736,7 @@ def md_table_rows(text):
             continue
         yield cells
 
-# ---- load the authoritative registry ---------------------------------------------
-REG_PATH = os.path.join(WAVE_DIR, "oracle-registry.yaml")
-registry = {}
-reg_entries = []
-if not os.path.isfile(REG_PATH):
-    fail("h", "oracle-registry.yaml missing")
-else:
-    try:
-        registry = load_yaml(REG_PATH) or {}
-    except Exception as e:
-        fail("h", f"oracle-registry.yaml YAML parse error: {e}")
-    reg_entries = registry.get("oracles") or []
-
+# The authoritative TOTAL registry + its mechanically-verifiable subset `reg_entries` are loaded above.
 # per-owner: acceptance predicate set, allowed globs, pinned-input paths, and that the contract
 # actually CONSUMES the registry via a canonical inputs.required[].external control_plane ref.
 acc_by_owner, allowed_by_owner, inputpaths_by_owner = {}, {}, {}
@@ -737,7 +760,7 @@ for nid, (p, c) in contracts.items():
 pred_owner = {}          # predicate -> owner (must be singular)
 pred_entry = {}          # predicate -> normalized entry tuple (for md-parity)
 for i, e in enumerate(reg_entries):
-    where = f"oracle-registry.oracles[{i}]"
+    where = f"oracle-registry.assurance(mv)[{i}]"
     if not isinstance(e, dict):
         fail("h", f"{where}: must be a mapping"); continue
     extra = set(e.keys()) - REGISTRY_ENTRY_KEYS
@@ -870,23 +893,18 @@ for fn in REQUIRED_LABELLED:
 if len(label_vals) > 1:
     fail("i", f"revision labels DISAGREE across artifacts: {sorted(label_vals)}")
 
-# derive classification counts from the acceptance-oracles.md classification tables (col-2 kind cells)
+# (2)/(3): counts come from the TOTAL registry (authoritative); the md 'Summary counts' line must EQUAL
+# the registry-derived per-category CHILD totals, the mv count must equal the ownership-entry count, and
+# EVERY classification-like md cell must be a single enum member (a compound category fails closed).
 if os.path.isfile(acc_oracles):
     md_text = open(acc_oracles, encoding="utf-8").read()
-    derived = {k: 0 for k in KIND_ENUM}
     for cells in md_table_rows(md_text):
-        if len(cells) < 2:
-            continue
-        cell = cells[1].strip().lower().strip("*` ")
-        # a classification cell: tokenize on separators; every token must be a kind enum member
-        toks = [t for t in re.split(r"[\s+/,]+|\band\b", cell) if t]
-        if not toks or not all(t in KIND_ENUM for t in toks):
-            continue                       # not a classification row (e.g. a projection predicate name)
-        if len(set(toks)) != 1 or len(toks) != 1:
-            fail("i", f"acceptance-oracles.md: classification cell is not a single enum member: {cells[1]!r}")
-            continue
-        derived[toks[0]] += 1
-    # reported summary line
+        for cell in cells:
+            c = cell.strip().lower().strip("*` ")
+            toks = [t for t in re.split(r"[\s+/,]+|\band\b", c) if t]
+            # a cell composed SOLELY of >=2 enum members is a compound category -> fail closed
+            if len(toks) >= 2 and all(t in KIND_ENUM for t in toks):
+                fail("i", f"acceptance-oracles.md: classification cell is not a single enum member: {cell!r}")
     msum = re.search(
         r"enforced\s*\*\*(\d+)\*\*.*?mechanically-verifiable\s*\*\*(\d+)\*\*.*?evidenced\s*\*\*(\d+)\*\*.*?cognitive-review\s*\*\*(\d+)\*\*",
         md_text, re.S)
@@ -896,14 +914,122 @@ if os.path.isfile(acc_oracles):
         reported = {"enforced": int(msum.group(1)), "mechanically-verifiable": int(msum.group(2)),
                     "evidenced": int(msum.group(3)), "cognitive-review": int(msum.group(4))}
         for k in KIND_ENUM:
-            if reported[k] != derived[k]:
-                fail("i", f"acceptance-oracles.md reported {k}={reported[k]} != derived table count {derived[k]}")
-    if derived["mechanically-verifiable"] != len(reg_entries):
-        fail("i", f"acceptance-oracles.md mechanically-verifiable table count {derived['mechanically-verifiable']} != registry entry count {len(reg_entries)}")
+            if reported[k] != child_cat_counts.get(k, 0):
+                fail("i", f"acceptance-oracles.md reported {k}={reported[k]} != total-registry child count {child_cat_counts.get(k, 0)}")
+    if child_cat_counts.get("mechanically-verifiable", 0) != len(reg_entries):
+        fail("i", f"registry mechanically-verifiable classification count {child_cat_counts.get('mechanically-verifiable', 0)} != ownership-entry count {len(reg_entries)}")
+
+# ---- (j) CLASSIFICATION TOTALITY + SINGULARITY over the COMPLETE child acceptance set --------------
+ASSURANCE_CORE = {"owner", "predicate", "classification"}
+ASSURANCE_REQUIRED = {
+    "enforced":                {"enforced_by"},
+    "mechanically-verifiable": {"ownership", "positive_fixture", "negative_fixture", "command",
+                                "receipt_evidence_predicate"},   # + EXACTLY one of checker|schema
+    "evidenced":               {"receipt_evidence"},
+    "cognitive-review":        {"independent_review"},
+}
+# child acceptance pairs (owner, predicate) from the RAW authored lists (also rejects an intra-contract dup)
+contract_pairs = set()
+for nid, (p, c) in contracts.items():
+    seen = set()
+    for pred in (((c.get("acceptance") or {}).get("predicates")) or []):
+        if not is_str(pred):
+            continue
+        if pred in seen:
+            fail("j", f"{nid}.acceptance.predicates lists {pred!r} more than once (not classified exactly once)")
+        seen.add(pred)
+        contract_pairs.add((nid, pred))
+
+# validate every assurance entry; build (owner,predicate) -> [classification, …]
+from collections import defaultdict as _dd
+reg_pair_classes = _dd(list)
+J_BY_CAT = {k: 0 for k in KIND_ENUM}
+for i, e in enumerate(assurance):
+    where = f"assurance[{i}]"
+    if not isinstance(e, dict):
+        fail("j", f"{where}: must be a mapping"); continue
+    owner, pred, cls = e.get("owner"), e.get("predicate"), e.get("classification")
+    if not is_str(owner) or owner not in contracts:
+        fail("j", f"{where}: owner {owner!r} is not a known child contract"); continue
+    if not is_str(pred):
+        fail("j", f"{where}: predicate must be a scalar string"); continue
+    if cls not in KIND_ENUM:
+        fail("j", f"{where}: classification {cls!r} is not exactly one enum member of {sorted(KIND_ENUM)}"); continue
+    missing = (ASSURANCE_CORE | ASSURANCE_REQUIRED[cls]) - set(e.keys())
+    if missing:
+        fail("j", f"{where}: classification {cls!r} is missing required field(s) {sorted(missing)}")
+    if cls == "mechanically-verifiable" and bool(e.get("checker")) == bool(e.get("schema")):
+        fail("j", f"{where}: mechanically-verifiable entry must name EXACTLY one of checker|schema")
+    reg_pair_classes[(owner, pred)].append(cls)
+    J_BY_CAT[cls] += 1
+
+# SINGULARITY: each (owner,predicate) is classified EXACTLY once
+for (owner, pred), classes in reg_pair_classes.items():
+    if len(classes) > 1:
+        fail("j", f"predicate ({owner!r}, {pred!r}) is DOUBLE-CLASSIFIED ({len(classes)} assurance entries: {classes})")
+
+# BIJECTION vs the complete child acceptance set
+reg_pairs = set(reg_pair_classes)
+for (owner, pred) in sorted(contract_pairs - reg_pairs):
+    fail("j", f"acceptance predicate ({owner!r}, {pred!r}) is absent from the assurance registry (UNCLASSIFIED)")
+for (owner, pred) in sorted(reg_pairs - contract_pairs):
+    fail("j", f"assurance entry ({owner!r}, {pred!r}) is a PHANTOM — no child contract declares it")
+
+# no drift: the mv subset of `assurance` must equal the (h) ownership entries
+mv_pairs_assur = {k for k, cs in reg_pair_classes.items() if cs == ["mechanically-verifiable"]}
+mv_pairs_own = {(e.get("owner"), e.get("predicate")) for e in reg_entries}
+if mv_pairs_assur != mv_pairs_own:
+    fail("j", f"mechanically-verifiable drift between classification and ownership entries: {sorted(mv_pairs_assur ^ mv_pairs_own)}")
+
+# WAVE-ONLY predicates: separate section; enforced; must NOT overlap any child acceptance predicate
+child_pred_strs = {pr for (_o, pr) in contract_pairs}
+for i, e in enumerate(wave_predicates):
+    where = f"wave_predicates[{i}]"
+    if not isinstance(e, dict):
+        fail("j", f"{where}: must be a mapping"); continue
+    if e.get("classification") != "enforced" or not is_str(e.get("enforced_by")):
+        fail("j", f"{where}: wave predicate must be classification 'enforced' with an enforced_by check")
+    if e.get("predicate") in child_pred_strs:
+        fail("j", f"{where}: wave predicate {e.get('predicate')!r} collides with a child acceptance predicate (would mask child coverage)")
+
+# COMPLETE md projection parity: the 'Complete assurance classification' table == the registry map
+if os.path.isfile(acc_oracles):
+    lines = open(acc_oracles, encoding="utf-8").read().splitlines()
+    sec, in_sec = [], False
+    for ln in lines:
+        if ln.startswith("#") and "Complete assurance classification" in ln:
+            in_sec = True; continue
+        if in_sec and ln.startswith("## "):
+            break
+        if in_sec:
+            sec.append(ln)
+    if not sec:
+        fail("j", "acceptance-oracles.md: no 'Complete assurance classification' section found")
+    comp_proj = {}
+    for cells in md_table_rows("\n".join(sec)):
+        if len(cells) < 3:
+            continue
+        owner, pred, cls = cells[0].strip(), cells[1].strip().strip("`"), cells[2].strip()
+        if owner == "owner" or pred == "predicate":
+            continue
+        key = (owner, pred)
+        if key in comp_proj:
+            fail("j", f"acceptance-oracles.md complete projection: DUPLICATE row for {key}")
+        comp_proj[key] = cls
+    reg_map = {k: cs[0] for k, cs in reg_pair_classes.items() if len(cs) == 1}
+    for key in sorted(set(comp_proj) - set(reg_map)):
+        fail("j", f"complete projection row {key} has no single registry classification (projection/registry mismatch)")
+    for key in sorted(set(reg_map) - set(comp_proj)):
+        fail("j", f"registry entry {key} is absent from the complete md projection (projection parity break)")
+    for key in sorted(set(reg_map) & set(comp_proj)):
+        if reg_map[key] != comp_proj[key]:
+            fail("j", f"assurance↔projection classification mismatch for {key}: registry {reg_map[key]!r} != projection {comp_proj[key]!r}")
+
+J_TOTAL = len(contract_pairs)
 
 # ---- report ----------------------------------------------------------------------
 print("=" * 78)
-print("Pre-authorization validator — wave cnos#671 (cell-runtime-doctrine) R5 — SOUND")
+print("Pre-authorization validator — wave cnos#671 (cell-runtime-doctrine) R6 — SOUND")
 print(f"  WAVE_DIR={WAVE_DIR}")
 print(f"  REPO_ROOT={REPO_ROOT}")
 print("=" * 78)
@@ -915,8 +1041,9 @@ checks = {
  "e": "parallel nodes share no write surface",
  "f": "gate invariants (doctrine_affecting ⇒ acceptance; reason present iff a gate bool true)",
  "g": "AUTHORED completion evaluated (predicate-graph acyclic by walk; fixtures computed vs expected)",
- "h": "oracle-ownership TOTAL+SINGULAR bijection (registry ⇄ each child's acceptance ⇄ md projection; reject missing/duplicate/extra owner, classification mismatch, placeholder, parity break)",
- "i": "ledger consistency (revision labels agree; reported counts == derived table counts == registry size; every category a single enum member)",
+ "h": "oracle-ownership TOTAL+SINGULAR bijection over the mechanically-verifiable subset (registry ⇄ each child's acceptance ⇄ mv projection; reject missing/duplicate/extra owner, classification mismatch, placeholder, parity break)",
+ "i": "ledger consistency (revision labels agree; reported counts == total-registry child totals == mv ownership size; every category a single enum member)",
+ "j": "classification TOTALITY+SINGULARITY over the COMPLETE child acceptance set (union(acceptance.predicates) ⇄ total registry, each classified exactly once across all four categories; reject unclassified/double/phantom/bad-category/parity-break)",
 }
 by = {k: [e for e in errors if e.startswith(f"[{k}")] for k in checks}
 for k, desc in checks.items():
@@ -929,8 +1056,12 @@ other = [e for e in errors if not any(e.startswith(f"[{k}") for k in checks)]
 for e in other:
     print(f"  (?) FAIL  {e}")
 print("-" * 78)
+print(f"  (j) derived child acceptance predicates: {J_TOTAL}  "
+      f"[enforced {J_BY_CAT['enforced']} · mechanically-verifiable {J_BY_CAT['mechanically-verifiable']} · "
+      f"evidenced {J_BY_CAT['evidenced']} · cognitive-review {J_BY_CAT['cognitive-review']}]")
+print("-" * 78)
 if errors:
     print(f"RESULT: FAIL ({len(errors)} violation(s))")
     sys.exit(1)
-print("RESULT: PASS — all nine checks green at this wave tree.")
+print("RESULT: PASS — all ten checks (a–j) green at this wave tree.")
 sys.exit(0)
