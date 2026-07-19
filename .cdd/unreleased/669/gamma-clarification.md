@@ -106,3 +106,53 @@ does not edit γ's scaffold, this clarification, or β's review. A fresh β roun
 must bind the resulting exact α SHA. No γ closeout, CC judgment, standing
 promotion, merge, ready mark, or FSM transition is authorized before β
 converges.
+
+---
+
+# γ Clarification — cnos#669 R6/R3 custody-claim boundary
+
+**Date:** 2026-07-19
+**Trigger:** independent β R6/R2 receipt
+`6b2e75a75c599b734d7984631c16fb914770e8f5` found that the tracked and live
+PR body still generalized specific publication-race guards into refusal of
+all raced inputs and outputs.
+
+## Boundary decision
+
+R6/R3 selects β's precise-claim repair, not a new filesystem concurrency
+mechanism. State A makes the immutable copied snapshots and atomic
+`publication/` the canonical evidence boundary. It currently proves:
+
+- static no-symlink-component checks for the output path and the six response
+  plus invariant input paths;
+- canonical-output reuse refusal;
+- exclusive publication-lock acquisition and atomic publication staging; and
+- source mutation checks for the specific tracked sources already named by
+  the runner contract.
+
+It does not prove universal refusal of every change to an external input
+pathname before that pathname is snapshotted. Such a guarantee is neither an
+implicit consequence of a pre-copy path check nor required to describe the
+implemented snapshot boundary honestly.
+
+## Required projection repair
+
+α must remove the broad phrase `raced ... inputs and outputs` from the current
+tracked PR proposal and replace it with the exact implemented classes above.
+Historical R5 proposal snapshots and β findings remain immutable evidence and
+are not rewritten. The recursive-cell `SKILL.md` and `README.md` already name
+the static lexical/snapshot checks precisely; α must confirm no authoritative
+or live projection generalizes them.
+
+No runner, schema, witness, aggregate, CUE, H01-H13, TSC, State-A/B, or
+standing behavior changes in this round. The R6/R2 matter commit remains
+`db9ce95b1beb025d24f43fba2df58692665f80be`. α appends an R6/R3 fix round to
+its own self-coherence artifact and signals a new exact review-ready SHA. κ
+may then project the tracked proposal to the live draft PR body.
+
+## Handoff gate
+
+A fresh β round must verify the tracked and live wording against exact runner
+behavior and bind the new α SHA. No γ closeout, CC judgment, operator final
+read, ready mark, merge, label change, standing promotion, or FSM transition
+is authorized before β convergence.
