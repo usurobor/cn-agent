@@ -340,6 +340,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # I5 resolves the recursive-cell calibration corpus against this exact
+      # historical commit. Keep the main checkout shallow and fetch only the
+      # pinned object needed by the fail-closed target validator.
+      - name: Fetch pinned recursive-cell calibration revision
+        run: |
+          revision=a0d39293a27cfe57b49dacff696345b1ee2cdb40
+          git fetch --no-tags --no-recurse-submodules --depth=1 origin "$revision"
+          git cat-file -e "${revision}^{commit}"
+
       # cue-lang/setup-cue: action tag pinned (#301 design constraint).
       # CUE version pinned for deterministic CI; bump only when the schema
       # is re-tested against the new release.
