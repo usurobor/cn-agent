@@ -1,0 +1,18 @@
+{
+  "schema": "cnos-recursive-cell-self-config/0.1",
+  "target": "recursive-cell-self",
+  "target_root": ".",
+  "registry": "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/self/registry.tsc",
+  "manifest": "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/self/target.tsc",
+  "instruction": "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/INSTRUCTION.md",
+  "emit_prompt_mode": "llm",
+  "ingestion_mode": "hybrid",
+  "mechanical_repetitions": 3,
+  "engine": {
+    "repository": "usurobor/tsc",
+    "revision": "26aab5023f03dc7d0abf82e5fdba20134fc6adad",
+    "version": "coh 0.12.0 (26aab50)"
+  },
+  "semantic_samples": 1,
+  "standing": "same-author diagnostic only; zero independent, consistency, admissibility, or held-out standing"
+}

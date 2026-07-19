@@ -1,17 +1,17 @@
 {
-  "target": "direct",
+  "target": "recursive-cell-self",
   "mode": "hybrid",
   "alpha": 0.9399999999999999,
-  "beta": 0.84,
-  "gamma": 0.6,
+  "beta": 0.64,
+  "gamma": 0.44,
   "bottleneck_axis": "gamma",
   "mechanical": {
-    "alpha": 1.0,
-    "beta": 1.0,
-    "gamma": 0.7675,
+    "alpha": 0.94625,
+    "beta": 0.44117647058823534,
+    "gamma": 0.7432575757575758,
     "evidence_kind": "structural-proxy",
     "confidence": 1.0,
-    "bottleneck_axis": "gamma",
+    "bottleneck_axis": "beta",
     "provenance": {
       "discrepancy_symbol": "delta",
       "discrepancy_range": "[0,1]",
@@ -26,11 +26,11 @@
         "gamma_alpha": null
       },
       "aggregate_math": {
-        "C_sigma_math": 0.9155726157872258,
+        "C_sigma_math": 0.6769956211903663,
         "zero_component_present": false
       },
       "aggregate_numeric": {
-        "C_sigma_num": 0.9155726157872258,
+        "C_sigma_num": 0.6769956211903662,
         "epsilon": 1e-05,
         "numeric_floor_applied": false
       },
@@ -44,10 +44,10 @@
   },
   "llm": {
     "alpha": 0.9399999999999999,
-    "beta": 0.84,
-    "gamma": 0.6,
+    "beta": 0.64,
+    "gamma": 0.44,
     "evidence_kind": "semantic-judgment",
-    "confidence": 0.93,
+    "confidence": 0.95,
     "bottleneck_axis": "gamma",
     "provenance": {
       "discrepancy_symbol": "delta",
@@ -63,11 +63,11 @@
         "gamma_alpha": null
       },
       "aggregate_math": {
-        "C_sigma_math": 0.7795658333279667,
+        "C_sigma_math": 0.642076588204461,
         "zero_component_present": false
       },
       "aggregate_numeric": {
-        "C_sigma_num": 0.7795658333279667,
+        "C_sigma_num": 0.6420765882044609,
         "epsilon": 1e-05,
         "numeric_floor_applied": false
       },
@@ -82,8 +82,8 @@
   "final": {
     "source": "llm",
     "alpha": 0.9399999999999999,
-    "beta": 0.84,
-    "gamma": 0.6
+    "beta": 0.64,
+    "gamma": 0.44
   },
   "provenance": {
     "discrepancy_symbol": "delta",
@@ -99,11 +99,11 @@
       "gamma_alpha": null
     },
     "aggregate_math": {
-      "C_sigma_math": 0.7795658333279667,
+      "C_sigma_math": 0.642076588204461,
       "zero_component_present": false
     },
     "aggregate_numeric": {
-      "C_sigma_num": 0.7795658333279667,
+      "C_sigma_num": 0.6420765882044609,
       "epsilon": 1e-05,
       "numeric_floor_applied": false
     },

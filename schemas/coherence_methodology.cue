@@ -17,6 +17,13 @@ package skill
 	targets:      [...string]
 	cross_target: bool
 	instruction:  !=""
+	// cnos currently validates and executes methodology authority paths from a
+	// repository checkout. Installed-package activation is refused until TSC
+	// can separate an external authority base from the measured target root.
+	path_base:  "repository-root"
+	activation: "source-checkout-only"
+	target_root_contract: "explicit-coh-root"
+	target_revision?: string & =~"^[0-9a-f]{40}$"
 	output_root:  string & =~"^\\.tsc(/|$)"
 	default_mode: "mechanical" | "llm" | "hybrid" | "auto"
 

@@ -34,6 +34,10 @@ methodology:
   targets: ["cc662-system", "cc662-l0", "cc662-l1", "cc662-l2", "cc662-l3", "cc662-l4"]
   cross_target: true
   instruction: "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/INSTRUCTION.md"
+  path_base: repository-root
+  activation: source-checkout-only
+  target_root_contract: explicit-coh-root
+  target_revision: "a0d39293a27cfe57b49dacff696345b1ee2cdb40"
   output_root: ".tsc/cnos-recursive-cell"
   default_mode: hybrid
   consistency:
@@ -82,7 +86,7 @@ methodology:
       write no other artifact. Do not compute Coh or C-sigma.
 ---
 
-# cnos Recursive Cell Coherence Methodology v0.1.0
+# cnos Recursive Cell Coherence Methodology v0.2.0
 
 ## 0. Status and epistemic boundary
 
@@ -97,14 +101,26 @@ requires at minimum:
 4. at least one held-out cnos cell architecture not used to design this CM;
 5. CM-of-CMs/admissibility measurement of this artifact.
 
-The current TSC CLI can run the bundled #662 target manifests with its built-in
-CM after `calibration/662/verify-target.sh` accepts the exact frozen receipt
-checkout, but it cannot yet consume
-this arbitrary CM declaration as a first-class instrument.
-Until that executor exists, `INSTRUCTION.md` is the semantic authority and the
-target manifests are the deterministic corpus projection. A new application
-must materialize its own immutable registry by specializing those manifests;
-the bundled registry is calibration evidence, not a wildcard production target.
+The current TSC CLI cannot consume this arbitrary CM declaration as a
+first-class instrument. The executable manual route instead supplies one
+materialized `INSTRUCTION.md` containing the pinned TSC v3.2.4 core plus the
+cnos supplement to the CLI's single `--instruction` flag. Arbitrary declaration
+loading remains unshipped.
+
+All declared authority paths use `path_base: repository-root`; `--root` names
+the explicit cnos target checkout. This v0.2 candidate is therefore
+`source-checkout-only`: an installed `cnos.cdd` package must refuse activation
+because TSC does not yet expose separate authority-root and target-root bases.
+`resolve-authority.sh` enforces that boundary and the package smoke tests the
+refusal. A new application must materialize its own immutable registry by
+specializing these manifests; the bundled registry is calibration evidence,
+not a wildcard production target.
+
+I5 parses the 0.1 registry/manifests with the pinned TSC semantics, checks exact
+target/name/path equality, expands each target to a non-empty bundle at the
+declared historical revision, and checks the exact v3.2.4 top-level semantic
+output field list. The `mechanical.signals` entries below are a cnos taxonomy,
+not a claim that I5 proves an unversioned cross-repository engine signal schema.
 
 ## 1. Measurement object and recursion
 

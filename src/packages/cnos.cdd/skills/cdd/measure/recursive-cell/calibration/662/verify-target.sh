@@ -4,10 +4,13 @@
 set -euo pipefail
 
 target_root="${1:-.}"
+cm_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 expected_receipt_head="a0d39293a27cfe57b49dacff696345b1ee2cdb40"
 matter_revision="2d6b93cc4e69e5b413a80bd8e352cb0a004da460"
 matter_path="docs/architecture/CELL-RUNTIME-CLASSES.md"
 expected_matter_sha256="80e0d8c68a3d8affabdd4bd14848cbb3f0bee27b078e435f61433e42a0ee89e0"
+
+"$cm_root/instruction/assemble-instruction.sh" --check
 
 actual_head="$(git -C "$target_root" rev-parse HEAD)"
 if [[ "$actual_head" != "$expected_receipt_head" ]]; then

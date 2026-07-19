@@ -33,9 +33,15 @@ projection to type its domain-owned measurement skills without requiring
 network access in CI.
 
 For `artifact_class: measurement`, the validator requires a `methodology`
-block, vets it as `#Measurement`, resolves its registry/instruction/preflight
-paths, and proves every declared target is registered. It does not claim that
-the current TSC CLI can execute arbitrary methodologies first-class.
+block, vets it as `#Measurement`, requires the repository-root/source-only path
+contract, resolves regular registry/instruction files and an executable
+preflight, parses TSC 0.1 registries/manifests with the pinned parser semantics,
+checks exact target/name/path equality, and proves each target expands non-empty
+at its declared revision. It also checks the exact ordered v3.2.4 top-level
+semantic response field list. Mechanical signal names remain domain taxonomy;
+cnos does not claim compatibility with an unversioned cross-repository signal
+schema. The current TSC CLI still cannot load arbitrary methodology declarations
+first-class.
 
 ## What `skill.cue` does NOT validate
 
@@ -65,8 +71,8 @@ The validation has two surfaces with one rule each:
   no filesystem I/O.
 - **`scripts/ci/validate-skill-frontmatter.sh`** — owns file discovery,
   frontmatter extraction, exception handling, `calls` filesystem checks, and
-  measurement authority-path/registry resolution. This is shell logic that wraps
-  `cue vet` per skill.
+  measurement authority-path/registry/manifest/bundle resolution. This is shell
+  logic that wraps `cue vet` per skill and the bounded TSC target validator.
 
 Do not move shape/type/enum rules into the shell, and do not move
 discovery/exceptions into CUE. Each side stays small.

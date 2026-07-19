@@ -1,25 +1,47 @@
-# Candidate CM self-measurement
+# Candidate CM self-measurement — v0.2 repair
 
-Status: same-author diagnostic only; no independent, consistency, admissibility,
-or held-out standing.
+Status: same-author diagnostic only; no independent, consistency,
+admissibility, or held-out standing.
 
-- TSC source: `26aab5023f03dc7d0abf82e5fdba20134fc6adad`
-- Engine: `coh 0.12.0 (016c511)`
-- Standard instruction SHA-256:
-  `ca26d7a1a4dc6bd73e0afff558ed0342d42daeee193d4169de2c51b762759391`
-- Frozen 15-file prompt SHA-256:
-  `50f8900b0a50480cfbf240f5d816ba364a91b1324e32ab76a91472e015ad03ac`
-- Mechanical repetitions: 3, exact; alpha=1.000, beta=1.000,
-  gamma=0.7675, C-sigma=0.9155726158, gamma bottleneck.
-- Semantic samples: 1; alpha=0.94, beta=0.84, gamma=0.60,
-  C-sigma=0.7795658333, gamma bottleneck.
+`target.tsc` is the exact ordered 55-file source bundle and intentionally
+excludes every measurement output in this directory. `receipt.json` binds the
+manifest, framed bundle, registry, composite instruction, config, prompt,
+three raw mechanical outputs, semantic response, hybrid report, commands,
+engine revision/version, witness boundary, and UTC run times.
 
-The frozen target contained the CM authority, instruction, README, #662
-calibration record, registry, six manifests, fail-closed target preflight,
-cnos base/methodology schemas, and cnos skill validator. It intentionally
-excluded this directory's response/report: a measurement output cannot become
-part of the bytes it claims to have measured after the fact.
+- TSC revision: `26aab5023f03dc7d0abf82e5fdba20134fc6adad`
+- Engine: `coh 0.12.0 (26aab50)`
+- Composite instruction SHA-256: `0b7e26a2fce364c2f89bbd04a72e8e1068cb7339de9e9b9e9d33e520eff75645`
+- Ordered bundle SHA-256: `d6031d7f107f4bcce4f86d36e0c8255148ada28df80949912f0fe2ea57df4001`
+- Frozen prompt SHA-256: `4ccef013f935b1733df82400c0b7eda9e05c04ba5f90ea8afb8ebd6df7ebeaa2`
+- Mechanical N=3: exact numeric equality; alpha `0.94625`, beta
+  `0.44117647058823534`, gamma `0.7432575757575758`, C-sigma
+  `0.6769956211903662`, beta bottleneck.
+- Semantic N=1: alpha `0.94`, beta `0.64`, gamma `0.44`, C-sigma
+  `0.6420765882044609`, gamma bottleneck; zero standing.
 
-`semantic-response.json` is the validated TSC v3.2.4 witness.
-`report.json` is the report produced by the engine's hybrid external-response
-route.
+Replay from the cnos root with the pinned engine:
+
+```bash
+COH=/path/to/tsc/engine/ocaml/_build/default/bin/main.exe
+BASE=src/packages/cnos.cdd/skills/cdd/measure/recursive-cell
+REGISTRY="$BASE/calibration/self/registry.tsc"
+INSTRUCTION="$BASE/INSTRUCTION.md"
+PROMPT=/tmp/recursive-cell-self.prompt.md
+
+"$BASE/instruction/assemble-instruction.sh" --check
+"$COH" --mode llm --target recursive-cell-self --registry "$REGISTRY" \
+  --instruction "$INSTRUCTION" --root . --emit-prompt "$PROMPT"
+sha256sum "$PROMPT"
+"$COH" --mode mechanical --target recursive-cell-self \
+  --registry "$REGISTRY" --instruction "$INSTRUCTION" --root . \
+  --output /tmp/recursive-cell-mechanical
+"$COH" --mode hybrid --target recursive-cell-self --registry "$REGISTRY" \
+  --instruction "$INSTRUCTION" --root . \
+  --llm-response "$BASE/calibration/self/semantic-response.json" \
+  --output /tmp/recursive-cell-hybrid
+```
+
+The semantic response was produced by a same-author OpenAI Codex hosted
+activation; the host exposes the GPT-5 family but no immutable model revision.
+That limitation is recorded rather than promoted into a provenance claim.

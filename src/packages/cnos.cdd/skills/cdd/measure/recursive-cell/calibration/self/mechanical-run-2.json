@@ -1,0 +1,172 @@
+{
+  "mode": "mechanical",
+  "target": "recursive-cell-self",
+  "alpha": 0.94625,
+  "beta": 0.44117647058823534,
+  "gamma": 0.7432575757575758,
+  "bottleneck_axis": "beta",
+  "confidence": 1.0,
+  "evidence_kind": "structural-proxy",
+  "axis_detail": {
+    "alpha": {
+      "axis": "alpha",
+      "score": 0.94625,
+      "evidence_kind": "structural-proxy",
+      "signals": [
+        {
+          "code": "alpha.terminology_consistency",
+          "label": "Terminology consistency",
+          "weight": 0.4,
+          "score": 1.0,
+          "evidence": [ "All 60 heading phrases consistent" ]
+        },
+        {
+          "code": "alpha.repeated_structure",
+          "label": "Repeated structure",
+          "weight": 0.25,
+          "score": 1.0,
+          "evidence": [ "17/17 files with headings have an H1" ]
+        },
+        {
+          "code": "alpha.duplicate_definition_tension",
+          "label": "Duplicate definition tension",
+          "weight": 0.2,
+          "score": 0.825,
+          "evidence": [
+            "'1. what each axis means' in 2 files",
+            "'3.3 score mapping for top-level fields' in 2 files",
+            "'self-measure v3.2.4' in 2 files"
+          ]
+        },
+        {
+          "code": "alpha.naming_drift",
+          "label": "Naming drift",
+          "weight": 0.15,
+          "score": 0.875,
+          "evidence": [ "snake_case: 7, camelCase: 1" ]
+        }
+      ],
+      "summary": "α structural-proxy score: 0.946",
+      "unresolved_ambiguity": []
+    },
+    "beta": {
+      "axis": "beta",
+      "score": 0.44117647058823534,
+      "evidence_kind": "structural-proxy",
+      "signals": [
+        {
+          "code": "beta.cross_reference_consistency",
+          "label": "Cross-reference consistency",
+          "weight": 0.35,
+          "score": 0.0,
+          "evidence": [
+            "2/2 links unresolved",
+            "schemas/README.md -> ../docs/reference/ctb/LANGUAGE-SPEC.md",
+            "schemas/README.md -> ../docs/reference/ctb/LANGUAGE-SPEC.md"
+          ]
+        },
+        {
+          "code": "beta.authority_alignment",
+          "label": "Authority alignment",
+          "weight": 0.3,
+          "score": 1.0,
+          "evidence": [ "No authority self-claims found — clean surface" ]
+        },
+        {
+          "code": "beta.source_of_truth_alignment",
+          "label": "Source-of-truth alignment",
+          "weight": 0.2,
+          "score": 0.0,
+          "evidence": [
+            "0/1 linking documents fully grounded in bundle",
+            "schemas/README.md"
+          ]
+        },
+        {
+          "code": "beta.target_file_fit",
+          "label": "Target-file fit",
+          "weight": 0.15,
+          "score": 0.9411764705882353,
+          "evidence": [ "16/17 files have H1 words matching filename" ]
+        }
+      ],
+      "summary": "β structural-proxy score: 0.441",
+      "unresolved_ambiguity": []
+    },
+    "gamma": {
+      "axis": "gamma",
+      "score": 0.7432575757575758,
+      "evidence_kind": "structural-proxy",
+      "signals": [
+        {
+          "code": "gamma.canonical_generated_distinction",
+          "label": "Canonical/generated distinction",
+          "weight": 0.3,
+          "score": 1.0,
+          "evidence": [
+            "No generated-file markers — clean canonical surface"
+          ]
+        },
+        {
+          "code": "gamma.version_surface_consistency",
+          "label": "Version surface consistency",
+          "weight": 0.3,
+          "score": 0.8472222222222222,
+          "evidence": [
+            "72 version occurrences, 12 unique: 0.11.0, 0.12.0, 0.13.2, 0.2.0, 1.0.1"
+          ]
+        },
+        {
+          "code": "gamma.traceability_presence",
+          "label": "Traceability presence",
+          "weight": 0.25,
+          "score": 0.2,
+          "evidence": [
+            "1/55 files contain traceability markers (saturation threshold 5)"
+          ]
+        },
+        {
+          "code": "gamma.authority_evolution_consistency",
+          "label": "Authority evolution consistency",
+          "weight": 0.15,
+          "score": 0.9272727272727272,
+          "evidence": [
+            "2/55 files contain deprecation/supersession language"
+          ]
+        }
+      ],
+      "summary": "γ structural-proxy score: 0.743",
+      "unresolved_ambiguity": []
+    }
+  },
+  "diagnostics": [],
+  "provenance": {
+    "discrepancy_symbol": "delta",
+    "discrepancy_range": "[0,1]",
+    "coherence_link": "barrier_exponential",
+    "barrier_phi": "delta/(1-delta)",
+    "barrier_clip_eta_phi": null,
+    "endpoint_policy": "delta=1 -> D=infinity -> Coh=0",
+    "energy_variable": "D_ab",
+    "link_lipschitz_constants": {
+      "alpha_beta": null,
+      "beta_gamma": null,
+      "gamma_alpha": null
+    },
+    "aggregate_math": {
+      "C_sigma_math": 0.6769956211903663,
+      "zero_component_present": false
+    },
+    "aggregate_numeric": {
+      "C_sigma_num": 0.6769956211903662,
+      "epsilon": 1e-05,
+      "numeric_floor_applied": false
+    },
+    "gauge_witness": {
+      "w_gauge_ref": 0.0,
+      "w_gauge_spread": 0.0,
+      "tau_gauge_spread": 0.05,
+      "canonical_remap_procedure": "lexicographic ascending by score value (lowest->alpha, middle->beta, highest->gamma)"
+    }
+  }
+}
