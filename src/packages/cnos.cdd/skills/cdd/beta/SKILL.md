@@ -31,7 +31,7 @@ calls:
 
 ## Core Principle
 
-**Coherent β work preserves independent judgment from first review through release and β close-out.**
+**Coherent β work preserves independent judgment from first review through merge and β close-out.**
 
 β owns:
 - review verdict
@@ -119,10 +119,13 @@ Refusal of harness implementation instructions or pre-provisioned per-role branc
 
 ### 2. Keep review and merge together
 
-The same β session or follow-on β session owns review through merge and β close-out unless γ coordinates a reassignment. Tag/deploy/disconnect is δ's release boundary. The post-release assessment is γ's responsibility.
+The same β session or follow-on β session owns review through merge and the
+immediate post-merge β close-out unless γ coordinates a reassignment.
+Tag/deploy/disconnect is δ's later release boundary. The post-release assessment
+is γ's responsibility.
 
 - ❌ "Approve now; merging can happen later in a different session"
-- ✅ "The same β ownership carries verdict → merge → β close-out, then hands off to γ for PRA and δ for release boundary"
+- ✅ "The same β ownership carries verdict → merge → β close-out, then hands off to γ for the marked receipt/release preparation and δ for the release boundary"
 
 ### 3. Treat stale references and authority conflicts as findings
 
@@ -140,13 +143,14 @@ No "approve with follow-up" except an explicitly named design-scope deferral tha
 
 ### 5. Closure discipline
 
-The same β session that reviews and merges also owns the release and β close-out.
-Do not defer these to a separate session or role unless γ coordinates a reassignment.
+The same β session that reviews and merges also owns the β close-out. β does
+not own the later release. Do not defer the close-out to a separate session or
+role unless γ coordinates a reassignment.
 
 For release-scoped triadic cycles, β writes `.cdd/unreleased/{N}/beta-closeout.md`; the directory remains there through δ disconnect and γ archives it afterward per `release/SKILL.md` §2.5a.
 
 - ❌ "Merge succeeded; someone else can write the β close-out later"
-- ✅ "Review → narrow → merge → release → write `.cdd/unreleased/{N}/beta-closeout.md` in the same β pass, then γ writes the PRA"
+- ✅ "Review → narrow → merge → write `.cdd/unreleased/{N}/beta-closeout.md` in the same β pass → γ marks release-ready → δ disconnects → γ writes the PRA/archive/terminal seal"
 
 ### 6. Anchor oracle evidence on code, not doc
 

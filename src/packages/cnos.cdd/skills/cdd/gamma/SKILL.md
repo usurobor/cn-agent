@@ -17,7 +17,7 @@ inputs:
   - .cdd/unreleased/{N}/self-coherence.md (α's gap, mode, ACs, CDD Trace, review-readiness, fix-rounds)
   - .cdd/unreleased/{N}/beta-review.md (β's round-by-round verdicts + findings)
   - .cdd/unreleased/{N}/alpha-closeout.md (α close-out, post-merge)
-  - .cdd/unreleased/{N}/beta-closeout.md (β close-out + release evidence, post-merge)
+  - .cdd/unreleased/{N}/beta-closeout.md (β review/merge close-out, post-merge)
   - release state
   - "delta gate results (observable via git: tags, branch state)"
 outputs:
@@ -235,9 +235,13 @@ When α or β is blocked, γ may: clarify requirement wording / add missing arti
 
 **Issue-edit cache-bust procedure.** When γ edits an issue body mid-cycle, γ commits a `gamma-clarification.md` entry on the cycle branch *before* signaling the edit. The cycle-branch transition is the signal; γ does not need to chat-relay. The clarification names: date, edit summary, and which ACs / non-goals / constraints / artifacts changed. **Canonical wire-format home at [`cnos.handoff/skills/handoff/mid-flight/SKILL.md`](../../../../cnos.handoff/skills/handoff/mid-flight/SKILL.md)** (Sub 4 of [cnos#404](https://github.com/usurobor/cnos/issues/404) / cnos#418); this section retains the role-local procedure citation.
 
-### 2.6. Steps 6–7 — Prepare release artifacts before δ tags
+### 2.6. Step 10 format — prepare release artifacts after marked closeout
 
-In the sequential dispatch model, β exits after merge. δ runs `scripts/release.sh` per `release-effector/SKILL.md` (stamp + tag) but does not author artifacts. γ owns two release-ordering obligations before requesting the tag:
+This subsection defines Step 10's artifact format; execute it only after the
+Step-9 closeout in §2.7 and §2.10 Phase A. In the sequential dispatch model,
+β exits after merge/β-closeout. δ runs `scripts/release.sh` per
+`release-effector/SKILL.md` (stamp + tag) but does not author artifacts. γ owns
+two release-ordering obligations before requesting the tag:
 
 1. **Write `RELEASE.md`** — per `release/SKILL.md` §2.5. The GitHub release body, at repo root, committed to main. Without it, release CI auto-generates sparse notes.
 2. **Keep cycle directories at the release-gate path** — per `release/SKILL.md` §2.5a. `.cdd/unreleased/{N}/` remains in place through δ's exact release validation and tagged disconnect. γ archives it only after δ reports release completion and green CI.
@@ -251,7 +255,7 @@ In the sequential dispatch model, β exits after merge. δ runs `scripts/release
 - ❌ Assume β handled release prep (β exits at merge in sequential model)
 - ✅ γ writes RELEASE.md → δ validates/tags/verifies → γ archives cycle dirs
 
-### 2.7. Steps 8–9 — Triage close-outs explicitly
+### 2.7. Step 9 — triage role close-outs and mark release-pending
 
 **Collecting close-outs in sequential bounded dispatch (`cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule").** β exits after writing `beta-closeout.md`; α already exited after signaling review-readiness. γ obtains both close-outs before triaging:
 
@@ -334,6 +338,14 @@ evidence, deferred candidates, and the exact standalone line:
 
 `CDD-Post-Merge-Closeout: complete`
 
+Immediately beside it γ writes exactly one canonical release assignment:
+
+`CDD-Release-Batch: X.Y.Z`
+
+(`docs/YYYY-MM-DD` is the no-tag docs-only form.) The batch line is required by
+the post-merge and release gates; prose such as “next release” is not an
+assignment.
+
 Run `scripts/validate-release-gate.sh --mode post-merge --cycle N`. Filename
 existence without the marker is only assurance; a passing post-merge gate means
 the receipt is complete enough for release preparation, never terminally
@@ -352,18 +364,38 @@ archive or declare terminal closure before that observable result.
 
 After disconnect, γ:
 
-1. verifies the exact tag and release-CI result;
+1. verifies the exact tag and release-CI result for a versioned batch, or δ's
+   acknowledged main merge SHA and applicable main CI for a docs-only batch;
 2. authors the PRA and finalizes triage, cycle-iteration outputs, immediate and
    deferred dispositions, hub memory, next MCA, and the mandatory
    `learning`/`epsilon_observations` fields;
 3. moves `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/` and commits that
    archive as its own observable commit;
 4. only after that commit exists, appends the terminal declaration to the
-   archived `gamma-closeout.md`, binding the tag and archive-commit SHA, and
-   commits it separately.
+   archived `gamma-closeout.md`, binding the disconnect and archive-commit SHA,
+   and commits it separately. For a tagged release the exact machine-readable
+   seal is:
 
-Only the tag/green-CI evidence plus the archive commit plus the subsequent
-terminal-declaration commit establish cycle closure. The earlier
+   ```text
+   CDD-Release-Tag: X.Y.Z
+   CDD-Archive-Commit: <40-hex archive commit>
+   CDD-Terminal-Closure: complete
+   ```
+
+   For a docs-only batch, γ first appends the δ-acknowledged disconnect while
+   the receipt is still under `unreleased/`, then archives it. The terminal
+   seal retains that line and binds the archive commit:
+
+   ```text
+   CDD-Release-Commit: <40-hex main merge/disconnect commit>
+   CDD-Archive-Commit: <40-hex archive commit>
+   CDD-Terminal-Closure: complete
+   ```
+
+Only the tag/green-release-CI evidence (versioned) or acknowledged main
+commit/applicable-main-CI evidence (docs-only), plus the archive commit, plus
+the subsequent terminal-declaration commit with resolvable matching bindings
+establish cycle closure. The earlier
 `CDD-Post-Merge-Closeout: complete` line remains a release-readiness marker and
 must never be cited as terminal proof.
 

@@ -1,6 +1,6 @@
 ---
 name: release-effector
-description: δ-side mechanics for cutting a release — scripts/release.sh invocation, tag push, release CI polling, CI-red recovery runbook, branch cleanup. The platform-actions companion to release/SKILL.md (β-side authoring).
+description: δ-side mechanics for cutting a release — scripts/release.sh invocation, tag push, release CI polling, CI-red recovery runbook, branch cleanup. The platform-actions companion to γ-owned release preparation in release/SKILL.md.
 artifact_class: skill
 kata_surface: embedded
 governing_question: When γ marks post-merge closeout release-ready, what does δ run, in what order, and how does δ report a clean disconnect for γ's later archive and terminal closure?
@@ -28,7 +28,7 @@ requires:
   - δ has read operator/SKILL.md §3 (outward gate policy)
   - γ has shipped RELEASE.md; cycle directories remain under unreleased until after disconnect
   - "gamma-closeout.md on main carries `CDD-Post-Merge-Closeout: complete`"
-  - β has signaled "release ready for δ tag" in beta-closeout.md (per release/SKILL.md §2.6)
+  - "gamma-closeout.md names one `CDD-Release-Batch: X.Y.Z` matching the requested tag"
 calls:
   - release/SKILL.md
   - operator/SKILL.md
@@ -40,7 +40,7 @@ calls:
 
 **The tag is the disconnection point. δ runs the script, polls CI, cleans the branches.**
 
-`release-effector` is the **mechanics-of-the-disconnect** skill. β-side authoring (RELEASE.md, CHANGELOG, version decision, cycle-dir move) lives in `release/SKILL.md`. δ-policy frame (when the release gate fires, what δ does NOT do, override authority) lives in `operator/SKILL.md` (Phase 4a will relocate to `delta/SKILL.md`). This skill is the executable surface between them: the exact commands δ runs at the disconnect moment, in order, with the failure-mode runbook for red CI.
+`release-effector` is the **mechanics-of-the-disconnect** skill. γ-side release preparation (RELEASE.md, batch assignment, and later cycle-dir archive) is specified by `release/SKILL.md`; β owns only review/merge closeout. δ-policy frame (when the release gate fires, what δ does NOT do, override authority) lives in `operator/SKILL.md` (Phase 4a will relocate to `delta/SKILL.md`). This skill is the executable surface between them: the exact commands δ runs at the disconnect moment, in order, with the failure-mode runbook for red CI.
 
 Failure mode: **manual tagging.** A `git tag X.Y.Z && git push --tags` skips version stamping, skips consistency checks, skips structured tag-message generation, and produces a release whose VERSION, `cn.json`, package manifests, and tag disagree. The single-command release script is the only sanctioned path.
 
@@ -53,10 +53,10 @@ Before δ runs `scripts/release.sh`, all of the following must be true on `main`
 | Precondition | Owner | Verified where |
 |---|---|---|
 | `gamma-closeout.md` on main carries `CDD-Post-Merge-Closeout: complete` | γ | `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10 closeout gate |
+| The same file carries exactly one `CDD-Release-Batch: X.Y.Z` matching the requested tag | γ | `gamma/SKILL.md` §2.10 Phase A; `validate-release-gate.sh` |
 | `RELEASE.md` exists at repo root | γ | `release/SKILL.md` §2.5; `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" |
 | Cycle directories remain at `.cdd/unreleased/{N}/` for validation | γ | `release/SKILL.md` §2.5a |
-| VERSION decided (semver bump) | γ + β | `release/SKILL.md` §2.2 |
-| β signaled "release ready for δ tag" in `beta-closeout.md` | β | `release/SKILL.md` §2.6 |
+| VERSION decided (semver bump) | γ, informed by merged/review evidence | `release/SKILL.md` §2.2 |
 | Local main up to date with origin/main | δ | `scripts/release.sh` step 2 (auto-check) |
 | Tag X.Y.Z does not already exist | δ | `scripts/release.sh` step 3 (auto-check) |
 
@@ -223,7 +223,7 @@ git push origin --delete cycle/399
 
 These are the hard rules δ enforces from the release-effector surface. Each maps to a precondition or a discipline failure mode evidenced by prior cycles.
 
-1. **Do not tag/release before `gamma-closeout.md` on main carries `CDD-Post-Merge-Closeout: complete`.** Filename existence alone may represent pre-operator assurance. The marker gates the tag but is nonterminal.
+1. **Do not tag/release before `gamma-closeout.md` on main carries `CDD-Post-Merge-Closeout: complete` plus exactly one matching `CDD-Release-Batch: X.Y.Z`.** Filename existence alone may represent pre-operator assurance. The marker/batch pair gates the tag but is nonterminal.
 2. **Manual `git tag` is not allowed.** `scripts/release.sh` is the only way to tag a release.
 3. **One tag per release.** Per `release/SKILL.md` §3.6: amend the release commit and reuse the same bare-version tag on CI-red retry. Do not proliferate `3.9.1-fix`, `3.9.1-fix2`.
 4. **Annotated tags only.** Generated message via `scripts/generate-release-tag-message.sh`. Lightweight tags lose the structured metadata.
@@ -257,10 +257,10 @@ See `release/SKILL.md` §2.5b for the docs-only flow and `issue/SKILL.md` for th
 These are intentionally out of scope. Crossing them is a role-boundary violation or an authority claim release-effector does not hold.
 
 - **Do not author `RELEASE.md`.** That's γ per `release/SKILL.md` §2.5.
-- **Do not write the CHANGELOG ledger row.** That's β/γ per `release/SKILL.md` §2.4 and §3.8.
-- **Do not decide the version bump.** That's γ + β per `release/SKILL.md` §2.2.
+- **Do not write the CHANGELOG ledger row.** That is γ-owned per `release/SKILL.md` §2.4 and §3.8.
+- **Do not decide the version bump.** That's γ's release-preparation judgment, informed by merged/review evidence, per `release/SKILL.md` §2.2.
 - **Do not run `scripts/validate-release-gate.sh` outside the script's flow.** β/CI may run it independently for pre-merge validation; release-effector triggers it transitively via the script's step 4 only.
-- **Do not deploy.** Deployment (binary distribution, host installation, daemon restart) is a separate effector surface — see `release/SKILL.md` §2.8 for the current deploy step (β/operator).
+- **Do not deploy.** Deployment (binary distribution, host installation, daemon restart) is a separate effector surface — see `release/SKILL.md` §2.8 for the current δ/operator deploy step.
 - **Do not declare the cycle closed.** δ establishes disconnect; γ performs the subsequent archive move. Terminal closure requires both.
 - **Do not override the gate.** Override is `operator/SKILL.md` §4 territory. Release-effector executes the mechanics; override is a δ-policy decision.
 
@@ -274,14 +274,14 @@ These are intentionally out of scope. Crossing them is a role-boundary violation
 - `operator/SKILL.md` §4 (override protocol — used in §4 step 5 above)
 - `operator/SKILL.md` §7 (cycle lifecycle table — Disconnect row points here for mechanics)
 - `release/SKILL.md` §2.1 (pre-release validator; invoked transitively by script step 4)
-- `release/SKILL.md` §2.4 (CHANGELOG — γ/β surface; release-effector does not author)
+- `release/SKILL.md` §2.4 (CHANGELOG — γ release-preparation surface; release-effector does not author)
 - `release/SKILL.md` §2.5 (RELEASE.md — γ surface; release-effector does not author)
 - `release/SKILL.md` §2.5a (post-disconnect cycle-dir archive — γ surface; release script does not move it)
 - `release/SKILL.md` §2.5b (docs-only disconnect — release-effector is not invoked)
-- `release/SKILL.md` §2.6 (release-readiness signaling — β surface; precondition above)
-- `release/SKILL.md` §2.7 (release CI polling — β-side text says δ owns this per release-effector §3)
+- `release/SKILL.md` §2.6 (release-readiness signaling — γ surface; precondition above)
+- `release/SKILL.md` §2.7 (post-tag release CI polling — δ owns this per release-effector §3)
 - `release/SKILL.md` §3.6 (amend-don't-re-tag — invoked by §4 step 3 above)
-- `release/SKILL.md` §3.8 (TSC scoring — γ/β; release-effector does not score)
+- `release/SKILL.md` §3.8 (TSC scoring — γ uses β evidence; release-effector does not score)
 - `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix" (canonical tag policy)
 - `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" (gamma-closeout.md gates tag)
 - `gamma/SKILL.md` §2.10 (γ closure gate — verifies preconditions above)
@@ -298,7 +298,7 @@ These are intentionally out of scope. Crossing them is a role-boundary violation
 
 ### Scenario
 
-γ has declared post-merge closeout complete. `gamma-closeout.md` carries `CDD-Post-Merge-Closeout: complete` on main. `RELEASE.md` is at repo root. The complete cycle directory remains under `.cdd/unreleased/{N}/`. VERSION still reads the previous release's version. The current release will be `3.67.0`.
+γ has declared post-merge closeout complete. `gamma-closeout.md` carries `CDD-Post-Merge-Closeout: complete` and `CDD-Release-Batch: 3.67.0` on main. `RELEASE.md` is at repo root. The complete cycle directory remains under `.cdd/unreleased/{N}/`. VERSION still reads the previous release's version. The current release will be `3.67.0`.
 
 ### Task
 
@@ -306,7 +306,7 @@ Execute the disconnect release.
 
 ### Expected actions
 
-1. **Verify preconditions and the negative case.** Exact marker in `gamma-closeout.md`; an assurance-only file without it must fail; `RELEASE.md`; α/β role closeouts; γ's release-readiness signal; local main matches `origin/main`.
+1. **Verify preconditions and the negative case.** Exact marker plus matching `CDD-Release-Batch: 3.67.0` in `gamma-closeout.md`; an assurance-only file or a marker without the batch must fail; `RELEASE.md`; α/β role closeouts; local main matches `origin/main`.
 2. **Run the script.** `scripts/release.sh 3.67.0` (or edit VERSION then `scripts/release.sh`).
 3. **Watch the script's output.** Expect: VERSION set, gate validated against `unreleased/`, manifests stamped, consistency OK, release commit, tag annotated, push complete. Assert the script did not move cycle dirs.
 4. **Poll release CI.** `gh run list --branch 3.67.0`, then `gh run watch <id> --exit-status`.

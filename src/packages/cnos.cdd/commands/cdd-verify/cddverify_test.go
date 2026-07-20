@@ -10,29 +10,53 @@ import (
 	"time"
 )
 
-func TestUnreleasedCloseoutsAreCanonicalPostMergeState(t *testing.T) {
-	root := t.TempDir()
-	cycleDir := filepath.Join(root, ".cdd", "unreleased", "669")
-	if err := os.MkdirAll(cycleDir, 0o755); err != nil {
-		t.Fatal(err)
+func TestUnreleasedCloseoutState(t *testing.T) {
+	cases := []struct {
+		name         string
+		gamma        string
+		archiveBatch string
+		want         checkResult
+		wantDetail   string
+	}{
+		{"versioned pending", "# gamma\nCDD-Post-Merge-Closeout: complete\nCDD-Release-Batch: 1.2.3\n", "", checkPass, "release-pending for assigned batch 1.2.3; disconnect absent"},
+		{"docs pending", "# gamma\nCDD-Post-Merge-Closeout: complete\nCDD-Release-Batch: docs/2026-07-20\n", "", checkPass, "release-pending for assigned batch docs/2026-07-20; disconnect absent"},
+		{"placeholder", "# gamma placeholder\n", "", checkWarn, "release-pending is unproven"},
+		{"versioned released residue", "# gamma\nCDD-Post-Merge-Closeout: complete\nCDD-Release-Batch: 1.2.3\n", "1.2.3", checkWarn, "stale under unreleased"},
+		{"docs archived residue", "# gamma\nCDD-Post-Merge-Closeout: complete\nCDD-Release-Batch: docs/2026-07-20\n", "docs/2026-07-20", checkWarn, "stale under unreleased"},
 	}
-	for _, name := range []string{"self-coherence.md", "beta-review.md", "alpha-closeout.md", "beta-closeout.md", "gamma-closeout.md"} {
-		if err := os.WriteFile(filepath.Join(cycleDir, name), []byte("# fixture\n"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			cycleDir := filepath.Join(root, ".cdd", "unreleased", "669")
+			if err := os.MkdirAll(cycleDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range []string{"self-coherence.md", "beta-review.md", "alpha-closeout.md", "beta-closeout.md"} {
+				if err := os.WriteFile(filepath.Join(cycleDir, name), []byte("# fixture\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := os.WriteFile(filepath.Join(cycleDir, "gamma-closeout.md"), []byte(tc.gamma), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if tc.archiveBatch != "" {
+				if err := os.MkdirAll(filepath.Join(root, ".cdd", "releases", filepath.FromSlash(tc.archiveBatch), "669"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
 
-	var out bytes.Buffer
-	l := newLedgerRun(root, "", &out)
-	l.checkUnreleasedTriadicArtifacts(cycleDir, "669")
-	got := out.String()
-	if strings.Contains(got, "may indicate stale cycle") {
-		t.Fatalf("post-merge closeouts under unreleased were misclassified as stale:\n%s", got)
-	}
-	for _, name := range []string{"alpha-closeout.md", "beta-closeout.md", "gamma-closeout.md"} {
-		if !strings.Contains(got, "✅ "+name+" (issue #669) — present in canonical post-merge/release-pending location") {
-			t.Errorf("%s was not accepted in the post-merge location:\n%s", name, got)
-		}
+			var out bytes.Buffer
+			l := newLedgerRun(root, "", &out)
+			l.checkUnreleasedTriadicArtifacts(cycleDir, "669")
+			got := out.String()
+			prefix := "✅ "
+			if tc.want == checkWarn {
+				prefix = "⚠️  "
+			}
+			if !strings.Contains(got, prefix+"alpha-closeout.md (issue #669)") || !strings.Contains(got, tc.wantDetail) {
+				t.Fatalf("unexpected closeout classification:\n%s", got)
+			}
+		})
 	}
 }
 

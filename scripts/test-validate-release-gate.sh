@@ -60,7 +60,7 @@ write_triadic_cycle() {
     printf '\n**Mode:** substantial\n' >> "$dir/gamma-scaffold.md"
   fi
   if [[ "$terminal" == "yes" && "$missing" != "gamma-closeout.md" ]]; then
-    printf '\nCDD-Post-Merge-Closeout: complete\n' >> "$dir/gamma-closeout.md"
+    printf '\nCDD-Post-Merge-Closeout: complete\nCDD-Release-Batch: 1.2.3\n' >> "$dir/gamma-closeout.md"
   fi
 }
 
@@ -168,6 +168,13 @@ OUT="$TMP/release_marker.out"; run_gate "$OUT" --repo-root "$R" --cycle 210
 assert_exit "release fails without closeout marker" 1 "$RUN_EXIT"
 assert_grep "release marker failure is explicit" "lacks post-merge closeout marker" "$OUT"
 
+echo "## post-merge requires one explicit release batch"
+R="$TMP/post_batch"; make_root "$R"; write_triadic_cycle "$R/.cdd/unreleased" 222
+sed -i '/^CDD-Release-Batch:/d' "$R/.cdd/unreleased/222/gamma-closeout.md"
+OUT="$TMP/post_batch.out"; run_gate "$OUT" --repo-root "$R" --mode post-merge --cycle 222
+assert_exit "post-merge fails without release batch" 1 "$RUN_EXIT"
+assert_grep "release-batch failure is explicit" "must carry exactly one canonical CDD-Release-Batch" "$OUT"
+
 echo "## small-change collapse remains intact"
 R="$TMP/small"; make_root "$R"; write_release_md "$R"; write_small_change_cycle "$R/.cdd/unreleased" 211
 OUT="$TMP/small.out"; run_gate "$OUT" --repo-root "$R" --cycle 211
@@ -221,12 +228,27 @@ printf '# gamma scaffold\n\n**Mode:** immediate-output\n' > "$R/.cdd/unreleased/
 OUT="$TMP/immediate.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 219
 assert_exit "explicit immediate-output exact cycle collapses" 0 "$RUN_EXIT"
 
-echo "## repository-wide scan preserves unscaffolded legacy compatibility"
+echo "## repository-wide scan permits only explicit legacy entries"
 R="$TMP/legacy_scan"; make_root "$R"; mkdir -p "$R/.cdd/unreleased/220"
 printf '# legacy self-coherence\n' > "$R/.cdd/unreleased/220/self-coherence.md"
+mkdir -p "$R/.cdd"
+printf '220\timmediate-output\tPre-scaffold fixture retained for compatibility.\n' > "$R/.cdd/release-gate-legacy.tsv"
 OUT="$TMP/legacy_scan.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge
 assert_exit "unselected legacy directory remains compatible" 0 "$RUN_EXIT"
-assert_grep "legacy compatibility is visibly classified" "cycle 220 (small-change)" "$OUT"
+assert_grep "legacy compatibility names explicit authority" "explicit legacy mode immediate-output" "$OUT"
+
+R="$TMP/new_malformed_scan"; make_root "$R"; write_release_md "$R"
+mkdir -p "$R/.cdd/unreleased/999"
+printf '# newly malformed cycle\n' > "$R/.cdd/unreleased/999/self-coherence.md"
+OUT="$TMP/new_malformed_scan.out"; run_gate "$OUT" --repo-root "$R"
+assert_exit "new unscaffolded repository-wide cycle fails closed" 1 "$RUN_EXIT"
+assert_grep "unlisted malformed cycle names allowlist refusal" "unscaffolded/unclassified directory is not listed" "$OUT"
+
+R="$TMP/malformed_allowlist"; make_root "$R"; mkdir -p "$R/.cdd/unreleased/998" "$R/.cdd"
+printf '998\timmediate-output\n' > "$R/.cdd/release-gate-legacy.tsv"
+OUT="$TMP/malformed_allowlist.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge
+assert_exit "legacy row without concrete reason fails" 1 "$RUN_EXIT"
+assert_grep "malformed legacy row names reason requirement" "concrete non-placeholder reason is required" "$OUT"
 
 echo "## activation workflow derives cycle only from numeric cycle pushes"
 TEMPLATE="$SCRIPT_DIR/../src/packages/cnos.cdd/skills/cdd/activation/templates/github-actions/cdd-artifact-validate.yml"

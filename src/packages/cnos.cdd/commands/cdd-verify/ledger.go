@@ -466,6 +466,7 @@ func (l *ledgerRun) checkUnreleasedCycle(issueNum string) {
 func (l *ledgerRun) checkUnreleasedTriadicArtifacts(cycleDir, issueNum string) {
 	core := []string{"self-coherence.md", "beta-review.md"}
 	closeouts := []string{"alpha-closeout.md", "beta-closeout.md", "gamma-closeout.md"}
+	closeoutResult, closeoutDetail := l.unreleasedCloseoutState(cycleDir, issueNum)
 	for _, artifact := range core {
 		ap := filepath.Join(cycleDir, artifact)
 		if fileExists(ap) {
@@ -483,12 +484,50 @@ func (l *ledgerRun) checkUnreleasedTriadicArtifacts(cycleDir, issueNum string) {
 	for _, artifact := range closeouts {
 		ap := filepath.Join(cycleDir, artifact)
 		if fileExists(ap) {
-			l.check(fmt.Sprintf("%s (issue #%s)", artifact, issueNum), checkPass, "present in canonical post-merge/release-pending location")
+			l.check(fmt.Sprintf("%s (issue #%s)", artifact, issueNum), closeoutResult, closeoutDetail)
 			l.validateSections(ap, artifact, "", false)
 		} else {
 			l.check(fmt.Sprintf("%s (issue #%s)", artifact, issueNum), checkWarn, "missing in unreleased cycle (expected before that role's post-merge closeout)")
 		}
 	}
+}
+
+func (l *ledgerRun) unreleasedCloseoutState(cycleDir, issueNum string) (checkResult, string) {
+	gammaPath := filepath.Join(cycleDir, "gamma-closeout.md")
+	data, err := os.ReadFile(gammaPath)
+	if err != nil {
+		return checkWarn, "present before γ establishes release-pending marker and batch"
+	}
+	marker := false
+	batch := ""
+	batchCount := 0
+	batchRE := regexp.MustCompile(`^CDD-Release-Batch: ([0-9]+\.[0-9]+\.[0-9]+|docs/[0-9]{4}-[0-9]{2}-[0-9]{2})$`)
+	for _, line := range strings.Split(string(data), "\n") {
+		if line == "CDD-Post-Merge-Closeout: complete" {
+			marker = true
+		}
+		if m := batchRE.FindStringSubmatch(line); m != nil {
+			batch = m[1]
+			batchCount++
+		}
+	}
+	if !marker || batchCount != 1 {
+		return checkWarn, "present but release-pending is unproven (requires exact marker and one canonical batch assignment)"
+	}
+
+	archivePath := filepath.Join(l.repoRoot, ".cdd", "releases", filepath.FromSlash(batch), issueNum)
+	archiveInfo, archiveErr := os.Stat(archivePath)
+	archiveExists := archiveErr == nil && archiveInfo.IsDir()
+	tagExists := false
+	if !strings.HasPrefix(batch, "docs/") {
+		cmd := exec.Command("git", "rev-parse", "--verify", "refs/tags/"+batch)
+		cmd.Dir = l.repoRoot
+		tagExists = cmd.Run() == nil
+	}
+	if tagExists || archiveExists {
+		return checkWarn, fmt.Sprintf("stale under unreleased: assigned batch %s has disconnect/archive evidence", batch)
+	}
+	return checkPass, fmt.Sprintf("release-pending for assigned batch %s; disconnect absent", batch)
 }
 
 func (l *ledgerRun) checkSmallChangeArtifacts(cycleDir, issueNum string) {

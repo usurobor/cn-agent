@@ -184,7 +184,7 @@ The dispatch configuration affects the honest-grading floor: §5.2 cycles carry 
 
 CI is the mechanical enforcement surface for CDD governance. A repo running CDD cycles without CI is relying entirely on role-actor discipline; CI converts that discipline into a verifiable gate. The minimum CI surface for a CDD-activated repo has three layers: artifact validation, test runs, and project-specific progressions.
 
-**Layer 1 — CDD artifact validation.** On numeric cycle-branch pushes, CI runs `scripts/validate-release-gate.sh --mode pre-merge` and checks only artifacts structurally available before merge. Post-merge closeout runs `--mode post-merge --cycle N` after role close-outs and requires `CDD-Post-Merge-Closeout: complete`; passing remains release-pending. Pre-tag/release validation runs default `release` mode and additionally requires `RELEASE.md`.
+**Layer 1 — CDD artifact validation.** On numeric cycle-branch pushes, CI runs `scripts/validate-release-gate.sh --mode pre-merge` and checks only artifacts structurally available before merge. Post-merge closeout runs `--mode post-merge --cycle N` after role close-outs and requires the exact `CDD-Post-Merge-Closeout: complete` marker plus exactly one `CDD-Release-Batch:` assignment; passing remains release-pending. Pre-tag/release validation runs default `release` mode and additionally requires `RELEASE.md`.
 
 **Layer 2 — Test and spec runs.** On every push, CI runs the project's test suite and spec validation (if applicable). For docs-only repos these may be link-check or markdown-lint runs; for code repos these are unit and integration test suites. Failing tests block merge. This layer ensures that no CDD cycle can merge a change that breaks the project's own correctness surface.
 

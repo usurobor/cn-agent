@@ -75,9 +75,15 @@ for f in "$SKILL" "$GOLDEN" "$LIVE"; do
     "status:review" \
     '.cdd/unreleased/{N}/REVIEW-REQUEST.yml' \
     "δ-owned transition evidence" \
+    "repair_evidence" \
+    "No role closeout carries or gates this pre-merge evidence" \
     "review_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md]"
   if grep -qF -- "on the cycle's closeout" "$ROOT/$f"; then
     echo "::error::cnos#524 guard ($f): ambiguous closeout-owned deliverable_evidence survived"; fail=1
+  fi
+  if grep -qF -- 'every closeout the cycle lands MUST carry a `repair_evidence` block' "$ROOT/$f" ||
+     grep -qF -- 'A closeout on a repair re-entry without a complete `repair_evidence` block' "$ROOT/$f"; then
+    echo "::error::cnos#524 guard ($f): closeout/status:review repair coupling survived"; fail=1
   fi
 done
 

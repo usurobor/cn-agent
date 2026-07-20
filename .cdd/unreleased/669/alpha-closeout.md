@@ -156,3 +156,48 @@ does not edit any β- or γ-owned #669 receipt.
 R2 performs no γ closeout, release assignment, tag, branch deletion, FSM
 transition, archive move, or terminal declaration. It is α repair matter for a
 fresh exact-SHA independent β review.
+
+## R3 — repair against β R2 at `af4ffe4b`
+
+R3 addresses the four D findings in the append-only R2 section of
+`beta-closure-review.md`. This section supersedes R2's broad claims that an
+unconditional repository-wide legacy fallback was acceptable, that repair
+evidence was fully decoupled from closeouts, that every lifecycle peer/status
+surface was reconciled, and that every present unreleased closeout could PASS.
+The accepted recursive-cell CM and its standing remain untouched.
+
+| β R2 finding | R3 repair | Evidence |
+|---|---|---|
+| Repository-wide release validation admitted every unscaffolded directory as legacy small-change | `.cdd/release-gate-legacy.tsv` is now the only repository-wide compatibility authority. Each row names one extant unscaffolded numeric cycle, an explicit recognized mode, and a concrete reason. The validator rejects malformed, duplicate, retired, newly scaffolded, or unlisted rows/directories. Exact-cycle validation remains strict and never consults the allowlist. `release/SKILL.md §2.1` owns row addition/removal. | Gate regressions prove one allowlisted legacy cycle passes, a new unscaffolded cycle 999 fails closed, and a reasonless allowlist row fails: 57/57 assertions pass. |
+| Repair-pass dispatch still coupled `status:review` to a future closeout | Source, golden, and live dispatch surfaces now place one `repair_evidence` block in top-level `.cdd/unreleased/{N}/REVIEW-REQUEST.yml`. They state that no role closeout carries or gates this review-time evidence. The integrity guard requires the new contract and rejects the former closeout/status coupling. | Both dispatch guards pass. Direct renderer replay is idempotent; source projection, golden, and live workflow are byte-identical at SHA-256 `f026b493b5cb425b24f6a5e074ac3540b801fbacb772055b464f1f8c37439a0f`. |
+| Live lifecycle peers and `cdd-status` did not expose one executable closeout → disconnect → archive → terminal sequence | β now exits with review/merge evidence only; γ creates the exact nonterminal marker plus one release-batch assignment under `unreleased/`; δ performs the disconnect; γ observes CI, assesses, archives, and seals terminal state in a later commit. `cdd-status` derives `post-merge-incomplete`, `release-pending`, `disconnected-but-not-archived`, `archived-but-not-terminal`, and `terminal` from ten repository-observable facts. Terminal validation binds either a semver tag or the acknowledged main commit for `docs/YYYY-MM-DD`, plus a resolvable archive commit. | Status runtime suite proves assurance-only rejection and every versioned phase, plus the rolling-docs commit-disconnect path: 41/41 assertions pass. Release-tag integration and the release-effector ordering kata pass. |
+| Ledger PASS erased stale unreleased residue | A triadic closeout under `unreleased/` now PASSes only when `gamma-closeout.md` carries the exact post-merge marker and exactly one canonical batch, while the assigned tag and archive path are absent. Placeholder or incomplete closeouts WARN; tag/archive evidence makes retained residue WARN as stale. | Focused Go table tests cover versioned/docs pending positives, placeholder negative, and versioned/docs archive-residue negatives. Source-built `cn cdd verify --unreleased --exceptions .cdd/exceptions.yml` reports 272 PASS, 0 FAIL, and 165 expected warnings across legacy/in-flight repository state. |
+
+### R3 verification
+
+- `scripts/test-validate-release-gate.sh`: 57/57 assertions pass.
+- `src/packages/cnos.cdd/commands/cdd-status/test-cn-cdd-status.sh`: 41/41
+  assertions pass, including versioned-tag and rolling-docs-main-SHA terminal
+  bindings.
+- `go test ./src/packages/cnos.cdd/commands/cdd-verify/...`: pass.
+- `go test ./src/go/...`: pass.
+- Dispatch closeout-integrity and repair-preflight guards: pass. Direct
+  renderer replay is byte-identical to golden and live at SHA-256
+  `f026b493b5cb425b24f6a5e074ac3540b801fbacb772055b464f1f8c37439a0f`.
+- Skill-frontmatter self-test: pass; repository skill validation: 100/100.
+- Release-tag integration, shell syntax, YAML parse, and `git diff --check`:
+  pass.
+- Exact #669 pre-merge gate: pass. Exact post-merge and release gates fail only
+  for the still-missing `beta-closeout.md`, the absent exact nonterminal
+  `CDD-Post-Merge-Closeout: complete` marker, and the absent canonical
+  `CDD-Release-Batch:` assignment. Those are deliberately left to β/γ after a
+  fresh review; α does not manufacture them.
+- Diff from β R2 head across the recursive-cell CM/runner/tests, frozen #662
+  inputs, accepted R6 `self-coherence.md` / `beta-review.md`, and β/γ-owned
+  #669 artifacts: empty. The accepted CM was not rerun; standing remains
+  `none`.
+
+R3 performs no β verdict or closeout, γ marker or release assignment,
+disconnect, archive, terminal seal, branch deletion, issue/FSM transition, or
+standing change. It is α repair matter offered for fresh exact-SHA independent
+β review.

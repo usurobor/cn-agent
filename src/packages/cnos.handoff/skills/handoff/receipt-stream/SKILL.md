@@ -315,8 +315,6 @@ The full row history is at `.cdd/iterations/INDEX.md` — 22+ rows at the source
 
 6. **Archive and terminal seal.** After the PRA, dispositions, and aggregation are complete, γ moves the cycle directory to `.cdd/releases/{X.Y.Z}/{N}/` in its own archive commit. γ then appends the terminal declaration to the archived `gamma-closeout.md` in a later commit binding the release tag and archive SHA. Only that final commit closes the cycle.
 
-6. **Release-time move (artifact-channel §2.4.2).** Before γ requests the tag from δ, γ moves `.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/` (or `.cdd/releases/docs/{ISO-date}/{N}/` for docs-only releases). The `cdd-iteration.md` file rides the move; the INDEX.md row's `Path` column is updated to reflect the new path in a subsequent close-out commit if not already pinned at write time.
-
 ### Common failures
 
 - γ writes `cdd-iteration.md` but forgets the INDEX row — ε's pattern-detection across cycles skips this cycle when scanning the aggregator. CDS gate F9 catches this.

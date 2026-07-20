@@ -3,7 +3,7 @@ name: release
 description: Ship a version as a measured coherence delta with matching code, changelog, tag, release notes, deployment, and validation.
 artifact_class: skill
 kata_surface: embedded
-governing_question: How does β turn a converged branch into a released version with a complete and auditable coherence delta?
+governing_question: How do β's merged evidence, γ's release preparation, and δ's disconnect mechanics produce a released version without prematurely closing the cycle?
 visibility: internal
 parent: cdd
 triggers:
@@ -75,6 +75,15 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - ✅ CI green, or known failure documented and accepted (e.g. Coherence workflow on #22)
   - ✅ Merge-tree validation green (especially when the cycle ships a new contract surface like #301's I5 frontmatter validator)
 
+  **Repository-wide cycle classification is fail-closed.** The default
+  `scripts/validate-release-gate.sh` scan requires every unreleased directory
+  to carry a recognized scaffold mode. The sole compatibility authority is
+  `.cdd/release-gate-legacy.tsv`, whose strict rows are
+  `cycle<TAB>mode<TAB>reason`. Each row must name an existing unscaffolded
+  directory, one recognized mode, and a concrete reason. A row is removed as
+  soon as that directory is archived or gains a scaffold; numeric cutoffs,
+  age guesses, and unconditional repository-scan bypasses are forbidden.
+
 2.2. **Version decision**
   - Review commits since last tag: `git log --oneline $(git describe --tags --abbrev=0)..HEAD`
   - Major: breaking changes, paradigm shift
@@ -97,7 +106,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 2.4. **CHANGELOG**
   - Add a ledger row matching the format defined in `CHANGELOG.md` § Release Coherence Ledger. That format is canonical — do not reinvent the row shape here.
   - The ledger row includes: Version, C_Σ, α, β, γ, Level, Rounds, and a coherence note. The **Rounds** column records the review-round count for the release's cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`). This is a learning-curve indicator — a rising trend signals process drift, a falling trend signals accumulated context.
-  - **Provisional vs. final scoring rule:** β writes the CHANGELOG TSC row at release commit with `provisional, pending γ PRA` in the level cell (or in a parenthetical next to the level). γ updates the cell to the final value in the same commit as the PRA. This ensures one writer per fact while preserving the release-time ledger entry.
+  - **Provisional vs. final scoring rule:** γ writes the CHANGELOG TSC row during Step-10 release preparation using β's recorded review evidence, with `provisional, pending γ PRA` in the level cell (or in a parenthetical next to the level). γ updates the cell to the final value in the same commit as the PRA. β has already exited after merge/closeout and does not author release-time state.
   - Add a detailed section below the ledger: Added / Changed / Fixed, with each commit's impact named and linked to issues.
   - ❌ "Various improvements" (no detail)
   - ❌ Ledger row without engineering level (Level column is required)
@@ -193,7 +202,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
   - After the post-merge role closeouts, nonterminal γ marker, and docs-only release validation, δ records the main merge SHA as the disconnect and verifies applicable main CI. Only then does γ move `.cdd/unreleased/{N}/` to `.cdd/releases/docs/{ISO-date}/{N}/`, where `{ISO-date}` is the merge commit's date in `YYYY-MM-DD` form (e.g. `.cdd/releases/docs/2026-05-08/27/`).
   - **No CHANGELOG ledger row.** The Release Coherence Ledger tracks tagged releases. γ records the cycle in `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md` instead — same PRA structure as a tagged release, just keyed by date.
-  - The merge commit hash is the boundary evidence named by δ's later disconnect acknowledgement. No `scripts/release.sh` invocation. No version bump. VERSION is unchanged.
+  - The merge commit hash is the boundary evidence named by δ's later disconnect acknowledgement. After that acknowledgement and applicable main CI, γ appends `CDD-Release-Commit: <40-hex main merge SHA>` to the still-unreleased `gamma-closeout.md`; this makes the docs-only disconnect repository-observable before archive. No `scripts/release.sh` invocation. No version bump. VERSION is unchanged.
   - `scripts/check-version-consistency.sh` is not required to run (nothing version-stamped changed).
 
   ```bash
@@ -220,7 +229,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - Commit: `git commit -m "release: X.Y.Z — summary"` (includes VERSION, manifests, CHANGELOG, RELEASE.md)
   - **Before any push that follows a rebase, run the eng/ship rebase-integrity gate** (see `eng/ship` § Rebase-Collision Integrity)
   - Push: `git push origin main`
-  - **γ signals release readiness to δ** only after the role closeouts and exact nonterminal marker pass the release gate. β may record merge/release inputs in `beta-closeout.md`, but does not authorize or execute the release. δ creates the single annotated tag `X.Y.Z` with generated message as part of the disconnect release flow (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 11 — δ disconnect). RELEASE.md remains the GitHub release body authority; generated tag messages are additive.
+  - **γ signals release readiness to δ** only after the role closeouts, exact nonterminal marker, and matching release-batch assignment pass the release gate. β records merge/review inputs in `beta-closeout.md`, but does not authorize or execute the release. δ creates the single annotated tag `X.Y.Z` with generated message as part of the disconnect release flow (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 11 — δ disconnect). RELEASE.md remains the GitHub release body authority; generated tag messages are additive.
   - ❌ β pushes tag directly (conflicts with δ tag authority)
   - ❌ Mix `v` prefix and bare versions across tags (`v3.14.6` then `3.14.7`)
   - ❌ Commit without RELEASE.md (CI auto-generates sparse notes)
@@ -236,7 +245,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 2.7. **Wait for release CI**
   - Release workflow builds binaries (linux-x64, macos-x64, macos-arm64)
   - Wait for completion before deploying
-  - **δ owns release CI polling** per `release-effector/SKILL.md` §3 — after tag push, δ monitors release workflow completion via `gh run list --branch <tag>`. β waits for δ confirmation.
+  - **δ owns release CI polling** per `release-effector/SKILL.md` §3 — after tag push, δ monitors release workflow completion via `gh run list --branch <tag>` and reports the result to γ. β has already exited.
   - ❌ Deploy while CI still running (stale binary from previous release)
   - ✅ `gh run watch {id} --exit-status` then verify assets attached
 
@@ -260,11 +269,12 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
     - artifact: tag / CHANGELOG / release artifact
     - skills loaded: release, plus write if used
     - decision: released version X.Y.Z
-  - If the triadic protocol is active, β also writes:
-    - release evidence in `.cdd/unreleased/{N}/beta-closeout.md`
-    - β close-out narrative in `.cdd/unreleased/{N}/beta-closeout.md` for γ to read (separate from `beta-review.md`, which carries the round-by-round verdicts; see `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Cycle-state evidence")
+  - If the triadic protocol is active, β writes its merge/review close-out
+    narrative in `.cdd/unreleased/{N}/beta-closeout.md` immediately after
+    merge (separate from `beta-review.md`, which carries round-by-round
+    verdicts). δ's later tag/CI evidence is not β-owned and is reported to γ.
   - γ writes the post-release assessment after β's close-out is complete and δ reports the release disconnect
-  - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/self-coherence.md` — it carries the trace through step 7a; β records the review verdict in `.cdd/unreleased/{N}/beta-review.md` (steps 8–9) and the close-out + release evidence in `.cdd/unreleased/{N}/beta-closeout.md` (step 10).
+  - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/self-coherence.md`; β records the Step-8 review verdict in `beta-review.md` and the Step-9 merge close-out in `beta-closeout.md`. Steps 10–13 belong to γ/δ.
 
 ## 3. Rules
 
@@ -274,8 +284,12 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - ❌ Tag is 3.15.1 but VERSION says 3.15.2 (forgot to commit before tagging)
   - ✅ `scripts/check-version-consistency.sh` passes before commit
 
-3.2. **CI must pass before tag**
-  - If CI fails after tag, fix and force-push tag (amend release commit)
+3.2. **Distinguish pre-tag main CI from post-tag release CI**
+  - Main/merge CI must be green before δ creates the tag.
+  - Release CI necessarily runs from the tag after it exists. If it fails,
+    follow the authorized same-tag recovery procedure (amend the release
+    commit and recreate the same bare-version tag); do not call the disconnect
+    complete and do not archive the cycle while release CI is red.
   - ❌ Ship with known test failure ("we'll fix it next patch")
   - ✅ Fix the test, amend, force-push tag, wait for green
 
@@ -326,7 +340,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   | **C**   | 2.0 | partial-protocol release with multiple drift items |
   | **< C** | < 2 | re-open and remediate; do not close |
 
-  **Closeout-gate override (fires before geometric-mean computation).** Merge-readiness requires only the triadic artifacts structurally available before merge (`gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`) and is checked with `scripts/validate-release-gate.sh --mode pre-merge --cycle N`. After merge, if `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, or the exact line `CDD-Post-Merge-Closeout: complete` is absent, `C_Σ` is forced to `<C` regardless of per-axis math. Cycle disposition is "open and remediate"; the geometric mean is not computed. The post-merge oracle is `scripts/validate-release-gate.sh --mode post-merge --cycle N`; passing it means closeout is complete with release still pending. Default release mode rechecks the full lifecycle and additionally requires `RELEASE.md`. Terminal closure additionally requires the observable disconnect and post-disconnect directory archive.
+  **Closeout-gate override (fires before geometric-mean computation).** Merge-readiness requires only the triadic artifacts structurally available before merge (`gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`) and is checked with `scripts/validate-release-gate.sh --mode pre-merge --cycle N`. After merge, if `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, the exact line `CDD-Post-Merge-Closeout: complete`, or exactly one canonical `CDD-Release-Batch:` assignment is absent, `C_Σ` is forced to `<C` regardless of per-axis math. Cycle disposition is "open and remediate"; the geometric mean is not computed. The post-merge oracle is `scripts/validate-release-gate.sh --mode post-merge --cycle N`; passing it means closeout is complete with release still pending. Default release mode rechecks the full lifecycle and additionally requires `RELEASE.md`. Terminal closure additionally requires the observable disconnect, post-disconnect directory archive, and resolvable terminal seal.
 
   **Letter normalization (`<C` and `C−`).** The rubric table uses `<C` as the grade label. Prior CHANGELOG, PRA, and alpha-closeout artifacts for cycles #331, #333, and #334 used `C−` for the same disposition. These are the same grade: `C−` is the operator-visible projection of `<C`. Both mean "open and remediate; do not close." Authors may use either form; the CHANGELOG column uses `<C` for rubric fidelity and `C−` is accepted as equivalent in prose artifacts.
 

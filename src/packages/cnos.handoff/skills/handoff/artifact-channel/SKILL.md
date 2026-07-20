@@ -132,7 +132,7 @@ Every per-cycle artifact has exactly one owning role at write time. The pattern 
 | α | role-local primary branch artifact | The role's review-readiness signal; gap / mode / ACs / trace / fix-rounds. One per cycle. |
 | α | role close-out | The role's post-merge findings record. One per cycle. |
 | β | role-local review record | The review CLP rounds + verdicts. One per cycle; one section per round. |
-| β | role close-out | The role's post-review close-out + release evidence. One per cycle. |
+| β | role close-out | The role's post-review/merge close-out evidence. One per cycle; no δ release evidence. |
 | γ | role close-out | Preliminary triage + nonterminal release-readiness marker before disconnect; terminal evidence appended after archive. One evolving γ-owned file per cycle. |
 | γ | cross-cycle receipt | The per-cycle iteration artifact (when `protocol_gap_count > 0`; courtesy stub permitted when count is 0). Feeds the cross-cycle aggregator. |
 | γ | mid-flight rescue | The clarification artifact (per `cnos.handoff/skills/handoff/mid-flight/SKILL.md`). One file per cycle (appended to per event). |
@@ -151,7 +151,7 @@ The intra-cycle flow is **sequential α → β → γ** with one cycle-start exc
 2. **α phase** — α writes its primary branch artifact incrementally on the cycle branch; the review-readiness section is the last section appended. The α phase ends when α signals review-readiness via the review-readiness section's append commit. α's primary artifact is β's input.
 3. **β phase** — β reads α's primary artifact + the diff + the issue body; runs the review CLP; writes the review record incrementally (one section per round). On A verdict, β merges. On RC, α appends a fix-round; β re-reviews. The β phase ends at merge (for non-RC paths) or at A after RC rounds.
 4. **Re-dispatched α (close-out)** — after β merge, α is re-dispatched (per `cnos.cdd/skills/cdd/operator/SKILL.md` re-dispatch protocol) and writes its close-out artifact. α exits.
-5. **β close-out** — β writes its close-out artifact (release evidence + close-out findings) in the same β session as the merge (per CDS Field 6 collapse). β exits.
+5. **β close-out** — β writes its review/merge close-out findings in the same β session as the merge (per CDS Field 6 collapse). β exits before release; δ's later release evidence is not β-owned.
 6. **γ post-merge phase** — γ verifies both closeouts, writes preliminary triage and the exact nonterminal marker under `unreleased/`; γ does not move the directory or declare terminal closure.
 7. **δ disconnect** — δ validates the marked unreleased receipt, tags/releases, and reports green CI (or explicit override).
 8. **γ terminal phase** — γ observes/assesses, commits the post-disconnect archive move, then appends and commits terminal evidence separately.
@@ -171,7 +171,8 @@ still be added by their owners. The boundary has three ordered phases:
 #### 2.4.1. Post-merge closeout and release validation
 
 The directory is on main at `.cdd/unreleased/{N}/`. α and β add their own
-closeouts; γ adds preliminary triage and `CDD-Post-Merge-Closeout: complete`.
+closeouts; γ adds preliminary triage, `CDD-Post-Merge-Closeout: complete`, and
+exactly one `CDD-Release-Batch: X.Y.Z` assignment.
 No actor rewrites predecessor matter. δ validates this exact path and performs
 the tagged disconnect while it remains there.
 
@@ -184,8 +185,9 @@ Only after δ reports the tag and green release CI (or explicit override), γ mo
 ```
 
 The move is a distinct post-disconnect commit on main. After that commit, γ
-appends terminal evidence binding the tag and archive SHA to the archived
-`gamma-closeout.md` and commits it separately. After terminal seal:
+appends `CDD-Release-Tag: X.Y.Z`, `CDD-Archive-Commit: <sha>`, and
+`CDD-Terminal-Closure: complete` to the archived `gamma-closeout.md` and
+commits it separately. After terminal seal:
 
 - `.cdd/unreleased/{N}/` no longer exists on main (the directory has moved).
 - `.cdd/releases/{X.Y.Z}/{N}/` carries the cycle's complete record, version-anchored.
@@ -284,6 +286,8 @@ Every cycle since the channel was established (pre-#364) uses this channel. The 
 
 - Does `.cdd/unreleased/{N}/gamma-closeout.md` carry the exact nonterminal
   `CDD-Post-Merge-Closeout: complete` marker before release validation?
+- Does that same receipt carry exactly one canonical `CDD-Release-Batch:` line
+  naming the selected version/date batch?
 - Does δ create the release tag and observe green tag CI while the cycle record
   still lives at `.cdd/unreleased/{N}/`?
 - After δ reports successful disconnect, does γ move the directory to
@@ -310,7 +314,7 @@ Every cycle since the channel was established (pre-#364) uses this channel. The 
 - `cnos.cds/skills/cds/CDS.md §"Coordination surfaces" → "Polling primitives"` — the polling primitives that detect the cycle-branch SHA advance (the handoff signal this skill names).
 - `cnos.cdd/skills/cdd/gamma/SKILL.md §2.5 → "Pre-dispatch γ scaffold check"` — the binding gate at cycle-start; γ MUST NOT dispatch α until `gamma-scaffold.md` exists on `origin/cycle/{N}`.
 - `cnos.cdd/skills/cdd/alpha/SKILL.md` — α's role-local channel obligations (write `self-coherence.md` incrementally; append review-readiness as the final section; append fix-round sections after β RC).
-- `cnos.cdd/skills/cdd/beta/SKILL.md` — β's role-local channel obligations (read α's primary artifact; write review record per round; write close-out + release evidence).
+- `cnos.cdd/skills/cdd/beta/SKILL.md` — β's role-local channel obligations (read α's primary artifact; write review record per round; write merge/review close-out before handoff to γ/δ).
 - `cnos.cdd/skills/cdd/release/SKILL.md §2.5a` — post-disconnect directory archive mechanics.
 - [cnos#364](https://github.com/usurobor/cnos/issues/364) — per-role artifact filename conventions empirical anchor.
 - [cnos#369](https://github.com/usurobor/cnos/issues/369) — the gamma-scaffold binding gate empirical anchor.
@@ -349,11 +353,11 @@ Every cycle since the channel was established (pre-#364) uses this channel. The 
 
 4. **β phase.** β reads α's primary artifact + the diff + the issue body (β does not modify α's primary artifact). β writes `beta-review.md` incrementally per round. On A verdict, β merges. (If RC, α appends a fix-round section to its own `self-coherence.md` — never to β's `beta-review.md` — and β re-reviews in a new round.)
 
-5. **Post-merge close-out phase.** α is re-dispatched after merge; α writes `alpha-closeout.md`. β writes `beta-closeout.md` (in the same β session as the merge per CDS Field 6 collapse). γ verifies both close-outs are on main, records preliminary triage, and appends `CDD-Post-Merge-Closeout: complete` to `gamma-closeout.md`. The marker means release-ready and explicitly does not mean terminally closed.
+5. **Post-merge close-out phase.** α is re-dispatched after merge; α writes `alpha-closeout.md`. β writes `beta-closeout.md` (in the same β session as the merge per CDS Field 6 collapse). γ verifies both close-outs are on main, records preliminary triage, and appends `CDD-Post-Merge-Closeout: complete` plus one `CDD-Release-Batch: X.Y.Z` assignment to `gamma-closeout.md`. The pair means release-ready and explicitly does not mean terminally closed.
 
 6. **Release disconnect while unreleased.** γ prepares `RELEASE.md` and runs the default release gate while `.cdd/unreleased/N/` remains in place. δ creates the release tag and observes green tag CI. A successful δ disconnect is the authority for γ to begin archival; δ does not move the cycle directory.
 
-7. **Post-disconnect archive and terminal close (§2.4.2, §3.6).** γ completes PRA/final triage and any `cdd-iteration.md` / `.cdd/iterations/INDEX.md` update, moves `.cdd/unreleased/N/` → `.cdd/releases/{X.Y.Z}/N/` in a dedicated archive commit, then appends a terminal declaration in a later γ commit that binds the release tag and archive commit. Only then is the cycle terminal; the archived directory is immutable thereafter.
+7. **Post-disconnect archive and terminal close (§2.4.2, §3.6).** γ completes PRA/final triage and any `cdd-iteration.md` / `.cdd/iterations/INDEX.md` update, moves `.cdd/unreleased/N/` → `.cdd/releases/{X.Y.Z}/N/` in a dedicated archive commit, then appends the exact release-tag/archive-commit bindings and `CDD-Terminal-Closure: complete` in a later γ commit. Only then is the cycle terminal; the archived directory is immutable thereafter.
 
 ### Common failures
 

@@ -285,7 +285,7 @@ Before submitting a review:
 
 ## After Review
 
-- **Approved:** β merges branch into main with `Closes #N`, pushes, proceeds to release per `release/SKILL.md`.
+- **Approved:** β merges branch into main with `Closes #N`, pushes, writes its review/merge close-out, then hands the marked-receipt and release sequence to γ/δ per `release/SKILL.md`.
 - **Changes requested:** α fixes on branch, appends to `self-coherence.md`; β narrows on next round.
 
 ### Review identity

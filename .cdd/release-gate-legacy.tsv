@@ -1,0 +1,7 @@
+# CDD release-gate legacy mode allowlist v1
+# cycle<TAB>mode<TAB>reason
+429	immediate-output	Pre-scaffold gamma closeout/backfill receipt retained for historical release reconstruction.
+430	immediate-output	Pre-scaffold iteration-only closeout receipt retained for historical release reconstruction.
+517	immediate-output	Pre-scaffold delta archive receipt; no production/review cycle artifacts were created.
+519	immediate-output	Pre-scaffold delta repair receipt; no production/review cycle artifacts were created.
+545	immediate-output	Pre-scaffold remote-runner board-map receipt; no production/review cycle artifacts were created.

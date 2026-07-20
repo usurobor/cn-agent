@@ -36,9 +36,9 @@ Canonical artifact locations (PRA path, close-out paths, snapshot dirs, tag poli
 
 **γ owns the post-release assessment.** The PRA is a cycle-level observation artifact — it measures α's implementation, β's review quality, and the cycle's economics. β assessing its own review quality is a self-grading problem that weakens the independence CDD exists to provide. γ holds the cycle-level observational authority that the assessment requires.
 
-**β owns `git merge` into main and the β close-out.** β's close-out captures the review context and merge evidence. **δ owns tag/release/deploy** (the release boundary per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Steps 9–10, `operator/SKILL.md` §3.4 doctrinal frame, and `release-effector/SKILL.md` mechanics). The PRA is a separate artifact written by γ after β's merge and close-out are complete.
+**β owns `git merge` into main and the β close-out.** β's close-out captures the review context and merge evidence. **γ owns Step-10 release preparation; δ owns Step-11 tag/release/deploy disconnect** (`operator/SKILL.md` §3.4; `release-effector/SKILL.md`). The PRA is a separate Step-12 artifact written by γ only after δ reports the disconnect and release CI.
 
-**Handoff:** β completes release + β close-out → γ reads both close-outs (α + β) + the shipped artifacts → γ writes the PRA. If γ's session ends before the assessment is complete, the assessment is the first task of its next session.
+**Handoff:** β completes merge + β close-out → γ marks release-pending and prepares the batch → δ disconnects and reports release CI → γ reads both close-outs plus shipped artifacts and writes the PRA/archive/terminal seal. If γ's session ends before the assessment is complete, the assessment is the first task of its next session.
 
 Exception: the operator may explicitly reassign the assessment to another agent. The reassignment must name the target agent and the reason.
 
@@ -199,7 +199,7 @@ Add a row in the canonical bare-version format. The Level and Rounds columns are
 
 The coherence note describes which incoherence was reduced, not what feature was added. The Level column records the cycle-level engineering level (L5 / L6 / L7) per `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Engineering levels". The Rounds column records the review-round count for the cycle (e.g. `1`, `2`, `3`); for releases bundling multiple cycles, sum or list (`1+2`).
 
-**Scoring sequence:** The CHANGELOG TSC entry written at release time is **provisional** — it is β's release-time score (marked as `provisional, pending γ PRA` in the level cell per `release/SKILL.md` §2.4). The post-release assessment is γ's independent score and MUST revise the CHANGELOG entry. γ updates the provisional TSC row to the final scoring values in the same commit as the PRA, replacing β's provisional markers with the final assessment. The assessment governs.
+**Scoring sequence:** The CHANGELOG TSC entry γ writes during release preparation is **provisional** (marked `provisional, pending γ PRA` per `release/SKILL.md` §2.4) and uses β's independent review evidence as input. The post-release assessment MUST revise it. γ updates the row to final values in the same commit as the PRA. The assessment governs.
 
 ### Step 3: Encoding lag table
 

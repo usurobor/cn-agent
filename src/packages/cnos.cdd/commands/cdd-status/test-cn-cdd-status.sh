@@ -133,10 +133,43 @@ write_closeouts() {
 
 write_post_merge_marker() {
   local repo="$1" cycle_num="$2"
-  printf '\nCDD-Post-Merge-Closeout: complete\n' >> "$repo/.cdd/unreleased/$cycle_num/gamma-closeout.md"
+  printf '\nCDD-Post-Merge-Closeout: complete\nCDD-Release-Batch: 1.2.3\n' >> "$repo/.cdd/unreleased/$cycle_num/gamma-closeout.md"
   git -C "$repo" add ".cdd/unreleased/$cycle_num/gamma-closeout.md"
   git -C "$repo" -c user.name="Gamma" commit -q -m "gamma: declare post-merge closeout"
   git -C "$repo" push --quiet origin "cycle/$cycle_num"
+}
+
+promote_cycle_to_main() {
+  local repo="$1" cycle_num="$2"
+  git -C "$repo" switch -q main
+  git -C "$repo" merge -q --ff-only "cycle/$cycle_num"
+  git -C "$repo" push --quiet origin main
+  git -C "$repo" switch -q "cycle/$cycle_num"
+}
+
+tag_disconnect() {
+  local repo="$1"
+  git -C "$repo" tag -a 1.2.3 -m "fixture disconnect"
+  git -C "$repo" push --quiet origin 1.2.3
+}
+
+archive_cycle() {
+  local repo="$1" cycle_num="$2"
+  git -C "$repo" switch -q main
+  mkdir -p "$repo/.cdd/releases/1.2.3"
+  mv "$repo/.cdd/unreleased/$cycle_num" "$repo/.cdd/releases/1.2.3/$cycle_num"
+  git -C "$repo" add ".cdd/unreleased/$cycle_num" ".cdd/releases/1.2.3/$cycle_num"
+  git -C "$repo" commit -q -m "gamma: archive cycle"
+  git -C "$repo" push --quiet origin main
+}
+
+seal_terminal() {
+  local repo="$1" cycle_num="$2" archive_sha
+  archive_sha="$(git -C "$repo" rev-parse main)"
+  printf '\nCDD-Release-Tag: 1.2.3\nCDD-Archive-Commit: %s\nCDD-Terminal-Closure: complete\n' "$archive_sha" >> "$repo/.cdd/releases/1.2.3/$cycle_num/gamma-closeout.md"
+  git -C "$repo" add ".cdd/releases/1.2.3/$cycle_num/gamma-closeout.md"
+  git -C "$repo" -c user.name="Gamma" commit -q -m "gamma: terminal seal"
+  git -C "$repo" push --quiet origin main
 }
 
 # ----- Test cases -----
@@ -161,10 +194,11 @@ assert_grep "gate state section present" "^## Gate State" "$OUT"
 assert_grep "next section present" "^## Next" "$OUT"
 
 echo ""
-echo "## test 2 — gate state shows 14 conditions"
-assert_grep "condition 1 present" "1\\. .* alpha-closeout.md" "$OUT"
-assert_grep "condition 14 present" "14\\. .* gamma-closeout.md" "$OUT"
-assert_grep "status counter present" "Status: .* of 14 conditions" "$OUT"
+echo "## test 2 — gate state shows only observable facts"
+assert_grep "condition 1 present" "1\\. .* self-coherence.md observable" "$OUT"
+assert_grep "condition 10 present" "10\\. .* terminal marker" "$OUT"
+assert_grep "status counter present" "Status: .* of 10 observable facts" "$OUT"
+assert_not_grep "no permanently unknown facts" "⚠.*condition" "$OUT"
 
 echo ""
 echo "## test 3 — role attribution works"
@@ -172,7 +206,7 @@ assert_grep "alpha attribution" "self-coherence.md (alpha)" "$OUT"
 assert_grep "beta attribution" "beta-review.md (beta)" "$OUT"
 
 echo ""
-echo "## test 4 — complete cycle shows high pass count"
+echo "## test 4 — lifecycle phases are mechanically distinct"
 R="$TMP/complete_cycle"
 make_repo "$R"
 create_cycle_branch "$R" "200"
@@ -183,6 +217,8 @@ write_closeouts "$R" "200"
 echo "# Release notes" > "$R/RELEASE.md"
 git -C "$R" add RELEASE.md
 git -C "$R" commit -q -m "release notes"
+git -C "$R" push --quiet origin "cycle/200"
+promote_cycle_to_main "$R" "200"
 
 OUT="$TMP/complete_cycle.out"
 set +e
@@ -190,17 +226,81 @@ set +e
 EC=$?
 set -e
 
-assert_exit "complete cycle exits 0" 0 "$EC"
-assert_grep "multiple checkmarks" "✓.*closeout" "$OUT"
-assert_grep "assurance-only gamma is not accepted" "✗.*gamma-closeout.md marks post-merge" "$OUT"
+assert_exit "post-merge incomplete cycle exits 0" 0 "$EC"
+assert_grep "assurance-only gamma remains incomplete" "Lifecycle phase: post-merge-incomplete" "$OUT"
+assert_grep "assurance-only gamma marker is rejected" "✗.*nonterminal post-merge marker exact" "$OUT"
 
 write_post_merge_marker "$R" "200"
+promote_cycle_to_main "$R" "200"
 OUT="$TMP/complete_cycle_marked.out"
 "$STATUS" --repo-root "$R" 200 > "$OUT" 2>&1
-assert_grep "exact post-merge marker accepted" "✓.*gamma-closeout.md marks post-merge" "$OUT"
+assert_grep "marker plus batch is release-pending" "Lifecycle phase: release-pending" "$OUT"
+assert_grep "exact post-merge marker accepted" "✓.*nonterminal post-merge marker exact" "$OUT"
+assert_grep "exact release batch accepted" "✓.*canonical release-batch assignment" "$OUT"
+
+tag_disconnect "$R"
+OUT="$TMP/disconnected.out"
+"$STATUS" --repo-root "$R" 200 > "$OUT" 2>&1
+assert_grep "tagged receipt is disconnected not archived" "Lifecycle phase: disconnected-but-not-archived" "$OUT"
+assert_grep "disconnect tag is observable" "✓.*assigned release disconnect observable" "$OUT"
+
+archive_cycle "$R" "200"
+OUT="$TMP/archived.out"
+"$STATUS" --repo-root "$R" 200 > "$OUT" 2>&1
+assert_grep "archive without seal is nonterminal" "Lifecycle phase: archived-but-not-terminal" "$OUT"
+assert_grep "archive is observable" "✓.*versioned cycle archive observable" "$OUT"
+assert_grep "terminal binding still absent" "✗.*terminal marker.*resolvable archive binding" "$OUT"
+
+seal_terminal "$R" "200"
+OUT="$TMP/terminal.out"
+"$STATUS" --repo-root "$R" 200 > "$OUT" 2>&1
+assert_grep "sealed archive is terminal" "Lifecycle phase: terminal" "$OUT"
+assert_grep "terminal binding is observable" "✓.*terminal marker.*resolvable archive binding" "$OUT"
 
 echo ""
-echo "## test 5 — hard failure: not a git repo"
+echo "## test 5 — rolling-docs disconnect uses an acknowledged main commit"
+R="$TMP/docs_cycle"
+make_repo "$R"
+create_cycle_branch "$R" "201"
+write_artifacts "$R" "201"
+write_closeouts "$R" "201"
+printf '\nCDD-Post-Merge-Closeout: complete\nCDD-Release-Batch: docs/2026-07-20\n' >> "$R/.cdd/unreleased/201/gamma-closeout.md"
+git -C "$R" add .cdd/unreleased/201/gamma-closeout.md
+git -C "$R" -c user.name="Gamma" commit -q -m "gamma: mark docs release pending"
+git -C "$R" push --quiet origin cycle/201
+promote_cycle_to_main "$R" "201"
+
+OUT="$TMP/docs_pending.out"
+"$STATUS" --repo-root "$R" 201 > "$OUT" 2>&1
+assert_grep "docs batch is release-pending" "Lifecycle phase: release-pending" "$OUT"
+
+git -C "$R" switch -q main
+DOCS_RELEASE_SHA="$(git -C "$R" rev-parse main)"
+printf '\nCDD-Release-Commit: %s\n' "$DOCS_RELEASE_SHA" >> "$R/.cdd/unreleased/201/gamma-closeout.md"
+git -C "$R" add .cdd/unreleased/201/gamma-closeout.md
+git -C "$R" -c user.name="Gamma" commit -q -m "gamma: record docs disconnect"
+git -C "$R" push --quiet origin main
+OUT="$TMP/docs_disconnected.out"
+"$STATUS" --repo-root "$R" 201 > "$OUT" 2>&1
+assert_grep "docs main SHA is a disconnect" "Lifecycle phase: disconnected-but-not-archived" "$OUT"
+
+mkdir -p "$R/.cdd/releases/docs/2026-07-20"
+mv "$R/.cdd/unreleased/201" "$R/.cdd/releases/docs/2026-07-20/201"
+git -C "$R" add .cdd/unreleased/201 .cdd/releases/docs/2026-07-20/201
+git -C "$R" -c user.name="Gamma" commit -q -m "gamma: archive docs cycle"
+DOCS_ARCHIVE_SHA="$(git -C "$R" rev-parse main)"
+git -C "$R" push --quiet origin main
+printf '\nCDD-Archive-Commit: %s\nCDD-Terminal-Closure: complete\n' "$DOCS_ARCHIVE_SHA" >> "$R/.cdd/releases/docs/2026-07-20/201/gamma-closeout.md"
+git -C "$R" add .cdd/releases/docs/2026-07-20/201/gamma-closeout.md
+git -C "$R" -c user.name="Gamma" commit -q -m "gamma: seal docs cycle"
+git -C "$R" push --quiet origin main
+OUT="$TMP/docs_terminal.out"
+"$STATUS" --repo-root "$R" 201 > "$OUT" 2>&1
+assert_grep "docs archive can become terminal" "Lifecycle phase: terminal" "$OUT"
+assert_grep "docs terminal binding is observable" "✓.*terminal marker.*resolvable archive binding" "$OUT"
+
+echo ""
+echo "## test 6 — hard failure: not a git repo"
 NOT_GIT="$TMP/not_a_git_repo"
 mkdir "$NOT_GIT"
 OUT="$TMP/not_git.out"
@@ -213,7 +313,7 @@ assert_exit "not-git exits 1" 1 "$EC"
 assert_grep "not git error message" "not in a git repository" "$OUT"
 
 echo ""
-echo "## test 6 — missing gh handled gracefully"
+echo "## test 7 — missing gh handled gracefully"
 R="$TMP/no_issue"
 make_repo "$R"
 
@@ -226,6 +326,10 @@ ln -s /bin/sh "$FAKE_PATH/"
 ln -s /usr/bin/git "$FAKE_PATH/"
 ln -s /usr/bin/grep "$FAKE_PATH/"
 ln -s /usr/bin/head "$FAKE_PATH/"
+ln -s /usr/bin/sed "$FAKE_PATH/"
+ln -s /usr/bin/xargs "$FAKE_PATH/"
+ln -s /usr/bin/sort "$FAKE_PATH/"
+ln -s /usr/bin/basename "$FAKE_PATH/"
 ln -s /bin/cat "$FAKE_PATH/"
 ln -s /usr/bin/jq "$FAKE_PATH/" 2>/dev/null || true
 
@@ -241,7 +345,7 @@ assert_exit "missing gh handled gracefully" 0 "$EC"
 assert_grep "gh warning" "GitHub CLI not available" "$OUT"
 
 echo ""
-echo "## test 7 — legacy branch detection"
+echo "## test 8 — legacy branch detection"
 R="$TMP/legacy_branch"
 make_repo "$R"
 
@@ -267,7 +371,7 @@ assert_exit "legacy branch exits 0" 0 "$EC"
 assert_grep "legacy branch warning" "Legacy branch" "$OUT"
 
 echo ""
-echo "## test 8 — missing branch handled gracefully"
+echo "## test 9 — missing branch handled gracefully"
 R="$TMP/no_branch"
 make_repo "$R"
 
@@ -279,10 +383,10 @@ set -e
 
 assert_exit "missing branch exits 0" 0 "$EC"
 assert_grep "no branch message" "No branch found" "$OUT"
-assert_grep "cannot read artifacts" "cannot read - branch not found" "$OUT"
+assert_grep "cannot read artifacts" "cannot read - branch or main record not found" "$OUT"
 
 echo ""
-echo "## test 9 — help output"
+echo "## test 10 — help output"
 OUT="$TMP/help.out"
 set +e
 "$STATUS" --help > "$OUT" 2>&1
@@ -291,7 +395,7 @@ set -e
 
 assert_exit "help exits 1" 1 "$EC"
 assert_grep "usage line" "Usage:" "$OUT"
-assert_grep "examples section" "Examples:" "$OUT"
+assert_grep "observable-facts help" "ten repository-observable lifecycle facts" "$OUT"
 
 # ----- Summary -----
 

@@ -47,7 +47,7 @@ calls:
 3. **Dispatch β** — δ dispatches β via the harness with the prompt γ produced; β reviews, merges, writes β close-out, and exits.
 4. **Re-dispatch α for fix rounds** (when β returns RC) — δ dispatches α via the harness with the fix-round re-dispatch prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in §5.2 of this file); α fixes findings, appends fix-round to self-coherence.md, exits.
 5. **Re-dispatch α for close-out** (when γ requests after β merge) — δ dispatches α via the harness with the close-out re-dispatch prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in §5.2 of this file); α writes alpha-closeout.md, commits to main, exits. **This step is mandatory when γ requests it.** γ cannot complete the closure gate without alpha-closeout.md.
-6. **Gate** — execute external actions: push main, tag, release, branch deletes. **Do not tag/release before `gamma-closeout.md` on main carries `CDD-Post-Merge-Closeout: complete`.** That marker authorizes release preflight; it is not terminal closure. Disconnect-release mechanics live in [`release-effector/SKILL.md`](../release-effector/SKILL.md); δ blocks release completion until CI is green.
+6. **Gate** — execute external actions: push main, tag, release, branch deletes. **Do not tag/release before `gamma-closeout.md` on main carries the exact `CDD-Post-Merge-Closeout: complete` marker plus exactly one matching `CDD-Release-Batch:` assignment.** That marker/batch pair authorizes release preflight; it is not terminal closure. Disconnect-release mechanics live in [`release-effector/SKILL.md`](../release-effector/SKILL.md); δ blocks release completion until post-tag release CI is green.
 7. **Override** — reassign roles or redirect scope only with an explicit declaration. The override doctrine (override is a degraded boundary action, never rewrites V's verdict, requires a structured override block when proceeding against a non-PASS verdict) lives in [`delta/SKILL.md`](../delta/SKILL.md) §3; this step is operator-as-coordinator routing the override declaration through the cycle.
 
 δ runs one role at a time. This keeps memory pressure low (single process per role), gives δ direct visibility into each session via the observability stream (`harness/SKILL.md` §2), and isolates failures — if α dies, δ retries α without losing γ or β state.
@@ -120,8 +120,8 @@ The actions in this table require platform permissions agents may lack. **δ-as-
 |--------|---------|-------------|
 | Pre-merge gate validation | Before authorizing β merge, run `scripts/validate-release-gate.sh --mode pre-merge --cycle N`; this checks only scaffold, self-coherence, and review artifacts that can exist before merge. | γ |
 | Push β-approved merge to main | β runs `git merge` — δ only pushes when β cannot execute the push directly (env/auth constraint). This is execution of β's integration authority, not δ approval. | β or γ |
-| Post-merge closeout validation | After merge and role close-outs, run `scripts/validate-release-gate.sh --mode post-merge --cycle N`; require `CDD-Post-Merge-Closeout: complete`. Passing means release-ready, not terminal. | γ |
-| Release-boundary preflight | After β merge + close-outs + γ PRA, δ verifies merge commit, release artifacts, tag/deploy preconditions, and platform readiness. Proceed / request changes / override. See `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 9 (δ gate). | γ |
+| Post-merge closeout validation | After merge and role close-outs, run `scripts/validate-release-gate.sh --mode post-merge --cycle N`; require `CDD-Post-Merge-Closeout: complete` plus exactly one `CDD-Release-Batch:` assignment. Passing means release-ready, not terminal. | γ |
+| Release-boundary preflight | After β merge + role close-outs + γ's exact nonterminal marker and release-batch assignment, δ verifies merge/main CI, release artifacts, tag/deploy preconditions, and platform readiness. PRA is post-disconnect. Proceed / request changes / override. See `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 10. | γ |
 | Tag push + release | After δ preflight confirms γ's post-merge closeout. **δ is sole tag-author** — β does not tag. | γ |
 | Branch delete | Cycle closed, merged branches | γ |
 | Issue filing on external repos | Cross-project dependency | γ |
@@ -157,8 +157,9 @@ That skill owns: the single-command release script invocation, the bare-`X.Y.Z` 
 Two gate-rules δ enforces from this surface (the policy-level claims; mechanics in the effector skill):
 
 - **Do not tag/release before `gamma-closeout.md` on main carries the exact
-  nonterminal marker `CDD-Post-Merge-Closeout: complete`.**
-- **δ blocks release completion until CI is green** (or operator explicitly accepts a known pre-existing failure per the release-effector recovery runbook).
+  nonterminal marker `CDD-Post-Merge-Closeout: complete` plus exactly one
+  matching `CDD-Release-Batch:` assignment.**
+- **δ blocks release completion until post-tag release CI is green** (or operator explicitly accepts a known pre-existing failure per the release-effector recovery runbook).
 
 ### 3.5. The tag is the signal
 
@@ -279,9 +280,9 @@ These are role boundaries. Crossing them without an override declaration breaks 
 | α close-out re-dispatch | Dispatch α via the harness with close-out prompt (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces"; prompt format in §5.2 of this file) when γ requests | α completion (alpha-closeout.md on main) |
 | Release prep | γ writes RELEASE.md; cycle dirs remain under `unreleased/` for validation | γ request |
 | δ preflight | Verify merge commit, release artifacts, tag preconditions | γ preflight request |
-| Post-merge closeout | Gate: do not tag before `gamma-closeout.md` carries `CDD-Post-Merge-Closeout: complete` | marked γ declaration (release pending) |
+| Post-merge closeout | Gate: do not tag before `gamma-closeout.md` carries `CDD-Post-Merge-Closeout: complete` and the matching `CDD-Release-Batch:` | marked γ declaration (release pending) |
 | Disconnect | Cut and verify the release — see [`release-effector/SKILL.md`](../release-effector/SKILL.md) | γ close-out + δ session patches on main |
-| Terminal archive | γ moves cycle dirs into the versioned release directory after disconnect | tag/release CI green |
+| Terminal seal | After versioned tag/release CI green, or docs-only main-SHA acknowledgement/applicable CI, γ archives and later appends a resolvable disconnect binding (`CDD-Release-Tag` or `CDD-Release-Commit`), `CDD-Archive-Commit`, and `CDD-Terminal-Closure: complete` | archive commit + terminal-seal commit |
 | Post-release | Execute deferred operator actions from γ close-out | γ deferred-output list |
 | Inter-cycle | Nothing until next γ dispatch | γ next-cycle selection |
 

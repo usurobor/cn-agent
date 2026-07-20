@@ -219,9 +219,10 @@ Write `.cdd/unreleased/{N}/REPAIR-PLAN.md` **before modifying any other file.** 
 
 δ repairs against the `REPAIR-PLAN`. The repair run MUST NOT re-assert a `converge` verdict over work a prior δ review rejected without showing the rejected findings are addressed, and MUST NOT write `alpha-closeout.md` / `beta-closeout.md` / `gamma-closeout.md` over the rejected branch while required repairs are unaddressed.
 
-### Step E — closeouts require a `repair_evidence` block (repair re-entry only)
+### Step E — `REVIEW-REQUEST.yml` requires `repair_evidence` (repair re-entry only)
 
-On a repair re-entry, every closeout the cycle lands MUST carry a `repair_evidence` block, and the cell MUST NOT advance to `status:review` until it is complete:
+On a repair re-entry, δ MUST write one top-level `repair_evidence` block in
+`.cdd/unreleased/{N}/REVIEW-REQUEST.yml` before requesting `status:review`:
 
 ```yaml
 repair_evidence:
@@ -237,7 +238,9 @@ repair_evidence:
   new_state_differs_from_rejected: <evidence the branch state now differs from the rejected R0, e.g. the repair commit range>
 ```
 
-A closeout on a repair re-entry without a complete `repair_evidence` block is a cnos#516 violation; the wake **STOPS and defers to operator** rather than shipping the cell.
+A repair-pass `REVIEW-REQUEST.yml` without a complete `repair_evidence` block
+is a cnos#516 violation; the wake **STOPS and defers to operator** rather than
+requesting review. No role closeout carries or gates this pre-merge evidence.
 
 ### `run_class` (recorded in the cycle receipt + this wake's return token)
 
