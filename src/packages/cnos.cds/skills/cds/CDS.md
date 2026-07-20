@@ -1025,18 +1025,15 @@ and a failure / retry path.
 | **S6: β reviewing** | β | `self-coherence.md` review-readiness, diff, CI green | `beta-review.md` round verdict (RC or A) | RC → S4; A → S7 | β blocked → γ unblocks |
 | **S7: β merged** | β | Approved verdict; pre-merge gate passed (`beta/SKILL.md §"Pre-merge gate"`, including row 5's close-keyword check) | Merge commit on main with `Closes #N`; `beta-closeout.md` | S8 | Merge conflict → β resolves in throwaway worktree; missing/ineffective close-keyword → issue state MUST still be asserted `CLOSED` before γ declares closure (S11; `gamma/SKILL.md §2.10` row 15 is the hard gate — this is a mandatory verification, not a conditional fallback) |
 | **S8: α close-out** | α (re-dispatched) | `beta-review.md` (approved); merged state | `alpha-closeout.md` on main | S9 | Re-dispatch unavailable → provisional close-out at review-readiness (declared as debt) |
-| **S9: γ triaging** | γ | `alpha-closeout.md`, `beta-closeout.md`, `RELEASE.md` | PRA at canonical path; γ close-out triage; skill patches landed | S10 | Missing close-out → request re-dispatch; missing RELEASE.md → γ writes it |
-| **S10: δ release-boundary preflight** | δ | PRA present; RELEASE.md present; `.cdd/unreleased/{N}/` not yet moved; merge on main | Proceed / Request changes / Override | Proceed → S11; RC → route to β/α/override | δ blocks → γ routes change |
-| **S11: γ closing** | γ | δ preflight passed; closure gate rows pass (`gamma/SKILL.md §2.10`) | `gamma-closeout.md`; cycle-dir move to `.cdd/releases/{X.Y.Z}/{N}/`; closure declaration | S12 | Missing artifact → obtain before closing |
-| **S12: δ disconnect** | δ | γ closure declaration; `gamma-closeout.md` on main carries `CDD-Cycle-Closure: terminal` | Tag + release commit; branch cleanup | S0 (next cycle) | Script fails → fix and retry |
+| **S9: γ post-merge closeout** | γ | `alpha-closeout.md`, `beta-closeout.md`, merge CI | PRA/triage when scoped; `gamma-closeout.md` carrying `CDD-Post-Merge-Closeout: complete` | S10 | Missing close-out → request role re-dispatch |
+| **S10: γ release preparation** | γ | Marked post-merge closeout; release assignment | `RELEASE.md`; complete receipt remains at `.cdd/unreleased/{N}/` | S11 | Missing release evidence → remain open |
+| **S11: δ disconnect** | δ | Release gate passes against unreleased record; merge on main | Tag + release commit; release CI green; branch cleanup | S12 | Script/CI fails → fix and retry |
+| **S12: γ terminal archive** | γ | Observable tagged disconnect and green release CI | Cycle-dir move to `.cdd/releases/{X.Y.Z}/{N}/`; archive commit | S0 (next cycle) | Missing tag/CI → do not move or declare terminal |
 
-The state machine maps onto the 0–13 step table as follows: Steps 0–3
-compose S0–S3 (γ-owned setup); Steps 4–7 compose S4–S5 (α implementation
-and review-ready signal); Step 8 composes S6–S7 (β review and merge); Step
-9–10 compose S8–S10 (close-out collection and δ preflight); Steps 11–12
-compose S9 + S11 (γ triage, PRA, closure declaration); Step 10's release
-mechanics compose S12 (δ disconnect). The step table is the canonical
-ordering; the state machine is the canonical ownership-and-transition shape.
+The state machine maps the pre-merge kernel through S7, post-merge role
+closeout through S9, release preparation through S10, δ's disconnect through
+S11, and γ's post-disconnect archival boundary through S12. The step table is
+the canonical ordering; this state machine is the canonical ownership shape.
 
 ### Branch rule
 
@@ -1796,18 +1793,20 @@ the v0.1 overlay) checks every row marked "Required before γ closure."
 | `beta-review.md` | β | During β review session, incrementally per round | γ at close-out triage | γ closure | γ cannot triage; requests β re-dispatch |
 | `alpha-closeout.md` | α (re-dispatched after merge) | After β merge, via δ re-dispatch. **Provisional fallback:** α may write a provisional close-out at review-readiness (marked `[provisional]`), but merge-readiness does not require it. Full close-out via δ re-dispatch remains the normative path for tagged releases. | γ before PRA; γ closure gate; post-merge gate | γ closure | γ closure gate blocks; γ requests δ to re-dispatch α |
 | `beta-closeout.md` | β | Before β exits (same β session as merge) | γ before PRA; γ closure gate | γ closure | γ closure gate blocks; γ requests β re-dispatch |
-| `gamma-closeout.md` | γ | After all closure gate rows pass; terminal form carries `CDD-Cycle-Closure: terminal` | δ before tag/release; post-merge gate checks exact marker | δ tag/release | δ must not tag; γ has not declared closure |
+| `gamma-closeout.md` | γ | After post-merge closeout rows pass; complete form carries `CDD-Post-Merge-Closeout: complete` | δ before tag/release; post-merge gate checks exact marker | δ tag/release | δ must not tag; post-merge closeout is incomplete |
 | `cdd-iteration.md` | γ (with ε review) | Same session as `gamma-closeout.md`; required when `protocol_gap_count > 0`; courtesy stub permitted when count is 0 (per cnos#401) | γ closure gate; aggregator update (`.cdd/iterations/INDEX.md`) | γ closure | γ closure gate blocks; if `cdd-*-gap` findings exist, the artifact must exist before closure |
 | `.cdd/iterations/INDEX.md` row | γ | Same session as `cdd-iteration.md` | γ closure gate | γ closure | γ closure gate blocks if `cdd-iteration.md` was written but INDEX.md was not updated |
 | `RELEASE.md` | γ | Before requesting δ tag/release; committed to main in release commit | δ at release-boundary preflight | δ tag/release | δ must not tag; CI auto-generates sparse notes |
-| `.cdd/releases/{X.Y.Z}/{N}/` (the cycle-dir move) | γ (at release) | Before γ requests δ tag; included in release commit | γ closure gate; δ preflight | δ tag/release | Stale unreleased dir; γ closure gate blocks until moved |
+| `.cdd/releases/{X.Y.Z}/{N}/` (the cycle-dir move) | γ (post-disconnect) | After δ reports tagged release + CI green; committed on main | γ terminal archive check | terminal cycle closure | Cycle remains unarchived under `unreleased/` |
 | POST-RELEASE-ASSESSMENT.md (PRA) | γ | After β merge + close-outs | γ closure gate; δ at release-boundary preflight | γ closure | γ closure gate blocks |
 
 **Ownership rules:**
 
-- `gamma-closeout.md` is the closure declaration artifact. δ's obligation
-  to not tag before closure is satisfied when `gamma-closeout.md` exists
-  and the closure-declaration commit is on main.
+- `gamma-closeout.md` is the post-merge closeout declaration artifact only
+  when it carries the exact marker `CDD-Post-Merge-Closeout: complete`. This
+  authorizes release preflight but is not terminal cycle closure. Terminal
+  closure requires δ's tagged disconnect, green release CI, and γ's subsequent
+  archive move.
 - For small-change cycles, `beta-closeout.md` and `gamma-closeout.md` may
   not apply per the small-change collapse rule (cited from §Field 6);
   `alpha-closeout.md`, `RELEASE.md`, and the cycle-directory move remain
@@ -2319,11 +2318,11 @@ below must be observable on `origin/main`:
 - **`RELEASE.md` committed to `main`.** The GitHub release body lives at
   the repo root, included in the release commit. Missing RELEASE.md
   triggers F5 (below) and the gate blocks.
-- **Cycle directories moved.** Every `.cdd/unreleased/{N}/` for cycles
-  closed in this release has been moved to `.cdd/releases/{X.Y.Z}/{N}/`
-  and the move is part of the release commit (per §Artifact contract
-  → §Location matrix). Stale `.cdd/unreleased/{N}/` after the release
-  triggers F4 and the gate blocks.
+- **Cycle directories remain readable for release validation.** Every selected
+  `.cdd/unreleased/{N}/` remains at its canonical path through the release gate
+  and tag. After δ reports release CI green, γ moves it to
+  `.cdd/releases/{X.Y.Z}/{N}/`; residue after that post-disconnect archival
+  step triggers F4.
 - **All close-outs present.** `alpha-closeout.md`, `beta-closeout.md`,
   `gamma-closeout.md` all live at the canonical paths on `main`. Missing
   any close-out triggers F1 / F2 / F3 respectively.
@@ -2340,11 +2339,10 @@ below must be observable on `origin/main`:
 - **No unresolved triage.** Every finding from `alpha-closeout.md`,
   `beta-closeout.md`, and the PRA carries a disposition (immediate MCA
   / project MCI / agent MCI / drop). Unresolved triage triggers F10.
-- **γ closure declaration on `main`.** `gamma-closeout.md` carrying the exact
-  line `CDD-Cycle-Closure: terminal` is the closure-declaration artifact; its
-  commit hash on `main` is the
-  signal that γ has declared closure. δ does **not** tag before this
-  signal (per the operator/SKILL.md §3.4 doctrine; per F6).
+- **γ post-merge closeout declaration on `main`.** `gamma-closeout.md` carrying
+  the exact line `CDD-Post-Merge-Closeout: complete` is the release-readiness
+  signal. δ does **not** tag before it, and no actor calls it terminal closure;
+  the tag plus later archive move supply that proof.
 
 The preconditions are conjunctive: all must hold simultaneously.
 A preflight that finds any precondition false returns "Request changes"
@@ -2392,35 +2390,32 @@ signal is unrecorded.
 β authors `beta-closeout.md` in the same session as the merge commit
 under the canonical path; re-dispatch is the exception, not the rule.
 
-#### F3: Missing γ close-out (no closure declaration)
+#### F3: Missing γ post-merge closeout declaration
 
 `.cdd/unreleased/{N}/gamma-closeout.md` does not exist on `origin/main`, or it
-does not contain the exact line `CDD-Cycle-Closure: terminal`, at gate-check
+does not contain the exact line `CDD-Post-Merge-Closeout: complete`, at gate-check
 time. The filename alone is insufficient because the same append-only
 artifact may first carry a pre-operator assurance receipt. Without the marker,
-γ has not declared terminal closure; the cycle has only stopped. δ MUST NOT
-tag before the marked γ closure declaration.
+γ has not completed post-merge closeout. δ MUST NOT tag. With the marker, the
+cycle is release-ready but still nonterminal.
 
 **Recovery:** γ runs the closure gate (§Closure → §Closure rule below);
-if every row passes, γ writes `gamma-closeout.md` with the closure
-declaration ("Cycle #N closed. Next: #M.") and exact terminal marker
-`CDD-Cycle-Closure: terminal`, then commits to main. If
+if every row passes, γ writes `gamma-closeout.md` with the post-merge
+declaration and exact marker `CDD-Post-Merge-Closeout: complete`, then commits
+to main. If
 any closure-gate row fails, γ remediates the underlying gap (re-dispatch
 α/β; author missing artifact) before re-running the gate.
 
 #### F4: Stale `.cdd/unreleased/{N}/` after release
 
 The per-cycle directory at `.cdd/unreleased/{N}/` still exists on
-`origin/main` after the release commit. The cycle-directory move
-(`.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/`) was skipped or
-landed after the release commit (instead of in it). The cycle loses
-its version association; the §Frozen snapshot rule (§Artifact contract)
-is structurally broken.
+`origin/main` after δ reported the tagged disconnect and green release CI and
+γ had the opportunity to perform the archival step. The cycle is released but
+not terminally archived.
 
-**Recovery:** γ moves the directory in a follow-up commit on `main`
-referenced from the PRA; the corrective commit cites F4 explicitly.
-For future cycles, γ executes the move **before** requesting δ tag,
-per `release/SKILL.md §2.5a` v0.1 overlay.
+**Recovery:** γ moves the directory in a follow-up commit on `main`, referenced
+from the PRA; the corrective commit cites F4 explicitly. The move is always
+post-disconnect per `release/SKILL.md §2.5a`.
 
 #### F5: Missing `RELEASE.md`
 
@@ -2439,9 +2434,10 @@ tag has already pushed; the F5 finding is recorded in the cycle's
 
 #### F6: δ tag ordering violation
 
-δ pushed a tag (`X.Y.Z`) before terminal-marked `gamma-closeout.md` existed on `main`.
-The release boundary fired before γ declared closure; the cycle's
-structural closure (per §Field 4 outward-membrane discipline) is
+δ pushed a tag (`X.Y.Z`) before `gamma-closeout.md` carried the exact
+`CDD-Post-Merge-Closeout: complete` marker on `main`. The release boundary
+fired before γ completed the post-merge receipt; the cycle's
+boundary ordering (per §Field 4 outward-membrane discipline) is
 inverted — δ recorded the boundary decision before the cycle was
 ready to cross the boundary. F6 is the most-severe gate violation
 because it cannot be reversed cleanly (a pushed tag is git-observable
@@ -2548,8 +2544,8 @@ temporary v0.1 overlay until the v1 CDS-side role rewrite:
   — docs-only disconnect (no tag); the docs-only release path that
   shares F1–F10 verification but bypasses the tag-ordering F6 check.
 - [`cnos.cdd/skills/cdd/release/SKILL.md §3.8`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
-  — closure-gate override (forces `C_Σ` to `<C` when any post-merge
-  close-out or the terminal γ marker is absent at closure time); the F1 /
+  — closeout-gate override (forces `C_Σ` to `<C` when any post-merge
+  close-out or the nonterminal γ marker is absent before release); the F1 /
   F2 / F3 mechanical realization. Verified per exact cycle by
   `scripts/validate-release-gate.sh --mode post-merge --cycle N`.
 - [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.10`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
@@ -2557,12 +2553,12 @@ temporary v0.1 overlay until the v1 CDS-side role rewrite:
   realizes F1–F10 across the cycle's closure preconditions; the
   closure-declaration commit that signals F3 PASS.
 - [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.6–§2.9`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
-  — γ's release-preparation steps (`RELEASE.md` author per F5; cycle-directory
-  move per F4; close-out triage per F10; PRA author per F8;
+  — γ's release-preparation and archive steps (`RELEASE.md` author per F5;
+  post-disconnect cycle-directory move per F4; close-out triage per F10; PRA author per F8;
   cycle-iteration trigger assessment per F9).
 - [`cnos.cdd/skills/cdd/operator/SKILL.md §3`](../../../cnos.cdd/skills/cdd/operator/SKILL.md)
   — δ-as-operator gate doctrine; "Do not tag/release before
-  terminal-marked `gamma-closeout.md` exists on main" (F6); "δ blocks release completion
+  `gamma-closeout.md` carries the exact post-merge closeout marker" (F6); "δ blocks release completion
   until CI is green or operator explicitly accepts a known pre-existing
   failure"; the gate-action-on-request-not-observation rule.
 - [`cnos.cdd/skills/cdd/operator/SKILL.md §3.1`](../../../cnos.cdd/skills/cdd/operator/SKILL.md)
@@ -2976,7 +2972,7 @@ The five canonical deferred-output fields:
 
 ### Closure rule
 
-A cycle closes **only when all three conjuncts hold**:
+Post-merge closeout is complete **only when all three receipt conjuncts hold**:
 
 1. **Immediate outputs executed** — every item in §Immediate outputs
    above has either landed in this cycle's commits or been explicitly
@@ -2996,15 +2992,12 @@ A cycle closes **only when all three conjuncts hold**:
    cadence rule applies: required only when `protocol_gap_count > 0`;
    courtesy empty-findings stub permitted when count is 0.
 
-When all three conjuncts hold, γ writes `gamma-closeout.md` with the
-**closure declaration** — the explicit statement *"Cycle #N closed.
-Next: #M."* — and the exact machine-readable line
-`CDD-Cycle-Closure: terminal`. This is γ's last commit on the cycle's surfaces;
-the closure-declaration commit's SHA on `main` is the structural
-signal that the cycle has crossed from "released" to "closed." δ's
-disconnect-release tag appearing on `main` after the closure-declaration
-commit is the **observable proof** that all gate actions completed
-and the cycle is fully closed.
+When those three receipt conjuncts hold, γ writes `gamma-closeout.md` with the exact
+machine-readable line `CDD-Post-Merge-Closeout: complete`. This nonterminal
+signal authorizes δ's release preflight. Terminal cycle closure adds two more
+conjuncts: (4) δ's tag exists and release CI is green (or carries an explicit
+authorized override), and (5) γ has subsequently moved the receipt directory
+to the versioned release path and committed the archive on main.
 
 A cycle that has stopped without closing (matter shipped; releases
 tagged; but immediate outputs unexecuted, deferred outputs uncommitted,

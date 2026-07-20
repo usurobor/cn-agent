@@ -5,18 +5,19 @@
 #   pre-merge  Review/merge readiness. A triadic cycle must expose only the
 #              artifacts available before merge: gamma-scaffold.md,
 #              self-coherence.md, and beta-review.md.
-#   post-merge Cycle closure after matter has merged. In addition to the
+#   post-merge Post-merge closeout after matter has merged. In addition to the
 #              pre-merge record, alpha-closeout.md, beta-closeout.md, and
 #              gamma-closeout.md are required. gamma-closeout.md must carry
-#              the exact terminal marker "CDD-Cycle-Closure: terminal".
+#              the exact marker "CDD-Post-Merge-Closeout: complete".
+#              This is a pre-release declaration, not terminal cycle closure;
 #              RELEASE.md is not required at this phase.
 #   release    Pre-tag/release gate (default). Requires RELEASE.md and the
-#              complete post-merge lifecycle set, including the terminal
-#              gamma marker.
+#              complete post-merge lifecycle set and closeout marker.
 #
-# A cycle is triadic when gamma-scaffold.md or beta-review.md is present. This
-# recognizes an in-flight substantial cycle before beta-review.md is written
-# while still preserving the small-change collapse.
+# A scaffold's canonical **Mode:** declaration controls classification.
+# Substantial or an unrecognized/missing declaration fails closed as triadic;
+# small-change and immediate-output preserve the collapsed path. A beta review
+# without a scaffold also fails closed as triadic.
 #
 # Usage:
 #   scripts/validate-release-gate.sh [--repo-root DIR] [--unreleased-dir DIR]
@@ -33,7 +34,7 @@ REPO_ROOT="."
 UNRELEASED_DIR_OVERRIDE=""
 MODE="release"
 CYCLE=""
-TERMINAL_GAMMA_MARKER="CDD-Cycle-Closure: terminal"
+POST_MERGE_CLOSEOUT_MARKER="CDD-Post-Merge-Closeout: complete"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -110,14 +111,20 @@ for dir in "${CYCLE_DIRS[@]}"; do
   [[ -d "$dir" ]] || continue
   N="$(basename "$dir")"
 
-  if [[ -f "$dir/gamma-scaffold.md" || -f "$dir/beta-review.md" ]]; then
+  SCAFFOLD_MODE=""
+  if [[ -f "$dir/gamma-scaffold.md" ]]; then
+    SCAFFOLD_MODE="$(sed -nE 's/^\*\*Mode:\*\*[[:space:]]*(substantial|small-change|immediate-output)([^[:alnum:]_-].*)?$/\1/p' "$dir/gamma-scaffold.md")"
+    SCAFFOLD_MODE="${SCAFFOLD_MODE%%$'\n'*}"
+  fi
+
+  if [[ -f "$dir/beta-review.md" || ( -f "$dir/gamma-scaffold.md" && "$SCAFFOLD_MODE" != "small-change" && "$SCAFFOLD_MODE" != "immediate-output" ) ]]; then
     CYCLE_ERRORS=0
     if [[ "$MODE" == "pre-merge" ]]; then
       REQUIRED=("${REQUIRED_TRIADIC_PRE_MERGE[@]}")
       PHASE_LABEL="before merge"
     else
       REQUIRED=("${REQUIRED_TRIADIC_POST_MERGE[@]}")
-      PHASE_LABEL="for post-merge closure"
+      PHASE_LABEL="for post-merge closeout"
     fi
 
     for f in "${REQUIRED[@]}"; do
@@ -129,8 +136,8 @@ for dir in "${CYCLE_DIRS[@]}"; do
     done
 
     if [[ "$MODE" != "pre-merge" && -f "$dir/gamma-closeout.md" ]]; then
-      if ! grep -Fxq "$TERMINAL_GAMMA_MARKER" "$dir/gamma-closeout.md"; then
-        echo "  ❌ cycle $N: gamma-closeout.md lacks terminal closure marker: $TERMINAL_GAMMA_MARKER" >&2
+      if ! grep -Fxq "$POST_MERGE_CLOSEOUT_MARKER" "$dir/gamma-closeout.md"; then
+        echo "  ❌ cycle $N: gamma-closeout.md lacks post-merge closeout marker: $POST_MERGE_CLOSEOUT_MARKER" >&2
         ERRORS=$((ERRORS + 1))
         CYCLE_ERRORS=$((CYCLE_ERRORS + 1))
       fi
@@ -148,7 +155,7 @@ echo ""
 if [[ $ERRORS -gt 0 ]]; then
   case "$MODE" in
     pre-merge)  echo "❌ Pre-merge gate FAILED: $ERRORS artifact error(s) — merge blocked" >&2 ;;
-    post-merge) echo "❌ Post-merge closure gate FAILED: $ERRORS artifact error(s) — cycle remains open" >&2 ;;
+    post-merge) echo "❌ Post-merge closeout gate FAILED: $ERRORS artifact error(s) — release remains blocked" >&2 ;;
     release)    echo "❌ Release gate FAILED: $ERRORS artifact error(s)" >&2 ;;
   esac
   exit 1
@@ -156,6 +163,6 @@ fi
 
 case "$MODE" in
   pre-merge)  echo "✅ Pre-merge gate passed" ;;
-  post-merge) echo "✅ Post-merge closure gate passed" ;;
+  post-merge) echo "✅ Post-merge closeout gate passed (release pending)" ;;
   release)    echo "✅ Release gate passed" ;;
 esac

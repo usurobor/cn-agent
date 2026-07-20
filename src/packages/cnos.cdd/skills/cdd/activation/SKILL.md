@@ -184,13 +184,13 @@ The dispatch configuration affects the honest-grading floor: §5.2 cycles carry 
 
 CI is the mechanical enforcement surface for CDD governance. A repo running CDD cycles without CI is relying entirely on role-actor discipline; CI converts that discipline into a verifiable gate. The minimum CI surface for a CDD-activated repo has three layers: artifact validation, test runs, and project-specific progressions.
 
-**Layer 1 — CDD artifact validation.** On cycle-branch pushes, CI runs `scripts/validate-release-gate.sh --mode pre-merge` and checks only artifacts structurally available before merge. Post-merge closure runs `--mode post-merge --cycle N` after role close-outs and requires the explicit terminal γ marker. Pre-tag/release validation runs default `release` mode and additionally requires `RELEASE.md`. Tenant repos may vendor this script or implement an equivalent; phase-specific file-presence validation must fail loudly with a named missing artifact without making merge-readiness depend on future close-outs.
+**Layer 1 — CDD artifact validation.** On numeric cycle-branch pushes, CI runs `scripts/validate-release-gate.sh --mode pre-merge` and checks only artifacts structurally available before merge. Post-merge closeout runs `--mode post-merge --cycle N` after role close-outs and requires `CDD-Post-Merge-Closeout: complete`; passing remains release-pending. Pre-tag/release validation runs default `release` mode and additionally requires `RELEASE.md`.
 
 **Layer 2 — Test and spec runs.** On every push, CI runs the project's test suite and spec validation (if applicable). For docs-only repos these may be link-check or markdown-lint runs; for code repos these are unit and integration test suites. Failing tests block merge. This layer ensures that no CDD cycle can merge a change that breaks the project's own correctness surface.
 
 **Layer 3 — Project-specific progressions.** Additional CI jobs that matter for the specific project: for tsc, kata runs (one job per kata, all must pass); for cnos, skill-bundle integrity checks (§16); for any project, linting or formatting gates that the project has adopted. These are listed in the activation checklist (§23 step 9) and become part of the repo's CI baseline.
 
-CI jobs must be configured to run on `cycle/*` branches as well as `main`. A job that only runs on `main` is invisible during review and provides no signal to α and β during the cycle. The canonical GitHub Actions trigger is `on: push: branches: ['main', 'cycle/**']`; without the `cycle/**` glob, CI silently passes review on branches where it has never run.
+Project test and progression jobs must run on `cycle/*` branches as well as `main`. The pre-merge artifact job is narrower: it runs only on numeric `cycle/**` pushes, because pull-request refs (`N/merge`) and `main` do not encode a cycle number. Post-merge and release gates are explicit exact-cycle invocations, not inferred from `GITHUB_REF_NAME`.
 
 **Minimum CI workflow structure:**
 
@@ -198,9 +198,7 @@ CI jobs must be configured to run on `cycle/*` branches as well as `main`. A job
 name: cdd-validate
 on:
   push:
-    branches: ['main', 'cycle/**']
-  pull_request:
-    branches: ['main']
+    branches: ['cycle/**']
 
 jobs:
   artifact-validate:
@@ -351,7 +349,7 @@ Final grade: {tsc_grade}
 
 ## §12 Cycle-README Template
 
-Every cycle directory — `releases/{version}/{N}/` for versioned releases or `releases/docs/{ISO-date}/{N}/` for rolling-docs releases — must contain the following five files. These files constitute the cycle close-out record and are what CI artifact validation (§9 Layer 1) checks for:
+Every archived cycle directory — `releases/{version}/{N}/` for versioned releases or `releases/docs/{ISO-date}/{N}/` for rolling-docs releases — carries the full close-out record. Pre-merge CI (§9 Layer 1) checks only `gamma-scaffold.md`, `self-coherence.md`, and `beta-review.md`; the phase-aware post-merge gate later checks the role closeouts.
 
 | File | Author | Purpose |
 |---|---|---|
@@ -361,7 +359,7 @@ Every cycle directory — `releases/{version}/{N}/` for versioned releases or `r
 | `gamma-closeout.md` | γ | TSC Grades, PRA, dispatch record, deferred-output list |
 | `cdd-iteration.md` | ε (often δ=ε) | Protocol-iteration findings for this cycle; see §22 |
 
-γ creates the cycle directory and stubs during dispatch. α, β, and γ fill files in the order shown. The cycle directory is initially created under `unreleased/{N}/`; at release time, γ moves it to the versioned path per `release/SKILL.md §2.5a`. CI artifact validation checks that all five files exist and are non-empty before allowing merge to `main`.
+γ creates the cycle directory and scaffold during dispatch. α and β add their review-time artifacts before merge; α, β, and γ add closeouts after merge. The directory remains under `unreleased/{N}/` through the tag/disconnect and γ moves it to the versioned path afterward per `release/SKILL.md §2.5a`.
 
 **Note on alpha-closeout.md:** Per `alpha/SKILL.md §2.8`, α writes `alpha-closeout.md` after β merge, not before. At review-readiness time, `alpha-closeout.md` either does not exist (standard path) or exists as `[provisional — pending β outcome]`. CI should not require `alpha-closeout.md` before merge; it should check for it in the post-merge gate only.
 

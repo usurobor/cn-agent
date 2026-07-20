@@ -161,8 +161,9 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - #N — description (if any found during validation)
   ```
 
-2.5a. **Move cycle directories to release directory** (tagged release)
-  - Move every per-cycle directory from `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/`:
+2.5a. **Archive cycle directories after the tagged disconnect**
+  - Keep every per-cycle directory at `.cdd/unreleased/{N}/` while the release gate runs and while δ creates and verifies the tag. The validator must inspect the complete pre-release record at its canonical unreleased path.
+  - After δ reports the tag/release boundary complete and CI green, γ moves each directory to `.cdd/releases/{X.Y.Z}/{N}/`:
     ```bash
     mkdir -p .cdd/releases/X.Y.Z
     for dir in .cdd/unreleased/*/; do
@@ -171,11 +172,11 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
     done
     ```
   - Each `.cdd/releases/{X.Y.Z}/{N}/` directory carries the same role-prefixed files that lived in `.cdd/unreleased/{N}/` during the cycle (`self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, plus any cycle-specific extras) per `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" + §"Artifact contract" → §"Location matrix".
-  - Include the moves in the release commit
-  - `.cdd/unreleased/` should be empty after the release commit
+  - Commit the moves on `main` as the post-disconnect archival step. The tag continues to identify the reviewed release commit; the archive commit records terminal lifecycle state.
+  - `.cdd/unreleased/` should be empty after the post-disconnect archive commit
   - ❌ Leave cycle directories in `unreleased/` after tagging (lose the version association)
-  - ❌ Move after the release commit (they should be part of the release snapshot)
-  - ✅ Move before commit, include in the release commit
+  - ❌ Move before the release gate or tag (the release validator would lose its canonical input)
+  - ✅ δ disconnects and verifies release CI → γ moves and commits the frozen receipt directories
 
 2.5b. **Docs-only disconnect (no tag)**
 
@@ -325,7 +326,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   | **C**   | 2.0 | partial-protocol release with multiple drift items |
   | **< C** | < 2 | re-open and remediate; do not close |
 
-  **Closure-gate override (fires before geometric-mean computation).** Merge-readiness requires only the triadic artifacts structurally available before merge (`gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`) and is checked with `scripts/validate-release-gate.sh --mode pre-merge --cycle N`. After merge, if `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, or the exact terminal line `CDD-Cycle-Closure: terminal` is absent, `C_Σ` is forced to `<C` regardless of per-axis math. Cycle disposition is "open and remediate"; the geometric mean is not computed. The post-merge oracle is `scripts/validate-release-gate.sh --mode post-merge --cycle N`; default release mode rechecks the full lifecycle and additionally requires `RELEASE.md`. The math below applies only after the post-merge closure gate passes.
+  **Closeout-gate override (fires before geometric-mean computation).** Merge-readiness requires only the triadic artifacts structurally available before merge (`gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`) and is checked with `scripts/validate-release-gate.sh --mode pre-merge --cycle N`. After merge, if `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, or the exact line `CDD-Post-Merge-Closeout: complete` is absent, `C_Σ` is forced to `<C` regardless of per-axis math. Cycle disposition is "open and remediate"; the geometric mean is not computed. The post-merge oracle is `scripts/validate-release-gate.sh --mode post-merge --cycle N`; passing it means closeout is complete with release still pending. Default release mode rechecks the full lifecycle and additionally requires `RELEASE.md`. Terminal closure additionally requires the observable disconnect and post-disconnect directory archive.
 
   **Letter normalization (`<C` and `C−`).** The rubric table uses `<C` as the grade label. Prior CHANGELOG, PRA, and alpha-closeout artifacts for cycles #331, #333, and #334 used `C−` for the same disposition. These are the same grade: `C−` is the operator-visible projection of `<C`. Both mean "open and remediate; do not close." Authors may use either form; the CHANGELOG column uses `<C` for rubric fidelity and `C−` is accepted as equivalent in prose artifacts.
 

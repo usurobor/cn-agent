@@ -128,6 +128,15 @@ write_closeouts() {
 
   git -C "$repo" add "$artifacts_dir/"
   git -C "$repo" -c user.name="Gamma" commit -q -m "gamma: closeouts"
+  git -C "$repo" push --quiet origin "cycle/$cycle_num"
+}
+
+write_post_merge_marker() {
+  local repo="$1" cycle_num="$2"
+  printf '\nCDD-Post-Merge-Closeout: complete\n' >> "$repo/.cdd/unreleased/$cycle_num/gamma-closeout.md"
+  git -C "$repo" add ".cdd/unreleased/$cycle_num/gamma-closeout.md"
+  git -C "$repo" -c user.name="Gamma" commit -q -m "gamma: declare post-merge closeout"
+  git -C "$repo" push --quiet origin "cycle/$cycle_num"
 }
 
 # ----- Test cases -----
@@ -183,7 +192,12 @@ set -e
 
 assert_exit "complete cycle exits 0" 0 "$EC"
 assert_grep "multiple checkmarks" "✓.*closeout" "$OUT"
-assert_grep "gamma closeout checked" "✓.*gamma-closeout.md" "$OUT"
+assert_grep "assurance-only gamma is not accepted" "✗.*gamma-closeout.md marks post-merge" "$OUT"
+
+write_post_merge_marker "$R" "200"
+OUT="$TMP/complete_cycle_marked.out"
+"$STATUS" --repo-root "$R" 200 > "$OUT" 2>&1
+assert_grep "exact post-merge marker accepted" "✓.*gamma-closeout.md marks post-merge" "$OUT"
 
 echo ""
 echo "## test 5 — hard failure: not a git repo"

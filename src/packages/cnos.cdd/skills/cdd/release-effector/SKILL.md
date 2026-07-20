@@ -18,7 +18,7 @@ inputs:
   - gamma-closeout.md on main
   - VERSION decision (per release/SKILL.md §2.2)
   - RELEASE.md on main (per release/SKILL.md §2.5)
-  - cycle directories under .cdd/unreleased/{N}/ ready to move
+  - complete cycle records under .cdd/unreleased/{N}/ for release validation
 outputs:
   - bare X.Y.Z annotated tag on origin
   - release CI green (or operator-accepted override)
@@ -26,8 +26,8 @@ outputs:
   - gate-action completion confirmations per operator/SKILL.md §3.3
 requires:
   - δ has read operator/SKILL.md §3 (outward gate policy)
-  - γ has shipped RELEASE.md and the cycle-dir moves per release/SKILL.md §2.5–§2.5a (or scripts/release.sh will perform the moves)
-  - gamma-closeout.md on main carries `CDD-Cycle-Closure: terminal` (per cnos.cds/skills/cds/CDS.md §"Artifact contract" → §"Frozen snapshot rule")
+  - γ has shipped RELEASE.md; cycle directories remain under unreleased until after disconnect
+  - "gamma-closeout.md on main carries `CDD-Post-Merge-Closeout: complete`"
   - β has signaled "release ready for δ tag" in beta-closeout.md (per release/SKILL.md §2.6)
 calls:
   - release/SKILL.md
@@ -52,9 +52,9 @@ Before δ runs `scripts/release.sh`, all of the following must be true on `main`
 
 | Precondition | Owner | Verified where |
 |---|---|---|
-| `gamma-closeout.md` on main carries `CDD-Cycle-Closure: terminal` | γ | `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10 closure gate |
+| `gamma-closeout.md` on main carries `CDD-Post-Merge-Closeout: complete` | γ | `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10 closeout gate |
 | `RELEASE.md` exists at repo root | γ | `release/SKILL.md` §2.5; `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" |
-| Cycle directories moved (or ready to move via the script) | γ | `release/SKILL.md` §2.5a |
+| Cycle directories remain at `.cdd/unreleased/{N}/` for validation | γ | `release/SKILL.md` §2.5a |
 | VERSION decided (semver bump) | γ + β | `release/SKILL.md` §2.2 |
 | β signaled "release ready for δ tag" in `beta-closeout.md` | β | `release/SKILL.md` §2.6 |
 | Local main up to date with origin/main | δ | `scripts/release.sh` step 2 (auto-check) |
@@ -86,12 +86,11 @@ scripts/release.sh 3.67.0
 4. Run `scripts/validate-release-gate.sh` — RELEASE.md + cycle-artifact completeness check (see `release/SKILL.md` §2.1 for the validator surface).
 5. Run `scripts/stamp-versions.sh` — derives `cn.json` and package manifests from VERSION.
 6. Run `scripts/check-version-consistency.sh` — validates all version-stamped files agree.
-7. Move `.cdd/unreleased/*/` directories to `.cdd/releases/$VERSION/` (no-op when γ has already moved them per `release/SKILL.md` §2.5a; the script handles both cases idempotently).
-8. Stage + commit `release: $VERSION` if anything changed in the working tree.
-9. Warn-prompt (interactive `y/N`) if `CHANGELOG.md` does not contain a `## $VERSION` heading. Abort path is `N`.
-10. Generate the annotated tag message via `scripts/generate-release-tag-message.sh` — includes issue metadata, wave context when present, and CDD review artifacts when available; deterministic fallback when metadata is unavailable.
-11. Create the **annotated** (not lightweight) tag at the bare version: `git tag -a $VERSION -F <message-file>`.
-12. `git push origin main --tags` — pushes the release commit and tag in one command.
+7. Stage + commit `release: $VERSION` if anything changed in the working tree. Cycle directories are deliberately not moved.
+8. Warn-prompt (interactive `y/N`) if `CHANGELOG.md` does not contain a `## $VERSION` heading. Abort path is `N`.
+9. Generate the annotated tag message via `scripts/generate-release-tag-message.sh`.
+10. Create the **annotated** tag at the bare version.
+11. `git push origin main --tags`.
 
 After the script returns, monitor release CI per §3 below.
 
@@ -224,7 +223,7 @@ git push origin --delete cycle/399
 
 These are the hard rules δ enforces from the release-effector surface. Each maps to a precondition or a discipline failure mode evidenced by prior cycles.
 
-1. **Do not tag/release before `gamma-closeout.md` on main carries `CDD-Cycle-Closure: terminal`.** The marked γ closure declaration gates the tag; filename existence alone may represent pre-operator assurance. (`cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10. The doctrinal frame lives in `operator/SKILL.md` §3.4.)
+1. **Do not tag/release before `gamma-closeout.md` on main carries `CDD-Post-Merge-Closeout: complete`.** Filename existence alone may represent pre-operator assurance. The marker gates the tag but is nonterminal.
 2. **Manual `git tag` is not allowed.** `scripts/release.sh` is the only way to tag a release.
 3. **One tag per release.** Per `release/SKILL.md` §3.6: amend the release commit and reuse the same bare-version tag on CI-red retry. Do not proliferate `3.9.1-fix`, `3.9.1-fix2`.
 4. **Annotated tags only.** Generated message via `scripts/generate-release-tag-message.sh`. Lightweight tags lose the structured metadata.
@@ -262,7 +261,7 @@ These are intentionally out of scope. Crossing them is a role-boundary violation
 - **Do not decide the version bump.** That's γ + β per `release/SKILL.md` §2.2.
 - **Do not run `scripts/validate-release-gate.sh` outside the script's flow.** β/CI may run it independently for pre-merge validation; release-effector triggers it transitively via the script's step 4 only.
 - **Do not deploy.** Deployment (binary distribution, host installation, daemon restart) is a separate effector surface — see `release/SKILL.md` §2.8 for the current deploy step (β/operator).
-- **Do not declare the cycle closed.** Cycle closure is γ's; release completion is δ's. The two are sequential: γ closes → δ tags → release complete.
+- **Do not declare the cycle closed.** δ establishes disconnect; γ performs the subsequent archive move. Terminal closure requires both.
 - **Do not override the gate.** Override is `operator/SKILL.md` §4 territory. Release-effector executes the mechanics; override is a δ-policy decision.
 
 ---
@@ -277,7 +276,7 @@ These are intentionally out of scope. Crossing them is a role-boundary violation
 - `release/SKILL.md` §2.1 (pre-release validator; invoked transitively by script step 4)
 - `release/SKILL.md` §2.4 (CHANGELOG — γ/β surface; release-effector does not author)
 - `release/SKILL.md` §2.5 (RELEASE.md — γ surface; release-effector does not author)
-- `release/SKILL.md` §2.5a (cycle-dir move — γ surface; script step 7 idempotently handles too)
+- `release/SKILL.md` §2.5a (post-disconnect cycle-dir archive — γ surface; release script does not move it)
 - `release/SKILL.md` §2.5b (docs-only disconnect — release-effector is not invoked)
 - `release/SKILL.md` §2.6 (release-readiness signaling — β surface; precondition above)
 - `release/SKILL.md` §2.7 (release CI polling — β-side text says δ owns this per release-effector §3)
@@ -286,7 +285,7 @@ These are intentionally out of scope. Crossing them is a role-boundary violation
 - `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix" (canonical tag policy)
 - `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" (gamma-closeout.md gates tag)
 - `gamma/SKILL.md` §2.10 (γ closure gate — verifies preconditions above)
-- `gamma/SKILL.md` §2 release-prep (γ writes RELEASE.md + moves cycle dirs before requesting δ disconnect)
+- `gamma/SKILL.md` §2 release-prep (γ writes RELEASE.md before disconnect and archives cycle dirs afterward)
 - `scripts/release.sh` (the script — δ does not reimplement)
 - `scripts/validate-release-gate.sh` (script step 4)
 - `scripts/stamp-versions.sh` (script step 5)
@@ -299,7 +298,7 @@ These are intentionally out of scope. Crossing them is a role-boundary violation
 
 ### Scenario
 
-γ has declared cycle/{N} closure. `gamma-closeout.md` is on main. `RELEASE.md` is at repo root. The cycle directory under `.cdd/unreleased/{N}/` is ready to move. VERSION still reads the previous release's version. The current release will be `3.67.0`.
+γ has declared post-merge closeout complete. `gamma-closeout.md` carries `CDD-Post-Merge-Closeout: complete` on main. `RELEASE.md` is at repo root. The complete cycle directory remains under `.cdd/unreleased/{N}/`. VERSION still reads the previous release's version. The current release will be `3.67.0`.
 
 ### Task
 
@@ -307,17 +306,17 @@ Execute the disconnect release.
 
 ### Expected actions
 
-1. **Verify preconditions.** `gamma-closeout.md` on main; `RELEASE.md` on main; `beta-closeout.md` carries "release ready for δ tag" signal; local main matches `origin/main`.
+1. **Verify preconditions and the negative case.** Exact marker in `gamma-closeout.md`; an assurance-only file without it must fail; `RELEASE.md`; β's release-ready signal; local main matches `origin/main`.
 2. **Run the script.** `scripts/release.sh 3.67.0` (or edit VERSION then `scripts/release.sh`).
-3. **Watch the script's output.** Expect: VERSION set, gate validated, manifests stamped, consistency OK, cycle dirs moved, release commit, tag annotated, push complete.
+3. **Watch the script's output.** Expect: VERSION set, gate validated against `unreleased/`, manifests stamped, consistency OK, release commit, tag annotated, push complete. Assert the script did not move cycle dirs.
 4. **Poll release CI.** `gh run list --branch 3.67.0`, then `gh run watch <id> --exit-status`.
-5. **CI Green path.** Confirm completion to γ per `operator/SKILL.md` §3.3 ("Released 3.67.0 — CI green, binaries attached"). Delete merged cycle branches (`git push origin --delete cycle/{N}`).
+5. **CI Green path.** Confirm completion to γ. Delete merged cycle branches. γ then moves the cycle directory to `.cdd/releases/3.67.0/{N}/` and commits the terminal archive.
 6. **CI Red path.** Execute §4 runbook: investigate, classify, fix-or-escalate, re-verify. Operator override only for pre-existing infrastructural failures.
 
 ### Common failures
 
 - Manual `git tag 3.67.0 && git push --tags` instead of `scripts/release.sh` (skips stamp/consistency check; produces version drift).
-- Pushing the tag before marked terminal `gamma-closeout.md` exists on main (γ closure gate violated).
+- Pushing the tag before the exact post-merge closeout marker exists on main.
 - Declaring release complete while CI is red without operator override (discipline failure; the gate has not actually closed).
 - Treating a 403 on `git push origin --delete cycle/{N}` as a release failure (the merge is authoritative; the branch is residue — record and move on).
 - Letting merged branches accumulate ("someone might need them") instead of deleting at release time.

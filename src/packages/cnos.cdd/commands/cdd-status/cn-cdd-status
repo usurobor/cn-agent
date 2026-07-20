@@ -110,6 +110,11 @@ get_role_attribution() {
   esac
 }
 
+branch_has_path() {
+  local branch="$1" path="$2"
+  git cat-file -e "$branch:$path" 2>/dev/null
+}
+
 # Helper to check if condition is met (returns ✓, ✗, or ⚠)
 check_condition() {
   local condition="$1"
@@ -118,14 +123,14 @@ check_condition() {
 
   case "$condition" in
     1) # alpha-closeout.md exists
-      if git ls-tree -r "$branch" ".cdd/unreleased/$cycle_num/alpha-closeout.md" >/dev/null 2>&1; then
+      if branch_has_path "$branch" ".cdd/unreleased/$cycle_num/alpha-closeout.md"; then
         echo "✓"
       else
         echo "✗"
       fi
       ;;
     2) # beta-closeout.md exists
-      if git ls-tree -r "$branch" ".cdd/unreleased/$cycle_num/beta-closeout.md" >/dev/null 2>&1; then
+      if branch_has_path "$branch" ".cdd/unreleased/$cycle_num/beta-closeout.md"; then
         echo "✓"
       else
         echo "✗"
@@ -178,8 +183,13 @@ check_condition() {
     13) # δ release-boundary preflight
       echo "⚠"
       ;;
-    14) # gamma-closeout.md exists (closure declaration artifact)
-      if git ls-tree -r "$branch" ".cdd/unreleased/$cycle_num/gamma-closeout.md" >/dev/null 2>&1; then
+    14) # gamma-closeout.md carries the exact post-merge closeout marker
+      local gamma_path=".cdd/unreleased/$cycle_num/gamma-closeout.md"
+      local gamma_content=""
+      if branch_has_path "$branch" "$gamma_path"; then
+        gamma_content="$(git show "$branch:$gamma_path")"
+      fi
+      if grep -Fxq "CDD-Post-Merge-Closeout: complete" <<<"$gamma_content"; then
         echo "✓"
       else
         echo "✗"
@@ -291,7 +301,7 @@ CONDITIONS=(
   "RELEASE.md written and committed"
   "cycle directories moved to releases/"
   "δ release-boundary preflight completed"
-  "gamma-closeout.md exists (closure signal)"
+  "gamma-closeout.md marks post-merge closeout complete (release pending)"
 )
 
 PASSED=0
@@ -321,7 +331,7 @@ echo "## Next"
 if [[ -z "$BRANCH" ]]; then
   echo "  ❌ Cannot analyze - no branch found"
 elif [[ "$PASSED" -eq "$TOTAL" ]]; then
-  echo "  ✅ Cycle appears ready for closure (all conditions met)"
+  echo "  ✅ Cycle appears terminally closed (disconnect and archive observed)"
 elif [[ "$PASSED" -ge 10 ]]; then
   echo "  ⚠️  Near completion - review remaining gate conditions"
 elif [[ "$PASSED" -ge 5 ]]; then
@@ -332,19 +342,19 @@ fi
 
 # Check for common next steps based on missing conditions
 if [[ -n "$BRANCH" ]] && git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
-  if git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/self-coherence.md" >/dev/null 2>&1; then
-    if ! git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/alpha-closeout.md" >/dev/null 2>&1; then
+  if branch_has_path "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/self-coherence.md"; then
+    if ! branch_has_path "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/alpha-closeout.md"; then
       echo "  → Request α close-out re-dispatch"
     fi
   fi
 
-  if git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/beta-review.md" >/dev/null 2>&1; then
-    if ! git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/beta-closeout.md" >/dev/null 2>&1; then
+  if branch_has_path "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/beta-review.md"; then
+    if ! branch_has_path "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/beta-closeout.md"; then
       echo "  → Request β close-out (post-merge)"
     fi
   fi
 
-  if [[ "$PASSED" -ge 2 ]] && ! git ls-tree -r "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/gamma-closeout.md" >/dev/null 2>&1; then
+  if [[ "$PASSED" -ge 2 ]] && ! branch_has_path "$BRANCH" ".cdd/unreleased/$CYCLE_NUM/gamma-closeout.md"; then
     echo "  → Ready for γ close-out triage and assessment"
   fi
 fi

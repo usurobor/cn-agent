@@ -2,7 +2,7 @@
 # check-dispatch-closeout-integrity.sh — cnos#524 W4 RCA regression guard.
 #
 # One job: presence-of-contract. Assert the rendered dispatch surface carries
-# the closeout-integrity contract (deliverable proof before status:review), so
+# the review-readiness integrity contract (deliverable proof before status:review), so
 # a future edit cannot silently remove it from the prompt/protocol (and thus
 # from the re-rendered golden + live workflow).
 #
@@ -68,7 +68,7 @@ need "$PROTO" "protocol" \
 # so this loop checks the SKILL.md, its golden, and the live workflow.
 for f in "$SKILL" "$GOLDEN" "$LIVE"; do
   need "$f" "dispatch-surface" \
-    "Closeout integrity preflight" \
+    "Review-readiness integrity preflight" \
     "deliverable_evidence" \
     "commits beyond its base" \
     "No-deliverable rule" \

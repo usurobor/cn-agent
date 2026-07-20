@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-validate-release-gate.sh — phase-split regression suite for the CDD
-# pre-merge, post-merge closure, and release gates.
+# pre-merge, post-merge closeout, and release gates.
 
 set -euo pipefail
 
@@ -26,11 +26,21 @@ assert_exit() {
 assert_grep() {
   local name="$1" pattern="$2" file="$3"
   TESTS=$((TESTS + 1))
-  if grep -q "$pattern" "$file"; then
+  if grep -q -- "$pattern" "$file"; then
     PASS=$((PASS + 1)); printf "  ✅ %s\n" "$name"
   else
     FAIL=$((FAIL + 1)); printf "  ❌ %s (pattern not found: %s)\n" "$name" "$pattern"
     sed 's/^/       /' "$file"
+  fi
+}
+
+assert_not_grep() {
+  local name="$1" pattern="$2" file="$3"
+  TESTS=$((TESTS + 1))
+  if ! grep -q -- "$pattern" "$file"; then
+    PASS=$((PASS + 1)); printf "  ✅ %s\n" "$name"
+  else
+    FAIL=$((FAIL + 1)); printf "  ❌ %s (unexpected pattern: %s)\n" "$name" "$pattern"
   fi
 }
 
@@ -46,13 +56,17 @@ write_triadic_cycle() {
       printf '# %s stub\n' "$f" > "$dir/$f"
     fi
   done
+  if [[ "$missing" != "gamma-scaffold.md" ]]; then
+    printf '\n**Mode:** substantial\n' >> "$dir/gamma-scaffold.md"
+  fi
   if [[ "$terminal" == "yes" && "$missing" != "gamma-closeout.md" ]]; then
-    printf '\nCDD-Cycle-Closure: terminal\n' >> "$dir/gamma-closeout.md"
+    printf '\nCDD-Post-Merge-Closeout: complete\n' >> "$dir/gamma-closeout.md"
   fi
 }
 
 write_small_change_cycle() {
   mkdir -p "$1/$2"
+  printf '# gamma scaffold\n\n**Mode:** small-change\n' > "$1/$2/gamma-scaffold.md"
   printf '# small-change self-coherence\n' > "$1/$2/self-coherence.md"
 }
 
@@ -88,7 +102,7 @@ assert_grep "pre-merge names gamma-scaffold" "missing gamma-scaffold.md" "$OUT"
 
 echo "## gamma scaffold classifies an in-flight cycle as triadic"
 R="$TMP/pre_scaffold"; make_root "$R"
-mkdir -p "$R/.cdd/unreleased/202"; printf '# scaffold\n' > "$R/.cdd/unreleased/202/gamma-scaffold.md"
+mkdir -p "$R/.cdd/unreleased/202"; printf '# scaffold\n\n**Mode:** substantial\n' > "$R/.cdd/unreleased/202/gamma-scaffold.md"
 OUT="$TMP/pre_scaffold.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 202
 assert_exit "scaffold-only cycle fails triadic gate" 1 "$RUN_EXIT"
 assert_grep "scaffold-only cycle names self-coherence" "missing self-coherence.md" "$OUT"
@@ -97,7 +111,7 @@ echo "## post-merge requires close-outs but not RELEASE.md"
 R="$TMP/post_pass"; make_root "$R"; write_triadic_cycle "$R/.cdd/unreleased" 203
 OUT="$TMP/post_pass.out"; run_gate "$OUT" --repo-root "$R" --mode post-merge --cycle 203
 assert_exit "post-merge passes complete lifecycle without RELEASE.md" 0 "$RUN_EXIT"
-assert_grep "post-merge pass diagnostic" "Post-merge closure gate passed" "$OUT"
+assert_grep "post-merge pass diagnostic" "Post-merge closeout gate passed" "$OUT"
 
 echo "## post-merge refuses absent alpha close-out"
 R="$TMP/post_no_alpha"; make_root "$R"; write_triadic_cycle "$R/.cdd/unreleased" 204 alpha-closeout.md
@@ -105,11 +119,11 @@ OUT="$TMP/post_no_alpha.out"; run_gate "$OUT" --repo-root "$R" --mode post-merge
 assert_exit "post-merge fails without alpha-closeout" 1 "$RUN_EXIT"
 assert_grep "post-merge names alpha-closeout" "missing alpha-closeout.md" "$OUT"
 
-echo "## post-merge distinguishes assurance receipt from terminal gamma closure"
+echo "## post-merge distinguishes assurance receipt from closeout declaration"
 R="$TMP/post_marker"; make_root "$R"; write_triadic_cycle "$R/.cdd/unreleased" 205 "" no
 OUT="$TMP/post_marker.out"; run_gate "$OUT" --repo-root "$R" --mode post-merge --cycle 205
-assert_exit "post-merge fails without terminal marker" 1 "$RUN_EXIT"
-assert_grep "marker failure is explicit" "lacks terminal closure marker" "$OUT"
+assert_exit "post-merge fails without closeout marker" 1 "$RUN_EXIT"
+assert_grep "marker failure is explicit" "lacks post-merge closeout marker" "$OUT"
 
 echo "## exact-cycle selector ignores unrelated incomplete cycles"
 R="$TMP/selector"; make_root "$R"
@@ -148,17 +162,37 @@ OUT="$TMP/release_no_notes.out"; run_gate "$OUT" --repo-root "$R" --cycle 209
 assert_exit "release fails without RELEASE.md" 1 "$RUN_EXIT"
 assert_grep "release names RELEASE.md" "RELEASE.md missing" "$OUT"
 
-echo "## release mode requires terminal gamma marker"
+echo "## release mode requires post-merge closeout marker"
 R="$TMP/release_marker"; make_root "$R"; write_release_md "$R"; write_triadic_cycle "$R/.cdd/unreleased" 210 "" no
 OUT="$TMP/release_marker.out"; run_gate "$OUT" --repo-root "$R" --cycle 210
-assert_exit "release fails without terminal marker" 1 "$RUN_EXIT"
-assert_grep "release marker failure is explicit" "lacks terminal closure marker" "$OUT"
+assert_exit "release fails without closeout marker" 1 "$RUN_EXIT"
+assert_grep "release marker failure is explicit" "lacks post-merge closeout marker" "$OUT"
 
 echo "## small-change collapse remains intact"
 R="$TMP/small"; make_root "$R"; write_release_md "$R"; write_small_change_cycle "$R/.cdd/unreleased" 211
 OUT="$TMP/small.out"; run_gate "$OUT" --repo-root "$R" --cycle 211
 assert_exit "small-change release gate passes" 0 "$RUN_EXIT"
 assert_grep "small-change classification shown" "small-change" "$OUT"
+
+echo "## explicit substantial scaffold cannot collapse without beta review"
+R="$TMP/substantial"; make_root "$R"; write_release_md "$R"
+mkdir -p "$R/.cdd/unreleased/214"
+printf '# gamma scaffold\n\n**Mode:** substantial\n' > "$R/.cdd/unreleased/214/gamma-scaffold.md"
+printf '# self-coherence\n' > "$R/.cdd/unreleased/214/self-coherence.md"
+OUT="$TMP/substantial.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 214
+assert_exit "substantial scaffold fails without beta review" 1 "$RUN_EXIT"
+assert_grep "substantial gate names beta review" "missing beta-review.md" "$OUT"
+
+echo "## activation workflow derives cycle only from numeric cycle pushes"
+TEMPLATE="$SCRIPT_DIR/../src/packages/cnos.cdd/skills/cdd/activation/templates/github-actions/cdd-artifact-validate.yml"
+assert_grep "template rejects nonnumeric cycle refs" "CYCLE_NUMBER.*=~.*\[1-9\]" "$TEMPLATE"
+assert_not_grep "template excludes pull-request trigger" "pull_request:" "$TEMPLATE"
+assert_not_grep "template excludes main from artifact trigger" "- main" "$TEMPLATE"
+
+echo "## release script preserves unreleased receipts through disconnect"
+RELEASE_SCRIPT="$SCRIPT_DIR/release.sh"
+assert_not_grep "release script does not move cycle directories" "mv.*\.cdd/releases" "$RELEASE_SCRIPT"
+assert_grep "release script validates before tagging" "validate-release-gate.sh" "$RELEASE_SCRIPT"
 
 echo ""
 echo "================================================================"
