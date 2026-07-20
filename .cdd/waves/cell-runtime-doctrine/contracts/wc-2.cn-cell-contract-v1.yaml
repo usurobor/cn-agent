@@ -55,7 +55,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:99cd008da97dc4faf8c14cb9790d6a1f8187840f621c62554df27d27457a4013@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:a58c2c84dcbcad848e457d3302a0e704fbfd8547eb513ba6f451279628980939@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "coherence-measurement-contract"     # the cm_ref interface every other node imports
@@ -75,12 +75,15 @@ acceptance:
     - "reproducible__same_frozen_inputs_plus_provider_version_reproduce_the_mechanically_claimed_cm_result"
     - "cm_ref_field_shape_is_the_single_interface_all_other_nodes_import__no_second_cm_shape_introduced_downstream"
     - "emits_machine_readable_acceptance_fixtures_into_receipt__cm_object_json__cc_judgment_json__receipt_core_json__final_receipt_json__reject_fifth_schema_json__each_validated_by_the_named_acceptance_oracle_command"
+    # R9: WC-2 is the SOLE owner of the deferred Go ref/content-hash resolver; its PASS gates WC-2 completion.
+    - "deferred_validator_owned__go_ref_content_hash_resolver_emitted_by_wc2_positive_and_named_negative_fixtures_green_gates_wc2_completion"
     - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
 constraints:
   allowed_paths:
     - "docs/architecture/COHERENCE-MEASUREMENT.md"
     - ".cdd/unreleased/wc-2/**"
     - ".cdd/unreleased/wc-2/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
+    - ".cdd/unreleased/wc-2/validators/**"   # R9: WC-2's deferred Go ref/content-hash resolver + fixtures
   forbidden_paths:
     - "schemas/**"                 # implementing CM *fields* in CUE is #627 S2; building the CM *engine* is S3
     - "src/**"

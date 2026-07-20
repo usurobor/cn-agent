@@ -110,6 +110,21 @@ schemas, Go is for procedural code.* The prior rounds (R3–R7) shipped a hand-r
 The accepted decomposition (WC-2 → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), the §2 contracts, D9-four,
 grounding, and intent provenance are **unchanged** — R8 is a validation-tooling re-architecture only.
 
+### R9 disposition — faithful canonical §2 CUE + single-owner deferred validators + consistent completion
+
+**Source:** the external-β ITERATE on #672 (findings) and this Planning Cell's α repair (R9). Review→repair
+outcomes, not intent. The accepted six-node graph, D9-four, grounding, and intent provenance are **unchanged**.
+
+| # | Finding | R9 disposition |
+|---|---|---|
+| 1 | **[BLOCKER]** `#CellContract` did not faithfully encode canonical §2 (drifts β found) | Rewrote `schema/cell_contract.cue` so `#CellContract` is the **exact** `cn.cell.contract.v1` §2 shape: `scope.wave`/`scope.parent_cell` `string \| null`; `inputs.required` 1+ of the provenance-tagged union; `inputs.optional` external-locator refs **only** (a `sibling_output` in optional is rejected); the external locator union carries `repo_artifact \| control_plane \| **prior_receipt**`; `requested_output.kind` = `artifact \| relation_graph \| judgment`; `acceptance.predicates` 1+, `allowed_paths` 1+, `forbidden_paths`/`non_goals` required present keys (0+); `gates.reason` an always-present `string \| null` obeying the **truth table** (nonempty iff a gate bool true, null iff both false) via CUE conditionals; closed through `stop_conditions`. Added a named **`#WorkingCellContract`** refinement (class=working, kind=artifact) — the canonical shape is NOT narrowed; the 6 real WCs validate against the refinement, 4 canonical variants (nullable scope, optional `prior_receipt`, `relation_graph`, `judgment`) validate against `#CellContract`, and 7 new §2-drift negatives are rejected (plus all prior regressions). |
+| 2 | **[REQUIRED]** deferred Go validators had multi/slash owners ("WC-3b/WC-5", "#627 S2-S3") | Every `deferred-go` check now has **exactly one** in-wave `deferred_owner` (a single-valued enum; #627 is not a member and stays a downstream consumer/canonicalizer): **wc-2** ref/content-hash resolver; **wc-3b** DAG + edge-parity + write-surface; **wc-1** oracle-ownership bijection; **wc-5** completion-evidence + ledger + classification-totality bijection. Each of the 8 canonical wave-level validators pins a Go artifact id+path, typed inputs, a result/evidence shape, positive + named negative fixtures, downstream consumers, and a `gating_predicate`; each owner contract carries that gating acceptance predicate (PASS gates the owner's completion) + the validator path in `allowed_paths`. WC-5 depends (sibling_output) on wc-1/wc-2/wc-3b, so **WC-5 cannot seal until every deferred validator exists and passes**. |
+| 3 | **[REQUIRED]** completion constituents inconsistent; the 5 booleans were author-supplied | `required_constituents` now lists all **5** (added `evidence_bound`), and `#ChildCompleteDef` (CUE) pins both the list and the definition to the canonical constituent set (a dropped constituent is rejected NOW). Added a typed **resolver-input contract** `#CompletionEvidenceInput` (node/output identity + content binding, acceptance result set, V verdict/receipt binding, β/γ evidence locator, receipt identity/hash) + `#EvidenceResolver` (owned by WC-5): the 5 booleans are **derived** by resolving these bindings, not author-supplied; the fixture `records` are labelled truth-table fixtures; the resolver PASS binds into WC-5 closure. |
+
+**Ledger:** every `wave-revision:`/`revision:` marker advanced to **R9**; the content-hash chain re-pinned
+(oracle-registry → 6 contracts → wave `contract_sha256`); grounding/reconcile/intent files unchanged so
+their hashes stay. Contracts remain exactly §2 (now validated by the faithful CUE). **No Python.**
+
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 
 Recording this provenance on an immutable coordination index (an update to #627 or a named index

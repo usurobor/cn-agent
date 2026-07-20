@@ -1,5 +1,5 @@
-<!-- wave-revision: R8 -->
-# Acceptance oracles — honestly classified, registry-projected (cnos#671 R8)
+<!-- wave-revision: R9 -->
+# Acceptance oracles — honestly classified, registry-projected (cnos#671 R9)
 
 Every load-bearing acceptance predicate (wave + WC-1..WC-5) is classified as **exactly one** of five
 honest kinds. Nothing cognitive is dressed up as mechanical; a semantic-absence claim is **never**
@@ -25,9 +25,11 @@ a **Go checker or a CUE schema** the child WC emits.
   (`#CellContract`/`#Wave`/`#AssuranceRegistry`/`#Intent`). Credential-free; exits non-zero on any
   closed-struct / typed-field / enum / cardinality / required-field / pinned-const violation. **Not** a
   blanket soundness certificate — it warrants exactly the declared constraints, nothing beyond.
-- **deferred-go** — a **named Go validator** WC-1/WC-2 and #627 S2–S3 ship (procedural/semantic: DAG
-  acyclicity, edge parity, ref/hash resolution, classification bijection, completion-evidence
-  derivation). **Not** run at this tree; run when each WC executes. Named, not implemented (D9, option B).
+- **deferred-go** — a **named Go validator** with **exactly one** in-wave `deferred_owner` (procedural/
+  semantic: DAG acyclicity, edge parity, ref/hash resolution, classification/oracle-ownership bijection,
+  write-surface disjointness, ledger consistency, completion-evidence derivation). #627 is never the
+  owner (S2–S3 are downstream consumers/canonicalizers). **Not** run at this tree; run when the owning
+  WC executes. Named, not implemented (D9, option B).
 - **mechanically-verifiable** — a per-child acceptance oracle the child WC **emits** as a **Go checker**
   (`go run .cdd/unreleased/wc-N/fixtures/CHECKER.go FIXTURE.json`) **or a CUE schema**
   (`cue vet FIXTURE.json .cdd/unreleased/wc-N/fixtures/NAME.schema.cue`), with named positive/negative
@@ -37,11 +39,10 @@ a **Go checker or a CUE schema** the child WC emits.
 - **evidenced** — verified by **bound evidence in the receipt**, not self-report.
 - **cognitive-review** — an **independent β / CC doctrine judgment**, honestly **NOT mechanical**.
 
-**Summary counts (69 child acceptance predicates, one classification each):** structural-cue **1** ·
-deferred-go **10** · mechanically-verifiable **30** · evidenced **7** · cognitive-review **21**. The
-former "enforced" category is split honestly: the gate invariant is `structural-cue` (a CUE
-conditional); edge-parity / completion-evidence / oracle-ownership-bijection / readiness are
-`deferred-go`. Wave-only structural/deferred predicates live **separately** in `wave_predicates:`.
+**Summary counts (78 child acceptance predicates, one classification each):** structural-cue **1** ·
+deferred-go **19** · mechanically-verifiable **30** · evidenced **7** · cognitive-review **21**. R9 added
+the single-owner deferred-validator **gating predicates** (9), each a `deferred-go` entry with exactly one
+`deferred_owner`. Wave-only structural/deferred predicates live **separately** in `wave_predicates:`.
 
 ## Wave-level structural / deferred predicates
 
@@ -52,23 +53,24 @@ conditional); edge-parity / completion-evidence / oracle-ownership-bijection / r
 | registry shape + classification enum + per-category required fields | structural-cue | `cue vet ./schema/ ./oracle-registry.yaml -d '#AssuranceRegistry'` |
 | intent projection shape | structural-cue | `cue vet ./schema/ ./intent.cn-intent-v1.yaml -d '#Intent'` |
 | gate invariant (doctrine_affecting ⇒ operator_acceptance_required; reason required) | structural-cue | native `#CellContract` conditional |
-| R7-blocker regression coverage (20 bad fixtures each rejected) | structural-cue | `make -C schema regressions` |
-| immutable ref / content-hash resolution (intent id/schema; `commit:path`; revision hashes; grounding `9d1ab3a5…`) | deferred-go | Go ref/hash resolver (WC-1/#627 S2) |
-| edge parity (authored == sibling-output-derived) | deferred-go | Go edge-parity validator (WC-3b/WC-5) |
-| dependency graph is a DAG | deferred-go | Go DAG validator (WC-3b/WC-5) |
-| parallel nodes share no write surface | deferred-go | Go write-surface validator (WC-5) |
-| completion-evidence derivation (child_complete AND; predicate-graph acyclicity; fixture `expected`) | deferred-go | Go completion-evidence validator (WC-3b/WC-5) |
-| oracle-ownership bijection (registry ⇄ each child's mechanically-verifiable predicates) | deferred-go | Go oracle-bijection validator (WC-1/#627 S2–S3) |
-| classification totality bijection (`union(acceptance.predicates)` ⇄ registry, each once) | deferred-go | Go classification-bijection validator (WC-1/#627 S2–S3) |
-| ledger consistency (revision markers agree; per-category counts) | deferred-go | Go ledger validator (WC-5) |
+| §2-drift + wave-envelope regression coverage (27 bad fixtures each rejected) | structural-cue | `make -C schema regressions` |
+| immutable ref / content-hash resolution (intent id/schema; `commit:path`; revision hashes; grounding `9d1ab3a5…`) | deferred-go | **WC-2** — `.cdd/unreleased/wc-2/validators/ref_resolve.go` |
+| edge parity (authored == sibling-output-derived) | deferred-go | **WC-3b** — `.cdd/unreleased/wc-3b/validators/edge_parity.go` |
+| dependency graph is a DAG | deferred-go | **WC-3b** — `.cdd/unreleased/wc-3b/validators/wave_dag.go` |
+| parallel nodes share no write surface | deferred-go | **WC-3b** — `.cdd/unreleased/wc-3b/validators/write_surface.go` |
+| completion-evidence derivation (typed resolver input → 5 derived constituents; predicate-graph acyclicity; fixture `expected`) | deferred-go | **WC-5** — `.cdd/unreleased/wc-5/validators/completion_evidence.go` |
+| oracle-ownership bijection (registry ⇄ each child's mechanically-verifiable predicates) | deferred-go | **WC-1** — `.cdd/unreleased/wc-1/validators/oracle_ownership_bijection.go` |
+| classification totality bijection (`union(acceptance.predicates)` ⇄ registry, each once) | deferred-go | **WC-5** — `.cdd/unreleased/wc-5/validators/classification_bijection.go` |
+| ledger consistency (revision markers agree; per-category counts) | deferred-go | **WC-5** — `.cdd/unreleased/wc-5/validators/ledger_consistency.go` |
 
 ---
 
 ## Complete assurance classification — projection of the total registry
 
-One row per **every** child acceptance predicate (all six contracts, 69 rows), each classified into
+One row per **every** child acceptance predicate (all six contracts, 78 rows), each classified into
 **exactly one** category. Generated from `oracle-registry.yaml`; the `union(acceptance.predicates)` ⇄
-registry bijection that proves this projection total + singular is a **deferred-go** check.
+registry bijection that proves this projection total + singular is a **deferred-go** check (owned by WC-5).
+The 9 R9 single-owner deferred-validator gating predicates are listed in the dedicated block at the end.
 
 | owner | predicate | classification |
 |---|---|---|
@@ -183,9 +185,27 @@ registry ⇄ projection parity is a **deferred-go** check.
 | wc-5 | `reconcile_627_mapping_complete__every_S_node_classified_exactly_once_no_duplicate_owner_no_omitted_executable_child` | mechanically-verifiable | emitted | `.cdd/unreleased/wc-5/fixtures/reconcile_audit.go` | `.cdd/unreleased/wc-5/fixtures/reconcile-627-audit.positive.json` | `.cdd/unreleased/wc-5/fixtures/reconcile-627-double-owner.negative.json` |
 | wc-5 | `residual_debt_disposed__every_grounding_fail_is_closed_by_or_retired_instance_defect_or_tracked_follow_up_exactly_once` | mechanically-verifiable | emitted | `.cdd/unreleased/wc-5/fixtures/fail_disposition_audit.go` | `.cdd/unreleased/wc-5/fixtures/fail-disposition-audit.positive.json` | `.cdd/unreleased/wc-5/fixtures/fail-disposed-twice.negative.json` |
 
+### R9 single-owner deferred-validator gating predicates (9)
+
+Each is a child acceptance predicate whose PASS gates the owner's completion; classified `deferred-go`
+with exactly one `deferred_owner`. WC-5 depends (sibling_output) on wc-1/wc-2/wc-3b, so it cannot seal
+until every upstream validator passes.
+
+| owner | predicate | classification | deferred_owner |
+|---|---|---|---|
+| wc-1 | `deferred_validator_owned__go_oracle_ownership_bijection_validator_emitted_by_wc1_positive_and_named_negative_fixtures_green_gates_wc1_completion` | deferred-go | wc-1 |
+| wc-2 | `deferred_validator_owned__go_ref_content_hash_resolver_emitted_by_wc2_positive_and_named_negative_fixtures_green_gates_wc2_completion` | deferred-go | wc-2 |
+| wc-3b | `deferred_validator_owned__go_wave_dag_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion` | deferred-go | wc-3b |
+| wc-3b | `deferred_validator_owned__go_edge_parity_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion` | deferred-go | wc-3b |
+| wc-3b | `deferred_validator_owned__go_write_surface_disjointness_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion` | deferred-go | wc-3b |
+| wc-5 | `deferred_validator_owned__go_completion_evidence_validator_emitted_by_wc5_typed_resolver_input_derives_the_five_constituents_positive_and_named_negative_fixtures_green_gates_wc5_completion` | deferred-go | wc-5 |
+| wc-5 | `deferred_validator_owned__go_ledger_consistency_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion` | deferred-go | wc-5 |
+| wc-5 | `deferred_validator_owned__go_classification_totality_bijection_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion` | deferred-go | wc-5 |
+| wc-5 | `seal_readiness_consumes_every_upstream_deferred_validator_pass__wc1_oracle_ownership__wc2_ref_content_hash_resolution__wc3b_dag_edge_parity_write_surface__each_bound_pass_is_a_precondition_of_wc5_readiness_via_child_complete` | deferred-go | wc-5 |
+
 ---
 
 *Rows marked **cognitive-review** are honestly not mechanical: an independent β (outside the Sigma
 lineage) or a CC doctrine judgment decides them. Rows marked **deferred-go** are procedural/semantic
-checks a named Go validator (WC-1/WC-2, #627 S2–S3) runs when the WC executes — not at this tree, and
-never in Python.*
+checks a **single-owner** Go validator runs when the owning WC executes — not at this tree, and never
+in Python. #627 S2–S3 are downstream consumers/canonicalizers, never the owner.*

@@ -1,13 +1,24 @@
 # oracle-registry.yaml — AUTHORITATIVE, TOTAL assurance-classification registry (cnos#671)
-# wave-revision: R8
+# wave-revision: R9
+#
+# R9 (Required 2): every deferred-go procedural check is owned by EXACTLY ONE in-wave producer WC —
+# pinned as a single `deferred_owner` enum (no slash-alternatives, and never #627: #627 S2–S3 stay
+# DOWNSTREAM consumers/canonicalizers, not owners of this wave's closure evidence). Single-owner map:
+# wc-2 = ref/content-hash resolver; wc-3b = DAG + edge-parity + write-surface; wc-1 = oracle-ownership
+# bijection; wc-5 = completion-evidence + ledger + classification-totality bijection. Each owner
+# contract pins a gating acceptance predicate whose PASS gates its completion, and the eight canonical
+# wave-level validators pin a Go artifact id+path, typed inputs, a result/evidence shape, positive +
+# named negative fixtures, and downstream consumers (see wave_predicates). WC-5 depends (sibling_output)
+# on wc-1/wc-2/wc-3b, so it CANNOT SEAL until every deferred validator exists and passes.
 #
 # R8 re-architecture (operator directive: Go + CUE repo, NO Python). The prior rounds enforced the
 # wave-level structural predicates with a hand-rolled Python validator (validate.py) — a tool-choice
-# error, now removed entirely. Structural pre-authorization validation is CUE: `cue vet` against the
-# plan-local closed schemas under ./schema/ (#CellContract, #Wave, #AssuranceRegistry, #Intent).
-# Procedural/semantic checks CUE cannot express (DAG acyclicity, sibling-output edge PARITY, git
-# ref/content-hash resolution, the classification bijection, completion-evidence derivation) are
-# NAMED-AND-DEFERRED to Go validators WC-1/WC-2 and #627 S2–S3 ship, run when each WC executes.
+# error, removed entirely. Structural pre-authorization validation is CUE: `cue vet` against the
+# plan-local closed schemas under ./schema/ (the FAITHFUL canonical #CellContract + its #WorkingCellContract
+# refinement, #Wave, #AssuranceRegistry, #Intent). Procedural/semantic checks CUE cannot express (DAG
+# acyclicity, sibling-output edge PARITY, git ref/content-hash resolution, the classification bijection,
+# write-surface disjointness, ledger consistency, completion-evidence derivation) are NAMED-AND-DEFERRED
+# to the single-owner Go validators above, run when each owning WC executes.
 #
 # This registry stays TOTAL over every child acceptance predicate; the bijection registry <->
 # union(child acceptance.predicates) is itself one of the DEFERRED-GO checks. acceptance-oracles.md
@@ -16,7 +27,8 @@
 #
 # Categories (each entry carries exactly one) and their required fields:
 #   structural-cue          -> enforced_by (the `cue vet` invocation + #Def that decides it NOW)
-#   deferred-go             -> deferred_to (the named Go validator WC-1/WC-2/#627 ships; not run here)
+#   deferred-go             -> deferred_owner (the SINGLE in-wave WC that ships it) + deferred_to
+#                              (the named Go validator; not run here). #627 is never a deferred_owner.
 #   mechanically-verifiable -> ownership + checker|schema + positive_fixture + negative_fixture +
 #                              command + receipt_evidence_predicate (a credential-free Go/CUE command,
 #                              NOT Python — the child WC emits a Go checker or a CUE schema)
@@ -26,7 +38,7 @@
 # registry via a canonical inputs.required[].external control_plane ref (content-hash pinned).
 schema: cn.assurance-registry.v1
 wave: "671"
-revision: "R8"
+revision: "R9"
 # ---- assurance: TOTAL over every child acceptance predicate (owner, predicate) ----
 assurance:
   # ---- WC-1 — cell classes & typed cell contract (12) ----
@@ -92,7 +104,8 @@ assurance:
   - owner: "wc-1"
     predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
     classification: "deferred-go"
-    deferred_to: "Go oracle-ownership bijection validator (WC-1 emits; #627 S2-S3): total+singular map registry <-> union(child acceptance.predicates), each mechanically-verifiable predicate owned exactly once, its Go/CUE checker + fixtures bound in the receipt"
+    deferred_owner: "wc-1"
+    deferred_to: "Go oracle-ownership bijection validator (owned solely by WC-1; #627 S2-S3 downstream canonicalizer, not owner): every mechanically-verifiable predicate binds exactly one concrete Go/CUE checker + fixtures, owned exactly once, bound in the receipt"
   # ---- WC-2 — coherence-measurement contract [keystone root] (13) ----
   - owner: "wc-2"
     predicate: "cm_defined_as_runner_or_provider_produced_object__producer_is_cm_provider_or_runtime_op_eg_tsc_not_cc"
@@ -185,7 +198,8 @@ assurance:
   - owner: "wc-2"
     predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
     classification: "deferred-go"
-    deferred_to: "Go oracle-ownership bijection validator (WC-1 emits; #627 S2-S3): total+singular map registry <-> union(child acceptance.predicates), each mechanically-verifiable predicate owned exactly once, its Go/CUE checker + fixtures bound in the receipt"
+    deferred_owner: "wc-1"
+    deferred_to: "Go oracle-ownership bijection validator (owned solely by WC-1; #627 S2-S3 downstream canonicalizer, not owner): every mechanically-verifiable predicate binds exactly one concrete Go/CUE checker + fixtures, owned exactly once, bound in the receipt"
   # ---- WC-3a — cell FSM (12) ----
   - owner: "wc-3a"
     predicate: "cell_fsm_state_set_closed_and_declared__blocked_is_a_declared_member_not_only_a_transition_target"
@@ -264,7 +278,8 @@ assurance:
   - owner: "wc-3a"
     predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
     classification: "deferred-go"
-    deferred_to: "Go oracle-ownership bijection validator (WC-1 emits; #627 S2-S3): total+singular map registry <-> union(child acceptance.predicates), each mechanically-verifiable predicate owned exactly once, its Go/CUE checker + fixtures bound in the receipt"
+    deferred_owner: "wc-1"
+    deferred_to: "Go oracle-ownership bijection validator (owned solely by WC-1; #627 S2-S3 downstream canonicalizer, not owner): every mechanically-verifiable predicate binds exactly one concrete Go/CUE checker + fixtures, owned exactly once, bound in the receipt"
   # ---- WC-3b — wave FSM (12) ----
   - owner: "wc-3b"
     predicate: "wave_fsm_state_set_closed__intent_planning_required_d0_review_wave_planning_wave_review_dispatchable_executing_holding_replanning_completing_complete_complete_with_residuals"
@@ -330,7 +345,8 @@ assurance:
   - owner: "wc-3b"
     predicate: "child_and_whole_wave_completion_predicates_defined__derived_from_child_acceptance_v_receipt_surfaces_not_a_new_contract_field"
     classification: "deferred-go"
-    deferred_to: "Go completion-evidence validator (WC-3b/WC-5, #627 S2-S3): derives child_complete(n) from each node's bound constituent record, proves the predicate graph acyclic, and asserts each fixture computes its authored `expected`; the completion SHAPE (pinned wave_complete const + closed 5-bool records) is fixed NOW by cue vet #Wave"
+    deferred_owner: "wc-5"
+    deferred_to: "Go completion-evidence validator (owned solely by WC-5; #627 S2-S3 downstream consumers, not owners): resolves each node's typed evidence bindings into the 5 derived constituents, derives child_complete(n), proves the predicate graph acyclic, and asserts each fixture computes its authored `expected`; the completion SHAPE (pinned wave_complete const + closed 5-bool records incl. evidence_bound) is fixed NOW by cue vet #Wave"
   - owner: "wc-3b"
     predicate: "emits_machine_readable_acceptance_fixtures_into_receipt__wave_fsm_state_table_json__and_eight_disposition_to_transition_map_json__for_totality_and_mapping_oracles"
     classification: "evidenced"
@@ -338,7 +354,8 @@ assurance:
   - owner: "wc-3b"
     predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
     classification: "deferred-go"
-    deferred_to: "Go oracle-ownership bijection validator (WC-1 emits; #627 S2-S3): total+singular map registry <-> union(child acceptance.predicates), each mechanically-verifiable predicate owned exactly once, its Go/CUE checker + fixtures bound in the receipt"
+    deferred_owner: "wc-1"
+    deferred_to: "Go oracle-ownership bijection validator (owned solely by WC-1; #627 S2-S3 downstream canonicalizer, not owner): every mechanically-verifiable predicate binds exactly one concrete Go/CUE checker + fixtures, owned exactly once, bound in the receipt"
   # ---- WC-4 — shipped->specified migration (9) ----
   - owner: "wc-4"
     predicate: "versioned_projection_specified__cnos_cdd_contract_v1_to_cn_cell_contract_v1_with_a_named_version_and_direction"
@@ -395,7 +412,8 @@ assurance:
   - owner: "wc-4"
     predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
     classification: "deferred-go"
-    deferred_to: "Go oracle-ownership bijection validator (WC-1 emits; #627 S2-S3): total+singular map registry <-> union(child acceptance.predicates), each mechanically-verifiable predicate owned exactly once, its Go/CUE checker + fixtures bound in the receipt"
+    deferred_owner: "wc-1"
+    deferred_to: "Go oracle-ownership bijection validator (owned solely by WC-1; #627 S2-S3 downstream canonicalizer, not owner): every mechanically-verifiable predicate binds exactly one concrete Go/CUE checker + fixtures, owned exactly once, bound in the receipt"
   # ---- WC-5 — integration seal (11) ----
   - owner: "wc-5"
     predicate: "cross_artifact_vocabulary_consistent__one_canonical_input_ref_and_requested_output_vocabulary_one_cm_object_one_kappa_neq_alpha_logic_across_wc1_through_wc4"
@@ -413,7 +431,8 @@ assurance:
   - owner: "wc-5"
     predicate: "graph_parity__wave_edges_equal_the_sibling_output_relations_exactly_no_missing_or_spurious_edge"
     classification: "deferred-go"
-    deferred_to: "Go edge-parity validator (WC-3b/WC-5): the authored wave edge set equals the set derived from child sibling_output refs, exactly (no missing or spurious edge)"
+    deferred_owner: "wc-3b"
+    deferred_to: "Go edge-parity validator (owned solely by WC-3b): the authored wave edge set equals the set derived from child sibling_output refs, exactly (no missing or spurious edge)"
   - owner: "wc-5"
     predicate: "migration_round_trips__wc4_round_trip_oracle_is_green_on_the_named_fixtures"
     classification: "mechanically-verifiable"
@@ -448,11 +467,13 @@ assurance:
   - owner: "wc-5"
     predicate: "wc5_readiness_over_non_recursive_construction_set_N__a_completion_receipt_exists_for_every_node_in_N_where_N_equals_wc1_wc2_wc3a_wc3b_wc4_and_excludes_wc5"
     classification: "deferred-go"
-    deferred_to: "Go completion-evidence validator (WC-3b/WC-5, #627 S2-S3): derives child_complete(n) from each node's bound constituent record, proves the predicate graph acyclic, and asserts each fixture computes its authored `expected`; the completion SHAPE (pinned wave_complete const + closed 5-bool records) is fixed NOW by cue vet #Wave"
+    deferred_owner: "wc-5"
+    deferred_to: "Go completion-evidence validator (owned solely by WC-5; #627 S2-S3 downstream consumers, not owners): resolves each node's typed evidence bindings into the 5 derived constituents, derives child_complete(n), proves the predicate graph acyclic, and asserts each fixture computes its authored `expected`; the completion SHAPE (pinned wave_complete const + closed 5-bool records incl. evidence_bound) is fixed NOW by cue vet #Wave"
   - owner: "wc-5"
     predicate: "wc5_own_completion_is_non_recursive__wc5_requested_output_produced_plus_wc5_acceptance_pass_plus_integration_v_pass_plus_bound_receipt__does_not_quantify_over_wc5_itself_nor_over_the_whole_wave_predicate"
     classification: "deferred-go"
-    deferred_to: "Go completion-evidence validator (WC-3b/WC-5, #627 S2-S3): derives child_complete(n) from each node's bound constituent record, proves the predicate graph acyclic, and asserts each fixture computes its authored `expected`; the completion SHAPE (pinned wave_complete const + closed 5-bool records) is fixed NOW by cue vet #Wave"
+    deferred_owner: "wc-5"
+    deferred_to: "Go completion-evidence validator (owned solely by WC-5; #627 S2-S3 downstream consumers, not owners): resolves each node's typed evidence bindings into the 5 derived constituents, derives child_complete(n), proves the predicate graph acyclic, and asserts each fixture computes its authored `expected`; the completion SHAPE (pinned wave_complete const + closed 5-bool records incl. evidence_bound) is fixed NOW by cue vet #Wave"
   - owner: "wc-5"
     predicate: "emits_machine_readable_acceptance_fixtures_into_receipt__reconcile_627_audit_json__fail_disposition_audit_json__vocab_consistency_json__schema_fixture_log_json__for_the_integration_seal_oracles"
     classification: "evidenced"
@@ -460,43 +481,181 @@ assurance:
   - owner: "wc-5"
     predicate: "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
     classification: "deferred-go"
-    deferred_to: "Go oracle-ownership bijection validator (WC-1 emits; #627 S2-S3): total+singular map registry <-> union(child acceptance.predicates), each mechanically-verifiable predicate owned exactly once, its Go/CUE checker + fixtures bound in the receipt"
+    deferred_owner: "wc-1"
+    deferred_to: "Go oracle-ownership bijection validator (owned solely by WC-1; #627 S2-S3 downstream canonicalizer, not owner): every mechanically-verifiable predicate binds exactly one concrete Go/CUE checker + fixtures, owned exactly once, bound in the receipt"
+
+  # ---- R9: deferred-validator OWNERSHIP gating predicates (one per single-owner Go validator) ----
+  # Each is a child acceptance predicate whose PASS gates the owning child's completion; every one is
+  # classified deferred-go with a SINGLE deferred_owner. WC-5 depends (sibling_output) on wc-1/wc-2/
+  # wc-3b, so it cannot seal until every upstream validator passes; WC-5's own three gate WC-5.
+  - owner: "wc-1"
+    predicate: "deferred_validator_owned__go_oracle_ownership_bijection_validator_emitted_by_wc1_positive_and_named_negative_fixtures_green_gates_wc1_completion"
+    classification: "deferred-go"
+    deferred_owner: "wc-1"
+    deferred_to: "PASS of the WC-1-owned Go oracle-ownership bijection validator (.cdd/unreleased/wc-1/validators/oracle_ownership_bijection.go) on its positive + named negative fixtures gates WC-1 completion; see wave_predicates.wave_oracle_ownership_bijection_enforced for the full spec"
+  - owner: "wc-2"
+    predicate: "deferred_validator_owned__go_ref_content_hash_resolver_emitted_by_wc2_positive_and_named_negative_fixtures_green_gates_wc2_completion"
+    classification: "deferred-go"
+    deferred_owner: "wc-2"
+    deferred_to: "PASS of the WC-2-owned Go ref/content-hash resolver (.cdd/unreleased/wc-2/validators/ref_resolve.go) on its positive + named negative fixtures gates WC-2 completion; see wave_predicates.wave_immutable_ref_resolution_deferred for the full spec"
+  - owner: "wc-3b"
+    predicate: "deferred_validator_owned__go_wave_dag_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
+    classification: "deferred-go"
+    deferred_owner: "wc-3b"
+    deferred_to: "PASS of the WC-3b-owned Go DAG validator (.cdd/unreleased/wc-3b/validators/wave_dag.go) gates WC-3b completion; see wave_predicates.wave_dependency_graph_is_a_dag_deferred"
+  - owner: "wc-3b"
+    predicate: "deferred_validator_owned__go_edge_parity_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
+    classification: "deferred-go"
+    deferred_owner: "wc-3b"
+    deferred_to: "PASS of the WC-3b-owned Go edge-parity validator (.cdd/unreleased/wc-3b/validators/edge_parity.go) gates WC-3b completion; see wave_predicates.wave_edge_parity_enforced"
+  - owner: "wc-3b"
+    predicate: "deferred_validator_owned__go_write_surface_disjointness_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
+    classification: "deferred-go"
+    deferred_owner: "wc-3b"
+    deferred_to: "PASS of the WC-3b-owned Go write-surface disjointness validator (.cdd/unreleased/wc-3b/validators/write_surface.go) gates WC-3b completion; see wave_predicates.wave_parallel_write_surface_disjoint_deferred"
+  - owner: "wc-5"
+    predicate: "deferred_validator_owned__go_completion_evidence_validator_emitted_by_wc5_typed_resolver_input_derives_the_five_constituents_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    classification: "deferred-go"
+    deferred_owner: "wc-5"
+    deferred_to: "PASS of the WC-5-owned Go completion-evidence validator (.cdd/unreleased/wc-5/validators/completion_evidence.go), which RESOLVES the typed #CompletionEvidenceInput bindings into the 5 derived constituents, gates WC-5 completion; see wave_predicates.wave_completion_relation_acyclic_and_fixtures_evaluated_enforced"
+  - owner: "wc-5"
+    predicate: "deferred_validator_owned__go_ledger_consistency_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    classification: "deferred-go"
+    deferred_owner: "wc-5"
+    deferred_to: "PASS of the WC-5-owned Go ledger consistency validator (.cdd/unreleased/wc-5/validators/ledger_consistency.go) gates WC-5 completion; see wave_predicates.wave_ledger_consistency_deferred"
+  - owner: "wc-5"
+    predicate: "deferred_validator_owned__go_classification_totality_bijection_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    classification: "deferred-go"
+    deferred_owner: "wc-5"
+    deferred_to: "PASS of the WC-5-owned Go classification-totality bijection validator (.cdd/unreleased/wc-5/validators/classification_bijection.go) gates WC-5 completion; see wave_predicates.wave_classification_totality_bijection_deferred"
+  - owner: "wc-5"
+    predicate: "seal_readiness_consumes_every_upstream_deferred_validator_pass__wc1_oracle_ownership__wc2_ref_content_hash_resolution__wc3b_dag_edge_parity_write_surface__each_bound_pass_is_a_precondition_of_wc5_readiness_via_child_complete"
+    classification: "deferred-go"
+    deferred_owner: "wc-5"
+    deferred_to: "PASS of the WC-5-owned Go completion-evidence validator additionally requires that every UPSTREAM owner's deferred validator PASS is bound (via the sibling_output edges wc-1/wc-2/wc-3b -> wc-5) into each producer's child_complete before wc5_ready; a missing/failed upstream validator holds the seal (see wave.stop_conditions.failed_predecessor)"
 
 # ---- wave_predicates: WAVE-ONLY structural/deferred predicates (separate; not child-owned) ----
 # Held apart from `assurance` so they can neither inflate nor mask child acceptance coverage (the
 # deferred-go classification-bijection validator rejects any overlap). Each is either structural-cue
-# (a `cue vet` against a plan-local #Def, run NOW) or deferred-go (a named Go validator WC/#627 ships).
+# (a `cue vet` against a plan-local #Def, run NOW) or deferred-go (a named Go validator ships it).
+#
+# R9 (Required 2): every deferred-go validator has EXACTLY ONE in-wave owner (`deferred_owner`, a
+# single WC — no slash-alternative, never #627) and pins a stable Go artifact id+path, typed inputs,
+# a result/evidence shape, positive + named negative fixtures, downstream consumers, and a
+# `gating_predicate` — an acceptance predicate on the OWNER contract whose PASS gates that owner's
+# completion. #627 S2–S3 stay DOWNSTREAM consumers/canonicalizers, not owners.
+#
+# Owner map (single owner each):
+#   wc-2  -> ref/content-hash resolver
+#   wc-3b -> DAG acyclicity, sibling-output↔edge parity, parallel write-surface disjointness
+#   wc-1  -> oracle-ownership bijection (each mechanically-verifiable predicate binds one checker)
+#   wc-5  -> completion-evidence derivation, ledger consistency, classification-totality bijection
+# WC-5 depends (sibling_output edges) on wc-1/wc-2/wc-3b, and each owner's gating_predicate is a
+# constituent of its child_complete; since wc5_ready = all(N) child_complete, WC-5 CANNOT SEAL until
+# every deferred validator exists and PASSES. WC-5's own three validators gate WC-5's own completion.
 wave_predicates:
   - predicate: "wave_section2_constraint_model_structural"
     classification: "structural-cue"
-    enforced_by: "cue vet ./schema/ ./contracts/<wc>.cn-cell-contract-v1.yaml -d '#CellContract' (closed §2 struct: unknown top-level key, wrong type, bad enum -> reject)"
+    enforced_by: "cue vet ./schema/ ./contracts/<wc>.cn-cell-contract-v1.yaml -d '#WorkingCellContract' (faithful §2 #CellContract refined for WCs: closed struct, nullable scope, 1+ cardinalities, prior_receipt locator, all output kinds, gate truth-table -> unknown key / wrong type / bad enum / drift rejected)"
   - predicate: "wave_immutable_ref_resolution_deferred"
     classification: "deferred-go"
-    deferred_to: "Go ref/hash resolver (WC-1/#627 S2): resolves each intent_ref.id vs the intent object, every repo_artifact commit:path via git cat-file, and every control_plane revision content hash (incl. the oracle-registry ref) + the grounding source hash 9d1ab3a5"
+    deferred_owner: "wc-2"
+    deferred_to: "Go ref/content-hash resolver (owned solely by WC-2; #627 S2 is a downstream consumer/canonicalizer, not the owner): resolves each intent_ref.id vs the intent object, every repo_artifact commit:path via git cat-file, and every control_plane/prior_receipt revision content hash (incl. the oracle-registry ref) + the grounding source hash 9d1ab3a5"
+    go_artifact_id: "wc2-ref-content-hash-resolver"
+    go_artifact_path: ".cdd/unreleased/wc-2/validators/ref_resolve.go"
+    inputs: "the wave + 6 contracts: every intent_ref.id, repo_artifact {repo,commit,path}, control_plane {ref,revision}, prior_receipt {receipt,binding}, and the grounding source/derivative/reconcile content_hashes"
+    result_shape: "[]{ ref_locator, kind, resolved: bool, computed_digest, expected_digest, match: bool }; overall_ok = every entry resolved && match"
+    positive_fixture: ".cdd/unreleased/wc-2/validators/fixtures/ref-resolve.all-pinned.positive.yaml"
+    negative_fixture: ".cdd/unreleased/wc-2/validators/fixtures/ref-resolve.identity-only-revision.negative.yaml"
+    downstream_consumers: [ "wc-5" ]
+    gating_predicate: "deferred_validator_owned__go_ref_content_hash_resolver_emitted_by_wc2_positive_and_named_negative_fixtures_green_gates_wc2_completion"
   - predicate: "wave_edge_parity_enforced"
     classification: "deferred-go"
-    deferred_to: "Go edge-parity validator (WC-3b/WC-5): the authored wave edge set equals the set derived from child sibling_output refs, exactly (no missing or spurious edge)"
+    deferred_owner: "wc-3b"
+    deferred_to: "Go edge-parity validator (owned solely by WC-3b): the authored wave edge set equals the set derived from child sibling_output refs, exactly (no missing or spurious edge)"
+    go_artifact_id: "wc3b-edge-parity-validator"
+    go_artifact_path: ".cdd/unreleased/wc-3b/validators/edge_parity.go"
+    inputs: "wave.edges + the sibling_output refs across the 6 contracts (producer + output_id resolving to producer.requested_output.id)"
+    result_shape: "{ authored_edges: [], derived_edges: [], missing: [], spurious: [], parity: bool }"
+    positive_fixture: ".cdd/unreleased/wc-3b/validators/fixtures/edge-parity.exact.positive.yaml"
+    negative_fixture: ".cdd/unreleased/wc-3b/validators/fixtures/edge-parity.spurious-edge.negative.yaml"
+    downstream_consumers: [ "wc-5" ]
+    gating_predicate: "deferred_validator_owned__go_edge_parity_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
   - predicate: "wave_dependency_graph_is_a_dag_deferred"
     classification: "deferred-go"
-    deferred_to: "Go DAG validator (WC-3b/WC-5): the dependency graph derived from sibling_output refs is acyclic (real topological analysis)"
+    deferred_owner: "wc-3b"
+    deferred_to: "Go DAG validator (owned solely by WC-3b): the dependency graph derived from sibling_output refs is acyclic (real topological analysis)"
+    go_artifact_id: "wc3b-wave-dag-validator"
+    go_artifact_path: ".cdd/unreleased/wc-3b/validators/wave_dag.go"
+    inputs: "the edge set derived from sibling_output refs (producer -> consumer)"
+    result_shape: "{ topo_order: [], acyclic: bool, cycle_witness: [] }"
+    positive_fixture: ".cdd/unreleased/wc-3b/validators/fixtures/dag.acyclic.positive.yaml"
+    negative_fixture: ".cdd/unreleased/wc-3b/validators/fixtures/dag.injected-cycle.negative.yaml"
+    downstream_consumers: [ "wc-5" ]
+    gating_predicate: "deferred_validator_owned__go_wave_dag_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
   - predicate: "wave_parallel_write_surface_disjoint_deferred"
     classification: "deferred-go"
-    deferred_to: "Go write-surface validator (WC-5): concurrently-schedulable nodes share no allowed_paths write surface (set-intersection over resolved globs)"
+    deferred_owner: "wc-3b"
+    deferred_to: "Go write-surface disjointness validator (owned solely by WC-3b): concurrently-schedulable nodes share no allowed_paths write surface (set-intersection over resolved globs)"
+    go_artifact_id: "wc3b-write-surface-validator"
+    go_artifact_path: ".cdd/unreleased/wc-3b/validators/write_surface.go"
+    inputs: "per-node constraints.allowed_paths globs + the derived schedule levels (concurrently-schedulable node sets)"
+    result_shape: "{ level_sets: [], overlaps: [{a,b,shared_glob}], disjoint: bool }"
+    positive_fixture: ".cdd/unreleased/wc-3b/validators/fixtures/write-surface.disjoint.positive.yaml"
+    negative_fixture: ".cdd/unreleased/wc-3b/validators/fixtures/write-surface.overlap.negative.yaml"
+    downstream_consumers: [ "wc-5" ]
+    gating_predicate: "deferred_validator_owned__go_write_surface_disjointness_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
   - predicate: "wave_gate_invariants_enforced"
     classification: "structural-cue"
-    enforced_by: "cue vet ./schema/ ./contracts/<wc>.cn-cell-contract-v1.yaml -d '#CellContract' (native gate-invariant conditional: doctrine_affecting => operator_acceptance_required: true; reason required when a gate bool is true)"
+    enforced_by: "cue vet ./schema/ ./contracts/<wc>.cn-cell-contract-v1.yaml -d '#WorkingCellContract' (native gate truth-table: doctrine_affecting => operator_acceptance_required: true; reason a nonempty string iff a gate bool is true, null iff both false)"
   - predicate: "wave_completion_relation_acyclic_and_fixtures_evaluated_enforced"
     classification: "deferred-go"
-    deferred_to: "Go completion-evidence validator (WC-3b/WC-5, #627 S2-S3): derives child_complete(n) from each node's bound constituent record, proves the predicate graph acyclic, and asserts each fixture computes its authored `expected`; the completion SHAPE (pinned wave_complete const + closed 5-bool records) is fixed NOW by cue vet #Wave"
+    deferred_owner: "wc-5"
+    deferred_to: "Go completion-evidence validator (owned solely by WC-5; #627 S2-S3 are downstream consumers, not owners): RESOLVES each node's typed evidence bindings (output digest/path, acceptance result set, V verdict/receipt binding, β/γ evidence locator, receipt identity/hash) into the 5 derived constituent booleans, derives child_complete(n), proves the predicate graph acyclic, and asserts each fixture computes its authored `expected`; the completion SHAPE (pinned wave_complete const + closed 5-bool records + evidence_bound constituent) is fixed NOW by cue vet #Wave"
+    go_artifact_id: "wc5-completion-evidence-validator"
+    go_artifact_path: ".cdd/unreleased/wc-5/validators/completion_evidence.go"
+    inputs: "per-node #CompletionEvidenceInput (see wave.cue): node/output identity + content binding, acceptance_result_set, v_verdict/receipt binding, evidence_locator, receipt identity/hash — NOT author-supplied booleans"
+    result_shape: "per node { derived: #ChildRecord (5 booleans DERIVED by resolving the bindings), child_complete: bool }; per fixture { computed_expected, authored_expected, match: bool }"
+    positive_fixture: ".cdd/unreleased/wc-5/validators/fixtures/completion.derived-equals-expected.positive.yaml"
+    negative_fixture: ".cdd/unreleased/wc-5/validators/fixtures/completion.naked-true-ignores-constituent.negative.yaml"
+    downstream_consumers: [ "wc-5" ]
+    gating_predicate: "deferred_validator_owned__go_completion_evidence_validator_emitted_by_wc5_typed_resolver_input_derives_the_five_constituents_positive_and_named_negative_fixtures_green_gates_wc5_completion"
   - predicate: "wave_oracle_ownership_bijection_enforced"
     classification: "deferred-go"
-    deferred_to: "Go oracle-ownership bijection validator (WC-1 emits; #627 S2-S3): total+singular map registry <-> union(child acceptance.predicates), each mechanically-verifiable predicate owned exactly once, its Go/CUE checker + fixtures bound in the receipt"
+    deferred_owner: "wc-1"
+    deferred_to: "Go oracle-ownership bijection validator (owned solely by WC-1; #627 S2-S3 downstream canonicalizer, not owner): every mechanically-verifiable predicate binds exactly one concrete Go/CUE checker + fixtures, owned exactly once, bound in the receipt (registry checker-ownership side)"
+    go_artifact_id: "wc1-oracle-ownership-bijection-validator"
+    go_artifact_path: ".cdd/unreleased/wc-1/validators/oracle_ownership_bijection.go"
+    inputs: "the oracle-registry assurance entries with classification == mechanically-verifiable (predicate -> {checker|schema, positive_fixture, negative_fixture, command})"
+    result_shape: "{ predicate_to_checker: {}, unowned: [], double_owned: [], missing_fixture: [], bijective: bool }"
+    positive_fixture: ".cdd/unreleased/wc-1/validators/fixtures/oracle-ownership.one-checker-each.positive.yaml"
+    negative_fixture: ".cdd/unreleased/wc-1/validators/fixtures/oracle-ownership.double-owned.negative.yaml"
+    downstream_consumers: [ "wc-5" ]
+    gating_predicate: "deferred_validator_owned__go_oracle_ownership_bijection_validator_emitted_by_wc1_positive_and_named_negative_fixtures_green_gates_wc1_completion"
   - predicate: "wave_ledger_consistency_deferred"
     classification: "deferred-go"
-    deferred_to: "Go ledger validator (WC-5): every wave-revision: marker agrees; reported per-category counts == the totals derived from this registry; every classification is a single enum member"
+    deferred_owner: "wc-5"
+    deferred_to: "Go ledger consistency validator (owned solely by WC-5): every wave-revision: marker agrees (R9); reported per-category counts == the totals derived from this registry; every classification is a single enum member"
+    go_artifact_id: "wc5-ledger-consistency-validator"
+    go_artifact_path: ".cdd/unreleased/wc-5/validators/ledger_consistency.go"
+    inputs: "every `wave-revision:`/`revision:` marker across the matter files + the registry per-category counts"
+    result_shape: "{ revisions_seen: [], all_R9: bool, category_counts: {}, counts_agree: bool, single_enum: bool }"
+    positive_fixture: ".cdd/unreleased/wc-5/validators/fixtures/ledger.all-r9-counts-agree.positive.yaml"
+    negative_fixture: ".cdd/unreleased/wc-5/validators/fixtures/ledger.revision-skew.negative.yaml"
+    downstream_consumers: [ "wc-5" ]
+    gating_predicate: "deferred_validator_owned__go_ledger_consistency_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"
   - predicate: "wave_classification_totality_bijection_deferred"
     classification: "deferred-go"
-    deferred_to: "Go classification-bijection validator (WC-1/#627 S2-S3): union(child acceptance.predicates) <-> the child-owned assurance entries, each classified exactly once across all five categories (rejects unclassified/double-classified/phantom/bad-category/parity-break)"
+    deferred_owner: "wc-5"
+    deferred_to: "Go classification-totality bijection validator (owned solely by WC-5; #627 S2-S3 downstream consumer, not owner): union(child acceptance.predicates) <-> the child-owned assurance entries, each classified exactly once across all five categories (rejects unclassified/double-classified/phantom/bad-category/parity-break)"
+    go_artifact_id: "wc5-classification-totality-bijection-validator"
+    go_artifact_path: ".cdd/unreleased/wc-5/validators/classification_bijection.go"
+    inputs: "union(child acceptance.predicates) across the 6 contracts + the assurance[] entries (owner, predicate, classification)"
+    result_shape: "{ predicates: [], entries: [], unclassified: [], double_classified: [], phantom: [], bad_category: [], bijective: bool }"
+    positive_fixture: ".cdd/unreleased/wc-5/validators/fixtures/classification.total-and-singular.positive.yaml"
+    negative_fixture: ".cdd/unreleased/wc-5/validators/fixtures/classification.omitted-predicate.negative.yaml"
+    downstream_consumers: [ "wc-5" ]
+    gating_predicate: "deferred_validator_owned__go_classification_totality_bijection_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"
   - predicate: "wave_envelope_constraints_structural"
     classification: "structural-cue"
     enforced_by: "cue vet ./schema/ ./wave.cn-wave-v1.yaml -d '#Wave' (closed envelope: schema const + top-level key set + types; node/edge shape + uniqueness; nonempty typed external_roots + STOP set; required gates.wave_authorization revision-bound fields; required contract_ref_resolution fields; pinned edge_derivation constants; pinned completion wave_complete const + closed 5-bool records; duplicate mapping keys rejected)"

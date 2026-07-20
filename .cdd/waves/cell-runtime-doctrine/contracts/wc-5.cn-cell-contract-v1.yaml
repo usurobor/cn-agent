@@ -50,7 +50,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:99cd008da97dc4faf8c14cb9790d6a1f8187840f621c62554df27d27457a4013@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:a58c2c84dcbcad848e457d3302a0e704fbfd8547eb513ba6f451279628980939@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "cell-runtime-integration-seal"
@@ -68,12 +68,19 @@ acceptance:
     - "wc5_readiness_over_non_recursive_construction_set_N__a_completion_receipt_exists_for_every_node_in_N_where_N_equals_wc1_wc2_wc3a_wc3b_wc4_and_excludes_wc5"
     - "wc5_own_completion_is_non_recursive__wc5_requested_output_produced_plus_wc5_acceptance_pass_plus_integration_v_pass_plus_bound_receipt__does_not_quantify_over_wc5_itself_nor_over_the_whole_wave_predicate"
     - "emits_machine_readable_acceptance_fixtures_into_receipt__reconcile_627_audit_json__fail_disposition_audit_json__vocab_consistency_json__schema_fixture_log_json__for_the_integration_seal_oracles"
+    # R9: WC-5 is the SOLE owner of the deferred Go completion-evidence, ledger, and classification-totality bijection validators; each PASS gates WC-5 completion.
+    - "deferred_validator_owned__go_completion_evidence_validator_emitted_by_wc5_typed_resolver_input_derives_the_five_constituents_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    - "deferred_validator_owned__go_ledger_consistency_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    - "deferred_validator_owned__go_classification_totality_bijection_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    # R9: the seal consumes (sibling_output) each UPSTREAM owner's deferred validator PASS; each bound PASS is a precondition of wc5_readiness via child_complete, so WC-5 cannot seal until every deferred validator exists and passes.
+    - "seal_readiness_consumes_every_upstream_deferred_validator_pass__wc1_oracle_ownership__wc2_ref_content_hash_resolution__wc3b_dag_edge_parity_write_surface__each_bound_pass_is_a_precondition_of_wc5_readiness_via_child_complete"
     - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
 constraints:
   allowed_paths:
     - "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
     - ".cdd/unreleased/wc-5/**"
     - ".cdd/unreleased/wc-5/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
+    - ".cdd/unreleased/wc-5/validators/**"   # R9: WC-5's deferred Go completion-evidence/ledger/classification validators + fixtures
   forbidden_paths:
     - "schemas/**"
     - "src/**"

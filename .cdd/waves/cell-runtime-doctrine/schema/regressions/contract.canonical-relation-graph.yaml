@@ -1,0 +1,46 @@
+# CANONICAL VARIANT (must PASS #CellContract) — requested_output.kind == relation_graph (PC telos).
+# A planning cell producing a relation graph: this is CANONICAL (passes #CellContract) but would FAIL
+# #WorkingCellContract (class != working, kind != artifact) — confirming the refinement is a real narrowing.
+schema: cn.cell.contract.v1
+cell:
+  id: "canonical-pc"
+  class: "planning"
+  mode: "wave"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: null
+  parent_cell: null
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-canonical"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#671"
+inputs:
+  required:
+    - ref_kind: "external"
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@grounding.md"
+  optional: []
+requested_output:
+  id: "canonical-relation-graph"
+  kind: "relation_graph"
+  path: "docs/plan/wave-graph.yaml"
+acceptance:
+  predicates:
+    - "planning_cell_emits_a_relation_graph"
+constraints:
+  allowed_paths:
+    - "docs/plan/**"
+  forbidden_paths: []
+  non_goals: []
+gates:
+  operator_authorization_required: true
+  operator_acceptance_required: false
+  reason: "wave authorization required at the boundary"
+doctrine_affecting: false
+stop_conditions: []

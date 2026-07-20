@@ -1,11 +1,11 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R8)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R9)
 #
 # Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
 # resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
 # MECHANICAL PROJECTION of the child contracts' sibling_output refs: an edge A→B exists iff B's
 # contract carries a sibling_output ref whose producer+output_id resolves to A's requested_output.id.
 # `external` refs (incl. the grounding CM and #628/S1) create NO edge. Edges here are authored for
-# readability; exact parity with the derived set is a DEFERRED-GO check (WC-3b/WC-5; see schema/README.md).
+# readability; exact parity with the derived set is a DEFERRED-GO check (owned solely by WC-3b; see schema/README.md).
 #
 # STRUCTURAL pre-authorization validation of THIS file is `cue vet ./schema/ ./wave.cn-wave-v1.yaml
 # -d '#Wave'` (Go+CUE repo — no Python). The closed #Wave definition natively rejects the R7
@@ -13,12 +13,13 @@
 # revision-bound authorization fields, empty contract_ref_resolution, a deleted/flipped edge_derivation
 # constant, a deleted/literal-mutated completion formula, a record missing evidence_bound, a bool given
 # as a string, a duplicate node/edge). PROCEDURAL checks (DAG acyclicity, edge parity, ref/hash
-# resolution, completion-evidence derivation) are named-and-deferred to the Go validators WC-1/WC-3b
-# and #627 S2–S3 ship.
+# resolution, completion-evidence derivation) are named-and-deferred to SINGLE-OWNER Go validators
+# (wc-2 ref-resolution; wc-3b DAG/parity/write-surface; wc-1 oracle-ownership; wc-5 completion-evidence/
+# ledger/classification); #627 S2–S3 stay downstream consumers, not owners.
 schema: cn.wave.v1
 wave: "671"
-# wave-revision: R8
-revision: "R8"
+# wave-revision: R9
+revision: "R9"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -82,40 +83,40 @@ contract_ref_resolution:
   per_child_content_binding: >-
     Each node additionally carries node.contract_sha256 — the SHA-256 of the contract blob at the
     authorized commit — so resolution is independently content-addressable and the DEFERRED-GO ref/hash
-    resolver (WC-1/#627 S2) can prove every contract_ref resolves to its pinned bytes.
+    resolver (owned solely by WC-2; #627 S2 downstream consumer) can prove every contract_ref resolves to its pinned bytes.
   stale_on: "any contract_ref path resolving to a different blob (different SHA-256) than at the authorized commit"
 
 nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
-    contract_sha256: "74614fbcc0f66ec4527f3b37f336965a2e4e8914fbe238cacbf16046af6b2ede"
+    contract_sha256: "f756255c576f80c0daa88ea064e43168301a95ecf739b154b39963f8e3dddce2"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
-    contract_sha256: "986c9cf84558373006e0821f22f90e43c597ff03a8520d56f08e8737d54fbd3b"
+    contract_sha256: "73e604ce7dbc414bb16cfff2f0d888d2ec3819107c37ceb792e821f4ede01df5"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
-    contract_sha256: "04470fe13c0a371196d712d23b36717ea5ee43b367f9c2427bb2de95d29b420d"
+    contract_sha256: "0bf4860d1d8d64076492830554e9509b0553dc4a74aeaef66370dc7c8e3f781e"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
-    contract_sha256: "d27ffbb3355906845d65f08b7396c5aee618242f6d1077cdc7dcb2307cdf150e"
+    contract_sha256: "d148f6288a516082b1a820eeedab0789a28f221b17e9095d14ea6dcf1b83ce54"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
-    contract_sha256: "f19d0458eaa8a928dcc09069c010c2950ddda5d2e5b6ad078bbb7602354496eb"
+    contract_sha256: "f5e9db1546d9ea63536df399d6f4e00a580d309c8dd9d00f6172981de830421a"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
-    contract_sha256: "8cca31e9953232643b0364202753e7e3883e2a41cc038234c1c146ce6928ee36"
+    contract_sha256: "e5e4b690325e5439a6e3d17c4cede0bb09bb6b747f80cf223550504f4a03210e"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 
@@ -188,7 +189,7 @@ stop_conditions:
 
 # Non-recursive whole-wave completion (BLOCKER-1/2 repair).
 #
-# STRUCTURE (enforced NOW by `cue vet` against #Wave, R8):
+# STRUCTURE (enforced NOW by `cue vet` against #Wave, R9):
 #   * `wave_complete` is a FIXED required governing-formula const (all(N) AND terminal) — a deleted or
 #     literal-mutated formula is rejected natively (required + pinned value), not by a validator;
 #   * each fixture's per-node `records` value is a CLOSED 5-bool struct #ChildRecord — every constituent
@@ -196,12 +197,12 @@ stop_conditions:
 #     required and typed bool, so a record MISSING evidence_bound, or a bool given as the string "false"
 #     (e.g. receipt_bound: "false"), is rejected by the schema.
 #
-# DERIVATION (named-and-deferred to Go — WC-3b/WC-5, #627 S2–S3): that child_complete(n) is the AND over
+# DERIVATION (named-and-deferred to Go — completion-evidence validator owned solely by WC-5; #627 S2-S3 downstream): that child_complete(n) is the AND over
 # node n's OWN bound constituent record; that wc5_ready/wc5_complete/wave_complete are DERIVED from those
 # records; that the predicate dependency graph (walked from the `expr` ASTs) is acyclic (a tautology
 # `wave_complete := wave_complete` -> self-cycle -> FAIL); and that each fixture's computed value equals
 # its authored `expected`. These are procedural evaluations CUE does not express; the Go completion-
-# evidence validator (WC-3b/WC-5) computes them when the wave executes. The predicate/fixture data below
+# evidence validator (owned solely by WC-5) computes them when the wave executes. The predicate/fixture data below
 # is the authored input to that validator (structurally typed by #Wave: predicates[].{name,expr};
 # fixtures[].{records,claimed_child_complete,expected}).
 #
@@ -223,11 +224,15 @@ completion:
   # a definition that ignores output/acceptance/V/receipt (a naked-`true` equivalent) FAILS check (g).
   child_complete:
     kind: "derived-per-node-predicate"
+    # R9 (Required 3): required_constituents lists ALL FIVE #ChildRecord constituents (evidence_bound
+    # was missing before), and the definition reads each of the five exactly — both constrained
+    # consistently by #ChildCompleteDef (a drop of evidence_bound is now rejected by cue vet).
     required_constituents:
       - "requested_output_produced"     # node n's requested_output was produced (content identity bound)
       - "acceptance_all_pass"           # every acceptance.predicate / oracle result for n is PASS
       - "class_v_pass"                  # class-WC V verdict for n is PASS (gates on the imported CM ref)
       - "receipt_bound"                 # a receipt for n is bound by identity/hash
+      - "evidence_bound"                # content-bound β/γ evidence present where required (5th; now listed)
     definition:
       all:
         - { record: "requested_output_produced" }
@@ -235,6 +240,46 @@ completion:
         - { record: "class_v_pass" }
         - { record: "receipt_bound" }
         - { record: "evidence_bound" }   # content-bound β/γ evidence present where required
+
+  # R9 (Required 3): the typed completion-evidence RESOLVER INPUT contract. The Go completion-validator
+  # (owned SOLELY by WC-5, Required 2) resolves these typed per-node bindings into the 5 derived
+  # constituent booleans — they are NOT author-supplied. The per-node fixture `records` below are
+  # TRUTH-TABLE FIXTURES over the values the resolver would derive. The resolver PASS binds into WC-5
+  # closure (wc-5's gating acceptance predicate makes it a constituent of wc-5 child_complete).
+  evidence_resolver:
+    owner: "wc-5"
+    go_artifact_id: "wc5-completion-evidence-validator"
+    go_artifact_path: ".cdd/unreleased/wc-5/validators/completion_evidence.go"
+    derivation_rule: >-
+      requested_output_produced := output_binding.output_digest resolves to produced bytes at output_path;
+      acceptance_all_pass := every predicate in acceptance_result_set is PASS;
+      class_v_pass := v_binding.verdict_locator resolves to a PASS verdict bound to receipt_ref;
+      evidence_bound := evidence_locator resolves β/γ evidence where the class requires it;
+      receipt_bound := receipt_identity.receipt_hash pins receipt_identity.receipt_id.
+      child_complete(n) := AND of the five DERIVED booleans (never author-supplied).
+    input_contract:
+      node: "<node-id>"
+      output_binding:
+        output_id: "<requested_output.id>"
+        output_digest: "sha256:<digest-of-produced-bytes>"
+        output_path: "<requested_output.path>"
+      acceptance_result_set:
+        rule: "every acceptance.predicate / oracle result for the node resolves PASS"
+      v_binding:
+        verdict_locator: "<class-WC V verdict locator>"
+        receipt_ref: "<receipt identity the verdict is bound to>"
+      evidence_locator:
+        rule: "β/γ content-bound evidence resolvable where the class requires it"
+      receipt_identity:
+        receipt_id: "<receipt identity>"
+        receipt_hash: "sha256:<immutable receipt content hash>"
+      derives:
+        - "requested_output_produced"
+        - "acceptance_all_pass"
+        - "class_v_pass"
+        - "receipt_bound"
+        - "evidence_bound"
+    binds_into: "wc-5 closure"
 
   # Named predicates, each with an evaluatable `expr`. The dependency graph is DERIVED from these ASTs.
   predicates:

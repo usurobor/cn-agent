@@ -1,0 +1,45 @@
+# NEGATIVE (must FAIL #CellContract) — constraints.forbidden_paths KEY is absent. §2 makes it a
+# required present key (0+); an absent key changes the canonical key-path set and is rejected.
+schema: cn.cell.contract.v1
+cell:
+  id: "neg"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: null
+  parent_cell: null
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-neg"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#671"
+inputs:
+  required:
+    - ref_kind: "external"
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "docs/architecture/CELL-RUNTIME.md"
+  optional: []
+requested_output:
+  id: "o"
+  kind: "artifact"
+  path: "docs/architecture/X.md"
+acceptance:
+  predicates:
+    - "p"
+constraints:
+  allowed_paths:
+    - "docs/architecture/X.md"
+  non_goals: []                    # VIOLATION: forbidden_paths key is missing
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: false
+  reason: null
+doctrine_affecting: false
+stop_conditions: []

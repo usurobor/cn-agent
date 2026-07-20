@@ -1,9 +1,11 @@
-<!-- wave-revision: R8 -->
-# Regression fixtures — each R7-blocker mutation is rejected by `cue vet`
+<!-- wave-revision: R9 -->
+# Regression fixtures — each blocker / §2-drift mutation is rejected by `cue vet`
 
-`wave.clean.yaml` and `contract.clean.yaml` are minimal-but-complete instances that PASS. Each
-`*.bad-*.yaml` applies exactly ONE mutation to a clean base and MUST be rejected. Run them all with
-`make -C .. regressions` (fails the build if any bad fixture passes). Individually:
+`wave.clean.yaml` and `contract.clean.yaml` are minimal-but-complete instances that PASS; the four
+`contract.canonical-*.yaml` are canonical §2 variants that PASS `#CellContract` (nullable scope,
+optional `prior_receipt`, `relation_graph`, `judgment`). Each `*.bad-*.yaml` applies exactly ONE
+mutation to a clean base and MUST be rejected. Run them all with `make -C .. regressions` (fails the
+build if any bad fixture passes). Individually:
 
 ```
 cue vet ../ ./wave.bad-<name>.yaml     -d '#Wave'          # expect non-zero
@@ -36,9 +38,16 @@ cue vet ../ ./contract.bad-<name>.yaml -d '#CellContract'  # expect non-zero
 |---|---|---|
 | `contract.bad-unknown-top-key.yaml` | add top-level `oracles:` (the R4 regression) | `oracles: field not allowed` |
 | `contract.bad-cell-class.yaml` | `cell.class: nonsense` | `cell.class: ... empty disjunction` |
-| `contract.bad-requested-output-kind.yaml` | `requested_output.kind: nonsense` | `requested_output.kind: conflicting values "artifact" and "nonsense"` |
+| `contract.bad-requested-output-kind.yaml` | `requested_output.kind: nonsense` (not in `artifact\|relation_graph\|judgment`) | `requested_output.kind: 3 errors in empty disjunction` |
 | `contract.bad-gate-invariant.yaml` | `doctrine_affecting: true` + `operator_acceptance_required: false` | `gates.operator_acceptance_required: conflicting values true and false` |
 | `contract.bad-doctrine-affecting-string.yaml` | `doctrine_affecting: "true"` (string) | `doctrine_affecting: conflicting values "true" and bool` |
+| `contract.bad-empty-required.yaml` | `inputs.required: []` | `inputs.required: incompatible list lengths (0 and 1)` |
+| `contract.bad-optional-sibling.yaml` | a `sibling_output` in `inputs.optional` | `inputs.optional.0.ref_kind: conflicting values "external" and "sibling_output"` |
+| `contract.bad-empty-acceptance.yaml` | `acceptance.predicates: []` | `acceptance.predicates: incompatible list lengths (0 and 1)` |
+| `contract.bad-empty-allowed-paths.yaml` | `constraints.allowed_paths: []` | `constraints.allowed_paths: incompatible list lengths (0 and 1)` |
+| `contract.bad-missing-forbidden-paths.yaml` | drop `constraints.forbidden_paths` | `constraints.forbidden_paths: field is required but not present` |
+| `contract.bad-missing-non-goals.yaml` | drop `constraints.non_goals` | `constraints.non_goals: field is required but not present` |
+| `contract.bad-gate-reason-nonnull-both-false.yaml` | both gates false + non-null `reason` | `gates.reason: conflicting values "..." and null` |
 
-All 20 rejections are verified green by `make regressions` (cue v0.17.1). CI / the WC Go tooling run
-this suite as the structural gate.
+All 27 rejections (15 wave + 12 contract, incl. the 7 §2-drift negatives) are verified green by
+`make regressions` (cue v0.17.1). CI / the WC Go tooling run this suite as the structural gate.

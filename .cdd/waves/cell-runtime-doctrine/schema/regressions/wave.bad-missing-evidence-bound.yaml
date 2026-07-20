@@ -3,7 +3,7 @@
 # by cue vet. (The real wave.cn-wave-v1.yaml is also vetted by the Makefile `clean` target.)
 schema: cn.wave.v1
 wave: "671"
-revision: "R8"
+revision: "R9"
 goal: "minimal valid wave"
 intent: { schema: "cn.intent.v1", id: "intent-x", locator: "sha256:0@intent.yaml" }
 grounding:
@@ -29,12 +29,26 @@ completion:
   terminal_node: "wc-5"
   wave_complete: "all(N child_complete) AND child_complete(terminal)"
   note: "wave_complete = all(N) AND wc5_complete"
-  child_complete: { kind: "derived-per-node-predicate", required_constituents: [ "requested_output_produced", "acceptance_all_pass", "class_v_pass", "receipt_bound" ], definition: { all: [ { record: "requested_output_produced" }, { record: "acceptance_all_pass" }, { record: "class_v_pass" }, { record: "receipt_bound" }, { record: "evidence_bound" } ] } }
+  child_complete: { kind: "derived-per-node-predicate", required_constituents: [ "requested_output_produced", "acceptance_all_pass", "class_v_pass", "receipt_bound", "evidence_bound" ], definition: { all: [ { record: "requested_output_produced" }, { record: "acceptance_all_pass" }, { record: "class_v_pass" }, { record: "receipt_bound" }, { record: "evidence_bound" } ] } }
+  evidence_resolver:
+    owner: "wc-5"
+    go_artifact_id: "wc5-completion-evidence-validator"
+    go_artifact_path: ".cdd/unreleased/wc-5/validators/completion_evidence.go"
+    derivation_rule: "the 5 booleans are DERIVED by resolving the typed bindings; never author-supplied"
+    input_contract:
+      node: "wc-1"
+      output_binding: { output_id: "cell-classes-and-contract", output_digest: "sha256:0", output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md" }
+      acceptance_result_set: { rule: "every acceptance predicate PASS" }
+      v_binding: { verdict_locator: "sha256:v", receipt_ref: "receipt-1" }
+      evidence_locator: { rule: "β/γ evidence resolvable where required" }
+      receipt_identity: { receipt_id: "receipt-1", receipt_hash: "sha256:r" }
+      derives: [ "requested_output_produced", "acceptance_all_pass", "class_v_pass", "receipt_bound", "evidence_bound" ]
+    binds_into: "wc-5 closure"
   predicates:
     - { name: "wave_complete", expr: { and: [ { all_over_N: "child_complete" }, { pred: "wc5_complete" } ] } }
   fixtures:
     - name: "all-complete"
       records:
-        wc-1: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true }
+        wc-1: { requested_output_produced: true, acceptance_all_pass: true, class_v_pass: true, receipt_bound: true }   # MUTATION: record omits evidence_bound (closed #ChildRecord) -> rejected
       claimed_child_complete: { wc-1: true }
       expected: { wc5_ready: true, wc5_complete: true, wave_complete: true }

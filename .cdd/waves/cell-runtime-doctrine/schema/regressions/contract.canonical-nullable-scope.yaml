@@ -1,0 +1,46 @@
+# CANONICAL VARIANT (must PASS #CellContract) — nullable scope refs + both-gates-false ⇒ reason: null.
+# A root cell: scope.wave and scope.parent_cell are null (scalar-or-null, §2), not strings.
+schema: cn.cell.contract.v1
+cell:
+  id: "canonical-root"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: null                       # scalar-or-null: a root cell has no parent wave
+  parent_cell: null                # scalar-or-null: a root cell has no parent cell
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-canonical"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#671"
+inputs:
+  required:
+    - ref_kind: "external"
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "docs/architecture/CELL-RUNTIME.md"
+  optional: []
+requested_output:
+  id: "canonical-artifact"
+  kind: "artifact"
+  path: "docs/architecture/X.md"
+acceptance:
+  predicates:
+    - "a_single_predicate_is_enough"
+constraints:
+  allowed_paths:
+    - "docs/architecture/X.md"
+  forbidden_paths: []
+  non_goals: []
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: false
+  reason: null                     # truth table: both gates false ⇒ reason is null
+doctrine_affecting: false
+stop_conditions: []

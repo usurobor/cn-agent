@@ -1,4 +1,4 @@
-// cnos#671 R8 — PLAN-LOCAL, TRANSITIONAL structural schema for intent.cn-intent-v1.yaml.
+// cnos#671 R9 — PLAN-LOCAL, TRANSITIONAL structural schema for intent.cn-intent-v1.yaml.
 //
 // Design input (D9 NAMES cn.intent.v1; #627 S2/#644 formalize the durable object). Closed #Intent so
 // `cue vet` structurally validates the transitional bootstrap intent projection: unknown top-level

@@ -1,14 +1,19 @@
-<!-- wave-revision: R8 -->
-# Wave: cell-runtime-doctrine (cnos#671 — R8)
+<!-- wave-revision: R9 -->
+# Wave: cell-runtime-doctrine (cnos#671 — R9)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
 single-purpose Working-Cell contracts, grounded in an immutable coherence measurement.
 
-**R8 re-architecture (operator directive).** This is a **Go + CUE** repository. **No Python.**
-Schemas are **CUE**; procedural code is **Go**. The prior rounds shipped a hand-rolled Python
-validator (`validate.py` / `validate_test.py`) — a tool-choice error. R8 **removes it entirely** and
-re-architects pre-authorization validation the right way:
+**R9 repair (external-β #672).** `#CellContract` is now the **faithful** canonical `cn.cell.contract.v1`
+§2 shape (nullable scope, 1+ cardinalities, `prior_receipt` locator, all output kinds, gate truth-table);
+a named **`#WorkingCellContract`** refinement validates the six WCs. Every deferred-go check has **exactly
+one** in-wave owner (gating WC-5's seal). Completion constituents are consistent (`evidence_bound` listed)
+with a typed resolver-input contract. Ledger advanced to R9; content-hash chain re-pinned. **No Python.**
+
+**Go + CUE repository (operator directive, R8).** Schemas are **CUE**; procedural code is **Go**. A prior
+round shipped a hand-rolled Python validator (`validate.py`) — a tool-choice error, **removed entirely**.
+Pre-authorization validation is:
 
 - **Structural** pre-authorization validation = **`cue vet`** against plan-local **closed CUE**
   schemas under [`schema/`](./schema/) (`#CellContract`, `#Wave`, `#AssuranceRegistry`, `#Intent`).
@@ -39,46 +44,59 @@ shipped→specified migration — decomposed so each artifact is single-purpose 
 coherent. **Done means:** a Working Cell can implement the runtime (Go/CUE) from these artifacts
 **without inventing** dependency, measurement, authority, or gate policy.
 
-## Validation architecture (R8)
+## Validation architecture (R9)
 
 ### Structural — enforced NOW by `cue vet`
 
-Run `make -C schema clean` (or the per-artifact invocations in [`schema/README.md`](./schema/README.md)):
+Run `make -C schema clean` (or the per-artifact invocations in [`schema/README.md`](./schema/README.md)).
+R9 makes `#CellContract` the **faithful** canonical §2 shape and validates the six Working-Cell contracts
+against the named **`#WorkingCellContract`** refinement (class=working, kind=artifact); the canonical
+variants exercise `#CellContract` directly:
 
 ```
 cue vet ./schema/ ./wave.cn-wave-v1.yaml                      -d '#Wave'
-cue vet ./schema/ ./contracts/wc-{1,2,3a,3b,4,5}.cn-cell-contract-v1.yaml -d '#CellContract'
+cue vet ./schema/ ./contracts/wc-{1,2,3a,3b,4,5}.cn-cell-contract-v1.yaml -d '#WorkingCellContract'
 cue vet ./schema/ ./oracle-registry.yaml                      -d '#AssuranceRegistry'
 cue vet ./schema/ ./intent.cn-intent-v1.yaml                  -d '#Intent'
+cue vet ./schema/ ./regressions/contract.canonical-{nullable-scope,optional-prior-receipt,relation-graph,judgment}.yaml -d '#CellContract'
 ```
 
-The R7 blockers close natively (full table in [`schema/README.md`](./schema/README.md)):
-`receipt_bound: "false"` (string) → type conflict; a record missing `evidence_bound` → required-field
-fail; a duplicate node id / duplicate edge / duplicate mapping key → conflicting values;
-`external_roots: []` / `stop_conditions: []` → nonempty-list fail; `contract_ref_resolution: {}` and a
-missing `gates.wave_authorization.revision_bound` → required-field fail; a deleted or flipped
-`edge_derivation.parity_required`/`acyclic` → required/const fail; a deleted or literal-mutated
-completion `wave_complete` formula → required/const fail; an added top-level key (e.g. the R4-regression
-`oracles`) → "field not allowed"; a bad `cell.class`/`requested_output.kind`/STOP `effect` → empty
-disjunction; a doctrine-affecting cell that does not require operator acceptance → gate-invariant
-conflict.
+The wave-envelope + completion + §2-drift blockers close natively (full tables in
+[`schema/README.md`](./schema/README.md)): nullable `scope.wave`/`parent_cell`; 1+ `inputs.required`; a
+`sibling_output` in `inputs.optional` → conflict; the `prior_receipt` locator class present; the full
+`artifact | relation_graph | judgment` output enum; 1+ `acceptance.predicates`/`allowed_paths`; required
+`forbidden_paths`/`non_goals`; the `gates.reason` truth table (nonempty iff a gate bool true, null iff
+both false); `receipt_bound: "false"` (string) → type conflict; a record or `required_constituents`
+missing `evidence_bound` → required-field fail; duplicate node/edge/mapping keys → conflicting values;
+empty `external_roots`/`stop_conditions`; a deleted/flipped `edge_derivation` const; a mutated completion
+formula; an added top-level key; a doctrine-affecting cell not requiring acceptance → gate-invariant conflict.
 
-The [`schema/regressions/`](./schema/regressions/) suite proves each rejection: a clean base PASSES and
-**20 one-mutation bad fixtures are each rejected** by `cue vet` (`make -C schema regressions`; verified
-green with cue v0.17.1). This is **not** a blanket soundness certificate — `cue vet` warrants exactly
-the closed-struct / typed-field / enum / cardinality / required-field / pinned-const constraints the
-schemas declare, and **nothing beyond them**. Everything else is named-and-deferred to Go.
+The [`schema/regressions/`](./schema/regressions/) suite proves each rejection: the clean/canonical bases
+PASS and **27 one-mutation bad fixtures are each rejected** by `cue vet` (`make -C schema regressions`;
+verified green with cue v0.17.1) — 15 wave + 12 contract, incl. the 7 new §2-drift negatives (empty
+`inputs.required`; a `sibling_output` in optional; empty `acceptance.predicates`/`allowed_paths`; missing
+`forbidden_paths`/`non_goals`; false/false gates with a non-null reason). This is **not** a blanket
+soundness certificate — `cue vet` warrants exactly the closed-struct / typed-field / enum / cardinality /
+required-field / pinned-const / truth-table constraints the schemas declare, and **nothing beyond them**.
+Everything else is named-and-deferred to single-owner Go validators.
 
-### Procedural / semantic — named-and-deferred to Go
+### Procedural / semantic — named-and-deferred to SINGLE-OWNER Go validators
 
-| Deferred-Go check (not run at this tree; the WC/#627 Go validator runs it when the WC executes) | Owner |
-|---|---|
-| graph **acyclicity** (DAG over derived dependency edges) | WC-3b/WC-5 |
-| sibling-output → wave-edge **parity** (authored == derived, exactly) | WC-3b/WC-5 |
-| git **ref / content-hash resolution** (intent id/schema; `commit:path`; revision hashes; grounding source `9d1ab3a5…`) | WC-1 / #627 S2 |
-| classification **bijection** (`union(child acceptance.predicates)` ⇄ registry, each classified once) | WC-1 / #627 S2–S3 |
-| **completion-evidence derivation** (child_complete AND over records; predicate-graph acyclicity; fixture `expected`) | WC-3b/WC-5 |
-| ledger consistency (revision markers agree; per-category counts) · parallel write-surface disjointness | WC-5 |
+R9: each deferred-go check has **exactly one** in-wave `deferred_owner` (never #627 — #627 S2–S3 stay
+downstream consumers/canonicalizers). Each owner contract carries a gating acceptance predicate whose PASS
+gates its completion; WC-5 depends (sibling_output) on wc-1/wc-2/wc-3b, so **WC-5 cannot seal until every
+deferred validator exists and passes**.
+
+| Deferred-Go check (the owner's Go validator runs it when that WC executes) | Single owner | Go artifact |
+|---|---|---|
+| git **ref / content-hash resolution** | **WC-2** | `.cdd/unreleased/wc-2/validators/ref_resolve.go` |
+| graph **acyclicity** (DAG) | **WC-3b** | `.cdd/unreleased/wc-3b/validators/wave_dag.go` |
+| sibling-output → wave-edge **parity** | **WC-3b** | `.cdd/unreleased/wc-3b/validators/edge_parity.go` |
+| parallel **write-surface disjointness** | **WC-3b** | `.cdd/unreleased/wc-3b/validators/write_surface.go` |
+| **oracle-ownership bijection** | **WC-1** | `.cdd/unreleased/wc-1/validators/oracle_ownership_bijection.go` |
+| **completion-evidence derivation** (typed resolver input → 5 derived constituents) | **WC-5** | `.cdd/unreleased/wc-5/validators/completion_evidence.go` |
+| **ledger consistency** (revision markers agree; per-category counts) | **WC-5** | `.cdd/unreleased/wc-5/validators/ledger_consistency.go` |
+| **classification-totality bijection** | **WC-5** | `.cdd/unreleased/wc-5/validators/classification_bijection.go` |
 
 ## Grounding CM (content-bound to the TRUE source)
 
@@ -127,10 +145,14 @@ Critical path: **WC-2 → WC-1 → WC-3b → WC-5**.
 
 ## §2 conformance
 
-All six `contracts/*.yaml` are canonical `cn.cell.contract.v1` §2 instances with the **exact**
-top-level key set and **no extras** — enforced now by `cue vet … -d '#CellContract'` (a closed struct;
-an added top-level key such as `oracles`/`consumers`/`completion_signal` is rejected as "field not
-allowed"). Oracle ownership lives in the separate content-bound [`oracle-registry.yaml`](./oracle-registry.yaml),
+All six `contracts/*.yaml` are canonical `cn.cell.contract.v1` §2 instances. `#CellContract` is the
+**faithful** canonical §2 shape (nullable `scope` refs; 1+ `inputs.required`; external-only
+`inputs.optional`; `repo_artifact | control_plane | prior_receipt` locator union; `artifact |
+relation_graph | judgment` output kinds; required `forbidden_paths`/`non_goals`; gate truth-table; closed
+struct). The six Working-Cell contracts are validated against the **named refinement**
+`#WorkingCellContract = #CellContract & { cell.class: "working", requested_output.kind: "artifact" }` —
+the canonical shape is **not** narrowed; the 4 canonical-variant fixtures validate directly against
+`#CellContract`. Oracle ownership lives in the separate content-bound [`oracle-registry.yaml`](./oracle-registry.yaml),
 which each contract consumes via a canonical `inputs.required[].external` control_plane ref (immutable
 locator + content hash). Reverse-consumer information is **derived** (see [`reconcile-627.md`](./reconcile-627.md)).
 
@@ -141,10 +163,15 @@ locator + content hash). Reverse-consumer information is **derived** (see [`reco
 formula const** `wave_complete: "all(N child_complete) AND child_complete(terminal)"` (required + fixed
 by `#Wave` — deleting or mutating it fails `cue vet`). Each fixture's per-node record is a **closed
 5-bool struct** (`requested_output_produced`, `acceptance_all_pass`, `class_v_pass`, `receipt_bound`,
-`evidence_bound` — every constituent mandatory and typed bool). The **derivation** — that
-child_complete(n) is the AND over node n's bound record, that the predicate graph is acyclic, and that
-each fixture computes its authored `expected` — is a **deferred-Go** check (WC-3b/WC-5). Four fixtures
-pin the intended behavior (all-incomplete; all-N-complete/WC-5-absent; WC-5 V-FAIL; all-complete).
+`evidence_bound` — every constituent mandatory and typed bool). **R9 (Required 3):** `required_constituents`
+now lists all **5** (matching `#ChildRecord`; `#ChildCompleteDef` pins the list and definition consistently),
+and a typed **resolver-input contract** `#CompletionEvidenceInput` (node/output identity + content binding,
+acceptance result set, V verdict/receipt binding, β/γ evidence locator, receipt identity/hash) is contracted
+in `evidence_resolver` (owned by WC-5): the 5 booleans are **derived** by resolving those bindings, not
+author-supplied; the fixture `records` are truth-table fixtures. The **derivation** — child_complete(n) AND,
+predicate-graph acyclicity, and each fixture computing its authored `expected` — is the WC-5 completion-evidence
+**deferred-Go** check, whose PASS binds into WC-5 closure. Four fixtures pin the intended behavior
+(all-incomplete; all-N-complete/WC-5-absent; WC-5 V-FAIL; all-complete).
 
 ## D9 — four-schema boundary SETTLED
 
@@ -167,21 +194,24 @@ Each node carries `contract_sha256` (the re-pinned SHA-256 of its contract blob)
 [`oracle-registry.yaml`](./oracle-registry.yaml) is the authoritative **TOTAL** registry: one
 `assurance:` entry for **every** child acceptance predicate, classified into **exactly one** of five
 honest categories, plus a separate `wave_predicates:` section. [`acceptance-oracles.md`](./acceptance-oracles.md)
-is its projection. The categories (R8 taxonomy):
+is its projection. The categories (R9 taxonomy):
 
 - **structural-cue** — enforced NOW by `cue vet` against a plan-local `#Def`.
-- **deferred-go** — a named Go validator WC-1/WC-2/#627 S2–S3 ship (procedural; not run at this tree).
+- **deferred-go** — a named Go validator with **exactly one** in-wave `deferred_owner` (never #627; #627
+  S2–S3 stay downstream consumers/canonicalizers). Procedural; not run at this tree.
 - **mechanically-verifiable** — a per-child acceptance oracle the child WC **emits** as a **Go checker
   or a CUE schema** (**no `.py`**) + named fixtures + a credential-free command, bound in its receipt.
 - **evidenced** — bound receipt evidence, not self-report.
 - **cognitive-review** — an independent β / CC doctrine judgment, honestly not mechanical.
 
-**Child acceptance predicates (69):** structural-cue **1** · deferred-go **10** · mechanically-verifiable
-**30** · evidenced **7** · cognitive-review **21** — one classification each. The former "enforced"
-category is split honestly: the gate invariant is `structural-cue` (a CUE conditional); edge-parity,
-completion-evidence, oracle-ownership bijection, and readiness are `deferred-go`. Wave-only structural/
-deferred predicates are held **separately** in `wave_predicates:` so they can neither inflate nor mask
-child coverage.
+**Child acceptance predicates (78, TOTAL):** structural-cue **1** · deferred-go **19** ·
+mechanically-verifiable **30** · evidenced **7** · cognitive-review **21** — one classification each,
+matching the 78 predicates across the six contracts (13+14+12+15+9+15). R9 added the single-owner
+deferred-validator **gating predicates** (wc-1 oracle-ownership; wc-2 ref-resolution; wc-3b DAG/parity/
+write-surface; wc-5 completion-evidence/ledger/classification + upstream-consumption), each a `deferred-go`
+entry with a single `deferred_owner`, whose PASS gates the owner's completion. Wave-only structural/deferred
+predicates are held **separately** in `wave_predicates:` (with the 8 canonical validators' full specs) so
+they can neither inflate nor mask child coverage.
 
 ## Node list
 
@@ -201,33 +231,33 @@ child coverage.
 interface from WC-2. The κ≠α role logic and content-bound-review rule repaired in #662 R8 are carried
 into WC-1 as **settled input**.
 
-## Per-finding disposition (R8 — remove Python; CUE + deferred Go; honest scoping)
+## Per-finding disposition (R9 — faithful §2 CUE; single-owner deferred validators; consistent completion)
 
-| # | Directive | R8 disposition |
+| # | Finding | R9 disposition |
 |---|---|---|
-| 1 | **Go + CUE repo; NO Python** | Deleted `validate.py` and `validate_test.py` (and every `*.py` under the wave dir → none remain). |
-| 2 | Structural pre-authorization validation the right way | Authored plan-local closed CUE (`schema/#CellContract`, `#Wave`, `#AssuranceRegistry`, `#Intent`); wired the exact `cue vet` invocations (schema/Makefile + README). All clean artifacts PASS. |
-| 3 | Close the R7 blockers **via CUE, natively** | Typed bool (rejects `"false"`), closed structs (reject unknown keys + un-typed authority substructure), duplicate-key/id conflicts, nonempty `external_roots`, required `contract_ref_resolution`/`wave_authorization` fields, pinned `edge_derivation` consts, a pinned required completion formula const, a mandatory `evidence_bound`. Proven by 20 rejected regression fixtures. |
-| 4 | Name-and-defer the procedural checks to Go | DAG acyclicity, edge parity, ref/hash resolution, classification bijection, completion-evidence derivation → **named** deliverables of WC-1/WC-2 and #627 S2–S3 (D9, option B). Not reimplemented; never in Python. |
-| 5 | Rewire the registry + honest scoping | Every `enforced_by: validate.py check (x)` now points at the CUE constraint (`cue vet` #Wave/#CellContract/…) or the named deferred Go validator; `mechanically-verifiable` checkers are Go/CUE (no `.py`); removed the blanket "sound/fail-closed" claim. |
-| 6 | Provenance + ledger | Operator directive recorded in `decision-provenance.md`; every `wave-revision:` marker advanced to **R8**; content hashes re-pinned for edited files; contracts stay exactly §2. |
+| 1 | **[BLOCKER]** `#CellContract` did not faithfully encode canonical §2 | Rewrote `schema/cell_contract.cue`: nullable `scope` refs; 1+ `inputs.required`; external-only `inputs.optional`; `repo_artifact\|control_plane\|prior_receipt` locator union; `artifact\|relation_graph\|judgment` output kinds; required `forbidden_paths`/`non_goals`; the `gates.reason` truth table (CUE conditionals); closed through `stop_conditions`. Added the named `#WorkingCellContract` refinement (the 6 WCs validate against it; 4 canonical variants against `#CellContract`; 7 new §2-drift negatives rejected). |
+| 2 | **[REQUIRED]** deferred Go validators had multi/slash owners | Every deferred-go check has **exactly one** `deferred_owner`: wc-2 ref-resolution; wc-3b DAG/parity/write-surface; wc-1 oracle-ownership; wc-5 completion-evidence/ledger/classification. The 8 canonical validators pin artifact id+path, typed inputs, result/evidence shape, positive+named negative fixtures, downstream consumers, and a gating predicate; each owner contract carries the gating acceptance predicate. #627 S2–S3 stay downstream. **WC-5 cannot seal until every deferred validator passes.** |
+| 3 | **[REQUIRED]** completion constituents inconsistent; 5 booleans author-supplied | `required_constituents` now lists all **5** (added `evidence_bound`), pinned consistent with the definition and `#ChildRecord` by `#ChildCompleteDef`; added the typed `#CompletionEvidenceInput` resolver-input contract + `#EvidenceResolver` (owned by WC-5); the 5 booleans are derived, the fixtures labelled truth-table fixtures; resolver PASS binds into WC-5 closure. |
+| 4 | Ledger + provenance | Every `wave-revision:`/`revision:` marker advanced to **R9**; the content-hash chain re-pinned (registry → 6 contracts → wave `contract_sha256`); grounding/reconcile/intent unchanged. Contracts stay exactly §2 (validated by the faithful CUE). **No Python.** |
 
 ## Prior-round ledger (unchanged accepted structure)
 
-R2 repaired the first external-β ITERATE (#672); R3 a second (honest intent provenance, honestly
-classified oracles, byte-exact grounding); R4/R5 moved oracle ownership into the content-bound
-`oracle-registry.yaml`; R6 made that registry TOTAL; R7 tried to close the wave-envelope + completion
-blockers **inside the Python validator** — which R8 supersedes by removing Python and closing them in
-CUE. The accepted decomposition graph (WC-2 → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), the §2 contracts,
-D9-four, intent provenance, and grounding are **unchanged** across R2–R8.
+R2/R3 repaired the external-β ITERATEs (non-recursive completion, honest intent provenance, byte-exact
+grounding); R4/R5 moved oracle ownership into the content-bound `oracle-registry.yaml`; R6 made it TOTAL;
+R7 closed the wave-envelope + completion blockers; R8 removed Python and moved structural validation to
+CUE; **R9** makes `#CellContract` faithfully canonical, gives every deferred validator a single in-wave
+owner, and makes completion constituents consistent with a typed resolver input. The accepted decomposition
+graph (WC-2 → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), D9-four, intent provenance, and grounding are
+**unchanged** across R2–R9.
 
 ## Files
 
 - [`README.md`](./README.md) — this overview.
-- [`schema/`](./schema/) — plan-local transitional CUE (`#CellContract`, `#Wave`, `#AssuranceRegistry`,
-  `#Intent`), the `Makefile` runner, and `regressions/` (clean bases + 20 rejected mutation fixtures).
+- [`schema/`](./schema/) — plan-local transitional CUE (`#CellContract` + `#WorkingCellContract`, `#Wave`,
+  `#AssuranceRegistry`, `#Intent`), the `Makefile` runner, and `regressions/` (clean/canonical bases + 27
+  rejected mutation fixtures).
 - [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — transitional bootstrap intent projection.
-- [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions + the R8 operator directive.
+- [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions + the R8/R9 dispositions.
 - [`wave.cn-wave-v1.yaml`](./wave.cn-wave-v1.yaml) — the `cn.wave.v1` instance.
 - [`contracts/wc-1..wc-5.cn-cell-contract-v1.yaml`](./contracts/) — the six §2-conformant child contracts.
 - [`grounding-source-5015460988.md`](./grounding-source-5015460988.md) — byte-exact source snapshot (SHA `9d1ab3a5…`).
@@ -237,5 +267,5 @@ D9-four, intent provenance, and grounding are **unchanged** across R2–R8.
 - [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the total registry (every predicate classified single-kind).
 
 ---
-*Status: R8 wave, α matter — under operator review; external-β and CC review next. No child WCs
+*Status: R9 wave, α matter — under operator review; external-β and CC review next. No child WCs
 dispatched; no control-plane action taken by this cell.*
