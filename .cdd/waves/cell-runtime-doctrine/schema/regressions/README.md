@@ -1,4 +1,4 @@
-<!-- wave-revision: R9 -->
+<!-- wave-revision: R10 -->
 # Regression fixtures — each blocker / §2-drift mutation is rejected by `cue vet`
 
 `wave.clean.yaml` and `contract.clean.yaml` are minimal-but-complete instances that PASS; the four

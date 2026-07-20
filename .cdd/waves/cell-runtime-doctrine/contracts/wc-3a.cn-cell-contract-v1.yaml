@@ -49,7 +49,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:a58c2c84dcbcad848e457d3302a0e704fbfd8547eb513ba6f451279628980939@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:d531a8b17346d112f2e0b599f4dc9e0ce43d509e7ca7e5324d2c6117dc6b1e57@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "cell-fsm"

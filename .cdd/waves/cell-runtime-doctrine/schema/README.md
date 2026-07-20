@@ -1,5 +1,5 @@
-<!-- wave-revision: R9 -->
-# Plan-local structural schemas (cnos#671 R9) — `cue vet`, no Python
+<!-- wave-revision: R10 -->
+# Plan-local structural schemas (cnos#671 R10) — `cue vet`, no Python
 
 This directory is the pre-authorization validation for the cell-runtime wave.
 
@@ -9,12 +9,25 @@ error, **removed entirely** (R8). Structural pre-authorization validation is **`
 closed CUE definitions here; the procedural/semantic checks CUE cannot express are **named-and-deferred
 to single-owner Go validators**.
 
-**R9 changes.** (1) `#CellContract` is now the **faithful** canonical `cn.cell.contract.v1` §2 shape —
+**R10 change (this repair) — FORWARD-ONLY ACYCLIC ASSURANCE GRAPH.** Every child deferred acceptance
+entry induces an assurance edge `deferred_owner -> owner`. R9 left two **backward** edges (a successor
+validating a predecessor's predicate): WC-2's oracle predicate deferred to wc-1 (cycle WC-2↔WC-1) and
+WC-3b's completion predicate deferred to wc-5 (cycle WC-3b↔WC-5). R10 constrains **every** deferred-go
+`#AssuranceEntry` so `deferred_owner ∈ {owner} ∪ predecessors(owner)` (the `#AllowedVerifier` transitive
+closure over the accepted six-node graph), so **every assurance edge is forward** and the combined
+(construction ∪ assurance) graph is acyclic. Whole-wave-property validators are moved off child edges:
+the cross-contract **oracle-ownership bijection** is now a **wave-boundary pre-authorization** predicate
+(`deferred_owner: "wave"`, `wave_authorization_gated`); **combined-graph acyclicity** is a forward
+**WC-3b** self-owned check; ledger + classification-totality stay forward-owned by terminal WC-5. New
+negative fixtures `regressions/registry.bad-backward-edge-{wc2-wc1,wc3b-wc5}.yaml` are **rejected** by
+`cue vet`; `regressions/registry.forward-edges.positive.yaml` passes.
+
+**R9 changes (carried).** (1) `#CellContract` is the **faithful** canonical `cn.cell.contract.v1` §2 shape —
 nullable scope refs, 1+ cardinalities, the `prior_receipt` locator class, all three output kinds, and
 the gate **truth table** (see below). (2) A named **`#WorkingCellContract`** refinement (class=working,
 output kind=artifact) validates the six real Working-Cell contracts, while `#CellContract` stays the
 canonical shape (exercised by the canonical-variant fixtures). (3) Every **deferred-go** procedural check
-is owned by **exactly one** in-wave WC. (4) The completion constituents are made consistent
+is owned by **exactly one** owner. (4) The completion constituents are made consistent
 (`evidence_bound` now listed in `required_constituents`) and a **typed resolver-input contract**
 (`#CompletionEvidenceInput`) types the completion-validator's input.
 
@@ -34,6 +47,10 @@ They are **not** the canonical deliverable and they do **not** edit the shipped 
   input), and `#EvidenceResolver` (owned by WC-5).
 - [`assurance_registry.cue`](./assurance_registry.cue) — `#AssuranceRegistry`: registry shape,
   classification enum, per-category required fields; deferred-go entries require a single `deferred_owner`.
+  **R10:** `#AllowedVerifier` pins each node's `{self} ∪ construction-predecessors` closure and constrains
+  every deferred-go `#AssuranceEntry` to `deferred_owner ∈ #AllowedVerifier[owner]` (forward-only, no
+  backward child edges); `#WavePredicate` additionally accepts `deferred_owner: "wave"` (a wave-boundary
+  pre-authorization validator carrying `wave_authorization_gated` instead of a child `gating_predicate`).
 - [`intent.cue`](./intent.cue) — `#Intent`: the transitional bootstrap intent projection shape.
 - [`Makefile`](./Makefile) — `make clean` · `make regressions` · `make all`.
 - [`regressions/`](./regressions/) — clean/canonical bases + one-mutation bad fixtures (see its README).
@@ -72,26 +89,30 @@ The faithful `#CellContract` rejects every §2 drift the external β found, nati
 
 ### PROCEDURAL / SEMANTIC — named-and-deferred to SINGLE-OWNER Go validators (D9)
 
-Each deferred-go check has **exactly one** in-wave owner (`deferred_owner` in `oracle-registry.yaml`;
-never #627 — #627 S2–S3 stay downstream consumers/canonicalizers). WC-5 depends (sibling_output) on
-wc-1/wc-2/wc-3b and each owner's gating acceptance predicate is a constituent of its `child_complete`,
-so **WC-5 cannot seal until every deferred validator exists and passes**.
+Each deferred-go check has **exactly one** owner (`deferred_owner` in `oracle-registry.yaml`; a child WC
+or the **wave boundary** `"wave"`; never #627 — #627 S2–S3 stay downstream consumers/canonicalizers).
+A **child-owned** validator's gating acceptance predicate is a constituent of its `child_complete` and is
+a **forward** self-edge; WC-5 depends (sibling_output) on wc-2/wc-3b, so **WC-5 cannot seal until every
+upstream deferred validator passes**. A **wave-owned** validator runs at **pre-authorization** (before any
+child dispatches) and is a precondition of the authorized wave, never a child edge.
 
-| Deferred-Go check | Single owner | Go artifact |
+| Deferred-Go check | Owner | Go artifact |
 |---|---|---|
 | git **ref / content-hash resolution** | **WC-2** | `.cdd/unreleased/wc-2/validators/ref_resolve.go` |
 | graph **acyclicity** (DAG) | **WC-3b** | `.cdd/unreleased/wc-3b/validators/wave_dag.go` |
 | sibling-output → wave-edge **parity** | **WC-3b** | `.cdd/unreleased/wc-3b/validators/edge_parity.go` |
 | parallel **write-surface disjointness** | **WC-3b** | `.cdd/unreleased/wc-3b/validators/write_surface.go` |
-| **oracle-ownership bijection** (each mech-verifiable predicate → one checker) | **WC-1** | `.cdd/unreleased/wc-1/validators/oracle_ownership_bijection.go` |
+| **combined-graph acyclicity** (construction ∪ cross-owner assurance edges) — R10 | **WC-3b** | `.cdd/unreleased/wc-3b/validators/combined_graph_acyclic.go` |
 | **completion-evidence derivation** (typed resolver input → 5 derived constituents) | **WC-5** | `.cdd/unreleased/wc-5/validators/completion_evidence.go` |
 | **ledger consistency** (revision markers agree; per-category counts) | **WC-5** | `.cdd/unreleased/wc-5/validators/ledger_consistency.go` |
 | **classification-totality bijection** (union(predicates) ⇄ registry, each once, all 5 categories) | **WC-5** | `.cdd/unreleased/wc-5/validators/classification_bijection.go` |
+| **oracle-ownership bijection** (each mech-verifiable predicate → one checker) — R10: **wave-boundary** | **WAVE** | `.cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go` |
 
-Each owner contract pins the Go artifact path in `allowed_paths` and a gating acceptance predicate whose
-PASS gates its completion; the full spec (typed inputs, result/evidence shape, positive + named negative
-fixtures, downstream consumers, gating predicate) is pinned in `oracle-registry.yaml` `wave_predicates`.
-CUE fixes the **shape** now; Go **computes** the procedural facts when the owning WC executes.
+Each **child** owner contract pins the Go artifact path in `allowed_paths` and a gating acceptance
+predicate whose PASS gates its completion; the wave-boundary validator runs at pre-authorization. The full
+spec (typed inputs, result/evidence shape, positive + named negative fixtures, downstream consumers, and
+either a `gating_predicate` or `wave_authorization_gated`) is pinned in `oracle-registry.yaml`
+`wave_predicates`. CUE fixes the **shape** now; Go **computes** the procedural facts when the owner executes.
 
 ## Reproduce
 

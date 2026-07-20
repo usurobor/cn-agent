@@ -1,4 +1,5 @@
-// cnos#671 R9 — PLAN-LOCAL, TRANSITIONAL structural schema for wave.cn-wave-v1.yaml.
+// cnos#671 R10 — PLAN-LOCAL, TRANSITIONAL structural schema for wave.cn-wave-v1.yaml.
+// #Wave/#Completion UNCHANGED in R10 (the R10 repair is the forward-only assurance graph in assurance_registry.cue).
 //
 // Design input (WC-1/WC-3b formalize the durable cn.wave.v1 CUE); NOT the canonical deliverable.
 // Closes the R7 wave-envelope + completion blockers NATIVELY via `cue vet`:

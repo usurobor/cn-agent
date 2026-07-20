@@ -1,4 +1,4 @@
-# cnos#671 R9 — structural pre-authorization validation runner (Go + CUE repo; NO Python).
+# cnos#671 R10 — structural pre-authorization validation runner (Go + CUE repo; NO Python).
 #
 # Run from the schema/ dir:  make -C .cdd/waves/cell-runtime-doctrine/schema
 #
@@ -8,6 +8,9 @@
 #                        canonical variants (nullable scope, optional prior_receipt, relation_graph,
 #                        judgment) validate against the faithful canonical #CellContract.
 #   make regressions  -> cue vet every bad fixture; each MUST be rejected (non-zero). Fails if any passes.
+#                        Includes the R10 backward-edge negatives (registry.bad-backward-edge-*: a WC-2
+#                        acceptance predicate with deferred_owner wc-1, and a WC-3b one with deferred_owner
+#                        wc-5, are BACKWARD assurance edges -> #AllowedVerifier rejects them).
 #   make all          -> clean + regressions.
 #
 # Requires `cue` on PATH (cue v0.17+). Install: go install cuelang.org/go/cmd/cue@latest
@@ -37,6 +40,9 @@ clean:
 	$(CUE) vet $(SCHEMA) ./regressions/contract.canonical-optional-prior-receipt.yaml -d '#CellContract'
 	$(CUE) vet $(SCHEMA) ./regressions/contract.canonical-relation-graph.yaml -d '#CellContract'
 	$(CUE) vet $(SCHEMA) ./regressions/contract.canonical-judgment.yaml -d '#CellContract'
+	# R10: the corrected FORWARD-ONLY registry fixture (self edges + wc-3b->wc-5 forward + a wave-boundary
+	# validator) MUST PASS against #AssuranceRegistry (the real oracle-registry.yaml is verified above).
+	$(CUE) vet $(SCHEMA) ./regressions/registry.forward-edges.positive.yaml -d '#AssuranceRegistry'
 	@echo "clean: all artifacts PASS cue vet"
 
 # ---- REGRESSIONS: each blocker/§2-drift mutation MUST be rejected by cue vet (non-zero). ----
@@ -49,6 +55,11 @@ regressions:
 	done; \
 	for f in ./regressions/contract.bad-*.yaml; do \
 	  if $(CUE) vet $(SCHEMA) "$$f" -d '#CellContract' >/dev/null 2>&1; then \
+	    echo "FAIL (unexpected pass): $$f"; rc=1; \
+	  else echo "ok rejected: $$f"; fi; \
+	done; \
+	for f in ./regressions/registry.bad-*.yaml; do \
+	  if $(CUE) vet $(SCHEMA) "$$f" -d '#AssuranceRegistry' >/dev/null 2>&1; then \
 	    echo "FAIL (unexpected pass): $$f"; rc=1; \
 	  else echo "ok rejected: $$f"; fi; \
 	done; \

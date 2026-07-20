@@ -125,6 +125,23 @@ outcomes, not intent. The accepted six-node graph, D9-four, grounding, and inten
 (oracle-registry → 6 contracts → wave `contract_sha256`); grounding/reconcile/intent files unchanged so
 their hashes stay. Contracts remain exactly §2 (now validated by the faithful CUE). **No Python.**
 
+### R10 disposition — forward-only, acyclic assurance (deferred-validator) graph
+
+**Source:** the external-β ITERATE on #672 (a single finding) and this Planning Cell's α repair (R10).
+Review→repair outcome, not intent. The accepted six-node **construction** graph (WC-2→WC-1→{WC-3a,WC-3b,WC-4}→WC-5),
+the faithful §2 `#CellContract`/`#WorkingCellContract`, the completion 5-constituent + resolver, and the CUE
+tool split are **unchanged**. This is a single-finding repair of the **assurance** graph only.
+
+| # | Finding | R10 disposition |
+|---|---|---|
+| 1 | **[BLOCKER]** the executable **assurance** graph was **cyclic**: two BACKWARD edges — a successor validating a predecessor's acceptance predicate. WC-2's `mechanical_oracles_owned` deferred to **wc-1** (edge wc-1→wc-2, but WC-1 runs *after* root WC-2 → cycle **WC-2↔WC-1**); WC-3b's completion predicate deferred to **wc-5** (edge wc-5→wc-3b, but terminal WC-5 runs *after* WC-3b → cycle **WC-3b↔WC-5**). | **Forward-only rule.** A child acceptance predicate may be verified only by the child **itself** or a construction-**predecessor** — never a successor. (a) All six per-child `mechanical_oracles_owned` predicates are **self-owned** ("my own oracle rows are owned", bound in my receipt); the WC-2 backward edge is gone. (b) WC-3b's completion-model predicate is **self-owned** (WC-3b proves its own child/whole-wave completion definition); WC-5's completion-evidence validator remains WC-5's **own forward** integration revalidation over all children (terminal) and no longer gates WC-3b. (c) The whole-wave cross-contract **oracle-ownership bijection** is moved off child edges to a **wave-boundary pre-authorization** predicate (`deferred_owner: "wave"`, `wave_authorization_gated`, Go artifact under `wave-validators/`); WC-1's former ownership predicate is removed; WC-5's seal-readiness predicate no longer treats it as an upstream child validator. (d) A new **combined-graph acyclicity** check is **WC-3b** self-owned (forward): its wave-DAG validator is extended to the union of the 12 construction edges and every cross-owner assurance edge, asserting acyclic + each cross-owner validator precedes its consumer. (e) **CUE enforces** it: `#AllowedVerifier` (transitive predecessor closure) constrains every deferred-go `#AssuranceEntry` to `deferred_owner ∈ {owner} ∪ predecessors(owner)`; two backward-edge negative fixtures FAIL and a forward positive passes. The **only** remaining cross-owner assurance edge is **wc-3b→wc-5** (edge-parity output consumed by the seal; forward). Both R9 cycles are gone; ledger + classification-totality stay genuinely-forward-owned by terminal WC-5. |
+
+**Ledger:** every `wave-revision:`/`revision:` marker advanced to **R10**; the content-hash chain re-pinned
+(oracle-registry → 6 contracts → wave `contract_sha256`); grounding/reconcile/intent files unchanged so
+their hashes stay. Registry stays **total** over child acceptance predicates (78 ⇄ 78; the wave-level
+oracle-ownership predicate lives in the separately-complete `wave_predicates` set). Contracts remain
+exactly §2. `make -C schema all` → exit 0. **No Python.**
+
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 
 Recording this provenance on an immutable coordination index (an update to #627 or a named index

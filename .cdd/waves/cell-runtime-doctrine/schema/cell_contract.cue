@@ -1,4 +1,5 @@
-// cnos#671 R9 — FAITHFUL canonical cn.cell.contract.v1 §2 schema (Go + CUE repo; NO Python).
+// cnos#671 R10 — FAITHFUL canonical cn.cell.contract.v1 §2 schema (Go + CUE repo; NO Python).
+// §2 schema UNCHANGED in R10 (the R10 repair is the forward-only assurance graph in assurance_registry.cue).
 //
 // #CellContract is the EXACT §2 `cn.cell.contract.v1` shape as specified by the authoritative
 // "Normative constraint model" paragraph of CELL-RUNTIME-CLASSES.md §2 (the constraint model, not

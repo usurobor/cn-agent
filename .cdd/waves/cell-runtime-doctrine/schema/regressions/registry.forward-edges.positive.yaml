@@ -1,0 +1,37 @@
+# POSITIVE (R10): a registry whose cross-owner deferred acceptance edges are all FORWARD passes
+# `cue vet`. wc-3b -> wc-5 (edge-parity output consumed by the seal) is forward (wc-3b is a predecessor
+# of terminal wc-5). SELF edges (wc-2 -> wc-2, wc-3b -> wc-3b) are trivially forward. A wave-boundary
+# validator (deferred_owner: "wave") carries wave_authorization_gated instead of a child gating_predicate.
+#   cue vet ./schema/ ./schema/regressions/registry.forward-edges.positive.yaml -d '#AssuranceRegistry'
+schema: cn.assurance-registry.v1
+wave: "671"
+revision: "R10"
+assurance:
+  - owner: "wc-2"
+    predicate: "self_edge__wc2_verified_by_wc2_is_forward"
+    classification: "deferred-go"
+    deferred_owner: "wc-2"
+    deferred_to: "self-owned: wc-2 proves its own predicate at wc-2 closure"
+  - owner: "wc-3b"
+    predicate: "self_edge__wc3b_verified_by_wc3b_is_forward"
+    classification: "deferred-go"
+    deferred_owner: "wc-3b"
+    deferred_to: "self-owned: wc-3b proves its own predicate at wc-3b closure"
+  - owner: "wc-5"
+    predicate: "forward_edge__wc5_predicate_verified_by_predecessor_wc3b_is_forward"
+    classification: "deferred-go"
+    deferred_owner: "wc-3b"   # FORWARD: wc-3b is a construction-predecessor of terminal wc-5
+    deferred_to: "forward reuse: wc-3b's edge-parity output consumed by the wc-5 seal"
+wave_predicates:
+  - predicate: "wave_boundary_bijection_preauthorized"
+    classification: "deferred-go"
+    deferred_owner: "wave"
+    wave_authorization_gated: true
+    deferred_to: "whole-wave property owned at the wave boundary (pre-authorization), not by a child"
+    go_artifact_id: "wave-oracle-ownership-bijection-validator"
+    go_artifact_path: ".cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go"
+    inputs: "the oracle-registry mechanically-verifiable entries across all owners"
+    result_shape: "{ bijective: bool }"
+    positive_fixture: "fixtures/oracle-ownership.one-checker-each.positive.yaml"
+    negative_fixture: "fixtures/oracle-ownership.double-owned.negative.yaml"
+    downstream_consumers: [ "wc-5" ]

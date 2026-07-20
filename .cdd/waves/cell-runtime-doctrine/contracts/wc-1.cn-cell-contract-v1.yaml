@@ -53,7 +53,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:a58c2c84dcbcad848e457d3302a0e704fbfd8547eb513ba6f451279628980939@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:d531a8b17346d112f2e0b599f4dc9e0ce43d509e7ca7e5324d2c6117dc6b1e57@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "cell-classes-and-contract"
@@ -72,15 +72,17 @@ acceptance:
     - "key_path_parity__template_and_worked_instance_normalize_to_identical_key_path_sets"
     - "scope_guard__no_cm_internals_no_cell_or_wave_fsm_no_migration_authored_here"
     - "emits_machine_readable_acceptance_fixtures_into_receipt__contract_template_yaml__worked_instance_yaml__input_union_fixtures__each_validated_by_the_named_acceptance_oracle_command"
-    # R9: WC-1 is the SOLE owner of the deferred Go oracle-ownership bijection validator; its PASS gates WC-1 completion.
-    - "deferred_validator_owned__go_oracle_ownership_bijection_validator_emitted_by_wc1_positive_and_named_negative_fixtures_green_gates_wc1_completion"
+    # R10: the oracle-ownership BIJECTION is a WHOLE-WAVE cross-contract property -> owned at the WAVE BOUNDARY
+    # (wave_predicates.wave_oracle_ownership_bijection_enforced, deferred_owner: "wave"), NOT by WC-1. WC-1's
+    # former deferred_validator_owned__go_oracle_ownership gating predicate is REMOVED. WC-1 keeps only the
+    # SELF-owned per-child oracle predicate below (its own mechanically-verifiable rows, bound in its receipt).
     - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
 constraints:
   allowed_paths:
     - "docs/architecture/CELL-RUNTIME-CLASSES.md"
     - ".cdd/unreleased/wc-1/**"
     - ".cdd/unreleased/wc-1/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
-    - ".cdd/unreleased/wc-1/validators/**"   # R9: WC-1's deferred Go oracle-ownership bijection validator + fixtures
+    - ".cdd/unreleased/wc-1/validators/**"   # R10: WC-1's SELF-owned per-child oracle checker + fixtures (the whole-wave oracle-ownership bijection moved to the wave boundary)
   forbidden_paths:
     - "schemas/**"
     - "src/**"

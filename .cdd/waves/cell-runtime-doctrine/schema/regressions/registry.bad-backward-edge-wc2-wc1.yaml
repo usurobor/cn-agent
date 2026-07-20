@@ -1,0 +1,14 @@
+# NEGATIVE (R10): a WC-2 acceptance predicate whose deferred_owner is wc-1 is a BACKWARD assurance
+# edge (wc-1 -> wc-2). wc-1 runs AFTER the root wc-2, so wc-1 is NOT in {wc-2} ∪ predecessors(wc-2) =
+# {wc-2}. #AllowedVerifier makes _forward_only false -> conflict with true -> `cue vet` MUST REJECT.
+#   cue vet ./schema/ ./schema/regressions/registry.bad-backward-edge-wc2-wc1.yaml -d '#AssuranceRegistry'
+schema: cn.assurance-registry.v1
+wave: "671"
+revision: "R10"
+assurance:
+  - owner: "wc-2"
+    predicate: "backward_edge_probe__wc2_acceptance_predicate_verified_by_wc1_a_successor_must_be_rejected"
+    classification: "deferred-go"
+    deferred_owner: "wc-1"   # BACKWARD: wc-1 is a successor of root wc-2 -> must FAIL
+    deferred_to: "illegal backward verifier: wc-1 runs after root wc-2; the R9 cycle WC-2 <-> WC-1"
+wave_predicates: []

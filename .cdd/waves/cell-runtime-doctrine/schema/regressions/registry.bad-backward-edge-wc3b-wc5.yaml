@@ -1,0 +1,14 @@
+# NEGATIVE (R10): a WC-3b acceptance predicate whose deferred_owner is wc-5 is a BACKWARD assurance
+# edge (wc-5 -> wc-3b). Terminal wc-5 runs AFTER wc-3b, so wc-5 is NOT in {wc-3b} ∪ predecessors(wc-3b)
+# = {wc-3b, wc-1, wc-2}. #AllowedVerifier makes _forward_only false -> conflict -> `cue vet` MUST REJECT.
+#   cue vet ./schema/ ./schema/regressions/registry.bad-backward-edge-wc3b-wc5.yaml -d '#AssuranceRegistry'
+schema: cn.assurance-registry.v1
+wave: "671"
+revision: "R10"
+assurance:
+  - owner: "wc-3b"
+    predicate: "backward_edge_probe__wc3b_acceptance_predicate_verified_by_wc5_a_successor_must_be_rejected"
+    classification: "deferred-go"
+    deferred_owner: "wc-5"   # BACKWARD: terminal wc-5 is a successor of wc-3b -> must FAIL
+    deferred_to: "illegal backward verifier: terminal wc-5 runs after wc-3b; the R9 cycle WC-3b <-> WC-5"
+wave_predicates: []
