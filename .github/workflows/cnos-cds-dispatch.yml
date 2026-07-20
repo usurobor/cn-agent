@@ -295,7 +295,10 @@ jobs:
             4. the required `.cdd/unreleased/{N}/` review artifacts exist (`gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`);
             5. the review receipt names the PR number or a commit SHA as evidence.
 
-            Record the proof in a `deliverable_evidence` block on the cycle's closeout:
+            δ records the proof before merge in
+            `.cdd/unreleased/{N}/REVIEW-REQUEST.yml` under the top-level
+            `deliverable_evidence` key. This marker is δ-owned transition evidence, not a
+            role closeout and not part of any post-merge artifact:
 
             ```
             deliverable_evidence:

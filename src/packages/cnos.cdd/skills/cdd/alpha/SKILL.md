@@ -312,7 +312,7 @@ In bounded dispatch, α exits after signaling review-readiness. α does not stay
 
 The close-out is a separate file from `self-coherence.md` — `self-coherence.md` carries the gap/mode/ACs/trace/review-readiness across the in-version cycle, and `alpha-closeout.md` carries the post-merge α-side cycle narrative (summary, friction log, observations, engineering-level reading).
 
-For release-scoped triadic cycles, the cycle directory moves to `.cdd/releases/{X.Y.Z}/{N}/` at release time per `release/SKILL.md` §2.5a — α does not duplicate the close-out elsewhere. The legacy aggregate path `.cdd/releases/{X.Y.Z}/alpha/CLOSE-OUT.md` is warn-only (pre-#283 form).
+For release-scoped triadic cycles, the directory remains under `unreleased/` through δ disconnect and γ moves it to `.cdd/releases/{X.Y.Z}/{N}/` afterward per `release/SKILL.md` §2.5a — α does not duplicate the close-out elsewhere.
 
 **Voice: factual observations and patterns only.** Do not recommend dispositions — triage is γ's job.
 

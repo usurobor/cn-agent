@@ -1,6 +1,6 @@
 ---
 name: receipt-stream
-description: Cross-cycle receipt-stream doctrine for protocol-iteration. Use when γ closes a cycle and writes the per-cycle iteration artifact (`cdd-iteration.md`), when γ updates the cross-cycle aggregator at `.cdd/iterations/INDEX.md`, when ε reads the receipt stream across cycles to surface protocol-gap patterns, when a finding's disposition lands a cross-repo patch and the cross-repo trace bundle attaches, or when a courtesy empty-findings stub is written for a `protocol_gap_count == 0` cycle.
+description: Cross-cycle receipt-stream doctrine for protocol-iteration. Use when γ performs post-disconnect terminal close and writes the per-cycle iteration artifact (`cdd-iteration.md`), when γ updates the cross-cycle aggregator at `.cdd/iterations/INDEX.md`, when ε reads the receipt stream across cycles to surface protocol-gap patterns, when a finding's disposition lands a cross-repo patch and the cross-repo trace bundle attaches, or when a courtesy empty-findings stub is written for a `protocol_gap_count == 0` cycle.
 artifact_class: skill
 kata_surface: embedded
 governing_question: How does the protocol carry its own learning signal across cycles — through a per-cycle iteration artifact (with a fixed per-finding shape) and a cross-cycle aggregator (with a fixed row format) — so that ε can read the receipt stream and surface protocol-gap patterns no single cycle can surface?
@@ -68,7 +68,7 @@ Out of scope:
 - The role-local authoring procedure (which session writes; the close-out gate ordering; the ε-vs-γ collapse rule). Lives in `cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b` (cdd-side runbook, now pointer to this skill) and `cnos.cdd/skills/cdd/epsilon/SKILL.md §1` (ε's CDD-side role-local authority).
 - The CDD-specific gap-class names (`cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`). Lives in `cnos.cdd/skills/cdd/epsilon/SKILL.md §1`. CDR has different gap classes; future c-d-X may have other gap classes. The per-finding `Class` field is consumer-specific in vocabulary; the wire-format `Class:` slot is protocol-agnostic.
 - The receipt schema itself (the typed `#Receipt` that carries `protocol_gap_count` and `protocol_gap_refs`). Lives in `schemas/cdd/receipt.cue`. This skill consumes the receipt's `protocol_gap_count` as the cadence-rule input; it does not define the receipt's shape.
-- The per-cycle artifact-channel (where the `cdd-iteration.md` file sits during the cycle; the release-time directory move). Lives in `cnos.handoff/skills/handoff/artifact-channel/SKILL.md`. The per-cycle iteration artifact is an artifact-channel-owned file; the receipt-stream owns its *content shape* and the cross-cycle aggregation; the channel owns the file path / write ownership / freeze-on-merge rules.
+- The per-cycle artifact channel (where `cdd-iteration.md` sits before the post-disconnect archive). The receipt-stream owns content/aggregation; artifact-channel owns path, role ownership, and archive timing.
 - The cross-repo bundle composition (LINEAGE.md schemas per case; STATUS state machine; feedback-patch format; archival rule). Lives in `cnos.handoff/skills/handoff/cross-repo/SKILL.md`. This skill names the *trigger* for a bundle (a `patch-landed` finding with `Cross-repo` target); cross-repo names the *bundle*.
 - The activation-side cadence declaration (per-repo `cdd-iteration.md` cadence; D/C/B/A severity scale; auto-spawn MCA trigger). Lives in `cnos.cdd/skills/cdd/activation/SKILL.md §22`. The activation skill declares per-repo cadence overlays; this skill carries the generic wire-format invariants.
 - Tooling that auto-verifies receipt-stream discipline (`cn cdd verify` cycle-iteration checks). Deferred; doctrine first, tooling later.
@@ -286,7 +286,7 @@ The full row history is at `.cdd/iterations/INDEX.md` — 22+ rows at the source
 
 ### Scenario
 
-γ has just closed a cycle. β has merged the cycle branch to main; α and β close-outs are on main. γ has filed `gamma-closeout.md`. The cycle's receipt at `.cdd/unreleased/{N}/receipt.yaml` carries `protocol_gap_count: 2` with two refs naming `cdd-skill-gap` findings surfaced during review.
+δ has just reported the cycle's tagged disconnect and green release CI. The role close-outs and γ's nonterminal marker are on main, and the cycle still lives under `.cdd/unreleased/{N}/`. Its receipt carries `protocol_gap_count: 2` with two refs naming `cdd-skill-gap` findings surfaced during review. γ has not yet archived or declared terminal closure.
 
 ### Expected reasoning
 
@@ -309,9 +309,11 @@ The full row history is at `.cdd/iterations/INDEX.md` — 22+ rows at the source
    ```
    | N | #N | YYYY-MM-DD | 2 | P | A | Z | .cdd/unreleased/N/cdd-iteration.md |
    ```
-   where P + A + Z = 2 (the consistency check per §2). γ commits both files in the same commit (typical pattern: the γ-closeout commit also carries the iteration artifact + INDEX row).
+   where P + A + Z = 2 (the consistency check per §2). γ commits both files in the same post-disconnect learning commit before the archive move.
 
 5. **Cross-repo bundle (§6).** If any finding had `Disposition: patch-landed` with a `Cross-repo:` target, γ creates a bundle at `.cdd/iterations/cross-repo/{counterpart-repo}/{slug}/` per `cnos.handoff/skills/handoff/cross-repo/SKILL.md`. The bundle's LINEAGE.md names the source-side patch + the destination-side PR.
+
+6. **Archive and terminal seal.** After the PRA, dispositions, and aggregation are complete, γ moves the cycle directory to `.cdd/releases/{X.Y.Z}/{N}/` in its own archive commit. γ then appends the terminal declaration to the archived `gamma-closeout.md` in a later commit binding the release tag and archive SHA. Only that final commit closes the cycle.
 
 6. **Release-time move (artifact-channel §2.4.2).** Before γ requests the tag from δ, γ moves `.cdd/unreleased/{N}/` → `.cdd/releases/{X.Y.Z}/{N}/` (or `.cdd/releases/docs/{ISO-date}/{N}/` for docs-only releases). The `cdd-iteration.md` file rides the move; the INDEX.md row's `Path` column is updated to reflect the new path in a subsequent close-out commit if not already pinned at write time.
 

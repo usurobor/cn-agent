@@ -3,7 +3,7 @@ name: release-effector
 description: δ-side mechanics for cutting a release — scripts/release.sh invocation, tag push, release CI polling, CI-red recovery runbook, branch cleanup. The platform-actions companion to release/SKILL.md (β-side authoring).
 artifact_class: skill
 kata_surface: embedded
-governing_question: When γ declares closure, what does δ run, in what order, and how does δ verify the release disconnected cleanly?
+governing_question: When γ marks post-merge closeout release-ready, what does δ run, in what order, and how does δ report a clean disconnect for γ's later archive and terminal closure?
 visibility: internal
 parent: cdd
 triggers:
@@ -306,11 +306,11 @@ Execute the disconnect release.
 
 ### Expected actions
 
-1. **Verify preconditions and the negative case.** Exact marker in `gamma-closeout.md`; an assurance-only file without it must fail; `RELEASE.md`; β's release-ready signal; local main matches `origin/main`.
+1. **Verify preconditions and the negative case.** Exact marker in `gamma-closeout.md`; an assurance-only file without it must fail; `RELEASE.md`; α/β role closeouts; γ's release-readiness signal; local main matches `origin/main`.
 2. **Run the script.** `scripts/release.sh 3.67.0` (or edit VERSION then `scripts/release.sh`).
 3. **Watch the script's output.** Expect: VERSION set, gate validated against `unreleased/`, manifests stamped, consistency OK, release commit, tag annotated, push complete. Assert the script did not move cycle dirs.
 4. **Poll release CI.** `gh run list --branch 3.67.0`, then `gh run watch <id> --exit-status`.
-5. **CI Green path.** Confirm completion to γ. Delete merged cycle branches. γ then moves the cycle directory to `.cdd/releases/3.67.0/{N}/` and commits the terminal archive.
+5. **CI Green path.** Confirm completion to γ. Delete merged cycle branches. γ then moves the cycle directory to `.cdd/releases/3.67.0/{N}/` and commits the archive; only afterward does γ append and commit the terminal declaration separately.
 6. **CI Red path.** Execute §4 runbook: investigate, classify, fix-or-escalate, re-verify. Operator override only for pre-existing infrastructural failures.
 
 ### Common failures

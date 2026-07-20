@@ -1,6 +1,6 @@
 ---
 name: gamma
-description: γ role in CDD. Coordination + closure + triage. γ produces dispatch prompts, unblocks via artifact facts, runs post-release assessment, triages findings, and declares cycle closure — binding the cell's ε-observations/learning section into the receipt at closeout. δ executes dispatch; harness owns the mechanics.
+description: γ role in CDD. Coordination + closeout + terminal archival closure. γ produces dispatch prompts, binds the nonterminal post-merge receipt, observes δ's disconnect, runs post-release assessment, archives the receipt, and only then declares terminal closure. δ executes dispatch; harness owns the mechanics.
 artifact_class: skill
 kata_surface: embedded
 governing_question: How does γ keep the full cycle coherent across issue creation, dispatch coordination, unblocking, assessment, and close-out — without leaking into runtime supervision mechanics?
@@ -26,7 +26,8 @@ outputs:
   - unblock decisions (clarification artifacts)
   - post-release assessment
   - close-out triage table
-  - cycle closure declaration (gamma-closeout.md)
+  - nonterminal post-merge closeout declaration (gamma-closeout.md)
+  - post-disconnect archive commit and terminal closure declaration
 requires:
   - active role is γ
   - canonical CDD.md loaded
@@ -63,7 +64,7 @@ When acting as γ:
 
 Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) are defined in `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix".
 
-`cnos.cds/skills/cds/CDS.md` is the canonical source for: the ordered γ lifecycle (§"Development lifecycle" → §"Step table" — γ owns Steps 0–3 and Steps 9–13; Step 8 is β's; Steps 9–10 are δ's release-gate authority; Step 10's tag mechanics are δ's via `release-effector/SKILL.md`) and selection rule order (§"Selection function"). This file does **not** redefine that algorithm — it expands those steps into executable checks, evidence, and gates.
+`cnos.cds/skills/cds/CDS.md` is the canonical source for the ordered lifecycle and selection rule. γ owns Steps 0–3, participates in the Step 9 post-merge receipt, prepares Step 10, observes δ-owned Step 11 disconnect, and owns Steps 12–13 archive/terminal closure. This file expands those steps without reordering them.
 
 ## Step map
 
@@ -71,11 +72,11 @@ Canonical artifact locations (PRA, close-out paths, snapshot dirs, tag policy) a
 - Step 3 → issue pack + quality gate (`§2.3–§2.4`)
 - Step 3a → create cycle branch (`§2.5` — `cycle/{N}` from `origin/main`, γ-owned pre-flight per `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch pre-flight")
 - Steps 3b–6 → dispatch + unblocking (`§2.5`)
-- Steps 7–8 → release-prep artifacts (`§2.6`)
-- Steps 9–10 → close-out triage (`§2.7`)
-- Steps 11–13 → cycle iteration + process patching (`§2.8–§2.9`)
-- Steps 14–16 → hub memory, branch cleanup, closure declaration (`§2.10`)
-- Step 17 → δ disconnect release (mechanics: `release-effector/SKILL.md`; doctrinal frame: `delta/SKILL.md` §1) — not γ's
+- Step 9 → post-merge role closeout, triage, and nonterminal marker (`§2.7–§2.10` Phase A)
+- Step 10 → `RELEASE.md` preparation and request for δ preflight (`§2.6`, `§2.10` Phase B)
+- Step 11 → δ disconnect release + green CI (`release-effector/SKILL.md`) — observed by γ, not executed by γ
+- Step 12 → post-release observation, PRA, final triage, and receipt archive (`§2.7–§2.10` Phase C)
+- Step 13 → terminal declaration bound to tag + archive; hub/next-MCA completion (`§2.10` Phase C)
 
 ---
 
@@ -173,7 +174,7 @@ Do not compensate for a weak issue by making the prompt longer. Fix the issue in
 
 After the issue passes the quality gate (§2.4) and **before** dispatching α/β, γ creates `cycle/{N}` from `origin/main`. The branch is the canonical coordination surface (`cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" + §"Development lifecycle" → §"Branch rule"); a single named target replaces the pre-#287 model where α opened the branch.
 
-**γ-owned branch pre-flight (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch pre-flight"):** `origin/cycle/{N}` does not yet exist (fail loud — one cycle = one branch); no stalled `.cdd/unreleased/{N}/` on `origin/main` (would indicate a previous cycle for `{N}` did not complete its release-time move per `release/SKILL.md` §2.5a); the issue's scope is declared in the body; base SHA known (`git rev-parse origin/main`); issue is open. Mechanics (the `git fetch` + `rev-parse --verify` + `ls-tree` + `switch -c` + `push -u` sequence) follow `cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch pre-flight" directly; γ does not restate them here.
+**γ-owned branch pre-flight (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Branch pre-flight"):** `origin/cycle/{N}` does not yet exist (fail loud — one cycle = one branch); no stalled `.cdd/unreleased/{N}/` on `origin/main` (would indicate a prior cycle missed its post-disconnect archive per `release/SKILL.md` §2.5a); the issue's scope is declared in the body; base SHA known (`git rev-parse origin/main`); issue is open.
 
 The branch must exist on `origin` before dispatch. α and β never create branches; their prompts include a `Branch: cycle/<N>` line and they `git switch` to it.
 
@@ -197,7 +198,7 @@ Mechanical check (run before producing the α prompt): `git ls-tree -r --name-on
 
 ##### Polling cross-reference
 
-γ polls the issue and `origin/cycle/{N}` to react to α/β commits, β verdicts, and CI status. **Mechanics: `harness/SKILL.md` §5.4** (single-named-branch transition loop, `Monitor`-wrapped, reachability re-probe per `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Polling primitives"). γ's invariant: **polling requires a query, a wake-up mechanism, and a reachability probe.** If the environment provides neither a `Monitor`-equivalent nor a shell-wake harness, γ surfaces the gap to operator before dispatch. Cycle-dir artifacts live on `origin/cycle/{N}` (not on `main`) until release-time move; polling `main` for in-flight cycle dirs is silent.
+γ polls the issue and `origin/cycle/{N}` to react to α/β commits, β verdicts, and CI status. **Mechanics: `harness/SKILL.md` §5.4**. Before merge the cycle directory is read from the cycle branch; after merge it is read from main under `unreleased/` through disconnect and archive.
 
 ##### Dispatch prompts + implementation contract → cnos.handoff
 
@@ -263,9 +264,13 @@ In the sequential dispatch model, β exits after merge. δ runs `scripts/release
 
 `self-coherence.md` + `beta-review.md` carry the in-cycle record; the two `*-closeout.md` files are γ's primary triage inputs. The cycle directory remains at `.cdd/unreleased/{N}/` through closeout and release validation; γ archives it only after the tagged disconnect (`cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Location matrix").
 
-Then write the post-release assessment per `post-release/SKILL.md` at `docs/{tier}/{bundle}/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md` (CDD package: `docs/gamma/cdd/{X.Y.Z}/POST-RELEASE-ASSESSMENT.md`). The PRA is γ's — it measures α's implementation, β's review quality, and cycle economics. β assessing its own review is a self-grading problem.
+Before release, γ performs preliminary triage of both role closeouts and binds
+that triage into the marked post-merge receipt. After δ disconnects and release
+CI is green, γ writes the PRA per `post-release/SKILL.md` and finalizes the
+triage with post-release evidence. The PRA is γ's — β assessing its own review
+would be self-grading.
 
-γ triages every finding from both close-outs + the PRA using CAP:
+γ triages every finding from both close-outs, then incorporates PRA findings using CAP:
 1. **Immediate MCA available** → ship now (γ lands the skill/spec patch per `cnos.cds/skills/cds/CDS.md` §"Closure" → §"Immediate outputs"; if delegated, name delegate + deadline)
 2. **Project MCI** → file / update project issue or `.cdd/` artifact
 3. **Agent MCI** → update hub / adhoc thread
@@ -281,7 +286,7 @@ Minimum triage record:
 
 Silence is not triage. Every finding gets a disposition. Step 13a skill/spec patches are γ's to land or explicitly delegate.
 
-### 2.8. Steps 10–11 — Enforce cycle-iteration outputs when triggers fire
+### 2.8. Step 12 — Enforce cycle-iteration outputs when triggers fire
 
 Apply the cycle-iteration checks named in `CDD.md` step 10. For each fired trigger, γ must do something explicit:
 
@@ -297,7 +302,7 @@ Each fired trigger must end in one of three states:
 - concrete next MCA committed
 - explicit no-patch decision with reason
 
-### 2.9. Step 13 — Run the independent γ process-gap check
+### 2.9. Steps 12–13 — Run the independent γ process-gap check
 
 Even if no `cnos.cds/skills/cds/CDS.md` §"Assessment" → §"Cycle iteration triggers" trigger fired, γ must still ask:
 - Did this cycle reveal a recurring friction?
@@ -315,43 +320,52 @@ If no:
 - ❌ "No trigger fired, so nothing to do"
 - ✅ "No formal trigger fired, but dispatch kept compensating for issue ambiguity; γ patches issue-quality gate now"
 
-### 2.10. Steps 13–15 — Declare post-merge closeout, then disconnect and archive
+### 2.10. Steps 9–13 — Mark closeout, disconnect, archive, then close
 
-Do not declare post-merge closeout complete until all of the following are true:
+#### Phase A — Step 9: nonterminal post-merge closeout
 
-1. `.cdd/unreleased/{N}/alpha-closeout.md` exists on main
-2. `.cdd/unreleased/{N}/beta-closeout.md` exists on main
-3. γ has written the post-release assessment per `post-release/SKILL.md`
-4. every fired cycle-iteration trigger has a `Cycle Iteration` entry with root cause and disposition
-5. recurring findings were assessed for skill / spec patching
-6. immediate outputs were either landed or explicitly ruled out
-7. deferred outputs have issue / owner / first AC
-8. next MCA is named
-9. hub memory is updated
-10. merged remote branch cleanup is assigned to δ after release
-11. the release batch/version assignment is named; `RELEASE.md` may be authored after this post-merge closeout declaration (§2.6)
-12. cycle directory remains at `.cdd/unreleased/{N}/` for exact-cycle release validation (§2.6)
-13. no release-boundary action has run out of order; passing this closeout gate authorizes γ to request preflight
-14. if the cycle's receipt has `protocol_gap_count > 0` (≥1 finding tagged `cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`), `.cdd/unreleased/{N}/cdd-iteration.md` exists with each finding structured per `post-release/SKILL.md` Step 5.6b, **and** `.cdd/iterations/INDEX.md` has a row for cycle N. If any finding shipped to a different repo, `.cdd/iterations/cross-repo/{target}/{slug}/` exists with bundle + `LINEAGE.md`. If `protocol_gap_count == 0`, no iteration file is required (per [`ROLES.md §4b.4`](../../../../../../ROLES.md), [`epsilon/SKILL.md §1`](../epsilon/SKILL.md), and [`activation/SKILL.md §22`](../activation/SKILL.md)); the INDEX row is also not required for empty-findings cycles.
-15. **γ MUST assert the parent issue's close state before declaring closure — this is a hard gate, not a conditional fallback.** Run `gh issue view {N} --json state --jq .state`. If the result is `CLOSED`, record the asserted state in `gamma-closeout.md` (field below) and proceed. If the result is anything other than `CLOSED` (e.g. the merge subject lacked a close-keyword per `beta/SKILL.md §"Pre-merge gate"` row 5), γ MUST run `gh issue close {N}` immediately and record the discrepancy — the pre-assertion state, the corrective action taken, and the post-correction state — in `gamma-closeout.md`. Closure MUST NOT be declared while this row is unresolved. *Derives from: cnos#368 — cycle #367 merged with a bare `(#367)` reference (no close-keyword); no γ-side assertion existed to catch the resulting OPEN state, and the issue stayed OPEN ~24h until a manual close. This row is the structural closer of that gap.*
+Before writing the marker, γ verifies: both role closeouts exist on main; merge
+CI is green; preliminary triage names a disposition for every α/β finding; the
+release batch/version is named; the cycle directory still lives at
+`.cdd/unreleased/{N}/`; and the parent issue has been asserted `CLOSED` (closing
+it and recording the discrepancy when needed). γ then writes/updates
+`gamma-closeout.md` with the cycle summary, preliminary triage, issue-state
+evidence, deferred candidates, and the exact standalone line:
 
-The mechanical lifecycle oracle is phase-specific. Before merge, run
-`scripts/validate-release-gate.sh --mode pre-merge --cycle N`; it must not ask
-for future close-outs. After merge and after the role close-outs have landed,
-γ appends the post-merge closeout declaration and the exact standalone line
-`CDD-Post-Merge-Closeout: complete` to `gamma-closeout.md`, then runs
-`scripts/validate-release-gate.sh --mode post-merge --cycle N`. A pre-operator
-assurance receipt in that filename does not satisfy post-merge closeout without
-the marker. This marker is explicitly nonterminal: `RELEASE.md`, δ's tagged
-disconnect, release CI, and γ's directory archive remain pending.
+`CDD-Post-Merge-Closeout: complete`
 
-Then:
-- write `.cdd/unreleased/{N}/gamma-closeout.md`. Contains: cycle summary, close-out triage table, §"Cycle iteration triggers" assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, next MCA, **and the asserted issue-close state from row 15 above** (the `gh issue view {N} --json state --jq .state` result at assertion time, plus, if a discrepancy was found and corrected, the discrepancy note: pre-assertion state, corrective action, post-correction state). `gamma-closeout.md` MUST also include the mandatory `learning`/`epsilon_observations` section per `CELL-KINDS.md` §"Mandatory terminal learning section" (`observations`, `process_deltas`, `reusable_patterns`, `followups`, `operator_burden`) — γ binds this section into the receipt; it is not optional narrative. **δ must not tag/release before this artifact carries `CDD-Post-Merge-Closeout: complete` on main, but that marker alone does not close the cycle.**
-- update hub memory
-- request δ's release-boundary preflight and tagged disconnect. After δ reports
-  release CI green, archive `.cdd/unreleased/{N}/` under the release version and
-  commit that move on main. Only the tag plus this archival move establish
-  terminal cycle closure; the pre-release marker does not.
+Run `scripts/validate-release-gate.sh --mode post-merge --cycle N`. Filename
+existence without the marker is only assurance; a passing post-merge gate means
+the receipt is complete enough for release preparation, never terminally
+closed. PRA, release tag, release CI, archive, final learning, and terminal
+declaration remain pending.
+
+#### Phase B — Steps 10–11: release preparation and δ disconnect
+
+γ writes `RELEASE.md` and leaves the receipt under `unreleased/`. The default
+`scripts/validate-release-gate.sh --cycle N` must pass there before γ requests
+δ preflight. δ alone executes `scripts/release.sh`, creates the annotated tag,
+and reports release CI green (or an explicit authorized override). γ does not
+archive or declare terminal closure before that observable result.
+
+#### Phase C — Steps 12–13: observe, assess, archive, terminally close
+
+After disconnect, γ:
+
+1. verifies the exact tag and release-CI result;
+2. authors the PRA and finalizes triage, cycle-iteration outputs, immediate and
+   deferred dispositions, hub memory, next MCA, and the mandatory
+   `learning`/`epsilon_observations` fields;
+3. moves `.cdd/unreleased/{N}/` to `.cdd/releases/{X.Y.Z}/{N}/` and commits that
+   archive as its own observable commit;
+4. only after that commit exists, appends the terminal declaration to the
+   archived `gamma-closeout.md`, binding the tag and archive-commit SHA, and
+   commits it separately.
+
+Only the tag/green-CI evidence plus the archive commit plus the subsequent
+terminal-declaration commit establish cycle closure. The earlier
+`CDD-Post-Merge-Closeout: complete` line remains a release-readiness marker and
+must never be cited as terminal proof.
 
 ### 2.11. γ as autonomous coordinator
 
@@ -370,7 +384,7 @@ On each polling transition, γ matches the event against named decision-points a
 - *Decision-request*: 1-sentence problem / options with trade-offs / γ recommendation / impact-if-delayed
 - *Deferred-question batch*: collect at natural coordination pauses, surface as batch
 
-**Kata — 3-round autonomous cycle.** γ drives a substantial cycle (≥5 ACs) with one mid-cycle clarification: (1) selects, creates issue, requests α/β dispatch; (2) α signals review-readiness, β returns RC; (3) γ writes clarification, requests α fix-round; (4) α fixes, β approves, merge completes; (5) γ writes PRA, triages, closes; (6) δ cuts release — **no operator interaction except at spawn time**. Success criterion: operator receives only the final TLDR.
+**Kata — 3-round autonomous cycle.** γ drives a substantial cycle with one clarification: (1) select/scaffold/dispatch; (2) α signals readiness, β returns RC; (3) clarify and fix; (4) β converges, operator accepts, merge completes; (5) role closeouts and γ's nonterminal marker land under `unreleased/`; (6) γ prepares release and δ disconnects with green CI; (7) γ observes, writes PRA, archives, then commits terminal closure. No step calls the marker terminal or writes PRA before the release it measures.
 
 ---
 

@@ -8,6 +8,12 @@ phase: post-merge
 
 # α Close-out — #669
 
+> **Historical-status note.** The unversioned opening sections below are the R0
+> observation record. Where R0 describes a post-merge marker as terminal or
+> otherwise implies closure before release disconnect and archival, that prose
+> is historical and superseded by R1 and R2. It remains append-only evidence,
+> not current lifecycle authority.
+
 ## Summary
 
 Cycle #669 landed the cnos-owned recursive-cell coherence methodology through
@@ -112,3 +118,41 @@ The recursive-cell CM, frozen #662 inputs, accepted R6 evidence, standing, issue
 state, release assignment, tag, branch lifecycle, and FSM state remain
 untouched. R1 is α matter offered for a fresh independent β review; it is not a
 β verdict, γ closeout, or terminal disposition.
+
+## R2 — repair against β R1 at `bec4e437`
+
+R2 addresses the three D findings in the append-only R1 section of
+`beta-closure-review.md`. It preserves the accepted recursive-cell matter and
+does not edit any β- or γ-owned #669 receipt.
+
+| β R1 finding | R2 repair | Evidence |
+|---|---|---|
+| Exact-cycle classification still failed open or rejected the landed cycle | Exact `--cycle` validation now requires `gamma-scaffold.md` plus a recognized anchored `**Mode:**`; missing, empty, self-coherence-only, missing-mode, and unknown-mode shapes fail. Only explicit `small-change` / `immediate-output` collapse. `substantial` and CDS's landed `substantial-cycle` spelling normalize to the same triadic class. Unselected repository-wide scans retain an explicit, tested legacy-unscaffolded compatibility path. | Gate regression suite covers all adversarial shapes and both substantial spellings: 51/51 assertions pass. Exact #669 pre-merge now passes against its `**Mode:** substantial-cycle \`repair_pass\`` scaffold. |
+| Review dispatch still coupled proof to future closeout artifacts | δ §9.5 and every generated dispatch surface now require only the three review-time artifacts (`gamma-scaffold.md`, `self-coherence.md`, `beta-review.md`) plus `REVIEW-REQUEST.yml`. `deliverable_evidence` has one authority: the top-level δ-owned transition field in `REVIEW-REQUEST.yml`; no source/golden/live dispatch prose places it “on the cycle's closeout.” | Dispatch closeout-integrity and repair-preflight guards pass. Renderer is idempotent; golden and live workflow are byte-identical at SHA-256 `18c8cfb8331a3fb5f243c80d67776177c1decd5cf54f3d17d03ec306b37f3b10`. |
+| Canonical lifecycle peers still contradicted the executable release order | CDS now has one 0–13 step table and S0–S13 FSM: marked nonterminal role closeout under `unreleased/` → release preparation/gate → δ disconnect + green CI → γ observation/PRA/final triage + archive → separate terminal declaration bound to tag and archive SHA. γ, operator, release, release-effector, handoff/artifact-channel, receipt-stream, activation, α/β/δ, and CDS pointers use that order. Docs-only cycles use δ's explicit acknowledgement of the merged SHA before γ archive. The legacy ledger now treats closeouts under `unreleased/` as the canonical post-merge/release-pending state rather than stale. | Release-effector kata assertions preserve the receipt through tag and separate archive from terminal declaration. Focused Go regression proves unreleased closeouts are accepted; source-built ledger reports 396 pass, 0 fail, 41 warnings. R0 terminal-marker prose is explicitly historical above. |
+
+### R2 verification
+
+- `scripts/test-validate-release-gate.sh`: 51/51 assertions pass.
+- `src/packages/cnos.cdd/commands/cdd-status/test-cn-cdd-status.sh`: 27/27
+  assertions pass.
+- `go test ./src/packages/cnos.cdd/commands/cdd-verify/...`: pass, including
+  `TestUnreleasedCloseoutsAreCanonicalPostMergeState`.
+- Source-built `cn cdd verify --unreleased --exceptions .cdd/exceptions.yml`:
+  396 passed, 0 failed, 41 warnings; #669 accepts α/γ in the canonical
+  release-pending location and identifies only the still-missing β closeout.
+- Exact #669 pre-merge gate: pass. Exact post-merge and release gates fail only
+  for missing `beta-closeout.md` and the absent nonterminal
+  `CDD-Post-Merge-Closeout: complete` marker; both are outside α authority.
+- Dispatch closeout-integrity and repair-preflight guards: pass. Golden
+  re-render: idempotent and byte-identical to the live workflow.
+- Skill-frontmatter self-test: pass; repository skill validation: 100/100.
+- Release-tag integration, shell syntax, YAML parse, and `git diff --check`:
+  pass.
+- Diff from β R1 head across the recursive-cell CM, frozen #662 matter, R6
+  `self-coherence.md`, R6 `beta-review.md`, and γ-owned #669 artifacts: empty.
+- Accepted CM execution in R2: none. Standing remains `none`.
+
+R2 performs no γ closeout, release assignment, tag, branch deletion, FSM
+transition, archive move, or terminal declaration. It is α repair matter for a
+fresh exact-SHA independent β review.

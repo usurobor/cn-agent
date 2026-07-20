@@ -72,7 +72,13 @@ for f in "$SKILL" "$GOLDEN" "$LIVE"; do
     "deliverable_evidence" \
     "commits beyond its base" \
     "No-deliverable rule" \
-    "status:review"
+    "status:review" \
+    '.cdd/unreleased/{N}/REVIEW-REQUEST.yml' \
+    "δ-owned transition evidence" \
+    "review_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md]"
+  if grep -qF -- "on the cycle's closeout" "$ROOT/$f"; then
+    echo "::error::cnos#524 guard ($f): ambiguous closeout-owned deliverable_evidence survived"; fail=1
+  fi
 done
 
 # The named failure mode must be explicitly forbidden, not merely implied.

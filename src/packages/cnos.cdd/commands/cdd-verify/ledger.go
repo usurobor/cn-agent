@@ -483,10 +483,10 @@ func (l *ledgerRun) checkUnreleasedTriadicArtifacts(cycleDir, issueNum string) {
 	for _, artifact := range closeouts {
 		ap := filepath.Join(cycleDir, artifact)
 		if fileExists(ap) {
-			l.check(fmt.Sprintf("%s (issue #%s)", artifact, issueNum), checkWarn, "present in unreleased cycle - may indicate stale cycle")
+			l.check(fmt.Sprintf("%s (issue #%s)", artifact, issueNum), checkPass, "present in canonical post-merge/release-pending location")
 			l.validateSections(ap, artifact, "", false)
 		} else {
-			l.check(fmt.Sprintf("%s (issue #%s)", artifact, issueNum), checkWarn, "missing in unreleased cycle (expected until cycle complete)")
+			l.check(fmt.Sprintf("%s (issue #%s)", artifact, issueNum), checkWarn, "missing in unreleased cycle (expected before that role's post-merge closeout)")
 		}
 	}
 }

@@ -98,7 +98,7 @@ R="$TMP/pre_no_scaffold"; make_root "$R"
 write_triadic_cycle "$R/.cdd/unreleased" 212 gamma-scaffold.md
 OUT="$TMP/pre_no_scaffold.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 212
 assert_exit "pre-merge fails without gamma-scaffold" 1 "$RUN_EXIT"
-assert_grep "pre-merge names gamma-scaffold" "missing gamma-scaffold.md" "$OUT"
+assert_grep "pre-merge names gamma-scaffold" "gamma-scaffold.md missing" "$OUT"
 
 echo "## gamma scaffold classifies an in-flight cycle as triadic"
 R="$TMP/pre_scaffold"; make_root "$R"
@@ -183,6 +183,51 @@ OUT="$TMP/substantial.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --
 assert_exit "substantial scaffold fails without beta review" 1 "$RUN_EXIT"
 assert_grep "substantial gate names beta review" "missing beta-review.md" "$OUT"
 
+R="$TMP/substantial_cycle"; make_root "$R"; write_release_md "$R"
+mkdir -p "$R/.cdd/unreleased/221"
+printf '# gamma scaffold\n\n**Mode:** substantial-cycle `repair_pass`\n' > "$R/.cdd/unreleased/221/gamma-scaffold.md"
+printf '# self-coherence\n' > "$R/.cdd/unreleased/221/self-coherence.md"
+OUT="$TMP/substantial_cycle.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 221
+assert_exit "CDS substantial-cycle spelling remains triadic" 1 "$RUN_EXIT"
+assert_grep "substantial-cycle gate names beta review" "missing beta-review.md" "$OUT"
+
+echo "## exact-cycle validation fails closed for unknown shapes"
+R="$TMP/self_only"; make_root "$R"
+mkdir -p "$R/.cdd/unreleased/215"
+printf '# self-coherence only\n' > "$R/.cdd/unreleased/215/self-coherence.md"
+OUT="$TMP/self_only.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 215
+assert_exit "self-coherence-only exact cycle fails" 1 "$RUN_EXIT"
+assert_grep "self-only diagnostic requires scaffold" "gamma-scaffold.md missing" "$OUT"
+
+R="$TMP/empty"; make_root "$R"; mkdir -p "$R/.cdd/unreleased/216"
+OUT="$TMP/empty.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 216
+assert_exit "empty exact cycle fails" 1 "$RUN_EXIT"
+assert_grep "empty-cycle diagnostic requires explicit mode" "explicit canonical \*\*Mode:\*\*" "$OUT"
+
+R="$TMP/mode_missing"; make_root "$R"; mkdir -p "$R/.cdd/unreleased/217"
+printf '# gamma scaffold without declaration\n' > "$R/.cdd/unreleased/217/gamma-scaffold.md"
+OUT="$TMP/mode_missing.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 217
+assert_exit "scaffold without mode fails" 1 "$RUN_EXIT"
+assert_grep "missing-mode diagnostic names recognized declaration" "lacks a recognized canonical" "$OUT"
+
+R="$TMP/mode_unknown"; make_root "$R"; mkdir -p "$R/.cdd/unreleased/218"
+printf '# gamma scaffold\n\n**Mode:** experimental\n' > "$R/.cdd/unreleased/218/gamma-scaffold.md"
+OUT="$TMP/mode_unknown.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 218
+assert_exit "unknown mode fails" 1 "$RUN_EXIT"
+assert_grep "unknown-mode diagnostic lists accepted modes" "expected substantial/substantial-cycle, small-change, or immediate-output" "$OUT"
+
+R="$TMP/immediate"; make_root "$R"; mkdir -p "$R/.cdd/unreleased/219"
+printf '# gamma scaffold\n\n**Mode:** immediate-output\n' > "$R/.cdd/unreleased/219/gamma-scaffold.md"
+OUT="$TMP/immediate.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge --cycle 219
+assert_exit "explicit immediate-output exact cycle collapses" 0 "$RUN_EXIT"
+
+echo "## repository-wide scan preserves unscaffolded legacy compatibility"
+R="$TMP/legacy_scan"; make_root "$R"; mkdir -p "$R/.cdd/unreleased/220"
+printf '# legacy self-coherence\n' > "$R/.cdd/unreleased/220/self-coherence.md"
+OUT="$TMP/legacy_scan.out"; run_gate "$OUT" --repo-root "$R" --mode pre-merge
+assert_exit "unselected legacy directory remains compatible" 0 "$RUN_EXIT"
+assert_grep "legacy compatibility is visibly classified" "cycle 220 (small-change)" "$OUT"
+
 echo "## activation workflow derives cycle only from numeric cycle pushes"
 TEMPLATE="$SCRIPT_DIR/../src/packages/cnos.cdd/skills/cdd/activation/templates/github-actions/cdd-artifact-validate.yml"
 assert_grep "template rejects nonnumeric cycle refs" "CYCLE_NUMBER.*=~.*\[1-9\]" "$TEMPLATE"
@@ -193,6 +238,11 @@ echo "## release script preserves unreleased receipts through disconnect"
 RELEASE_SCRIPT="$SCRIPT_DIR/release.sh"
 assert_not_grep "release script does not move cycle directories" "mv.*\.cdd/releases" "$RELEASE_SCRIPT"
 assert_grep "release script validates before tagging" "validate-release-gate.sh" "$RELEASE_SCRIPT"
+
+echo "## release-effector kata preserves boundary order"
+RELEASE_EFFECTOR="$SCRIPT_DIR/../src/packages/cnos.cdd/skills/cdd/release-effector/SKILL.md"
+assert_grep "kata keeps receipt under unreleased through tag" "Assert the script did not move cycle dirs" "$RELEASE_EFFECTOR"
+assert_grep "kata separates archive from terminal declaration" "only afterward does γ append and commit the terminal declaration separately" "$RELEASE_EFFECTOR"
 
 echo ""
 echo "================================================================"

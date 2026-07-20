@@ -1,11 +1,40 @@
 package cddverify
 
 import (
+	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestUnreleasedCloseoutsAreCanonicalPostMergeState(t *testing.T) {
+	root := t.TempDir()
+	cycleDir := filepath.Join(root, ".cdd", "unreleased", "669")
+	if err := os.MkdirAll(cycleDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"self-coherence.md", "beta-review.md", "alpha-closeout.md", "beta-closeout.md", "gamma-closeout.md"} {
+		if err := os.WriteFile(filepath.Join(cycleDir, name), []byte("# fixture\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var out bytes.Buffer
+	l := newLedgerRun(root, "", &out)
+	l.checkUnreleasedTriadicArtifacts(cycleDir, "669")
+	got := out.String()
+	if strings.Contains(got, "may indicate stale cycle") {
+		t.Fatalf("post-merge closeouts under unreleased were misclassified as stale:\n%s", got)
+	}
+	for _, name := range []string{"alpha-closeout.md", "beta-closeout.md", "gamma-closeout.md"} {
+		if !strings.Contains(got, "✅ "+name+" (issue #669) — present in canonical post-merge/release-pending location") {
+			t.Errorf("%s was not accepted in the post-merge location:\n%s", name, got)
+		}
+	}
+}
 
 // Table-driven tests for the helpers and rules. eng/go §2.10 requires
 // table-driven + subtests; happy + degraded paths.

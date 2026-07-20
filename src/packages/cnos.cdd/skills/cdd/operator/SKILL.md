@@ -90,7 +90,7 @@ The operator's wake-up signals are:
 
 - **γ requests an external gate** (push on β's behalf, tag push, release, deploy, issue filing, auth action)
 - **γ requests an unblock decision** (design ambiguity, scope question, env constraint)
-- **γ declares cycle closure** and names deferred outputs that need operator action
+- **γ marks post-merge closeout release-ready** and requests δ preflight, or later reports terminal closure after archive
 - **An agent session dies or stalls** (no activity for an unexpected duration)
 
 Between these signals, the operator's correct action is nothing.
@@ -294,7 +294,7 @@ When a dispatched session SIGTERMs, hits a timeout, or crashes before committing
 - **Override declaration.** If δ commits work on behalf of an agent, this is an implicit override; δ declares it per [`delta/SKILL.md`](../delta/SKILL.md) §3 with the standard shape ("Override: operator-identity commit for cycle #N. Reason: …"). The mechanics record entry lives in `self-coherence.md §Debt` per harness §6.4.
 - **Grade implication.** A cycle with operator-identity recovery commits is a cycle with operator override; per `release/SKILL.md §3.8`, the γ-axis grade reflects the override.
 - **Prevention.** The recovery procedure is the failure path; the prevention path is a correctly-sized dispatch budget per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule" (heuristic constants in this file's §5.2). Record budget/AC count in PRA telemetry (`post-release/SKILL.md` §4) so the heuristic refines.
-- **Close-state assertion parity.** If recovery carries a SIGTERM-terminated cycle through to a merge, δ MUST run the same close-state hard gate a normal γ close-out runs (`gamma/SKILL.md §2.10` row 15: `gh issue view {N} --json state --jq .state` MUST return `CLOSED`) before declaring the recovered cycle closed — mechanics at `harness/SKILL.md` §6.6. Recovery changes who runs the closure gate, not whether it runs.
+- **Close-state assertion parity.** If recovery carries a SIGTERM-terminated cycle through merge, δ MUST run the same issue-state assertion as `gamma/SKILL.md §2.10` Phase A before the post-merge marker is written. This assertion does not declare terminal closure; recovery must still pass disconnect, archive, and terminal phases.
 
 ---
 
@@ -316,9 +316,9 @@ Execute the operator role through the full cycle.
 2. Deliver α prompt to session A, β prompt to session B
 3. Wait
 4. When β requests merge: execute merge
-5. When γ requests tag push: execute tag push
-6. When γ declares closure: cut the release per [`release-effector/SKILL.md`](../release-effector/SKILL.md)
-7. Execute any deferred operator actions from γ's close-out
+5. When γ's marked post-merge closeout requests preflight: verify and cut the release per [`release-effector/SKILL.md`](../release-effector/SKILL.md)
+6. Report the tag and green release CI to γ; do not call the cycle terminal
+7. Wait for γ's archive commit and subsequent terminal declaration, then execute any deferred operator actions
 
 #### Common failures
 

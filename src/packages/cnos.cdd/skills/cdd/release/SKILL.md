@@ -172,15 +172,15 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
     done
     ```
   - Each `.cdd/releases/{X.Y.Z}/{N}/` directory carries the same role-prefixed files that lived in `.cdd/unreleased/{N}/` during the cycle (`self-coherence.md`, `beta-review.md`, `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md`, plus any cycle-specific extras) per `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" + §"Artifact contract" → §"Location matrix".
-  - Commit the moves on `main` as the post-disconnect archival step. The tag continues to identify the reviewed release commit; the archive commit records terminal lifecycle state.
-  - `.cdd/unreleased/` should be empty after the post-disconnect archive commit
+  - Commit the moves on `main` as the post-disconnect archival step. The tag continues to identify the reviewed release commit; the archive commit provides the SHA that γ's later terminal declaration binds.
+  - Every cycle assigned to that release should be absent from `.cdd/unreleased/` after the post-disconnect archive commit; unrelated cycles assigned to later releases remain there.
   - ❌ Leave cycle directories in `unreleased/` after tagging (lose the version association)
   - ❌ Move before the release gate or tag (the release validator would lose its canonical input)
   - ✅ δ disconnects and verifies release CI → γ moves and commits the frozen receipt directories
 
 2.5b. **Docs-only disconnect (no tag)**
 
-  A cycle that ships only documentation, protocol artifacts, or assessments — with no code change and no version bump — still requires a disconnect, but the disconnect is the merge commit on main, not a tag.
+  A cycle that ships only documentation, protocol artifacts, or assessments — with no code change and no version bump — still requires a disconnect, but the disconnect is an explicit δ acknowledgement of the already-merged main commit, not a tag.
 
   Cases this covers:
 
@@ -191,13 +191,13 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
 
   For docs-only cycles:
 
-  - `.cdd/unreleased/{N}/` moves to `.cdd/releases/docs/{ISO-date}/{N}/` where `{ISO-date}` is the merge commit's date in `YYYY-MM-DD` form (e.g. `.cdd/releases/docs/2026-05-08/27/`).
+  - After the post-merge role closeouts, nonterminal γ marker, and docs-only release validation, δ records the main merge SHA as the disconnect and verifies applicable main CI. Only then does γ move `.cdd/unreleased/{N}/` to `.cdd/releases/docs/{ISO-date}/{N}/`, where `{ISO-date}` is the merge commit's date in `YYYY-MM-DD` form (e.g. `.cdd/releases/docs/2026-05-08/27/`).
   - **No CHANGELOG ledger row.** The Release Coherence Ledger tracks tagged releases. γ records the cycle in `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md` instead — same PRA structure as a tagged release, just keyed by date.
-  - The merge commit hash IS the disconnect signal. No `scripts/release.sh` invocation. No version bump. VERSION is unchanged.
+  - The merge commit hash is the boundary evidence named by δ's later disconnect acknowledgement. No `scripts/release.sh` invocation. No version bump. VERSION is unchanged.
   - `scripts/check-version-consistency.sh` is not required to run (nothing version-stamped changed).
 
   ```bash
-  # Docs-only disconnect at merge time (run as part of γ closure):
+  # Post-disconnect docs-only archive (run by γ after δ acknowledgement):
   ISO_DATE="$(date -u +%Y-%m-%d)"
   mkdir -p ".cdd/releases/docs/${ISO_DATE}"
   for dir in .cdd/unreleased/*/; do
@@ -206,11 +206,11 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   done
   ```
 
-  - ❌ Leave docs-only cycle directories in `.cdd/unreleased/{N}/` after merge ("there's no release to move them to")
+  - ❌ Leave docs-only cycle directories in `.cdd/unreleased/{N}/` after δ's no-tag disconnect acknowledgement and γ's archive opportunity ("there's no release to move them to")
   - ❌ Force a synthetic version bump on a docs-only cycle just to fit the tagged-release flow
   - ❌ Skip the PRA because no tag was pushed
-  - ✅ Move to `.cdd/releases/docs/{ISO-date}/{N}/` in the merge commit
-  - ✅ γ writes `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md`
+  - ✅ δ acknowledges the merged main SHA after the marked closeout and applicable CI, then γ archives to `.cdd/releases/docs/{ISO-date}/{N}/`
+  - ✅ γ writes `docs/gamma/cdd/docs/{ISO-date}/POST-RELEASE-ASSESSMENT.md`, commits the archive, and appends terminal evidence afterward
 
   γ declares `docs-only` in the issue mode header (per `issue/SKILL.md` §Mode declaration); the disconnect path is selected at issue-creation time, not retrofitted at merge.
 
@@ -220,7 +220,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - Commit: `git commit -m "release: X.Y.Z — summary"` (includes VERSION, manifests, CHANGELOG, RELEASE.md)
   - **Before any push that follows a rebase, run the eng/ship rebase-integrity gate** (see `eng/ship` § Rebase-Collision Integrity)
   - Push: `git push origin main`
-  - **β signals "release ready for δ tag"** in `beta-closeout.md` — β does not execute `git tag` or push tags; δ creates the single annotated tag `X.Y.Z` with generated message as part of the disconnect release flow (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 10 — δ release). RELEASE.md remains the GitHub release body authority; generated tag messages are additive.
+  - **γ signals release readiness to δ** only after the role closeouts and exact nonterminal marker pass the release gate. β may record merge/release inputs in `beta-closeout.md`, but does not authorize or execute the release. δ creates the single annotated tag `X.Y.Z` with generated message as part of the disconnect release flow (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 11 — δ disconnect). RELEASE.md remains the GitHub release body authority; generated tag messages are additive.
   - ❌ β pushes tag directly (conflicts with δ tag authority)
   - ❌ Mix `v` prefix and bare versions across tags (`v3.14.6` then `3.14.7`)
   - ❌ Commit without RELEASE.md (CI auto-generates sparse notes)
@@ -263,7 +263,7 @@ Failure mode: version drift — tag says X, binary says Y, agent reports Z. Or: 
   - If the triadic protocol is active, β also writes:
     - release evidence in `.cdd/unreleased/{N}/beta-closeout.md`
     - β close-out narrative in `.cdd/unreleased/{N}/beta-closeout.md` for γ to read (separate from `beta-review.md`, which carries the round-by-round verdicts; see `cnos.cds/skills/cds/CDS.md` §"Coordination surfaces" → §"Cycle-state evidence")
-  - γ writes the post-release assessment after β's release and close-out are complete
+  - γ writes the post-release assessment after β's close-out is complete and δ reports the release disconnect
   - For triadic cycles, the primary branch artifact is `.cdd/unreleased/{N}/self-coherence.md` — it carries the trace through step 7a; β records the review verdict in `.cdd/unreleased/{N}/beta-review.md` (steps 8–9) and the close-out + release evidence in `.cdd/unreleased/{N}/beta-closeout.md` (step 10).
 
 ## 3. Rules

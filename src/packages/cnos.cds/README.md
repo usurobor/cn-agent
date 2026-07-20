@@ -23,7 +23,7 @@ This package is **v0.1 complete**. The doctrine surface (`CDS.md` — the 3,588-
 
 ### `/skills/cds/<area>/` — Operational sub-area overlays (v0.1 thin)
 
-- **`lifecycle/SKILL.md`** — CDS development lifecycle thin overlay. Canonical 0–13 steps + S0–S12 state machine + branch rule + pre-flight + tier structure live at [`CDS.md §"Development lifecycle"`](skills/cds/CDS.md); this overlay delegates mechanics to existing `cnos.cdd` role + harness skills until the v1 role rewrite. **Landed via Subs 3–5 of [cnos#403](https://github.com/usurobor/cnos/issues/403)** as the cross-cutting operational binding for the lifecycle migration.
+- **`lifecycle/SKILL.md`** — CDS development lifecycle thin overlay. Canonical 0–13 steps + S0–S13 state machine + branch rule + pre-flight + tier structure live at [`CDS.md §"Development lifecycle"`](skills/cds/CDS.md); this overlay delegates mechanics to existing `cnos.cdd` role + harness skills until the v1 role rewrite. **Landed via Subs 3–5 of [cnos#403](https://github.com/usurobor/cnos/issues/403)** as the cross-cutting operational binding for the lifecycle migration.
 - **`selection/SKILL.md`** — CDS selection-function thin overlay. Canonical rules at [`CDS.md §"Selection function"`](skills/cds/CDS.md); mechanics delegate to `cnos.cdd/skills/cdd/gamma/SKILL.md` until the v1 role rewrite. **Landed via Sub 3 of [cnos#403](https://github.com/usurobor/cnos/issues/403) — [cnos#408](https://github.com/usurobor/cnos/issues/408).**
 
 ### `/docs/` — The Extraction Plan + Empirical Anchor

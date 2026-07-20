@@ -14,10 +14,13 @@
 #   release    Pre-tag/release gate (default). Requires RELEASE.md and the
 #              complete post-merge lifecycle set and closeout marker.
 #
-# A scaffold's canonical **Mode:** declaration controls classification.
-# Substantial or an unrecognized/missing declaration fails closed as triadic;
-# small-change and immediate-output preserve the collapsed path. A beta review
-# without a scaffold also fails closed as triadic.
+# A scaffold's canonical **Mode:** declaration controls classification. For an
+# exact --cycle target, the scaffold and one recognized declaration are
+# mandatory: only explicit small-change/immediate-output may collapse, while
+# substantial (including the landed `substantial-cycle` spelling used by CDS)
+# takes the triadic path. Repository-wide legacy scans retain the
+# historical inference for unscaffolded directories so old unrelated records
+# do not suddenly block a release; scaffolded unknown modes still fail closed.
 #
 # Usage:
 #   scripts/validate-release-gate.sh [--repo-root DIR] [--unreleased-dir DIR]
@@ -113,11 +116,26 @@ for dir in "${CYCLE_DIRS[@]}"; do
 
   SCAFFOLD_MODE=""
   if [[ -f "$dir/gamma-scaffold.md" ]]; then
-    SCAFFOLD_MODE="$(sed -nE 's/^\*\*Mode:\*\*[[:space:]]*(substantial|small-change|immediate-output)([^[:alnum:]_-].*)?$/\1/p' "$dir/gamma-scaffold.md")"
+    SCAFFOLD_MODE="$(sed -nE 's/^\*\*Mode:\*\*[[:space:]]*(substantial-cycle|substantial|small-change|immediate-output)([^[:alnum:]_-].*)?$/\1/p' "$dir/gamma-scaffold.md")"
     SCAFFOLD_MODE="${SCAFFOLD_MODE%%$'\n'*}"
+    # CDS names the intervention class `substantial-cycle`; γ's work-shape
+    # shorthand is `substantial`. They are one triadic class at this gate.
+    [[ "$SCAFFOLD_MODE" == "substantial-cycle" ]] && SCAFFOLD_MODE="substantial"
   fi
 
-  if [[ -f "$dir/beta-review.md" || ( -f "$dir/gamma-scaffold.md" && "$SCAFFOLD_MODE" != "small-change" && "$SCAFFOLD_MODE" != "immediate-output" ) ]]; then
+  if [[ -n "$CYCLE" && ! -f "$dir/gamma-scaffold.md" ]]; then
+    echo "  ❌ cycle $N: gamma-scaffold.md missing — exact-cycle validation requires an explicit canonical **Mode:** declaration" >&2
+    ERRORS=$((ERRORS + 1))
+    continue
+  fi
+
+  if [[ -f "$dir/gamma-scaffold.md" && -z "$SCAFFOLD_MODE" ]]; then
+    echo "  ❌ cycle $N: gamma-scaffold.md lacks a recognized canonical **Mode:** declaration (expected substantial/substantial-cycle, small-change, or immediate-output)" >&2
+    ERRORS=$((ERRORS + 1))
+    continue
+  fi
+
+  if [[ -f "$dir/beta-review.md" || "$SCAFFOLD_MODE" == "substantial" ]]; then
     CYCLE_ERRORS=0
     if [[ "$MODE" == "pre-merge" ]]; then
       REQUIRED=("${REQUIRED_TRIADIC_PRE_MERGE[@]}")
@@ -146,8 +164,11 @@ for dir in "${CYCLE_DIRS[@]}"; do
     if [[ $CYCLE_ERRORS -eq 0 ]]; then
       echo "  ✅ cycle $N (triadic): $MODE artifact set complete"
     fi
-  else
+  elif [[ "$SCAFFOLD_MODE" == "small-change" || "$SCAFFOLD_MODE" == "immediate-output" || -z "$CYCLE" ]]; then
     echo "  ✅ cycle $N (small-change): no triadic lifecycle artifacts required"
+  else
+    echo "  ❌ cycle $N: internal classification error for mode '$SCAFFOLD_MODE'" >&2
+    ERRORS=$((ERRORS + 1))
   fi
 done
 
