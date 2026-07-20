@@ -1028,7 +1028,7 @@ and a failure / retry path.
 | **S9: γ triaging** | γ | `alpha-closeout.md`, `beta-closeout.md`, `RELEASE.md` | PRA at canonical path; γ close-out triage; skill patches landed | S10 | Missing close-out → request re-dispatch; missing RELEASE.md → γ writes it |
 | **S10: δ release-boundary preflight** | δ | PRA present; RELEASE.md present; `.cdd/unreleased/{N}/` not yet moved; merge on main | Proceed / Request changes / Override | Proceed → S11; RC → route to β/α/override | δ blocks → γ routes change |
 | **S11: γ closing** | γ | δ preflight passed; closure gate rows pass (`gamma/SKILL.md §2.10`) | `gamma-closeout.md`; cycle-dir move to `.cdd/releases/{X.Y.Z}/{N}/`; closure declaration | S12 | Missing artifact → obtain before closing |
-| **S12: δ disconnect** | δ | γ closure declaration; `gamma-closeout.md` exists on main | Tag + release commit; branch cleanup | S0 (next cycle) | Script fails → fix and retry |
+| **S12: δ disconnect** | δ | γ closure declaration; `gamma-closeout.md` on main carries `CDD-Cycle-Closure: terminal` | Tag + release commit; branch cleanup | S0 (next cycle) | Script fails → fix and retry |
 
 The state machine maps onto the 0–13 step table as follows: Steps 0–3
 compose S0–S3 (γ-owned setup); Steps 4–7 compose S4–S5 (α implementation
@@ -1794,9 +1794,9 @@ the v0.1 overlay) checks every row marked "Required before γ closure."
 |---|---|---|---|---|---|
 | `self-coherence.md` | α | During α session, incrementally; review-readiness section last | β at review intake | β review | β waits; no review until review-readiness present |
 | `beta-review.md` | β | During β review session, incrementally per round | γ at close-out triage | γ closure | γ cannot triage; requests β re-dispatch |
-| `alpha-closeout.md` | α (re-dispatched after merge) | After β merge, via δ re-dispatch. **Provisional fallback:** α may write a provisional close-out at review-readiness (marked `[provisional]`); the pre-merge gate accepts this form. Full close-out via δ re-dispatch remains the normative path for tagged releases. | γ before PRA; γ closure gate; pre-merge gate (provisional accepted) | γ closure | γ closure gate blocks; γ requests δ to re-dispatch α |
+| `alpha-closeout.md` | α (re-dispatched after merge) | After β merge, via δ re-dispatch. **Provisional fallback:** α may write a provisional close-out at review-readiness (marked `[provisional]`), but merge-readiness does not require it. Full close-out via δ re-dispatch remains the normative path for tagged releases. | γ before PRA; γ closure gate; post-merge gate | γ closure | γ closure gate blocks; γ requests δ to re-dispatch α |
 | `beta-closeout.md` | β | Before β exits (same β session as merge) | γ before PRA; γ closure gate | γ closure | γ closure gate blocks; γ requests β re-dispatch |
-| `gamma-closeout.md` | γ | After all closure gate rows pass | δ before tag/release (implicit: tag requires γ closure declaration, which is `gamma-closeout.md`) | δ tag/release | δ must not tag; γ has not declared closure |
+| `gamma-closeout.md` | γ | After all closure gate rows pass; terminal form carries `CDD-Cycle-Closure: terminal` | δ before tag/release; post-merge gate checks exact marker | δ tag/release | δ must not tag; γ has not declared closure |
 | `cdd-iteration.md` | γ (with ε review) | Same session as `gamma-closeout.md`; required when `protocol_gap_count > 0`; courtesy stub permitted when count is 0 (per cnos#401) | γ closure gate; aggregator update (`.cdd/iterations/INDEX.md`) | γ closure | γ closure gate blocks; if `cdd-*-gap` findings exist, the artifact must exist before closure |
 | `.cdd/iterations/INDEX.md` row | γ | Same session as `cdd-iteration.md` | γ closure gate | γ closure | γ closure gate blocks if `cdd-iteration.md` was written but INDEX.md was not updated |
 | `RELEASE.md` | γ | Before requesting δ tag/release; committed to main in release commit | δ at release-boundary preflight | δ tag/release | δ must not tag; CI auto-generates sparse notes |
@@ -1939,7 +1939,7 @@ frozen-snapshot rule above are CDS's canonical artifact-contract
 statement. The v0.1 operational overlay — the per-artifact authoring
 mechanics, the closure-gate row-by-row check sequence, the
 release-time directory-move command sequence, the
-`scripts/validate-release-gate.sh --mode pre-merge` mechanical check —
+phase-aware `scripts/validate-release-gate.sh` mechanical checks —
 lives in the existing cdd role/runtime skills as the temporary v0.1
 overlay until the v1 CDS-side role rewrite:
 
@@ -2022,11 +2022,12 @@ re-derive the verdict.
   pre-commit hook implied by §Field 2's "no regressions" oracle on
   documentation surfaces) catches dead references. The oracle is the
   link-checker's exit code.
-- **Gate checks** — the closure-gate row-by-row checks per §Gate →
-  §Closure verification checklist below (F1–F10). Each F-row is a
-  mechanical predicate: file exists / file absent at canonical path.
-  `scripts/validate-release-gate.sh --mode pre-merge` is the v0.1
-  realization of the gate-check oracle.
+- **Gate checks** — the phase-specific checks per §Gate → §Closure
+  verification checklist below. `--mode pre-merge` checks only the
+  structurally available scaffold / production / review record;
+  `--mode post-merge` checks the role close-outs and explicit terminal γ
+  declaration; default `release` adds `RELEASE.md`. `--cycle N` selects one
+  exact cycle when unrelated unreleased cycles are at other phases.
 
 ### Judgment axes
 
@@ -2271,8 +2272,11 @@ the v0.1 cdd cite-points above are the temporary v0.1 home.
 
 ## Gate
 
-The **gate** is the release-boundary check that protects a cycle's
-transition from "merged" to "tagged + released." A cycle that merges
+The **gate** is phase-split. Merge-readiness protects integration using only
+artifacts that can exist before merge. Post-merge closure protects the
+transition from "matter landed" to "cycle terminally closed." The later
+release gate protects a cycle's transition from "merged" to "tagged +
+released." A cycle that merges
 matter into `main` but bypasses the gate ships unreleased — the trust
 boundary on which downstream consumers depend (per the CCNF kernel's
 Scope-Lift Invariant: a closed cycle projects as α-matter at the parent
@@ -2336,8 +2340,9 @@ below must be observable on `origin/main`:
 - **No unresolved triage.** Every finding from `alpha-closeout.md`,
   `beta-closeout.md`, and the PRA carries a disposition (immediate MCA
   / project MCI / agent MCI / drop). Unresolved triage triggers F10.
-- **γ closure declaration on `main`.** `gamma-closeout.md` is the
-  closure-declaration artifact; its commit hash on `main` is the
+- **γ closure declaration on `main`.** `gamma-closeout.md` carrying the exact
+  line `CDD-Cycle-Closure: terminal` is the closure-declaration artifact; its
+  commit hash on `main` is the
   signal that γ has declared closure. δ does **not** tag before this
   signal (per the operator/SKILL.md §3.4 doctrine; per F6).
 
@@ -2352,9 +2357,11 @@ the override block recorded on the receipt.
 
 The 10 failure modes below — F1 through F10 — are the gate's named
 checks. Each F-row is a mechanical predicate (file exists / file absent
-at canonical path; commit ordering; field present) whose oracle is the
-gate-check script (`scripts/validate-release-gate.sh --mode pre-merge`
-in the v0.1 realization). The F-anchors are **stable cross-reference
+at canonical path; commit ordering; field present). F1–F3 become mechanically
+available only after merge: their cycle-level oracle is
+`scripts/validate-release-gate.sh --mode post-merge --cycle N`; release-time
+rechecks use the default `release` mode. The pre-merge mode deliberately does
+not require future close-outs. The F-anchors are **stable cross-reference
 targets**: cdd skill files (and post-#403, the CDS-side role overlays)
 cite the F-anchors when naming which closure-gate row a finding maps
 to; Sub 6 of cnos#403 re-points the citations from
@@ -2369,8 +2376,8 @@ signal is unrecorded.
 
 **Recovery:** γ requests δ to re-dispatch α via the close-out prompt
 (per `cnos.cdd/skills/cdd/CDD.md §1.6a` v0.1 overlay). The provisional
-fallback (α writes `[provisional]` at review-readiness; pre-merge gate
-accepts the form) is acceptable for non-tagged docs-only cycles but
+fallback (α writes `[provisional]` at review-readiness) is acceptable for
+non-tagged docs-only cycles but
 not for tagged releases — full close-out via δ re-dispatch is the
 normative path. F7 is the related anchor for the re-dispatch mechanism.
 
@@ -2387,14 +2394,17 @@ under the canonical path; re-dispatch is the exception, not the rule.
 
 #### F3: Missing γ close-out (no closure declaration)
 
-`.cdd/unreleased/{N}/gamma-closeout.md` does not exist on `origin/main`
-at gate-check time. γ has not declared closure; the cycle has not closed
-in the structural sense (it has only stopped). δ MUST NOT tag before
-γ closure declaration.
+`.cdd/unreleased/{N}/gamma-closeout.md` does not exist on `origin/main`, or it
+does not contain the exact line `CDD-Cycle-Closure: terminal`, at gate-check
+time. The filename alone is insufficient because the same append-only
+artifact may first carry a pre-operator assurance receipt. Without the marker,
+γ has not declared terminal closure; the cycle has only stopped. δ MUST NOT
+tag before the marked γ closure declaration.
 
 **Recovery:** γ runs the closure gate (§Closure → §Closure rule below);
 if every row passes, γ writes `gamma-closeout.md` with the closure
-declaration ("Cycle #N closed. Next: #M.") and commits to main. If
+declaration ("Cycle #N closed. Next: #M.") and exact terminal marker
+`CDD-Cycle-Closure: terminal`, then commits to main. If
 any closure-gate row fails, γ remediates the underlying gap (re-dispatch
 α/β; author missing artifact) before re-running the gate.
 
@@ -2429,7 +2439,7 @@ tag has already pushed; the F5 finding is recorded in the cycle's
 
 #### F6: δ tag ordering violation
 
-δ pushed a tag (`X.Y.Z`) before `gamma-closeout.md` existed on `main`.
+δ pushed a tag (`X.Y.Z`) before terminal-marked `gamma-closeout.md` existed on `main`.
 The release boundary fired before γ declared closure; the cycle's
 structural closure (per §Field 4 outward-membrane discipline) is
 inverted — δ recorded the boundary decision before the cycle was
@@ -2456,7 +2466,7 @@ re-dispatch mechanism itself is absent. F7 is the **meta-finding**
 that F1 is structurally un-remediable at this actor configuration.
 
 **Recovery:** γ accepts the provisional fallback (α writes `[provisional]`
-close-out at review-readiness; the pre-merge gate accepts the form
+close-out at review-readiness; merge-readiness does not depend on the form
 per §Ownership matrix); the cycle is marked as carrying a provisional
 close-out in `gamma-closeout.md`; the next cycle's α-axis signal carries
 the provisional flag. For tagged release cycles, F7 forces a
@@ -2538,10 +2548,10 @@ temporary v0.1 overlay until the v1 CDS-side role rewrite:
   — docs-only disconnect (no tag); the docs-only release path that
   shares F1–F10 verification but bypasses the tag-ordering F6 check.
 - [`cnos.cdd/skills/cdd/release/SKILL.md §3.8`](../../../cnos.cdd/skills/cdd/release/SKILL.md)
-  — closure-gate override (forces `C_Σ` to `<C` when any close-out
-  artifact is absent at merge time); the F1 / F2 / F3 mechanical
-  realization. Verified by `scripts/validate-release-gate.sh --mode
-  pre-merge` per cnos#339 AC1.
+  — closure-gate override (forces `C_Σ` to `<C` when any post-merge
+  close-out or the terminal γ marker is absent at closure time); the F1 /
+  F2 / F3 mechanical realization. Verified per exact cycle by
+  `scripts/validate-release-gate.sh --mode post-merge --cycle N`.
 - [`cnos.cdd/skills/cdd/gamma/SKILL.md §2.10`](../../../cnos.cdd/skills/cdd/gamma/SKILL.md)
   — γ's closure gate; the 14-row row-by-row check (rows 1–14) that
   realizes F1–F10 across the cycle's closure preconditions; the
@@ -2552,7 +2562,7 @@ temporary v0.1 overlay until the v1 CDS-side role rewrite:
   cycle-iteration trigger assessment per F9).
 - [`cnos.cdd/skills/cdd/operator/SKILL.md §3`](../../../cnos.cdd/skills/cdd/operator/SKILL.md)
   — δ-as-operator gate doctrine; "Do not tag/release before
-  `gamma-closeout.md` exists on main" (F6); "δ blocks release completion
+  terminal-marked `gamma-closeout.md` exists on main" (F6); "δ blocks release completion
   until CI is green or operator explicitly accepts a known pre-existing
   failure"; the gate-action-on-request-not-observation rule.
 - [`cnos.cdd/skills/cdd/operator/SKILL.md §3.1`](../../../cnos.cdd/skills/cdd/operator/SKILL.md)
@@ -2988,7 +2998,8 @@ A cycle closes **only when all three conjuncts hold**:
 
 When all three conjuncts hold, γ writes `gamma-closeout.md` with the
 **closure declaration** — the explicit statement *"Cycle #N closed.
-Next: #M."* This is γ's last commit on the cycle's surfaces;
+Next: #M."* — and the exact machine-readable line
+`CDD-Cycle-Closure: terminal`. This is γ's last commit on the cycle's surfaces;
 the closure-declaration commit's SHA on `main` is the structural
 signal that the cycle has crossed from "released" to "closed." δ's
 disconnect-release tag appearing on `main` after the closure-declaration

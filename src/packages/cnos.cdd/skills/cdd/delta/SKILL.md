@@ -82,8 +82,9 @@ ACCEPTED                         →   receipt transmissible to parent scope
 
 | Action | Authority | Mechanics location |
 |--------|-----------|--------|
-| Pre-merge gate validation | δ authorises; γ requests via `scripts/validate-release-gate.sh --mode pre-merge` (`cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" + `gamma/SKILL.md` §2.10) | `operator/SKILL.md` §3.1 |
+| Pre-merge gate validation | δ authorises; γ requests `scripts/validate-release-gate.sh --mode pre-merge --cycle N`, which checks only pre-merge scaffold / production / review artifacts | `operator/SKILL.md` §3.1 |
 | Push β-approved merge to main | δ executes on β's behalf when env/auth blocks β; this is execution of β's integration authority, not δ approval | `operator/SKILL.md` §3.1 |
+| Post-merge closure validation | δ authorises; γ requests `scripts/validate-release-gate.sh --mode post-merge --cycle N` after role close-outs and terminal γ declaration | `operator/SKILL.md` §3.1 |
 | Release-boundary preflight | δ verifies merge commit, release artifacts, tag/deploy preconditions, platform readiness; decision is proceed / request changes / override (`cnos.cds/skills/cds/CDS.md` §"Development lifecycle" → §"Step table" Step 9 — δ gate) | `operator/SKILL.md` §3.1 |
 | Tag push + release | **δ is sole tag-author** — β does not tag; only δ creates tags per cycle | `release-effector/SKILL.md` |
 | Branch delete | After cycle closure and merge | `release-effector/SKILL.md` §5 |

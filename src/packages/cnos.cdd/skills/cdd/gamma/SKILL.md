@@ -335,11 +335,23 @@ Do not declare the cycle closed until all of the following are true:
 14. if the cycle's receipt has `protocol_gap_count > 0` (≥1 finding tagged `cdd-skill-gap` / `cdd-protocol-gap` / `cdd-tooling-gap` / `cdd-metric-gap`), `.cdd/unreleased/{N}/cdd-iteration.md` exists with each finding structured per `post-release/SKILL.md` Step 5.6b, **and** `.cdd/iterations/INDEX.md` has a row for cycle N. If any finding shipped to a different repo, `.cdd/iterations/cross-repo/{target}/{slug}/` exists with bundle + `LINEAGE.md`. If `protocol_gap_count == 0`, no iteration file is required (per [`ROLES.md §4b.4`](../../../../../../ROLES.md), [`epsilon/SKILL.md §1`](../epsilon/SKILL.md), and [`activation/SKILL.md §22`](../activation/SKILL.md)); the INDEX row is also not required for empty-findings cycles.
 15. **γ MUST assert the parent issue's close state before declaring closure — this is a hard gate, not a conditional fallback.** Run `gh issue view {N} --json state --jq .state`. If the result is `CLOSED`, record the asserted state in `gamma-closeout.md` (field below) and proceed. If the result is anything other than `CLOSED` (e.g. the merge subject lacked a close-keyword per `beta/SKILL.md §"Pre-merge gate"` row 5), γ MUST run `gh issue close {N}` immediately and record the discrepancy — the pre-assertion state, the corrective action taken, and the post-correction state — in `gamma-closeout.md`. Closure MUST NOT be declared while this row is unresolved. *Derives from: cnos#368 — cycle #367 merged with a bare `(#367)` reference (no close-keyword); no γ-side assertion existed to catch the resulting OPEN state, and the issue stayed OPEN ~24h until a manual close. This row is the structural closer of that gap.*
 
+The mechanical lifecycle oracle is phase-specific. Before merge, run
+`scripts/validate-release-gate.sh --mode pre-merge --cycle N`; it must not ask
+for future close-outs. After merge and after the role close-outs have landed,
+γ appends the final closure declaration and the exact standalone line
+`CDD-Cycle-Closure: terminal` to `gamma-closeout.md`, then runs
+`scripts/validate-release-gate.sh --mode post-merge --cycle N`. A pre-operator
+assurance receipt in that filename does not satisfy terminal closure without
+the marker. `RELEASE.md` remains a later release-mode requirement.
+
 Then:
-- write `.cdd/unreleased/{N}/gamma-closeout.md`. Contains: cycle summary, close-out triage table, §"Cycle iteration triggers" assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, next MCA, **and the asserted issue-close state from row 15 above** (the `gh issue view {N} --json state --jq .state` result at assertion time, plus, if a discrepancy was found and corrected, the discrepancy note: pre-assertion state, corrective action, post-correction state). `gamma-closeout.md` MUST also include the mandatory terminal `learning`/`epsilon_observations` section per `CELL-KINDS.md` §"Mandatory terminal learning section" (`observations`, `process_deltas`, `reusable_patterns`, `followups`, `operator_burden`) — γ binds this section into the receipt; it is not optional narrative. **`gamma-closeout.md` is the closure declaration artifact. δ must not tag/release until it exists on main.** See `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix".
+- write `.cdd/unreleased/{N}/gamma-closeout.md`. Contains: cycle summary, close-out triage table, §"Cycle iteration triggers" assessment, cycle iteration, skill gap candidate dispositions, deferred outputs, hub memory evidence, next MCA, **and the asserted issue-close state from row 15 above** (the `gh issue view {N} --json state --jq .state` result at assertion time, plus, if a discrepancy was found and corrected, the discrepancy note: pre-assertion state, corrective action, post-correction state). `gamma-closeout.md` MUST also include the mandatory terminal `learning`/`epsilon_observations` section per `CELL-KINDS.md` §"Mandatory terminal learning section" (`observations`, `process_deltas`, `reusable_patterns`, `followups`, `operator_burden`) — γ binds this section into the receipt; it is not optional narrative. **`gamma-closeout.md` is the closure declaration artifact only when it carries `CDD-Cycle-Closure: terminal`; δ must not tag/release before that marked form is on main.** See `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix".
 - update hub memory
 - delete merged remote branches (mechanics: `release-effector/SKILL.md` §5)
-- state closure explicitly: *"Cycle #N closed. Next: #M."* This is γ's last commit. δ will cut the disconnect release (step 17) — the tag appearing on main is the observable proof the cycle is fully closed.
+- state closure explicitly: *"Cycle #N closed. Next: #M."* and include
+  `CDD-Cycle-Closure: terminal` on its own line. This is γ's last commit. δ
+  will cut the disconnect release (step 17) — the tag appearing on main is the
+  observable proof the cycle is fully disconnected.
 
 ### 2.11. γ as autonomous coordinator
 

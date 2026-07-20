@@ -49,7 +49,7 @@ CI workflow templates for CDD artifact governance.
 
 | File | Purpose |
 |---|---|
-| `cdd-artifact-validate.yml` | Validates `.cdd/` structure on every push to `cycle/**` and `main`; requires `scripts/validate-release-gate.sh` in the tenant repository |
+| `cdd-artifact-validate.yml` | Validates the exact `cycle/**` number for merge readiness; main requires a separate exact-cycle post-merge closure invocation, and pre-tag validation uses `--mode release` |
 | `cdd-cycle-on-merge.yml` | Runs project test suite + emits cycle-merge notification on merge to main |
 
 Copy both files to `.github/workflows/` and replace the test command placeholder

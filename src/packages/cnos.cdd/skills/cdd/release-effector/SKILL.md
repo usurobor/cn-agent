@@ -27,7 +27,7 @@ outputs:
 requires:
   - δ has read operator/SKILL.md §3 (outward gate policy)
   - γ has shipped RELEASE.md and the cycle-dir moves per release/SKILL.md §2.5–§2.5a (or scripts/release.sh will perform the moves)
-  - gamma-closeout.md exists on main (per cnos.cds/skills/cds/CDS.md §"Artifact contract" → §"Frozen snapshot rule")
+  - gamma-closeout.md on main carries `CDD-Cycle-Closure: terminal` (per cnos.cds/skills/cds/CDS.md §"Artifact contract" → §"Frozen snapshot rule")
   - β has signaled "release ready for δ tag" in beta-closeout.md (per release/SKILL.md §2.6)
 calls:
   - release/SKILL.md
@@ -52,7 +52,7 @@ Before δ runs `scripts/release.sh`, all of the following must be true on `main`
 
 | Precondition | Owner | Verified where |
 |---|---|---|
-| `gamma-closeout.md` exists on main | γ | `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10 closure gate |
+| `gamma-closeout.md` on main carries `CDD-Cycle-Closure: terminal` | γ | `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10 closure gate |
 | `RELEASE.md` exists at repo root | γ | `release/SKILL.md` §2.5; `cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix" |
 | Cycle directories moved (or ready to move via the script) | γ | `release/SKILL.md` §2.5a |
 | VERSION decided (semver bump) | γ + β | `release/SKILL.md` §2.2 |
@@ -224,7 +224,7 @@ git push origin --delete cycle/399
 
 These are the hard rules δ enforces from the release-effector surface. Each maps to a precondition or a discipline failure mode evidenced by prior cycles.
 
-1. **Do not tag/release before `gamma-closeout.md` exists on main.** γ closure declaration gates the tag. (`cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10. The doctrinal frame lives in `operator/SKILL.md` §3.4.)
+1. **Do not tag/release before `gamma-closeout.md` on main carries `CDD-Cycle-Closure: terminal`.** The marked γ closure declaration gates the tag; filename existence alone may represent pre-operator assurance. (`cnos.cds/skills/cds/CDS.md` §"Artifact contract" → §"Ownership matrix"; `gamma/SKILL.md` §2.10. The doctrinal frame lives in `operator/SKILL.md` §3.4.)
 2. **Manual `git tag` is not allowed.** `scripts/release.sh` is the only way to tag a release.
 3. **One tag per release.** Per `release/SKILL.md` §3.6: amend the release commit and reuse the same bare-version tag on CI-red retry. Do not proliferate `3.9.1-fix`, `3.9.1-fix2`.
 4. **Annotated tags only.** Generated message via `scripts/generate-release-tag-message.sh`. Lightweight tags lose the structured metadata.
@@ -317,7 +317,7 @@ Execute the disconnect release.
 ### Common failures
 
 - Manual `git tag 3.67.0 && git push --tags` instead of `scripts/release.sh` (skips stamp/consistency check; produces version drift).
-- Pushing the tag before `gamma-closeout.md` exists on main (γ closure gate violated).
+- Pushing the tag before marked terminal `gamma-closeout.md` exists on main (γ closure gate violated).
 - Declaring release complete while CI is red without operator override (discipline failure; the gate has not actually closed).
 - Treating a 403 on `git push origin --delete cycle/{N}` as a release failure (the merge is authoritative; the branch is residue — record and move on).
 - Letting merged branches accumulate ("someone might need them") instead of deleting at release time.

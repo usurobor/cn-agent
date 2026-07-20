@@ -184,7 +184,7 @@ The dispatch configuration affects the honest-grading floor: §5.2 cycles carry 
 
 CI is the mechanical enforcement surface for CDD governance. A repo running CDD cycles without CI is relying entirely on role-actor discipline; CI converts that discipline into a verifiable gate. The minimum CI surface for a CDD-activated repo has three layers: artifact validation, test runs, and project-specific progressions.
 
-**Layer 1 — CDD artifact validation.** On every push to any branch, CI checks that the cycle directory (if present) contains the required file set defined in §12. The canonical example for this check is `scripts/validate-release-gate.sh` (landed in cnos cycle #339), which performs mechanical pre-merge gate validation of the `.cdd/` structure and required artifact presence. Tenant repos may vendor this script or implement an equivalent; what matters is that file-presence validation fires on every push and fails loudly with a named missing artifact.
+**Layer 1 — CDD artifact validation.** On cycle-branch pushes, CI runs `scripts/validate-release-gate.sh --mode pre-merge` and checks only artifacts structurally available before merge. Post-merge closure runs `--mode post-merge --cycle N` after role close-outs and requires the explicit terminal γ marker. Pre-tag/release validation runs default `release` mode and additionally requires `RELEASE.md`. Tenant repos may vendor this script or implement an equivalent; phase-specific file-presence validation must fail loudly with a named missing artifact without making merge-readiness depend on future close-outs.
 
 **Layer 2 — Test and spec runs.** On every push, CI runs the project's test suite and spec validation (if applicable). For docs-only repos these may be link-check or markdown-lint runs; for code repos these are unit and integration test suites. Failing tests block merge. This layer ensures that no CDD cycle can merge a change that breaks the project's own correctness surface.
 
@@ -207,8 +207,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate CDD artifact presence
-        run: bash scripts/validate-release-gate.sh
+      - name: Validate pre-merge CDD artifacts
+        run: |
+          CYCLE_NUMBER="${GITHUB_REF_NAME#cycle/}"
+          bash scripts/validate-release-gate.sh --mode pre-merge --cycle "$CYCLE_NUMBER"
 
   tests:
     runs-on: ubuntu-latest

@@ -3,12 +3,14 @@
 # Drop this file into .github/workflows/ in your tenant repository.
 #
 # What it does:
-#   On every push to cycle/* branches and main, runs scripts/validate-release-gate.sh
-#   to verify that required CDD lifecycle artifacts are present in .cdd/unreleased/.
+#   On every push to cycle/* branches and main, runs the pre-merge phase of
+#   scripts/validate-release-gate.sh. Post-merge closure is a separate exact-cycle
+#   invocation; release is a separate pre-tag invocation.
 #   Fails with a named error message if the script is missing or if artifacts are absent.
 #
 # Customize:
-#   - VALIDATE_MODE: change to "release" for pre-tag gate runs (default: "pre-merge")
+#   - VALIDATE_MODE: use "post-merge" with --cycle N for closure, or "release"
+#     for pre-tag gate runs (default here: "pre-merge")
 #   - No other edits needed; secret names use the canonical CDD_ namespace.
 #
 # Reference: cdd/activation/SKILL.md §9 Layer 1
@@ -39,8 +41,16 @@ jobs:
           echo "scripts/validate-release-gate.sh found"
 
       - name: Validate CDD artifact presence
-        # Customize: set VALIDATE_MODE=release for pre-tag checks
+        # Cycle branches use pre-merge. A closure workflow should invoke
+        # post-merge with --cycle N; pre-tag checks use release.
         env:
           VALIDATE_MODE: pre-merge
         run: |
-          bash scripts/validate-release-gate.sh --mode "$VALIDATE_MODE"
+          if [[ "$GITHUB_REF_NAME" != cycle/* ]]; then
+            echo "pre-merge validation is cycle-branch scoped; use an exact"
+            echo "post-merge or release invocation for main"
+            exit 0
+          fi
+          CYCLE_NUMBER="${GITHUB_REF_NAME#cycle/}"
+          bash scripts/validate-release-gate.sh \
+            --mode "$VALIDATE_MODE" --cycle "$CYCLE_NUMBER"
