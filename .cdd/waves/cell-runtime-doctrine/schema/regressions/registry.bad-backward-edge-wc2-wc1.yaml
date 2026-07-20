@@ -4,7 +4,7 @@
 #   cue vet ./schema/ ./schema/regressions/registry.bad-backward-edge-wc2-wc1.yaml -d '#AssuranceRegistry'
 schema: cn.assurance-registry.v1
 wave: "671"
-revision: "R10"
+revision: "R11"
 assurance:
   - owner: "wc-2"
     predicate: "backward_edge_probe__wc2_acceptance_predicate_verified_by_wc1_a_successor_must_be_rejected"

@@ -1,5 +1,5 @@
-<!-- wave-revision: R10 -->
-# Acceptance oracles — honestly classified, registry-projected (cnos#671 R10)
+<!-- wave-revision: R11 -->
+# Acceptance oracles — honestly classified, registry-projected (cnos#671 R11)
 
 Every load-bearing acceptance predicate (wave + WC-1..WC-5) is classified as **exactly one** of five
 honest kinds. Nothing cognitive is dressed up as mechanical; a semantic-absence claim is **never**
@@ -45,7 +45,10 @@ single-owner deferred-validator **gating predicates** (9) are each a `deferred-g
 `deferred_owner`. **R10 — forward-only:** every child deferred acceptance entry is verified by the child
 **itself** or a construction-**predecessor** (`deferred_owner ∈ {owner} ∪ predecessors(owner)`, CUE-enforced),
 so the combined assurance graph is acyclic; the whole-wave oracle-ownership bijection is a **wave-boundary**
-predicate (owned by no child) held in `wave_predicates:`.
+predicate (owned by no child) held in `wave_predicates:`. **R11:** that wave-boundary validator is
+**MATERIALIZED** — [`wave-validators/oracle_ownership_bijection.go`](./wave-validators/oracle_ownership_bijection.go)
+runs at **pre-authorization** (before any WC), credential-free, and its PASS is bound to wave authorization;
+the child procedural validators (below) stay correctly **deferred** to their owning WCs.
 
 ## Wave-level structural / deferred predicates
 
@@ -65,7 +68,7 @@ predicate (owned by no child) held in `wave_predicates:`.
 | completion-evidence derivation (typed resolver input → 5 derived constituents; predicate-graph acyclicity; fixture `expected`) | deferred-go | **WC-5** — `.cdd/unreleased/wc-5/validators/completion_evidence.go` |
 | classification totality bijection (`union(acceptance.predicates)` ⇄ registry, each once) | deferred-go | **WC-5** — `.cdd/unreleased/wc-5/validators/classification_bijection.go` |
 | ledger consistency (revision markers agree; per-category counts) | deferred-go | **WC-5** — `.cdd/unreleased/wc-5/validators/ledger_consistency.go` |
-| oracle-ownership bijection (registry ⇄ ALL contracts' mechanically-verifiable predicates; whole-wave) — R10: **wave-boundary** | deferred-go | **WAVE** — `.cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go` |
+| oracle-ownership bijection (registry ⇄ ALL contracts' mechanically-verifiable predicates; whole-wave) — R10: **wave-boundary**; **R11: MATERIALIZED + runs at pre-authorization** (78 ⇄ 78, exit 0 iff bijective; PASS bound to wave authorization) | deferred-go | **WAVE** — `.cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go` |
 
 ---
 
@@ -213,11 +216,13 @@ WC-5 depends (sibling_output) on wc-2/wc-3b, so it cannot seal until every upstr
 
 | owner | predicate | classification | deferred_owner |
 |---|---|---|---|
-| WAVE | `wave_oracle_ownership_bijection_enforced` (whole-wave cross-contract bijection; pre-authorization) | deferred-go | wave |
+| WAVE | `wave_oracle_ownership_bijection_enforced` (whole-wave cross-contract bijection; pre-authorization; **R11: MATERIALIZED** — `wave-validators/oracle_ownership_bijection.go`, PASS bound to wave authorization) | deferred-go | wave |
 
 ---
 
 *Rows marked **cognitive-review** are honestly not mechanical: an independent β (outside the Sigma
-lineage) or a CC doctrine judgment decides them. Rows marked **deferred-go** are procedural/semantic
-checks a **single-owner** Go validator runs when the owning WC executes — not at this tree, and never
-in Python. #627 S2–S3 are downstream consumers/canonicalizers, never the owner.*
+lineage) or a CC doctrine judgment decides them. **Child-owned** rows marked **deferred-go** are
+procedural/semantic checks a **single-owner** Go validator runs when the owning WC executes — not at
+this tree, and never in Python. The **one exception is the wave-boundary** oracle-ownership-bijection
+predicate: because it is a **pre-authorization** gate (before any WC), its validator is **MATERIALIZED
+here** (R11) and runnable now. #627 S2–S3 are downstream consumers/canonicalizers, never the owner.*

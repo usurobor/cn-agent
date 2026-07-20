@@ -1,7 +1,20 @@
 # oracle-registry.yaml — AUTHORITATIVE, TOTAL assurance-classification registry (cnos#671)
-# wave-revision: R10
+# wave-revision: R11
 #
-# R10 (this repair) — FORWARD-ONLY ACYCLIC ASSURANCE GRAPH. Every child deferred acceptance entry
+# R11 (this repair) — MATERIALIZE the wave-boundary pre-authorization validator. R10 moved the
+# whole-wave oracle-ownership/classification bijection to a wave-boundary predicate (deferred_owner:
+# "wave") but named Go artifacts that did not exist. A PRE-AUTHORIZATION gate runs BEFORE any WC
+# executes, so it cannot be deferred to a WC — it must be a real, runnable validator NOW. R11 ships it:
+# wave-validators/oracle_ownership_bijection.go (credential-free, stdlib-only, `go run`) + positive/
+# negative fixtures + a wave-validators/Makefile gate, and BINDS its PASS to wave authorization (see
+# wave_predicates.wave_oracle_ownership_bijection_enforced below + wave.cn-wave-v1.yaml
+# gates.wave_authorization.preauthorization_gates). The child procedural validators (ref-resolution,
+# edge-parity, per-child completion, combined-DAG) stay correctly DEFERRED to their owning WCs
+# (post-authorization). The six §2 contracts, the six-node graph, the forward-only acyclic assurance
+# graph, and the completion model are UNCHANGED. R11 also fixes stale in-matter projections and
+# advances the ledger. content-hash chain re-pinned (registry -> contracts -> wave contract_sha256).
+#
+# R10 — FORWARD-ONLY ACYCLIC ASSURANCE GRAPH. Every child deferred acceptance entry
 # induces an assurance edge deferred_owner -> owner. R9 left two BACKWARD edges (a successor validating
 # a predecessor's predicate): WC-2's oracle predicate deferred to wc-1 (cycle WC-2 <-> WC-1) and WC-3b's
 # completion predicate deferred to wc-5 (cycle WC-3b <-> WC-5). R10 makes every child acceptance
@@ -54,7 +67,7 @@
 # registry via a canonical inputs.required[].external control_plane ref (content-hash pinned).
 schema: cn.assurance-registry.v1
 wave: "671"
-revision: "R10"
+revision: "R11"
 # ---- assurance: TOTAL over every child acceptance predicate (owner, predicate) ----
 assurance:
   # ---- WC-1 — cell classes & typed cell contract (12) ----
@@ -653,11 +666,18 @@ wave_predicates:
     deferred_to: "Go oracle-ownership bijection validator (owned at the WAVE BOUNDARY; #627 S2-S3 downstream canonicalizer, not owner): every mechanically-verifiable predicate across ALL contracts binds exactly one concrete Go/CUE checker + fixtures, owned exactly once, bound in its receipt (registry checker-ownership side). Whole-wave cross-contract bijection; no child owns it."
     go_artifact_id: "wave-oracle-ownership-bijection-validator"
     go_artifact_path: ".cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go"
-    inputs: "the oracle-registry assurance entries across ALL owners with classification == mechanically-verifiable (predicate -> {checker|schema, positive_fixture, negative_fixture, command})"
-    result_shape: "{ predicate_to_checker: {}, unowned: [], double_owned: [], missing_fixture: [], bijective: bool }"
+    inputs: "the six contracts' acceptance.predicates + the oracle-registry assurance entries: union(child acceptance.predicates) over (owner,predicate) <-> the assurance[] entries over (owner,predicate); and every mechanically-verifiable entry's {checker|schema} owner"
+    result_shape: "{ predicate_to_checker: {}, missing: [], phantom: [], child_duplicates: [], double_owned: [], mech_bad_owner: [], bijective: bool }; exit 0 iff bijective"
     positive_fixture: ".cdd/waves/cell-runtime-doctrine/wave-validators/fixtures/oracle-ownership.one-checker-each.positive.yaml"
     negative_fixture: ".cdd/waves/cell-runtime-doctrine/wave-validators/fixtures/oracle-ownership.double-owned.negative.yaml"
     downstream_consumers: [ "wc-5" ]
+    # R11: MATERIALIZED + BOUND TO AUTHORIZATION. The validator exists and runs credential-free; its
+    # PASS is content-bound to wave revision R11 (see wave.cn-wave-v1.yaml gates.wave_authorization).
+    command: "go run oracle_ownership_bijection.go .. (from wave-validators/); or `make -C .cdd/waves/cell-runtime-doctrine/wave-validators all` — real wave exit 0 (bijective: true, 78<->78), positive fixture exit 0, negative (double-owned) exit non-zero"
+    validator_sha256: "271887be7cab33d592e009c5a8c04bfa20ed09a31fe5017b0e19e7065be7c832"
+    result_evidence: ".cdd/waves/cell-runtime-doctrine/wave-validators/EVIDENCE.md"
+    result_evidence_sha256: "e6e644f234965e82a45aafe10da1653575e0e669beed39b8f8d28b2a04d762c3"
+    authorization_binding: "wave authorization is NOT authorization-ready unless this validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true; removing/corrupting oracle_ownership_bijection.go breaks the pinned hash -> pre-authorization hold. PASS content-bound to revision R11."
   - predicate: "wave_ledger_consistency_deferred"
     classification: "deferred-go"
     deferred_owner: "wc-5"

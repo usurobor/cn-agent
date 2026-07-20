@@ -37,7 +37,7 @@ external roots (immutable): grounding-CM(@sha 9d1ab3a5) · #628/S1 · shipped sc
 - **Node set** `N ∪ {wc-5}` where `N = {wc-1, wc-2, wc-3a, wc-3b, wc-4}`.
 - **Edges** are the mechanical projection of the child contracts' `sibling_output` refs (an edge
   `A→B` exists iff B carries a `sibling_output` ref resolving to A's `requested_output.id`);
-  `external` refs create no edge. The deferred-Go edge-parity validator (WC-3b/WC-5) proves authored == derived parity.
+  `external` refs create no edge. The deferred-Go edge-parity validator (**owned by WC-3b**, consumed/revalidated by WC-5 — single owner, matching the authoritative registry) proves authored == derived parity.
 - **Roots:** `wc-2` (sole keystone; every `cm_ref` imports from its output).
 - **Critical path:** `wc-2 → wc-1 → wc-3b → wc-5`.
 - **WC-5 (integration seal)** was **required by the external-β** (four/six child closures do not by
@@ -141,6 +141,24 @@ tool split are **unchanged**. This is a single-finding repair of the **assurance
 their hashes stay. Registry stays **total** over child acceptance predicates (78 ⇄ 78; the wave-level
 oracle-ownership predicate lives in the separately-complete `wave_predicates` set). Contracts remain
 exactly §2. `make -C schema all` → exit 0. **No Python.**
+
+### R11 disposition — materialize the wave-boundary pre-authorization validator + fix stale projections
+
+**Source:** the external-β ITERATE on #672 (findings) and this Planning Cell's α repair (R11). Review→repair
+outcome, not intent. The accepted six-node **construction** graph (WC-2→WC-1→{WC-3a,WC-3b,WC-4}→WC-5), the
+faithful §2 `#CellContract`/`#WorkingCellContract`, the forward-only acyclic assurance graph, and the
+completion model are **unchanged**.
+
+| # | Finding | R11 disposition |
+|---|---|---|
+| 1 | **[BLOCKER]** the wave-boundary oracle-ownership bijection was moved to `deferred_owner: "wave"` (R10) but named **Go artifacts that did not exist**. A **pre-authorization** gate runs **before any WC executes**, so it **cannot** be deferred to a WC — it must be a real, runnable validator in the plan matter. | **Materialized it.** Shipped [`wave-validators/oracle_ownership_bijection.go`](./wave-validators/oracle_ownership_bijection.go) — a self-contained `package main`, **standard-library only** (no module, no network, no credentials; `go run` anywhere) that reads the six `contracts/*.yaml` `acceptance.predicates` + `oracle-registry.yaml` `assurance:` and **proves the bijection**: union(child acceptance predicates) over `(owner, predicate)` ⇄ the registry entries, **exactly** (**78 ⇄ 78**, no missing/phantom/duplicate), and every `mechanically-verifiable` predicate binds **exactly one** checker\|schema owner. Prints a clear result; **exit 0 iff bijective**. Takes an input-path arg (a **wave directory** or a self-contained **fixture file**), so it runs against the real wave **and** the two named fixtures: [`fixtures/oracle-ownership.one-checker-each.positive.yaml`](./wave-validators/fixtures/oracle-ownership.one-checker-each.positive.yaml) (→ exit 0) and [`fixtures/oracle-ownership.double-owned.negative.yaml`](./wave-validators/fixtures/oracle-ownership.double-owned.negative.yaml) (a predicate owned twice → non-zero). Wired a credential-free [`wave-validators/Makefile`](./wave-validators/Makefile) (`make all`: real wave exit 0, positive exit 0, negative non-zero). **Bound its PASS to authorization:** `oracle-registry.yaml`'s `wave_oracle_ownership_bijection_enforced` predicate now carries the concrete `command` + `validator_sha256` + `result_evidence` binding, and `wave.cn-wave-v1.yaml` `gates.wave_authorization.preauthorization_gates[]` pins the validator path + hash + invocation + [`EVIDENCE.md`](./wave-validators/EVIDENCE.md) + `binds_to_revision: R11` — so the wave is **not authorization-ready** unless the validator resolves at its pinned hash **and** exits 0 with `bijective: true`; removing/corrupting it breaks the hash → pre-authorization hold. It stays **wave-owned** (outside child completion). The child procedural validators (ref-resolution, edge-parity, per-child completion, combined-DAG) stay correctly **deferred to their owning WCs** (post-authorization) — unchanged. |
+| 2 | **[REQUIRED]** stale in-matter projections: edge parity shown as a `WC-3b/WC-5` slash-owner; the README status claimed "under operator review" while external-β/CC were still pending. | `reconcile-627.md` and this file (§1) now read **"owned by WC-3b, consumed/revalidated by WC-5"** (single owner, matching the authoritative registry). The README status states the **actual** next boundary honestly: **external-β review next (then γ → CC → operator)**, not "under operator review." A whole-matter sweep confirms no other current-state slash-owner or `validate.py`/`validate_test.py` current-state reference remains — historical round entries keep Python **as explicitly-historical evidence**; every current-state claim is CUE/Go. |
+
+**Ledger:** every `wave-revision:`/`revision:` marker advanced to **R11**; the content-hash chain re-pinned for
+the edits (registry → 6 contracts' oracle-registry ref → each contract `contract_sha256` in the wave; reconcile
+content_hash re-pinned in the wave after the slash-owner fix). grounding/intent files unchanged so their hashes
+stay. Registry stays **total** (78 ⇄ 78). Contracts remain exactly §2. `make -C schema all` → exit 0; the wave
+validator → real wave exit 0, positive fixture exit 0, negative fixture non-zero. **No Python.**
 
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 

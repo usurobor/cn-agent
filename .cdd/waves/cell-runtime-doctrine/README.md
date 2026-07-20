@@ -1,9 +1,27 @@
-<!-- wave-revision: R10 -->
-# Wave: cell-runtime-doctrine (cnos#671 — R10)
+<!-- wave-revision: R11 -->
+# Wave: cell-runtime-doctrine (cnos#671 — R11)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
 single-purpose Working-Cell contracts, grounded in an immutable coherence measurement.
+
+**R11 repair (external-β #672) — materialize the wave-boundary pre-authorization validator.** R10 moved
+the whole-wave oracle-ownership/classification bijection to a wave-boundary predicate (`deferred_owner:
+"wave"`) but named Go artifacts that **did not exist**. A **pre-authorization** gate runs **before any WC
+executes**, so it cannot be deferred to a WC — it must be a real, runnable validator **now**. R11 ships it:
+[`wave-validators/oracle_ownership_bijection.go`](./wave-validators/oracle_ownership_bijection.go) —
+credential-free, **standard-library-only** Go (`go run`, no module/network) that proves the bijection over
+the six contracts' `acceptance.predicates` + `oracle-registry.yaml` (**78 ⇄ 78**; every
+`mechanically-verifiable` predicate bound to exactly one checker\|schema owner; **exit 0 iff bijective**),
+plus a **positive** and a **double-owned negative** fixture and a credential-free
+[`wave-validators/Makefile`](./wave-validators/Makefile). Its **PASS is bound to wave authorization**:
+`gates.wave_authorization.preauthorization_gates[]` pins the validator path + `validator_sha256` +
+invocation + [`EVIDENCE.md`](./wave-validators/EVIDENCE.md) content-bound to **R11** — the wave is **not
+authorization-ready** unless the validator resolves at its pinned hash and exits 0 with `bijective: true`;
+removing/corrupting it breaks the hash → pre-authorization hold. It stays **wave-owned** (outside child
+completion); the child procedural validators stay correctly **deferred to their WCs** (post-authorization).
+Also fixed stale in-matter projections (single-owner edge-parity; honest README boundary). Ledger advanced
+to **R11**; content-hash chain re-pinned. `make -C schema all` → exit 0. **No Python.**
 
 **R10 repair (external-β #672) — forward-only, acyclic assurance graph.** Every child deferred acceptance
 entry induces an assurance edge `deferred_owner → owner`. R9 left two **backward** edges (a successor
@@ -32,11 +50,14 @@ Pre-authorization validation is:
   duplicate mapping keys and duplicate node/edge ids conflict; the completion formula is a pinned
   required const; `evidence_bound` is a mandatory typed bool. No procedural validator is involved.
 - **Procedural / semantic** validation = **deferred Go validators** the Working Cells (single owner each:
-  wc-2, wc-3b, wc-5) and the **wave boundary** produce (option B, D9: *named*, not implemented here): graph
-  acyclicity (DAG) + **combined-graph acyclicity**, sibling-output → edge **parity**, git ref/content-hash
-  resolution, the classification **bijection**, the wave-boundary **oracle-ownership bijection**, and
-  **completion-evidence derivation** over resolved records. CUE fixes the shape now; Go computes
-  the procedural facts when each WC executes under its own α→β→γ→CC.
+  wc-2, wc-3b, wc-5) produce (option B, D9: *named*, not implemented here — they run post-authorization when
+  the owning WC executes): graph acyclicity (DAG) + **combined-graph acyclicity**, sibling-output → edge
+  **parity**, git ref/content-hash resolution, the classification **bijection**, and **completion-evidence
+  derivation** over resolved records. The **one exception** is the wave-boundary **oracle-ownership
+  bijection**: a **pre-authorization** gate runs **before any WC**, so it cannot be deferred — **R11
+  materializes it here** ([`wave-validators/oracle_ownership_bijection.go`](./wave-validators/oracle_ownership_bijection.go),
+  credential-free, runnable now; PASS bound to wave authorization). CUE fixes the shape now; the child Go
+  validators compute their procedural facts when each WC executes under its own α→β→γ→CC.
 
 This is a **plan, not doctrine**. The `docs/` artifacts named as `requested_output` paths are the
 **future output of the Working Cells** — not authored here. Nothing under `docs/` or `schemas/cdd/`
@@ -113,7 +134,7 @@ assurance edge is **wc-3b→wc-5** (forward).
 | **completion-evidence derivation** (typed resolver input → 5 derived constituents) | **WC-5** | `.cdd/unreleased/wc-5/validators/completion_evidence.go` |
 | **ledger consistency** (revision markers agree; per-category counts) | **WC-5** | `.cdd/unreleased/wc-5/validators/ledger_consistency.go` |
 | **classification-totality bijection** | **WC-5** | `.cdd/unreleased/wc-5/validators/classification_bijection.go` |
-| **oracle-ownership bijection** (whole-wave, cross-contract) — R10: **wave-boundary** | **WAVE** | `.cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go` |
+| **oracle-ownership bijection** (whole-wave, cross-contract) — R10: **wave-boundary**; **R11: MATERIALIZED**, runs at pre-authorization (78 ⇄ 78, exit 0 iff bijective; PASS bound to wave authorization) | **WAVE** | `.cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go` |
 
 ## Grounding CM (content-bound to the TRUE source)
 
@@ -267,6 +288,13 @@ into WC-1 as **settled input**.
 |---|---|---|
 | 1 | **[BLOCKER]** the executable **assurance** (deferred-validator) graph was **cyclic** — two BACKWARD edges (a successor validating a predecessor's acceptance predicate): WC-2's `mechanical_oracles_owned` deferred to **wc-1** (cycle **WC-2↔WC-1**), and WC-3b's completion predicate deferred to **wc-5** (cycle **WC-3b↔WC-5**). | **Forward-only rule, CUE-enforced.** A child acceptance predicate is verified only by the child **itself** or a construction-**predecessor**; `#AllowedVerifier` (transitive predecessor closure) constrains every deferred-go `#AssuranceEntry` to `deferred_owner ∈ {owner} ∪ predecessors(owner)`. (a) All six per-child oracle predicates are **self-owned**; (b) WC-3b's completion predicate is **self-owned** (WC-5 keeps its own forward integration revalidation); (c) the whole-wave **oracle-ownership bijection** moved to a **wave-boundary pre-authorization** predicate (`deferred_owner: "wave"`), WC-1's ownership removed, WC-5's seal-readiness reworded; (d) a new **combined-graph acyclicity** check is **WC-3b** self-owned (union of construction ∪ cross-owner assurance edges, acyclic + each validator precedes its consumer); (e) two **backward-edge negative fixtures FAIL** and a forward positive passes (`make -C schema all` → 0). Both cycles gone; the only cross-owner edge is **wc-3b→wc-5** (forward); registry stays **total** (78 ⇄ 78). Ledger advanced to **R10**; content-hash chain re-pinned. **No Python.** |
 
+## Per-finding disposition (R11 — materialize the wave-boundary pre-authorization validator)
+
+| # | Finding | R11 disposition |
+|---|---|---|
+| 1 | **[BLOCKER]** the wave-boundary oracle-ownership bijection (R10 moved it to `deferred_owner: "wave"`) named **Go artifacts that did not exist**. A **pre-authorization** gate runs **before any WC executes** → it **cannot** be deferred to a WC; it must EXIST and run now. | **Materialized** [`wave-validators/oracle_ownership_bijection.go`](./wave-validators/oracle_ownership_bijection.go) — self-contained `package main`, **stdlib-only**, credential-free (`go run`, no module/network). Reads the six `contracts/*.yaml` `acceptance.predicates` + `oracle-registry.yaml` `assurance:` and proves the bijection over `(owner, predicate)`: **78 ⇄ 78** (no missing/phantom/duplicate) and every `mechanically-verifiable` predicate bound to **exactly one** checker\|schema owner; **exit 0 iff bijective**. Input-path arg → runs against the real wave **and** the two named fixtures ([positive](./wave-validators/fixtures/oracle-ownership.one-checker-each.positive.yaml) → exit 0; [double-owned negative](./wave-validators/fixtures/oracle-ownership.double-owned.negative.yaml) → non-zero). Credential-free [`wave-validators/Makefile`](./wave-validators/Makefile) gate (`make all`). **PASS bound to authorization:** `oracle-registry.yaml` `wave_oracle_ownership_bijection_enforced` carries `command`/`validator_sha256`/`result_evidence`; `wave.cn-wave-v1.yaml` `gates.wave_authorization.preauthorization_gates[]` pins path + hash + invocation + [`EVIDENCE.md`](./wave-validators/EVIDENCE.md) + `binds_to_revision: R11`. **Not authorization-ready** unless the validator resolves at its pinned hash **and** exits 0 with `bijective: true`; removing/corrupting it breaks the hash → pre-authorization hold. Stays **wave-owned** (outside child completion). Child procedural validators stay **deferred** to their WCs (post-authorization). |
+| 2 | **[REQUIRED]** stale in-matter projections (`WC-3b/WC-5` slash-owner edge-parity; README "under operator review" while β/CC pending). | `reconcile-627.md` + `decision-provenance.md` §1 now read **"owned by WC-3b, consumed/revalidated by WC-5"** (single owner). README status states the actual next boundary: **external-β review next (then γ → CC → operator)**. Whole-matter sweep: no other current-state slash-owner or `validate.py` current-state reference — historical round entries keep Python as explicitly-historical evidence. |
+
 ## Prior-round ledger (unchanged accepted structure)
 
 R2/R3 repaired the external-β ITERATEs (non-recursive completion, honest intent provenance, byte-exact
@@ -275,9 +303,12 @@ R7 closed the wave-envelope + completion blockers; R8 removed Python and moved s
 CUE; **R9** makes `#CellContract` faithfully canonical, gives every deferred validator a single owner,
 and makes completion constituents consistent with a typed resolver input; **R10** makes the assurance
 (deferred-validator) graph **forward-only and acyclic** (CUE-enforced `deferred_owner ∈ {self} ∪
-predecessors`; whole-wave bijection moved to the wave boundary; combined-graph acyclicity owned by WC-3b).
+predecessors`; whole-wave bijection moved to the wave boundary; combined-graph acyclicity owned by WC-3b);
+**R11** **materializes** the wave-boundary oracle-ownership-bijection validator (it was named but did not
+exist) as credential-free stdlib Go with positive/negative fixtures, and **binds its PASS to wave
+authorization** (pre-authorization gate), plus fixes stale single-owner/boundary projections.
 The accepted **construction** graph (WC-2 → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), D9-four, intent provenance,
-and grounding are **unchanged** across R2–R10.
+and grounding are **unchanged** across R2–R11.
 
 ## Files
 
@@ -285,6 +316,10 @@ and grounding are **unchanged** across R2–R10.
 - [`schema/`](./schema/) — plan-local transitional CUE (`#CellContract` + `#WorkingCellContract`, `#Wave`,
   `#AssuranceRegistry`, `#Intent`), the `Makefile` runner, and `regressions/` (clean/canonical bases + 29
   rejected mutation fixtures + a forward-edges positive).
+- [`wave-validators/`](./wave-validators/) — **R11**: the materialized wave-boundary pre-authorization
+  validator `oracle_ownership_bijection.go` (credential-free stdlib Go), its positive + double-owned negative
+  `fixtures/`, a `Makefile` gate, and `EVIDENCE.md` (the PASS content-bound to R11, referenced by the wave's
+  `preauthorization_gates`).
 - [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — transitional bootstrap intent projection.
 - [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions + the R8/R9 dispositions.
 - [`wave.cn-wave-v1.yaml`](./wave.cn-wave-v1.yaml) — the `cn.wave.v1` instance.
@@ -296,5 +331,6 @@ and grounding are **unchanged** across R2–R10.
 - [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the total registry (every predicate classified single-kind).
 
 ---
-*Status: R10 wave, α matter — under operator review; external-β and CC review next. No child WCs
-dispatched; no control-plane action taken by this cell.*
+*Status: R11 wave, α matter — **external-β review next** (then γ → CC → operator). The current boundary is
+external-β ITERATE on #672; β/CC/operator review are still pending, so this is **not** yet under operator
+review. No child WCs dispatched; no control-plane action taken by this cell.*

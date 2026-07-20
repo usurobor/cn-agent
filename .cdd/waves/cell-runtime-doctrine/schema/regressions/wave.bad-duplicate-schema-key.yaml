@@ -4,7 +4,7 @@
 schema: cn.wave.v1
 schema: nonsense
 wave: "671"
-revision: "R10"
+revision: "R11"
 goal: "minimal valid wave"
 intent: { schema: "cn.intent.v1", id: "intent-x", locator: "sha256:0@intent.yaml" }
 grounding:

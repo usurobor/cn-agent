@@ -1,5 +1,8 @@
-// cnos#671 R10 — PLAN-LOCAL, TRANSITIONAL structural schema for wave.cn-wave-v1.yaml.
-// #Wave/#Completion UNCHANGED in R10 (the R10 repair is the forward-only assurance graph in assurance_registry.cue).
+// cnos#671 R11 — PLAN-LOCAL, TRANSITIONAL structural schema for wave.cn-wave-v1.yaml.
+// R11: #WaveGates.wave_authorization gains an optional pre-authorization gate list (#PreAuthGate) — a
+// materialized wave-boundary validator's PASS (path + pinned content hash + invocation + evidence) bound
+// to authorization-readiness. #Completion and the §2 completion model are UNCHANGED (R10 forward-only
+// assurance graph lives in assurance_registry.cue).
 //
 // Design input (WC-1/WC-3b formalize the durable cn.wave.v1 CUE); NOT the canonical deliverable.
 // Closes the R7 wave-envelope + completion blockers NATIVELY via `cue vet`:
@@ -123,12 +126,32 @@ package crd
 		authority!:     string
 		boundary!:      string
 		revision_bound!: string // revision-bound authorization field required
+		// R11: PRE-AUTHORIZATION gates — whole-wave validators proven BEFORE any WC dispatches, each
+		// binding a materialized validator's PASS (path + pinned content hash + invocation + evidence)
+		// to authorization-readiness. Optional list; when present each entry is fully pinned.
+		preauthorization_gates?: [...#PreAuthGate]
 	}
 	per_child!: {
 		operator_authorization_required!: bool
 		operator_acceptance_required!:    bool
 		reason!:                          string
 	}
+}
+
+// A wave-boundary pre-authorization gate: a materialized, runnable validator whose PASS is content-bound
+// to the wave revision. authorization-ready IFF the validator resolves at validator_sha256 and its
+// invocation exits 0 with required_result — so removing/corrupting it prevents the authorization-ready state.
+#PreAuthGate: {
+	predicate!:               string
+	validator_path!:          string
+	validator_sha256!:        string & =~"^[0-9a-f]{64}$"
+	invocation!:              string
+	required_result!:         string
+	result_evidence!:         string
+	result_evidence_sha256!:  string & =~"^[0-9a-f]{64}$"
+	binds_to_revision!:       string & =~"^R[0-9]+$"
+	authorization_ready_iff!: string
+	owned_by?:                string
 }
 
 #StopCondition: {

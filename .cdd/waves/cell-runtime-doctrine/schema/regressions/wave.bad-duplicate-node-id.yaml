@@ -3,7 +3,7 @@
 # by cue vet. (The real wave.cn-wave-v1.yaml is also vetted by the Makefile `clean` target.)
 schema: cn.wave.v1
 wave: "671"
-revision: "R10"
+revision: "R11"
 goal: "minimal valid wave"
 intent: { schema: "cn.intent.v1", id: "intent-x", locator: "sha256:0@intent.yaml" }
 grounding:

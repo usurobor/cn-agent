@@ -5,7 +5,7 @@
 #   cue vet ./schema/ ./schema/regressions/registry.forward-edges.positive.yaml -d '#AssuranceRegistry'
 schema: cn.assurance-registry.v1
 wave: "671"
-revision: "R10"
+revision: "R11"
 assurance:
   - owner: "wc-2"
     predicate: "self_edge__wc2_verified_by_wc2_is_forward"

@@ -1,4 +1,4 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R10)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R11)
 #
 # Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
 # resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
@@ -21,8 +21,8 @@
 # the combined (construction ∪ assurance) graph is acyclic (sole root wc-2, terminal wc-5).
 schema: cn.wave.v1
 wave: "671"
-# wave-revision: R10
-revision: "R10"
+# wave-revision: R11
+revision: "R11"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -61,7 +61,7 @@ grounding:
       repo: "usurobor/cnos"
       resolved_at: "authorized_wave_commit"
       path: ".cdd/waves/cell-runtime-doctrine/reconcile-627.md"
-      content_hash: "sha256:795ef4a8b9b1010a92b2bbdc17624bfb19637e350b277582be685be87bbf5c54"
+      content_hash: "sha256:6d8ed66be0e77875ebb57f91908e4f1701243962fe083ce57a53260fcc5a1262"
 
 # External roots (immutable; consumed by nodes, create no wave edge)
 external_roots:
@@ -93,33 +93,33 @@ nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
-    contract_sha256: "5bc3c8eda89782d66c31a75566dc2171464c96b2cef3bb690da35fdc482c3573"
+    contract_sha256: "fc6a53426b674fbedf0f7c4d314ef7bcad792ef9f6d363f3ab0f8278845b8686"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
-    contract_sha256: "8283eeee4fce28a862b7f7b6ea643960b661d8d36cae4ae0415a0267a4c5a32b"
+    contract_sha256: "3d173ececccdf08267ad07d1398e134400d1e2365b5e45a08892c8a7fafafc73"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
-    contract_sha256: "4ceec6d9b4871c7ba222c632d98b50ce61750b0810fea89d8e8d47b5b90e9043"
+    contract_sha256: "07dd522ec857699387acda16087c0b5431169c2929cbd763df53ce865465f49e"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
-    contract_sha256: "10e39a7e4ccbab4ee6f9a46b0cef2d3ce42926c51e600d74ff662907bbf47048"
+    contract_sha256: "c4db358d2cc5a0dd97ae113189af8ab7e84621a8a55e83cd536f5a567a3fb742"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
-    contract_sha256: "2d2c2dedec72a20d4e25fb1f1215700bce0c116f7869d309b9ac10c1f80d75f8"
+    contract_sha256: "d525c4712e9e00cb313e85901f62437c3cefb7062b4f85c9887c9f6c368fa38d"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
-    contract_sha256: "ccb020cd2158b595ea190ecb94a268474dbcfba179e5a6930d7a5a6c4c192a95"
+    contract_sha256: "c3c47f9ec82f766685087965b037cc16843e9e99c1d18e2e3691629115a848d3"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 
@@ -151,6 +151,21 @@ gates:
     authority: "operator"
     boundary: "once at the wave boundary (§9); children then scheduled by dependencies, no per-child operator gate"
     revision_bound: "binds to the authorized wave commit (see contract_ref_resolution); a changed tree fails stale"
+    # R11: PRE-AUTHORIZATION gate(s) — a whole-wave property proven BEFORE any WC dispatches. The wave is
+    # NOT authorization-ready unless every gate here resolves at its pinned validator_sha256 AND its
+    # invocation exits 0 with the required result. Removing/corrupting a validator breaks the pinned hash
+    # -> not authorization-ready (see stop_conditions.revoked_authorization). Wave-owned, outside child completion.
+    preauthorization_gates:
+      - predicate: "wave_oracle_ownership_bijection_enforced"     # oracle-registry.yaml wave_predicates (deferred_owner: "wave")
+        validator_path: ".cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go"
+        validator_sha256: "271887be7cab33d592e009c5a8c04bfa20ed09a31fe5017b0e19e7065be7c832"
+        invocation: "go run oracle_ownership_bijection.go .. (from wave-validators/); or make -C .cdd/waves/cell-runtime-doctrine/wave-validators all"
+        required_result: "bijective: true — 78 child acceptance predicates <-> 78 registry assurance entries (no missing/phantom/duplicate); 30 mechanically-verifiable predicates each bound to exactly one checker|schema; exit 0"
+        result_evidence: ".cdd/waves/cell-runtime-doctrine/wave-validators/EVIDENCE.md"
+        result_evidence_sha256: "e6e644f234965e82a45aafe10da1653575e0e669beed39b8f8d28b2a04d762c3"
+        binds_to_revision: "R11"
+        authorization_ready_iff: "the validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true (PASS content-bound to R11); a removed/corrupted validator or a non-bijective result makes this wave NOT authorization-ready (pre-authorization hold)"
+        owned_by: "wave-boundary (no child WC); runs at pre-authorization, outside child completion"
   per_child:
     operator_authorization_required: false
     operator_acceptance_required: true        # every child is doctrine_affecting: true

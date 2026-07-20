@@ -1,0 +1,32 @@
+# POSITIVE fixture (cnos#671 R11) for wave-validators/oracle_ownership_bijection.go
+#
+# A minimal, self-contained registry + child-predicate set the validator ACCEPTS (exit 0):
+#   * every child acceptance predicate (owner, predicate) maps to EXACTLY ONE registry entry
+#     and vice-versa (bijective; no missing / phantom / duplicate);
+#   * every mechanically-verifiable predicate binds EXACTLY ONE concrete checker|schema owner.
+#
+# Note the predicate STRING "alpha_mechanical" appears under TWO different owners (wc-x, wc-y):
+# ownership is per (owner, predicate) PAIR, so each is a distinct, singly-owned slot — a legal
+# bijection, not a double-own.
+#
+# Run:  go run ../oracle_ownership_bijection.go oracle-ownership.one-checker-each.positive.yaml   -> exit 0
+child_predicates:
+  - owner: "wc-x"
+    predicate: "alpha_mechanical"
+  - owner: "wc-x"
+    predicate: "beta_cognitive"
+  - owner: "wc-y"
+    predicate: "alpha_mechanical"
+
+assurance:
+  - owner: "wc-x"
+    predicate: "alpha_mechanical"
+    classification: "mechanically-verifiable"
+    checker: "check_alpha.go"
+  - owner: "wc-x"
+    predicate: "beta_cognitive"
+    classification: "cognitive-review"
+  - owner: "wc-y"
+    predicate: "alpha_mechanical"
+    classification: "mechanically-verifiable"
+    schema: "alpha.schema.cue"

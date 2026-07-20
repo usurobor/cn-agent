@@ -74,9 +74,10 @@ above (`refined-by <WC-n>`), not from any contract field. Reading those rows in 
 | WC-5 | #627 coordination index (whole-wave seal; no single S-owner) |
 
 Neither derivation is stored on a contract; both are recomputed from the `sibling_output` refs and
-this #627 map. The **deferred-Go edge-parity validator** (WC-3b/WC-5; see `schema/README.md`) proves
-derivation (a) matches the authored wave edges exactly. (R8: the prior Python validator was removed;
-this is a Go + CUE repo — structural shape is `cue vet`, procedural parity is Go.)
+this #627 map. The **deferred-Go edge-parity validator** (**owned by WC-3b**, consumed/revalidated by
+WC-5; single owner, matching the authoritative registry — see `schema/README.md`) proves derivation
+(a) matches the authored wave edges exactly. (R8: the prior Python validator was removed; this is a
+Go + CUE repo — structural shape is `cue vet`, procedural parity is Go.)
 
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 

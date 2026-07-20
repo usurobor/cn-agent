@@ -16,7 +16,12 @@
 // consumers, and a gating predicate whose PASS gates the owning child's completion — so WC-5 cannot
 // seal until every deferred validator exists and passes.
 //
-// R10 (this repair) — FORWARD-ONLY ACYCLIC ASSURANCE GRAPH. Each child deferred acceptance entry
+// R11 — the wave-boundary oracle-ownership bijection validator is now MATERIALIZED and its PASS is
+// BOUND to wave authorization: #WavePredicate gains optional command/validator_sha256/result_evidence
+// (+sha)/authorization_binding fields carrying the runnable invocation + content-bound PASS evidence.
+// The forward-only assurance graph and per-category required fields below are UNCHANGED.
+//
+// R10 — FORWARD-ONLY ACYCLIC ASSURANCE GRAPH. Each child deferred acceptance entry
 // creates an assurance edge deferred_owner -> owner. To keep the combined (construction + assurance)
 // graph acyclic, a child acceptance predicate may be verified ONLY by the child ITSELF or a
 // construction-PREDECESSOR of that child — never a successor. #AllowedVerifier pins the transitive
@@ -137,6 +142,14 @@ import "list"
 	downstream_consumers?: [...string]
 	gating_predicate?:         string
 	wave_authorization_gated?: true
+	// R11: a MATERIALIZED wave-boundary validator additionally binds its PASS to wave authorization —
+	// a runnable invocation + the validator/evidence content hashes + the binding statement. Present on
+	// the oracle-ownership bijection predicate (the one pre-authorization validator shipped in-matter).
+	command?:                string
+	validator_sha256?:       string & =~"^[0-9a-f]{64}$"
+	result_evidence?:        string
+	result_evidence_sha256?: string & =~"^[0-9a-f]{64}$"
+	authorization_binding?:  string
 	if classification == "structural-cue" {
 		enforced_by!: string
 	}

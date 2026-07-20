@@ -1,0 +1,26 @@
+# NEGATIVE fixture (cnos#671 R11) for wave-validators/oracle_ownership_bijection.go
+#
+# A predicate OWNED TWICE: the (owner, predicate) pair (wc-x, alpha_mechanical) has TWO registry
+# `assurance:` entries. The bijection requires each (owner, predicate) to map to EXACTLY ONE
+# registry entry, so this is a double-own (and a child⇄registry count break) — the validator
+# MUST reject it (non-zero exit).
+#
+# Run:  go run ../oracle_ownership_bijection.go oracle-ownership.double-owned.negative.yaml   -> exit 1 (non-zero)
+child_predicates:
+  - owner: "wc-x"
+    predicate: "alpha_mechanical"
+  - owner: "wc-x"
+    predicate: "beta_cognitive"
+
+assurance:
+  - owner: "wc-x"
+    predicate: "alpha_mechanical"
+    classification: "mechanically-verifiable"
+    checker: "check_alpha.go"
+  - owner: "wc-x"
+    predicate: "alpha_mechanical"
+    classification: "mechanically-verifiable"
+    checker: "check_alpha_duplicate.go"
+  - owner: "wc-x"
+    predicate: "beta_cognitive"
+    classification: "cognitive-review"
