@@ -1,0 +1,4 @@
+# minimal wave-dir NEGATIVE fixture (cnos#671 R12) — dir-mode analog of the complete-wave false-pass R11 admitted.
+schema: cn.wave.v1
+nodes:
+  - { id: "wc-1" }

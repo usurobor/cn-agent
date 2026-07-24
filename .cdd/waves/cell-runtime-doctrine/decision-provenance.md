@@ -160,6 +160,25 @@ content_hash re-pinned in the wave after the slash-owner fix). grounding/intent 
 stay. Registry stays **total** (78 ⇄ 78). Contracts remain exactly §2. `make -C schema all` → exit 0; the wave
 validator → real wave exit 0, positive fixture exit 0, negative fixture non-zero. **No Python.**
 
+### R12 disposition — sound wave-boundary gate (cue-export normalized) + revision-relative ledger
+
+**Source:** the external-β ITERATE on #672 (returned ITERATE with two BLOCKERs + one REQUIRED) and this
+Planning Cell's α repair (R12). Review→repair outcome, not intent. The accepted six-node **construction**
+graph (WC-2→WC-1→{WC-3a,WC-3b,WC-4}→WC-5), the faithful §2 `#CellContract`/`#WorkingCellContract`, the
+forward-only acyclic assurance graph, and the completion model are **unchanged**.
+
+| # | Finding | R12 disposition |
+|---|---|---|
+| 1 | **[BLOCKER]** (validator soundness) the R11 wave-boundary validator hand-parsed YAML by indentation/prefix and **silently dropped** CUE-valid **flow-style** predicate lists (`predicates: ["x"]`), producing a demonstrated complete-wave **FALSE PASS** — an unregistered child predicate reached "authorization-ready" while R11 reported "66 child predicates, 66 registry entries, bijective: true". | **Rewrote the validator to normalize EVERY input through `cue export --out json`** — no ad-hoc YAML parsing; owners derived from each semantic contract's `cell.id` cross-checked against the wave node ids; **fail-closed** (exit 2) on parse loss or empty owner/predicate. New regression fixtures: flow-style missing-registry, flow-style mismatched-owner, empty-owner (exit 2), cell.id-not-a-node (exit 2), a flow-style positive, and a minimal wave-dir positive + flow-unregistered negative. The Makefile builds once and asserts **exact per-fixture exit codes** (0 = bijective PASS; 1 = bijection/ownership defect; 2 = fail-closed). Verified: the real wave still PASSes **78 child acceptance predicates ⇄ 78 registry assurance entries** (30 mechanically-verifiable), and the exact clean complete-mutant Codex demonstrated now **exits 1** (missing=1) instead of false-passing. |
+| 2 | **[BLOCKER]** (ledger contract stale) `oracle-registry.yaml` `wave_ledger_consistency_deferred` (owned by WC-5) was hard-coded to R10 (`all_R10`, `ledger.all-r10-counts-agree.positive.yaml`), forcing per-round ledger churn. | Made it **REVISION-RELATIVE**: it checks that every ROUND marker (a `# wave-revision: Rn` comment or a top-level `revision: "Rn"` field matching `^R[0-9]+$`; **not** content-hash `revision: "sha256:…"` locators) equals the authorized `wave.revision`. `result_shape` now `{ expected_revision, revisions_seen, all_match_expected, category_counts, counts_agree, single_enum }`; the revision-neutral positive fixture is `ledger.markers-match-wave-revision.positive.yaml`. This ends the per-round ledger churn. |
+| 3 | **[REQUIRED]** (projection drift) the `schema/wave.cue` deferred-owner comment still implied shared/multi owners; the `schema/README.md` bundle header was stale at R10. | Rewrote the `schema/wave.cue` deferred-owner comment to **single-owner** (graph acyclicity + edge parity → **WC-3b**; ref/content-hash resolution → **WC-2**; completion-evidence derivation → **WC-5**; #627 S2–S3 downstream consumers, **never** owners); bumped the `schema/README.md` bundle header **R10→R12**. |
+
+**Ledger:** every `wave-revision:`/`revision:` marker advanced to **R12**; the content-hash chain re-pinned
+(oracle-registry → 6 contracts → wave `contract_sha256`); grounding/reconcile/intent files unchanged so their
+hashes stay. Registry stays **total** (78 ⇄ 78). Contracts remain exactly §2. `make -C schema all` → exit 0;
+the wave validator now normalizes via `cue export --out json` — real wave exit 0, and the Makefile asserts the
+exact per-fixture exit codes (0 bijective / 1 defect / 2 fail-closed). **No Python.**
+
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 
 Recording this provenance on an immutable coordination index (an update to #627 or a named index

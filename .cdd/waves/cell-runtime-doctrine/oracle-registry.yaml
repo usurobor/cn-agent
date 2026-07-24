@@ -1,7 +1,20 @@
 # oracle-registry.yaml — AUTHORITATIVE, TOTAL assurance-classification registry (cnos#671)
-# wave-revision: R11
+# wave-revision: R12
 #
-# R11 (this repair) — MATERIALIZE the wave-boundary pre-authorization validator. R10 moved the
+# R12 (this repair) — SOUNDNESS of the wave-boundary gate + REVISION-RELATIVE ledger. External-β R11
+# proved a complete-wave FALSE PASS: the R11 validator hand-parsed YAML and silently dropped CUE-valid
+# flow-style predicate lists, so an unregistered child predicate reached "authorization-ready". R12
+# rewrites wave-validators/oracle_ownership_bijection.go to normalize EVERY input through `cue export
+# --out json` (no ad-hoc YAML parsing; owners derived from semantic cell.id ∈ wave nodes; fail-closed on
+# parse loss or empty owner/predicate), adds flow-style + fail-closed regression fixtures, and asserts
+# exact per-fixture exit codes via a build-once Makefile. The wave_ledger_consistency_deferred contract
+# below is made REVISION-RELATIVE (checks every round marker equals wave.revision; no R-literal), ending
+# the per-round ledger churn. Projection drift fixed (schema/wave.cue single-owner comment; schema
+# bundle header). Validator/evidence hashes re-pinned; the content-hash chain re-pinned (registry ->
+# contracts -> wave contract_sha256). The six §2 contracts, the six-node graph, the forward-only acyclic
+# assurance graph, and the completion model are UNCHANGED.
+#
+# R11 — MATERIALIZE the wave-boundary pre-authorization validator. R10 moved the
 # whole-wave oracle-ownership/classification bijection to a wave-boundary predicate (deferred_owner:
 # "wave") but named Go artifacts that did not exist. A PRE-AUTHORIZATION gate runs BEFORE any WC
 # executes, so it cannot be deferred to a WC — it must be a real, runnable validator NOW. R11 ships it:
@@ -67,7 +80,7 @@
 # registry via a canonical inputs.required[].external control_plane ref (content-hash pinned).
 schema: cn.assurance-registry.v1
 wave: "671"
-revision: "R11"
+revision: "R12"
 # ---- assurance: TOTAL over every child acceptance predicate (owner, predicate) ----
 assurance:
   # ---- WC-1 — cell classes & typed cell contract (12) ----
@@ -671,22 +684,23 @@ wave_predicates:
     positive_fixture: ".cdd/waves/cell-runtime-doctrine/wave-validators/fixtures/oracle-ownership.one-checker-each.positive.yaml"
     negative_fixture: ".cdd/waves/cell-runtime-doctrine/wave-validators/fixtures/oracle-ownership.double-owned.negative.yaml"
     downstream_consumers: [ "wc-5" ]
-    # R11: MATERIALIZED + BOUND TO AUTHORIZATION. The validator exists and runs credential-free; its
-    # PASS is content-bound to wave revision R11 (see wave.cn-wave-v1.yaml gates.wave_authorization).
+    # MATERIALIZED (R11) + SOUNDNESS-REPAIRED (R12) + BOUND TO AUTHORIZATION. The validator exists, runs
+    # credential-free, and normalizes inputs via cue export (no ad-hoc YAML parsing); its PASS is
+    # content-bound to wave revision R12 (see wave.cn-wave-v1.yaml gates.wave_authorization).
     command: "go run oracle_ownership_bijection.go .. (from wave-validators/); or `make -C .cdd/waves/cell-runtime-doctrine/wave-validators all` — real wave exit 0 (bijective: true, 78<->78), positive fixture exit 0, negative (double-owned) exit non-zero"
-    validator_sha256: "271887be7cab33d592e009c5a8c04bfa20ed09a31fe5017b0e19e7065be7c832"
+    validator_sha256: "ccf3080289f6c32f81239b7237cbcf7a984111069a8a8ffd97ada7a3e8815bf7"
     result_evidence: ".cdd/waves/cell-runtime-doctrine/wave-validators/EVIDENCE.md"
-    result_evidence_sha256: "e6e644f234965e82a45aafe10da1653575e0e669beed39b8f8d28b2a04d762c3"
-    authorization_binding: "wave authorization is NOT authorization-ready unless this validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true; removing/corrupting oracle_ownership_bijection.go breaks the pinned hash -> pre-authorization hold. PASS content-bound to revision R11."
+    result_evidence_sha256: "f78844c64ee4cd48d684eac695ddfae91d5db52e20d7f8913a201d8518bad4f2"
+    authorization_binding: "wave authorization is NOT authorization-ready unless this validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true; removing/corrupting oracle_ownership_bijection.go breaks the pinned hash -> pre-authorization hold. PASS content-bound to revision R12."
   - predicate: "wave_ledger_consistency_deferred"
     classification: "deferred-go"
     deferred_owner: "wc-5"
-    deferred_to: "Go ledger consistency validator (owned solely by WC-5; genuinely-forward, terminal): every wave-revision: marker agrees (R10); reported per-category counts == the totals derived from this registry; every classification is a single enum member"
+    deferred_to: "Go ledger consistency validator (owned solely by WC-5; genuinely-forward, terminal): REVISION-RELATIVE — every ROUND marker across the matter (a `# wave-revision: Rn` comment or a top-level `revision: \"Rn\"` field, i.e. matching ^R[0-9]+$; NOT the content-hash `revision: \"sha256:…@path\"` input-locator fields) equals the authorized `wave.revision` (read from wave.cn-wave-v1.yaml; NO hard-coded round literal, so a revision-only bump needs no algorithm/fixture change); reported per-category counts == the totals derived from this registry; every classification is a single enum member"
     go_artifact_id: "wc5-ledger-consistency-validator"
     go_artifact_path: ".cdd/unreleased/wc-5/validators/ledger_consistency.go"
-    inputs: "every `wave-revision:`/`revision:` marker across the matter files + the registry per-category counts"
-    result_shape: "{ revisions_seen: [], all_R10: bool, category_counts: {}, counts_agree: bool, single_enum: bool }"
-    positive_fixture: ".cdd/unreleased/wc-5/validators/fixtures/ledger.all-r10-counts-agree.positive.yaml"
+    inputs: "the authorized `wave.revision` (expected revision); every `wave-revision:`/`revision:` marker across the matter files; the registry per-category counts"
+    result_shape: "{ expected_revision: \"<wave.revision>\", revisions_seen: [], all_match_expected: bool, category_counts: {}, counts_agree: bool, single_enum: bool }"
+    positive_fixture: ".cdd/unreleased/wc-5/validators/fixtures/ledger.markers-match-wave-revision.positive.yaml"
     negative_fixture: ".cdd/unreleased/wc-5/validators/fixtures/ledger.revision-skew.negative.yaml"
     downstream_consumers: [ "wc-5" ]
     gating_predicate: "deferred_validator_owned__go_ledger_consistency_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"

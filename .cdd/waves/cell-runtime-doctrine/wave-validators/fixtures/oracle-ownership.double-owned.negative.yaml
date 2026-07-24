@@ -1,4 +1,4 @@
-# NEGATIVE fixture (cnos#671 R11) for wave-validators/oracle_ownership_bijection.go
+# NEGATIVE fixture (cnos#671 R12) for wave-validators/oracle_ownership_bijection.go
 #
 # A predicate OWNED TWICE: the (owner, predicate) pair (wc-x, alpha_mechanical) has TWO registry
 # `assurance:` entries. The bijection requires each (owner, predicate) to map to EXACTLY ONE

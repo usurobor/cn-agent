@@ -1,4 +1,4 @@
-# POSITIVE fixture (cnos#671 R11) for wave-validators/oracle_ownership_bijection.go
+# POSITIVE fixture (cnos#671 R12) for wave-validators/oracle_ownership_bijection.go
 #
 # A minimal, self-contained registry + child-predicate set the validator ACCEPTS (exit 0):
 #   * every child acceptance predicate (owner, predicate) maps to EXACTLY ONE registry entry

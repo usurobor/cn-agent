@@ -1,0 +1,4 @@
+# minimal child contract (data-only; the bijection validator reads cell.id + acceptance.predicates).
+cell: { id: "wc-1" }
+acceptance:
+  predicates: ["p_block_style", "p_flow_style"]

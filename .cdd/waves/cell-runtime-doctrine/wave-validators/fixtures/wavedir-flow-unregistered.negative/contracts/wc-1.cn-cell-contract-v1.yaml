@@ -1,0 +1,4 @@
+# The acceptance predicate is written in CUE-VALID FLOW style. R11's ad-hoc parser dropped it (false pass);
+# R12 normalizes via cue export and sees it. The registry omits it → MISSING → exit 1.
+cell: { id: "wc-1" }
+acceptance: { predicates: ["wc1_actual_but_unregistered"] }

@@ -1,0 +1,3 @@
+assurance:
+  - { owner: "wc-1", predicate: "p_block_style", classification: "mechanically-verifiable", checker: "a.go" }
+  - { owner: "wc-1", predicate: "p_flow_style",  classification: "cognitive-review" }

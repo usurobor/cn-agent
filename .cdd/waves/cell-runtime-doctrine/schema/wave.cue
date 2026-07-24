@@ -1,4 +1,4 @@
-// cnos#671 R11 — PLAN-LOCAL, TRANSITIONAL structural schema for wave.cn-wave-v1.yaml.
+// cnos#671 R12 — PLAN-LOCAL, TRANSITIONAL structural schema for wave.cn-wave-v1.yaml.
 // R11: #WaveGates.wave_authorization gains an optional pre-authorization gate list (#PreAuthGate) — a
 // materialized wave-boundary validator's PASS (path + pinned content hash + invocation + evidence) bound
 // to authorization-readiness. #Completion and the §2 completion model are UNCHANGED (R10 forward-only
@@ -19,10 +19,12 @@
 //   * uniqueness folds over nodes/edges              -> a duplicate node id / duplicate edge conflicts;
 //   * a non-empty typed STOP set with an effect enum -> `stop_conditions: []` / a bad effect rejected.
 //
-// Procedural/semantic checks NAMED-AND-DEFERRED to Go (WC-3b/WC-1, #627 S2–S3): graph acyclicity
-// (DAG), sibling-output→edge PARITY, git ref/content-hash resolution, and the completion-evidence
-// DERIVATION over resolved child receipts (that a fixture's `expected` equals the value computed from
-// the records, and that child_complete ignores no constituent). CUE fixes the SHAPE; Go computes.
+// Procedural/semantic checks NAMED-AND-DEFERRED to single-owner Go validators (each owned by exactly
+// one in-wave WC per oracle-registry.yaml; #627 S2–S3 are downstream consumers/canonicalizers, never
+// owners): graph acyclicity (DAG) and sibling-output→edge PARITY — owner WC-3b; git ref/content-hash
+// resolution — owner WC-2; the completion-evidence DERIVATION over resolved child receipts (that a
+// fixture's `expected` equals the value computed from the records, and that child_complete ignores no
+// constituent) — owner WC-5. CUE fixes the SHAPE; Go computes.
 //
 // Invocation:
 //   cue vet ./schema/ ./wave.cn-wave-v1.yaml -d '#Wave'

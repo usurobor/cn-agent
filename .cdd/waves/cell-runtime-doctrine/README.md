@@ -1,9 +1,30 @@
-<!-- wave-revision: R11 -->
-# Wave: cell-runtime-doctrine (cnos#671 — R11)
+<!-- wave-revision: R12 -->
+# Wave: cell-runtime-doctrine (cnos#671 — R12)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
 single-purpose Working-Cell contracts, grounded in an immutable coherence measurement.
+
+**R12 repair (external-β #672) — sound wave-boundary gate (cue-export normalized) + revision-relative
+ledger.** The R11 wave-boundary pre-authorization validator hand-parsed YAML by indentation/prefix and
+**silently dropped** CUE-valid **flow-style** predicate lists (`predicates: ["x"]`), producing a demonstrated
+complete-wave **FALSE PASS** (an unregistered child predicate reached "authorization-ready" while R11 reported
+"66 child predicates, 66 registry entries, bijective: true"). R12 **rewrites the validator to normalize EVERY
+input through `cue export --out json`** — no ad-hoc YAML parsing; owners derived from each semantic contract's
+`cell.id` cross-checked against the wave node ids; **fail-closed** on parse loss or empty owner/predicate. New
+regression fixtures: flow-style missing-registry, flow-style mismatched-owner, empty-owner (fail-closed exit 2),
+cell.id-not-a-node (fail-closed exit 2), a flow-style positive, and a minimal wave-dir positive + flow-unregistered
+negative. The [`wave-validators/Makefile`](./wave-validators/Makefile) now **builds once and asserts exact
+per-fixture exit codes** (0 = bijective PASS; 1 = bijection/ownership defect; 2 = fail-closed). Verified: the real
+wave still PASSes **78 child acceptance predicates ⇄ 78 registry assurance entries** (30 mechanically-verifiable),
+and the exact clean complete-mutant Codex demonstrated now **exits 1** (missing=1) instead of false-passing. R12
+also makes `oracle-registry.yaml`'s `wave_ledger_consistency_deferred` (owned by WC-5) **revision-relative** — it
+checks every ROUND marker (a `# wave-revision: Rn` comment or a top-level `revision: "Rn"` field matching
+`^R[0-9]+$`; **not** content-hash `revision: "sha256:…"` locators) equals the authorized `wave.revision`,
+ending the per-round ledger churn — and rewrites the `schema/wave.cue` deferred-owner comment to **single-owner**
+(graph acyclicity + edge parity → WC-3b; ref/content-hash resolution → WC-2; completion-evidence derivation →
+WC-5; #627 S2–S3 downstream consumers, **never** owners), with the `schema/README.md` bundle header R10→R12.
+**All round markers advanced R11→R12; content-hash chain re-pinned.** `make -C schema all` → exit 0. **No Python.**
 
 **R11 repair (external-β #672) — materialize the wave-boundary pre-authorization validator.** R10 moved
 the whole-wave oracle-ownership/classification bijection to a wave-boundary predicate (`deferred_owner:
@@ -54,9 +75,10 @@ Pre-authorization validation is:
   the owning WC executes): graph acyclicity (DAG) + **combined-graph acyclicity**, sibling-output → edge
   **parity**, git ref/content-hash resolution, the classification **bijection**, and **completion-evidence
   derivation** over resolved records. The **one exception** is the wave-boundary **oracle-ownership
-  bijection**: a **pre-authorization** gate runs **before any WC**, so it cannot be deferred — **R11
-  materializes it here** ([`wave-validators/oracle_ownership_bijection.go`](./wave-validators/oracle_ownership_bijection.go),
-  credential-free, runnable now; PASS bound to wave authorization). CUE fixes the shape now; the child Go
+  bijection**: a **pre-authorization** gate runs **before any WC**, so it cannot be deferred — it was
+  materialized in R11 and made **sound in R12** ([`wave-validators/oracle_ownership_bijection.go`](./wave-validators/oracle_ownership_bijection.go),
+  credential-free, `cue export --out json` normalized + fail-closed, runnable now; PASS bound to wave
+  authorization). CUE fixes the shape now; the child Go
   validators compute their procedural facts when each WC executes under its own α→β→γ→CC.
 
 This is a **plan, not doctrine**. The `docs/` artifacts named as `requested_output` paths are the
@@ -134,7 +156,7 @@ assurance edge is **wc-3b→wc-5** (forward).
 | **completion-evidence derivation** (typed resolver input → 5 derived constituents) | **WC-5** | `.cdd/unreleased/wc-5/validators/completion_evidence.go` |
 | **ledger consistency** (revision markers agree; per-category counts) | **WC-5** | `.cdd/unreleased/wc-5/validators/ledger_consistency.go` |
 | **classification-totality bijection** | **WC-5** | `.cdd/unreleased/wc-5/validators/classification_bijection.go` |
-| **oracle-ownership bijection** (whole-wave, cross-contract) — R10: **wave-boundary**; **R11: MATERIALIZED**, runs at pre-authorization (78 ⇄ 78, exit 0 iff bijective; PASS bound to wave authorization) | **WAVE** | `.cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go` |
+| **oracle-ownership bijection** (whole-wave, cross-contract) — R10: **wave-boundary**; R11: materialized at pre-authorization; **R12: SOUNDNESS-REPAIRED** — normalizes every input via `cue export --out json` (no hand-parsed YAML), fail-closed on parse loss/empty owner-predicate (78 ⇄ 78, exit 0 iff bijective / 1 defect / 2 fail-closed; PASS bound to wave authorization) | **WAVE** | `.cdd/waves/cell-runtime-doctrine/wave-validators/oracle_ownership_bijection.go` |
 
 ## Grounding CM (content-bound to the TRUE source)
 
@@ -295,6 +317,14 @@ into WC-1 as **settled input**.
 | 1 | **[BLOCKER]** the wave-boundary oracle-ownership bijection (R10 moved it to `deferred_owner: "wave"`) named **Go artifacts that did not exist**. A **pre-authorization** gate runs **before any WC executes** → it **cannot** be deferred to a WC; it must EXIST and run now. | **Materialized** [`wave-validators/oracle_ownership_bijection.go`](./wave-validators/oracle_ownership_bijection.go) — self-contained `package main`, **stdlib-only**, credential-free (`go run`, no module/network). Reads the six `contracts/*.yaml` `acceptance.predicates` + `oracle-registry.yaml` `assurance:` and proves the bijection over `(owner, predicate)`: **78 ⇄ 78** (no missing/phantom/duplicate) and every `mechanically-verifiable` predicate bound to **exactly one** checker\|schema owner; **exit 0 iff bijective**. Input-path arg → runs against the real wave **and** the two named fixtures ([positive](./wave-validators/fixtures/oracle-ownership.one-checker-each.positive.yaml) → exit 0; [double-owned negative](./wave-validators/fixtures/oracle-ownership.double-owned.negative.yaml) → non-zero). Credential-free [`wave-validators/Makefile`](./wave-validators/Makefile) gate (`make all`). **PASS bound to authorization:** `oracle-registry.yaml` `wave_oracle_ownership_bijection_enforced` carries `command`/`validator_sha256`/`result_evidence`; `wave.cn-wave-v1.yaml` `gates.wave_authorization.preauthorization_gates[]` pins path + hash + invocation + [`EVIDENCE.md`](./wave-validators/EVIDENCE.md) + `binds_to_revision: R11`. **Not authorization-ready** unless the validator resolves at its pinned hash **and** exits 0 with `bijective: true`; removing/corrupting it breaks the hash → pre-authorization hold. Stays **wave-owned** (outside child completion). Child procedural validators stay **deferred** to their WCs (post-authorization). |
 | 2 | **[REQUIRED]** stale in-matter projections (`WC-3b/WC-5` slash-owner edge-parity; README "under operator review" while β/CC pending). | `reconcile-627.md` + `decision-provenance.md` §1 now read **"owned by WC-3b, consumed/revalidated by WC-5"** (single owner). README status states the actual next boundary: **external-β review next (then γ → CC → operator)**. Whole-matter sweep: no other current-state slash-owner or `validate.py` current-state reference — historical round entries keep Python as explicitly-historical evidence. |
 
+## Per-finding disposition (R12 — sound wave-boundary gate; revision-relative ledger)
+
+| # | Finding | R12 disposition |
+|---|---|---|
+| 1 | **[BLOCKER]** (validator soundness) the R11 wave-boundary validator **hand-parsed YAML** by indentation/prefix and **silently dropped** CUE-valid **flow-style** predicate lists (`predicates: ["x"]`) → a demonstrated complete-wave **FALSE PASS** (an unregistered child predicate reached "authorization-ready"; R11 reported "66 child predicates, 66 registry entries, bijective: true"). | **Rewrote the validator to normalize EVERY input through `cue export --out json`** — no ad-hoc YAML parsing; owners derived from each semantic contract's `cell.id` cross-checked against the wave node ids; **fail-closed** (exit 2) on parse loss or empty owner/predicate. New regression fixtures: flow-style missing-registry, flow-style mismatched-owner, empty-owner (exit 2), cell.id-not-a-node (exit 2), a flow-style positive, and a minimal wave-dir positive + flow-unregistered negative. The Makefile **builds once and asserts exact per-fixture exit codes** (0 = bijective PASS; 1 = bijection/ownership defect; 2 = fail-closed). Verified: the real wave still PASSes **78 ⇄ 78** (30 mechanically-verifiable), and the exact clean complete-mutant Codex demonstrated now **exits 1** (missing=1) instead of false-passing. |
+| 2 | **[BLOCKER]** (ledger contract stale) `oracle-registry.yaml` `wave_ledger_consistency_deferred` (owned by WC-5) was hard-coded to R10 (`all_R10`, `ledger.all-r10-counts-agree.positive.yaml`) → per-round ledger churn. | Made it **REVISION-RELATIVE**: it checks that every ROUND marker (a `# wave-revision: Rn` comment or a top-level `revision: "Rn"` field matching `^R[0-9]+$`; **not** content-hash `revision: "sha256:…"` locators) equals the authorized `wave.revision`. `result_shape` now `{ expected_revision, revisions_seen, all_match_expected, category_counts, counts_agree, single_enum }`; revision-neutral positive fixture `ledger.markers-match-wave-revision.positive.yaml`. Ends the per-round churn. |
+| 3 | **[REQUIRED]** (projection drift) `schema/wave.cue` deferred-owner comment still implied shared/multi owners; `schema/README.md` bundle header stale at R10. | Rewrote the `schema/wave.cue` comment to **single-owner** (graph acyclicity + edge parity → **WC-3b**; ref/content-hash resolution → **WC-2**; completion-evidence derivation → **WC-5**; #627 S2–S3 downstream consumers, **never** owners); bumped the `schema/README.md` bundle header **R10→R12**. |
+
 ## Prior-round ledger (unchanged accepted structure)
 
 R2/R3 repaired the external-β ITERATEs (non-recursive completion, honest intent provenance, byte-exact
@@ -306,9 +336,13 @@ and makes completion constituents consistent with a typed resolver input; **R10*
 predecessors`; whole-wave bijection moved to the wave boundary; combined-graph acyclicity owned by WC-3b);
 **R11** **materializes** the wave-boundary oracle-ownership-bijection validator (it was named but did not
 exist) as credential-free stdlib Go with positive/negative fixtures, and **binds its PASS to wave
-authorization** (pre-authorization gate), plus fixes stale single-owner/boundary projections.
+authorization** (pre-authorization gate), plus fixes stale single-owner/boundary projections; **R12** makes
+that wave-boundary validator **sound** — it normalizes every input via `cue export --out json` (the R11
+hand-parser silently dropped flow-style predicate lists → a demonstrated complete-wave false pass), is
+fail-closed with exact per-fixture exit codes, and makes the WC-5 ledger check **revision-relative** (ending
+per-round ledger churn) plus fixes the `schema/wave.cue` single-owner comment + `schema/README.md` header.
 The accepted **construction** graph (WC-2 → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), D9-four, intent provenance,
-and grounding are **unchanged** across R2–R11.
+and grounding are **unchanged** across R2–R12.
 
 ## Files
 
@@ -316,10 +350,14 @@ and grounding are **unchanged** across R2–R11.
 - [`schema/`](./schema/) — plan-local transitional CUE (`#CellContract` + `#WorkingCellContract`, `#Wave`,
   `#AssuranceRegistry`, `#Intent`), the `Makefile` runner, and `regressions/` (clean/canonical bases + 29
   rejected mutation fixtures + a forward-edges positive).
-- [`wave-validators/`](./wave-validators/) — **R11**: the materialized wave-boundary pre-authorization
-  validator `oracle_ownership_bijection.go` (credential-free stdlib Go), its positive + double-owned negative
-  `fixtures/`, a `Makefile` gate, and `EVIDENCE.md` (the PASS content-bound to R11, referenced by the wave's
-  `preauthorization_gates`).
+- [`wave-validators/`](./wave-validators/) — the materialized wave-boundary pre-authorization validator
+  `oracle_ownership_bijection.go` (credential-free Go), **R12: sound** — it normalizes every input via
+  `cue export --out json` (no hand-parsed YAML), derives owners from each contract's `cell.id` against the
+  wave node ids, and is **fail-closed** on parse loss/empty owner-predicate; its `fixtures/` (flow-style
+  positive/negative, missing-registry, mismatched-owner, empty-owner + cell.id-not-a-node fail-closed, wave-dir
+  positive + flow-unregistered negative), a `Makefile` that builds once and asserts **exact per-fixture exit
+  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R12, referenced
+  by the wave's `preauthorization_gates`).
 - [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — transitional bootstrap intent projection.
 - [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions + the R8/R9 dispositions.
 - [`wave.cn-wave-v1.yaml`](./wave.cn-wave-v1.yaml) — the `cn.wave.v1` instance.
@@ -331,6 +369,6 @@ and grounding are **unchanged** across R2–R11.
 - [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the total registry (every predicate classified single-kind).
 
 ---
-*Status: R11 wave, α matter — **external-β review next** (then γ → CC → operator). The current boundary is
+*Status: R12 wave, α matter — **external-β review next** (then γ → CC → operator). The current boundary is
 external-β ITERATE on #672; β/CC/operator review are still pending, so this is **not** yet under operator
 review. No child WCs dispatched; no control-plane action taken by this cell.*
