@@ -1,4 +1,4 @@
-# POSITIVE fixture (cnos#671 R15) — CUE-VALID FLOW SERIALIZATION.
+# POSITIVE fixture (cnos#671 R16) — CUE-VALID FLOW SERIALIZATION.
 # Same legal bijection as one-checker-each.positive, written in FLOW style (`[{...}]`, `{k: v}`).
 # cue export normalizes it to the identical JSON the block form produces, so it MUST exit 0.
 # This pins the R12 guarantee that flow style neither breaks a positive nor hides a slot.

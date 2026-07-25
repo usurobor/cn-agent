@@ -1,4 +1,4 @@
-# minimal wave-dir POSITIVE fixture (cnos#671 R15). Exercises wave-dir mode over cue-export:
+# minimal wave-dir POSITIVE fixture (cnos#671 R16). Exercises wave-dir mode over cue-export:
 # contract cell.id ('wc-1') ∈ wave nodes, filename stem == cell.id, child⇄registry bijective → exit 0.
 schema: cn.wave.v1
 nodes:

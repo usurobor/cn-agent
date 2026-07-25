@@ -55,7 +55,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:391da351ab7b8cded064692ce08796f8bba95696c4f736c8a9e93c96c2fa01fb@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:fe4eb56110fa2484c271fa9bf7c2d685b260ef8bc50ad7f618975b91e1b66ee2@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "coherence-measurement-contract"     # the cm_ref interface every other node imports

@@ -232,6 +232,22 @@ validator bytes + 78⇄78 result unchanged; adding an external required input cr
 `acceptance.predicates`, so the bijection stays total (78 ⇄ 78). `make -C schema all` + `make -C wave-validators all`
 → exit 0. **No Python.**
 
+### R16 disposition — atomic, canonical, resolvable ratification identities
+
+**Source:** the external-β re-review of R15 (**CONVERGED** the γ/δ role fix; returned ITERATE with one REQUIRED,
+mechanical, no operator decision) and this Planning Cell's α repair (R16). Review→repair outcome, not intent. The
+accepted graph, §2 contracts, assurance graph, completion model, and wave-boundary gate are **unchanged**.
+
+| # | Finding | R16 disposition |
+|---|---|---|
+| 1 | **[REQUIRED]** (compound prose in a typed field) R15 bound the boundary decision as one `control_plane` locator whose single free-form `revision` string overloaded two merge OIDs + ancestry + PR mapping + issue-closure — with no grammar/tagged-variant/resolver contract. Since `#ControlPlaneLocator.revision` is only `string`, β replaced it with "approved by vibes" and `cue vet` still passed: the prose-authority defect was recreated inside a typed field, and the WC-2 resolver would have to invent parsing policy. | **Replaced the one compound locator with TWO ATOMIC `repo_artifact {repo, commit, path}` required inputs** of WC-1/WC-2/WC-3b — each a single canonical identity the WC-2 ref-resolver already resolves (git `commit:path`, ancestry-checkable): PR #629's ratifying merge `562e8025172864588f3083ea9b42ada96f9dc5de:docs/architecture/CELL-RUNTIME.md` (S1 doctrine landed) and PR #646's merge `a08c56ad72cff80c8c851b3d10a394eb1ecacfb5:.cdd/unreleased/628/beta-review.md` (β ratification receipt landed); both verified ancestors of `6e40d934`; #628 close event `27848824089` corroborates. **Tightened `#RepoArtifactLocator.commit` to a 40-hex OID regex** (`^[0-9a-f]{40}$`) so a prose/short/non-hex commit **fails `cue vet`** — demonstrated by the new negative fixture `schema/regressions/contract.bad-nonhex-commit.yaml` (rejected; 31 negatives total). The `wave.external_roots` entry is likewise replaced with the two atomic merge locators. No authority object is free-form text; each is atomically resolvable, and swapping/falsifying a commit fails the schema (bad commit) or the named resolver (bad ancestry). |
+
+**Ledger:** every round marker advanced to **R16**; content-hash chain re-pinned (oracle-registry → 6 contracts → wave
+`contract_sha256`; evidence → wave gate + registry). Grounding/reconcile/intent unchanged so their hashes stay. The
+validator bytes + 78⇄78 result unchanged; adding external required inputs creates **no wave edge** and does not touch
+`acceptance.predicates`, so the bijection stays total (78 ⇄ 78). `make -C schema all` (31 negatives reject) +
+`make -C wave-validators all` → exit 0. **No Python.**
+
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 
 Recording this provenance on an immutable coordination index (an update to #627 or a named index

@@ -1,11 +1,22 @@
-<!-- wave-revision: R15 -->
-# Wave: cell-runtime-doctrine (cnos#671 — R15)
+<!-- wave-revision: R16 -->
+# Wave: cell-runtime-doctrine (cnos#671 — R16)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
 single-purpose Working-Cell contracts, grounded in an immutable coherence measurement.
 
-**R15 repair (external-β #672) — S1 ratification authority = the δ/control-plane merge/close boundary, not γ.**
+**R16 repair (external-β #672) — atomic, canonical, resolvable ratification identities (no compound prose in a typed field).**
+R15 **converged** the γ/δ role fix. Its one remaining REQUIRED: R15 moved the authority into a typed `control_plane`
+locator but packed both merge identities + ancestry + PR mapping + issue-closure into one free-form `revision` string
+(only constrained as `string` — β swapped it for "approved by vibes" and `cue vet` still passed). R16 replaces it with
+**two atomic `repo_artifact {commit, path}` inputs** — PR #629's ratifying merge (`562e8025…:docs/architecture/CELL-RUNTIME.md`)
+and PR #646's merge (`a08c56ad…:.cdd/unreleased/628/beta-review.md`), each a single canonical identity the WC-2
+ref-resolver already resolves (git commit+path, ancestry-checkable); #628's close event `27848824089` corroborates.
+And the `#RepoArtifactLocator.commit` schema is **tightened to a 40-hex OID regex**, so a prose/short/non-hex commit now
+**fails `cue vet`** (new negative fixture `contract.bad-nonhex-commit.yaml`, rejected). No authority object is encoded as
+free-form text anymore.
+
+**R15 repair (external-β #672, prior round) — S1 ratification authority = the δ/control-plane merge/close boundary, not γ.**
 R14 **converged** (typed immutable input + prose-substitution fixture + revision-truth). Its one remaining REQUIRED:
 the γ closeout `.cdd/unreleased/628/gamma-closeout.md` was labeled "the ratification authority," but that artifact's
 own scope says "PR-time close-out … not release-time closure" and records #628 still OPEN at capture — so it is γ
@@ -367,7 +378,7 @@ hand-parser silently dropped flow-style predicate lists → a demonstrated compl
 fail-closed with exact per-fixture exit codes, and makes the WC-5 ledger check **revision-relative** (ending
 per-round ledger churn) plus fixes the `schema/wave.cue` single-owner comment + `schema/README.md` header.
 The accepted **construction** graph (WC-2 → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), D9-four, intent provenance,
-and grounding are **unchanged** across R2–R15.
+and grounding are **unchanged** across R2–R16.
 
 ## Files
 
@@ -381,7 +392,7 @@ and grounding are **unchanged** across R2–R15.
   wave node ids, and is **fail-closed** on parse loss/empty owner-predicate; its `fixtures/` (flow-style
   positive/negative, missing-registry, mismatched-owner, empty-owner + cell.id-not-a-node fail-closed, wave-dir
   positive + flow-unregistered negative), a `Makefile` that builds once and asserts **exact per-fixture exit
-  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R15, referenced
+  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R16, referenced
   by the wave's `preauthorization_gates`).
 - [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — transitional bootstrap intent projection.
 - [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions + the R8/R9 dispositions.
@@ -394,7 +405,7 @@ and grounding are **unchanged** across R2–R15.
 - [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the total registry (every predicate classified single-kind).
 
 ---
-*Status: R15 wave, α matter — **external-β re-review** (then γ → CC → operator). Prior boundary was external-β
+*Status: R16 wave, α matter — **external-β re-review** (then γ → CC → operator). Prior boundary was external-β
 ITERATE on R13 (two REQUIRED, both mechanical); R14 repairs them and re-submits. β/CC/operator review are still
 pending, so this is **not** yet under operator review. No child WCs dispatched; no control-plane action taken by
 this cell.*

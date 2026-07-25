@@ -34,11 +34,18 @@ inputs:
         repo: "usurobor/cnos"
         commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
         path: ".cdd/unreleased/628/gamma-closeout.md"
-    - ref_kind: "external"          # #628 S1-RATIFICATION DECISION (δ/control-plane boundary) — THE AUTHORITY: PR #629 MERGED as 562e8025172864588f3083ea9b42ada96f9dc5de ("Merge #629: S1 — Cell Runtime doctrine") + PR #646 MERGED as a08c56ad72cff80c8c851b3d10a394eb1ecacfb5 ("Merge #646: #628 β ratification receipt"), both ANCESTORS of the pinned 6e40d934, then issue #628 CLOSED. This merge/close boundary — NOT the γ closeout above — ratifies S1; removing THIS input makes "S1 ratified" underivable. (γ binds evidence; δ/control-plane records the boundary decision.)
+    - ref_kind: "external"          # #628 S1-RATIFICATION DECISION 1/2 — PR #629 ratifying MERGE: the S1 doctrine landed at merge commit 562e8025… ("Merge #629: S1 — Cell Runtime doctrine"). Atomic, canonical, resolvable (git commit+path); the WC-2 ref-resolver verifies the commit resolves and is an ancestor of the authorized base. This merge is the boundary DECISION, not the γ evidence above; removing it makes "S1 ratified" underivable.
       locator:
-        kind: "control_plane"
-        ref: "cnos#628 ratification boundary — PR #629 + PR #646 merged, issue #628 closed"
-        revision: "git-merge-commits 562e8025172864588f3083ea9b42ada96f9dc5de (#629) + a08c56ad72cff80c8c851b3d10a394eb1ecacfb5 (#646); both ancestors of 6e40d93497589afd96e6c891e94851cdabe2ef3a; issue #628 CLOSED — immutable merge/close identities"
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "562e8025172864588f3083ea9b42ada96f9dc5de"
+        path: "docs/architecture/CELL-RUNTIME.md"
+    - ref_kind: "external"          # #628 S1-RATIFICATION DECISION 2/2 — PR #646 MERGE: the independent β ratification receipt landed at merge commit a08c56ad… ("Merge #646: #628 β ratification receipt"). Atomic repo_artifact (git commit+path); ancestor of the pinned 6e40d934. Corroborated by issue #628's close event (cnos#628 close event 27848824089).
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "a08c56ad72cff80c8c851b3d10a394eb1ecacfb5"
+        path: ".cdd/unreleased/628/beta-review.md"
     - ref_kind: "external"          # shipped contract schema (envelope V validates against)
       locator:
         kind: "repo_artifact"
@@ -64,7 +71,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:391da351ab7b8cded064692ce08796f8bba95696c4f736c8a9e93c96c2fa01fb@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:fe4eb56110fa2484c271fa9bf7c2d685b260ef8bc50ad7f618975b91e1b66ee2@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "cell-classes-and-contract"

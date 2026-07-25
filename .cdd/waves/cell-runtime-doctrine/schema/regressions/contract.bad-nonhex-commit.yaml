@@ -26,7 +26,7 @@ inputs:
       locator:
         kind: "repo_artifact"
         repo: "usurobor/cnos"
-        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        commit: "approved-by-vibes"   # BAD: not a 40-hex git OID; the R16 #RepoArtifactLocator regex MUST reject (a ratification/merge identity cannot be prose)
         path: "docs/architecture/CELL-RUNTIME.md"
     - ref_kind: "external"          # shipped receipt schema — source of the L1-A1 circularity (requires validation+boundary_decision)
       locator:
@@ -102,4 +102,3 @@ stop_conditions:
   - "source_doctrine_conflicts"
   - "fifth_canonical_schema_proposed__d9_four_schema_boundary_is_settled_no_authorized_reopening"
   - "grounding_cm_ref_unresolvable_or_stale"
-oracles: []

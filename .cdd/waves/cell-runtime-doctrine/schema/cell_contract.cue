@@ -122,8 +122,8 @@ package crd
 #RepoArtifactLocator: {
 	kind!:   "repo_artifact"
 	repo!:   string
-	commit!: string // REQUIRED immutable commit/tree/blob revision
-	path!:   string // resolved AT that revision
+	commit!: string & =~"^[0-9a-f]{40}$" // REQUIRED immutable 40-hex git commit OID (R16: a prose / short / non-hex "commit" is rejected by cue vet — a merge/ratification identity cannot be free-form text)
+	path!:   string // resolved AT that immutable commit
 }
 
 #ControlPlaneLocator: {

@@ -1,5 +1,5 @@
-<!-- wave-revision: R15 -->
-# Plan-local structural schemas (cnos#671 R15) — `cue vet`, no Python
+<!-- wave-revision: R16 -->
+# Plan-local structural schemas (cnos#671 R16) — `cue vet`, no Python
 
 This directory is the pre-authorization validation for the cell-runtime wave.
 

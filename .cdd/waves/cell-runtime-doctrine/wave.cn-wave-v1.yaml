@@ -1,4 +1,4 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R15)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R16)
 #
 # Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
 # resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
@@ -21,8 +21,8 @@
 # the combined (construction ∪ assurance) graph is acyclic (sole root wc-2, terminal wc-5).
 schema: cn.wave.v1
 wave: "671"
-# wave-revision: R15
-revision: "R15"
+# wave-revision: R16
+revision: "R16"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -66,7 +66,8 @@ grounding:
 # External roots (immutable; consumed by nodes, create no wave edge)
 external_roots:
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:docs/architecture/CELL-RUNTIME.md   # #628/S1 doctrine — RATIFIED per #628 (see the cnos#628 S1-ratification root below); the 'Proposed/Not ratified' banner at this commit is STALE-HISTORICAL, superseded"
-  - "control_plane cnos#628 S1-RATIFICATION DECISION (δ/control-plane boundary) — THE AUTHORITY: PR #629 MERGED as 562e8025172864588f3083ea9b42ada96f9dc5de ('Merge #629: S1 — Cell Runtime doctrine') + PR #646 MERGED as a08c56ad72cff80c8c851b3d10a394eb1ecacfb5 ('Merge #646: #628 β ratification receipt'), both ancestors of the pinned 6e40d934; issue #628 then CLOSED. This merge/close boundary ratifies S1 and supersedes the stale 'Proposed/Not ratified' banner. Bound as a required control_plane input of WC-1/WC-2/WC-3b. Removing it makes 'S1 ratified' underivable."
+  - "repo_artifact usurobor/cnos@562e8025172864588f3083ea9b42ada96f9dc5de:docs/architecture/CELL-RUNTIME.md   # #628 S1-RATIFICATION DECISION 1/2 — PR #629 ratifying merge (S1 doctrine landed). Atomic canonical locator; ancestor of the pinned 6e40d934; supersedes the stale 'Proposed/Not ratified' banner. Required input of WC-1/WC-2/WC-3b."
+  - "repo_artifact usurobor/cnos@a08c56ad72cff80c8c851b3d10a394eb1ecacfb5:.cdd/unreleased/628/beta-review.md   # #628 S1-RATIFICATION DECISION 2/2 — PR #646 merge (β ratification receipt landed). Atomic canonical locator; ancestor of 6e40d934; corroborated by #628 close event 27848824089. Required input of WC-1/WC-2/WC-3b. Removing either merge makes 'S1 ratified' underivable."
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:.cdd/unreleased/628/gamma-closeout.md   # #628 β/γ CONVERGENCE EVIDENCE (γ pre-boundary closeout, sha256 8aeffcff…) — SUPPORTING EVIDENCE, not the decision: β R1 converged + γ bound the receipt; its own scope says PR-time closeout (#628 still OPEN at capture). Corroborating: beta-review.md@6e40d934 sha256 20a21ae…. The ratification DECISION is the merge/close boundary above. Also a required input of WC-1/WC-2/WC-3b."
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/receipt.cue"
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/contract.cue"
@@ -95,33 +96,33 @@ nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
-    contract_sha256: "46b7537041df895d023989d9924f7f7339a5605a9eda8a84d57a67428c6b329f"
+    contract_sha256: "6d305afd5db47fd779ed50172a60a42588469ef16fda8f447530d4ff49ed87bb"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
-    contract_sha256: "9da97835c6348d8636cb49025f15e8b3f7a363d4fc12e8b5d9cd72dc81c8aa75"
+    contract_sha256: "2704656b13f552318906f2c6779312971bec8cecea763a16dcf9b8a5f21f1705"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
-    contract_sha256: "e6eb90d1f927575e2d572dfc1e5a19756f7065dc1dc435c3fb32b05c99b8e0b3"
+    contract_sha256: "7272aafe537ac3deb6fbf00c0928ffa2510269291852547e2cbe0a9fc80c7864"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
-    contract_sha256: "6968da12ce938e8632ece4a8e86b2f16d6bdb4abdfbc72d14bfd63607d75d0f1"
+    contract_sha256: "a444c1c604c173b8e6e68150661e678f0d775b42010fe2f086137355e2e6db45"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
-    contract_sha256: "6af6a8eb2f646c92eff65a529f02d1ca921fd23530ec952c9748f64cc8d9abfb"
+    contract_sha256: "3b841fd7310079ba83fc86a488890b4a0cce7e52878e31a0a5e687b171a23cd0"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
-    contract_sha256: "e8325518e89cd4811cc325fc55838b83e8073392b203be85147c457f1bfbf7b6"
+    contract_sha256: "fcd702b853be9ea565dd95f0f3abdbb56dac871b51fcb26207f577937a4d3065"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 
@@ -164,9 +165,9 @@ gates:
         invocation: "go run oracle_ownership_bijection.go .. (from wave-validators/); or make -C .cdd/waves/cell-runtime-doctrine/wave-validators all"
         required_result: "bijective: true — 78 child acceptance predicates <-> 78 registry assurance entries (no missing/phantom/duplicate); 30 mechanically-verifiable predicates each bound to exactly one checker|schema; exit 0"
         result_evidence: ".cdd/waves/cell-runtime-doctrine/wave-validators/EVIDENCE.md"
-        result_evidence_sha256: "1e6a9567a632618b6cda6a7ed99fd9f54510d0a0f0d0495290f6b571f7ff993f"
-        binds_to_revision: "R15"
-        authorization_ready_iff: "the validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true (PASS content-bound to R15); a removed/corrupted validator or a non-bijective result makes this wave NOT authorization-ready (pre-authorization hold)"
+        result_evidence_sha256: "b1e6255d579cbeb4f0ba49c3cb22ce1c135acb97d33feb03c52bc4a48b0b07e9"
+        binds_to_revision: "R16"
+        authorization_ready_iff: "the validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true (PASS content-bound to R16); a removed/corrupted validator or a non-bijective result makes this wave NOT authorization-ready (pre-authorization hold)"
         owned_by: "wave-boundary (no child WC); runs at pre-authorization, outside child completion"
   per_child:
     operator_authorization_required: false
