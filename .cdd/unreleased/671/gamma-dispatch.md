@@ -67,11 +67,30 @@ relabelled its own closeout.
 
 ## Transport receipt (appended by κ after the activation completes)
 
-_Filled in after the γ activation returns and pushes its output; records the
-activation identity and the γ output hash, closing dispatch → authorship →
-transport._
+Recorded after the γ activation returned and pushed its output, closing
+dispatch → authorship → transport.
 
-- **Activation identity:** _(pending — recorded post-activation)_
+- **Activation identity:** a **distinct R17 γ sub-activation** — a separate
+  agent session with its own context, dispatched by the κ/δ control plane with
+  the frozen input set above; **not the κ session**. It independently re-ran all
+  six checks (observed values recorded in `gamma-closeout.md` §Bound evidence)
+  and could have returned HOLD; it returned **CONVERGED** on its own check.
 - **γ output file:** `.cdd/unreleased/671/gamma-closeout.md`
-- **γ output SHA-256:** _(pending — recorded post-activation)_
-- **Transport (κ):** _(commit that κ used to push the γ output)_
+- **γ output SHA-256:** `affa09d28dea1469987667a5f509fca4a0ae9ad4fb943a66ada1d4d53ca73717`
+- **Authorship + transport:** the γ activation **authored the closeout and
+  committed + pushed it itself** as commit `25bca3ad339afe4a43601dd6c97fec93b16ef2af`
+  (Git author `gamma-671 <gamma@cdd.cnos>`). κ did **not** write, commit, or push
+  `gamma-closeout.md` — κ only **dispatched** the activation and records this
+  provenance receipt. (This is a *stronger* separation than the baseline "κ
+  transports the artifact": here κ never touched the γ output at all.)
+- **How a fresh reviewer resolves this (matches the reviewer's stated check):**
+  read this dispatch record → reproduce the frozen input set (matter `614829a4`,
+  β raw-body `75cdb9b6…`, exemption `dccba69c…`) → `sha256sum
+  .cdd/unreleased/671/gamma-closeout.md` == `affa09d2…` → confirm commit
+  `25bca3ad` carries only that file and κ's commits carry none of it. Changing
+  only `GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL` cannot satisfy this: the binding is
+  the input→output derivation and the dispatch record, not the author string.
+- **Honest limit (restated):** this establishes a distinct *activation* that
+  re-derived the evidence and self-committed; it does **not** establish a
+  different-lineage third party (that is β's guarantee). In a manual bootstrap
+  this is the strongest γ-independence available.
