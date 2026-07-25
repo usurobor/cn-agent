@@ -22,7 +22,7 @@ intent_ref:
 inputs:
   required:
     # --- external roots (immutable, revision-pinned; create no wave edge) ---
-    - ref_kind: "external"          # #628/S1 landed doctrine: "CM measures; V gates; δ effects"
+    - ref_kind: "external"          # #628/S1 doctrine ("CM measures; V gates; δ effects") — RATIFIED per #628 (PRs #629/#646 merged 2026-07-11, issue closed, beta-review R1); pinned "Proposed/Not ratified" banner is STALE-HISTORICAL, superseded (bound in wave.external_roots) — does NOT trigger source_doctrine_conflicts
       locator:
         kind: "repo_artifact"
         repo: "usurobor/cnos"
@@ -55,7 +55,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:26b3dd2d355ec85b7f6389a2ae1e174040ab634caf79135a8d8a6a9ab65a02bd@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:39a06a5a3918308502ac5d6f92c7fff02ff34424f2efc63c16ab1973ea8320df@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "coherence-measurement-contract"     # the cm_ref interface every other node imports

@@ -179,6 +179,24 @@ hashes stay. Registry stays **total** (78 ⇄ 78). Contracts remain exactly §2.
 the wave validator now normalizes via `cue export --out json` — real wave exit 0, and the Makefile asserts the
 exact per-fixture exit codes (0 bijective / 1 defect / 2 fail-closed). **No Python.**
 
+### R13 disposition — content-binding + source-truth fixes
+
+**Source:** the external-β re-review of R12 (CONVERGED both R11 blockers; returned ITERATE with one BLOCKER
++ two REQUIRED, all mechanical, no operator decision) and this Planning Cell's α repair (R13). Review→repair
+outcome, not intent. The accepted six-node construction graph, the faithful §2 contracts, the forward-only
+acyclic assurance graph, the completion model, and the wave-boundary Go gate are **unchanged**.
+
+| # | Finding | R13 disposition |
+|---|---|---|
+| 1 | **[BLOCKER]** (content-stale input) WC-5's required `reconcile-627.md` input was pinned at digest `795ef4a8…` while the wave envelope carried the actual digest `6d8ed66b…` — WC-5 could not resolve a required input under its immutable locator, blocking the terminal seal. | **Re-pinned WC-5's reconcile-627 locator to the actual bytes** and re-ran the whole content-hash chain; swept **every** live `sha256:<digest>@<path>` locator + `node.contract_sha256` so each path resolves to one digest equal to `sha256sum` of its bytes, and WC-5's reconcile digest equals `wave.grounding.reconcile_627_ref`. |
+| 2 | **[REQUIRED]** (state-truth) the wave consumed **S1** (`CELL-RUNTIME.md`/#628) as settled while the pinned canonical banner still reads "Proposed / Not ratified" (and CELL-KINDS / docs-index say "proposed") — a WC could conclude the rules are still proposals. | **Bound the #628 ratification receipts immutably** (a new `wave.external_roots` entry: PRs #629/#646 merged 2026-07-11, issue #628 closed, `.cdd/unreleased/628/beta-review.md` R1 converged) and **classified the stale banner as stale-historical doc-debt** in `reconcile-627.md` (S1 row → ratified-predecessor) and the WC-1/WC-2/WC-3b `CELL-RUNTIME.md` input comments, so `source_doctrine_conflicts` does not fire and a WC derives one answer ("S1 is ratified"). No graph change. |
+| 3 | **[REQUIRED]** (provenance) the grounding snapshot was labeled the "byte-for-byte source" / "true source SHA-256 9d1ab3a5", but it is the exact GitHub API comment body **plus one terminal LF** (raw API body = `883671cf…`, 15,985 bytes; stored artifact = `9d1ab3a5…`, 15,986 bytes). | **Relabeled it a normalized transport capture** binding **both** digests (raw API body `883671cf…`, normalized artifact `9d1ab3a5…`) with the explicit **+1-LF normalization rule**, in `grounding-cm.md`, the wave `source_snapshot` note, and the README; stopped calling `9d1ab3a5…` the raw/exact source hash. The stored file bytes are unchanged (still `9d1ab3a5…`), so grounding pins are stable. |
+
+**Ledger:** every round marker advanced to **R13**; the content-hash chain re-pinned (grounding-cm + reconcile-627 →
+wave; oracle-registry → 6 contracts → wave `contract_sha256`; evidence → wave gate + registry); the validator bytes
+and its 78⇄78 result are unchanged (only the evidence hash re-pins). Registry stays total (78 ⇄ 78). Contracts remain
+exactly §2. `make -C schema all` and `make -C wave-validators all` → exit 0. **No Python.**
+
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 
 Recording this provenance on an immutable coordination index (an update to #627 or a named index

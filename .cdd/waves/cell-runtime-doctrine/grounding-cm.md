@@ -1,10 +1,15 @@
 # Grounding CM — α's derivative FAIL-classification (cnos#671)
 
 **This file is a DERIVATIVE, authored by α. It is NOT the exact bytes of the source measurement.**
-The exact, byte-for-byte source is captured immutably in a separate snapshot:
+The source measurement is captured immutably in a separate snapshot. That snapshot is a
+**normalized transport capture**: the exact GitHub API comment body **plus one terminal LF**
+(transport/editor appended a single trailing `0x0A`) — semantically identical to the API body,
+but not literally byte-identical to it. Both identities are recorded:
 
 - **Immutable source snapshot:** [`grounding-source-5015460988.md`](./grounding-source-5015460988.md)
-- **True source SHA-256:** `9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb`
+- **Raw API-body SHA-256** (credential-free GitHub API extraction; 15,985 bytes): `883671cf5faa64de2e4da35b8b12b7466ac07360914659f0b6bfc03cb73a9727`
+- **Normalized snapshot artifact SHA-256** (the stored `grounding-source-5015460988.md`; 15,986 bytes = API body + one terminal LF): `9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb`
+- **Normalization rule:** exactly one `0x0A` appended at EOF; strip it to recover the raw API body (→ `883671cf…`).
 - **Source object:** `usurobor/cnos` PR #667, issue-comment id `5015460988`
   (*External CC Ratification — cnos#662 (PC-D0) · Corrective recursive measurement addendum — frozen
   R7 only*), created `2026-07-19T11:01:36Z`, disposition `request_planning`.
@@ -12,13 +17,16 @@ The exact, byte-for-byte source is captured immutably in a separate snapshot:
 The measurement that grounds this wave is the source snapshot above. This file only carries **α's
 derived FAIL-classification table** — the trace mapping each measured FAIL to the wave node that
 disposes it. Every claim below is α's reading of the snapshot; it is **not** a verbatim reproduction
-of the source, and it must never be cited as "the exact bytes." Anything needing the exact source
-bytes MUST resolve the snapshot by its path + source SHA-256 above.
+of the source, and it must never be cited as the source bytes. Anything needing the source resolves
+the snapshot by its path + the digests above (raw API body `883671cf…`, or the normalized artifact
+`9d1ab3a5…` per the one-LF rule).
 
 > **Prior-revision defect (repaired here).** An earlier revision of this file inlined a fenced block
-> and called it "the exact bytes of comment 5015460988." That block was **abridged** (the true
-> source is 150 lines, SHA-256 `9d1ab3a5…`), so the claim was false. The exact bytes now live only in
-> the snapshot; this file is honestly labeled a derivative.
+> and called it "the exact bytes of comment 5015460988." That block was **abridged**, so the claim
+> was false. The source now lives in the snapshot — a **normalized transport capture** (raw API-body
+> SHA-256 `883671cf…`; stored artifact `9d1ab3a5…` = the API body + one terminal LF); this file is
+> honestly labeled a derivative. (A prior revision mislabeled `9d1ab3a5…` the "true source" SHA — it
+> is the normalized-artifact SHA, **not** the raw API-body SHA `883671cf…`.)
 
 ## CM ownership (the settled BLOCKER-1 doctrine)
 
@@ -32,7 +40,7 @@ here collapses CM into CC-judgment.
 
 ## Provenance (immutable binding) — as read from the snapshot
 
-| Field | Value (per source snapshot `9d1ab3a5…`) |
+| Field | Value (per source snapshot — normalized artifact `9d1ab3a5…`; raw API body `883671cf…`) |
 |---|---|
 | Source control-plane comment | `usurobor/cnos` PR #667, issue-comment id `5015460988` (2026-07-19T11:01:36Z) |
 | Producer | independent external Cohering Cell (TSC-γ judgment), outside the Sigma activation lineage |
@@ -43,8 +51,9 @@ here collapses CM into CC-judgment.
 | Disposition (frozen R7) | `request_planning` — ratification withheld; feeds operator final-read gate |
 | Standing note | mechanical arm N=3 exact-equal; semantic arm k=1 (no semantic-consistency standing); hard-invariant FAILs gate independently |
 
-The authoritative binding is the **source snapshot SHA-256 `9d1ab3a5…`** (the exact bytes), recorded
-in `wave.cn-wave-v1.yaml` and imported by every node's grounding `external` ref. The comment id is a
+The authoritative binding is the **source snapshot — normalized-artifact SHA-256 `9d1ab3a5…`** (the
+stored bytes = raw API body `883671cf…` + one terminal LF), recorded in `wave.cn-wave-v1.yaml` and
+imported by every node's grounding `external` ref. The comment id is a
 mutable carrier and is retained only as the human-readable source pointer.
 
 ---

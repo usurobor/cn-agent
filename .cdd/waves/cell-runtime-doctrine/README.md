@@ -1,4 +1,4 @@
-<!-- wave-revision: R12 -->
+<!-- wave-revision: R13 -->
 # Wave: cell-runtime-doctrine (cnos#671 — R12)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
@@ -162,9 +162,9 @@ assurance edge is **wc-3b→wc-5** (forward).
 
 The whole wave is **grounded in** an immutable measurement, not "producing CM as a telos."
 
-- **Immutable source snapshot (exact bytes):** [`grounding-source-5015460988.md`](./grounding-source-5015460988.md)
-  — byte-for-byte capture of PR #667 comment `5015460988`.
-- **True source SHA-256:** `9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb` (150-line body).
+- **Immutable source snapshot:** [`grounding-source-5015460988.md`](./grounding-source-5015460988.md)
+  — a **normalized transport capture** of PR #667 comment `5015460988` (the exact API body + one terminal LF).
+- **Raw API-body SHA-256:** `883671cf5faa64de2e4da35b8b12b7466ac07360914659f0b6bfc03cb73a9727` (15,985 bytes); **normalized artifact SHA-256:** `9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb` (15,986 bytes = API body + 1 LF).
 - **α's derivative:** [`grounding-cm.md`](./grounding-cm.md) — clearly marked as α's **derived**
   FAIL-classification that *references* the snapshot by path + source hash (not the exact bytes).
 - `wave.cn-wave-v1.yaml` grounding points to **both** (source hash + derivative content hash). Every
@@ -192,7 +192,7 @@ validates the projection's shape; identity/carrier **resolution** is a deferred-
 ## Corrected dependency graph (WC-2 keystone root) — unchanged shape
 
 ```
-external roots: grounding-CM(@sha 9d1ab3a5) + #628/S1 + shipped schemas/CCNF/transitions.json
+external roots: grounding-CM(@sha 9d1ab3a5) + #628/S1 (ratified; pinned banner stale-historical) + shipped schemas/CCNF/transitions.json
   → WC-2  (CM measurement object + receipt_core→CM→V→δ→final_receipt type path)   [keystone root]
   → WC-1  (cell classes + typed cell contract; imports cm_ref from WC-2)
       → WC-3a (cell FSM) · WC-3b (wave FSM) · WC-4 (shipped→specified migration)   [each dep WC-1 + WC-2]
@@ -356,13 +356,13 @@ and grounding are **unchanged** across R2–R12.
   wave node ids, and is **fail-closed** on parse loss/empty owner-predicate; its `fixtures/` (flow-style
   positive/negative, missing-registry, mismatched-owner, empty-owner + cell.id-not-a-node fail-closed, wave-dir
   positive + flow-unregistered negative), a `Makefile` that builds once and asserts **exact per-fixture exit
-  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R12, referenced
+  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R13, referenced
   by the wave's `preauthorization_gates`).
 - [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — transitional bootstrap intent projection.
 - [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions + the R8/R9 dispositions.
 - [`wave.cn-wave-v1.yaml`](./wave.cn-wave-v1.yaml) — the `cn.wave.v1` instance.
 - [`contracts/wc-1..wc-5.cn-cell-contract-v1.yaml`](./contracts/) — the six §2-conformant child contracts.
-- [`grounding-source-5015460988.md`](./grounding-source-5015460988.md) — byte-exact source snapshot (SHA `9d1ab3a5…`).
+- [`grounding-source-5015460988.md`](./grounding-source-5015460988.md) — normalized transport capture of the source (raw API body `883671cf…` + 1 LF = artifact `9d1ab3a5…`).
 - [`grounding-cm.md`](./grounding-cm.md) — α's derivative FAIL-classification (references the snapshot).
 - [`reconcile-627.md`](./reconcile-627.md) — the #627 S1–S8 refinement map + derived reverse-consumers.
 - [`oracle-registry.yaml`](./oracle-registry.yaml) — AUTHORITATIVE, TOTAL assurance registry (five honest categories).

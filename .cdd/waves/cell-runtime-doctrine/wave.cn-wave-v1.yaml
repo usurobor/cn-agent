@@ -1,4 +1,4 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R12)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R13)
 #
 # Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
 # resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
@@ -21,8 +21,8 @@
 # the combined (construction ∪ assurance) graph is acyclic (sole root wc-2, terminal wc-5).
 schema: cn.wave.v1
 wave: "671"
-# wave-revision: R12
-revision: "R12"
+# wave-revision: R13
+revision: "R13"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -36,15 +36,15 @@ intent:
   id: "intent-2026-0719-671-cell-runtime-doctrine"
   locator: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
 
-# Grounding points to BOTH the immutable byte-for-byte source snapshot AND α's derivative mapping.
+# Grounding points to BOTH the immutable normalized transport-capture source snapshot (API body + 1 LF; see grounding-cm.md) AND α's derivative mapping.
 grounding:
-  source_snapshot:                 # the EXACT bytes of the source measurement (content-bound, immutable)
+  source_snapshot:                 # the source measurement, as a normalized transport capture (API body + 1 LF; see grounding-cm.md)
     ref_kind: "external"
     locator:
       kind: "control_plane"
       ref: "cnos#667#issuecomment-5015460988"
       revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
-      note: "true source SHA-256; 150-line comment body; the authoritative grounding measurement"
+      note: "normalized transport capture: exact GitHub API comment body + one terminal LF; raw API-body SHA-256 883671cf (15985 bytes), normalized artifact SHA-256 9d1ab3a5 (15986 bytes); see grounding-cm.md for the +1-LF normalization rule"
   alpha_derivative:                # α's derived FAIL-classification (REFERENCES the snapshot; NOT the exact bytes)
     ref_kind: "external"
     locator:
@@ -52,7 +52,7 @@ grounding:
       repo: "usurobor/cnos"
       resolved_at: "authorized_wave_commit"
       path: ".cdd/waves/cell-runtime-doctrine/grounding-cm.md"
-      content_hash: "sha256:d6ce02d99518a6df6e1995ac425719490c934f84b4745401cd24a823202e379e"
+      content_hash: "sha256:bbf2bc83aed163b452295a7f2f8f70a96dc33a9650c47eec2ff1b00471701a05"
       references_source: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb"
   reconcile_627_ref:
     ref_kind: "external"
@@ -61,11 +61,12 @@ grounding:
       repo: "usurobor/cnos"
       resolved_at: "authorized_wave_commit"
       path: ".cdd/waves/cell-runtime-doctrine/reconcile-627.md"
-      content_hash: "sha256:6d8ed66be0e77875ebb57f91908e4f1701243962fe083ce57a53260fcc5a1262"
+      content_hash: "sha256:1d2ad1c400ada2c22c61ea8216539706ce00882e2e7e15a4d55655310e4c9704"
 
 # External roots (immutable; consumed by nodes, create no wave edge)
 external_roots:
-  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:docs/architecture/CELL-RUNTIME.md   # #628/S1 landed doctrine"
+  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:docs/architecture/CELL-RUNTIME.md   # #628/S1 doctrine — RATIFIED per #628 (see the cnos#628 S1-ratification root below); the 'Proposed/Not ratified' banner at this commit is STALE-HISTORICAL, superseded"
+  - "control_plane cnos#628 S1-ratification: PRs #629,#646 merged 2026-07-11 + issue #628 closed + .cdd/unreleased/628/beta-review.md R1 converged — S1 (docs/architecture/CELL-RUNTIME.md doctrine) is RATIFIED; the 'Proposed/Not ratified' banner text at the pinned CELL-RUNTIME.md commit (and the CELL-KINDS / docs-index 'proposed' text) is stale-historical doc-debt, superseded by this ratification, NOT a live source_doctrine_conflicts trigger"
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/receipt.cue"
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/contract.cue"
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/boundary_decision.cue"
@@ -93,33 +94,33 @@ nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
-    contract_sha256: "e476129eb2985071d7ef788693a59563cc7e59aeb002ec1f360869dfb8bd4061"
+    contract_sha256: "d78dccf59faf1b23bd8e3ccd8e6da31a54aa25e1729cdfdf52e47abbd0d223ec"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
-    contract_sha256: "a3fe8fd4470034dff0ceebcd769dc4eeb74c87d5c162da552912b144d66a32cb"
+    contract_sha256: "8c9e1d2ae3261b1d919ca13397944776e266dca321adabc8688e77562b292fd8"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
-    contract_sha256: "e24a7440306a7848c575ab32b774c96f7f5d2ba9761fff440b4bc507facecf73"
+    contract_sha256: "d161b0e0b749a81745a49644e606be874df602a43a0809eff794550be47b242f"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
-    contract_sha256: "328419e75144fa47a3940ffe92b2a18601d28250bf5b906f6f4aa8bcc8e227fa"
+    contract_sha256: "6515011a495642b9b422be102890b0e7c2ad5587433562d35331d4a4f1e0811e"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
-    contract_sha256: "ae9a853db6fb1253fcbe85bcf5fbde3e8fe95cfe3c96ea18a4a815508f5eb6a8"
+    contract_sha256: "52f2a5d7961b57b63acaa775428446072561ea7edca29053e8d10fbfdccd09c5"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
-    contract_sha256: "3b225a8cc35599a140fa08c775d4e2394891ca97afd2780973565ed273ba3aac"
+    contract_sha256: "21757be1620fb5e5acc904c34ab017080bf91b398bdcdd46c6f50771c3f3bb30"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 
@@ -162,9 +163,9 @@ gates:
         invocation: "go run oracle_ownership_bijection.go .. (from wave-validators/); or make -C .cdd/waves/cell-runtime-doctrine/wave-validators all"
         required_result: "bijective: true — 78 child acceptance predicates <-> 78 registry assurance entries (no missing/phantom/duplicate); 30 mechanically-verifiable predicates each bound to exactly one checker|schema; exit 0"
         result_evidence: ".cdd/waves/cell-runtime-doctrine/wave-validators/EVIDENCE.md"
-        result_evidence_sha256: "f78844c64ee4cd48d684eac695ddfae91d5db52e20d7f8913a201d8518bad4f2"
-        binds_to_revision: "R12"
-        authorization_ready_iff: "the validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true (PASS content-bound to R12); a removed/corrupted validator or a non-bijective result makes this wave NOT authorization-ready (pre-authorization hold)"
+        result_evidence_sha256: "94ec2256f3855e1aba24c9ea251b2deece5fb125ebb5978563f3e57cc18988a6"
+        binds_to_revision: "R13"
+        authorization_ready_iff: "the validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true (PASS content-bound to R13); a removed/corrupted validator or a non-bijective result makes this wave NOT authorization-ready (pre-authorization hold)"
         owned_by: "wave-boundary (no child WC); runs at pre-authorization, outside child completion"
   per_child:
     operator_authorization_required: false

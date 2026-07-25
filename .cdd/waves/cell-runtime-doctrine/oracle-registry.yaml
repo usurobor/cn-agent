@@ -1,7 +1,21 @@
 # oracle-registry.yaml — AUTHORITATIVE, TOTAL assurance-classification registry (cnos#671)
-# wave-revision: R12
+# wave-revision: R13
 #
-# R12 (this repair) — SOUNDNESS of the wave-boundary gate + REVISION-RELATIVE ledger. External-β R11
+# R13 (this repair) — CONTENT-BINDING + SOURCE-TRUTH fixes (external-β R12). Three mechanical findings,
+# no operator decision: (1) [BLOCKER] WC-5's required reconcile-627.md input was pinned at a stale digest
+# (795ef4a8) while the wave envelope carried the real one (6d8ed66b) — re-pinned to the actual bytes, and
+# the whole live sha256@path locator set swept for one-digest-per-path. (2) [REQUIRED] the wave consumed
+# S1 (CELL-RUNTIME.md/#628) as settled while the pinned canonical banner still reads "Proposed/Not
+# ratified" — the #628 ratification receipts (PRs #629/#646 merged 2026-07-11, issue closed, beta-review
+# R1 converged) are now immutably bound in wave.external_roots and the stale banner is classified
+# stale-historical in reconcile-627.md + the WC-1/WC-2/WC-3b input comments, so a WC derives one answer.
+# (3) [REQUIRED] the grounding snapshot was labeled "byte-for-byte source" but is the API body + one
+# terminal LF — relabeled a normalized transport capture binding BOTH digests (raw API body 883671cf,
+# normalized artifact 9d1ab3a5) with the +1-LF rule. Round markers advanced R12->R13; validator/evidence
+# + content-hash chain re-pinned by κ. The six §2 contracts (shape), the six-node graph, the forward-only
+# acyclic assurance graph, the completion model, and the wave-boundary Go gate are UNCHANGED.
+#
+# R12 — SOUNDNESS of the wave-boundary gate + REVISION-RELATIVE ledger. External-β R11
 # proved a complete-wave FALSE PASS: the R11 validator hand-parsed YAML and silently dropped CUE-valid
 # flow-style predicate lists, so an unregistered child predicate reached "authorization-ready". R12
 # rewrites wave-validators/oracle_ownership_bijection.go to normalize EVERY input through `cue export
@@ -80,7 +94,7 @@
 # registry via a canonical inputs.required[].external control_plane ref (content-hash pinned).
 schema: cn.assurance-registry.v1
 wave: "671"
-revision: "R12"
+revision: "R13"
 # ---- assurance: TOTAL over every child acceptance predicate (owner, predicate) ----
 assurance:
   # ---- WC-1 — cell classes & typed cell contract (12) ----
@@ -686,12 +700,12 @@ wave_predicates:
     downstream_consumers: [ "wc-5" ]
     # MATERIALIZED (R11) + SOUNDNESS-REPAIRED (R12) + BOUND TO AUTHORIZATION. The validator exists, runs
     # credential-free, and normalizes inputs via cue export (no ad-hoc YAML parsing); its PASS is
-    # content-bound to wave revision R12 (see wave.cn-wave-v1.yaml gates.wave_authorization).
+    # content-bound to wave revision R13 (see wave.cn-wave-v1.yaml gates.wave_authorization).
     command: "go run oracle_ownership_bijection.go .. (from wave-validators/); or `make -C .cdd/waves/cell-runtime-doctrine/wave-validators all` — real wave exit 0 (bijective: true, 78<->78), positive fixture exit 0, negative (double-owned) exit non-zero"
     validator_sha256: "ccf3080289f6c32f81239b7237cbcf7a984111069a8a8ffd97ada7a3e8815bf7"
     result_evidence: ".cdd/waves/cell-runtime-doctrine/wave-validators/EVIDENCE.md"
-    result_evidence_sha256: "f78844c64ee4cd48d684eac695ddfae91d5db52e20d7f8913a201d8518bad4f2"
-    authorization_binding: "wave authorization is NOT authorization-ready unless this validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true; removing/corrupting oracle_ownership_bijection.go breaks the pinned hash -> pre-authorization hold. PASS content-bound to revision R12."
+    result_evidence_sha256: "94ec2256f3855e1aba24c9ea251b2deece5fb125ebb5978563f3e57cc18988a6"
+    authorization_binding: "wave authorization is NOT authorization-ready unless this validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true; removing/corrupting oracle_ownership_bijection.go breaks the pinned hash -> pre-authorization hold. PASS content-bound to revision R13."
   - predicate: "wave_ledger_consistency_deferred"
     classification: "deferred-go"
     deferred_owner: "wc-5"
