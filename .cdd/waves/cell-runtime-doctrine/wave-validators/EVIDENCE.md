@@ -1,10 +1,10 @@
-<!-- wave-revision: R14 -->
-# Wave-boundary pre-authorization evidence — oracle-ownership bijection (cnos#671 R14)
+<!-- wave-revision: R15 -->
+# Wave-boundary pre-authorization evidence — oracle-ownership bijection (cnos#671 R15)
 
 This is the **result/evidence binding** referenced by `wave.cn-wave-v1.yaml`
 `gates.wave_authorization.preauthorization_gates[]` and by `oracle-registry.yaml`
 `wave_predicates.wave_oracle_ownership_bijection_enforced`. It records the **PASS** of the
-materialized wave-boundary validator, **content-bound to wave revision R14**. (The validator and its
+materialized wave-boundary validator, **content-bound to wave revision R15**. (The validator and its
 78⇄78 result are UNCHANGED since R12 — R13 re-pins the evidence to the current revision; the R12
 soundness repair below is retained as history.)
 
@@ -37,7 +37,7 @@ so no `go.mod` is needed.
   (`sha256:6569a056ac408cb49633d045d0000528417bf41131efe73b43cf27a046807c86`)
 - **flow-style positive fixture:** `fixtures/oracle-ownership.flow-style.positive.yaml`
   (`sha256:4e88dde9ac4641f28787fc7cfa319f3ac7925f015c26bc00c88ea0ebdf2a436c`)
-- **authorized_revision:** `R14`
+- **authorized_revision:** `R15`
 
 ## Invocation (credential-free; no modules, no network; requires `cue` + `go` on PATH)
 

@@ -1,5 +1,5 @@
-<!-- wave-revision: R14 -->
-# Acceptance oracles — honestly classified, registry-projected (cnos#671 R14)
+<!-- wave-revision: R15 -->
+# Acceptance oracles — honestly classified, registry-projected (cnos#671 R15)
 
 Every load-bearing acceptance predicate (wave + WC-1..WC-5) is classified as **exactly one** of five
 honest kinds. Nothing cognitive is dressed up as mechanical; a semantic-absence claim is **never**

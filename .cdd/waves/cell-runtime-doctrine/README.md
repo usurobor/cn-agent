@@ -1,11 +1,21 @@
-<!-- wave-revision: R14 -->
-# Wave: cell-runtime-doctrine (cnos#671 — R14)
+<!-- wave-revision: R15 -->
+# Wave: cell-runtime-doctrine (cnos#671 — R15)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
 single-purpose Working-Cell contracts, grounded in an immutable coherence measurement.
 
-**R14 repair (external-β #672) — bind the S1 ratification receipt as a typed required input + sync the overview
+**R15 repair (external-β #672) — S1 ratification authority = the δ/control-plane merge/close boundary, not γ.**
+R14 **converged** (typed immutable input + prose-substitution fixture + revision-truth). Its one remaining REQUIRED:
+the γ closeout `.cdd/unreleased/628/gamma-closeout.md` was labeled "the ratification authority," but that artifact's
+own scope says "PR-time close-out … not release-time closure" and records #628 still OPEN at capture — so it is γ
+**evidence**, not the boundary **decision**. R15 keeps the γ closeout as a required **evidence** input and binds the
+ratification **decision** as a typed `control_plane` required input of WC-1/WC-2/WC-3b: PR #629 merged as
+`562e8025…` + PR #646 merged as `a08c56ad…` (both ancestors of the pinned `6e40d934`), then #628 CLOSED. A WC now
+establishes β converged → γ bound receipt → boundary actor merged/closed at immutable identities; removing the
+merge/close input makes "S1 ratified" underivable. (γ binds evidence; δ/control-plane records the boundary decision.)
+
+**R14 repair (external-β #672, prior round) — bind the S1 ratification receipt as a typed required input + sync the overview
 revision.** The R13 review **converged** the R12 WC-5 content-binding blocker and the grounding-identity finding.
 R14 closes its two REQUIRED findings: (1) the #628 S1-ratification evidence is now bound as a **typed immutable
 `repo_artifact` input** (`.cdd/unreleased/628/gamma-closeout.md` @ `6e40d934`, sha256 `8aeffcff…`) — a **required
@@ -357,7 +367,7 @@ hand-parser silently dropped flow-style predicate lists → a demonstrated compl
 fail-closed with exact per-fixture exit codes, and makes the WC-5 ledger check **revision-relative** (ending
 per-round ledger churn) plus fixes the `schema/wave.cue` single-owner comment + `schema/README.md` header.
 The accepted **construction** graph (WC-2 → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), D9-four, intent provenance,
-and grounding are **unchanged** across R2–R14.
+and grounding are **unchanged** across R2–R15.
 
 ## Files
 
@@ -371,7 +381,7 @@ and grounding are **unchanged** across R2–R14.
   wave node ids, and is **fail-closed** on parse loss/empty owner-predicate; its `fixtures/` (flow-style
   positive/negative, missing-registry, mismatched-owner, empty-owner + cell.id-not-a-node fail-closed, wave-dir
   positive + flow-unregistered negative), a `Makefile` that builds once and asserts **exact per-fixture exit
-  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R14, referenced
+  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R15, referenced
   by the wave's `preauthorization_gates`).
 - [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — transitional bootstrap intent projection.
 - [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions + the R8/R9 dispositions.
@@ -384,7 +394,7 @@ and grounding are **unchanged** across R2–R14.
 - [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the total registry (every predicate classified single-kind).
 
 ---
-*Status: R14 wave, α matter — **external-β re-review** (then γ → CC → operator). Prior boundary was external-β
+*Status: R15 wave, α matter — **external-β re-review** (then γ → CC → operator). Prior boundary was external-β
 ITERATE on R13 (two REQUIRED, both mechanical); R14 repairs them and re-submits. β/CC/operator review are still
 pending, so this is **not** yet under operator review. No child WCs dispatched; no control-plane action taken by
 this cell.*

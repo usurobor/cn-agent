@@ -28,12 +28,17 @@ inputs:
         repo: "usurobor/cnos"
         commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
         path: "docs/architecture/CELL-RUNTIME.md"
-    - ref_kind: "external"          # #628 S1-RATIFICATION RECEIPT (γ-closeout) — the IMMUTABLE authority: a WC derives "S1 ratified" from THIS pinned receipt (sha256 8aeffcff…) + the pinned CELL-RUNTIME.md doctrine; the doctrine's "Proposed/Not ratified" banner is stale-historical, superseded by this receipt (so source_doctrine_conflicts does not fire). Supersession is a conclusion from two pinned inputs, not prose.
+    - ref_kind: "external"          # #628 β/γ CONVERGENCE EVIDENCE (γ pre-boundary closeout, sha256 8aeffcff…) — SUPPORTING EVIDENCE, NOT the decision: establishes β R1 converged + γ bound the receipt, but its own scope says "PR-time close-out … not release-time closure" and records issue #628 still OPEN at capture. It corroborates ratification; the boundary DECISION below is the authority.
       locator:
         kind: "repo_artifact"
         repo: "usurobor/cnos"
         commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
         path: ".cdd/unreleased/628/gamma-closeout.md"
+    - ref_kind: "external"          # #628 S1-RATIFICATION DECISION (δ/control-plane boundary) — THE AUTHORITY: PR #629 MERGED as 562e8025172864588f3083ea9b42ada96f9dc5de ("Merge #629: S1 — Cell Runtime doctrine") + PR #646 MERGED as a08c56ad72cff80c8c851b3d10a394eb1ecacfb5 ("Merge #646: #628 β ratification receipt"), both ANCESTORS of the pinned 6e40d934, then issue #628 CLOSED. This merge/close boundary — NOT the γ closeout above — ratifies S1; removing THIS input makes "S1 ratified" underivable. (γ binds evidence; δ/control-plane records the boundary decision.)
+      locator:
+        kind: "control_plane"
+        ref: "cnos#628 ratification boundary — PR #629 + PR #646 merged, issue #628 closed"
+        revision: "git-merge-commits 562e8025172864588f3083ea9b42ada96f9dc5de (#629) + a08c56ad72cff80c8c851b3d10a394eb1ecacfb5 (#646); both ancestors of 6e40d93497589afd96e6c891e94851cdabe2ef3a; issue #628 CLOSED — immutable merge/close identities"
     - ref_kind: "external"          # shipped contract schema (envelope V validates against)
       locator:
         kind: "repo_artifact"
@@ -59,7 +64,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:3722233d12517e325209d139fa87a2db721b8d01b395c71c1e62eafcead0fcbd@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:391da351ab7b8cded064692ce08796f8bba95696c4f736c8a9e93c96c2fa01fb@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "cell-classes-and-contract"

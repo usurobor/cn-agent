@@ -1,7 +1,21 @@
 # oracle-registry.yaml — AUTHORITATIVE, TOTAL assurance-classification registry (cnos#671)
-# wave-revision: R14
+# wave-revision: R15
 #
-# R14 (this repair) — S1-RATIFICATION as a TYPED IMMUTABLE INPUT + overview revision sync (external-β R13).
+# R15 (this repair) — S1 ratification AUTHORITY = the δ/control-plane merge/close boundary, not γ (external-β R14).
+# R14 CONVERGED (typed immutable input + prose-substitution fixture + revision-truth). R14's one remaining REQUIRED:
+# it labeled `.cdd/unreleased/628/gamma-closeout.md` "the ratification authority," but that γ artifact's own scope
+# says "PR-time close-out … not release-time closure" and records issue #628 still OPEN at capture — so it is
+# EVIDENCE (β converged + γ bound the receipt), not the boundary DECISION. R15 keeps the γ closeout as a required
+# EVIDENCE input and adds the ratification DECISION as a typed control_plane required input of WC-1/WC-2/WC-3b: PR
+# #629 merged as 562e8025172864588f3083ea9b42ada96f9dc5de + PR #646 merged as a08c56ad72cff80c8c851b3d10a394eb1ecacfb5
+# (both ancestors of the pinned 6e40d934), then issue #628 CLOSED. A WC now establishes β converged → γ bound receipt
+# → boundary actor merged/closed at immutable identities; removing the merge/close input makes "S1 ratified"
+# underivable even with the γ closeout present. No surface calls γ alone the decision (γ binds evidence; δ/control-plane
+# records the boundary). Round markers advanced R14->R15; content-hash chain re-pinned by κ. The six §2 contract SHAPE,
+# the six-node graph, the assurance graph, the completion model, and the wave-boundary Go gate are UNCHANGED
+# (external inputs create no edge and do not touch acceptance.predicates — 78<->78 bijection unchanged).
+#
+# R14 — S1-RATIFICATION as a TYPED IMMUTABLE INPUT + overview revision sync (external-β R13).
 # R13 CONVERGED the WC-5 content-binding blocker and the grounding-identity finding. R14 closes R13's two
 # REQUIRED findings, both mechanical: (1) the #628 S1-ratification warrant was an unversioned prose string in
 # wave.external_roots (which #Wave accepts as arbitrary text) while each S1 consumer's required inputs still held
@@ -110,7 +124,7 @@
 # registry via a canonical inputs.required[].external control_plane ref (content-hash pinned).
 schema: cn.assurance-registry.v1
 wave: "671"
-revision: "R14"
+revision: "R15"
 # ---- assurance: TOTAL over every child acceptance predicate (owner, predicate) ----
 assurance:
   # ---- WC-1 — cell classes & typed cell contract (12) ----
@@ -716,12 +730,12 @@ wave_predicates:
     downstream_consumers: [ "wc-5" ]
     # MATERIALIZED (R11) + SOUNDNESS-REPAIRED (R12) + BOUND TO AUTHORIZATION. The validator exists, runs
     # credential-free, and normalizes inputs via cue export (no ad-hoc YAML parsing); its PASS is
-    # content-bound to wave revision R14 (see wave.cn-wave-v1.yaml gates.wave_authorization).
+    # content-bound to wave revision R15 (see wave.cn-wave-v1.yaml gates.wave_authorization).
     command: "go run oracle_ownership_bijection.go .. (from wave-validators/); or `make -C .cdd/waves/cell-runtime-doctrine/wave-validators all` — real wave exit 0 (bijective: true, 78<->78), positive fixture exit 0, negative (double-owned) exit non-zero"
     validator_sha256: "ccf3080289f6c32f81239b7237cbcf7a984111069a8a8ffd97ada7a3e8815bf7"
     result_evidence: ".cdd/waves/cell-runtime-doctrine/wave-validators/EVIDENCE.md"
-    result_evidence_sha256: "884b6efb95ac9f3f07825fe0a9c14b0d1c9a7d6b3f8a5eaeac1a669de51f35fd"
-    authorization_binding: "wave authorization is NOT authorization-ready unless this validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true; removing/corrupting oracle_ownership_bijection.go breaks the pinned hash -> pre-authorization hold. PASS content-bound to revision R14."
+    result_evidence_sha256: "1e6a9567a632618b6cda6a7ed99fd9f54510d0a0f0d0495290f6b571f7ff993f"
+    authorization_binding: "wave authorization is NOT authorization-ready unless this validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true; removing/corrupting oracle_ownership_bijection.go breaks the pinned hash -> pre-authorization hold. PASS content-bound to revision R15."
   - predicate: "wave_ledger_consistency_deferred"
     classification: "deferred-go"
     deferred_owner: "wc-5"

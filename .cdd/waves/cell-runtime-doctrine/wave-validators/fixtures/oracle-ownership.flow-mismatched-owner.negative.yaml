@@ -1,4 +1,4 @@
-# NEGATIVE fixture (cnos#671 R14) — FLOW-style registry entry whose (owner,predicate) matches NO child.
+# NEGATIVE fixture (cnos#671 R15) — FLOW-style registry entry whose (owner,predicate) matches NO child.
 # The child declares (wc-x, alpha_mechanical); the registry (flow style) instead carries
 # (wc-z, alpha_mechanical) — a PHANTOM (registry -> no child) AND the child's alpha_mechanical is MISSING.
 # R11's parser could collapse flow entries to empty fields and spuriously agree; R12 sees both. MUST exit non-zero.

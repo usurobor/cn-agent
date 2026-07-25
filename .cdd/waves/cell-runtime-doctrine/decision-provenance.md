@@ -215,6 +215,23 @@ The validator bytes and its 78⇄78 result are unchanged (only the evidence hash
 input creates **no wave edge** and does not touch `acceptance.predicates`, so the bijection stays total (78 ⇄ 78).
 `make -C schema all` (now with the new negative fixture) and `make -C wave-validators all` → exit 0. **No Python.**
 
+### R15 disposition — S1 ratification authority is the δ/control-plane merge/close boundary, not γ
+
+**Source:** the external-β re-review of R14 (**CONVERGED** the typed-input + prose-substitution + revision-truth
+findings; returned ITERATE with one REQUIRED, mechanical, no operator decision) and this Planning Cell's α repair
+(R15). Review→repair outcome, not intent. The accepted graph, §2 contracts, assurance graph, completion model, and
+wave-boundary gate are **unchanged**.
+
+| # | Finding | R15 disposition |
+|---|---|---|
+| 1 | **[REQUIRED]** (γ ≠ boundary decision) R14 designated `.cdd/unreleased/628/gamma-closeout.md` "the S1-ratification authority", but that γ artifact's own scope says "PR-time close-out … not release-time closure" and records issue #628 still **OPEN** at capture — so it is γ **evidence**, not the ratification **decision**. Attributing δ/boundary authority to γ collapses the CCNF role separation and asks a worker to infer ratification from an artifact that says the boundary has not occurred. | **Reclassified the γ closeout as a required EVIDENCE input** (β R1 converged + γ bound the receipt) and **bound the ratification DECISION as a typed `control_plane` required input** of WC-1/WC-2/WC-3b: PR #629 merged as `562e8025172864588f3083ea9b42ada96f9dc5de` ("Merge #629: S1 — Cell Runtime doctrine") + PR #646 merged as `a08c56ad72cff80c8c851b3d10a394eb1ecacfb5` ("Merge #646: #628 β ratification receipt"), both **ancestors** of the pinned `6e40d934` (verified), then issue #628 **CLOSED**. A WC now establishes the sequence β converged → γ bound receipt → boundary actor merged/closed at immutable identities. **Removing the merge/close input makes "S1 ratified" underivable** even with the γ closeout present. No surface calls γ alone the decision. The `wave.external_roots` γ entry is likewise reclassified evidence with the merge/close boundary as the authority. |
+
+**Ledger:** every round marker advanced to **R15**; content-hash chain re-pinned (oracle-registry → 6 contracts → wave
+`contract_sha256`; evidence → wave gate + registry). Grounding/reconcile/intent unchanged so their hashes stay. The
+validator bytes + 78⇄78 result unchanged; adding an external required input creates **no wave edge** and does not touch
+`acceptance.predicates`, so the bijection stays total (78 ⇄ 78). `make -C schema all` + `make -C wave-validators all`
+→ exit 0. **No Python.**
+
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 
 Recording this provenance on an immutable coordination index (an update to #627 or a named index
