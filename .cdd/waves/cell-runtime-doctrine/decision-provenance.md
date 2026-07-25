@@ -197,6 +197,24 @@ wave; oracle-registry → 6 contracts → wave `contract_sha256`; evidence → w
 and its 78⇄78 result are unchanged (only the evidence hash re-pins). Registry stays total (78 ⇄ 78). Contracts remain
 exactly §2. `make -C schema all` and `make -C wave-validators all` → exit 0. **No Python.**
 
+### R14 disposition — S1-ratification as a typed immutable input + overview revision sync
+
+**Source:** the external-β re-review of R13 (**CONVERGED** the WC-5 content-binding blocker and the grounding-identity
+finding; returned ITERATE with two REQUIRED, both mechanical, no operator decision) and this Planning Cell's α repair
+(R14). Review→repair outcome, not intent. The accepted six-node construction graph, the faithful §2 contracts, the
+forward-only acyclic assurance graph, the completion model, and the wave-boundary Go gate are **unchanged**.
+
+| # | Finding | R14 disposition |
+|---|---|---|
+| 1 | **[REQUIRED]** (asserted, not bound) the #628 S1-ratification warrant was an unversioned prose string in `wave.external_roots` (which `#Wave` accepts as arbitrary text — β replaced it with "PR #999 is allegedly enough" and both `cue vet` and the Go gate still passed), while each S1 consumer's `inputs.required` still held only `CELL-RUNTIME.md` whose bytes say "Not ratified". Supersession rested on prose. | **Bound the #628 γ-closeout receipt as a TYPED immutable `repo_artifact` locator** (`.cdd/unreleased/628/gamma-closeout.md` @ `6e40d934`, sha256 `8aeffcff…`, verified present at that commit) as a **required input of WC-1, WC-2, WC-3b**, and upgraded the `wave.external_roots` entry to a real locator. A WC now derives "S1 ratified" from the pinned doctrine **plus** the pinned ratification receipt. Enforcement is native: a required-input `locator` must be a `#Locator` (repo_artifact\|control_plane\|prior_receipt), so a prose/bare-string authority is **rejected by `cue vet`** — demonstrated by the new negative fixture `schema/regressions/contract.bad-prose-input-locator.yaml`. Corroborating immutable evidence recorded: `beta-review.md@6e40d934` sha256 `20a21ae…`; PRs #629→merge `562e8025`, #646→merge `a08c56ad` (merged 2026-07-11); issue #628 closed. |
+| 2 | **[REQUIRED]** (revision-truth) the overview `README.md` still projected **R12** (heading, leading repair summary, terminal status) after the R13 repair, so the directory's designated overview named a different current revision than the wave/registry/evidence. | Synced the README **heading, leading repair summary, and terminal status to the current revision**, with R12/R13 demoted to explicit prior-round history and a pointer to this provenance for the R13/R14 dispositions. |
+
+**Ledger:** every round marker advanced to **R14**; content-hash chain re-pinned (oracle-registry → 6 contracts → wave
+`contract_sha256`; evidence → wave gate + registry). Grounding/reconcile/intent files unchanged so their hashes stay.
+The validator bytes and its 78⇄78 result are unchanged (only the evidence hash re-pins). Adding an external required
+input creates **no wave edge** and does not touch `acceptance.predicates`, so the bijection stays total (78 ⇄ 78).
+`make -C schema all` (now with the new negative fixture) and `make -C wave-validators all` → exit 0. **No Python.**
+
 ## Coordination-index note (κ / control-plane, not this cell's matter)
 
 Recording this provenance on an immutable coordination index (an update to #627 or a named index

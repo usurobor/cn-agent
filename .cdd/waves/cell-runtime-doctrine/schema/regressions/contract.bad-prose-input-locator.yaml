@@ -22,18 +22,12 @@ intent_ref:
 inputs:
   required:
     # --- external roots (immutable, revision-pinned; create no wave edge) ---
-    - ref_kind: "external"          # #628/S1 doctrine ("CM measures; V gates; δ effects") — RATIFIED per #628 (PRs #629/#646 merged 2026-07-11, issue closed, beta-review R1); pinned "Proposed/Not ratified" banner is STALE-HISTORICAL, superseded (bound in wave.external_roots) — does NOT trigger source_doctrine_conflicts
-      locator:
-        kind: "repo_artifact"
-        repo: "usurobor/cnos"
-        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
-        path: "docs/architecture/CELL-RUNTIME.md"
-    - ref_kind: "external"          # #628 S1-RATIFICATION RECEIPT (γ-closeout) — the IMMUTABLE authority: a WC derives "S1 ratified" from THIS pinned receipt (sha256 8aeffcff…) + the pinned CELL-RUNTIME.md doctrine; the doctrine's "Proposed/Not ratified" banner is stale-historical, superseded by this receipt (so source_doctrine_conflicts does not fire). Supersession is a conclusion from two pinned inputs, not prose.
-      locator:
-        kind: "repo_artifact"
-        repo: "usurobor/cnos"
-        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
-        path: ".cdd/unreleased/628/gamma-closeout.md"
+    # BAD: authority-as-prose. A required input's locator is a BARE STRING, not a typed #Locator
+    # (repo_artifact | control_plane | prior_receipt). #CellContract MUST reject this (cue vet non-zero).
+    # Proves a ratification / source authority cannot be carried as a prose assertion in a required input —
+    # i.e. the R14 #628 S1-ratification receipt input cannot be downgraded to a comment/string.
+    - ref_kind: "external"
+      locator: "cnos#628 ratified S1 — trust me, no commit or receipt digest"
     - ref_kind: "external"          # shipped receipt schema — source of the L1-A1 circularity (requires validation+boundary_decision)
       locator:
         kind: "repo_artifact"
@@ -81,15 +75,12 @@ acceptance:
     - "reproducible__same_frozen_inputs_plus_provider_version_reproduce_the_mechanically_claimed_cm_result"
     - "cm_ref_field_shape_is_the_single_interface_all_other_nodes_import__no_second_cm_shape_introduced_downstream"
     - "emits_machine_readable_acceptance_fixtures_into_receipt__cm_object_json__cc_judgment_json__receipt_core_json__final_receipt_json__reject_fifth_schema_json__each_validated_by_the_named_acceptance_oracle_command"
-    # R9: WC-2 is the SOLE owner of the deferred Go ref/content-hash resolver; its PASS gates WC-2 completion.
-    - "deferred_validator_owned__go_ref_content_hash_resolver_emitted_by_wc2_positive_and_named_negative_fixtures_green_gates_wc2_completion"
     - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
 constraints:
   allowed_paths:
     - "docs/architecture/COHERENCE-MEASUREMENT.md"
     - ".cdd/unreleased/wc-2/**"
     - ".cdd/unreleased/wc-2/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
-    - ".cdd/unreleased/wc-2/validators/**"   # R9: WC-2's deferred Go ref/content-hash resolver + fixtures
   forbidden_paths:
     - "schemas/**"                 # implementing CM *fields* in CUE is #627 S2; building the CM *engine* is S3
     - "src/**"

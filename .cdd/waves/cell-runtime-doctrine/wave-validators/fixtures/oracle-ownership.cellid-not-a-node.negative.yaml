@@ -1,4 +1,4 @@
-# NEGATIVE fixture (cnos#671 R13) — a child owner that is NOT an owning wave node.
+# NEGATIVE fixture (cnos#671 R14) — a child owner that is NOT an owning wave node.
 # `wave_nodes` lists the legal owner namespace (the wave-dir analog of contract cell.id ∈ wave nodes).
 # The child declares owner `wc-ROGUE`, absent from wave_nodes, so ownership cannot be attributed to a
 # real node: FAIL CLOSED (exit 2). Pins Codex's "contract cell.id inconsistent with the owning wave node".

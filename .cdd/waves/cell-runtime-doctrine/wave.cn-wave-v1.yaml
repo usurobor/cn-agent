@@ -1,4 +1,4 @@
-# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R13)
+# cn.wave.v1 — CM-grounded cell-runtime doctrine decomposition (cnos#671 R14)
 #
 # Every node carries a complete cn.cell.contract.v1 (by contract_ref to the files under contracts/,
 # resolved at the immutable authorized wave commit; see contract_ref_resolution). Edges are the
@@ -21,8 +21,8 @@
 # the combined (construction ∪ assurance) graph is acyclic (sole root wc-2, terminal wc-5).
 schema: cn.wave.v1
 wave: "671"
-# wave-revision: R13
-revision: "R13"
+# wave-revision: R14
+revision: "R14"
 goal: >-
   A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine — the typed
   cell contract, the CM measurement backbone, the cell/wave FSMs, and the shipped→specified
@@ -66,7 +66,7 @@ grounding:
 # External roots (immutable; consumed by nodes, create no wave edge)
 external_roots:
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:docs/architecture/CELL-RUNTIME.md   # #628/S1 doctrine — RATIFIED per #628 (see the cnos#628 S1-ratification root below); the 'Proposed/Not ratified' banner at this commit is STALE-HISTORICAL, superseded"
-  - "control_plane cnos#628 S1-ratification: PRs #629,#646 merged 2026-07-11 + issue #628 closed + .cdd/unreleased/628/beta-review.md R1 converged — S1 (docs/architecture/CELL-RUNTIME.md doctrine) is RATIFIED; the 'Proposed/Not ratified' banner text at the pinned CELL-RUNTIME.md commit (and the CELL-KINDS / docs-index 'proposed' text) is stale-historical doc-debt, superseded by this ratification, NOT a live source_doctrine_conflicts trigger"
+  - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:.cdd/unreleased/628/gamma-closeout.md   # #628 S1-RATIFICATION RECEIPT (γ-closeout, sha256 8aeffcff…): S1 (CELL-RUNTIME.md doctrine) is RATIFIED — supersedes the stale 'Proposed/Not ratified' banner (and the CELL-KINDS / docs-index 'proposed' text). Also a REQUIRED INPUT of WC-1/WC-2/WC-3b (typed repo_artifact locator, schema-enforced — not prose). Corroborating immutable evidence: beta-review.md@6e40d934 sha256 20a21ae…; PRs #629→merge 562e8025, #646→merge a08c56ad (merged 2026-07-11); issue #628 closed."
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/receipt.cue"
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/contract.cue"
   - "repo_artifact usurobor/cnos@6e40d93497589afd96e6c891e94851cdabe2ef3a:schemas/cdd/boundary_decision.cue"
@@ -94,33 +94,33 @@ nodes:
   - id: "wc-2"
     role: "keystone-root"
     contract_ref: "contracts/wc-2.cn-cell-contract-v1.yaml"
-    contract_sha256: "d78dccf59faf1b23bd8e3ccd8e6da31a54aa25e1729cdfdf52e47abbd0d223ec"
+    contract_sha256: "62a1adfd2c6577b0fa899838337d3fd60bbc8e1e169627a671af76ac7453438a"
     output_id: "coherence-measurement-contract"
     output_path: "docs/architecture/COHERENCE-MEASUREMENT.md"
   - id: "wc-1"
     contract_ref: "contracts/wc-1.cn-cell-contract-v1.yaml"
-    contract_sha256: "8c9e1d2ae3261b1d919ca13397944776e266dca321adabc8688e77562b292fd8"
+    contract_sha256: "9fc7f0e10be39074406327c32290c96f2be800cd97efd6a6c4d2223cc5f571ec"
     output_id: "cell-classes-and-contract"
     output_path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
   - id: "wc-3a"
     contract_ref: "contracts/wc-3a.cn-cell-contract-v1.yaml"
-    contract_sha256: "d161b0e0b749a81745a49644e606be874df602a43a0809eff794550be47b242f"
+    contract_sha256: "5e21b346f9ca18e76923cc76d691dc964e99fe42829b757173b0ceb0b9ac7bf5"
     output_id: "cell-fsm"
     output_path: "docs/architecture/CELL-FSM.md"
   - id: "wc-3b"
     contract_ref: "contracts/wc-3b.cn-cell-contract-v1.yaml"
-    contract_sha256: "6515011a495642b9b422be102890b0e7c2ad5587433562d35331d4a4f1e0811e"
+    contract_sha256: "a6794429552adb82b68487f30e310a24a5f7d68d69f81d2e7382d2945f135795"
     output_id: "wave-fsm"
     output_path: "docs/architecture/WAVE-FSM.md"
   - id: "wc-4"
     contract_ref: "contracts/wc-4.cn-cell-contract-v1.yaml"
-    contract_sha256: "52f2a5d7961b57b63acaa775428446072561ea7edca29053e8d10fbfdccd09c5"
+    contract_sha256: "4a45103e59af84ea99f230ae306cf8a07ffc60fe6ff7023f13ce060a2c98d4e0"
     output_id: "contract-migration"
     output_path: "docs/architecture/CONTRACT-MIGRATION.md"
   - id: "wc-5"
     role: "integration-seal"
     contract_ref: "contracts/wc-5.cn-cell-contract-v1.yaml"
-    contract_sha256: "21757be1620fb5e5acc904c34ab017080bf91b398bdcdd46c6f50771c3f3bb30"
+    contract_sha256: "edca1d94296656da19cd9da0ba9efa04d6c626c7cb2142af35e50d3136691f4e"
     output_id: "cell-runtime-integration-seal"
     output_path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
 
@@ -163,9 +163,9 @@ gates:
         invocation: "go run oracle_ownership_bijection.go .. (from wave-validators/); or make -C .cdd/waves/cell-runtime-doctrine/wave-validators all"
         required_result: "bijective: true — 78 child acceptance predicates <-> 78 registry assurance entries (no missing/phantom/duplicate); 30 mechanically-verifiable predicates each bound to exactly one checker|schema; exit 0"
         result_evidence: ".cdd/waves/cell-runtime-doctrine/wave-validators/EVIDENCE.md"
-        result_evidence_sha256: "94ec2256f3855e1aba24c9ea251b2deece5fb125ebb5978563f3e57cc18988a6"
-        binds_to_revision: "R13"
-        authorization_ready_iff: "the validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true (PASS content-bound to R13); a removed/corrupted validator or a non-bijective result makes this wave NOT authorization-ready (pre-authorization hold)"
+        result_evidence_sha256: "884b6efb95ac9f3f07825fe0a9c14b0d1c9a7d6b3f8a5eaeac1a669de51f35fd"
+        binds_to_revision: "R14"
+        authorization_ready_iff: "the validator resolves at validator_sha256 AND its invocation exits 0 with bijective: true (PASS content-bound to R14); a removed/corrupted validator or a non-bijective result makes this wave NOT authorization-ready (pre-authorization hold)"
         owned_by: "wave-boundary (no child WC); runs at pre-authorization, outside child completion"
   per_child:
     operator_authorization_required: false

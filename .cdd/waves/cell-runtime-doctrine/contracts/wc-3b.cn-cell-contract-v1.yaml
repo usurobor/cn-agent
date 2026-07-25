@@ -27,6 +27,12 @@ inputs:
         repo: "usurobor/cnos"
         commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
         path: "docs/architecture/CELL-RUNTIME.md"
+    - ref_kind: "external"          # #628 S1-RATIFICATION RECEIPT (γ-closeout) — the IMMUTABLE authority: a WC derives "S1 ratified" from THIS pinned receipt (sha256 8aeffcff…) + the pinned CELL-RUNTIME.md doctrine; the doctrine's "Proposed/Not ratified" banner is stale-historical, superseded by this receipt (so source_doctrine_conflicts does not fire). Supersession is a conclusion from two pinned inputs, not prose.
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: ".cdd/unreleased/628/gamma-closeout.md"
     - ref_kind: "external"          # CCNF scope-lift (wave = scope n+1 coordination)
       locator:
         kind: "repo_artifact"
@@ -49,7 +55,7 @@ inputs:
       locator:
         kind: "control_plane"
         ref: "cnos#671#oracle-registry"
-        revision: "sha256:39a06a5a3918308502ac5d6f92c7fff02ff34424f2efc63c16ab1973ea8320df@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+        revision: "sha256:3722233d12517e325209d139fa87a2db721b8d01b395c71c1e62eafcead0fcbd@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
   optional: []
 requested_output:
   id: "wave-fsm"

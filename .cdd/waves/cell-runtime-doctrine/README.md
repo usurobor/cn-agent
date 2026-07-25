@@ -1,11 +1,26 @@
-<!-- wave-revision: R13 -->
-# Wave: cell-runtime-doctrine (cnos#671 — R12)
+<!-- wave-revision: R14 -->
+# Wave: cell-runtime-doctrine (cnos#671 — R14)
 
 **Planning Cell output.** This directory is the matter of the Planning Cell #671 (child of parent
 wave #627): a mature, executable `cn.wave.v1` plan that decomposes the cell-runtime doctrine into
 single-purpose Working-Cell contracts, grounded in an immutable coherence measurement.
 
-**R12 repair (external-β #672) — sound wave-boundary gate (cue-export normalized) + revision-relative
+**R14 repair (external-β #672) — bind the S1 ratification receipt as a typed required input + sync the overview
+revision.** The R13 review **converged** the R12 WC-5 content-binding blocker and the grounding-identity finding.
+R14 closes its two REQUIRED findings: (1) the #628 S1-ratification evidence is now bound as a **typed immutable
+`repo_artifact` input** (`.cdd/unreleased/628/gamma-closeout.md` @ `6e40d934`, sha256 `8aeffcff…`) — a **required
+input of WC-1/WC-2/WC-3b** and a real locator in `wave.external_roots`, so a Working Cell derives "S1 ratified" by
+resolving the pinned doctrine **plus** the pinned ratification receipt (supersession is schema-enforced, not prose —
+replacing the locator with a bare string fails `cue vet`); (2) this overview's heading/leading summary/status are
+synced to the live revision. See [`decision-provenance.md`](./decision-provenance.md) for the R13 and R14
+per-finding dispositions.
+
+**R13 repair (external-β #672, prior round) — content-binding + source-truth.** Re-pinned WC-5's stale
+`reconcile-627.md` digest and swept every live `sha256@path` locator (one digest per path); relabeled the grounding
+snapshot a **normalized transport capture** (raw API body `883671cf…` + one terminal LF = artifact `9d1ab3a5…`),
+binding both digests with the +1-LF rule.
+
+**R12 repair (external-β #672, prior round) — sound wave-boundary gate (cue-export normalized) + revision-relative
 ledger.** The R11 wave-boundary pre-authorization validator hand-parsed YAML by indentation/prefix and
 **silently dropped** CUE-valid **flow-style** predicate lists (`predicates: ["x"]`), producing a demonstrated
 complete-wave **FALSE PASS** (an unregistered child predicate reached "authorization-ready" while R11 reported
@@ -342,7 +357,7 @@ hand-parser silently dropped flow-style predicate lists → a demonstrated compl
 fail-closed with exact per-fixture exit codes, and makes the WC-5 ledger check **revision-relative** (ending
 per-round ledger churn) plus fixes the `schema/wave.cue` single-owner comment + `schema/README.md` header.
 The accepted **construction** graph (WC-2 → WC-1 → {WC-3a, WC-3b, WC-4} → WC-5), D9-four, intent provenance,
-and grounding are **unchanged** across R2–R12.
+and grounding are **unchanged** across R2–R14.
 
 ## Files
 
@@ -356,7 +371,7 @@ and grounding are **unchanged** across R2–R12.
   wave node ids, and is **fail-closed** on parse loss/empty owner-predicate; its `fixtures/` (flow-style
   positive/negative, missing-registry, mismatched-owner, empty-owner + cell.id-not-a-node fail-closed, wave-dir
   positive + flow-unregistered negative), a `Makefile` that builds once and asserts **exact per-fixture exit
-  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R13, referenced
+  codes** (0 bijective / 1 defect / 2 fail-closed), and `EVIDENCE.md` (the PASS content-bound to R14, referenced
   by the wave's `preauthorization_gates`).
 - [`intent.cn-intent-v1.yaml`](./intent.cn-intent-v1.yaml) — transitional bootstrap intent projection.
 - [`decision-provenance.md`](./decision-provenance.md) — α/β planning conclusions + the R8/R9 dispositions.
@@ -369,6 +384,7 @@ and grounding are **unchanged** across R2–R12.
 - [`acceptance-oracles.md`](./acceptance-oracles.md) — projection of the total registry (every predicate classified single-kind).
 
 ---
-*Status: R12 wave, α matter — **external-β review next** (then γ → CC → operator). The current boundary is
-external-β ITERATE on #672; β/CC/operator review are still pending, so this is **not** yet under operator
-review. No child WCs dispatched; no control-plane action taken by this cell.*
+*Status: R14 wave, α matter — **external-β re-review** (then γ → CC → operator). Prior boundary was external-β
+ITERATE on R13 (two REQUIRED, both mechanical); R14 repairs them and re-submits. β/CC/operator review are still
+pending, so this is **not** yet under operator review. No child WCs dispatched; no control-plane action taken by
+this cell.*

@@ -1,4 +1,4 @@
-// cnos#671 R13 — PLAN-LOCAL, TRANSITIONAL structural schema for wave.cn-wave-v1.yaml.
+// cnos#671 R14 — PLAN-LOCAL, TRANSITIONAL structural schema for wave.cn-wave-v1.yaml.
 // R11: #WaveGates.wave_authorization gains an optional pre-authorization gate list (#PreAuthGate) — a
 // materialized wave-boundary validator's PASS (path + pinned content hash + invocation + evidence) bound
 // to authorization-readiness. #Completion and the §2 completion model are UNCHANGED (R10 forward-only

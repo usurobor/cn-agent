@@ -1,4 +1,4 @@
-# NEGATIVE fixture (cnos#671 R13) — FLOW-style child predicate with NO registry entry.
+# NEGATIVE fixture (cnos#671 R14) — FLOW-style child predicate with NO registry entry.
 # `beta_cognitive` is declared as a CUE-valid flow list item; the registry omits it. R11's ad-hoc
 # parser dropped flow items and would false-pass; R12 normalizes via cue export, sees the predicate,
 # and reports it MISSING (child -> no registry). MUST exit non-zero.
