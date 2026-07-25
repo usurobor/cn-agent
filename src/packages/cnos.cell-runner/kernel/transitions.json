@@ -1,0 +1,65 @@
+{
+  "_doc": [
+    "The CCNF cell kernel as a declarative transition table (spike; see",
+    "../DESIGN.md §Kernel FSM). This is the single source of truth for the",
+    "kernel FSM: the generic evaluator in engine.go reads the current state,",
+    "looks up its entry in `transitions` below, and returns the first rule",
+    "whose guards hold against the observed FactSnapshot (first match wins) —",
+    "it never hardcodes a state name in a switch/if-chain, exactly like the",
+    "cnos.issues/issues-fsm engine. Adding a kernel state or edge is an edit",
+    "to THIS FILE, not to Go source. Guard names reference the fixed generic",
+    "predicate vocabulary in engine.go's guard registry; step names reference",
+    "the actor-step registry in drive.go. All three cells (CC/PC/WC) run this",
+    "same table — they differ only by telos (which actor is bound)."
+  ],
+  "states": ["init", "produced", "reviewed", "closed", "validated", "decided", "held"],
+  "terminal": ["decided", "held"],
+  "guards": {
+    "contract_present": "a contract was handed to this cell (α input present)",
+    "artifact_present": "α produced its artifact (WC file edit / PC wave / CC measurement)",
+    "review_approved": "β reviewed the artifact and approved",
+    "review_rejected": "β reviewed the artifact and rejected",
+    "receipt_bound": "γ computed and bound the receipt from transition evidence",
+    "v_pass": "V mechanically validated the artifact against the contract's acceptance predicates",
+    "v_fail": "V mechanically rejected the artifact"
+  },
+  "transitions": [
+    {
+      "state": "init",
+      "trigger": "advance",
+      "rules": [
+        {"all_true": ["contract_present"], "to": "produced", "step": "alpha_produce", "reason": "contract present → α produces the artifact"}
+      ]
+    },
+    {
+      "state": "produced",
+      "trigger": "advance",
+      "rules": [
+        {"all_true": ["artifact_present"], "to": "reviewed", "step": "beta_review", "reason": "artifact present → β reviews it"}
+      ]
+    },
+    {
+      "state": "reviewed",
+      "trigger": "advance",
+      "rules": [
+        {"all_true": ["review_approved"], "to": "closed", "step": "gamma_close", "reason": "β approved → γ closes (computes receipt)"},
+        {"all_true": ["review_rejected"], "to": "held", "step": "delta_hold", "reason": "β rejected → δ holds (stop, fail closed)"}
+      ]
+    },
+    {
+      "state": "closed",
+      "trigger": "advance",
+      "rules": [
+        {"all_true": ["receipt_bound"], "to": "validated", "step": "v_validate", "reason": "receipt bound → V validates mechanically"}
+      ]
+    },
+    {
+      "state": "validated",
+      "trigger": "advance",
+      "rules": [
+        {"all_true": ["v_pass"], "to": "decided", "step": "delta_accept", "reason": "V passed → δ accepts"},
+        {"all_true": ["v_fail"], "to": "held", "step": "delta_hold", "reason": "V failed → δ holds (stop, fail closed)"}
+      ]
+    }
+  ]
+}
