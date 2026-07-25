@@ -67,7 +67,10 @@ wave-boundary pre-authorization gate.
   reviewer of different model lineage** ("Codex", posting as `usurobor`),
   content-bound to the exact reviewed SHA each round. Terminal verdict
   **CONVERGE at R16 / `614829a4`** — no BLOCKER or REQUIRED defect.
-  Captured in `beta-review.md` (this cycle dir).
+  Captured **byte-exact** in `beta-review-source-5076109763.md` (raw-body
+  sha256 `75cdb9b6…`, 9,894 bytes), with κ metadata in the separate
+  envelope `beta-review.md` (R17 repair — the prior capture was an
+  excerpt, corrected here).
 - **γ (closure):** performed by a **distinct non-κ actor** — see
   `gamma-closeout.md`. The earlier κ-signed γ closeout
   ([PR #672 comment 5076124652](https://github.com/usurobor/cnos/pull/672#issuecomment-5076124652))
@@ -85,12 +88,13 @@ wave-boundary pre-authorization gate.
 
 | Row | State | Evidence |
 |---|---|---|
-| Matter frozen | yes | `.cdd/waves/cell-runtime-doctrine/**` byte-identical to `614829a4`; this cycle adds only `.cdd/unreleased/671/**` + the #671 body exemption |
-| β evidence content-bound | yes | `beta-review.md` binds comment id + URL + reviewed SHA + verbatim body |
-| γ not by κ | yes (via `gamma-closeout.md`) | authored + committed by a distinct non-κ actor; void κ-signed closeout retracted on PR |
+| Matter frozen (`matter_sha` `614829a4`) | yes | `.cdd/waves/cell-runtime-doctrine/**` byte-identical to `614829a4`; this cycle adds only `.cdd/unreleased/671/**`; receipt head is a distinct `receipt_head` above the frozen matter |
+| β evidence byte-exact + content-bound | yes | `beta-review-source-5076109763.md` reproduces the source raw body byte-for-byte (sha256 `75cdb9b6…`, 9,894 bytes); envelope `beta-review.md` binds comment id + reviewed SHA |
+| γ not by κ (durable provenance) | yes | `gamma-dispatch.md` binds the γ activation identity + frozen inputs + output hash; `gamma-closeout.md` is the output; κ only transports. **Git author metadata is not the proof.** Void κ-signed closeout retracted on PR |
 | 3.11b discoverable | yes | `## Protocol exemption` in #671 body (recovery path (b)) |
+| exemption revision-bound | yes | snapshot `protocol-exemption-source.md` (sha256 `dccba69c…`) + envelope `protocol-exemption.md`; gate fails stale if the live issue exemption diverges |
 | firebreak κ≠α stated | yes (as bootstrap debt) | `## Known debt` item 1; named, not hidden |
-| No witness theater | yes | no fabricated multi-actor history; collapse recorded truthfully |
+| No witness theater | yes | no fabricated multi-actor history; collapse recorded truthfully; role claims rest on input→output binding, not labels |
 
 ## Known debt
 
@@ -112,4 +116,16 @@ wave-boundary pre-authorization gate.
    carried as debt for a later authorized documentation pass, **not**
    repaired here (repairing it would break the freeze / seal).
 
-## Review-readiness | bootstrap PC | reviewed matter SHA `614829a4682e148d98c70371e600ffdc3fa6386e` (R16) | matter frozen; constitution + role receipts added under `.cdd/unreleased/671/` | ready for non-κ γ + external-CC
+## R17 — receipt-layer repair (external-β ITERATE, comment 5076629728)
+
+External-β returned **ITERATE** on the first receipt head (`7a8ec483`) with three
+correct boundary-evidence findings (matter unchanged, still CONVERGED). R17 fixes
+the **receipt layer only** — the frozen matter stays byte-identical to `614829a4`:
+
+| β finding | R17 repair |
+|---|---|
+| [BLOCKER] git-author string ≠ distinct non-κ γ actor | `gamma-dispatch.md` binds durable γ activation provenance (activation identity + exact frozen inputs + γ output hash); κ transports only; git-author metadata explicitly disclaimed as proof. The γ activation is a **distinct in-host activation** that re-derives evidence from frozen inputs and could return HOLD — the strongest γ-independence available in a manual bootstrap (β carries the different-lineage independence). |
+| [REQUIRED] β capture is an excerpt, not full verbatim | `beta-review-source-5076109763.md` is now **byte-exact** to the source (sha256 `75cdb9b6…`, 9,894 bytes, all nine `##` sections in order); κ metadata moved to the `beta-review.md` envelope. |
+| [REQUIRED] mutable exemption not revision-bound; PR conflates matter/receipt SHA | exemption snapshotted + hashed (`protocol-exemption.md`, `dccba69c…`) with a fail-stale gate rule; `matter_sha` (`614829a4`) vs `receipt_head` distinguished here and in the PR body. |
+
+## Review-readiness | bootstrap PC · R17 | frozen `matter_sha` `614829a4682e148d98c70371e600ffdc3fa6386e` (R16) | receipt layer under `.cdd/unreleased/671/` | ready for durable-provenance γ re-run + external-β re-review + external-CC
