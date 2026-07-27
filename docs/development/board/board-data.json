@@ -2844,7 +2844,25 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-07-27T18:17:34Z",
-    "updated": "2026-07-27T18:17:34Z",
+    "updated": "2026-07-27T21:32:59Z",
     "url": "https://github.com/usurobor/cnos/issues/676"
+  },
+  {
+    "n": 677,
+    "t": "CDD kernel / ε: route recurring `invalid` (self-contradicting verdict×decision) to ε receipt-stream observation",
+    "kind": "",
+    "areas": [],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-27T21:32:43Z",
+    "updated": "2026-07-27T21:32:43Z",
+    "url": "https://github.com/usurobor/cnos/issues/677"
   }
 ]
