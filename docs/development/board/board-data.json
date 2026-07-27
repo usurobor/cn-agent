@@ -2828,5 +2828,23 @@
     "created": "2026-07-27T18:17:18Z",
     "updated": "2026-07-27T18:17:18Z",
     "url": "https://github.com/usurobor/cnos/issues/675"
+  },
+  {
+    "n": 676,
+    "t": "CDD kernel: preregistered attempt-budget + reflexive FailureDisposition (close the failure-laundering-under-deadline gap)",
+    "kind": "",
+    "areas": [],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-27T18:17:34Z",
+    "updated": "2026-07-27T18:17:34Z",
+    "url": "https://github.com/usurobor/cnos/issues/676"
   }
 ]
