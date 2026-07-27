@@ -2792,5 +2792,41 @@
     "created": "2026-07-19T12:15:45Z",
     "updated": "2026-07-25T03:28:34Z",
     "url": "https://github.com/usurobor/cnos/issues/671"
+  },
+  {
+    "n": 674,
+    "t": "β review: reviewer-capability contract (capability declaration + hash-verified change-claims + capability-scoped closure)",
+    "kind": "",
+    "areas": [],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-27T18:17:04Z",
+    "updated": "2026-07-27T18:17:04Z",
+    "url": "https://github.com/usurobor/cnos/issues/674"
+  },
+  {
+    "n": 675,
+    "t": "cnos.cdr: formula-instantiation oracle for formal/mathematical claims (the math analog of β §3.13c wiring-grep)",
+    "kind": "",
+    "areas": [],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-27T18:17:18Z",
+    "updated": "2026-07-27T18:17:18Z",
+    "url": "https://github.com/usurobor/cnos/issues/675"
   }
 ]
