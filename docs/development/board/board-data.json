@@ -2864,5 +2864,23 @@
     "created": "2026-07-27T21:32:43Z",
     "updated": "2026-07-27T21:32:43Z",
     "url": "https://github.com/usurobor/cnos/issues/677"
+  },
+  {
+    "n": 678,
+    "t": "[design] ε as cross-domain correspondence detector — failure-mode catalogue + correspondence-claim refutation discipline + diversity-over-depth",
+    "kind": "",
+    "areas": [],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-07-28T03:03:10Z",
+    "updated": "2026-07-28T03:03:10Z",
+    "url": "https://github.com/usurobor/cnos/issues/678"
   }
 ]
