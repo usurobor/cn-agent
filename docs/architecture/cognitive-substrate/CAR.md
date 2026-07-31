@@ -38,7 +38,7 @@ v3.5 eliminates both:
 ## 3. Design principles
 
 1. **Everything cognitive is a package.** Core is `cnos.core`. Role packs are
-   `cnos.eng`, `cnos.pm`. No special "bundled core" path at runtime.
+   `cnos.eng`, `cnos.cds`. No special "bundled core" path at runtime.
 
 2. **Profiles are NOT packages.** Profiles are setup-time presets that expand
    to package lists. `engineer` → `[cnos.core, cnos.eng]`.
@@ -102,10 +102,10 @@ packages/
     cn.package.json
     skills/
       eng/code/SKILL.md, eng/review/SKILL.md, ...
-  cnos.pm/
+  cnos.cds/
     cn.package.json
     skills/
-      pm/follow-up/SKILL.md, pm/issue/SKILL.md, pm/ship/SKILL.md
+      cds/lifecycle/SKILL.md, cds/selection/SKILL.md, ...
 ```
 
 ### Package metadata

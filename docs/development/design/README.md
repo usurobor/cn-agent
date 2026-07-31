@@ -22,5 +22,5 @@ These docs sit alongside `docs/gamma/essays/` (position papers) and the role-ski
 
 - **`docs/gamma/essays/`** — position papers. Read essays for the *why* and the long-form vision; read design docs for the *what and where* a downstream cycle must pin.
 - **`docs/gamma/cdd/`** — CDD-class docs and historical post-release assessments (PRAs). Read for archival precedent; do not edit historical records.
-- **`docs/alpha/essays/`** — foundational position papers (C≡ / TSC / CTB / cnos stack). Cited from γ-class designs.
+- **`docs/papers/`** — foundational position papers (C≡ / TSC / CTB / cnos stack). Cited from γ-class designs.
 - **`src/packages/*/skills/`** — executable doctrine (the *how*). Design docs here gate skill / schema authoring there.

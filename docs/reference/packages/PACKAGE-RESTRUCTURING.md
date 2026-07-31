@@ -6,6 +6,11 @@
 **Mode:** MCA
 **Active Skills:** cdd/design, eng/evolve
 
+> **Status: Draft proposal — not the shipped structure.** This document proposes
+> retiring `cnos.pm` and adding `cnos.kernel` / `cnos.agent` / `cnos.hub`; none of
+> those landed. For the packages that actually ship, see the package table in the
+> repo [`README.md`](../../../README.md).
+
 ## Problem
 
 The current package boundary is uneven:
