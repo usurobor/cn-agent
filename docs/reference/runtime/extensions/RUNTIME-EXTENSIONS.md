@@ -11,33 +11,9 @@
 
 ---
 
-## 0. Coherence Contract
+## Purpose
 
-### Gap
-
-cnos can evolve cognition through packages, but capability growth still tends to imply core runtime changes. Issue #67 exposes the pattern clearly:
-
-- agents need network access
-- network access must be configurable, sandboxed, typed, and visible at wake
-- but adding it directly to core would enlarge the runtime by accretion
-
-The deeper incoherence is:
-- cognitive substrate is packageable and local
-- runtime capabilities are not yet equally extensible
-
-### Mode
-
-MCA — change the runtime architecture so new capability families can be shipped as extensions rather than core edits.
-
-### α / β / γ target
-
-- α PATTERN: one explicit extension model instead of ad hoc built-ins
-- β RELATION: align package distribution, runtime contract, traceability, doctor, and capability execution
-- γ EXIT: make future capabilities (network, browser, lab/device IO, bridges) additive instead of invasive
-
-### Smallest coherent intervention
-
-Do not rewrite core capabilities. Introduce an extension architecture and use network access as the first reference extension.
+cnos can evolve cognition through packages, but capability growth still tends to imply core runtime changes: the cognitive substrate is packageable and local, while runtime capabilities are not yet equally extensible. Issue #67 (network access) exposes the pattern — agents need network access that is configurable, sandboxed, typed, and visible at wake, but adding it directly to core would enlarge the runtime by accretion. This document defines a runtime extension architecture so new capability families (network, browser, lab/device IO, bridges) ship as extensions rather than core edits, using network access as the first reference extension.
 
 ---
 
@@ -676,21 +652,7 @@ Core built-ins remain untouched in v1.
 
 ---
 
-## 15. Acceptance Criteria
-
-This is done when:
-
-1. A package can ship an extension without modifying core runtime code.
-2. cnos discovers installed extensions automatically at boot.
-3. The runtime can dispatch extension-defined op kinds without core code changes.
-4. The Runtime Contract tells the agent which extension ops exist and whether they are enabled.
-5. Extension execution is sandboxed and traced.
-6. cn doctor validates extension compatibility and configuration.
-7. cnos.net.http proves the model by shipping http_get as the first extension.
-
----
-
-## 16. Summary
+## 15. Summary
 
 The long-term fix for capability growth is not "add more built-ins." It is:
 - packages as distribution units
@@ -708,11 +670,11 @@ This keeps the system coherent:
 
 ---
 
-## 17. Marketplace-Readiness Requirements
+## 16. Marketplace-Readiness Requirements
 
 This document defines the runtime extension architecture, not the full ecosystem/distribution model. However, the extension system MUST be designed so a future registry / marketplace can sit on top of it coherently.
 
-### 17.1 Required readiness properties
+### 16.1 Required readiness properties
 
 The extension system MUST support:
 - globally unique package names
@@ -727,7 +689,7 @@ The extension system MUST support:
 - clean uninstall / disable semantics
 - bundle/app composition without core runtime changes
 
-### 17.2 Why
+### 16.2 Why
 
 Without these properties, a future registry or marketplace would have no stable basis for:
 - discovery
@@ -738,7 +700,7 @@ Without these properties, a future registry or marketplace would have no stable 
 - conflict resolution
 - operator understanding
 
-### 17.3 Out of scope here
+### 16.3 Out of scope here
 
 This document does not define:
 - publication workflow
@@ -749,22 +711,3 @@ This document does not define:
 - bundle/app metadata schema
 
 Those belong to a companion registry/ecosystem design.
-
----
-
-## CLP Summary
-
-The design is now coherently layered. It distinguishes:
-- runtime extension mechanics
-- distribution/app composition
-- source vs installed layouts
-- discovery vs enablement
-- built-in vs extension dispatch
-
-- α: A
-- β: A
-- γ: A
-
-No material axis weakness remains inside this artifact. The next work lies outside the doc:
-- implementation planning
-- companion registry/ecosystem design
