@@ -1,7 +1,6 @@
 # CN Security Model
 
 **Status:** Current
-**Date:** 2026-03-05
 **Author:** usurobor (aka Axiom)  
 **Contributors:** Sigma  
 

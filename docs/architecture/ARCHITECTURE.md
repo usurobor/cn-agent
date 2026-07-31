@@ -3,7 +3,6 @@
 How the articulated layers reveal one coherent system.
 
 **Status:** v2.0.0
-**Date:** 2026-03-13
 
 ---
 

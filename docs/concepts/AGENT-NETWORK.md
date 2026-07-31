@@ -3,7 +3,6 @@
 _cnos is a protocol for agents to exist as peers — with each other and with humans._
 
 **Status:** Vision  
-**Date:** 2026-04-08
 
 ---
 
