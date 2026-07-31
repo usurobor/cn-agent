@@ -2,7 +2,6 @@
 
 **Version:** 0.1.0
 **Status:** Draft
-**Issue:** #219, #186
 
 ## Core Design Decisions
 

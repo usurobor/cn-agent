@@ -2,7 +2,6 @@
 
 **Version:** 0.1.0
 **Status:** Draft
-**Issue:** #218
 **Parent:** POLYGLOT-PACKAGES-AND-PROVIDERS.md, PROVIDER-CONTRACT-v1.md
 
 ## Decision

@@ -1,37 +1,12 @@
 # Memory in cnos — lean triadic model
 
-**Issue:** #100  
-**Version:** 0.2.0  
-**Mode:** MCA  
-**Active Skills:** cdd/design, eng/evolve, eng/writing  
-**Engineering Level:** L7
+**Version:** 0.2.0
 
 ---
 
-## Problem
+## Purpose
 
-cnos already has memory in practice, but the current model is still narrower than the way the system actually works.
-
-Today:
-
-- The runtime contract classifies `threads/reflections/` and `state/conversation.json` as memory
-- `state/` otherwise remains `private_body`
-- The context packer loads reflections into the dynamic system block
-- The context packer loads conversation history as recent message turns
-- The adhoc-thread skill already treats standalone topic threads as the place where important things should be preserved instead of being lost in chat
-
-So the system already distinguishes:
-
-- Durable reflective memory
-- Session continuity
-- Runtime internals
-
-What is missing is a simple architectural statement of how these fit together. The current incoherence is:
-
-1. `threads/adhoc/` is functionally memory, but is not yet named as such in the runtime contract
-2. Conversation history is useful, but it is too easy to mistake it for canonical memory
-3. There is pressure to add a memory index or retrieval layer before the underlying memory model is explicit
-4. Packages, commands, and orchestrators could add memory tooling, but core memory semantics are not yet clearly separated from optional memory services
+This document defines the memory model for cnos: a lean triadic split across episodic, reflective, and working-continuity surfaces, kept Git-native and inspectable. It names how the three concerns the system already runs — durable reflective memory, session continuity, and runtime internals — fit together, and fixes the rule that `threads/adhoc/` is canonical memory while `state/conversation.json` is working continuity, not canonical memory.
 
 ---
 
@@ -348,60 +323,8 @@ This adds:
 
 ---
 
-## File Changes
-
-### Edit
-
-- `docs/reference/runtime/RUNTIME-CONTRACT-v2.md` — add `threads/adhoc/` to the memory model, clarify `state/conversation.json` as working continuity
-- `src/cmd/cn_runtime_contract.ml` — reflect the same distinction in emitted contract
-- `docs/reference/runtime/AGENT-RUNTIME.md` — align memory language with the lean model if needed
-
-### No new files in v1
-
-Do not add:
-
-- `threads/memory/INDEX.md`
-- New memory package
-- New retrieval extension
-- New memory-specific command package
-
----
-
-## Acceptance Criteria
-
-- [ ] `threads/adhoc/` is explicitly recognized as canonical memory
-- [ ] `threads/reflections/` remains canonical reflective memory
-- [ ] `state/conversation.json` is explicitly treated as working continuity, not source of truth
-- [ ] Runtime contract reflects the distinction clearly
-- [ ] Docs no longer imply that memory requires an index layer in core
-- [ ] No new canonical memory surfaces are introduced in v1
-- [ ] Existing reflect and adhoc-thread skills remain the practice layer for memory
-
----
-
-## Known Debt
-
-- If wake/restore cost grows, a derived restore map may become useful later
-- Optional recall/search/import tooling may still be worth packaging later
-- The exact runtime-contract zone names may need one tightening pass for clarity
-
----
-
-## CDD Trace
-
-| Step | Artifact | Skills loaded | Decision |
-|------|----------|---------------|----------|
-| 0 Observe | — | — | Current cnos already distinguishes reflections and conversation history, and adhoc-thread already functions as retained memory in practice |
-| 1 Select | — | — | Selected gap: memory architecture is overcomplicating itself before the current surfaces are fully named |
-| 4 Gap | this artifact | — | Named incoherence: memory semantics are implicit and invite unnecessary new layers |
-| 5 Mode | this artifact | cdd/design, eng/evolve, eng/writing | L7 MCA; lean architectural clarification |
-| 6 Artifacts | this artifact | — | Design drafted; no implementation plan included yet |
-
----
-
 ## Related
 
-- #100 — Memory as first-class retention faculty (this design supersedes the original spec direction)
 - AGENT-NETWORK.md — agents carry memory when deployed to new workspaces
 - HUB-PLACEMENT-MODELS.md — hub is memory, workspace is workbench
-- #156 — Attached hubs (AC9: agent memory stays in hub, tagged by workspace)
+- #156 — Attached hubs (agent memory stays in hub, tagged by workspace)
