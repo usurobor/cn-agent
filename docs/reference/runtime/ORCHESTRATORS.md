@@ -2,7 +2,6 @@
 
 **Version:** 0.1.0
 **Status:** Draft
-**Issue:** #170
 **Doc-Class:** canonical-spec
 **Canonical-Path:** docs/reference/runtime/ORCHESTRATORS.md
 **Owns:** orchestrator model, command-provider model, activation index, compiled orchestrator IR, runtime contract additions

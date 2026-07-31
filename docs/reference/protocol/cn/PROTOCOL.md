@@ -1,9 +1,6 @@
 # Design: cn Protocol as Typed FSMs
 
 **Status:** Implemented (v2 — `cn_protocol.ml` matches this spec)  
-**Author:** usurobor (aka Axiom)  
-**Contributors:** Sigma  
-**Date:** 2026-02-11  
 
 ## Context
 

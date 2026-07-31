@@ -4,7 +4,6 @@
 
 **Version:** 1.0.1
 **Status:** Draft
-**Issue:** #153
 **Purpose:** Define the semantic model for threads, replies, discovery, routing, and projection in cnos.
 
 **Related:**

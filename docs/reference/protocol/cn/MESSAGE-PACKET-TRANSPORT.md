@@ -1,20 +1,12 @@
 # Message Packet Transport
 
-**Issue:** #150
 **Version:** 3.31.0
-**Mode:** MCA
-**Active Skills:** design, inbox, writing
-**Engineering Level:** L7
 
-## Problem
+## Purpose
 
-Inbox materialization can silently write the wrong message content. The receiver reads a different message than the sender sent, with no error or warning.
+This document defines the message packet transport for cnos: a transport-agnostic packet with a canonical envelope, a content commitment, and a transport proof, validated before any inbox write. It replaces branch-diff message discovery, under which a receiver could silently materialize the wrong message content — reading a different message than the sender sent, with no error or warning.
 
-**Evidence:** Pi sent `sigma/axiom-says-hi` with body "Axiom says hi." Sigma materialized it with body from `where-does-a-surfaced-mca-for.md` — a completely different message from a different date. Triage proceeded on wrong content. The actual message was silently dropped.
-
-**Mechanism:** `get_branch_files` runs `git diff main...origin/<branch>` on the local peer clone. When the clone's main is stale, the diff includes every file changed since the old merge base — not just the message file. `materialize_branch` iterates all diff results and writes the first unarchived `.md` match. Wrong file first in diff = wrong content in inbox.
-
-### Failure modes
+### Failure modes it defends against
 
 1. **Stale clone main** — diff against old merge base returns noise files
 2. **Ambiguous file selection** — materializer picks first match, not the intended file
@@ -65,42 +57,6 @@ This fails when:
 ### Replacement assumption
 
 A message is a self-contained packet with a canonical envelope, a content commitment, and a transport proof. The receiver validates the packet before any inbox write.
-
----
-
-## Impact Graph
-
-### Downstream consumers
-
-| Consumer | How it's affected |
-|----------|------------------|
-| `materialize_branch` in `cn_io.ml` | Replaced by packet validation + exact materialization |
-| `sync_inbox` in `cn_io.ml` | Fetches packet refs / transport proofs, not arbitrary branch diffs |
-| `get_branch_files` in `cn_io.ml` | Removed or Phase 0 only; no longer authoritative |
-| `inbox_check_once` in `cn_maintenance.ml` | Calls packet validation pipeline |
-| `reject_orphan_branch` in `cn_maintenance.ml` | Uses packet schema / proof validation, not merge-base heuristics |
-| `outbox_flush` / `send_thread` in `cn_mail.ml` | Produces canonical packets + transport proof |
-| Inbox skill (`ops/inbox/SKILL.md`) | Updated to reflect validated packet input |
-| Peer skill (`ops/peer/SKILL.md`) | Updated to reflect packet transport, not branch-diff discovery |
-
-### Upstream producers
-
-| Producer | What it provides |
-|----------|-----------------|
-| `send_thread` in `cn_mail.ml` | Canonical packet envelope + payload + transport proof |
-| Transport adapter (Git) | Fetch, commit/tree/blob proof for packet |
-| Future transport adapter (chain, mailbox, etc.) | Equivalent proof for packet inclusion/retrieval |
-
-### Copies and authority
-
-| Artifact | Authority |
-|----------|-----------|
-| `packet/envelope.json` | **Sole** transport-authoritative manifest |
-| `packet/message.md` | Exact payload bytes named by the envelope |
-| `packet/signature.ed25519` | Authenticity proof over canonical envelope |
-| Inbox file frontmatter | Derived from validated envelope; never authoritative |
-| Ref / tx / branch / locator | Routing / transport proof only — never authoritative for message content |
-| Markdown frontmatter inside `message.md` | Optional human/application metadata only; ignored for transport validation |
 
 ---
 
@@ -673,50 +629,15 @@ Before packet protocol fully lands:
 
 ---
 
-## 15. Acceptance Criteria
+## 15. Limitations
 
-### Phase 0
-
-- [ ] Legacy diff path fails closed when candidate payload is ambiguous
-- [ ] Legacy path never writes "first match" content
-
-### Phase 1
-
-- [ ] `send_thread` produces canonical packet commits under `refs/cn/msg/{sender}/{msg_id}`
-- [ ] `envelope.json` contains all required fields
-- [ ] Validation rejects invalid tree shape, wrong recipient, and payload hash/length mismatch
-- [ ] Dedup ignores same-id same-hash duplicates
-- [ ] Equivocation rejects same-id different-hash packets
-- [ ] Materialized inbox content is exactly the validated payload bytes
-- [ ] Materialization correctness does not depend on main freshness
-- [ ] No `diff.*main...` dependency remains in the packet materialization path
-
-### Phase 2
-
-- [ ] Receiver policy defaults to requiring signatures for all peers
-- [ ] Unsigned packets are rejected when receiver policy requires signatures
-- [ ] Invalid signatures are rejected
-- [ ] Sender public key verification uses the local trusted peer registry
-- [ ] Insecure/dev mode requires explicit opt-in
-
-### Transport compatibility
-
-- [ ] Canonical packet validation is independent of transport adapter
-- [ ] Git remains supported as the default transport
-- [ ] Additional transport adapters can provide proof without changing materialization semantics
-
----
-
-## 16. Known Debt
-
-- Legacy non-packet message branches may need temporary compatibility handling during migration
 - Dedup index garbage collection is not yet designed
-- Attachments / multipart payloads deferred
-- Packet schema migration strategy (`cn.packet.v2`) not yet designed
+- Attachments / multipart payloads are not supported
+- Packet schema migration (`cn.packet.v2`) is not yet designed
 
 ---
 
-## 17. Summary
+## 16. Summary
 
 The right fix is not "better diffing." The right fix is:
 

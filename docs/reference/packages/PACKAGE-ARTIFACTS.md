@@ -1,25 +1,13 @@
-# Design: Package Artifact Distribution and Command Content Class
+# Package Artifact Distribution and Command Content Class
 
-**Issue:** #167
 **Version:** 0.5.0
-**Mode:** MCA
-**Active Skills:** design, cap, writing
-**Engineering Level:** L7
 
-## Problem
+## Purpose
 
-Two gaps that share a root cause:
+This document defines two things: artifact-first distribution for released packages, and `commands` as a package content class.
 
-**1. Released packages are not yet the distribution unit.** `cn deps restore` fetches a git repository commit and copies a subtree out of it. That couples package installation to git protocol capabilities. When the protocol fails (#155: Claude Code sandbox, shallow-fetch-by-SHA rejected), there is no simple recovery. The lockfile carries `source`, `rev`, `subdir` — transport metadata consumers don't need. `cn_deps.ml` has 27 references to these fields.
-
-**2. Commands are not yet a package content class.** The CLI command surface is a closed built-in variant (`commit`, `push`, `save`, `daily`, `weekly`, `release` compiled into core). Adding operator-facing commands requires core edits (#162). The package content model already has explicit classes — doctrine, mindsets, skills, extensions, templates — but commands are not one of them.
-
-**Evidence:**
-- #155: `cn deps restore` failed in Claude Code sandbox (git 2.43.0, shallow-fetch-by-SHA unsupported). Three patches shipped to work around git protocol limitations.
-- `cn_deps.ml`: 27 references to `source_kind`/`rev`/`subdir` — complexity that exists only because distribution is coupled to repository structure.
-- #162: modular CLI commands requested, no current path without core modification.
-
-**What fails if skipped:** Every new environment that restricts git protocol requires another fetch workaround. CLI command extension requires either core modification or a second plugin framework.
+- **Distribution:** released first-party packages are distributed as versioned HTTP tarballs resolved through a package index, not by fetching a git repository commit and copying a subtree. Git is a development/exception path, so environments that restrict git protocol still install packages.
+- **Commands:** `commands` is a package content class alongside doctrine, mindsets, skills, extensions, and templates, declared explicitly in `cn.package.json` — so operator-facing CLI commands ship in packages without core edits or a second plugin framework.
 
 ## Constraints
 
@@ -57,33 +45,6 @@ Runtime extensions = typed capability providers for the agent/runtime plane (net
 | Runtime extensions | Typed capability providers for agent execution | `cnos.net.http` |
 | Package commands | Operator-facing CLI commands | `cn daily`, `cn save` |
 | Cognitive substrate | Skills, doctrine, mindsets, templates | `coherent`, `ENGINEERING.md` |
-
-## Impact Graph
-
-### Downstream consumers
-- `cn deps restore` — switch to HTTP tarball fetch
-- `cn deps vendor` — understand new lockfile format
-- `cn deps list` — reads installed packages, minimal change
-- `cn doctor` — validate package integrity + command integrity
-- `cn help` — discover and list package commands + repo-local commands
-- `cn <name>` dispatch — resolve by precedence (built-in → repo-local → package)
-- `cn_runtime_contract.ml` — emit skill activation table in cognition layer at wake
-- Lockfile schema — simplifies (drops git transport fields)
-- `cn.package.json` schema — extends (`commands` content class)
-- `PACKAGE-SYSTEM.md` — must document `commands` as content class and artifact-first distribution
-
-### Upstream producers
-- Release workflow — build and publish package tarballs + index
-- `scripts/stamp-versions.sh` — stamp package artifact versions
-- `scripts/check-version-consistency.sh` — validate package artifacts
-- Package index — new artifact, generated at release time
-- `scripts/build-packages.sh` — new script, builds tarballs from `packages/` dirs
-
-### Copies and authority
-- Package index (authority for name+version → URL+hash resolution)
-- Lockfile (authority for what a hub has installed — name+version+hash)
-- `cn.package.json` inside tarball (authority for package metadata including commands)
-- `cn.package.json` in repo source (development source, generates the above)
 
 ## Proposal
 
@@ -425,44 +386,6 @@ No PATH fallback in v1. If two external commands claim the same name at the same
 - Semantic version range solving in v1
 - Package signing beyond checksum verification
 
-## File Changes
-
-### Create
-- `packages/index.json` — package index
-- `scripts/build-packages.sh` — build package tarballs from `packages/` dirs
-- `src/cmd/cn_command.ml` — command discovery and dispatch
-
-### Edit
-- `src/cmd/cn_deps.ml` — replace git fetch with HTTP tarball fetch, new lockfile format, delete `source_kind`/`rev`/`subdir`
-- `src/lib/cn_lib.ml` — lockfile v2 types, package index types, command content class types
-- `src/cmd/cn_doctor.ml` — package command validation
-- `src/cmd/cn_help.ml` — list package and repo-local commands
-- `src/cli/cn.ml` — command dispatch precedence
-- `.github/workflows/release.yml` — build and publish package tarballs + index
-- `scripts/stamp-versions.sh` — stamp package artifact versions
-- `scripts/check-version-consistency.sh` — validate package artifacts
-- `docs/reference/packages/PACKAGE-SYSTEM.md` — add `commands` content class, document artifact-first distribution
-- `packages/cnos.core/cn.package.json` — add `commands` content class entries
-- `packages/cnos.eng/cn.package.json` — add `commands` content class entries if applicable
-- `src/cmd/cn_runtime_contract.ml` — add skill activation table to cognition layer (scan exposed skills' frontmatter for trigger keywords)
-
-### Delete
-- Git fetch/clone logic in `cn_deps.ml`
-- `source_kind`, `rev`, `subdir` from lockfile schema
-
-## Acceptance Criteria
-
-- [ ] AC1: Released first-party packages are published as tarball artifacts by the release workflow
-- [ ] AC2: `packages/index.json` exists and resolves name+version to URL+SHA-256
-- [ ] AC3: `cn deps restore` restores first-party packages via HTTP without git
-- [ ] AC4: `cn deps restore` verifies package SHA-256 before install
-- [ ] AC5: Extracted packages validate `cn.package.json`
-- [ ] AC6: `commands` is an explicit content class in `cn.package.json` schema, documented in PACKAGE-SYSTEM.md
-- [ ] AC7: `cn help` lists package-provided and repo-local commands
-- [ ] AC8: `cn doctor` validates package command integrity (duplicates, missing entrypoints, non-executable, malformed metadata)
-- [ ] AC9: `.cn/commands/` repo-local commands are discoverable
-- [ ] AC10: Runtime capability extensions remain a separate system (no regression)
-
 ## Migration
 
 One hub exists (sigma). No backward compatibility needed. Cut over:
@@ -473,19 +396,9 @@ One hub exists (sigma). No backward compatibility needed. Cut over:
 
 No phased migration. No v1/v2 lockfile coexistence.
 
-## Known Debt
+## Limitations
 
 - Package index is a flat file; no versioned API or caching layer
 - No third-party package hosting story yet
 - No package signing beyond SHA-256 checksums
 - Version solving is exact-match only (no ranges)
-
-## CDD Trace
-
-| Step | Artifact | Skills loaded | Decision |
-|------|----------|---------------|----------|
-| 0 Observe | CHANGELOG TSC, open issues, #155 post-mortem | — | Git-based package fetch fails in restricted environments; #162 needs command extension |
-| 1 Select | — | — | Package distribution is the root cause of #155; commands are not a content class (#162) |
-| 4 Gap | this artifact | — | Released packages not yet the distribution unit; commands not yet a package content class |
-| 5 Mode | this artifact | design, cap, writing | MCA, L7, system-shaping: artifact-first distribution + commands as content class |
-| 6 Artifacts | PACKAGE-ARTIFACTS.md v0.2.0 | design | Design doc tightened per operator review |
