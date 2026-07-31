@@ -9,38 +9,9 @@
 
 ---
 
-## 0. Coherence Contract
+## Purpose
 
-### Gap
-
-Runtime Extensions makes capability growth coherent at wake and execution time, but it does not yet define the ecosystem layer that makes extensions practical to distribute and operate. Without a registry/app-layer design, cnos lacks a coherent answer to:
-
-- how packages and extensions are published
-- how operators discover them
-- how trust and signatures work
-- how install/update/remove/rollback works
-- how channels (`stable`, `beta`, `local`) are modeled
-- how higher-level apps/bundles are represented
-- how local installed truth relates to registry-visible available artifacts
-
-### Mode
-
-MCA — change the ecosystem/distribution architecture.
-
-### α / β / γ target
-
-- α PATTERN: one explicit ecosystem model instead of ad hoc package distribution
-- β RELATION: align registry, trust, installer, Runtime Contract, doctor, and traceability
-- γ EXIT: make future marketplace/app-store surfaces possible without redesigning runtime extension mechanics
-
-### Smallest coherent intervention
-
-Do not redesign Runtime Extensions. Build the layer above them:
-
-- registry
-- trust model
-- install lifecycle
-- bundle/app model
+Runtime Extensions makes capability growth coherent at wake and execution time, but does not define the ecosystem layer that makes extensions practical to distribute and operate. This document defines that layer above Runtime Extensions: how packages and extensions are published, how operators discover them, how trust and signatures work, how install/update/remove/rollback works, how channels (`stable`, `beta`, `local`) are modeled, how higher-level apps/bundles are represented, and how local installed truth relates to registry-visible available artifacts.
 
 ---
 
@@ -680,20 +651,7 @@ The marketplace is therefore a presentation layer over the registry, not a separ
 
 ---
 
-## 20. Acceptance Criteria
-
-This is done when:
-
-1. A package/extension can be published and installed without core runtime code changes.
-2. A bundle/app can be installed as one unit.
-3. Trust and channel state are explicit.
-4. Install/update/remove/rollback are coherent and reversible.
-5. Installed, enabled, disabled, and rejected states are visible in Runtime Contract, doctor, and traceability.
-6. The runtime still wakes from local installed state only.
-
----
-
-## 21. Summary
+## 20. Summary
 
 Runtime Extensions makes capability growth coherent at runtime. Extension Registry makes that growth usable at ecosystem scale.
 
