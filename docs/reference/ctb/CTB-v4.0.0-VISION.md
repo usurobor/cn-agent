@@ -338,7 +338,7 @@ These are the seams where CTB syntax makes the skill language checkable.
 
 ### 8.5.1 Evidence from CDD package audit (2026-04-24)
 
-Operating the CDD skill-program as a triadic agent coordination system surfaced four additional language design requirements. Full evidence at `docs/gamma/essays/SKILLS-LANGUAGE-EVIDENCE.md`.
+Operating the CDD skill-program as a triadic agent coordination system surfaced four additional language design requirements:
 
 | CTB requirement | Practice-side evidence | Current workaround |
 |-----------------|----------------------|-------------------|

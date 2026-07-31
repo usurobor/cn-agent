@@ -3,7 +3,7 @@
 **Version:** 1.0.0
 **Status:** Draft
 **Doc-Class:** reference
-**Canonical-Path:** `docs/beta/SUSTAINABILITY.md`
+**Canonical-Path:** `SUSTAINABILITY.md`
 **Owns:** project funding model, sponsorship framing, commercial support framing
 **Does-Not-Own:** license terms, product roadmap, governance, contributor policy
 

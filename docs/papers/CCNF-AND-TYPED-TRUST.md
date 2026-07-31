@@ -5,7 +5,7 @@ version: v0.1.0
 date: 2026-05-21
 proposed-path: docs/papers/CCNF-AND-TYPED-TRUST.md
 related:
-  - docs/gamma/ENGINEERING-LEVELS.md
+  - docs/development/ENGINEERING-LEVELS.md
   - docs/papers/EXECUTABLE-SKILLS.md
   - ROLES.md
   - src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md
@@ -455,7 +455,7 @@ Do not finalize `CDD.md` until V works and domain evidence has somewhere else to
 ## References
 
 - `ROLES.md`
-- `docs/gamma/ENGINEERING-LEVELS.md`
+- `docs/development/ENGINEERING-LEVELS.md`
 - `docs/papers/EXECUTABLE-SKILLS.md`
 - `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md`
 - `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md`
