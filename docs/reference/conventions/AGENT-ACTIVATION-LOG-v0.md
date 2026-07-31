@@ -190,7 +190,7 @@ Single-writer is **logical**, not physical. Per-day sharding (both directions: f
 ## §9 Origin and evolution
 
 - **Origin:** `cn-sigma:spec/OPERATOR.md` § Activation logs (commit `7d8edc0`, 2026-05-30). Sigma is the first adopter; predecessor "Sigma peer log v0" (`89404dd`) was renamed to reflect the activations/peers conceptual split.
-- **Generalization:** The Sigma-specific `SIGMA-ACTIVATION-LOG-v0.md` name is superseded by this agent-level convention. The mechanics are unchanged; the scope is now any agent identity with a home hub and foreign activations.
+- **Scope:** The convention covers any agent identity with a home hub and foreign activations. The mechanics are the same for every adopter.
 - **Field writeup:** `cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md` (rationale + open questions).
 - **Different-topology elaborations:** [GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md](../protocol/cn/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md) v1 (signed envelopes, entry IDs, union merge) and [MESSAGE-PACKET-TRANSPORT.md](../protocol/cn/MESSAGE-PACKET-TRANSPORT.md) (cnos#150, ref-based packets) solve problems for topologies v0 does not have (adversarial routing, distrusted operators, cross-organization peer comms). They are not the next version of v0; they are the right tools when the topology changes. Cross-reference: `cn-sigma:threads/adhoc/20260530-sigma-activation-log-v0.md § Reframe 2026-06-01` for the full topology argument.
 

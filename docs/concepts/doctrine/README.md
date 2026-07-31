@@ -24,14 +24,7 @@ The order matters. EFA's commitments depend on CFA's structural derivation. JFA'
 
 ## Cycle artifacts
 
-Each essay travels with the record of the cycle that produced it. Every cycle's artifacts live in the essay's folder.
-
-- [coherence-for-agents/](coherence-for-agents/) — CFA, its critiques, its cycle log
-- [ethics-for-agents/](ethics-for-agents/) — EFA, its critiques, its cycle log, the external observations it received
-- [judgment-for-agents/](judgment-for-agents/) — JFA, its critiques, its dyad cycle log, its γ cycle log
-- [inheritance-for-agents/](inheritance-for-agents/) — IFA, its critiques, its dyad cycle log, its γ cycle log
-
-The cycle artifacts are not optional context. They record the failure modes each cycle had to repair to reach convergence, and future doctrine cycles inherit those failure modes by reference rather than by re-discovery. A reader using this doctrine to govern new work should read the cycle logs alongside the essays.
+Each essay was produced by a coherence cycle. Those cycles named the failure modes future cycles inherit, listed below in [Inherited failure modes](#inherited-failure-modes). The per-cycle production records — cycle logs, critiques, external observations — are archived in git history.
 
 ## Inherited failure modes
 

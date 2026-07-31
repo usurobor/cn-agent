@@ -12,9 +12,7 @@ These docs sit alongside `docs/papers/` (position papers) and the role-skill / h
 
 ## Document Map
 
-| Document | Class | Description |
-|----------|-------|-------------|
-| [ccnf-o-track-a1-survey.md](ccnf-o-track-a1-survey.md) | Survey + decision (v0.1) | Track A1 of [cnos#405](https://github.com/usurobor/cnos/issues/405): name-pick (CCNF-O), 20-surface inventory matrix, higher-level form classification, TSC integration v0.1 scope, package-location pin (`cnos.ccnf-o`), and refined dispatch-brief shapes for Tracks A2–A6 + B1. |
+No decision surveys are active here now. Past surveys are archived in git history; a survey's pinned decisions land in the owning package or schema home when a downstream cycle dispatches against them.
 
 ---
 

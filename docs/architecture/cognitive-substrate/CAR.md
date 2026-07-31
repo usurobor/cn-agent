@@ -1,7 +1,6 @@
 # Cognitive Asset Resolver & Unified Package Model (v3.5.0)
 
 **Status:** Implemented
-**Date:** 2026-03-09
 **Supersedes:** CAR v3.4.0 (three-layer model)
 **Authors:** usurobor (design), Claude (implementation)
 **Applies to:** cnos runtime, `cn setup`, `cn agent`, `cn deps`
