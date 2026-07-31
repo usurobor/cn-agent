@@ -7,7 +7,7 @@ How CNOS came to be.
 | Version | 3.14.2 |
 | Status | Draft |
 | Doc-Class | reference |
-| Canonical-Path | docs/beta/lineage/ORIGIN.md |
+| Canonical-Path | docs/concepts/lineage/ORIGIN.md |
 | Owns | project genesis, architectural pivot narrative, substrate rationale |
 | Does-Not-Own | structural lineage (see LINEAGE.md), system specifications, doctrine |
 

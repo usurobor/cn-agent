@@ -13,7 +13,7 @@ related:
   - docs/papers/AGENT-FIRST.md
   - docs/papers/CCNF-AND-TYPED-TRUST.md
   - docs/papers/DECREASING-INCOHERENCE.md
-  - docs/gamma/design/ccnf-o-track-a1-survey.md
+  - docs/development/design/ccnf-o-track-a1-survey.md
   - src/packages/cnos.cdd/skills/cdd/CDD.md
   - src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md
   - src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md
