@@ -9,7 +9,7 @@ Purpose: Define the shared meaning of engineering levels used in cnos so referen
 
 Related:
 - docs/papers/ENGINEERING-LEVEL-ASSESSMENT.md
-- src/agent/skills/eng/README.md
+- src/packages/cnos.eng/skills/eng/README.md
 
 ---
 
@@ -198,7 +198,7 @@ They are about:
 
 ## 7. Mapping to the engineering skills
 
-The skills in src/agent/skills/eng/ support the levels like this:
+The skills in src/packages/cnos.eng/skills/eng/ support the levels like this:
 
 ### Mostly L5-supporting
 

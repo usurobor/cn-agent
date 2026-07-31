@@ -168,7 +168,7 @@ Pressing Enter accepts the default / keeps the existing value.
 
 ### Terminal output conventions
 
-All output follows `src/agent/skills/eng/ux-cli/SKILL.md`.
+All output follows `src/packages/cnos.eng/skills/eng/ux-cli/SKILL.md`.
 
 **Color mapping** (ANSI):
 
@@ -418,10 +418,10 @@ After role selection, prompt for agent name:
 
 Templates are sourced from the `cnos` template repo (at these paths):
 
-- `src/agent/mindsets/ENGINEERING.md` — engineer principles
-- `src/agent/mindsets/PM.md` — PM principles
-- `src/agent/mindsets/PERSONALITY.md` — identity structure (name, vibe, mission)
-- `src/agent/templates/SOUL.md` — baseline Conduct section (shared by all roles)
+- `src/packages/cnos.core/mindsets/ENGINEERING.md` — engineer principles
+- `src/packages/cnos.core/mindsets/PM.md` — PM principles
+- `src/packages/cnos.core/mindsets/PERSONALITY.md` — identity structure (name, vibe, mission)
+- `SOUL.md` baseline Conduct section (shared by all roles) — template source read by `cn setup`; path to confirm against Go setup code
 
 At build time, `cn setup` reads these files from the template repo
 (or uses embedded copies if the template repo is not cloned locally).

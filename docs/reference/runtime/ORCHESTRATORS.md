@@ -535,7 +535,7 @@ Suggested full example:
 ### 10.1 Source layout
 
 ```
-src/agent/
+src/packages/<pkg>/
   skills/
   commands/
   orchestrators/

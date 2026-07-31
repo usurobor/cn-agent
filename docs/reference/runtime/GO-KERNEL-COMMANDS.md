@@ -339,7 +339,7 @@ Explicit and boring. No magic.
 
 One script + one manifest entry (unchanged from current model):
 
-1. Create `src/agent/commands/<name>/cn-<name>` (shell script)
+1. Create `src/packages/<pkg>/commands/<name>/cn-<name>` (shell script)
 2. Add entry to package's `cn.package.json` under `sources.commands` and `commands`
 3. `cn build` + `cn deps restore` makes it available
 

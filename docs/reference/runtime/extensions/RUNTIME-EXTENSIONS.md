@@ -177,13 +177,13 @@ The extension architecture must distinguish between:
 ### 4.1 Source-of-truth layout
 
 Extensions must follow the same source discipline as the rest of cnos:
-- `src/agent/` is the canonical source
-- `packages/` is generated output
+- `src/packages/` is the canonical source
+- `dist/packages/` is generated output
 
 A first-party extension source tree should therefore live under a source root such as:
 
 ```text
-src/agent/extensions/<pkg>/<ext-name>/
+src/packages/<pkg>/extensions/<ext-name>/
   cn.extension.json
   host/...
   docs/...

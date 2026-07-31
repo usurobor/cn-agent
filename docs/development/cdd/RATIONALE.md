@@ -195,7 +195,7 @@ CDD.md is the normative algorithm.
 
 ### Executable summary
 
-`src/agent/skills/ops/cdd/SKILL.md` is the operational summary for agents.
+`src/packages/cnos.cdd/skills/cdd/SKILL.md` is the operational summary for agents.
 
 ### Supporting skills
 
