@@ -330,7 +330,7 @@ This is not a proposal for concrete syntax. It is a demonstration that the prose
 
 ### 14.3 What this means for the spec
 
-LANGUAGE-SPEC v0.2 §6 (Composition) needs to name these operators. The spec currently says "composition is explicit invocation" — correct, but incomplete. Explicit invocation has structure: it is sequential, parallel, conditional, iterative, or binding. The operators are not optional extras; they are the composition model.
+The composition model in `LANGUAGE-SPEC.md` needs to name these operators. The spec currently says "composition is explicit invocation" — correct, but incomplete. Explicit invocation has structure: it is sequential, parallel, conditional, iterative, or binding. The operators are not optional extras; they are the composition model.
 
 The minimum addition to the spec:
 
@@ -586,7 +586,7 @@ CTB does not implement TSC measurement. The structural parallel is useful becaus
 
 **Witness theater and TSC-Oper W1–W4.**
 
-LANGUAGE-SPEC v0.2 §15 names the witness theater risk: a conformant-looking close-out not mechanically connected to what actually happened. TSC-Oper's four witnesses identify the same failure mode structurally:
+The **witness theater** risk — a conformant-looking close-out not mechanically connected to what actually happened — is identified structurally by TSC-Oper's four witnesses:
 
 - W1 (S₃ permutation): coherence is label-independent — a close-out should not change character when roles are relabeled
 - W2 (role-gauge independence): measurement is presentation-independent — a witness should not be constructed to satisfy the expected verdict
