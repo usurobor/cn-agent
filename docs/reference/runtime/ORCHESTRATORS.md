@@ -180,7 +180,7 @@ Suggested shape:
     {
       "name": "daily",
       "source": "package",
-      "package": "cnos.pm",
+      "package": "cnos.core",
       "summary": "Create or show the daily reflection thread"
     }
   ],
@@ -188,7 +188,7 @@ Suggested shape:
     {
       "name": "daily-review",
       "source": "package",
-      "package": "cnos.pm",
+      "package": "cnos.core",
       "trigger_kinds": ["command", "schedule"]
     }
   ]
@@ -490,7 +490,7 @@ Suggested full example:
 ```json
 {
   "schema": "cn.package.v1",
-  "name": "cnos.pm",
+  "name": "cnos.core",
   "version": "3.40.0",
   "kind": "package",
   "engines": { "cnos": "3.40.0" },

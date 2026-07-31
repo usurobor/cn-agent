@@ -465,7 +465,7 @@ This design does not:
 
 ### Create
 
-- `docs/alpha/HUB-PLACEMENT-MODELS.md`
+- `docs/architecture/HUB-PLACEMENT-MODELS.md`
 - placement manifest schema
 - placement resolver module
 

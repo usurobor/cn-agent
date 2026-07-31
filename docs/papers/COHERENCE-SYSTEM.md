@@ -263,7 +263,7 @@ These are operative, stateful expressions:
 These are distributable cognitive units:
 - `cnos.core`
 - `cnos.eng`
-- `cnos.pm`
+- `cnos.cds`
 - future org packs
 
 ### 5.6 Repository articulations
@@ -598,7 +598,7 @@ A release is a milestone on the coherence gradient:
 - `docs/THESIS.md` — the public-facing thesis: cnos as a recurrent coherence system
 
 ### Doctrine / Why
-- `docs/alpha/doctrine/FOUNDATIONS.md`
+- `docs/papers/FOUNDATIONS.md`
 - `CAP.md`
 - `COHERENCE.md`
 - `CA-CONDUCT.md`

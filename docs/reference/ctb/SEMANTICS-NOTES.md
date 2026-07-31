@@ -47,7 +47,7 @@ This is why the language unit is a *module with a signature*, not a *function*.
 
 ## 2. Why functions, not classes
 
-The architectural argument is in `docs/alpha/doctrine/SKILL-ARCHITECTURE.md`. The short form:
+The architectural argument is in `docs/papers/SKILL-ARCHITECTURE.md`. The short form:
 
 - Inheritance creates implicit coupling. Skills cannot afford implicit coupling because the loader must inspect every dependency.
 - Inheritance commits to one variation axis. Skills cross many axes — coherence, voice, form, naturalness, domain — and no single hierarchy captures them.
