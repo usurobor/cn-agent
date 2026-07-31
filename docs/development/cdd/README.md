@@ -47,13 +47,13 @@ Read this bundle when you need to know:
 
 ## Related operational docs
 
-- `src/agent/skills/cdd/SKILL.md` — executable summary (skill)
-- `src/agent/skills/cdd/design/SKILL.md` — design protocol (skill)
-- `src/agent/skills/cdd/review/SKILL.md` — review protocol (skill)
-- `src/agent/skills/cdd/release/SKILL.md` — release procedure (skill)
-- `src/agent/skills/cdd/post-release/SKILL.md` — assessment procedure (skill)
-- `src/agent/skills/cdd/plan/SKILL.md` — implementation plan production (runbook)
-- `src/agent/skills/cdd/issue/SKILL.md` — issue writing (runbook)
+- `src/packages/cnos.cdd/skills/cdd/SKILL.md` — executable summary (skill)
+- `src/packages/cnos.cdd/skills/cdd/design/SKILL.md` — design protocol (skill)
+- `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` — review protocol (skill)
+- `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` — release procedure (skill)
+- `src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md` — assessment procedure (skill)
+- `src/packages/cnos.cdd/skills/cdd/plan/SKILL.md` — implementation plan production (runbook)
+- `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` — issue writing (runbook)
 
 ---
 

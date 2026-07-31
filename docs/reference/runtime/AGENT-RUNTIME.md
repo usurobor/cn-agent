@@ -150,7 +150,7 @@
   - The agent MUST NOT output executable code; agent interface remains the pure-pipe `string → string`
 
 **v3.1.4** — Mindsets as session substrate + role-weighted skill scoring:
-- `Cn_context.pack` now loads mindsets from `src/agent/mindsets/` in deterministic order (COHERENCE, role-file, WRITING, OPERATIONS, PERSONALITY, MEMES) between USER and reflections
+- `Cn_context.pack` now loads mindsets from `src/packages/cnos.core/mindsets/` in deterministic order (COHERENCE, role-file, WRITING, OPERATIONS, PERSONALITY, MEMES) between USER and reflections
 - Closes the drift between AGENTS.md session contract ("every session ingest mindsets") and actual runtime behavior
 - `load_skills` accepts `runtime.role` from `.cn/config.json` and applies a +2 score bonus to role-matching skill paths; filter still requires base keyword overlap > 0 (bonus reorders, never introduces)
 - `load_role` normalizes to lowercase (tolerates "Engineer", "PM", etc.)

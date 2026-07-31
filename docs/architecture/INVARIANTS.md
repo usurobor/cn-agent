@@ -156,8 +156,8 @@ The package lifecycle must have one explicit authored source, one explicit distr
 
 **Current layout** (on main today):
 
-- `src/agent/<class>/` → authored source
-- `packages/<name>/<class>/` → built package (mixed: also contains manifests)
+- `src/packages/<name>/<class>/` → authored source
+- `dist/packages/<name>-<version>.tar.gz` → built package tarball (gitignored)
 - `.cn/vendor/packages/<name>@<version>/` → installed active state
 
 **Target layout** (per BUILD-AND-DIST.md):

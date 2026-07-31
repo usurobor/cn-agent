@@ -8,6 +8,11 @@
 
 ---
 
+> **Design record (#182), partly landed.** The package-authoring move is done:
+> content is now authored under `src/packages/<pkg>/`, not `src/agent/`. Paths
+> below that read `src/agent/` describe the pre-refactor tree; the current
+> authored-source root is `src/packages/`.
+
 ## Authority Relationships
 
 After this refactor:

@@ -708,7 +708,7 @@ Reflections remain separate in v1.
   - publish packet refs, feed refs, inbox refs
 - `src/cmd/cn_maintenance.ml`
   - fetch/process feed/inbox refs
-- `src/agent/skills/ops/inbox/SKILL.md`
+- `src/packages/cnos.core/skills/ops/inbox/SKILL.md`
   - actionable events are derived thread events
 - `docs/reference/GLOSSARY.md`
   - distinguish packet / thread event / projection / locator

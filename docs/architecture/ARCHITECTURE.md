@@ -86,7 +86,7 @@ If a spec exists without a module, the spec is aspirational. If a module exists 
 
 The runtime loads cognition from installed packages (`.cn/vendor/packages/`). The relation:
 
-- CAR specifies the package model → `cn_build.ml` assembles packages from `src/agent/`
+- CAR specifies the package model → `cn build` assembles packages from `src/packages/`
 - Packages contain doctrine, mindsets, and skills → the context packer (`cn_context.ml`) loads them at invocation
 - Package manifests (`cn.package.json`) declare contents → the runtime verifies them at setup
 

@@ -197,9 +197,14 @@ package version ≠ cnos binary version
 
 The package declares compatibility. The runtime enforces it.
 
-## Migration from current layout
+## Migration from the prior layout
 
-### Current state (on main today)
+> This migration has landed. `src/agent/` is gone; packages are authored under
+> `src/packages/<name>/` and built into `dist/packages/` (gitignored). The
+> "Target state" below is the layout on `main` today; the "Prior state" records
+> what it replaced.
+
+### Prior state (before the refactor)
 
 - `src/agent/<class>/` — authored skill/doctrine/template content
 - `packages/<name>/cn.package.json` — manifests (source) + copied content (derived)
