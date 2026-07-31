@@ -9,8 +9,7 @@ How the articulated layers reveal one coherent system.
 
 > **Runtime note (2026-06-29).** The active runtime and CLI is the **Go `cn` binary**
 > (`src/go/`). The OCaml modules (`cn_*.ml`) referenced throughout this document are the
-> **archived CN thread reference implementation** — see
-> [`OCAML-THREAD-REFERENCE.md`](../reference/legacy/OCAML-THREAD-REFERENCE.md)
+> **archived CN thread reference implementation**
 > (branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`).
 > The relations, module layering, and FSMs below describe that reference architecture;
 > the shipped Go runtime implements its subset. `dune`/OCaml is not a mainline build or
@@ -269,4 +268,3 @@ hub/
 | [AGENT-RUNTIME.md](../reference/runtime/AGENT-RUNTIME.md) | Runtime spec — this doc shows how it relates to FSMs and observability |
 | [PROTOCOL.md](../reference/protocol/cn/PROTOCOL.md) | FSM design — this doc shows how FSMs compose |
 | [CDD.md](../development/cdd/CDD.md) | Development method — governs how all these relations evolve |
-| [AUDIT.md](../evidence/AUDIT.md) | Evidence — tracks which relations are current vs stale |

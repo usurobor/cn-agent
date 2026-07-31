@@ -19,7 +19,7 @@ The docs tree is organized by **reader intent**: each top-level directory answer
 | `guides/` | How do I do a task? | Task-oriented how-tos |
 | `reference/` | What is the exact contract? | Canonical specs, APIs, CLI, schemas, protocol |
 | `architecture/` | How do the parts fit? | System overview, invariants, constraints |
-| `development/` | How is the work done? | CDD method, rules, plans, checklists |
+| `development/` | How is the work done? | CDD method, rules, checklists |
 | `papers/` | Why is it built this way? | Essays, whitepapers, position papers |
 | `evidence/` | Did it hold up? | Audits, RCAs, measurements, demo receipts |
 
@@ -45,7 +45,6 @@ Create a bundle when a feature has a canonical spec plus at least one supporting
 - Which document is the canonical spec, by name and path
 - A document map: every file in the bundle, one line each
 - Reading order for a new reader
-- Links to related plans in `development/plans/`
 
 ---
 
@@ -61,7 +60,6 @@ Every document is one of these. The class decides which intent directory it live
 | Guide | Task-oriented procedure connecting operator to system. | `guides/` |
 | Concept / doctrine | The mental model and the doctrine essays. | `concepts/` |
 | Paper | Essay, whitepaper, or position paper arguing a design. | `papers/` |
-| Plan | Implementation plan for a release or subsystem. Ephemeral. | `development/plans/` |
 | Evidence | Audit, RCA, or model↔reality assessment. | `evidence/` |
 
 A **canonical spec** evolves in place — it is never forked into parallel copies at the same level. It carries a version and date header, and absorbs design narratives after they ship.
@@ -118,5 +116,5 @@ If a document fits no intent directory, the taxonomy may need to evolve — upda
 These invariants should be enforced by CI:
 
 - Every feature bundle directory has a `README.md` that names exactly one canonical spec.
-- No document declares an α/β/γ folder path (`docs/alpha/`, `docs/beta/`, `docs/gamma/`) — those were retired.
+- No document declares an α/β/γ folder path (`docs/alpha/`, `docs/beta/`, `docs/gamma/`).
 - Internal links and backtick paths resolve to a file on disk.

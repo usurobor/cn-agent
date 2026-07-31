@@ -378,12 +378,6 @@ Mitigation: require every protocol package to declare whether a statement belong
 
 ## Migration plan
 
-### Wave 0 — Design essay
-
-Land this document under `docs/gamma/essays/` and point to it from the essays README.
-
-Purpose: give the whole direction one citable design surface.
-
 ### Wave 1 — Phase 2.5 generic/domain schema boundary
 
 Split or adapt `schemas/cdd/` so generic CDD does not require CDS-specific evidence fields.

@@ -22,17 +22,6 @@ The native cnos agent runtime: CN Shell, typed ops, N-pass orchestration, receip
 | 3.8.0/SYSCALL-SURFACE.md | Feature-scoped design | Syscall surface redesign for v3.8.0 |
 | 3.7.0/DESIGN.md | Feature-scoped design | Scheduler design for v3.7.0 |
 
-## Related Plans
-
-| Plan | Scope |
-|------|-------|
-| [PLAN-v3.7.0-scheduler.md](../../development/plans/PLAN-v3.7.0-scheduler.md) | Scheduler unification implementation plan |
-| [PLAN-v3.8.0-n-pass-bind.md](../../development/plans/PLAN-v3.8.0-n-pass-bind.md) | N-pass bind loop implementation plan |
-| [PLAN-v3.8.0-syscall-surface.md](../../development/plans/PLAN-v3.8.0-syscall-surface.md) | Syscall surface coherence implementation plan |
-| [PLAN-v3.10.0-runtime-contract.md](../../development/plans/PLAN-v3.10.0-runtime-contract.md) | Runtime contract implementation plan |
-
----
-
 ## Reading Order
 
 1. **[AGENT-RUNTIME.md](./AGENT-RUNTIME.md)** — start here for the full runtime model
