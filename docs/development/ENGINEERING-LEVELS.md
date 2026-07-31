@@ -8,7 +8,6 @@ Status: Draft
 Purpose: Define the shared meaning of engineering levels used in cnos so references to "L5", "L6", or "L7" are stable, local, and actionable.
 
 Related:
-- docs/papers/ENGINEERING-LEVEL-ASSESSMENT.md
 - src/packages/cnos.eng/skills/eng/README.md
 
 ---
@@ -280,22 +279,7 @@ Use it only when the change genuinely alters the system boundary in a leverage-r
 
 ---
 
-## 10. Relationship to the assessment essay
-
-ENGINEERING-LEVEL-ASSESSMENT.md is a historical assessment of observed work.
-
-This doc is the shared rubric that makes such assessments consistent in future.
-
-If the essay and this doc disagree:
-
-- the essay should be updated,
-- or this doc should be deliberately revised.
-
-This doc is the stable reference.
-
----
-
-## 11. Summary
+## 10. Summary
 
 The cnos engineering levels mean:
 

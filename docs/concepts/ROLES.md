@@ -296,8 +296,8 @@ Each instantiation declares its own gap classes named to its loss function. The 
 
 Reference instantiations:
 
-- **cdd (engineering, repairable-feedback regime per §4a.2):** `cdd-skill-gap` (procedural skill underspecified or wrong), `cdd-protocol-gap` (CDD doctrine itself drifted), `cdd-tooling-gap` (tooling absent, wrong, or unavailable), `cdd-metric-gap` (measurement missing or wrong). See [`src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md`](src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md).
-- **cdr (research, truth-preserving regime per §4a.2):** `cdr-data-gate-gap`, `cdr-overclaim-gap`, `cdr-reproduction-gap`, `cdr-citation-gap`, `cdr-oracle-ambiguity-gap`, `cdr-construct-drift-gap`. The class set is wider than cdd because research-discipline failure modes are wider; the principle is the same. See [`src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md`](src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md).
+- **cdd (engineering, repairable-feedback regime per §4a.2):** `cdd-skill-gap` (procedural skill underspecified or wrong), `cdd-protocol-gap` (CDD doctrine itself drifted), `cdd-tooling-gap` (tooling absent, wrong, or unavailable), `cdd-metric-gap` (measurement missing or wrong). See [`src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md`](../../src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md).
+- **cdr (research, truth-preserving regime per §4a.2):** `cdr-data-gate-gap`, `cdr-overclaim-gap`, `cdr-reproduction-gap`, `cdr-citation-gap`, `cdr-oracle-ambiguity-gap`, `cdr-construct-drift-gap`. The class set is wider than cdd because research-discipline failure modes are wider; the principle is the same. See [`src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md`](../../src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md).
 - **cds, cdw, cda, future:** each instantiation declares its own class names against its discipline profile (§4a.2). The class set must be enumerable, the names stable across cycles, and each class oracle-defined (β can mechanically decide whether a finding fits the class).
 
 A protocol that declares no gap classes has no machinery for protocol-iteration. The receipt's `protocol_gap_count` would have nowhere to type its `protocol_gap_refs` against; ε's matter (the protocol) would be invisible. The gap class declaration is therefore a Field-5-equivalent obligation: a protocol that instantiates the role ladder must declare its gap classes before live cycles run.
@@ -310,8 +310,8 @@ The artifact is **conditional**: required only when `protocol_gap_count > 0`. Wh
 
 Each instantiation declares the artifact's name and path. References:
 
-- **cdd:** `cdd-iteration.md` at `.cdd/unreleased/{N}/cdd-iteration.md` (in-cycle) → `.cdd/releases/{X.Y.Z}/{N}/cdd-iteration.md` (after release); aggregator at `.cdd/iterations/INDEX.md`. The cadence rule is declared in [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b`](src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md). See [`cnos.cdd/skills/cdd/epsilon/SKILL.md`](src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md).
-- **cdr:** project-binding-dependent path (typically `<project>/.cdr/waves/{wave-id}/cdr-iteration.md`); the protocol-overlay declares existence and shape, the project binding declares path. See [`cnos.cdr/skills/cdr/epsilon/SKILL.md`](src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md).
+- **cdd:** `cdd-iteration.md` at `.cdd/unreleased/{N}/cdd-iteration.md` (in-cycle) → `.cdd/releases/{X.Y.Z}/{N}/cdd-iteration.md` (after release); aggregator at `.cdd/iterations/INDEX.md`. The cadence rule is declared in [`cnos.cdd/skills/cdd/post-release/SKILL.md §5.6b`](../../src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md). See [`cnos.cdd/skills/cdd/epsilon/SKILL.md`](../../src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md).
+- **cdr:** project-binding-dependent path (typically `<project>/.cdr/waves/{wave-id}/cdr-iteration.md`); the protocol-overlay declares existence and shape, the project binding declares path. See [`cnos.cdr/skills/cdr/epsilon/SKILL.md`](../../src/packages/cnos.cdr/skills/cdr/epsilon/SKILL.md).
 
 The generic doctrine does not mandate a fixed path. Single-binding instantiations (cdd in cnos itself) may bind to a fixed path; multi-binding instantiations (cdr over many possible project repos) leave the path to the project binding. Both are valid; the protocol-overlay layer declares the artifact's existence and per-finding shape.
 
@@ -360,7 +360,7 @@ findings.
 The full cdd instantiation — lifecycle algorithm, instantiation-contract
 fields, artifact specifications, role algorithms, and the six-field contract
 as declared for cdd — is at
-[`src/packages/cnos.cdd/skills/cdd/CDD.md`](src/packages/cnos.cdd/skills/cdd/CDD.md).
+[`src/packages/cnos.cdd/skills/cdd/CDD.md`](../../src/packages/cnos.cdd/skills/cdd/CDD.md).
 
 cdd does not claim to have invented this role structure. cdd made it explicit
 for software development; this document generalises it to any

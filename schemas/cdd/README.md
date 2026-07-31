@@ -138,7 +138,7 @@ The design rationale is sourced from:
   §Kernel — substrate-independent role signatures; generic kernel must
   not name domain-specific evidence fields. The cycle/388 split aligns
   `schemas/cdd/` with this discipline.
-- [`ROLES.md §4a`](../../ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain)
+- [`ROLES.md §4a`](../../docs/concepts/ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain)
   — five-layer enforcement chain: protocol overlay (layer 3) is where
   domain evidence refs live. §4a.3 names CDS and CDR receipt sketches as
   the two required field sets per domain.

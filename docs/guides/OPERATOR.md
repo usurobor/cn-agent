@@ -2,8 +2,8 @@
 
 Day-2 operations for a running cnos agent. Assumes install and setup are done.
 
-For install: [README "Try it"](README.md#try-it).
-For setup: [SETUP-INSTALLER.md](docs/reference/cli/SETUP-INSTALLER.md).
+For install: [README "Try it"](../../README.md#try-it).
+For setup: [SETUP-INSTALLER.md](../reference/cli/SETUP-INSTALLER.md).
 
 ---
 
@@ -49,7 +49,7 @@ Crontab entry:
 
 Both modes run the same protocol loop: sync peers, materialize inbox, flush outbox, drain queue. The daemon loops; oneshot exits after one pass.
 
-See [AUTOMATION.md](docs/guides/AUTOMATION.md) for scheduler config, drain limits, and systemd unit setup.
+See [AUTOMATION.md](../guides/AUTOMATION.md) for scheduler config, drain limits, and systemd unit setup.
 
 ### Configuration
 
@@ -73,7 +73,7 @@ Settings: `.cn/config.json`.
 }
 ```
 
-Full config options: [AUTOMATION.md scheduler settings](docs/guides/AUTOMATION.md).
+Full config options: [AUTOMATION.md scheduler settings](../guides/AUTOMATION.md).
 
 ---
 
@@ -149,7 +149,7 @@ curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | sh
 
 After updating, restart the daemon if running: `systemctl restart cn-<name>` (target — when daemon is running).
 
-See [BUILD-RELEASE.md](docs/guides/BUILD-RELEASE.md) for rollback procedure.
+See [BUILD-RELEASE.md](../guides/BUILD-RELEASE.md) for rollback procedure.
 
 ### Packages
 
@@ -162,7 +162,7 @@ cn deps update                 # re-resolve and update lockfile (planned)
 
 Desired state: `.cn/deps.json`. Resolved state: `.cn/deps.lock.json`. Installed: `.cn/vendor/packages/`.
 
-See [PACKAGE-SYSTEM.md](docs/reference/packages/PACKAGE-SYSTEM.md).
+See [PACKAGE-SYSTEM.md](../reference/packages/PACKAGE-SYSTEM.md).
 
 ### Peers — planned
 
@@ -172,7 +172,7 @@ cn peer add <name> <url>       # add peer
 cn peer sync                   # fetch all peer repos
 ```
 
-See [HANDSHAKE.md](docs/guides/HANDSHAKE.md) for establishing peer-to-peer coordination.
+See [HANDSHAKE.md](../guides/HANDSHAKE.md) for establishing peer-to-peer coordination.
 
 ---
 
@@ -223,7 +223,7 @@ Start with `cn logs --errors`. Every failure path emits to the unified log.
 | Unknown peer errors | `cn peer` | Verify peer name and URL |
 | Package drift | `cn doctor` then `cn deps restore` | Lockfile vs vendor mismatch |
 
-See [TROUBLESHOOTING.md](docs/guides/TROUBLESHOOTING.md) for detailed diagnostics.
+See [TROUBLESHOOTING.md](../guides/TROUBLESHOOTING.md) for detailed diagnostics.
 
 ---
 
@@ -237,4 +237,4 @@ See [TROUBLESHOOTING.md](docs/guides/TROUBLESHOOTING.md) for detailed diagnostic
 | View recent activity | `cn logs` (planned) |
 | Sync peers | `cn sync` (planned) |
 | Process one item | `cn agent --process` (planned) |
-| Full CLI reference | `cn --help` or [CLI.md](docs/reference/cli/CLI.md) |
+| Full CLI reference | `cn --help` or [CLI.md](../reference/cli/CLI.md) |

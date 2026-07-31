@@ -1,5 +1,7 @@
 # SELF-COHERENCE
 
+<!-- Cycle scaffolding: this is the working cell. When a design artifact is promoted to a canonical `docs/reference/**` or `docs/architecture/**` doc, strip the cycle apparatus per the Promotion rule in `src/packages/cnos.cdd/skills/cdd/design/SKILL.md` §3.2. -->
+
 Issue: #NN
 Version: X.Y.Z
 Mode: MCA / MCI

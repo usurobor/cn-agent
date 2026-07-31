@@ -322,7 +322,7 @@ Three authoring surfaces, one canonical IR:
 
 | Surface | Author | Strength |
 |---------|--------|----------|
-| **CTB (Coherent Triadic Binding)** | LLMs + Humans | Deterministic, expression-only, effects-as-data. Small surface area, canonical formatting, LLM-friendly. See [CTB-v4.0.0-VISION.md](../ctb/CTB-v4.0.0-VISION.md) |
+| **CTB (Coherent Triadic Binding)** | LLMs + Humans | Deterministic, expression-only, effects-as-data. Small surface area, canonical formatting, LLM-friendly. See [CTB LANGUAGE-SPEC.md](../ctb/LANGUAGE-SPEC.md) |
 | **F# computation expressions** | Humans | Sequencing, binding, branching, effect boundaries — compact and type-safe |
 | **YAML** | Humans | Simple workflows, low ceremony |
 
@@ -336,10 +336,10 @@ CTB / F# CE / YAML  →  compiler  →  cn.orchestrator.v1 JSON  →  runtime
 **CTB** is the canonical authoring language for orchestrators. A CTB program evaluates to an **Effect Plan** — a pure data term describing what should happen — which maps directly to the orchestrator IR step graph. This is the connection between CTB (§4: separation of logic and effects) and the orchestrator runtime: CTB programs produce effect plans, the runtime executes them with explicit capabilities.
 
 CTB is the preferred authoring surface because it is:
-- **Deterministic** — same inputs, same outputs (CTB-v4.0.0-VISION §3.1)
-- **Misuse-resistant** — no ambiguous clause overlap, no hidden state (§3.1.3)
-- **LLM-friendly** — small surface area, predictable syntax, witness-based errors (§3.1.5)
-- **Effects-as-data** — programs return effect plans, not side effects (§3.1.4)
+- **Deterministic** — same inputs, same outputs
+- **Misuse-resistant** — no ambiguous clause overlap, no hidden state
+- **LLM-friendly** — small surface area, predictable syntax, witness-based errors
+- **Effects-as-data** — programs return effect plans, not side effects
 
 F# computation expressions and YAML remain as alternative authoring surfaces for humans who prefer them. All compile to the same IR.
 
@@ -368,10 +368,10 @@ CTB source  →  compile/evaluate  →  Effect Plan (JSON)  →  runtime bridge 
 
 The Effect Plan is the actual IR — pure data, capability-declarable, runtime-interpretable, reproducible. CTB programs evaluate to effect plans. The runtime bridge interprets effect plans under explicit capability policy. Peers can re-run the same CTB program and get the same plan.
 
-This matches CTB-v4.0.0-VISION.md exactly:
-- CTB programs are equations over triadic terms (§3.1)
-- A CTB "skill" is a pure function `State → EffectPlan` (§4)
-- The runtime bridge interprets the plan with explicit capabilities (§4)
+This is the CTB model:
+- CTB programs are equations over triadic terms
+- A CTB "skill" is a pure function `State → EffectPlan`
+- The runtime bridge interprets the plan with explicit capabilities
 - The runtime becomes a driver, not the source of truth
 
 ### 7.4 Why JSON as the wire/storage encoding
@@ -387,10 +387,10 @@ JSON is not the authoring surface — CTB is. JSON is one layer down: the compil
 
 ### 7.5 What CTB is for cnos
 
-CTB is the programmable skill language for cnos. The CTB vision doc says it explicitly:
-- "Skills are programs, not prose" (§1)
-- "A shared skills layer written in Markdown or prose cannot be executed consistently" (§1)
-- "We need a skills substrate where peers can re-run the same program and get the same plan" (§1)
+CTB is the programmable skill language for cnos, on the premise that:
+- skills are programs, not prose
+- a shared skills layer written in Markdown or prose cannot be executed consistently
+- peers need a skills substrate where they can re-run the same program and get the same plan
 
 This means:
 - **Markdown skills** remain as human-facing judgment docs (CAP, review, design)

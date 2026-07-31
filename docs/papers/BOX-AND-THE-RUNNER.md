@@ -17,7 +17,7 @@ related:
   - src/packages/cnos.handoff/skills/handoff/HANDOFF.md
   - src/packages/cnos.cdd/skills/cdd/release-effector/SKILL.md
   - src/packages/cnos.cdd/skills/cdd/operator/SKILL.md
-  - ROLES.md
+  - docs/concepts/ROLES.md
   - .github/workflows/release.yml
 ---
 

@@ -3,7 +3,7 @@
 Machine-checkable [CUE](https://cuelang.org/) schema for the **CDR
 (research) protocol overlay** receipt shape. This package extends the
 generic coherence-cell kernel ([`schemas/cdd/`](../cdd/)) with the
-required evidence-ref keys [`ROLES.md §4a.3`](../../ROLES.md) names for
+required evidence-ref keys [`ROLES.md §4a.3`](../../docs/concepts/ROLES.md) names for
 research discipline: claim refs (which claims this receipt asserts),
 data refs (dataset / mount / manifest / checksum), method refs (script
 paths + commit SHA), result refs (output file paths), a claim-status
@@ -133,5 +133,5 @@ values` against each enum member.
 - [`schemas/cdd/README.md`](../cdd/README.md) — the generic kernel; this
   package extends it.
 - [`schemas/cds/`](../cds/) — sibling package for software receipts.
-- [`ROLES.md §4a.3`](../../ROLES.md) — receipts-enforce-discipline
+- [`ROLES.md §4a.3`](../../docs/concepts/ROLES.md) — receipts-enforce-discipline
   principle; names the CDR receipt sketch this skeleton types.

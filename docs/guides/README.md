@@ -4,6 +4,7 @@
 
 ## Operator
 
+- [OPERATOR.md](OPERATOR.md) — day-2 operations for a running cnos agent.
 - [INSTALL-CDS.md](INSTALL-CDS.md) — install CDS into a repo (CLI or GitHub UI).
 - [HANDSHAKE.md](HANDSHAKE.md) — connect an operator to a repo.
 - [AUTOMATION.md](AUTOMATION.md) — wake/dispatch automation.

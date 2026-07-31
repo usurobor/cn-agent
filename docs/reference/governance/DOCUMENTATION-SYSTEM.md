@@ -99,7 +99,7 @@ When a canonical document is fully replaced, the replacement's version is the cn
 
 Released snapshots are **not** kept as folders on `main` — git history is the archive. To read a document as it stood at a past release, check out that release tag. A document on `main` is always the current one; its `Version:` header says which release it belongs to.
 
-A frozen record (a dated design decision, a cycle log, a completed plan) is left in place under its dated or `Superseded` header. Its stale internal paths are not corrected — the header already marks it as history. Only the live reader surface is kept current.
+A completed, dated, or superseded record — a design decision, a cycle log, a finished plan — is **not kept on the reader surface**. Git history is its archive: to read it, check out the release or commit under which it was written. The working tree on `main` reflects only current state. Records that must persist as intentional history live in the dotdirs (`.cdd/`, `.cn-sigma/`, `.github/`), which are exempt from the current-state rule. A document that remains on the reader surface is, by that fact, current — its paths and contents are kept correct, not frozen.
 
 ---
 

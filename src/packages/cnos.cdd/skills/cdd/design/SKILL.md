@@ -254,7 +254,7 @@ The design doc is the origin artifact in the CDD pipeline. Plan, issue, and revi
 8.4. **When companion artifacts exist, link to them**
   - Design should link to issue, plan, and any prior art it references
   - ❌ Design is self-contained and mentions no related artifacts
-  - ✅ "Issue: #113. Plan: PLAN-package-system.md. Prior art: EXTENSION-REGISTRY.md."
+  - ✅ "Issue: #404. Plan: design-notes.md. Prior art: RUNTIME-EXTENSIONS.md."
 
 ---
 
@@ -275,6 +275,8 @@ List every file that needs to change, grouped by action.
 ## 3. Rules
 
 ### 3.1. Output Format
+
+This is the **cycle-artifact form (working cell)** — the shape a design carries while the design cycle runs. It is **not** the promoted reader-surface form; see §3.2 for what to strip when the artifact becomes a canonical doc.
 
 ```markdown
 # [Title]
@@ -336,7 +338,32 @@ List every file that needs to change, grouped by action.
 
 ---
 
-### 3.2. Keep the CDD Trace in the primary branch artifact
+### 3.2. Promotion
+
+The §3.1 form is a working cell. It lives in the `.cdd/` cycle record, the PR body, or the issue — dotdirs and `.github`, which are exempt from the current-state rule. Git history preserves it.
+
+When a design artifact is **promoted** to a canonical reader-surface document (`docs/reference/**`, `docs/architecture/**`), strip it to current state. The reader of a spec needs what the system is now, not the cycle that produced it.
+
+**Retain:**
+- The governed header — `Version:` / `Status:` / `Doc-Class:` where applicable
+- `## Purpose`
+- The spec body (the actual contract, types, interfaces, semantics)
+- `## Alternatives` / `## Migration` / `## Non-goals`
+- Fold genuine present-day limits into `## Limitations`
+
+**Drop** — these are cycle apparatus; git history preserves them in the working cell:
+- `Mode` / `Active Skills` / `Engineering Level`
+- `## Impact Graph`
+- `## File Changes`
+- `## Acceptance Criteria`
+- `## CDD Trace`
+
+- ❌ Land the §3.1 artifact verbatim under `docs/reference/` — the promoted spec now carries Mode, an impact graph, and a CDD Trace the reader does not need
+- ✅ Promote the spec body under a governed header; the Mode / AC / CDD Trace stay in the cycle record, retrievable from git history
+
+---
+
+### 3.3. Keep the CDD Trace in the primary branch artifact
 
 If this design artifact is the primary branch artifact for a substantial cycle, it must carry the CDD Trace.
 
@@ -345,7 +372,7 @@ If this design artifact is the primary branch artifact for a substantial cycle, 
 
 If another artifact is the primary branch artifact, point to it explicitly.
 
-### 3.3. Pre-Submission Checklist
+### 3.4. Pre-Submission Checklist
 
 Before requesting review:
 

@@ -42,7 +42,3 @@ Essays, whitepapers, and position papers — one home for the arguments.
 - [BOX-AND-THE-RUNNER](./BOX-AND-THE-RUNNER.md) — compute is pluggable; Git stores truth.
 - [FIDONET-AND-CNOS](./FIDONET-AND-CNOS.md)
 - [SHIPPING-SOFTWARE-AFTER-AI](./SHIPPING-SOFTWARE-AFTER-AI.md) — from H2M to a human triad.
-
-## Engineering and release
-
-- [ENGINEERING-LEVEL-ASSESSMENT](./ENGINEERING-LEVEL-ASSESSMENT.md)

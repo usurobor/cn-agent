@@ -4,13 +4,13 @@
 
 **Date:** 2026-04-26
 
-**Companion to:** `LANGUAGE-SPEC.md` (normative), `CTB-v4.0.0-VISION.md` (strategic).
+**Companion to:** `LANGUAGE-SPEC.md` (normative).
 
 ---
 
 ## 0. Why this document
 
-The Vision sets direction. The Spec sets rules. Some material belongs in neither: the deeper observations about *why* the rules take the shape they do, and *what practice taught us* before we could name it.
+The Spec sets the rules. Some material belongs outside it: the deeper observations about *why* the rules take the shape they do, and *what practice taught us* before we could name it.
 
 This document collects that material. It is the place where conceptual moves are recorded so that future revisions of the spec can be made deliberately rather than through drift.
 
@@ -606,7 +606,5 @@ ctb-check v0 should draw from TSC-Oper's witness-independence pattern. Field pre
 This document is non-normative. It exists to preserve conceptual progress and to make spec revisions deliberate.
 
 If this document and `LANGUAGE-SPEC.md` disagree on a rule, the spec governs.
-
-If this document and `CTB-v4.0.0-VISION.md` disagree on strategy, the Vision governs.
 
 If a claim here becomes load-bearing for implementers, it should be moved into the spec rather than relied on here.

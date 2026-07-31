@@ -26,7 +26,7 @@ outputs:
 # Epsilon (CDD ε)
 
 > **This is the CDD-specific instantiation of the generic ε doctrine declared in
-> [`ROLES.md §4b`](../../../../../../ROLES.md).** The kernel grammar — what ε
+> [`ROLES.md §4b`](../../../../../../docs/concepts/ROLES.md).** The kernel grammar — what ε
 > observes (receipt streams across cells); the watched receipt fields
 > (`protocol_gap_count`, `protocol_gap_refs`); the gap-class instantiation
 > pattern (`{protocol}-{axis}-gap`); the iteration artifact rule (required only
@@ -35,7 +35,7 @@ outputs:
 > by reference. Only **CDD-specific gap class names**, the **receipt-stream
 > location**, the **iteration artifact path**, and the **aggregator location**
 > diverge for the engineering loss function per
-> [`ROLES.md §4a.2`](../../../../../../ROLES.md#4a2-loss-function-distinction).
+> [`ROLES.md §4a.2`](../../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction).
 
 ## §1 ε's CDD-side scope
 
@@ -45,7 +45,7 @@ them durably, and produces a system that learns from its own cycles rather than
 repeating the same class of error.
 
 **CDD-specific gap classes** (per the `{protocol}-{axis}-gap` pattern in
-[`ROLES.md §4b.3`](../../../../../../ROLES.md)):
+[`ROLES.md §4b.3`](../../../../../../docs/concepts/ROLES.md)):
 
 - **`cdd-skill-gap`** — a procedural skill (the active skill set loaded during
   the cycle) was underspecified or wrong for the failure pattern that surfaced.
@@ -66,7 +66,7 @@ These are the CDD-specific trigger classes, distinct from cdr's
 research-failure classes (`cdr-data-gate-gap`, `cdr-overclaim-gap`, etc. per
 [`cnos.cdr/skills/cdr/epsilon/SKILL.md §1`](../../../../cnos.cdr/skills/cdr/epsilon/SKILL.md)).
 The MCA-discipline shape (ship now / next-MCA / no-patch) is identical and
-inherited from [`ROLES.md §4b.5`](../../../../../../ROLES.md).
+inherited from [`ROLES.md §4b.5`](../../../../../../docs/concepts/ROLES.md).
 
 **Receipt stream ε reads:** `.cdd/releases/{X.Y.Z}/{N}/receipt.yaml` (after
 release) and `.cdd/unreleased/{N}/receipt.yaml` (during cycle). ε observes
@@ -89,7 +89,7 @@ produced ≥1 finding tagged `cdd-skill-gap`, `cdd-protocol-gap`,
 `cdd-tooling-gap`, or `cdd-metric-gap`. The receipt's
 `protocol_gap_count == 0` is the no-gap signal; no iteration file is required
 when the cycle ran cleanly. This is the inherited rule from
-[`ROLES.md §4b.4`](../../../../../../ROLES.md) — the receipt is the
+[`ROLES.md §4b.4`](../../../../../../docs/concepts/ROLES.md) — the receipt is the
 always-present record of *whether* an iteration file is required; the file is
 the conditional record of *what was found*. The canonical wire-format home
 for the cadence rule + per-finding shape + aggregator-update procedure is
@@ -116,7 +116,7 @@ a different repo, ε also writes a cross-repo bundle at
 ## §2 ε's relationship to δ in CDD
 
 The generic ε=δ collapse rule is declared in
-[`ROLES.md §4b.6`](../../../../../../ROLES.md); this section names the
+[`ROLES.md §4b.6`](../../../../../../docs/concepts/ROLES.md); this section names the
 CDD-specific operating point.
 
 In the current cnos cdd operating point — one active operator running a
@@ -138,11 +138,11 @@ human — who reads close-outs across cycles and drives protocol patches
 independently.
 
 The role-collapse is one of the *safe* collapses
-([`ROLES.md §4`](../../../../../../ROLES.md)); contrast α=β (never safe).
+([`ROLES.md §4`](../../../../../../docs/concepts/ROLES.md)); contrast α=β (never safe).
 
 ## §3 Cross-references
 
-- [`ROLES.md §4b`](../../../../../../ROLES.md) — generic ε doctrine; the
+- [`ROLES.md §4b`](../../../../../../docs/concepts/ROLES.md) — generic ε doctrine; the
   authoritative source for the watched-fields invariant, the MCA discipline,
   and the ε=δ collapse rule.
 - [`cnos.handoff/skills/handoff/receipt-stream/SKILL.md`](../../../../cnos.handoff/skills/handoff/receipt-stream/SKILL.md) —
