@@ -12,15 +12,14 @@ This document specifies the language-level model of CTB: what a skill is, what i
 
 The signature surface defined in §2 — frontmatter, scope, visibility, contracts, calls — is fully realized today in `cnos.cdd`. The cnos.core skills (`skill`, `write`, `design`, `compose`, `naturalize`, `audit`) declare only the older minimal frontmatter (`name`, `description`, `triggers`, sometimes `artifact_class` and `kata_surface`) and state their input/output contracts in prose inside the body. For those skills this spec is **prescriptive**: it states the form they should take when migrated. Migration is not a precondition for adopting the spec elsewhere.
 
-The spec also closes the seams the Vision surfaces — loader model, pipeline semantics, contract grammar, scoped authority — that the practice has named but not yet formalized.
+The spec also closes seams the practice has named but not yet formalized — loader model, pipeline semantics, contract grammar, scoped authority.
 
 It is **not**:
 
-- the strategy document (see `CTB-v4.0.0-VISION.md`)
 - the rationale document (see `SEMANTICS-NOTES.md`)
 - the kernel grammar of `.coh` terms (defined separately by the v1.x kernel spec)
 
-Where this spec and the Vision disagree, this spec governs the language model. Where this spec and the kernel spec disagree on terms and equations, the kernel spec governs.
+Where this spec and the kernel spec disagree on terms and equations, the kernel spec governs.
 
 The spec uses **MUST**, **MUST NOT**, **SHOULD**, **MAY** in the IETF sense.
 
@@ -312,7 +311,7 @@ A **global aspect** is a rule that applies across every skill in a package and h
 
 ### 7.1 Why aspects exist
 
-Practice surfaced this requirement: the rule "write large files section by section to disk" appeared in four CDD role/phase skills with slight wording drift. When one copy was missing, a real failure occurred. The rule was hoisted to `CDD.md §1.4` and the duplicates removed (Vision §8.5.1 E1).
+Practice surfaced this requirement: the rule "write large files section by section to disk" appeared in four CDD role/phase skills with slight wording drift. When one copy was missing, a real failure occurred. The rule was hoisted to `CDD.md §1.4` and the duplicates removed.
 
 This is a cross-cutting concern. It does not belong in any one skill, but it must be enforced for all of them.
 
@@ -505,9 +504,8 @@ Conformance is checked against the conformance suite shipped with the spec (fort
 
 This document governs the language model for skill modules, signatures, scope, invocation, composition, and the effect-plan boundary.
 
-- `CTB-v4.0.0-VISION.md` governs strategy, motivation, and roadmap.
 - `SEMANTICS-NOTES.md` governs deeper conceptual rationale and design discussion.
 - The CTB v1.x kernel spec governs term grammar, equation form, and evaluation of `.coh` programs.
 - `docs/papers/SKILL-ARCHITECTURE.md` governs the architectural argument for composition over inheritance.
 
-If this spec and the Vision disagree on language semantics, this spec governs. If this spec and the kernel spec disagree on terms or evaluation, the kernel spec governs. If this spec and `SKILL-ARCHITECTURE.md` disagree on the composition model, this spec governs (the doctrine is the argument; the spec is the rule).
+If this spec and the kernel spec disagree on terms or evaluation, the kernel spec governs. If this spec and `SKILL-ARCHITECTURE.md` disagree on the composition model, this spec governs (the doctrine is the argument; the spec is the rule).

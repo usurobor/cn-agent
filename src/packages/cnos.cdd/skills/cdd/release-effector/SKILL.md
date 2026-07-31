@@ -76,7 +76,7 @@ scripts/release.sh
 scripts/release.sh 3.67.0
 ```
 
-**Manual tagging is not allowed.** Do not run `git tag` directly. The release script is the only way to tag. It prevents the class of failures where VERSION, `cn.json`, and package manifests disagree (see `DISPATCH-FAILURE-EVIDENCE.md`, cycle #84 failure 3).
+**Manual tagging is not allowed.** Do not run `git tag` directly. The release script is the only way to tag. It prevents the class of failures where VERSION, `cn.json`, and package manifests disagree.
 
 **What the script does, in order** (mechanical narration; matches `scripts/release.sh` as of cycle #399):
 

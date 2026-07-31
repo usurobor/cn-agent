@@ -69,8 +69,7 @@ jobs:
         run: |
           ./cn help
 
-      # cnos#612 Mock F (docs/development/design/cn-repo-install-MOCKS.md
-      # §Mock F) — CLI ergonomics for onboarding. Exercises the real binary
+      # cnos#612 Mock F — CLI ergonomics for onboarding. Exercises the real binary
       # end to end, the same way a first-time tenant would (cnos#606 C3).
       - name: CLI ergonomics smoke test (cnos#612 F1-F4)
         working-directory: src/go

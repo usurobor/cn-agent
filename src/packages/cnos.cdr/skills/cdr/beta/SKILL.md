@@ -26,7 +26,7 @@ outputs:
 > Only the **review oracle** (the criterion β uses to evaluate matter) and
 > the **close-out** (the typed `#CDRReceipt` rather than a `git merge`)
 > diverge for the research loss function per
-> [`ROLES.md §4a.2`](../../../../../../ROLES.md#4a2-loss-function-distinction)
+> [`ROLES.md §4a.2`](../../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction)
 > and the binding doctrinal contract [`CDR.md`](../CDR.md) Field 2 + Field 3.
 
 ## Core Principle

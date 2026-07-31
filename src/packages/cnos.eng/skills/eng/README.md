@@ -6,7 +6,6 @@ Purpose: Define the engineering skill suite, recommended loading bundles, and th
 
 Related:
 - docs/gamma/ENGINEERING-LEVELS.md
-- docs/papers/ENGINEERING-LEVEL-ASSESSMENT.md
 
 ---
 
@@ -269,18 +268,6 @@ In practice, that means using these skills more deliberately:
 - process-economics
 
 For substantial changes, those are no longer optional background skills. They are the L7 lane.
-
----
-
-## Relationship to the level assessment essay
-
-ENGINEERING-LEVEL-ASSESSMENT.md is a descriptive assessment of actual work in a period.
-
-This README and ENGINEERING-LEVELS.md are normative:
-- they define what the labels mean in cnos
-- they define how the engineering skill suite supports those levels
-
-The essay may evolve. The level definitions should remain stable unless deliberately changed.
 
 ---
 

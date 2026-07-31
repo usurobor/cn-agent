@@ -7,7 +7,7 @@ proposed-path: docs/papers/CCNF-AND-TYPED-TRUST.md
 related:
   - docs/development/ENGINEERING-LEVELS.md
   - docs/papers/EXECUTABLE-SKILLS.md
-  - ROLES.md
+  - docs/concepts/ROLES.md
   - src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md
   - src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md
   - src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md

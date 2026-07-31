@@ -689,7 +689,7 @@ jobs:
           echo "AC7 renderer-side (dispatch shape): 0 role-decision leaks."
 
       - name: AC1 (cnos#609) — configurable identity, positive (acme render)
-        # cnos#609 / Mock C of docs/development/design/cn-repo-install-MOCKS.md.
+        # cnos#609 / Mock C.
         # Renders cds-dispatch for a non-sigma agent with the full identity
         # flag set and asserts the caller-supplied values land in the
         # output. The rendered file is kept at a fixed path so later steps

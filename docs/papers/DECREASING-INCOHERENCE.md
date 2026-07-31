@@ -16,7 +16,7 @@ related:
   - src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md
   - src/packages/cnos.cds/skills/cds/CDS.md
   - src/packages/cnos.cdr/skills/cdr/CDR.md
-  - ROLES.md
+  - docs/concepts/ROLES.md
   - schemas/cdd/
   - schemas/cds/
   - schemas/cdr/
