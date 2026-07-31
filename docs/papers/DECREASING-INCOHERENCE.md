@@ -523,10 +523,6 @@ The system should not describe autonomy as merely "agent creates issues." Autono
 
 ## Migration plan
 
-### Wave 0 — Land this essay
-
-Add this file under `docs/gamma/essays/` and add a short pointer to `docs/gamma/essays/README.md`.
-
 ### Wave 1 — Define TSC report attachment for CCNF receipts
 
 Name where post-cell TSC reports live, which targets get measured, and how reports cite receipts.

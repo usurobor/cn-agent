@@ -39,7 +39,6 @@ Essays, whitepapers, and position papers — one home for the arguments.
 - [EXECUTABLE-SKILLS](./EXECUTABLE-SKILLS.md) — CTB as the skill language for CN agents.
 - [SKILL-ARCHITECTURE](./SKILL-ARCHITECTURE.md) — why skills compose instead of inherit.
 - [CLOSED-LOOP-SKILL-QUALITY](./CLOSED-LOOP-SKILL-QUALITY.md) — closing the loop on skill quality.
-- [MODULAR-ARCHITECTURE-REFACTOR](./MODULAR-ARCHITECTURE-REFACTOR.md)
 - [BOX-AND-THE-RUNNER](./BOX-AND-THE-RUNNER.md) — compute is pluggable; Git stores truth.
 - [FIDONET-AND-CNOS](./FIDONET-AND-CNOS.md)
 - [SHIPPING-SOFTWARE-AFTER-AI](./SHIPPING-SOFTWARE-AFTER-AI.md) — from H2M to a human triad.

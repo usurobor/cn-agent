@@ -172,7 +172,7 @@ l = logs     in = agent
 > The three implementation sections below (command types, dispatch, file tree)
 > describe the **archived OCaml reference implementation**, not the shipped Go
 > binary. The active runtime is Go under `src/go/`; the OCaml tree is off `main`
-> — see [OCAML-THREAD-REFERENCE.md](../legacy/OCAML-THREAD-REFERENCE.md).
+> (branch `legacy/ocaml-thread-reference`).
 
 From `cn_lib.ml` — exhaustive variant, compiler warns on missing cases:
 

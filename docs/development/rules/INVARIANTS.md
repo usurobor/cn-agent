@@ -197,7 +197,6 @@ Behavioral checks become blocking only after they are stable and trusted.
 - **TRACEABILITY.md** — defines operational truth
 - **AGENT-RUNTIME.md** — defines runtime contracts
 - **CAR.md** / package docs — define source/package model
-- **INVARIANT-HARDENING-v1.md** — implementation plan for this document
 
 This document defines what must remain invariant across those layers.
 
