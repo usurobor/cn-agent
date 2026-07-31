@@ -158,5 +158,4 @@ This is a fundamentally different trust model from "this agent was made by a rep
 - #189 — Change proposals and review mechanics
 - #190 — Agent web surface (API + presentation)
 - #182 — Core refactor (package-driven runtime)
-- CORE-REFACTOR.md — Architecture that enables this vision
 - SOUL.md — Agent identity model

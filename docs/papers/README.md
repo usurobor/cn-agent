@@ -46,4 +46,3 @@ Essays, whitepapers, and position papers — one home for the arguments.
 ## Engineering and release
 
 - [ENGINEERING-LEVEL-ASSESSMENT](./ENGINEERING-LEVEL-ASSESSMENT.md)
-- [RELEASE-LEVEL-CLASSIFICATION](./RELEASE-LEVEL-CLASSIFICATION.md)
