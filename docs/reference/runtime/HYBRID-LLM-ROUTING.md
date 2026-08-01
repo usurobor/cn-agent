@@ -1,13 +1,14 @@
 # Hybrid LLM Routing for cnos
 
 **Version:** 0.1.0
-**Status:** Draft
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented in the Go runtime
 
 ---
 
 ## Purpose
 
-This document defines the hybrid LLM routing layer for cnos: an explicit, inspectable runtime policy for when a model-bound task stays on a local model and when it escalates to a remote frontier model. Provider choice is a body/runtime policy decision, not a skill or prompt concern.
+This document proposes a hybrid LLM routing layer for cnos: an explicit, inspectable runtime policy for when a model-bound task stays on a local model and when it escalates to a remote frontier model. Provider choice is a body/runtime policy decision, not a skill or prompt concern.
 
 Two shapes the policy avoids:
 

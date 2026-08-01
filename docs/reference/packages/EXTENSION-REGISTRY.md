@@ -3,15 +3,16 @@
 ## Publishing, Trust, Installation, and App Bundles in cnos
 
 **Version:** 1.0.0
-**Status:** Draft
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented — no registry, trust/signature layer, channels, or bundle/app model exists in the Go runtime.
 **Scope:** Ecosystem/distribution layer above Runtime Extensions
-**Depends on:** Runtime Extensions (docs/reference/runtime/extensions/RUNTIME-EXTENSIONS.md)
+**Depends on:** Runtime Extensions (docs/reference/runtime/extensions/RUNTIME-EXTENSIONS.md), itself a draft that is not implemented.
 
 ---
 
 ## Purpose
 
-Runtime Extensions makes capability growth coherent at wake and execution time, but does not define the ecosystem layer that makes extensions practical to distribute and operate. This document defines that layer above Runtime Extensions: how packages and extensions are published, how operators discover them, how trust and signatures work, how install/update/remove/rollback works, how channels (`stable`, `beta`, `local`) are modeled, how higher-level apps/bundles are represented, and how local installed truth relates to registry-visible available artifacts.
+Runtime Extensions (a proposed design, not yet implemented) would make capability growth coherent at wake and execution time, but does not define the ecosystem layer that makes extensions practical to distribute and operate. This document defines that layer above Runtime Extensions: how packages and extensions are published, how operators discover them, how trust and signatures work, how install/update/remove/rollback works, how channels (`stable`, `beta`, `local`) are modeled, how higher-level apps/bundles are represented, and how local installed truth relates to registry-visible available artifacts.
 
 ---
 
