@@ -1,6 +1,8 @@
 # Package Artifact Distribution and Command Content Class
 
 **Version:** 0.5.0
+**Status:** Implemented
+**Implementation:** artifact-first distribution — `src/go/internal/restore/restore.go`, `src/go/internal/cli/cmd_deps.go`, `src/go/internal/pkgbuild/build.go`; `commands` content class — `src/go/internal/pkg/pkg.go`; skill activation table — `src/go/internal/activation/index.go`.
 
 ## Purpose
 
@@ -145,7 +147,7 @@ visibility: internal
 
 The activation table is derived, not configured. It is always the union of trigger keywords from every public skill discovered on disk across installed packages. No manual maintenance and no manifest-declared skill inventory.
 
-**Where the activation table lives:** in the runtime contract, emitted at every wake. The runtime contract (`cn_runtime_contract.ml`) already describes the agent's identity, cognition, body, and medium. The activation table belongs in **cognition** — it tells the agent what skills it has and when to use them.
+**Where the activation table lives:** in the runtime contract, emitted at every wake. The runtime contract describes the agent's identity, cognition, body, and medium. The activation table belongs in **cognition** — it tells the agent what skills it has and when to use them.
 
 ```
 ## Cognition
@@ -349,7 +351,7 @@ No PATH fallback in v1. If two external commands claim the same name at the same
 
 - **Eliminates #155's failure class entirely** — no git protocol dependency for package install
 - **Eliminates #162's need for a separate plugin system** — commands are a package content class
-- **Lockfile simplification** — drops `source_kind`, `rev`, `subdir` (27 references in cn_deps.ml)
+- **Lockfile simplification** — drops `source_kind`, `rev`, `subdir`
 - **Every restricted environment works** — sandboxes, containers, airgapped (with vendored packages)
 - **Content-class consistency** — commands follow the same explicit pattern as doctrine/mindsets/skills/extensions/templates
 - **Hosting portability** — lockfile stores name+version+hash, not URLs. Move hosting without touching lockfiles.

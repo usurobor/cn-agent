@@ -1,7 +1,8 @@
 # Orchestrators and Command Providers
 
 **Version:** 0.1.0
-**Status:** Draft
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented. The orchestrator IR, CTB/effect-plan compiler and executor, and the declarative activation index in the package manifest do not exist in the Go runtime. Package `commands` are implemented separately (see PACKAGE-ARTIFACTS.md).
 **Doc-Class:** canonical-spec
 **Canonical-Path:** docs/reference/runtime/ORCHESTRATORS.md
 **Owns:** orchestrator model, command-provider model, activation index, compiled orchestrator IR, runtime contract additions

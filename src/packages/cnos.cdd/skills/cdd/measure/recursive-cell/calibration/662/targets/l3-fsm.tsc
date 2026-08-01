@@ -1,0 +1,18 @@
+format = "tsc-target/0.1"
+name = "cc662-l3"
+kind = "aggregate"
+description = "L3: shipped cell FSM, specified wave FSM, guards, command transitions, and runtime separation."
+include = [
+  "docs/architecture/CELL-RUNTIME.md",
+  "docs/architecture/CELL-RUNTIME-CLASSES.md",
+  "src/packages/cnos.cds/skills/cds/fsm/transitions.json",
+  "src/packages/cnos.issues/commands/issues-fsm/table.go",
+  "src/packages/cnos.issues/commands/issues-fsm/issuesfsm_test.go",
+  "src/packages/cnos.core/skills/agent/label-doctrine/SKILL.md",
+  "src/packages/cnos.core/skills/agent/dispatch-protocol/SKILL.md",
+  "src/go/internal/cell/**",
+  "src/go/internal/cli/cmd_cell.go",
+  "src/go/internal/cli/cmd_issues_fsm*.go",
+  "src/go/internal/cli/cmd_issues_dispatch.go"
+]
+exclude = []

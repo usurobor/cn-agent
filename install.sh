@@ -9,6 +9,22 @@
 #
 # If /usr/local/bin requires root:
 #   curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | sudo sh
+#
+# Select a release channel (default: stable — unchanged from before
+# cnos#618; this is additive/opt-in only):
+#   CNOS_CHANNEL=tooling curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | sh
+#
+# "tooling" resolves the newest tooling-<date>-<sha> prerelease (published
+# via .github/workflows/release.yml's workflow_dispatch with an explicit
+# tag + prerelease=true input) instead of GitHub's /releases/latest
+# redirect, which by definition never returns a prerelease. This ships the
+# current main's cn (FSM verbs, cn repo install, ...) ahead of the next
+# held feature-version cut — see cnos#618.
+#
+# NOTE: when piping into `sh`, put the env var on the `sh` side of the
+# pipe (or `export` it first) so it is visible to the process that reads
+# it — `VAR=val curl ... | sh` only sets VAR for curl, not for sh:
+#   curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh | CNOS_CHANNEL=tooling sh
 
 set -e
 
@@ -91,24 +107,67 @@ esac
 TARGET="${PLATFORM}-${ARCH}"
 ok "Detected platform: ${TARGET}"
 
-# --- Fetch latest release (via redirect, no JSON parsing) ---
-LATEST=$(curl -fsSI "https://github.com/${REPO}/releases/latest" \
-  | grep -i '^location:' \
-  | sed -E 's|.*/tag/([^ ]+).*|\1|' \
-  | tr -d '\r') || true
+# --- Resolve release channel ---
+CNOS_CHANNEL="${CNOS_CHANNEL:-}"
 
-if [ -z "$LATEST" ]; then
-  fail "Cannot continue — could not determine latest release" \
-    "" \
-    "Fix by checking:" \
-    "  1) Your internet connection" \
-    "  2) https://github.com/${REPO}/releases has at least one release" \
-    "" \
-    "Then rerun:" \
-    "  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | sh"
-fi
+case "$CNOS_CHANNEL" in
+  ""|stable)
+    # Default (unchanged pre-cnos#618 behavior): fetch latest release via
+    # redirect, no JSON parsing. GitHub's /releases/latest redirect never
+    # returns a prerelease, so this path is structurally unaffected by
+    # the tooling channel below.
+    LATEST=$(curl -fsSI "https://github.com/${REPO}/releases/latest" \
+      | grep -i '^location:' \
+      | sed -E 's|.*/tag/([^ ]+).*|\1|' \
+      | tr -d '\r') || true
 
-ok "Latest release: ${LATEST}"
+    if [ -z "$LATEST" ]; then
+      fail "Cannot continue — could not determine latest release" \
+        "" \
+        "Fix by checking:" \
+        "  1) Your internet connection" \
+        "  2) https://github.com/${REPO}/releases has at least one release" \
+        "" \
+        "Then rerun:" \
+        "  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | sh"
+    fi
+    ;;
+  tooling)
+    # Opt-in tooling channel (cnos#618 AC2): resolve the newest
+    # tooling-<date>-<sha> prerelease tag via the GitHub API. Prereleases
+    # never appear at /releases/latest, so this can't reuse the redirect
+    # above. tag_name values are lexicographically sortable by
+    # construction (fixed 8-digit UTC date first), so we sort locally
+    # rather than depend on any undocumented API response ordering.
+    LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases?per_page=100" 2>/dev/null \
+      | grep -o '"tag_name"[[:space:]]*:[[:space:]]*"tooling-[^"]*"' \
+      | sed -E 's/.*"(tooling-[^"]*)"$/\1/' \
+      | LC_ALL=C sort -r \
+      | head -1) || true
+
+    if [ -z "$LATEST" ]; then
+      fail "Cannot continue — no tooling-channel release found" \
+        "" \
+        "CNOS_CHANNEL=tooling resolves the newest tooling-<date>-<sha>" \
+        "prerelease (published via release.yml's workflow_dispatch with" \
+        "an explicit tag + prerelease=true input)." \
+        "" \
+        "Fix by checking:" \
+        "  1) Your internet connection" \
+        "  2) https://github.com/${REPO}/releases has a tooling-* prerelease" \
+        "" \
+        "Or use the stable channel instead:" \
+        "  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | sh"
+    fi
+    ;;
+  *)
+    fail "Cannot continue — unknown CNOS_CHANNEL: '${CNOS_CHANNEL}'" \
+      "" \
+      "Supported values: (unset, default: stable), tooling"
+    ;;
+esac
+
+ok "Resolved release (channel=${CNOS_CHANNEL:-stable}): ${LATEST}"
 
 # --- Probe BIN_DIR writability (early fail with actionable error) ---
 if [ ! -d "$BIN_DIR" ]; then

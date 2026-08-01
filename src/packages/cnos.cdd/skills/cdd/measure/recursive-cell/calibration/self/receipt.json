@@ -1,0 +1,93 @@
+{
+  "schema": "cnos-recursive-cell-self-receipt/0.1",
+  "status": "same-author diagnostic only; no independent, consistency, admissibility, or held-out standing",
+  "target": "recursive-cell-self",
+  "target_file_count": 55,
+  "ordered_files_manifest": {
+    "path": "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/self/target.tsc",
+    "sha256": "ee86f9b6df5966e84001f6a547b3cf19739b1e242056287d2c855c5c772e0eb3"
+  },
+  "registry": {
+    "path": "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/self/registry.tsc",
+    "sha256": "6b3ac90e0acbcaa13850d3b71d71dcac1218384d6a3fadcae6c5347b058e1511"
+  },
+  "bundle": {
+    "framing": "For each manifest include in order: UTF-8 path, one NUL byte, then raw file bytes; concatenate without separators after file bytes.",
+    "replay_command": "awk -F '\\\"' '/^  \\\"/ {print $2}' \"$MANIFEST\" | while IFS= read -r path; do printf '%s\\\\0' \"$path\"; cat \"$path\"; done | sha256sum",
+    "sha256": "d6031d7f107f4bcce4f86d36e0c8255148ada28df80949912f0fe2ea57df4001"
+  },
+  "instrument": {
+    "path": "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/INSTRUCTION.md",
+    "sha256": "0b7e26a2fce364c2f89bbd04a72e8e1068cb7339de9e9b9e9d33e520eff75645",
+    "assembly_check": "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/instruction/assemble-instruction.sh --check"
+  },
+  "config": {
+    "path": "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/self/config.json",
+    "sha256": "097303042003258c402d2ec92c31b2db8f3884cf9d1040d6996efe7df1faf76e"
+  },
+  "prompt": {
+    "retained": false,
+    "reason": "Prompt bytes are deterministically re-emitted from the retained ordered target, config, and instruction.",
+    "byte_count": 189227,
+    "sha256": "4ccef013f935b1733df82400c0b7eda9e05c04ba5f90ea8afb8ebd6df7ebeaa2",
+    "verification": "sha256sum /tmp/cnos669-self-prompt.md; compare exact digest before witness use and again before ingestion"
+  },
+  "commands": {
+    "emit_prompt": "$COH --mode llm --target recursive-cell-self --registry \"$REGISTRY\" --instruction \"$INSTRUCTION\" --root . --emit-prompt \"$PROMPT\"",
+    "mechanical": "$COH --mode mechanical --target recursive-cell-self --registry \"$REGISTRY\" --instruction \"$INSTRUCTION\" --root . --output \"$OUTPUT\"",
+    "ingest": "$COH --mode hybrid --target recursive-cell-self --registry \"$REGISTRY\" --instruction \"$INSTRUCTION\" --root . --llm-response \"$RESPONSE\" --output \"$OUTPUT\""
+  },
+  "engine": {
+    "repository": "https://github.com/usurobor/tsc",
+    "revision": "26aab5023f03dc7d0abf82e5fdba20134fc6adad",
+    "version": "coh 0.12.0 (26aab50)",
+    "build_command": "cd /root/tsc/engine/ocaml && opam exec -- dune build bin/main.exe"
+  },
+  "mechanical": {
+    "repetitions": 3,
+    "exact_numeric_equality": true,
+    "run_time_utc": "2026-07-19T12:17:00Z",
+    "outputs": [
+      {
+        "path": "mechanical-run-1.json",
+        "sha256": "438b8121dacbca3fba6e67892aef8b27b17195e3728cd9289f42e9990bec9c95"
+      },
+      {
+        "path": "mechanical-run-2.json",
+        "sha256": "438b8121dacbca3fba6e67892aef8b27b17195e3728cd9289f42e9990bec9c95"
+      },
+      {
+        "path": "mechanical-run-3.json",
+        "sha256": "438b8121dacbca3fba6e67892aef8b27b17195e3728cd9289f42e9990bec9c95"
+      }
+    ],
+    "scores": {
+      "alpha": 0.94625,
+      "beta": 0.44117647058823534,
+      "gamma": 0.7432575757575758,
+      "C_sigma_num": 0.6769956211903662,
+      "bottleneck": "beta"
+    }
+  },
+  "semantic": {
+    "samples": 1,
+    "response": {
+      "path": "semantic-response.json",
+      "sha256": "e819c47e123cc703b6b99f2b3a8e6349a1d44fd1530797c303d01544b466b398"
+    },
+    "witness_engine": "OpenAI Codex hosted activation",
+    "model_family": "GPT-5",
+    "model_revision": "not exposed by host",
+    "run_time_utc": "2026-07-19T12:17:42Z",
+    "hosting_boundary": "Same-author hosted activation; not independent and not off-house."
+  },
+  "ingestion": {
+    "validated": true,
+    "run_time_utc": "2026-07-19T12:17:42Z",
+    "report": {
+      "path": "report.json",
+      "sha256": "7fbc6260b27a590cc7500b9ec1325e0f7f65c2af04d8b7af61ed6657ac47f9ba"
+    }
+  },
+  "self_inclusion_boundary": "target.tsc includes the authority, validators, refusal fixtures, and package-contract sources. calibration/self/config.json, prompt, responses, raw runs, report, README, and this receipt are measurement outputs and are excluded."
+}

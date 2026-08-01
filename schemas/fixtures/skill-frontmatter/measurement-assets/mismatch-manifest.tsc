@@ -1,0 +1,6 @@
+format = "tsc-target/0.1"
+name = "different-target"
+kind = "aggregate"
+include = [
+  "schemas/skill.cue"
+]

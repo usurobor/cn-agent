@@ -1,10 +1,12 @@
 # Polyglot Packages and Provider Contracts
 
 **Version:** 0.2.0
+**Status:** Partially implemented
+**Implementation:** the Go kernel, the polyglot package substrate, and the command execution contract are implemented (`src/go/internal/pkg/pkg.go` — content classes including `commands`; `CommandSource`/`CommandTier`/`CommandSpec` and precedence in `src/go/internal/cli/`). The provider contract, provider registry, and provider execution (§5, §6 Phase 2/3) are **not implemented** — no provider is hosted by the Go runtime.
 
 ## Purpose
 
-This document defines how a Go kernel hosts package-provided commands and providers written in whatever language best fits each job, while the package remains the single unit of distribution and the kernel stays small and trusted.
+This document defines how a Go kernel hosts package-provided commands and providers written in whatever language best fits each job, while the package remains the single unit of distribution and the kernel stays small and trusted. The command surface is implemented; the provider surface is a normative target, not yet built.
 
 The shape this supports:
 
