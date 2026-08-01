@@ -1,0 +1,145 @@
+{
+  "target": "recursive-cell-self",
+  "alpha": 0.94,
+  "beta": 0.64,
+  "gamma": 0.44,
+  "delta_alpha_beta": 0.28,
+  "delta_beta_gamma": 0.3,
+  "delta_gamma_alpha": 0.42,
+  "bottleneck_axis": "gamma",
+  "confidence": 0.95,
+  "summary": "The v0.2 candidate now ships one checked composite instruction, exact TSC-compatible target validation, replayable self evidence, and an honest source-only package boundary. It remains a candidate because arbitrary methodology declaration loading, independent calibration, consistency sampling, admissibility, and held-out validation are not shipped.",
+  "axis_evidence": {
+    "alpha": {
+      "positive": [
+        "SKILL.md, README.md, the materialized INSTRUCTION.md, and its checked core/supplement assembly use one recursive L0-L4 vocabulary and one source-only path contract.",
+        "The exact v3.2.4 output field list and primary-axis rules are stable across schema, validator, composite instruction, and fixtures."
+      ],
+      "negative": [],
+      "reason": "The candidate presents one internally stable v0.2 instrument and explicitly separates executable manual composition from unshipped declaration loading.",
+      "checklist": {
+        "naming-drift": {
+          "count": 0,
+          "severity": "none"
+        },
+        "duplicate-definition": {
+          "count": 0,
+          "severity": "none"
+        },
+        "internal-contradiction": {
+          "count": 0,
+          "severity": "none"
+        },
+        "unstable-boundary": {
+          "count": 0,
+          "severity": "none"
+        }
+      }
+    },
+    "beta": {
+      "positive": [
+        "validate-tsc-targets.sh mirrors the pinned registry/manifest parser and prefix/suffix expansion, checks exact registrations, paths, names, manifest kinds, and non-empty historical bundles.",
+        "Eight negative fixtures cover missing registry/instruction/preflight, preflight mode, missing/malformed/name-mismatched manifests, and empty bundles.",
+        "assemble-instruction.sh binds the exact pinned TSC core, cnos supplement, and composite digests before the CLI consumes the single instruction file."
+      ],
+      "negative": [
+        "TSC still cannot load the frontmatter methodology declaration itself; the executable route is explicitly manual and source-checkout-only."
+      ],
+      "reason": "All claimed source-route relations are executable and refusal-tested, while the remaining cross-repository loader edge is bounded instead of claimed.",
+      "checklist": {
+        "broken-reference": {
+          "count": 0,
+          "severity": "none"
+        },
+        "authority-conflict": {
+          "count": 0,
+          "severity": "none"
+        },
+        "fact-drift": {
+          "count": 0,
+          "severity": "none"
+        },
+        "undeclared-relationship": {
+          "count": 1,
+          "severity": "systemic"
+        }
+      }
+    },
+    "gamma": {
+      "positive": [
+        "The self manifest fixes ordered inputs and excludes output receipts, avoiding circular measurement.",
+        "The package smoke proves shipped layout and installed activation refusal, and the historical preflight pins both target revision and instruction bytes.",
+        "All standing language remains zero: same-author diagnostic evidence cannot confer consistency, admissibility, independent, or held-out standing."
+      ],
+      "negative": [
+        "No shipped TSC migration yet replaces the source-only/manual route with arbitrary methodology declaration loading.",
+        "Independent calibration, three-sample semantic consistency, admissibility measurement, and held-out validation remain future work without completed evidence."
+      ],
+      "reason": "The candidate has strong fail-closed evolution boundaries, but promotion and generic executor migration remain deliberately incomplete, making process coherence the bottleneck.",
+      "checklist": {
+        "unowned-change-path": {
+          "count": 1,
+          "severity": "systemic"
+        },
+        "generated-canonical-confusion": {
+          "count": 0,
+          "severity": "none"
+        },
+        "missing-migration-rule": {
+          "count": 1,
+          "severity": "systemic"
+        },
+        "stale-transitional-marker": {
+          "count": 0,
+          "severity": "none"
+        }
+      }
+    }
+  },
+  "defect_cards": [
+    {
+      "id": "CM-B1",
+      "primary_axis": "beta",
+      "category": "undeclared-relationship",
+      "severity": "systemic",
+      "evidence": "SKILL.md section 0 and README.md exact route",
+      "summary": "The generic TSC executor does not load the arbitrary methodology declaration; v0.2 requires the bounded manual composite route.",
+      "secondary_axes": [
+        "gamma"
+      ]
+    },
+    {
+      "id": "CM-G1",
+      "primary_axis": "gamma",
+      "category": "unowned-change-path",
+      "severity": "systemic",
+      "evidence": "SKILL.md status prerequisites and calibration commons",
+      "summary": "Independent calibration, semantic consistency, admissibility, and held-out standing are required but not completed.",
+      "secondary_axes": [
+        "beta"
+      ]
+    },
+    {
+      "id": "CM-G2",
+      "primary_axis": "gamma",
+      "category": "missing-migration-rule",
+      "severity": "systemic",
+      "evidence": "SKILL.md path-base boundary and resolve-authority.sh",
+      "summary": "No released TSC migration supports separate installed authority and target roots or first-class declaration loading.",
+      "secondary_axes": [
+        "beta"
+      ]
+    }
+  ],
+  "unresolved_ambiguity": [],
+  "next_fixes": [
+    {
+      "axis": "beta",
+      "fix": "Implement and version TSC arbitrary methodology loading with distinct authority-root and target-root semantics."
+    },
+    {
+      "axis": "gamma",
+      "fix": "Run three independent frozen-prompt samples, public calibration cases, admissibility measurement, and a held-out cnos target before changing standing."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+claim_request:
+  issue: 493
+  wake: cds-dispatch
+  protocol: cds
+  requested_transition: "todo -> in-progress"
+  requested_by: sigma
+  base_sha: 83f43a53f42b06ff90c7ea3f7c46f8cc9cf5ce33
+  reason: >
+    Re-claim per cnos#630 resumed-from-mechanical-reversion shape
+    (delta/SKILL.md §9.11): a prior firing's claim on this same issue
+    reached this point (cycle/493 branch + draft PR #634, 12 implementation
+    commits) then died before REVIEW-REQUEST.yml was written; the recovery
+    scanner's propose_status_todo_with_matter rule reconciled
+    status:in-progress -> status:todo, preserving the branch/PR. This
+    firing re-requests status:todo -> status:in-progress via
+    `cn issues fsm evaluate --issue 493 --apply` per cnos#454
+    dispatch-protocol §2 claim mechanism / cnos#575 Phase 3, to resume
+    (not restart) from the existing matter.

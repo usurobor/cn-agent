@@ -1,8 +1,9 @@
 # schemas/
 
-Machine-checkable schemas for cnos artifacts. Currently scoped to
-`SKILL.md` frontmatter (I5). The directory will grow as new schema-bearing
-artifacts come under coherence-CI gating.
+Machine-checkable schemas for cnos artifacts. Currently scoped to `SKILL.md`
+frontmatter and TSC-compatible coherence-methodology declarations (I5). The
+directory will grow as new schema-bearing artifacts come under coherence-CI
+gating.
 
 ## What `skill.cue` validates
 
@@ -16,11 +17,31 @@ The schema enforces:
   list shape of `triggers`, mapping shape of `calls_dynamic`).
 - **Enum domains** — `scope ∈ {global, role-local, task-local}`,
   `visibility ∈ {internal, public}`, `artifact_class ∈ {skill, runbook,
-  reference, deprecated}`, `kata_surface ∈ {embedded, external, none}`.
+  reference, deprecated, wake, measurement}`, `kata_surface ∈ {embedded,
+  external, none}`.
 - **Hard-gate presence** — `name`, `description`, `governing_question`,
   `triggers`, `scope` must be present and non-empty in every skill.
 - **Open extension** — unknown package-local keys (e.g. `parent`) pass
   through; the loader must ignore unknown keys per LANGUAGE-SPEC §11.
+
+## What `coherence_methodology.cue` validates
+
+`schemas/coherence_methodology.cue` is an essence-only projection of TSC's
+generic `#CoherenceMethodology` contract, pinned to the TSC revision named in
+that file. TSC remains the authority and executor. cnos uses the local
+projection to type its domain-owned measurement skills without requiring
+network access in CI.
+
+For `artifact_class: measurement`, the validator requires a `methodology`
+block, vets it as `#Measurement`, requires the repository-root/source-only path
+contract, resolves regular registry/instruction files and an executable
+preflight, parses TSC 0.1 registries/manifests with the pinned parser semantics,
+checks exact target/name/path equality, and proves each target expands non-empty
+at its declared revision. It also checks the exact ordered v3.2.4 top-level
+semantic response field list. Mechanical signal names remain domain taxonomy;
+cnos does not claim compatibility with an unversioned cross-repository signal
+schema. The current TSC CLI still cannot load arbitrary methodology declarations
+first-class.
 
 ## What `skill.cue` does NOT validate
 
@@ -45,13 +66,13 @@ attempt:
 
 The validation has two surfaces with one rule each:
 
-- **`schemas/skill.cue`** — owns shape, type, and enum constraints. CUE
+- **`schemas/{skill,coherence_methodology}.cue`** — own shape, type, and enum constraints. CUE
   fails any frontmatter whose fields drift from this declaration. Pure;
   no filesystem I/O.
 - **`scripts/ci/validate-skill-frontmatter.sh`** — owns file discovery,
-  frontmatter extraction, exception handling, and `calls`
-  filesystem-existence checks. This is shell logic that wraps
-  `cue vet` per skill.
+  frontmatter extraction, exception handling, `calls` filesystem checks, and
+  measurement authority-path/registry/manifest/bundle resolution. This is shell
+  logic that wraps `cue vet` per skill and the bounded TSC target validator.
 
 Do not move shape/type/enum rules into the shell, and do not move
 discovery/exceptions into CUE. Each side stays small.
@@ -110,7 +131,7 @@ For each entry, the addressable change is mechanical:
 1. Open the SKILL.md named in `path`.
 2. For each field in `allowed_missing`, add the field to the frontmatter.
    - `artifact_class`: pick the closest of `skill`, `runbook`,
-     `reference`, `deprecated`.
+     `reference`, `deprecated`, `wake`, `measurement`.
    - `kata_surface`: pick the closest of `embedded`, `external`, `none`.
    - `inputs` / `outputs`: lift from the body's contract section if the
      skill has one; otherwise author from the skill's stated purpose.

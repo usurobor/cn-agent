@@ -15,6 +15,39 @@ Source (git) → Build (dune) → Release (GitHub) → Install (curl)
 | Release | GitHub Releases | Binary artifacts attached |
 | Install | User machine | `install.sh` downloads from Releases |
 
+> Note: the table above (and the "Local Development" / "Version Bump"
+> sections below) predate the Go rewrite and describe the old OCaml/dune
+> toolchain. The actual build today is Go (`src/go`); see
+> `.github/workflows/release.yml` and `.github/workflows/build.yml` for
+> the current pipeline. Not rewritten as part of cnos#618 — out of scope
+> for that cycle.
+
+## Tooling channel (prerelease publish) — cnos#618
+
+Between held feature-version cuts, the current `main`'s `cn` (with
+whatever FSM verbs / subcommands have landed) can be published as a
+**tooling-channel prerelease** without touching the feature-version tag:
+
+```sh
+gh workflow run release.yml --repo usurobor/cnos \
+  -f smoke-only=false \
+  -f tag=tooling-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD) \
+  -f prerelease=true
+```
+
+This publishes `cn-*` binaries, `checksums.txt`, and the package
+`index.json`/tarballs at the given tag, flagged as a GitHub prerelease.
+Because prereleases are excluded from GitHub's `/releases/latest`
+redirect, this is invisible to `install.sh`'s default resolution — the
+stable channel is unaffected. To install from the tooling channel:
+
+```sh
+CNOS_CHANNEL=tooling sh -c "$(curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh)"
+```
+
+See `install.sh`'s header comment for the channel-selector contract and
+a caveat about env-var placement when piping into `sh`.
+
 ## Local Development
 
 ```bash

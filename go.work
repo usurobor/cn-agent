@@ -6,4 +6,5 @@ use (
 	./src/packages/cnos.issues/commands/issues-map
 	./src/packages/cnos.issues/commands/issues-fsm
 	./src/packages/cnos.issues/commands/issues-dispatch
+	./src/packages/cnos.core/commands/label-doctor
 )

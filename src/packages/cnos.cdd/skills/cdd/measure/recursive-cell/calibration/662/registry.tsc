@@ -1,0 +1,20 @@
+format = "tsc-target-registry/0.1"
+default_target = "cc662-system"
+
+[target.cc662-system]
+manifest = "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/662/targets/system.tsc"
+
+[target.cc662-l0]
+manifest = "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/662/targets/l0-three-cell.tsc"
+
+[target.cc662-l1]
+manifest = "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/662/targets/l1-kernel.tsc"
+
+[target.cc662-l2]
+manifest = "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/662/targets/l2-contracts.tsc"
+
+[target.cc662-l3]
+manifest = "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/662/targets/l3-fsm.tsc"
+
+[target.cc662-l4]
+manifest = "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/662/targets/l4-instance.tsc"

@@ -1,0 +1,11 @@
+format = "tsc-target/0.1"
+name = "cc662-l0"
+kind = "aggregate"
+description = "L0: WC/PC/CC properties, inter-class relations, and system evolution."
+include = [
+  "docs/architecture/CELL-RUNTIME.md",
+  "docs/architecture/CELL-RUNTIME-CLASSES.md",
+  "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md",
+  "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md"
+]
+exclude = []
