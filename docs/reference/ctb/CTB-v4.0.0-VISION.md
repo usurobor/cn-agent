@@ -338,7 +338,7 @@ These are the seams where CTB syntax makes the skill language checkable.
 
 ### 8.5.1 Evidence from CDD package audit (2026-04-24)
 
-Operating the CDD skill-program as a triadic agent coordination system surfaced four additional language design requirements. Full evidence at `docs/gamma/essays/SKILLS-LANGUAGE-EVIDENCE.md`.
+Operating the CDD skill-program as a triadic agent coordination system surfaced four additional language design requirements:
 
 | CTB requirement | Practice-side evidence | Current workaround |
 |-----------------|----------------------|-------------------|
@@ -349,7 +349,7 @@ Operating the CDD skill-program as a triadic agent coordination system surfaced 
 
 **Implication for CTB:** These are not exotic requirements. They are the minimum infrastructure a skill-program needs once it grows past ~10 files. The current markdown format cannot express or enforce any of them — they survive only through manual prose discipline and periodic audits.
 
-See also: `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
+See also: `docs/papers/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
 
 ### 8.5.2 Emerging shape: agents as scoped function calls
 
@@ -374,7 +374,7 @@ Operating the CDD triad revealed that the skill language already has an executio
 
 This maps directly to CTB's plan-as-data model (§4.2): a skill returns an effect plan (data), and the caller decides what to do with it. The triad is a call tree where each node returns a plan to its parent. The operator is the top-level caller that ultimately executes.
 
-**Composability:** Once a triad stabilizes, it appears at its external boundary as one articulated whole — a function that takes an issue and returns a release. A fourth agent creates a new two-sided boundary, not a new primitive. The system grows by composing wholes (triads as units at the next scale), not by counting agents. See `docs/alpha/doctrine/COHERENCE-FOR-AGENTS.md` for the structural derivation.
+**Composability:** Once a triad stabilizes, it appears at its external boundary as one articulated whole — a function that takes an issue and returns a release. A fourth agent creates a new two-sided boundary, not a new primitive. The system grows by composing wholes (triads as units at the next scale), not by counting agents. See `docs/concepts/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md` for the structural derivation.
 
 **CTB language requirements surfaced:**
 

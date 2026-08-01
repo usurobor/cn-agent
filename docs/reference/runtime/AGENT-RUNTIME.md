@@ -21,7 +21,7 @@
 - Receipt pass field uses numeric labels (`"1"`, `"2"`, ...) under N-pass; `cn.receipts.v1` schema unchanged
 - `state/runtime.json` now includes `max_passes` for operator visibility
 - Backward compatible: `max_passes=2` reproduces existing N-pass behavior
-- See: `N-PASS-BIND-v3.8.0.md` and [`PLAN-v3.8.0-n-pass-bind.md`](../../development/plans/PLAN-v3.8.0-n-pass-bind.md) for full design and plan
+- See: `N-PASS-BIND-v3.8.0.md` for full design
 
 **v3.8.0** — Syscall Surface Coherence Amendment:
 - Implement `fs_glob` observe op (was advertised but returned `not_yet_implemented`)
@@ -43,7 +43,7 @@
 - Add `scheduler` config block: `sync_interval_sec`, `review_interval_sec`, `oneshot_drain_limit`, `daemon_drain_limit`
 - Add scheduler projection to `state/ready.json`: `scheduler.mode`, `last_sync_at`, `last_sync_status`, `last_maintenance_at`, `last_maintenance_status`
 - Add trace events: `maintenance.start/.complete`, `sync.start/.ok/.error`, `inbox.materialized`, `outbox.flushed`, `drain.start/.complete/.stopped`, `scheduler.tick/.idle/.degraded`
-- See `SCHEDULER-v3.7.0.md` and [`PLAN-v3.7.0.md`](../../development/plans/PLAN-v3.7.0-scheduler.md) for full design and implementation plan
+- See `SCHEDULER-v3.7.0.md` for full design
 
 **v3.6.0** — Output Plane Separation and sink-safe rendering:
 - Introduce strict separation between **control plane** (frontmatter, coordination ops, typed `ops:` manifest) and **presentation plane** (human-facing text projected to sinks such as Telegram/Discord)
@@ -150,7 +150,7 @@
   - The agent MUST NOT output executable code; agent interface remains the pure-pipe `string → string`
 
 **v3.1.4** — Mindsets as session substrate + role-weighted skill scoring:
-- `Cn_context.pack` now loads mindsets from `src/agent/mindsets/` in deterministic order (COHERENCE, role-file, WRITING, OPERATIONS, PERSONALITY, MEMES) between USER and reflections
+- `Cn_context.pack` now loads mindsets from `src/packages/cnos.core/mindsets/` in deterministic order (COHERENCE, role-file, WRITING, OPERATIONS, PERSONALITY, MEMES) between USER and reflections
 - Closes the drift between AGENTS.md session contract ("every session ingest mindsets") and actual runtime behavior
 - `load_skills` accepts `runtime.role` from `.cn/config.json` and applies a +2 score bonus to role-matching skill paths; filter still requires base keyword overlap > 0 (bonus reorders, never introduces)
 - `load_role` normalizes to lowercase (tolerates "Engineer", "PM", etc.)
@@ -1534,7 +1534,7 @@ WantedBy=multi-user.target
 
 ## Migration Path
 
-*v3.0 migration (OC → native runtime) is complete. Phase-by-phase build plan moved to [PLAN.md](../../development/plans/PLAN.md).*
+*v3.0 migration (OC → native runtime) is complete.*
 
 ### Success Criteria
 

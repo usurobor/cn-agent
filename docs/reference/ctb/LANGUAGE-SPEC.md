@@ -302,7 +302,7 @@ A new skill MUST justify its existence against the best alternative composition 
 - adds skill-specific concerns (classification, triggers, the publish-or-compose verdict)
 - points to `design` as the owner of the shared rules it does not redefine
 
-(See `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` §6.)
+(See `docs/papers/SKILL-ARCHITECTURE.md` §6.)
 
 ---
 
@@ -508,6 +508,6 @@ This document governs the language model for skill modules, signatures, scope, i
 - `CTB-v4.0.0-VISION.md` governs strategy, motivation, and roadmap.
 - `SEMANTICS-NOTES.md` governs deeper conceptual rationale and design discussion.
 - The CTB v1.x kernel spec governs term grammar, equation form, and evaluation of `.coh` programs.
-- `docs/alpha/doctrine/SKILL-ARCHITECTURE.md` governs the architectural argument for composition over inheritance.
+- `docs/papers/SKILL-ARCHITECTURE.md` governs the architectural argument for composition over inheritance.
 
 If this spec and the Vision disagree on language semantics, this spec governs. If this spec and the kernel spec disagree on terms or evaluation, the kernel spec governs. If this spec and `SKILL-ARCHITECTURE.md` disagree on the composition model, this spec governs (the doctrine is the argument; the spec is the rule).

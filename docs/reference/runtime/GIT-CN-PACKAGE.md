@@ -1,8 +1,8 @@
 # git-cn Package Design
 
 **Version:** 0.1.0
-**Status:** Draft
-**Issue:** #218
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented — no `cnos.transport.git` package, `git-cn` command, or provider exists in the tree.
 **Parent:** POLYGLOT-PACKAGES-AND-PROVIDERS.md, PROVIDER-CONTRACT-v1.md
 
 ## Decision

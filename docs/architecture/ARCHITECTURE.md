@@ -3,14 +3,12 @@
 How the articulated layers reveal one coherent system.
 
 **Status:** v2.0.0
-**Date:** 2026-03-13
 
 ---
 
 > **Runtime note (2026-06-29).** The active runtime and CLI is the **Go `cn` binary**
 > (`src/go/`). The OCaml modules (`cn_*.ml`) referenced throughout this document are the
-> **archived CN thread reference implementation** — see
-> [`OCAML-THREAD-REFERENCE.md`](../reference/legacy/OCAML-THREAD-REFERENCE.md)
+> **archived CN thread reference implementation**
 > (branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`).
 > The relations, module layering, and FSMs below describe that reference architecture;
 > the shipped Go runtime implements its subset. `dune`/OCaml is not a mainline build or
@@ -86,7 +84,7 @@ If a spec exists without a module, the spec is aspirational. If a module exists 
 
 The runtime loads cognition from installed packages (`.cn/vendor/packages/`). The relation:
 
-- CAR specifies the package model → `cn_build.ml` assembles packages from `src/agent/`
+- CAR specifies the package model → `cn build` assembles packages from `src/packages/`
 - Packages contain doctrine, mindsets, and skills → the context packer (`cn_context.ml`) loads them at invocation
 - Package manifests (`cn.package.json`) declare contents → the runtime verifies them at setup
 
@@ -269,4 +267,3 @@ hub/
 | [AGENT-RUNTIME.md](../reference/runtime/AGENT-RUNTIME.md) | Runtime spec — this doc shows how it relates to FSMs and observability |
 | [PROTOCOL.md](../reference/protocol/cn/PROTOCOL.md) | FSM design — this doc shows how FSMs compose |
 | [CDD.md](../development/cdd/CDD.md) | Development method — governs how all these relations evolve |
-| [AUDIT.md](../evidence/AUDIT.md) | Evidence — tracks which relations are current vs stale |

@@ -526,7 +526,7 @@ Providers are shipped inside packages.
 **Source:**
 
 ```text
-src/agent/extensions/<provider-name>/
+src/packages/<pkg>/extensions/<provider-name>/
   cn.extension.json       ← cn.extension.v1 manifest with capabilities field
   host/...
   docs/...

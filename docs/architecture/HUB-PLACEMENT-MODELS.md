@@ -2,57 +2,19 @@
 
 ## Standalone and Attached Hubs for Sandboxed Agents
 
-**Issue:** #156
 **Version:** 1.0.0
-**Mode:** MCA
-**Active Skills:** design, architecture-evolution, process-economics, writing
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented in the Go runtime
 
-## Problem
+## Purpose
 
-Sandboxed agents (Claude Code, Codespaces, CI runners, foreign repo sessions) operate inside a single project checkout and often cannot maintain a standalone hub elsewhere on disk.
+This document specifies a proposed Hub Placement Models design: two explicit roots, `hub_root` and `workspace_root`, and two placement modes — standalone (the roots coincide) and attached (a hub mounted alongside a project workspace but kept a distinct repo and canonical root).
 
-The current cnos model assumes one root is doing two jobs at once:
+Attached mode serves sandboxed/injected agents (Claude Code, Codespaces, CI runners, foreign repo sessions) that operate inside a single project checkout and cannot maintain a standalone hub elsewhere on disk. Collapsing the hub into the project repo causes three problems the model prevents:
 
-- **hub root** — where cnos keeps:
-  - `.cn/config.json`
-  - `.cn/secrets.env`
-  - `state/`
-  - `threads/`
-  - `spec/`
-  - `.cn/vendor/`
-- **workspace root** — where the agent performs:
-  - filesystem reads/lists/globs
-  - git status/diff/commit
-  - local code/doc edits
-
-That assumption is coherent for standalone agents with their own repo/home. It is not coherent for injected/sandboxed agents operating inside some other project repo.
-
-### Named incoherence
-
-The current system implicitly equates:
-
-> hub root = workspace root
-
-This causes three classes of problem in the sandboxed use case:
-
-1. **Project pollution** — placing full hub state directly in the project repo pollutes project history with:
-   - sync state
-   - inbox materialization
-   - reflections
-   - package installs
-   - runtime logs/state
-
-2. **Remote confusion** — the agent's durable home and the project repo are not the same remote — cnos needs to push hub state to the hub remote, not the project remote
-
-3. **Root ambiguity** — the current discovery model finds a hub root, but not a distinct workspace root — that means execution still wants to operate against the same root that stores the hub
-
-### Why the raw submodule proposal is not enough
-
-A Git submodule at `.cn/` is a useful implementation technique, but it is not the real architecture. The real architecture question is:
-
-> How does cnos model a hub that is attached to, but not identical with, the workspace repo?
-
-If that is not answered first, "submodule support" becomes a narrow patch rather than a coherent placement model.
+1. **Project pollution** — full hub state in the project repo pollutes project history with sync state, inbox materialization, reflections, package installs, and runtime logs/state
+2. **Remote confusion** — the agent's durable home and the project repo are different remotes; hub state must push to the hub remote, not the project remote
+3. **Root ambiguity** — discovery finds a hub root but not a distinct workspace root, so execution operates against the same root that stores the hub
 
 ---
 
@@ -92,42 +54,9 @@ The challenged assumption is:
 
 > "One root can serve as both the hub root and the workspace root."
 
-This change replaces it with:
+This design would replace it with:
 
-> cnos has two explicit roots: `hub_root` and `workspace_root`.
-
----
-
-## Impact Graph
-
-### Downstream consumers
-
-- hub discovery (`cn_hub`)
-- executor root resolution for filesystem and git operations
-- package installs / vendor roots
-- sync / peer remotes
-- Runtime Contract workspace/body/medium surfaces
-- doctor validation
-- setup/init flows
-- documentation for sandboxed workflows
-
-### Upstream producers
-
-- placement manifest
-- standalone init / attached init commands
-- optional Git backend implementation (nested clone / submodule)
-- operator configuration
-
-### Copies and authority
-
-- **placement manifest** is authoritative for root separation
-- **hub repo** remains authoritative for:
-  - state
-  - threads
-  - spec
-  - vendor/packages
-- **workspace repo** remains authoritative for the code/docs/tree being worked on
-- submodule status or local clone state is never itself the canonical semantic model
+> cnos gains two explicit roots: `hub_root` and `workspace_root`.
 
 ---
 
@@ -461,42 +390,7 @@ This design does not:
 
 ---
 
-## File Changes
+## Limitations
 
-### Create
-
-- `docs/alpha/HUB-PLACEMENT-MODELS.md`
-- placement manifest schema
-- placement resolver module
-
-### Edit
-
-- hub discovery/path resolution code
-- executor root resolution
-- Runtime Contract
-- package/deps root logic where needed
-- doctor
-- setup/init docs and commands
-
----
-
-## Acceptance Criteria
-
-- [ ] cnos supports two explicit placement modes: standalone and attached
-- [ ] attached mode has explicit `hub_root` and `workspace_root`
-- [ ] nested clone works as the default attached backend
-- [ ] submodule works as an optional attached backend
-- [ ] runtime operations target `workspace_root` where appropriate
-- [ ] hub state, memory, packages, and sync target `hub_root`
-- [ ] `cn sync` pushes hub state to the hub remote, not the project remote
-- [ ] `cn doctor` validates attached placement
-- [ ] Runtime Contract exposes attached placement coherently
-- [ ] project repo history is not polluted by ordinary hub state changes
-
----
-
-## Known Debt
-
-- multi-workspace attachments deferred
-- CI-specific backend quirks deferred
-- migration of old single-root assumptions needs implementation sequencing
+- multi-workspace attachments are not supported
+- CI-specific backend quirks are not handled

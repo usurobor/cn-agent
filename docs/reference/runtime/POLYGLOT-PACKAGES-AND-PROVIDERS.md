@@ -1,50 +1,23 @@
 # Polyglot Packages and Provider Contracts
 
-**Issue:** #170
 **Version:** 0.2.0
-**Mode:** MCA
-**Active Skills:** cdd/design, eng/evolve, eng/process-economics
-**Engineering Level:** L7
+**Status:** Partially implemented
+**Implementation:** the Go kernel, the polyglot package substrate, and the command execution contract are implemented (`src/go/internal/pkg/pkg.go` — content classes including `commands`; `CommandSource`/`CommandTier`/`CommandSpec` and precedence in `src/go/internal/cli/`). The provider contract, provider registry, and provider execution (§5, §6 Phase 2/3) are **not implemented** — no provider is hosted by the Go runtime.
 
-## Problem
+## Purpose
 
-cnos is converging on a package-driven runtime:
+This document defines how a Go kernel hosts package-provided commands and providers written in whatever language best fits each job, while the package remains the single unit of distribution and the kernel stays small and trusted. The command surface is implemented; the provider surface is a normative target, not yet built.
 
-- package artifacts are the unit of distribution
-- packages can carry doctrine, mindsets, skills, commands, orchestrators, extensions, and templates
-- the runtime contract exposes installed/activatable cognition and executable body surfaces
-- the Go kernel is becoming the small trusted bootstrap/runtime substrate
+The shape this supports:
 
-But the current design still leaves one important ambiguity unresolved:
+- **Go** for the kernel/runtime: package manager, daemon, web surface, command registry/dispatch, runtime contract, doctor/status/update
+- **Rust** for some package-provided tools/providers: e.g. git-cn, transport-heavy, performance-sensitive, capability-oriented tools
+- **packages** carrying non-binary assets: skills, doctrine, templates, orchestrators
 
-> Does "package-driven" imply "same implementation language everywhere," or can the kernel stay Go while package-provided commands and providers are implemented in the language best suited to their job?
-
-This matters now because the likely next shape of the system is:
-
-- **Go** for the kernel/runtime:
-  - package manager
-  - daemon
-  - web surface
-  - command registry/dispatch
-  - runtime contract
-  - doctor/status/update
-- **Rust** for some package-provided tools/providers:
-  - e.g. git-cn
-  - transport-heavy, performance-sensitive, capability-oriented tools
-- **packages** continuing to carry non-binary assets:
-  - skills
-  - doctrine
-  - templates
-  - orchestrators
-
-Without an explicit design, the system risks drifting into one of two bad shapes:
+Two shapes it avoids:
 
 1. **Monolingual pressure:** everything must be Go because the kernel is Go, even when another language would be better for a package-provided tool/provider
 2. **Polyglot drift without contracts:** commands/providers appear in many languages, but discovery, packaging, execution, and policy boundaries become inconsistent
-
-The gap is not "can cnos run binaries?" The gap is:
-
-> What are the explicit contracts that let the kernel remain small and trusted while packages provide commands and providers in whatever language fits the job?
 
 ## Decision
 
@@ -463,54 +436,3 @@ It also requires resisting the temptation to let every package invent its own ex
 | Make commands and providers the same thing | Simpler surface | Blurs exact-dispatch tools with capability providers | Rejected |
 | Separate package systems for kernel and polyglot tools | Clear on paper | Two ecosystems, two indexes, two restore paths | Rejected |
 | Go kernel + polyglot packages + separate command/provider contracts | Simple kernel, flexible packages, one substrate | More explicit contracts to maintain | **Chosen** |
-
-## File Changes
-
-**Create:**
-
-- `docs/reference/runtime/POLYGLOT-PACKAGES-AND-PROVIDERS.md`
-
-**Edit:**
-
-- `docs/reference/packages/PACKAGE-SYSTEM.md`
-  - clarify language-agnostic payload principle
-  - mention platform-aware payloads where relevant
-- `docs/reference/runtime/extensions/RUNTIME-EXTENSIONS.md`
-  - clarify provider contract vs package distribution
-- `docs/reference/runtime/RUNTIME-CONTRACT-v2.md`
-  - later, expose provider registry / health
-- command/provider design docs
-  - align with one descriptor model for commands
-  - one provider contract for providers
-
-## Acceptance Criteria
-
-- cnos documents one package substrate with language-agnostic payloads
-- command execution contract is explicit and distinct from provider contract
-- `cnos.kernel` remains package-compatible while embedded
-- package-provided commands can be implemented in non-Go languages
-- provider packages can declare executable providers without becoming commands
-- low-level protocol semantics remain kernel-owned
-- transport implementations can move to provider packages without redefining protocol truth
-- the package system does not split into separate ecosystems for Go vs non-Go payloads
-
-## Known Debt
-
-- exact provider protocol still needs its own dedicated spec
-- platform-aware package artifact resolution needs a concrete index format later
-- first provider migration (likely `cnos.transport.git`) is still future work
-- doctor/status/runtime-contract surfacing of providers remains follow-up work
-
-## CDD Trace
-
-| Step | Artifact | Skills loaded | Decision |
-|------|----------|--------------|----------|
-| 0 | Observe | — | Current design now points to a Go kernel, but package/tool/provider needs are becoming polyglot |
-| 1 | Select | — | Selected gap: the package/runtime design does not yet explicitly explain how a Go kernel hosts non-Go commands/providers coherently |
-| 4 | Gap | this artifact | Named incoherence: package substrate and runtime execution contracts are not yet explicit enough for a polyglot future |
-| 5 | Mode | this artifact | L7 MCA; kernel/package/provider architecture clarification |
-| 6 | Artifacts | this artifact | Design drafted; implementation sequencing remains future work |
-
----
-
-If you want, the next useful artifact is the **provider contract spec** for packages like `cnos.transport.git`, since that is the place where this design becomes concrete.

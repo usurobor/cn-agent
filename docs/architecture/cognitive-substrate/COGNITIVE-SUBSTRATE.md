@@ -1,7 +1,8 @@
 # Cognitive Substrate Specification
 
 Version: 1.0.0
-Status: Draft
+Status: Normative — enforced
+Implementation: the authored-asset class taxonomy is enforced by the package system (`src/go/internal/pkg/pkg.go` content classes: doctrine, mindsets, skills, extensions, commands, orchestrators, katas), skill loading (`src/go/internal/activation/index.go`), and the four-layer runtime contract validated by `src/go/internal/doctor/doctor.go` (identity, cognition, body, medium). The full Runtime Contract emission detail in §6.1 and RUNTIME-CONTRACT-v2.md is a normative target beyond what the current runtime emits.
 
 ## 0. Purpose
 
@@ -464,27 +465,3 @@ This spec is normative for new substrate work.
 Legacy skill files that expose only Core Principle + Rules remain readable, but new and revised skills SHOULD migrate to the canonical skill contract in §7.3 so that placement, loading, and authorship rules are explicit in one place.
 
 Any document that explains doctrine, mindsets, or skills MUST defer to this spec for classification and file contract.
-
----
-
-## Coherence Contract for This Document
-
-**Gap:** cnos has doctrine (CAP, COHERENCE, CBP, CA-CONDUCT), architecture (CAA, CAR, AGENT-RUNTIME), and skill-writing guides (skill/SKILL.md, WRITE-A-SKILL.md), but no single normative document for classifying, placing, and structuring cognitive substrate assets. Classification rules were scattered across THESIS, CAA, CAR, and COHERENCE-SYSTEM.
-
-**Mode:** MCI — unify existing concepts into one normative spec.
-
-**Scope:** System spec layer.
-
-**Expected effect:**
-
-- α: one classifier, one placement algorithm, one file contract per class
-- β: docs that reference substrate classes now defer to one spec
-- γ: new assets have a clear placement path; promotion rules prevent class drift
-
-**Failure if skipped:** Classification remains implicit and taste-based. Mindsets look like skills, skills look like mindsets, reflections silently become doctrine. The COHERENCE-as-mindset drift persists.
-
-**CLP:**
-
-- **TERMS:** The ontology already exists: THESIS defines the semantic distinctions, CAA defines the wake-up strata, CAR defines load behavior. The MCP is "unify classification, placement, and schema into one normative document."
-- **POINTER:** Weakest axis before patch is β. The concepts are present but their relations are broken across documents. The sharpest break is the skill contract: skill/SKILL.md teaches Define/Unfold/Rules while skills/README.md frames skills as TERMS/INPUTS/EFFECTS.
-- **EXIT:** MCI applied. The draft installs one classifier, one placement algorithm, canonical locations, explicit runtime treatment, a unified skill contract (Define/Unfold/Rules as canonical form), promotion/splitting rules, and validation checks. Remaining MCA: align CAR, AGENT-RUNTIME, WHITEPAPER, and skills/README.md to this spec.

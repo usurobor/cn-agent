@@ -3,7 +3,7 @@
 **Version:** 1.2.0
 **Status:** Active
 **Doc-Class:** constitutive
-**Canonical-Path:** `docs/alpha/architecture/INVARIANTS.md`
+**Canonical-Path:** `docs/architecture/INVARIANTS.md`
 **Owns:** architectural invariants and transition constraints that CDD must validate
 **Does-Not-Own:** implementation tactics, coding-style heuristics, release notes, or detailed migration plans
 
@@ -156,8 +156,8 @@ The package lifecycle must have one explicit authored source, one explicit distr
 
 **Current layout** (on main today):
 
-- `src/agent/<class>/` → authored source
-- `packages/<name>/<class>/` → built package (mixed: also contains manifests)
+- `src/packages/<name>/<class>/` → authored source
+- `dist/packages/<name>-<version>.tar.gz` → built package tarball (gitignored)
 - `.cn/vendor/packages/<name>@<version>/` → installed active state
 
 **Target layout** (per BUILD-AND-DIST.md):

@@ -25,7 +25,9 @@ A coherent system minimizes the gap between:
 This is not an aesthetic claim.
 It is an operational one.
 
-From that first principle, cnos unfolds:
+From that first principle, cnos unfolds. Each capitalized term below is defined
+at first use in the sections that follow and collected in the
+[Glossary](reference/governance/GLOSSARY.md).
 
 - **CAP** provides the atomic move: act on the world (**MCA**) or update the model (**MCI**), with bias toward action when action is possible.
 - **MCP** names the best current picture of reality and system state.
@@ -333,10 +335,10 @@ These are operational expressions:
 - recovery checkpoints
 
 ### 7.5 Package articulations
-These are distributable cognitive units:
-- `cnos.core` — doctrine, mindsets, core skills
-- `cnos.eng` — engineering skills
-- `cnos.pm` — PM skills
+These are distributable cognitive units — for example `cnos.core` (doctrine,
+mindsets, core skills) and `cnos.eng` (engineering skills). The
+[README package table](../README.md#how-the-project-is-organized) lists the
+current set.
 
 ### 7.6 Repository articulations
 These are durable software encodings:
@@ -700,12 +702,12 @@ It is a milestone on the coherence gradient.
 ## 17. Relationship to Other Documents
 
 ### Doctrine / Why
-- `docs/alpha/doctrine/FOUNDATIONS.md`
-- `CAP.md`
-- `COHERENCE.md`
-- `CA-CONDUCT.md`
-- `CBP.md`
-- `AGENT-OPS.md`
+- `docs/papers/FOUNDATIONS.md`
+- `src/packages/cnos.core/doctrine/CAP.md`
+- `src/packages/cnos.core/doctrine/COHERENCE.md`
+- `src/packages/cnos.core/doctrine/CA-CONDUCT.md`
+- `src/packages/cnos.core/doctrine/CBP.md`
+- `src/packages/cnos.core/doctrine/AGENT-OPS.md`
 
 ### Agent architecture / What the coherent agent is
 - `docs/reference/runtime/CAA.md`

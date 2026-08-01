@@ -1,8 +1,8 @@
 # Orchestrators and Command Providers
 
 **Version:** 0.1.0
-**Status:** Draft
-**Issue:** #170
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented. The orchestrator IR, CTB/effect-plan compiler and executor, and the declarative activation index in the package manifest do not exist in the Go runtime. Package `commands` are implemented separately (see PACKAGE-ARTIFACTS.md).
 **Doc-Class:** canonical-spec
 **Canonical-Path:** docs/reference/runtime/ORCHESTRATORS.md
 **Owns:** orchestrator model, command-provider model, activation index, compiled orchestrator IR, runtime contract additions
@@ -180,7 +180,7 @@ Suggested shape:
     {
       "name": "daily",
       "source": "package",
-      "package": "cnos.pm",
+      "package": "cnos.core",
       "summary": "Create or show the daily reflection thread"
     }
   ],
@@ -188,7 +188,7 @@ Suggested shape:
     {
       "name": "daily-review",
       "source": "package",
-      "package": "cnos.pm",
+      "package": "cnos.core",
       "trigger_kinds": ["command", "schedule"]
     }
   ]
@@ -490,7 +490,7 @@ Suggested full example:
 ```json
 {
   "schema": "cn.package.v1",
-  "name": "cnos.pm",
+  "name": "cnos.core",
   "version": "3.40.0",
   "kind": "package",
   "engines": { "cnos": "3.40.0" },
@@ -535,7 +535,7 @@ Suggested full example:
 ### 10.1 Source layout
 
 ```
-src/agent/
+src/packages/<pkg>/
   skills/
   commands/
   orchestrators/

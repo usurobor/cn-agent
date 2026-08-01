@@ -40,20 +40,18 @@ Read this bundle when you need to know:
 | [OVERVIEW.md](./OVERVIEW.md) | Introduction | Plain-language explanation of CDD for humans new to the method |
 | [CDD.md](./CDD.md) | Canonical spec | Normative CDD algorithm: observe → select → execute → assess → close |
 | [RATIONALE.md](./RATIONALE.md) | Companion rationale | Why CDD is closed-loop, artifact-driven, and not fully mechanical |
-| [POST-RELEASE-EPOCH-v3.12.md](./POST-RELEASE-EPOCH-v3.12.md) | Assessment | Epoch assessment: v3.12.0–v3.12.2 |
-| [POST-RELEASE-EPOCH-v3.14.md](./POST-RELEASE-EPOCH-v3.14.md) | Assessment | Epoch assessment: v3.14.0–v3.14.5 |
 
 ---
 
 ## Related operational docs
 
-- `src/agent/skills/cdd/SKILL.md` — executable summary (skill)
-- `src/agent/skills/cdd/design/SKILL.md` — design protocol (skill)
-- `src/agent/skills/cdd/review/SKILL.md` — review protocol (skill)
-- `src/agent/skills/cdd/release/SKILL.md` — release procedure (skill)
-- `src/agent/skills/cdd/post-release/SKILL.md` — assessment procedure (skill)
-- `src/agent/skills/cdd/plan/SKILL.md` — implementation plan production (runbook)
-- `src/agent/skills/cdd/issue/SKILL.md` — issue writing (runbook)
+- `src/packages/cnos.cdd/skills/cdd/SKILL.md` — executable summary (skill)
+- `src/packages/cnos.cdd/skills/cdd/design/SKILL.md` — design protocol (skill)
+- `src/packages/cnos.cdd/skills/cdd/review/SKILL.md` — review protocol (skill)
+- `src/packages/cnos.cdd/skills/cdd/release/SKILL.md` — release procedure (skill)
+- `src/packages/cnos.cdd/skills/cdd/post-release/SKILL.md` — assessment procedure (skill)
+- `src/packages/cnos.cdd/skills/cdd/plan/SKILL.md` — implementation plan production (runbook)
+- `src/packages/cnos.cdd/skills/cdd/issue/SKILL.md` — issue writing (runbook)
 
 ---
 

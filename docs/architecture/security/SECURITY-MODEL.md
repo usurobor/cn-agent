@@ -1,11 +1,18 @@
 # CN Security Model
 
 **Status:** Current
-**Date:** 2026-03-05
 **Author:** usurobor (aka Axiom)  
 **Contributors:** Sigma  
 
 ---
+
+> **Runtime note (2026-06-29).** The active runtime and CLI is the **Go `cn` binary**
+> (`src/go/`). The OCaml modules (`cn_*.ml`) referenced throughout this document are the
+> **archived CN thread reference implementation**
+> (branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`).
+> The relations, module layering, and FSMs below describe that reference architecture;
+> the shipped Go runtime implements its subset (`src/go/internal/cli/cmd_*.go`,
+> `dispatch/`, `doctor/`). `dune`/OCaml is not a mainline build or test gate.
 
 ## Principle
 

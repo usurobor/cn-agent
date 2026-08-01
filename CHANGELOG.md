@@ -20,8 +20,6 @@ These are intuition-level ratings, not outputs from a running TSC engine (formal
 - **L6** — System-safe: cross-surface coherence, failure modes handled
 - **L7** — System-shaping: architecture boundary moved, class of future work eliminated
 
-See [RELEASE-LEVEL-CLASSIFICATION.md](docs/papers/RELEASE-LEVEL-CLASSIFICATION.md) for the full historical analysis.
-
 ## 3.82.0
 
 **Package architecture stabilized.** CDS, CDR, and cnos.handoff reach v0.1 alongside the compact CCNF kernel. CDS and CDR READMEs replace "v0.1 skeleton" / "in flight" framing with current status. CCNF kernel (`CDD.md`) byte-identical to 3.81.0. See [`.cdd/releases/3.82.0/RELEASE.md`](.cdd/releases/3.82.0/RELEASE.md) for the full ledger.

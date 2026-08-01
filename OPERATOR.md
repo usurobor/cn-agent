@@ -2,7 +2,7 @@
 
 Day-2 operations for a running cnos agent. Assumes install and setup are done.
 
-For install: [README.md quickstart](README.md).
+For install: [README "Try it"](README.md#try-it).
 For setup: [SETUP-INSTALLER.md](docs/reference/cli/SETUP-INSTALLER.md).
 
 ---
@@ -79,7 +79,11 @@ Full config options: [AUTOMATION.md scheduler settings](docs/guides/AUTOMATION.m
 
 ## 1. Observing
 
-### Unified log (`cn logs`)
+Shipped today: `cn status` and `cn doctor` (below). The log surfaces (`cn logs`,
+daemon/event logs) land with the agent runtime and are marked **(planned)** —
+see README "What ships today".
+
+### Unified log (`cn logs`) — planned
 
 The unified log is the single entry point for operator observability. One line per event, correlated by message ID.
 
@@ -114,7 +118,7 @@ cn doctor                      # 20+ checks: tools, config, packages, extensions
 
 `cn doctor` validates: git/curl/patch installed, hub structure intact, package chain consistent (deps.json -> deps.lock.json -> vendor/), runtime contract valid, version coherence, origin remote configured.
 
-### Other log locations
+### Other log locations — planned
 
 | Log | Path | Use when |
 |-----|------|----------|
@@ -153,14 +157,14 @@ See [BUILD-RELEASE.md](docs/guides/BUILD-RELEASE.md) for rollback procedure.
 cn deps                        # list installed packages
 cn deps doctor                 # verify installed matches lockfile
 cn deps restore                # reinstall from lockfile
-cn deps update                 # re-resolve and update lockfile
+cn deps update                 # re-resolve and update lockfile (planned)
 ```
 
 Desired state: `.cn/deps.json`. Resolved state: `.cn/deps.lock.json`. Installed: `.cn/vendor/packages/`.
 
 See [PACKAGE-SYSTEM.md](docs/reference/packages/PACKAGE-SYSTEM.md).
 
-### Peers
+### Peers — planned
 
 ```bash
 cn peer                        # list peers
@@ -204,6 +208,9 @@ The release workflow (`.github/workflows/release.yml`) triggers on the tag push 
 
 ## 4. Troubleshooting
 
+The log- and daemon-based diagnostics here are **planned** (agent runtime);
+`cn doctor` and `cn deps restore` ship today.
+
 Start with `cn logs --errors`. Every failure path emits to the unified log.
 
 | Symptom | Command | What to check |
@@ -224,10 +231,10 @@ See [TROUBLESHOOTING.md](docs/guides/TROUBLESHOOTING.md) for detailed diagnostic
 
 | Task | Command |
 |------|---------|
-| View recent activity | `cn logs` |
 | Check health | `cn doctor` |
 | View hub state | `cn status` |
 | Update binary | `cn update` |
-| Sync peers | `cn sync` |
+| View recent activity | `cn logs` (planned) |
+| Sync peers | `cn sync` (planned) |
 | Process one item | `cn agent --process` (planned) |
 | Full CLI reference | `cn --help` or [CLI.md](docs/reference/cli/CLI.md) |

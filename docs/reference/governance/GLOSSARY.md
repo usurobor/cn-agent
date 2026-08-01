@@ -15,9 +15,7 @@ canonical source with an inline path.
 > readers** (`quickstart/`, `concepts/`, `guides/`, `reference/`,
 > `development/`, `architecture/`, `papers/`, `evidence/`). **α/β/γ are role
 > grammar and TSC measurement axes — never docs folders.** There is no
-> `docs/alpha/`, `docs/beta/`, or `docs/gamma/`; those directories were retired
-> in the docs cleanup and their contents now live under intent directories
-> (e.g. the foundational essays are in `docs/papers/`). Cognitive packages live
+> `docs/alpha/`, `docs/beta/`, or `docs/gamma/`. Cognitive packages live
 > under `src/packages/` (e.g. `src/packages/cnos.core/`), not a root
 > `packages/`. There is no root `threads/` in this repo — threads are a *hub*
 > concept (see **Thread**).

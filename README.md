@@ -132,10 +132,9 @@ not here. `dist/` is generated build output (gitignored): `cn build` produces
 tarballs under `dist/packages/`.
 
 **Legacy:** the original OCaml thread-reference implementation is archived off
-`main` — see
-[`docs/reference/legacy/OCAML-THREAD-REFERENCE.md`](docs/reference/legacy/OCAML-THREAD-REFERENCE.md)
-(branch `legacy/ocaml-thread-reference`, tag `ocaml-thread-reference-2026-06-29`).
-The active runtime is Go (`src/go/`); `src/` holds only `go/` and `packages/`.
+`main` (branch `legacy/ocaml-thread-reference`, tag
+`ocaml-thread-reference-2026-06-29`). The active runtime is Go (`src/go/`);
+`src/` holds only `go/` and `packages/`.
 
 The current package set:
 

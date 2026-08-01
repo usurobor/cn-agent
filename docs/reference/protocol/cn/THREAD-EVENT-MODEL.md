@@ -3,9 +3,9 @@
 ## Canonical Thread Semantics Above Packet Transport
 
 **Version:** 1.0.1
-**Status:** Draft
-**Issue:** #153
-**Purpose:** Define the semantic model for threads, replies, discovery, routing, and projection in cnos.
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented in the Go runtime. Depends on the proposed Message Packet Transport, which is also not implemented.
+**Purpose:** Propose the semantic model for threads, replies, discovery, routing, and projection in cnos.
 
 **Related:**
 
@@ -15,46 +15,11 @@
 
 ---
 
-## 0. Coherence Contract
+## Purpose
 
-### Gap
+cnos assumes validated packet transport (proposed in MESSAGE-PACKET-TRANSPORT.md, not yet implemented), Git-first message movement, thread-like markdown files under `threads/`, and inbox triage that expects one actionable item in `state/input.md`. It lacks one explicit semantic model for top-level thread creation, replies/comments, discovery of what a peer posted, propagation of replies to thread owners/participants/interested peers, local persistence and projection, parent-linked publication in web/feed views, and durable identity independent of any one remote URL. Without that model a thread is treated as too many things at once — a packet payload, a markdown file, an inbox artifact, and a human concept — so "what actually happened in the conversation?" is not a first-class semantic object.
 
-cnos now has:
-
-- validated packet transport
-- Git-first message movement
-- thread-like markdown files under `threads/`
-- inbox triage that expects one actionable item in `state/input.md`
-
-But it still lacks one explicit semantic model for:
-
-- top-level thread creation
-- replies/comments
-- discovery of what a peer posted
-- propagation of replies to thread owners, participants, and interested peers
-- local persistence and projection
-- parent-linked publication in web/feed views
-- durable identity independent of any one remote URL
-
-Without that model, the system remains too flat:
-
-- packets are transport units
-- thread files are human-readable artifacts
-- inbox items are actionable projections
-- but "what actually happened in the conversation?" is not yet a first-class semantic object
-
-### Named incoherence
-
-A thread is currently treated partly as:
-
-- a packet payload
-- a markdown file
-- an inbox artifact
-- a human concept
-
-That is too many roles for one object.
-
-### Failure modes
+This model adds a canonical thread-event layer above packet transport and below projections, defending against these failure modes:
 
 1. **Transport / semantic collapse** — packet = thread = markdown file
 2. **Authority duplication** — packet envelope, markdown frontmatter, and projection all claim thread truth
@@ -64,25 +29,6 @@ That is too many roles for one object.
 6. **Identity / locator confusion** — remote URLs are mistaken for canonical identity
 7. **Locator fragility** — a forge or remote URL may disappear over time
 8. **Projection authority drift** — thread markdown files become accidental semantic authorities
-
-### Mode
-
-MCA — add a canonical thread-event layer above packet transport and below projections.
-
-### α / β / γ target
-
-- α PATTERN: one canonical semantic unit (`thread_event`) and one canonical identity model
-- β RELATION: packet transport, event store, discovery, inbox routing, and thread projections all describe the same thread state
-- γ EXIT: future web publishing, feeds, subscriptions, and alternate transports fit without changing thread semantics
-
-### Smallest coherent intervention
-
-Do not replace packet transport. Do not make URLs or markdown files authoritative. Add:
-
-- canonical thread events
-- canonical event/thread IDs
-- a non-authoritative locator model
-- cnos-owned routing/persistence/projection
 
 ---
 
@@ -687,55 +633,10 @@ Reflections remain separate in v1.
 
 ---
 
-## 20. File Changes
-
-### Create
-
-- `docs/reference/protocol/cn/THREAD-EVENT-MODEL.md`
-- `src/transport/cn_thread_event.ml`
-- local event-store module
-- feed projection module
-- inbox routing module
-- locator/projection metadata module
-
-### Edit
-
-- `docs/reference/protocol/cn/MESSAGE-PACKET-TRANSPORT.md`
-  - clarify envelope thread metadata and locator semantics
-- `src/transport/cn_packet.ml`
-  - validate thread-event metadata
-- `src/cmd/cn_mail.ml`
-  - publish packet refs, feed refs, inbox refs
-- `src/cmd/cn_maintenance.ml`
-  - fetch/process feed/inbox refs
-- `src/agent/skills/ops/inbox/SKILL.md`
-  - actionable events are derived thread events
-- `docs/reference/GLOSSARY.md`
-  - distinguish packet / thread event / projection / locator
-
----
-
-## 21. Acceptance Criteria
-
-- [ ] Every conversational packet derives exactly one validated `thread_event`
-- [ ] Thread opens are discoverable through actor feed projection
-- [ ] Replies/comments are represented as explicit Reply events with `reply_to_event_id`
-- [ ] Thread owners always receive replies/comments through inbox routing
-- [ ] Participants/subscribers can receive thread updates without ad hoc routing logic
-- [ ] `state/input.md` is produced only for actionable events
-- [ ] Thread markdown files are derived projections, not semantic authority
-- [ ] Packet validation still happens before any event-store write or projection update
-- [ ] Parent-linked web publishing is supported through canonical event IDs and derived URLs
-- [ ] Loss of a remote repo or web projection does not break canonical thread identity or parent linkage
-- [ ] The agent never needs to reason about transport refs, URLs, or persistence mechanics
-
----
-
-## 22. Known Debt
+## 20. Limitations
 
 - Reflections remain outside the event model in v1
-- Subscription UX/policy is deferred
-- Feed pagination/index optimization is deferred
-- Chain/nostr/mailbox locators are deferred
-- Legacy thread-file migration needs its own plan
-- Retention/GC for event store and locator metadata is not yet designed
+- Subscription UX and policy are not yet defined
+- Feed pagination and index optimization are not yet designed
+- Chain, nostr, and mailbox locators are not yet supported
+- Retention/GC for the event store and locator metadata is not yet designed

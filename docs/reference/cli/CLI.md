@@ -1,9 +1,11 @@
 # CN CLI Reference
 
-**Status:** Current
-**Date:** 2026-03-06
+**Status:** Target CLI surface. The shipped binary is the Go `cn`; its commands are
+listed in [README "What ships today"](../../../README.md#what-ships-today), the
+authoritative shipped set. Commands here outside that set are marked **(planned)** —
+they belong to the agent runtime, which is not yet shipped.
 **Author:** usurobor (aka Axiom)
-**Contributors:** Sigma  
+**Contributors:** Sigma
 
 ---
 
@@ -21,7 +23,7 @@ cn <command> [options]
 
 ## Commands
 
-### Agent Decisions (GTD)
+### Agent Decisions (GTD) — planned
 
 The five GTD operations on threads:
 
@@ -40,7 +42,7 @@ cn reply <thread> <message>  Append reply to thread
 cn send <peer> <message>     Send message to peer (or self)
 ```
 
-### Agent Output (Structured)
+### Agent Output (Structured) — planned
 
 For agent-to-cn structured responses (used by actor loop):
 
@@ -55,7 +57,7 @@ cn out delegate --to <peer>
 cn out delete --reason <reason>
 ```
 
-### Agent Runtime
+### Agent Runtime — planned
 
 ```
 cn agent                     Oneshot scheduler: one cycle then exit
@@ -64,7 +66,7 @@ cn agent --daemon            Daemon scheduler: continuous loop + optional Telegr
 cn agent --stdio             Interactive REPL (stdin → LLM → stdout)
 ```
 
-### Orchestration
+### Orchestration — planned
 
 ```
 cn sync                      Fetch inbound + send outbound
@@ -81,7 +83,7 @@ cn mca [list]                List managed concern aggregations
 cn mca add <description>     Surface MCA for community pickup
 ```
 
-### Thread Creation
+### Thread Creation — planned
 
 ```
 cn adhoc <title>             Create adhoc thread in threads/adhoc/
@@ -95,21 +97,25 @@ cn weekly                    Create/show weekly reflection
 cn deps [list]               List installed packages
 cn deps restore              Install from lockfile (deterministic)
 cn deps doctor               Verify installed assets match lockfile
-cn deps add <pkg>            Add dependency to .cn/deps.json
-cn deps remove <pkg>         Remove dependency
-cn deps update [pkg]         Update lockfile (re-resolve within ranges)
-cn deps vendor               Commit vendor tree for airgapped use
+cn deps add <pkg>            Add dependency to .cn/deps.json        (planned)
+cn deps remove <pkg>         Remove dependency                     (planned)
+cn deps update [pkg]         Update lockfile (re-resolve in range)  (planned)
+cn deps vendor               Commit vendor tree for airgapped use  (planned)
 ```
+
+Shipped: `list`, `restore`, `doctor`. The rest are planned.
 
 ### Build
 
 ```
-cn build                     Assemble packages/ from src/agent/ sources
-cn build --check             Verify packages/ matches src/agent/ (CI mode)
-cn build clean               Remove generated content from packages/
+cn build                     Assemble package tarballs in dist/packages/ from src/packages/ sources
+cn build --check             Verify built output matches src/packages/ sources (CI mode)
+cn build clean               Remove generated content                              (planned)
 ```
 
-### Observability
+Shipped: `build`, `--check`. `clean` is planned.
+
+### Observability — planned
 
 ```
 cn logs                      Human-formatted tail (last 50 entries)
@@ -131,15 +137,17 @@ cn setup                     Interactive hub setup (config, secrets, optional sy
 cn status                    Show hub state
 cn doctor                    Health check
 cn update                    Update cn to latest version
-cn commit [message]          Stage + commit
-cn push                      Push to origin
-cn save [message]            Commit + push (shorthand)
-cn release [version]         Tag + create GitHub release (default: current version)
-cn peer [list]               List peers
-cn peer add <name> <url>     Add peer
-cn peer remove <name>        Remove peer
-cn peer sync                 Fetch all peer repos
+cn commit [message]          Stage + commit                                       (planned)
+cn push                      Push to origin                                       (planned)
+cn save [message]            Commit + push (shorthand)                            (planned)
+cn release [version]         Tag + create GitHub release                          (planned)
+cn peer [list]               List peers                                           (planned)
+cn peer add <name> <url>     Add peer                                             (planned)
+cn peer remove <name>        Remove peer                                          (planned)
+cn peer sync                 Fetch all peer repos                                 (planned)
 ```
+
+Shipped: `init`, `setup`, `status`, `doctor`, `update`. The git and peer commands are planned.
 
 ### Aliases
 
@@ -160,6 +168,11 @@ l = logs     in = agent
 ```
 
 ## Command Types (Implementation)
+
+> The three implementation sections below (command types, dispatch, file tree)
+> describe the **archived OCaml reference implementation**, not the shipped Go
+> binary. The active runtime is Go under `src/go/`; the OCaml tree is off `main`
+> (branch `legacy/ocaml-thread-reference`).
 
 From `cn_lib.ml` — exhaustive variant, compiler warns on missing cases:
 

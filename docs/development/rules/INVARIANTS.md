@@ -28,8 +28,8 @@ They are test and CI gates.
 Internal consistency of articulated artifacts.
 
 Examples:
-- `src/agent/` is the only source of truth for doctrine, mindsets, skills
-- generated `packages/` matches source
+- `src/packages/` is the only source of truth for doctrine, mindsets, skills
+- generated `dist/packages/` matches source
 - protocol/runtime types match the structured protocol contract
 
 ### 1.2 β — Relation integrity
@@ -54,7 +54,7 @@ Examples:
 
 ### I1. Source → Package Integrity
 
-`src/agent/` is the single source of truth for doctrine, mindsets, and skills.
+`src/packages/` is the single source of truth for doctrine, mindsets, and skills.
 
 **Requirement:**
 Running:
@@ -62,7 +62,7 @@ Running:
 cn build --check
 ```
 must succeed in CI.
-If `packages/` does not match what `src/agent/` would generate, the build fails.
+If the build output does not match what `src/packages/` would generate, the build fails.
 
 **Why:** Prevents manual edits to generated package output and preserves α consistency.
 
@@ -197,7 +197,6 @@ Behavioral checks become blocking only after they are stable and trusted.
 - **TRACEABILITY.md** — defines operational truth
 - **AGENT-RUNTIME.md** — defines runtime contracts
 - **CAR.md** / package docs — define source/package model
-- **INVARIANT-HARDENING-v1.md** — implementation plan for this document
 
 This document defines what must remain invariant across those layers.
 
