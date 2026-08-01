@@ -2847,7 +2847,7 @@
       "wake"
     ],
     "pri": "none",
-    "status": "review",
+    "status": "backlog",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2856,7 +2856,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-08-01T06:44:59Z",
-    "updated": "2026-08-01T23:33:12Z",
+    "updated": "2026-08-01T23:51:44Z",
     "url": "https://github.com/usurobor/cnos/issues/684"
   },
   {
@@ -2899,7 +2899,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-08-01T23:23:01Z",
-    "updated": "2026-08-01T23:23:01Z",
+    "updated": "2026-08-01T23:51:50Z",
     "url": "https://github.com/usurobor/cnos/issues/690"
   }
 ]
