@@ -1,8 +1,9 @@
 ---
 title: Agent Activation Log Convention v0
-status: field convention
+status: superseded — historical record
 version: v0
 date: 2026-05-30
+superseded_by: docs/reference/conventions/AGENT-ACTIVATION-CHANNEL-v1.md (cnos#684, 2026-08-01)
 scope: cross-activation continuity for one agent identity operating across multiple hubs/bodies
 related:
   - cn-sigma:.cn-sigma/spec/OPERATOR.md § Activation logs
@@ -11,6 +12,9 @@ related:
   - docs/reference/protocol/cn/GIT-AS-THE-LOWEST-DURABLE-SUBSTRATE.md
   - docs/reference/protocol/cn/MESSAGE-PACKET-TRANSPORT.md (cnos#150)
 ---
+
+> **Superseded by [`AGENT-ACTIVATION-CHANNEL-v1.md`](AGENT-ACTIVATION-CHANNEL-v1.md) (cnos#684, 2026-08-01).**
+> This file remains the historical record of the v0 convention (two-artifact, single-writer, `main`-tree-resident, bare-SHA-cursor design) and is **not deleted or gutted**. v1 replaces the storage substrate (orphan refs off `main`, not `.cn-{agent}/logs/` files in `main`'s tree), the cursor schema (repo+ref+sha triple, writer-local, not a bare SHA), and adds explicit orphan-ref invariants and a promotion-boundary rule that v0 did not name. v1's own §10 ("What changed from v0") is the authoritative delta summary. Do not author new content against this v0 design — use v1 for any new activation-channel work. The physical migration of already-committed `.cn-sigma/logs/**` history off `main` is tracked separately (see v1 §8 "Rename status" and §9 "Migration references"); this file's content remains valid history until that migration lands.
 
 # Agent Activation Log Convention v0
 
