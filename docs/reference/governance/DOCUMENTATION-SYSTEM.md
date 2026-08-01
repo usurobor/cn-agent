@@ -95,11 +95,13 @@ Some documents still carry pre-alignment numbers (e.g. THESIS 1.0.0). These re-v
 
 When a canonical document is fully replaced, the replacement's version is the cnos release in which it first appears; it does not restart at 1.0.0. The superseded document records `Supersedes:` / `Superseded by:` in its header so a reader can trace the lineage. Do not keep parallel live versions of the same document.
 
-### Frozen history
+### First principle: `main` holds only what is now
 
-Released snapshots are **not** kept as folders on `main` — git history is the archive. To read a document as it stood at a past release, check out that release tag. A document on `main` is always the current one; its `Version:` header says which release it belongs to.
+The working tree on `main` reflects **current state only.** No historical artifact is kept in it — **in a dotdir or not.** Released snapshots, and completed / dated / superseded records — a design decision, a cycle log, a finished plan, a released CDD cell, a dated activation log — are not kept in the tree. Their archive is the git commit graph reachable from `main`: to read one as it stood, check out the commit or release under which it was written.
 
-A completed, dated, or superseded record — a design decision, a cycle log, a finished plan — is **not kept on the reader surface**. Git history is its archive: to read it, check out the release or commit under which it was written. The working tree on `main` reflects only current state. Records that must persist as intentional history live in the dotdirs (`.cdd/`, `.cn-sigma/`, `.github/`), which are exempt from the current-state rule. A document that remains on the reader surface is, by that fact, current — its paths and contents are kept correct, not frozen.
+The discriminator is **historical vs. current — never dotdir vs. not.** What stays in the tree is current state regardless of location: live configuration and operational state — `.github/` workflows, the live `.cdd` control files (`CADENCE`, `DISPATCH`, …) and in-flight cells, `.cn-sigma` live cursors — are "what is now," not history, and remain. A document that stays on the reader surface is, by that fact, current: its paths and contents are kept correct, not frozen. (This supersedes the earlier rule that treated dotdirs as a blanket history store.)
+
+Closed CDD cells reach history-only through a current-state projection + index kept in the tree, not by deletion — see [cnos#682](https://github.com/usurobor/cnos/issues/682).
 
 ---
 
