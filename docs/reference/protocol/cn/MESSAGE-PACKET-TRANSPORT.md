@@ -1,10 +1,12 @@
 # Message Packet Transport
 
 **Version:** 3.31.0
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented in the Go runtime
 
 ## Purpose
 
-This document defines the message packet transport for cnos: a transport-agnostic packet with a canonical envelope, a content commitment, and a transport proof, validated before any inbox write. It replaces branch-diff message discovery, under which a receiver could silently materialize the wrong message content — reading a different message than the sender sent, with no error or warning.
+This document specifies a proposed message packet transport for cnos: a transport-agnostic packet with a canonical envelope, a content commitment, and a transport proof, validated before any inbox write. It is intended to replace branch-diff message discovery, under which a receiver could silently materialize the wrong message content — reading a different message than the sender sent, with no error or warning.
 
 ### Failure modes it defends against
 
@@ -22,7 +24,7 @@ This document defines the message packet transport for cnos: a transport-agnosti
 ### Existing contracts
 
 - Pull-only transport: agents push to their own repo, peers fetch
-- `cn_io.ml` `materialize_branch` is the current materialization entry point
+- Branch-diff materialization was the entry point in the archived OCaml runtime (`cn_io.ml` `materialize_branch`); the current Go runtime has no message-packet transport yet
 - `peers.md` defines peer clones and their local paths
 - Inbox skill governs triage; this design governs transport
 
