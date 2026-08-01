@@ -2903,5 +2903,26 @@
     "created": "2026-07-31T23:00:42Z",
     "updated": "2026-07-31T23:00:42Z",
     "url": "https://github.com/usurobor/cnos/issues/680"
+  },
+  {
+    "n": 682,
+    "t": "architecture: `main` holds only current state — move closed CDD cells to the git layer (slim `.cdd` to a projection + index)",
+    "kind": "process",
+    "areas": [
+      "cdd",
+      "coherence"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-01T00:10:27Z",
+    "updated": "2026-08-01T00:10:27Z",
+    "url": "https://github.com/usurobor/cnos/issues/682"
   }
 ]
