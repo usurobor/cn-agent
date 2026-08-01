@@ -1,0 +1,127 @@
+{
+  "schema": "cnos-recursive-cell-invariants/0.2",
+  "target": "cc662-system",
+  "assessment_prompt_sha256": "1e54e9afbda0bedfe07eba5916842b5a18e5455c62684599b02eed35891711d0",
+  "prompt_sha256": {
+    "cc662-system": "7f57a995198e7e254d8fb51a5799000bb923a7a613c485af2131a4cff994cba5",
+    "cc662-l0": "0e5561e27cd4f2bddf49ddb1026aa2f848a469cd2538e21ce79487a0c24be6ee",
+    "cc662-l1": "407b3d05235f7fb5176d18bed1f5a5a63abd4f49c8a66c6791953b5510a1daf0",
+    "cc662-l2": "9a5b2d25435c0bc36af774640be084c7103b55a3697ef9ba4c70a64a9a82ce6a",
+    "cc662-l3": "55ea996b3e93e88d19fae8bf57ae7c886cf2a52a704e784f7e78cc2b990041b0",
+    "cc662-l4": "75269de545f1cef965d347b9dbfea28126c2cef055dd661b822e94cc8b491c70"
+  },
+  "response_sha256": {
+    "cc662-system": "3a0cb5c7d746ee021156d22e757c303609ed9e4288312b4a9a06ad2d7d9ca386",
+    "cc662-l0": "5daec0688df6b2e0aae7945e688f4e841dfb126b9337cec9dd515f6e9776fe12",
+    "cc662-l1": "9255d24206865dda30c6a0a69c1f18e3aff2e72a2fb50584430dfd4468a5b4fc",
+    "cc662-l2": "b88e1aa361fd23a3c896ed2ede2c184bb8be0146ef35511a066c7fb580d60ef1",
+    "cc662-l3": "12d0af6e6c74a11bebd8ffb5ba60c1c6381c3259d2a92ba766f91f2ba1a04e57",
+    "cc662-l4": "0679026ec7bb6831ee4f8297c7bec17e8c213c0d4a4d25a37960fec29a76b879"
+  },
+  "items": [
+    {
+      "id": "H01",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H01.",
+      "level": "system",
+      "primary_axis": "alpha",
+      "next_mca": null
+    },
+    {
+      "id": "H02",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H02.",
+      "level": "L0",
+      "primary_axis": "alpha",
+      "next_mca": null
+    },
+    {
+      "id": "H03",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H03.",
+      "level": "L0",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H04",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H04.",
+      "level": "L1",
+      "primary_axis": "alpha",
+      "next_mca": null
+    },
+    {
+      "id": "H05",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H05.",
+      "level": "L1",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H06",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H06.",
+      "level": "L2",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H07",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H07.",
+      "level": "L2",
+      "primary_axis": "gamma",
+      "next_mca": null
+    },
+    {
+      "id": "H08",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H08.",
+      "level": "L2",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H09",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H09.",
+      "level": "L3",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H10",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H10.",
+      "level": "L3",
+      "primary_axis": "beta",
+      "next_mca": null
+    },
+    {
+      "id": "H11",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H11.",
+      "level": "L3",
+      "primary_axis": "gamma",
+      "next_mca": null
+    },
+    {
+      "id": "H12",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H12.",
+      "level": "L4",
+      "primary_axis": "gamma",
+      "next_mca": null
+    },
+    {
+      "id": "H13",
+      "status": "pass",
+      "evidence": "Deterministic fixture evidence for H13.",
+      "level": "L4",
+      "primary_axis": "gamma",
+      "next_mca": null
+    }
+  ]
+}

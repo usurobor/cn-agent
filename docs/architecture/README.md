@@ -13,6 +13,10 @@
 - [COGNITIVE-SUBSTRATE.md](cognitive-substrate/COGNITIVE-SUBSTRATE.md) — cognitive asset classes (doctrine, mindsets, skills).
 - [CAR.md](cognitive-substrate/CAR.md) — cognitive asset resolver: local, versioned cognition.
 
+## Runtime
+
+- [CELL-RUNTIME.md](CELL-RUNTIME.md) — cell classes (WC/PC/CC), matter domains, and the generic cell runner. *Proposed* (#627 / #628); realization peer of `COHERENCE-CELL-NORMAL-FORM.md`.
+
 ## Security & observability
 
 - [SECURITY-MODEL.md](security/SECURITY-MODEL.md) — sandbox, FSM enforcement, audit trail.

@@ -1,7 +1,8 @@
 # Cognitive Substrate Specification
 
 Version: 1.0.0
-Status: Draft
+Status: Normative — enforced
+Implementation: the authored-asset class taxonomy is enforced by the package system (`src/go/internal/pkg/pkg.go` content classes: doctrine, mindsets, skills, extensions, commands, orchestrators, katas), skill loading (`src/go/internal/activation/index.go`), and the four-layer runtime contract validated by `src/go/internal/doctor/doctor.go` (identity, cognition, body, medium). The full Runtime Contract emission detail in §6.1 and RUNTIME-CONTRACT-v2.md is a normative target beyond what the current runtime emits.
 
 ## 0. Purpose
 

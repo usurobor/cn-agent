@@ -1,7 +1,8 @@
 # Build and Distribution Model
 
 **Version:** 0.1.0
-**Status:** Draft
+**Status:** Implemented
+**Implementation:** `src/go/internal/pkgbuild/build.go` (`cn build`), `src/go/internal/cli/cmd_build.go`, `src/go/internal/restore/restore.go` (`cn deps restore`), `src/go/internal/cli/cmd_deps.go`. The `cnos.transport.git` package and its Rust `git-cn` provider payload shown in the source-layout example do not yet exist — that provider build step is aspirational.
 
 ## Core Design Decisions
 

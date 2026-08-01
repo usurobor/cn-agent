@@ -2,7 +2,7 @@
 # scripts/ci/validate-skill-frontmatter.sh — validate every SKILL.md frontmatter
 # against schemas/skill.cue (#301, I5 coherence-CI job).
 #
-# The CUE schema owns shape / type / enum constraints. This script owns
+# The CUE schemas own shape / type / enum constraints. This script owns
 # everything outside that: file discovery, frontmatter extraction,
 # exception-list handling, and `calls` filesystem-existence checks
 # (#301 AC2 surface boundary).
@@ -52,6 +52,8 @@ need find
 # --- paths --------------------------------------------------------------
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 SCHEMA="${REPO_ROOT}/schemas/skill.cue"
+METHODOLOGY_SCHEMA="${REPO_ROOT}/schemas/coherence_methodology.cue"
+TSC_TARGET_VALIDATOR="${REPO_ROOT}/scripts/ci/validate-tsc-targets.sh"
 EXCEPTIONS="${REPO_ROOT}/schemas/skill-exceptions.json"
 FIXTURE_VALID="${REPO_ROOT}/schemas/fixtures/skill-frontmatter/valid"
 FIXTURE_INVALID="${REPO_ROOT}/schemas/fixtures/skill-frontmatter/invalid"
@@ -59,6 +61,14 @@ DEFAULT_ROOT="${REPO_ROOT}/src/packages"
 
 [[ -f "$SCHEMA" ]] || {
   echo "${RED}${SYM_FAIL}${RESET} schema not found at: $SCHEMA" >&2
+  exit 2
+}
+[[ -f "$METHODOLOGY_SCHEMA" ]] || {
+  echo "${RED}${SYM_FAIL}${RESET} schema not found at: $METHODOLOGY_SCHEMA" >&2
+  exit 2
+}
+[[ -x "$TSC_TARGET_VALIDATOR" ]] || {
+  echo "${RED}${SYM_FAIL}${RESET} target validator not executable at: $TSC_TARGET_VALIDATOR" >&2
   exit 2
 }
 
@@ -202,6 +212,110 @@ validate_skill_file() {
       local_fail=1
     fi
   done
+
+  # 4b. Measurement skills carry a generic TSC-compatible methodology
+  # essence. Validate the typed block and its local authority paths. TSC owns
+  # execution; this check keeps the cnos declaration internally resolvable.
+  local artifact_class
+  artifact_class=$(jq -r '.artifact_class // ""' "$json_path")
+  if [[ "$artifact_class" == "measurement" ]]; then
+    if ! cue_err=$(cue vet -d '#Measurement' "$SCHEMA" "$METHODOLOGY_SCHEMA" "$yaml_path" 2>&1); then
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        if [[ "$line" =~ ^[[:space:]] || "$line" == *"$yaml_path"* ]]; then
+          continue
+        fi
+        emit_finding "$rel" "methodology" "measurement-schema" "$line" \
+          "fix the block per schemas/coherence_methodology.cue"
+      done <<<"$cue_err"
+      local_fail=1
+    else
+      local methodology_json="${TMPDIR}/measurement.json"
+      cue export --out json -d '#Measurement' "$SCHEMA" "$METHODOLOGY_SCHEMA" "$yaml_path" >"$methodology_json"
+      local key declared_path
+      for key in registry instruction; do
+        declared_path=$(jq -r --arg k "$key" '.methodology[$k] // ""' "$methodology_json")
+        if [[ -z "$declared_path" || ! -f "$REPO_ROOT/$declared_path" ]]; then
+          emit_finding "$rel" "methodology.${key}" "regular-file" \
+            "declared path does not resolve to a regular file from repository-root: ${declared_path:-<empty>}" \
+            "point methodology.${key} at a repository-root-relative canonical file"
+          local_fail=1
+        fi
+      done
+
+      local execution_runner
+      execution_runner=$(jq -r '.methodology.execution.runner // ""' "$methodology_json")
+      if [[ -n "$execution_runner" ]]; then
+        for key in runner output_schema invariant_assessment_template; do
+          declared_path=$(jq -r --arg k "$key" '.methodology.execution[$k] // ""' "$methodology_json")
+          if [[ -z "$declared_path" || ! -f "$REPO_ROOT/$declared_path" ]]; then
+            emit_finding "$rel" "methodology.execution.${key}" "regular-file" \
+              "declared path does not resolve to a regular file from repository-root: ${declared_path:-<empty>}" \
+              "point methodology.execution.${key} at a repository-root-relative canonical file"
+            local_fail=1
+          fi
+        done
+        if [[ -f "$REPO_ROOT/$execution_runner" && ! -x "$REPO_ROOT/$execution_runner" ]]; then
+          emit_finding "$rel" "methodology.execution.runner" "executable" \
+            "declared runner is not executable: $execution_runner" \
+            "set its executable mode and retain a fail-closed shebang"
+          local_fail=1
+        fi
+      fi
+
+      local preflight
+      preflight=$(jq -r '.methodology.calibration_preflight // ""' "$methodology_json")
+      if [[ -n "$preflight" ]]; then
+        if [[ ! -f "$REPO_ROOT/$preflight" ]]; then
+          emit_finding "$rel" "methodology.calibration_preflight" "regular-file" \
+            "declared path does not resolve to a regular file from repository-root: $preflight" \
+            "point the calibration preflight at a repository-root-relative executable"
+          local_fail=1
+        elif [[ ! -x "$REPO_ROOT/$preflight" ]]; then
+          emit_finding "$rel" "methodology.calibration_preflight" "executable" \
+            "declared preflight is not executable: $preflight" \
+            "set its executable mode and retain a fail-closed shebang"
+          local_fail=1
+        fi
+      fi
+
+      local registry
+      registry=$(jq -r '.methodology.registry // ""' "$methodology_json")
+      if [[ -f "$REPO_ROOT/$registry" ]]; then
+        local target_revision target_output
+        target_revision=$(jq -r '.methodology.target_revision // ""' "$methodology_json")
+        local target_args=()
+        while IFS= read -r target; do
+          target_args+=(--target "$target")
+        done < <(jq -r '.methodology.targets[]' "$methodology_json")
+        local revision_args=()
+        [[ -z "$target_revision" ]] || revision_args+=(--target-revision "$target_revision")
+        if ! target_output=$("$TSC_TARGET_VALIDATOR" \
+          --registry "$REPO_ROOT/$registry" \
+          --target-root "$REPO_ROOT" \
+          "${revision_args[@]}" "${target_args[@]}" 2>&1); then
+          emit_finding "$rel" "methodology.targets" "tsc-target-resolution" \
+            "${target_output//$'\n'/; }" \
+            "fix the TSC 0.1 registry/manifests and ensure every exact target resolves non-empty"
+          local_fail=1
+        fi
+      fi
+
+      # The semantic output contract is safe to cross-check in cnos because
+      # it is a closed field list in the pinned TSC instruction. Mechanical
+      # signal paths are deliberately not claimed here: they remain a cnos
+      # methodology taxonomy until TSC exports a versioned signal schema.
+      local expected_estimates
+      expected_estimates='["target","alpha","beta","gamma","delta_alpha_beta","delta_beta_gamma","delta_gamma_alpha","bottleneck_axis","confidence","summary","axis_evidence","defect_cards","unresolved_ambiguity","next_fixes"]'
+      if ! jq -e --argjson expected "$expected_estimates" \
+        '.methodology.llm.estimates == $expected' "$methodology_json" >/dev/null; then
+        emit_finding "$rel" "methodology.llm.estimates" "tsc-v3.2.4-output-contract" \
+          "declared estimate fields do not exactly match the pinned TSC v3.2.4 witness contract" \
+          "use the exact ordered field list from runtime/SELF-MEASURE.md section 7"
+        local_fail=1
+      fi
+    fi
+  fi
 
   # 5. Static `calls`: every entry must resolve to an existing file under
   # the package skill root. The base is package-skill-root, NOT the

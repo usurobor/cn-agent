@@ -1,12 +1,14 @@
 # Memory in cnos — lean triadic model
 
 **Version:** 0.2.0
+**Status:** Draft (proposed — not implemented)
+**Implementation:** the memory surfaces exist (`threads/adhoc/`, `threads/reflections/`, `state/conversation.json` — scaffolded by `src/go/internal/hubinit/hubinit.go`), but the triadic memory model and its runtime-contract zones (`memory_episodic`/`memory_reflective`/`memory_working`) are not yet implemented.
 
 ---
 
 ## Purpose
 
-This document defines the memory model for cnos: a lean triadic split across episodic, reflective, and working-continuity surfaces, kept Git-native and inspectable. It names how the three concerns the system already runs — durable reflective memory, session continuity, and runtime internals — fit together, and fixes the rule that `threads/adhoc/` is canonical memory while `state/conversation.json` is working continuity, not canonical memory.
+This document proposes a memory model for cnos: a lean triadic split across episodic, reflective, and working-continuity surfaces, kept Git-native and inspectable. It names how the three concerns the system already runs — durable reflective memory, session continuity, and runtime internals — fit together, and would fix the rule that `threads/adhoc/` is canonical memory while `state/conversation.json` is working continuity, not canonical memory.
 
 ---
 

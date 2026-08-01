@@ -1,0 +1,6 @@
+format = "tsc-target/0.1"
+name = "fixture-target"
+kind = "aggregate"
+include = [
+  "schemas/fixtures/skill-frontmatter/measurement-assets/does-not-exist"
+]

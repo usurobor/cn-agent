@@ -20,10 +20,12 @@
 // wake manifest, requiring an explicit caller identity (--agent /
 // --workflow-pat-secret / --bot-name / --bot-id) for any non-sigma
 // agent. It never pushes to a remote (PR-only, by construction — this
-// package never calls git). It does not implement the cnos#493
-// canonical-label-install mechanism; until that ships, it detects the
-// gap and returns a named, actionable error rather than silently
-// skipping the labels obligation.
+// package never calls git). It ensures the canonical cnos.core labels
+// via an in-process call into packages/cnos.core/commands/label-doctor
+// (cnos#493); if that mechanism cannot resolve the installing repo's
+// target (no git remote) or cannot reach the GitHub API, it surfaces a
+// named, actionable error rather than silently skipping the labels
+// obligation.
 //
 // This package is cli/-boundary compliant per eng/go §2.18: all domain
 // logic lives here, and cli/cmd_repo_install.go is a thin wrapper.
@@ -43,6 +45,7 @@ import (
 	"strings"
 	"time"
 
+	labeldoctor "github.com/usurobor/cnos/packages/cnos.core/commands/label-doctor"
 	"github.com/usurobor/cnos/src/go/internal/binupdate"
 	"github.com/usurobor/cnos/src/go/internal/hubsetup"
 	"github.com/usurobor/cnos/src/go/internal/pkg"
@@ -92,6 +95,16 @@ type Args struct {
 	WorkflowPatSecret string // required for any non-sigma Agent
 	BotName           string // overrides the renderer's agent_bot_name() lookup
 	BotID             string // overrides the renderer's agent_bot_id() lookup
+
+	// Engine selects the PAT-free mechanical FSM-engine wake tier
+	// (cnos#613 Mock G). Only valid with Dispatch == "cds". When set, the
+	// rendered wake runs `cn issues fsm ... --apply` on the default
+	// GITHUB_TOKEN — no workflow-scoped PAT, no CLAUDE_CODE_OAUTH_TOKEN, no
+	// agent bot identity (Agent/WorkflowPatSecret/BotName/BotID identity
+	// bindings are unused; Agent still names the concurrency group). The
+	// default (false) renders the agent tier (claude-code-action),
+	// byte-for-byte unchanged.
+	Engine bool
 }
 
 // ParseArgs parses the `cn repo install` flag set. Two-token
@@ -127,6 +140,8 @@ func ParseArgs(argv []string) (Args, error) {
 				return a, err
 			}
 			a.Dispatch = v
+		case "--engine":
+			a.Engine = true
 		case "--agent":
 			v, err := takeValue(argv, &i, "--agent")
 			if err != nil {
@@ -197,6 +212,9 @@ type Options struct {
 	BotName           string
 	BotID             string
 
+	// Engine — see Args.Engine. Only valid with Dispatch == "cds".
+	Engine bool
+
 	// Repo is the "owner/repo" slug used to resolve releases and
 	// construct download URLs. Defaults to DefaultRepo.
 	Repo string
@@ -224,6 +242,10 @@ type Result struct {
 // Run executes `cn repo install` against opts.RepoRoot.
 func Run(ctx context.Context, opts Options) (*Result, error) {
 	if err := validateDispatch(opts.Dispatch); err != nil {
+		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+		return nil, err
+	}
+	if err := validateEngine(opts.Dispatch, opts.Engine); err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
 		return nil, err
 	}
@@ -287,7 +309,7 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	}
 
 	if opts.DryRun {
-		printPlan(opts.Stdout, manifest, plannedFiles, releaseTag, opts.IndexPath, opts.Dispatch)
+		printPlan(opts.Stdout, manifest, plannedFiles, releaseTag, opts.IndexPath, opts.Dispatch, opts.Engine)
 		return &Result{ReleaseTag: releaseTag, Manifest: manifest, DryRun: true}, nil
 	}
 
@@ -330,6 +352,25 @@ func validateDispatch(d string) error {
 	}
 }
 
+// validateEngine enforces that the PAT-free mechanical FSM-engine wake
+// tier (--engine, cnos#613) is only requested alongside --dispatch cds:
+// --engine selects a rendering variant of the cds dispatch workflow, so
+// it is meaningless without a dispatch render to vary. A clear refusal
+// here beats silently ignoring the flag on a base (or non-cds) install.
+func validateEngine(dispatch string, engine bool) error {
+	if !engine {
+		return nil
+	}
+	if dispatch != "cds" {
+		shown := dispatch
+		if shown == "" {
+			shown = "none"
+		}
+		return fmt.Errorf("--engine is only valid with --dispatch cds (got --dispatch %q); the engine tier is a variant of the cds dispatch render", shown)
+	}
+	return nil
+}
+
 // resolveDispatchAgent returns the effective --agent value for
 // --dispatch cds, defaulting to "sigma" to match cn-install-wake's own
 // default-agent convention (src/packages/cnos.core/commands/install-wake/
@@ -366,17 +407,26 @@ func dispatchWorkflowPath(repoRoot string) string {
 //  3. State the workflow-scope PAT requirement + "never pushes to main"
 //     fact in stdout (AC4/C6 — this package never calls git/gh; the
 //     never-pushes-main property holds by construction, not by a guard).
-//  4. Ensure the canonical dispatch labels via the cnos#493 mechanism
-//     (AC3) — that mechanism does not exist yet (cnos#493 is open); this
-//     function does not implement it (Non-goals) and does not silently
-//     skip the obligation: it always surfaces a named, actionable error
-//     naming cnos#493 once identity resolution + the render themselves
-//     succeed.
+//  4. Ensure the canonical dispatch labels via the cnos#493
+//     label-doctor mechanism (AC3): an in-process call into
+//     packages/cnos.core/commands/label-doctor (both packages are
+//     go.work-linked, mirroring cmd_issues_fsm.go's cross-module
+//     issuesfsm import). Does not silently skip the obligation: if the
+//     installing repo's target (owner/repo, resolved from its git
+//     "origin" remote) or a GitHub token cannot be resolved, or the
+//     GitHub API call itself fails, this surfaces a named, actionable
+//     error once identity resolution + the render themselves succeed.
 func runDispatchCds(ctx context.Context, opts Options) error {
 	agent := resolveDispatchAgent(opts.Agent)
 
+	// PAT-secret identity resolution is an AGENT-tier concern only. The
+	// engine tier (cnos#613 G2) is PAT-free: the rendered wake binds every
+	// token to the default GITHUB_TOKEN, so it needs no --workflow-pat-secret
+	// and no agent bot identity, and a non-sigma --agent must NOT trip the
+	// identity gate here. patSecret is resolved (and printed) for the agent
+	// tier only.
 	patSecret := opts.WorkflowPatSecret
-	if patSecret == "" {
+	if !opts.Engine && patSecret == "" {
 		if agent != "sigma" {
 			err := fmt.Errorf("--workflow-pat-secret is required for --agent %q (no default substrate PAT-secret binding for non-sigma agents); pass --workflow-pat-secret <NAME> naming the GitHub Actions secret that holds this agent's workflow-scoped PAT", agent)
 			fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
@@ -398,14 +448,22 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 	outPath := dispatchWorkflowPath(opts.RepoRoot)
 
 	args := []string{"cds-dispatch", "--out", outPath, "--agent", agent}
-	if opts.WorkflowPatSecret != "" {
-		args = append(args, "--workflow-pat-secret", opts.WorkflowPatSecret)
-	}
-	if opts.BotName != "" {
-		args = append(args, "--bot-name", opts.BotName)
-	}
-	if opts.BotID != "" {
-		args = append(args, "--bot-id", opts.BotID)
+	if opts.Engine {
+		// Engine tier: the only renderer arg beyond the output path and the
+		// concurrency-group agent name is --tier engine. The identity flags
+		// (workflow-pat-secret / bot-name / bot-id) are deliberately not
+		// forwarded — the engine tier binds nothing to them.
+		args = append(args, "--tier", "engine")
+	} else {
+		if opts.WorkflowPatSecret != "" {
+			args = append(args, "--workflow-pat-secret", opts.WorkflowPatSecret)
+		}
+		if opts.BotName != "" {
+			args = append(args, "--bot-name", opts.BotName)
+		}
+		if opts.BotID != "" {
+			args = append(args, "--bot-id", opts.BotID)
+		}
 	}
 
 	cmd := exec.CommandContext(ctx, rendererPath, args...)
@@ -420,29 +478,56 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 
 	fmt.Fprintf(opts.Stdout, "✓ rendered .github/workflows/cnos-cds-dispatch.yml\n")
 	fmt.Fprintf(opts.Stdout, "  identity: %s\n", agent)
-	fmt.Fprintf(opts.Stdout, "  pat secret: %s\n", patSecret)
+	if opts.Engine {
+		fmt.Fprintf(opts.Stdout, "  tier: engine (mechanical FSM engine — PAT-free runtime)\n")
+		fmt.Fprintf(opts.Stdout, "  runtime token: GITHUB_TOKEN (no workflow-scoped PAT, no CLAUDE_CODE_OAUTH_TOKEN)\n")
+	} else {
+		fmt.Fprintf(opts.Stdout, "  pat secret: %s\n", patSecret)
+	}
 	fmt.Fprintf(opts.Stdout, "⚠ dispatch grants scheduled write access on merge. Review before merging.\n")
 	fmt.Fprintf(opts.Stdout, "  This changes .github/workflows/ — the installing token needs `workflow` scope.\n")
 	fmt.Fprintf(opts.Stdout, "  Dispatch never pushes to main (PR-only).\n")
 
-	if err := ensureCanonicalDispatchLabels(); err != nil {
+	if err := ensureCanonicalDispatchLabels(ctx, opts); err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
 		return err
 	}
 	return nil
 }
 
-// ensureCanonicalDispatchLabels ensures the canonical dispatch labels
-// (dispatch:cell / protocol:cds / status:todo) exist on the installing
-// repo, via the cnos#493 label-install mechanism ("cn install
-// cnos.core" / label-doctor). That mechanism is not implemented
-// anywhere in this repo yet — cnos#493 is open (P1) — confirmed absent
-// by repo-wide search, not assumed. This cell does NOT implement
-// cnos#493 (Non-goals); it only detects the absence and returns a
-// named, actionable error, so the caller is never told "labels
-// ensured" when they were not (AC3 — "not a silent skip").
-func ensureCanonicalDispatchLabels() error {
-	return fmt.Errorf("canonical dispatch labels not ensured: cnos#493 label-install mechanism is not yet available; labels must be applied manually until it ships")
+// ensureCanonicalDispatchLabels ensures every canonical label in
+// src/packages/cnos.core/labels.json (the 7 status:* lifecycle labels +
+// dispatch:cell) exists on the installing repo (opts.RepoRoot's git
+// "origin" remote), with canonical color/description, via the cnos#493
+// label-doctor mechanism (packages/cnos.core/commands/label-doctor),
+// called in-process — not a subprocess/vendored-binary exec, unlike
+// runDispatchCds's cn-install-wake invocation above: label-doctor is
+// pure API+diff logic with no templating/file-artifact constraint
+// requiring a separate process (see the γ scaffold's Implementation
+// contract → Existing-binary disposition row).
+//
+// labeldoctor.Doctor resolves its own target repo (from opts.RepoRoot's
+// git remote) and its own GitHub token ($GITHUB_TOKEN then $GH_TOKEN);
+// this function passes RepoRoot/Stdout/Stderr through and otherwise
+// leaves resolution to that package, so a caller with no configured git
+// remote (as every existing repoinstall_test.go dispatch-cds fixture
+// uses — a plain t.TempDir() or a git-init'd repo with no "origin") gets
+// a named, actionable error rather than any live network call.
+func ensureCanonicalDispatchLabels(ctx context.Context, opts Options) error {
+	res, err := labeldoctor.Doctor(ctx, labeldoctor.Options{
+		RepoRoot: opts.RepoRoot,
+		Stdout:   opts.Stdout,
+		Stderr:   opts.Stderr,
+	})
+	if err != nil {
+		return fmt.Errorf("canonical dispatch labels not ensured: %w", err)
+	}
+	if len(res.Applied) > 0 {
+		fmt.Fprintf(opts.Stdout, "✓ label-doctor repaired %d canonical label(s): %s\n", len(res.Applied), strings.Join(res.Applied, ", "))
+	} else {
+		fmt.Fprintf(opts.Stdout, "✓ label-doctor: all canonical labels already present and matching\n")
+	}
+	return nil
 }
 
 // applyInstall performs the non-dry-run write path: .cn/deps.json,
@@ -510,7 +595,7 @@ func writeManifest(path string, m pkg.Manifest) error {
 // the pre-cnos#610 text (pinned backward-compat); dispatch == "cds"
 // prints a distinct line so --dry-run --dispatch cds does not falsely
 // claim no .github/workflows/ change is planned.
-func printPlan(w io.Writer, m pkg.Manifest, plannedFiles []string, releaseTag, indexArg, dispatch string) {
+func printPlan(w io.Writer, m pkg.Manifest, plannedFiles []string, releaseTag, indexArg, dispatch string, engine bool) {
 	if releaseTag != "" {
 		fmt.Fprintf(w, "  Would fetch package index + tarballs for release %s (%d package(s))\n", releaseTag, len(m.Packages))
 	} else {
@@ -524,8 +609,13 @@ func printPlan(w io.Writer, m pkg.Manifest, plannedFiles []string, releaseTag, i
 	fmt.Fprintf(w, "  Would run: (internal) deps restore → .cn/vendor/packages/ (%d package(s))\n", len(m.Packages))
 	fmt.Fprintf(w, "  Would ensure .gitignore contains: .cn/vendor/\n")
 	if dispatch == "cds" {
-		fmt.Fprintf(w, "  Would render: .github/workflows/cnos-cds-dispatch.yml (via cn-install-wake)\n")
-		fmt.Fprintf(w, "Dispatch: cds (would render .github/workflows/cnos-cds-dispatch.yml)\n\n")
+		if engine {
+			fmt.Fprintf(w, "  Would render: .github/workflows/cnos-cds-dispatch.yml (via cn-install-wake, tier=engine — PAT-free mechanical FSM)\n")
+			fmt.Fprintf(w, "Dispatch: cds (engine tier; would render .github/workflows/cnos-cds-dispatch.yml)\n\n")
+		} else {
+			fmt.Fprintf(w, "  Would render: .github/workflows/cnos-cds-dispatch.yml (via cn-install-wake)\n")
+			fmt.Fprintf(w, "Dispatch: cds (would render .github/workflows/cnos-cds-dispatch.yml)\n\n")
+		}
 	} else {
 		fmt.Fprintf(w, "Dispatch: none (base install only — no .github/workflows/ changes)\n\n")
 	}

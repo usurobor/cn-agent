@@ -3,8 +3,9 @@
 ## Canonical Thread Semantics Above Packet Transport
 
 **Version:** 1.0.1
-**Status:** Draft
-**Purpose:** Define the semantic model for threads, replies, discovery, routing, and projection in cnos.
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented in the Go runtime. Depends on the proposed Message Packet Transport, which is also not implemented.
+**Purpose:** Propose the semantic model for threads, replies, discovery, routing, and projection in cnos.
 
 **Related:**
 
@@ -16,7 +17,7 @@
 
 ## Purpose
 
-cnos has validated packet transport, Git-first message movement, thread-like markdown files under `threads/`, and inbox triage that expects one actionable item in `state/input.md`. It lacks one explicit semantic model for top-level thread creation, replies/comments, discovery of what a peer posted, propagation of replies to thread owners/participants/interested peers, local persistence and projection, parent-linked publication in web/feed views, and durable identity independent of any one remote URL. Without that model a thread is treated as too many things at once — a packet payload, a markdown file, an inbox artifact, and a human concept — so "what actually happened in the conversation?" is not a first-class semantic object.
+cnos assumes validated packet transport (proposed in MESSAGE-PACKET-TRANSPORT.md, not yet implemented), Git-first message movement, thread-like markdown files under `threads/`, and inbox triage that expects one actionable item in `state/input.md`. It lacks one explicit semantic model for top-level thread creation, replies/comments, discovery of what a peer posted, propagation of replies to thread owners/participants/interested peers, local persistence and projection, parent-linked publication in web/feed views, and durable identity independent of any one remote URL. Without that model a thread is treated as too many things at once — a packet payload, a markdown file, an inbox artifact, and a human concept — so "what actually happened in the conversation?" is not a first-class semantic object.
 
 This model adds a canonical thread-event layer above packet transport and below projections, defending against these failure modes:
 

@@ -3,10 +3,12 @@
 ## Standalone and Attached Hubs for Sandboxed Agents
 
 **Version:** 1.0.0
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented in the Go runtime
 
 ## Purpose
 
-This document defines Hub Placement Models: two explicit roots, `hub_root` and `workspace_root`, and two placement modes — standalone (the roots coincide) and attached (a hub mounted alongside a project workspace but kept a distinct repo and canonical root).
+This document specifies a proposed Hub Placement Models design: two explicit roots, `hub_root` and `workspace_root`, and two placement modes — standalone (the roots coincide) and attached (a hub mounted alongside a project workspace but kept a distinct repo and canonical root).
 
 Attached mode serves sandboxed/injected agents (Claude Code, Codespaces, CI runners, foreign repo sessions) that operate inside a single project checkout and cannot maintain a standalone hub elsewhere on disk. Collapsing the hub into the project repo causes three problems the model prevents:
 
@@ -52,9 +54,9 @@ The challenged assumption is:
 
 > "One root can serve as both the hub root and the workspace root."
 
-This change replaces it with:
+This design would replace it with:
 
-> cnos has two explicit roots: `hub_root` and `workspace_root`.
+> cnos gains two explicit roots: `hub_root` and `workspace_root`.
 
 ---
 

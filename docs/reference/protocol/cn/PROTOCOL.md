@@ -1,6 +1,9 @@
 # Design: cn Protocol as Typed FSMs
 
-**Status:** Implemented (v2 — `cn_protocol.ml` matches this spec)  
+**Status:** Normative target — not implemented in the Go runtime
+**Implementation:** specified and previously implemented in the archived OCaml runtime (`cn_protocol.ml`, `cn_mail.ml`, `cn_gtd.ml`, `cn_agent.ml`); the current Go runtime does not implement these transport/thread/actor FSMs
+
+> The OCaml modules named throughout this document ("Maps to current code", "Implemented resolution", `Done` deliverables) refer to the archived OCaml runtime, which has been removed from the tree. They are retained here as design record and describe the intended protocol contract, not the current Go implementation.
 
 ## Context
 

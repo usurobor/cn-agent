@@ -1,0 +1,11 @@
+# cds-dispatch wake review request (cnos#569 Phase 2 / cnos#454 dispatch-protocol)
+issue: 628
+protocol: cds
+wake: cds-dispatch
+requested_transition: "status:in-progress -> status:review"
+run_class: repair_pass
+round: R1
+verdict: converge
+deliverable_evidence:
+  pr: "#646 (cycle/628 -> main)"
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]

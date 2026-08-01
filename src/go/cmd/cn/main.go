@@ -49,6 +49,7 @@ func main() {
 	reg.Register(&cli.IssuesFsmCmd{})
 	reg.Register(&cli.IssuesDispatchCmd{})
 	reg.Register(&cli.RepoInstallCmd{})
+	reg.Register(&cli.LabelDoctorCmd{})
 
 	// Discover hub: walk up from cwd to find .cn/.
 	hubPath := discoverHub()

@@ -3,7 +3,8 @@
 ## Capability Providers, Discovery, and Isolation in cnos
 
 **Version:** 1.0.6
-**Status:** Draft — converged
+**Status:** Draft (proposed — not implemented)
+**Implementation:** not implemented in the Go runtime — no extension manifest discovery, subprocess extension host, or open-op registry/dispatch exists. The optional "native OCaml plugin loading" backend (§8.2) refers to the archived OCaml runtime.
 **Addresses:** #67 (network access), future capability extensibility
 **Iteration history:**
 - v1.0.0–v1.0.5: initial drafts, package layout alignment, lifecycle states

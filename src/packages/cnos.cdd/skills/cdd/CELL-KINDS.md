@@ -1,10 +1,18 @@
-# CELL-KINDS — Cell-Kind Taxonomy
+# CELL-KINDS — Legacy Cell-Kind Taxonomy, now Domain Vocabulary
 
-**Status:** Doctrine-first (Phase A of [#570](https://github.com/usurobor/cnos/issues/570)). Deferred: CUE schema, verifier enforcement, UI display, automatic inference, full wave/cleanup execution, `table.go` transition consumption.
+**Status:** Doctrine-first (Phase A of [#570](https://github.com/usurobor/cnos/issues/570)). **Demoted (proposed, [#628](https://github.com/usurobor/cnos/issues/628)):** the "cell kinds" below are **matter/contract domains**, not canonical cell types — this document is now the **domain vocabulary**. Deferred: CUE schema, verifier enforcement, UI display, automatic inference, full wave/cleanup execution, `table.go` transition consumption.
 **Placement:** `src/packages/cnos.cdd/skills/cdd/`
 **Parent:** [`CDD.md`](CDD.md) — this document refines the generic kernel; it does not replace or re-derive it.
 
-## Design rule: one kernel, multiple cell kinds
+> **⚠ Framing demoted (proposed — [#628](https://github.com/usurobor/cnos/issues/628); ratifies the architecture note `docs/architecture/CELL-RUNTIME.md`).**
+> The canonical unit of work is the **one CCNF kernel cell** (`COHERENCE-CELL-NORMAL-FORM.md`), not a "cell kind." The names below are **matter/contract domains** (the *fourth* orthogonal axis) — **not** cell types, and **not** the operating-scale **classes** WC/PC/CC (output-telos deployment shapes of the one kernel; see `docs/architecture/CELL-RUNTIME.md`). They are heterogeneous:
+> - **matter domains** — `implementation`, `doctrine`, `audit`, `experiment`, `cleanup`, `planning`
+> - **contract modes** — `repair`, `recovery`
+> - **coordination / boundary** — `wave` (a scope), `release` (a δ boundary action)
+>
+> **Compat (legacy / adapter only):** legacy `cell_kind: X` maps to `cell_class` (`working|planning|cohering`) + `matter_domain: X`; the FSM `CellKind` observation seam keeps `cell_kind` as an alias. **New contracts must not introduce new canonical cell kinds** — a contract names a `cell_class` and a `matter_domain`. The file is kept in place (link stability); a physical rename to `CELL-DOMAINS.md` may follow once inbound links are swept. The definitions below stand as the **domain vocabulary**.
+
+## Design rule: one kernel, multiple domains
 
 [`CDD.md`](CDD.md) names the generic recursive coherence-cell kernel:
 
@@ -12,10 +20,10 @@
 contractₙ -> matterₙ -> reviewₙ -> receiptₙ -> verdictₙ -> decisionₙ
 ```
 
-Every closed cell — regardless of what it produces — runs this same five-step closure. **Cell kind does not fork the kernel.** A cell kind is a *typed refinement* of the kernel: it names what matter the kernel's `α.produce` step is expected to emit, what `β.review` means for that matter, what the `γ.close` receipt projects, and what boundary decisions `δ` may take at that cell's scope. Do not create a separate lifecycle per cell kind — bind the existing kernel to a specific matter shape instead.
+Every closed cell — regardless of what it produces — runs this same five-step closure. **A domain does not fork the kernel** (this rule was formerly stated as *"cell kind does not fork the kernel"*). A domain is a *typed refinement* of the kernel: it names what matter the kernel's `α.produce` step is expected to emit, what `β.review` means for that matter, what the `γ.close` receipt projects, and what boundary decisions `δ` may take. Do not create a separate lifecycle per domain — bind the existing kernel to a specific matter shape instead. A domain is **not** the cell's **class** (WC/PC/CC), which names its output telos; see `docs/architecture/CELL-RUNTIME.md`.
 
 ```text
-cell kind -> expected matter -> review surface -> closeout/projection
+domain -> expected matter -> review surface -> closeout/projection
 ```
 
 ## `issue kind` != `cell kind`
@@ -23,11 +31,13 @@ cell kind -> expected matter -> review surface -> closeout/projection
 These are two different, non-interchangeable classifications:
 
 - **`issue kind`** (e.g. `kind/process`, `kind/bug`, `kind/feature` — see `docs/development/issues/TAXONOMY.md`) is a **GitHub issue taxonomy label**. It classifies *what an issue is about*.
-- **`cell_kind`** (e.g. `implementation`, `issue_authoring`, `wave`) is a **lifecycle declaration**. It classifies *what the coherence cell dispatched against that issue is expected to produce as matter*.
+- **`matter_domain`** (legacy `cell_kind`; e.g. `implementation`, `issue_authoring`, `wave`) is a **domain declaration**. It classifies *what matter the coherence cell dispatched against that issue is expected to produce*. `cell_kind` is retained **only** as a compatibility alias; new contracts name a `cell_class` (`working|planning|cohering`) plus a `matter_domain`.
 
-An issue labeled `kind/feature` can be worked by an `implementation` cell (the common case) or, earlier in its life, be *itself* the matter of an `issue_authoring` cell that drafted it. The GitHub label and the `cell_kind` value travel on different axes and must not be conflated.
+An issue labeled `kind/feature` can be worked in the `implementation` domain (the common case) or, earlier in its life, be *itself* the matter of an `issue_authoring`-domain cell that drafted it. The GitHub label and the `matter_domain` value travel on different axes and must not be conflated.
 
-## The 11 cell kinds
+## The 11 legacy domains
+
+The eleven entries below are the **matter/contract domain vocabulary** (legacy name: "cell kinds"). Each names an expected matter shape, review surface, and closeout/projection — a *typed refinement* of the one kernel, not a distinct cell type. A cell also carries a **class** (WC/PC/CC) orthogonal to its domain.
 
 ### 1. `issue_authoring`
 
@@ -129,11 +139,11 @@ An issue labeled `kind/feature` can be worked by an `implementation` cell (the c
 - **Worked example:** operator review of #570 surfaced two gaps (this cell kind, and the mandatory learning section) that were not cleanly captured by `issue_authoring` (a single issue) or `wave` (child-receipt composition) — a planning-shaped pass would have filed a scoped issue with explicit AC/scope up front, then handed off to a `doctrine`-kind `implementation` cell, illustrating the planning → issue_authoring/implementation handoff this entry formalizes.
 - **FSM implication:** a planning cell may **create or update issues**, but does **not** imply immediate dispatch unless the plan explicitly says so (mirrors `issue_authoring`).
 
-## FSM awareness: `cell kind -> valid matter -> allowed transition request`
+## FSM awareness: legacy `cell_kind` (= `matter_domain`) -> valid matter -> allowed transition request
 
-The issue FSM (`cnos.issues/commands/issues-fsm`) should evaluate transitions differently depending on which cell kind is running against an issue. This table names the mapping at the doctrine level; it is **not yet consumed by any transition rule** — see "Observation, not enforcement" below.
+The issue FSM (`cnos.issues/commands/issues-fsm`) evaluates transitions using the observed legacy `cell_kind` field (now read as the `matter_domain`). This table names the mapping at the doctrine level; it is **not yet consumed by any transition rule** — see "Observation, not enforcement" below.
 
-| Cell kind | Valid matter | Allowed transition request |
+| Domain (legacy `cell_kind`) | Valid matter | Allowed transition request |
 |---|---|---|
 | `issue_authoring` | issue body / issue pack draft | `selected gap -> issue draft -> issue reviewed -> status:ready` (not `status:todo -> status:in-progress -> status:review`) |
 | `implementation` | branch / PR / diff / review-request | `status:todo -> status:in-progress -> status:review` |
@@ -149,7 +159,7 @@ The issue FSM (`cnos.issues/commands/issues-fsm`) should evaluate transitions di
 
 ## Recording point (AC8)
 
-`cell_kind` is first recorded as a line in `.cdd/unreleased/{N}/gamma-scaffold.md`:
+The legacy `cell_kind` field (now the `matter_domain`) is recorded as a line in `.cdd/unreleased/{N}/gamma-scaffold.md`:
 
 ```markdown
 **cell_kind:** `doctrine`
@@ -161,13 +171,13 @@ or the plain form:
 cell_kind: doctrine
 ```
 
-This cell's own scaffold, `.cdd/unreleased/570/gamma-scaffold.md`, is the worked example — γ names the cell kind at dispatch time, before α ever starts producing matter. This is the **first canonical recording point** per the issue's own recommendation: "document the field and require new cells to record it in the CDD receipt / self-coherence surface. Do not make verifier enforcement mandatory yet." No existing cells are required to backfill `cell_kind`; its absence defaults to `implementation` (the current CDS dispatch cell kind) wherever it is observed.
+This cell's own scaffold, `.cdd/unreleased/570/gamma-scaffold.md`, is the worked example — γ names the domain at dispatch time, before α ever starts producing matter. This is the **first canonical recording point** per the issue's own recommendation: "document the field and require new cells to record it in the CDD receipt / self-coherence surface. Do not make verifier enforcement mandatory yet." No existing cells are required to backfill `cell_kind`; its absence defaults to `implementation` (the current CDS dispatch domain) wherever it is observed. `cell_kind` is retained as the on-disk field name for compatibility; new contracts additionally carry a `cell_class`.
 
-**Future typed field (deferred, Phase B).** The generic-kernel + typed-refinement shape here mirrors the CUE unification pattern already used across `schemas/cdd/receipt.cue` (generic `#Receipt`) and `schemas/cds/receipt.cue` (`#CDSReceipt: cdd.#Receipt & {...}`). A future `schemas/cdd/cell.cue` could define `#Cell` and per-kind refinements as a closed disjunction discriminated by `cell_kind`, validated via `cdd-verify`'s `cuevet.go`. That CUE schema, its verifier enforcement, and any codegen of Go types from it are explicitly **out of scope for this doctrine-first cell** (see #570 Deferred list).
+**Future typed field (deferred, Phase B).** The generic-kernel + typed-refinement shape here mirrors the CUE unification pattern already used across `schemas/cdd/receipt.cue` (generic `#Receipt`) and `schemas/cds/receipt.cue` (`#CDSReceipt: cdd.#Receipt & {...}`). A future `schemas/cdd/cell.cue` could define `#Cell` and per-domain refinements as a closed disjunction discriminated by `matter_domain` (plus the orthogonal `cell_class`), validated via `cdd-verify`'s `cuevet.go`. That CUE schema, its verifier enforcement, and any codegen of Go types from it are explicitly **out of scope for this doctrine-first cell** (see #570 Deferred list).
 
 ## Mandatory terminal learning section
 
-Every terminal cell closeout MUST include a `learning` (equivalently `epsilon_observations`) section — a general rule across **all** cell kinds, not just `planning`. This is not a giant postmortem; it is a small, always-present artifact:
+Every terminal cell closeout MUST include a `learning` (equivalently `epsilon_observations`) section — a general rule across **all** domains, not just `planning`. This is not a giant postmortem; it is a small, always-present artifact:
 
 ```yaml
 learning:
@@ -209,11 +219,12 @@ observe -> capture -> detect-recurrence -> mechanize -> verify-non-recurrence
 
 ## Observation, not enforcement
 
-`src/packages/cnos.issues/commands/issues-fsm` carries an observation seam for `cell_kind`: `FactSnapshot.CellKind{Observed, Source, DefaultedTo}` (`snapshot.go`). As of this cell, `fetch.go`'s live-assembly path (`assembleLive`) parses the `cell_kind:` line out of `.cdd/unreleased/{N}/gamma-scaffold.md` when present and sets `CellKind.Observed` / `CellKind.Source = "cdd_artifact"`. This is **observation only** — no transition rule in `table.go` consumes `CellKind`, so its value cannot change any FSM decision. `TestSeam_CellKindNotEnforced` locks this: evaluating the same facts under every defined cell kind must yield a byte-identical decision. Consuming `cell_kind` in transition guards (the "valid transition" column above becoming enforced behavior) is deferred to a future, explicitly scoped FSM Phase 2 issue.
+`src/packages/cnos.issues/commands/issues-fsm` carries an observation seam for the legacy `cell_kind` field: `FactSnapshot.CellKind{Observed, Source, DefaultedTo}` (`snapshot.go`). As of this cell, `fetch.go`'s live-assembly path (`assembleLive`) parses the `cell_kind:` line out of `.cdd/unreleased/{N}/gamma-scaffold.md` when present and sets `CellKind.Observed` / `CellKind.Source = "cdd_artifact"`. This is **observation only** — no transition rule in `table.go` consumes `CellKind`, so its value cannot change any FSM decision. `TestSeam_CellKindNotEnforced` locks this: evaluating the same facts under every defined domain must yield a byte-identical decision. Consuming the field in transition guards (the "valid transition" column above becoming enforced behavior) is deferred to a future, explicitly scoped FSM Phase 2 issue.
 
 ## Cross-references
 
 - [`CDD.md`](CDD.md) — the generic kernel this taxonomy refines.
+- `docs/architecture/CELL-RUNTIME.md` — the WC/PC/CC deployment **classes** + generic runner these **domains** sit under; the orthogonal-axes correction (proposed; #627/#628).
 - [`issue/SKILL.md`](issue/SKILL.md) — issue-authoring doctrine; states an issue can itself be a cell's matter; its "false closure" failure mode is what §"Process self-improvement loop" refuses to commit (asserting the detect-recurrence gap is closed when it isn't).
 - `docs/reference/governance/GLOSSARY.md` §"Cell" — glossary entry for the generic term.
 - `src/packages/cnos.issues/commands/issues-fsm/snapshot.go` — the `CellKind` observation struct.

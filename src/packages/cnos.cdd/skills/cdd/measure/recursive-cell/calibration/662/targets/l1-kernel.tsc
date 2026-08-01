@@ -1,0 +1,11 @@
+format = "tsc-target/0.1"
+name = "cc662-l1"
+kind = "aggregate"
+description = "L1: each class as one CCNF kernel with roles, firebreaks, and scope lift."
+include = [
+  "docs/architecture/CELL-RUNTIME-CLASSES.md",
+  "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md",
+  "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL.md",
+  "src/packages/cnos.cdd/skills/cdd/CELL-KINDS.md"
+]
+exclude = []

@@ -111,7 +111,7 @@ The rule is what keeps the receipt as a typed handoff rather than a narrative po
 verdictₙ := V(contractₙ, receiptₙ)
 ```
 
-`V` is a typed predicate. It reads the contract and the receipt, dereferences the evidence references the receipt carries, walks the referenced evidence graph, and emits a verdict — `PASS`, `FAIL`, or (optionally) `WARN`. The verdict is structured: it carries a headline value, a list of failed predicates with refs back to the contract, and a list of advisory warnings.
+`V` is a typed predicate. It reads the contract and the receipt, dereferences the evidence references the receipt carries, walks the referenced evidence graph, and emits a verdict — `PASS` or `FAIL`. The verdict is structured: it carries the `PASS`/`FAIL` value, a list of failed predicates with refs back to the contract, and a list of advisory warnings. `WARN` is **not** a verdict value in the shipped schema (`schemas/cdd/receipt.cue` pins `#ValidationVerdict.verdict ∈ {PASS, FAIL}`); advisory signals live in `ValidationVerdict.warnings`, not in the verdict.
 
 `V`'s signature shows two inputs, not three. The receipt carries the evidence references; `V` does not take an unbound `evidenceₙ` argument. This is the canonical form of evidence-binding: the receipt is the single object that carries everything `V` needs to dereference, and the cycle's accumulated evidence is reachable only through the receipt's typed references. A `V` that read evidence directly would be a `V` that could be invoked against an inconsistent (receipt, evidence) pair; binding evidence to the receipt prevents that class of inconsistency by construction.
 
@@ -160,7 +160,7 @@ invalid  := (verdictₙ = PASS   ∧ decisionₙ = override)
 Each outcome carries a structural meaning:
 
 - **`accepted`** — the cell is clean. `V` returned `PASS`; δ recorded a non-degraded boundary action. The closed cell is transmissible to scope `n+1` as α-matter without qualification. This is the kernel's PASS-equivalent terminal outcome.
-- **`degraded`** — the cell is transmissible under explicit override. `V` returned `FAIL` (or `WARN`); δ chose to proceed anyway by recording `override` with the override block populated. The closed cell is transmissible, but the parent scope's α at scope `n+1` reads degraded matter — the override block is the structural signal that every downstream consumer must detect. Override is a degraded boundary action, not a form of validity.
+- **`degraded`** — the cell is transmissible under explicit override. `V` returned `FAIL`; δ chose to proceed anyway by recording `override` with the override block populated. The closed cell is transmissible, but the parent scope's α at scope `n+1` reads degraded matter — the override block is the structural signal that every downstream consumer must detect. Override is a degraded boundary action, not a form of validity.
 - **`blocked`** — the cell does not transmit. δ recorded `reject` (the cell's matter cannot cross the boundary as-is) or `repair_dispatch` (the cell stays open at scope `n` and a child cell at the same scope addresses the failure under a repair contract — see §Recursion Modes). The cell at `n` does not produce α-matter at `n+1` in either case. `reject` closes the cell with no parent-scope projection; `repair_dispatch` keeps the cell open until the child cell's accept lets the parent γₙ re-emit `receiptₙ` and the loop re-fires.
 - **`invalid`** — the cell is malformed at the boundary. δ's decision is inconsistent with `V`'s verdict: either δ recorded `override` against a `PASS` verdict (overriding nothing — there is nothing to override) or δ recorded `accept`/`release` against a non-`PASS` verdict (accepting matter `V` failed without invoking the override path). Both branches indicate δ has misread the verdict or has bypassed the override discipline.
 
@@ -332,7 +332,7 @@ The split protects two properties simultaneously. The kernel stays portable: a f
 
 ### Realization peers
 
-Four realization-layer surfaces expand this kernel on the current substrate. Each is cited here as a realization peer; none of them is edited by this cycle. The kernel is the doctrine; the realization peers are the substrate expansions.
+Four realization-layer surfaces expand this kernel on the current substrate along the `#366` phase roadmap. Each is cited here as a realization peer. The kernel is the doctrine; the realization peers are the substrate expansions. (A fifth, *proposed* realization — the CNOS operating-scale deployment — is noted after the four; it is not a `#366`-phase peer.)
 
 **`RECEIPT-VALIDATION.md` — parent-facing typed-interface design.**
 This is the frozen validation interface for `V` — input contract (what `V` reads as references), output contract (`ValidationVerdict` shape), invocation contract (when and how δ invokes `V`), and the structural distinction between `ValidationVerdict` (V-emitted) and `BoundaryDecision` (δ-recorded). The kernel positions `V` at step 4 and δ at step 5; the receptor design types the interface and resolves the five Open Questions seeded by the predecessor doctrine. Where the kernel commits to "V dereferences evidence from the receipt," the receptor design types the dereferencing as `EvidenceRootRef` and pins the override-detection biconditional.
@@ -345,6 +345,9 @@ This is the realization peer that implements `V` as an operator-facing command w
 
 **`CDD.md` (Phase 7 rewrite, deferred) — canonical executable algorithm.**
 This is the realization peer that expands the kernel into the operational algorithm CDD runs as a working protocol on this substrate. The kernel pins the five-step closure, the four outcomes, the two recursion modes, and the three scope-lift projections; the operational rewrite expands each into role-specific steps, dispatch sequences, branch mechanics, harness contracts, and concrete artifacts. The kernel is the spine; `CDD.md` rewrite is the body. Until the Phase 7 rewrite lands, `CDD.md` remains the canonical algorithm at its current shape — this cycle does not touch it.
+
+**Proposed operating-scale realization (not one of the four `#366`-phase peers above).**
+`docs/architecture/CELL-RUNTIME.md` (proposed; #627/#628) names how the kernel *deploys* at CNOS operating scale: three output-telos cell **classes** — WC (Working), PC (Planning), CC (Cohering), distinguished by which TSC axis their matter targets — and one generic runner that executes them, selected by `--class working|planning|cohering`. It is a realization *of* this kernel, not a change *to* it: every class runs the full five-role closure, the α≠β firebreak holds, and the four outcomes and scope-lift are unchanged. The `CELL-KINDS` names are demoted to matter/contract domains (a distinct axis from the classes). Proposed; ratified by a CDD `doctrine` cell (#628).
 
 ### What lives where
 
