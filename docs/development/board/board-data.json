@@ -2955,16 +2955,16 @@
       "wake"
     ],
     "pri": "none",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
     "effort": "",
     "effort_weight": 1,
     "unestimated": true,
     "tracking": false,
     "assignee": "",
     "created": "2026-08-01T06:44:59Z",
-    "updated": "2026-08-01T06:59:04Z",
+    "updated": "2026-08-01T07:50:22Z",
     "url": "https://github.com/usurobor/cnos/issues/684"
   },
   {
