@@ -2945,5 +2945,26 @@
     "created": "2026-08-01T00:35:00Z",
     "updated": "2026-08-01T00:35:00Z",
     "url": "https://github.com/usurobor/cnos/issues/683"
+  },
+  {
+    "n": 684,
+    "t": "architecture: Sigma activation channel — rename `.cn-sigma/logs`, move to symmetric append-only orphan refs (independent stream, off main HEAD)",
+    "kind": "process",
+    "areas": [
+      "coherence",
+      "wake"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-01T06:44:59Z",
+    "updated": "2026-08-01T06:44:59Z",
+    "url": "https://github.com/usurobor/cnos/issues/684"
   }
 ]
