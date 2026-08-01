@@ -103,6 +103,21 @@ The discriminator is **historical vs. current — never dotdir vs. not.** What s
 
 Closed CDD cells reach history-only through a current-state projection + index kept in the tree, not by deletion — see [cnos#682](https://github.com/usurobor/cnos/issues/682).
 
+### Decision records — no silent drops
+
+Not everything that leaves the reader surface is history. Distinguish two kinds of record:
+
+- **Episode records — *how* work happened** (cycle logs, closed cells, dated runs): pure process history → the git commit graph, per the first principle above.
+- **Decision records — *what* we concluded and why**, including a direction we considered and set aside: durable **current knowledge**. A recorded decision ("we are not going here, and here is the thinking") is current state, not history — it stays on the reader surface, banner-marked as archived / superseded (e.g. an archived exploration under `docs/papers/`).
+
+The invariant is **no silent drops.** Every change of course, removal, or replacement leaves a receipt: what we expected (A → B), what happened instead (C), and why. Every tracked concern has exactly **one lawful disposition**:
+
+- **open** — still on the radar (an issue, a `## Known Debt`, a tracked commitment);
+- **removed** — gone, with the rationale recorded;
+- **superseded** — replaced, with a pointer to the replacement (`Supersedes:` / `Superseded by:`).
+
+It may never *hang* (a loose end with no disposition) nor *disappear* (dropped with no words). This is a doctrine-level **audit property**: an auditor reading the reader surface, the decision records, and the receipts can establish whether the repo is coherent — whether actual state matches declared doctrine — with no hidden decisions. A change dropped without a word is exactly what this forbids, and exactly what a coherence audit is meant to surface.
+
 ---
 
 ## 6. Placement
