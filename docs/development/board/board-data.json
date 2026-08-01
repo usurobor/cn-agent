@@ -2955,7 +2955,7 @@
       "wake"
     ],
     "pri": "none",
-    "status": "in-progress",
+    "status": "review",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2964,7 +2964,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-08-01T06:44:59Z",
-    "updated": "2026-08-01T07:56:47Z",
+    "updated": "2026-08-01T08:28:25Z",
     "url": "https://github.com/usurobor/cnos/issues/684"
   },
   {
