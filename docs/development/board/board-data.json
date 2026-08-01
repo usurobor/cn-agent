@@ -2906,7 +2906,7 @@
   },
   {
     "n": 682,
-    "t": "architecture: `main` holds only current state — move closed CDD cells to the git layer (slim `.cdd` to a projection + index)",
+    "t": "architecture: dematerialize closed CDD cells from HEAD — make Git history canonical and `.cdd` a current-state projection/index",
     "kind": "process",
     "areas": [
       "cdd",
@@ -2922,7 +2922,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-08-01T00:10:27Z",
-    "updated": "2026-08-01T00:10:27Z",
+    "updated": "2026-08-01T00:44:32Z",
     "url": "https://github.com/usurobor/cnos/issues/682"
   },
   {
