@@ -1,0 +1,5 @@
+format = "tsc-target-registry/0.1"
+default_target = "recursive-cell-self"
+
+[target.recursive-cell-self]
+manifest = "src/packages/cnos.cdd/skills/cdd/measure/recursive-cell/calibration/self/target.tsc"

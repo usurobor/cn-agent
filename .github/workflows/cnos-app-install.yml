@@ -1,0 +1,122 @@
+name: cnos app install (Option A render)
+
+# Server-side render engine for the CNOS Installer GitHub App.
+#
+# This is NOT a workflow tenants copy into their repos. It runs in
+# usurobor/cnos and is the App's Option-A substrate (see
+# docs/development/design/cnos-installer-github-app.md): the App's webhook
+# forwarder fires a repository_dispatch here; this workflow mints a
+# short-lived installation token scoped to the TARGET repo, runs the same
+# `cn repo install` engine against it, and opens a base-install PR.
+#
+# Inert until the operator provisions CNOS_APP_ID + CNOS_APP_PRIVATE_KEY and
+# a forwarder starts sending repository_dispatch events. It has no other
+# trigger, so landing it on main changes nothing until then.
+
+on:
+  repository_dispatch:
+    types: [cnos-app-install]
+
+# This workflow reads no default-token repo scope for the target; all target
+# writes go through the minted installation token below. Least privilege on
+# the controlling run itself.
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse dispatch payload
+        id: p
+        env:
+          TARGET_REPO: ${{ github.event.client_payload.target_repo }}
+          RELEASE: ${{ github.event.client_payload.release }}
+          TIER: ${{ github.event.client_payload.tier }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TARGET_REPO:-}" ] || [ "${TARGET_REPO#*/}" = "${TARGET_REPO}" ]; then
+            echo "::error::client_payload.target_repo must be 'owner/repo' (got '${TARGET_REPO:-}')" >&2
+            exit 1
+          fi
+          owner="${TARGET_REPO%%/*}"
+          repo="${TARGET_REPO#*/}"
+          tier="${TIER:-base}"
+          if [ "$tier" != "base" ]; then
+            # Tier 2 (labels) and Tier 3 (dispatch/secrets) are the "next"
+            # milestones in the design doc — this engine ships base only, so
+            # fail loudly rather than silently under-installing.
+            echo "::error::tier '$tier' not supported by this engine yet (base only). See docs/development/design/cnos-installer-github-app.md." >&2
+            exit 1
+          fi
+          {
+            echo "owner=$owner"
+            echo "repo=$repo"
+            echo "release=${RELEASE:-latest}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Mint installation token (scoped to target repo)
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CNOS_APP_ID }}
+          private-key: ${{ secrets.CNOS_APP_PRIVATE_KEY }}
+          owner: ${{ steps.p.outputs.owner }}
+          repositories: ${{ steps.p.outputs.repo }}
+
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.p.outputs.owner }}/${{ steps.p.outputs.repo }}
+          token: ${{ steps.token.outputs.token }}
+          path: target
+
+      - name: Install cn (from release install.sh)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/usurobor/cnos/main/install.sh \
+            | BIN_DIR="$HOME/.local/bin" sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: cn repo install (base) + capture receipt
+        id: install
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Same engine as the CLI and the Action fallback — no install logic
+          # is reimplemented here (design doc: single source of truth is cn).
+          cn repo install --release "${{ steps.p.outputs.release }}" | tee /tmp/cn-install.out
+          {
+            echo 'RECEIPT<<EOF'
+            echo '### `cn repo install` receipt'
+            echo ''
+            echo '```'
+            cat /tmp/cn-install.out
+            echo '```'
+            echo ''
+            echo '**Explicitly not installed (base tier):** no `.github/workflows/` change, no secrets, no labels, no autonomous write loop.'
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open base-install PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ steps.token.outputs.token }}
+          path: target
+          branch: cnos/install
+          delete-branch: true
+          commit-message: "chore(cnos): install CDS packages (base)"
+          title: "Install CNOS/CDS (base)"
+          body: |
+            Opened by the **CNOS Installer** GitHub App (base install).
+
+            - release: `${{ steps.p.outputs.release }}`
+            - engine: `cn repo install` (server-side render, Option A)
+
+            ${{ steps.install.outputs.RECEIPT }}
+
+            See `docs/guides/INSTALL-CDS.md` for what this installs. The
+            vendored packages under `.cn/vendor/` are gitignored and rehydrate
+            from `.cn/deps.lock.json`; this PR commits the manifests only.

@@ -15,6 +15,9 @@ This package contains two main surfaces:
 - **`cdd/COHERENCE-CELL.md`** — Draft refactor doctrine: the recursive coherence-cell model (contract → α/β/γ cell → receipt → validator → δ boundary → accepted receipt as next-scope matter). Does not replace `CDD.md`; collaboration surface for the planned CDD refactor.
 - **Role skills** — `alpha/`, `beta/`, `gamma/`, `operator/` define triadic responsibilities  
 - **Lifecycle skills** — `issue/`, `review/`, `release/`, `design/`, `plan/` implement phases
+- **Measurement methodologies** — `measure/recursive-cell/` declares the
+  candidate L0–L4 cell-architecture/receipt CM and its calibration corpus;
+  it is not automatically loaded and carries no standing until its own gates pass
 - **Activation** — `activation/SKILL.md` for one-time repository bootstrap
 
 ### Repository Root `.cdd/` — The Evidence

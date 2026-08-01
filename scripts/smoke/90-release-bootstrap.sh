@@ -108,6 +108,29 @@ if [[ -z "$TAG" || "$TAG" == "null" ]]; then
 fi
 info "release tag: $TAG"
 
+# --- tooling / prerelease tags: skip the cn-setup bootstrap (cnos#618) ---
+# This smoke exercises `cn setup`, which pins the default deps.json to the
+# BINARY's own compiled version (main.version) — valid for a feature release,
+# where binary-version == package-versions. A tooling-channel prerelease
+# (tooling-<date>-<sha>, published via release.yml workflow_dispatch,
+# prerelease=true) deliberately ships the CURRENT `cn` ahead of the next
+# feature-version cut, so its binary version does NOT match the released
+# package set (cnos.core@3.82.0, ...). `cn setup` would therefore fail with
+# "pinned packages not in released index" — not a real defect, just the wrong
+# smoke for this artifact type. The tooling channel's actual install path is
+# `cn repo install`, which resolves versions FROM the index (cnos#608/3.82.3),
+# not from the binary version, and is validated separately. Skip (exit 2 =
+# warning, not failure) so a tooling publish's release.yml run is green.
+case "$TAG" in
+  tooling-*|*-rc[0-9]*|*-alpha*|*-beta*|*-pre*)
+    skip "tag '$TAG' is a tooling/prerelease tag — cn-setup bootstrap smoke does not apply"
+    skip "  (binary version intentionally != released package set; the tooling"
+    skip "   channel installs via 'cn repo install', validated separately)"
+    echo "RESULT: skipped (tooling/prerelease tag)"
+    exit 2
+    ;;
+esac
+
 DL="https://github.com/${REPO}/releases/download/${TAG}"
 
 # --- workspace ---

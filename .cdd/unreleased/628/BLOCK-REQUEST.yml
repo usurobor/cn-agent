@@ -1,0 +1,15 @@
+# cds-dispatch wake hard-block request (cnos#575 AC2)
+issue: 628
+protocol: cds
+wake: cds-dispatch
+block_class: external_dependency
+reason: >
+  Independent beta-review of PR #629 (this cell's alpha-matter) converged
+  on verdict: iterate. PR #629's branch is stale relative to main and
+  silently deletes already-landed doctrine (delta/SKILL.md section 9.13,
+  cnos#639, plus ~1300 lines of related artifacts). This cell's own role
+  (independent review, not re-derivation of the doctrine) cannot itself
+  rebase or repair PR #629 without collapsing the alpha/beta independence
+  the cell exists to preserve. Requires operator or a future alpha pass
+  to rebase PR #629 onto current main before an independent beta can
+  converge.

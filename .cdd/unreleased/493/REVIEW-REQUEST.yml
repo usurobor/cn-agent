@@ -1,0 +1,29 @@
+issue: 493
+protocol: cds
+cycle_branch: cycle/493
+head_commit: 682f815dd372511ef82b89c3b98e9e89ab6ec610
+requested_by: delta (cds-dispatch wake, wake-invoked mode)
+converge_verdict_ref: .cdd/unreleased/493/beta-review.md
+note: >
+  Requesting the in-progress -> review transition per beta's Round 0
+  converge verdict (round 0: converge, zero D-severity findings). This
+  cycle is the cnos#630 "resumed-from-mechanical-reversion" shape
+  (delta/SKILL.md Sec 9.11): a prior wake firing implemented cn
+  label-doctor end-to-end (12 commits) and died mid-write of
+  self-coherence.md before requesting review; the recovery scanner
+  mechanically reconciled in-progress -> todo, preserving cycle/493 and
+  PR #634; this firing re-claimed the cell and resumed -- rebasing onto
+  current main, independently re-verifying all 5 ACs against live
+  repo/test state (not trusting the prior session's self-coherence.md
+  prose alone), completing self-coherence.md's remaining canonical
+  sections, then dispatching an independent beta review that re-derived
+  every AC from real command output and confirmed implementation-contract
+  conformance across all 7 pinned axes. All six converge-boundary
+  closeout artifacts (gamma-scaffold.md, self-coherence.md,
+  beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md)
+  are present on this branch as of this request; gamma-closeout.md
+  carries the deliverable_evidence block per the cnos#524
+  closeout-integrity preflight. PR #634 (opened earlier by the mechanical
+  cell finalizer, cnos#591) has been marked ready-for-review and its
+  title/body updated to reflect the converged cycle as this request's
+  companion action.

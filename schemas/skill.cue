@@ -32,7 +32,7 @@ package skill
 
 	// Spec-required-but-exception-backed (#301 AC1, AC4).
 	// Schema marks optional; the script enforces presence-or-exception.
-	artifact_class?: "skill" | "runbook" | "reference" | "deprecated" | "wake"
+	artifact_class?: "skill" | "runbook" | "reference" | "deprecated" | "wake" | "measurement"
 	kata_surface?:   "embedded" | "external" | "none"
 	inputs?: [...string]
 	outputs?: [...string]

@@ -1,0 +1,9 @@
+format = "tsc-target/0.1"
+name = "cc662-l4"
+kind = "aggregate"
+description = "L4: frozen #662 matter and its complete repository-local receipt stream."
+include = [
+  "docs/architecture/CELL-RUNTIME-CLASSES.md",
+  ".cdd/unreleased/662/**"
+]
+exclude = []

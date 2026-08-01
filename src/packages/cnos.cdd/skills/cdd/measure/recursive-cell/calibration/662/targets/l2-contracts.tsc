@@ -1,0 +1,15 @@
+format = "tsc-target/0.1"
+name = "cc662-l2"
+kind = "aggregate"
+description = "L2: contracts, evidence binding, CM/V/delta separation, receipts, and scope lift."
+include = [
+  "docs/architecture/CELL-RUNTIME.md",
+  "docs/architecture/CELL-RUNTIME-CLASSES.md",
+  "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md",
+  "src/packages/cnos.cdd/skills/cdd/RECEIPT-VALIDATION.md",
+  "schemas/cdd/contract.cue",
+  "schemas/cdd/receipt.cue",
+  "schemas/cdd/boundary_decision.cue",
+  "schemas/cds/receipt.cue"
+]
+exclude = []
