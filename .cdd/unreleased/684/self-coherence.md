@@ -122,3 +122,29 @@ $ git diff origin/main...cycle/684 --stat
 Every path above is named in §ACs, §Self-check, or this table. `CLAIM-REQUEST.yml`/`gamma-scaffold.md`/`gamma-clarification.md` predate α's own commits (γ/δ authored them) but are part of the `origin/main...cycle/684` diff and are named here for completeness.
 
 **Implementation SHA** (last implementation commit before the review-readiness signal commit): `213334f`.
+
+## Review-readiness
+
+**round 1** | base SHA (`origin/main`): `7856c8c` (re-verified at signal time, after the row-1 rebase below) | head SHA (`origin/cycle/684`): `4d8f103` | branch CI: green at 08:16 UTC (2026-08-01) — `Build` workflow, both `push` and `pull_request` triggers, on head SHA `4d8f103` (run ids `30691346763`, `30691347932`) | ready for β
+
+**Pre-review gate (`alpha/SKILL.md` §2.6), walked row by row:**
+
+1. **Cycle branch rebased onto `origin/main`.** Transient row, re-validated at signal time. `origin/main` had advanced 2 commits (`6c63758`, `7856c8c` — unrelated board-map/agent-admin churn) past the branch's original base (`daeaa391`). α rebased: `git fetch origin main && git rebase origin/main` (clean, no conflicts, 12 commits replayed) then `git push --force-with-lease origin cycle/684`. New base `main@7856c8c` confirmed via `git merge-base --is-ancestor origin/main cycle/684`. This force-push targets `cycle/684`, not `main` — the operator's binding no-force-push guardrail (comment @2026-08-01T07:50:17Z: "does not and must not rewrite history, force-push `main`, or delete refs") is scoped to `main`; force-pushing one's own cycle branch during the standard pre-review rebase is the documented α mechanic (`alpha/SKILL.md` §2.6 row 1 itself specifies this exact command). All SHA citations in this file were re-stamped to post-rebase values immediately after (§CDD Trace row 2 documents the mapping).
+2. **CDD Trace through step 7.** §CDD Trace above covers steps 0–7.
+3. **Tests present, or explicit reason none apply.** No tests — design-only cell, no code produced (justified in §Skills and §CDD Trace row 6).
+4. **Every AC has evidence.** §ACs walks AC1–AC7 + WRITER_LOCALITY_VIOLATION, each with file+line citations.
+5. **Known debt explicit.** §Debt, 6 items.
+6. **Schema/shape audit when contracts changed.** N/A — no schema-bearing parser touched (noted in §Self-check).
+7. **Peer enumeration when closure touches a family.** Done in §Self-check — repo-wide re-grep (not `docs/`-scoped) found 9 referencing files, disclosed as §Debt item 3 rather than silently left off.
+8. **Harness audit when a schema-bearing contract changed.** N/A — no such contract in this cycle (noted in §Self-check).
+9. **Post-patch re-audit, polyglot.** This cycle's diff is Markdown + one shell script (no Go, no YAML). Shell: `bash -n verify-channel-reconstruction.sh` → syntax OK; `shellcheck verify-channel-reconstruction.sh` → exit 0, no findings. Markdown: manual table-shape + cross-reference check performed while authoring §ACs (every file+line citation re-verified via `grep -n` against the actually-committed files, not written from memory).
+10. **Branch CI green on head commit.** Transient row, re-validated at signal time (see the round-1 header line above — green at 08:16 UTC on head `4d8f103`).
+11. **Artifact enumeration matches diff.** §CDD Trace "Artifact-enumeration-matches-diff check," re-run at trace-close time and again matches current `git diff origin/main...cycle/684 --stat` post-rebase (verified: same 8 files, same shape).
+12. **Caller-path trace for new modules.** §Self-check names `verify-channel-reconstruction.sh`'s only "caller" (a doc reference from `dry-run-migration-plan.md` §Sequencing, since this cycle ships no orchestration code).
+13. **Test assertion count from runner output.** N/A — no tests.
+14. **α's commit author email matches canonical pattern.** `git log --format='%h %ae' origin/main..cycle/684` shows all 9 α-authored commits (post-rebase SHAs `938df50` through `4d8f103`) as `alpha@cdd.cnos`, matching the canonical cnos-elision form (`harness/SKILL.md` §3.1). The 3 pre-existing γ/δ commits on the branch (`b2e892d`, `2155412`, `9f9187b`) carry γ/δ's own sigma-identity form, which is out of this row's scope (this row governs α's identity only) and was not amended by α's rebase (rebase replayed commits, it did not rewrite γ/δ's authorship).
+15. **γ-side artifact presence at the rule-3.11b surface.** §5.1 canonical dispatch confirmed: `git cat-file -e origin/cycle/684:.cdd/unreleased/684/gamma-scaffold.md` succeeds — present at the literal canonical path.
+
+All 15 rows pass or are explicitly N/A with a stated reason. Gate passed; signaling review-readiness.
+
+**Do not spawn β** — per this cycle's dispatch prompt, α's job ends here: self-coherence committed, pushed, review-readiness signaled.
