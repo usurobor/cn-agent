@@ -1,0 +1,18 @@
+wake: cds-dispatch
+protocol: cds
+issue: 684
+run_class: first_pass
+requested_transition: todo -> in-progress
+reason: >
+  Claim sequence step 5/6 (cds-dispatch wake). Well-formedness gates
+  verified: issue open, dispatch:cell present, exactly one protocol label
+  (protocol:cds), exactly one status label (status:todo). Issue body's
+  trailing "Not dispatched -- status:ready" line is superseded by an
+  explicit operator dispatch-authorization comment (usurobor, 2026-08-01
+  07:50:17Z, "kappa dispatch authorization + bounded scope refinement")
+  posted 5 seconds before the dispatch:cell/protocol:cds/status:todo labels
+  were applied (07:50:22Z) -- no body/label contradiction once the comment
+  trail is read. No cycle/684 branch, no PR referencing #684, no
+  .cdd/unreleased/684/ artifacts prior to this claim, no status:changes
+  history, no prior bounce comments -- classified first_pass per repair
+  re-entry preflight Step A.
