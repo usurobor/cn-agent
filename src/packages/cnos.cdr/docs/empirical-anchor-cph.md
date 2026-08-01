@@ -176,7 +176,7 @@ This document cites:
   the cnos.cdr v0.1 doctrinal contract (Sub 1, [cnos#390](https://github.com/usurobor/cnos/issues/390)). All Field N citations target this file. The "Shape-compatibility claim" sub-section of §"Empirical anchor" is the seed that this document verifies row-by-row.
 - [`schemas/cdr/receipt.cue`](../../../../schemas/cdr/receipt.cue) —
   the `#CDRReceipt` schema. Schema field citations target this file.
-- [`ROLES.md`](../../../../ROLES.md) — the six-field instantiation
+- [`ROLES.md`](../../../../docs/concepts/ROLES.md) — the six-field instantiation
   contract (`§3`) and the five-layer enforcement chain (`§4a`).
 - [`docs/papers/CCNF-AND-TYPED-TRUST.md §"Wave 4 — CDR bootstrap"`](../../../../docs/papers/CCNF-AND-TYPED-TRUST.md) — the doctrinal declaration that cph is anchored but not definitional.
 - The role overlays at `cnos.cdr/skills/cdr/{alpha,beta,gamma,delta,epsilon}/SKILL.md` (Sub 3, [cnos#395](https://github.com/usurobor/cnos/issues/395)) — referenced by file path only; this document does not depend on their merge state.

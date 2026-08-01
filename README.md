@@ -192,7 +192,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 ## Support
 
 - Individuals: [GitHub Sponsors](https://github.com/sponsors/usurobor)
-- Organizations: [Sustainability](SUSTAINABILITY.md)
+- Organizations: [Sustainability](docs/SUSTAINABILITY.md)
 
 ## License
 

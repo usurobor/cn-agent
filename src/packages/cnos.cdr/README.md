@@ -1,12 +1,12 @@
 # CDR — Coherence-Driven Research
 
-**CDR (Coherence-Driven Research)** is the research-protocol overlay in the c-d-X family. It instantiates the role-cell grammar (α/β/γ/δ/ε) and the six-field instantiation contract (per [`ROLES.md §3`](../../../ROLES.md)) for research work — investigation, synthesis, citation, dataset stewardship, claim transmission under uncertainty.
+**CDR (Coherence-Driven Research)** is the research-protocol overlay in the c-d-X family. It instantiates the role-cell grammar (α/β/γ/δ/ε) and the six-field instantiation contract (per [`ROLES.md §3`](../../../docs/concepts/ROLES.md)) for research work — investigation, synthesis, citation, dataset stewardship, claim transmission under uncertainty.
 
 CDR is **not** a persona and **not** a project. It is the protocol layer — layer 3 of the five-layer enforcement chain — that sits between the persona (Rho lives in `cn-rho`) and the project binding (cph lives in `usurobor/cph`). See [`skills/cdr/CDR.md` §"Persona, Protocol, Project"](skills/cdr/CDR.md) for the boundary.
 
 ## What CDR Does
 
-CDR is the research discipline used to transmit claims about the world (or about a system under study) coherently. Its loss function — per [`ROLES.md §4a.2`](../../../ROLES.md) — is **truth-preserving claim transmission under uncertainty**. The primary failure mode CDR must structurally resist is **overclaim**: a claim becoming stronger than its evidence; false knowledge propagating.
+CDR is the research discipline used to transmit claims about the world (or about a system under study) coherently. Its loss function — per [`ROLES.md §4a.2`](../../../docs/concepts/ROLES.md) — is **truth-preserving claim transmission under uncertainty**. The primary failure mode CDR must structurally resist is **overclaim**: a claim becoming stronger than its evidence; false knowledge propagating.
 
 CDR shares the role-cell kernel (α/β/γ/δ/ε) with [`cnos.cdd`](../cnos.cdd/) (the generic kernel) and is a sibling of [`cnos.cds`](../cnos.cds/) (engineering realization). The discipline profile diverges: engineering optimises for *artifact improvement under repairable feedback*; research optimises for *truth preservation under uncertainty*. The role names are shared; the loss functions diverge; the receipts and oracles diverge to enforce the divergent disciplines.
 
@@ -41,7 +41,7 @@ All five role overlays are CDR-specific extensions of the corresponding `cnos.cd
 
 1. [`skills/cdr/CDR.md`](skills/cdr/CDR.md) — The instantiation contract; the doctrinal anchor. Six fields per `ROLES.md §3`; architecture-choice declaration; persona/protocol/project boundary; empirical-anchor citation to `usurobor/cph`.
 2. [`skills/cdr/SKILL.md`](skills/cdr/SKILL.md) — The loader skill; declares the load order and the cross-protocol relationship with `cnos.cdd` (kernel) and `cnos.cds` (engineering sibling).
-3. [`ROLES.md §3` + `§4a`](../../../ROLES.md) — The generic role-cell grammar and the five-layer enforcement chain CDR inherits.
+3. [`ROLES.md §3` + `§4a`](../../../docs/concepts/ROLES.md) — The generic role-cell grammar and the five-layer enforcement chain CDR inherits.
 4. [`schemas/cdr/receipt.cue`](../../../schemas/cdr/receipt.cue) — The typed γ close-out surface (`#CDRReceipt`) referenced by CDR.md Field 3.
 5. [`docs/empirical-anchor-cph.md`](docs/empirical-anchor-cph.md) — Maps `usurobor/cph`'s research-cycle `.cdr/` artifacts to CDR's six-field structure; useful for grounding the doctrine in observable evidence.
 6. [cnos#376](https://github.com/usurobor/cnos/issues/376) — parent tracker; rationale for the research-protocol extraction; sub-issue wave history.

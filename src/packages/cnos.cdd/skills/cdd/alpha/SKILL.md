@@ -173,7 +173,7 @@ Required output:
 
 Peer enumeration applies at any scale. Beyond cross-surface peer sets, enumerate:
 
-- **Intra-doc repetition** — one document carrying the same fact across multiple sentences, tables, or sections. Each occurrence is a peer. When a reviewer names one site of a numeric, SHA, count, or named-value drift, grep the doc for every occurrence of the wrong value AND the corrected value before claiming the fix is complete. *Derives from: #266 F3 / F3-bis — `DESIGN-266-dist-out-of-git.md` carried one count across 4 sentences; 3 of 4 initially wrong; fixing only the named site surfaced F3-bis in the next round.*
+- **Intra-doc repetition** — one document carrying the same fact across multiple sentences, tables, or sections. Each occurrence is a peer. When a reviewer names one site of a numeric, SHA, count, or named-value drift, grep the doc for every occurrence of the wrong value AND the corrected value before claiming the fix is complete. *Derives from: #266 F3 / F3-bis — a design doc carried one count across 4 sentences; 3 of 4 initially wrong; fixing only the named site surfaced F3-bis in the next round.*
 - **Commit-message closure claims** — a commit fixing a finding typically restates the finding's resolution. The commit message is a peer of the artifact it fixes; the same grep-every-occurrence rule applies. A commit message that asserts "one remaining mismatch" without running the grep that would tell you otherwise is a closure overclaim. *Derives from: #266 commit `9f162dc` — commit message claimed closure prematurely; F3-bis was the direct consequence.*
 
 - ❌ "§Concrete changes step 1 corrected — fixes the one remaining mismatch" (without grepping the doc)

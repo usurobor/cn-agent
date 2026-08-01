@@ -20,7 +20,7 @@ outputs:
 # Epsilon (research ε)
 
 > **This is the CDR-specific instantiation of the generic ε doctrine declared in
-> [`ROLES.md §4b`](../../../../../../ROLES.md).** The kernel grammar —
+> [`ROLES.md §4b`](../../../../../../docs/concepts/ROLES.md).** The kernel grammar —
 > ε-as-protocol-reviewer in the scope ladder, the watched receipt fields
 > (`protocol_gap_count`, `protocol_gap_refs`), the gap-class instantiation
 > pattern (`{protocol}-{axis}-gap`), the iteration-artifact rule (required
@@ -31,13 +31,13 @@ outputs:
 > engineering-failure classes) and the **output-artifact location** (the
 > CDR-iteration artifact under the project binding's wave surface) diverge
 > for the research loss function per
-> [`ROLES.md §4a.2`](../../../../../../ROLES.md#4a2-loss-function-distinction).
+> [`ROLES.md §4a.2`](../../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction).
 
 ## §1 ε's CDR-side scope
 
 ε's domain in CDR is **protocol-iteration**: the work of observing whether the CDR protocol is itself coherent — whether it selects the right research gaps, closes them with correctly-calibrated typed receipts, and produces a research-claim transmission discipline that learns from its own waves rather than repeating the same overclaim class.
 
-The canonical output artifact is the **CDR-iteration record** (the research analogue of `cdd-iteration.md`). Per the inherited cadence rule ([`ROLES.md §4b.4`](../../../../../../ROLES.md)), the artifact is required only when the wave's receipt has `protocol_gap_count > 0` — i.e. when the wave produced ≥1 finding tagged with one of the `cdr-*-gap` classes below. The receipt's `protocol_gap_count == 0` is the no-gap signal; no iteration file is required when the wave ran cleanly. The artifact's concrete location is project-binding-dependent (typically `<project>/.cdr/waves/{wave-id}/cdr-iteration.md` or an equivalent under the project's wave surface); the protocol-overlay layer declares the artifact's existence and shape, not its file path.
+The canonical output artifact is the **CDR-iteration record** (the research analogue of `cdd-iteration.md`). Per the inherited cadence rule ([`ROLES.md §4b.4`](../../../../../../docs/concepts/ROLES.md)), the artifact is required only when the wave's receipt has `protocol_gap_count > 0` — i.e. when the wave produced ≥1 finding tagged with one of the `cdr-*-gap` classes below. The receipt's `protocol_gap_count == 0` is the no-gap signal; no iteration file is required when the wave ran cleanly. The artifact's concrete location is project-binding-dependent (typically `<project>/.cdr/waves/{wave-id}/cdr-iteration.md` or an equivalent under the project's wave surface); the protocol-overlay layer declares the artifact's existence and shape, not its file path.
 
 For waves that produce findings, the trigger classes the artifact enumerates are CDR-specific (per [`CDR.md §"Field 5"`](../CDR.md)):
 
@@ -56,7 +56,7 @@ The MCA discipline governs what ε does with each finding (per the generic doctr
 - **No MCA yet, pattern real** → file a protocol MCI (entry in the project binding's iteration INDEX + an issue against `cnos.cdr` if the patch crosses the protocol boundary).
 - **One-off, no pattern** → drop; note the drop explicitly.
 
-ε cross-references [`ROLES.md §1`](../../../../../../ROLES.md#1-the-role-ladder) row 5 (ε iterates the δ-discipline) and [`CDR.md §"Field 5"`](../CDR.md) (the authoring procedure and per-finding shape for the CDR-iteration artifact).
+ε cross-references [`ROLES.md §1`](../../../../../../docs/concepts/ROLES.md#1-the-role-ladder) row 5 (ε iterates the δ-discipline) and [`CDR.md §"Field 5"`](../CDR.md) (the authoring procedure and per-finding shape for the CDR-iteration artifact).
 
 ## §2 ε's relationship to δ
 
@@ -64,9 +64,9 @@ The MCA discipline governs what ε does with each finding (per the generic doctr
 
 Separation becomes warranted when protocol-iteration volume justifies dedicated attention: when the CDR-iteration artifact is written on most waves with non-empty findings; when the iteration INDEX accumulates faster than one actor can triage; when the operator's operational load crowds out the reflective work. At that point, ε may be a distinct actor — a second agent or a dedicated human — who reads receipts across waves and drives protocol patches independently.
 
-No claim is made here that ε is required as a separate human or agent. ε is a structural role in the scope-escalation ladder ([`ROLES.md §1`](../../../../../../ROLES.md#1-the-role-ladder)), not a headcount requirement. The role may collapse onto δ indefinitely in small-protocol regimes; the obligation is that ε work happens and is attributed, not that it is performed by a distinct person.
+No claim is made here that ε is required as a separate human or agent. ε is a structural role in the scope-escalation ladder ([`ROLES.md §1`](../../../../../../docs/concepts/ROLES.md#1-the-role-ladder)), not a headcount requirement. The role may collapse onto δ indefinitely in small-protocol regimes; the obligation is that ε work happens and is attributed, not that it is performed by a distinct person.
 
-See [`ROLES.md §4`](../../../../../../ROLES.md#4-hats-vs-actors-roles-as-behavioral-contracts) for the general principle governing role collapse rules, and [`CDR.md §"Field 6"`](../CDR.md) for CDR's specific collapse rule — note that the α=β collapse is **never** safe for research-claim cycles (overclaim is the precise failure mode α cannot self-detect), while ε=δ and γ=δ are conditionally permitted.
+See [`ROLES.md §4`](../../../../../../docs/concepts/ROLES.md#4-hats-vs-actors-roles-as-behavioral-contracts) for the general principle governing role collapse rules, and [`CDR.md §"Field 6"`](../CDR.md) for CDR's specific collapse rule — note that the α=β collapse is **never** safe for research-claim cycles (overclaim is the precise failure mode α cannot self-detect), while ε=δ and γ=δ are conditionally permitted.
 
 ## §3 Persona / protocol / project boundary
 

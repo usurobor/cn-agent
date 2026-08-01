@@ -64,7 +64,7 @@ The mapping below covers the load-bearing operational surfaces (4–16). The doc
 
 ### §Six-field instantiation contract
 
-CDS's six-field contract (Matter type, Review oracle, γ close-out artifact, δ cadence, ε iteration cadence, Actor collapse rule) is the spine declared by [`ROLES.md §3`](../../../../ROLES.md) and instantiated for software by [`CDS.md §Six-field instantiation contract`](../skills/cds/CDS.md). Every cnos cycle since #364 has been a six-field instantiation; the cycles below are load-bearing because they introduced, refined, or stress-tested the contract itself.
+CDS's six-field contract (Matter type, Review oracle, γ close-out artifact, δ cadence, ε iteration cadence, Actor collapse rule) is the spine declared by [`ROLES.md §3`](../../../../docs/concepts/ROLES.md) and instantiated for software by [`CDS.md §Six-field instantiation contract`](../skills/cds/CDS.md). Every cnos cycle since #364 has been a six-field instantiation; the cycles below are load-bearing because they introduced, refined, or stress-tested the contract itself.
 
 | Cycle | Issue | Date | What it exercised | Artifact citation |
 |---|---|---|---|---|
@@ -304,7 +304,7 @@ This document cites:
   target this file. The "Empirical anchor → Sub 7 deferred surface-by-surface mapping" sub-section is the seed that this document verifies.
 - [`src/packages/cnos.cdd/skills/cdd/CDD.md`](../../cnos.cdd/skills/cdd/CDD.md) —
   the kernel doctrine (CCNF spine) that CDS extends. CDS inherits the
-  six-field structure from CDD via [`ROLES.md §3`](../../../../ROLES.md);
+  six-field structure from CDD via [`ROLES.md §3`](../../../../docs/concepts/ROLES.md);
   CDS is the software-domain instantiation.
 - [`src/packages/cnos.cdr/docs/empirical-anchor-cph.md`](../../cnos.cdr/docs/empirical-anchor-cph.md) —
   the structural precedent. The cph anchor maps research artifact classes
@@ -317,7 +317,7 @@ This document cites:
 - [`.cdd/iterations/INDEX.md`](../../../../.cdd/iterations/INDEX.md) — the
   canonical receipt stream. Every `cdd-iteration.md` row referenced in
   this doc lives under one of the paths listed there.
-- [`ROLES.md`](../../../../ROLES.md) — the six-field instantiation contract
+- [`ROLES.md`](../../../../docs/concepts/ROLES.md) — the six-field instantiation contract
   (`§3`) and the five-layer enforcement chain (`§4a`) that CDS realizes.
 - [usurobor/cnos issues #364 through #412](https://github.com/usurobor/cnos/issues) —
   the cycle stream cited row-by-row.

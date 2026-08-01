@@ -201,5 +201,4 @@ When [LANGUAGE-SPEC.md](../docs/reference/ctb/LANGUAGE-SPEC.md) changes:
 - [#301](https://github.com/usurobor/cnos/issues/301) — this work, CUE-based skill frontmatter validation in coherence CI.
 - [#289](https://github.com/usurobor/cnos/issues/289) — CTB v0.2 stabilization (this is the machine-checkable layer of v0.2 AC5).
 - [#303](https://github.com/usurobor/cnos/issues/303) — `ctb-check` v0 (witness / close-out validation; out of scope here).
-- `docs/reference/ctb/LANGUAGE-SPEC.md` — v0.1 spec governing field shape, stratification, and reserved vocabulary.
-- `docs/reference/ctb/LANGUAGE-SPEC-v0.2-draft.md` — v0.2 draft (out of scope until promoted).
+- `docs/reference/ctb/LANGUAGE-SPEC.md` — the spec governing field shape, stratification, and reserved vocabulary.

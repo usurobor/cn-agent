@@ -1,10 +1,12 @@
 # CTB v4.0.0 — Vision, Design, and Definition
 
+> **Archived exploration.** A CTB v4 direction we considered — kept as a record of what we thought CTB could become, not a current specification. The active CTB spec is [`LANGUAGE-SPEC.md`](../reference/ctb/LANGUAGE-SPEC.md).
+
 **Project:** Coherent Agents (CA) / git-CN / CTB
 **Document type:** Vision + Design Definition (non-normative)
 **Version:** 4.0.0
 **Date:** 2026-03-22
-**Status:** Draft for alignment (intended to guide the next 2–4 major iterations)
+**Status:** Archived exploration — a considered direction, superseded / not current spec.
 
 ---
 
@@ -268,8 +270,8 @@ Exit criteria:
 
 Deliverables:
 
-- **Two kinds:** `agent-type` (type declarations: loop, invariants, required bindings) and `agent-module` (callable modules with signatures and composition bodies). See `LANGUAGE-SPEC-v0.2-draft.md` §1.
-- **Composition operators:** `>>` (sequence), `>>=` (bind), `|||` (parallel), `case` (branch), `fix` (iterate), `wait` (join), `try` (recover) as first-class effect algebra terms. See `LANGUAGE-SPEC-v0.2-draft.md` §6.
+- **Two kinds:** `agent-type` (type declarations: loop, invariants, required bindings) and `agent-module` (callable modules with signatures and composition bodies). See [`CTB-LANGUAGE-SPEC-v0.2-draft.md`](CTB-LANGUAGE-SPEC-v0.2-draft.md) §1.
+- **Composition operators:** `>>` (sequence), `>>=` (bind), `|||` (parallel), `case` (branch), `fix` (iterate), `wait` (join), `try` (recover) as first-class effect algebra terms. See [`CTB-LANGUAGE-SPEC-v0.2-draft.md`](CTB-LANGUAGE-SPEC-v0.2-draft.md) §6.
 - **Type satisfaction:** loader verifies that an agent-module's body respects its declared agent-type's invariants.
 - **Scope enforcement:** runtime enforces `task-local` / `role-local` / `global` boundaries — no upward mutation, state dies with scope.
 - Module/import system (small and explicit; no dynamic loading).
@@ -461,7 +463,7 @@ The skill-language framing (§1–§6) was correct as a migration path but too n
 
 The v2.0 target (§8.2) is therefore not "toolchain, types, and composition" for skills alone. It is the first machine-checkable agent-composition layer. The deliverables listed in §8.2 already reflect this (agent-type, agent-module, composition operators, type satisfaction, scope enforcement). This addendum records the conceptual shift; the roadmap section already describes the concrete target.
 
-See `LANGUAGE-SPEC-v0.2-draft.md` §1.4 (triadic carrier) and `SEMANTICS-NOTES.md` §15 (full rationale) for the detailed treatment.
+See [`CTB-LANGUAGE-SPEC-v0.2-draft.md`](CTB-LANGUAGE-SPEC-v0.2-draft.md) §1.4 (triadic carrier) and [`SEMANTICS-NOTES.md`](../reference/ctb/SEMANTICS-NOTES.md) §15 (full rationale) for the detailed treatment.
 
 ---
 

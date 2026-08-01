@@ -1,10 +1,12 @@
 # CTB Language Spec
 
+> **Archived exploration.** A CTB v4 direction we considered — kept as a record of what we thought CTB could become, not a current specification. The active CTB spec is [`LANGUAGE-SPEC.md`](../reference/ctb/LANGUAGE-SPEC.md).
+
 **Version:** 0.2 (draft-normative)
 
 **Date:** 2026-04-28
 
-**Status:** Draft-normative migration target. Conceptually supersedes v0.1 by unifying "skill" and "agent" into one primitive, but does not govern current v0.1 conformance until promoted. Until promotion, `LANGUAGE-SPEC.md` (v0.1) governs conformance.
+**Status:** Archived exploration — a draft direction that was not promoted. [`LANGUAGE-SPEC.md`](../reference/ctb/LANGUAGE-SPEC.md) (v0.1) is the active CTB spec.
 
 ---
 
@@ -12,17 +14,17 @@
 
 This document specifies the language-level model of CTB: what an agent is, what it declares, how it is named, scoped, invoked, composed, and bounded against effects.
 
-It is a **draft migration target**, not the active normative spec. v0.1 (`LANGUAGE-SPEC.md`) governs current conformance until v0.2 is explicitly promoted. v0.2 conceptually supersedes v0.1 by collapsing "skill" and "agent" into one primitive; that supersession takes effect through promotion, not through this document's existence.
+This was a **draft migration target**, not the active normative spec, and it was not promoted. v0.1 ([`LANGUAGE-SPEC.md`](../reference/ctb/LANGUAGE-SPEC.md)) remains the active CTB spec. v0.2 conceptually would have superseded v0.1 by collapsing "skill" and "agent" into one primitive; that supersession would have taken effect through promotion, which did not occur.
 
 The core simplification over v0.1: there is one primitive — the **agent**. What v0.1 called a "skill" is a narrow-scope agent with a single axis and short lifetime. What practice calls a "role" is an agent with role-local scope and a loop. What practice calls a "triad" is three agents composing into one agent at the next scale. The composition model is the same at every level: dispatch with scoped authority.
 
 It is **not**:
 
-- the strategy document (see `CTB-v4.0.0-VISION.md`)
-- the rationale document (see `SEMANTICS-NOTES.md`)
+- the strategy document (see [`CTB-v4.0.0-VISION.md`](CTB-v4.0.0-VISION.md))
+- the rationale document (see [`SEMANTICS-NOTES.md`](../reference/ctb/SEMANTICS-NOTES.md))
 - the kernel grammar of `.coh` terms (defined separately by the v1.x kernel spec)
 
-Where this spec and the Vision disagree, this spec governs the language model. Where this spec and the kernel spec disagree on terms and equations, the kernel spec governs.
+Where this spec and the Vision disagreed, this spec was intended to govern the language model. Where this spec and the kernel spec disagreed on terms and equations, the kernel spec governed.
 
 The spec uses **MUST**, **MUST NOT**, **SHOULD**, **MAY** in the IETF sense.
 
@@ -647,12 +649,12 @@ This section is non-normative; the modal verbs in this list are recommendations 
 
 Until those checks exist, v0.2 remains a draft discipline rather than enforced semantics.
 
-The structural basis for witness independence is TSC-Oper's W1–W4 witness model (usurobor/tsc `spec/tsc-oper.md`). See `SEMANTICS-NOTES.md` §15.6 for the mapping between TSC-Oper states and CTB close-out forms, and for the ctb-check implications.
+The structural basis for witness independence is TSC-Oper's W1–W4 witness model (usurobor/tsc `spec/tsc-oper.md`). See [`SEMANTICS-NOTES.md`](../reference/ctb/SEMANTICS-NOTES.md) §15.6 for the mapping between TSC-Oper states and CTB close-out forms, and for the ctb-check implications.
 
 ---
 
 ## Authority
 
-This document governs the language model for agent modules, signatures, scope, invocation, composition, and the effect-plan boundary.
+This document was intended to govern the language model for agent modules, signatures, scope, invocation, composition, and the effect-plan boundary.
 
-If this spec and the Vision disagree on language semantics, this spec governs. If this spec and the kernel spec disagree on terms or evaluation, the kernel spec governs.
+Where this spec and the Vision disagreed on language semantics, this spec was intended to govern. Where this spec and the kernel spec disagreed on terms or evaluation, the kernel spec governed.

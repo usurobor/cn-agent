@@ -6,7 +6,7 @@
 > CDS is a software-engineering-protocol instantiation of the generic
 > role-scope ladder pattern. The pattern (α/β/γ/δ/ε roles, scope-escalation
 > contract, six-field instantiation contract) is documented at
-> [`ROLES.md`](../../../../../ROLES.md) at the repo root. CDS does not claim
+> [`ROLES.md`](../../../../../docs/concepts/ROLES.md). CDS does not claim
 > to have originated the role structure; it instantiates the structure for
 > software-engineering work — code, tests, documentation, schemas, releases,
 > deployments — under the engineering loss function (artifact improvement
@@ -34,7 +34,7 @@ persona/protocol/project boundary.
 
 CDS is the engineering discipline used to improve software artifacts
 coherently under repairable feedback. Its loss function — per
-[`ROLES.md §4a.2`](../../../../../ROLES.md#4a2-loss-function-distinction) —
+[`ROLES.md §4a.2`](../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction) —
 is *artifact improvement under repairable feedback*. The primary failure
 mode CDS must structurally resist is **the stalled loop**: code that drifts
 farther from coherence with each round; tests that grow but do not bind;
@@ -51,7 +51,7 @@ oracles diverge to enforce the divergent disciplines.
 The asymmetry that drives the divergence — engineering's strong
 correction-surface (build, test, CI, deployment-probe loops) versus
 research's slow-truth-check surface — is the subject of
-[`ROLES.md §4a.2`](../../../../../ROLES.md#4a2-loss-function-distinction);
+[`ROLES.md §4a.2`](../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction);
 that section is the source-of-truth for the distinction and is not
 restated here. CDS's authoring discipline inherits the engineering side
 of that distinction: the shared role grammar covers both regimes; the
@@ -180,7 +180,7 @@ The decision rationale and the schema-level precedent are sourced from:
   — declare the wave-shape for the engineering-realization extraction. The
   CCNF spine landed at Phase 7 of cnos#366 (cycle/402); the cds extraction
   is the post-CCNF wave at cnos#403; CDS.md is its doctrinal-contract step.
-- [`ROLES.md §4a.2`](../../../../../ROLES.md#4a2-loss-function-distinction)
+- [`ROLES.md §4a.2`](../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction)
   — the loss-function distinction that makes engineering-discipline and
   research-discipline differ at the procedural layer while sharing the
   role-cell kernel.
@@ -208,7 +208,7 @@ The decision rationale and the schema-level precedent are sourced from:
 
 CDS is a **protocol overlay** — layer 3 of the five-layer enforcement chain
 declared at
-[`ROLES.md §4a`](../../../../../ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain).
+[`ROLES.md §4a`](../../../../../docs/concepts/ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain).
 This section names CDS's relationship to the layers above and below it.
 The boundary is doctrinal, not operational; operational mechanics (dispatch,
 polling, repo wiring, branch creation, merge effection) belong in role-overlay
@@ -218,7 +218,7 @@ skills (Sub 3) and in persona/operator contracts (separate hubs).
 
 A persona is *what kind of mind is doing the work*. For engineering, the
 named exemplar is **Sigma** — the engineering persona declared at
-[`ROLES.md §4a.4`](../../../../../ROLES.md#4a4-worked-example--sigma-engineering-and-rho-research).
+[`ROLES.md §4a.4`](../../../../../docs/concepts/ROLES.md#4a4-worked-example--sigma-engineering-and-rho-research).
 Sigma's discipline profile is sourced from that section (action-biased,
 correction-surface-driven, debt-recording rather than block-on-perfection);
 CDS.md does not restate the profile, only cites it. Other engineering
@@ -285,7 +285,7 @@ bind concrete artifacts.
 ### Why this matters
 
 Conflating any two of the three layers produces drift, exactly as
-[`ROLES.md §4a`](../../../../../ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain)
+[`ROLES.md §4a`](../../../../../docs/concepts/ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain)
 warns. Specifically for CDS:
 
 - **Persona content inside CDS.md** would make CDS un-reusable across
@@ -308,7 +308,7 @@ The three canonical homes (`cn-sigma/spec/`, `cnos.cds/skills/cds/`,
 
 ## Six-field instantiation contract
 
-Per [`ROLES.md §3`](../../../../../ROLES.md#3-instantiation-contract), every
+Per [`ROLES.md §3`](../../../../../docs/concepts/ROLES.md#3-instantiation-contract), every
 c-d-X protocol must declare six fields. CDS declares them below, each in
 engineering-loss-function language. The shape follows the role-ladder
 contract; the language is software-engineering, not research.
@@ -368,7 +368,7 @@ land — is **research-class evidence** consumed by reference (cited from
 the cycle's design notes), not authored under CDS. A cycle whose primary
 deliverable is a knowledge claim under uncertainty is structurally a CDR
 cycle, not a CDS cycle; the protocol dispatch boundary (per
-[`ROLES.md §4a.2`](../../../../../ROLES.md#4a2-loss-function-distinction))
+[`ROLES.md §4a.2`](../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction))
 routes the work to the matching discipline. The reverse routing also
 holds: a CDR wave that ships executable measurement scripts as its
 primary deliverable is structurally a CDS cycle whose result feeds the CDR
@@ -604,10 +604,10 @@ across many `#CDSReceipt` instances (or their narrative close-out analogues
 where V is not yet wired in) and surfaces patterns that require protocol
 patches. The cadence is **finding-triggered**, not calendar-triggered, per
 the generic ε doctrine at
-[`ROLES.md §4b`](../../../../../ROLES.md#4b-generic-%CE%B5--the-protocol-iteration-role).
+[`ROLES.md §4b`](../../../../../docs/concepts/ROLES.md#4b-generic-%CE%B5--the-protocol-iteration-role).
 
 **Gap classes** — per the
-[`ROLES.md §4b.3`](../../../../../ROLES.md#4b3-gap-class-taxonomy-instantiation-pattern)
+[`ROLES.md §4b.3`](../../../../../docs/concepts/ROLES.md#4b3-gap-class-taxonomy-instantiation-pattern)
 `{protocol}-{axis}-gap` naming convention, CDS declares four classes:
 
 - **`cds-skill-gap`** — a procedural skill is underspecified or wrong. A
@@ -640,7 +640,7 @@ record. The two name-sets cover the same gap geometry; the rename is a
 package-attribution rename, not a doctrine change.
 
 **Iteration artifact** — per
-[`ROLES.md §4b.4`](../../../../../ROLES.md#4b4-iteration-artifact-and-cadence-rule):
+[`ROLES.md §4b.4`](../../../../../docs/concepts/ROLES.md#4b4-iteration-artifact-and-cadence-rule):
 
 - File: `cds-iteration.md` (canonical name; the empirical-anchor cycles
   use the pre-rename `cdd-iteration.md` until Sub 5 lands the rename).
@@ -653,7 +653,7 @@ package-attribution rename, not a doctrine change.
   row even for zero-finding cycles).
 
 The cadence rule (per
-[`ROLES.md §4b.4`](../../../../../ROLES.md#4b4-iteration-artifact-and-cadence-rule)):
+[`ROLES.md §4b.4`](../../../../../docs/concepts/ROLES.md#4b4-iteration-artifact-and-cadence-rule)):
 the iteration artifact is **required only when `protocol_gap_count > 0`**.
 The cycle/401 courtesy convention permits writing a zero-findings stub for
 traceability; the stub records `protocol_gap_count: 0` explicitly and is
@@ -685,7 +685,7 @@ linked in the aggregator with the cycle's finding count of 0.
 ε's output is the iteration artifact above. Sub 3's `epsilon/SKILL.md`
 declares the per-finding shape, the disposition workflow (ship-now /
 next-MCA / no-patch per
-[`ROLES.md §4b.5`](../../../../../ROLES.md#4b5-mca-discipline)), and the
+[`ROLES.md §4b.5`](../../../../../docs/concepts/ROLES.md#4b5-mca-discipline)), and the
 aggregator-update procedure.
 
 The Sub-5-vs-Field-5 line: Field 5 owns the gap-class taxonomy + the
@@ -706,8 +706,8 @@ which are prohibited, and what signal warrants splitting.
   The order-of-observation argument for why α cannot self-review (the
   structural independence that makes review add information α could
   not produce) is the subject of
-  [`ROLES.md §1`](../../../../../ROLES.md#1-the-role-ladder) and
-  [`ROLES.md §4`](../../../../../ROLES.md#4-hats-vs-actors-roles-as-behavioral-contracts);
+  [`ROLES.md §1`](../../../../../docs/concepts/ROLES.md#1-the-role-ladder) and
+  [`ROLES.md §4`](../../../../../docs/concepts/ROLES.md#4-hats-vs-actors-roles-as-behavioral-contracts);
   CDS inherits the argument without restatement. The engineering-side
   qualifier: the engineering substrate's fast correction surface
   (build, test, CI) catches some failure modes structurally, but the
@@ -743,7 +743,7 @@ which are prohibited, and what signal warrants splitting.
 - **ε = δ until receipt-stream volume warrants split.** Allowed in
   small-protocol regimes where ε's receipt-stream review work does not
   justify a dedicated reviewer of the protocol. Per
-  [`ROLES.md §4b.6`](../../../../../ROLES.md#4b6-%CE%B5s-relationship-to-%CE%B4-collapse-rule),
+  [`ROLES.md §4b.6`](../../../../../docs/concepts/ROLES.md#4b6-%CE%B5s-relationship-to-%CE%B4-collapse-rule),
   the collapse is one of the *safe* collapses. The signal for splitting:
   finding volume crosses a threshold where the protocol-iteration load
   competes with cross-cycle gap-selection load.
@@ -3303,7 +3303,7 @@ This is intentional. The CDS doctrine and the engineering work happen on
 the same substrate so the doctrine learns from the work and the work binds
 against the doctrine in tight feedback loops. The recursion is bounded
 by the
-[`ROLES.md §4a`](../../../../../ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain)
+[`ROLES.md §4a`](../../../../../docs/concepts/ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain)
 five-layer chain: the protocol overlay (this file) is doctrinally
 independent of the project binding (cnos's `.cdd/` directory) even when
 they live in the same repository.
@@ -3430,7 +3430,7 @@ similar; the v0.1 naming follows the cycle/406 README precedent.
 
 Inherits, cites, or extends:
 
-- [`ROLES.md`](../../../../../ROLES.md) — the role-cell grammar and the
+- [`ROLES.md`](../../../../../docs/concepts/ROLES.md) — the role-cell grammar and the
   six-field instantiation contract that CDS realises. Specifically:
   - `§3` — six-field instantiation contract (the structure mirrored
     above).
