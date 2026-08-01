@@ -1,0 +1,476 @@
+# CTB v4.0.0 — Vision, Design, and Definition
+
+> **Archived exploration.** A CTB v4 direction we considered — kept as a record of what we thought CTB could become, not a current specification. The active CTB spec is [`LANGUAGE-SPEC.md`](../reference/ctb/LANGUAGE-SPEC.md).
+
+**Project:** Coherent Agents (CA) / git-CN / CTB
+**Document type:** Vision + Design Definition (non-normative)
+**Version:** 4.0.0
+**Date:** 2026-03-22
+**Status:** Archived exploration — a considered direction, superseded / not current spec.
+
+---
+
+## 0. Why this document exists
+
+CTB v1.0.x defines a small, deterministic, expression-only language that can *articulate* (not "execute") agent behavior as pure transformations over triadic terms.
+
+This document explains the next step: how CTB evolves from a correct minimal kernel into a **full-blown, adoption-ready language for LLM-driven Coherent Agents**.
+
+"Full-blown" here does **not** mean "general-purpose." It means:
+
+- **Implementable** (reference interpreter/compiler exists)
+- **Usable** (tooling + debugging + docs)
+- **Verifiable** (determinism, totality profiles, witness diagnostics)
+- **Integrable** (effects bridge to real systems: git, filesystem, issues, PRs)
+- **Adoptable** (teams can onboard without buying the whole philosophical stack)
+
+---
+
+## 1. Problem statement
+
+LLM agents can already write code, but agent coordination has three persistent failure modes:
+
+1. **Non-determinism and ambiguity**
+   - "Same prompt, same repo state" does not guarantee the same action plan.
+   - Natural language specs are underdetermined; general-purpose languages are overpowered.
+
+2. **Non-auditable intent vs. action**
+   - An agent can claim it followed a policy, but peers cannot cheaply verify it.
+   - Git history proves *something* happened, not *why* it was the right move.
+
+3. **Coordination without shared runtime**
+   - Different agents run different stacks (Node, Python, local tools).
+   - A shared "skills layer" written in Markdown or prose cannot be executed consistently.
+
+**We need a skills substrate where:**
+
+- Skills are **programs**, not prose.
+- Programs are **small enough** for LLMs to reliably produce, review, and repair.
+- Outputs are **effect plans** (data) rather than immediate side effects.
+- Peers can **re-run** the same program and get the same plan.
+- Plans can be **verified** and then executed by a separate runtime with explicit capabilities.
+
+---
+
+## 2. Audience and framing
+
+This document is written for:
+
+- **Implementers** building the runtime/toolchain (compiler, interpreter, linter, formatter)
+- **Agent architects** designing git-based coordination protocols (git-CN)
+- **Early adopters** who want practical value *before* the full stack is finished
+- **Skeptical reviewers** evaluating whether CTB adds real leverage vs. "just use Python"
+
+It assumes:
+
+- The **theory stack** exists (Coherence Calculus → TSC → CTB → cn-agent/git-CN)
+- The *direction* is "coherence as a computable property," not a vibe
+
+---
+
+## 3. Design goals
+
+### 3.1 Primary goals (must-win)
+
+1. **Determinism**
+   - Same inputs → same outputs.
+   - No hidden time, randomness, I/O, or ambient state.
+
+2. **Totality as an operational option**
+   - A strict profile (TOTAL) where evaluation cannot crash due to match failure.
+   - A relaxed profile (PARTIAL) where missing cases are allowed but warned.
+
+3. **Misuse resistance**
+   - Ban ambiguous clause overlap (cross-overlap)
+   - Prevent semantics changing from line reordering
+   - Provide synthesized witnesses when something is incomplete
+
+4. **Separation of logic and effects**
+   - CTB program returns an **Effect Plan** (a term).
+   - A separate runtime interprets the plan with explicit capabilities.
+
+5. **LLM friendliness**
+   - Small surface area, predictable syntax.
+   - Canonical formatting.
+   - Errors that include counterexamples (witnesses) and suggested repairs.
+
+### 3.2 Non-goals (explicitly not trying to do)
+
+- Replace Python/JS/OCaml for general compute.
+- Become a full dependent type theory.
+- Make "emoji programming" mandatory; emoji is an allowed atom set, not the language.
+- Implicitly grant authority; effects remain capability-gated.
+
+---
+
+## 4. The core model
+
+### 4.1 CTB programs are *equations* over triadic terms
+
+CTB's kernel remains intentionally small:
+
+- **Wholeness**: `_` (value)
+- **Atoms**: emoji and symbol tokens (domain-defined)
+- **Tri constructor**: `[L|C|R]`
+
+A CTB "skill" is a pure function:
+
+```
+skill : State -> EffectPlan
+```
+
+Where:
+
+- `State` is data (usually derived from git-CN hub + thread + repo context)
+- `EffectPlan` is data (a term that describes intended actions)
+
+### 4.2 Why "plan-as-data" is the unlock
+
+If a skill returns data, then:
+
+- Peers can reproduce and verify the output.
+- Tooling can statically lint for dangerous patterns.
+- Runtimes can sandbox execution and enforce capabilities.
+
+The runtime becomes a "driver," not the source of truth.
+
+---
+
+## 5. The adoption constraint: why not just use an existing language?
+
+### 5.1 Baseline alternatives
+
+**A) Use general-purpose languages for skills (Python/JS/OCaml)**
+
+- Pros: immediate; libraries; familiar
+- Cons:
+  - enormous surface area for LLM errors
+  - ambient effects and non-determinism
+  - difficult cross-agent verification
+  - security: arbitrary code execution
+
+**B) Use declarative formats (YAML/JSON) for skills**
+
+- Pros: easy to parse; deterministic
+- Cons:
+  - weak composability
+  - limited abstraction and reuse
+  - quickly turns into "YAML programming" with ad-hoc conventions
+
+**C) Use existing total/config languages (Dhall, Nix, Cue)**
+
+- Pros: purity; some totality guarantees; good tooling
+- Cons:
+  - not designed around triadic articulation
+  - ergonomics for LLM authoring are mixed
+  - may force a different conceptual stack
+
+**D) Use WASM modules as the skill unit**
+
+- Pros: sandboxing; portable runtime
+- Cons:
+  - authoring friction (toolchain)
+  - LLMs still need to produce source in another language
+  - debugging and explainability are worse
+
+### 5.2 CTB's differentiator
+
+CTB aims at a narrow but high-leverage niche:
+
+- A *small*, deterministic, equation-only language
+- With built-in conformance constraints that prevent ambiguous meaning
+- And with first-class support for "errors as counterexamples" (witness synthesis)
+
+This is specifically tuned for **LLMs writing skills** and **peers verifying skills**.
+
+---
+
+## 6. Proposed solution: CTB as the Skill Language for Coherent Agents
+
+### 6.1 Architectural layers
+
+**Layer 1 — CTB (pure)**
+
+- Parses `.coh` source.
+- Evaluates pure equations.
+- Produces an output term: `EffectPlan`.
+
+**Layer 2 — Effect Algebra (still pure)**
+
+- A standardized vocabulary of effects encoded as terms.
+- Example (illustrative):
+
+```
+[WriteFile | [path|content|_] | _]
+[GitCommit | [message|files|_] | _]
+[Seq | effect1 | effect2]
+```
+
+**Layer 3 — Runtime Bridge (impure, capability-gated)**
+
+- Interprets effect terms.
+- Executes with explicit capability grants (read-only git, write-files, create PRs, etc.).
+- Produces an execution log that can be committed to git-CN.
+
+### 6.2 Determinism boundary
+
+Determinism is guaranteed **above** the runtime boundary:
+
+- CTB evaluation and effect plan synthesis are deterministic.
+- Runtime execution is audited and reproducible *in intent*, even if the environment changes.
+
+---
+
+## 7. Implementation strategy (OCaml-first, adoption-aware)
+
+### 7.1 Language design influence vs. implementation language
+
+CTB's surface syntax can feel "Haskell-like" (infix declarations, off-side rule, equational style) without being "based on Haskell."
+
+The reference implementation **should be written in OCaml** if the host project/tooling is already OCaml-based.
+
+Why OCaml works well:
+
+- Pattern matching maps directly onto CTB clause semantics.
+- OCaml makes it easier to keep the interpreter small and correct.
+- A single static binary can be distributed for CI and local usage.
+
+### 7.2 Multi-runtime posture
+
+To optimize adoption, aim for a two-target posture:
+
+- **Reference:** OCaml interpreter/compiler (correctness + maintainability)
+- **Distribution:** one of
+  - compiled binary invoked by Node-based tools, or
+  - WASM build embedded in Node tools, or
+  - a small JS port once semantics stabilize
+
+The decision is tactical; the language semantics stay the same.
+
+---
+
+## 8. Roadmap: CTB v1 → v4
+
+This roadmap is intentionally outcome-driven.
+
+### 8.1 v1.x — "Spec is frozen; prove it runs"
+
+Deliverables:
+
+- Reference interpreter that can run the v1.0.5 conformance suite.
+- Canonical formatter (so LLM output can be normalized).
+- Effect Algebra v0 (minimal set: read, write, git operations, sequencing).
+- One migrated skill from Markdown → `.coh`, with golden tests.
+
+Exit criteria:
+
+- A peer can clone a hub, run `ctb check`, and deterministically reproduce a skill's plan.
+
+### 8.2 v2.0 — "Toolchain, types, and composition"
+
+Deliverables:
+
+- **Two kinds:** `agent-type` (type declarations: loop, invariants, required bindings) and `agent-module` (callable modules with signatures and composition bodies). See [`CTB-LANGUAGE-SPEC-v0.2-draft.md`](CTB-LANGUAGE-SPEC-v0.2-draft.md) §1.
+- **Composition operators:** `>>` (sequence), `>>=` (bind), `|||` (parallel), `case` (branch), `fix` (iterate), `wait` (join), `try` (recover) as first-class effect algebra terms. See [`CTB-LANGUAGE-SPEC-v0.2-draft.md`](CTB-LANGUAGE-SPEC-v0.2-draft.md) §6.
+- **Type satisfaction:** loader verifies that an agent-module's body respects its declared agent-type's invariants.
+- **Scope enforcement:** runtime enforces `task-local` / `role-local` / `global` boundaries — no upward mutation, state dies with scope.
+- Module/import system (small and explicit; no dynamic loading).
+- Package format (lockfile) with content-addressed references.
+- Linter: overlap/totality/witness diagnostics as a first-class CLI.
+- Standard library (tiny, curated).
+
+Exit criteria:
+
+- An agent-type can be declared, instantiated, and its invariants checked by the linter.
+- A triadic cycle (CDD) can be expressed as a single composition expression that the toolchain can parse and verify.
+- Teams can share and upgrade agent-modules without copy/paste.
+
+### 8.3 v3.0 — "Safety envelope"
+
+Deliverables:
+
+- Capability annotations on effect plans (declare required capabilities).
+- Policy checking: deny dangerous capabilities by default.
+- Sandboxed runtime bridge with explicit permissions.
+- Reproducible "plan hash" (content-addressed plan IDs) for verification.
+
+Exit criteria:
+
+- "Trustless execution": peers can verify the plan hash equals the committed plan before running.
+
+### 8.4 v4.0 — "Language for real agent networks"
+
+Deliverables:
+
+- Stable interoperability with git-CN protocol artifacts (threads/manifests/peers).
+- Conformance test suite as a public standard.
+- LSP/IDE support focused on LLM workflows (explain errors, synthesize witnesses, propose fixes).
+- Signed artifacts (skill packages and/or plan outputs) bound to agent identity.
+- Operational telemetry hooks (not for surveillance—only for reproducible diagnosis).
+
+Exit criteria:
+
+- Independent implementers can write a new CTB runtime and still interoperate.
+
+---
+
+## 8.5 Convergence from practice: the skill system as prototype
+
+The cnos.core skill system (skill, write, design, compose) is independently producing the ecosystem components CTB needs — discovered through practice, not designed top-down.
+
+| CTB component | Practice-side prototype |
+|---------------|------------------------|
+| Type system | Artifact classification: skill, runbook, reference, deprecated — with classification tests |
+| Function model | Skill signature: trigger + input contract + output contract + transformation along one axis |
+| Module system | compose: no inheritance, explicit order, single ownership, publish-or-compose gate |
+| Standard library | The four cnos.core skills |
+| Linter / type checker | The Final Test, the Verify phase in each skill |
+| Test framework | Katas as executable verification surfaces |
+| Calling convention | SKILL-ARCHITECTURE doctrine: skills are functions, not classes |
+
+**Implication for CTB:** the standard library is being written before the compiler. The practice-side skill language is human-readable and human-executed; CTB's job is to give it syntax, determinism, and machine-checkability. CTB should not reinvent the ecosystem — it should formalize what practice has already discovered.
+
+Three practice-side gaps mark where CTB adds the most value:
+
+1. **Loader model** — trigger resolution and precedence are referenced but never formalized
+2. **Pipeline model** — compose declares order but execution semantics are undefined
+3. **Contract grammar** — "Input: ... Output: ..." is convention, not grammar; satisfaction cannot be verified mechanically
+
+These are the seams where CTB syntax makes the skill language checkable.
+
+### 8.5.1 Evidence from CDD package audit (2026-04-24)
+
+Operating the CDD skill-program as a triadic agent coordination system surfaced four additional language design requirements:
+
+| CTB requirement | Practice-side evidence | Current workaround |
+|-----------------|----------------------|-------------------|
+| **Global aspects** (E1) | "Write large files section by section" was duplicated in 4 role/phase skills with slight wording drift. When one copy was missing, the agent hit API timeouts. | Hoisted to a single prose rule in CDD.md §1.4; manually deleted duplicates. No enforcement mechanism. |
+| **Authority hierarchy** (E2) | CDD.md and role skills said different things about conflict resolution. Agents couldn't mechanically determine which file wins. | Prose rule: "CDD.md governs lifecycle; role skill governs local detail." Not machine-checkable. |
+| **Visibility enforcement** (E3) | Root skill lacked `visibility: public`. Internal sub-skill triggers leaked as public dispatch targets. A bare "review" keyword could resolve to an internal sub-skill. | Added `visibility: public` to root; wrote prose rule that internal triggers are advisory. Runtime doesn't enforce it. |
+| **Dependency graph** (E4) | Load order was prose instructions that drifted from actual behavior. CDD.md claimed "all skills always loaded" while role skills loaded only what they needed. References to non-existent gamma sections. | Manual audit and correction. No cycle detection, no missing-ref detection. |
+
+**Implication for CTB:** These are not exotic requirements. They are the minimum infrastructure a skill-program needs once it grows past ~10 files. The current markdown format cannot express or enforce any of them — they survive only through manual prose discipline and periodic audits.
+
+See also: `docs/papers/SKILL-ARCHITECTURE.md` for the architectural argument (skills are functions, composition is the only model consistent with coherence).
+
+### 8.5.2 Emerging shape: agents as scoped function calls
+
+Operating the CDD triad revealed that the skill language already has an execution model hiding in practice. The model is a **call stack with scoped authority**.
+
+| Language concept | CDD practice-side equivalent | Concrete example |
+|-----------------|------------------------------|-----------------|
+| Call stack | `operator → γ → α/β` | Operator dispatches γ; γ dispatches α and β. Each level has strictly more authority than the level below. |
+| Function scope | Each agent owns only its local artifacts | α owns implementation artifacts (branch, code, tests). β owns review artifacts (CR, verdict). γ owns cycle artifacts (PRA, triage). None can write to the other's scope. |
+| Arguments | Dispatch prompt + issue | γ's dispatch to α: `"You are α. Issue: gh issue view 268. Tier 3 skills: skill, eng/tool, eng/document, eng/test."` — input contract, not implementation guidance. |
+| Return value | Close-out | α's close-out returns implementation findings to γ. β's close-out returns review findings. γ receives both, triages, decides. The caller owns the result. |
+| No upward mutation | Lower scope cannot write to higher scope | α cannot modify γ's triage decision. β cannot modify γ's PRA. Close-outs are returned, not pushed. |
+| Type constraint on separation | Role independence = no shared mutable state | α and β having separate scope is the same principle as functions not sharing mutable state. Role leakage = concurrent mutation bug. The CDD independence rule is a soundness property, not a preference. |
+| Error handling | γ unblocks | When α or β is stuck, γ intervenes — the caller catches the exception and decides recovery. |
+| Tail-call optimization | Immediate outputs | When a finding is immediate-output sized, γ fixes it inline rather than dispatching a new cycle — the caller resolves a trivial return without pushing a new frame. |
+
+**Implication for CTB:** This fills the execution-model gap in the §8.5 table. The practice side has types (artifact classes), function signatures (skill contracts), a module system (compose), and a standard library (core skills). The missing piece was how skills are **invoked at runtime with scoped authority**. The CDD triad IS the execution model:
+
+- **Skill** = function definition (trigger + contract + single-axis transformation)
+- **Agent** = function invocation (scoped execution of a skill with concrete inputs)
+- **Triad** = call tree (γ invokes α/β, collects returns, produces own return to operator)
+
+This maps directly to CTB's plan-as-data model (§4.2): a skill returns an effect plan (data), and the caller decides what to do with it. The triad is a call tree where each node returns a plan to its parent. The operator is the top-level caller that ultimately executes.
+
+**Composability:** Once a triad stabilizes, it appears at its external boundary as one articulated whole — a function that takes an issue and returns a release. A fourth agent creates a new two-sided boundary, not a new primitive. The system grows by composing wholes (triads as units at the next scale), not by counting agents. See `docs/concepts/doctrine/coherence-for-agents/COHERENCE-FOR-AGENTS.md` for the structural derivation.
+
+**CTB language requirements surfaced:**
+
+| Requirement | Practice-side evidence |
+|------------|----------------------|
+| **Scoped authority model** | The runtime must enforce that a skill invoked at α scope cannot write to γ scope. Currently enforced by prose rules in role skills. |
+| **Return-type contracts** | Close-outs should satisfy a declared return type. γ's closure gate (10 conditions in `gamma/SKILL.md §2.10`) is already a runtime type check on return values — but not machine-checkable. |
+| **Call-tree composition** | When a triad composes with another triad, their contracts must be compatible at the boundary. Currently verified by human judgment during γ selection. |
+
+---
+
+## 9. Tradeoffs and explicit choices
+
+### 9.1 Small language vs. expressive language
+
+- **Choice:** keep CTB small.
+- **Tradeoff:** some problems require "host language escapes."
+- **Mitigation:** host escapes happen only in runtimes, not in CTB.
+
+### 9.2 Totality without a type system
+
+- **Choice:** TOTAL/PARTIAL profiles with syntactic exhaustiveness.
+- **Tradeoff:** less precise than typed exhaustiveness.
+- **Mitigation:** witness synthesis and runtime logs make failures visible and repairable.
+
+### 9.3 Emoji atoms
+
+- **Choice:** atoms are domain-defined; emoji allowed.
+- **Tradeoff:** tooling and fonts vary.
+- **Mitigation:** define canonical "ASCII aliases" in tooling and allow dual rendering.
+
+---
+
+## 10. How this lands in git-CN (practical adoption path)
+
+The "minimum credible product" for adoption is:
+
+1. A hub contains a `skills/` directory with `.coh` skills.
+2. A thread entry references a skill + input snapshot.
+3. Any peer can run:
+   - `ctb plan <skill> <input>` → deterministic plan
+   - `ctb verify <plan> <commit>` → checks plan matches committed output
+4. The runtime bridge executes the plan only if capabilities are granted.
+
+This turns coordination from "I think I did the right thing" to "here's the plan; you can reproduce it."
+
+---
+
+## 11. Success metrics (adoption + coherence)
+
+**Technical:**
+
+- % of skills expressed as `.coh` vs Markdown.
+- Deterministic plan reproduction rate across machines/agents.
+- Reduction in merge conflicts for thread logs.
+- Witness synthesis coverage: % of non-total groups that produce a witness.
+
+**Operational:**
+
+- Mean time for a peer agent to verify another agent's plan.
+- Incidents of "semantic drift" (meaning changed without diff) → should trend to ~0.
+
+**Community:**
+
+- Third-party hubs adopting the toolchain.
+- Independent runtime implementations passing the conformance suite.
+
+---
+
+## 12. Open questions (intentionally deferred)
+
+- Do we need a lightweight shape/type system for effect plans?
+- What is the minimal effect vocabulary that still feels useful?
+- How do we represent strings, paths, and blobs canonically while staying minimal?
+- What is the cryptographic binding model: signed plans, signed skills, or signed commits only?
+
+---
+
+## 13. Addendum 2026-04-29 — Agent composition turn
+
+The skill-language framing (§1–§6) was correct as a migration path but too narrow as a semantic account. The revised model:
+
+> CTB is a triadic agent-composition language. A skill is a narrow agent. A role is a role-local agent. A triad is a composite agent that appears externally as one agent at the next boundary. `tri()` is the shared carrier across skills, agents, protocols, repairs, reviews, and cycles.
+
+The v2.0 target (§8.2) is therefore not "toolchain, types, and composition" for skills alone. It is the first machine-checkable agent-composition layer. The deliverables listed in §8.2 already reflect this (agent-type, agent-module, composition operators, type satisfaction, scope enforcement). This addendum records the conceptual shift; the roadmap section already describes the concrete target.
+
+See [`CTB-LANGUAGE-SPEC-v0.2-draft.md`](CTB-LANGUAGE-SPEC-v0.2-draft.md) §1.4 (triadic carrier) and [`SEMANTICS-NOTES.md`](../reference/ctb/SEMANTICS-NOTES.md) §15 (full rationale) for the detailed treatment.
+
+---
+
+## Appendix: terminology
+
+- **C≡ (Coherence Calculus):** foundational term algebra and equivalences.
+- **TSC:** measurement framework producing coherence scores.
+- **CTB:** the programming language used to express executable coherence/skills.
+- **Coherent Agent (CA):** an agent identity operating via git-CN substrates.
+- **Effect Plan:** pure data describing intended side effects.
