@@ -1,0 +1,20 @@
+wake: cds-dispatch
+protocol: cds
+issue: 684
+requested_transition: in-progress -> review
+run_class: first_pass
+reason: >
+  beta-review.md R0 verdict: converge, zero findings. All 8 AC oracle
+  rows (AC1-AC7 + WRITER_LOCALITY_VIOLATION) and the scope guardrail hard
+  gate (no .cn-sigma/**, no .github/workflows/*, no
+  docs/development/board/**, no ref/tag mutation) were independently
+  re-verified by beta against the actual committed artifacts and the raw
+  issue/comment text, not against self-coherence.md's narrative alone --
+  see beta-review.md's own "Scope of this review" section. gamma-closeout.md,
+  alpha-closeout.md, and beta-closeout.md all land in this same commit,
+  completing the delta/SKILL.md §9.5 converge-boundary artifact set.
+  gamma-closeout.md's deliverable_evidence block names PR #688
+  (cycle/684 -> main), head c109052, base 7856c8c, 15 commits beyond
+  base. delta requests the status:in-progress -> status:review
+  transition per delta/SKILL.md §9.6; `cn issues fsm evaluate --issue 684
+  --apply` is delta's next action following this request.
