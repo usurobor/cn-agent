@@ -95,11 +95,28 @@ Some documents still carry pre-alignment numbers (e.g. THESIS 1.0.0). These re-v
 
 When a canonical document is fully replaced, the replacement's version is the cnos release in which it first appears; it does not restart at 1.0.0. The superseded document records `Supersedes:` / `Superseded by:` in its header so a reader can trace the lineage. Do not keep parallel live versions of the same document.
 
-### Frozen history
+### First principle: `main` holds only what is now
 
-Released snapshots are **not** kept as folders on `main` — git history is the archive. To read a document as it stood at a past release, check out that release tag. A document on `main` is always the current one; its `Version:` header says which release it belongs to.
+The working tree on `main` reflects **current state only.** No historical artifact is kept in it — **in a dotdir or not.** Released snapshots, and completed / dated / superseded records — a design decision, a cycle log, a finished plan, a released CDD cell, a dated activation log — are not kept in the tree. Their archive is the git commit graph reachable from `main`: to read one as it stood, check out the commit or release under which it was written.
 
-A frozen record (a dated design decision, a cycle log, a completed plan) is left in place under its dated or `Superseded` header. Its stale internal paths are not corrected — the header already marks it as history. Only the live reader surface is kept current.
+The discriminator is **historical vs. current — never dotdir vs. not.** What stays in the tree is current state regardless of location: live configuration and operational state — `.github/` workflows, the live `.cdd` control files (`CADENCE`, `DISPATCH`, …) and in-flight cells, `.cn-sigma` live cursors — are "what is now," not history, and remain. A document that stays on the reader surface is, by that fact, current: its paths and contents are kept correct, not frozen. (This supersedes the earlier rule that treated dotdirs as a blanket history store.)
+
+Closed CDD cells reach history-only through a current-state projection + index kept in the tree, not by deletion — see [cnos#682](https://github.com/usurobor/cnos/issues/682).
+
+### Decision records — no silent drops
+
+Not everything that leaves the reader surface is history. Distinguish two kinds of record:
+
+- **Episode records — *how* work happened** (cycle logs, closed cells, dated runs): pure process history → the git commit graph, per the first principle above.
+- **Decision records — *what* we concluded and why**, including a direction we considered and set aside: durable **current knowledge**. A recorded decision ("we are not going here, and here is the thinking") is current state, not history — it stays on the reader surface, banner-marked as archived / superseded (e.g. an archived exploration under `docs/papers/`).
+
+The invariant is **no silent drops.** Every change of course, removal, or replacement leaves a receipt: what we expected (A → B), what happened instead (C), and why. Every tracked concern has exactly **one lawful disposition**:
+
+- **open** — still on the radar (an issue, a `## Known Debt`, a tracked commitment);
+- **removed** — gone, with the rationale recorded;
+- **superseded** — replaced, with a pointer to the replacement (`Supersedes:` / `Superseded by:`).
+
+It may never *hang* (a loose end with no disposition) nor *disappear* (dropped with no words). This is a doctrine-level **audit property**: an auditor reading the reader surface, the decision records, and the receipts can establish whether the repo is coherent — whether actual state matches declared doctrine — with no hidden decisions. A change dropped without a word is exactly what this forbids, and exactly what a coherence audit is meant to surface.
 
 ---
 

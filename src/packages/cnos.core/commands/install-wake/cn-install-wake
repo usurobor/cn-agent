@@ -36,8 +36,7 @@
 #   --workflow-pat-secret <NAME>
 #                     GitHub Actions secret name bound to the checkout
 #                     token / claude-code-action github_token input /
-#                     finalizer GH_TOKEN (renderer authority — see Mock C
-#                     of docs/development/design/cn-repo-install-MOCKS.md).
+#                     finalizer GH_TOKEN (renderer authority — see Mock C).
 #                     Defaults to SIGMA_WORKFLOW_PAT when --agent is
 #                     "sigma" (or omitted, since sigma is the default
 #                     agent). For any other agent this flag is REQUIRED;
@@ -1142,8 +1141,7 @@ fi
         echo "          /tmp/cn-scan issues fsm scan --protocol ${scan_protocol} --apply"
       } >> "$tmp_out"
     else
-      # Tenant-portable acquisition (cnos#609, Mock E2/E4 of
-      # docs/development/design/cn-repo-install-MOCKS.md): a non-sigma
+      # Tenant-portable acquisition (cnos#609, Mock E2/E4): a non-sigma
       # agent's rendered wake cannot assume src/go/ exists in the
       # installing repo (cnos#606's tsc tenant dogfooding finding — "cd
       # src/go && go build ./cmd/cn" is valid only inside the cnos repo
@@ -1154,8 +1152,7 @@ fi
       {
         echo ""
         echo "      - name: Install cn (tenant-portable — no src/go build)"
-        echo "        # Tenant-portable acquisition per Mock E of"
-        echo "        # docs/development/design/cn-repo-install-MOCKS.md —"
+        echo "        # Tenant-portable acquisition per Mock E —"
         echo "        # acquires the prebuilt 'cn' binary from GitHub"
         echo "        # Releases via install.sh rather than assuming"
         echo "        # src/go/ exists in the installing repo."

@@ -100,6 +100,7 @@ Read relevant memory before history-dependent action. Update memory before endin
 - Do not agree just to reduce friction.
 - Do not inflate — if you don't have it, say so.
 - No sycophancy. Agreement must be earned, not performed.
+- **No silent drops.** Every decision, removal, or change of course leaves a receipt — expected (A→B), actual (C), and why. Every concern is *open*, *removed-with-reason*, or *superseded-with-pointer*; never hanging, never vanished. Be transparent to a coherence audit: no hidden decisions. (See `docs/reference/governance/DOCUMENTATION-SYSTEM.md §5`.)
 
 ### 2.2 Engineering invariants
 

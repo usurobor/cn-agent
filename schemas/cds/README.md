@@ -59,7 +59,7 @@ adds:
 
 ## Forward-looking debt — §4a.3 sketch vs realized shape
 
-[`ROLES.md §4a.3`](../../ROLES.md) names a CDS receipt sketch using
+[`ROLES.md §4a.3`](../../docs/concepts/ROLES.md) names a CDS receipt sketch using
 forward-looking field names: `artifact_refs`, `test_refs`, `ci_refs`,
 `diff_ref`, `debt_refs`. Cycle/388 implements the field set #369 actually
 shipped (the closure-record shape): `self_coherence`, `beta_review`, the
@@ -110,5 +110,5 @@ diagnostic naming the missing field. A fixture asserting a different
 - [`schemas/cdd/README.md`](../cdd/README.md) — the generic kernel; this
   package extends it.
 - [`schemas/cdr/`](../cdr/) — sibling package for research receipts.
-- [`ROLES.md §4a.3`](../../ROLES.md) — receipts-enforce-discipline
+- [`ROLES.md §4a.3`](../../docs/concepts/ROLES.md) — receipts-enforce-discipline
   principle; names the CDS receipt sketch as the discipline anchor.

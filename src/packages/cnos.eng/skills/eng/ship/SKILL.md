@@ -156,7 +156,7 @@ From RCA `2026-02-20-pi-peer-sync-disabled`: Pi's `peer-sync-check` was disabled
 
 **Prevent silent loss of upstream content during integration.**
 
-Rebase operations can silently drop upstream-only content from `main`, leading to manual restoration post-hoc. This failure class was confirmed in γ #268 with two documented instances: COHERENCE-FOR-AGENTS.md and CTB vision §8.5.2.
+Rebase operations can silently drop upstream-only content from `main`, leading to manual restoration post-hoc. This failure class was confirmed in γ #268, where upstream-only content was silently dropped during a rebase (e.g. COHERENCE-FOR-AGENTS.md).
 
 ### The Problem
 

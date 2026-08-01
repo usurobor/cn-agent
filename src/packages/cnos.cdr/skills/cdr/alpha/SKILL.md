@@ -26,7 +26,7 @@ outputs:
 > Only the **discipline profile** and the **matter type** diverge: this
 > overlay specifies what α does under the research loss function
 > (truth-preserving claim transmission under uncertainty per
-> [`ROLES.md §4a.2`](../../../../../../ROLES.md#4a2-loss-function-distinction)),
+> [`ROLES.md §4a.2`](../../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction)),
 > not the engineering loss function (artifact improvement under repairable
 > feedback). The binding doctrinal contract is [`CDR.md`](../CDR.md).
 

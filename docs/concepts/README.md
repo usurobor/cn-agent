@@ -17,6 +17,7 @@
 
 ## Doctrine and origin
 
+- [ROLES.md](ROLES.md) — the generic α/β/γ/δ/ε role-scope ladder; the single source of truth for the role structure every c-d-X protocol instantiates.
 - [Doctrine bundle](doctrine/README.md) — coherence, ethics, judgment, inheritance for agents.
 - [Origin](lineage/ORIGIN.md) and [Lineage](lineage/LINEAGE.md) — where cnos came from and how it is structured.
 

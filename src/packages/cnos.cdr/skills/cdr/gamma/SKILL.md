@@ -29,7 +29,7 @@ outputs:
 > the **cadence trigger** (gate-transition, not release-shaped), and the
 > **ε iteration input** (research-failure trigger classes) diverge for the
 > research loss function per
-> [`ROLES.md §4a.2`](../../../../../../ROLES.md#4a2-loss-function-distinction)
+> [`ROLES.md §4a.2`](../../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction)
 > and the binding doctrinal contract [`CDR.md`](../CDR.md) Fields 3 + 4.
 
 ## Core Principle

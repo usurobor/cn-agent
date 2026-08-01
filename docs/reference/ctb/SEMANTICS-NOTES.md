@@ -4,13 +4,13 @@
 
 **Date:** 2026-04-26
 
-**Companion to:** `LANGUAGE-SPEC.md` (normative), `CTB-v4.0.0-VISION.md` (strategic).
+**Companion to:** `LANGUAGE-SPEC.md` (normative).
 
 ---
 
 ## 0. Why this document
 
-The Vision sets direction. The Spec sets rules. Some material belongs in neither: the deeper observations about *why* the rules take the shape they do, and *what practice taught us* before we could name it.
+The Spec sets the rules. Some material belongs outside it: the deeper observations about *why* the rules take the shape they do, and *what practice taught us* before we could name it.
 
 This document collects that material. It is the place where conceptual moves are recorded so that future revisions of the spec can be made deliberately rather than through drift.
 
@@ -330,7 +330,7 @@ This is not a proposal for concrete syntax. It is a demonstration that the prose
 
 ### 14.3 What this means for the spec
 
-LANGUAGE-SPEC v0.2 §6 (Composition) needs to name these operators. The spec currently says "composition is explicit invocation" — correct, but incomplete. Explicit invocation has structure: it is sequential, parallel, conditional, iterative, or binding. The operators are not optional extras; they are the composition model.
+The composition model in `LANGUAGE-SPEC.md` needs to name these operators. The spec currently says "composition is explicit invocation" — correct, but incomplete. Explicit invocation has structure: it is sequential, parallel, conditional, iterative, or binding. The operators are not optional extras; they are the composition model.
 
 The minimum addition to the spec:
 
@@ -586,7 +586,7 @@ CTB does not implement TSC measurement. The structural parallel is useful becaus
 
 **Witness theater and TSC-Oper W1–W4.**
 
-LANGUAGE-SPEC v0.2 §15 names the witness theater risk: a conformant-looking close-out not mechanically connected to what actually happened. TSC-Oper's four witnesses identify the same failure mode structurally:
+The **witness theater** risk — a conformant-looking close-out not mechanically connected to what actually happened — is identified structurally by TSC-Oper's four witnesses:
 
 - W1 (S₃ permutation): coherence is label-independent — a close-out should not change character when roles are relabeled
 - W2 (role-gauge independence): measurement is presentation-independent — a witness should not be constructed to satisfy the expected verdict
@@ -606,7 +606,5 @@ ctb-check v0 should draw from TSC-Oper's witness-independence pattern. Field pre
 This document is non-normative. It exists to preserve conceptual progress and to make spec revisions deliberate.
 
 If this document and `LANGUAGE-SPEC.md` disagree on a rule, the spec governs.
-
-If this document and `CTB-v4.0.0-VISION.md` disagree on strategy, the Vision governs.
 
 If a claim here becomes load-bearing for implementers, it should be moved into the spec rather than relied on here.

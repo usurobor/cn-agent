@@ -349,6 +349,5 @@ If you adopted the GitHub UI path, also remove
 ## Related
 
 - [`docs/reference/cli/CLI.md`](../reference/cli/CLI.md) — CLI reference.
-- [`docs/development/design/cn-repo-install-MOCKS.md`](../development/design/cn-repo-install-MOCKS.md) — the design surface `cn repo install` was built against.
 - [dispatch orchestrator skill](../../src/packages/cnos.cds/orchestrators/cds-dispatch/SKILL.md) — the autonomous dispatch loop (Layer 2).
 - [`docs/guides/templates/cnos-install.yml`](templates/cnos-install.yml) — the GitHub UI install workflow template.

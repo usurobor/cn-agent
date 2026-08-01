@@ -20,7 +20,7 @@ related:
   - src/packages/cnos.cds/skills/cds/CDS.md
   - src/packages/cnos.cdr/skills/cdr/CDR.md
   - src/packages/cnos.handoff/skills/handoff/HANDOFF.md
-  - ROLES.md
+  - docs/concepts/ROLES.md
   - usurobor/tsc:docs/THESIS.md
   - usurobor/tsc:spec/c-equiv.md
 ---

@@ -204,13 +204,13 @@ Phase 3 (`cn-cdd-verify` refactor) knows what it is building: a package-provided
 
 ## Q3 — Where does ε relocate?
 
-**Chosen position.** ε relocates to **`ROLES.md`** — the generic role-scope ladder doctrine at the repo root. The CDD-specific instantiation (`src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md`) is rewritten in Phase 6 as a thin pointer to the generic doctrine in `ROLES.md`, retaining only the CDD-instantiation details ε needs (where receipt streams live, what protocol gaps look like in CDD, what `cdd-iteration.md` is). **This cycle names the target; Phase 6 ships the move.**
+**Chosen position.** ε relocates to **`ROLES.md`** — the generic role-scope ladder doctrine in `docs/concepts/`. The CDD-specific instantiation (`src/packages/cnos.cdd/skills/cdd/epsilon/SKILL.md`) is rewritten in Phase 6 as a thin pointer to the generic doctrine in `ROLES.md`, retaining only the CDD-instantiation details ε needs (where receipt streams live, what protocol gaps look like in CDD, what `cdd-iteration.md` is). **This cycle names the target; Phase 6 ships the move.**
 
 ### Rationale
 
 The doctrine constraint from `COHERENCE-CELL.md` §ε as Protocol Evolution is that ε is outside ordinary cell metabolism. Inside the cell, α produces, β discriminates, γ closes, δ effects the boundary. ε observes the cell from outside, across many cells, and patches the protocol when receipt-stream patterns reveal a structural gap the protocol does not prevent. ε's matter is the protocol itself.
 
-The doctrine consequence is that ε is generic to the role-scope ladder pattern, not specific to CDD. Any ladder instantiation that emits receipts can be observed by an ε that evolves the protocol. CDD is one such instantiation; if `ROLES.md` ever documents another instantiation (e.g., a research-cycle ladder, a product-cycle ladder), each instantiation has its own α/β/γ/δ doing in-cell metabolism and a shared ε that observes receipt streams across instantiations. ε's doctrine therefore belongs at the level where the ladder pattern itself is documented — `ROLES.md` at the repo root.
+The doctrine consequence is that ε is generic to the role-scope ladder pattern, not specific to CDD. Any ladder instantiation that emits receipts can be observed by an ε that evolves the protocol. CDD is one such instantiation; if `ROLES.md` ever documents another instantiation (e.g., a research-cycle ladder, a product-cycle ladder), each instantiation has its own α/β/γ/δ doing in-cell metabolism and a shared ε that observes receipt streams across instantiations. ε's doctrine therefore belongs at the level where the ladder pattern itself is documented — `docs/concepts/ROLES.md`.
 
 The three candidates the predecessor doctrine names map to three different authority scopes:
 
@@ -226,7 +226,7 @@ The three candidates the predecessor doctrine names map to three different autho
 
 **2. A new `cnos.protocol-iteration` package adds boundary without adding substitutability.** Per `design/SKILL.md` §3.10 (prefer package/install cohesion over topic labeling), a new package boundary is justified when there is a real install/use unit to separate. ε's matter is doctrine evolution — patches to skills, schemas, validators, harness contracts. That matter lands across `cnos.cdd`, `cnos.core`, and `cnos.eng` depending on where the protocol gap surfaced. There is no install/use unit "the protocol-iteration runtime" that a separate package would carry. Inventing one would create a package whose only purpose is to host one role's doctrine, which is the false-package-boundary failure `design/SKILL.md` §3.10 names.
 
-**3. `ROLES.md` already owns the generic ladder.** `CDD.md` opens with the pointer to `ROLES.md`: "cdd is the reference instantiation of the generic role-scope ladder pattern. The pattern (α/β/γ/δ/ε roles, scope-escalation contract, instantiation fields) is documented at `ROLES.md` at the repo root." The α/β/γ/δ generic doctrine already lives there. ε's generic doctrine joining it preserves a single home for the ladder pattern and avoids splitting role doctrine across two surfaces.
+**3. `ROLES.md` already owns the generic ladder.** `CDD.md` opens with the pointer to `ROLES.md`: "cdd is the reference instantiation of the generic role-scope ladder pattern. The pattern (α/β/γ/δ/ε roles, scope-escalation contract, instantiation fields) is documented at `docs/concepts/ROLES.md`." The α/β/γ/δ generic doctrine already lives there. ε's generic doctrine joining it preserves a single home for the ladder pattern and avoids splitting role doctrine across two surfaces.
 
 ### What Phase 6 will do
 

@@ -43,6 +43,10 @@ Essays, whitepapers, and position papers — one home for the arguments.
 - [FIDONET-AND-CNOS](./FIDONET-AND-CNOS.md)
 - [SHIPPING-SOFTWARE-AFTER-AI](./SHIPPING-SOFTWARE-AFTER-AI.md) — from H2M to a human triad.
 
-## Engineering and release
+## Archived explorations
 
-- [ENGINEERING-LEVEL-ASSESSMENT](./ENGINEERING-LEVEL-ASSESSMENT.md)
+Directions we considered and kept as memory — not current specs. The active CTB
+spec is [`reference/ctb/LANGUAGE-SPEC.md`](../reference/ctb/LANGUAGE-SPEC.md).
+
+- [CTB-v4.0.0-VISION](./CTB-v4.0.0-VISION.md) — an archived CTB v4 vision/roadmap (a direction considered, not current spec).
+- [CTB-LANGUAGE-SPEC-v0.2-draft](./CTB-LANGUAGE-SPEC-v0.2-draft.md) — an archived CTB v0.2 draft spec (the agent-module composition-operator algebra); not promoted; `reference/ctb/LANGUAGE-SPEC.md` is active.

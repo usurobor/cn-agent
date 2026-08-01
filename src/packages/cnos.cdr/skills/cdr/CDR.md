@@ -6,7 +6,7 @@
 > CDR is a research-protocol instantiation of the generic role-scope ladder
 > pattern. The pattern (α/β/γ/δ/ε roles, scope-escalation contract, six-field
 > instantiation contract) is documented at
-> [`ROLES.md`](../../../../../ROLES.md) at the repo root. CDR does not claim
+> [`ROLES.md`](../../../../../docs/concepts/ROLES.md). CDR does not claim
 > to have originated the role structure; it instantiates the structure for
 > research work — investigation, synthesis, citation, dataset stewardship,
 > claim transmission under uncertainty.
@@ -29,7 +29,7 @@ persona/protocol/project boundary.
 
 CDR is the research discipline used to transmit claims about the world (or
 about a system under study) coherently. Its loss function — per
-[`ROLES.md §4a.2`](../../../../../ROLES.md#4a2-loss-function-distinction) —
+[`ROLES.md §4a.2`](../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction) —
 is *truth-preserving claim transmission under uncertainty*. The primary
 failure mode CDR must structurally resist is **overclaim**: a claim becoming
 stronger than its evidence; false knowledge propagating; the system
@@ -136,7 +136,7 @@ The decision rationale and the schema-level precedent are sourced from:
   anchored in cph but not defined by cph. CDR owns research role overlays.
   Rho owns the research persona. cph owns the project binding." CDR.md
   realises this declaration.
-- [`ROLES.md §4a.2`](../../../../../ROLES.md#4a2-loss-function-distinction)
+- [`ROLES.md §4a.2`](../../../../../docs/concepts/ROLES.md#4a2-loss-function-distinction)
   — the loss-function distinction that makes engineering-discipline and
   research-discipline differ at the procedural layer while sharing the
   role-cell kernel.
@@ -155,7 +155,7 @@ The decision rationale and the schema-level precedent are sourced from:
 
 CDR is a **protocol overlay** — layer 3 of the five-layer enforcement chain
 declared at
-[`ROLES.md §4a`](../../../../../ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain).
+[`ROLES.md §4a`](../../../../../docs/concepts/ROLES.md#4a-persona-operator-protocol-project-receipt--the-five-layer-enforcement-chain).
 This section names CDR's relationship to the layers above and below it.
 The boundary is doctrinal, not operational; operational mechanics (dispatch,
 polling, repo wiring) belong in role-overlay skills (Sub 3) and in
@@ -328,7 +328,7 @@ narrative wave reports are separate human-facing surfaces that cite the
 receipt.
 
 The receipt carries (per
-[`ROLES.md §4a.3`](../../../../../ROLES.md#4a3-receipts-enforce-discipline-mechanically)
+[`ROLES.md §4a.3`](../../../../../docs/concepts/ROLES.md#4a3-receipts-enforce-discipline-mechanically)
 and the schema):
 
 - `claim_refs` — which claims this receipt asserts (≥1).
@@ -454,8 +454,8 @@ which are prohibited, and what signal warrants splitting.
 - **α = β within a single cycle.** Always prohibited. Research β reviews
   α's claim/evidence alignment for overclaim; α reviewing α's own claims
   is order-0 observation masquerading as order-1 (per
-  [`ROLES.md §1`](../../../../../ROLES.md#1-the-role-ladder) +
-  [`ROLES.md §4`](../../../../../ROLES.md#4-hats-vs-actors-roles-as-behavioral-contracts)).
+  [`ROLES.md §1`](../../../../../docs/concepts/ROLES.md#1-the-role-ladder) +
+  [`ROLES.md §4`](../../../../../docs/concepts/ROLES.md#4-hats-vs-actors-roles-as-behavioral-contracts)).
   The structural independence is the mechanism by which review catches
   overclaim. No research-class waiver exists. Engineering-class collapse
   precedents (γ+α+β-collapsed-on-δ for mechanical refactor cycles) do
@@ -561,7 +561,7 @@ every cph artifact and records the mapping table.
 
 Inherits, cites, or extends:
 
-- [`ROLES.md`](../../../../../ROLES.md) — the role-cell grammar and the
+- [`ROLES.md`](../../../../../docs/concepts/ROLES.md) — the role-cell grammar and the
   six-field instantiation contract that CDR realises. Specifically:
   - `§3` — six-field instantiation contract (the structure mirrored
     above).
