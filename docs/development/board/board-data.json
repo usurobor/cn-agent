@@ -2924,5 +2924,26 @@
     "created": "2026-08-01T00:10:27Z",
     "updated": "2026-08-01T00:10:27Z",
     "url": "https://github.com/usurobor/cnos/issues/682"
+  },
+  {
+    "n": 683,
+    "t": "process: a maintained open-items ledger (the \"radar\") — the primitive that makes no-silent-drops auditable",
+    "kind": "process",
+    "areas": [
+      "cdd",
+      "coherence"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-01T00:35:00Z",
+    "updated": "2026-08-01T00:35:00Z",
+    "url": "https://github.com/usurobor/cnos/issues/683"
   }
 ]
