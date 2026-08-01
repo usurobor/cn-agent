@@ -2985,7 +2985,28 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-08-01T07:14:56Z",
-    "updated": "2026-08-01T07:14:56Z",
+    "updated": "2026-08-01T07:31:24Z",
     "url": "https://github.com/usurobor/cnos/issues/685"
+  },
+  {
+    "n": 686,
+    "t": "activation protocol: ideal behavior for every activation case (home | attached | unattached-attachable | not-attachable | repo-less) — quiet, evidence-derived, non-confabulating",
+    "kind": "process",
+    "areas": [
+      "coherence",
+      "wake"
+    ],
+    "pri": "none",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-01T07:36:48Z",
+    "updated": "2026-08-01T07:36:48Z",
+    "url": "https://github.com/usurobor/cnos/issues/686"
   }
 ]
