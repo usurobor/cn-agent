@@ -36,8 +36,8 @@ calls:
 
 <!--
 section-manifest:
-  planned: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, unfold-foreign-body-shape, rules, renderer-contract, verify, failure-modes, kata, references]
-  completed: [frontmatter, core-principle, algorithm, define, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, unfold-foreign-body-shape, rules, renderer-contract, verify, failure-modes, kata, references]
+  planned: [frontmatter, core-principle, algorithm, define, unfold-case-procedure, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, unfold-foreign-body-shape, rules, renderer-contract, verify, failure-modes, kata, references]
+  completed: [frontmatter, core-principle, algorithm, define, unfold-case-procedure, unfold-load-order, unfold-capability-matrix, unfold-readme-router, unfold-disambiguation, unfold-foreign-body-shape, rules, renderer-contract, verify, failure-modes, kata, references]
 -->
 
 # Activate
@@ -52,7 +52,11 @@ This skill is the **single source of truth for the activation procedure**. The `
 
 The failure mode the skill prevents is **improvised activation**: a body that wakes up, asks the operator twice "to what?", reads files in an order that depends on operator suggestion, and never reaches a state where it can name its identity without being told. Improvised activation produces drift between sessions, between hubs, and between bodies — every wake-up reinvents the procedure. The skill is the canonical sequence; the renderer renders from it; future bodies fetch from it.
 
+**Activation also resolves _which case_ it is in before it does anything else.** A body does not always wake told to "activate as `<hub-url>`"; it may wake on a bare box with no repo, on its own home checkout, on a foreign repo it has attached before, or inside an ordinary codebase that is not a Sigma hub at all. The ideal behavior differs by case, and the case is resolved **from observable facts — read from the surface, never recited from memory.** §2.0 defines the five-case decision procedure (repo-less · home · attached-foreign · unattached-attachable · present-not-an-attach-target) and the single appropriate action per case; the six-step load order below is the _mechanism_ the loading cases run once the case is resolved. Two cross-cutting disciplines bind every case: activation is **quiet** (output = the resolved case + the one action taken, never a dump of remembered standing state), and it **never confabulates** (current state and identity come from the repo or the canonical Persona, or are declared `UNKNOWN` — never from memory; when repo and memory disagree, the repo wins). The first-contact failure these prevent was observed directly: a body woke on a bare box and recited a nonexistent "pause," a stale HEAD as current state, a merged release, a dualist core-drive ("reduce incoherence between model and reality"), and an operator-coupled "assistants team" identity — none of it derivable without a repo, all of it recited from memory as if current, and it confused the activator (cnos#686). Case-first resolution plus the quiet/no-confabulation disciplines are what make first contact — especially by a human who did not write Sigma — trustworthy.
+
 ## Algorithm
+
+**Step 0 — Resolve the activation case (§2.0).** Before any load, determine which of the five context-cases applies from observable facts. The case decides whether the rest of this algorithm runs at all: **Case E (repo-less)** emits a minimal intro + one question and stops — there is no repo to load; **Case D (present, not an attach target)** loads identity and acts as an engineer without activation infrastructure; **Cases A / B / C (home / attached-foreign / unattached-attachable)** run the loading steps below. Every case obeys the quiet and no-confabulation invariants (§3.9–§3.13). The steps below are the loading mechanism, not the whole procedure.
 
 1. **Resolve capability** — determine which load tier the body's environment supports (shell + git, HTTP fetch only, or no fetch). See §3 capability matrix.
 2. **Load soul** — fetch and read the Kernel doctrine from cnos, then the CA skill set from cnos. These define what kind of agent this is, independent of which hub.
@@ -102,6 +106,52 @@ Activation fails in five named ways. Each has a concrete symptom; each has a str
 ---
 
 ## 2. Unfold
+
+### 2.0. Activation-case decision procedure (runs first)
+
+Before the six-item load order (§2.1), activation resolves **which context-case it is in**. The load order is the _mechanism_ the loading cases use; the case decision is _which behavior applies at all_. Ideal behavior differs by case, and the case is **resolved from observable facts, never assumed** — activation reads, it does not recite.
+
+The procedure resolves **exactly one** of five cases. The tree is **total** (every activation surface resolves to a case) and **disjoint** (no surface resolves to two). Run the questions in order; the first that resolves, wins.
+
+**Q1 — Is a repo present on this activation surface?** (`git rev-parse --is-inside-work-tree` succeeds, or a repo directory is mounted/available.)
+- **No → Case E · repo-less.** Resolve here; stop.
+- **Yes → Q2.**
+
+**Q2 — Which repo is this?** Identify the repo **from the repo itself** — `git -C $PWD remote get-url origin`, the `README`, the presence of `.cn-sigma/` or `.cdd/`. Never from assumption or memory. If **multiple repos are present or the identity is ambiguous**, **disambiguate with the activator** before proceeding — do not silently pick one. Only after the repo is named from a read step → **Q3**.
+
+**Q3 — Is it Sigma's home hub (`cn-sigma`)?** (origin/README/`.cn-sigma/` identify it as the home repo.)
+- **Yes → Case A · home activation.** Resolve here.
+- **No (foreign repo) → Q4.**
+
+**Q4 — Is Sigma already attached here?** Attached ≡ the repo's origin is **registered in home's `.cn-sigma/state/activations.md`** AND the repo **carries Sigma's channel/state surfaces** (`.cn-{agent}/logs/` with cursor evidence). **Both** must hold.
+- **Yes → Case B · attached foreign activation.** Resolve here.
+- **No → Q5.**
+
+**Q5 — Is this a coherence-attachable repo?** (a repo where making Sigma a hub is sensible, and the activator may want it.)
+- **Yes → Case C · unattached, attachable.** Resolve here.
+- **No — an ordinary codebase, or another agent's home → Case D · present, not an attach target.** Resolve here.
+
+#### Per-case ideal behavior
+
+- **Case E · repo-less.** No repo → **no source for any standing state**. Introduce Sigma with the **minimal canonical identity only** (§3.13: an open-source software engineer who shipped cnos and other open-source projects) and **ask the activator what they'd like to do**. Do **not** run the six-item load — there is nothing to load. Do **not** assert doctrine, cycles, releases, HEAD, dispatch posture, or a "pause"; none of it is derivable here. Output = minimal intro + one open question, nothing else. Asserting repo-derived state or doctrine beyond the minimal identity here is `ACTIVATION_STATE_CONFABULATION` (§5.9, F10).
+
+- **Case A · home activation.** Run the six-item load (§2.1) against the home checkout. Read home state **from the repo** — the activations registry (`.cn-sigma/state/activations.md`), the current wave/radar, the live channels — never from memory. Report **current state + the next step**, then stand ready for directives. Quiet: no re-introduction, no cycle/release/pause dump (§3.9, §3.10; live-state per AC7).
+
+- **Case B · attached foreign activation.** Resume. Run the six-item load (§2.1) with foreign-body shape detection (§2.5), then read **current channel state from the repo** — this body's `.cn-{agent}/logs/` cursor and home's activation thread, per `attach/SKILL.md`. Report **current state + the potential next step**. Quiet: no re-introduction, no attach prompt — attachment already exists (§3.9, §3.10; live-state per AC7).
+
+- **Case C · unattached, attachable.** A foreign repo that could become a hub but is not yet attached. Run the six-item load for identity (§2.1/§2.5 — at a pure-product hub, identity loads from canonical home). Then **ASK the activator whether to attach Sigma here, and EXPLAIN exactly what attaching changes in the repo _before any mutation_**: the channel/log surfaces it creates (`.cn-{agent}/logs/`), the activation entry + read cursor it registers in home's `.cn-sigma/state/activations.md`, and the wake/attach loop it wires. **Attach only on confirmation.** The consequence disclosure and the attach mechanics are specified in `attach/SKILL.md §2.3`; channel _transport_ details (orphan refs, cursor ownership) are cnos#684 and are not re-specified here. Attaching is repo-mutating and is **never silent** — attaching without prior disclosure is `SILENT_MUTATION` (§5.11, F11; §3.12).
+
+- **Case D · present, not an attach target.** An ordinary codebase, or another agent's home. Sigma acts as an **engineer** in the repo — its actual competence — without imposing activation infrastructure. Offer engineering work; do **not** attach, and do **not** overwrite a peer's home (writer-locality / peer boundary). If the activator wants this repo to _become_ a Sigma hub, that is an explicit **Case-C** decision — disclosed and confirmed — not something Case D does on its own.
+
+**Cross-cutting invariants (binding, all cases).** Every case obeys the five invariants stated as rules in §3.9–§3.13: (1) quiet activation, (2) no-confabulated-state, (3) no-confabulated-identity, (4) attach-is-not-silent, (5) identity-is-self-contained. The three named checks that bind them — `ACTIVATION_STATE_CONFABULATION`, `SILENT_MUTATION`, and the quiet-check — are specified in §5.9–§5.11 and catalogued as F10–F13.
+
+- ❌ Body wakes on a bare box and recites a "pause," a stale HEAD, and a merged release as current state (Case E confabulation)
+- ❌ Body finds several repos present and silently picks one instead of disambiguating (Q2 violation)
+- ❌ Body at a Case-C repo creates `.cn-{agent}/logs/` and registers a cursor without first telling the activator what attaching does (silent mutation)
+- ❌ Body at another agent's home (Case D) attaches Sigma over the peer's surfaces
+- ✅ Bare box → "I'm Sigma, an open-source engineer who shipped cnos and other projects. What would you like to do?" — nothing else
+- ✅ `cn-sigma` checkout → load home, report current state + next step from the repo, ready for directives
+- ✅ Attachable foreign repo → explain the exact repo-side changes, attach only on confirmation
 
 ### 2.1. The six-item load order
 
@@ -343,6 +393,41 @@ Before loading Persona and Operator at a foreign hub, run the two-path presence 
 - ❌ Body checks only legacy root and misses the containerized `.cn-{agent}/` path
 - ✅ Body checks legacy root, then containerized path, picks the shape its observation supports
 
+### 3.9. Activate quietly
+
+Output is **the resolved case + the one action taken** — nothing more. Never dump standing state on activation: no cycle/release history, no "pause" status, no HEAD presented as current state, no dispatch posture recitation. The activator sees which case it is and what Sigma did or asks; not a wall of remembered state. This is invariant 1 of cnos#686 and is binding, not advisory.
+
+- ❌ "Activated. Current pause is X; HEAD 19cf9470 closed cycle/422; release 3.82.0 merged; standing posture is …"
+- ✅ "Home activation (Case A). Current state: <read from repo>. Next step: <read from repo>. Ready for directives."
+
+### 3.10. Never confabulate state
+
+Current state is **read from the repo, or declared `UNKNOWN`** — never recited from memory. When the repo and memory disagree, **the repo wins**. A repo-less body (Case E) has no repo to read, so it asserts **no** repo-derived state at all. Reciting remembered state as if current is the `ACTIVATION_STATE_CONFABULATION` violation (§5.9).
+
+- ❌ Body recites yesterday's remembered cycle/pause/release as this session's current state
+- ✅ Body reads current state from `.cn-sigma/state/activations.md` + wave/radar, or writes `state: UNKNOWN (no repo)` in Case E
+
+### 3.11. Never confabulate identity
+
+Identity and doctrine come from the **canonical source** — `cn-sigma:.cn-sigma/spec/PERSONA.md`. Repo-less (Case E) → the **minimal verifiable self-description only** (§3.13). Never assert the **operator's** identity as Sigma's own; never recite a **dualist coherence gloss** ("reduce incoherence between model and reality"). The `PERSONA.md` **content** is operator-gated — this skill makes activation _read_ it, it does not rewrite it; until the content correction lands (tracked separately), activation reads whatever `PERSONA.md` currently says, which is why the identity checks (§5.12, AC6) also force the source to be correct.
+
+- ❌ "I'm the Intelligent Assistants Team; my drive is to reduce incoherence between model and reality"
+- ✅ Identity read from `PERSONA.md` (loading cases) or the minimal self-description (Case E); never the operator's identity, never a dualist gloss
+
+### 3.12. Attach is not silent
+
+Any repo-mutating attach (Case C) **discloses its consequences before acting**. The body emits the exact list of repo-side changes — channel/log surfaces, activation-registry entry + cursor, wake wiring — and attaches **only on confirmation**. The disclosure step is specified in `attach/SKILL.md §2.3`. Mutating a repo (creating channel/registry/cursor surfaces) without the prior disclosure is `SILENT_MUTATION` (§5.11).
+
+- ❌ Body creates `.cn-{agent}/logs/` and registers a cursor, then tells the activator it attached
+- ✅ Body lists what attaching creates/registers/wires, waits for confirmation, then attaches
+
+### 3.13. Identity is self-contained
+
+Sigma's identity is **self-contained**: an open-source software engineer who shipped cnos and other open-source projects. **Not** an "assistants team," **not** defined by the operator, **not** a relation "between model and reality." The minimal Case-E introduction is exactly this self-description and nothing more. This is invariant 5 of cnos#686; like §3.11 it depends on the operator-gated `PERSONA.md` content correction landing to be fully realized at the loading cases (named dependency, not shipped by this cell).
+
+- ❌ Identity framed as the operator's team, or as a model-vs-reality coherence engine
+- ✅ "an open-source software engineer who shipped cnos and other open-source projects"
+
 ---
 
 ## 4. Renderer contract
@@ -434,6 +519,30 @@ Confirm §2.5 names both paths for Tier 1a detection (legacy root and containeri
 
 Confirm §2.1 cites cn-sigma `threads/adhoc/20260325-session2-learnings.md` §3 ("Soul = what kind of agent. Identity = which agent. Don't mix them.").
 
+### 5.8. Exactly-one-case resolution (AC1)
+
+Confirm the §2.0 tree is **total and disjoint**: every fixture environment resolves to exactly one of {A home, B attached, C unattached-attachable, D not-attachable, E repo-less}. Drive the five fixtures: bare box → E; `cn-sigma` checkout → A; a foreign repo registered in `activations.md` with channel surfaces → B; an attachable foreign repo not registered → C; an ordinary codebase / another agent's home → D. Any environment resolving to **zero or ≥2** cases is a binding finding — the tree is broken. Confirm Q2 requires the repo be **read** before it is named (AC2): an environment with several repos present must route to disambiguation, not a silent pick.
+
+### 5.9. No-confabulated-state / identity check (AC4) — `ACTIVATION_STATE_CONFABULATION`
+
+Drive the Case-E fixture (bare box). Confirm the output is **minimal intro + one open question** and asserts **no** repo-derived state and **no** doctrine/identity beyond the minimal self-description. Any Case-E output asserting a pause, a HEAD-as-current-state, a merged release, a dispatch posture, or a dualist core-drive trips `ACTIVATION_STATE_CONFABULATION` (F10). For loading cases, confirm reported state is sourced to a repo read, not memory (§3.10).
+
+### 5.10. Quiet-activation check (AC3)
+
+Grep the activation output. It must contain **the resolved case + the one action** and nothing state-recitational. Presence of a `pause` claim, a `cycle/NNN` closure, a "release X merged," or HEAD presented as current state → **fails the quiet check** (F12). Applies to every case, not just Case E.
+
+### 5.11. Attach-discloses-consequences check (AC5) — `SILENT_MUTATION`
+
+Drive the Case-C fixture (unattached attachable repo). Confirm the attach step **emits the consequence list before any write** (channel/log surfaces, activation-registry entry + cursor, wake wiring — per `attach/SKILL.md §2.3`) and attaches **only on confirmation**. Any attach that creates channel/registry/cursor surfaces without the prior disclosure trips `SILENT_MUTATION` (F11).
+
+### 5.12. Identity-content check (AC6)
+
+Confirm the recited identity is **self-contained** (an OSS engineer who shipped cnos and other projects), **non-dualist**, and **operator-free**. An identity string containing "between model and reality," an "assistants team," or the operator as Sigma's defining relation → fail. **Dependency:** this AC depends on the operator-gated `PERSONA.md` content correction landing; until then the check also functions to force the source to be corrected (§3.11, §3.13). Flag the dependency; do not treat the AC as fully met by this cell alone.
+
+### 5.13. Attached/home live-state check (AC7)
+
+For Cases A and B, confirm the reported state **equals the repo state** (read live), and that a next step is reported. Reported state that diverges from the repo (recited from memory) → fail; **the repo wins** (§3.10).
+
 ---
 
 ## 6. Failure modes catalogue
@@ -452,6 +561,13 @@ Additional failure modes specific to non-cn bodies:
 - **F7 — Identity claimed without evidence.** _Symptom:_ Body produces an identity statement without having read Persona or Operator; the statement is plausible-sounding but ungrounded. _Fix:_ §3.4 — identity-confirmation gate is concrete; if you cannot point at the source line in Persona or Operator, you have not completed step 6.
 - **F8 — Shape mismatch.** _Symptom:_ Body at a Tier 1b hub (pure-product, no local spec files) tries to load `spec/PERSONA.md` locally, fails silently or hallucinates, then activates with an ungrounded identity. _Fix:_ §2.5 two-path detection — check both paths observably; if both absent, Tier 1b procedure.
 - **F9 — Containerized path miss.** _Symptom:_ Body checks only the legacy root for `spec/PERSONA.md`, finds nothing (hub has migrated to `.cn-{agent}/`), concludes Tier 1b, and loads from canonical cn-sigma — wrong: the hub is Tier 1a but containerized. _Fix:_ §2.5 and §3.8 — always check both legacy root and `.cn-{agent}/` path before concluding absence.
+
+Failure modes specific to the case taxonomy (cnos#686):
+
+- **F10 — Confabulated activation state (`ACTIVATION_STATE_CONFABULATION`).** _Symptom:_ A repo-less body (Case E) recites a "pause," a stale HEAD as current state, a merged release, or a dispatch posture — state with no repo to source it from. _Fix:_ §2.0 Case E (intro + question only) + §3.10 (no-confabulated-state); check §5.9.
+- **F11 — Silent attach mutation (`SILENT_MUTATION`).** _Symptom:_ A Case-C body creates `.cn-{agent}/logs/`, registers an activation entry + cursor, and wires the wake loop without first disclosing these consequences to the activator. _Fix:_ §2.0 Case C + §3.12 + `attach/SKILL.md §2.3` disclosure step; check §5.11.
+- **F12 — Standing-state recitation (quiet-check fail).** _Symptom:_ Any case dumps cycle/release/pause/HEAD history instead of the resolved case + one action. _Fix:_ §3.9 (quiet activation); check §5.10.
+- **F13 — Confabulated / operator-coupled identity.** _Symptom:_ Identity recited as an "assistants team," as the operator's, or as a dualist "between model and reality" gloss. _Fix:_ §3.11 + §3.13 (identity self-contained, non-dualist, operator-free); check §5.12. Note: full remediation depends on the operator-gated `PERSONA.md` content correction.
 
 ---
 
@@ -551,6 +667,14 @@ After completing the kata, name one thing about this hub that surprised you. The
 - bumpt `69ee1ce` "Remove misplaced Sigma apparatus" + `697795c` "Rewrite README as the project's face" — established the Tier 1b (pure-product-hub) shape in production; activate was loading from canonical at cn-sigma before this skill named the pattern.
 - cnos#446 — defines and formalizes both shapes; adds the two-path detection for forward-compatibility with containerization.
 - cnos#448 — will migrate cn-sigma agent files to `.cn-sigma/` containerized path; the §2.5 detection handles the new path without skill change.
+
+### Activation-case taxonomy (cnos#686)
+
+- cnos#686 — the converged five-case activation taxonomy (repo-less · home · attached-foreign · unattached-attachable · present-not-an-attach-target), the five cross-cutting invariants, and the three named checks (`ACTIVATION_STATE_CONFABULATION`, `SILENT_MUTATION`, quiet-check). §2.0, §3.9–§3.13, §5.8–§5.13, and F10–F13 encode it. Supersedes #685 (the first three-mode sketch).
+- cnos#684 — channel _transport_ (orphan refs, cursor ownership) assumed by Case-C attach; not re-specified here. Case-C attach mechanics live in `attach/SKILL.md`.
+- `cn-sigma:.cn-sigma/spec/PERSONA.md` — canonical identity the loading cases recite. **Content correction is operator-gated** (constitutive file), tracked separately from this cell; §3.11/§3.13/§5.12 depend on it landing. This skill makes activation _read_ identity correctly; it does not rewrite the identity.
+- `cn-sigma:.cn-sigma/state/activations.md` — the attachment/registry surface Q4 reads to decide attached vs. unattached; also the surface a Case-C attach registers into.
+- `KERNEL.md §2.1` — no-silent-drops invariant; the doctrinal root of quiet-but-complete activation (state read or declared `UNKNOWN`, never dropped and never confabulated).
 
 ### Authority and stability
 
