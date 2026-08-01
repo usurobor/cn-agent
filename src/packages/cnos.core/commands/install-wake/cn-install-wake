@@ -781,12 +781,26 @@ else
 fi
 
 # Substrate cron slots — substrate authority per
-# wake-provider/SKILL.md §2.5 right column. Today's selection
-# reproduces the four staggered hourly slots used by the existing
-# substrate wake (.github/workflows/claude-wake.yml lines 36-39) for
-# operational continuity at cutover; off-peak minutes (8, 23, 38, 53)
-# avoid both :00/:30 high-load and :15/:45 cn-sigma home-wake slots.
-substrate_cron_slots="8 23 38 53"
+# wake-provider/SKILL.md §2.5 right column. Off-peak minutes (8, 23,
+# 38, 53) avoid both :00/:30 high-load and :15/:45 cn-sigma home-wake
+# slots.
+#
+# Cadence is per-wake: the dispatch loop keeps all four staggered slots
+# (~15-min claim latency, so a queued cell is picked up promptly);
+# admin housekeeping only needs an hourly heartbeat. Quartering the
+# agent-admin cadence quarters its channel-log write volume on `main`
+# (the dominant source of HEAD churn) without slowing cell dispatch.
+# The durable fix — moving the activation channel off `main` HEAD
+# entirely — is tracked in cnos#684; this is the tactical reduction.
+case "$name" in
+  cds-dispatch)
+    substrate_cron_slots="8 23 38 53"
+    ;;
+  *)
+    # agent-admin and any other housekeeping wake: hourly.
+    substrate_cron_slots="8"
+    ;;
+esac
 
 # ---------------------------------------------------------------------------
 # Resolve output path

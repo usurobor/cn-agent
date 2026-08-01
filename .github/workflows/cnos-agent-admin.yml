@@ -13,9 +13,6 @@ name: cnos-agent-admin
 on:
   schedule:
     - cron: '8 * * * *'
-    - cron: '23 * * * *'
-    - cron: '38 * * * *'
-    - cron: '53 * * * *'
   issues:
     types: [opened]
 
