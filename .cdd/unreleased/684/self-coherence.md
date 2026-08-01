@@ -93,3 +93,32 @@ No path under `.cn-sigma/**`. No path under `.github/workflows/`. No `docs/devel
 4. **`cn-sigma`-side registry file is out of this cell's reach.** Per `gamma-scaffold.md` §"Friction notes," the actual `.cn-sigma/state/activations.md` registry file that would carry the amended repo+ref+cursor schema in production lives in the separate `cn-sigma` hub repo. This cycle's convention doc specifies the target shape; landing it in `cn-sigma`'s own registry file is a follow-on action for that repo's owner, not attempted here (would also violate this cell's no-cross-repo-write guardrail).
 5. **No Tier 2 `eng/shell` bundle exists to load** for the one shell script this cycle produces — general shell-hygiene discipline (`set -euo pipefail`, quoting, `mktemp -d`) plus `shellcheck`/`bash -n` were applied directly since no formal Tier 2 bundle for shell exists in this repo's skill taxonomy to cite. Not a gap introduced by this cycle, but noted since `alpha/SKILL.md` §2.6 row 9 asks for the toolchain match to be explicit.
 6. **Provisional α close-out.** Per `alpha/SKILL.md` §2.8, this dispatch is bounded (α does not spawn β and exits after review-readiness). No `alpha-closeout.md` is written at this stage — the dispatch prompt for this cycle explicitly directs α to stop after `self-coherence.md` is committed/pushed ("Do not spawn β... Your job ends when self-coherence.md is committed, pushed, and you've reported back"), so the standard post-merge re-dispatch close-out path applies later, owned by δ/γ, not by this α session.
+
+## CDD Trace
+
+| Step | Owner | Required output | This cycle |
+|---|---|---|---|
+| 0 Observe | γ | Selection inputs read | γ read the issue + operator comments; scaffold cites the full source-of-truth table. |
+| 1 Select | γ | Named selected gap + decisive rule clause | γ selected cnos#684 (design-first/explore, operator-authorized 2026-08-01T07:50:17Z). |
+| 2 Branch | γ | `origin/cycle/684` exists | Verified — branch pre-existed at dispatch (`CLAIM-REQUEST.yml` base), base `main@daeaa391`. α switched onto it per dispatch instruction, created no new branch. |
+| 3 Bootstrap | γ | Issue #684 + scaffold on `cycle/684` | `.cdd/unreleased/684/gamma-scaffold.md` (commit `d7353d7`) + `gamma-clarification.md` (commit `b6ade72`), both present on `cycle/684`. |
+| 4 Gap | α | `self-coherence.md §Gap` | This file, §Gap, commit `b8cdcc1`. |
+| 5 Mode | α | Mode declaration + Tier 1/2/3 skill set | §Gap (mode: `explore`) + §Skills, commit `12146bd`. |
+| 6 Artifacts | α | Aligned implementation artifacts on `cycle/684` | Design/docs (no separate design-artifact step — the convention doc *is* the design deliverable, per §Skills' explicit "not required" justification): `docs/reference/conventions/AGENT-ACTIVATION-CHANNEL-v1.md` (commit `b04ac5f`), `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` pointer edit (commit `d3f654d`), `.cdd/unreleased/684/verify-channel-reconstruction.sh` (commit `1d36fb1`), `.cdd/unreleased/684/dry-run-migration-plan.md` (commit `c0e9622`). No tests step (no code produced — design-only cell, justified in §Skills). No separate "code" step (same reason). |
+| 7 Self-coherence | α | `self-coherence.md` complete through §CDD Trace | This section, closing the trace. §ACs (commit `e171ddc`) maps all 8 oracle rows (AC1–AC7 + WRITER_LOCALITY_VIOLATION) to file+line evidence; §Self-check + §Debt (commit `e828888`) record the corrected repo-wide peer enumeration and 6 named debt items. |
+
+**Artifact-enumeration-matches-diff check (§2.6 row 11), re-verified at trace-close time:**
+```
+$ git diff origin/main...cycle/684 --stat
+ .cdd/unreleased/684/CLAIM-REQUEST.yml                |  18 ++
+ .cdd/unreleased/684/dry-run-migration-plan.md        | 159 +++++++++++++++
+ .cdd/unreleased/684/gamma-clarification.md           |  15 ++
+ .cdd/unreleased/684/gamma-scaffold.md                | 103 ++++++++++
+ .cdd/unreleased/684/self-coherence.md                | (this file, growing incrementally)
+ .cdd/unreleased/684/verify-channel-reconstruction.sh | 137 +++++++++++++
+ .../conventions/AGENT-ACTIVATION-CHANNEL-v1.md       | 224 +++++++++++++++++++++
+ .../conventions/AGENT-ACTIVATION-LOG-v0.md           |   6 +-
+```
+Every path above is named in §ACs, §Self-check, or this table. `CLAIM-REQUEST.yml`/`gamma-scaffold.md`/`gamma-clarification.md` predate α's own commits (γ/δ authored them) but are part of the `origin/main...cycle/684` diff and are named here for completeness.
+
+**Implementation SHA** (last implementation commit before the review-readiness signal commit): `e828888`.
