@@ -1,9 +1,12 @@
 ---
 title: Agent Activation Log Convention v0
-status: field convention
+status: historical convention — superseded for agent-memory purposes by cnos#690 (docs/reference/runtime/MEMORY.md); §0/§0.1 writer-locality and wake-class-ownership mechanics remain current
 version: v0
 date: 2026-05-30
 scope: cross-activation continuity for one agent identity operating across multiple hubs/bodies
+superseded_for_memory_by:
+  - docs/reference/runtime/MEMORY.md (ranked r0/rN box-topology model)
+  - cnos#690 (ratifying design doc, operator clarification 2026-08-02)
 related:
   - cn-sigma:.cn-sigma/spec/OPERATOR.md § Activation logs
   - cn-sigma:.cn-sigma/threads/adhoc/20260530-sigma-activation-log-v0.md
@@ -13,6 +16,12 @@ related:
 ---
 
 # Agent Activation Log Convention v0
+
+> **Superseded for agent-memory purposes.** As of cnos#690 (operator clarification, 2026-08-02), agent-memory continuity across activations is governed by the ranked (`r0`/`rN`) box-topology model in [`docs/reference/runtime/MEMORY.md`](../runtime/MEMORY.md) — per-locus write-local `refs/heads/sigma/<activation-id>` boxes (and `refs/heads/sigma/home` at home), compacted by home into an `rN` rollup tower with `reads:` provenance — **not** by the `.cn-{agent}/logs/` + `.cn-{agent}/threads/activations/` main-tree mirror this document describes below.
+>
+> **§0 (Writer Locality) and §0.1 (Wake-class writer ownership) are not superseded** — they document live, currently-operating write-discipline mechanics (which body/wake may write which surface, in which repo) that are orthogonal to where agent memory itself lives, and remain the accurate description of production behavior.
+>
+> **§1 onward** (the two-artifact convention, activation loop, cursor model, entry format) describe the pre-#690 mechanism for *where agent memory lives*. That description is kept here as an accurate historical record — not as the current or future source of truth for agent memory. See `docs/reference/runtime/MEMORY.md` and cnos#690 for the current doctrine.
 
 A minimal two-artifact, single-writer, append-only convention for cross-activation continuity when one agent identity operates across multiple hubs/bodies.
 
