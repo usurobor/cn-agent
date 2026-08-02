@@ -1,0 +1,13 @@
+wake: cds-dispatch
+protocol: cds
+issue: 691
+run_class: first_pass
+requested_transition: todo -> in-progress
+reason: >
+  Claim sequence step 5/6 (cds-dispatch/SKILL.md). Well-formedness gates
+  verified: issue open, dispatch:cell present, exactly one protocol label
+  (protocol:cds), exactly one status label (status:todo). No prior
+  cycle/691 branch, no .cdd/unreleased/691/ artifacts prior to this claim,
+  no prior status:changes history, no scanner "MECHANICAL reversion"
+  comment, no operator continuation-authorization comment -- classified
+  first_pass per repair re-entry preflight Step A.

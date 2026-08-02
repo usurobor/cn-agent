@@ -1,332 +1,85 @@
-# Memory in cnos — lean triadic model
+# Memory in cnos — ranked model
 
-**Version:** 0.2.0
-**Status:** Draft (proposed — not implemented)
-**Implementation:** the memory surfaces exist (`threads/adhoc/`, `threads/reflections/`, `state/conversation.json` — scaffolded by `src/go/internal/hubinit/hubinit.go`), but the triadic memory model and its runtime-contract zones (`memory_episodic`/`memory_reflective`/`memory_working`) are not yet implemented.
-
----
-
-## Purpose
-
-This document proposes a memory model for cnos: a lean triadic split across episodic, reflective, and working-continuity surfaces, kept Git-native and inspectable. It names how the three concerns the system already runs — durable reflective memory, session continuity, and runtime internals — fit together, and would fix the rule that `threads/adhoc/` is canonical memory while `state/conversation.json` is working continuity, not canonical memory.
+**Version:** 0.3.0
+**Status:** Canonical doctrine, ratified by #690 (operator clarification, 2026-08-02). The ranked model below is the authoritative agent-memory doctrine for cnos going forward. The runtime implementation of the box topology (per-locus write-local refs, home's rollup tower, cursor tracking in `state/cursors.yaml`) does **not** exist yet — that is #690 Sub 2 (cn-sigma dry-run migration map) through Sub 5 (cmp alignment), future work. This document states the doctrine that implementation must converge on, not a description of what already runs.
+**Supersedes:** the three-surface split (episodic memory, reflective memory, working continuity, bound respectively to `threads/adhoc/`, `threads/reflections/`, `state/conversation.json`) that was v0.2.0 of this document is **retired**, not relabeled. That split does not survive in any form below: there is one memory primitive — an append-only thread of typed entries — differentiated only by rank, not by three fixed named classes bound to three fixed paths.
+**Also supersedes (for agent-memory purposes only):** [`docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`](../conventions/AGENT-ACTIVATION-LOG-v0.md) is no longer the mechanism agent memory persists through. See that document's own status note for the narrowed scope it retains (writer-locality and wake-class-ownership mechanics, which remain live and are orthogonal to the rank question this document answers).
+**Prior exploration, subsumed (not controlling):** #684 and its held PR #688 explored a direction-based ref scheme (`refs/heads/channels/sigma/{cnos-to-home,home-to-cnos}`) as the r0 substrate. Per #690's operator clarification (2026-08-02): "#684/#688 are prior substrate exploration, not the controlling topology; their salvage... carries into Sub 2. #684/#688 closed as subsumed." The salvaged artifacts (`dry-run-migration-plan.md`, `verify-channel-reconstruction.sh`) carry forward into #690 Sub 2 on the box topology stated below — the direction-based ref scheme itself does not.
 
 ---
 
-## Decision
+## Principle
 
-Use a lean triadic memory model.
+`main` holds only what the project **is now**; how-we-got-here lives off-HEAD (`DOCUMENTATION-SYSTEM.md §5`, kernel §2.1). Applied to agent memory:
 
-### Core memory classes
+> **Memory is one primitive — an append-only thread of typed entries — at different *ranks*.** `r0` = raw evidence; `rN` (N≥1) = a compaction that *reads* rank N-1 and cites it. "events vs reflections" and "adhoc vs daily" are the same entry at different ranks/cadences, not separate subsystems.
 
-- **α — episodic memory:** factual retained record of what happened and what was decided. Surface: `threads/adhoc/`
-- **β — reflective memory:** interpretation and synthesis over episodic memory. Surface: `threads/reflections/`
-- **γ — working continuity:** recent session/conversation continuity across wake boundaries. Surface: `state/conversation.json`
+There is no separate episodic/reflective/working-continuity ontology and no fixed binding of memory classes to fixed paths. A single entry schema (below) covers raw evidence and every compaction over it; what differs between entries is rank and provenance, not kind.
 
-### Canonical rule
+And at **home**, the hub's content is **not** hidden inside a `.cn-{agent}/` dotdir. That container prefix is a *foreign-vendoring* concept only (keeps Sigma's files from colliding with a host repo). At home — the cn-sigma repo, which *is* Sigma — the hub materializes at repo **root**.
 
-Canonical memory is:
+## The model (KISS / YAGNI)
 
-- `threads/adhoc/`
-- `threads/reflections/`
+1. **r0 — distributed, write-local.** Each activation appends to its **own box** (an orphan ref) **at its own repo**, where it already has push access. One box per locus. **No mirror, no cross-repo copy** — each box is the single source of truth for that locus's raw evidence.
+2. **rN — centralized at home.** Home is the **only** reader-across and the **only** compactor: it fetches every box by `(repo, ref, cursor)` and writes the rollup tower — daily **r1** over r0, weekly **r2** over r1, monthly **r3** over r2. A reflection is a **new, smaller artifact**, never a copy.
+3. **Asymmetry.** Activations are dumb producers (append-only, local, never read others, never compact); home is the one synthesizer. **r0 fans out; rN funnels in.** One Sigma identity → one home (cn-sigma) → one tower; every box (cnos, bumpt, tsc, cmp, *and* `sigma/home`) feeds it.
+4. **Cursors = state.** Home tracks how far it has read per box in `state/cursors.yaml` — one line each `{repo, ref, last_read_sha}`, nothing else.
+5. **Provenance.** Each rollup names the SHAs it read (`reads:`). The one non-negotiable field — it makes a bad reflection repairable from raw instead of a summary that drifts.
+6. **Promotion ≠ rank.** Moving a stable lesson into spec/state/protocol is a different event, not `r(N+1)`. The reflective tower stays one kind of artifact (`r0 → r1 → r2 → …`); promotion moves a stable lesson out of that tower into a governing surface (spec/state/protocol) as an explicit, cited edit — never by incrementing rank. See "Promotion is not a rank" in [`docs/papers/AGENT-MEMORY-LOG-STRUCTURED.md`](../../papers/AGENT-MEMORY-LOG-STRUCTURED.md) for the full argument.
 
-`state/conversation.json` is:
+## Ref topology (box model; authoritative go-forward shape, per #690)
 
-- Useful
-- Retained
-- Runtime-visible
-- But not canonical memory
+```
+usurobor/cnos      : refs/heads/sigma/<activation-id>        Sigma-at-cnos  r0
+usurobor/bumpt     : refs/heads/sigma/<activation-id>        Sigma-at-bumpt r0
+usurobor/tsc       : refs/heads/sigma/<activation-id>        Sigma-at-tsc   r0
+usurobor/cmp       : refs/heads/sigma/box, refs/.../cloud    two activations, one repo
+usurobor/cn-sigma  : refs/heads/sigma/home                   home's own r0 box (off HEAD)
+```
 
-It is a working continuity surface.
+Each box: `README.md` + `posts/YYYYMMDD.md`. Invariants: orphan (no `main` ancestry), **single writer**, **fast-forward-only**, no force-push, no-delete-while-registered.
 
-### KISS / YAGNI rule
+This topology is **doctrine** — the ratified go-forward shape — not yet-implemented runtime state. Migrating cn-sigma onto it (unwrap `.cn-sigma/` → root, bind r0 boxes to these refs including `sigma/home`, collapse the current 11-folder sprawl, drain `state/activations.md` into `state/cursors.yaml`) is #690 Sub 2/3. Aligning `cmp` onto the same shape is Sub 5, dependent on cn-sigma proving the model first.
 
-Do not add:
+## Entry schema (r0 and rN share it)
+
+```yaml
+---
+ts:    2026-08-01T11:39:23Z
+from:  <activation-id>
+rank:  r0                  # r0 | r1 | r2 | …
+class: note                # note | decision | request | ack | handoff | review | status | rca
+to:    <activation-id>     # optional; omit for a broadcast note
+reads:                     # required for rank ≥ r1; omit for r0
+  - {repo: usurobor/cnos, ref: refs/heads/sigma/<id>, sha: <sha>}
+---
+```
+
+Rank↔cadence bound for v0 (daily=r1, weekly=r2, monthly=r3); the "rank = what-it-reads" flexibility is deferred until a missed cadence forces a higher tier to read raw. Cadence is operational scheduling, not structural ontology — see "Rank is not frequency" in `docs/papers/AGENT-MEMORY-LOG-STRUCTURED.md`.
+
+## Constraints (KISS / YAGNI)
+
+Do not add, until the ranked model above proves insufficient:
 
 - `threads/memory/INDEX.md`
 - Vector stores
 - Graph stores
-- Retrieval indexes
-- Memory-specific package roles
+- Retrieval / search indexes
+- Per-rank wake machinery
+- Forget/eviction
+- Telemetry-as-memory
 - A dedicated memory package
 
-...until the current three-surface model proves insufficient.
+## Scope note (this document vs. implementation cells)
 
----
-
-## Constraints
-
-- Keep canonical memory Git-native and inspectable
-- Do not add opaque mandatory storage
-- Do not require a retrieval backend
-- Preserve current runtime behavior where possible
-- Keep the distinction between constitutive self, memory, and private runtime state explicit
-- Avoid adding a third canonical memory surface unless there is real operational need
-
-## Challenged Assumption
-
-The challenged assumption is:
-
-> Memory needs an additional index or retrieval layer in core before the underlying memory model is explicit.
-
-That assumption is unnecessary right now. cnos already has enough surfaces to define a coherent memory model without introducing another canonical layer.
-
----
-
-## Current Evidence
-
-### Runtime contract
-
-The runtime contract already classifies:
-
-- `threads/reflections/`
-- `state/conversation.json`
-
-as memory surfaces, distinct from:
-
-- `constitutive_self`
-- `private_body`
-- `work_medium`
-- `projection_surface`
-
-### Context packer
-
-The context packer already loads:
-
-- Daily and weekly reflections into the dynamic system block
-- Conversation history into recent message turns
-
-It does not treat all state equally.
-
-### Skills
-
-`adhoc-thread` already defines a durable thread as the place for a proposal, learning, question, or decision that would otherwise be lost if left inline.
-
-`reflect` already defines reflection as: evidence → interpretation → conclusion.
-
-So the practical model already exists. It is just not yet stated cleanly.
-
----
-
-## Proposal
-
-### 1. Core memory semantics
-
-Core should own only the memory semantics that must be true for every hub:
-
-#### 1.1 Canonical episodic memory — `threads/adhoc/`
-
-What belongs here:
-
-- Decisions
-- Investigations
-- Proposals
-- Durable questions
-- Corrections worth preserving
-- Significant conversation outcomes once promoted out of chat
-
-This is the factual retained record.
-
-#### 1.2 Canonical reflective memory — `threads/reflections/`
-
-What belongs here:
-
-- Daily synthesis
-- Weekly synthesis
-- Higher-order lessons
-- Explicit MCA/MCI outcomes
-- Reflections over patterns in the raw record
-
-This is the interpretive retained record.
-
-#### 1.3 Working continuity — `state/conversation.json`
-
-What belongs here:
-
-- Recent turns
-- Session continuity
-- Immediate conversational context
-- Resumable short-term history
-
-This is useful retained state, but not the canonical record of memory.
-
----
-
-### 2. Triadic fit
-
-#### α — episodic memory
-
-The α side preserves the pattern of what happened. Its failure mode is:
-
-- Facts stay in chat and disappear
-- Decisions are remembered socially but not recorded
-- Investigations leave no durable trace
-
-#### β — reflective memory
-
-The β side links the parts into meaning. Its failure mode is:
-
-- Conclusions detached from evidence
-- Lessons that cannot be traced back to what actually happened
-- Reflections that substitute for the record instead of interpreting it
-
-#### γ — working continuity
-
-The γ side carries the current line of interaction across a wake boundary. Its failure mode is:
-
-- The agent loses the immediate thread of a conversation
-- Stale short-term history is mistaken for durable truth
-- Runtime projection is treated as if it were canonical memory
-
-#### Memory is coherent when
-
-- α preserves the facts
-- β interprets the facts
-- γ carries the current thread without claiming to be the source of truth
-
----
-
-### 3. Ownership split
-
-#### cnos core owns
-
-- The distinction between episodic, reflective, and working memory
-- Runtime-contract visibility of those surfaces
-- Doctor/status validation of memory surfaces
-- The rule that `state/conversation.json` is not canonical memory
-- The rule that constitutive self is not memory
-
-#### Agent layer owns
-
-The existing skills already provide most of the needed memory discipline:
-
-- `adhoc-thread` — when to retain a fact or decision durably
-- `reflect` — how to synthesize evidence into a durable lesson
-
-No new agent/memory skill is required in this v1 design.
-
-#### Commands / orchestrators may later own
-
-Optional tooling only:
-
-- Conversation import
-- Memory compaction
-- Recall helpers
-- Search/indexing helpers
-- Reflection promotion workflows
-
-Those are layered behaviors, not memory ontology.
-
----
-
-### 4. Runtime contract changes
-
-Update the memory zone so it reflects the actual lean model.
-
-#### Current
-
-- `threads/reflections/`
-- `state/conversation.json`
-
-#### Proposed
-
-Memory should distinguish canonical vs working surfaces more clearly. Suggested rendering:
-
-```json
-"medium": {
-  "zones": [
-    { "path": "threads/adhoc/", "zone": "memory_episodic" },
-    { "path": "threads/reflections/", "zone": "memory_reflective" },
-    { "path": "state/conversation.json", "zone": "memory_working" },
-    { "path": "spec/SOUL.md", "zone": "constitutive_self" },
-    { "path": ".cn/", "zone": "private_body" }
-  ]
-}
-```
-
-If introducing three new zone names feels too heavy, then at minimum:
-
-- Add `threads/adhoc/` to memory
-- Document in prose that `state/conversation.json` is working continuity, not canonical memory
-
-That lighter version is acceptable for v1.
-
----
-
-### 5. Context-packing rule
-
-Do not blindly load all adhoc threads into context.
-
-Current behavior is already mostly right:
-
-- Reflections are directly useful as compact memory
-- Conversation history is directly useful as recent turns
-
-For `threads/adhoc/`, use:
-
-- Explicit reference from the current task
-- Or later, an optional retrieval/indexing layer
-
-This avoids flooding the prompt while still keeping adhoc threads canonical.
-
----
-
-### 6. What not to add yet
-
-#### No `threads/memory/INDEX.md`
-
-Not yet. Reason:
-
-- Runtime does not use it today
-- Current memory surfaces are enough
-- A third canonical memory file would add ceremony before necessity
-
-If restore cost becomes too high later, add it as a derived restore map, not a third source of truth.
-
-#### No vector/graph store in core
-
-Not needed. Those can be optional later.
-
-#### No dedicated memory package
-
-Not needed yet. The existing reflect and adhoc-thread split is already enough.
-
----
-
-## Leverage
-
-This design:
-
-- Makes the current memory surfaces explicit
-- Keeps core small
-- Keeps memory inspectable and Git-native
-- Avoids introducing an unnecessary index layer
-- Gives commands/orchestrators/extensions a clear non-core role
-- Aligns the runtime contract, context packer, and existing skills
-
-### Negative Leverage
-
-This adds:
-
-- One more explicit distinction to maintain in docs and runtime contract
-- One more rule for what is canonical and what is projection
-- Some migration work for docs that currently speak about memory more loosely
-
----
-
-## Alternatives Considered
-
-| Option | Pros | Cons | Decision |
-|--------|------|------|----------|
-| Keep current implicit model | No work | adhoc stays semantically invisible; confusion remains | Rejected |
-| Add `threads/memory/INDEX.md` now | Explicit restore surface | Extra canonical layer too early | Rejected |
-| Add vector/index backend in core | Better retrieval | Makes memory backend-defined and opaque too early | Rejected |
-| New dedicated agent/memory skill now | One obvious home | Adds a layer before the current split proves insufficient | Rejected |
-| **Lean triadic model: adhoc + reflections + conversation** | Small, truthful, aligned with current system | Requires explicit documentation of boundaries | **Chosen** |
-
----
+This document is the **canonical doctrine** ratified by #690. It is doctrine-only: it does not itself migrate `cn-sigma`, does not implement the box topology, and does not build the compactor. Those are separate, later cells in #690's wave (Sub 2 — dry-run migration map; Sub 3 — cn-sigma migration; Sub 4 — home rollup/no-op read mechanics; Sub 5 — cmp alignment). Do not read the ref paths or invariants above as already running in production.
 
 ## Related
 
+- [`docs/papers/AGENT-MEMORY-LOG-STRUCTURED.md`](../../papers/AGENT-MEMORY-LOG-STRUCTURED.md) — the essay this doctrine draws its rank law and coherence framing from; cross-referenced throughout.
+- [`docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`](../conventions/AGENT-ACTIVATION-LOG-v0.md) — historical convention; superseded for agent-memory purposes by this document; still accurate for the writer-locality/wake-ownership mechanics it documents.
+- Issue #690 — the ratifying design doc (ranked model, box topology, operator clarification, 2026-08-02).
+- Issue #684 / PR #688 — prior substrate exploration (direction-based ref scheme); subsumed, not controlling; closed.
 - AGENT-NETWORK.md — agents carry memory when deployed to new workspaces
 - HUB-PLACEMENT-MODELS.md — hub is memory, workspace is workbench
 - #156 — Attached hubs (agent memory stays in hub, tagged by workspace)
