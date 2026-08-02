@@ -2890,7 +2890,7 @@
       "coherence"
     ],
     "pri": "P1",
-    "status": "review",
+    "status": "changes",
     "dispatch": true,
     "protocol": "cds",
     "effort": "",
@@ -2899,7 +2899,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-08-02T01:52:06Z",
-    "updated": "2026-08-02T02:06:25Z",
+    "updated": "2026-08-02T19:12:56Z",
     "url": "https://github.com/usurobor/cnos/issues/691"
   },
   {
