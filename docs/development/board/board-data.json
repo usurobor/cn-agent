@@ -2839,27 +2839,6 @@
     "url": "https://github.com/usurobor/cnos/issues/683"
   },
   {
-    "n": 684,
-    "t": "architecture: Sigma activation channel — rename `.cn-sigma/logs`, move to symmetric append-only orphan refs (independent stream, off main HEAD)",
-    "kind": "process",
-    "areas": [
-      "coherence",
-      "wake"
-    ],
-    "pri": "none",
-    "status": "backlog",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-08-01T06:44:59Z",
-    "updated": "2026-08-01T23:51:44Z",
-    "url": "https://github.com/usurobor/cnos/issues/684"
-  },
-  {
     "n": 686,
     "t": "activation protocol: ideal behavior for every activation case (home | attached | unattached-attachable | not-attachable | repo-less) — quiet, evidence-derived, non-confabulating",
     "kind": "process",
@@ -2964,5 +2943,47 @@
     "created": "2026-08-02T01:52:19Z",
     "updated": "2026-08-02T01:52:19Z",
     "url": "https://github.com/usurobor/cnos/issues/693"
+  },
+  {
+    "n": 694,
+    "t": "memory wave Sub 4: home rollup + no-op read mechanics (first minimal compactor)",
+    "kind": "feature",
+    "areas": [
+      "coherence",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-02T01:52:24Z",
+    "updated": "2026-08-02T01:52:24Z",
+    "url": "https://github.com/usurobor/cnos/issues/694"
+  },
+  {
+    "n": 695,
+    "t": "memory wave Sub 5: cmp alignment — after cn-sigma proves the model",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "coherence"
+    ],
+    "pri": "P2",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-02T01:52:28Z",
+    "updated": "2026-08-02T01:52:28Z",
+    "url": "https://github.com/usurobor/cnos/issues/695"
   }
 ]
