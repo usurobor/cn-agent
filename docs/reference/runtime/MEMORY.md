@@ -83,4 +83,3 @@ This document is the **canonical doctrine** ratified by #690. It is doctrine-onl
 - AGENT-NETWORK.md — agents carry memory when deployed to new workspaces
 - HUB-PLACEMENT-MODELS.md — hub is memory, workspace is workbench
 - #156 — Attached hubs (agent memory stays in hub, tagged by workspace)
-</content>
