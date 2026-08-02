@@ -1,5 +1,7 @@
 # Agent Memory Is Coherence-Preserving Log Structure
 
+> **Doctrine cross-reference.** This essay is the philosophical/law basis for cnos's ranked memory model; [`docs/reference/runtime/MEMORY.md`](../reference/runtime/MEMORY.md) is the concrete, canonical doctrine it feeds (ratified by #690, 2026-08-02) — the box topology, the terse `ts/from/rank/class/reads` entry schema, and the ref paths live there. Where this essay's illustrative schemas (e.g. the `inputs:`/`basis:`/`coherence:` compaction-receipt example below) differ in verbosity from `MEMORY.md`'s minimal `reads:` field, treat `MEMORY.md` as the machine-readable spec and this essay as the reasoning behind it — they name the same provenance requirement, not two different structural models. References below to "activation logs" as the r0 substrate describe that *role* generically; the concrete r0 substrate going forward is the box topology (per-locus write-local orphan refs) in `MEMORY.md`, which supersedes `docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` for agent-memory purposes (that convention remains accurate for the writer-locality/wake-ownership mechanics it documents, which are orthogonal to this rank law).
+
 Agent memory exists to preserve coherence across time.
 
 The log remembers what happened. Reflection remembers what mattered for coherence. State remembers where to resume. Spec and protocol remember what must constrain future work.
@@ -490,11 +492,12 @@ That is agent memory without a memory store.
 
 ## Related analogues
 
+- **Canonical doctrine:** `docs/reference/runtime/MEMORY.md` — the concrete ranked model (r0/rN, box topology, `reads:` provenance, promotion≠rank) this essay's law feeds. Ratified by cnos#690 (2026-08-02).
 - TSC, [docs/THESIS.md](https://github.com/usurobor/tsc/blob/main/docs/THESIS.md)
 - TSC Core, [spec/tsc-core.md](https://github.com/usurobor/tsc/blob/main/spec/tsc-core.md)
 - TSC Self-Measure, [runtime/SELF-MEASURE.md](https://github.com/usurobor/tsc/blob/main/runtime/SELF-MEASURE.md)
 - Martin Fowler, [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)
 - Microsoft Azure Architecture Center, [Event Sourcing pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing)
 - Jay Kreps, [Questioning the Lambda Architecture](https://www.oreilly.com/radar/questioning-the-lambda-architecture/)
-- Agent Activation Log Convention v0, [`docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`](../reference/conventions/AGENT-ACTIVATION-LOG-v0.md)
+- Agent Activation Log Convention v0, [`docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md`](../reference/conventions/AGENT-ACTIVATION-LOG-v0.md) — historical convention, superseded for agent-memory purposes by `MEMORY.md` (see that convention's own status note)
 - Companion essays: [`AGENT-ACTIVATION-LOGS-AND-EVENTUAL-CONSISTENCY.md`](./AGENT-ACTIVATION-LOGS-AND-EVENTUAL-CONSISTENCY.md), [`AGENT-COMMS-FUTURES-KISS.md`](./AGENT-COMMS-FUTURES-KISS.md)
