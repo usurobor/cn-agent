@@ -2882,27 +2882,6 @@
     "url": "https://github.com/usurobor/cnos/issues/690"
   },
   {
-    "n": 691,
-    "t": "memory wave Sub 1: cnos doctrine alignment — one canonical model (MEMORY.md / AGENT-MEMORY-LOG-STRUCTURED / activation-log-v0)",
-    "kind": "doctrine",
-    "areas": [
-      "agent",
-      "coherence"
-    ],
-    "pri": "P1",
-    "status": "review",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-08-02T01:52:06Z",
-    "updated": "2026-08-02T19:38:29Z",
-    "url": "https://github.com/usurobor/cnos/issues/691"
-  },
-  {
     "n": 692,
     "t": "memory wave Sub 2: cn-sigma dry-run migration map — exact old→new mapping, no destructive move",
     "kind": "process",
