@@ -2882,12 +2882,54 @@
   },
   {
     "n": 690,
-    "t": "spec: agent memory = log-structured ranked threads (r0 daily logs → home rollups); migrate cn-sigma first",
-    "kind": "doctrine",
+    "t": "wave: agent memory = log-structured ranked threads (r0 boxes → home rollups); cn-sigma first",
+    "kind": "wave",
     "areas": [
       "agent",
       "coherence",
       "wake"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-01T23:23:01Z",
+    "updated": "2026-08-02T01:51:57Z",
+    "url": "https://github.com/usurobor/cnos/issues/690"
+  },
+  {
+    "n": 691,
+    "t": "memory wave Sub 1: cnos doctrine alignment — one canonical model (MEMORY.md / AGENT-MEMORY-LOG-STRUCTURED / activation-log-v0)",
+    "kind": "doctrine",
+    "areas": [
+      "agent",
+      "coherence"
+    ],
+    "pri": "P1",
+    "status": "todo",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-02T01:52:06Z",
+    "updated": "2026-08-02T01:52:06Z",
+    "url": "https://github.com/usurobor/cnos/issues/691"
+  },
+  {
+    "n": 692,
+    "t": "memory wave Sub 2: cn-sigma dry-run migration map — exact old→new mapping, no destructive move",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "coherence"
     ],
     "pri": "P1",
     "status": "ready",
@@ -2898,8 +2940,29 @@
     "unestimated": true,
     "tracking": false,
     "assignee": "",
-    "created": "2026-08-01T23:23:01Z",
-    "updated": "2026-08-02T00:52:27Z",
-    "url": "https://github.com/usurobor/cnos/issues/690"
+    "created": "2026-08-02T01:52:13Z",
+    "updated": "2026-08-02T01:52:13Z",
+    "url": "https://github.com/usurobor/cnos/issues/692"
+  },
+  {
+    "n": 693,
+    "t": "memory wave Sub 3: cn-sigma migration — unwrap to root, r0 boxes, cursors.yaml, collapse sprawl",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "coherence"
+    ],
+    "pri": "P1",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-02T01:52:19Z",
+    "updated": "2026-08-02T01:52:19Z",
+    "url": "https://github.com/usurobor/cnos/issues/693"
   }
 ]
