@@ -12,9 +12,15 @@ name: Board map
 # .cdd/unreleased/545/remote-runner-receipt-board-map.md
 
 on:
-  # Board *data* changed — an issue moved.
-  issues:
-    types: [opened, edited, deleted, closed, reopened, labeled, unlabeled, assigned, unassigned]
+  # NOTE: the per-issue-event trigger (opened/edited/deleted/closed/reopened/
+  # labeled/unlabeled/assigned/unassigned) was intentionally removed. It
+  # regenerated + committed the board on EVERY issue micro-event — a label
+  # flip, an assignment — producing a commit per event and making the board
+  # a dominant source of `main` HEAD churn. The board is a human-facing
+  # projection; a daily refresh (plus on-source-change and manual) is ample.
+  # The scheduled run below rebuilds it from the live open-issue set once a
+  # day, so issue movements are still reflected — just batched, not per-event.
+  #
   # Generator / template / taxonomy may have changed — regenerate from source.
   # paths-ignore keeps the Action's own commit to docs/development/board/** from
   # re-triggering it (no self-trigger loop).
@@ -22,10 +28,11 @@ on:
     branches: [main]
     paths-ignore:
       - 'docs/development/board/**'
+  # On-demand refresh when an operator wants the board current immediately.
   workflow_dispatch: {}
   schedule:
-    # Daily fallback in case an event trigger is ever missed
-    # (e.g. a GitHub Actions outage window). Time of day is arbitrary.
+    # Daily refresh from the live open-issue set (also a fallback if an event
+    # trigger is ever missed, e.g. a GitHub Actions outage window).
     - cron: '17 6 * * *'
 
 permissions:
