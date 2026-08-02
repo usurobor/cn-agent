@@ -42,28 +42,6 @@
     "url": "https://github.com/usurobor/cnos/issues/34"
   },
   {
-    "n": 35,
-    "t": "B9c: daemon mode periodic reflection cycles + forget skill",
-    "kind": "feature",
-    "areas": [
-      "agent",
-      "memory",
-      "runtime"
-    ],
-    "pri": "P2",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-03-13T07:00:05Z",
-    "updated": "2026-07-02T03:52:26Z",
-    "url": "https://github.com/usurobor/cnos/issues/35"
-  },
-  {
     "n": 42,
     "t": "B11: Telegram parity — media, reply/forward, conversation history, edits, polls (multi-phase spine)",
     "kind": "feature",
@@ -312,27 +290,6 @@
     "created": "2026-03-24T08:07:01Z",
     "updated": "2026-07-02T03:54:53Z",
     "url": "https://github.com/usurobor/cnos/issues/87"
-  },
-  {
-    "n": 100,
-    "t": "B9b: memory as a first-class retention faculty — contract, skill, recall + write protocol",
-    "kind": "feature",
-    "areas": [
-      "agent",
-      "memory"
-    ],
-    "pri": "P2",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-03-24T22:49:10Z",
-    "updated": "2026-07-02T03:54:51Z",
-    "url": "https://github.com/usurobor/cnos/issues/100"
   },
   {
     "n": 101,
@@ -1469,27 +1426,6 @@
     "url": "https://github.com/usurobor/cnos/issues/457"
   },
   {
-    "n": 458,
-    "t": "agent/reflect: format + per-rank guidance (canonical template, backfill discipline, rank-specific shape)",
-    "kind": "skill",
-    "areas": [
-      "agent",
-      "coherence"
-    ],
-    "pri": "P2",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-06-18T20:07:40Z",
-    "updated": "2026-07-02T03:53:26Z",
-    "url": "https://github.com/usurobor/cnos/issues/458"
-  },
-  {
     "n": 459,
     "t": "cdd/committer-identity: canonical-form spec (drop .cdd + activation-site rule + home-collapse rule)",
     "kind": "doctrine",
@@ -1722,28 +1658,6 @@
     "created": "2026-06-30T01:39:59Z",
     "updated": "2026-07-02T03:55:28Z",
     "url": "https://github.com/usurobor/cnos/issues/523"
-  },
-  {
-    "n": 528,
-    "t": "agent memory wakes — typed-module orchestrators for rN reflection ladder",
-    "kind": "feature",
-    "areas": [
-      "agent",
-      "coherence",
-      "wake"
-    ],
-    "pri": "P2",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-06-30T14:52:48Z",
-    "updated": "2026-07-02T03:53:19Z",
-    "url": "https://github.com/usurobor/cnos/issues/528"
   },
   {
     "n": 530,
@@ -2015,28 +1929,6 @@
     "created": "2026-07-04T04:12:12Z",
     "updated": "2026-07-04T17:14:09Z",
     "url": "https://github.com/usurobor/cnos/issues/580"
-  },
-  {
-    "n": 581,
-    "t": "feat(cnos.core): reflect-rN wake family — memory role in #Wake, three cadence orchestrators, three reflect task skills",
-    "kind": "feature",
-    "areas": [
-      "agent",
-      "coherence",
-      "wake"
-    ],
-    "pri": "P1",
-    "status": "ready",
-    "dispatch": true,
-    "protocol": "cds",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-07-04T04:12:17Z",
-    "updated": "2026-07-04T04:12:17Z",
-    "url": "https://github.com/usurobor/cnos/issues/581"
   },
   {
     "n": 582,
@@ -2947,8 +2839,8 @@
     "url": "https://github.com/usurobor/cnos/issues/683"
   },
   {
-    "n": 684,
-    "t": "architecture: Sigma activation channel — rename `.cn-sigma/logs`, move to symmetric append-only orphan refs (independent stream, off main HEAD)",
+    "n": 686,
+    "t": "activation protocol: ideal behavior for every activation case (home | attached | unattached-attachable | not-attachable | repo-less) — quiet, evidence-derived, non-confabulating",
     "kind": "process",
     "areas": [
       "coherence",
@@ -2963,19 +2855,20 @@
     "unestimated": true,
     "tracking": false,
     "assignee": "",
-    "created": "2026-08-01T06:44:59Z",
-    "updated": "2026-08-01T06:59:04Z",
-    "url": "https://github.com/usurobor/cnos/issues/684"
+    "created": "2026-08-01T07:36:48Z",
+    "updated": "2026-08-01T07:36:48Z",
+    "url": "https://github.com/usurobor/cnos/issues/686"
   },
   {
-    "n": 685,
-    "t": "activation protocol: bootstrap modes (attach | activate | repo-less) + no-confabulated-state — activation reads current state from the repo, never recites it from memory",
-    "kind": "process",
+    "n": 690,
+    "t": "wave: agent memory = log-structured ranked threads (r0 boxes → home rollups); cn-sigma first",
+    "kind": "wave",
     "areas": [
+      "agent",
       "coherence",
       "wake"
     ],
-    "pri": "none",
+    "pri": "P1",
     "status": "",
     "dispatch": false,
     "protocol": "",
@@ -2984,8 +2877,92 @@
     "unestimated": true,
     "tracking": false,
     "assignee": "",
-    "created": "2026-08-01T07:14:56Z",
-    "updated": "2026-08-01T07:14:56Z",
-    "url": "https://github.com/usurobor/cnos/issues/685"
+    "created": "2026-08-01T23:23:01Z",
+    "updated": "2026-08-02T01:51:57Z",
+    "url": "https://github.com/usurobor/cnos/issues/690"
+  },
+  {
+    "n": 692,
+    "t": "memory wave Sub 2: cn-sigma dry-run migration map — exact old→new mapping, no destructive move",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "coherence"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-02T01:52:13Z",
+    "updated": "2026-08-02T01:52:13Z",
+    "url": "https://github.com/usurobor/cnos/issues/692"
+  },
+  {
+    "n": 693,
+    "t": "memory wave Sub 3: cn-sigma migration — unwrap to root, r0 boxes, cursors.yaml, collapse sprawl",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "coherence"
+    ],
+    "pri": "P1",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-02T01:52:19Z",
+    "updated": "2026-08-02T01:52:19Z",
+    "url": "https://github.com/usurobor/cnos/issues/693"
+  },
+  {
+    "n": 694,
+    "t": "memory wave Sub 4: home rollup + no-op read mechanics (first minimal compactor)",
+    "kind": "feature",
+    "areas": [
+      "coherence",
+      "wake"
+    ],
+    "pri": "P1",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-02T01:52:24Z",
+    "updated": "2026-08-02T01:52:24Z",
+    "url": "https://github.com/usurobor/cnos/issues/694"
+  },
+  {
+    "n": 695,
+    "t": "memory wave Sub 5: cmp alignment — after cn-sigma proves the model",
+    "kind": "process",
+    "areas": [
+      "agent",
+      "coherence"
+    ],
+    "pri": "P2",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-02T01:52:28Z",
+    "updated": "2026-08-02T01:52:28Z",
+    "url": "https://github.com/usurobor/cnos/issues/695"
   }
 ]
