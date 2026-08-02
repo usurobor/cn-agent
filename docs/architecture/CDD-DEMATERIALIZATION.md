@@ -1,177 +1,311 @@
-# CDD Dematerialization — `main` holds "what is," history holds "how we got here"
+# CDD Dematerialization — a typed, retention-governed seal-event protocol
 
-**Status:** Design (L7) · **Tracking issue:** [#682](https://github.com/usurobor/cnos/issues/682) · **Depends on:** #681 (first principle in doctrine — merged)
-**Related:** #683 (open-items ledger), #684 (channel plane), #680 (repo-self-coherence methodology)
+**Status:** **Proposed** (design, L7) — revised R1 after external-β `REQUEST CHANGES`; **independent ratification pending**, prune **not** authorized, implementation issues **not** to be derived from this note yet.
+**Tracking issue:** [#682](https://github.com/usurobor/cnos/issues/682) · **Depends on:** #681 (first principle — merged)
+**Related:** #683 (open-items radar), #684 (channel plane), #642 (ε recurrence), #664 (actor identity), #627/#662 (cell-runtime doctrine)
 
----
-
-## Summary
-
-`main`'s working tree must contain only artifacts that answer **"what is"** — the current code, specs, config, and a present-tense index. The CDD cell receipts under `.cdd/releases/` and closed `.cdd/unreleased/` answer **"how we got here."** They are already permanent in Git history (the commits that created them); materializing them *again* as 10.4 MB / 1,022 files in every checkout is noise that violates the principle.
-
-**Target:** the closed-cell receipts leave the working tree and live only in `main`'s **ancestry** (reachable commits), retrievable on demand. `main` keeps a single present-tense finding-aid — `.cdd/INDEX.jsonl` — that relates to history exactly as `CHANGELOG.md` does: a curated current view that *points into* the past without *being* it.
-
-This is **event sourcing applied to coherence receipts**: the sealed commits are the append-only log; the index is a rebuildable read-model projection.
+> **The missing abstraction is not "Git history."** It is a **typed, discoverable, retention-governed CDD seal-event protocol** with separate authorities for *closed evidence*, *live cell state*, *open commitments*, and *independent channels*. Once that separation is explicit, dematerialization is a consequence, not a repository cleanup. This revision makes it explicit.
 
 ---
 
-## Governing principle
+## R1 review-response map (external-β `REQUEST CHANGES`)
 
-> `main` contains only what is needed to answer **"what is."** How the project got here is warranted by history — reachable from `main`, retrievable, auditable — but **not materialized** in the working tree.
-
-Encoded in `DOCUMENTATION-SYSTEM.md §5` (the first principle, landed in #681) and `KERNEL.md §2.1` (no silent drops — history is never dropped, only dematerialized).
+| Finding | Where addressed |
+|---|---|
+| **D1** CURRENT not rebuildable-from-history | §5 Authorities (INDEX = history-derived; CURRENT = declared union; radar = #683) |
+| **D2** no seal-discovery protocol | §6 Seal-event protocol (trailers + locator ref + traversal/order/dedup) |
+| **D3** stale `kind`/`cell/{N}` vocabulary | §7 Event identity (`cell_class`/`matter_domain`/`protocol_id`/`episode_id`; `cycle/{N}`) |
+| **D4** `S≺D≺P` vs CONTENT squash | §8 Custody DAGs (CHAIN vs CONTENT; common invariant) |
+| **D5** rejected-episode Git algorithm | §9 Receipt-only publication transaction |
+| **D6** Phase-3 can delete active state | §11 Prune-eligibility predicate + dry-run manifest |
+| **D7** no retention/trust governance | §12 Retention & trust contract |
+| **D8** shallow-runner incompatible | §13 Acquisition contract |
+| **D9** projection concurrency hot spots | §10 Projection ownership (per-episode immutable fragments) |
+| **D10** CURRENT vs #683 authority overlap | §5 Authorities (explicit split) |
+| **D11** missing dual-write/parity prototype | §14 Migration (Phase 1A–1C parity gate) |
+| **D12** human retrieval UX | §13.3 Operator retrieval surface |
+| **C1** lighter alternatives not compared | §4 Alternatives & leverage (4 structurally distinct moves) |
+| **C2** "reversible" overstated | §14 (shippable / rollback-defined / recoverable-from-seals) |
+| **C3** impact graph incomplete | §9-impact: §13.4 consumer graph (ε/waves/repair/PRA/installer/TSC/operator) |
+| **C4** manifest under-typed | §7.2 `cn.cdd.seal.v1` schema |
 
 ---
 
-## 1. Current state (concrete)
+## 0. Current situation (evidence-bound)
 
-`git ls-tree -r main -- .cdd/` today: **1,022 files, 10.4 MB**, materialized in every clone and checkout.
+cnos has crossed from prompt-driven orchestration into a partially mechanical runtime, which changes what this migration touches:
+
+- `cn repo install [--dispatch cds]`, package-owned admin + CDS-dispatch wakes, and Go/FSM-owned issue-claim/lifecycle are **live**; `cn cell return|resume|finalize` exist; recovery scanning/finalization run mechanically (`src/go/internal/cell/cell.go`).
+- Cells run on **`cycle/{N}`** branches (verified: `cell.go` → `cycle/{Issue}`, `cycle/{N}`), **not** `cell/{N}`.
+- The verifier/runtime is **tree-coupled**: `cell.go` resolves `.cdd/unreleased/{N}/` directly from the checkout; release validation resolves `.cdd/releases/{version}/{cycle}`.
+- The **cds-dispatch workflow** (`.github/workflows/cnos-cds-dispatch.yml`) checks out with `actions/checkout@v4` + `sparse-checkout` (excludes `.cn-sigma`), with **no full-history setting** — shallow by default, and it excludes only `.cn-sigma`, not historical `.cdd` payloads.
+- WC/PC/CC are ratified as output-telos classes of one CCNF kernel; the shipped ontology is **`cell_class` / `matter_domain` / `protocol_id`** (verified present in schemas/runtime); the old "cell kind" vocabulary is retired.
+- **TSC is an external cnos tenant** installed via `cn repo install`. Any storage migration must be **versioned, dual-readable, and installer-compatible** — it cannot rely on cnos-repo-specific Git habits.
+
+So #682 is not merely moving files: it changes the repository's **evidence database, merge protocol, release reader, recovery substrate, clone contract, and CI trust model.** That scope is why this note must be a contract, not a cleanup.
+
+---
+
+## 1. Governing principle
+
+> `main`'s working tree contains only what answers **"what is."** How the project got there is warranted by **ancestry** — reachable from `main`, retrievable, auditable — but **not materialized** in the tree.
+
+Encoded in `DOCUMENTATION-SYSTEM.md §5` + `KERNEL.md §2.1`. The distinction is *causal*, not stylistic — which is exactly why CDD receipts stay in ancestry (they warrant current product) and do **not** move to an orphan ref like the channel plane (#684), whose content is *not* product ancestry.
+
+---
+
+## 2. Current state (concrete)
+
+`git ls-tree -r main -- .cdd/` = **1,022 files, 10.4 MB**, materialized in every clone.
 
 ```
 .cdd/
-├── CADENCE  CDD-VERSION  DISPATCH  MCAs  OPERATORS       ← config: "what is"  (stays)
-├── exceptions.yml  legacy-exceptions.yml                 ← config: "what is"  (stays)
-├── skills/                                               ← vendored bundle: "what is"  (stays)
-├── proposals/  iterations/                               ← queue/backlog: mostly "what is"
-├── releases/          596 files · 5.2 MB                 ← closed receipts: "how we got here"  (MOVE)
-│   └── {X.Y.Z}/{alpha,beta,gamma}/{issue}.md
-├── unreleased/        375 files · 5.0 MB                 ← cells, mostly closed: "how we got here"  (MOVE)
-│   └── {N}/{self-coherence,beta-review,gamma-closeout,…}.md
-└── waves/             10 files                           ← wave matter, closed: "how we got here"  (MOVE)
+├── CADENCE CDD-VERSION DISPATCH MCAs OPERATORS exceptions.yml …   ← config: "what is"  (STAYS)
+├── skills/                                                        ← vendored bundle    (STAYS)
+├── proposals/ iterations/            33 files                     ← queue/backlog: mostly current
+├── releases/{X.Y.Z}/{α,β,γ}/{issue}.md   596 files · 5.2 MB       ← closed receipts    (MOVE)
+├── unreleased/{N}/{self-coherence,beta-review,…}   375 · 5.0 MB   ← cells (mostly closed) (MOVE closed only)
+└── waves/{slug}/…                        10 files                 ← wave matter: NOT all historical
 ```
 
-**The split within `.cdd/`.** Not all of it is history. ~971 files / ~10.2 MB — `releases/` + closed `unreleased/` + `waves/` — are closed-cell receipts. The rest (config + vendored skills) is current-state and stays. The design is about the receipts, not the config.
+**The split is not "`.cdd/` vs not."** Config + `skills/` are current-state and stay. `releases/` + *closed* `unreleased/` are the ~10.2 MB of "how we got here." `waves/` is **not universally historical** — active wave manifests are runtime authority (dispatch context, standing permissions, γ-substitutes) and must be classified, not blanket-pruned (see D6/§11).
 
-**What pins the receipts in HEAD today:** tooling reads them from the *working tree*, not from history — `cdd-verify/ledger.go`, `cn-cdd-status`, and `scripts/release.sh` read `.cdd/releases/`. This runtime coupling is the actual reason the directory cannot simply be deleted.
-
-## 2. What is wrong
+## 3. What is wrong
 
 | # | Problem | Evidence |
 |---|---|---|
-| P1 | **Principle violation** | 10.2 MB of "how we got here" sits in a tree that should hold only "what is." |
-| P2 | **Attention cost** | Every newcomer, agent context load, tree walk, and code search wades through 971 closed-receipt files to find the ~current ones. The problem is *attention*, not storage — the bytes are already Git blobs. |
-| P3 | **Unbounded working-set growth** | The receipt set grows with every cell, forever, in the *working tree* — not just in history where unbounded growth is normal. |
-| P4 | **Runtime coupling** | Tools read `.cdd/releases/` from the tree, so the directory can't leave HEAD until the coupling is cut — the coupling *is* the blocker. |
+| P1 | principle violation | 10.2 MB of "how we got here" in a tree that should hold only "what is" |
+| P2 | **attention, not storage** | every newcomer/agent-context/tree-walk/search wades through 971 closed files; the bytes are already Git blobs — the cost is attention |
+| P3 | working-set growth | receipts grow forever *in the working tree*, not just in history |
+| P4 | runtime coupling | `cell.go` + release validation read `.cdd/` from the tree; the coupling *is* the blocker |
 
-## 3. Target state (concrete)
+## 4. Alternatives & leverage (L7 requires ≥3 structurally distinct moves)
 
-`git ls-tree -r main -- .cdd/` after migration:
+| Move | What it does | Positive leverage | Negative leverage / cost | Verdict |
+|---|---|---|---|---|
+| **M1 · sparse-checkout + search exclusion** | dispatch/CI/search exclude closed `.cdd` payloads (extends the existing `.cn-sigma` exclusion) | removes **most agent-attention cost immediately**; ~zero new machinery; fully reversible | payloads still in HEAD tree for a normal clone; does not satisfy "main = what is"; per-consumer opt-in drifts | **Ship now** as interim relief while M4 is proven |
+| **M2 · retention window** | keep only the last *N* cells materialized; older pruned | bounded working set; simpler than full ledger | arbitrary boundary; "how we got here" still partly in HEAD; still needs the seal/prune machinery for the pruned tail | Partial; subsumed by M4 |
+| **M3 · release-level packing** | pack each release's receipts into one archive blob + index | large file-count reduction; simple | opaque archive breaks per-artifact review/links/validation; still in tree | Rejected as endpoint |
+| **M4 · full ancestry dematerialization** | this note: seals in ancestry, HEAD keeps derived index only | satisfies the principle; unbounded receipts never enter HEAD; typed, auditable evidence DB | ongoing cost: seal+prune events, merge restrictions, full-history fetch, projector, reader/recovery code, operator-UX | **Chosen endpoint** — *only if* it earns the cost below |
 
-```
-.cdd/
-├── CADENCE  CDD-VERSION  DISPATCH  MCAs  OPERATORS  exceptions.yml  …   ← config (unchanged)
-├── skills/                                                             ← vendored bundle (unchanged)
-├── INDEX/                              ← NEW · the finding-aid (like CHANGELOG.md)
-│   ├── 2026.jsonl                      ← one line per closed cell, sharded by year
-│   └── …
-└── CURRENT.json                        ← NEW · current-state view (current release, open cells)
-```
+**Why M4 earns its ongoing cost over M1/M2:** M1 hides receipts *per consumer* (each must opt in; new consumers re-inherit the noise); M4 makes "receipts are not present-state" a **repository invariant** enforced once, in CI, for every consumer including future tenants. The receipt-bearing model's whole value — a decision provable from evidence — degrades if evidence discovery is ad-hoc per tool. M4 buys a single typed evidence protocol; M1 buys quiet checkouts. **Recommended sequencing: ship M1 immediately; prove and ratify M4 in parallel; M1 becomes redundant once M4's steady state lands.**
 
-**Gone from the working tree:** `.cdd/releases/**`, closed `.cdd/unreleased/{N}/**`, `.cdd/waves/**` — every closed-cell payload. They remain **reachable in `main`'s ancestry** (the commit that sealed each cell is an ancestor of `main`) and are retrieved with `cn cdd materialize {N}` / `git show <seal>:.cdd/…`.
+## 5. Authorities (the separation that makes this safe) — resolves D1, D10
 
-**`.cdd/INDEX/{year}.jsonl`** — the present-tense catalog. One append-only line per closed cell:
+Four distinct authorities, each with a named source. No file claims another's truth.
 
-```jsonc
-{"cell":"671","seal":"25bca3ad…","outcome":"accepted","kind":"planning",
- "contract":"cn.wave.v1","closed":"2026-07-25","artifacts":[".cdd/unreleased/671/self-coherence.md", …]}
-```
+| Authority | Owns | Source of truth | Rebuildable from main history? |
+|---|---|---|---|
+| **Ancestry seal events** | canonical closed-episode evidence | commits reachable from `main` carrying a seal trailer + manifest | — (it *is* the source) |
+| **`.cdd/INDEX/**`** | closed-episode **finding aid** | *derived* from ancestry seal events | **Yes, exactly** (`cn cdd index --rebuild`) |
+| **`.cdd/CURRENT.json`** | narrow **current CDD projection** | *declared union* — see below | **No** (depends on live inputs) |
+| **radar / #683** | cross-system **open commitments** | issues + Known-Debt + deferred clauses + decisions | No (owned by #683) |
+| **issue + FSM + `cycle/*` refs** | **live cell state** | GitHub/FSM/Git refs | No (live) |
 
-It **is "what is"** — the current index of the archive, exactly like a library catalog or `CHANGELOG.md`: present-tense, points into history, rebuildable from it. Sharded by year to avoid append-contention on a single hot file.
+**D1 fix — CURRENT is not history-derivable, so it is not claimed to be.** `INDEX` rebuilds byte-exactly from history. `CURRENT.json` is an *explicitly declared union* of `{INDEX (closed), current Git refs, issue/FSM state, release state}` — its live fields (open/in-flight cells, active runs) come from off-main sources a history walk **cannot** reconstruct. A `cycle/700` branch with `status:in-progress` and no commit in `main` is invisible to `index --rebuild` **by design** — it belongs to live-state + the #683 radar, not to a history projection.
 
-**`.cdd/CURRENT.json`** — the current-state view tools read instead of walking `.cdd/releases/`: current release pointer, open commitments, live-cell references. Replaces the `.cdd/releases/`-as-database read pattern.
+**D10 fix — open commitments belong to the radar (#683), not CURRENT.** `CURRENT.json` carries only CDD-projection fields whose authority is the CDD ledger (current release pointer, latest sealed episode per lineage). Cross-system open items are the radar's. `cn cdd status` *joins* these sources for operator display; no single file double-claims "current."
 
-**In-flight cells are not here at all.** A cell being worked lives on its own branch `cell/{N}` — in *that* working tree, never in `main`'s. `main` only ever sees a cell as (a) a line in `INDEX` after it closes, or (b) not at all while open.
+## 6. Seal-event protocol (deterministic discovery) — resolves D2
 
-## 4. Lifecycle — `S ≺ D ≺ P` (commit-level)
+A seal is a **typed event**, discoverable without already trusting the index.
 
-A cell's receipts persist **on the commit that created them**, not in the HEAD tree. Three ordered events:
-
-```
-cell/671:  ●──α──●──β──●  S  (seal: γ writes MANIFEST.json + closeout; commit contains .cdd/unreleased/671/**)
-                          ╲
-main:      …──● base ──────● D  (δ merges cell/671 → main; S is now an ANCESTOR of main;
-                            │      history-preserving merge — no squash that orphans S)
-main:                       ● P  (a DESCENDANT of D: `git rm -r .cdd/unreleased/671/`
-                                   + append INDEX/2026.jsonl line + update CURRENT.json)
-
-result:  HEAD tree has NO .cdd/unreleased/671/**   ·   `git show S:.cdd/unreleased/671/self-coherence.md` works
-```
-
-- **S — Seal.** γ writes the closeout + `MANIFEST.json` (cell id, contract digest, artifact paths + blob digests, role commits, outcome, residuals). Commit `S` contains the complete payload. The manifest cannot name `S` itself.
-- **D — Decide.** `V` validates; δ records the boundary decision by merging (history-preserving). `S` becomes reachable from `main`.
-- **P — Project/Prune.** A descendant of `D` removes the payload from the tree and updates `INDEX`/`CURRENT`. The payload leaves HEAD; it stays in `S`.
-
-**The one hard invariant (seal-before-prune):** a payload MUST NOT leave HEAD until its sealing commit is **reachable from `main`.** This forbids the data-loss path *seal → delete-on-branch → squash to empty tree → no `main`-reachable payload*. Reachable-in-ancestry is the real requirement; materialized-in-tree never was.
-
-**Publication by outcome** (the failure-persistence rule): a *rejected* cell's product matter does **not** merge, but the episode still happened — publish a receipt-only seal into ancestry (`base → receipt-only seal → δ-rejection/index commit → prune`). The receipt lands in ancestry regardless of accept/reject; only the *product change* is gated on acceptance.
-
-## 5. The index is a projection, not a source of truth
-
-`.cdd/INDEX/**` and `CURRENT.json` are **derived** and **rebuildable**:
+**6.1 Commit trailers** (on the seal commit — the C4/D2 event-typing surface #682 named):
 
 ```
-cn cdd index --rebuild    # walk main's history, reproduce INDEX/** + CURRENT.json exactly
-cn cdd index --check      # verify: every seal SHA resolves & is reachable; every manifest
-                          #   blob digest matches; one seal per closed cell; one index line per seal
+CN-Event: cdd.seal.v1
+CN-Cell: 671
+CN-Episode: 671/1
+CN-Seal-Seq: 1
+CN-Protocol-ID: cnos.cdd.cds.receipt.v1
+CN-Manifest-Blob: <blob-oid of MANIFEST.json>
+CN-Custody: CHAIN            # or CONTENT
+CN-Outcome: accepted         # accepted|degraded|rejected|invalid|aborted
 ```
 
-Because it rebuilds exactly from history, it is never a second source of truth — if the file and history disagree, history wins and `--rebuild` corrects it. **Ever-growing is fine**: linear in cell count, one small line each, and compactible (shard/snapshot), never deleted. This is the standard log-structured shape.
+**6.2 Discovery algorithm** (canonical, deterministic):
+- **Traversal:** walk **first-parent** history of `main` (`git log --first-parent`), the merge/boundary spine — not every reachable tree. Seal events live on the spine (D) or are bound by an anchor ref (below).
+- **Selection:** a commit is a canonical seal iff it carries `CN-Event: cdd.seal.v1` **and** its `CN-Manifest-Blob` resolves. `(CN-Episode, CN-Seal-Seq)` is the primary key.
+- **Ordering:** by first-parent topological order, ties broken by `(CN-Episode, CN-Seal-Seq)`.
+- **Duplicates:** a repeated `(episode, seq)` is an error surfaced by `index --check`, never silently coalesced.
+- **Amendments:** a later event with `CN-Amends: 671/1` supersedes-with-pointer; the original stays immutable (§7.3).
 
-**Precedent** (this is a well-worn pattern, not a novel bet):
-- **Git itself** — working tree = "what is"; commit DAG = "how we got here." We apply Git's own model recursively to `.cdd`.
-- **Event sourcing / CQRS** — append-only log + rebuildable read-model projections. Sealed commits = log; `INDEX`/`CURRENT` = projections.
-- **Blockchain UTXO set** — append-only chain + a derived current-state set rebuilt by replay. Ancestry ↔ chain; `CURRENT.json` ↔ UTXO set.
-- **Datomic / log-structured stores (Kafka, LSM)** — immutable history + derived indexes, managed by compaction.
+**6.3 Anchor refs (locator, not an evidence plane).** Optionally, a protected ref `refs/cn/cdd/seals/{episode}` points at a seal commit **already reachable from `main`.** This is a durable *locator into ancestry* to make discovery O(1) and survive first-parent edge cases — **not** an orphan evidence plane (that would sever causality, the exact thing #684 is for and this is not). If present, refs are authoritative for discovery and `--check` verifies each still points into `main` ancestry.
 
-## 6. Impact graph (what must change)
+**Rebuild proof:** delete `INDEX/**`, retain the commit graph + anchor refs, run `--rebuild`. If it must grep arbitrary trees or read the deleted index to find seals, the projection is **not** genuinely rebuildable — that is the D2 negative test and a CI gate.
 
-| Consumer | Today | After |
-|---|---|---|
-| `cdd-verify/ledger.go` | reads `.cdd/releases/` tree | reads `CURRENT.json` + `cn cdd` reader over history |
-| `cn-cdd-status` | walks `.cdd/` tree | reads `CURRENT.json` / `INDEX` |
-| `scripts/release.sh` | reads `.cdd/releases/{X.Y.Z}/` | reads `CURRENT.json` release pointer |
-| `cn cdd` (new) | — | `list · show {N} · materialize {N} · index --rebuild/--check · verify` |
-| CI | — | (a) no closed payload in HEAD; (b) every INDEX seal reachable; (c) `index --check` passes |
-| Merge policy | ad hoc | history-preserving for CHAIN cells; CONTENT cells may squash iff the squash commit carries the complete sealed payload before prune |
+## 7. Event identity & manifest — resolves D3, C4
 
-## 7. Migration plan (phased; each phase independently shippable and reversible)
+**7.1 Identity.** An issue number is **not** an immutable event. Identity is:
 
-- **Phase 0 — Doctrine (done).** First principle in `DOCUMENTATION-SYSTEM.md §5` + `KERNEL.md §2.1` (#681, merged). No file moves.
-- **Phase 1 — Reader + schema (no removal).** Build `cn cdd` reader, `INDEX`/`CURRENT`/`MANIFEST` schemas, and `index --rebuild/--check`. Prove `cn cdd materialize {N}` reconstructs a cell **from the seal SHA alone**, in a fresh clone, on a **pruned-HEAD fixture**, with filesystem fallback disabled and tested negatively. Removes nothing.
-- **Phase 2 — Break the runtime coupling.** Repoint `ledger.go` / `cn-cdd-status` / `release.sh` from the `.cdd/releases/` tree to `CURRENT.json` + the reader. Still removes nothing — but now nothing *reads* the payload from the tree.
-- **Phase 3 — One-time historical prune.** A single mechanical migration commit: `git rm -r` all closed-cell payloads (`releases/`, closed `unreleased/`, `waves/`), build the full `INDEX/**` from history, write `CURRENT.json`. Large diff, purely mechanical, reviewed once. Payloads remain in ancestry (verified by `index --check` reachability).
-- **Phase 4 — Lifecycle enforcement.** New cells follow `S ≺ D ≺ P`. CI enforces: no closed payload in HEAD, every INDEX seal reachable, `index --rebuild` reproduces exactly. The steady state.
+```
+cell_id      671         # the cell/issue lineage
+episode_id   671/1       # a specific closed episode of that lineage
+seal_seq     1           # monotonic per lineage
+amends / supersedes      # pointers; never mutate a sealed episode
+```
 
-## 8. Acceptance criteria
+Reopening or post-seal correction creates a **new episode / amendment**, never a mutation of `671/1`.
 
-- **AC1** — `cn cdd materialize {N}` reconstructs the complete typed cell from the **seal SHA only**, in a fresh full clone, no network, on a **pruned-HEAD fixture** (`git ls-tree HEAD …/{N}` → absent). Filesystem fallback prohibited and tested negatively.
-- **AC2** — `cn cdd index --rebuild` reproduces `INDEX/**` + `CURRENT.json` **byte-for-byte** from history; `--check` fails if any seal SHA is unreachable, any manifest blob digest mismatches, or the seal↔index bijection breaks.
-- **AC3** — a **rejected** cell's product diff is absent from `main`, yet its receipt seal is `main`-reachable and reconstructable (failure-persistence).
-- **AC4** — CHAIN custody survives a real merge (original role commits + exact parents reachable; history-preserving merge); CONTENT survives a squash **iff** the squash commit carries the complete sealed payload before prune. Prune-gate = custody-reachable.
-- **AC5** — a shallow clone lacking the seal returns `HISTORY_INCOMPLETE {required_sha, remediation}` — never "cell not found"; `INDEX`/`CURRENT` stay visible.
-- **AC6** — post-migration, `git ls-tree -r main -- .cdd/` contains **no** closed-cell payload; only config + `skills/` + `INDEX/**` + `CURRENT.json`.
+**7.2 `cn.cdd.seal.v1` manifest** (typed; reconciled with shipped `cell_class`/`matter_domain`/`protocol_id`):
 
-## 9. Alternatives considered
+```yaml
+schema: cn.cdd.seal.v1
+repository_id: usurobor/cnos
+cell_id: "671"
+episode_id: "671/1"
+seal_seq: 1
+protocol_id: cnos.cdd.cds.receipt.v1
+cell_class: PC                       # WC | PC | CC  (output-telos; NOT "kind")
+matter_domain: doctrine
+contract_schema: cn.wave.v1
+contract_digest: sha256:…
+custody_mode: CONTENT | CHAIN
+outcome: accepted|degraded|rejected|invalid|aborted
+v_verdict: PASS|FAIL
+delta_action: merge|reject|repair-dispatch
+role_commits: {alpha: …, beta: …, gamma: …}   # required for CHAIN
+artifact_blobs: [{path: …, oid: sha256:…}, …]
+evidence_refs: […]
+amends: null            # e.g. "671/0"
+supersedes: null
+residuals: […]
+```
 
-| Option | Verdict |
-|---|---|
-| **Orphan ref for `.cdd`** (like the channel plane, #684) | **Rejected.** A cell is *causal lineage* — a decision points back to the cell that warranted it. An orphan ref severs the ancestry walk. Correct for channels (parallel streams); wrong for receipts (main's own past). |
-| **Payloads in commit-message bodies** (Move B) | **Rejected as the general form.** Poor fit for review tables / finding lists / cross-file links; loses Markdown + file validation; awkward amendments. Fine only for small boundary events. |
-| **Keep a rich projection in HEAD** (early #682) | **Superseded.** The richer in-HEAD projection was a middle step; the destination is index-only — `.cdd` in HEAD is a `CHANGELOG`-scale finding-aid, nothing more. |
-| **File-native blobs + commit-native index** (Move A) | **Chosen.** Payloads stay file-native in sealed reachable commits; the index is the derived current view. |
+**7.3** A closed episode is immutable. The index points to `episode + amendments`.
 
-## 10. Risks / negative leverage
+**D3 negative test (CI):** a future reader must **not** be able to derive "planning is a cell kind" from this schema — the retired `kind` vocabulary appears nowhere; `cell_class` uses the ratified WC/PC/CC values.
+
+## 8. Custody DAGs — resolves D4
+
+Common invariant: **`canonical_seal ≤ boundary_decision < prune`.** The canonical seal differs by custody:
+
+```
+CHAIN  (role provenance is itself evidence):
+   S(role commits + seal) ──< D(history-preserving merge) ──< P(prune)
+   canonical_seal = S ;  original α/β/γ commits + exact parents remain main-reachable ;  no post-review rebase
+
+CONTENT  (final content + receipt suffice):
+   D(squash/boundary commit carrying the complete sealed payload) ──< P(prune)
+   canonical_seal = D ;  the pre-squash branch S is NOT relied upon and may be GC'd
+```
+
+`index --check` verifies the *selected* mode: CHAIN → original commits reachable; CONTENT → `D` carries the full manifest+artifacts before `P`. **D4 negative:** indexing a pre-squash `S` for a CONTENT episode is rejected — the canonical seal for CONTENT is `D`.
+
+## 9. Rejected-episode publication — resolves D5
+
+A rejected episode's *product* must not enter `main` ancestry; its *receipt* must persist. Exact transaction:
+
+```
+1. base := current main boundary commit
+2. tree := base.tree  +  only the terminal receipt + manifest   (NO product files)
+3. R := commit(tree, parent = base)          # parent is main's boundary, NOT the product branch
+4. R.manifest binds the rejected work by digest: rejected_ref, rejected_diff_digest
+5. R records V verdict + δ reject decision (CN-Outcome: rejected)
+6. index episode as rejected (seal = R)   ;   R ──< P (prune the receipt from HEAD tree)
+```
+
+The product commits stay **outside** `main` ancestry (they were never parents of `R`). **D5 negative:** an "R" that is the rejected branch tip with product files deleted is invalid — its parent chain imports every rejected product commit into ancestry.
+
+## 10. Projection ownership & concurrency — resolves D9
+
+`INDEX/{year}.jsonl` and `CURRENT.json` are **hot spots** — every close/release/reopen writes them; concurrent closes conflict, duplicate, or produce non-byte-identical rebuilds. Two safe models; this note selects **A**:
+
+- **A · per-episode immutable fragments (selected).** Each seal writes its own file `INDEX/{year}/{episode_id}.json` (write-once, never appended by another cell). A **serialized `cdd-projector`** (single writer on `main`, triggered on boundary events) folds fragments into the consolidated `INDEX/{year}.jsonl` view + `CURRENT.json`. Fragments never conflict; the consolidated view is regenerated, not hand-merged.
+- **B · serialized projector only** (no fragments) — acceptable but loses the immutable per-episode audit unit.
+
+**Canonical normalization** (required for byte-exact rebuild): UTF-8, LF, sorted keys, RFC-3339-UTC timestamps sourced from the **seal commit's committer date** (not wall-clock), amendments ordered by `seal_seq`, duplicates → `--check` error.
+
+## 11. Prune-eligibility & the one-time migration — resolves D6
+
+No blanket `git rm -r`. A path is prune-eligible **iff** a mechanical predicate holds:
+
+```
+prune_eligible(path) :=
+     terminal outcome recorded           (accepted|degraded|rejected|invalid|aborted)
+  ∧  V verdict recorded
+  ∧  δ boundary decision recorded
+  ∧  canonical seal reachable from main   (per custody mode)
+  ∧  custody check passes
+  ∧  NO active repair / review-return lineage referencing the episode
+  ∧  (waves only) wave terminal marker present
+  ∧  episode NOT retained by a current runtime contract (active dispatch context / standing permission)
+```
+
+Phase 3 emits a **dry-run prune manifest** (every path, episode, and proof) for human/independent review **before** any deletion. Active wave manifests, in-flight cells, and repair/review-return state are protected by the predicate — never removed because they merely sit in the directory.
+
+## 12. Retention & trust contract — resolves D7
+
+If ancestry is the evidence database, **history rewriting is data deletion.** Pin governance:
+
+- `main` is **non-rewriteable**; force-push prohibited (branch protection).
+- Seal commits + anchor refs (`refs/cn/cdd/seals/*`) protected by repository policy.
+- **≥1 independent full-history mirror**; release/export backups include seal history.
+- `index --check` records the **last trusted projection root** (a checkpoint SHA) so a silent co-rewrite of history *and* index is detectable (the checkpoint won't match).
+- High-assurance seals MAY require **signed commits**; actor attribution intersects **#664** (Git-hosting identity is not yet fully structural — named dependency, not solved here).
+
+**D7 negative:** if `main` + index are force-rewritten to omit an episode and `--check` still reports success, the checkpoint-root defense has failed — `--check` must diff against the last trusted root, not only self-consistency.
+
+## 13. Acquisition, tenants & operator UX — resolves D8, D12, C3
+
+**13.1 Acquisition contract.** After dematerialization, ordinary shallow checkouts lack seal ancestry. Define:
+- history-consuming jobs (verify, ε, release) → **full history** (`fetch-depth: 0`) **or** a **targeted fetch** of the indexed reachable seal (`cn cdd fetch {episode}`);
+- offline reconstruction → full clone (this is AC1, a *test*, not the normal path);
+- shallow + no fetch → typed `HISTORY_INCOMPLETE {required_sha, remediation}`, never "cell not found";
+- **installer-generated workflows** (`cn repo install`) carry the correct checkout/fetch policy.
+
+**13.2 Tenants.** TSC (and every `cn repo install` tenant) gets a **versioned, dual-readable** migration: the reader supports both tree-resident (legacy) and ancestry+index (new) layouts, gated by `CDD-VERSION`, so tenants migrate on their own cadence.
+
+**13.3 Operator retrieval surface (D12).** `cn cdd show {episode}` and each `INDEX` entry expose: episode summary, **seal-commit permalink**, manifest, **per-artifact GitHub links at the historical commit**, amendments, PR/issue links, and the `materialize` command — so a GitHub-native operator moves from index → receipt **without** hand-composing `git show`. Operator-final-read is an authority boundary; it must stay one click deep.
+
+**13.4 Consumer impact graph (C3).** Dematerialization changes: `cell.go`/verifier, `cn-cdd-status`, `release.sh` **and** — the ε recurrence detector (#642, scans `.cdd/releases/**`), wave-status/wave-manifest readers, repair/review-return, release PRA generation, installer-generated workflows, tenant repos (TSC), and operator-final-read surfaces. Each is a required migration target, not an afterthought.
+
+## 14. Migration (parity-gated; corrected reversibility) — resolves D11, C2
+
+1. **Phase 0 — Doctrine (done):** first principle in `DOCUMENTATION-SYSTEM.md §5` + `KERNEL.md §2.1` (#681).
+2. **Phase 1 — Reader + schema, no deletion:** `cn cdd` reader, `cn.cdd.seal.v1`, trailer/anchor discovery, `index --rebuild/--check`.
+3. **Phase 1A — Dual-write:** new cells write seal events (trailers + manifest + fragment) while the tree stays canonical.
+4. **Phase 1B — Parity:** dual-read tree vs history; compare artifact set + blob digests; must match.
+5. **Phase 1C — Fixtures:** accepted-CONTENT, accepted-CHAIN, rejected-receipt-only, amendment, shallow-history — each reconstructed from ancestry under the **real merge policy**.
+6. **Phase 2 — Switch readers** (only after 1B parity stays clean): repoint `cell.go`/verifier/`cn-cdd-status`/`release.sh` + ε + installer workflows to `CURRENT.json` + reader. Removes nothing.
+7. **Phase 3 — Dry-run prune manifest** (§11 predicate), independently reviewed.
+8. **Phase 4 — Prune** only mechanically-proven terminal episodes; enable the serialized projector.
+9. **Rollback material retained**; full-history mirrors verified before prune.
+
+**C2 language:** Phases 1–2 are *independently shippable and reversible*. Phase 3+ is **not** "reversible" — it is **recoverable from verified seals** with a **pre-defined rollback** (re-materialize from ancestry). Re-materializing ~1,000 files + restoring consumers is itself a migration; call it that.
+
+## 15. Acceptance criteria
+
+- **AC1** `cn cdd materialize {episode}` reconstructs the complete typed cell from the **seal SHA only**, fresh full clone, no network, on a **pruned-HEAD fixture**; filesystem fallback prohibited + tested negatively.
+- **AC2** `index --rebuild` reproduces `INDEX/**` byte-for-byte from ancestry (fragments + trailers/anchors only); `--check` fails on unreachable seal, digest mismatch, seal↔index non-bijection, or **checkpoint-root divergence** (D7).
+- **AC3** rejected episode: product diff absent from `main` ancestry; receipt seal reachable + reconstructable; parent chain imports no product commits (§9 negative).
+- **AC4** CHAIN survives history-preserving merge (original commits + parents reachable); CONTENT survives squash iff `D` carries the full sealed payload before `P`; indexing pre-squash `S` for CONTENT is rejected (§8).
+- **AC5** shallow clone lacking the seal → `HISTORY_INCOMPLETE {required_sha, remediation}`; `INDEX`/`CURRENT` stay visible; targeted `cn cdd fetch` resolves it.
+- **AC6** post-migration `git ls-tree -r main -- .cdd/` has **no** prune-eligible payload; only config + `skills/` + `INDEX/**` + `CURRENT.json`; **no** active wave/repair/live-cell path removed (§11 predicate honored).
+- **AC7** parity (Phase 1B): tree-read and history-read produce identical artifact sets + digests across all §14 fixtures before any reader switch.
+- **AC8** deterministic discovery (§6): delete `INDEX/**`, rebuild from graph + anchors only, reproduce exactly, without grepping arbitrary trees.
+
+## 16. Risks / negative leverage
 
 | Risk | Mitigation |
 |---|---|
-| Squash-merge orphans a seal → **data loss** | `S ≺ D ≺ P` invariant + CI reachability check (AC2); CHAIN cells forbid post-review rebase. |
-| Shallow clone can't materialize | `HISTORY_INCOMPLETE {required_sha, remediation}`, never "not found" (AC5). |
-| Index drift from history | Rebuildable + `--check` in CI (AC2). |
-| Large one-time prune diff (Phase 3) | Mechanical, single reviewed commit; content preserved in ancestry, verified reachable. |
-| Append-contention on the index | Shard by year (`INDEX/{YYYY}.jsonl`) and/or rebuild rather than hand-append. |
+| squash orphans a CHAIN seal → data loss | §8 CHAIN reachability + `--check`; forbid post-review rebase |
+| history rewrite deletes evidence | §12 non-rewriteable main, mirrors, checkpoint-root `--check` |
+| shallow tenant misclassifies old cells | §13 acquisition contract + targeted fetch + dual-read version gate |
+| projection concurrency | §10 per-episode immutable fragments + serialized projector |
+| Phase-3 deletes active wave/repair | §11 prune predicate + dry-run manifest |
+| CURRENT drifts from live state | §5 CURRENT = declared union, radar owns open items (#683) |
+| operator can't review a pruned receipt | §13.3 index → seal permalink → artifact links |
+
+## 17. Ratification status
+
+This PR changes one design document; #682 remains design-first and **not dispatched**; there is no `.cdd/unreleased/682/` receipt set. That is correct for planning matter — but it is **not** a ratified architecture contract. After R1 findings clear, choose:
+
+- **A** — keep **Proposed**, merge under an explicit human design-gate, keep #682 open for the prototype + ratification; or
+- **B (recommended)** — dispatch an **independent CDS ratification cell** (independent β, no unresolved findings), then merge as canonical architecture.
+
+Given L7 scope, **B**. Do **not** derive reader/prune implementation issues, and do **not** begin any prune, from this note until ratification.
 
 ## References
 
-- **Issues:** #682 (this), #681 (first principle — merged), #683 (open-items ledger — a `CURRENT.json` consumer), #684 (channel plane), #680 (repo-self-coherence).
-- **Doctrine:** `DOCUMENTATION-SYSTEM.md §5`, `KERNEL.md §2.1`, `docs/architecture/CELL-RUNTIME.md`.
-- **Prior art:** Git object model; event sourcing / CQRS; Datomic; blockchain UTXO set; Kafka / LSM log compaction.
+Issues: #682, #681, #683, #684, #642, #664, #627/#662. Doctrine: `DOCUMENTATION-SYSTEM.md §5`, `KERNEL.md §2.1`, `docs/architecture/CELL-RUNTIME.md`. Prior art: Git object model; event sourcing / CQRS (log + rebuildable read-models); Datomic; blockchain UTXO set; Kafka / LSM log compaction.
