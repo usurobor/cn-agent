@@ -23,3 +23,15 @@ Three doctrine docs reconciled into one canonical memory model (ranked `r0`/`rN`
 ## Artifact set (this cycle)
 
 `gamma-scaffold.md`, `self-coherence.md` (§R0), `beta-review.md` (§R0, verdict: converge), `alpha-closeout.md`, `beta-closeout.md`, `gamma-closeout.md` (this file). No PRA — a single clean R0-converge doctrine cell does not carry explicit retrospective value beyond what's captured above.
+
+## deliverable_evidence
+
+```yaml
+deliverable_evidence:
+  pr: "#696 (cycle/691 -> main)"
+  head_sha: "e5d9e66c6cf64a4a43a7253cedbd5f4646a5be30"
+  base_sha: "737e573388a9a771ce2432fefaefe1327bf55d32"
+  commits_beyond_base: 4
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
