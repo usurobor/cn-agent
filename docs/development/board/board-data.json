@@ -2964,5 +2964,28 @@
     "created": "2026-08-02T01:52:28Z",
     "updated": "2026-08-02T01:52:28Z",
     "url": "https://github.com/usurobor/cnos/issues/695"
+  },
+  {
+    "n": 698,
+    "t": "architecture: Agent Dialogue Protocol v0 — writer-owned streams, thread IDs, home memory rollups",
+    "kind": "doctrine",
+    "areas": [
+      "agent",
+      "cdd",
+      "docs",
+      "protocol"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-03T22:09:25Z",
+    "updated": "2026-08-03T22:52:32Z",
+    "url": "https://github.com/usurobor/cnos/issues/698"
   }
 ]
