@@ -2987,5 +2987,27 @@
     "created": "2026-08-03T22:09:25Z",
     "updated": "2026-08-04T00:16:10Z",
     "url": "https://github.com/usurobor/cnos/issues/698"
+  },
+  {
+    "n": 699,
+    "t": "tooling: move the Drive→Git dialogue bridge into cnos.handoff as functional Go",
+    "kind": "tooling",
+    "areas": [
+      "handoff",
+      "package",
+      "transport"
+    ],
+    "pri": "P1",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "L",
+    "effort_weight": 4,
+    "unestimated": false,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-04T06:08:42Z",
+    "updated": "2026-08-04T06:08:42Z",
+    "url": "https://github.com/usurobor/cnos/issues/699"
   }
 ]
