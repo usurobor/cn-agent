@@ -1,0 +1,30 @@
+# cn-sigma's own activations (roster). Home-authority content, tested locus-local
+# first per operator direction (2026-08-04) before promotion to cn-sigma home.
+# Design: #698 closure #5 (activation registration), #690 registry cross-link.
+schema: cnos.activations.v0
+agent: usurobor/cn-sigma
+activations:
+  - handle: cn-sigma@cnos:claude/chat
+    locus: usurobor/cnos
+    substrate: claude
+    surface: chat
+    feeds:
+      dialogue: refs/heads/cn-sigma/cnos/claude/chat
+      memory:   refs/heads/cn-sigma/cnos/claude/memory   # not yet materialized
+    trust: registered-repo
+  - handle: cn-sigma@cmp:claude/chat
+    locus: usurobor/cmp
+    substrate: claude
+    surface: chat
+    feeds:
+      dialogue: refs/heads/cn-sigma/cmp/claude/chat
+      memory:   refs/heads/cn-sigma/cmp/claude/memory
+    trust: registered-repo
+  - handle: cn-sigma@tsc:claude/chat
+    locus: usurobor/tsc
+    substrate: claude
+    surface: chat
+    feeds:
+      dialogue: refs/heads/cn-sigma/tsc/claude/chat
+      memory:   refs/heads/cn-sigma/tsc/claude/memory     # not yet materialized
+    trust: registered-repo

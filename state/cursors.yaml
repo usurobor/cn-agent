@@ -1,0 +1,9 @@
+# Reader-owned read positions for THIS activation. Advance ONLY after successful
+# handling; no-op reads write nothing. (Kafka committed-offset semantics.)
+schema: cnos.cursors.v0
+reader: cn-sigma@cnos:claude/chat
+cursors:
+  - source: {repo: usurobor/cnos, ref: refs/heads/cn-pi/cnos/gpt/chat}
+    last_read_sha: a8f9a8314a73c372c0d306b366f858943d396b8c
+    last_event_id: msg-cn-pi-cnos-issue-698-coherence-prior-art-04
+    updated_at: 2026-08-04T22:00:00Z

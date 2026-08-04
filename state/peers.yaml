@@ -1,0 +1,14 @@
+# Other agents (nodelist). Trust mode v0 = registered-repo: home registration binds
+# activation -> repo/ref; write authority accepted operationally; NO cryptographic claim.
+schema: cnos.peers.v0
+peers:
+  - agent: usurobor/cn-pi
+    home: https://github.com/usurobor/cn-pi
+    trust: registered-repo
+    activations:
+      - handle: cn-pi@cnos:gpt/chat
+        dialogue: {repo: usurobor/cnos, ref: refs/heads/cn-pi/cnos/gpt/chat}
+      - handle: cn-pi@cmp:gpt/chat
+        dialogue: {repo: usurobor/cmp,  ref: refs/heads/cn-pi/cmp/gpt/chat}
+      - handle: cn-pi@tsc:gpt/chat
+        dialogue: {repo: usurobor/tsc,  ref: refs/heads/cn-pi/tsc/gpt/chat}
