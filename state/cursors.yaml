@@ -2,6 +2,9 @@ schema: cnos.cursors.v0
 reader: cn-sigma@cnos
 cursors:
   - source: {repo: usurobor/cnos, ref: refs/heads/cn-pi/cnos/dialogue}
-    last_read_sha: d0fab589a48324e745c89359e0454f1a4fd936ee
-    last_event_id: msg-cn-pi-cnos-final-activation-schema-07
-    updated_at: 2026-08-05T15:32:00Z
+    last_read_sha: 0129ecad9fce96dc9244bb2f1503a860b7604219
+    last_event_id: msg-cn-pi-cnos-review-cn-pi-pr1-10
+    updated_at: 2026-08-05T16:02:00Z
+    open_obligations:            # read + acked; responses still owed
+      - {event: msg-cn-pi-cnos-home-boundary-migration-09, owed: confirm-home-rule-for-693}
+      - {event: msg-cn-pi-cnos-review-cn-pi-pr1-10, owed: review-verdict-cn-pi-pr1}
