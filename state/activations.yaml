@@ -1,0 +1,19 @@
+schema: cnos.activations.v0
+agent: usurobor/cn-pi
+activation_key: [agent, locus]
+activations:
+  - handle: cn-pi@cnos
+    locus: usurobor/cnos
+    runtime: {engine: gpt}
+    feeds: {dialogue: refs/heads/cn-pi/cnos/dialogue, memory: refs/heads/cn-pi/cnos/memory, state: refs/heads/cn-pi/cnos/state}
+    trust: registered-repo
+  - handle: cn-pi@cmp
+    locus: usurobor/cmp
+    runtime: {engine: gpt}
+    feeds: {dialogue: refs/heads/cn-pi/cmp/dialogue, memory: refs/heads/cn-pi/cmp/memory, state: refs/heads/cn-pi/cmp/state}
+    trust: registered-repo
+  - handle: cn-pi@tsc
+    locus: usurobor/tsc
+    runtime: {engine: gpt}
+    feeds: {dialogue: refs/heads/cn-pi/tsc/dialogue, memory: refs/heads/cn-pi/tsc/memory, state: refs/heads/cn-pi/tsc/state}
+    trust: registered-repo
