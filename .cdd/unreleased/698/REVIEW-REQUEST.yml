@@ -1,0 +1,10 @@
+issue: 698
+wake: cds-dispatch
+protocol: cds
+requested_transition: "in-progress -> review"
+cycle_branch: cycle/698
+converge_round: R1
+note: >
+  β converged at R1 (verdict: converge, .cdd/unreleased/698/beta-review.md §R1)
+  after α repaired R0's citation-accuracy findings. Closeouts (alpha/beta/gamma)
+  land in the same commit as this marker.
