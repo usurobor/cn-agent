@@ -1,0 +1,11 @@
+issue: 698
+wake: cds-dispatch
+protocol: cds
+requested_transition: "todo -> in-progress"
+main_sha: 7f249ddbb50f230d5d41287b6554ab17b5a1d1d5
+cycle_branch: cycle/698
+note: >
+  Claimed per dispatch-protocol/SKILL.md §2.2. Issue's final comment
+  (2026-08-05T17:58:30Z, "Dispatching (operator-authorized, 2026-08-05)")
+  is the explicit operator authorization required by the issue body's
+  "Not dispatched" preamble.
