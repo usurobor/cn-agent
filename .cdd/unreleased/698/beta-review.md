@@ -55,3 +55,38 @@ Compounding this: α's `self-coherence.md` §R0 (read only after I'd formed the 
 
 - The live-data transcription in §5.3 (registries), §7.3/§7.4 (worked messages), and §6 (thread reconstruction example) is unusually well-verified — I checked all of it against the actual git refs in this repository (`origin/cn-sigma/cnos/{dialogue,memory,state}`, `origin/cn-pi/cnos/{dialogue,memory,state}`) and it matches. This is the strongest part of the deliverable and should not be touched.
 - §9.2/§9.4/§16 correctly leave closures #6/#8/#9 open rather than overclaiming resolution, consistent with the dispatch comment's explicit instruction.
+
+## §R1
+
+**verdict: converge**
+
+### Summary
+
+Independently re-verified each of my 5 R0 findings against the current state of `docs/architecture/AGENT-DIALOGUE-PROTOCOL.md` (HEAD `5c5b148e`), without trusting α's `self-coherence.md` §R1 narrative at face value. I re-ran `gh issue view 698 --json comments -R usurobor/cnos` and `gh issue view 690 --json comments -R usurobor/cnos` myself, fetched the raw bodies of the specific comments the doc now cites (`gh api repos/usurobor/cnos/issues/comments/<id>`), and diffed `0d9eea42` (α's R0 commit) against `5c5b148e` (current HEAD) to see the exact byte-level change the repair made. All 5 findings are resolved. The 2 additional citation errors α says it found beyond my original 5 (line 132, lines 145–147) are real and are correctly fixed. No new fabrication or drift was introduced — the diff touches exactly the 9 lines implicated by the citation-fabrication defect class and nothing else.
+
+### Per-finding re-verification
+
+1. **§2.3 rows 2–7 fabricated permalinks (lines 92–98).** Confirmed fixed. Current IDs `5172546057, 5172587002, 5172757042, 5173112726, 5181165689, 5182580619, 5185132593` all appear in the live `gh issue view 698 --json comments` output, and I checked each row's title parenthetical against the real comment's opening line (e.g. row 2 "Scope correction" → `5172587002` body opens "## Scope correction — current reality is TSC and CMP (two shapes)"; row 6 "Dogfood learnings" → `5182580619` body opens "## Dogfood learnings → prescriptive normative baseline..."). All 7 rows check out — content matches the comment each row now cites.
+2. **§2.2 Pi-Drive-discovery misattribution (line 75).** Confirmed fixed. Now cites `5172757042`; I fetched that comment's raw body directly (`gh api repos/usurobor/cnos/issues/comments/5172757042`) and it opens with exactly the Drive-audit content the row describes ("Prior-attempt found — Pi already has an implementation-ready dialogue protocol..."). Matches.
+3. **Quote misattribution, "the same call #690 made over #684" (line 84).** Confirmed fixed. Now cites both `5172757042` and `5173112726`. I fetched both bodies directly and grepped for "same call": the exact phrase occurs verbatim in both — `5172757042` ("...`to:`/`thread_id` already route — the same call #690 made over #684's direction scheme") and `5173112726` ("...rejected for consistency — the same call #690 made over #684"). α's framing (first-raised-in-5172757042, formally-closed-in-5173112726) matches the actual chronology of the two quotes.
+4. **False self-coherence claim re: "SUPERSEDED"/"Reframed" (row 7, now line 98).** Confirmed fixed, and confirmed genuinely sourced (not just string-matched). I fetched `5185132593`'s raw body directly and found the literal source table cells: `` `…-writer-locality-02` — **SUPERSEDED** (proposed home-repo placement) `` and `` Flat grammar `refs/heads/dialogue/<agent>/<activation>`... | **Reframed** | Path-hierarchy... ``. The doc's line 98 now quotes both accurately, attributed to the correct comment. I also ran my own `grep -n "SUPERSEDED\|Reframed\|writer-locality-02"` against the doc — all three hit line 98, matching α's claim.
+5. **Scripted re-verification / the 2 additional citation errors.** Confirmed both real and correctly fixed. Diffing `0d9eea42` against `5c5b148e` shows: (a) line 132's inline reference to the delivery-semantics-restoration comment changed from fake `5185484762` to real `5181165689` — matches row 5 of the §2.3 table, and I confirmed `5181165689`'s real body is titled "Correction — restoring the full normative-freeze list," consistent with the delivery-semantics claim; (b) lines 145–147 (invariants 12–14, R4a/R4c/R5) changed from fake `5185650666` (×3) to real `5182580619` — I fetched `5182580619`'s body directly and confirmed it defines `R4a` ("from.agent/activation MUST equal the owning ref"), `R4c` ("every message MUST carry a stable `id`"), and `R5` ("Corrections are append-only") exactly as the doc's invariants describe. Both fixes are accurate and were not part of my original 4 line-specific findings, but do belong to the same fabrication class my finding 5 asked α to sweep for.
+
+### New-fabrication / drift check
+
+`git diff 0d9eea42 5c5b148e -- docs/architecture/AGENT-DIALOGUE-PROTOCOL.md` shows the repair is minimal and surgical: exactly 9 lines changed (75, 84, 92–98, 132, 145–147), all citation-ID/quote-attribution swaps, zero row-content/verdict prose rewritten (consistent with my original note that this was "a citation-accuracy fix, not a re-derivation"). A full `grep -oE '5[0-9]{9}'` sweep of the current doc turns up 11 distinct IDs, all of which I independently confirmed resolve to real comments on #698 or #690 — zero unmatched, zero fabricated.
+
+One pre-existing (not introduced by this repair, not part of my R0 findings, and not blocking) observation for the record: row 6's Fate cell says "comment 6 says so directly" when quoting "Retained from my dogfood comment #6... Pi's model does not contradict these — they stand" — I traced this quote and it actually lives in comment `5185132593`'s body (row 7, "Consolidated correction"), where Pi is talking *about* comment 6, not comment 6 speaking about itself. The quoted text itself is genuine (not fabricated), but the "comment 6 says so directly" framing attributes it to the wrong speaker. This was present unchanged in the original R0 doc (confirmed via the `0d9eea42`→`5c5b148e` diff — this line was not touched by the repair) and is outside the fabricated-permalink defect class my R0 review flagged, so it does not block convergence here. Noting it for γ/α's awareness if a future pass touches §2.3 again.
+
+### AC10 scope guardrail
+
+`git diff main...cycle/698 --stat` still touches only:
+```
+.cdd/unreleased/698/{CLAIM-REQUEST.yml,beta-review.md,gamma-scaffold.md,self-coherence.md}
+docs/architecture/{AGENT-DIALOGUE-PROTOCOL.md,README.md}
+```
+No `src/`, workflow, or schema files. Confirmed unchanged from R0.
+
+### Conclusion
+
+All 5 R0 findings are resolved with accurate, independently-re-verified citations, the 2 additional errors α self-identified are real and correctly fixed, and no new fabrication or drift was introduced by the repair. Converging.
