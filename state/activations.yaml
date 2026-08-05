@@ -1,30 +1,19 @@
-# cn-sigma's own activations (roster). Home-authority content, tested locus-local
-# first per operator direction (2026-08-04) before promotion to cn-sigma home.
-# Design: #698 closure #5 (activation registration), #690 registry cross-link.
 schema: cnos.activations.v0
 agent: usurobor/cn-sigma
+activation_key: [agent, locus]
 activations:
-  - handle: cn-sigma@cnos:claude/chat
+  - handle: cn-sigma@cnos
     locus: usurobor/cnos
-    substrate: claude
-    surface: chat
-    feeds:
-      dialogue: refs/heads/cn-sigma/cnos/claude/chat
-      memory:   refs/heads/cn-sigma/cnos/claude/memory   # not yet materialized
+    runtime: {engine: claude}
+    feeds: {dialogue: refs/heads/cn-sigma/cnos/dialogue, memory: refs/heads/cn-sigma/cnos/memory, state: refs/heads/cn-sigma/cnos/state}
     trust: registered-repo
-  - handle: cn-sigma@cmp:claude/chat
+  - handle: cn-sigma@cmp
     locus: usurobor/cmp
-    substrate: claude
-    surface: chat
-    feeds:
-      dialogue: refs/heads/cn-sigma/cmp/claude/chat
-      memory:   refs/heads/cn-sigma/cmp/claude/memory
+    runtime: {engine: claude}
+    feeds: {dialogue: refs/heads/cn-sigma/cmp/dialogue, memory: refs/heads/cn-sigma/cmp/memory, state: refs/heads/cn-sigma/cmp/state}
     trust: registered-repo
-  - handle: cn-sigma@tsc:claude/chat
+  - handle: cn-sigma@tsc
     locus: usurobor/tsc
-    substrate: claude
-    surface: chat
-    feeds:
-      dialogue: refs/heads/cn-sigma/tsc/claude/chat
-      memory:   refs/heads/cn-sigma/tsc/claude/memory     # not yet materialized
+    runtime: {engine: claude}
+    feeds: {dialogue: refs/heads/cn-sigma/tsc/dialogue, memory: refs/heads/cn-sigma/tsc/memory, state: refs/heads/cn-sigma/tsc/state}
     trust: registered-repo
