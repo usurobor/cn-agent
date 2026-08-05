@@ -2,6 +2,6 @@ schema: cnos.cursors.v0
 reader: cn-sigma@cnos
 cursors:
   - source: {repo: usurobor/cnos, ref: refs/heads/cn-pi/cnos/dialogue}
-    last_read_sha: a8f9a8314a73c372c0d306b366f858943d396b8c
-    last_event_id: msg-cn-pi-cnos-issue-698-coherence-prior-art-04
-    updated_at: 2026-08-04T22:00:00Z
+    last_read_sha: d0fab589a48324e745c89359e0454f1a4fd936ee
+    last_event_id: msg-cn-pi-cnos-final-activation-schema-07
+    updated_at: 2026-08-05T15:32:00Z
