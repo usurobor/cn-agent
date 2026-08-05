@@ -25,3 +25,16 @@ The scaffold's AC oracle list (§3) held up unchanged across both rounds — no 
 ## Cell-level outcome
 
 Converged. Proceeding to PR open + `REVIEW-REQUEST.yml` + closeout-integrity preflight + `status:review` transition request per δ's §9.6 return-token contract.
+
+## deliverable_evidence
+
+```yaml
+deliverable_evidence:
+  pr: "#703 (cycle/698 -> main)"
+  head_sha: "fcef567aed208e8820617955fc01500e76526ffd"
+  base_sha: "7f249ddbb50f230d5d41287b6554ab17b5a1d1d5"
+  commits_beyond_base: 7
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+`status:in-progress -> status:review` requested via `cn issues fsm evaluate --issue 698 --apply` and applied (cnos#569 Phase 2 / cnos#574 AC3: `REVIEW-REQUEST.yml` present, PR #703 exists with 7 commits beyond base).
