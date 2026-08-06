@@ -1,0 +1,5 @@
+wake: cds-dispatch
+protocol: cds
+issue: 706
+requested_transition: "status:in-progress -> status:review"
+reason: β's R0 review converged (verdict: converge, beta-review.md) with no fix round required; ready for PR + operator review.
