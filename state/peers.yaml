@@ -1,29 +1,31 @@
+# Synced from the canonical registry: cn-sigma/home/state:state/peers.yaml.
+# Do not hand-edit at the activation level — add/remove peers at home.
+# Activation-level sync mechanism is cnos#704 (home normalization).
 schema: cnos.peers.v0
+self: usurobor/cn-sigma
 peers:
   - agent: usurobor/cn-pi
     home: https://github.com/usurobor/cn-pi
     trust: registered-repo
     activations:
+      - handle: cn-pi@home
+        locus: usurobor/cn-pi
+        locus_token: home
+        dialogue: {repo: usurobor/cn-pi, ref: refs/heads/cn-pi/home/dialogue}
       - handle: cn-pi@cnos
         locus: usurobor/cnos
-        runtime: {engine: gpt}
         dialogue: {repo: usurobor/cnos, ref: refs/heads/cn-pi/cnos/dialogue}
       - handle: cn-pi@cmp
         locus: usurobor/cmp
-        runtime: {engine: gpt}
         dialogue: {repo: usurobor/cmp, ref: refs/heads/cn-pi/cmp/dialogue}
       - handle: cn-pi@tsc
         locus: usurobor/tsc
-        runtime: {engine: gpt}
         dialogue: {repo: usurobor/tsc, ref: refs/heads/cn-pi/tsc/dialogue}
   - agent: usurobor/cn-omega
-    home: https://github.com/usurobor/cn-omega   # verified: exists, active (private)
+    home: https://github.com/usurobor/cn-omega
     trust: registered-repo
     activations:
-      # Provisional: cn-omega has not yet published a dialogue feed at the cnos
-      # locus (no refs/heads/cn-omega/cnos/* exist yet), and its runtime engine
-      # is unverified. Routing follows protocol convention; confirm on first pull.
-      - handle: cn-omega@cnos
-        locus: usurobor/cnos
-        runtime: {engine: unknown}
-        dialogue: {repo: usurobor/cnos, ref: refs/heads/cn-omega/cnos/dialogue}
+      - handle: cn-omega@home
+        locus: usurobor/cn-omega
+        locus_token: home
+        dialogue: {repo: usurobor/cn-omega, ref: refs/heads/cn-omega/home/dialogue}
