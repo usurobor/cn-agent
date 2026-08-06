@@ -1,0 +1,59 @@
+wake: cds-dispatch
+role: delta
+issue: 707
+requested_transition: in-progress -> blocked
+block_class: project_priority_conflict_unresolvable_by_triad
+reason: >
+  delta's outward-membrane boundary decision (delta/SKILL.md Sec 3.3:
+  "the triad's direction conflicts with project priorities the triad
+  cannot see") -- not a code-level or AC-level blocker.
+
+  gamma's R0 scaffold (.cdd/unreleased/707/gamma-scaffold.md) surfaced
+  that issue #707's manifest-driven design ('.cn/install-manifest.json')
+  for `cn repo uninstall` substantially duplicates the CLI surface of an
+  already-in-flight, more authoritative design:
+
+    - docs/development/design/cn-repo-lifecycle.md (Status: Proposed,
+      pre-implementation) specifies a ledger-driven `cn repo uninstall`
+      keyed on a committed `.cn/repo.state.json` managed-surface ledger,
+      as one command in a five-command lifecycle family (install /
+      update / status / doctor / repair / prune / uninstall).
+    - #655 is the tracking wave ("cn repo lifecycle commands: ledger ->
+      sync-install -> update -> repair/prune -> uninstall").
+    - #656 ("repo lifecycle Phase 1 -- state ledger (.cn/repo.state.json)
+      + cn repo status") is already status:review -- the ledger
+      foundation is nearly landed.
+    - #660 ("repo lifecycle Phase 5 -- cn repo uninstall (conservative,
+      ledger-driven)") is the wave's own uninstall sub-issue, explicitly
+      scoped against the ledger, with its own AC set and safety rules
+      (never remove unknown .cn content, refuse locally-edited generated
+      workflows without --force, labels never default).
+
+  #707's issue body does not reference the design doc, #655, #656, or
+  #660 -- there is no visible evidence the operator who authored/
+  authorized #707 (2026-08-05/06) was aware of the wave when scoping a
+  second, independent design for the same command name.
+
+  Proceeding to implement #707 as scoped risks: (a) shipping a `cn repo
+  uninstall` whose manifest schema (`cn.install-manifest.v1`) and
+  removal semantics conflict with the ledger-driven `cn.repo.state.v1`
+  design once #660 lands, forcing a rework or a confusing two-manifest
+  system; (b) wasted implementation effort if #707 is superseded once
+  the wave reaches Phase 5; (c) two competing PRs both claiming the
+  `cn repo uninstall` verb.
+
+  Per delta/SKILL.md Sec 3.3 this is exactly the override-eligible class
+  ("information asymmetry... the triad cannot see") but delta does not
+  have authority to unilaterally choose which design ships -- that is a
+  project-priority decision for the operator. Per cds-dispatch/SKILL.md's
+  own defer-path ("when ambiguous, defer to operator... do not guess"),
+  delta blocks rather than picks a side.
+
+  No implementation code was written; the only matter produced this
+  cycle is gamma's scaffold (informational) and this block record.
+  cycle/707 and .cdd/unreleased/707/ are preserved for the operator's
+  resumption decision (proceed with #707 as an interim/narrower
+  solution, close #707 as superseded by #660, or descope #707 to only
+  the parts the wave does not cover, e.g. AC5's operator-effects
+  printout).
+escalation_comment_posted: true
