@@ -27,3 +27,16 @@ No process-gap here rose to the level of an immediate MCA patch or a project MCI
 
 - **Remove `SIGMA_WORKFLOW_PAT` from the repo's actual secrets** once `CN_DISPATCH_PAT` is confirmed working end-to-end (i.e., after at least one successful post-merge scheduled firing of both wakes under the new name). Small cleanup, not blocking — the old secret becomes dead weight once the rename is confirmed live, but leaving it in place briefly is harmless and arguably a useful rollback fallback during the transition window.
 - **F2 (LOW, non-blocking, per `beta-review.md`):** `docs/guides/INSTALL-CDS.md`'s Tier 3 runbook rotation-cadence guidance doesn't call out that rotating `CN_DISPATCH_PAT` on the cnos repo itself carries the same secret-must-exist-before-workflow-references-it care this cycle's F1 describes — currently only implied, not stated. Doc nit; can be picked up in a future docs pass, does not block this cycle's merge.
+
+## Deliverable evidence (δ, cnos#524 closeout-integrity preflight)
+
+```
+deliverable_evidence:
+  pr: "#708 (cycle/706 -> main)"
+  head_sha: "d34d7643252391fcac17da48ccc6aa35eec7e5bc"
+  base_sha: "7f249ddbb50f230d5d41287b6554ab17b5a1d1d5"
+  commits_beyond_base: 15
+  closeout_artifacts: [gamma-scaffold.md, self-coherence.md, beta-review.md, alpha-closeout.md, beta-closeout.md, gamma-closeout.md]
+```
+
+δ confirmed via `cn issues fsm evaluate --issue 706` (read-only) before requesting the transition: `pr_exists: true`, `commits_beyond_base: 15`, `review_request_present: true`, all six required closeout artifacts present. PR #708 is open, non-draft, and its description carries the F1 pre-merge operator-action warning verbatim.
