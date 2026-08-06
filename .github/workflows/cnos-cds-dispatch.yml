@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+          token: ${{ secrets.CN_DISPATCH_PAT }}
           sparse-checkout: |
             /*
             !/.cn-sigma
@@ -62,7 +62,7 @@ jobs:
           # phase — so no firing can claim anything (reads succeed on a public
           # repo, only writes 401; surfaced once cnos#630's rule drove the first
           # real scanner write). Reuse the same PR-scoped PAT the finalizer binds.
-          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+          GH_TOKEN: ${{ secrets.CN_DISPATCH_PAT }}
         run: |
           set -euo pipefail
           (cd src/go && go build -o /tmp/cn-scan ./cmd/cn)
@@ -85,9 +85,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ secrets.SIGMA_WORKFLOW_PAT }}
-          bot_name: "sigma@cnos.cn-sigma.cnos"
-          bot_id: "41898282"
+          github_token: ${{ secrets.CN_DISPATCH_PAT }}
           settings: |
             {
               "permissions": {
@@ -421,7 +419,7 @@ jobs:
           # finalizer reds the job after checkpointing (cnos#591 PR-open path
           # was masked while dispatch cells no-op'd). Reuse the same PR-scoped
           # PAT the wake already uses as the checkout / github_token binding.
-          GH_TOKEN: ${{ secrets.SIGMA_WORKFLOW_PAT }}
+          GH_TOKEN: ${{ secrets.CN_DISPATCH_PAT }}
         run: |
           set -euo pipefail
           (cd src/go && go build -o /tmp/cn-finalize ./cmd/cn)

@@ -45,6 +45,7 @@ import (
 	"strings"
 	"time"
 
+	installpreflight "github.com/usurobor/cnos/packages/cnos.core/commands/install-preflight"
 	labeldoctor "github.com/usurobor/cnos/packages/cnos.core/commands/label-doctor"
 	"github.com/usurobor/cnos/src/go/internal/binupdate"
 	"github.com/usurobor/cnos/src/go/internal/hubsetup"
@@ -59,6 +60,27 @@ const DefaultRepo = "usurobor/cnos"
 const (
 	defaultAPIBaseURL  = "https://api.github.com"
 	defaultDownloadURL = "https://github.com"
+
+	// preflightAPIBaseEnv / preflightRepoEnv are deliberately
+	// cnos-specific (never ambiently set by a real CI runner, unlike
+	// e.g. GitHub Actions' own GITHUB_API_URL default env var) escape
+	// hatches that point the cnos#706 preflight's GitHub REST calls at
+	// a test double and bypass its git "origin" remote resolution.
+	// Because these names cannot collide with ambient CI state, their
+	// absence always means "use the real GitHub API / resolve the
+	// target repo from git" — no test can accidentally leak a live
+	// network call merely because some unrelated ambient var happened
+	// to already be set. Not part of the public CLI contract (no
+	// --flag exposes them): they exist purely so both the in-process
+	// package tests (repoinstall_test.go) and the CLI-level tests that
+	// drive RepoInstallCmd.Run without any Options-level seam
+	// (cmd_repo_install_test.go, including the one real subprocess
+	// test) can point preflight at an httptest.Server without also
+	// perturbing label-doctor's OWN (unrelated, downstream) git-remote
+	// resolution — see repoinstall_test.go's newPreflightFixtureEnv doc
+	// comment for the full rationale.
+	preflightAPIBaseEnv = "CN_INSTALL_PREFLIGHT_API_BASE_URL"
+	preflightRepoEnv    = "CN_INSTALL_PREFLIGHT_REPO"
 
 	// manifestSchema/manifestProfile are the exact wire values written to
 	// .cn/deps.json. Per the implementation contract these must not change
@@ -282,6 +304,24 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	fmt.Fprintln(opts.Stdout)
 	fmt.Fprintf(opts.Stdout, "✓ Git repository root: %s\n", opts.RepoRoot)
 
+	// cnos#706 AC1/AC2: for --dispatch cds, operator prerequisites are
+	// checked BEFORE anything else — strictly before resolveIndex (no
+	// network call beyond the preflight check itself), before
+	// applyInstall (no .cn/ write), and before runDispatchCds (no
+	// render, no label-doctor call). A missing prerequisite therefore
+	// leaves zero partial deploy artifacts (AC2) and the operator sees
+	// exactly what's missing before the tool does anything on their
+	// behalf (the governing gap this cycle fixes). --dry-run is exempt
+	// (see runPreflight's doc comment) — a dry-run plan report requires
+	// no live credential to produce, matching its existing behavior of
+	// never reaching label-doctor either.
+	if opts.Dispatch == "cds" && !opts.DryRun {
+		if err := runPreflight(ctx, opts); err != nil {
+			fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
+			return nil, err
+		}
+	}
+
 	idxPath, idx, releaseTag, pinVersion, cleanup, err := resolveIndex(ctx, client, apiBase, dlBase, repo, opts.Release, opts.IndexPath)
 	if err != nil {
 		fmt.Fprintf(opts.Stderr, "✗ %s\n", err)
@@ -385,6 +425,121 @@ func resolveDispatchAgent(a string) string {
 	return a
 }
 
+// requiredSecretNames returns the GitHub Actions repo-secret names the
+// cnos#706 --dispatch cds preflight must find present before any
+// label/render/commit. The engine tier (cnos#613) is PAT-free by
+// construction (see cn-install-wake's own tier split, and
+// runDispatchCds above) — it needs no repo secret at all, so this
+// returns nil and preflight checks push access only. The agent tier
+// always needs CLAUDE_CODE_OAUTH_TOKEN (the anthropics/claude-code-
+// action standard name — kept unchanged per the issue's final spec);
+// the workflow-PAT secret name is the caller's --workflow-pat-secret
+// when given, else CN_DISPATCH_PAT for the sigma default (mirroring
+// cn-install-wake's own default binding, resolved identically above in
+// runDispatchCds). A non-sigma agent with no --workflow-pat-secret has
+// no PAT-secret NAME to check yet — that is a distinct, pre-existing
+// Go-level flag-validation gate (runDispatchCds's own named error,
+// unchanged by this cycle), not an operator-secret-presence check;
+// preflight still checks CLAUDE_CODE_OAUTH_TOKEN + push access in that
+// case so the operator is not left waiting on Claude-token setup only
+// to immediately hit the identity gate next.
+func requiredSecretNames(engine bool, agent, workflowPatSecret string) []string {
+	if engine {
+		return nil
+	}
+	names := []string{"CLAUDE_CODE_OAUTH_TOKEN"}
+	patName := workflowPatSecret
+	if patName == "" && agent == "sigma" {
+		patName = "CN_DISPATCH_PAT"
+	}
+	if patName != "" {
+		names = append(names, patName)
+	}
+	return names
+}
+
+// preflightPrerequisiteDoc names, for each operator-provided secret
+// this cycle's preflight can find missing, exactly what it is, why
+// it's needed, and the precise acquisition steps — the operator's own
+// FINAL wording from cnos#706's issue thread (comments "Refinement" +
+// "Decisions (operator, 2026-08-05)"), not a paraphrase. AC7's oracle
+// greps for these exact substrings ("claude setup-token"; "fine-
+// grained"; the four scopes Contents/Issues/Pull requests/Workflows;
+// the Settings → Developer settings → Personal access tokens →
+// Fine-grained tokens path).
+var preflightPrerequisiteDoc = map[string]string{
+	"CLAUDE_CODE_OAUTH_TOKEN": "authorizes the dispatch agent to call Claude. Get it by running " +
+		"`claude setup-token` locally (requires a Claude Pro/Max subscription); paste the printed " +
+		"token as this repo secret. Settings → Secrets and variables → Actions → New repository secret.",
+	"CN_DISPATCH_PAT": "a fine-grained Personal Access Token on your own GitHub account, scoped to this " +
+		"repo with Contents + Issues + Pull requests + Workflows = write. The dispatch workflow uses it " +
+		"to check out, move FSM labels via the API, and push the cell branch + open the PR. Create it at " +
+		"Settings → Developer settings → Personal access tokens → Fine-grained tokens.",
+}
+
+// formatPreflightFailure renders the AC2/AC7 hard-block message: for
+// each MISSING secret, its what/why/exact-acquisition-steps (verbatim
+// operator wording, preflightPrerequisiteDoc above); for missing push
+// access, a plain explanation. Every missing prerequisite is listed,
+// not just the first (AC7's "per prerequisite" contract) — a first-time
+// operator satisfying one gate at a time should not have to re-run
+// --dispatch cds repeatedly just to discover the next missing item.
+func formatPreflightFailure(res *installpreflight.Result) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "operator prerequisites are not yet satisfied for %s — cn repo install --dispatch cds will not proceed until they are:\n", res.Repo)
+	for _, name := range res.Missing {
+		doc, ok := preflightPrerequisiteDoc[name]
+		if !ok {
+			doc = "a required GitHub Actions repository secret (see docs/guides/INSTALL-CDS.md)."
+		}
+		fmt.Fprintf(&b, "\n  ✗ %s — %s\n", name, doc)
+	}
+	if !res.PushAccess {
+		fmt.Fprintf(&b, "\n  ✗ push access — the installing token does not have push access to %s. "+
+			"Use a token belonging to an account with write access to this repository (an owner/admin can "+
+			"grant this at Settings → Collaborators and teams), then re-run.\n", res.Repo)
+	}
+	fmt.Fprintf(&b, "\nSee docs/guides/INSTALL-CDS.md for the full quickstart. Re-run `cn repo install --dispatch cds` once every item above is satisfied — this command is idempotent and resumes cleanly (AC4).\n")
+	return b.String()
+}
+
+// runPreflight is the cnos#706 operator-prerequisite gate (Final ACs
+// 1-4/7): for --dispatch cds it is the FIRST thing Run does (see Run's
+// call site, strictly before resolveIndex/applyInstall/runDispatchCds),
+// so a missing prerequisite fails before any file is written and before
+// any other network call. It verifies PRESENCE only — never a secret's
+// value (AC3; see installpreflight's package doc comment) — via the
+// same dependency-free net/http GitHub REST idiom label-doctor already
+// established (installpreflight mirrors, rather than imports,
+// label-doctor/github.go — separate go.work module), and the same
+// RepoRoot -> git "origin" remote target resolution label-doctor's
+// Doctor() uses (bypassable via $CN_INSTALL_PREFLIGHT_REPO for tests
+// that must not perturb label-doctor's own, unrelated, downstream
+// git-remote resolution — see the env-var constants' doc comment).
+func runPreflight(ctx context.Context, opts Options) error {
+	agent := resolveDispatchAgent(opts.Agent)
+	secretNames := requiredSecretNames(opts.Engine, agent, opts.WorkflowPatSecret)
+
+	res, err := installpreflight.Check(ctx, installpreflight.Options{
+		RepoRoot:    opts.RepoRoot,
+		Repo:        os.Getenv(preflightRepoEnv),
+		APIBaseURL:  os.Getenv(preflightAPIBaseEnv),
+		SecretNames: secretNames,
+	})
+	if err != nil {
+		return fmt.Errorf("preflight: could not verify operator prerequisites: %w", err)
+	}
+	if res.Ready() {
+		if len(secretNames) > 0 {
+			fmt.Fprintf(opts.Stdout, "✓ preflight: operator prerequisites present (%s; push access confirmed)\n", strings.Join(secretNames, ", "))
+		} else {
+			fmt.Fprintf(opts.Stdout, "✓ preflight: push access confirmed (engine tier needs no repo secret)\n")
+		}
+		return nil
+	}
+	return fmt.Errorf("preflight: %s", formatPreflightFailure(res))
+}
+
 // dispatchWorkflowPath returns the fixed output path --dispatch cds
 // always renders to (AC1/C3): .github/workflows/cnos-cds-dispatch.yml
 // under the repo root, matching cnos-cds-dispatch.yml already committed
@@ -434,8 +589,11 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 		}
 		// sigma's default substrate PAT binding, mirroring
 		// cn-install-wake's own default (renderer authority; this is
-		// just the display value printed below).
-		patSecret = "SIGMA_WORKFLOW_PAT"
+		// just the display value printed below). Renamed from
+		// SIGMA_WORKFLOW_PAT to CN_DISPATCH_PAT per cnos#706 AC6 (the
+		// issue's final operator ruling: "if it's a PAT, the name must
+		// say PAT" — agent-agnostic, type-unambiguous).
+		patSecret = "CN_DISPATCH_PAT"
 	}
 
 	rendererPath := filepath.Join(pkg.VendorPath(opts.RepoRoot, "cnos.core"), "commands", "install-wake", "cn-install-wake")
