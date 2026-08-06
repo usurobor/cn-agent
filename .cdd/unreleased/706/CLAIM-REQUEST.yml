@@ -1,0 +1,4 @@
+wake: cds-dispatch
+protocol: cds
+issue: 706
+requested_transition: status:todo -> status:in-progress
