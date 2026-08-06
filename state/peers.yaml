@@ -16,3 +16,14 @@ peers:
         locus: usurobor/tsc
         runtime: {engine: gpt}
         dialogue: {repo: usurobor/tsc, ref: refs/heads/cn-pi/tsc/dialogue}
+  - agent: usurobor/cn-omega
+    home: https://github.com/usurobor/cn-omega   # verified: exists, active (private)
+    trust: registered-repo
+    activations:
+      # Provisional: cn-omega has not yet published a dialogue feed at the cnos
+      # locus (no refs/heads/cn-omega/cnos/* exist yet), and its runtime engine
+      # is unverified. Routing follows protocol convention; confirm on first pull.
+      - handle: cn-omega@cnos
+        locus: usurobor/cnos
+        runtime: {engine: unknown}
+        dialogue: {repo: usurobor/cnos, ref: refs/heads/cn-omega/cnos/dialogue}
