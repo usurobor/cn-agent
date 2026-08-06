@@ -1292,6 +1292,59 @@ func TestRun_DispatchCds_BotFlags_StillOptIn(t *testing.T) {
 	}
 }
 
+// TestRun_DispatchCds_PreflightSatisfied_SecondRunByteIdentical is
+// AC4's idempotent-re-run oracle for the --dispatch cds path,
+// mirroring TestRun_Idempotent_ByteIdenticalArtifacts's shape (base
+// install) for the dispatch case: with prerequisites present, calling
+// Run twice against the same repoRoot produces byte-identical
+// .cn/deps.json and rendered workflow output both times — "re-run
+// resumes cleanly" (AC4) holds even though the overall Run() call
+// still returns label-doctor's own (unrelated, pre-existing,
+// downstream) target-resolution error in this fixture (see
+// setPreflightSatisfiedEnv's doc comment for why that error is
+// deliberately still present here — it is not a preflight failure).
+func TestRun_DispatchCds_PreflightSatisfied_SecondRunByteIdentical(t *testing.T) {
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "CN_DISPATCH_PAT")
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+
+	run := func() ([]byte, []byte) {
+		stdout, stderr := noopStdio()
+		_, err := Run(context.Background(), Options{
+			RepoRoot:  repoRoot,
+			IndexPath: indexPath,
+			Packages:  []string{"cnos.core", "cnos.cds"},
+			Dispatch:  "cds",
+			Stdout:    stdout,
+			Stderr:    stderr,
+		})
+		// Preflight passes both times; the label-doctor target-
+		// resolution error is expected and unrelated to AC4.
+		if err == nil || !strings.Contains(err.Error(), "canonical dispatch labels not ensured") {
+			t.Fatalf("expected only the canonical-dispatch-labels error, got: %v\nstderr: %s", err, stderr.String())
+		}
+		deps, rerr := os.ReadFile(filepath.Join(repoRoot, ".cn", "deps.json"))
+		if rerr != nil {
+			t.Fatal(rerr)
+		}
+		workflow, rerr := os.ReadFile(filepath.Join(repoRoot, ".github", "workflows", "cnos-cds-dispatch.yml"))
+		if rerr != nil {
+			t.Fatal(rerr)
+		}
+		return deps, workflow
+	}
+
+	deps1, workflow1 := run()
+	deps2, workflow2 := run()
+
+	if !bytes.Equal(deps1, deps2) {
+		t.Errorf("deps.json not byte-identical across re-runs of --dispatch cds")
+	}
+	if !bytes.Equal(workflow1, workflow2) {
+		t.Errorf("rendered workflow not byte-identical across re-runs of --dispatch cds")
+	}
+}
+
 // AC2/C2 (Mock C2 "no partial render"): a non-sigma --agent with no
 // --workflow-pat-secret must fail early, before the renderer ever runs
 // — nonzero exit, no .github/workflows/ directory created at all.
