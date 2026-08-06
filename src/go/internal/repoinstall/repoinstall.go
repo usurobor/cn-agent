@@ -589,10 +589,10 @@ func runDispatchCds(ctx context.Context, opts Options) error {
 		}
 		// sigma's default substrate PAT binding, mirroring
 		// cn-install-wake's own default (renderer authority; this is
-		// just the display value printed below). Renamed from
-		// SIGMA_WORKFLOW_PAT to CN_DISPATCH_PAT per cnos#706 AC6 (the
-		// issue's final operator ruling: "if it's a PAT, the name must
-		// say PAT" — agent-agnostic, type-unambiguous).
+		// just the display value printed below). Renamed per cnos#706
+		// AC6 (the issue's final operator ruling: "if it's a PAT, the
+		// name must say PAT" — agent-agnostic, type-unambiguous; the
+		// prior agent-hardcoded name is gone from this codebase).
 		patSecret = "CN_DISPATCH_PAT"
 	}
 

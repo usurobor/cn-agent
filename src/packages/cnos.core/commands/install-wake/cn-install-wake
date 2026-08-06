@@ -41,8 +41,9 @@
 #                     finalizer GH_TOKEN (renderer authority — see Mock C).
 #                     Defaults to CN_DISPATCH_PAT when --agent is
 #                     "sigma" (or omitted, since sigma is the default
-#                     agent) — cnos#706: renamed from SIGMA_WORKFLOW_PAT
-#                     (agent-agnostic, type-unambiguous name; "PAT" in
+#                     agent) — cnos#706: renamed from the prior
+#                     agent-hardcoded secret name (agent-agnostic,
+#                     type-unambiguous name; "PAT" in
 #                     the name distinguishes it from the built-in
 #                     GITHUB_TOKEN). For any other agent this flag is
 #                     REQUIRED; omitting it dies before any output is
@@ -748,8 +749,9 @@ else
   # Workflow PAT secret resolution (Mock C2 — fail-early identity binding).
   # Resolution order: explicit --workflow-pat-secret flag; else
   # CN_DISPATCH_PAT when --agent is "sigma" (today's only agent with a
-  # default substrate PAT binding; renamed from SIGMA_WORKFLOW_PAT per
-  # cnos#706 AC6); else die BEFORE any render/write phase runs (out_path
+  # default substrate PAT binding; renamed per cnos#706 AC6 from the
+  # prior agent-hardcoded secret name); else die BEFORE any
+  # render/write phase runs (out_path
   # is not touched until the very end of this script, so dying here
   # leaves no partial --out file per Mock C2).
   if [ -n "$workflow_pat_secret_flag" ]; then
