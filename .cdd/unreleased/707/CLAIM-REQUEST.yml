@@ -1,0 +1,16 @@
+wake: cds-dispatch
+protocol: cds
+issue: 707
+run_class: first_pass
+requested_transition: todo -> in-progress
+reason: >
+  Claim sequence step 5/6 (cds-dispatch/SKILL.md). Well-formedness gates
+  verified: issue open, dispatch:cell present, exactly one protocol label
+  (protocol:cds), exactly one status label (status:todo). No prior
+  cycle/707 branch, no .cdd/unreleased/707/ artifacts prior to this claim,
+  no prior status:changes history, no scanner "MECHANICAL reversion"
+  comment, no operator continuation-authorization comment on the issue --
+  label timeline shows only status:ready -> status:todo (operator flip at
+  2026-08-06T00:58:51Z). Classified first_pass per repair re-entry
+  preflight Step A.
+head_commit: 7f249ddbb50f230d5d41287b6554ab17b5a1d1d5
