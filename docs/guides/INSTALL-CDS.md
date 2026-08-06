@@ -3,6 +3,44 @@
 **Audience:** a human who wants to bring the cnos **CDS** (Coherence-Driven
 Software) process into an existing software repository.
 
+## Terms
+
+A few words below are easy to gloss over if you haven't set up a GitHub
+Actions workflow before. Defined here, before anything below uses them:
+
+- **PAT (Personal Access Token)** — a credential tied to *your own* GitHub
+  account that authorizes API and git actions as you. Distinct from the
+  built-in `GITHUB_TOKEN` GitHub Actions provisions automatically for every
+  workflow run (which is scoped to that one run and cannot push new
+  `.github/workflows/` files or trigger other workflows). This guide uses a
+  **fine-grained PAT** — one scoped to a single repository and an explicit,
+  minimal set of permissions, rather than a "classic" token with blanket
+  account-wide access.
+- **Repo secret** — a named value stored at a repository's
+  **Settings → Secrets and variables → Actions**. Only that repo's own
+  workflow runs can read it at runtime; the value is never shown again
+  after creation, and `cn repo install` never reads, logs, or otherwise
+  handles a secret's *value* — it only checks that a secret with a given
+  *name* exists (see [§ Preflight](#preflight-what-the-operator-provides-before-anything-else-cnos706)).
+- **Default branch** — the branch (usually `main`) GitHub treats as a
+  repo's canonical line of history. A workflow file under
+  `.github/workflows/` only takes effect once it is merged to the default
+  branch — sitting on any other branch, it is inert.
+- **"Bot"** — **there is no bot account to create for this install.**
+  Earlier revisions of the rendered dispatch workflow carried a cosmetic
+  `bot_name`/`bot_id` commit-author label naming a fixed, historical
+  identity string — this was never a separate GitHub account, only a label
+  layered over the operator's own PAT (verified against the live workflow
+  and the GitHub API; see cnos#706). That cosmetic default was deleted: a
+  fresh install authors commits as whichever account your `CN_DISPATCH_PAT`
+  belongs to (your own), with no bot-flavored anything. A **real** dedicated
+  bot account — a second GitHub login, added to the repo as a collaborator,
+  so dispatch commits/PRs are attributable to a distinct identity — is
+  optional future work (cnos#449 / cnos#702), not required and not built
+  today.
+
+---
+
 Installing CDS has two layers, and they are separate trust decisions:
 
 - **Layer 1 — Base package install.** Pins the `cn` toolchain reference and
@@ -10,9 +48,11 @@ Installing CDS has two layers, and they are separate trust decisions:
   the safe default — enough for you, or a Claude attached to the repo, to run
   the CDS method by hand. **This is what this guide covers.**
 - **Layer 2 — Autonomous dispatch (opt-in).** A scheduled workflow that wakes
-  an agent, claims issues, and opens PRs on a cron. This needs extra secrets
-  (a `workflow`-scoped PAT, a model OAuth token) and standing write access —
-  see [§ Autonomous dispatch](#autonomous-dispatch-opt-in) before enabling it.
+  an agent, claims issues, and opens PRs on a cron. This needs two secrets on
+  **your own GitHub account** (a Claude OAuth token, a fine-grained PAT) and a
+  manual merge to your default branch — no second account to create. See
+  [§ Terms](#terms) for what these words mean and
+  [§ Autonomous dispatch](#autonomous-dispatch-opt-in) before enabling it.
 
 The canonical way to install Layer 1 is one command:
 
@@ -146,16 +186,62 @@ for the full protocol.
 this layer:
 
 ```sh
-cn repo install --dispatch cds \
-  --agent acme --workflow-pat-secret ACME_WORKFLOW_PAT \
-  --bot-name acme-bot --bot-id 12345678
+cn repo install --dispatch cds
 ```
 
-This runs the base install, then renders `.github/workflows/cnos-cds-dispatch.yml`
-for the given agent identity — no sigma binding required; any non-sigma
-`--agent` requires `--workflow-pat-secret` (fails early, before any render,
-if it is missing). The installing token needs `workflow` scope to write
-`.github/workflows/`; the command itself never pushes to `main` (PR-only).
+That's the whole command for the common case — no `--agent`, no
+`--workflow-pat-secret`, no bot flags. It runs the base install, then —
+once [§ Preflight](#preflight-what-the-operator-provides-before-anything-else-cnos706)
+passes — renders `.github/workflows/cnos-cds-dispatch.yml` bound to the
+`sigma` identity (just a concurrency-group label, not an account — see
+[§ Terms](#terms)) and the `CN_DISPATCH_PAT` / `CLAUDE_CODE_OAUTH_TOKEN`
+secrets. Commits it makes are authored by whichever account
+`CN_DISPATCH_PAT` belongs to — **your own** — with no bot-flavored label of
+any kind.
+
+Installing under a different named identity only changes the
+concurrency-group label and the PAT secret's name — still bot-less by
+default:
+
+```sh
+cn repo install --dispatch cds --agent acme --workflow-pat-secret ACME_DISPATCH_PAT
+```
+
+A non-sigma `--agent` requires `--workflow-pat-secret` naming your own
+secret (fails early, before any render, if it is missing). `--bot-name` /
+`--bot-id` still exist as a **strictly opt-in** cosmetic commit-author
+override — you do not need them, and a fresh install never sets them by
+default (cnos#706 AC9). The installing token needs `workflow` scope to
+write `.github/workflows/`; the command itself never pushes to `main`
+(PR-only).
+
+### Preflight: what the operator provides, before anything else (cnos#706)
+
+Before `--dispatch cds` renders a single file, it checks three things only
+*you* (the operator) can provide, and refuses to proceed until they are all
+in place — so you are never left with a half-deployed, inert workflow:
+
+1. **`CLAUDE_CODE_OAUTH_TOKEN`** repo secret exists (checked by name only —
+   its value is never read).
+2. **`CN_DISPATCH_PAT`** repo secret exists (checked by name only — see
+   [§ Tier 3 runbook](#tier-3-runbook-autonomous-dispatch--two-own-account-secrets)
+   for how to create one).
+3. **Push access** — the token you're running `cn repo install` with has
+   push access to this repo (checked via a single read-only GitHub API
+   call; no secret value is ever sent to or read by the CLI).
+
+If any of these is missing, the command exits non-zero and prints, for each
+missing item, what it is, why it's needed, and the exact steps to get it —
+the same text as the runbook linked above. **Nothing is written** — no
+`.cn/`, no `.github/workflows/` — until every prerequisite is satisfied.
+Once they are, re-run the exact same command: `cn repo install` is
+idempotent, so it resumes and completes cleanly (no special "resume" flag
+needed).
+
+A fourth gate is deliberately **not** automated: merging the install PR to
+your default branch. An autonomous, PR-opening agent must not be able to
+self-activate its own scheduled automation — that step stays a manual
+merge, by design, not an oversight.
 
 **The canonical dispatch labels are ensured automatically:** after
 rendering the workflow, `--dispatch cds` audits the installing repo's
@@ -267,7 +353,7 @@ What you provision depends on how far up the automation ladder you go:
 |---|---|---|---|
 | **Tier 1 — base install** | `cn repo install` (this guide's Layer 1). Just the CDS method, no automation. | `cn repo install` | None beyond what GitHub Actions already provides (`GITHUB_TOKEN`), and only if you use the GitHub UI path above — the plain CLI path needs no secrets at all. |
 | **Tier 2 — mechanical FSM engine** | A PAT-free mechanical engine (the CDS issue-state FSM, `cn issues fsm scan/evaluate --apply`) that reconciles label state without an agent in the loop. | `cn repo install --dispatch cds --engine` | `GITHUB_TOKEN` only (the default Actions token — no secret to provision). |
-| **Tier 3 — autonomous dispatch** | This guide's Layer 2 (`--dispatch cds`): a scheduled agent that claims cells and opens PRs. | `cn repo install --dispatch cds` | A `workflow`-scope PAT (named by `--workflow-pat-secret` / `workflow_pat_secret`) **and** `CLAUDE_CODE_OAUTH_TOKEN` for the agent runtime. |
+| **Tier 3 — autonomous dispatch** | This guide's Layer 2 (`--dispatch cds`): a scheduled agent that claims cells and opens PRs. | `cn repo install --dispatch cds` | Two secrets on **your own GitHub account** — `CLAUDE_CODE_OAUTH_TOKEN` and `CN_DISPATCH_PAT` (a fine-grained PAT; see the runbook below). No separate bot account. |
 
 Both Tier 2 and Tier 3 write `.github/workflows/cnos-cds-dispatch.yml`, so
 the **installing** token (or the GitHub UI path's `workflow_pat_secret`)
@@ -297,22 +383,48 @@ pull request, and runs entirely on the default `GITHUB_TOKEN`.
    read-only), so that setting would grant permissions it never uses. (It is
    the Tier 3 agent tier — which writes code and opens PRs — that needs it.)
 
-### Tier 3 runbook (autonomous dispatch — PAT + OAuth token)
+### Tier 3 runbook (autonomous dispatch — two own-account secrets)
 
-The agent tier runs `claude-code-action`, which needs two credentials:
+There is no bot account to create (see [§ Terms](#terms)) — just two
+secrets on your own GitHub account. This is the exact text the
+[§ Preflight](#preflight-what-the-operator-provides-before-anything-else-cnos706)
+check prints when either is missing:
 
-1. Create a **`workflow`-scope PAT** and store it as a repo Actions secret.
-   Name it whatever you pass to `--workflow-pat-secret` (e.g.
-   `ACME_WORKFLOW_PAT`); for the default `sigma` agent the renderer expects
-   `SIGMA_WORKFLOW_PAT`.
-2. Create a **`CLAUDE_CODE_OAUTH_TOKEN`** repo Actions secret holding the
-   agent runtime's OAuth token.
-3. Run `cn repo install --dispatch cds --agent <name> --workflow-pat-secret
-   <SECRET_NAME> --bot-name <name> --bot-id <id>` (a non-sigma agent
-   requires all four; a bare `--dispatch cds` uses the sigma defaults).
-4. Review and merge the install PR. Rotate both secrets on your normal
-   credential-rotation cadence; the PAT must retain `workflow` scope or the
-   scheduled wake cannot check out and push.
+1. **`CLAUDE_CODE_OAUTH_TOKEN`** — authorizes the dispatch agent to call
+   Claude. Get it by running **`claude setup-token`** locally (requires a
+   Claude Pro/Max subscription); paste the printed token as this repo
+   secret. **Settings → Secrets and variables → Actions → New repository
+   secret.**
+2. **`CN_DISPATCH_PAT`** — a **fine-grained Personal Access Token on your
+   own GitHub account**, scoped to this repo with **Contents + Issues +
+   Pull requests + Workflows = write**. The dispatch workflow uses it to
+   check out, move FSM labels via the API, and push the cell branch + open
+   the PR. Create it at **Settings → Developer settings → Personal access tokens → Fine-grained tokens.**
+
+   *Why a PAT and not the built-in `GITHUB_TOKEN`?* Installing needs
+   workflow-write to commit `.github/workflows/cnos-cds-dispatch.yml`,
+   which `GITHUB_TOKEN` cannot do; and at runtime, GitHub blocks
+   `GITHUB_TOKEN`-authored pushes from triggering *other* workflows — so a
+   `GITHUB_TOKEN`-only setup would silently lose PR CI and the
+   `issues: labeled` fast-path (it would still limp along on the cron
+   backstop, but that's a caveat, not the default). This has been verified
+   against the dispatch workflow's actual triggers, not assumed.
+3. Run `cn repo install --dispatch cds` (bare — the sigma default needs no
+   `--agent` / `--workflow-pat-secret` / `--bot-name` / `--bot-id`). If
+   either secret above is missing, or the installing token lacks push
+   access, the command exits non-zero explaining exactly which and how to
+   fix it, *before* touching your repo.
+4. Review and merge the install PR to your **default branch** — deliberately
+   manual; an autonomous PR-opening agent must not be able to self-activate
+   its own scheduled automation.
+5. Rotate both secrets on your normal credential-rotation cadence; the PAT
+   must retain all four scopes or the scheduled wake cannot check out, move
+   labels, or push.
+
+A **dedicated bot account** — a second GitHub login, added as a repo
+collaborator, so dispatch commits/PRs are attributable to a distinct
+identity — is optional future work (cnos#449 / cnos#702), not required
+here.
 
 ---
 
@@ -340,8 +452,9 @@ If you adopted the GitHub UI path, also remove
 | `package(s) not found in index` | The requested `--packages` entry isn't published in the resolved release/index. Check spelling, or pin `--release` to a tag that publishes it. |
 | `package(s) have multiple versions in index; pass --release to pin one` | You passed `--index` pointing at a multi-version index with no `--release`; add `--release <tag>` to disambiguate. |
 | `cn: command not found` after install | `install.sh` put `cn` outside your `PATH`. Re-run with `BIN_DIR="$HOME/.local/bin"` and add that dir to `PATH`. |
-| `--dispatch cds` fails with "canonical dispatch labels not ensured: ..." | The workflow still rendered; label-doctor could not resolve the repo's `origin` git remote, a GitHub token, or reach the GitHub API. Run `cn label doctor` yourself (or apply the labels manually) once the underlying issue (missing remote/token/scope) is fixed. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
-| `--dispatch cds` fails with "--workflow-pat-secret is required for --agent ..." | Pass `--workflow-pat-secret <NAME>` (and, for a non-sigma agent, `--bot-name`/`--bot-id`) naming the GitHub Actions secret holding that agent's workflow-scoped PAT. Or, if you want the mechanical (no-agent) tier, add `--engine` — it needs no PAT. |
+| `--dispatch cds` fails with "preflight: operator prerequisites are not yet satisfied ..." | Nothing was written yet (cnos#706 — this is the first thing the command checks). The message names exactly which of `CLAUDE_CODE_OAUTH_TOKEN` / `CN_DISPATCH_PAT` / push access is missing and how to get it — see [§ Tier 3 runbook](#tier-3-runbook-autonomous-dispatch--two-own-account-secrets). Re-run the exact same command once satisfied; it resumes cleanly. |
+| `--dispatch cds` fails with "canonical dispatch labels not ensured: ..." | The workflow still rendered (preflight already passed); label-doctor could not resolve the repo's `origin` git remote, a GitHub token, or reach the GitHub API. Run `cn label doctor` yourself (or apply the labels manually) once the underlying issue (missing remote/token/scope) is fixed. See [§ Autonomous dispatch](#autonomous-dispatch-opt-in). |
+| `--dispatch cds` fails with "--workflow-pat-secret is required for --agent ..." | Pass `--workflow-pat-secret <NAME>` naming the GitHub Actions secret holding that agent's workflow-scoped PAT. `--bot-name`/`--bot-id` are optional cosmetic overrides, not required. Or, if you want the mechanical (no-agent) tier, add `--engine` — it needs no PAT. |
 | `--engine is only valid with --dispatch cds` | `--engine` selects the mechanical tier of the *cds dispatch* render; it is meaningless on a base or `--dispatch none` install. Add `--dispatch cds`, or drop `--engine`. |
 | Engine-tier workflow advances labels but opens no PR | Expected — by design. The `--engine` tier is label-FSM only: it renders `contents: read` + `pull-requests: read` and never opens a pull request. If you want a tier that opens PRs, that is the Tier 3 agent tier (`--dispatch cds` without `--engine`), which needs a `workflow`-scope PAT + `CLAUDE_CODE_OAUTH_TOKEN`. |
 | GitHub UI install run fails with "`install_dispatch=true` requires a workflow-scoped PAT ..." | Set the repo secret named by the `workflow_pat_secret` input (default `CNOS_WORKFLOW_PAT`) to a `workflow`-scoped PAT before re-running "Run workflow" — see [§ GitHub UI (no-terminal) install](#github-ui-no-terminal-install). |
