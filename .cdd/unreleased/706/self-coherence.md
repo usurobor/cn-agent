@@ -109,6 +109,8 @@ Pre-review gate (§2.6), re-validated immediately before this signal:
 14. **α's commit author email** — `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos`, matching the canonical role pattern; verified for every α commit on this branch (`git log --format='%h %ae' origin/main..HEAD`), all consistent.
 15. **γ-side artifact presence** — `git cat-file -e origin/cycle/706:.cdd/unreleased/706/gamma-scaffold.md` succeeds: γ-artifact at canonical §5.1 path.
 
+**Post-signal CI confirmation.** Per the SHA convention this file uses ("implementation SHA" — the last implementation commit before the readiness-signal commit itself, `79ed10b028f17ea196a6a6c3956d1fd582767732`), the readiness-signal commit that follows (adding this §Review-readiness section) necessarily advances HEAD past that SHA. Re-checked directly: the signal commit itself is ALSO green — `gh api repos/usurobor/cnos/commits/3e06c20.../check-runs` reports all 11 check runs `success` (checked 2026-08-06T01:33:54Z). Every commit on this branch as of writing is CI-green.
+
 ## Review-readiness | round 1 | base SHA: 7f249ddbb50f230d5d41287b6554ab17b5a1d1d5 | implementation SHA: 79ed10b028f17ea196a6a6c3956d1fd582767732 | branch CI: green at 2026-08-06T01:31:30Z | ready for β
 
 R0 is ready for β review. All 10 Final ACs are implemented with named evidence in §ACs above; the pre-review gate (§2.6) passed on every row as of this signal; branch CI is green on the head commit at the moment of signaling (not a stale earlier check). Known debt is disclosed in §Debt (none of it blocks any AC). β should independently walk each AC's oracle per the γ scaffold's β prompt rather than relying on this self-report, per that prompt's own instruction.
