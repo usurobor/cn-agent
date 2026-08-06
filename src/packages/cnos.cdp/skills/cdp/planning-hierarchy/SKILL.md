@@ -1,5 +1,5 @@
 ---
-name: cpm/planning-hierarchy
+name: cdp/planning-hierarchy
 description: Structure a body of work so every unit rolls up to an owned workstream through a track, with one canonical source of truth per level. Use when organizing a backlog, defining workstreams/tracks, assigning ownership, or making a program legible at a glance.
 governing_question: How do we structure a body of work so it reads with extreme clarity — every unit rolling up to an owned workstream through a track, with one canonical source of truth per level?
 triggers:

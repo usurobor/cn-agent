@@ -1,6 +1,6 @@
 {
   "schema": "cn.package.v1",
-  "name": "cnos.cpm",
+  "name": "cnos.cdp",
   "version": "0.1.0",
   "kind": "package",
   "engines": {
