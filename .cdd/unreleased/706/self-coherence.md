@@ -88,3 +88,27 @@ Step 7 of `cdd/alpha/SKILL.md`'s CDD Trace (through step 7 — the pre-review ga
    - `.github/workflows/cnos-cds-dispatch.yml`, `src/packages/cnos.cds/orchestrators/cds-dispatch/cnos-cds-dispatch.golden.yml`, `src/packages/cnos.core/orchestrators/agent-admin/cnos-agent-admin.golden.yml` — regenerated via the renderer, confirmed idempotent + sha256-matched (AC6/AC9).
    - `docs/guides/INSTALL-CDS.md` — revised in place (AC5/AC7/AC8/AC10).
 7. Caller-path trace for the new module: `installpreflight.Check` is called from `src/go/internal/repoinstall/repoinstall.go`'s `runPreflight` (non-test caller), which is called from `Run()`'s `if opts.Dispatch == "cds" && !opts.DryRun` block — a real, reachable production call path, not a dead module.
+
+## Review-readiness
+
+Pre-review gate (§2.6), re-validated immediately before this signal:
+
+1. **Cycle branch rebased onto main.** `git fetch origin main && git merge-base --is-ancestor origin/main HEAD` succeeds — `origin/main` is still at `7f249ddbb50f230d5d41287b6554ab17b5a1d1d5` (unchanged since the branch was cut), no rebase needed.
+2. **CDD Trace through step 7** — present above.
+3. **Tests present.** 38 test functions in `internal/repoinstall` (0 failing), 53 in `internal/cli` (0 failing), 15 in `packages/cnos.core/commands/install-preflight` (0 failing) — counts taken directly from `go test -v -count=1` runner output (`grep -c '^--- PASS'`), not manually enumerated. Full `cd src/go && go test ./...` is green across all 15 packages.
+4. **Every AC has evidence** — §ACs above, each citing a named test or a grep I ran directly.
+5. **Known debt is explicit** — §Debt above (3 items).
+6. **Schema/shape audit** — `ghSecret`'s wire shape was verified against GitHub's real documented response shape (no `value` field), not assumed.
+7. **Peer enumeration** — the "two sigma bindings" (bot-identity table + PAT-secret default) were both located and both fixed; `SIGMA_WORKFLOW_PAT` and `bot_name`/`bot_id` greps were run across every file the scaffold named (renderer, repoinstall.go, cmd_repo_install.go, live workflow, both golden fixtures) — not just the first hit.
+8. **Harness audit** — not applicable (no CI-emitted example/fixture derived from this schema exists outside the golden-fixture mechanism already exercised).
+9. **Post-patch re-audit** — not applicable (no fix-round yet; this is the initial R0 submission).
+10. **Branch CI is green on the head commit.** Verified directly via `gh api repos/usurobor/cnos/commits/<head-sha>/check-runs` at the moment of this signal: all 11 check runs (`Go build & test`, `CDD artifact ledger validation (I6)`, `Package verification`, `Binary verification`, `Repo link validation (I4)`, `Workflow + design-template parse guard`, `Protocol contract schema sync (I2)`, `SKILL.md frontmatter validation (I5)`, `Dispatch closeout-integrity guard`, `Dispatch repair-preflight guard`, `Package/source drift (I1)`) report `completed`/`success` at commit `79ed10b028f17ea196a6a6c3956d1fd582767732` as of 2026-08-06T01:31:30Z. (Earlier commits in this cycle's history show CI red — `cn cdd verify`'s `## ACs`/`## CDD Trace`/`## Self-check`/`## Debt` section check failed on every commit before this file carried those sections, per §2.5's incremental-write discipline; this is expected and resolved by this final self-coherence commit.)
+11. **Artifact enumeration matches diff** — §CDD Trace step 6 above enumerates every file in `git diff --stat origin/main..HEAD` (verified by direct comparison, 20/20 files).
+12. **Caller-path trace for new modules** — §CDD Trace step 7 above.
+13. **Test assertion count from runner output** — row 3 above, pasted from real `go test -v` output, not estimated.
+14. **α's commit author email** — `git log -1 --format='%ae' HEAD` → `alpha@cdd.cnos`, matching the canonical role pattern; verified for every α commit on this branch (`git log --format='%h %ae' origin/main..HEAD`), all consistent.
+15. **γ-side artifact presence** — `git cat-file -e origin/cycle/706:.cdd/unreleased/706/gamma-scaffold.md` succeeds: γ-artifact at canonical §5.1 path.
+
+## Review-readiness | round 1 | base SHA: 7f249ddbb50f230d5d41287b6554ab17b5a1d1d5 | implementation SHA: 79ed10b028f17ea196a6a6c3956d1fd582767732 | branch CI: green at 2026-08-06T01:31:30Z | ready for β
+
+R0 is ready for β review. All 10 Final ACs are implemented with named evidence in §ACs above; the pre-review gate (§2.6) passed on every row as of this signal; branch CI is green on the head commit at the moment of signaling (not a stale earlier check). Known debt is disclosed in §Debt (none of it blocks any AC). β should independently walk each AC's oracle per the γ scaffold's β prompt rather than relying on this self-report, per that prompt's own instruction.
