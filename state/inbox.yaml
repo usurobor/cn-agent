@@ -1,0 +1,24 @@
+# Derived open-obligation projection for cn-sigma@cnos (Pi obligation-projection-11 / #709).
+# NOT memory, NOT project authority. Reader-owned, on the state ref. An ACK does not close
+# an obligation — only its requested terminal evidence does.
+schema: cnos.inbox.v0
+activation: cn-sigma@cnos
+open:
+  - id: obl-708-review
+    source: {pr: 708, from: "#706 dispatch"}
+    what: independent review of the install-preflight PR (#706 deliverable)
+    terminal_evidence: review posted on PR #708
+    status: open
+  - id: obl-710-converge
+    source: {thread: cnos-planning-710-cds-cli-runner}
+    what: converge #710 planning with Pi's β, fold into #711 contract
+    terminal_evidence: Pi β received + #711 updated
+    status: waiting-on cn-pi@cnos (comms)
+closed_recently:
+  - {id: obl-pi-obligation-projection-11, terminal: convergence reply msg-...-25}
+  - {id: obl-689-review, terminal: review posted on PR #689}
+  - {id: obl-703-review, terminal: clean approve on PR #703}
+not-mine:
+  - ref: "#689 design repair / cn-sigma PR #17 (#704) rebuild"
+    owner: cn-omega
+    note: Pi -11 attributed these to Sigma; they belong to the box/cn-omega runtime, not cn-sigma@cnos
