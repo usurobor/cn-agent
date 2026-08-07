@@ -29,19 +29,6 @@ calls:
 
 - **planning hierarchy** — the `workstream ⊃ track ⊃ issue` structure, single-threaded ownership per level, and one canonical source of truth per initiative (`skills/cdp/planning-hierarchy/SKILL.md`).
 
-## Place in the family
-
-The Coherence-Driven packages are becoming **cell-class definitions** — each parameterizes the generic cell (`cell = generic_cell(α, β, contract)`, cnos#711) for a telos:
-
-| package | cell class | α produces | β judges |
-|---|---|---|---|
-| `cnos.cdd` | work / development | code + AC evidence | AC-oracle |
-| `cnos.cdr` | research | claims + receipts | reproduction / citation |
-| `cnos.cdp` | **planning** (PC) | a plan (wave graph, workstream taxonomy) | plan-coherence |
-| `cnos.cds` | software dispatch | the invoker / realization | — |
-
-`cnos.cdp` is the **planning cell**: its doctrine defines α (the plan producer) and β (the plan reviewer) for product/program planning.
-
 ## Boundary
 
 `cnos.cdp` owns the **doctrine**; it does not own the label mechanics or the board. The `workstream/*` and `track/*` labels, their definitions, and the treemap render are owned by `cnos.issues` (canonical [`docs/development/issues/TAXONOMY.md`](../../../docs/development/issues/TAXONOMY.md), `cn issues map`). The planning-hierarchy skill **cites** that realization; it does not fork it. If doctrine and taxonomy ever disagree, extend `TAXONOMY.md` to match the doctrine, then let the board consume it.
