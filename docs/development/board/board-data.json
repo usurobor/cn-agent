@@ -2798,7 +2798,7 @@
   },
   {
     "n": 682,
-    "t": "architecture: dematerialize closed CDD cells from HEAD — make Git history canonical and `.cdd` a current-state projection/index",
+    "t": "master: Dematerialization — cell exchange as one thread; sealed threads leave HEAD, .cdd = rebuildable index",
     "kind": "process",
     "areas": [
       "cdd",
@@ -2814,7 +2814,7 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-08-01T00:10:27Z",
-    "updated": "2026-08-06T02:39:27Z",
+    "updated": "2026-08-06T22:05:19Z",
     "url": "https://github.com/usurobor/cnos/issues/682"
   },
   {
@@ -3111,7 +3111,135 @@
     "tracking": false,
     "assignee": "",
     "created": "2026-08-06T03:42:05Z",
-    "updated": "2026-08-06T03:42:05Z",
+    "updated": "2026-08-06T21:39:52Z",
     "url": "https://github.com/usurobor/cnos/issues/709"
+  },
+  {
+    "n": 710,
+    "t": "cds: GitHub-independent CLI cell runner — `cn cds build \u003cfile|stdin\u003e`; decouple the CDS engine from the GitHub transport",
+    "kind": "feature",
+    "areas": [
+      "cds",
+      "cli"
+    ],
+    "pri": "P2",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-06T16:45:17Z",
+    "updated": "2026-08-06T21:27:51Z",
+    "url": "https://github.com/usurobor/cnos/issues/710"
+  },
+  {
+    "n": 711,
+    "t": "master: Threads — one exchange substrate (dialogue/memory/task/state as kinds) + the generic cell",
+    "kind": "doctrine",
+    "areas": [
+      "agent",
+      "cds",
+      "protocol"
+    ],
+    "pri": "P2",
+    "status": "ready",
+    "dispatch": true,
+    "protocol": "cds",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-06T21:27:01Z",
+    "updated": "2026-08-07T04:00:22Z",
+    "url": "https://github.com/usurobor/cnos/issues/711"
+  },
+  {
+    "n": 712,
+    "t": "wave: workstream/track taxonomy (Naomi Gleit \"Canonical Everything\") — two-level grouping over all issues, extend TAXONOMY.md, render both levels in the board",
+    "kind": "tracking",
+    "areas": [
+      "coherence",
+      "core"
+    ],
+    "pri": "P1",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": true,
+    "assignee": "",
+    "created": "2026-08-06T22:20:18Z",
+    "updated": "2026-08-06T22:44:21Z",
+    "url": "https://github.com/usurobor/cnos/issues/712"
+  },
+  {
+    "n": 713,
+    "t": "PC: review + propose a refactored design for agent communication skills — structure, names, skill-set, and migration",
+    "kind": "doctrine",
+    "areas": [
+      "agent",
+      "skills"
+    ],
+    "pri": "P2",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-06T23:46:23Z",
+    "updated": "2026-08-06T23:46:23Z",
+    "url": "https://github.com/usurobor/cnos/issues/713"
+  },
+  {
+    "n": 714,
+    "t": "research(runtime): future RESTful agent effect-plan protocol",
+    "kind": "",
+    "areas": [
+      "protocol",
+      "runtime",
+      "security"
+    ],
+    "pri": "P2",
+    "status": "backlog",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-07T02:44:38Z",
+    "updated": "2026-08-07T04:15:22Z",
+    "url": "https://github.com/usurobor/cnos/issues/714"
+  },
+  {
+    "n": 715,
+    "t": "design: `cn dialogue` — CLI to append dialogue entries to the writer's own feed (write-own-ref + schema enforced)",
+    "kind": "tooling",
+    "areas": [
+      "agent",
+      "cli"
+    ],
+    "pri": "P0",
+    "status": "",
+    "dispatch": false,
+    "protocol": "",
+    "effort": "",
+    "effort_weight": 1,
+    "unestimated": true,
+    "tracking": false,
+    "assignee": "",
+    "created": "2026-08-07T03:38:02Z",
+    "updated": "2026-08-07T03:38:02Z",
+    "url": "https://github.com/usurobor/cnos/issues/715"
   }
 ]
