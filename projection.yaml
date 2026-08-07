@@ -1,0 +1,19 @@
+schema: cnos.tasks-projection.v0
+self: usurobor/cn-sigma
+locus: usurobor/cnos
+note: "rebuildable fold over events/ (event-sourced). v0 manual test."
+tasks:
+  review-pr-708:
+    title: "Review PR #708 (#706 install-preflight) as κ"
+    owner: usurobor/cn-sigma
+    state: done
+    spawned_by: cnos#706
+    terminal_evidence: "PR #708 κ review — converge/approve"
+  consolidate-workstreams:
+    title: "Consolidate PM masters (#711/#682) + workstream taxonomy (#712)"
+    owner: usurobor/cn-sigma
+    state: blocked
+    spawned_by: "cn-sigma/cnos/dialogue#msg-cn-sigma-cnos-pm-consolidation-29"
+    blocked_on: "usurobor/cn-pi tasks:workstream-derivation"
+inbox:            # query: state in {open, blocked}
+  - "consolidate-workstreams (blocked on cn-pi:workstream-derivation)"
