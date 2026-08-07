@@ -9,6 +9,14 @@ triggers:
   - deciding where the source of truth for an initiative lives
   - a program is hard to reason about at a glance
 scope: task-local
+artifact_class: skill
+kata_surface: none
+inputs:
+  - a body of work (backlog of issues or tasks)
+  - current ownership and sources of truth
+outputs:
+  - a `workstream ⊃ track ⊃ unit` structure with single-threaded owners
+  - one canonical doc per level
 ---
 
 # Planning Hierarchy
@@ -19,7 +27,7 @@ A body of work is legible when every unit rolls up to one owned workstream, and 
 
 `workstream ⊃ track ⊃ unit`. A workstream is a top-level area of work with a single-threaded owner and its own canonical doc. A track is a sub-workstream inside exactly one workstream, also owned. A unit (issue, task) belongs to exactly one track. No orphan work; no diffuse ownership; no scattered truth.
 
-This adapts Naomi Gleit's practice: workstreams with single-threaded owners, each with its own canonical doc linked from an overall canonical doc, recursively — the discipline she calls Canonical Everything, in service of Extreme Clarity.
+This adapts Naomi Gleit's practice: workstreams with single-threaded owners, each with its own canonical doc linked from an overall canonical doc, recursively — the discipline she calls Canonical Everything, in service of Extreme Clarity. Source: Naomi Gleit, "Canonical Everything" — https://naomi.com/canonical-everything-c85441a84e70; interview context in Lenny's Newsletter — https://www.lennysnewsletter.com/p/metas-head-of-product-naomi-gleit.
 
 ## Algorithm
 

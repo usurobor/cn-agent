@@ -15,6 +15,12 @@ triggers:
   - roadmap
   - prioritization
 scope: global
+inputs:
+  - a body of work to structure (issue backlog, initiatives)
+  - existing ownership and canonical-doc assignments
+outputs:
+  - workstream/track planning doctrine
+  - owned initiatives, each with a single canonical doc
 calls:
   - skills/cdp/planning-hierarchy/SKILL.md
 ---
@@ -36,3 +42,5 @@ calls:
 ## Source
 
 The planning hierarchy adapts **Naomi Gleit's "Canonical Everything" / "Extreme Clarity"** program-management practice (workstreams with single-threaded owners, each with its own canonical doc, recursively). This package names the source; it does not restate her essays.
+
+Source: Naomi Gleit, "Canonical Everything" — https://naomi.com/canonical-everything-c85441a84e70 (workstreams, single-threaded owners, recursive canonical docs). Interview context: Lenny's Newsletter, "Meta's Head of Product … Naomi Gleit" — https://www.lennysnewsletter.com/p/metas-head-of-product-naomi-gleit ("Extreme Clarity", single-threaded owners).
