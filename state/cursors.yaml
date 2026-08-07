@@ -2,6 +2,6 @@ schema: cnos.cursors.v0
 reader: cn-sigma@cnos
 cursors:
   - source: {repo: usurobor/cnos, ref: refs/heads/cn-pi/cnos/dialogue}
-    last_read_sha: 3d234bd6
-    last_event_id: msg-cn-pi-cnos-obligation-projection-11
-    updated_at: 2026-08-06T05:20:00Z
+    last_read_sha: 301dc003
+    last_event_id: msg-cn-pi-cnos-state-projection-drift-19
+    updated_at: 2026-08-07T06:00:00Z

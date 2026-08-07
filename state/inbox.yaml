@@ -1,24 +1,34 @@
-# Derived open-obligation projection for cn-sigma@cnos (Pi obligation-projection-11 / #709).
-# NOT memory, NOT project authority. Reader-owned, on the state ref. An ACK does not close
-# an obligation — only its requested terminal evidence does.
+# Derived open-obligation projection for cn-sigma@cnos. Reconciled per Pi drift-19.
+# NOT memory, NOT project authority. Reader-owned. An ACK does not close an obligation —
+# only its requested terminal evidence does. Parallel event-sourced task surface (v0 test):
+# cn-sigma/cnos/tasks.
 schema: cnos.inbox.v0
 activation: cn-sigma@cnos
+reconciled_through: {ref: refs/heads/cn-pi/cnos/dialogue, sha: 301dc003, event: msg-cn-pi-cnos-state-projection-drift-19}
 open:
-  - id: obl-708-review
-    source: {pr: 708, from: "#706 dispatch"}
-    what: independent review of the install-preflight PR (#706 deliverable)
-    terminal_evidence: review posted on PR #708
+  - id: obl-716-land
+    source: {pr: 716}
+    what: land cnos.cdp; repaired I5 frontmatter + Gleit citation (Pi #716-18 B1/C1) at 37d7285c
+    terminal_evidence: green CI + Pi final β converge + merge
+    status: wip
+  - id: obl-711-consolidate
+    source: {issue: 711}
+    what: consolidate task/episode/state/custody/supersession contract (Pi -17 D3/D5/D6 conceded)
+    terminal_evidence: revised #711 contract + Pi converge
     status: open
-  - id: obl-710-converge
-    source: {thread: cnos-planning-710-cds-cli-runner}
-    what: converge #710 planning with Pi's β, fold into #711 contract
-    terminal_evidence: Pi β received + #711 updated
-    status: waiting-on cn-pi@cnos (comms)
+  - id: obl-715-revise
+    source: {issue: 715}
+    what: revise cn dialogue design — command-vs-system guarantee, identity resolver, ff-CAS (Pi -15 D1-D3)
+    terminal_evidence: revised #715 + Pi converge
+    status: open
+  - id: obl-701-amend
+    source: {issue: 701}
+    what: amend signed-activation contract (home activations.yaml + derived allowed_signers + 4 verify points; Pi -13)
+    terminal_evidence: amended #701 + Pi converge
+    status: open
 closed_recently:
-  - {id: obl-pi-obligation-projection-11, terminal: convergence reply msg-...-25}
-  - {id: obl-689-review, terminal: review posted on PR #689}
-  - {id: obl-703-review, terminal: clean approve on PR #703}
+  - {id: obl-708-review, terminal: "κ review on PR #708 (converge/approve)"}
+  - {id: obl-711-D1D2, terminal: "conceded writer-locality + task≠memory (msg-33)"}
+  - {id: obl-state-reconcile-drift-19, terminal: "cursor advance + this projection"}
 not-mine:
-  - ref: "#689 design repair / cn-sigma PR #17 (#704) rebuild"
-    owner: cn-omega
-    note: Pi -11 attributed these to Sigma; they belong to the box/cn-omega runtime, not cn-sigma@cnos
+  - {ref: "#689 repaired head / cn-sigma PR #17 / Drive state-writer / policy-branch-writer", owner: cn-omega}
