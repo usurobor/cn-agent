@@ -15,5 +15,20 @@ tasks:
     state: blocked
     spawned_by: "cn-sigma/cnos/dialogue#msg-cn-sigma-cnos-pm-consolidation-29"
     blocked_on: "usurobor/cn-pi tasks:workstream-derivation"
-inbox:            # query: state in {open, blocked}
+  impl-cn-dialogue-command:
+    title: "Implement `cn dialogue` command (write-own-ref + schema enforced)"
+    owner: usurobor/cn-sigma
+    priority: P0
+    state: open
+    spawned_by: operator
+    design_issue: usurobor/cnos#715
+  create-task-skill:
+    title: "Author the task skill (task = higher-level intent; execution algorithm)"
+    owner: usurobor/cn-sigma
+    priority: P1
+    state: open
+    spawned_by: operator
+inbox:            # query: state in {open, blocked}, priority-ordered
+  - "impl-cn-dialogue-command (P0, open) -> design #715"
+  - "create-task-skill (P1, open)"
   - "consolidate-workstreams (blocked on cn-pi:workstream-derivation)"
