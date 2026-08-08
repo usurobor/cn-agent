@@ -1,34 +1,32 @@
-# Derived open-obligation projection for cn-sigma@cnos. Reconciled per Pi drift-19.
-# NOT memory, NOT project authority. Reader-owned. An ACK does not close an obligation —
-# only its requested terminal evidence does. Parallel event-sourced task surface (v0 test):
-# cn-sigma/cnos/tasks.
+# Derived open-obligation projection for cn-sigma@cnos. Reader-owned. ACK != closure.
+# Parallel event-sourced task surface (v0 test): cn-sigma/cnos/tasks.
 schema: cnos.inbox.v0
 activation: cn-sigma@cnos
-reconciled_through: {ref: refs/heads/cn-pi/cnos/dialogue, sha: 301dc003, event: msg-cn-pi-cnos-state-projection-drift-19}
+reconciled_through: {ref: refs/heads/cn-pi/cnos/dialogue, sha: 6fb670b5, event: msg-cn-pi-cnos-shipping-roadmap-26}
 open:
-  - id: obl-716-land
-    source: {pr: 716}
-    what: land cnos.cdp; repaired I5 frontmatter + Gleit citation (Pi #716-18 B1/C1) at 37d7285c
-    terminal_evidence: green CI + Pi final β converge + merge
-    status: wip
-  - id: obl-711-consolidate
+  - id: obl-712-s1
+    source: {issue: 712}
+    what: "#712 S1 canonical roadmap — WORKSTREAMS.md + TAXONOMY.md workstream/track extension (Pi -22/-23/-26)"
+    terminal_evidence: S1 issue/branch/PR head + Pi β converge
+    status: pending-operator-sequencing
+  - id: obl-711-rewrite
     source: {issue: 711}
-    what: consolidate task/episode/state/custody/supersession contract (Pi -17 D3/D5/D6 conceded)
-    terminal_evidence: revised #711 contract + Pi converge
-    status: open
+    what: "rewrite #711 into ONE authoritative body — recursive-with-predicates architecture (Pi -23/-24/-25); mark addenda superseded; GENERIC-CELL.md carries same"
+    terminal_evidence: consolidated #711 body + Pi fresh β
+    status: pending-operator-confirmation (Pi claims operator ratified -23; verify)
   - id: obl-715-revise
     source: {issue: 715}
-    what: revise cn dialogue design — command-vs-system guarantee, identity resolver, ff-CAS (Pi -15 D1-D3)
+    what: "revise cn dialogue design — command-vs-system guarantee, identity resolver, ff-CAS (Pi -15)"
     terminal_evidence: revised #715 + Pi converge
     status: open
   - id: obl-701-amend
     source: {issue: 701}
-    what: amend signed-activation contract (home activations.yaml + derived allowed_signers + 4 verify points; Pi -13)
+    what: "amend signed-activation contract (Pi -13)"
     terminal_evidence: amended #701 + Pi converge
     status: open
 closed_recently:
-  - {id: obl-708-review, terminal: "κ review on PR #708 (converge/approve)"}
-  - {id: obl-711-D1D2, terminal: "conceded writer-locality + task≠memory (msg-33)"}
-  - {id: obl-state-reconcile-drift-19, terminal: "cursor advance + this projection"}
+  - {id: obl-716-land, terminal: "PR #716 merged (squash) cdfa4db0 — cnos.cdp on main; Pi CONVERGE -20"}
+  - {id: obl-708-review, terminal: "κ review on PR #708"}
+  - {id: obl-state-reconcile-drift-19, terminal: "cursor + inbox reconciled"}
 not-mine:
-  - {ref: "#689 repaired head / cn-sigma PR #17 / Drive state-writer / policy-branch-writer", owner: cn-omega}
+  - {ref: "#689 head / cn-sigma PR #17 / Drive state-writer / policy-branch-writer", owner: cn-omega}
