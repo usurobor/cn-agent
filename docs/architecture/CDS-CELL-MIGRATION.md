@@ -21,6 +21,83 @@ main.cell  --compile-->  spec.json  --cue vet #CellSpec-->  cellkernel.Run
 This is the exact mirror of the pipeline we already ship on the *output* side
 (γ emits a receipt → `cue vet #CDSReceipt` → V). We are adding the *input* side.
 
+## Why — the reasoning behind every choice
+
+This plan is the settled end of a long design dialogue. The reasoning matters
+as much as the steps, because each decision closed a specific fork.
+
+1. **The kernel is pure mechanics; it cannot hold a resolver.** `cellkernel.Run`
+   executes the five-step closure at one scope and knows *nothing* about the
+   work being done (which language, which skills, which repo). Therefore the
+   cell spec must be **constructed before/around the run** — never resolved
+   inside the kernel. This is the load-bearing separation the whole design
+   protects.
+
+2. **The spec is static data "all the way down" — but only one level at a
+   time.** For a mono-lingual repo where the language falls out mechanically,
+   the whole tree can be compiled up front (Case A). When a decision needs
+   *judgment* (a multilingual repo where the issue demands Rust vs Go), the
+   child spec does not exist until the parent's α runs — the tree unfolds one
+   static level at a time (Case B). Each cell is static *when it runs*; deeper
+   specs are produced at runtime by α cognition emitting data.
+
+3. **Composition is one reentrant mechanism, not a new construct.** A subcell
+   becomes an α via an adapter `α = extract ∘ Run ∘ resolve` (the `.NET Rx`
+   `SelectMany` / F# `let!`). The parent's α calls the kernel on the child; the
+   kernel is reentrant and stays oblivious. This is the settled industry answer
+   — Railway-Oriented Programming (F# `Result` composition), the GoF Composite +
+   Decorator patterns (uniform interface so a subcell stands in for α), the
+   interpreter-over-data / Free-monad pattern (recursion lives in the *data + a
+   recursive walker*, not a grammar), and Unix pipes (compose only through the
+   typed payload — for us, the receipt). Because composition is closed under the
+   α interface, nothing in the kernel is ever re-implemented to recurse.
+
+4. **The static-vs-dynamic "spec expression" dilemma was never a language
+   problem.** We weighed compiling everything to a static resolved spec against
+   a dynamic expression language carrying `resolve` at runtime. TSC's
+   `cm-language` (the F#-shaped `coh` surface) settled it by example: it is a
+   *compiler to a CUE-validated data IR* with **no runtime** — it names
+   providers but executes nothing. The dynamism we feared (`α = resolve |>
+   coding_cell`) is not a language operator; it is α cognition *emitting data*
+   that the kernel then loops over. So: **spec is data, `resolve` is a library
+   function, recursion is the kernel's loop.** No runtime expression language.
+
+5. **We adopt `cm-language`'s *shape and toolchain architecture*, not its
+   *semantics*.** cm is measure-only by construction (`forbid compile, admit,
+   authorize, repair, self_authorize`) — the categorical opposite of a cell
+   whose α *produces* and whose δ *repair-dispatches*. So we do not adopt the
+   language. We adopt its form: the compact F#-computation-expression surface
+   (`NAME (params) -> ReturnType { … }`, `let!`/`and!` binders) compiled to a
+   CUE-validated data IR with **CUE as the independent oracle**. It is the most
+   compact legible way we have seen to express a bounded, typed, composable
+   workflow; the noise of raw YAML (`mode: rented` everywhere) is exactly what
+   it removes.
+
+6. **No OCaml.** cm chose OCaml because TSC *is* an OCaml toolchain. Our kernel
+   is Go; introducing OCaml means a second toolchain and a subprocess/FFI seam
+   between compiler and kernel — pure friction. A ~150-line Go `participle`
+   grammar (or Starlark to bootstrap) targets `cellkernel.Spec` natively.
+
+7. **Compile to JSON + `cue vet` — because it mirrors what we already run.** The
+   receipt path is already `γ emits → cue vet #CDSReceipt → V`. Adding the
+   input-side mirror (`compile → cue vet #CellSpec → Run`) means both ends share
+   one compile-vet-execute shape. That symmetry is why the remaining work is
+   three small artifacts, not a new architecture.
+
+8. **Parameters are Unix typed holes — because that is the seam that lets us
+   start simple and grow.** Filling `language` from the CLI now, from a parent
+   cell (mechanically or cognitively) later, changes only *who fills the hole* —
+   never the cell. Unix already solved value→implementation resolution (`$PATH`)
+   and required/optional inputs (positional vs flag); we borrow it wholesale.
+
+9. **The four protocols already differ in only two things** (verified against
+   `schemas/cds/receipt.cue` and `schemas/cdr/receipt.cue`: both are
+   `cdd.#Receipt & { protocol_id, evidence_refs }`). A protocol *is*
+   `(protocol_id, evidence-key set, skills)`. So one generic cell + a thin
+   overlay expresses cdd/cds/cdr/cdw — the surface differs only in the header
+   protocol and the two skill lines. This is what makes "CDS is one cell the
+   runner runs" concrete rather than aspirational.
+
 ## Two settled decisions
 
 1. **Entrypoint file:** `main.cell` (per package). Mirrors `main.go`; the file
