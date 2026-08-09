@@ -282,3 +282,26 @@ follow only when their preceding cases have executable evidence.
 - **cnos.cds** owns a *program written in it*: `main.cell`, the params-domain
   overlay, and its α/β skills. cds is one profile; cdw/cdr are siblings of the
   same shape.
+
+### The abstract cell (cdd) vs. the concrete cells (cds/cdr/cdw)
+
+The "abstract cell" is a **type cdd owns**, not a base program to inherit. It is
+`schemas/cdd/spec.cue #CellSpec` (+ the kernel + the empty cell). Specializations
+are unifications, exactly mirroring the receipt side:
+
+```
+#CDSCellSpec: cdd.#CellSpec & { protocol_id: "…cds…", params: {language: …} }
+   ⟺  #CDSReceipt: cdd.#Receipt & { protocol_id, evidence_refs }
+```
+
+There is deliberately **no language-level inheritance** (no `cdd/main.cell` base
+that cds `extends`): a cell has no shared *body* to inherit — its skills and
+protocol are precisely what a specialization supplies, and the shared machinery
+is the kernel. The abstraction lives in the type + the kernel.
+
+cdd's canonical instance of the abstract cell is the **empty / identity cell**
+(`schemas/cdd/fixtures/empty-cell-spec.json`) — the smallest well-formed
+`#CellSpec`, the data analogue of the kernel's `EmptySpec`/`cell-0`, and the
+runner's reference. It runs today (`cn cell run --contract …/empty-cell-spec.json`
+→ accepted); at Phase 4 it becomes `cdd/main.cell`. The generic cdd cell and a
+concrete cds cell close through the **same kernel**; only the overlay differs.

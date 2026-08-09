@@ -1,0 +1,9 @@
+{
+  "contract": {
+    "id": "cell-0",
+    "goal": "empty"
+  },
+  "protocol_id": "cnos.cdd.receipt.v1",
+  "alpha": { "skills": [] },
+  "beta": { "skills": [] }
+}
