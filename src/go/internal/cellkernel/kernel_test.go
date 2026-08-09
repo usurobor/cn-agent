@@ -16,8 +16,13 @@ func (s seqIDs) Mint() (Identity, error) {
 }
 
 func testMeta(mode ExecutionMode) RunMeta {
+	// Profile must be mode-coherent: stub ⇔ profile "stub" (round-5 D1).
+	profile := "bool"
+	if mode == ModeStub {
+		profile = "stub"
+	}
 	return RunMeta{ExecutionMode: mode, ResolvedSpec: ResolvedSpec{
-		Version: "cnos.cellspec.v0", DeclaredProtocol: "p", Profile: "bool",
+		Version: "cnos.cellspec.v0", DeclaredProtocol: "p", Profile: profile,
 		AlphaSkills: []string{}, BetaSkills: []string{},
 	}}
 }

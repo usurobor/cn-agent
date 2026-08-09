@@ -9,10 +9,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/usurobor/cnos/src/go/internal/cli"
 	"github.com/usurobor/cnos/src/go/internal/discover"
@@ -26,10 +24,11 @@ var (
 )
 
 func main() {
-	// Honor Ctrl-C / SIGTERM: commands receive a cancellable context rather
-	// than an uncancellable background context (cnos cell-runner hardening).
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	// Default signal disposition is deliberate (Pi pr718 round-5 D3): a global
+	// NotifyContext swallows SIGINT while readContract blocks on stdin with no
+	// EOF. Library callers of the kernel still get cancellation via their own
+	// contexts; the process relies on the default terminate-on-signal path.
+	ctx := context.Background()
 
 	// Build the kernel command registry.
 	reg := cli.NewRegistry()

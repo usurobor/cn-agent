@@ -79,6 +79,8 @@ func TestParseRejects(t *testing.T) {
 		"bad param kind":    "{" + base + `,"params":{"p":{"kind":"weird"}}}`,
 		"bad evidence prod": `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"gamma"}]},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
 		"dup evidence id":   `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"alpha"},{"id":"x","kind":"k","producer":"beta"}]},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
+		"empty goal":        `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":""},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
+		"missing skills":    `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{},"beta":{"skills":[]}}`,
 	}
 	for name, in := range cases {
 		t.Run(name, func(t *testing.T) {

@@ -38,8 +38,11 @@ package cdd
 }
 
 // #Seat is a seat's skill line: literal skill names or `$param` splices.
+// `skills!` — required-field marker: an open list defaults to [] under
+// unification, so without it an absent skills field is indistinguishable
+// from an empty one and vet cannot reject it (Pi round-5 D2 parity).
 #Seat: {
-	skills: [...string]
+	skills!: [...string]
 }
 
 // #Profile is a builtin v0 seat profile (no cognition yet). "stub" is smoke;
@@ -52,7 +55,7 @@ package cdd
 	version: "cnos.cellspec.v0"
 	contract: {
 		id:   string & !=""
-		goal: string
+		goal: string & !=""
 		required_evidence?: [...#RequiredRef]
 	}
 	// Declared protocol (provenance). The v0 runner emits a generic episode

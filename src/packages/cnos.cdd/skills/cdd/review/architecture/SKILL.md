@@ -11,8 +11,7 @@ triggers:
   - review design
 scope: task-local
 inputs:
-  - branch
-  - diff
+  - diff (or artifact set) at a stated base
   - diff/context findings from Phase 2b
 outputs:
   - architecture check table (7 questions A–G with yes/no/n/a results)

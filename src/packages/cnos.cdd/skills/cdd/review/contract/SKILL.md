@@ -10,9 +10,7 @@ triggers:
   - review contract
 scope: task-local
 inputs:
-  - issue
-  - PR body
-  - branch summary
+  - contract / acceptance criteria (issue text, PR body, branch summary, or equivalent work-contract surfaces — whichever exist for this review)
 outputs:
   - contract integrity table (yes/no/n/a per check)
 requires:
@@ -23,6 +21,8 @@ calls: []
 # Review — Phase 1: Contract Integrity
 
 **GATE: Complete this phase before reading the diff.** A branch can be locally well-implemented and still not review-ready if the contract it claims to satisfy is contradictory, stale, or overclaims shipped behavior.
+
+The work contract is whatever contract surfaces exist for this review — issue, PR body, branch summary, or equivalent contract text supplied with the diff. An issue, a PR, or a branch is not itself required; checks over a surface that does not exist for this review are n/a.
 
 Fill the Contract Integrity table. If any row is "no," the review cannot approve unless the row is explicitly out of scope and the reviewer names why it does not affect merge readiness.
 

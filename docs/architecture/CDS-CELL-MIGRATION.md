@@ -198,32 +198,13 @@ Four layers, matching the rest of the architecture:
 | `main.cell` compiler (surface → spec.json) | cnos.cdd | ❌ Phase 4 sugar (deliberately deferred) |
 | `cnos.cds/main.cell` | cnos.cds | ❌ Phase 4 (JSON fixtures are the current authored form) |
 
-## Kernel corrections required first (Pi β #31, D1–D4)
-
-The current `internal/cellkernel` proves only Case-0 smoke; it is not yet a
-reference. Four bounded corrections gate everything below:
-
-- **D1 — honest closure.** Split `RunEpisode → EpisodeResult` (`terminal
-  {accepted|degraded|rejected}` | `needs_repair` {typed request, parent stays
-  open} | `malfunction` {error}) from a later `Drive` (bounded attempt loop).
-  `invalid` (PASS+override, FAIL+accept) is a typed kernel error, never a
-  returned closed cell.
-- **D2 — no self-certification.** `Spec` carries **Contract + α + β only**; the
-  kernel *owns* mechanical γ/V/δ (no injectable seat interfaces). V verifies
-  *bindings* — contract/matter/review identity+hash, required evidence refs,
-  runtime-produced route evidence is bound (not γ-authored), verdict/decision
-  schema-valid — it does not merely mirror β.
-- **D3 — evidence seam.** `AlphaResult{Matter; EvidenceRefs}`,
-  `BetaResult{Review; EvidenceRefs}` (or a runtime recorder) so γ binds real
-  refs. v0 refs are `{id, kind, ref, sha256, producer_execution_id}` (Pi Q4).
-- **D4 — fail closed.** A nil/missing α or β returns a wrapped error before any
-  seat runs; no panics.
-
 ## Phases (Pi's KISS ladder, `msg-…-review-31` D5; smallest-first)
 
-**Phase K — correct the kernel.** Apply D1–D4 above; keep Case-0 smoke green and
-add the negative tests Pi specified (self-certification blocked, nil-seat error,
-invalid pair → error). *Prerequisite for a truthful CLI.*
+**Phase K — correct the kernel (shipped).** The kernel corrections Pi's β #31
+required (honest closure taxonomy, kernel-owned γ/V/δ with no injectable
+certification, the evidence seam, fail-closed seats) landed and were then
+superseded by the stronger FIDO refactor below — the shipped kernel is the
+reference; the piece inventory above reflects it.
 
 **Phase 0 — the input contract.** Write `schemas/cdd/spec.cue` (`#CellSpec`:
 `{version, contract (producer-attributed required_evidence), protocol_id,
@@ -321,5 +302,6 @@ cdd's canonical instance of the abstract cell is the **empty / identity cell**
 (`schemas/cdd/fixtures/empty-cell-spec.json`) — the smallest well-formed
 `#CellSpec`, the data analogue of the kernel's `EmptySpec`/`cell-0`, and the
 runner's reference. It runs today (`cn cell run --contract …/empty-cell-spec.json`
-→ accepted); at Phase 4 it becomes `cdd/main.cell`. The generic cdd cell and a
+→ `simulated`, exit 3 — its `stub` profile is honest, non-authoritative smoke);
+at Phase 4 it becomes `cdd/main.cell`. The generic cdd cell and a
 concrete cds cell close through the **same kernel**; only the overlay differs.

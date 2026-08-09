@@ -92,6 +92,9 @@ func Parse(data []byte) (CellSpec, error) {
 	if s.Contract.ID == "" {
 		return CellSpec{}, fmt.Errorf("cell spec: contract.id is required")
 	}
+	if s.Contract.Goal == "" { // parity with #CellSpec (Pi round-5 D2)
+		return CellSpec{}, fmt.Errorf("cell spec: contract.goal is required")
+	}
 	if s.ProtocolID == "" { // protocol_id is opaque provenance (one language with
 		// generic CUE, Pi PR-#718-fido β D6); domain overlays like #CDSCellSpec
 		// constrain it at vet time, not here.
@@ -99,6 +102,9 @@ func Parse(data []byte) (CellSpec, error) {
 	}
 	if s.Alpha == nil || s.Beta == nil {
 		return CellSpec{}, fmt.Errorf("cell spec: alpha and beta must both be present")
+	}
+	if s.Alpha.Skills == nil || s.Beta.Skills == nil { // parity with #Seat (Pi round-5 D2)
+		return CellSpec{}, fmt.Errorf("cell spec: alpha.skills and beta.skills must be present (use [] for none)")
 	}
 	if s.Profile == "" { // D5: profile is explicit — a stub run must be opted into.
 		return CellSpec{}, fmt.Errorf("cell spec: profile is required (%q or %q)", ProfileStub, ProfileBool)

@@ -402,6 +402,9 @@ func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error)
 	if err := validateSpec(s); err != nil {
 		return Closure{}, err
 	}
+	if err := validateMeta(cfg.meta); err != nil { // D1: invocation truth is part of the boundary.
+		return Closure{}, err
+	}
 	if err := ctx.Err(); err != nil {
 		return Closure{}, fmt.Errorf("cellkernel: context: %w", err)
 	}
@@ -569,6 +572,15 @@ func validateRecord(r EpisodeRecord) []Failure {
 	add(!knownMode(r.Mode), InvalidRecord, "unknown execution mode")
 	add(r.BetaInputPolicy != BetaInputPolicyID, InvalidRecord, "unknown beta-input policy")
 
+	// Invocation authority (Pi round-5 D1): the resolved spec is inside the one
+	// boundary — a stub closure cannot be promoted to mechanical/accepted while
+	// resolved_spec.profile still says stub.
+	add(r.ResolvedSpec.Version == "" || r.ResolvedSpec.DeclaredProtocol == "" || r.ResolvedSpec.Profile == "",
+		InvalidRecord, "resolved spec missing version/protocol/profile")
+	add(!knownProfile(r.ResolvedSpec.Profile), InvalidRecord, "unknown profile")
+	add((r.Mode == ModeStub) != (r.ResolvedSpec.Profile == "stub"),
+		InvalidRecord, "profile is incoherent with execution mode")
+
 	// Identity: non-empty and pairwise distinct across the whole triple.
 	add(r.EpisodeID == "" || r.Alpha.ExecutionID == "" || r.Beta.ExecutionID == "", InvalidIdentity, "missing identity")
 	add(r.Alpha.ExecutionID == r.Beta.ExecutionID, InvalidIdentity, "stations share an execution id")
@@ -709,6 +721,34 @@ func failureDetails(v Verdict) []string {
 }
 
 // --- Kernel-boundary validation -------------------------------------------
+
+// validateMeta rejects an unmetadata'd or incoherent invocation before alpha
+// runs (Pi round-5 D1): the resolved spec is invocation authority, so a run
+// that cannot state its version/protocol/profile — or whose profile and mode
+// disagree — is a malfunction, not a closable episode.
+func validateMeta(m RunMeta) error {
+	if !knownMode(m.ExecutionMode) {
+		return fmt.Errorf("cellkernel: unknown execution mode %q", m.ExecutionMode)
+	}
+	rs := m.ResolvedSpec
+	if rs.Version == "" || rs.DeclaredProtocol == "" || rs.Profile == "" {
+		return errors.New("cellkernel: resolved spec must carry version, declared_protocol, and profile")
+	}
+	if !knownProfile(rs.Profile) {
+		return fmt.Errorf("cellkernel: unknown profile %q", rs.Profile)
+	}
+	if (m.ExecutionMode == ModeStub) != (rs.Profile == "stub") {
+		return fmt.Errorf("cellkernel: profile %q is incoherent with execution mode %q", rs.Profile, m.ExecutionMode)
+	}
+	return nil
+}
+
+// knownProfile mirrors the closed #Profile enum in schemas/cdd/spec.cue — a
+// closure carrying any other profile is schema-invalid and must not
+// self-verify (Pi round-5 D1).
+func knownProfile(p string) bool {
+	return p == "stub" || p == "bool"
+}
 
 func validateSpec(s Spec) error {
 	if seatIsNil(s.Alpha) {

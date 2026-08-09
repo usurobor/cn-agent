@@ -27,12 +27,13 @@ orchestrator invoke this kernel repeatedly — they are not extra seats.
 
 ## Outcomes
 
-`RunEpisode` returns an `EpisodeResult` whose `Status` is terminal
-(`accepted` | `degraded` | `rejected`) or non-terminal (`needs_repair`, the
-parent stays open). A seat that returns an **error** is a malfunction (the
-episode does not close). A review with `Pass=false` is **contract-unmet**
-(closes `needs_repair`). An inconsistent (verdict, decision) pair is a typed
-`ErrInvalidClosure` — never a returned closed cell.
+`RunEpisode` returns a `Closure` whose `Status` is terminal
+(`accepted` | `degraded` | `rejected` | `simulated`) or non-terminal
+(`needs_repair`, the parent stays open — the closure then carries a
+`RepairRequest` derived from the verdict). A seat that returns an **error**
+is a malfunction (the episode does not close). A review with `Pass=false` is
+**contract-unmet** (closes `needs_repair`). Integrity failures fail closed
+to `rejected`.
 
 ## Invariants the kernel enforces (FIDO/functional doctrine)
 
@@ -117,5 +118,5 @@ parent cell later) fills the hole; the cell body never changes.
 ## What the runner does not own (custody boundary)
 
 The kernel owns no GitHub, ref, PR, branch, cursor, writer-locality, or custody
-policy. `cn cell run` reads a local path or stdin and writes a receipt to
-stdout. CLI and GitHub are invokers/projections over this same engine.
+policy. `cn cell run` reads a local path or stdin and writes the closure JSON
+to stdout. CLI and GitHub are invokers/projections over this same engine.
