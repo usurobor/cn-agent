@@ -13,12 +13,12 @@ triggers:
   - request changes
 scope: task-local
 inputs:
-  - branch
-  - issue
-  - diff
-  - .cdd/unreleased/{N}/ artifacts
+  - diff (or artifact set) at a stated base
+  - contract / acceptance criteria
+  - active skills
 outputs:
-  - beta-review.md
+  - severity-classed findings (D/C/B/A) with dispositions
+  - verdict
 requires:
   - β completed intake and skill loading
   - canonical CDD.md loaded
@@ -125,22 +125,16 @@ Return to this file for verdict rules and output format.
   - β must verify required CI/build checks are green on review SHA before emitting verdict APPROVED.
   - Run `gh run list --branch <review-SHA> --json status,conclusion,workflow_name` (or equivalent) and verify every *required* workflow has `conclusion == "success"`.
   - If any required workflow is red/pending/missing on review SHA → verdict is RC, finding B-severity, classification `ci-status`.
-  - Document the check in `beta-review.md` §CI status: one-line citation of run + conclusion.
-  - Required workflows determined by GitHub branch protection rules; fallback to "every workflow that runs on cycle branch" if no protection rules configured.
+  - Document the check in the review output §CI status: one-line citation of run + conclusion.
+  - Required workflows determined by GitHub branch protection rules; fallback to "every workflow that runs on the review branch" if no protection rules configured.
 
 3.11. **Merge instruction is explicit**
   - Names the exact branch and merge action with `Closes #N` in the merge commit.
 
-3.11b. **γ artifact completeness gate (binding)**
-  - β must verify `.cdd/unreleased/{N}/gamma-scaffold.md` exists on the cycle branch before emitting verdict APPROVED.
-  - If gamma-scaffold.md is missing → verdict is RC, finding D-severity, classification `protocol-compliance`.
-  - **Rationale**: Prevents protocol bypass where δ dispatches α→β directly without γ coordination. Missing γ artifacts indicate the cycle did not follow the canonical triadic protocol (`cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule").
-  - **Scope**: This gate applies to all cycles except explicit protocol exemptions.
-  - **Exemption discoverability**: An exemption satisfies 3.11b only if it appears in one of the following auditable surfaces:
-    - **(i) Sub-issue body (canonical §5.1 dispatch)** — the body of the cycle's own issue, or the body of any issue γ links from the dispatch prompt as authority for the cycle. A comment on a parent / master / tracking issue does NOT satisfy exemption discoverability on this path: β reviews the sub-issue β was dispatched against, not the parent tree, and master comments are not part of the cycle's load surface. *Derives from: tsc #49 F2 — four β subagents diverged on a cycle where the exemption lived as a parent-issue comment; β@S1 read 3.11b literally (D-severity RC), β@S2/S3/S4 accepted the master comment (B non-blocker). The rule did not specify which issue body counts, so divergence was structural, not careless.*
-    - **(ii) Wave manifest under §5.2 wave-mode** — for any cycle running as a sub of a wave under `operator/SKILL.md` §5.2 wave-mode (γ=δ collapse permitted; per `cnos.cds/skills/cds/CDS.md` §"Field 6: Actor collapse rule" with γ-coordinator and δ-operator fused), the canonical γ-artifact-of-record is the wave manifest at `.cdd/waves/{wave-id}/manifest.md` plus the wave status (per `operator/SKILL.md` §10.2). β recognizes the wave manifest as discharging the same γ-artifact-of-record duty `.cdd/unreleased/{N}/gamma-scaffold.md` discharges under §5.1 — provided the **discoverability link** from sub-issue to wave manifest is itself auditable: either (a) the sub-issue body cites the wave by id (e.g. names `.cdd/waves/{wave-id}/manifest.md` or the wave title in `## Wave` / `## Source` / `## Related` prose), OR (b) the master tracking issue named by the wave manifest links to the sub-issue (e.g. via GitHub sub-issue relations, a wave-tracking comment thread, or an explicit `Issues:` table in the manifest itself naming the sub). When (a) or (b) holds, the wave manifest's `γ = δ permitted` declaration (or equivalent wave-mode exemption text), pinned file-paths forward-reference contract, standing permissions, and timeout budgets satisfy the γ-artifact-of-record duty for every sub of that wave. *Derives from: cph cdr-refactor wave 2026-05-18 (master `usurobor/cph#11`; subs `cph#12, #13, #14, #15`) — four-of-four sub-uniform §5.2 configuration with zero per-sub `gamma-scaffold.md`; β produced three distinct substantive-read justifications across the four subs (`cph#12 beta-review.md §3.11b L133–158`: wave-manifest-as-γ-artifact; `cph#13 §Contract Integrity row 11`: sub-issue-body exemption line; `cph#14 §2.5 L187–195`: cph-canonical-model three-part justification; `cph#15 §2.0.0 row L29`: uniform §5.2 wave-exempt). Three distinct β reads of the same wave-uniform configuration is a discoverability gap, not a β skill issue. `cph#15` β-closeout L55 names the patch axis explicitly; wave-iteration F1 at `usurobor/cph:.cdd/iterations/wave-2026-05-18.md` consolidates the pattern.*
-  - **Recovery paths when 3.11b RC fires**: either (a) γ (or δ-as-γ) authors the missing `.cdd/unreleased/{N}/gamma-scaffold.md` on the cycle branch before β re-dispatch, OR (b) γ amends the sub-issue body to add an explicit `## Protocol exemption` section naming the reason (e.g. emergency patch, infrastructure-only change with operator override) and β re-dispatches against the amended body, OR (c) under §5.2 wave-mode, γ ensures the wave manifest at `.cdd/waves/{wave-id}/manifest.md` exists with a wave-mode exemption declaration AND establishes the sub-issue ↔ wave-manifest discoverability link per (ii) above. Path (a) is canonical for §5.1 dispatch; path (b) is the escape valve for cycles that legitimately bypass γ scaffolding; path (c) is canonical for §5.2 wave-mode dispatch and does not require per-sub scaffolds.
-  - Document the check in `beta-review.md` §Artifact completeness: citation of gamma-scaffold.md presence/absence under §5.1, OR — under §5.2 wave-mode — citation of the wave manifest path AND the discoverability-link surface (sub-issue body wave-id cite OR master-tracking-issue link to sub); if a 3.11b exemption is claimed via sub-issue body §Protocol exemption section, cite that section.
+3.11b. **Protocol-supplied artifact locations (optional context)**
+  - The review itself never requires coordination scaffolds, closure-record files, or any particular artifact-tree layout. Its inputs are the diff (or artifact set) at a stated base, the contract/acceptance criteria, and the active skills.
+  - When the invoking protocol supplies artifact locations (a coordination scaffold, a wave manifest, a closure record), use them as review context and verify them against the contract like any other named artifact. Their absence is a finding only if the contract under review explicitly names them as deliverables — then it is an ordinary AC-coverage finding at the severity the incoherence demonstrates, not a standing protocol gate.
+  - **History**: earlier revisions of this rule hard-gated presence of a per-cycle γ scaffold file (D-severity RC, classification `protocol-compliance`) with auditable-exemption machinery. That cycle scaffolding is legacy process law; the gate is retired so the review is executable against any diff + contract.
 
 3.12. **Review divergence is a skill gap**
   - When two reviewers diverge, the fix is a patch to the review skill, not "be more careful."
@@ -186,12 +180,12 @@ Mechanical findings reaching review are **process bugs**. If >20% of findings in
 
 ## Output Format
 
-Written to `.cdd/unreleased/{N}/beta-review.md` **incrementally**. Each review pass (contract, implementation, verdict) is a separate commit+push to the cycle branch. Do not write the entire review in one generation — stream timeouts will discard partial work.
+Written **incrementally**. When the invoking protocol supplies a review-artifact location, write there; otherwise emit the review in the same structure wherever the review is being delivered (PR review, file, message). Each review pass (contract, implementation, verdict) is a separate write — when writing to a branch, a separate commit+push. Do not write the entire review in one generation — stream timeouts will discard partial work.
 
 **Incremental write discipline:**
 1. Write each pass as a separate operation (§2.0.0 Contract → §2.1 Implementation → Verdict)
-2. Commit and push after each pass
-3. If resuming after a failure, read what exists on the branch and continue from the last committed pass
+2. Persist (commit and push, when writing to a branch) after each pass
+3. If resuming after a failure, read what exists and continue from the last persisted pass
 
 Each round appends a new section.
 
@@ -217,7 +211,7 @@ Each round appends a new section.
 | Cross-surface projections updated | yes / no / n/a | |
 | No witness theater / false closure | yes / no / n/a | |
 | PR body matches branch files | yes / no / n/a | |
-| γ artifacts present (gamma-scaffold.md) | yes / no / n/a | rule 3.11b compliance |
+| Protocol-supplied artifacts consistent | yes / no / n/a | optional context per rule 3.11b; n/a when none supplied |
 
 ## §2.0 Issue Contract
 
@@ -266,7 +260,7 @@ Before submitting a review:
 - [ ] No witness theater: structure backed by rejection mechanism or honest caveat
 - [ ] Every issue AC verified (met, partial, missing, deferred)
 - [ ] Required named docs/files checked
-- [ ] CDD artifacts exist and are internally consistent
+- [ ] Contract-named CDD artifacts (if any) exist and are internally consistent
 - [ ] Mechanical diff scan: duplicates, branch names, snapshot plausibility
 - [ ] Every claim traces to evidence
 - [ ] Honest-claim verification (3.13a): every quoted measurement reproducible from this commit
@@ -285,8 +279,8 @@ Before submitting a review:
 
 ## After Review
 
-- **Approved:** β merges branch into main with `Closes #N`, pushes, proceeds to release per `release/SKILL.md`.
-- **Changes requested:** α fixes on branch, appends to `self-coherence.md`; β narrows on next round.
+- **Approved:** β merges branch into main with `Closes #N`, pushes, then follows any post-approval steps the invoking protocol defines (e.g. `release/SKILL.md`).
+- **Changes requested:** α fixes on branch (recording fixes in the closure record when the invoking protocol supplies one); β narrows on next round.
 
 ### Review identity
 
