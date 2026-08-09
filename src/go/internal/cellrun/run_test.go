@@ -1,4 +1,4 @@
-package cli
+package cellrun
 
 import (
 	"bytes"
@@ -18,32 +18,22 @@ const boolSpecJSON = `{"version":"cnos.cellspec.v0",` +
 	`"params":{"value":{"kind":"value","required":true,"domain":["true","false"]}},` +
 	`"alpha":{"skills":[]},"beta":{"skills":[]}}`
 
-// runCLI drives CellRunCmd.Run with buffered stdio and returns the exit code.
-func runCLI(t *testing.T, stdin string, args ...string) (code int, stdout, stderr string) {
-	t.Helper()
+// run drives Run with buffered stdio and returns the exit code + streams.
+func run(stdin string, args ...string) (code int, stdout, stderr string) {
 	var out, errb bytes.Buffer
-	inv := Invocation{Args: args, Stdin: strings.NewReader(stdin), Stdout: &out, Stderr: &errb}
-	err := (&CellRunCmd{}).Run(context.Background(), inv)
-	code = 0
-	if err != nil {
-		if e, ok := err.(*CellRunExit); ok {
-			code = e.Code
-		} else {
-			code = 1
-		}
-	}
+	code = Run(context.Background(), args, strings.NewReader(stdin), &out, &errb)
 	return code, out.String(), errb.String()
 }
 
-func TestCLIAcceptedFromStdin(t *testing.T) {
-	code, stdout, stderr := runCLI(t, boolSpecJSON, "--contract", "-", "--param", "value=true")
+func TestAcceptedFromStdin(t *testing.T) {
+	code, stdout, stderr := run(boolSpecJSON, "--contract", "-", "--param", "value=true")
 	if code != 0 {
 		t.Fatalf("exit=%d stderr=%s", code, stderr)
 	}
-	// stdout must be exactly one valid receipt that re-verifies; stderr silent.
 	if stderr != "" {
 		t.Errorf("stderr not empty: %q", stderr)
 	}
+	// stdout must be exactly one valid receipt that re-verifies.
 	dec := json.NewDecoder(strings.NewReader(stdout))
 	var rc cellkernel.Receipt
 	if err := dec.Decode(&rc); err != nil {
@@ -57,7 +47,7 @@ func TestCLIAcceptedFromStdin(t *testing.T) {
 	}
 }
 
-func TestCLIExitCodes(t *testing.T) {
+func TestExitCodes(t *testing.T) {
 	tmp := filepath.Join(t.TempDir(), "spec.json")
 	if err := os.WriteFile(tmp, []byte(boolSpecJSON), 0o600); err != nil {
 		t.Fatal(err)
@@ -83,7 +73,7 @@ func TestCLIExitCodes(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			code, stdout, _ := runCLI(t, tc.stdin, tc.args...)
+			code, stdout, _ := run(tc.stdin, tc.args...)
 			if code != tc.want {
 				t.Fatalf("exit=%d, want %d", code, tc.want)
 			}

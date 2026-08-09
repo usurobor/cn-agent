@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 
@@ -212,7 +213,7 @@ func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 		return Resolved{}, fmt.Errorf("missing required parameter(s): %s (supply with --param <name>=<value>)", strings.Join(missing, ", "))
 	}
 	for name, p := range s.Params {
-		if v, ok := vals[name]; ok && len(p.Domain) > 0 && !contains(p.Domain, v) {
+		if v, ok := vals[name]; ok && len(p.Domain) > 0 && !slices.Contains(p.Domain, v) {
 			return Resolved{}, fmt.Errorf("parameter %q value %q not in domain [%s]", name, v, strings.Join(p.Domain, ", "))
 		}
 	}
@@ -303,15 +304,6 @@ func (r Resolved) resolvedSpecHash() string {
 	b, _ := json.Marshal(c)
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
-}
-
-func contains(xs []string, v string) bool {
-	for _, x := range xs {
-		if x == v {
-			return true
-		}
-	}
-	return false
 }
 
 // checkNoDuplicateKeys rejects duplicate object keys anywhere in the JSON, which
