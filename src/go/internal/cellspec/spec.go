@@ -17,8 +17,6 @@ package cellspec
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -28,10 +26,6 @@ import (
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 )
-
-// ResolvedSpecSchema versions the canonical resolved-spec encoding that is
-// hashed into the receipt's resolved_spec_hash (Pi #33 D1).
-const ResolvedSpecSchema = "cnos.cellspec.resolved.v0"
 
 // SchemaVersion is the pinned cell-spec version; a spec must declare it exactly.
 const SchemaVersion = "cnos.cellspec.v0"
@@ -126,8 +120,8 @@ func Parse(data []byte) (CellSpec, error) {
 	if s.Alpha == nil || s.Beta == nil {
 		return CellSpec{}, fmt.Errorf("cell spec: alpha and beta must both be present")
 	}
-	if s.Profile == "" {
-		s.Profile = ProfileStub
+	if s.Profile == "" { // D5: profile is explicit — a stub run must be opted into.
+		return CellSpec{}, fmt.Errorf("cell spec: profile is required (%q or %q)", ProfileStub, ProfileBool)
 	}
 	if !isKnownProfile(s.Profile) {
 		return CellSpec{}, fmt.Errorf("cell spec: unknown profile %q", s.Profile)
@@ -251,10 +245,10 @@ func splice(skills []string, declared map[string]ParamSpec, vals map[string]stri
 	return out, nil
 }
 
-// Build binds the resolved cell spec to a runnable kernel Spec + the RunMeta the
-// kernel binds into the receipt (resolved-spec identity), and reports the
-// execution mode (stub vs mechanical).
-func (r Resolved) Build() (cellkernel.Spec, cellkernel.RunMeta, string, error) {
+// Build binds the resolved cell spec to a runnable kernel Spec and the RunMeta
+// the kernel binds into the envelope: the normalized resolved-spec (so
+// resolved_spec_hash is recomputable, Pi PR-#718 β D2) and the execution mode.
+func (r Resolved) Build() (cellkernel.Spec, cellkernel.RunMeta, error) {
 	req := make([]cellkernel.RequiredRef, 0, len(r.Spec.Contract.RequiredEvidence))
 	for _, e := range r.Spec.Contract.RequiredEvidence {
 		req = append(req, cellkernel.RequiredRef{ID: e.ID, Kind: e.Kind, Producer: cellkernel.Role(e.Producer)})
@@ -266,44 +260,21 @@ func (r Resolved) Build() (cellkernel.Spec, cellkernel.RunMeta, string, error) {
 	}
 	alpha, beta, mode, err := buildProfile(r)
 	if err != nil {
-		return cellkernel.Spec{}, cellkernel.RunMeta{}, "", err
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, err
 	}
 	meta := cellkernel.RunMeta{
-		ResolvedSpecHash: r.resolvedSpecHash(),
-		DeclaredProtocol: r.Spec.ProtocolID,
-		Profile:          r.Spec.Profile,
-		Params:           r.Params,
+		ExecutionMode: mode,
+		ResolvedSpec: cellkernel.ResolvedSpec{
+			Version:          r.Spec.Version,
+			DeclaredProtocol: r.Spec.ProtocolID,
+			Profile:          r.Spec.Profile,
+			Params:           r.Params,
+			AlphaSkills:      r.AlphaSkills,
+			BetaSkills:       r.BetaSkills,
+			// Contract is filled by the kernel from the frozen contract.
+		},
 	}
-	return cellkernel.Spec{Contract: contract, Alpha: alpha, Beta: beta}, meta, mode, nil
-}
-
-// resolvedSpecHash is the content address of the exact normalized executable
-// spec — everything that selects behavior (Pi #33 D1). Runs differing only in
-// resolved input therefore differ in resolved_spec_hash.
-func (r Resolved) resolvedSpecHash() string {
-	type canon struct {
-		Schema      string
-		Version     string
-		Protocol    string
-		Profile     string
-		Params      map[string]string
-		AlphaSkills []string
-		BetaSkills  []string
-		Contract    ContractSpec
-	}
-	c := canon{
-		Schema:      ResolvedSpecSchema,
-		Version:     r.Spec.Version,
-		Protocol:    r.Spec.ProtocolID,
-		Profile:     r.Spec.Profile,
-		Params:      r.Params,
-		AlphaSkills: r.AlphaSkills,
-		BetaSkills:  r.BetaSkills,
-		Contract:    r.Spec.Contract,
-	}
-	b, _ := json.Marshal(c)
-	sum := sha256.Sum256(b)
-	return hex.EncodeToString(sum[:])
+	return cellkernel.Spec{Contract: contract, Alpha: alpha, Beta: beta}, meta, nil
 }
 
 // checkNoDuplicateKeys rejects duplicate object keys anywhere in the JSON, which

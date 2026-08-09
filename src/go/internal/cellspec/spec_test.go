@@ -90,28 +90,31 @@ func TestParseRejects(t *testing.T) {
 	}
 }
 
-func TestStubProfileRunsToAccepted(t *testing.T) {
+func TestStubProfileIsSimulated(t *testing.T) {
 	r, err := mustParse(t).Resolve(map[string]string{"language": "go"})
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, _, mode, err := r.Build()
+	kspec, meta, err := r.Build()
 	if err != nil {
-		t.Fatalf("kernelspec: %v", err)
+		t.Fatalf("build: %v", err)
 	}
-	if mode != ModeStub {
-		t.Fatalf("mode = %q, want stub", mode)
+	if meta.ExecutionMode != cellkernel.ModeStub {
+		t.Fatalf("mode = %q, want stub", meta.ExecutionMode)
 	}
-	res, err := cellkernel.RunEpisode(context.Background(), kspec)
+	env, err := cellkernel.RunEpisode(context.Background(), kspec, cellkernel.WithMeta(meta))
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	if res.Status != cellkernel.Accepted {
-		t.Fatalf("status = %q, want accepted", res.Status)
+	if env.Status != cellkernel.Simulated {
+		t.Fatalf("status = %q, want simulated", env.Status)
+	}
+	if err := cellkernel.VerifyEnvelope(env); err != nil {
+		t.Fatalf("envelope must verify: %v", err)
 	}
 	// The α diff and β beta_review are each bound with the authorized producer.
 	var diffAlpha, reviewBeta bool
-	for _, e := range res.Receipt.Evidence {
+	for _, e := range env.Receipt.Evidence {
 		if e.ID == "diff" && e.Producer == cellkernel.RoleAlpha {
 			diffAlpha = true
 		}
@@ -120,7 +123,7 @@ func TestStubProfileRunsToAccepted(t *testing.T) {
 		}
 	}
 	if !diffAlpha || !reviewBeta {
-		t.Fatalf("producer-attributed evidence not bound: %+v", res.Receipt.Evidence)
+		t.Fatalf("producer-attributed evidence not bound: %+v", env.Receipt.Evidence)
 	}
 }
 
@@ -145,18 +148,18 @@ func TestBoolProfileAcceptedAndUnmet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("resolve(%s): %v", value, err)
 		}
-		kspec, _, mode, err := r.Build()
+		kspec, meta, err := r.Build()
 		if err != nil {
-			t.Fatalf("kernelspec: %v", err)
+			t.Fatalf("build: %v", err)
 		}
-		if mode != ModeMechanical {
-			t.Fatalf("mode = %q, want mechanical", mode)
+		if meta.ExecutionMode != cellkernel.ModeMechanical {
+			t.Fatalf("mode = %q, want mechanical", meta.ExecutionMode)
 		}
-		res, err := cellkernel.RunEpisode(context.Background(), kspec)
+		env, err := cellkernel.RunEpisode(context.Background(), kspec, cellkernel.WithMeta(meta))
 		if err != nil {
 			t.Fatalf("run: %v", err)
 		}
-		return res.Status
+		return env.Status
 	}
 	if got := run("true"); got != cellkernel.Accepted {
 		t.Errorf("value=true: status %q, want accepted", got)

@@ -46,19 +46,32 @@ episode does not close). A review with `Pass=false` is **contract-unmet**
   content digest, creates the `sha256:` ref, and inlines the bytes. α cannot
   mint β's evidence; the canonical `beta_review` is minted by the runtime from
   the actual review.
-- **I4 — γ is self-proving.** The runtime builds an authoritative
-  `EpisodeRecord`; γ binds it; V recomputes every hash from the receipt's own
-  content *and* compares to the record. A γ bug that rewrote any field fails V.
-- **I5 — identity is per-invocation.** Each run gets a distinct episode id and
-  α/β execution ids (injectable only for deterministic tests). A separate
-  `resolved_spec_hash` binds the exact executable spec, so runs differing only
-  in resolved input differ in the receipt.
-- **I6 — the receipt re-verifies out of process.** `VerifyReceipt` re-checks a
-  serialized receipt alone (hashes, content-addressing, uniqueness, required
-  evidence + producer authority) — the check a parent runs on what it received.
-- **I7 — the kernel guards its own boundary.** A direct `Spec` is validated
-  (non-empty id, unique/valid required refs, bounded cardinality); output is
-  size-bounded; cancellation is checked between α, β, and closure.
+- **I4 — the whole envelope re-derives.** The terminal object is an `Envelope`
+  (schema, protocol_validated, execution_mode, verdict, decision, status,
+  repair, resolved_spec, receipt). `VerifyEnvelope` recomputes **every** field
+  from content: `verdict←V(receipt)`, `decision←δ(verdict)`,
+  `status←(decision, execution_mode)`, `protocol_validated` pinned false. No
+  outer field can be changed while the inner receipt still verifies.
+- **I5 — identity is per-invocation and fail-closed.** The whole identity tuple
+  (episode + α/β execution ids) is minted through one error-returning op and
+  must be non-empty and pairwise distinct before α runs (a crypto/rand failure
+  fails the run). Each evidence ref is bound to its producer's station id. A
+  `resolved_spec` (version/protocol/profile/params/skills/contract) is carried
+  so `resolved_spec_hash` recomputes; runs differing only in resolved input
+  differ in the envelope.
+- **I6 — typed failure routing.** V classifies each failure. Only
+  `contract_unmet` may become `needs_repair`; integrity failures
+  (`invalid_receipt`/`_evidence`/`_identity`/`_independence`) fail closed to
+  `rejected` — never the α repair path. A stub run is non-authoritative
+  `simulated`, never ordinary accepted authority.
+- **I7 — re-verifies out of process, gated in CI.** `VerifyEnvelope`/
+  `VerifyReceipt` re-check a serialized envelope alone — the check a parent runs
+  on what it received — and a CI job (`cell-schema.yml`) vets the CUE schemas +
+  actual `cn cell run` output against a shared positive/negative corpus.
+- **I8 — the kernel guards its own boundary.** A direct `Spec` is validated
+  (non-empty id, unique/valid required refs, bounded cardinality); matter/review/
+  evidence output is size-bounded (per-item + aggregate) and evidence bytes must
+  be valid UTF-8; cancellation is checked between α, β, and closure.
 
 ## The ladder (implementation order; Pi #32 D5)
 

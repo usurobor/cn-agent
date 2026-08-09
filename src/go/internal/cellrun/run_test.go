@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +19,6 @@ const boolSpecJSON = `{"version":"cnos.cellspec.v0",` +
 	`"params":{"value":{"kind":"value","required":true,"domain":["true","false"]}},` +
 	`"alpha":{"skills":[]},"beta":{"skills":[]}}`
 
-// run drives Run with buffered stdio and returns the exit code + streams.
 func run(stdin string, args ...string) (code int, stdout, stderr string) {
 	var out, errb bytes.Buffer
 	code = Run(context.Background(), args, strings.NewReader(stdin), &out, &errb)
@@ -33,17 +33,18 @@ func TestAcceptedFromStdin(t *testing.T) {
 	if stderr != "" {
 		t.Errorf("stderr not empty: %q", stderr)
 	}
-	// stdout must be exactly one valid receipt that re-verifies.
+	// stdout must be exactly one valid envelope that re-verifies whole.
 	dec := json.NewDecoder(strings.NewReader(stdout))
-	var rc cellkernel.Receipt
-	if err := dec.Decode(&rc); err != nil {
-		t.Fatalf("stdout not a receipt: %v", err)
+	var env cellkernel.Envelope
+	if err := dec.Decode(&env); err != nil {
+		t.Fatalf("stdout not an envelope: %v", err)
 	}
-	if dec.More() {
-		t.Fatal("stdout carried more than one JSON value")
+	var extra json.RawMessage
+	if err := dec.Decode(&extra); err != io.EOF {
+		t.Fatalf("stdout carried trailing data (want io.EOF, got %v)", err)
 	}
-	if err := cellkernel.VerifyReceipt(rc); err != nil {
-		t.Fatalf("emitted receipt does not verify: %v", err)
+	if err := cellkernel.VerifyEnvelope(env); err != nil {
+		t.Fatalf("emitted envelope does not verify: %v", err)
 	}
 }
 
@@ -52,6 +53,9 @@ func TestExitCodes(t *testing.T) {
 	if err := os.WriteFile(tmp, []byte(boolSpecJSON), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	stubSpec := `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},` +
+		`"protocol_id":"cnos.cellkernel.episode-receipt.v0","profile":"stub",` +
+		`"alpha":{"skills":[]},"beta":{"skills":[]}}`
 	big := "{" + strings.Repeat(" ", maxContractBytes+10) + "}"
 
 	cases := []struct {
@@ -60,11 +64,13 @@ func TestExitCodes(t *testing.T) {
 		args  []string
 		want  int
 	}{
-		{"file accepted", "", []string{"--contract", tmp, "--param", "value=true"}, 0},
-		{"needs_repair exit 1", boolSpecJSON, []string{"--contract", "-", "--param", "value=false"}, 1},
+		{"accepted", "", []string{"--contract", tmp, "--param", "value=true"}, 0},
+		{"needs_repair", boolSpecJSON, []string{"--contract", "-", "--param", "value=false"}, 1},
+		{"simulated stub", stubSpec, []string{"--contract", "-"}, 3},
 		{"malformed json", "{not json", []string{"--contract", "-"}, 2},
 		{"unknown arg", "", []string{"--bogus"}, 2},
 		{"missing contract", "", []string{"--param", "value=true"}, 2},
+		{"missing profile", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cellkernel.episode-receipt.v0","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 2},
 		{"dup param", boolSpecJSON, []string{"--contract", "-", "--param", "value=true", "--param", "value=false"}, 2},
 		{"dup contract", boolSpecJSON, []string{"--contract", "-", "--contract", "-"}, 2},
 		{"unknown protocol", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"made.up","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 2},

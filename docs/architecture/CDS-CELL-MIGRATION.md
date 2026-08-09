@@ -236,19 +236,21 @@ returns only when it is actually enforced.)
 **Phase 1 — CLI 0: one local episode, honest receipt (no cognition).**
 `internal/cellspec` loader (strict parse → kernel `Spec`), and `cn cell run
 --contract <path|-> [--param k=v]` that fills holes and calls `RunEpisode`.
-Emits a **generic** `cnos.cellkernel.episode-receipt.v0` with `execution_mode`
+Emits a **generic** `cnos.cellkernel.episode-envelope.v0` with `execution_mode`
 and `protocol_validated=false` — the declared `protocol_id` is provenance, never
-a validated CDS claim (Pi #32 D1). A `profile` selects the builtin seat pair:
-`stub` (smoke, tautological, stamped `execution_mode=stub`) or `bool` (a real
-mechanical episode where β **independently verifies** α's artifact — the
-non-tautological proof, Pi #32 D6). **Zero GitHub/network.** Contract is frozen
-+ hashed; evidence is runtime-authenticated + producer-attributed; β receives a
-runtime-owned `BetaInput` review surface (Pi #32 D2–D4). The receipt is
-**self-verifying** — every hash recomputes from its own content, evidence is
-inlined + content-addressed, and identity is per-invocation with a
-`resolved_spec_hash` — so `cellkernel.VerifyReceipt` re-checks it out of
-process, and a canonical `schemas/cdd/episode-receipt.cue` vets it (Pi #33
-D1–D6).
+a validated CDS claim. A `profile` (explicit; no default) selects the builtin
+seat pair: `stub` (a non-authoritative **`simulated`** smoke run, exit 3) or
+`bool` (a real mechanical episode where β **independently verifies** α's
+artifact). **Zero GitHub/network.** Contract is frozen + hashed; evidence is
+runtime-authenticated + producer-attributed + UTF-8 + size-bounded; β receives a
+runtime-owned `BetaInput` review surface. The terminal **envelope re-verifies
+whole** — `cellkernel.VerifyEnvelope` re-derives every field
+(`verdict←V(receipt)`, `decision←δ(verdict)`, `status←(decision, mode)`), the
+`resolved_spec` makes `resolved_spec_hash` recomputable, identity is
+per-invocation and fail-closed, and integrity failures route to `rejected` not
+`needs_repair`. A CI job (`.github/workflows/cell-schema.yml`) vets the CUE
+schemas + actual `cn cell run` output against a shared positive/negative corpus
+(Pi #31–#33 + PR-#718 β).
 
 **Phase 2 — skill resolution.** The `$PATH`-like resolver (`value → skill ref`)
 + required/optional/default hole logic; `cn cell run` errors on unfilled

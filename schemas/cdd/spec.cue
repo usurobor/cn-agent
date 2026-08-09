@@ -58,7 +58,7 @@ package cdd
 	// Declared protocol (provenance). The v0 runner emits a generic episode
 	// receipt and sets protocol_validated=false; it does not validate this.
 	protocol_id: string & !=""
-	profile:     #Profile | *"stub"
+	profile:     #Profile // explicit; no default (Pi PR-#718 β D5)
 	params?: {[string]: #Param}
 	alpha: #Seat
 	beta:  #Seat
