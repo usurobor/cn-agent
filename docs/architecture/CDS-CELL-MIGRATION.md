@@ -41,16 +41,27 @@ as much as the steps, because each decision closed a specific fork.
    static level at a time (Case B). Each cell is static *when it runs*; deeper
    specs are produced at runtime by α cognition emitting data.
 
-3. **Composition is one reentrant mechanism, not a new construct.** A subcell
-   becomes an α via an adapter `α = extract ∘ Run ∘ resolve` (the `.NET Rx`
-   `SelectMany` / F# `let!`). The parent's α calls the kernel on the child; the
-   kernel is reentrant and stays oblivious. This is the settled industry answer
+3. **Composition is one reentrant mechanism, not a new construct — but α
+   *proposes*, the runtime *executes*.** A parent decomposes by having its α
+   emit *child contracts* (data); the **runtime/Drive** runs each child episode;
+   the accepted child receipts become the parent's matter; parent-β reviews the
+   composition against the parent contract. This is the settled industry answer
    — Railway-Oriented Programming (F# `Result` composition), the GoF Composite +
-   Decorator patterns (uniform interface so a subcell stands in for α), the
-   interpreter-over-data / Free-monad pattern (recursion lives in the *data + a
-   recursive walker*, not a grammar), and Unix pipes (compose only through the
-   typed payload — for us, the receipt). Because composition is closed under the
-   α interface, nothing in the kernel is ever re-implemented to recurse.
+   Decorator patterns (uniform interface so a child stands in for the parent's
+   input), the interpreter-over-data / Free-monad pattern (recursion lives in
+   the *data + a recursive walker*, not a grammar), and Unix pipes (compose only
+   through the typed payload — for us, the receipt).
+
+   **Correction from Pi β (`msg-cn-pi-cnos-cell-runner-cases-review-31`, C1):**
+   an earlier framing made parent-α *call the kernel on the child* directly
+   (`α = extract ∘ Run ∘ resolve`, the `.NET Rx` `SelectMany`). That fuses
+   *decomposition judgment* with *runtime execution* inside a cognition seat. A
+   composite-α adapter may be a later convenience, but it must not be the
+   normative boundary: **the runtime executes; α only proposes.** The surface
+   `let!` (below) is sugar that *lowers to* "α emits child contract → runtime
+   runs it → receipt → matter" — not to α invoking `Run` itself. This keeps
+   child execution mechanical and auditable (route receipts, custody) rather
+   than buried in α.
 
 4. **The static-vs-dynamic "spec expression" dilemma was never a language
    problem.** We weighed compiling everything to a static resolved spec against
@@ -128,10 +139,17 @@ A cell whose α is a subcell (the parent/dispatch case, later) is one `let!`:
 
 ```
 cell cds-dispatch (issue, repo, language: skill) -> cnos.cdd.cds.receipt.v1 {
-  let! impl = cds (issue, repo, $language)   # α = SelectMany over the child cell
-  review with dispatch-review                 # β reviews the choice, not the code
+  let! impl = cds (issue, repo, $language)   # α PROPOSES this child contract;
+                                             # runtime runs it; receipt → matter
+  review with dispatch-review                 # β reviews the composition/choice
 }
 ```
+
+`let!` is surface sugar: it lowers to "parent-α emits the `cds` child contract →
+the runtime executes that child episode → the accepted child receipt becomes
+the parent's matter." It does **not** compile to α calling the kernel itself
+(Pi β C1). Composition and single-episode work therefore share one runtime, not
+two cell algorithms.
 
 ## Parameters → skills (the resolution model)
 
@@ -170,7 +188,7 @@ Four layers, matching the rest of the architecture:
 | Piece | Owner | Status |
 |---|---|---|
 | Receipt schema (output contract) | cnos.cdd + cds | ✅ shipped |
-| `cellkernel.Run` (five-step closure) | src/go `internal/cellkernel` | ✅ built (empty cell green) |
+| `cellkernel` five-seat order | src/go `internal/cellkernel` | ⚠ **Case-0 sketch only** — needs Pi D1–D4 (see below) |
 | Provider seam for rented cognition | src/go `internal/dispatch.Backend` | ✅ exists |
 | **`#CellSpec` CUE schema (input contract)** | cnos.cdd | ❌ **new** |
 | **cds params-domain overlay (`#CDSCellSpec`)** | cnos.cds | ❌ new |
@@ -180,7 +198,32 @@ Four layers, matching the rest of the architecture:
 | **`main.cell` compiler (surface → spec.json)** | cnos.cdd | ❌ new (Go `participle`, or fork TSC `cm_surface.ml` shape) |
 | **`cnos.cds/main.cell`** | cnos.cds | ❌ new |
 
-## Phases (smallest-first; each independently demonstrable)
+## Kernel corrections required first (Pi β #31, D1–D4)
+
+The current `internal/cellkernel` proves only Case-0 smoke; it is not yet a
+reference. Four bounded corrections gate everything below:
+
+- **D1 — honest closure.** Split `RunEpisode → EpisodeResult` (`terminal
+  {accepted|degraded|rejected}` | `needs_repair` {typed request, parent stays
+  open} | `malfunction` {error}) from a later `Drive` (bounded attempt loop).
+  `invalid` (PASS+override, FAIL+accept) is a typed kernel error, never a
+  returned closed cell.
+- **D2 — no self-certification.** `Spec` carries **Contract + α + β only**; the
+  kernel *owns* mechanical γ/V/δ (no injectable seat interfaces). V verifies
+  *bindings* — contract/matter/review identity+hash, required evidence refs,
+  runtime-produced route evidence is bound (not γ-authored), verdict/decision
+  schema-valid — it does not merely mirror β.
+- **D3 — evidence seam.** `AlphaResult{Matter; EvidenceRefs}`,
+  `BetaResult{Review; EvidenceRefs}` (or a runtime recorder) so γ binds real
+  refs. v0 refs are `{id, kind, ref, sha256, producer_execution_id}` (Pi Q4).
+- **D4 — fail closed.** A nil/missing α or β returns a wrapped error before any
+  seat runs; no panics.
+
+## Phases (Pi's KISS ladder, `msg-…-review-31` D5; smallest-first)
+
+**Phase K — correct the kernel.** Apply D1–D4 above; keep Case-0 smoke green and
+add the negative tests Pi specified (self-certification blocked, nil-seat error,
+invalid pair → error). *Prerequisite for a truthful CLI.*
 
 **Phase 0 — the input contract.** Write `schemas/cdd/spec.cue` (`#CellSpec`:
 `{contract, protocol_id, params, alpha:{skills}, beta:{skills}, budget?}`) and
@@ -188,27 +231,48 @@ the cds overlay (`#CDSCellSpec` pinning `protocol_id` + param domains).
 Hand-write a `cds.spec.json` for a real issue; `cue vet` it. *Proves the data
 shape before any Go or compiler.*
 
-**Phase 1 — run it from the CLI (stub cognition).** `internal/cellspec` loader
-(spec.json → `cellkernel.Spec`), and `cn cell run <spec.json> --language go`
-that fills holes and calls `cellkernel.Run` with **stub α/β** (echo producer /
-accept reviewer). Prints the CCNF trace + receipt. *Proves the execution path
-end-to-end with no compiler and no cognition.*
+**Phase 1 — CLI 0: one real local episode (stub cognition).** `internal/cellspec`
+loader (spec.json → kernel `Spec`), and `cn cell run --contract <path|-> [--param
+language=go]` that fills holes and calls `RunEpisode` with **stub α/β** (echo
+producer / accept reviewer). Structured receipt to stdout + explicit exit code.
+**Zero GitHub/network.** *Proves the execution path end-to-end, no compiler, no
+cognition.* (Pi shipping steps 4–6.)
 
 **Phase 2 — skill resolution.** The `$PATH`-like resolver (`value → skill ref`)
-+ the required/optional/default hole logic; `cn cell run` errors on unfilled
++ required/optional/default hole logic; `cn cell run` errors on unfilled
 required holes with a Unix-style usage line. Seats load the resolved skills
 (cognition still stubbed). *Proves parameters map to real skills.*
 
-**Phase 3 — the surface + compiler.** `cn cell compile main.cell → spec.json`
-(Go `participle` grammar, ~150 lines; CUE stays the independent oracle). Author
-`cnos.cds/main.cell`. Now `cn cell run cds --language go` runs the surface
-directly. *The compiler is pure sugar over Phase-1 JSON — optional until it
-earns its keep.*
+**Phase 3 — rented α + CDS profile.** First `internal/dispatch.Backend` adapter
+behind the GitHub-free provider port; trivial escalation predicate ("compiled
+implementation absent → rent α", Pi Q2). Expose `cn cds run --issue N --contract
+<path|->` (`--issue N` is identity/output metadata only — no hidden `gh`). One
+real bounded CDS episode closes locally. *This is #717/F.*
 
-**Horizon (out of this pass):** real α/β via `internal/dispatch.Backend`
-(rented cognition); the `cds-dispatch` parent cell (`let!` composition); wiring
-the existing GitHub wake to fill holes + land artifacts instead of routing δ by
-prose.
+**Phase 4 — the surface + compiler (sugar, later).** `cn cell compile main.cell
+→ spec.json` (Go `participle`, ~150 lines; CUE stays the independent oracle) +
+author `cnos.cds/main.cell`. Pure sugar over Phase-1 JSON — **optional until it
+earns its keep**, and explicitly *not* on the frozen S4/S6 critical path.
+
+**Horizon (out of this pass):** `Drive` bounded-repair loop (Case 4); the
+`cds-dispatch` parent (`let!` = α-proposes-child / runtime-executes, Case 5);
+rewiring the GitHub wake to a thin adapter that fills holes + lands artifacts.
+
+## Boundary the kernel never owns (Pi β #31, C3)
+
+The episode kernel owns no GitHub, ref, PR, branch, cursor, writer-locality, or
+custody policy. CLI and GitHub are **invokers/projections**. Persistence
+defaults to content-like typed-receipt custody; CHAIN (`.cdd` publication)
+remains an opt-in mechanism a CLI adapter may drive — never the kernel.
+
+## Alignment with the frozen shipping plan
+
+This migration instantiates, it does not reopen, the frozen plan
+(`msg-cn-pi-cnos-shipping-plan-lock-27`): Phase K + Phase 1 = S4 core + S6 CLI
+scaffolding; Phase 3 = the #717/F local CDS field proof (S7). The `.cell`
+surface (Phase 4) is a CNOS addition layered *after* the mechanical CLI, not a
+plan change. Repair, composition recursion, and the GitHub thin-adapter (S8)
+follow only when their preceding cases have executable evidence.
 
 ## Ownership split
 
