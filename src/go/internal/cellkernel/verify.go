@@ -37,7 +37,8 @@ func VerifyClosure(cl Closure) error {
 	add(sha256hex(cl.Receipt.Record.canonicalBytes()) != cl.Receipt.ScopeLiftDigest,
 		"scope-lift digest does not recompute")
 
-	// (2) pure re-derivation of the mechanical tail.
+	// (2) pure re-derivation of the mechanical tail — including the repair
+	// surface, so repair is never a second unauthenticated authority (D2).
 	wantVerdict := validate(cl.Receipt)
 	add(string(mustJSON(wantVerdict)) != string(mustJSON(cl.Verdict)), "verdict does not derive from the receipt")
 	wantDecision := decide(wantVerdict)
@@ -46,10 +47,9 @@ func VerifyClosure(cl Closure) error {
 		f = append(f, "status inconsistent: "+err.Error())
 	} else {
 		add(wantStatus != cl.Status, "status does not derive from (verdict, decision, mode)")
+		wantRepair := repairFrom(wantVerdict, wantStatus)
+		add(string(mustJSON(wantRepair)) != string(mustJSON(cl.Repair)), "repair does not derive from the verdict")
 	}
-
-	// (3) coherence of the repair surface.
-	add((cl.Status == NeedsRepair) != (cl.Repair != nil), "repair present iff status is needs_repair")
 
 	if len(f) > 0 {
 		return errors.New("closure verification failed: " + strings.Join(f, "; "))

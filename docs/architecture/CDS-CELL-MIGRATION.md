@@ -188,15 +188,15 @@ Four layers, matching the rest of the architecture:
 | Piece | Owner | Status |
 |---|---|---|
 | Receipt schema (output contract) | cnos.cdd + cds | ✅ shipped |
-| `cellkernel` five-seat order | src/go `internal/cellkernel` | ⚠ **Case-0 sketch only** — needs Pi D1–D4 (see below) |
+| CCNF kernel (`RunEpisode` → verifiable `Closure`) | src/go `internal/cellkernel` | ✅ shipped (PR #718; hardened through Pi β #31–#45) |
 | Provider seam for rented cognition | src/go `internal/dispatch.Backend` | ✅ exists |
-| **`#CellSpec` CUE schema (input contract)** | cnos.cdd | ❌ **new** |
-| **cds params-domain overlay (`#CDSCellSpec`)** | cnos.cds | ❌ new |
-| **JSON `spec.json` → `cellkernel.Spec` loader** | src/go `internal/cellspec` | ❌ new |
-| **`cn cell run` (fill holes, resolve skills, Run)** | src/go `internal/cli` | ❌ new |
-| **skill-path resolver (value → skill ref)** | cnos.cdd | ❌ new |
-| **`main.cell` compiler (surface → spec.json)** | cnos.cdd | ❌ new (Go `participle`, or fork TSC `cm_surface.ml` shape) |
-| **`cnos.cds/main.cell`** | cnos.cds | ❌ new |
+| `#CellSpec` CUE schema (input contract) | cnos.cdd (`schemas/cdd/spec.cue`) | ✅ shipped |
+| cds params-domain overlay (`#CDSCellSpec`) | cnos.cds (`schemas/cds/spec.cue`) | ✅ shipped (canonical diff-first evidence rule) |
+| spec loader/binder (strict parse → kernel Spec) | src/go `internal/cellspec` | ✅ shipped |
+| `cn cell run` (fill holes, run, emit closure) | src/go `internal/cellrun` (+ thin `cli` wrapper) | ✅ shipped (exits 0/1/2/3; closure self-verifies) |
+| skill-path resolver (value → loaded skill) | cnos.cdd | ❌ Phase 2/3 (params→skill names shipped; loading comes with cognition) |
+| `main.cell` compiler (surface → spec.json) | cnos.cdd | ❌ Phase 4 sugar (deliberately deferred) |
+| `cnos.cds/main.cell` | cnos.cds | ❌ Phase 4 (JSON fixtures are the current authored form) |
 
 ## Kernel corrections required first (Pi β #31, D1–D4)
 

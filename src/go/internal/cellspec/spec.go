@@ -30,25 +30,6 @@ import (
 // SchemaVersion is the pinned cell-spec version; a spec must declare it exactly.
 const SchemaVersion = "cnos.cellspec.v0"
 
-// GenericProtocol is the generic protocol id a spec may declare when it runs
-// no domain protocol. Declared protocols are provenance only; the runner never
-// claims to have validated one.
-const GenericProtocol = "cnos.cellkernel.episode-closure.v0"
-
-// knownProtocols are the protocol identifiers the runner recognizes. An unknown
-// (typo'd) declared protocol fails closed; a known-but-unexecuted protocol
-// (e.g. CDS in v0) is carried as provenance with execution_mode set honestly.
-var knownProtocols = map[string]bool{
-	GenericProtocol:           true,
-	"cnos.cdd.receipt.v1":     true,
-	"cnos.cdd.cds.receipt.v1": true,
-	"cnos.cdd.cdr.receipt.v1": true,
-	"cnos.cdd.cdw.receipt.v1": true,
-}
-
-// IsKnownProtocol reports whether id is a recognized protocol identifier.
-func IsKnownProtocol(id string) bool { return knownProtocols[id] }
-
 // CellSpec is the serialized, strictly-validated cell.
 type CellSpec struct {
 	Version    string               `json:"version"`
@@ -111,11 +92,10 @@ func Parse(data []byte) (CellSpec, error) {
 	if s.Contract.ID == "" {
 		return CellSpec{}, fmt.Errorf("cell spec: contract.id is required")
 	}
-	if s.ProtocolID == "" {
+	if s.ProtocolID == "" { // protocol_id is opaque provenance (one language with
+		// generic CUE, Pi PR-#718-fido β D6); domain overlays like #CDSCellSpec
+		// constrain it at vet time, not here.
 		return CellSpec{}, fmt.Errorf("cell spec: protocol_id is required")
-	}
-	if !IsKnownProtocol(s.ProtocolID) {
-		return CellSpec{}, fmt.Errorf("cell spec: unknown protocol_id %q", s.ProtocolID)
 	}
 	if s.Alpha == nil || s.Beta == nil {
 		return CellSpec{}, fmt.Errorf("cell spec: alpha and beta must both be present")

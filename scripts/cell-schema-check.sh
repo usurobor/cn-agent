@@ -19,6 +19,10 @@ vet_ok() {
 vet_bad() {
   if "$CUE" vet "$@" >/dev/null 2>&1; then echo "  ✗ expected FAIL: cue vet $*"; fail=1; else echo "  ✓ rejected $*"; fi
 }
+run_bad() { # Go-only negatives: the CLI is the executable authority (exit 2).
+  "$CN" cell run --contract "$1" >/dev/null 2>&1; local code=$?
+  if [ "$code" != 2 ]; then echo "  ✗ expected CLI exit 2: $1 (got $code)"; fail=1; else echo "  ✓ CLI rejected $1"; fi
+}
 run_vet() { # want-exit, cn args...
   local want=$1; shift
   "$CN" cell run "$@" >"$tmp" 2>/dev/null; local code=$?
@@ -42,6 +46,12 @@ echo "# negative cell specs (must be rejected)"
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.json -d '#CellSpec'
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-missing-profile.json -d '#CellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-no-diff.json -d '#CDSCellSpec'
+
+echo "# Go-only negatives (executable authority = the CLI)"
+run_bad schemas/cdd/fixtures/invalid/cellspec-dup-required-id.json
+run_bad schemas/cdd/fixtures/invalid/bool-missing-value.json
+run_bad schemas/cdd/fixtures/invalid/cellspec-bad-producer.json
+run_bad schemas/cdd/fixtures/invalid/cellspec-missing-profile.json
 
 echo "# actual CLI output vetted against the terminal schema"
 run_vet 0 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=true

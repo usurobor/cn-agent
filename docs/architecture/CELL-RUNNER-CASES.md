@@ -91,7 +91,8 @@ append-only sequence of results. Children never write upward or sideways.
   `value=false → needs_repair`. No repair loop.
 - **CLI 0 — local runner.** `cn cell run --contract <path|-> [--param k=v]`
   fills parameter holes, runs one episode, emits a generic
-  `cnos.cellkernel.episode-receipt.v0`, exit `0/1/2`. Zero GitHub/network.
+  `cnos.cellkernel.episode-closure.v0`, exit `0/1/2/3` (3 = `simulated`).
+  Zero GitHub/network.
 - **Case 2 — rented α, mechanical β.** First cognition behind α (a provider
   seam); β still mechanical. (Phase 3 / #717-F; held until CI + Pi converge.)
 - **Case 3 — rented α and β.** Full single-episode CDS. V validates

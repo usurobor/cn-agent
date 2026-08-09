@@ -74,7 +74,6 @@ func TestParseRejects(t *testing.T) {
 		"duplicate key":     `{"version":"cnos.cellspec.v0","version":"x","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
 		"missing version":   `{"contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
 		"wrong version":     `{"version":"v9","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"unknown protocol":  "{" + `"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"made.up","alpha":{"skills":[]},"beta":{"skills":[]}` + "}",
 		"missing beta":      `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]}}`,
 		"unknown profile":   "{" + base + `,"profile":"wat"}`,
 		"bad param kind":    "{" + base + `,"params":{"p":{"kind":"weird"}}}`,

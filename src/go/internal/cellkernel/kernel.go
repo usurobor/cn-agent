@@ -248,6 +248,22 @@ type ResolvedSpec struct {
 	BetaSkills       []string          `json:"beta_skills"`
 }
 
+// clone deep-copies the resolved spec so no caller- or seat-retained alias can
+// mutate runtime-owned invocation truth (Pi PR-#718-fido β D3).
+func (r ResolvedSpec) clone() ResolvedSpec {
+	cp := r
+	if r.Params != nil {
+		cp.Params = make(map[string]string, len(r.Params))
+		for k, v := range r.Params {
+			cp.Params[k] = v
+		}
+	}
+	// Always non-nil so the canonical JSON is [] rather than null.
+	cp.AlphaSkills = append(make([]string, 0, len(r.AlphaSkills)), r.AlphaSkills...)
+	cp.BetaSkills = append(make([]string, 0, len(r.BetaSkills)), r.BetaSkills...)
+	return cp
+}
+
 // StationRecord is one station's contribution, owned positionally.
 type StationRecord struct {
 	ExecutionID string     `json:"execution_id"`
@@ -390,6 +406,9 @@ func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error)
 		return Closure{}, fmt.Errorf("cellkernel: context: %w", err)
 	}
 
+	if seatIsNil(cfg.ids) { // D5: the identity source fails closed like a seat.
+		return Closure{}, errors.New("cellkernel: nil identity source")
+	}
 	id, err := cfg.ids.Mint() // fail-closed identity, before α runs
 	if err != nil {
 		return Closure{}, fmt.Errorf("cellkernel: %w", err)
@@ -399,6 +418,7 @@ func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error)
 	}
 
 	frozen := s.Contract.clone()
+	frozenMeta := RunMeta{ExecutionMode: cfg.meta.ExecutionMode, ResolvedSpec: cfg.meta.ResolvedSpec.clone()}
 
 	// Station α: isolated input → output → sealed.
 	aOut, err := s.Alpha.Produce(ctx, AlphaInput{Contract: frozen.clone()})
@@ -433,7 +453,7 @@ func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error)
 	}
 
 	// Compose the one immutable record; then the mechanical tail is pure.
-	record, err := compose(id, cfg.meta, frozen, sealedA, sealedB)
+	record, err := compose(id, frozenMeta, frozen, sealedA, sealedB)
 	if err != nil {
 		return Closure{}, err
 	}
@@ -453,9 +473,7 @@ func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error)
 		Verdict:           verdict,
 		Receipt:           receipt,
 	}
-	if status == NeedsRepair {
-		cl.Repair = &RepairRequest{Reason: "contract unmet", Failed: failureDetails(verdict)}
-	}
+	cl.Repair = repairFrom(verdict, status)
 	return cl, nil
 }
 
@@ -534,10 +552,12 @@ func gamma(r EpisodeRecord) Receipt {
 	return Receipt{Record: r, ScopeLiftDigest: sha256hex(r.canonicalBytes())}
 }
 
-// validate (V) checks the receipt at the scope-lift boundary: the one digest,
-// record predicates, and contract satisfaction — with typed failures. Producer
-// authority is positional: a required α artifact must sit under record.Alpha.
-func validate(rc Receipt) Verdict {
+// validateRecord replays the COMPLETE record boundary as typed failures (Pi
+// PR-#718-fido β D1): everything the kernel guards on the honest path is
+// re-derivable by a verifier from the serialized record alone. Pure; used by V
+// before closure and by VerifyClosure at scope lift — one boundary, one
+// validator.
+func validateRecord(r EpisodeRecord) []Failure {
 	var fs []Failure
 	add := func(cond bool, class FailureClass, msg string) {
 		if cond {
@@ -545,22 +565,68 @@ func validate(rc Receipt) Verdict {
 		}
 	}
 
-	r := rc.Record
 	add(r.Canon != RecordCanon, InvalidRecord, "wrong record canon")
-	add(sha256hex(r.canonicalBytes()) != rc.ScopeLiftDigest, InvalidRecord, "scope-lift digest does not recompute")
 	add(!knownMode(r.Mode), InvalidRecord, "unknown execution mode")
-
-	add(r.EpisodeID == "" || r.Alpha.ExecutionID == "" || r.Beta.ExecutionID == "", InvalidIdentity, "missing identity")
-	add(r.Alpha.ExecutionID == r.Beta.ExecutionID, InvalidIdentity, "stations share an execution id")
 	add(r.BetaInputPolicy != BetaInputPolicyID, InvalidRecord, "unknown beta-input policy")
 
-	dupCheck(r.Alpha.Artifacts, &fs)
-	dupCheck(r.Beta.Artifacts, &fs)
+	// Identity: non-empty and pairwise distinct across the whole triple.
+	add(r.EpisodeID == "" || r.Alpha.ExecutionID == "" || r.Beta.ExecutionID == "", InvalidIdentity, "missing identity")
+	add(r.Alpha.ExecutionID == r.Beta.ExecutionID, InvalidIdentity, "stations share an execution id")
+	add(r.EpisodeID == r.Alpha.ExecutionID || r.EpisodeID == r.Beta.ExecutionID, InvalidIdentity, "episode id aliases a station id")
+
+	// Contract validity (same rules validateSpec enforces on the honest path).
+	add(r.Contract.ID == "", InvalidRecord, "contract id is empty")
+	add(len(r.Contract.RequiredEvidence) > maxRequiredEvidence, InvalidRecord, "too many required evidence refs")
+	seenReq := make(map[string]bool)
+	for _, req := range r.Contract.RequiredEvidence {
+		add(req.ID == "" || req.Kind == "", InvalidRecord, "required evidence with empty id/kind")
+		add(req.Producer != RoleAlpha && req.Producer != RoleBeta, InvalidRecord, "required evidence with invalid producer: "+req.ID)
+		add(seenReq[req.ID], InvalidRecord, "duplicate required evidence id: "+req.ID)
+		seenReq[req.ID] = true
+	}
+
+	// Output bounds (same rules the seal path enforces).
+	add(len(r.Matter.Data) > maxMatterBytes, InvalidRecord, "matter exceeds bound")
+	add(len(r.Review.Notes) > maxReviewNotesBytes, InvalidRecord, "review notes exceed bound")
+	total := 0
+	for _, side := range []StationRecord{r.Alpha, r.Beta} {
+		add(len(side.Artifacts) > maxArtifacts, InvalidRecord, "too many artifacts")
+		seen := make(map[string]bool)
+		for _, a := range side.Artifacts {
+			add(a.ID == "" || a.Kind == "", InvalidRecord, "artifact with empty id/kind")
+			add(a.Encoding != "utf8", InvalidRecord, "artifact with unknown encoding: "+a.ID)
+			add(!utf8.ValidString(a.Text), InvalidRecord, "artifact is not valid UTF-8: "+a.ID)
+			add(len(a.Text) > maxArtifactBytes, InvalidRecord, "artifact exceeds bound: "+a.ID)
+			add(seen[a.ID], InvalidRecord, "duplicate artifact id: "+a.ID)
+			seen[a.ID] = true
+			total += len(a.Text)
+		}
+	}
+	add(total > maxAggregateArtifact, InvalidRecord, "aggregate artifact bytes exceed bound")
+
+	return fs
+}
+
+// validate (V) checks the receipt at the scope-lift boundary: the one digest,
+// the full record boundary (validateRecord), and contract satisfaction — with
+// typed failures. Producer authority is positional and fails closed: a
+// required artifact with an invalid producer never resolves to a side.
+func validate(rc Receipt) Verdict {
+	r := rc.Record
+	fs := validateRecord(r)
+	if sha256hex(r.canonicalBytes()) != rc.ScopeLiftDigest {
+		fs = append(fs, Failure{InvalidRecord, "scope-lift digest does not recompute"})
+	}
 
 	for _, req := range r.Contract.RequiredEvidence {
-		side := r.Alpha.Artifacts
-		if req.Producer == RoleBeta {
+		var side []Artifact
+		switch req.Producer {
+		case RoleAlpha:
+			side = r.Alpha.Artifacts
+		case RoleBeta:
 			side = r.Beta.Artifacts
+		default:
+			continue // invalid producer already an integrity failure above
 		}
 		if !hasArtifact(side, req.ID, req.Kind) {
 			fs = append(fs, Failure{ContractUnmet, fmt.Sprintf("missing required %s artifact: %s", req.Producer, req.ID)})
@@ -577,16 +643,6 @@ func validate(rc Receipt) Verdict {
 		return fs[i].Detail < fs[j].Detail
 	})
 	return Verdict{Pass: len(fs) == 0, Failures: fs}
-}
-
-func dupCheck(arts []Artifact, fs *[]Failure) {
-	seen := make(map[string]bool)
-	for _, a := range arts {
-		if seen[a.ID] {
-			*fs = append(*fs, Failure{InvalidRecord, "duplicate artifact id: " + a.ID})
-		}
-		seen[a.ID] = true
-	}
 }
 
 func hasArtifact(arts []Artifact, id, kind string) bool {
@@ -611,10 +667,13 @@ func decide(v Verdict) Decision {
 	}
 }
 
-// lift maps (verdict, decision, mode) to the terminal status. A stub run is
-// always `simulated`; an inconsistent pair is an error, never a closure.
+// lift maps (verdict, decision, mode) to the terminal status. `simulated` is
+// admissible ONLY for an otherwise coherent successful stub smoke run (Pi
+// PR-#718-fido β D4); a stub with integrity or semantic failures routes by the
+// normal table — failures are never masked. An inconsistent pair is an error,
+// never a closure.
 func lift(v Verdict, d Decision, mode ExecutionMode) (Status, error) {
-	if mode == ModeStub {
+	if mode == ModeStub && v.Pass && d == Accept {
 		return Simulated, nil
 	}
 	switch {
@@ -629,6 +688,16 @@ func lift(v Verdict, d Decision, mode ExecutionMode) (Status, error) {
 	default:
 		return "", fmt.Errorf("%w: verdict.pass=%v decision=%q", ErrInvalidClosure, v.Pass, d)
 	}
+}
+
+// repairFrom derives the repair surface purely from (verdict, status) — the
+// verifier recomputes and compares it, so repair is never a second
+// unauthenticated terminal authority (Pi PR-#718-fido β D2).
+func repairFrom(v Verdict, st Status) *RepairRequest {
+	if st != NeedsRepair {
+		return nil
+	}
+	return &RepairRequest{Reason: "contract unmet", Failed: failureDetails(v)}
 }
 
 func failureDetails(v Verdict) []string {

@@ -23,8 +23,11 @@ import "cnos.dev/cnos/schemas/cdd"
 		...
 	}
 
-	// A CDS coding cell must carry a producer-attributed diff as evidence: the
-	// list is pinned to include the diff member mechanically (Pi #33 D5), not
-	// merely permit an arbitrary list.
+	// CANONICAL ORDER (explicit rule, not an accident): a CDS spec's first
+	// required_evidence entry IS the alpha diff. Chosen over order-independent
+	// membership deliberately — specs are machine-emitted, canonical form is
+	// deterministic, and CUE v0.17 computed validators (list.MatchN/Contains,
+	// comprehension guards) do not fire reliably through `vet -d` against a
+	// closed base definition. Mechanically enforced by this structural pattern.
 	contract: required_evidence: [{id: "diff", kind: "diff", producer: "alpha"}, ...cdd.#RequiredRef]
 }

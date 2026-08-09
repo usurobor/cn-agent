@@ -153,8 +153,10 @@ port. Corrected list; the first two block a real CDS episode entirely.
   **workspace adapter** (worktree) materializes α's working copy *outside*
   the kernel; the sealed α output binds `head_sha` and the diff as an
   artifact. The kernel stays substrate-free; the adapter is the seam.
-- **G2 — shipping the closure (git-native, no `.cdd/`).** The `.cdd/` tree
-  is retired, not ported. A diff ships its receipt as three git-native
+- **G2 — shipping the closure (git-native, no `.cdd/`) — PROPOSAL.**
+  Custody authority stays with #682/#711 (CHAIN remains open there); nothing
+  here is implemented or settled by PR #718. The proposed shape: the `.cdd/`
+  tree is retired, not ported. A diff ships its receipt as three git-native
   pieces: (1) a **commit trailer** `Cell-Closure: sha256:<scope-lift-digest>`
   binding the merge commit to its closure; (2) the **closure object on a
   ref** (the same pull-based writer-owned substrate as dialogue), where the

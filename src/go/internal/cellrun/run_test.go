@@ -73,7 +73,7 @@ func TestExitCodes(t *testing.T) {
 		{"missing profile", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cellkernel.episode-closure.v0","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 2},
 		{"dup param", boolSpecJSON, []string{"--contract", "-", "--param", "value=true", "--param", "value=false"}, 2},
 		{"dup contract", boolSpecJSON, []string{"--contract", "-", "--contract", "-"}, 2},
-		{"unknown protocol", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"made.up","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 2},
+		{"opaque protocol runs", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"made.up","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 3},
 		{"trailing brace", boolSpecJSON + "}", []string{"--contract", "-", "--param", "value=true"}, 2},
 		{"oversize contract", big, []string{"--contract", "-"}, 2},
 	}
