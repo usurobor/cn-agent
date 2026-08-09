@@ -42,6 +42,7 @@ func main() {
 	reg.Register(&cli.ActivateCmd{})
 	reg.Register(&cli.DispatchCmd{})
 	reg.Register(&cli.CddVerifyCmd{})
+	reg.Register(&cli.CellRunCmd{})
 	reg.Register(&cli.CellReturnCmd{})
 	reg.Register(&cli.CellResumeCmd{})
 	reg.Register(&cli.CellFinalizeCmd{})
@@ -140,6 +141,9 @@ func main() {
 		// error so we can propagate the same status code to the operator.
 		// See src/go/internal/cli/cmd_cdd_verify.go.
 		if e, ok := err.(*cli.CddVerifyExit); ok {
+			os.Exit(e.Code)
+		}
+		if e, ok := err.(*cli.CellRunExit); ok {
 			os.Exit(e.Code)
 		}
 		// Other commands already printed user-facing output to stderr.

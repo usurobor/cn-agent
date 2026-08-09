@@ -63,11 +63,11 @@ type Matter struct{ Data string }
 // α/β work (Pi Q4 shape). ProducerExecutionID ties the ref to the seat run
 // that produced it, so V can check it was not γ-authored after the fact.
 type EvidenceRef struct {
-	ID                  string
-	Kind                string
-	Ref                 string
-	SHA256              string
-	ProducerExecutionID string
+	ID                  string `json:"id"`
+	Kind                string `json:"kind"`
+	Ref                 string `json:"ref"`
+	SHA256              string `json:"sha256,omitempty"`
+	ProducerExecutionID string `json:"producer_execution_id"`
 }
 
 // AlphaResult is α's output: the matter plus the evidence its run accrued.
@@ -159,8 +159,8 @@ const (
 // RepairRequest is the typed reason an episode needs repair. It is surfaced to
 // a Drive loop (future); the kernel does not itself re-attempt.
 type RepairRequest struct {
-	Reason string
-	Failed []string
+	Reason string   `json:"reason"`
+	Failed []string `json:"failed,omitempty"`
 }
 
 // EpisodeResult is the kernel's object for one closed-or-held episode. When
