@@ -6,9 +6,6 @@ import (
 	"testing"
 )
 
-// TestStatusOf is the table-driven contract for the (verdict, decision) → status
-// mapping (Pi D1): consistent pairs map to a Status; inconsistent pairs are a
-// typed error, never a returned closed cell.
 func TestStatusOf(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -30,138 +27,130 @@ func TestStatusOf(t *testing.T) {
 			got, err := statusOf(Verdict{Pass: tc.pass}, tc.dec)
 			if tc.wantErr {
 				if !errors.Is(err, ErrInvalidClosure) {
-					t.Fatalf("statusOf(pass=%v, %q): want ErrInvalidClosure, got err=%v status=%q", tc.pass, tc.dec, err, got)
+					t.Fatalf("want ErrInvalidClosure, got err=%v status=%q", err, got)
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("statusOf(pass=%v, %q): unexpected error: %v", tc.pass, tc.dec, err)
+				t.Fatalf("unexpected error: %v", err)
 			}
 			if got != tc.want {
-				t.Errorf("statusOf(pass=%v, %q) = %q, want %q", tc.pass, tc.dec, got, tc.want)
+				t.Errorf("statusOf(pass=%v,%q)=%q, want %q", tc.pass, tc.dec, got, tc.want)
 			}
 		})
 	}
 }
 
-// TestEmptyCellRunsToAccepted runs Case 0 through the full closure and asserts
-// it terminates `accepted` with the contract bound.
 func TestEmptyCellRunsToAccepted(t *testing.T) {
 	res, err := RunEpisode(context.Background(), EmptySpec())
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if res.Status != Accepted {
-		t.Fatalf("status: want %q, got %q", Accepted, res.Status)
+		t.Fatalf("status: want accepted, got %q", res.Status)
 	}
-	if res.Decision != Accept {
-		t.Fatalf("decision: want %q, got %q", Accept, res.Decision)
+	if res.Receipt.Contract.ID != "cell-0" || res.ContractHash == "" {
+		t.Fatalf("receipt did not bind the frozen contract: %+v", res.Receipt)
 	}
-	if !res.Verdict.Pass {
-		t.Fatalf("verdict: want PASS, got %+v", res.Verdict)
-	}
-	if res.Receipt.Contract.ID != "cell-0" {
-		t.Fatalf("receipt did not bind the contract: %+v", res.Receipt)
-	}
-	t.Logf("CCNF trace: matter=%q review.pass=%v -> receipt(contract=%s) -> verdict.pass=%v -> decision=%s -> status=%s",
-		res.Matter.Data, res.Review.Pass, res.Receipt.Contract.ID, res.Verdict.Pass, res.Decision, res.Status)
+	t.Logf("CCNF trace: episode=%s matter=%q review.pass=%v -> verdict.pass=%v -> decision=%s -> status=%s",
+		res.EpisodeID, res.Matter.Data, res.Review.Pass, res.Verdict.Pass, res.Decision, res.Status)
 }
 
-// TestBoolCellAccepts: Case 1, bool true → accepted, and the required α evidence
-// is bound into the receipt.
 func TestBoolCellAccepts(t *testing.T) {
 	res, err := RunEpisode(context.Background(), BoolSpec(true))
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if res.Status != Accepted {
-		t.Fatalf("status: want %q, got %q", Accepted, res.Status)
+		t.Fatalf("status: want accepted, got %q", res.Status)
 	}
-	if !hasEvidence(res.Receipt.EvidenceRefs, "bool", "value") {
-		t.Fatalf("required evidence not bound: %+v", res.Receipt.EvidenceRefs)
+	// The α "bool" evidence is bound and stamped with the α producer.
+	var found bool
+	for _, e := range res.Receipt.Evidence {
+		if e.ID == "bool" && e.Producer == RoleAlpha {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("bool evidence not bound with alpha producer: %+v", res.Receipt.Evidence)
 	}
 }
 
-// TestBoolCellNeedsRepair: Case 1, bool false → contract-unmet → needs_repair,
-// parent stays open, no error, Repair request set.
 func TestBoolCellNeedsRepair(t *testing.T) {
 	res, err := RunEpisode(context.Background(), BoolSpec(false))
 	if err != nil {
-		t.Fatalf("run: unexpected error: %v", err)
+		t.Fatalf("run: %v", err)
 	}
-	if res.Status != NeedsRepair {
-		t.Fatalf("status: want %q, got %q", NeedsRepair, res.Status)
-	}
-	if res.Decision != RepairDispatch {
-		t.Fatalf("decision: want %q, got %q", RepairDispatch, res.Decision)
-	}
-	if res.Repair == nil {
-		t.Fatal("needs_repair result must carry a RepairRequest")
+	if res.Status != NeedsRepair || res.Repair == nil {
+		t.Fatalf("want needs_repair with RepairRequest, got %q %+v", res.Status, res.Repair)
 	}
 }
 
-// --- Pi-mandated negative tests -----------------------------------------
+// --- Malfunction vs contract-unmet --------------------------------------
 
-// brokenBeta fails to run: a malfunction, distinct from a reject.
 type brokenBeta struct{}
 
-func (brokenBeta) Review(context.Context, Contract, Matter) (BetaResult, error) {
+func (brokenBeta) Review(context.Context, BetaInput) (BetaResult, error) {
 	return BetaResult{}, errors.New("backend unavailable")
 }
 
-// TestBetaMalfunctionReturnsError: a seat that cannot run makes RunEpisode
-// return an error (the episode does not close) — distinct from a needs_repair
-// contract-unmet episode.
 func TestBetaMalfunctionReturnsError(t *testing.T) {
 	s := EmptySpec()
 	s.Beta = brokenBeta{}
-
 	if _, err := RunEpisode(context.Background(), s); err == nil {
-		t.Fatal("run: want error from beta malfunction, got nil")
+		t.Fatal("want error from beta malfunction, got nil")
 	}
 }
 
-// TestNilSeatsFailClosed (D4): a nil α or β is a wrapped error before any seat
-// runs — never a panic.
 func TestNilSeatsFailClosed(t *testing.T) {
 	t.Run("nil alpha", func(t *testing.T) {
 		s := EmptySpec()
 		s.Alpha = nil
 		if _, err := RunEpisode(context.Background(), s); err == nil {
-			t.Fatal("want error for nil alpha, got nil")
+			t.Fatal("want error for nil alpha")
 		}
 	})
-	t.Run("nil beta", func(t *testing.T) {
+	t.Run("typed-nil beta", func(t *testing.T) {
 		s := EmptySpec()
-		s.Beta = nil
+		var b *typedNilBeta // typed nil
+		s.Beta = b
 		if _, err := RunEpisode(context.Background(), s); err == nil {
-			t.Fatal("want error for nil beta, got nil")
+			t.Fatal("want error for typed-nil beta")
 		}
 	})
 }
 
-// forgingAlpha produces matter but claims, via evidence, that a rejecting review
-// "passed". It models a hostile producer trying to self-certify.
+type typedNilBeta struct{}
+
+func (*typedNilBeta) Review(context.Context, BetaInput) (BetaResult, error) {
+	return BetaResult{}, nil
+}
+
+func TestCancelledContextFailsClosed(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := RunEpisode(ctx, EmptySpec()); err == nil {
+		t.Fatal("want error for cancelled context")
+	}
+}
+
+// --- Adversarial: evidence authority (D2) -------------------------------
+
 type forgingAlpha struct{}
 
 func (forgingAlpha) Produce(context.Context, Contract) (AlphaResult, error) {
 	return AlphaResult{Matter: Matter{Data: "junk"}}, nil
 }
 
-// rejectBeta discriminates every matter as failing: it ran, it said no.
 type rejectBeta struct{}
 
-func (rejectBeta) Review(context.Context, Contract, Matter) (BetaResult, error) {
-	return BetaResult{Review: Review{Pass: false, Notes: "reject for test"}}, nil
+func (rejectBeta) Review(context.Context, BetaInput) (BetaResult, error) {
+	return BetaResult{Review: Review{Pass: false, Notes: "reject"}}, nil
 }
 
-// TestNoSelfCertification (D2): a rejecting β cannot be turned into an
-// acceptance. Because γ/V/δ are kernel-owned (not injectable via Spec), there is
-// no seam through which α or a caller can rewrite β's review. A rejecting β
-// therefore always closes needs_repair, never accepted.
 func TestNoSelfCertification(t *testing.T) {
 	s := Spec{
-		Contract: Contract{ID: "cell-self-cert", Goal: "cannot self-certify"},
+		Contract: Contract{ID: "c", Goal: "cannot self-certify"},
 		Alpha:    forgingAlpha{},
 		Beta:     rejectBeta{},
 	}
@@ -169,34 +158,155 @@ func TestNoSelfCertification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	if res.Status == Accepted {
-		t.Fatalf("self-certification leaked: rejecting beta produced status %q", res.Status)
-	}
-	if res.Verdict.Pass {
-		t.Fatal("V passed a rejecting review — binding validation failed")
+	if res.Status == Accepted || res.Verdict.Pass {
+		t.Fatalf("self-cert leaked: status=%q verdict.pass=%v", res.Status, res.Verdict.Pass)
 	}
 }
 
-// TestMissingRequiredEvidenceFailsV: if the contract requires an evidence ref
-// that no seat produced, V FAILs even when β passed (Pi D2/Q4 binding check).
-func TestMissingRequiredEvidenceFailsV(t *testing.T) {
+// alphaMintingBetaEvidence tries to satisfy a β-owned required ref itself.
+type alphaMintingBetaEvidence struct{}
+
+func (alphaMintingBetaEvidence) Produce(context.Context, Contract) (AlphaResult, error) {
+	return AlphaResult{
+		Matter: Matter{Data: "m"},
+		Evidence: []EvidenceRef{
+			{ID: "diff", Kind: "diff", Content: "d"},
+			// α forges a β-owned ref; the runtime will stamp it producer=alpha.
+			{ID: "beta_review", Kind: "review", Content: "fake"},
+		},
+	}, nil
+}
+
+type acceptNoEvidenceBeta struct{}
+
+func (acceptNoEvidenceBeta) Review(context.Context, BetaInput) (BetaResult, error) {
+	return BetaResult{Review: Review{Pass: true}}, nil
+}
+
+func TestAlphaCannotMintBetaEvidence(t *testing.T) {
 	s := Spec{
 		Contract: Contract{
-			ID:               "cell-needs-evidence",
-			Goal:             "requires a diff that alpha never produced",
-			RequiredEvidence: []RequiredRef{{ID: "diff", Kind: "diff"}},
+			ID:   "c",
+			Goal: "beta must produce its own review evidence",
+			RequiredEvidence: []RequiredRef{
+				{ID: "diff", Kind: "diff", Producer: RoleAlpha},
+				{ID: "beta_review", Kind: "review", Producer: RoleBeta},
+			},
 		},
-		Alpha: NoopAlpha{}, // produces no evidence
-		Beta:  AcceptBeta{},
+		Alpha: alphaMintingBetaEvidence{},
+		Beta:  acceptNoEvidenceBeta{}, // β produces no evidence
 	}
 	res, err := RunEpisode(context.Background(), s)
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if res.Verdict.Pass {
-		t.Fatal("V passed despite missing required evidence")
+		t.Fatal("V passed although beta_review was minted by alpha, not beta")
 	}
-	if res.Status != NeedsRepair {
-		t.Fatalf("status: want %q, got %q", NeedsRepair, res.Status)
+}
+
+// duplicateEvidenceAlpha returns the same required id twice.
+type duplicateEvidenceAlpha struct{}
+
+func (duplicateEvidenceAlpha) Produce(context.Context, Contract) (AlphaResult, error) {
+	return AlphaResult{
+		Matter: Matter{Data: "m"},
+		Evidence: []EvidenceRef{
+			{ID: "diff", Kind: "diff", Content: "a"},
+			{ID: "diff", Kind: "diff", Content: "b"},
+		},
+	}, nil
+}
+
+func TestDuplicateEvidenceFailsV(t *testing.T) {
+	s := Spec{
+		Contract: Contract{ID: "c", Goal: "g",
+			RequiredEvidence: []RequiredRef{{ID: "diff", Kind: "diff", Producer: RoleAlpha}}},
+		Alpha: duplicateEvidenceAlpha{},
+		Beta:  acceptNoEvidenceBeta{},
+	}
+	res, err := RunEpisode(context.Background(), s)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if res.Verdict.Pass {
+		t.Fatal("V passed with duplicate evidence ids")
+	}
+}
+
+// TestForgedHashFailsV exercises the integrity check directly, since the runtime
+// otherwise recomputes the hash and a seat cannot forge it.
+func TestForgedHashFailsV(t *testing.T) {
+	frozen := Contract{ID: "c", Goal: "g"}
+	rc := Receipt{
+		ContractHash: frozen.canonicalHash(),
+		Review:       Review{Pass: true},
+		Evidence:     []EvidenceRef{{ID: "x", Kind: "k", Producer: RoleAlpha, Content: "real", SHA256: "deadbeef"}},
+	}
+	v := validate(frozen, frozen.canonicalHash(), rc)
+	if v.Pass {
+		t.Fatal("V passed a receipt with a forged evidence hash")
+	}
+}
+
+// --- Adversarial: contract freeze (D3) ----------------------------------
+
+// mutatingAlpha tries to relax the contract it is judged against by clearing the
+// required-evidence slice it received.
+type mutatingAlpha struct{}
+
+func (mutatingAlpha) Produce(_ context.Context, c Contract) (AlphaResult, error) {
+	for i := range c.RequiredEvidence {
+		c.RequiredEvidence[i].ID = "neutralized"
+	}
+	c.RequiredEvidence = nil
+	return AlphaResult{Matter: Matter{Data: "m"}}, nil // produces none of the required evidence
+}
+
+func TestHostileAlphaCannotMutateFrozenContract(t *testing.T) {
+	s := Spec{
+		Contract: Contract{ID: "c", Goal: "g",
+			RequiredEvidence: []RequiredRef{{ID: "diff", Kind: "diff", Producer: RoleAlpha}}},
+		Alpha: mutatingAlpha{},
+		Beta:  acceptNoEvidenceBeta{},
+	}
+	res, err := RunEpisode(context.Background(), s)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	// The frozen contract is unchanged, so V still requires the diff evidence
+	// that the mutating alpha never produced → not accepted.
+	if res.Verdict.Pass {
+		t.Fatal("frozen contract was relaxed by a hostile alpha")
+	}
+	if len(res.Contract.RequiredEvidence) != 1 || res.Contract.RequiredEvidence[0].ID != "diff" {
+		t.Fatalf("frozen contract mutated: %+v", res.Contract.RequiredEvidence)
+	}
+}
+
+// --- Beta input surface (D4) --------------------------------------------
+
+// surfaceCheckingBeta asserts it received the runtime-owned review surface.
+type surfaceCheckingBeta struct{ t *testing.T }
+
+func (b surfaceCheckingBeta) Review(_ context.Context, in BetaInput) (BetaResult, error) {
+	if in.ContractHash == "" || in.PolicyID != BetaInputPolicyID || in.BundleHash == "" {
+		b.t.Errorf("beta input missing surface fields: %+v", in)
+	}
+	if len(in.AlphaEvidence) == 0 {
+		b.t.Error("beta did not receive alpha evidence as review surface")
+	}
+	return BetaResult{Review: Review{Pass: true}}, nil
+}
+
+func TestBetaReceivesRuntimeOwnedSurface(t *testing.T) {
+	s := Spec{
+		Contract: Contract{ID: "c", Goal: "g",
+			RequiredEvidence: []RequiredRef{{ID: "diff", Kind: "diff", Producer: RoleAlpha}}},
+		Alpha: duplicateEvidenceAlpha{}, // produces diff evidence α sees as surface
+		Beta:  surfaceCheckingBeta{t: t},
+	}
+	if _, err := RunEpisode(context.Background(), s); err != nil {
+		t.Fatalf("run: %v", err)
 	}
 }

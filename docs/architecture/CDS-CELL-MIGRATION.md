@@ -226,17 +226,24 @@ add the negative tests Pi specified (self-certification blocked, nil-seat error,
 invalid pair → error). *Prerequisite for a truthful CLI.*
 
 **Phase 0 — the input contract.** Write `schemas/cdd/spec.cue` (`#CellSpec`:
-`{contract, protocol_id, params, alpha:{skills}, beta:{skills}, budget?}`) and
-the cds overlay (`#CDSCellSpec` pinning `protocol_id` + param domains).
-Hand-write a `cds.spec.json` for a real issue; `cue vet` it. *Proves the data
-shape before any Go or compiler.*
+`{version, contract (producer-attributed required_evidence), protocol_id,
+profile, params, alpha:{skills}, beta:{skills}}`) and the cds overlay
+(`#CDSCellSpec` pinning `protocol_id` + param domains). Hand-write a
+`cds.spec.json` for a real issue; `cue vet` it. *Proves the data shape before
+any Go or compiler.* (`budget` was removed as decorative per Pi #32 D5; it
+returns only when it is actually enforced.)
 
-**Phase 1 — CLI 0: one real local episode (stub cognition).** `internal/cellspec`
-loader (spec.json → kernel `Spec`), and `cn cell run --contract <path|-> [--param
-language=go]` that fills holes and calls `RunEpisode` with **stub α/β** (echo
-producer / accept reviewer). Structured receipt to stdout + explicit exit code.
-**Zero GitHub/network.** *Proves the execution path end-to-end, no compiler, no
-cognition.* (Pi shipping steps 4–6.)
+**Phase 1 — CLI 0: one local episode, honest receipt (no cognition).**
+`internal/cellspec` loader (strict parse → kernel `Spec`), and `cn cell run
+--contract <path|-> [--param k=v]` that fills holes and calls `RunEpisode`.
+Emits a **generic** `cnos.cellkernel.episode-receipt.v0` with `execution_mode`
+and `protocol_validated=false` — the declared `protocol_id` is provenance, never
+a validated CDS claim (Pi #32 D1). A `profile` selects the builtin seat pair:
+`stub` (smoke, tautological, stamped `execution_mode=stub`) or `bool` (a real
+mechanical episode where β **independently verifies** α's artifact — the
+non-tautological proof, Pi #32 D6). **Zero GitHub/network.** Contract is frozen
++ hashed; evidence is runtime-authenticated + producer-attributed; β receives a
+runtime-owned `BetaInput` review surface (Pi #32 D2–D4).
 
 **Phase 2 — skill resolution.** The `$PATH`-like resolver (`value → skill ref`)
 + required/optional/default hole logic; `cn cell run` errors on unfilled

@@ -5,6 +5,21 @@
 ratified architecture `cnos#711` (recursive-with-predicates). Grounded in the
 reference implementation `src/go/internal/cellkernel`.
 
+> **Corrections (Pi β #31 + #32) — read first.** Parts of the prose below the
+> line predate the hardened kernel and are superseded by
+> `CDS-CELL-MIGRATION.md` + the code. Specifically: (a) γ/V/δ are **kernel-owned
+> and not injectable** — the `Spec` carries only Contract + α + β; (b) the
+> engine is `RunEpisode → EpisodeResult{accepted|degraded|rejected|
+> needs_repair}`, and an inconsistent (verdict, decision) pair is a typed error,
+> **never** a returned closed cell; (c) β receives a runtime-owned **`BetaInput`
+> review surface** (frozen contract + matter + authenticated α evidence), not
+> "matter only"; (d) evidence is **runtime-authenticated and producer-
+> attributed** — a seat cannot mint another seat's evidence; (e) the contract is
+> **frozen + hashed** so a seat cannot mutate the terms it is judged against;
+> (f) composition is **α-proposes / runtime-executes**, never parent-α calling
+> the kernel on children; (g) repair/`Drive` and composition are **later cases**,
+> not bundled into Case 1. Where the text below conflicts with these, these win.
+
 ## Purpose
 
 One kernel runs every cell. This note pins **exactly how the runner behaves

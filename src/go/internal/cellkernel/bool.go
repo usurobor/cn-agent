@@ -5,51 +5,50 @@ import (
 	"strconv"
 )
 
-// Case 1 on the ladder: a one-shot mechanical cell over a bool. α produces a
-// bool as its matter; β passes iff the bool is true. No repair loop — a false
-// bool closes the episode as needs_repair (contract-unmet), which a Drive wrapper
-// (future) would re-attempt. This is the smallest cell that exercises both a
-// PASS→accepted path and a FAIL→needs_repair path through the real kernel.
+// Case 1: a one-shot mechanical cell where β INDEPENDENTLY checks α's artifact
+// (Pi D6 — a non-tautological proof, unlike the stub profile). α produces a bool
+// as its matter and mints the required "bool" evidence (producer α); β re-reads
+// the matter from its runtime-owned bundle and passes iff it is true. A hostile
+// α that produces false — or that tries to mint the acceptance itself — cannot
+// make β pass, and V independently checks producer authority and integrity.
 
-// BoolAlpha produces a fixed bool as its matter, plus one evidence ref recording
-// what it produced. Deterministic: the same BoolAlpha always produces the same
-// matter (no cognition rented here).
+// BoolAlpha produces a fixed bool as its matter plus the required α evidence.
 type BoolAlpha struct {
 	Value bool
 }
 
 func (a BoolAlpha) Produce(_ context.Context, _ Contract) (AlphaResult, error) {
+	s := strconv.FormatBool(a.Value)
 	return AlphaResult{
-		Matter: Matter{Data: strconv.FormatBool(a.Value)},
-		EvidenceRefs: []EvidenceRef{{
-			ID:                  "bool",
-			Kind:                "value",
-			Ref:                 strconv.FormatBool(a.Value),
-			ProducerExecutionID: "boolalpha",
+		Matter: Matter{Data: s},
+		Evidence: []EvidenceRef{{
+			ID:      "bool",
+			Kind:    "value",
+			Ref:     "bool://" + s,
+			Content: s,
 		}},
 	}, nil
 }
 
-// BoolBeta discriminates: it passes iff the matter parses as bool true. A matter
-// that does not parse is contract-unmet (not a malfunction) — β ran, it said no.
+// BoolBeta independently checks the matter from its bundle: pass iff it parses
+// as bool true. It does not trust α's claim — it re-reads and decides.
 type BoolBeta struct{}
 
-func (BoolBeta) Review(_ context.Context, _ Contract, m Matter) (BetaResult, error) {
-	v, err := strconv.ParseBool(m.Data)
+func (BoolBeta) Review(_ context.Context, in BetaInput) (BetaResult, error) {
+	v, err := strconv.ParseBool(in.Matter.Data)
 	if err != nil || !v {
 		return BetaResult{Review: Review{Pass: false, Notes: "matter is not bool true"}}, nil
 	}
-	return BetaResult{Review: Review{Pass: true, Notes: "matter is bool true"}}, nil
+	return BetaResult{Review: Review{Pass: true, Notes: "beta independently verified matter is bool true"}}, nil
 }
 
-// BoolSpec is the one-shot bool cell with the given α value and a contract that
-// requires the α "bool" evidence ref to be present.
+// BoolSpec is the one-shot bool cell requiring α-produced "bool" evidence.
 func BoolSpec(value bool) Spec {
 	return Spec{
 		Contract: Contract{
 			ID:               "cell-bool",
 			Goal:             "produce bool true",
-			RequiredEvidence: []RequiredRef{{ID: "bool", Kind: "value"}},
+			RequiredEvidence: []RequiredRef{{ID: "bool", Kind: "value", Producer: RoleAlpha}},
 		},
 		Alpha: BoolAlpha{Value: value},
 		Beta:  BoolBeta{},

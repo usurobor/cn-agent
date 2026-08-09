@@ -1,0 +1,17 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "cell-bool",
+    "goal": "produce bool true",
+    "required_evidence": [
+      { "id": "bool", "kind": "value", "producer": "alpha" }
+    ]
+  },
+  "protocol_id": "cnos.cellkernel.episode-receipt.v0",
+  "profile": "bool",
+  "params": {
+    "value": { "kind": "value", "required": true, "domain": ["true", "false"] }
+  },
+  "alpha": { "skills": [] },
+  "beta": { "skills": [] }
+}

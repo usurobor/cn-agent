@@ -9,8 +9,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/usurobor/cnos/src/go/internal/cli"
 	"github.com/usurobor/cnos/src/go/internal/discover"
@@ -24,7 +26,10 @@ var (
 )
 
 func main() {
-	ctx := context.Background()
+	// Honor Ctrl-C / SIGTERM: commands receive a cancellable context rather
+	// than an uncancellable background context (cnos cell-runner hardening).
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	// Build the kernel command registry.
 	reg := cli.NewRegistry()

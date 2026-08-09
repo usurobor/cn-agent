@@ -2,10 +2,9 @@ package cellkernel
 
 import "context"
 
-// The empty cell: α does nothing, β accepts unconditionally. It exercises the
-// full five-step closure and terminates in `accepted`, proving the loop turns.
-// It is Case 0 on the ladder; real cells swap NoopAlpha/AcceptBeta for α/β that
-// produce and discriminate real matter.
+// The empty cell: α produces nothing, β accepts unconditionally. It exercises
+// the full closure and terminates `accepted` — Case 0, the runner's smoke
+// reference. It carries no required evidence, so V's evidence checks are vacuous.
 
 // NoopAlpha produces no matter and no evidence.
 type NoopAlpha struct{}
@@ -14,10 +13,11 @@ func (NoopAlpha) Produce(context.Context, Contract) (AlphaResult, error) {
 	return AlphaResult{}, nil
 }
 
-// AcceptBeta accepts any matter.
+// AcceptBeta accepts any matter. It reviews over the runtime-owned BetaInput but
+// (being the empty smoke seat) checks nothing.
 type AcceptBeta struct{}
 
-func (AcceptBeta) Review(context.Context, Contract, Matter) (BetaResult, error) {
+func (AcceptBeta) Review(context.Context, BetaInput) (BetaResult, error) {
 	return BetaResult{Review: Review{Pass: true, Notes: "empty cell: accept"}}, nil
 }
 

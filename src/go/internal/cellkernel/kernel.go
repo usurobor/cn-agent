@@ -3,107 +3,167 @@
 // five-step closure a coherence cell runs at one scope.
 //
 //  1. matter   := α.produce(contract)
-//  2. review   := β.review(contract, matter)
+//  2. review   := β.review(betaInput)
 //  3. receipt  := γ.close(contract, matter, review, evidence)   [kernel-owned]
 //  4. verdict  := V(contract, receipt)                          [kernel-owned]
 //  5. decision := δ.decide(receipt, verdict)                    [kernel-owned]
 //
-// See src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md,
-// docs/architecture/CDS-CELL-MIGRATION.md, and cnos#711. This is the
-// single-episode engine: no repair loop (that is a Drive wrapper), no
-// composition (that is α-proposes / runtime-executes), no CUE binding yet.
+// See docs/architecture/CDS-CELL-MIGRATION.md and cnos#711. This is the
+// single-episode engine: no repair loop (a future Drive wrapper), no
+// composition (α-proposes / runtime-executes), no protocol dispatch (the
+// runner emits a generic episode receipt; protocol-specific validation is a
+// later phase).
 //
-// Design corrections from Pi β (msg-cn-pi-cnos-cell-runner-cases-review-31):
+// Authority model (Pi β msg-cn-pi-cnos-cell-prototype-beta-32, D1–D4):
 //
-//   - D1 honest closure: RunEpisode returns an EpisodeResult whose Status is a
-//     terminal outcome (accepted|degraded|rejected) OR needs_repair (the parent
-//     stays open). An inconsistent (verdict, decision) pair is a typed error,
-//     never a returned result. Repair looping belongs to a future Drive.
-//   - D2 no self-certification: the caller supplies Contract + α + β only. The
-//     kernel OWNS mechanical γ/V/δ; there are no injectable seat interfaces, so
-//     a rejecting β cannot be rewritten into an acceptance. V verifies bindings,
-//     it does not merely mirror β.
-//   - D3 evidence seam: α and β return typed EvidenceRefs that γ binds.
-//   - D4 fail closed: a nil α or β is a wrapped error before any seat runs.
+//   - The runtime FREEZES the contract at episode start: it deep-copies and
+//     hashes it, hands each seat an isolated copy, and V/γ bind the frozen
+//     snapshot + hash. A seat cannot mutate the terms it is judged against (D3).
+//   - Evidence is RUNTIME-AUTHENTICATED, not seat-asserted: the runtime stamps
+//     each evidence ref's producer role and execution id from the seat that
+//     actually returned it and hashes its content. α cannot mint β's evidence,
+//     because the producer role is assigned by the runtime, not claimed by the
+//     seat (D2).
+//   - β receives a runtime-owned BetaInput (the review surface + the frozen
+//     contract + authenticated α evidence + a bundle hash), never α's private
+//     state (D4).
+//   - Only α and β are open seats. γ binds, V validates bindings, δ applies
+//     boundary policy — all kernel-owned and mechanical (no injectable seats).
 //
 // Purity boundary (eng/go §2.17): α and β may do IO or rent cognition, so they
-// take a context and may fail. γ/V/δ are mechanical and kernel-owned. A seat
-// that returns an error is a malfunction (the episode cannot close); a review
-// that returns Pass=false is contract-unmet (the episode closes needing repair).
+// take a context and may fail. A seat error is a malfunction (the episode
+// cannot close); a review with Pass=false is contract-unmet (closes needing
+// repair). An inconsistent (verdict, decision) pair is a typed error, never a
+// returned closed cell.
 package cellkernel
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 )
+
+// Role names which seat produced an artifact. The runtime assigns it; a seat
+// cannot claim a role it does not hold.
+type Role string
+
+const (
+	RoleAlpha Role = "alpha"
+	RoleBeta  Role = "beta"
+)
+
+// BetaInputPolicyID identifies the review-surface policy: β sees the frozen
+// contract, the matter, and α's authenticated evidence — never α's private
+// reasoning or session state.
+const BetaInputPolicyID = "cnos.cellkernel.beta-input.v0"
 
 // --- Artifacts (typed; minimal shapes for now) --------------------------
 
-// RequiredRef names an evidence ref the contract requires γ to bind and V to
-// find present. Kind is the ref's typed role (e.g. "diff", "review").
+// RequiredRef names an evidence ref the contract requires, and which producer
+// role is authorized to mint it. V checks presence *and* producer authority.
 type RequiredRef struct {
-	ID   string
-	Kind string
+	ID       string `json:"id"`
+	Kind     string `json:"kind"`
+	Producer Role   `json:"producer"`
 }
 
 // Contract is the cell's input: what to produce, what "done" means, and the
-// evidence the closed receipt must carry.
+// evidence the closed receipt must carry (with producer authority).
 type Contract struct {
-	ID               string
-	Goal             string
-	RequiredEvidence []RequiredRef
-	// acceptance criteria, scope, non-goals: added as the kernel grows.
+	ID               string        `json:"id"`
+	Goal             string        `json:"goal"`
+	RequiredEvidence []RequiredRef `json:"required_evidence,omitempty"`
 }
 
-// Matter is α's product.
-type Matter struct{ Data string }
+// clone deep-copies the contract so a seat cannot mutate the frozen snapshot
+// through a shared slice backing array (D3).
+func (c Contract) clone() Contract {
+	cp := c
+	if c.RequiredEvidence != nil {
+		cp.RequiredEvidence = append([]RequiredRef(nil), c.RequiredEvidence...)
+	}
+	return cp
+}
 
-// EvidenceRef is one typed, content-addressed evidence record accrued during
-// α/β work (Pi Q4 shape). ProducerExecutionID ties the ref to the seat run
-// that produced it, so V can check it was not γ-authored after the fact.
+// canonicalHash is the content address of the frozen contract.
+func (c Contract) canonicalHash() string {
+	b, _ := json.Marshal(c) // struct field order is deterministic
+	return sha256hex(b)
+}
+
+// Matter is α's product. It is a public result surface, never a channel for a
+// model's private reasoning.
+type Matter struct {
+	Data string `json:"data"`
+}
+
+// EvidenceRef is one typed evidence record. Producer, ProducerExecutionID, and
+// SHA256 are RUNTIME-stamped (a seat cannot forge them); Content is the produced
+// bytes the runtime hashes (kept out of the serialized receipt).
 type EvidenceRef struct {
 	ID                  string `json:"id"`
 	Kind                string `json:"kind"`
-	Ref                 string `json:"ref"`
-	SHA256              string `json:"sha256,omitempty"`
+	Producer            Role   `json:"producer"`
 	ProducerExecutionID string `json:"producer_execution_id"`
+	Ref                 string `json:"ref"`
+	SHA256              string `json:"sha256"`
+	Content             string `json:"-"` // hashed by the runtime; not serialized
 }
 
-// AlphaResult is α's output: the matter plus the evidence its run accrued.
+// AlphaResult is α's output: the matter plus candidate evidence (the runtime
+// authenticates the candidates).
 type AlphaResult struct {
-	Matter       Matter
-	EvidenceRefs []EvidenceRef
+	Matter   Matter
+	Evidence []EvidenceRef
 }
 
-// Review is β's discrimination of the matter against the contract. β consumes
-// matter only — never evidence (that is V's job at step 4).
+// Review is β's discrimination of the matter against the contract.
 type Review struct {
-	Pass  bool
-	Notes string
+	Pass  bool   `json:"pass"`
+	Notes string `json:"notes"`
 }
 
-// BetaResult is β's output: the review plus the evidence its run accrued.
+// BetaResult is β's output: the review plus candidate evidence.
 type BetaResult struct {
-	Review       Review
-	EvidenceRefs []EvidenceRef
+	Review   Review
+	Evidence []EvidenceRef
 }
 
-// Receipt is the parent-facing artifact γ emits: the single typed surface that
-// crosses the scope boundary. V dereferences everything it needs from here.
+// BetaInput is the runtime-owned review surface handed to β (D4). It carries the
+// frozen contract + hash, the matter, α's authenticated evidence, and the
+// bundle/policy identity — and nothing of α's private state.
+type BetaInput struct {
+	Contract      Contract
+	ContractHash  string
+	Matter        Matter
+	AlphaEvidence []EvidenceRef
+	PolicyID      string
+	BundleHash    string
+}
+
+// Receipt is the parent-facing artifact γ emits. It binds the frozen contract
+// and its hash, the episode and seat execution ids, and the authenticated
+// evidence.
 type Receipt struct {
-	Contract     Contract
-	Matter       Matter
-	Review       Review
-	EvidenceRefs []EvidenceRef
+	EpisodeID        string        `json:"episode_id"`
+	Contract         Contract      `json:"contract"`
+	ContractHash     string        `json:"contract_hash"`
+	Matter           Matter        `json:"matter"`
+	Review           Review        `json:"review"`
+	Evidence         []EvidenceRef `json:"evidence_refs"`
+	AlphaExecutionID string        `json:"alpha_execution_id"`
+	BetaExecutionID  string        `json:"beta_execution_id"`
 }
 
-// Verdict is V's typed output. WARN is not a verdict value; advisories live in
-// Warnings (mirrors schemas/cdd/receipt.cue #ValidationVerdict).
+// Verdict is V's typed output.
 type Verdict struct {
-	Pass     bool
-	Failed   []string
-	Warnings []string
+	Pass     bool     `json:"pass"`
+	Failed   []string `json:"failed,omitempty"`
+	Warnings []string `json:"warnings,omitempty"`
 }
 
 // Decision is δ's boundary decision.
@@ -119,25 +179,18 @@ const (
 
 // --- The two open seats -------------------------------------------------
 
-// Alpha produces matter against the contract. It sees only the contract, and
-// may rent cognition or do IO, so it takes a context and may fail. It returns
-// the evidence its run accrued (D3).
+// Alpha produces matter against the contract (an isolated frozen copy).
 type Alpha interface {
 	Produce(ctx context.Context, c Contract) (AlphaResult, error)
 }
 
-// Beta discriminates the matter against the contract. Matter only, no evidence.
-// A returned error is a malfunction; Review{Pass:false} is a contract-unmet
-// review, not an error.
+// Beta discriminates over the runtime-owned review surface. A returned error is
+// a malfunction; Review{Pass:false} is contract-unmet.
 type Beta interface {
-	Review(ctx context.Context, c Contract, m Matter) (BetaResult, error)
+	Review(ctx context.Context, in BetaInput) (BetaResult, error)
 }
 
-// --- Spec + result ------------------------------------------------------
-
-// Spec is a single-episode cell: a contract plus the two open seats. γ/V/δ are
-// kernel-owned and mechanical, deliberately NOT part of the Spec (D2): a caller
-// cannot inject a γ that certifies its own receipt.
+// Spec is a single-episode cell: a contract plus the two open seats.
 type Spec struct {
 	Contract Contract
 	Alpha    Alpha
@@ -148,70 +201,79 @@ type Spec struct {
 type Status string
 
 const (
-	// Terminal statuses: the episode is closed.
-	Accepted Status = "accepted"
-	Degraded Status = "degraded"
-	Rejected Status = "rejected"
-	// Non-terminal: the parent cell stays open; a Drive may re-attempt.
-	NeedsRepair Status = "needs_repair"
+	Accepted    Status = "accepted"
+	Degraded    Status = "degraded"
+	Rejected    Status = "rejected"
+	NeedsRepair Status = "needs_repair" // nonterminal; the parent stays open
 )
 
-// RepairRequest is the typed reason an episode needs repair. It is surfaced to
-// a Drive loop (future); the kernel does not itself re-attempt.
+// RepairRequest is the typed reason an episode needs repair.
 type RepairRequest struct {
 	Reason string   `json:"reason"`
 	Failed []string `json:"failed,omitempty"`
 }
 
-// EpisodeResult is the kernel's object for one closed-or-held episode. When
-// Status == NeedsRepair, Repair is set and the parent is still open; otherwise
-// Status is terminal. An inconsistent (verdict, decision) pair is never
-// represented here — RunEpisode returns an error instead (D1).
+// EpisodeResult is the kernel's object for one closed-or-held episode.
 type EpisodeResult struct {
-	Contract Contract
-	Matter   Matter
-	Review   Review
-	Receipt  Receipt
-	Verdict  Verdict
-	Decision Decision
-	Status   Status
-	Repair   *RepairRequest // set iff Status == NeedsRepair
+	EpisodeID    string
+	ContractHash string
+	Contract     Contract
+	Matter       Matter
+	Review       Review
+	Receipt      Receipt
+	Verdict      Verdict
+	Decision     Decision
+	Status       Status
+	Repair       *RepairRequest // set iff Status == NeedsRepair
 }
 
-// ErrInvalidClosure is returned when (verdict, decision) is an inconsistent
-// pair (PASS+override, or FAIL+accept/release). Such a pair is nonterminal in
-// full CCNF (δ must re-decide); in this v0 kernel it is a typed malfunction
-// rather than a returned result.
+// ErrInvalidClosure is returned for an inconsistent (verdict, decision) pair.
 var ErrInvalidClosure = errors.New("cellkernel: inconsistent (verdict, decision) pair")
 
-// RunEpisode executes the CCNF five-step closure for one episode. It returns:
-//   - a terminal EpisodeResult (accepted|degraded|rejected), or
-//   - a NeedsRepair EpisodeResult (the parent stays open), or
-//   - an error: a seat malfunction, a fail-closed spec violation, or an
-//     inconsistent closure (ErrInvalidClosure).
-//
-// It never returns a non-terminal state dressed as a closed cell.
+// RunEpisode executes the CCNF five-step closure for one episode.
 func RunEpisode(ctx context.Context, s Spec) (EpisodeResult, error) {
-	if s.Alpha == nil { // D4: fail closed before any seat runs.
+	if seatIsNil(s.Alpha) { // D4/hardening: reject nil and typed-nil seats.
 		return EpisodeResult{}, errors.New("cellkernel: spec has nil alpha")
 	}
-	if s.Beta == nil {
+	if seatIsNil(s.Beta) {
 		return EpisodeResult{}, errors.New("cellkernel: spec has nil beta")
 	}
+	if err := ctx.Err(); err != nil { // honor a cancelled context.
+		return EpisodeResult{}, fmt.Errorf("cellkernel: context: %w", err)
+	}
 
-	aRes, err := s.Alpha.Produce(ctx, s.Contract) // 1
+	// Freeze the contract: deep-copy + hash. Everything downstream binds the
+	// frozen snapshot; seats receive isolated copies (D3).
+	frozen := s.Contract.clone()
+	frozenHash := frozen.canonicalHash()
+	episodeID := "ep-" + frozenHash[:12]
+	alphaExec := "alpha-" + episodeID
+	betaExec := "beta-" + episodeID
+
+	aRes, err := s.Alpha.Produce(ctx, frozen.clone()) // 1 — α gets its own copy
 	if err != nil {
 		return EpisodeResult{}, fmt.Errorf("alpha produce: %w", err)
 	}
-	bRes, err := s.Beta.Review(ctx, s.Contract, aRes.Matter) // 2
+	alphaEv := authenticate(aRes.Evidence, RoleAlpha, alphaExec)
+
+	bin := BetaInput{
+		Contract:      frozen.clone(),
+		ContractHash:  frozenHash,
+		Matter:        aRes.Matter,
+		AlphaEvidence: cloneEvidence(alphaEv),
+		PolicyID:      BetaInputPolicyID,
+		BundleHash:    bundleHash(frozenHash, aRes.Matter, alphaEv),
+	}
+	bRes, err := s.Beta.Review(ctx, bin) // 2 — β gets the runtime-owned surface
 	if err != nil {
 		return EpisodeResult{}, fmt.Errorf("beta review: %w", err)
 	}
+	betaEv := authenticate(bRes.Evidence, RoleBeta, betaExec)
 
-	evidence := append(append([]EvidenceRef{}, aRes.EvidenceRefs...), bRes.EvidenceRefs...)
-	receipt := closeReceipt(s.Contract, aRes.Matter, bRes.Review, evidence) // 3 (kernel γ)
-	verdict := validate(s.Contract, receipt)                                // 4 (kernel V)
-	decision := decide(verdict)                                             // 5 (kernel δ)
+	evidence := append(cloneEvidence(alphaEv), betaEv...)
+	receipt := closeReceipt(frozen, frozenHash, episodeID, aRes.Matter, bRes.Review, evidence, alphaExec, betaExec) // 3
+	verdict := validate(frozen, frozenHash, receipt)                                                                // 4
+	decision := decide(verdict)                                                                                     // 5
 
 	status, err := statusOf(verdict, decision)
 	if err != nil {
@@ -219,13 +281,15 @@ func RunEpisode(ctx context.Context, s Spec) (EpisodeResult, error) {
 	}
 
 	res := EpisodeResult{
-		Contract: s.Contract,
-		Matter:   aRes.Matter,
-		Review:   bRes.Review,
-		Receipt:  receipt,
-		Verdict:  verdict,
-		Decision: decision,
-		Status:   status,
+		EpisodeID:    episodeID,
+		ContractHash: frozenHash,
+		Contract:     frozen,
+		Matter:       aRes.Matter,
+		Review:       bRes.Review,
+		Receipt:      receipt,
+		Verdict:      verdict,
+		Decision:     decision,
+		Status:       status,
 	}
 	if status == NeedsRepair {
 		res.Repair = &RepairRequest{Reason: "contract unmet", Failed: verdict.Failed}
@@ -246,34 +310,94 @@ func statusOf(v Verdict, d Decision) (Status, error) {
 	case d == RepairDispatch:
 		return NeedsRepair, nil
 	default:
-		// PASS+override/reject, or FAIL+accept/release: inconsistent.
 		return "", fmt.Errorf("%w: verdict.pass=%v decision=%q", ErrInvalidClosure, v.Pass, d)
 	}
 }
 
-// --- Kernel-owned mechanical γ / V / δ (D2; not injectable) --------------
+// --- Runtime evidence authentication ------------------------------------
 
-// closeReceipt (γ) mechanically binds the episode's inputs and accrued evidence
-// into a receipt. It is pure: no judgment, no IO, no validation.
-func closeReceipt(c Contract, m Matter, r Review, evidence []EvidenceRef) Receipt {
-	return Receipt{Contract: c, Matter: m, Review: r, EvidenceRefs: evidence}
+// authenticate stamps each candidate evidence ref with the producing role, the
+// seat execution id, and the content hash — overwriting anything the seat
+// claimed. This is what stops α from minting β's evidence (D2).
+func authenticate(candidates []EvidenceRef, role Role, execID string) []EvidenceRef {
+	out := make([]EvidenceRef, 0, len(candidates))
+	for _, e := range candidates {
+		e.Producer = role
+		e.ProducerExecutionID = execID
+		e.SHA256 = sha256hex([]byte(e.Content))
+		out = append(out, e)
+	}
+	return out
 }
 
-// validate (V) verifies the receipt's bindings — it does not re-judge the
-// matter (Pi D2). Because γ is kernel-owned, β's review reaches V unrewritten;
-// V additionally checks the contract binding and required-evidence presence,
-// then derives PASS from the (trusted) review.
-func validate(c Contract, rc Receipt) Verdict {
+func cloneEvidence(in []EvidenceRef) []EvidenceRef {
+	return append([]EvidenceRef(nil), in...)
+}
+
+func bundleHash(contractHash string, m Matter, alphaEv []EvidenceRef) string {
+	h := sha256.New()
+	h.Write([]byte(contractHash))
+	h.Write([]byte(m.Data))
+	for _, e := range alphaEv {
+		h.Write([]byte(e.ID))
+		h.Write([]byte(e.SHA256))
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// --- Kernel-owned mechanical γ / V / δ (D2; not injectable) --------------
+
+// closeReceipt (γ) mechanically binds the frozen snapshot and authenticated
+// evidence. Pure: no judgment, no IO.
+func closeReceipt(c Contract, hash, episodeID string, m Matter, r Review, evidence []EvidenceRef, alphaExec, betaExec string) Receipt {
+	return Receipt{
+		EpisodeID:        episodeID,
+		Contract:         c,
+		ContractHash:     hash,
+		Matter:           m,
+		Review:           r,
+		Evidence:         evidence,
+		AlphaExecutionID: alphaExec,
+		BetaExecutionID:  betaExec,
+	}
+}
+
+// validate (V) verifies the receipt's bindings against the frozen contract: the
+// contract hash, then — for each required ref — a bound evidence entry with the
+// matching id, kind, and authorized producer, unique, with an intact content
+// hash. It does not re-judge β's prose (Pi D2/D4).
+func validate(frozen Contract, frozenHash string, rc Receipt) Verdict {
 	var failed []string
 
-	if rc.Contract.ID != c.ID {
+	if rc.ContractHash != frozenHash {
 		failed = append(failed, "contract binding mismatch")
 	}
-	for _, req := range c.RequiredEvidence {
-		if !hasEvidence(rc.EvidenceRefs, req.ID, req.Kind) {
-			failed = append(failed, "missing required evidence: "+req.ID)
+
+	// Uniqueness: no two bound evidence refs may share an id.
+	seen := make(map[string]int)
+	for _, e := range rc.Evidence {
+		seen[e.ID]++
+	}
+	for id, n := range seen {
+		if n > 1 {
+			failed = append(failed, "duplicate evidence id: "+id)
 		}
 	}
+
+	// Integrity: each bound ref's content must hash to its stamped SHA256.
+	for _, e := range rc.Evidence {
+		if sha256hex([]byte(e.Content)) != e.SHA256 {
+			failed = append(failed, "evidence hash mismatch: "+e.ID)
+		}
+	}
+
+	// Required presence + producer authority.
+	for _, req := range frozen.RequiredEvidence {
+		if !hasAuthorizedEvidence(rc.Evidence, req) {
+			failed = append(failed, fmt.Sprintf("missing/unauthorized required evidence: %s (want producer %s)", req.ID, req.Producer))
+		}
+	}
+
 	if !rc.Review.Pass {
 		failed = append(failed, "review.pass=false")
 	}
@@ -284,9 +408,9 @@ func validate(c Contract, rc Receipt) Verdict {
 	return Verdict{Pass: true}
 }
 
-func hasEvidence(refs []EvidenceRef, id, kind string) bool {
+func hasAuthorizedEvidence(refs []EvidenceRef, req RequiredRef) bool {
 	for _, e := range refs {
-		if e.ID == id && e.Kind == kind {
+		if e.ID == req.ID && e.Kind == req.Kind && e.Producer == req.Producer {
 			return true
 		}
 	}
@@ -294,10 +418,32 @@ func hasEvidence(refs []EvidenceRef, id, kind string) bool {
 }
 
 // decide (δ) is the minimal mechanical boundary policy: PASS→accept,
-// FAIL→repair_dispatch. A richer δ (override, reject) arrives with policy.
+// FAIL→repair_dispatch.
 func decide(v Verdict) Decision {
 	if v.Pass {
 		return Accept
 	}
 	return RepairDispatch
+}
+
+// --- helpers ------------------------------------------------------------
+
+func sha256hex(b []byte) string {
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
+}
+
+// seatIsNil reports whether a seat is nil or a typed-nil (interface holding a
+// nil pointer), which a bare `== nil` misses.
+func seatIsNil(v any) bool {
+	if v == nil {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Ptr, reflect.Interface, reflect.Func, reflect.Map, reflect.Slice, reflect.Chan:
+		return rv.IsNil()
+	default:
+		return false
+	}
 }
