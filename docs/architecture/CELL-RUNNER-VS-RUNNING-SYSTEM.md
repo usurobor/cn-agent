@@ -43,6 +43,10 @@ cognition we port the process lessons the shell learned the hard way.
 
 ## 2. What the running system does better (borrow list)
 
+*(Descriptive of the running system; where §4's simplification pass narrows a
+recommendation — no git identities, no REPAIR-PLAN file, no `.cdd/` — §4
+wins.)*
+
 1. **Matter lives on a durable substrate.** A cycle's matter is the
    `cycle/{N}` branch: commits vs a pinned `base_sha`, artifacts on disk,
    reconstructable by any fresh process (*"the branch state IS the iteration
@@ -140,31 +144,42 @@ cognition we port the process lessons the shell learned the hard way.
 
 ## 4. Where the new kernel is honestly behind (gaps before cognition)
 
-Ordered; the first two block a real CDS episode entirely.
+**Operator simplification pass applied** — several first-draft borrow items
+were the old system's *workarounds for having no runtime*, not wisdom to
+port. Corrected list; the first two block a real CDS episode entirely.
 
 - **G1 — matter substrate.** `Matter{Data string}` cannot carry a code
   change. Needed: contract gains `base_sha` (+ optional writable scope); a
   **workspace adapter** (worktree) materializes α's working copy *outside*
   the kernel; the sealed α output binds `head_sha` and the diff as an
   artifact. The kernel stays substrate-free; the adapter is the seam.
-- **G2 — durability.** The closure must land on disk
-  (`.cdd/unreleased/{N}/closure.json` beside — eventually instead of — the
-  five prose files), so a dead process leaves a reconstructable trail and the
-  finalizer pattern applies. The typed closure replaces the *mechanical* role
-  of the prose records; the prose narratives survive as artifacts referenced
-  from the record.
-- **G3 — findings.** `BetaOutput` grows typed findings
-  (severity/location/text/disposition); the repair contract derives from
-  them.
+- **G2 — shipping the closure (git-native, no `.cdd/`).** The `.cdd/` tree
+  is retired, not ported. A diff ships its receipt as three git-native
+  pieces: (1) a **commit trailer** `Cell-Closure: sha256:<scope-lift-digest>`
+  binding the merge commit to its closure; (2) the **closure object on a
+  ref** (the same pull-based writer-owned substrate as dialogue), where the
+  trailer digest must match and `VerifyClosure` re-checks; (3) **one
+  distilled r1 file** — decisions made, why, lessons (the #698
+  distilled-knowledge record; the ε `learning:` content) — the only authored
+  artifact. Five prose closure records collapse into that one file; any
+  index on main is rebuildable (#711's original design). Site-specific
+  rationale that constrains future editors goes where this repo already
+  successfully puts it: a `Derives from:`-style comment at the constrained
+  site. Verdicts/receipts never go in code comments.
+- **G3 — findings.** `BetaOutput` grows minimal typed findings
+  (severity + text + optional location). **The findings ARE the repair
+  plan** — the repair contract derives from them mechanically; no authored
+  REPAIR-PLAN artifact.
 - **G4 — rounds.** `Drive` (deferred by Pi's gate, correctly) adopts the
-  running system's shape: internal α↔β rounds within one cell; REPAIR-PLAN
-  discipline on re-entry; never-blind-requeue-over-matter.
-- **G5 — actor identity.** `StationRecord` gains provider/actor identity when
-  seats cross processes; C1/C2-equivalents return as V predicates at that
-  boundary; `collapsed` joins the status/mode vocabulary for honestly
-  degraded independence.
-- **G6 — learning.** The closure carries the ε `learning:` block (the #698
-  distilled-knowledge record).
+  running system's proven shape: internal α↔β rounds within one cell;
+  repair-not-recertify on re-entry (enforced by deriving the repair contract
+  from the prior findings); never-blind-requeue-over-matter.
+- **G5 — provider provenance, not git identities.** Dropped: per-role git
+  identities and C1/C2 git-author/commit-time forensics — those compensated
+  for a prose-gate runtime. The record simply names which provider
+  invocation held each seat; separation stays structural (disjoint
+  contexts). Kept: `collapsed` as one honest mode value for
+  real-work-degraded-independence.
 
 ## 5. Synthesis — the migration posture
 
@@ -179,8 +194,8 @@ and labels/PR projection") — this evaluation confirms S8's shape against the
 real code.
 
 Pre-cognition order (proposal): **G1 + G3** (matter seam + findings — the CDS
-profile becomes real), then **G2** (durable closure — the finalizer pattern
-applies to us), then cognition behind the provider seam, then G4–G6 with the
+profile becomes real), then **G2** (closure shipped git-native: trailer + ref +
+one r1 file), then cognition behind the provider seam, then G4–G5 with the
 `Drive` work. Each lands under the existing Pi β gate.
 
 What eventually gets retired from the running system (only after parity):
