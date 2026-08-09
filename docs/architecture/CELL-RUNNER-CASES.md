@@ -156,6 +156,121 @@ projects **as α-matter at scope n+1** via its receipt; that is just mechanism
 
 ---
 
+## The normalized cell spec
+
+The spec is **data**, not code — a declarative instruction a parent (or the
+root invoker) *emits*. This is what makes recursion automatic: a parent-α
+produces child specs and the runtime runs each. The runtime **wires** the data
+spec into seat implementations and runs the five steps.
+
+```yaml
+spec:
+  contract:                          # what to produce + what "done" means (per-run)
+    id: issue-717
+    goal: "<the issue text / goal>"
+    acceptance: ["<criterion>", ...]
+  protocol_id: cnos.cds.receipt.v1   # selects the domain receipt schema V validates against
+  alpha:
+    mode: rent                       # noop | compiled | rent | decompose
+    skills: [eng/code, eng/ocaml, eng/functional]
+  beta:
+    mode: rent                       # accept | compiled | rent | compose
+    skills: [cdd/beta]               # the review skill
+  budget: {attempts: 3}              # bounds the repair loop
+```
+
+- `contract` is per-run (the issue). `alpha`/`beta` are the customization
+  (`mode` + `skills`). `protocol_id` selects the domain receipt schema. γ/V/δ
+  are the generic kernel and are **not** in the spec.
+- `mode` tells the runtime how to wire the seat: `noop`/`accept` (trivial),
+  `compiled` (mechanical — CUE/table), `rent` (provider-backed cognition),
+  `decompose`/`compose` (recursion).
+- **The spec is fully-set, top-down.** A cell never chooses its own skills or
+  mode; the caller set them.
+
+### Coding cell (OCaml) — full use case
+
+The spec above. Walk:
+- **α** (`rent`, ocaml/functional) writes the code against the contract.
+- **β** (`rent`, review skill) reviews the residue; mechanizes tests/greps.
+- **γ** binds `{diff, test output, route receipts, skills used}` into a
+  `cnos.cds.receipt.v1` receipt.
+- **V** cue-vets it against `schemas/cdd/receipt.cue ∧ schemas/cds/receipt.cue`
+  (requires `diff`, `tests`, …).
+- **δ** decides; FAIL → `repair_dispatch` → α with the why.
+
+### Writing cell (doc) — full use case
+
+```yaml
+spec:
+  contract: {id: issue-800, goal: "write the X guide", acceptance: [...]}
+  protocol_id: cnos.cdw.receipt.v1   # writing receipt schema: doc + readability evidence
+  alpha: {mode: rent, skills: [write, eng/document]}
+  beta:  {mode: rent, skills: [cdd/beta, document-review]}
+  budget: {attempts: 3}
+```
+
+**Same kernel, same five steps.** What differs is entirely in the spec:
+different **skills** (`write/document` vs `eng/ocaml`), and a different
+**`protocol_id`** → a different domain receipt schema → different required
+**artifacts** (the doc + readability evidence vs a diff + tests). γ/V/δ are
+unchanged; γ binds whatever evidence exists, V validates against the schema the
+`protocol_id` names. A new cell class = a new `evidence_refs` domain schema + a
+`protocol_id`, nothing in the kernel.
+
+## Where the child spec comes from — resolution & recursion
+
+Normalizing the spec is what enables recursion: because the spec is data, a
+parent can *create a specific instance of it* per child, and the runtime runs
+each. Recursion = re-entrant `Run` over parent-emitted child specs.
+
+**Is the coding cell "α within a parent"?** One precision: the coding cell is a
+**child** the parent's α *runs*, not literally the parent's α. **Parent-α =
+decomposition** (`mode: decompose`): produce the child specs, run the child
+cells, compose their results into the parent's matter. Parent-β = composition
+(judges child receipts jointly against the parent contract).
+
+**Where "OCaml vs Python" is decided.** Not in any child's α/β. In the
+**spec-constructor** — parent-α (decompose) below the root, or the
+**invoker/dispatcher** at the root. It fills each child spec by calling a
+**compiled profile resolver**:
+
+```
+resolve(class, project_binding) → {alpha.skills, beta.skills, protocol_id}
+```
+
+- `class` = coding | writing | … (the telos).
+- `project_binding` = this repo's declared/detected stack ("this repo is OCaml"
+  — from repo config, or a compiled detector: `dune-project` → ocaml/functional).
+- output = the per-seat skills + the receipt-schema selector.
+
+The resolver is a **compiled runtime component** (a registry/table + optional
+repo detection), **deterministic**, living in the **spec-construction layer**.
+It is *not* a seat; it is the tool the caller uses to build a spec.
+
+Two distinct things happen in parent-α's decomposition:
+1. **the decomposition decision** — how to split the work into sub-tasks. May be
+   *compiled* (mechanical: one repo → one coding cell) or *rented* (a planning
+   cell that decides the split by cognition).
+2. **the spec fill** — for each sub-task, `resolve(class, project_binding)` →
+   the child's skills + `protocol_id`, plus its contract. Always *compiled*.
+
+So the mechanical "given this repo, it's OCaml" logic lives in **(2), the
+compiled resolver, invoked by the spec-constructor**. At the root the invoker
+calls it; below the root parent-α calls it. **Neither a child's α nor β ever
+resolves its own spec — it receives a fully-set one from above.**
+
+```
+invoker/dispatcher            # root: resolve(class, project_binding) → root spec → Run
+   └─ parent-α (decompose)    # emits child specs via resolve(...) → runs each child
+        └─ coding cell        # receives its fully-set spec; α writes, β reviews
+```
+Every arrow points down. A cell is fully parameterized from above; the resolver
+is the only place the "OCaml" fact enters, and it enters mechanically at
+spec-construction time.
+
+---
+
 ## Mapping to the reference implementation
 
 `src/go/internal/cellkernel` today:
