@@ -17,13 +17,20 @@ package cellspec
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 )
+
+// ResolvedSpecSchema versions the canonical resolved-spec encoding that is
+// hashed into the receipt's resolved_spec_hash (Pi #33 D1).
+const ResolvedSpecSchema = "cnos.cellspec.resolved.v0"
 
 // SchemaVersion is the pinned cell-spec version; a spec must declare it exactly.
 const SchemaVersion = "cnos.cellspec.v0"
@@ -95,7 +102,11 @@ func Parse(data []byte) (CellSpec, error) {
 	if err := dec.Decode(&s); err != nil {
 		return CellSpec{}, fmt.Errorf("decode cell spec: %w", err)
 	}
-	if dec.More() { // trailing data after the first JSON value.
+	// Strict EOF: any non-whitespace byte after the first value — including a
+	// stray delimiter like `]` or `}` — is rejected. dec.More() is an iteration
+	// helper, not an EOF check, so decode a second value and require io.EOF.
+	var extra json.RawMessage
+	if err := dec.Decode(&extra); err != io.EOF {
 		return CellSpec{}, fmt.Errorf("cell spec: trailing data after JSON object")
 	}
 
@@ -128,7 +139,25 @@ func Parse(data []byte) (CellSpec, error) {
 			return CellSpec{}, fmt.Errorf("cell spec: parameter %q has unsupported kind %q (want \"skill\" or \"value\")", name, p.Kind)
 		}
 	}
+	if err := checkProfileParams(s); err != nil {
+		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
+	}
 	return s, nil
+}
+
+// checkProfileParams enforces a builtin profile's parameter contract (Pi #33
+// D5): the bool profile needs a `value` parameter of kind "value".
+func checkProfileParams(s CellSpec) error {
+	if s.Profile == ProfileBool {
+		p, ok := s.Params["value"]
+		if !ok {
+			return fmt.Errorf("profile %q requires a \"value\" parameter", ProfileBool)
+		}
+		if p.Kind != "value" {
+			return fmt.Errorf("profile %q parameter \"value\" must have kind \"value\", got %q", ProfileBool, p.Kind)
+		}
+	}
+	return nil
 }
 
 func validateEvidence(refs []RequiredRef) error {
@@ -207,8 +236,12 @@ func splice(skills []string, declared map[string]ParamSpec, vals map[string]stri
 			continue
 		}
 		name := strings.TrimPrefix(sk, "$")
-		if _, ok := declared[name]; !ok {
+		p, ok := declared[name]
+		if !ok {
 			return nil, fmt.Errorf("skill %q references undeclared parameter %q", sk, name)
+		}
+		if p.Kind != "skill" { // Pi #33 D5: only skill-kind params splice into seats.
+			return nil, fmt.Errorf("skill %q references %q-kind parameter %q (only skill-kind splices)", sk, p.Kind, name)
 		}
 		if v, ok := vals[name]; ok {
 			out = append(out, v)
@@ -217,10 +250,10 @@ func splice(skills []string, declared map[string]ParamSpec, vals map[string]stri
 	return out, nil
 }
 
-// KernelSpec binds the resolved cell spec to a runnable kernel Spec by
-// constructing the builtin profile's seat pair. ExecutionMode reports whether
-// the seats are a stub (smoke) or a real mechanical profile.
-func (r Resolved) KernelSpec() (cellkernel.Spec, string, error) {
+// Build binds the resolved cell spec to a runnable kernel Spec + the RunMeta the
+// kernel binds into the receipt (resolved-spec identity), and reports the
+// execution mode (stub vs mechanical).
+func (r Resolved) Build() (cellkernel.Spec, cellkernel.RunMeta, string, error) {
 	req := make([]cellkernel.RequiredRef, 0, len(r.Spec.Contract.RequiredEvidence))
 	for _, e := range r.Spec.Contract.RequiredEvidence {
 		req = append(req, cellkernel.RequiredRef{ID: e.ID, Kind: e.Kind, Producer: cellkernel.Role(e.Producer)})
@@ -232,9 +265,44 @@ func (r Resolved) KernelSpec() (cellkernel.Spec, string, error) {
 	}
 	alpha, beta, mode, err := buildProfile(r)
 	if err != nil {
-		return cellkernel.Spec{}, "", err
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, "", err
 	}
-	return cellkernel.Spec{Contract: contract, Alpha: alpha, Beta: beta}, mode, nil
+	meta := cellkernel.RunMeta{
+		ResolvedSpecHash: r.resolvedSpecHash(),
+		DeclaredProtocol: r.Spec.ProtocolID,
+		Profile:          r.Spec.Profile,
+		Params:           r.Params,
+	}
+	return cellkernel.Spec{Contract: contract, Alpha: alpha, Beta: beta}, meta, mode, nil
+}
+
+// resolvedSpecHash is the content address of the exact normalized executable
+// spec — everything that selects behavior (Pi #33 D1). Runs differing only in
+// resolved input therefore differ in resolved_spec_hash.
+func (r Resolved) resolvedSpecHash() string {
+	type canon struct {
+		Schema      string
+		Version     string
+		Protocol    string
+		Profile     string
+		Params      map[string]string
+		AlphaSkills []string
+		BetaSkills  []string
+		Contract    ContractSpec
+	}
+	c := canon{
+		Schema:      ResolvedSpecSchema,
+		Version:     r.Spec.Version,
+		Protocol:    r.Spec.ProtocolID,
+		Profile:     r.Spec.Profile,
+		Params:      r.Params,
+		AlphaSkills: r.AlphaSkills,
+		BetaSkills:  r.BetaSkills,
+		Contract:    r.Spec.Contract,
+	}
+	b, _ := json.Marshal(c)
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
 }
 
 func contains(xs []string, v string) bool {

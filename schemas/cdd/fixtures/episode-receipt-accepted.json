@@ -1,0 +1,63 @@
+{
+  "receipt_schema": "cnos.cellkernel.episode-receipt.v0",
+  "protocol_validated": false,
+  "execution_mode": "mechanical",
+  "status": "accepted",
+  "decision": "accept",
+  "verdict": {
+    "pass": true
+  },
+  "episode_id": "ep-d4d479c7a9de85cc2c115e854acbbbef",
+  "resolved_spec_hash": "54aba11df2440f6601460fc35ea9a37668308c2bba2bc113c45d1ff79bbfae2a",
+  "declared_protocol": "cnos.cellkernel.episode-receipt.v0",
+  "profile": "bool",
+  "params": {
+    "value": "true"
+  },
+  "contract": {
+    "id": "cell-bool",
+    "goal": "produce bool true",
+    "required_evidence": [
+      {
+        "id": "bool",
+        "kind": "value",
+        "producer": "alpha"
+      }
+    ]
+  },
+  "contract_hash": "49961228a9ed50178735e4086c069d69f2856b6446ee9155313bb60df82f2104",
+  "matter": {
+    "data": "true"
+  },
+  "matter_hash": "d8fc5f2ef55aa6b826157a489b083d77226763fd50b8a158ea6c524635e0a2b7",
+  "review": {
+    "pass": true,
+    "notes": "beta independently verified matter is bool true"
+  },
+  "review_hash": "097a4e0ac334726e1b636df3cbfe4932ea826f98f2513d5f78774e1d39c5ba40",
+  "evidence_refs": [
+    {
+      "id": "bool",
+      "kind": "value",
+      "producer": "alpha",
+      "producer_execution_id": "alpha-98c93b92aa6232ad3759a577041c4dd7",
+      "ref": "sha256:b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "content": "true"
+    },
+    {
+      "id": "beta_review",
+      "kind": "review",
+      "producer": "beta",
+      "producer_execution_id": "beta-8c470ee9bdd10d7e3a8eb8cb603ced3d",
+      "ref": "sha256:097a4e0ac334726e1b636df3cbfe4932ea826f98f2513d5f78774e1d39c5ba40",
+      "sha256": "097a4e0ac334726e1b636df3cbfe4932ea826f98f2513d5f78774e1d39c5ba40",
+      "content": "{\"pass\":true,\"notes\":\"beta independently verified matter is bool true\"}"
+    }
+  ],
+  "evidence_hash": "18144aed75e8dfe8704a9235c2e558ce188c221ad79405e425450388ddb016c3",
+  "alpha_execution_id": "alpha-98c93b92aa6232ad3759a577041c4dd7",
+  "beta_execution_id": "beta-8c470ee9bdd10d7e3a8eb8cb603ced3d",
+  "beta_input_policy_id": "cnos.cellkernel.beta-input.v0",
+  "beta_input_hash": "40d9047be5db6671019ad046aa3a6a6f682d80a74597ded0b2e9da1e2182b201"
+}

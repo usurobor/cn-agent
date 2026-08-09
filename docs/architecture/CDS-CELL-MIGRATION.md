@@ -243,7 +243,12 @@ a validated CDS claim (Pi #32 D1). A `profile` selects the builtin seat pair:
 mechanical episode where β **independently verifies** α's artifact — the
 non-tautological proof, Pi #32 D6). **Zero GitHub/network.** Contract is frozen
 + hashed; evidence is runtime-authenticated + producer-attributed; β receives a
-runtime-owned `BetaInput` review surface (Pi #32 D2–D4).
+runtime-owned `BetaInput` review surface (Pi #32 D2–D4). The receipt is
+**self-verifying** — every hash recomputes from its own content, evidence is
+inlined + content-addressed, and identity is per-invocation with a
+`resolved_spec_hash` — so `cellkernel.VerifyReceipt` re-checks it out of
+process, and a canonical `schemas/cdd/episode-receipt.cue` vets it (Pi #33
+D1–D6).
 
 **Phase 2 — skill resolution.** The `$PATH`-like resolver (`value → skill ref`)
 + required/optional/default hole logic; `cn cell run` errors on unfilled

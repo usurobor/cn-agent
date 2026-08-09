@@ -1,338 +1,98 @@
 # Cell Runner — the case ladder
 
-**Status:** Design note for β review (Pi). Companion to the kernel doctrine
-`src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md` (CCNF) and the
-ratified architecture `cnos#711` (recursive-with-predicates). Grounded in the
-reference implementation `src/go/internal/cellkernel`.
+**Status:** Current reference for the single-episode cell runner. Companion to
+the kernel doctrine `src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md`
+(CCNF) and the migration plan `CDS-CELL-MIGRATION.md`. Grounded in the code:
+`src/go/internal/cellkernel`, `src/go/internal/cellspec`, and `cn cell run`.
+This document reflects the kernel hardened through Pi β #31–#33; earlier
+wording lives in Git history only.
 
-> **Corrections (Pi β #31 + #32) — read first.** Parts of the prose below the
-> line predate the hardened kernel and are superseded by
-> `CDS-CELL-MIGRATION.md` + the code. Specifically: (a) γ/V/δ are **kernel-owned
-> and not injectable** — the `Spec` carries only Contract + α + β; (b) the
-> engine is `RunEpisode → EpisodeResult{accepted|degraded|rejected|
-> needs_repair}`, and an inconsistent (verdict, decision) pair is a typed error,
-> **never** a returned closed cell; (c) β receives a runtime-owned **`BetaInput`
-> review surface** (frozen contract + matter + authenticated α evidence), not
-> "matter only"; (d) evidence is **runtime-authenticated and producer-
-> attributed** — a seat cannot mint another seat's evidence; (e) the contract is
-> **frozen + hashed** so a seat cannot mutate the terms it is judged against;
-> (f) composition is **α-proposes / runtime-executes**, never parent-α calling
-> the kernel on children; (g) repair/`Drive` and composition are **later cases**,
-> not bundled into Case 1. Where the text below conflicts with these, these win.
+## One kernel, every case
 
-## Purpose
-
-One kernel runs every cell. This note pins **exactly how the runner behaves
-across the ladder of cases** — from the empty cell to full recursion — so there
-is one shared picture and no per-case confusion. Every case is the *same*
-five-step closure; only **how the seats are filled** changes.
-
-## The kernel (recap)
-
-At one scope, a cell is a five-step closure over a `contract`:
+`RunEpisode(ctx, spec, …opts)` runs the five-step closure once, at one scope:
 
 ```
-1. matter   := α.produce(contract)
-2. review   := β.review(contract, matter)
-3. receipt  := γ.close(contract, matter, review, evidence)
-4. verdict  := V(contract, receipt)
-5. decision := δ.decide(receipt, verdict)
-outcome     := f(verdict, decision)   ∈ {accepted, degraded, blocked, invalid}
+matter   := α.produce(contract)          α: open seat (may rent cognition)
+review   := β.review(betaInput)          β: open seat (may rent cognition)
+receipt  := γ.close(record)              γ: kernel-owned, mechanical
+verdict  := V(record, receipt)           V: kernel-owned, mechanical
+decision := δ.decide(receipt, verdict)   δ: kernel-owned, mechanical
 ```
 
-Reference types: `Alpha`, `Beta`, `Gamma`, `Validator`(V), `Delta` interfaces;
-`Run(ctx, Spec) (ClosedCell, error)`. `α` and `β` are the caller's
-customization; `γ/V/δ` default to the mechanical kernel.
+Only **α and β** are open (customizable / cognition-rentable). **γ, V, δ are
+kernel-owned functions** — not injectable, so a caller cannot substitute a γ
+that certifies its own receipt. Every case on the ladder is the *same*
+`RunEpisode`; only the α/β *fills* change. A repair driver and a composition
+orchestrator invoke this kernel repeatedly — they are not extra seats.
 
-### Invariants that hold in **every** case
+## Outcomes
 
-- **I1 — Trust moves by the typed receipt.** The parent trusts a cell only when
-  **V validates the receipt** and **δ records a decision** — never because γ
-  "closed." (CCNF: trust by typed receipt, not role seniority.)
-- **I2 — Cognition is rentable only at α and β.** `γ` (close, pure), `V`
-  (validate, mechanical/CUE), `δ` (decide, policy) are **always compiled**. V
-  being mechanical is precisely what keeps the trust surface deterministic and
-  reproducible.
-- **I3 — Escalation is a decorator on the α/β seat**, keyed on a
-  runtime-constructed, **hashed bundle**; **deterministic** (same bundle hash →
-  same compiled-vs-rented decision) and **logged as evidence**. The kernel's
-  `Run` is unchanged by it.
-- **I4 — Two failure kinds are distinct.** A seat returning an **error** is a
-  *malfunction* (the cell does not close; `Run` errors). A review returning
-  `Pass:false` is *contract-unmet* (the cell closes `blocked`).
-- **I5 — Loops are bounded.** The repair loop (`repair_dispatch`) runs under a
-  **preregistered attempt budget**; on exhaustion it emits a terminal `held`
-  (contract-unmet) or `failed` (malfunction) receipt, never an infinite spin.
-- **I6 — Evidence-binding.** Evidence accrues during α/β work → **γ binds it
-  into the receipt** → **V dereferences it** → β never consumes evidence, δ
-  never re-reads it. Escalation decisions are part of that evidence.
+`RunEpisode` returns an `EpisodeResult` whose `Status` is terminal
+(`accepted` | `degraded` | `rejected`) or non-terminal (`needs_repair`, the
+parent stays open). A seat that returns an **error** is a malfunction (the
+episode does not close). A review with `Pass=false` is **contract-unmet**
+(closes `needs_repair`). An inconsistent (verdict, decision) pair is a typed
+`ErrInvalidClosure` — never a returned closed cell.
 
----
+## Invariants the kernel enforces
 
-## The case ladder
+- **I1 — trust by receipt, not role.** γ/V/δ are mechanical; cognition is
+  rentable only at α/β. The trust surface is deterministic.
+- **I2 — the contract is frozen.** At episode start the runtime deep-copies +
+  hashes the contract; each seat gets an isolated copy; V/γ bind the frozen
+  snapshot. A seat cannot mutate the terms it is judged against.
+- **I3 — evidence is runtime-authenticated.** Seats return candidate
+  `{id, kind, bytes}` only. The runtime stamps producer role + execution id +
+  content digest, creates the `sha256:` ref, and inlines the bytes. α cannot
+  mint β's evidence; the canonical `beta_review` is minted by the runtime from
+  the actual review.
+- **I4 — γ is self-proving.** The runtime builds an authoritative
+  `EpisodeRecord`; γ binds it; V recomputes every hash from the receipt's own
+  content *and* compares to the record. A γ bug that rewrote any field fails V.
+- **I5 — identity is per-invocation.** Each run gets a distinct episode id and
+  α/β execution ids (injectable only for deterministic tests). A separate
+  `resolved_spec_hash` binds the exact executable spec, so runs differing only
+  in resolved input differ in the receipt.
+- **I6 — the receipt re-verifies out of process.** `VerifyReceipt` re-checks a
+  serialized receipt alone (hashes, content-addressing, uniqueness, required
+  evidence + producer authority) — the check a parent runs on what it received.
+- **I7 — the kernel guards its own boundary.** A direct `Spec` is validated
+  (non-empty id, unique/valid required refs, bounded cardinality); output is
+  size-bounded; cancellation is checked between α, β, and closure.
 
-Each case names the **contract**, which **seats are compiled vs rented**, and
-the **walk** through the five steps.
+## The ladder (implementation order; Pi #32 D5)
 
-### Case 0 — Empty cell (all compiled)
+- **Case 0 — empty.** `NoopAlpha` + `AcceptBeta`; no required evidence.
+  Terminates `accepted`. The runner smoke reference (`cell-0`).
+- **Case 1 — one-shot mechanical (bool).** α produces a bool; β **independently
+  verifies** it from its bundle (non-tautological). `value=true → accepted`,
+  `value=false → needs_repair`. No repair loop.
+- **CLI 0 — local runner.** `cn cell run --contract <path|-> [--param k=v]`
+  fills parameter holes, runs one episode, emits a generic
+  `cnos.cellkernel.episode-receipt.v0`, exit `0/1/2`. Zero GitHub/network.
+- **Case 2 — rented α, mechanical β.** First cognition behind α (a provider
+  seam); β still mechanical. (Phase 3 / #717-F; held until CI + Pi converge.)
+- **Case 3 — rented α and β.** Full single-episode CDS. V validates
+  evidence/bindings; it never re-judges β's prose.
+- **Case 4 — bounded repair driver.** A `Drive` loop invokes the same episode
+  kernel under an attempt budget on `needs_repair`. Not a new algorithm.
+- **Case 5 — composition.** Parent-α **proposes** child contracts; the
+  **runtime executes** child episodes; accepted child receipts become parent
+  matter; parent-β reviews the composition. α never calls the kernel itself.
 
-- **Contract:** empty.
-- **Seats:** α = noop (`Matter{}`), β = accept, γ/V/δ = mechanical default.
-- **Walk:** `∅ → review.pass → receipt(cell-0) → verdict.pass → accept →
-  accepted`.
-- **Proves:** the loop turns; all five seats fire. Zero cognition.
-- **Status:** implemented in `cellkernel` (`EmptySpec`).
+Degraded/override, reject, budget exhaustion, and malfunction are **cross-cutting
+outcome tests**, not new rungs.
 
-### Case 1 — Bool cell (all compiled, real repair loop)
+## Parameters → skills (Unix typed holes)
 
-- **Contract:** "produce a bool that is `true`."
-- **Seats:** α produces a bool (compiled — e.g. a deterministic/pseudo source),
-  β checks `matter == true` (compiled — a CUE constraint `matter: true`), γ/V/δ
-  mechanical.
-- **Walk:** on `false`, V FAIL → δ `repair_dispatch` → α re-produces with the
-  why → re-test; bounded by the attempt budget (I5).
-- **New vs Case 0:** the **repair loop** with a mechanical β. Still **zero
-  cognition** — everything is CUE-decidable.
-- **Status:** seats/outcome/malfunction implemented; the `repair_dispatch` drive
-  loop is a named increment (see §Recursion).
+A parameter is a typed hole resolved like `$PATH`: `skill`-kind values resolve to
+a skill and splice into a seat via `$name`; `value`-kind values are scalars
+passed to a builtin profile. Required vs optional-with-default = positional vs
+flag; a closed `domain` makes a typo fail resolution. The invoker (CLI now, a
+parent cell later) fills the hole; the cell body never changes.
 
-### Case 2 — α rents cognition (mini-CDS)
+## What the runner does not own (custody boundary)
 
-- **Contract:** "write a function that passes test `T`."
-- **Seats:** **α rents cognition** — there is *no compiled path* that
-  synthesizes arbitrary code, so the escalation predicate fires at α (I3); α
-  calls a cognition backend. **β/V are compiled** — they *run the test*;
-  PASS/FAIL is deterministic. **δ** loops on FAIL back to α.
-- **Why V stays mechanical:** the test **is** the oracle. Cognition at α costs
-  nothing on the trust surface (I1/I2).
-- **New:** first cell that needs a backend; first genuine escalation. The
-  compiled path for a seat is *empty*, so the trigger *must* fire.
-- **Status:** increment — needs the escalating-α decorator + `dispatch.Backend`
-  wiring + a contract carrying acceptance.
-
-### Case 3 — β also rents cognition (full CDS)
-
-- **Contract:** "write feature X and review it to the review skill."
-- **Seats:** **α rents cognition** (writes). **β rents cognition for the
-  judgment residue** — a thorough review following the cnos review skill
-  (`cdd/beta`), while **mechanizing everything it can** (run tests, grep
-  patterns, AC-presence stay compiled; process-economics). **V stays
-  mechanical**: it validates the **receipt** — that β produced the *required
-  evidence* (checks ran, ACs covered, independence/firebreak recorded) and the
-  receipt is structurally consistent. **V never re-judges the code.**
-- **Trust model:** correctness of β's judgment is trusted via **discipline (the
-  review skill) + independence (β ≠ α) + the evidence β must produce + V's
-  structural validation** (I1/I6) — not by V re-deriving the review.
-- **New:** both open-ended seats rent cognition; the trust surface still
-  deterministic. This is the full **CDS cell**: α writes, β reviews per skill,
-  γ/V/δ hold the mechanical spine.
-- **Status:** increment — escalating-β decorator carrying the review-skill
-  bundle; V extended to validate required-evidence presence.
-
-### Case 4 — Recursion (cell of cells)
-
-Two mechanisms, **both re-entrant `Run`** — the kernel's five steps never change;
-recursion is `Run` calling `Run`.
-
-**(a) Compositional recursion — α/β are themselves cells.** (CCNF scope-lift;
-#711 §2.)
-
-- **Parent α = decomposition:** its `Produce` turns the parent contract into
-  **child contracts / an execution graph**, runs each child via `Run(ctx,
-  childSpec)`, and composes the child `ClosedCell`s into the parent matter.
-- **Parent β = composition:** its `Review` judges whether the accepted **child
-  receipts jointly satisfy the parent contract** — the composition oracle:
-  *"name one way every child receipt could be locally valid while the parent
-  contract remains unmet."* A β that only counts child PASSes is degenerate.
-- **Cognition placement:** leaf α/β rent cognition where the escalation
-  predicate fires (Cases 2/3); interior decompose/compose nodes may be
-  **all-compiled**. Novelty concentrates at the leaves, not "cognition lives at
-  the leaves" (I3).
-- **Task ≠ episode:** a durable task survives multiple execution episodes;
-  task state is *projected from* episodes, not identical to one episode's FSM
-  (#711 §3) — relevant once a decomposition spans retries.
-
-**(b) Repair recursion — `repair_dispatch` (within-scope).** (CCNF §Recursion
-Modes.)
-
-- δ decides `repair_dispatch` → a **child cell at the same scope** runs under a
-  **repair contract** derived from the failure (the failed predicates + β's
-  why). On child `accepted`, the parent γ **re-emits** a fresh receipt; V and δ
-  **re-fire** at the parent. Scope index unchanged. Bounded by the attempt
-  budget (I5).
-- In the reference this is the **`Drive`** loop wrapping `Run`: run one closure;
-  if the outcome is `blocked`/`repair_dispatch`, derive a repair contract and
-  run again with feedback, until a terminal outcome (`accepted`/`degraded`/
-  `reject`) or budget exhaustion.
-
-**Cross-scope projection (scope-lift):** an `accepted`/`degraded` closed cell
-projects **as α-matter at scope n+1** via its receipt; that is just mechanism
-(a) viewed from the parent — the parent's α reads the child's `ClosedCell`.
-
----
-
-## The normalized cell spec
-
-The spec is **data**, not code — a declarative instruction a parent (or the
-root invoker) *emits*. This is what makes recursion automatic: a parent-α
-produces child specs and the runtime runs each. The runtime **wires** the data
-spec into seat implementations and runs the five steps.
-
-```yaml
-spec:
-  contract:                          # what to produce + what "done" means (per-run)
-    id: issue-717
-    goal: "<the issue text / goal>"
-    acceptance: ["<criterion>", ...]
-  protocol_id: cnos.cds.receipt.v1   # selects the domain receipt schema V validates against
-  alpha:
-    mode: rent                       # noop | compiled | rent | decompose
-    skills: [eng/code, eng/ocaml, eng/functional]
-  beta:
-    mode: rent                       # accept | compiled | rent | compose
-    skills: [cdd/beta]               # the review skill
-  budget: {attempts: 3}              # bounds the repair loop
-```
-
-- `contract` is per-run (the issue). `alpha`/`beta` are the customization
-  (`mode` + `skills`). `protocol_id` selects the domain receipt schema. γ/V/δ
-  are the generic kernel and are **not** in the spec.
-- `mode` tells the runtime how to wire the seat: `noop`/`accept` (trivial),
-  `compiled` (mechanical — CUE/table), `rent` (provider-backed cognition),
-  `decompose`/`compose` (recursion).
-- **The spec is fully-set, top-down.** A cell never chooses its own skills or
-  mode; the caller set them.
-
-### Coding cell (OCaml) — full use case
-
-The spec above. Walk:
-- **α** (`rent`, ocaml/functional) writes the code against the contract.
-- **β** (`rent`, review skill) reviews the residue; mechanizes tests/greps.
-- **γ** binds `{diff, test output, route receipts, skills used}` into a
-  `cnos.cds.receipt.v1` receipt.
-- **V** cue-vets it against `schemas/cdd/receipt.cue ∧ schemas/cds/receipt.cue`
-  (requires `diff`, `tests`, …).
-- **δ** decides; FAIL → `repair_dispatch` → α with the why.
-
-### Writing cell (doc) — full use case
-
-```yaml
-spec:
-  contract: {id: issue-800, goal: "write the X guide", acceptance: [...]}
-  protocol_id: cnos.cdw.receipt.v1   # writing receipt schema: doc + readability evidence
-  alpha: {mode: rent, skills: [write, eng/document]}
-  beta:  {mode: rent, skills: [cdd/beta, document-review]}
-  budget: {attempts: 3}
-```
-
-**Same kernel, same five steps.** What differs is entirely in the spec:
-different **skills** (`write/document` vs `eng/ocaml`), and a different
-**`protocol_id`** → a different domain receipt schema → different required
-**artifacts** (the doc + readability evidence vs a diff + tests). γ/V/δ are
-unchanged; γ binds whatever evidence exists, V validates against the schema the
-`protocol_id` names. A new cell class = a new `evidence_refs` domain schema + a
-`protocol_id`, nothing in the kernel.
-
-## Where the child spec comes from — resolution & recursion
-
-Normalizing the spec is what enables recursion: because the spec is data, a
-parent can *create a specific instance of it* per child, and the runtime runs
-each. Recursion = re-entrant `Run` over parent-emitted child specs.
-
-**Is the coding cell "α within a parent"?** One precision: the coding cell is a
-**child** the parent's α *runs*, not literally the parent's α. **Parent-α =
-decomposition** (`mode: decompose`): produce the child specs, run the child
-cells, compose their results into the parent's matter. Parent-β = composition
-(judges child receipts jointly against the parent contract).
-
-**Where "OCaml vs Python" is decided.** Not in any child's α/β. In the
-**spec-constructor** — parent-α (decompose) below the root, or the
-**invoker/dispatcher** at the root. It fills each child spec by calling a
-**compiled profile resolver**:
-
-```
-resolve(class, project_binding) → {alpha.skills, beta.skills, protocol_id}
-```
-
-- `class` = coding | writing | … (the telos).
-- `project_binding` = this repo's declared/detected stack ("this repo is OCaml"
-  — from repo config, or a compiled detector: `dune-project` → ocaml/functional).
-- output = the per-seat skills + the receipt-schema selector.
-
-The resolver is a **compiled runtime component** (a registry/table + optional
-repo detection), **deterministic**, living in the **spec-construction layer**.
-It is *not* a seat; it is the tool the caller uses to build a spec.
-
-Two distinct things happen in parent-α's decomposition:
-1. **the decomposition decision** — how to split the work into sub-tasks. May be
-   *compiled* (mechanical: one repo → one coding cell) or *rented* (a planning
-   cell that decides the split by cognition).
-2. **the spec fill** — for each sub-task, `resolve(class, project_binding)` →
-   the child's skills + `protocol_id`, plus its contract. Always *compiled*.
-
-So the mechanical "given this repo, it's OCaml" logic lives in **(2), the
-compiled resolver, invoked by the spec-constructor**. At the root the invoker
-calls it; below the root parent-α calls it. **Neither a child's α nor β ever
-resolves its own spec — it receives a fully-set one from above.**
-
-```
-invoker/dispatcher            # root: resolve(class, project_binding) → root spec → Run
-   └─ parent-α (decompose)    # emits child specs via resolve(...) → runs each child
-        └─ coding cell        # receives its fully-set spec; α writes, β reviews
-```
-Every arrow points down. A cell is fully parameterized from above; the resolver
-is the only place the "OCaml" fact enters, and it enters mechanically at
-spec-construction time.
-
----
-
-## Mapping to the reference implementation
-
-`src/go/internal/cellkernel` today:
-
-- **Case 0** — implemented (`EmptySpec`, `Run` → `accepted`).
-- **Cases 1–3** — the **seats, outcome mapping, and malfunction-vs-contract-unmet
-  distinction** are implemented; what each case adds is a *seat implementation*
-  (compiled bool / escalating-α / escalating-β) plus, for Case 1+, the `Drive`
-  loop. `Run` itself does not change.
-- **Case 4** — compositional recursion is a **seat that calls `Run`**; repair
-  recursion is the **`Drive`** loop. Both are increments; the `Alpha`/`Beta`
-  interfaces and re-entrant `Run` are the seams already present.
-
-**Nothing in the ladder changes the five-step `Run`.** Every case is a different
-*fill* of the seats plus (for the loop) a `Drive` wrapper. That is the whole
-claim of the runner.
-
----
-
-## What to build, in order
-
-1. `Drive(ctx, spec, budget)` — loop `Run` under `repair_dispatch` to a terminal
-   outcome (enables Case 1's real loop).
-2. `Contract` carrying acceptance + a compiled CUE-backed `V`/`β` (Case 1 fully
-   mechanical).
-3. Escalating-α decorator + `dispatch.Backend` wiring + `cn cds build --issue N`
-   (Case 2).
-4. Escalating-β carrying the review-skill bundle; V validates required-evidence
-   presence (Case 3 = full CDS).
-5. Composite α/β (`Produce`/`Review` that call `Run`) + parent-β composition
-   oracle (Case 4a); task≠episode projection when decompositions span retries.
-
----
-
-## Open questions for β (Pi)
-
-1. **Repair contract derivation.** Is `Drive` the right home for repair-contract
-   synthesis, or does that belong in δ (which *decides* `repair_dispatch`)? Where
-   is the boundary between "δ decides to repair" and "who writes the repair
-   contract"?
-2. **Bundle + escalation determinism.** Is "hashed bundle → same escalation
-   decision" fully specifiable at the seat, or does part of it depend on the
-   backend being pinned? (Same concern you raised on #715 AC1/AC3.)
-3. **Composition oracle as a seat.** Should parent-β composition be a distinct
-   `Beta` impl, or is it a *contract shape* the same β discriminates against?
-4. **V's required-evidence check (Case 3).** What is the minimal typed shape of
-   "required evidence present" so V stays a CUE-decidable predicate over the
-   receipt rather than creeping into judgment?
-5. **Anything missing from the ladder** — a case between these rungs, or a
-   degraded/override path (Case 3+ with `override`) we have not drawn.
+The kernel owns no GitHub, ref, PR, branch, cursor, writer-locality, or custody
+policy. `cn cell run` reads a local path or stdin and writes a receipt to
+stdout. CLI and GitHub are invokers/projections over this same engine.

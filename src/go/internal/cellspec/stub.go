@@ -45,36 +45,37 @@ func buildProfile(r Resolved) (cellkernel.Alpha, cellkernel.Beta, string, error)
 	}
 }
 
-// stubAlpha produces a summary matter and mints exactly the α-owned required
-// evidence (producer authority is stamped by the runtime; it can only satisfy
-// its own role, never β's).
+// stubAlpha produces a summary matter and candidate bytes for exactly the
+// α-owned required evidence. The runtime stamps producer/exec/digest, so a stub
+// can only satisfy its own role.
 type stubAlpha struct{ skills []string }
 
 func (a stubAlpha) Produce(_ context.Context, c cellkernel.Contract) (cellkernel.AlphaResult, error) {
 	matter := cellkernel.Matter{Data: fmt.Sprintf("stub-alpha produced for %q with skills [%s]", c.Goal, strings.Join(a.skills, ", "))}
-	var refs []cellkernel.EvidenceRef
+	var cands []cellkernel.EvidenceCandidate
 	for _, req := range c.RequiredEvidence {
 		if req.Producer != cellkernel.RoleAlpha {
 			continue
 		}
-		refs = append(refs, cellkernel.EvidenceRef{ID: req.ID, Kind: req.Kind, Ref: "stub://" + req.ID, Content: "stub-alpha:" + req.ID})
+		cands = append(cands, cellkernel.EvidenceCandidate{ID: req.ID, Kind: req.Kind, Bytes: []byte("stub-alpha:" + req.ID)})
 	}
-	return cellkernel.AlphaResult{Matter: matter, Evidence: refs}, nil
+	return cellkernel.AlphaResult{Matter: matter, Evidence: cands}, nil
 }
 
-// stubBeta accepts and mints the β-owned required evidence (e.g. beta_review).
+// stubBeta accepts and produces candidate bytes for β-owned required evidence
+// other than beta_review (the runtime mints beta_review from the actual review).
 type stubBeta struct{ skills []string }
 
 func (b stubBeta) Review(_ context.Context, in cellkernel.BetaInput) (cellkernel.BetaResult, error) {
-	var refs []cellkernel.EvidenceRef
+	var cands []cellkernel.EvidenceCandidate
 	for _, req := range in.Contract.RequiredEvidence {
-		if req.Producer != cellkernel.RoleBeta {
+		if req.Producer != cellkernel.RoleBeta || req.ID == "beta_review" {
 			continue
 		}
-		refs = append(refs, cellkernel.EvidenceRef{ID: req.ID, Kind: req.Kind, Ref: "stub://" + req.ID, Content: "stub-beta:" + req.ID})
+		cands = append(cands, cellkernel.EvidenceCandidate{ID: req.ID, Kind: req.Kind, Bytes: []byte("stub-beta:" + req.ID)})
 	}
 	return cellkernel.BetaResult{
 		Review:   cellkernel.Review{Pass: true, Notes: fmt.Sprintf("stub-beta accepted with skills [%s]", strings.Join(b.skills, ", "))},
-		Evidence: refs,
+		Evidence: cands,
 	}, nil
 }

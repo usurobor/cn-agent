@@ -82,19 +82,25 @@ func (c *CellRunCmd) Run(ctx context.Context, inv Invocation) error {
 		return &CellRunExit{Code: 2}
 	}
 
-	kspec, mode, err := resolved.KernelSpec()
+	kspec, meta, mode, err := resolved.Build()
 	if err != nil {
 		fmt.Fprintf(inv.Stderr, "✗ %v\n", err)
 		return &CellRunExit{Code: 2}
 	}
 
-	res, err := cellkernel.RunEpisode(ctx, kspec)
+	res, err := cellkernel.RunEpisode(ctx, kspec, cellkernel.WithMeta(meta))
 	if err != nil {
 		fmt.Fprintf(inv.Stderr, "✗ episode malfunction: %v\n", err)
 		return &CellRunExit{Code: 2}
 	}
 
-	if err := writeReceipt(inv.Stdout, spec, resolved, mode, res); err != nil {
+	// Self-check: the emitted receipt must independently re-verify (Pi #33 D2).
+	if err := cellkernel.VerifyReceipt(res.Receipt); err != nil {
+		fmt.Fprintf(inv.Stderr, "✗ receipt failed self-verification: %v\n", err)
+		return &CellRunExit{Code: 2}
+	}
+
+	if err := writeReceipt(inv.Stdout, mode, res); err != nil {
 		fmt.Fprintf(inv.Stderr, "✗ %v\n", err)
 		return &CellRunExit{Code: 2}
 	}
@@ -165,59 +171,29 @@ func readContract(path string, stdin io.Reader) ([]byte, error) {
 	return data, nil
 }
 
-// receiptOutput is the CLI's structured generic episode receipt.
+// receiptOutput is the CLI's structured generic episode receipt: the kernel's
+// self-verifying receipt plus the runner's mode/verdict framing. It vets against
+// schemas/cdd/episode-receipt.cue.
 type receiptOutput struct {
-	ReceiptSchema     string                    `json:"receipt_schema"`
-	DeclaredProtocol  string                    `json:"declared_protocol"`
-	ProtocolValidated bool                      `json:"protocol_validated"`
-	ExecutionMode     string                    `json:"execution_mode"`
-	EpisodeID         string                    `json:"episode_id"`
-	ContractID        string                    `json:"contract_id"`
-	ContractHash      string                    `json:"contract_hash"`
-	Status            string                    `json:"status"`
-	Decision          string                    `json:"decision"`
-	Verdict           verdictOutput             `json:"verdict"`
-	Params            map[string]string         `json:"params,omitempty"`
-	AlphaSkills       []string                  `json:"alpha_skills"`
-	BetaSkills        []string                  `json:"beta_skills"`
-	AlphaExecutionID  string                    `json:"alpha_execution_id"`
-	BetaExecutionID   string                    `json:"beta_execution_id"`
-	Matter            string                    `json:"matter"`
-	Review            reviewOutput              `json:"review"`
-	EvidenceRefs      []cellkernel.EvidenceRef  `json:"evidence_refs"`
-	Repair            *cellkernel.RepairRequest `json:"repair,omitempty"`
+	ReceiptSchema      string                    `json:"receipt_schema"`
+	ProtocolValidated  bool                      `json:"protocol_validated"`
+	ExecutionMode      string                    `json:"execution_mode"`
+	Status             string                    `json:"status"`
+	Decision           string                    `json:"decision"`
+	Verdict            cellkernel.Verdict        `json:"verdict"`
+	cellkernel.Receipt                           // embedded self-verifying receipt
+	Repair             *cellkernel.RepairRequest `json:"repair,omitempty"`
 }
 
-type verdictOutput struct {
-	Pass   bool     `json:"pass"`
-	Failed []string `json:"failed,omitempty"`
-}
-
-type reviewOutput struct {
-	Pass  bool   `json:"pass"`
-	Notes string `json:"notes"`
-}
-
-func writeReceipt(w io.Writer, spec cellspec.CellSpec, r cellspec.Resolved, mode string, res cellkernel.EpisodeResult) error {
+func writeReceipt(w io.Writer, mode string, res cellkernel.EpisodeResult) error {
 	out := receiptOutput{
 		ReceiptSchema:     cellspec.EpisodeReceiptSchema,
-		DeclaredProtocol:  spec.ProtocolID,
 		ProtocolValidated: false, // v0 runs no protocol-specific validation.
 		ExecutionMode:     mode,
-		EpisodeID:         res.EpisodeID,
-		ContractID:        res.Contract.ID,
-		ContractHash:      res.ContractHash,
 		Status:            string(res.Status),
 		Decision:          string(res.Decision),
-		Verdict:           verdictOutput{Pass: res.Verdict.Pass, Failed: res.Verdict.Failed},
-		Params:            r.Params,
-		AlphaSkills:       r.AlphaSkills,
-		BetaSkills:        r.BetaSkills,
-		AlphaExecutionID:  res.Receipt.AlphaExecutionID,
-		BetaExecutionID:   res.Receipt.BetaExecutionID,
-		Matter:            res.Matter.Data,
-		Review:            reviewOutput{Pass: res.Review.Pass, Notes: res.Review.Notes},
-		EvidenceRefs:      res.Receipt.Evidence,
+		Verdict:           res.Verdict,
+		Receipt:           res.Receipt,
 		Repair:            res.Repair,
 	}
 	enc := json.NewEncoder(w)

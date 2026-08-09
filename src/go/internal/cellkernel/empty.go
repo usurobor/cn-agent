@@ -2,9 +2,8 @@ package cellkernel
 
 import "context"
 
-// The empty cell: α produces nothing, β accepts unconditionally. It exercises
-// the full closure and terminates `accepted` — Case 0, the runner's smoke
-// reference. It carries no required evidence, so V's evidence checks are vacuous.
+// The empty cell: α produces nothing, β accepts unconditionally. Case 0 — the
+// runner's smoke reference. It carries no required evidence.
 
 // NoopAlpha produces no matter and no evidence.
 type NoopAlpha struct{}
@@ -13,8 +12,7 @@ func (NoopAlpha) Produce(context.Context, Contract) (AlphaResult, error) {
 	return AlphaResult{}, nil
 }
 
-// AcceptBeta accepts any matter. It reviews over the runtime-owned BetaInput but
-// (being the empty smoke seat) checks nothing.
+// AcceptBeta accepts any matter, reviewing over the runtime-owned BetaInput.
 type AcceptBeta struct{}
 
 func (AcceptBeta) Review(context.Context, BetaInput) (BetaResult, error) {

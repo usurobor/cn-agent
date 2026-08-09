@@ -6,13 +6,13 @@ import (
 )
 
 // Case 1: a one-shot mechanical cell where β INDEPENDENTLY checks α's artifact
-// (Pi D6 — a non-tautological proof, unlike the stub profile). α produces a bool
-// as its matter and mints the required "bool" evidence (producer α); β re-reads
-// the matter from its runtime-owned bundle and passes iff it is true. A hostile
-// α that produces false — or that tries to mint the acceptance itself — cannot
-// make β pass, and V independently checks producer authority and integrity.
+// (Pi D6 — non-tautological). α produces a bool as its matter and the required
+// "bool" evidence bytes; β re-reads the matter from its runtime-owned bundle and
+// passes iff it is true. A hostile α that produces false — or tries to mint the
+// acceptance itself — cannot make β pass, and V + VerifyReceipt independently
+// check producer authority and content integrity.
 
-// BoolAlpha produces a fixed bool as its matter plus the required α evidence.
+// BoolAlpha produces a fixed bool as its matter plus the "bool" evidence bytes.
 type BoolAlpha struct {
 	Value bool
 }
@@ -20,13 +20,8 @@ type BoolAlpha struct {
 func (a BoolAlpha) Produce(_ context.Context, _ Contract) (AlphaResult, error) {
 	s := strconv.FormatBool(a.Value)
 	return AlphaResult{
-		Matter: Matter{Data: s},
-		Evidence: []EvidenceRef{{
-			ID:      "bool",
-			Kind:    "value",
-			Ref:     "bool://" + s,
-			Content: s,
-		}},
+		Matter:   Matter{Data: s},
+		Evidence: []EvidenceCandidate{{ID: "bool", Kind: "value", Bytes: []byte(s)}},
 	}, nil
 }
 

@@ -23,6 +23,8 @@ import "cnos.dev/cnos/schemas/cdd"
 		...
 	}
 
-	// A CDS coding cell must carry a producer-attributed diff as evidence.
-	contract: required_evidence: [...cdd.#RequiredRef]
+	// A CDS coding cell must carry a producer-attributed diff as evidence: the
+	// list is pinned to include the diff member mechanically (Pi #33 D5), not
+	// merely permit an arbitrary list.
+	contract: required_evidence: [{id: "diff", kind: "diff", producer: "alpha"}, ...cdd.#RequiredRef]
 }

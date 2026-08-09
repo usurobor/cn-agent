@@ -95,7 +95,7 @@ func TestStubProfileRunsToAccepted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, mode, err := r.KernelSpec()
+	kspec, _, mode, err := r.Build()
 	if err != nil {
 		t.Fatalf("kernelspec: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestBoolProfileAcceptedAndUnmet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("resolve(%s): %v", value, err)
 		}
-		kspec, mode, err := r.KernelSpec()
+		kspec, _, mode, err := r.Build()
 		if err != nil {
 			t.Fatalf("kernelspec: %v", err)
 		}
