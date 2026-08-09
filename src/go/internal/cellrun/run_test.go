@@ -15,7 +15,7 @@ import (
 
 const boolSpecJSON = `{"version":"cnos.cellspec.v0",` +
 	`"contract":{"id":"cell-bool","goal":"b","required_evidence":[{"id":"bool","kind":"value","producer":"alpha"}]},` +
-	`"protocol_id":"cnos.cellkernel.episode-receipt.v0","profile":"bool",` +
+	`"protocol_id":"cnos.cellkernel.episode-closure.v0","profile":"bool",` +
 	`"params":{"value":{"kind":"value","required":true,"domain":["true","false"]}},` +
 	`"alpha":{"skills":[]},"beta":{"skills":[]}}`
 
@@ -33,18 +33,18 @@ func TestAcceptedFromStdin(t *testing.T) {
 	if stderr != "" {
 		t.Errorf("stderr not empty: %q", stderr)
 	}
-	// stdout must be exactly one valid envelope that re-verifies whole.
+	// stdout must be exactly one valid closure that re-verifies whole.
 	dec := json.NewDecoder(strings.NewReader(stdout))
-	var env cellkernel.Envelope
-	if err := dec.Decode(&env); err != nil {
-		t.Fatalf("stdout not an envelope: %v", err)
+	var cl cellkernel.Closure
+	if err := dec.Decode(&cl); err != nil {
+		t.Fatalf("stdout not a closure: %v", err)
 	}
 	var extra json.RawMessage
 	if err := dec.Decode(&extra); err != io.EOF {
 		t.Fatalf("stdout carried trailing data (want io.EOF, got %v)", err)
 	}
-	if err := cellkernel.VerifyEnvelope(env); err != nil {
-		t.Fatalf("emitted envelope does not verify: %v", err)
+	if err := cellkernel.VerifyClosure(cl); err != nil {
+		t.Fatalf("emitted closure does not verify: %v", err)
 	}
 }
 
@@ -54,7 +54,7 @@ func TestExitCodes(t *testing.T) {
 		t.Fatal(err)
 	}
 	stubSpec := `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},` +
-		`"protocol_id":"cnos.cellkernel.episode-receipt.v0","profile":"stub",` +
+		`"protocol_id":"cnos.cellkernel.episode-closure.v0","profile":"stub",` +
 		`"alpha":{"skills":[]},"beta":{"skills":[]}}`
 	big := "{" + strings.Repeat(" ", maxContractBytes+10) + "}"
 
@@ -70,7 +70,7 @@ func TestExitCodes(t *testing.T) {
 		{"malformed json", "{not json", []string{"--contract", "-"}, 2},
 		{"unknown arg", "", []string{"--bogus"}, 2},
 		{"missing contract", "", []string{"--param", "value=true"}, 2},
-		{"missing profile", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cellkernel.episode-receipt.v0","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 2},
+		{"missing profile", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cellkernel.episode-closure.v0","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 2},
 		{"dup param", boolSpecJSON, []string{"--contract", "-", "--param", "value=true", "--param", "value=false"}, 2},
 		{"dup contract", boolSpecJSON, []string{"--contract", "-", "--contract", "-"}, 2},
 		{"unknown protocol", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"made.up","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 2},

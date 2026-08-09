@@ -1,40 +1,39 @@
 // Package cellkernel is a reference implementation of the Coherence-Cell
-// Normal Form (CCNF) single-episode kernel: the substrate-independent
-// five-step closure a coherence cell runs at one scope.
+// Normal Form (CCNF) single-episode kernel, implemented under the
+// operator-ratified FIDO/functional doctrine
+// (msg-cn-pi-cnos-cell-runner-fido-functional-44):
 //
-//  1. matter   := α.produce(contract)
-//  2. review   := β.review(betaInput)
-//  3. receipt  := γ.close(record)                               [kernel-owned]
-//  4. verdict  := V(record, receipt)                            [kernel-owned]
-//  5. decision := δ.decide(receipt, verdict)                    [kernel-owned]
+//	alphaIn  := AlphaInput{frozen contract}
+//	aOut     := α(alphaIn)                        Result<AlphaOutput, error>
+//	sealedA  := sealAlpha(aOut)                   runtime-owned, immutable
+//	betaIn   := BetaInput{contract, projection(sealedA), policy}
+//	bOut     := β(betaIn)                         Result<BetaOutput, error>
+//	sealedB  := sealBeta(bOut)
+//	record   := compose(start, sealedA, sealedB)  one immutable EpisodeRecord
+//	receipt  := γ(record)                         canonical bytes + ONE digest
+//	verdict  := V(receipt)                        typed failures
+//	decision := δ(verdict)
+//	status   := lift(decision, mode)
 //
-// See docs/architecture/CDS-CELL-MIGRATION.md and cnos#711/#717. Single-episode
-// engine: no repair loop, no composition, no protocol dispatch.
+// Governing rule: NO MUTABLE SHARED EPISODE STATE. Each seat is a pure-shaped
+// function invoked with exactly the immutable data it needs, returning one
+// typed value. Ownership is positional and structural — the runtime knows a
+// value came from α because it invoked α and received the return. Seats never
+// declare producer roles, execution ids, hashes, verdicts, receipts, status,
+// or decisions; there are no seat-visible authority fields to forge.
 //
-// Authority model (Pi β #31–#33 + PR-#718 β). The terminal object is an
-// Envelope, and VerifyEnvelope re-derives EVERY field of it from content — a
-// parent trusts nothing that is merely copied in:
+// The primary safety mechanism is structural isolation of the untrusted
+// cognitive seats, not the trusted runtime proving its own internal steps to
+// itself: sealed results carry unexported state (unforgeable outside this
+// package), β receives fresh copies (projections) of sealed α output, and the
+// single scope-lift digest over the canonical EpisodeRecord is the one proof a
+// downstream verifier recomputes (VerifyClosure).
 //
-//   - WHOLE-ENVELOPE PROOF (D1): the emitted Envelope (schema, protocol_validated,
-//     execution_mode, verdict, decision, status, repair, resolved_spec, receipt)
-//     is one verified object. verdict←V(receipt), decision←δ(verdict),
-//     status←(decision, execution_mode); protocol_validated is pinned false.
-//   - REPRODUCIBLE BINDINGS (D2): the Envelope carries the normalized
-//     resolved_spec (version/protocol/profile/params/skills/contract) so
-//     resolved_spec_hash recomputes; beta_input_hash recomputes from the
-//     receipt; execution ids are distinct and every evidence ref is bound to its
-//     producer's station id.
-//   - TYPED FAILURE ROUTING (D3): V classifies failures. Only contract_unmet may
-//     become needs_repair; integrity failures (invalid_receipt/_evidence/
-//     _identity/_independence) fail closed to rejected — never the α repair path.
-//   - FAIL-CLOSED IDENTITY (D4): identities are minted through one error-returning
-//     op and must be non-empty and pairwise distinct before α runs.
-//   - NON-AUTHORITATIVE SMOKE (D5): a stub run yields status `simulated`, never
-//     ordinary accepted authority.
-//   - EVIDENCE BYTES (C1): evidence bytes must be valid UTF-8 and bounded per-item
-//     and in aggregate.
-//
-// γ, V, δ are kernel-owned and mechanical; only α and β are open seats.
+// Retained mechanical gates (Pi β #31–#33, PR-#718 β): typed
+// semantic-vs-integrity failure routing; fail-closed identity minting;
+// explicit non-authoritative stub (`simulated`); size bounds + cancellation
+// between stations; explicit UTF-8 artifact text contract with an aggregate
+// bound; γ/V/δ kernel-owned and mechanical; only α and β are open seats.
 package cellkernel
 
 import (
@@ -50,25 +49,25 @@ import (
 	"unicode/utf8"
 )
 
-// Schema ids.
+// Schema / canon identifiers.
 const (
-	EnvelopeSchema        = "cnos.cellkernel.episode-envelope.v0"
-	betaInputCanonVersion = "cnos.cellkernel.beta-input-canon.v0"
-	resolvedSpecCanon     = "cnos.cellkernel.resolved-spec-canon.v0"
-	BetaInputPolicyID     = "cnos.cellkernel.beta-input.v0"
+	ClosureSchema     = "cnos.cellkernel.episode-closure.v0"
+	RecordCanon       = "cnos.cellkernel.episode-record-canon.v0"
+	BetaInputPolicyID = "cnos.cellkernel.beta-input.v0"
 )
 
-// Output bounds enforced at the kernel boundary (D6/C1).
+// Bounds enforced at the kernel boundary.
 const (
 	maxRequiredEvidence  = 64
 	maxMatterBytes       = 1 << 20 // 1 MiB
 	maxReviewNotesBytes  = 64 << 10
-	maxEvidenceItems     = 64
-	maxEvidenceBytes     = 1 << 20 // per item
-	maxAggregateEvidence = 4 << 20 // sum of all evidence bytes
+	maxArtifacts         = 64
+	maxArtifactBytes     = 1 << 20 // per artifact
+	maxAggregateArtifact = 4 << 20 // sum over both seats
 )
 
-// Role names which seat produced an artifact. The runtime assigns it.
+// Role names which station a required artifact must come from. The check is
+// positional (which side of the record the artifact sits on), never a stamp.
 type Role string
 
 const (
@@ -76,8 +75,7 @@ const (
 	RoleBeta  Role = "beta"
 )
 
-// ExecutionMode reports how authoritative a run is. A stub run is a smoke test
-// (non-authoritative); a mechanical run has β independently verify.
+// ExecutionMode: a stub run is a non-authoritative smoke test.
 type ExecutionMode string
 
 const (
@@ -87,7 +85,7 @@ const (
 
 func knownMode(m ExecutionMode) bool { return m == ModeStub || m == ModeMechanical }
 
-// --- Artifacts ----------------------------------------------------------
+// --- Immutable values ----------------------------------------------------
 
 type RequiredRef struct {
 	ID       string `json:"id"`
@@ -118,73 +116,181 @@ type Review struct {
 	Notes string `json:"notes"`
 }
 
-// EvidenceCandidate is what a seat returns: semantic identity + bytes only.
-type EvidenceCandidate struct {
-	ID    string
-	Kind  string
-	Bytes []byte
+// ArtifactCandidate is what a seat returns: semantic identity + UTF-8 text.
+// No provenance fields exist for a seat to forge.
+type ArtifactCandidate struct {
+	ID   string
+	Kind string
+	Text string
 }
 
-// EvidenceRef is an authenticated, self-verifying evidence record. Content is
-// the inlined UTF-8 bytes the runtime hashed; Ref is the content address.
-type EvidenceRef struct {
-	ID                  string `json:"id"`
-	Kind                string `json:"kind"`
-	Producer            Role   `json:"producer"`
-	ProducerExecutionID string `json:"producer_execution_id"`
-	Ref                 string `json:"ref"`
-	SHA256              string `json:"sha256"`
-	Content             string `json:"content"`
+// Artifact is a runtime-normalized artifact inside the sealed record. Its
+// provenance is its position (under alpha or beta), not a stamp.
+type Artifact struct {
+	ID       string `json:"id"`
+	Kind     string `json:"kind"`
+	Encoding string `json:"encoding"` // "utf8" (base64 is a future extension)
+	Text     string `json:"text"`
 }
 
-type AlphaResult struct {
-	Matter   Matter
-	Evidence []EvidenceCandidate
+// --- Seat inputs/outputs (immutable scopes) ------------------------------
+
+// AlphaInput is exactly what α may see: an isolated frozen contract copy.
+type AlphaInput struct {
+	Contract Contract
 }
 
-type BetaResult struct {
-	Review   Review
-	Evidence []EvidenceCandidate
+type AlphaOutput struct {
+	Matter    Matter
+	Artifacts []ArtifactCandidate
 }
 
-// BetaInput is the runtime-owned review surface handed to β.
+// BetaInput is the runtime-owned review surface: a fresh frozen contract copy,
+// a projection of sealed α output (copies — never α's live scope), and the
+// review policy. Nothing of α's private state crosses.
 type BetaInput struct {
-	Contract      Contract
-	ContractHash  string
-	Matter        Matter
-	AlphaEvidence []EvidenceRef
-	PolicyID      string
-	BundleHash    string
+	Contract       Contract
+	Matter         Matter
+	AlphaArtifacts []Artifact
+	PolicyID       string
 }
 
-// Receipt is the kernel's closure record (no resolved-spec identity; that lives
-// in the Envelope's ResolvedSpec).
+type BetaOutput struct {
+	Review    Review
+	Artifacts []ArtifactCandidate
+}
+
+// --- Sealed results (runtime-owned; unforgeable outside this package) ----
+
+// SealedAlpha holds α's normalized return. Fields are unexported: no seat or
+// external caller can construct or mutate a sealed value; accessors return
+// copies, so a β that mutates its projection cannot reach the sealed original.
+type SealedAlpha struct {
+	exec      string
+	matter    Matter
+	artifacts []Artifact
+}
+
+func (s SealedAlpha) projection() ([]Artifact, Matter) {
+	return append([]Artifact(nil), s.artifacts...), s.matter
+}
+
+type SealedBeta struct {
+	exec      string
+	review    Review
+	artifacts []Artifact
+}
+
+// --- The two open seats ---------------------------------------------------
+
+type Alpha interface {
+	Produce(ctx context.Context, in AlphaInput) (AlphaOutput, error)
+}
+
+type Beta interface {
+	Review(ctx context.Context, in BetaInput) (BetaOutput, error)
+}
+
+// Spec is a single-episode cell: a contract plus the two open seats.
+type Spec struct {
+	Contract Contract
+	Alpha    Alpha
+	Beta     Beta
+}
+
+// --- Identity (fail-closed) ----------------------------------------------
+
+type Identity struct {
+	Episode string
+	Alpha   string
+	Beta    string
+}
+
+func (id Identity) valid() error {
+	if id.Episode == "" || id.Alpha == "" || id.Beta == "" {
+		return errors.New("identity has empty id")
+	}
+	if id.Episode == id.Alpha || id.Episode == id.Beta || id.Alpha == id.Beta {
+		return errors.New("identity ids are not pairwise distinct")
+	}
+	return nil
+}
+
+// IDSource mints the whole identity tuple in one error-returning operation.
+type IDSource interface {
+	Mint() (Identity, error)
+}
+
+type randomIDs struct{}
+
+func (randomIDs) Mint() (Identity, error) {
+	parts := [3]string{}
+	for i := range parts {
+		b := make([]byte, 16)
+		if _, err := rand.Read(b); err != nil {
+			return Identity{}, fmt.Errorf("mint id: %w", err)
+		}
+		parts[i] = hex.EncodeToString(b)
+	}
+	return Identity{Episode: "ep-" + parts[0], Alpha: "alpha-" + parts[1], Beta: "beta-" + parts[2]}, nil
+}
+
+// --- Episode record, receipt, closure ------------------------------------
+
+// ResolvedSpec is the normalized executable spec, carried whole so the scope-
+// lift digest covers it and any verifier can reproduce it.
+type ResolvedSpec struct {
+	Version          string            `json:"version"`
+	DeclaredProtocol string            `json:"declared_protocol"`
+	Profile          string            `json:"profile"`
+	Params           map[string]string `json:"params,omitempty"`
+	AlphaSkills      []string          `json:"alpha_skills"`
+	BetaSkills       []string          `json:"beta_skills"`
+}
+
+// StationRecord is one station's contribution, owned positionally.
+type StationRecord struct {
+	ExecutionID string     `json:"execution_id"`
+	Artifacts   []Artifact `json:"artifacts"`
+}
+
+// EpisodeRecord is the ONE immutable account of the episode, composed by the
+// runtime from the sealed results. Everything downstream derives from it.
+type EpisodeRecord struct {
+	Canon           string        `json:"canon"`
+	EpisodeID       string        `json:"episode_id"`
+	Mode            ExecutionMode `json:"execution_mode"`
+	ResolvedSpec    ResolvedSpec  `json:"resolved_spec"`
+	Contract        Contract      `json:"contract"`
+	Alpha           StationRecord `json:"alpha"`
+	Matter          Matter        `json:"matter"`
+	Beta            StationRecord `json:"beta"`
+	Review          Review        `json:"review"`
+	BetaInputPolicy string        `json:"beta_input_policy"`
+}
+
+// canonicalBytes is the record's canonical serialization (schema-ordered JSON,
+// versioned by Canon). The scope-lift digest is computed over exactly these.
+func (r EpisodeRecord) canonicalBytes() []byte {
+	b, _ := json.Marshal(r)
+	return b
+}
+
+// Receipt is γ's output: the serialized record plus its single scope-lift
+// digest — the one proof any downstream verifier recomputes.
 type Receipt struct {
-	EpisodeID        string        `json:"episode_id"`
-	Contract         Contract      `json:"contract"`
-	ContractHash     string        `json:"contract_hash"`
-	Matter           Matter        `json:"matter"`
-	MatterHash       string        `json:"matter_hash"`
-	Review           Review        `json:"review"`
-	ReviewHash       string        `json:"review_hash"`
-	Evidence         []EvidenceRef `json:"evidence_refs"`
-	EvidenceHash     string        `json:"evidence_hash"`
-	AlphaExecutionID string        `json:"alpha_execution_id"`
-	BetaExecutionID  string        `json:"beta_execution_id"`
-	PolicyID         string        `json:"beta_input_policy_id"`
-	BetaInputHash    string        `json:"beta_input_hash"`
+	Record          EpisodeRecord `json:"record"`
+	ScopeLiftDigest string        `json:"scope_lift_digest"`
 }
 
 // FailureClass separates repairable contract-unmet from fail-closed integrity
-// failures (D3).
+// failures.
 type FailureClass string
 
 const (
-	ContractUnmet       FailureClass = "contract_unmet"
-	InvalidReceipt      FailureClass = "invalid_receipt"
-	InvalidEvidence     FailureClass = "invalid_evidence"
-	InvalidIdentity     FailureClass = "invalid_identity"
-	InvalidIndependence FailureClass = "invalid_independence"
+	ContractUnmet   FailureClass = "contract_unmet"
+	InvalidRecord   FailureClass = "invalid_record"
+	InvalidIdentity FailureClass = "invalid_identity"
 )
 
 func (f FailureClass) integrity() bool { return f != ContractUnmet }
@@ -225,7 +331,7 @@ const (
 	Degraded    Status = "degraded"
 	Rejected    Status = "rejected"
 	NeedsRepair Status = "needs_repair"
-	Simulated   Status = "simulated" // stub profile: non-authoritative
+	Simulated   Status = "simulated" // stub: non-authoritative
 )
 
 type RepairRequest struct {
@@ -233,101 +339,21 @@ type RepairRequest struct {
 	Failed []string `json:"failed,omitempty"`
 }
 
-// ResolvedSpec is the normalized executable spec resolved_spec_hash covers.
-type ResolvedSpec struct {
-	Canon            string            `json:"canon"`
-	Version          string            `json:"version"`
-	DeclaredProtocol string            `json:"declared_protocol"`
-	Profile          string            `json:"profile"`
-	Params           map[string]string `json:"params,omitempty"`
-	AlphaSkills      []string          `json:"alpha_skills"`
-	BetaSkills       []string          `json:"beta_skills"`
-	Contract         Contract          `json:"contract"`
-}
-
-func (r ResolvedSpec) hash() string { return hashJSON(r) }
-
-// Envelope is the terminal, whole-object-verifiable artifact `cn cell run`
-// emits. VerifyEnvelope re-derives every field.
-type Envelope struct {
-	Schema            string         `json:"envelope_schema"`
+// Closure is the terminal object that crosses the scope boundary: receipt,
+// verdict, decision, status — all re-derivable from the record by
+// VerifyClosure. It carries no other proof surfaces.
+type Closure struct {
+	Schema            string         `json:"closure_schema"`
 	ProtocolValidated bool           `json:"protocol_validated"`
-	ExecutionMode     ExecutionMode  `json:"execution_mode"`
 	Status            Status         `json:"status"`
 	Decision          Decision       `json:"decision"`
 	Verdict           Verdict        `json:"verdict"`
-	ResolvedSpec      ResolvedSpec   `json:"resolved_spec"`
-	ResolvedSpecHash  string         `json:"resolved_spec_hash"`
 	Receipt           Receipt        `json:"receipt"`
 	Repair            *RepairRequest `json:"repair,omitempty"`
 }
 
-// --- The two open seats -------------------------------------------------
+// --- Run options ----------------------------------------------------------
 
-type Alpha interface {
-	Produce(ctx context.Context, c Contract) (AlphaResult, error)
-}
-
-type Beta interface {
-	Review(ctx context.Context, in BetaInput) (BetaResult, error)
-}
-
-type Spec struct {
-	Contract Contract
-	Alpha    Alpha
-	Beta     Beta
-}
-
-// --- Identity source (D1/D4) --------------------------------------------
-
-type Identity struct {
-	Episode string
-	Alpha   string
-	Beta    string
-}
-
-func (id Identity) valid() error {
-	if id.Episode == "" || id.Alpha == "" || id.Beta == "" {
-		return errors.New("identity has empty id")
-	}
-	if id.Episode == id.Alpha || id.Episode == id.Beta || id.Alpha == id.Beta {
-		return errors.New("identity ids are not pairwise distinct")
-	}
-	return nil
-}
-
-// IDSource mints the whole identity tuple; it may fail (crypto/rand).
-type IDSource interface {
-	Mint() (Identity, error)
-}
-
-type randomIDs struct{}
-
-func (randomIDs) Mint() (Identity, error) {
-	e, err := randHex(16)
-	if err != nil {
-		return Identity{}, err
-	}
-	a, err := randHex(16)
-	if err != nil {
-		return Identity{}, err
-	}
-	b, err := randHex(16)
-	if err != nil {
-		return Identity{}, err
-	}
-	return Identity{Episode: "ep-" + e, Alpha: "alpha-" + a, Beta: "beta-" + b}, nil
-}
-
-func randHex(n int) (string, error) {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("mint id: %w", err)
-	}
-	return hex.EncodeToString(b), nil
-}
-
-// RunMeta carries the resolved-spec identity + execution mode from the runner.
 type RunMeta struct {
 	ResolvedSpec  ResolvedSpec
 	ExecutionMode ExecutionMode
@@ -345,137 +371,249 @@ func WithMeta(m RunMeta) RunOption      { return func(c *runConfig) { c.meta = m
 
 var ErrInvalidClosure = errors.New("cellkernel: inconsistent (verdict, decision) pair")
 
-// RunEpisode executes the CCNF five-step closure and returns the terminal
-// Envelope. A returned error is a malfunction (a seat failed, the spec was
-// invalid, identity minting failed, or the closure was internally inconsistent);
-// otherwise the Envelope's Status reports how the episode closed.
-func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Envelope, error) {
+// RunEpisode executes the five-step closure as a pure-shaped pipeline over
+// immutable values. A returned error is a malfunction (invalid spec, identity
+// failure, seat error, bound violation); otherwise the Closure's Status reports
+// how the episode closed.
+func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error) {
 	cfg := runConfig{ids: randomIDs{}, meta: RunMeta{ExecutionMode: ModeMechanical}}
 	for _, o := range opts {
 		o(&cfg)
 	}
 	if !knownMode(cfg.meta.ExecutionMode) {
-		return Envelope{}, fmt.Errorf("cellkernel: unknown execution mode %q", cfg.meta.ExecutionMode)
+		return Closure{}, fmt.Errorf("cellkernel: unknown execution mode %q", cfg.meta.ExecutionMode)
 	}
 	if err := validateSpec(s); err != nil {
-		return Envelope{}, err
+		return Closure{}, err
 	}
 	if err := ctx.Err(); err != nil {
-		return Envelope{}, fmt.Errorf("cellkernel: context: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: context: %w", err)
 	}
 
-	id, err := cfg.ids.Mint() // D4: fail-closed identity before α runs.
+	id, err := cfg.ids.Mint() // fail-closed identity, before α runs
 	if err != nil {
-		return Envelope{}, fmt.Errorf("cellkernel: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: %w", err)
 	}
 	if err := id.valid(); err != nil {
-		return Envelope{}, fmt.Errorf("cellkernel: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: %w", err)
 	}
 
 	frozen := s.Contract.clone()
-	contractHash := hashJSON(frozen)
 
-	aRes, err := s.Alpha.Produce(ctx, frozen.clone()) // 1
+	// Station α: isolated input → output → sealed.
+	aOut, err := s.Alpha.Produce(ctx, AlphaInput{Contract: frozen.clone()})
 	if err != nil {
-		return Envelope{}, fmt.Errorf("alpha produce: %w", err)
+		return Closure{}, fmt.Errorf("alpha produce: %w", err)
 	}
-	if err := boundMatter(aRes.Matter); err != nil {
-		return Envelope{}, err
-	}
-	alphaEv, err := authenticate(aRes.Evidence, RoleAlpha, id.Alpha)
+	sealedA, err := sealAlpha(aOut, id.Alpha)
 	if err != nil {
-		return Envelope{}, fmt.Errorf("alpha evidence: %w", err)
+		return Closure{}, fmt.Errorf("seal alpha: %w", err)
 	}
 	if err := ctx.Err(); err != nil {
-		return Envelope{}, fmt.Errorf("cellkernel: context after alpha: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: context after alpha: %w", err)
 	}
 
-	bin := BetaInput{
-		Contract:      frozen.clone(),
-		ContractHash:  contractHash,
-		Matter:        aRes.Matter,
-		AlphaEvidence: cloneEvidence(alphaEv),
-		PolicyID:      BetaInputPolicyID,
-	}
-	betaInputHash := hashBetaInput(bin)
-	bin.BundleHash = betaInputHash
-
-	bRes, err := s.Beta.Review(ctx, bin) // 2
+	// Station β: fresh projection of sealed α — never α's live scope.
+	projArtifacts, projMatter := sealedA.projection()
+	bOut, err := s.Beta.Review(ctx, BetaInput{
+		Contract:       frozen.clone(),
+		Matter:         projMatter,
+		AlphaArtifacts: projArtifacts,
+		PolicyID:       BetaInputPolicyID,
+	})
 	if err != nil {
-		return Envelope{}, fmt.Errorf("beta review: %w", err)
+		return Closure{}, fmt.Errorf("beta review: %w", err)
 	}
-	if err := boundReview(bRes.Review); err != nil {
-		return Envelope{}, err
-	}
-	betaEv, err := mintBetaEvidence(bRes, id.Beta)
+	sealedB, err := sealBeta(bOut, id.Beta)
 	if err != nil {
-		return Envelope{}, fmt.Errorf("beta evidence: %w", err)
+		return Closure{}, fmt.Errorf("seal beta: %w", err)
 	}
 	if err := ctx.Err(); err != nil {
-		return Envelope{}, fmt.Errorf("cellkernel: context after beta: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: context after beta: %w", err)
 	}
 
-	evidence := append(cloneEvidence(alphaEv), betaEv...)
-	if err := boundAggregateEvidence(evidence); err != nil {
-		return Envelope{}, err
-	}
-
-	receipt := Receipt{ // 3 (kernel γ)
-		EpisodeID:        id.Episode,
-		Contract:         frozen,
-		ContractHash:     contractHash,
-		Matter:           aRes.Matter,
-		MatterHash:       hashJSON(aRes.Matter),
-		Review:           bRes.Review,
-		ReviewHash:       hashJSON(bRes.Review),
-		Evidence:         evidence,
-		EvidenceHash:     hashJSON(evidence),
-		AlphaExecutionID: id.Alpha,
-		BetaExecutionID:  id.Beta,
-		PolicyID:         BetaInputPolicyID,
-		BetaInputHash:    betaInputHash,
-	}
-
-	verdict := validate(receipt) // 4 (kernel V)
-	decision := decide(verdict)  // 5 (kernel δ)
-
-	rs := cfg.meta.ResolvedSpec
-	rs.Canon = resolvedSpecCanon
-	rs.Contract = frozen // bind the frozen contract into the resolved spec
-
-	status, err := statusOf(verdict, decision, cfg.meta.ExecutionMode)
+	// Compose the one immutable record; then the mechanical tail is pure.
+	record, err := compose(id, cfg.meta, frozen, sealedA, sealedB)
 	if err != nil {
-		return Envelope{}, err
+		return Closure{}, err
+	}
+	receipt := gamma(record)
+	verdict := validate(receipt)
+	decision := decide(verdict)
+	status, err := lift(verdict, decision, record.Mode)
+	if err != nil {
+		return Closure{}, err
 	}
 
-	env := Envelope{
-		Schema:            EnvelopeSchema,
+	cl := Closure{
+		Schema:            ClosureSchema,
 		ProtocolValidated: false,
-		ExecutionMode:     cfg.meta.ExecutionMode,
 		Status:            status,
 		Decision:          decision,
 		Verdict:           verdict,
-		ResolvedSpec:      rs,
-		ResolvedSpecHash:  rs.hash(),
 		Receipt:           receipt,
 	}
 	if status == NeedsRepair {
-		env.Repair = &RepairRequest{Reason: "contract unmet", Failed: failureDetails(verdict)}
+		cl.Repair = &RepairRequest{Reason: "contract unmet", Failed: failureDetails(verdict)}
 	}
-	return env, nil
+	return cl, nil
 }
 
-func failureDetails(v Verdict) []string {
-	out := make([]string, 0, len(v.Failures))
-	for _, f := range v.Failures {
-		out = append(out, string(f.Class)+": "+f.Detail)
+// --- Sealing (runtime-only) -----------------------------------------------
+
+func normalizeArtifacts(cands []ArtifactCandidate) ([]Artifact, error) {
+	if len(cands) > maxArtifacts {
+		return nil, fmt.Errorf("too many artifacts (%d > %d)", len(cands), maxArtifacts)
 	}
-	return out
+	out := make([]Artifact, 0, len(cands))
+	for _, c := range cands {
+		if c.ID == "" || c.Kind == "" {
+			return nil, errors.New("artifact candidate needs non-empty id and kind")
+		}
+		if len(c.Text) > maxArtifactBytes {
+			return nil, fmt.Errorf("artifact %q exceeds %d bytes", c.ID, maxArtifactBytes)
+		}
+		if !utf8.ValidString(c.Text) {
+			return nil, fmt.Errorf("artifact %q is not valid UTF-8 (base64 encoding is a future extension)", c.ID)
+		}
+		out = append(out, Artifact{ID: c.ID, Kind: c.Kind, Encoding: "utf8", Text: c.Text})
+	}
+	return out, nil
 }
 
-// statusOf maps (verdict, decision, mode) to a terminal Status. A stub run is
-// always non-authoritative `simulated` (D5). An inconsistent pair is an error.
-func statusOf(v Verdict, d Decision, mode ExecutionMode) (Status, error) {
+func sealAlpha(o AlphaOutput, exec string) (SealedAlpha, error) {
+	if len(o.Matter.Data) > maxMatterBytes {
+		return SealedAlpha{}, fmt.Errorf("matter exceeds %d bytes", maxMatterBytes)
+	}
+	arts, err := normalizeArtifacts(o.Artifacts)
+	if err != nil {
+		return SealedAlpha{}, err
+	}
+	return SealedAlpha{exec: exec, matter: o.Matter, artifacts: arts}, nil
+}
+
+func sealBeta(o BetaOutput, exec string) (SealedBeta, error) {
+	if len(o.Review.Notes) > maxReviewNotesBytes {
+		return SealedBeta{}, fmt.Errorf("review notes exceed %d bytes", maxReviewNotesBytes)
+	}
+	arts, err := normalizeArtifacts(o.Artifacts)
+	if err != nil {
+		return SealedBeta{}, err
+	}
+	return SealedBeta{exec: exec, review: o.Review, artifacts: arts}, nil
+}
+
+// compose builds the one immutable EpisodeRecord from sealed results (pure).
+func compose(id Identity, meta RunMeta, frozen Contract, a SealedAlpha, b SealedBeta) (EpisodeRecord, error) {
+	total := 0
+	for _, art := range a.artifacts {
+		total += len(art.Text)
+	}
+	for _, art := range b.artifacts {
+		total += len(art.Text)
+	}
+	if total > maxAggregateArtifact {
+		return EpisodeRecord{}, fmt.Errorf("cellkernel: aggregate artifact bytes exceed %d", maxAggregateArtifact)
+	}
+	return EpisodeRecord{
+		Canon:           RecordCanon,
+		EpisodeID:       id.Episode,
+		Mode:            meta.ExecutionMode,
+		ResolvedSpec:    meta.ResolvedSpec,
+		Contract:        frozen,
+		Alpha:           StationRecord{ExecutionID: a.exec, Artifacts: a.artifacts},
+		Matter:          a.matter,
+		Beta:            StationRecord{ExecutionID: b.exec, Artifacts: b.artifacts},
+		Review:          b.review,
+		BetaInputPolicy: BetaInputPolicyID,
+	}, nil
+}
+
+// gamma serializes the record and computes the single scope-lift digest (pure).
+func gamma(r EpisodeRecord) Receipt {
+	return Receipt{Record: r, ScopeLiftDigest: sha256hex(r.canonicalBytes())}
+}
+
+// validate (V) checks the receipt at the scope-lift boundary: the one digest,
+// record predicates, and contract satisfaction — with typed failures. Producer
+// authority is positional: a required α artifact must sit under record.Alpha.
+func validate(rc Receipt) Verdict {
+	var fs []Failure
+	add := func(cond bool, class FailureClass, msg string) {
+		if cond {
+			fs = append(fs, Failure{Class: class, Detail: msg})
+		}
+	}
+
+	r := rc.Record
+	add(r.Canon != RecordCanon, InvalidRecord, "wrong record canon")
+	add(sha256hex(r.canonicalBytes()) != rc.ScopeLiftDigest, InvalidRecord, "scope-lift digest does not recompute")
+	add(!knownMode(r.Mode), InvalidRecord, "unknown execution mode")
+
+	add(r.EpisodeID == "" || r.Alpha.ExecutionID == "" || r.Beta.ExecutionID == "", InvalidIdentity, "missing identity")
+	add(r.Alpha.ExecutionID == r.Beta.ExecutionID, InvalidIdentity, "stations share an execution id")
+	add(r.BetaInputPolicy != BetaInputPolicyID, InvalidRecord, "unknown beta-input policy")
+
+	dupCheck(r.Alpha.Artifacts, &fs)
+	dupCheck(r.Beta.Artifacts, &fs)
+
+	for _, req := range r.Contract.RequiredEvidence {
+		side := r.Alpha.Artifacts
+		if req.Producer == RoleBeta {
+			side = r.Beta.Artifacts
+		}
+		if !hasArtifact(side, req.ID, req.Kind) {
+			fs = append(fs, Failure{ContractUnmet, fmt.Sprintf("missing required %s artifact: %s", req.Producer, req.ID)})
+		}
+	}
+	if !r.Review.Pass {
+		fs = append(fs, Failure{ContractUnmet, "review.pass=false"})
+	}
+
+	sort.Slice(fs, func(i, j int) bool {
+		if fs[i].Class != fs[j].Class {
+			return fs[i].Class < fs[j].Class
+		}
+		return fs[i].Detail < fs[j].Detail
+	})
+	return Verdict{Pass: len(fs) == 0, Failures: fs}
+}
+
+func dupCheck(arts []Artifact, fs *[]Failure) {
+	seen := make(map[string]bool)
+	for _, a := range arts {
+		if seen[a.ID] {
+			*fs = append(*fs, Failure{InvalidRecord, "duplicate artifact id: " + a.ID})
+		}
+		seen[a.ID] = true
+	}
+}
+
+func hasArtifact(arts []Artifact, id, kind string) bool {
+	for _, a := range arts {
+		if a.ID == id && a.Kind == kind {
+			return true
+		}
+	}
+	return false
+}
+
+// decide (δ) routes by failure class: integrity fails closed; contract-unmet
+// repairs; pass accepts (pure).
+func decide(v Verdict) Decision {
+	switch {
+	case v.Pass:
+		return Accept
+	case v.hasIntegrityFailure():
+		return Reject
+	default:
+		return RepairDispatch
+	}
+}
+
+// lift maps (verdict, decision, mode) to the terminal status. A stub run is
+// always `simulated`; an inconsistent pair is an error, never a closure.
+func lift(v Verdict, d Decision, mode ExecutionMode) (Status, error) {
 	if mode == ModeStub {
 		return Simulated, nil
 	}
@@ -493,7 +631,15 @@ func statusOf(v Verdict, d Decision, mode ExecutionMode) (Status, error) {
 	}
 }
 
-// --- D6: kernel-boundary spec validation + output bounds ----------------
+func failureDetails(v Verdict) []string {
+	out := make([]string, 0, len(v.Failures))
+	for _, f := range v.Failures {
+		out = append(out, string(f.Class)+": "+f.Detail)
+	}
+	return out
+}
+
+// --- Kernel-boundary validation -------------------------------------------
 
 func validateSpec(s Spec) error {
 	if seatIsNil(s.Alpha) {
@@ -524,191 +670,7 @@ func validateSpec(s Spec) error {
 	return nil
 }
 
-func boundMatter(m Matter) error {
-	if len(m.Data) > maxMatterBytes {
-		return fmt.Errorf("cellkernel: matter exceeds %d bytes", maxMatterBytes)
-	}
-	return nil
-}
-
-func boundReview(r Review) error {
-	if len(r.Notes) > maxReviewNotesBytes {
-		return fmt.Errorf("cellkernel: review notes exceed %d bytes", maxReviewNotesBytes)
-	}
-	return nil
-}
-
-func boundAggregateEvidence(refs []EvidenceRef) error {
-	total := 0
-	for _, e := range refs {
-		total += len(e.Content)
-	}
-	if total > maxAggregateEvidence {
-		return fmt.Errorf("cellkernel: aggregate evidence exceeds %d bytes", maxAggregateEvidence)
-	}
-	return nil
-}
-
-// --- D2/C1: runtime evidence authentication -----------------------------
-
-func authenticate(candidates []EvidenceCandidate, role Role, execID string) ([]EvidenceRef, error) {
-	if len(candidates) > maxEvidenceItems {
-		return nil, fmt.Errorf("too many evidence items (%d > %d)", len(candidates), maxEvidenceItems)
-	}
-	out := make([]EvidenceRef, 0, len(candidates))
-	for _, c := range candidates {
-		if c.ID == "" || c.Kind == "" {
-			return nil, errors.New("evidence candidate needs non-empty id and kind")
-		}
-		if len(c.Bytes) > maxEvidenceBytes {
-			return nil, fmt.Errorf("evidence %q exceeds %d bytes", c.ID, maxEvidenceBytes)
-		}
-		if !utf8.Valid(c.Bytes) { // C1: bytes must round-trip through JSON.
-			return nil, fmt.Errorf("evidence %q is not valid UTF-8", c.ID)
-		}
-		sum := sha256hex(c.Bytes)
-		out = append(out, EvidenceRef{
-			ID:                  c.ID,
-			Kind:                c.Kind,
-			Producer:            role,
-			ProducerExecutionID: execID,
-			Ref:                 "sha256:" + sum,
-			SHA256:              sum,
-			Content:             string(c.Bytes),
-		})
-	}
-	return out, nil
-}
-
-// mintBetaEvidence authenticates β's candidates, then mints the canonical
-// beta_review from the ACTUAL review (a seat cannot substitute it).
-func mintBetaEvidence(b BetaResult, execID string) ([]EvidenceRef, error) {
-	filtered := make([]EvidenceCandidate, 0, len(b.Evidence))
-	for _, c := range b.Evidence {
-		if c.ID == "beta_review" {
-			continue
-		}
-		filtered = append(filtered, c)
-	}
-	reviewBytes, _ := json.Marshal(b.Review)
-	filtered = append([]EvidenceCandidate{{ID: "beta_review", Kind: "review", Bytes: reviewBytes}}, filtered...)
-	return authenticate(filtered, RoleBeta, execID)
-}
-
-func cloneEvidence(in []EvidenceRef) []EvidenceRef {
-	return append([]EvidenceRef(nil), in...)
-}
-
-func hashBetaInput(in BetaInput) string {
-	type evCanon struct{ ID, Kind, Producer, Exec, SHA string }
-	type canon struct {
-		Version      string
-		PolicyID     string
-		ContractHash string
-		Matter       string
-		Alpha        []evCanon
-	}
-	c := canon{Version: betaInputCanonVersion, PolicyID: in.PolicyID, ContractHash: in.ContractHash, Matter: in.Matter.Data}
-	for _, e := range in.AlphaEvidence {
-		c.Alpha = append(c.Alpha, evCanon{e.ID, e.Kind, string(e.Producer), e.ProducerExecutionID, e.SHA256})
-	}
-	return hashJSON(c)
-}
-
-// --- Kernel-owned γ / V / δ ----------------------------------------------
-
-// validate (V) recomputes every binding from the receipt's own content and
-// classifies each failure. It does not re-judge β's prose.
-func validate(rc Receipt) Verdict {
-	var fs []Failure
-	add := func(cond bool, class FailureClass, msg string) {
-		if cond {
-			fs = append(fs, Failure{Class: class, Detail: msg})
-		}
-	}
-
-	add(hashJSON(rc.Contract) != rc.ContractHash, InvalidReceipt, "contract hash mismatch")
-	add(hashJSON(rc.Matter) != rc.MatterHash, InvalidReceipt, "matter hash mismatch")
-	add(hashJSON(rc.Review) != rc.ReviewHash, InvalidReceipt, "review hash mismatch")
-	add(hashJSON(rc.Evidence) != rc.EvidenceHash, InvalidReceipt, "evidence hash mismatch")
-
-	// Identity: non-empty, distinct, and each evidence ref bound to its station.
-	add(rc.AlphaExecutionID == "" || rc.BetaExecutionID == "", InvalidIdentity, "missing execution id")
-	add(rc.AlphaExecutionID == rc.BetaExecutionID, InvalidIdentity, "alpha and beta share an execution id")
-
-	seen := make(map[string]int)
-	for _, e := range rc.Evidence {
-		seen[e.ID]++
-		if sha256hex([]byte(e.Content)) != e.SHA256 {
-			fs = append(fs, Failure{InvalidEvidence, "evidence hash mismatch: " + e.ID})
-		}
-		if e.Ref != "sha256:"+e.SHA256 {
-			fs = append(fs, Failure{InvalidEvidence, "evidence ref not content-addressed: " + e.ID})
-		}
-		wantExec := rc.AlphaExecutionID
-		if e.Producer == RoleBeta {
-			wantExec = rc.BetaExecutionID
-		}
-		if e.Producer != RoleAlpha && e.Producer != RoleBeta {
-			fs = append(fs, Failure{InvalidEvidence, "evidence has no producer: " + e.ID})
-		} else if e.ProducerExecutionID != wantExec {
-			fs = append(fs, Failure{InvalidIndependence, "evidence producer-execution not bound to station: " + e.ID})
-		}
-	}
-	for id, n := range seen {
-		if n > 1 {
-			fs = append(fs, Failure{InvalidEvidence, "duplicate evidence id: " + id})
-		}
-	}
-
-	// Required presence + producer authority (a work gap, not an integrity fault).
-	for _, req := range rc.Contract.RequiredEvidence {
-		if !hasAuthorizedEvidence(rc.Evidence, req) {
-			fs = append(fs, Failure{ContractUnmet, fmt.Sprintf("missing/unauthorized required evidence: %s (want producer %s)", req.ID, req.Producer)})
-		}
-	}
-	if !rc.Review.Pass {
-		fs = append(fs, Failure{ContractUnmet, "review.pass=false"})
-	}
-
-	// Deterministic order so the verdict hashes/compares stably (map iteration
-	// over duplicate ids above is otherwise unordered).
-	sort.Slice(fs, func(i, j int) bool {
-		if fs[i].Class != fs[j].Class {
-			return fs[i].Class < fs[j].Class
-		}
-		return fs[i].Detail < fs[j].Detail
-	})
-	return Verdict{Pass: len(fs) == 0, Failures: fs}
-}
-
-func hasAuthorizedEvidence(refs []EvidenceRef, req RequiredRef) bool {
-	for _, e := range refs {
-		if e.ID == req.ID && e.Kind == req.Kind && e.Producer == req.Producer {
-			return true
-		}
-	}
-	return false
-}
-
-// decide (δ) routes by failure class (D3): an integrity failure fails closed to
-// reject; a pure contract-unmet goes to repair; a pass accepts.
-func decide(v Verdict) Decision {
-	if v.Pass {
-		return Accept
-	}
-	if v.hasIntegrityFailure() {
-		return Reject
-	}
-	return RepairDispatch
-}
-
-// --- helpers ------------------------------------------------------------
-
-func hashJSON(v any) string {
-	b, _ := json.Marshal(v)
-	return sha256hex(b)
-}
+// --- helpers ---------------------------------------------------------------
 
 func sha256hex(b []byte) string {
 	sum := sha256.Sum256(b)

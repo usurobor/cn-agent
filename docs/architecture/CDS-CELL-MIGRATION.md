@@ -236,21 +236,25 @@ returns only when it is actually enforced.)
 **Phase 1 — CLI 0: one local episode, honest receipt (no cognition).**
 `internal/cellspec` loader (strict parse → kernel `Spec`), and `cn cell run
 --contract <path|-> [--param k=v]` that fills holes and calls `RunEpisode`.
-Emits a **generic** `cnos.cellkernel.episode-envelope.v0` with `execution_mode`
-and `protocol_validated=false` — the declared `protocol_id` is provenance, never
-a validated CDS claim. A `profile` (explicit; no default) selects the builtin
+Emits a **generic** `cnos.cellkernel.episode-closure.v0` with
+`protocol_validated=false` — the declared `protocol_id` is provenance, never a
+validated CDS claim. A `profile` (explicit; no default) selects the builtin
 seat pair: `stub` (a non-authoritative **`simulated`** smoke run, exit 3) or
 `bool` (a real mechanical episode where β **independently verifies** α's
-artifact). **Zero GitHub/network.** Contract is frozen + hashed; evidence is
-runtime-authenticated + producer-attributed + UTF-8 + size-bounded; β receives a
-runtime-owned `BetaInput` review surface. The terminal **envelope re-verifies
-whole** — `cellkernel.VerifyEnvelope` re-derives every field
-(`verdict←V(receipt)`, `decision←δ(verdict)`, `status←(decision, mode)`), the
-`resolved_spec` makes `resolved_spec_hash` recomputable, identity is
-per-invocation and fail-closed, and integrity failures route to `rejected` not
-`needs_repair`. A CI job (`.github/workflows/cell-schema.yml`) vets the CUE
-schemas + actual `cn cell run` output against a shared positive/negative corpus
-(Pi #31–#33 + PR-#718 β).
+artifact). **Zero GitHub/network.**
+
+Implementation follows the operator-ratified **FIDO/functional doctrine**
+(`msg-cn-pi-cnos-cell-runner-fido-functional-44`): no mutable shared episode
+state; immutable seat scopes (`AlphaInput → Result<AlphaOutput>`, sealed before
+crossing scope; β gets a fresh projection of sealed α output); **positional
+ownership** (no seat-authored provenance — a required α artifact must sit under
+`record.alpha`); **one** immutable `EpisodeRecord` with **one** scope-lift
+digest; `VerifyClosure` as the single verification boundary (digest recomputes;
+verdict/decision/status re-derive purely); typed failure routing (integrity →
+`rejected`, never the α repair path); fail-closed identity; UTF-8 +
+size-bounded artifacts. A CI job (`.github/workflows/cell-schema.yml`) vets the
+CUE schemas + actual `cn cell run` output (accepted / needs-repair / simulated)
+against a shared positive/negative corpus (Pi #31–#33 + PR-#718 β + #44).
 
 **Phase 2 — skill resolution.** The `$PATH`-like resolver (`value → skill ref`)
 + required/optional/default hole logic; `cn cell run` errors on unfilled

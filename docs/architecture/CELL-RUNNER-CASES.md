@@ -34,44 +34,53 @@ episode does not close). A review with `Pass=false` is **contract-unmet**
 (closes `needs_repair`). An inconsistent (verdict, decision) pair is a typed
 `ErrInvalidClosure` — never a returned closed cell.
 
-## Invariants the kernel enforces
+## Invariants the kernel enforces (FIDO/functional doctrine)
 
-- **I1 — trust by receipt, not role.** γ/V/δ are mechanical; cognition is
-  rentable only at α/β. The trust surface is deterministic.
-- **I2 — the contract is frozen.** At episode start the runtime deep-copies +
-  hashes the contract; each seat gets an isolated copy; V/γ bind the frozen
-  snapshot. A seat cannot mutate the terms it is judged against.
-- **I3 — evidence is runtime-authenticated.** Seats return candidate
-  `{id, kind, bytes}` only. The runtime stamps producer role + execution id +
-  content digest, creates the `sha256:` ref, and inlines the bytes. α cannot
-  mint β's evidence; the canonical `beta_review` is minted by the runtime from
-  the actual review.
-- **I4 — the whole envelope re-derives.** The terminal object is an `Envelope`
-  (schema, protocol_validated, execution_mode, verdict, decision, status,
-  repair, resolved_spec, receipt). `VerifyEnvelope` recomputes **every** field
-  from content: `verdict←V(receipt)`, `decision←δ(verdict)`,
-  `status←(decision, execution_mode)`, `protocol_validated` pinned false. No
-  outer field can be changed while the inner receipt still verifies.
-- **I5 — identity is per-invocation and fail-closed.** The whole identity tuple
-  (episode + α/β execution ids) is minted through one error-returning op and
-  must be non-empty and pairwise distinct before α runs (a crypto/rand failure
-  fails the run). Each evidence ref is bound to its producer's station id. A
-  `resolved_spec` (version/protocol/profile/params/skills/contract) is carried
-  so `resolved_spec_hash` recomputes; runs differing only in resolved input
-  differ in the envelope.
-- **I6 — typed failure routing.** V classifies each failure. Only
-  `contract_unmet` may become `needs_repair`; integrity failures
-  (`invalid_receipt`/`_evidence`/`_identity`/`_independence`) fail closed to
-  `rejected` — never the α repair path. A stub run is non-authoritative
-  `simulated`, never ordinary accepted authority.
-- **I7 — re-verifies out of process, gated in CI.** `VerifyEnvelope`/
-  `VerifyReceipt` re-check a serialized envelope alone — the check a parent runs
-  on what it received — and a CI job (`cell-schema.yml`) vets the CUE schemas +
-  actual `cn cell run` output against a shared positive/negative corpus.
-- **I8 — the kernel guards its own boundary.** A direct `Spec` is validated
-  (non-empty id, unique/valid required refs, bounded cardinality); matter/review/
-  evidence output is size-bounded (per-item + aggregate) and evidence bytes must
-  be valid UTF-8; cancellation is checked between α, β, and closure.
+Governing rule (`msg-cn-pi-cnos-cell-runner-fido-functional-44`,
+operator-ratified): **no mutable shared episode state.** Each station is a
+pure-shaped function invoked with exactly the immutable data it needs,
+returning one typed value. Structural isolation of the untrusted seats is the
+primary safety mechanism — not the trusted runtime proving its own internal
+steps to itself.
+
+- **I1 — immutable seat scopes.** `α: AlphaInput → Result<AlphaOutput>`,
+  `β: BetaInput → Result<BetaOutput>`. Each seat sees an isolated frozen
+  contract copy; β additionally receives a fresh **projection** of sealed α
+  output (copies) — never α's live scope, session, or a shared episode object.
+- **I2 — sealed results.** The runtime seals each return (`sealAlpha`,
+  `sealBeta`) before it can cross scope. Sealed values carry unexported state:
+  no seat or external caller can construct or mutate one; a β that mutates its
+  projection cannot reach the sealed original.
+- **I3 — positional ownership.** The runtime knows a value came from α because
+  it invoked α and received the return. Seats return candidates `{id, kind,
+  text}` only — there are no producer roles, execution ids, hashes, verdicts,
+  or status fields for a seat to forge. A required α artifact is satisfied only
+  by an artifact sitting under `record.alpha`.
+- **I4 — one record, one digest.** `compose` builds ONE immutable
+  `EpisodeRecord` (identity, mode, resolved spec, contract, both stations,
+  matter, review, policy); γ serializes it with ONE scope-lift digest.
+  `VerifyClosure` is the single verification boundary: the digest recomputes,
+  and `verdict←V(receipt)`, `decision←δ(verdict)`, `status←lift(...)` re-derive
+  purely. No overlapping proof objects.
+- **I5 — identity is per-invocation and fail-closed.** The identity tuple is
+  minted through one error-returning op and must be non-empty and pairwise
+  distinct before α runs.
+- **I6 — typed failure routing.** Only `contract_unmet` may become
+  `needs_repair`; integrity failures (`invalid_record`/`invalid_identity`) fail
+  closed to `rejected` — never the α repair path. A stub run is
+  non-authoritative `simulated` (exit 3), never accepted authority.
+- **I7 — gated in CI.** `cell-schema.yml` vets the CUE schemas + actual
+  `cn cell run` output (accepted / needs-repair / simulated) against a shared
+  positive/negative corpus.
+- **I8 — the kernel guards its own boundary.** Spec validation (non-empty id,
+  unique/valid required refs, bounded cardinality); matter/review/artifact
+  output size-bounded (per-item + aggregate); artifact text is explicit UTF-8
+  (base64 is a future extension); cancellation checked between stations.
+
+**Composition (future cases) is functional:** `map`/`traverse` a child cell
+over immutable inputs, `zip` independent results, `bind` the next child
+contract from a sealed previous result, `fold` a parent projection from an
+append-only sequence of results. Children never write upward or sideways.
 
 ## The ladder (implementation order; Pi #32 D5)
 

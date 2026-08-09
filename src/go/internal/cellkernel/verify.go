@@ -1,72 +1,28 @@
 package cellkernel
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 )
 
-// VerifyReceipt re-verifies a receipt's internal structural integrity from its
-// serialized content alone (Pi #33 D2): recompute every hash, re-derive the
-// content-addressed evidence, check id uniqueness, that each evidence ref is
-// bound to its producer's station id, that execution ids are non-empty and
-// distinct, and that beta_input_hash recomputes. It does NOT judge contract
-// satisfaction (that is V's verdict) — only that the record is self-consistent.
-func VerifyReceipt(rc Receipt) error {
-	var f []string
-	add := func(cond bool, msg string) {
-		if cond {
-			f = append(f, msg)
-		}
-	}
-
-	add(rc.EpisodeID == "", "missing episode_id")
-	add(rc.AlphaExecutionID == "" || rc.BetaExecutionID == "", "missing execution id")
-	add(rc.AlphaExecutionID == rc.BetaExecutionID, "execution ids not distinct")
-	add(rc.PolicyID == "", "missing beta_input_policy_id")
-
-	add(hashJSON(rc.Contract) != rc.ContractHash, "contract hash mismatch")
-	add(hashJSON(rc.Matter) != rc.MatterHash, "matter hash mismatch")
-	add(hashJSON(rc.Review) != rc.ReviewHash, "review hash mismatch")
-	add(hashJSON(rc.Evidence) != rc.EvidenceHash, "evidence hash mismatch")
-
-	seen := make(map[string]int)
-	var alphaEv []EvidenceRef
-	for _, e := range rc.Evidence {
-		seen[e.ID]++
-		add(sha256hex([]byte(e.Content)) != e.SHA256, "evidence hash mismatch: "+e.ID)
-		add(e.Ref != "sha256:"+e.SHA256, "evidence ref not content-addressed: "+e.ID)
-		switch e.Producer {
-		case RoleAlpha:
-			add(e.ProducerExecutionID != rc.AlphaExecutionID, "alpha evidence not bound to alpha station: "+e.ID)
-			alphaEv = append(alphaEv, e)
-		case RoleBeta:
-			add(e.ProducerExecutionID != rc.BetaExecutionID, "beta evidence not bound to beta station: "+e.ID)
-		default:
-			f = append(f, "evidence has no producer: "+e.ID)
-		}
-	}
-	for id, n := range seen {
-		if n > 1 {
-			f = append(f, "duplicate evidence id: "+id)
-		}
-	}
-
-	// beta_input_hash must recompute from the receipt's own alpha evidence.
-	want := hashBetaInput(BetaInput{ContractHash: rc.ContractHash, Matter: rc.Matter, AlphaEvidence: alphaEv, PolicyID: rc.PolicyID})
-	add(want != rc.BetaInputHash, "beta_input_hash does not recompute")
-
-	if len(f) > 0 {
-		return errors.New("receipt verification failed: " + strings.Join(f, "; "))
-	}
-	return nil
+func mustJSON(v any) []byte {
+	b, _ := json.Marshal(v)
+	return b
 }
 
-// VerifyEnvelope re-derives EVERY field of a terminal envelope from content
-// (Pi PR-#718 β D1/D2): the resolved-spec hash, the inner receipt, and the
-// verdict→decision→status chain. A parent that runs this trusts nothing that is
-// merely copied in. Returns nil iff the envelope is fully self-consistent.
-func VerifyEnvelope(env Envelope) error {
+// VerifyClosure is the ONE scope-lift verification boundary (FIDO doctrine,
+// msg-cn-pi-cnos-cell-runner-fido-functional-44): a parent or another runtime
+// re-checks a serialized closure with a single reproducible proof plus pure
+// re-derivation — no overlapping hash authorities.
+//
+//  1. the scope-lift digest recomputes over the record's canonical bytes;
+//  2. verdict ← V(receipt), decision ← δ(verdict), status ← lift(...) all
+//     re-derive to exactly the closure's values;
+//  3. schema/protocol pins hold and repair is present iff status needs it.
+//
+// Returns nil iff the closure is fully self-consistent.
+func VerifyClosure(cl Closure) error {
 	var f []string
 	add := func(cond bool, msg string) {
 		if cond {
@@ -74,35 +30,29 @@ func VerifyEnvelope(env Envelope) error {
 		}
 	}
 
-	add(env.Schema != EnvelopeSchema, "wrong envelope schema")
-	add(env.ProtocolValidated, "protocol_validated must be false in v0")
-	add(!knownMode(env.ExecutionMode), "unknown execution mode")
+	add(cl.Schema != ClosureSchema, "wrong closure schema")
+	add(cl.ProtocolValidated, "protocol_validated must be false in v0")
 
-	// Resolved-spec identity recomputes, and binds the receipt's contract.
-	add(env.ResolvedSpec.Canon != resolvedSpecCanon, "wrong resolved-spec canon")
-	add(env.ResolvedSpec.hash() != env.ResolvedSpecHash, "resolved_spec_hash does not recompute")
-	add(hashJSON(env.ResolvedSpec.Contract) != hashJSON(env.Receipt.Contract), "resolved spec contract != receipt contract")
+	// (1) the single reproducible proof.
+	add(sha256hex(cl.Receipt.Record.canonicalBytes()) != cl.Receipt.ScopeLiftDigest,
+		"scope-lift digest does not recompute")
 
-	// Inner receipt integrity.
-	if err := VerifyReceipt(env.Receipt); err != nil {
-		f = append(f, err.Error())
-	}
-
-	// verdict ← V(receipt); decision ← δ(verdict); status ← (decision, mode).
-	wantVerdict := validate(env.Receipt)
-	add(hashJSON(wantVerdict) != hashJSON(env.Verdict), "verdict does not derive from the receipt")
+	// (2) pure re-derivation of the mechanical tail.
+	wantVerdict := validate(cl.Receipt)
+	add(string(mustJSON(wantVerdict)) != string(mustJSON(cl.Verdict)), "verdict does not derive from the receipt")
 	wantDecision := decide(wantVerdict)
-	add(wantDecision != env.Decision, "decision does not derive from the verdict")
-	if wantStatus, err := statusOf(wantVerdict, wantDecision, env.ExecutionMode); err != nil {
-		f = append(f, fmt.Sprintf("status inconsistent: %v", err))
+	add(wantDecision != cl.Decision, "decision does not derive from the verdict")
+	if wantStatus, err := lift(wantVerdict, wantDecision, cl.Receipt.Record.Mode); err != nil {
+		f = append(f, "status inconsistent: "+err.Error())
 	} else {
-		add(wantStatus != env.Status, "status does not derive from (decision, mode)")
+		add(wantStatus != cl.Status, "status does not derive from (verdict, decision, mode)")
 	}
 
-	add((env.Status == NeedsRepair) != (env.Repair != nil), "repair present iff status is needs_repair")
+	// (3) coherence of the repair surface.
+	add((cl.Status == NeedsRepair) != (cl.Repair != nil), "repair present iff status is needs_repair")
 
 	if len(f) > 0 {
-		return errors.New("envelope verification failed: " + strings.Join(f, "; "))
+		return errors.New("closure verification failed: " + strings.Join(f, "; "))
 	}
 	return nil
 }

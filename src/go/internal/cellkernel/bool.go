@@ -6,38 +6,37 @@ import (
 )
 
 // Case 1: a one-shot mechanical cell where β INDEPENDENTLY checks α's artifact
-// (Pi D6 — non-tautological). α produces a bool as its matter and the required
-// "bool" evidence bytes; β re-reads the matter from its runtime-owned bundle and
-// passes iff it is true. A hostile α that produces false — or tries to mint the
-// acceptance itself — cannot make β pass, and V + VerifyReceipt independently
-// check producer authority and content integrity.
+// from its own immutable projection (non-tautological). α produces a bool as
+// its matter plus the required "bool" artifact; β re-reads the matter from its
+// BetaInput and passes iff it is true. Provenance is positional: the "bool"
+// artifact satisfies the contract only because it sits under record.Alpha.
 
-// BoolAlpha produces a fixed bool as its matter plus the "bool" evidence bytes.
+// BoolAlpha produces a fixed bool as its matter plus the "bool" artifact.
 type BoolAlpha struct {
 	Value bool
 }
 
-func (a BoolAlpha) Produce(_ context.Context, _ Contract) (AlphaResult, error) {
+func (a BoolAlpha) Produce(_ context.Context, _ AlphaInput) (AlphaOutput, error) {
 	s := strconv.FormatBool(a.Value)
-	return AlphaResult{
-		Matter:   Matter{Data: s},
-		Evidence: []EvidenceCandidate{{ID: "bool", Kind: "value", Bytes: []byte(s)}},
+	return AlphaOutput{
+		Matter:    Matter{Data: s},
+		Artifacts: []ArtifactCandidate{{ID: "bool", Kind: "value", Text: s}},
 	}, nil
 }
 
-// BoolBeta independently checks the matter from its bundle: pass iff it parses
-// as bool true. It does not trust α's claim — it re-reads and decides.
+// BoolBeta independently checks the matter from its projection: pass iff it
+// parses as bool true. It does not trust α's claim — it re-reads and decides.
 type BoolBeta struct{}
 
-func (BoolBeta) Review(_ context.Context, in BetaInput) (BetaResult, error) {
+func (BoolBeta) Review(_ context.Context, in BetaInput) (BetaOutput, error) {
 	v, err := strconv.ParseBool(in.Matter.Data)
 	if err != nil || !v {
-		return BetaResult{Review: Review{Pass: false, Notes: "matter is not bool true"}}, nil
+		return BetaOutput{Review: Review{Pass: false, Notes: "matter is not bool true"}}, nil
 	}
-	return BetaResult{Review: Review{Pass: true, Notes: "beta independently verified matter is bool true"}}, nil
+	return BetaOutput{Review: Review{Pass: true, Notes: "beta independently verified matter is bool true"}}, nil
 }
 
-// BoolSpec is the one-shot bool cell requiring α-produced "bool" evidence.
+// BoolSpec is the one-shot bool cell requiring the α-side "bool" artifact.
 func BoolSpec(value bool) Spec {
 	return Spec{
 		Contract: Contract{

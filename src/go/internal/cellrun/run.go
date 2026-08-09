@@ -1,13 +1,13 @@
 // Package cellrun is the domain logic behind `cn cell run`: read a serialized
 // cell spec, fill its parameter holes, run one episode through the cellkernel,
-// and emit the terminal episode envelope. It owns the IO, parsing, and
+// and emit the terminal episode closure. It owns the IO, parsing, and
 // rendering; internal/cli holds only a thin dispatch wrapper (eng/go §2.18).
 //
 // It owns no GitHub, ref, PR, or custody policy (Pi β #31 C3): --contract is a
-// local path or "-" for stdin; there is no network access. The emitted envelope
-// is a generic cnos.cellkernel.episode-envelope.v0 with protocol_validated=false
+// local path or "-" for stdin; there is no network access. The emitted closure
+// is a generic cnos.cellkernel.episode-closure.v0 with protocol_validated=false
 // — the spec's protocol_id is declared provenance, never a validated claim — and
-// re-verifies whole via cellkernel.VerifyEnvelope.
+// re-verifies whole via cellkernel.VerifyClosure.
 package cellrun
 
 import (
@@ -34,8 +34,8 @@ USAGE:
 DESCRIPTION:
   Reads a serialized cell spec (JSON) from a file or stdin, fills its typed
   parameter holes from --param flags, and runs a single episode through the
-  kernel. Prints a generic episode envelope (cnos.cellkernel.episode-envelope.v0)
-  as JSON to stdout; the whole envelope re-verifies via VerifyEnvelope. The
+  kernel. Prints a generic episode closure (cnos.cellkernel.episode-closure.v0)
+  as JSON to stdout; the whole closure re-verifies via VerifyClosure. The
   spec's protocol_id is declared provenance only (protocol_validated=false).
 
   Exit status: 0 accepted; 1 non-accepted terminal (needs_repair/degraded/
@@ -78,26 +78,26 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return 2
 	}
 
-	env, err := cellkernel.RunEpisode(ctx, kspec, cellkernel.WithMeta(meta))
+	cl, err := cellkernel.RunEpisode(ctx, kspec, cellkernel.WithMeta(meta))
 	if err != nil {
 		fmt.Fprintf(stderr, "✗ episode malfunction: %v\n", err)
 		return 2
 	}
 
-	// Self-check: the emitted envelope must independently re-verify whole.
-	if err := cellkernel.VerifyEnvelope(env); err != nil {
-		fmt.Fprintf(stderr, "✗ envelope failed self-verification: %v\n", err)
+	// Self-check: the emitted closure must independently re-verify whole.
+	if err := cellkernel.VerifyClosure(cl); err != nil {
+		fmt.Fprintf(stderr, "✗ closure failed self-verification: %v\n", err)
 		return 2
 	}
 
 	enc := json.NewEncoder(stdout)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(env); err != nil {
-		fmt.Fprintf(stderr, "✗ encode envelope: %v\n", err)
+	if err := enc.Encode(cl); err != nil {
+		fmt.Fprintf(stderr, "✗ encode closure: %v\n", err)
 		return 2
 	}
 
-	switch env.Status {
+	switch cl.Status {
 	case cellkernel.Accepted:
 		return 0
 	case cellkernel.Simulated:

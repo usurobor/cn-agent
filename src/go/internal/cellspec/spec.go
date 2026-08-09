@@ -30,16 +30,16 @@ import (
 // SchemaVersion is the pinned cell-spec version; a spec must declare it exactly.
 const SchemaVersion = "cnos.cellspec.v0"
 
-// EpisodeReceiptSchema is the generic receipt schema the v0 runner actually
-// emits. A spec's protocol_id is carried as *declared* provenance; the runner
-// never claims to have validated a protocol it did not execute (Pi D1).
-const EpisodeReceiptSchema = "cnos.cellkernel.episode-receipt.v0"
+// GenericProtocol is the generic protocol id a spec may declare when it runs
+// no domain protocol. Declared protocols are provenance only; the runner never
+// claims to have validated one.
+const GenericProtocol = "cnos.cellkernel.episode-closure.v0"
 
 // knownProtocols are the protocol identifiers the runner recognizes. An unknown
 // (typo'd) declared protocol fails closed; a known-but-unexecuted protocol
 // (e.g. CDS in v0) is carried as provenance with execution_mode set honestly.
 var knownProtocols = map[string]bool{
-	EpisodeReceiptSchema:      true,
+	GenericProtocol:           true,
 	"cnos.cdd.receipt.v1":     true,
 	"cnos.cdd.cds.receipt.v1": true,
 	"cnos.cdd.cdr.receipt.v1": true,

@@ -1,0 +1,44 @@
+{
+  "closure_schema": "cnos.cellkernel.episode-closure.v0",
+  "protocol_validated": false,
+  "status": "simulated",
+  "decision": "accept",
+  "verdict": {
+    "pass": true
+  },
+  "receipt": {
+    "record": {
+      "canon": "cnos.cellkernel.episode-record-canon.v0",
+      "episode_id": "ep-9cf0b3a6cbe97b66fb60bf3231223481",
+      "execution_mode": "stub",
+      "resolved_spec": {
+        "version": "cnos.cellspec.v0",
+        "declared_protocol": "cnos.cdd.receipt.v1",
+        "profile": "stub",
+        "alpha_skills": [],
+        "beta_skills": []
+      },
+      "contract": {
+        "id": "cell-0",
+        "goal": "empty"
+      },
+      "alpha": {
+        "execution_id": "alpha-3c9575e2174cdb73d67ff49662185f98",
+        "artifacts": []
+      },
+      "matter": {
+        "data": "stub-alpha produced for \"empty\" with skills []"
+      },
+      "beta": {
+        "execution_id": "beta-dc19a55add3763cc93058ee4de36580a",
+        "artifacts": []
+      },
+      "review": {
+        "pass": true,
+        "notes": "stub-beta accepted with skills []"
+      },
+      "beta_input_policy": "cnos.cellkernel.beta-input.v0"
+    },
+    "scope_lift_digest": "81806c46a9b5a567e3a25f239334f587400d4d232ecdff7491d5e0e87cf70341"
+  }
+}

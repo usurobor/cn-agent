@@ -23,8 +23,8 @@ run_vet() { # want-exit, cn args...
   local want=$1; shift
   "$CN" cell run "$@" >"$tmp" 2>/dev/null; local code=$?
   if [ "$code" != "$want" ]; then echo "  ✗ cn cell run exit=$code want=$want ($*)"; fail=1; fi
-  if ! "$CUE" vet schemas/cdd/episode-envelope.cue "$tmp" -d '#EpisodeEnvelope' >/dev/null 2>&1; then
-    echo "  ✗ CLI output failed #EpisodeEnvelope ($*)"; fail=1
+  if ! "$CUE" vet schemas/cdd/episode-closure.cue "$tmp" -d '#EpisodeClosure' >/dev/null 2>&1; then
+    echo "  ✗ CLI output failed #EpisodeClosure ($*)"; fail=1
   else echo "  ✓ CLI output vets ($*)"; fi
 }
 
@@ -33,9 +33,10 @@ vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/empty-cell-spec.json -d '#CellS
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/bool-cell-spec.json -d '#CellSpec'
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/valid-cell-spec.json -d '#CDSCellSpec'
 
-echo "# positive envelopes"
-vet_ok schemas/cdd/episode-envelope.cue schemas/cdd/fixtures/episode-envelope-accepted.json -d '#EpisodeEnvelope'
-vet_ok schemas/cdd/episode-envelope.cue schemas/cdd/fixtures/episode-envelope-needs-repair.json -d '#EpisodeEnvelope'
+echo "# positive closures"
+vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-accepted.json -d '#EpisodeClosure'
+vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-needs-repair.json -d '#EpisodeClosure'
+vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-simulated.json -d '#EpisodeClosure'
 
 echo "# negative cell specs (must be rejected)"
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.json -d '#CellSpec'
@@ -45,5 +46,6 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-no-diff.json -d '#CDS
 echo "# actual CLI output vetted against the terminal schema"
 run_vet 0 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=true
 run_vet 1 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=false
+run_vet 3 --contract schemas/cdd/fixtures/empty-cell-spec.json
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi

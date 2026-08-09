@@ -12,7 +12,7 @@ import (
 // Builtin v0 seat profiles. v0 has no cognition; a profile selects a mechanical
 // seat pair. Rented cognition (Phase 3) adds a provider-backed profile.
 const (
-	ProfileStub = "stub" // smoke: fabricates required evidence, beta accepts (tautological)
+	ProfileStub = "stub" // smoke: fabricates required artifacts; non-authoritative `simulated`
 	ProfileBool = "bool" // real: alpha produces a bool, beta INDEPENDENTLY verifies it
 )
 
@@ -39,37 +39,35 @@ func buildProfile(r Resolved) (cellkernel.Alpha, cellkernel.Beta, cellkernel.Exe
 	}
 }
 
-// stubAlpha produces a summary matter and candidate bytes for exactly the
-// α-owned required evidence. The runtime stamps producer/exec/digest, so a stub
-// can only satisfy its own role.
+// stubAlpha produces a summary matter and candidates for the α-side required
+// artifacts. Provenance is positional — a stub can only fill its own side.
 type stubAlpha struct{ skills []string }
 
-func (a stubAlpha) Produce(_ context.Context, c cellkernel.Contract) (cellkernel.AlphaResult, error) {
-	matter := cellkernel.Matter{Data: fmt.Sprintf("stub-alpha produced for %q with skills [%s]", c.Goal, strings.Join(a.skills, ", "))}
-	var cands []cellkernel.EvidenceCandidate
-	for _, req := range c.RequiredEvidence {
+func (a stubAlpha) Produce(_ context.Context, in cellkernel.AlphaInput) (cellkernel.AlphaOutput, error) {
+	matter := cellkernel.Matter{Data: fmt.Sprintf("stub-alpha produced for %q with skills [%s]", in.Contract.Goal, strings.Join(a.skills, ", "))}
+	var cands []cellkernel.ArtifactCandidate
+	for _, req := range in.Contract.RequiredEvidence {
 		if req.Producer != cellkernel.RoleAlpha {
 			continue
 		}
-		cands = append(cands, cellkernel.EvidenceCandidate{ID: req.ID, Kind: req.Kind, Bytes: []byte("stub-alpha:" + req.ID)})
+		cands = append(cands, cellkernel.ArtifactCandidate{ID: req.ID, Kind: req.Kind, Text: "stub-alpha:" + req.ID})
 	}
-	return cellkernel.AlphaResult{Matter: matter, Evidence: cands}, nil
+	return cellkernel.AlphaOutput{Matter: matter, Artifacts: cands}, nil
 }
 
-// stubBeta accepts and produces candidate bytes for β-owned required evidence
-// other than beta_review (the runtime mints beta_review from the actual review).
+// stubBeta accepts and produces candidates for the β-side required artifacts.
 type stubBeta struct{ skills []string }
 
-func (b stubBeta) Review(_ context.Context, in cellkernel.BetaInput) (cellkernel.BetaResult, error) {
-	var cands []cellkernel.EvidenceCandidate
+func (b stubBeta) Review(_ context.Context, in cellkernel.BetaInput) (cellkernel.BetaOutput, error) {
+	var cands []cellkernel.ArtifactCandidate
 	for _, req := range in.Contract.RequiredEvidence {
-		if req.Producer != cellkernel.RoleBeta || req.ID == "beta_review" {
+		if req.Producer != cellkernel.RoleBeta {
 			continue
 		}
-		cands = append(cands, cellkernel.EvidenceCandidate{ID: req.ID, Kind: req.Kind, Bytes: []byte("stub-beta:" + req.ID)})
+		cands = append(cands, cellkernel.ArtifactCandidate{ID: req.ID, Kind: req.Kind, Text: "stub-beta:" + req.ID})
 	}
-	return cellkernel.BetaResult{
-		Review:   cellkernel.Review{Pass: true, Notes: fmt.Sprintf("stub-beta accepted with skills [%s]", strings.Join(b.skills, ", "))},
-		Evidence: cands,
+	return cellkernel.BetaOutput{
+		Review:    cellkernel.Review{Pass: true, Notes: fmt.Sprintf("stub-beta accepted with skills [%s]", strings.Join(b.skills, ", "))},
+		Artifacts: cands,
 	}, nil
 }

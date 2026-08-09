@@ -102,28 +102,31 @@ func TestStubProfileIsSimulated(t *testing.T) {
 	if meta.ExecutionMode != cellkernel.ModeStub {
 		t.Fatalf("mode = %q, want stub", meta.ExecutionMode)
 	}
-	env, err := cellkernel.RunEpisode(context.Background(), kspec, cellkernel.WithMeta(meta))
+	cl, err := cellkernel.RunEpisode(context.Background(), kspec, cellkernel.WithMeta(meta))
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	if env.Status != cellkernel.Simulated {
-		t.Fatalf("status = %q, want simulated", env.Status)
+	if cl.Status != cellkernel.Simulated {
+		t.Fatalf("status = %q, want simulated", cl.Status)
 	}
-	if err := cellkernel.VerifyEnvelope(env); err != nil {
-		t.Fatalf("envelope must verify: %v", err)
+	if err := cellkernel.VerifyClosure(cl); err != nil {
+		t.Fatalf("closure must verify: %v", err)
 	}
-	// The α diff and β beta_review are each bound with the authorized producer.
+	// Positional ownership: the diff sits under Alpha, beta_review under Beta.
 	var diffAlpha, reviewBeta bool
-	for _, e := range env.Receipt.Evidence {
-		if e.ID == "diff" && e.Producer == cellkernel.RoleAlpha {
+	for _, a := range cl.Receipt.Record.Alpha.Artifacts {
+		if a.ID == "diff" {
 			diffAlpha = true
 		}
-		if e.ID == "beta_review" && e.Producer == cellkernel.RoleBeta {
+	}
+	for _, a := range cl.Receipt.Record.Beta.Artifacts {
+		if a.ID == "beta_review" {
 			reviewBeta = true
 		}
 	}
 	if !diffAlpha || !reviewBeta {
-		t.Fatalf("producer-attributed evidence not bound: %+v", env.Receipt.Evidence)
+		t.Fatalf("positional artifacts not bound: alpha=%+v beta=%+v",
+			cl.Receipt.Record.Alpha.Artifacts, cl.Receipt.Record.Beta.Artifacts)
 	}
 }
 
@@ -131,7 +134,7 @@ const boolFixture = `{
   "version": "cnos.cellspec.v0",
   "contract": {"id":"cell-bool","goal":"produce bool true",
     "required_evidence":[{"id":"bool","kind":"value","producer":"alpha"}]},
-  "protocol_id": "cnos.cellkernel.episode-receipt.v0",
+  "protocol_id": "cnos.cellkernel.episode-closure.v0",
   "profile": "bool",
   "params": {"value": {"kind":"value","required":true,"domain":["true","false"]}},
   "alpha": {"skills": []},
@@ -155,11 +158,11 @@ func TestBoolProfileAcceptedAndUnmet(t *testing.T) {
 		if meta.ExecutionMode != cellkernel.ModeMechanical {
 			t.Fatalf("mode = %q, want mechanical", meta.ExecutionMode)
 		}
-		env, err := cellkernel.RunEpisode(context.Background(), kspec, cellkernel.WithMeta(meta))
+		cl, err := cellkernel.RunEpisode(context.Background(), kspec, cellkernel.WithMeta(meta))
 		if err != nil {
 			t.Fatalf("run: %v", err)
 		}
-		return env.Status
+		return cl.Status
 	}
 	if got := run("true"); got != cellkernel.Accepted {
 		t.Errorf("value=true: status %q, want accepted", got)

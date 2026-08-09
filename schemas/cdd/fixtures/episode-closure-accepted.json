@@ -1,0 +1,61 @@
+{
+  "closure_schema": "cnos.cellkernel.episode-closure.v0",
+  "protocol_validated": false,
+  "status": "accepted",
+  "decision": "accept",
+  "verdict": {
+    "pass": true
+  },
+  "receipt": {
+    "record": {
+      "canon": "cnos.cellkernel.episode-record-canon.v0",
+      "episode_id": "ep-ee86c30c0ede343765f1c328f4a040e6",
+      "execution_mode": "mechanical",
+      "resolved_spec": {
+        "version": "cnos.cellspec.v0",
+        "declared_protocol": "cnos.cellkernel.episode-closure.v0",
+        "profile": "bool",
+        "params": {
+          "value": "true"
+        },
+        "alpha_skills": [],
+        "beta_skills": []
+      },
+      "contract": {
+        "id": "cell-bool",
+        "goal": "produce bool true",
+        "required_evidence": [
+          {
+            "id": "bool",
+            "kind": "value",
+            "producer": "alpha"
+          }
+        ]
+      },
+      "alpha": {
+        "execution_id": "alpha-2fdd88cef13a43cab209a31fdb636cf5",
+        "artifacts": [
+          {
+            "id": "bool",
+            "kind": "value",
+            "encoding": "utf8",
+            "text": "true"
+          }
+        ]
+      },
+      "matter": {
+        "data": "true"
+      },
+      "beta": {
+        "execution_id": "beta-c3232d374378a236d589e2779d6dbb3d",
+        "artifacts": []
+      },
+      "review": {
+        "pass": true,
+        "notes": "beta independently verified matter is bool true"
+      },
+      "beta_input_policy": "cnos.cellkernel.beta-input.v0"
+    },
+    "scope_lift_digest": "6a9822cc37a1547b69ec14b7a1d8957c0790187d1129e469fcd807d7f3c71fab"
+  }
+}

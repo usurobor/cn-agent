@@ -11,130 +11,221 @@ import (
 // seqIDs is a deterministic id source for tests.
 type seqIDs struct{ ep, a, b string }
 
-func (s seqIDs) Mint() (Identity, error) { return Identity{Episode: s.ep, Alpha: s.a, Beta: s.b}, nil }
-
-func testMeta(mode ExecutionMode) RunMeta {
-	return RunMeta{ExecutionMode: mode, ResolvedSpec: ResolvedSpec{Version: "cnos.cellspec.v0", DeclaredProtocol: "p", Profile: "bool", AlphaSkills: []string{}, BetaSkills: []string{}}}
+func (s seqIDs) Mint() (Identity, error) {
+	return Identity{Episode: s.ep, Alpha: s.a, Beta: s.b}, nil
 }
 
-func mechEnvelope(t *testing.T, s Spec) Envelope {
+func testMeta(mode ExecutionMode) RunMeta {
+	return RunMeta{ExecutionMode: mode, ResolvedSpec: ResolvedSpec{
+		Version: "cnos.cellspec.v0", DeclaredProtocol: "p", Profile: "bool",
+		AlphaSkills: []string{}, BetaSkills: []string{},
+	}}
+}
+
+func mechClosure(t *testing.T, s Spec) Closure {
 	t.Helper()
-	env, err := RunEpisode(context.Background(), s,
+	cl, err := RunEpisode(context.Background(), s,
 		WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}), WithMeta(testMeta(ModeMechanical)))
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	return env
+	return cl
 }
 
-func TestEmptyCellRunsToAccepted(t *testing.T) {
-	env := mechEnvelope(t, EmptySpec())
-	if env.Status != Accepted {
-		t.Fatalf("status: want accepted, got %q", env.Status)
-	}
-	if err := VerifyEnvelope(env); err != nil {
-		t.Fatalf("envelope must self-verify: %v", err)
-	}
-}
-
-func TestBoolCellAcceptedAndRepair(t *testing.T) {
-	acc := mechEnvelope(t, BoolSpec(true))
-	if acc.Status != Accepted {
-		t.Fatalf("bool true: status=%q", acc.Status)
-	}
-	rep := mechEnvelope(t, BoolSpec(false))
-	if rep.Status != NeedsRepair || rep.Repair == nil {
-		t.Fatalf("bool false: status=%q repair=%v", rep.Status, rep.Repair)
-	}
-}
-
-// D5: a stub run is non-authoritative `simulated`, never accepted.
-func TestStubIsSimulated(t *testing.T) {
-	env, err := RunEpisode(context.Background(), EmptySpec(),
-		WithIDSource(seqIDs{"ep-s", "alpha-s", "beta-s"}), WithMeta(testMeta(ModeStub)))
-	if err != nil {
-		t.Fatalf("run: %v", err)
-	}
-	if env.Status != Simulated {
-		t.Fatalf("stub status: want simulated, got %q", env.Status)
-	}
-	if err := VerifyEnvelope(env); err != nil {
-		t.Fatalf("stub envelope must verify: %v", err)
-	}
-}
-
-// D1: identity is per-invocation.
-func TestEpisodeIdentityIsPerInvocation(t *testing.T) {
-	a, _ := RunEpisode(context.Background(), BoolSpec(true), WithMeta(testMeta(ModeMechanical)))
-	b, _ := RunEpisode(context.Background(), BoolSpec(true), WithMeta(testMeta(ModeMechanical)))
-	if a.Receipt.EpisodeID == b.Receipt.EpisodeID || a.Receipt.AlphaExecutionID == b.Receipt.AlphaExecutionID {
-		t.Fatal("identities are not per-invocation")
-	}
-}
-
-func TestResolvedInputBoundInEnvelope(t *testing.T) {
-	mk := func(v string) Envelope {
-		m := testMeta(ModeMechanical)
-		m.ResolvedSpec.AlphaSkills = []string{v}
-		env, _ := RunEpisode(context.Background(), BoolSpec(true), WithMeta(m))
-		return env
-	}
-	if mk("go").ResolvedSpecHash == mk("rust").ResolvedSpecHash {
-		t.Fatal("runs differing in resolved input share a resolved_spec_hash")
-	}
-}
-
-// --- D1/D2: whole-envelope verification; every field re-derives ----------
-
-func roundTrip(t *testing.T, env Envelope) Envelope {
+func roundTrip(t *testing.T, cl Closure) Closure {
 	t.Helper()
-	b, err := json.Marshal(env)
+	b, err := json.Marshal(cl)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
-	var out Envelope
+	var out Closure
 	if err := json.Unmarshal(b, &out); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
 	return out
 }
 
-func TestEnvelopeReVerifiesAfterSerialization(t *testing.T) {
-	env := roundTrip(t, mechEnvelope(t, BoolSpec(true)))
-	if err := VerifyEnvelope(env); err != nil {
-		t.Fatalf("round-tripped envelope must verify: %v", err)
+func TestEmptyCellRunsToAccepted(t *testing.T) {
+	cl := mechClosure(t, EmptySpec())
+	if cl.Status != Accepted {
+		t.Fatalf("status: want accepted, got %q", cl.Status)
+	}
+	if err := VerifyClosure(cl); err != nil {
+		t.Fatalf("closure must self-verify: %v", err)
 	}
 }
 
-func TestTamperedEnvelopeFails(t *testing.T) {
-	tamper := map[string]func(*Envelope){
-		"flip status":          func(e *Envelope) { e.Status = Rejected },
-		"flip decision":        func(e *Envelope) { e.Decision = Reject },
-		"flip verdict pass":    func(e *Envelope) { e.Verdict.Pass = false },
-		"flip protocol valid":  func(e *Envelope) { e.ProtocolValidated = true },
-		"flip execution mode":  func(e *Envelope) { e.ExecutionMode = ModeStub },
-		"rewrite spec version": func(e *Envelope) { e.ResolvedSpec.Version = "x" },
-		"rewrite inner matter": func(e *Envelope) { e.Receipt.Matter.Data = "changed" },
-		"forge inner evidence": func(e *Envelope) { e.Receipt.Evidence[0].Content = "x" },
-		"drop repair":          func(e *Envelope) { e.Repair = &RepairRequest{Reason: "spurious"} },
+func TestBoolCellAcceptedAndRepair(t *testing.T) {
+	if cl := mechClosure(t, BoolSpec(true)); cl.Status != Accepted {
+		t.Fatalf("bool true: status=%q", cl.Status)
+	}
+	rep := mechClosure(t, BoolSpec(false))
+	if rep.Status != NeedsRepair || rep.Repair == nil {
+		t.Fatalf("bool false: status=%q repair=%v", rep.Status, rep.Repair)
+	}
+}
+
+// Stub runs are non-authoritative `simulated`.
+func TestStubIsSimulated(t *testing.T) {
+	cl, err := RunEpisode(context.Background(), EmptySpec(),
+		WithIDSource(seqIDs{"ep-s", "alpha-s", "beta-s"}), WithMeta(testMeta(ModeStub)))
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if cl.Status != Simulated {
+		t.Fatalf("stub status: want simulated, got %q", cl.Status)
+	}
+	if err := VerifyClosure(cl); err != nil {
+		t.Fatalf("stub closure must verify: %v", err)
+	}
+}
+
+// Identity is per-invocation; resolved input is covered by the one digest.
+func TestEpisodeIdentityIsPerInvocation(t *testing.T) {
+	a, _ := RunEpisode(context.Background(), BoolSpec(true), WithMeta(testMeta(ModeMechanical)))
+	b, _ := RunEpisode(context.Background(), BoolSpec(true), WithMeta(testMeta(ModeMechanical)))
+	if a.Receipt.Record.EpisodeID == b.Receipt.Record.EpisodeID {
+		t.Fatal("identities are not per-invocation")
+	}
+}
+
+func TestResolvedInputChangesDigest(t *testing.T) {
+	mk := func(skill string) Closure {
+		m := testMeta(ModeMechanical)
+		m.ResolvedSpec.AlphaSkills = []string{skill}
+		cl, _ := RunEpisode(context.Background(), BoolSpec(true),
+			WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}), WithMeta(m))
+		return cl
+	}
+	if mk("go").Receipt.ScopeLiftDigest == mk("rust").Receipt.ScopeLiftDigest {
+		t.Fatal("runs differing in resolved input share a scope-lift digest")
+	}
+}
+
+// --- The one verification boundary ---------------------------------------
+
+func TestClosureReVerifiesAfterSerialization(t *testing.T) {
+	cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
+	if err := VerifyClosure(cl); err != nil {
+		t.Fatalf("round-tripped closure must verify: %v", err)
+	}
+}
+
+func TestTamperedClosureFails(t *testing.T) {
+	tamper := map[string]func(*Closure){
+		"flip status":           func(c *Closure) { c.Status = Rejected },
+		"flip decision":         func(c *Closure) { c.Decision = Reject },
+		"flip verdict pass":     func(c *Closure) { c.Verdict.Pass = false },
+		"flip protocol claim":   func(c *Closure) { c.ProtocolValidated = true },
+		"rewrite record matter": func(c *Closure) { c.Receipt.Record.Matter.Data = "changed" },
+		"rewrite record review": func(c *Closure) { c.Receipt.Record.Review.Pass = false },
+		"forge alpha artifact":  func(c *Closure) { c.Receipt.Record.Alpha.Artifacts[0].Text = "x" },
+		"rewrite resolved spec": func(c *Closure) { c.Receipt.Record.ResolvedSpec.Profile = "x" },
+		"substitute digest":     func(c *Closure) { c.Receipt.ScopeLiftDigest = strings.Repeat("0", 64) },
+		"spurious repair":       func(c *Closure) { c.Repair = &RepairRequest{Reason: "spurious"} },
+		"move artifact to beta": func(c *Closure) {
+			c.Receipt.Record.Beta.Artifacts = c.Receipt.Record.Alpha.Artifacts
+			c.Receipt.Record.Alpha.Artifacts = nil
+		},
 	}
 	for name, mut := range tamper {
 		t.Run(name, func(t *testing.T) {
-			env := roundTrip(t, mechEnvelope(t, BoolSpec(true)))
-			mut(&env)
-			if err := VerifyEnvelope(env); err == nil {
+			cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
+			mut(&cl)
+			if err := VerifyClosure(cl); err == nil {
 				t.Fatalf("tamper %q passed verification", name)
 			}
 		})
 	}
 }
 
-// --- D3: typed failure routing ------------------------------------------
+// --- Seat isolation (Pi #44 required action 7) ----------------------------
+
+// mutatingAlpha tries to relax the contract it was handed.
+type mutatingAlpha struct{}
+
+func (mutatingAlpha) Produce(_ context.Context, in AlphaInput) (AlphaOutput, error) {
+	for i := range in.Contract.RequiredEvidence {
+		in.Contract.RequiredEvidence[i].ID = "neutralized"
+	}
+	in.Contract.RequiredEvidence = nil
+	return AlphaOutput{Matter: Matter{Data: "m"}}, nil
+}
+
+func TestSeatCannotMutateItsInputContract(t *testing.T) {
+	s := Spec{
+		Contract: Contract{ID: "c", Goal: "g",
+			RequiredEvidence: []RequiredRef{{ID: "diff", Kind: "diff", Producer: RoleAlpha}}},
+		Alpha: mutatingAlpha{},
+		Beta:  AcceptBeta{},
+	}
+	cl := mechClosure(t, s)
+	if cl.Verdict.Pass {
+		t.Fatal("frozen contract was relaxed by a hostile alpha")
+	}
+	if len(cl.Receipt.Record.Contract.RequiredEvidence) != 1 || cl.Receipt.Record.Contract.RequiredEvidence[0].ID != "diff" {
+		t.Fatalf("frozen contract mutated: %+v", cl.Receipt.Record.Contract.RequiredEvidence)
+	}
+}
+
+// projectionMutatingBeta mutates the α projection it receives; the sealed
+// original must be unaffected.
+type projectionMutatingBeta struct{}
+
+func (projectionMutatingBeta) Review(_ context.Context, in BetaInput) (BetaOutput, error) {
+	for i := range in.AlphaArtifacts {
+		in.AlphaArtifacts[i].Text = "corrupted-by-beta"
+	}
+	in.Matter.Data = "corrupted-by-beta"
+	return BetaOutput{Review: Review{Pass: true, Notes: "beta tried to corrupt alpha output"}}, nil
+}
+
+func TestBetaCannotMutateSealedAlpha(t *testing.T) {
+	s := BoolSpec(true)
+	s.Beta = projectionMutatingBeta{}
+	cl := mechClosure(t, s)
+	if cl.Receipt.Record.Matter.Data != "true" {
+		t.Fatalf("sealed alpha matter mutated via beta projection: %q", cl.Receipt.Record.Matter.Data)
+	}
+	if got := cl.Receipt.Record.Alpha.Artifacts[0].Text; got != "true" {
+		t.Fatalf("sealed alpha artifact mutated via beta projection: %q", got)
+	}
+	if err := VerifyClosure(cl); err != nil {
+		t.Fatalf("closure must still verify: %v", err)
+	}
+}
+
+// A seat has no authority surface to forge: candidates carry only {id, kind,
+// text}; a "beta_review"-labeled α artifact lands positionally under Alpha and
+// cannot satisfy a β-side requirement.
+type impersonatingAlpha struct{}
+
+func (impersonatingAlpha) Produce(context.Context, AlphaInput) (AlphaOutput, error) {
+	return AlphaOutput{Matter: Matter{Data: "m"}, Artifacts: []ArtifactCandidate{
+		{ID: "diff", Kind: "diff", Text: "d"},
+		{ID: "beta_signoff", Kind: "review", Text: "fake"},
+	}}, nil
+}
+
+func TestAlphaArtifactCannotSatisfyBetaRequirement(t *testing.T) {
+	s := Spec{
+		Contract: Contract{ID: "c", Goal: "g", RequiredEvidence: []RequiredRef{
+			{ID: "diff", Kind: "diff", Producer: RoleAlpha},
+			{ID: "beta_signoff", Kind: "review", Producer: RoleBeta},
+		}},
+		Alpha: impersonatingAlpha{},
+		Beta:  AcceptBeta{}, // produces no artifacts
+	}
+	cl := mechClosure(t, s)
+	if cl.Verdict.Pass {
+		t.Fatal("an alpha-side artifact satisfied a beta-side requirement")
+	}
+}
+
+// --- Typed routing, identity, bounds, malfunction -------------------------
 
 func TestIntegrityFailureFailsClosed(t *testing.T) {
-	// A verdict carrying an integrity failure must reject (fail closed), not
-	// route to the ordinary alpha repair path.
-	integrity := Verdict{Pass: false, Failures: []Failure{{InvalidEvidence, "x"}}}
+	integrity := Verdict{Pass: false, Failures: []Failure{{InvalidRecord, "x"}}}
 	if d := decide(integrity); d != Reject {
 		t.Fatalf("integrity failure -> %q, want reject", d)
 	}
@@ -143,8 +234,6 @@ func TestIntegrityFailureFailsClosed(t *testing.T) {
 		t.Fatalf("contract-unmet -> %q, want repair_dispatch", d)
 	}
 }
-
-// --- D4: fail-closed identity minting ------------------------------------
 
 type errIDs struct{}
 
@@ -164,27 +253,24 @@ func TestIdentityFailsClosed(t *testing.T) {
 	}
 }
 
-// --- C1: evidence bytes must be valid UTF-8 ------------------------------
-
 type badBytesAlpha struct{}
 
-func (badBytesAlpha) Produce(context.Context, Contract) (AlphaResult, error) {
-	return AlphaResult{Matter: Matter{Data: "m"}, Evidence: []EvidenceCandidate{{ID: "x", Kind: "k", Bytes: []byte{0xff, 0xfe}}}}, nil
+func (badBytesAlpha) Produce(context.Context, AlphaInput) (AlphaOutput, error) {
+	return AlphaOutput{Matter: Matter{Data: "m"},
+		Artifacts: []ArtifactCandidate{{ID: "x", Kind: "k", Text: string([]byte{0xff, 0xfe})}}}, nil
 }
 
-func TestNonUTF8EvidenceRejected(t *testing.T) {
+func TestNonUTF8ArtifactRejected(t *testing.T) {
 	s := Spec{Contract: Contract{ID: "c", Goal: "g"}, Alpha: badBytesAlpha{}, Beta: AcceptBeta{}}
 	if _, err := RunEpisode(context.Background(), s, WithMeta(testMeta(ModeMechanical))); err == nil {
-		t.Fatal("want error for non-UTF-8 evidence")
+		t.Fatal("want error for non-UTF-8 artifact")
 	}
 }
 
-// --- Malfunction, self-cert, producer authority --------------------------
-
 type brokenBeta struct{}
 
-func (brokenBeta) Review(context.Context, BetaInput) (BetaResult, error) {
-	return BetaResult{}, errors.New("backend unavailable")
+func (brokenBeta) Review(context.Context, BetaInput) (BetaOutput, error) {
+	return BetaOutput{}, errors.New("backend unavailable")
 }
 
 func TestBetaMalfunctionReturnsError(t *testing.T) {
@@ -195,11 +281,23 @@ func TestBetaMalfunctionReturnsError(t *testing.T) {
 	}
 }
 
-func TestNilSeatsFailClosed(t *testing.T) {
-	s := EmptySpec()
-	s.Alpha = nil
-	if _, err := RunEpisode(context.Background(), s, WithMeta(testMeta(ModeMechanical))); err == nil {
-		t.Fatal("want error for nil alpha")
+type forgingAlpha struct{}
+
+func (forgingAlpha) Produce(context.Context, AlphaInput) (AlphaOutput, error) {
+	return AlphaOutput{Matter: Matter{Data: "junk"}}, nil
+}
+
+type rejectBeta struct{}
+
+func (rejectBeta) Review(context.Context, BetaInput) (BetaOutput, error) {
+	return BetaOutput{Review: Review{Pass: false, Notes: "reject"}}, nil
+}
+
+func TestNoSelfCertification(t *testing.T) {
+	s := Spec{Contract: Contract{ID: "c", Goal: "g"}, Alpha: forgingAlpha{}, Beta: rejectBeta{}}
+	cl := mechClosure(t, s)
+	if cl.Status == Accepted || cl.Verdict.Pass {
+		t.Fatalf("self-cert leaked: status=%q", cl.Status)
 	}
 }
 
@@ -211,90 +309,10 @@ func TestCancelledContextFailsClosed(t *testing.T) {
 	}
 }
 
-type forgingAlpha struct{}
-
-func (forgingAlpha) Produce(context.Context, Contract) (AlphaResult, error) {
-	return AlphaResult{Matter: Matter{Data: "junk"}}, nil
-}
-
-type rejectBeta struct{}
-
-func (rejectBeta) Review(context.Context, BetaInput) (BetaResult, error) {
-	return BetaResult{Review: Review{Pass: false, Notes: "reject"}}, nil
-}
-
-func TestNoSelfCertification(t *testing.T) {
-	s := Spec{Contract: Contract{ID: "c", Goal: "g"}, Alpha: forgingAlpha{}, Beta: rejectBeta{}}
-	env := mechEnvelope(t, s)
-	if env.Status == Accepted || env.Verdict.Pass {
-		t.Fatalf("self-cert leaked: status=%q", env.Status)
-	}
-}
-
-type alphaMintingBetaEvidence struct{}
-
-func (alphaMintingBetaEvidence) Produce(context.Context, Contract) (AlphaResult, error) {
-	return AlphaResult{Matter: Matter{Data: "m"}, Evidence: []EvidenceCandidate{
-		{ID: "diff", Kind: "diff", Bytes: []byte("d")},
-		{ID: "beta_review", Kind: "review", Bytes: []byte("fake")},
-	}}, nil
-}
-
-func TestAlphaCannotMintBetaEvidence(t *testing.T) {
-	s := Spec{
-		Contract: Contract{ID: "c", Goal: "g", RequiredEvidence: []RequiredRef{
-			{ID: "diff", Kind: "diff", Producer: RoleAlpha},
-			{ID: "beta_review", Kind: "review", Producer: RoleBeta},
-		}},
-		Alpha: alphaMintingBetaEvidence{},
-		Beta:  AcceptBeta{},
-	}
-	env := mechEnvelope(t, s)
-	if env.Verdict.Pass {
-		t.Fatal("V passed although beta_review was forged by alpha")
-	}
-}
-
-func TestHostileAlphaCannotMutateFrozenContract(t *testing.T) {
-	s := Spec{
-		Contract: Contract{ID: "c", Goal: "g", RequiredEvidence: []RequiredRef{{ID: "diff", Kind: "diff", Producer: RoleAlpha}}},
-		Alpha:    mutatingAlpha{},
-		Beta:     AcceptBeta{},
-	}
-	env := mechEnvelope(t, s)
-	if env.Verdict.Pass {
-		t.Fatal("frozen contract was relaxed by a hostile alpha")
-	}
-	if len(env.Receipt.Contract.RequiredEvidence) != 1 || env.Receipt.Contract.RequiredEvidence[0].ID != "diff" {
-		t.Fatalf("frozen contract mutated: %+v", env.Receipt.Contract.RequiredEvidence)
-	}
-}
-
-type mutatingAlpha struct{}
-
-func (mutatingAlpha) Produce(_ context.Context, c Contract) (AlphaResult, error) {
-	for i := range c.RequiredEvidence {
-		c.RequiredEvidence[i].ID = "neutralized"
-	}
-	c.RequiredEvidence = nil
-	return AlphaResult{Matter: Matter{Data: "m"}}, nil
-}
-
-func TestBetaInputHashStableAndSensitive(t *testing.T) {
-	base := BetaInput{Contract: Contract{ID: "c"}, ContractHash: "h", Matter: Matter{Data: "m"}, PolicyID: BetaInputPolicyID}
-	if hashBetaInput(base) != hashBetaInput(base) {
-		t.Fatal("beta-input hash not stable")
-	}
-	other := base
-	other.PolicyID = "different"
-	if hashBetaInput(base) == hashBetaInput(other) {
-		t.Fatal("beta-input hash ignored the policy id")
-	}
-}
-
 func TestKernelRejectsInvalidSpec(t *testing.T) {
 	cases := map[string]Spec{
 		"empty contract id": {Contract: Contract{ID: ""}, Alpha: NoopAlpha{}, Beta: AcceptBeta{}},
+		"nil alpha":         {Contract: Contract{ID: "c"}, Alpha: nil, Beta: AcceptBeta{}},
 		"bad producer":      {Contract: Contract{ID: "c", RequiredEvidence: []RequiredRef{{ID: "x", Kind: "k", Producer: "gamma"}}}, Alpha: NoopAlpha{}, Beta: AcceptBeta{}},
 		"dup required":      {Contract: Contract{ID: "c", RequiredEvidence: []RequiredRef{{ID: "x", Kind: "k", Producer: RoleAlpha}, {ID: "x", Kind: "k", Producer: RoleBeta}}}, Alpha: NoopAlpha{}, Beta: AcceptBeta{}},
 	}
@@ -309,8 +327,8 @@ func TestKernelRejectsInvalidSpec(t *testing.T) {
 
 type oversizeAlpha struct{}
 
-func (oversizeAlpha) Produce(context.Context, Contract) (AlphaResult, error) {
-	return AlphaResult{Matter: Matter{Data: strings.Repeat("x", maxMatterBytes+1)}}, nil
+func (oversizeAlpha) Produce(context.Context, AlphaInput) (AlphaOutput, error) {
+	return AlphaOutput{Matter: Matter{Data: strings.Repeat("x", maxMatterBytes+1)}}, nil
 }
 
 func TestBoundedOutput(t *testing.T) {
