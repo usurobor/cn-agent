@@ -135,6 +135,53 @@ run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json
 run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json
 run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json
 
+echo "# committed rented-Claude evidence (one-off receipt, NOT a provider run)"
+# The live corpus rents `fake`, so the cognitive path has no runtime witness
+# here. The committed closure below IS that witness, and these checks make it
+# accountable rather than narrative (Pi #58 D1): both CUE oracles are
+# recomputed from the artifact, and the measurement is recomputed from the
+# diff the artifact carries. A one-byte edit or a deletion fails this block.
+# Nothing here invokes a provider.
+ev=docs/architecture/evidence/cds-case2-claude-closure.json
+ev_diff_sha=3826a7e883a9fb78769d1ef99ca54a16bad631aea244620412e2d5be58261766
+ev_diff_bytes=2475
+ev_touched="CONTRIBUTING.md README.md"
+if ! files_exist "$ev"; then
+  fail=1
+else
+  vet_ok schemas/cdd/episode-closure.cue "$ev" -d '#EpisodeClosure'
+  evalpha="$tmpdir/evidence-alpha.json"
+  if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$ev" "$evalpha" 2>/dev/null; then
+    vet_ok ./schemas/cds:cds "$evalpha" -d '#CDSPatchAlphaResolved'
+  else
+    echo "  ✗ evidence closure has no resolved alpha"; fail=1
+  fi
+  if python3 - "$ev" "$ev_diff_sha" "$ev_diff_bytes" "$ev_touched" <<'PYEOF'
+import hashlib, json, sys
+c = json.load(open(sys.argv[1]))
+r = c["receipt"]["record"]
+d = r["matter"]["data"]
+want_sha, want_bytes, want_touched = sys.argv[2], int(sys.argv[3]), sys.argv[4].split()
+got_touched = sorted({l.split(" b/")[-1] for l in d.splitlines() if l.startswith("diff --git")})
+checks = [
+    ("execution_mode", r["execution_mode"], "cognitive"),
+    ("status", c["status"], "needs_repair"),
+    ("diff bytes", len(d), want_bytes),
+    ("diff sha256", hashlib.sha256(d.encode()).hexdigest(), want_sha),
+    ("touched files", got_touched, sorted(want_touched)),
+]
+bad = [(n, g, w) for n, g, w in checks if g != w]
+for n, g, w in bad:
+    print(f"    {n}: got {g!r}, want {w!r}")
+sys.exit(1 if bad else 0)
+PYEOF
+  then
+    echo "  ✓ evidence closure measurement recomputes (cognitive, needs_repair, $ev_diff_bytes bytes, digest, touched files)"
+  else
+    echo "  ✗ evidence closure measurement does NOT recompute"; fail=1
+  fi
+fi
+
 echo "# SIGINT terminates a blocked stdin reader (Pi round-5 D3)"
 mkfifo "$tmpdir/stdin.fifo"
 # set -m: without job control, a non-interactive shell starts background jobs

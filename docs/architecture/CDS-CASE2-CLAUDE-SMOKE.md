@@ -1,0 +1,106 @@
+# Case-2 rented-Claude smoke receipt
+
+One bounded, disposable episode, recorded because the shared corpus cannot
+carry it: the corpus rents `fake`, and a CI job that rents real cognition would
+be the provider service this project deliberately does not build.
+
+Everything below is **recomputable from the committed artifact**. The raw
+closure stdout is at
+[`evidence/cds-case2-claude-closure.json`](evidence/cds-case2-claude-closure.json),
+and `scripts/cell-schema-check.sh` re-derives the CUE verdicts and the
+measurement from it on every run — so a one-byte edit or a deletion fails the
+gate rather than this file quietly going stale. This is an evidence fixture,
+not a provider harness: nothing in the corpus invokes a provider.
+
+**Why it exists (Pi #57 D1).** The exact-argv oracle proves the recipe; it
+cannot prove the runtime. Before `--permission-mode acceptEdits` was sealed,
+the seat's tools were *available* but not *approved*, so earlier real episodes
+were resting on ambient host permission authority rather than on the cell's
+declaration. The claim was open exactly where the fix landed.
+
+## Invocation
+
+Runtime was an immutable, clean commit — not "a head plus changes":
+
+| | |
+|---|---|
+| runtime commit | `ca1f241b36b0835b8be3922af2e6a34c8a8270ef` |
+| runtime tree | `9d85c712beafd632c8cdaeecf040cb033917bf91` |
+| working tree at run | clean (`git status --porcelain` empty) |
+| `claude --version` | `2.1.226 (Claude Code)` |
+| fixture repo base | `1d79f7552649357165ce9addf3fbe7c57f3b62b0` |
+
+Built with `go -C src/go build -o ./cn ./cmd/cn` at that commit, then, from
+inside a hub vendored from `repoinstall.DefaultPackages`:
+
+```sh
+cn cell run \
+  --contract schemas/cds/fixtures/code-cell-spec.json \
+  --param language=cnos.eng:eng/go \
+  --param provider=claude-cli \
+  --param model=claude-opus-5 \
+  --param base_sha=1d79f7552649357165ce9addf3fbe7c57f3b62b0 \
+  --param repo=<throwaway repo>
+```
+
+`model` is a **requested selector**, not an observed model identity. Nothing
+in the runtime asks the provider what actually served the request.
+
+## Result — every value below is re-derived by the gate
+
+| | |
+|---|---|
+| episode | `ep-7a83e6c07a2749068aab291152113946` |
+| exit | `1` — `needs_repair` |
+| `execution_mode` | **`cognitive`** |
+| measured diff | **2475 bytes** |
+| diff sha256 | `3826a7e883a9fb78769d1ef99ca54a16bad631aea244620412e2d5be58261766` |
+| touched | `CONTRIBUTING.md` (new), `README.md` |
+| recorded cognition | `{"provider":"claude-cli","model":"claude-opus-5"}` |
+| recorded base | `1d79f7552649357165ce9addf3fbe7c57f3b62b0` |
+| `#EpisodeClosure` | vets |
+| `#CDSPatchAlphaResolved` | vets |
+
+Recompute by hand:
+
+```sh
+ev=docs/architecture/evidence/cds-case2-claude-closure.json
+cue vet schemas/cdd/episode-closure.cue "$ev" -d '#EpisodeClosure'
+python3 -c 'import json,sys;json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"],open("/tmp/a.json","w"))' "$ev"
+cue vet ./schemas/cds:cds /tmp/a.json -d '#CDSPatchAlphaResolved'
+python3 -c 'import hashlib,json,sys;d=json.load(open(sys.argv[1]))["receipt"]["record"]["matter"]["data"];print(len(d),hashlib.sha256(d.encode()).hexdigest())' "$ev"
+```
+
+**`VerifyClosure`.** `cellrun` self-verifies the emitted closure against the
+contract and metadata *this invocation* built, and exits 2 with empty stdout if
+that fails; encoding happens only after. The preserved artifact is a complete
+closure and the observed exit was 1, so verification succeeded. The premise
+that was missing before — the preserved stdout — is the committed file.
+
+## What this establishes
+
+1. **The declared authority is sufficient.** The seat edited files with only
+   `--tools Read,Write,Edit,Glob,Grep` and `--permission-mode acceptEdits`.
+2. **The runtime measures rather than believes.** The diff was computed from
+   the disposable worktree.
+3. **Case-2 honesty holds under real cognition.** A genuine change still
+   closes `needs_repair`: the mechanical β will not pass what it cannot judge,
+   and the matter is preserved for Case 3's independent reviewer.
+4. **Mode follows the provider** — `cognitive`, honestly irreproducible.
+
+## What it does not establish
+
+- Nothing about `codex-cli`, which remains held.
+- Nothing about which model served the request; only which selector was asked
+  for.
+- **Not "nothing inherited from the host."** The adapter seals a declared
+  baseline tool and permission recipe and suppresses user/project defaults via
+  `--safe-mode`. Authentication is ambient by design, and vendor-managed
+  substrate policy can apply above the baseline; the adapter neither detects
+  nor overrides it.
+- No OS confinement. The honest authority is the offered tool surface, the
+  declared permission mode, and the measured worktree.
+- Source-repo cleanliness after the run was observed at run time
+  (`git status --porcelain` empty, `HEAD` unchanged) but is **not** recomputable
+  from the committed artifact, so it is recorded here as an observation only
+  and nothing in the gate asserts it.
