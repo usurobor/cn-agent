@@ -322,6 +322,45 @@ not re-derive them):*
   <https://learn.chatgpt.com/docs/github-action> ·
   <https://github.com/openai/codex-action/blob/52fe01ec70a42f454c9d2ebd47598f9fd6893d56/action.yml>
 
+## HELD — promote the generic cognition schema to CDD (captured, not implemented)
+
+**Status: held until a second cognitive fill exists.** CDD is the generic
+layer, CDS a concrete one; a mechanism every fill can rent belongs to CDD, and
+no future fill may depend on CDS to reach it.
+
+The **Go** layer already obeys this, and the dependency graph is what enforces
+it rather than a naming convention:
+
+```text
+cellcog    -> (no internal deps)     generic cognition
+cellskill  -> (no internal deps)     generic skill loading
+cellwork   -> (no internal deps)     generic worktree substrate
+cellfill   -> cellkernel             generic registry + cdd fills
+cdspatch   -> cellcog, cellskill, cellwork, cellfill, cellkernel
+```
+
+`cellcog` is a leaf; nothing depends on `cdspatch` but the composition root. A
+later `text.write` or `research` fill sits exactly where `cdspatch` sits — it
+rents cognition, it does not reimplement it, and it never imports CDS.
+
+The **CUE** layer does not yet obey it. Two generic definitions live in the
+concrete overlay `schemas/cds/spec.cue`:
+
+- `#Cognition` — mirrors `cellcog.New`, which is a generic mechanism.
+- `#Hole` — a generic cellspec param-resolution concept, not a CDS one.
+
+A second cognitive fill would have to duplicate them or import `schemas/cds`.
+Both belong in `schemas/cdd/`.
+
+What correctly stays in CDS is the **composition**, not the pieces:
+`#CDSPatchAlphaResolved` binds cognition + workspace + skills into the shape a
+diff-producing alpha takes. Likewise `cellwork` is generic substrate that only
+diff-producing fills rent — a researcher or text cell would never touch it.
+
+Deliberately deferred: promoting a definition with exactly one consumer is
+speculative, and the move is mechanical once a real second consumer exists to
+prove the boundary. Do it when the second cognitive fill lands, not before.
+
 ## Boundary the kernel never owns (Pi β #31, C3)
 
 The episode kernel owns no GitHub, ref, PR, branch, cursor, writer-locality, or
