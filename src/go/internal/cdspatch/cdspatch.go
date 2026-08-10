@@ -39,7 +39,10 @@ const (
 
 // Decl is the complete, closed shape of a cds.patch alpha declaration. The
 // fill owns this strictness: unknown keys fail StrictDecode, and the CUE
-// overlay #CDSPatchAlpha pins the same shape for the independent oracle.
+// overlays #CDSPatchAlphaAuthored and #CDSPatchAlphaResolved pin the same
+// shapes for the independent oracle: authored admits the structurally
+// possible forms, and resolution plus this constructor validate the selected
+// provider/model combination.
 type Decl struct {
 	Fill      string         `json:"fill"`
 	Cognition cellcog.Config `json:"cognition"`

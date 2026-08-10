@@ -44,7 +44,8 @@ import "cnos.dev/cnos/schemas/cdd"
 #Concrete: string & !="" & !~"^\\$"
 
 // #Cognition is the inline provider declaration. A provider that really rents
-// cognition must name an EXACT model; only the deterministic fake may omit
+// cognition must name a REQUESTED MODEL SELECTOR; only the deterministic
+// fake may omit
 // it. Written as a disjunction rather than two independent fields so this
 // schema rejects exactly what cellcog.New rejects — the two authorities must
 // not disagree. There is no argv/flags escape: a cell cannot smuggle
@@ -64,7 +65,7 @@ import "cnos.dev/cnos/schemas/cdd"
 //
 //   - a literal fake ignores the model, so it may omit the key, write it
 //     empty, or carry a hole that resolution fills with the empty value;
-//   - a literal real provider needs an exact model, present either as a
+//   - a literal real provider needs a model selector, present either as a
 //     concrete literal or as a hole;
 //   - a HOLE in the provider position means which arm applies is not known
 //     until resolution, so the model must admit the union of both.

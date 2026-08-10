@@ -32,7 +32,7 @@ func TestNewClosedProviderSet(t *testing.T) {
 		t.Fatal("unknown provider must fail construction")
 	}
 	if _, _, err := New(Config{Provider: "claude-cli"}); err == nil {
-		t.Fatal("a real provider without an exact model must fail construction")
+		t.Fatal("a real provider without a model selector must fail construction")
 	}
 }
 

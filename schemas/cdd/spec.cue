@@ -10,9 +10,9 @@
 // constructor and whose remaining fields are that constructor's arguments.
 // The generic schema therefore owns only the minimum tagged envelope — it
 // deliberately does NOT enumerate any fill's fields, providers, skills, or
-// workspaces; the selected fill's overlay (e.g. cds.#CDSPatchAlpha) owns the
-// closed schema for the complete object, exactly as the fill's Go decoder
-// owns the strict shape at build time.
+// workspaces; the selected fill's overlay (e.g. cds.#CDSPatchAlphaAuthored)
+// owns the closed schema for the complete object, exactly as the fill's Go
+// decoder owns the strict shape at build time.
 //
 // γ, V, and δ are kernel-owned and mechanical; they deliberately do NOT
 // appear here. See docs/architecture/CDS-CELL-MIGRATION.md.

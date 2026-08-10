@@ -98,7 +98,7 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-diff-not-first.json -
 # rejected by the CDS overlay (and by the fill decoder below).
 vet_bad ./schemas/cds:cds schemas/cdd/fixtures/invalid/cellspec-null-skills.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-smuggled-argv.json -d '#CDSCellSpec'
-# A real provider without an exact model must be rejected by BOTH authorities,
+# A real provider without a model selector must be rejected by BOTH authorities,
 # and so must a fake carrying a model it would ignore.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-modelless-provider.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-fake-with-model.json -d '#CDSCellSpec'

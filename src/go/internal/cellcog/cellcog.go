@@ -55,8 +55,8 @@ type Coder interface {
 var ErrNoProvider = errors.New("cellcog: no provider")
 
 // Config is the inline cognition declaration a fill passes through from the
-// seat: which provider and which exact model. Nothing else — a cell cannot
-// smuggle argv or flags into an adapter.
+// seat: which provider and which REQUESTED MODEL SELECTOR. Nothing else — a
+// cell cannot smuggle argv or flags into an adapter.
 type Config struct {
 	Provider string `json:"provider"`
 	Model    string `json:"model"`
@@ -77,7 +77,7 @@ func New(cfg Config) (Coder, Mode, error) {
 	switch cfg.Provider {
 	case "claude-cli":
 		if cfg.Model == "" {
-			return nil, "", fmt.Errorf("cellcog: provider %q requires an exact model id", cfg.Provider)
+			return nil, "", fmt.Errorf("cellcog: provider %q requires a model selector", cfg.Provider)
 		}
 		return ClaudeCLI{Model: cfg.Model}, ModeCognitive, nil
 	case "fake":

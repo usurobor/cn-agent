@@ -153,29 +153,38 @@ two cell algorithms.
 
 ## Parameters → skills (the resolution model)
 
-A parameter is a **typed hole**, resolved exactly like a Unix command resolves
-argv against `$PATH`:
+A parameter is a **typed hole**. What ships today is deliberately simpler than
+the Unix analogy that motivated it, and the difference matters (Pi #58 B1):
+**there is no skill-path resolver.** A caller passes the canonical ref itself.
 
-| Concern | Unix analogue | Here |
+### What ships
+
+```sh
+cn cell run --contract schemas/cds/fixtures/code-cell-spec.json \
+  --param language=cnos.eng:eng/go --param provider=claude-cli --param model=<selector>
+```
+
+| Stage | Who | What it actually checks |
 |---|---|---|
-| required vs optional | positional arg vs flag-with-default | `language: skill` (required) vs `style?: skill = functional` |
-| value → implementation | `ls` → `/bin/ls` via `$PATH` | `"ocaml"` → the `ocaml` skill via the **skill path** |
-| domain / typo check | — | CUE constrains `language: "go"|"ocaml"|"rust"`; bad value fails `vet` |
-| splice into the seat | — | `$language` in `produce with` |
-| pass down to a child | wrapper `exec cmd "$@"` | `let! impl = cds(issue, repo, $language)` |
+| declaration | CUE `#CellSpec` / `#CDSCellSpec` | that a parameter's NAME, flags and domain are well shaped, and that seat values are either concrete or well-formed holes. CUE never sees a supplied CLI value. |
+| supplied values | Go `cellspec.Resolve` | that every required parameter was given, that no unknown parameter was passed, and that a given value lies in its declared `domain` |
+| splice | Go `cellspec.Resolve` | `$language` is replaced in place, wherever it sits in the seat tree |
+| loading | `cds.patch` via `cellskill` | the canonical ref `cnos.eng:eng/go` is looked up under the installed package root and its BODY is loaded, with ref + content digest recorded |
 
-Four layers, matching the rest of the architecture:
+So a value is a **canonical ref**, not a short name: `cnos.eng:eng/go`, not
+`go`. `domain` is what constrains it, and the domain lists refs.
 
-1. **Surface** declares holes (`language: skill`, `style?: skill = functional`)
-   and splices them (`$language`).
-2. **CUE `#CellSpec`** carries the holes and (via the cds overlay) constrains
-   their domains — a missing *required* hole or an out-of-domain value fails
-   vet. Mirror of how `#CDSReceipt` overlays `#Receipt` with `evidence_refs`.
-3. **Runner** fills holes from the CLI (`--language go`), resolves each value to
-   a concrete skill ref against the skill path, loads it into the seat.
-4. **Kernel / seats** receive *loaded skills*. α/β never see the string
-   `"ocaml"` — they get the resolved skill. (Seats consume skills, never
-   resolve them — same top-down rule as everywhere.)
+### What does not ship
+
+- No `$PATH`-like skill resolver mapping `"go"` → the `eng/go` skill. The
+  `<package>:<path>` ref IS the address; `cellskill.Tree` does one exact
+  lookup with no search order.
+- No `--language go` flag. Holes are filled generically by `--param NAME=VALUE`.
+- No CUE check of supplied values. A schema cannot do it — it never sees the
+  invocation.
+
+A shorthand resolver may arrive later; it would change only *how a value
+becomes a ref*, never the cell, which is the point of the seam.
 
 **Staging of who fills the hole (the cell never changes):**
 - *Now (CLI bootstrap):* the runner fills every hole from CLI flags.

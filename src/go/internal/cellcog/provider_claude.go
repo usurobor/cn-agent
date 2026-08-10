@@ -9,7 +9,7 @@ import (
 // ClaudeCLI rents workspace cognition from the Claude Code CLI. Stateless: a
 // Work call is one fresh bounded subprocess; no session is started or kept.
 type ClaudeCLI struct {
-	Model   string        // exact model id; required
+	Model   string        // requested model selector; required
 	Bin     string        // default "claude"
 	Timeout time.Duration // default 10m
 }

@@ -238,3 +238,36 @@ func TestFillArgumentsAreStrict(t *testing.T) {
 		t.Fatal("an unknown key in a seat declaration must fail the fill decode")
 	}
 }
+
+// A malformed hole must be rejected FOR ITS OWN REASON, not incidentally. The
+// shared corpus cannot prove this: its fixtures also carry a base SHA no
+// repository resolves, so worktree construction would return the same exit 2
+// even if the hole checks disappeared entirely (Pi #58 C1). Each case here
+// pins a DISTINCT diagnostic, so neither can stand in for the other.
+func TestMalformedHolesRejectedForTheirOwnReason(t *testing.T) {
+	// An illegal identifier is caught at Parse, as a parameter NAME, because a
+	// hole spelling and a parameter name are the same grammar.
+	declared := strings.Replace(fixture, `"base_sha": {"required": true}`,
+		`"base_sha": {"required": true}, "bad-name": {"required": false, "default": "x"}`, 1)
+	declared = strings.Replace(declared, `"$base_sha"`, `"$bad-name"`, 1)
+	if _, err := Parse([]byte(declared)); err == nil {
+		t.Fatal("an illegal parameter identifier must fail Parse")
+	} else if !strings.Contains(err.Error(), "is not a legal identifier") {
+		t.Fatalf("rejected for the wrong reason: %v", err)
+	}
+
+	// An undeclared hole survives Parse and dies at Resolve, which is the only
+	// stage that knows which parameters exist.
+	undeclared := strings.Replace(fixture, `"$base_sha"`, `"$nosuchparam"`, 1)
+	s, err := Parse([]byte(undeclared))
+	if err != nil {
+		t.Fatalf("a well-formed but undeclared hole must survive Parse: %v", err)
+	}
+	_, err = s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "x"})
+	if err == nil {
+		t.Fatal("a hole referencing an undeclared parameter must fail resolution")
+	}
+	if !strings.Contains(err.Error(), `undeclared parameter "nosuchparam"`) {
+		t.Fatalf("rejected for the wrong reason: %v", err)
+	}
+}
