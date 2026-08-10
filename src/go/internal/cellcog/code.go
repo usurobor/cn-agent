@@ -14,8 +14,16 @@ import (
 // Coder is the second port, deliberately separate from Provider: a seat that
 // must CHANGE files needs a capability a text-only Provider does not have, and
 // putting that difference in the type rather than in an optional field keeps
-// it visible at every call site. A Provider cannot touch a filesystem; a Coder
-// can touch exactly the directory it is handed.
+// it visible at every call site.
+//
+// Scope, stated honestly: a Coder is pointed at one directory and granted
+// file tools only, and only that directory is ever measured. That is a
+// working-directory boundary plus the provider's own workspace rules — NOT an
+// OS sandbox. A provider that writes an absolute path elsewhere is not
+// stopped by this package; it merely gains nothing, since anything outside
+// the worktree is invisible to the diff and cannot become evidence. Real
+// containment (namespace or container isolation) belongs under the adapter
+// and is not implemented.
 type Coder interface {
 	Name() string
 

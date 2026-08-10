@@ -45,8 +45,11 @@ vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-acce
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-needs-repair.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-simulated.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-opaque-profile.json -d '#EpisodeClosure'
-# Emitted by a real `--param provider=claude` run: a model held alpha.
+# Emitted by real `--param provider=claude` runs: a model held alpha. The
+# second is a code episode — its diff was measured from a worktree, not
+# reported by the seat.
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-cognitive.json -d '#EpisodeClosure'
+vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-code.json -d '#EpisodeClosure'
 
 echo "# negative cell specs (must be rejected)"
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.json -d '#CellSpec'

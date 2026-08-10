@@ -117,7 +117,10 @@ append-only sequence of results. Children never write upward or sideways.
 - **CDS Case 2 — rented α on real code.** ✅ The `code` profile: a disposable
   worktree is cut at `base_sha` (`internal/cellwork`, outside the kernel), the
   rented seat edits files in it with file tools only — **no shell** — and the
-  runtime then **measures** the change as a unified diff. The diff is the
+  runtime then **measures** the change as a unified diff. Scope is a
+  working-directory boundary plus the provider's workspace rules, *not* an OS
+  sandbox; what it guarantees is that only the worktree is ever measured, so
+  anything written elsewhere cannot become evidence. The diff is the
   matter β reviews and the `diff` artifact V checks; `base_sha` is bound as a
   runtime-computed artifact, never a seat claim. A seat that changed nothing
   produces no diff, so false completion is unrepresentable rather than caught
