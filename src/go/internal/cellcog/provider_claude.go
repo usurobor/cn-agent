@@ -38,6 +38,23 @@ type ClaudeCLI struct {
 func (ClaudeCLI) Name() string { return "claude-cli" }
 
 func (c ClaudeCLI) Complete(ctx context.Context, prompt string) (string, error) {
+	return c.run(ctx, "", prompt)
+}
+
+// Work implements Coder: the same binary, granted file tools and confined to
+// dir. Tools are FILE tools only — read, write, edit, search. No shell: a
+// producing seat needs to change files, and a shell is a capability nobody
+// asked for. Running tests is a mechanical step or a reviewer's job, not
+// something the produced-work seat gets to do to the host.
+func (c ClaudeCLI) Work(ctx context.Context, dir, prompt string) error {
+	if dir == "" {
+		return fmt.Errorf("cellcog: Work needs a directory")
+	}
+	_, err := c.run(ctx, dir, prompt)
+	return err
+}
+
+func (c ClaudeCLI) run(ctx context.Context, dir, prompt string) (string, error) {
 	bin := c.Bin
 	if bin == "" {
 		bin = defaultClaudeBin
@@ -57,7 +74,13 @@ func (c ClaudeCLI) Complete(ctx context.Context, prompt string) (string, error) 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, bin, "-p", "--output-format", "text")
+	args := []string{"-p", "--output-format", "text"}
+	if dir != "" {
+		args = append(args, "--permission-mode", "acceptEdits",
+			"--allowedTools", "Read,Write,Edit,Glob,Grep")
+	}
+	cmd := exec.CommandContext(ctx, bin, args...)
+	cmd.Dir = dir // "" keeps the caller's cwd; a text-only Complete writes nothing
 	cmd.Stdin = strings.NewReader(prompt)
 	stdout := &boundedBuffer{max: maxBytes}
 	stderr := &boundedBuffer{max: maxStderrBytes}

@@ -38,6 +38,7 @@ vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/bool-cell-spec.json -d '#CellSp
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/cognitive-cell-spec.json -d '#CellSpec'
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/cognitive-evidence-cell-spec.json -d '#CellSpec'
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/valid-cell-spec.json -d '#CDSCellSpec'
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/code-cell-spec.json -d '#CDSCellSpec'
 
 echo "# positive closures"
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-accepted.json -d '#EpisodeClosure'
@@ -103,5 +104,18 @@ run_vet 3 --contract schemas/cdd/fixtures/empty-cell-spec.json
 # trusted (V alone routes it to needs_repair).
 run_vet 0 --contract schemas/cdd/fixtures/cognitive-cell-spec.json --param provider=fake
 run_vet 1 --contract schemas/cdd/fixtures/cognitive-evidence-cell-spec.json --param provider=fake
+
+# The code profile against a hermetic throwaway repository: the runtime cuts a
+# worktree, the seat changes a file, and the diff in the closure is MEASURED
+# from that worktree rather than reported by the seat.
+coderepo="$tmpdir/coderepo"
+mkdir -p "$coderepo"
+(
+  cd "$coderepo" && git init -q -b main && echo base >README.md && git add -A &&
+    GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t \
+      git commit -qm base
+) >/dev/null 2>&1 || { echo "  ✗ could not build the code-profile fixture repo"; fail=1; }
+run_vet 0 --contract schemas/cds/fixtures/code-cell-spec.json \
+  --param language=go --param provider=fake --param base_sha=HEAD --param repo="$coderepo"
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi

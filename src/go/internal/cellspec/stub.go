@@ -16,10 +16,11 @@ const (
 	ProfileStub      = "stub"      // smoke: fabricates required artifacts; non-authoritative `simulated`
 	ProfileBool      = "bool"      // real: alpha produces a bool, beta INDEPENDENTLY verifies it
 	ProfileCognitive = "cognitive" // rented alpha behind a provider; beta still mechanical (Case 2)
+	ProfileCode      = "code"      // rented alpha changes real code; the runtime measures the diff
 )
 
 func isKnownProfile(p string) bool {
-	return p == ProfileStub || p == ProfileBool || p == ProfileCognitive
+	return p == ProfileStub || p == ProfileBool || p == ProfileCognitive || p == ProfileCode
 }
 
 // Providers the cognitive profile may rent. Closed set: a typo must fail
@@ -53,6 +54,21 @@ func buildProfile(r Resolved) (cellkernel.Alpha, cellkernel.Beta, cellkernel.Exe
 			return nil, nil, "", err
 		}
 		return cellcog.Alpha{Provider: provider, Skills: r.AlphaSkills}, cellcog.MatterBeta{}, mode, nil
+	case ProfileCode:
+		coder, mode, err := buildCoder(r.Params["provider"])
+		if err != nil {
+			return nil, nil, "", err
+		}
+		base := r.Params["base_sha"]
+		if base == "" {
+			return nil, nil, "", fmt.Errorf("profile %q requires a non-empty %q parameter", ProfileCode, "base_sha")
+		}
+		repo := r.Params["repo"]
+		if repo == "" {
+			repo = "."
+		}
+		return cellcog.CodeAlpha{Coder: coder, Repo: repo, BaseRef: base, Skills: r.AlphaSkills},
+			cellcog.MatterBeta{}, mode, nil
 	default:
 		return nil, nil, "", fmt.Errorf("unknown profile %q", r.Spec.Profile)
 	}
@@ -69,6 +85,20 @@ func buildProvider(name string) (cellcog.Provider, cellkernel.ExecutionMode, err
 	default:
 		return nil, "", fmt.Errorf("profile %q: unknown provider %q (want %q or %q)",
 			ProfileCognitive, name, ProviderClaude, ProviderFake)
+	}
+}
+
+// buildCoder is buildProvider's file-capable twin; the mode tells the same
+// truth about which one actually rents cognition.
+func buildCoder(name string) (cellcog.Coder, cellkernel.ExecutionMode, error) {
+	switch name {
+	case ProviderClaude:
+		return cellcog.ClaudeCLI{}, cellkernel.ModeCognitive, nil
+	case ProviderFake:
+		return cellcog.FakeCoder{}, cellkernel.ModeMechanical, nil
+	default:
+		return nil, "", fmt.Errorf("profile %q: unknown provider %q (want %q or %q)",
+			ProfileCode, name, ProviderClaude, ProviderFake)
 	}
 }
 

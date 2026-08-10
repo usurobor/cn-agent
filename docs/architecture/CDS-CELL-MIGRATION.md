@@ -195,7 +195,7 @@ Four layers, matching the rest of the architecture:
 | spec loader/binder (strict parse → kernel Spec) | src/go `internal/cellspec` | ✅ shipped |
 | `cn cell run` (fill holes, run, emit closure) | src/go `internal/cellrun` (+ thin `cli` wrapper) | ✅ shipped (exits 0/1/2/3; closure self-verifies) |
 | skill-path resolver (value → loaded skill) | cnos.cdd | ◐ names resolve and splice into the rented α's prompt; loading skill *bodies* is still open |
-| matter substrate (diff at a base SHA) | src/go, outside the kernel | ❌ G1 — blocks a real CDS episode; next |
+| matter substrate (diff at a base SHA) | src/go `internal/cellwork` (worktree adapter, outside the kernel) | ✅ shipped (G1) — the runtime measures the diff; a seat cannot claim one |
 | typed findings on `BetaOutput` | src/go `internal/cellkernel` | ❌ G3 — the findings ARE the repair plan |
 | `main.cell` compiler (surface → spec.json) | cnos.cdd | ❌ Phase 4 sugar (deliberately deferred) |
 | `cnos.cds/main.cell` | cnos.cds | ❌ Phase 4 (JSON fixtures are the current authored form) |
@@ -257,11 +257,21 @@ the closure never implies cognition that was not rented. β stays mechanical
 (`MatterBeta`) and honestly says its review is weak; V still checks required
 evidence positionally, so a model that omits it closes `needs_repair`.
 
-*Still open before a real CDS episode:* **G1** the matter substrate (a diff at
-a base SHA, materialized by a workspace adapter outside the kernel) and **G3**
-typed findings — until then a rented α can only produce text, which is why the
-CDS profile itself is not yet operational. `cn cds run --issue N` and the
-escalation predicate (Pi Q2) follow those.
+**G1 shipped with it.** The `code` profile turns a rented α onto real code:
+`internal/cellwork` cuts a disposable worktree at `base_sha` *outside* the
+kernel, the seat edits files there with file tools only (no shell — a
+producing seat needs to change files, not command the host), and the runtime
+**measures** the result as a unified diff. That measurement is the whole trust
+argument: the diff in the record is computed from the worktree, so a seat that
+claims a sweeping change and wrote nothing produces no diff, and an episode
+with no diff cannot satisfy a contract requiring one. False completion — the
+#514/#516 scar where wakes reported success having "repaired 0 of 41 items" —
+is unrepresentable rather than a review failure to catch later.
+
+*Still open before CDS is complete:* **Case 3** (an independent rented β
+reviewing that diff — the first real judgement in the loop) and **G3** typed
+findings. `cn cds run --issue N` and the escalation predicate (Pi Q2) follow
+those.
 
 **Phase 4 — the surface + compiler (sugar, later).** `cn cell compile main.cell
 → spec.json` (Go `participle`, ~150 lines; CUE stays the independent oracle) +

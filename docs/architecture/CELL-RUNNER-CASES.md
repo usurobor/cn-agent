@@ -114,6 +114,15 @@ append-only sequence of results. Children never write upward or sideways.
   deterministically offline for CI. β is `MatterBeta` — a deliberately weak
   mechanical review that says so in its notes. Required evidence stays V's
   business, so a model that omits it closes `needs_repair`.
+- **CDS Case 2 — rented α on real code.** ✅ The `code` profile: a disposable
+  worktree is cut at `base_sha` (`internal/cellwork`, outside the kernel), the
+  rented seat edits files in it with file tools only — **no shell** — and the
+  runtime then **measures** the change as a unified diff. The diff is the
+  matter β reviews and the `diff` artifact V checks; `base_sha` is bound as a
+  runtime-computed artifact, never a seat claim. A seat that changed nothing
+  produces no diff, so false completion is unrepresentable rather than caught
+  late. The caller's checkout is never touched and no worktree outlives the
+  episode.
 - **Case 3 — rented α and β.** Full single-episode CDS. V validates
   evidence/bindings; it never re-judges β's prose.
 - **Case 4 — bounded repair driver.** A `Drive` loop invokes the same episode

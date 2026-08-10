@@ -152,7 +152,7 @@ func requiredValueParam(profile string) (string, bool) {
 	switch profile {
 	case ProfileBool:
 		return "value", true
-	case ProfileCognitive:
+	case ProfileCognitive, ProfileCode:
 		return "provider", true
 	default:
 		return "", false

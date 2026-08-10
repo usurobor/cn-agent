@@ -47,9 +47,11 @@ package cdd
 
 // #Profile is a builtin seat profile. "stub" is smoke; "bool" is a real
 // independently-checked mechanical episode; "cognitive" rents alpha from a
-// provider while beta stays mechanical (Case 2). The whitelist is an INPUT
-// rule — the kernel and the closure treat a profile as opaque.
-#Profile: "stub" | "bool" | "cognitive"
+// provider for text while beta stays mechanical (Case 2); "code" rents alpha
+// to change real files in a disposable worktree, and the runtime MEASURES the
+// change as a diff rather than believing a report of it. The whitelist is an
+// INPUT rule — the kernel and the closure treat a profile as opaque.
+#Profile: "stub" | "bool" | "cognitive" | "code"
 
 // #CellSpec is the serialized cell.
 #CellSpec: {
