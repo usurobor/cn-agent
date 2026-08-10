@@ -41,6 +41,13 @@ package cdd
 // inside seat declarations and are replaced in place at resolution. There is
 // deliberately no "kind": what a filled value MEANS belongs to the fill that
 // consumes it, not to the generic envelope.
+//
+// Division of labour, stated so neither authority is credited with the
+// other's work (Pi #57 B2): CUE validates the DECLARATION — that a parameter's
+// name, flags and domain are well shaped. Go's `Resolve` validates SUPPLIED
+// VALUES — that required parameters were given and that a given value lies in
+// its declared domain. A schema cannot check the second; it never sees the
+// invocation.
 #Param: {
 	required: bool | *false
 	default?: string

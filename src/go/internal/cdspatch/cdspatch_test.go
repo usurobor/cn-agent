@@ -284,3 +284,33 @@ func TestPatchAlphaFailsClosed(t *testing.T) {
 		t.Fatal("a non-repository must fail closed")
 	}
 }
+
+// A fake ignores the model, so an authored declaration may simply omit the
+// key — Go's decoder yields the empty model either way. The authored CUE
+// shape admits the same omission; this is the Go half of that parity
+// (Pi #57 C1), and the RESOLVED declaration must still record `model: ""`
+// so a receipt says what held the seat rather than what the author typed.
+func TestFakeMayOmitModelAndStillRecordsIt(t *testing.T) {
+	repo, _ := testRepo(t)
+	decl := json.RawMessage(fmt.Sprintf(`{
+		"fill": "cds.patch",
+		"cognition": {"provider": "fake"},
+		"workspace": {"kind": "git-worktree", "repo": %q, "base_sha": "HEAD"},
+		"skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"]
+	}`, repo))
+	a, err := Factory(skillTree(t, testSkills...))(context.Background(), decl)
+	if err != nil {
+		t.Fatalf("a fake omitting its meaningless model must construct: %v", err)
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(a.Decl, &raw); err != nil {
+		t.Fatal(err)
+	}
+	var cog map[string]any
+	if err := json.Unmarshal(raw["cognition"], &cog); err != nil {
+		t.Fatal(err)
+	}
+	if m, present := cog["model"]; !present || m != "" {
+		t.Fatalf("resolved cognition must record model:\"\", got %v (present=%v)", m, present)
+	}
+}

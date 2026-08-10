@@ -47,6 +47,10 @@ func (ClaudeCLI) Name() string { return "claude-cli" }
 //     approves edits only — Bash is absent from the tool set entirely, and
 //     bypassPermissions is never used.
 //
+//     Scoped honestly: this seals the DECLARED BASELINE permission mode. It
+//     does not make execution independent of all environment policy, since
+//     higher-authority managed substrate policy can still apply above it.
+//
 //   - `--no-session-persistence` keeps the adapter stateless.
 func ClaudeArgv(model string) []string {
 	return []string{

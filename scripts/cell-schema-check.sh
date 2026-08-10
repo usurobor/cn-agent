@@ -65,6 +65,12 @@ vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/bool-cell-spec.json -d '#CellSp
 # tagged envelope and the CDS overlay's closed seat shapes.
 vet_ok schemas/cdd/spec.cue schemas/cds/fixtures/code-cell-spec.json -d '#CellSpec'
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/code-cell-spec.json -d '#CDSCellSpec'
+# Cognition's authored language must admit exactly what survives resolution
+# (Pi #57 C1): a literal fake whose model is a hole resolving to empty, and a
+# hole in the PROVIDER position with the model omitted because the hole may
+# resolve to fake. Both were rejected before this arm existed.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/fake-model-hole-cell-spec.json -d '#CDSCellSpec'
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/provider-hole-cell-spec.json -d '#CDSCellSpec'
 
 echo "# positive closures"
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-accepted.json -d '#EpisodeClosure'
@@ -102,6 +108,8 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-codex-held.json -d '#
 # A hole-capable CDS field must not accept a malformed hole through an
 # unrestricted string arm: Go reads every $... as a hole (Pi #56 C1).
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-bad-hole-name.json -d '#CDSCellSpec'
+# ...including in the cognition model position, which was bare `string`.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-bad-model-hole.json -d '#CDSCellSpec'
 # Fill-owned keys are exact and case-sensitive at every depth: encoding/json
 # would otherwise decode these while the closed overlay rejects them.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
@@ -122,6 +130,7 @@ run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json
 run_bad schemas/cds/fixtures/invalid/cds-fake-with-model.json
 run_bad schemas/cds/fixtures/invalid/cds-codex-held.json
 run_bad schemas/cds/fixtures/invalid/cds-bad-hole-name.json
+run_bad schemas/cds/fixtures/invalid/cds-bad-model-hole.json
 run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json
 run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json
 run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json
@@ -207,7 +216,7 @@ else echo "  ✓ cds.patch closure vets #EpisodeClosure"; fi
 decl="$tmpdir/resolved-alpha.json"
 if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$tmp" "$decl" 2>/dev/null &&
    "$CUE" vet ./schemas/cds:cds "$decl" -d '#CDSPatchAlphaResolved' >/dev/null 2>&1; then
-  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (no holes, pinned base, digested skills)"
+  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, pinned base, digested skills)"
 else echo "  ✗ resolved alpha failed #CDSPatchAlphaResolved"; fail=1; fi
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi

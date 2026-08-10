@@ -46,3 +46,40 @@ func TestStrictDecodeRequiresRealEOF(t *testing.T) {
 		})
 	}
 }
+
+// canonical() is the sibling JSON boundary to StrictDecode, and it must make
+// the same demand: a fill's declaration ends where it says it ends. Decoding
+// one value proves a value arrived, not that only one did — without an EOF
+// check the trailing bytes are silently dropped from the record (Pi #57 B1).
+func TestCanonicalRequiresRealEOF(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  string
+		want string // "" means the call must succeed
+	}{
+		{name: "clean object", raw: `{"fill":"x","n":1}`},
+		{name: "trailing value", raw: `{"fill":"x"} {"fill":"y"}`, want: "trailing data"},
+		{name: "trailing garbage", raw: `{"fill":"x"} garbage`, want: "malformed data"},
+		{name: "not an object", raw: `["x"]`, want: "not an object"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := canonical("t.fill", json.RawMessage(tc.raw))
+			if tc.want == "" {
+				if err != nil {
+					t.Fatalf("want success, got %v", err)
+				}
+				if len(got) == 0 {
+					t.Fatal("want canonical bytes, got none")
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("want an error containing %q, got %s", tc.want, got)
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error %q does not mention %q", err, tc.want)
+			}
+		})
+	}
+}

@@ -7,12 +7,22 @@
 // the cds.patch Go decoder it mirrors — strictly defines every constructor
 // argument. Unknown, mixed-case, and null fields still fail.
 //
-// AUTHORED vs RESOLVED are separate definitions on purpose. An authored spec
-// may carry `$param` holes; a resolved declaration — the one the closure
-// records and the digest covers — may not, and its base_sha must be a real
-// commit rather than a moving ref. One schema serving both would let a hole
-// survive into a receipt unnoticed, so the corpus vets the emitted closure's
-// declaration against the RESOLVED shape.
+// AUTHORED vs RESOLVED are separate definitions on purpose, and each proves a
+// different thing — stated exactly, because the earlier wording overclaimed
+// (Pi #57 C1):
+//
+//   - RUNTIME RESOLUTION proves every authored reference was filled. That is
+//     the only authority that can prove it, because it is the only one that
+//     saw the parameters.
+//   - THE RESOLVED SCHEMA proves canonical structural shape, a base_sha
+//     pinned to a real commit rather than a moving ref, and skills carrying
+//     content digests.
+//
+// The resolved schema does NOT mechanically prove "no holes remain". A
+// supplied parameter value may legitimately begin with `$` — it is then a
+// resolved literal, and the record keeps no provenance letting CUE tell it
+// from an unresolved token. Banning such values outright would break honest
+// inputs to satisfy a sentence, so the sentence is what changed.
 //
 // NOTE (Pi #32 D1): declaring protocol_id "cnos.cdd.cds.receipt.v1" is a
 // declaration of intent, not proof. The v0 runner carries it as provenance and
@@ -48,18 +58,32 @@ import "cnos.dev/cnos/schemas/cdd"
 #Cognition: {provider: "fake", model: ""} |
 	{provider: "claude-cli", model: string & !=""}
 
-// #CognitionAuthored is the same rule at AUTHORING time, where a fake may
-// simply omit the model it would ignore. Go's decoder yields "" for an absent
-// field, so a spec omitting it constructs there; requiring the key only in
-// the authored shape made the two authorities disagree about the same
-// document (Pi #56 C2). The RESOLVED form above still requires `model: ""`
-// present, because a receipt records what held the seat rather than what the
-// author chose not to type.
-#CognitionAuthored: {provider: "fake", model?: ""} |
-	{provider: "claude-cli", model: string & !=""}
+// #CognitionAuthored is the same rule at AUTHORING time, and it has to admit
+// exactly what survives resolution — no more and no less (Pi #57 C1). Three
+// stages exist, so there are three arms:
+//
+//   - a literal fake ignores the model, so it may omit the key, write it
+//     empty, or carry a hole that resolution fills with the empty value;
+//   - a literal real provider needs an exact model, present either as a
+//     concrete literal or as a hole;
+//   - a HOLE in the provider position means which arm applies is not known
+//     until resolution, so the model must admit the union of both.
+//
+// Every model position is `#Concrete | #Hole` rather than bare `string`. A
+// bare string arm accepted `$bad-name`, which CUE read as a concrete value
+// and Go read as an illegal hole — the same divergence #Concrete closed for
+// workspace and skills.
+//
+// The RESOLVED form above still requires `model: ""` present for the fake,
+// because a receipt records what held the seat rather than what the author
+// chose not to type.
+#CognitionAuthored: {provider: "fake", model?: "" | #Hole} |
+	{provider: "claude-cli", model: #Concrete | #Hole} |
+	{provider: #Hole, model?: "" | #Concrete | #Hole}
 
-// #CDSPatchAlphaResolved is what a closure records: no holes, and a base_sha
-// pinned to a commit at construction.
+// #CDSPatchAlphaResolved is what a closure records: the canonical structural
+// shape, a base_sha pinned to a commit at construction, and digested skills.
+// Hole-freedom is proven by resolution, not by this shape — see the header.
 #CDSPatchAlphaResolved: {
 	fill:      "cds.patch"
 	cognition: #Cognition
@@ -77,7 +101,7 @@ import "cnos.dev/cnos/schemas/cdd"
 // holes admitted in the positions resolution fills.
 #CDSPatchAlphaAuthored: {
 	fill: "cds.patch"
-	cognition: #CognitionAuthored | {provider: #Hole, model: string}
+	cognition: #CognitionAuthored
 	workspace: {
 		kind:     "git-worktree"
 		repo:     #Concrete | #Hole

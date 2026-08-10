@@ -246,8 +246,10 @@ against a shared positive/negative corpus (Pi #31–#33 + PR-#718 β + #44).
 required holes with a Unix-style usage line. Seats load the resolved skills
 (cognition still stubbed). *Proves parameters map to real skills.*
 
-**Phase 3 — rented α + CDS patch fill.** ◐ *First half shipped.* Cognition is
-a **fill**, not an architecture: `internal/cellcog` constructs bounded,
+**Phase 3 — rented α + CDS patch fill.** ◐ *First half shipped.* Stated
+precisely: **`cds.patch` is the fill; cognition is one of its constructor
+dependencies**, not a fill itself and not a new architecture.
+`internal/cellcog` constructs bounded,
 stateless provider adapters (claude-cli and a deterministic fake; codex-cli is
 HELD, see below) with an explicit model, typed argv and a sealed permission
 mode — a cell cannot smuggle flags into one, nor inherit edit authority from

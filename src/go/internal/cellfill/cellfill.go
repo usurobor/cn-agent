@@ -132,6 +132,19 @@ func canonical(fill string, raw json.RawMessage) (json.RawMessage, error) {
 	if _, ok := v.(map[string]any); !ok {
 		return nil, fmt.Errorf("fill %q returned a declaration that is not an object", fill)
 	}
+	// The same EOF requirement StrictDecode carries, for the same reason: one
+	// value decoded is not one value SUPPLIED. Without this, a fill returning
+	// `{...} garbage` is silently canonicalized down to the leading object and
+	// the trailing bytes vanish from the record (Pi #57 B1). The built-ins
+	// marshal clean JSON today, so this is local robustness at a boundary that
+	// must not quietly discard what it was handed.
+	var extra json.RawMessage
+	if err := dec.Decode(&extra); err != io.EOF {
+		if err == nil {
+			return nil, fmt.Errorf("fill %q returned trailing data after its declaration", fill)
+		}
+		return nil, fmt.Errorf("fill %q returned malformed data after its declaration: %w", fill, err)
+	}
 	out, err := json.Marshal(v)
 	if err != nil {
 		return nil, fmt.Errorf("fill %q: canonicalize: %w", fill, err)

@@ -55,8 +55,16 @@ type WorkspaceDecl struct {
 
 // ResolvedDecl is what the closure records for this seat: the declaration
 // with skills expanded to ordered canonical refs + content digests, and the
-// provider/model that actually held the seat. Deterministic bytes — this is
+// provider plus the REQUESTED MODEL SELECTOR. Deterministic bytes — this is
 // the canonical form the scope-lift digest covers.
+//
+// "Selector", precisely (Pi #57 B2): the recorded model is what the cell
+// asked for, not an independently observed immutable model identity. A
+// provider may remap a selector to another model — the Claude CLI says so on
+// stderr when it does — and nothing here observes or verifies what actually
+// served the request. Recording the served identity would need the provider
+// to report it and the runtime to check it; neither exists yet, so the field
+// claims only what it is.
 type ResolvedDecl struct {
 	Fill      string          `json:"fill"`
 	Cognition cellcog.Config  `json:"cognition"`
