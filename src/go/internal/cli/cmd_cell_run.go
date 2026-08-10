@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/usurobor/cnos/src/go/internal/cellfills"
 	"github.com/usurobor/cnos/src/go/internal/cellrun"
 )
 
@@ -24,7 +25,7 @@ func (c *CellRunCmd) Spec() CommandSpec {
 func (c *CellRunCmd) Help() string { return cellrun.Help }
 
 func (c *CellRunCmd) Run(ctx context.Context, inv Invocation) error {
-	code := cellrun.Run(ctx, inv.HubPath, inv.Args, inv.Stdin, inv.Stdout, inv.Stderr)
+	code := cellrun.Run(ctx, cellfills.Assemble(inv.HubPath), inv.Args, inv.Stdin, inv.Stdout, inv.Stderr)
 	if code == 0 {
 		return nil
 	}

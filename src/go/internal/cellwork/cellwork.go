@@ -26,12 +26,17 @@ import (
 )
 
 const (
-	gitTimeout   = 2 * time.Minute
-	maxDiffBytes = 1 << 20 // matches the kernel's matter bound
+	gitTimeout     = 2 * time.Minute
+	maxDiffBytes   = 1 << 20 // matches the kernel's matter bound
+	maxRefBytes    = 8 << 10 // shas, paths, and git's own chatter
+	maxStderrBytes = 8 << 10 // diagnostics only
+	waitDelay      = 2 * time.Second
 )
 
-// Worktree is a disposable checkout of a repository at one base commit.
-// Nothing outside it is writable by the seat that receives it.
+// Worktree is a disposable checkout of a repository at one base commit. It is
+// the only place whose changes are measured — a seat is pointed at it, not
+// confined to it by the operating system, so the guarantee is evidential
+// rather than physical: what happens elsewhere never becomes evidence.
 type Worktree struct {
 	Dir     string // absolute path the seat may modify
 	Repo    string // repository the worktree was cut from
@@ -46,7 +51,7 @@ func ResolveBase(ctx context.Context, repo, base string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sha, err := git(ctx, repoAbs, "rev-parse", "--verify", base+"^{commit}")
+	sha, err := git(ctx, repoAbs, maxRefBytes, "rev-parse", "--verify", base+"^{commit}")
 	if err != nil {
 		return "", fmt.Errorf("cellwork: base %q does not resolve in %s: %w", base, repoAbs, err)
 	}
@@ -58,7 +63,7 @@ func ResolveBase(ctx context.Context, repo, base string) (string, error) {
 // present (the cnos#593 fallback), so nothing resolves relative to the
 // process working directory.
 func RepoRoot(ctx context.Context, dir string) (string, error) {
-	out, err := git(ctx, dir, "rev-parse", "--show-toplevel")
+	out, err := git(ctx, dir, maxRefBytes, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return "", fmt.Errorf("cellwork: no git repository at %s: %w", dir, err)
 	}
@@ -98,16 +103,18 @@ func Materialize(ctx context.Context, repo, base string) (Worktree, func(), erro
 	}
 	// git insists on creating the leaf itself.
 	wtDir := filepath.Join(dir, "wt")
-	if _, err := git(ctx, repoAbs, "worktree", "add", "--detach", wtDir, sha); err != nil {
+	if _, err := git(ctx, repoAbs, maxRefBytes, "worktree", "add", "--detach", wtDir, sha); err != nil {
 		os.RemoveAll(dir)
 		return Worktree{}, nil, fmt.Errorf("cellwork: add worktree at %s: %w", sha, err)
 	}
 
 	release := func() {
 		// Best effort, in order: git forgets the worktree, then the bytes go.
+		// Failures are not surfaced: cleanup is housekeeping, and an episode's
+		// truth does not depend on it.
 		rmCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), gitTimeout)
 		defer cancel()
-		_, _ = git(rmCtx, repoAbs, "worktree", "remove", "--force", wtDir)
+		_, _ = git(rmCtx, repoAbs, maxRefBytes, "worktree", "remove", "--force", wtDir)
 		os.RemoveAll(dir)
 	}
 	return Worktree{Dir: wtDir, Repo: repoAbs, BaseSHA: sha}, release, nil
@@ -119,28 +126,30 @@ func Materialize(ctx context.Context, repo, base string) (Worktree, func(), erro
 func (w Worktree) Diff(ctx context.Context) (string, error) {
 	// Staging everything is what makes new files visible to `diff`; the index
 	// belongs to this disposable worktree alone.
-	if _, err := git(ctx, w.Dir, "add", "-A"); err != nil {
+	if _, err := git(ctx, w.Dir, maxRefBytes, "add", "-A"); err != nil {
 		return "", fmt.Errorf("cellwork: stage worktree: %w", err)
 	}
-	out, err := git(ctx, w.Dir, "diff", "--cached", "--no-color")
+	out, err := git(ctx, w.Dir, maxDiffBytes, "diff", "--cached", "--no-color")
 	if err != nil {
 		return "", fmt.Errorf("cellwork: compute diff: %w", err)
-	}
-	if len(out) > maxDiffBytes {
-		return "", fmt.Errorf("cellwork: diff exceeds %d bytes", maxDiffBytes)
 	}
 	return out, nil
 }
 
-// git runs one git command in dir and returns stdout.
-func git(ctx context.Context, dir string, args ...string) (string, error) {
+// git runs one git command in dir and returns stdout, capturing at most max
+// bytes. The bound is applied AS THE CHILD WRITES, not after it exits: a
+// repository can produce a diff far larger than memory, and a limit checked
+// on a fully buffered result is not a limit.
+func git(ctx context.Context, dir string, max int, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, gitTimeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	stdout := &boundedBuffer{max: max}
+	stderr := &boundedBuffer{max: maxStderrBytes}
+	cmd.Stdout, cmd.Stderr = stdout, stderr
+	cmd.WaitDelay = waitDelay
 	if err := cmd.Run(); err != nil {
 		msg := strings.TrimSpace(stderr.String())
 		if msg == "" {
@@ -148,5 +157,34 @@ func git(ctx context.Context, dir string, args ...string) (string, error) {
 		}
 		return "", errors.New("git " + strings.Join(args, " ") + ": " + msg)
 	}
+	if stdout.truncated {
+		return "", fmt.Errorf("git %s produced more than %d bytes", strings.Join(args, " "), max)
+	}
 	return stdout.String(), nil
 }
+
+// boundedBuffer captures at most max bytes and remembers that it had to stop.
+// It never reports a short write, so the bound fails the command here rather
+// than killing the child mid-stream with a broken pipe. (Deliberately the same
+// small pattern the provider adapters use; the two adapters share no
+// dependency worth creating for fifteen lines.)
+type boundedBuffer struct {
+	max       int
+	buf       bytes.Buffer
+	truncated bool
+}
+
+func (b *boundedBuffer) Write(p []byte) (int, error) {
+	switch room := b.max - b.buf.Len(); {
+	case room >= len(p):
+		b.buf.Write(p)
+	case room > 0:
+		b.buf.Write(p[:room])
+		b.truncated = true
+	default:
+		b.truncated = true
+	}
+	return len(p), nil
+}
+
+func (b *boundedBuffer) String() string { return b.buf.String() }

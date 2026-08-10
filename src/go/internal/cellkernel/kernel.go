@@ -577,9 +577,8 @@ func validateRecord(r EpisodeRecord) []Failure {
 	// so a mode rewrite cannot survive even with a recomputed digest.
 	add(r.ResolvedSpec.Version == "" || r.ResolvedSpec.DeclaredProtocol == "",
 		InvalidRecord, "resolved spec missing version/protocol")
-	add(len(r.ResolvedSpec.Alpha) == 0 || string(r.ResolvedSpec.Alpha) == "null" ||
-		len(r.ResolvedSpec.Beta) == 0 || string(r.ResolvedSpec.Beta) == "null",
-		InvalidRecord, "resolved spec missing seat declarations")
+	add(validSeatEnvelope(r.ResolvedSpec.Alpha) != nil, InvalidRecord, "alpha declaration is not a tagged object")
+	add(validSeatEnvelope(r.ResolvedSpec.Beta) != nil, InvalidRecord, "beta declaration is not a tagged object")
 
 	// Required arrays are arrays, never null (round-6 D2): the closure schema
 	// admits no null, so a nil slice surviving to canonical JSON must not
@@ -752,8 +751,32 @@ func validateMeta(m RunMeta) error {
 	// Fill semantics are opaque to the kernel (round-6 C1); the declarations
 	// only have to exist. Mode truth is bound to the parent-trusted metadata
 	// at VerifyClosure (round-7 D1).
-	if len(rs.Alpha) == 0 || string(rs.Alpha) == "null" || len(rs.Beta) == 0 || string(rs.Beta) == "null" {
-		return errors.New("cellkernel: resolved spec must carry both seat declarations")
+	if err := validSeatEnvelope(rs.Alpha); err != nil {
+		return fmt.Errorf("cellkernel: alpha declaration: %w", err)
+	}
+	if err := validSeatEnvelope(rs.Beta); err != nil {
+		return fmt.Errorf("cellkernel: beta declaration: %w", err)
+	}
+	return nil
+}
+
+// validSeatEnvelope checks the ONLY thing the generic boundary knows about a
+// seat declaration: it is a JSON object carrying a non-empty string `fill`.
+// Everything else stays opaque. Without this a direct caller could emit `{}`,
+// `[]`, or a scalar, self-verify it, and still fail the closure schema — the
+// kernel would be certifying something no reader could parse.
+func validSeatEnvelope(raw json.RawMessage) error {
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return errors.New("must be a JSON object")
+	}
+	tag, ok := obj["fill"]
+	if !ok {
+		return errors.New("must carry a fill")
+	}
+	var id string
+	if err := json.Unmarshal(tag, &id); err != nil || id == "" {
+		return errors.New("fill must be a non-empty string")
 	}
 	return nil
 }

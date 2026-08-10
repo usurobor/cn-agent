@@ -210,7 +210,7 @@ reference; the piece inventory above reflects it.
 
 **Phase 0 — the input contract.** Write `schemas/cdd/spec.cue` (`#CellSpec`:
 `{version, contract (producer-attributed required_evidence), protocol_id,
-profile, params, alpha:{skills}, beta:{skills}}`) and the cds overlay
+params, alpha:{fill, …}, beta:{fill, …}}`) and the cds overlay
 (`#CDSCellSpec` pinning `protocol_id` + param domains). Hand-write a
 `cds.spec.json` for a real issue; `cue vet` it. *Proves the data shape before
 any Go or compiler.* (`budget` was removed as decorative per Pi #32 D5; it
@@ -221,10 +221,10 @@ returns only when it is actually enforced.)
 --contract <path|-> [--param k=v]` that fills holes and calls `RunEpisode`.
 Emits a **generic** `cnos.cellkernel.episode-closure.v0` with
 `protocol_validated=false` — the declared `protocol_id` is provenance, never a
-validated CDS claim. A `profile` (explicit; no default) selects the builtin
-seat pair: `stub` (a non-authoritative **`simulated`** smoke run, exit 3) or
-`bool` (a real mechanical episode where β **independently reviews** the matter
-and V checks the required α artifact). **Zero GitHub/network.**
+validated CDS claim. Each seat names its own `fill`: `cdd.stub` (a
+non-authoritative **`simulated`** smoke run, exit 3), `cdd.bool` +
+`cdd.bool-check` (a real mechanical episode with a genuine review predicate),
+or `cds.patch` + `cdd.mechanical-unmet` (Case 2). **Zero GitHub/network.**
 
 Implementation follows the operator-ratified **FIDO/functional doctrine**
 (`msg-cn-pi-cnos-cell-runner-fido-functional-44`): no mutable shared episode
@@ -245,33 +245,28 @@ against a shared positive/negative corpus (Pi #31–#33 + PR-#718 β + #44).
 required holes with a Unix-style usage line. Seats load the resolved skills
 (cognition still stubbed). *Proves parameters map to real skills.*
 
-**Phase 3 — rented α + CDS profile.** ◐ *First half shipped.* The provider
-port and the `cognitive` profile live in `internal/cellcog`: the frozen
-contract renders (purely) to a prompt, a `Provider` answers, and the answer
-parses (purely) into kernel candidates. `--param provider=claude` rents the
-Claude Code CLI — bounded by timeout, output cap and `WaitDelay`, because a
-rented seat is the one part of an episode the runtime cannot predict;
-`provider=fake` runs the identical seam deterministically so CI exercises
-cognition on every commit without a model. The mode follows the provider, so
-the closure never implies cognition that was not rented. β stays mechanical
-(`MatterBeta`) and honestly says its review is weak; V still checks required
-evidence positionally, so a model that omits it closes `needs_repair`.
+**Phase 3 — rented α + CDS patch fill.** ◐ *First half shipped.* Cognition is
+a **fill**, not an architecture: `internal/cellcog` constructs bounded,
+stateless provider adapters (claude-cli, codex-cli, and a deterministic fake)
+with an explicit model and typed argv — a cell cannot smuggle flags into one.
+`internal/cellskill` resolves canonical installed refs and **loads** the
+bodies, recording ordered refs and content digests in the closure, because
+naming a skill is not loading it. `internal/cdspatch` composes those with the
+worktree substrate into one provider-neutral patch alpha; the generic runner
+learns none of it.
 
-**G1 shipped with it.** The `code` profile turns a rented α onto real code:
-`internal/cellwork` cuts a disposable worktree at `base_sha` *outside* the
-kernel, the seat edits files there with file tools only (no shell — a
-producing seat needs to change files, not command the host), and the runtime
-**measures** the result as a unified diff. That measurement is the whole trust
-argument: the diff in the record is computed from the worktree, so a seat that
-claims a sweeping change and wrote nothing produces no diff, and an episode
-with no diff cannot satisfy a contract requiring one. False completion — the
-#514/#516 scar where wakes reported success having "repaired 0 of 41 items" —
-is unrepresentable rather than a review failure to catch later.
+**G1 shipped with it.** The runtime **measures** the change: `cellwork` cuts a
+disposable worktree at a commit pinned during construction, and computes the
+diff itself. A seat that claims a sweeping change and wrote nothing produces
+no diff, and an episode with no diff cannot satisfy a contract requiring one —
+false completion (the #514/#516 scar) is unrepresentable rather than a review
+failure to catch later. Bounds are applied as output streams, not after it is
+buffered.
 
 *Still open before CDS is complete:* **Case 3** (an independent rented β
-reviewing that diff — the first real judgement in the loop) and **G3** typed
-findings. `cn cds run --issue N` and the escalation predicate (Pi Q2) follow
-those.
+reviewing that diff — the first real judgement in the loop, and a one-field
+`beta.fill` change under this boundary) and **G3** typed findings.
+`cn cds run --issue N` and the escalation predicate (Pi Q2) follow those.
 
 **Phase 4 — the surface + compiler (sugar, later).** `cn cell compile main.cell
 → spec.json` (Go `participle`, ~150 lines; CUE stays the independent oracle) +
@@ -304,7 +299,7 @@ follow only when their preceding cases have executable evidence.
   loader, the runner (`cn cell compile` / `cn cell run`), and the skill-path
   resolver. It is the language + kernel.
 - **cnos.cds** owns a *program written in it*: `main.cell`, the params-domain
-  overlay, and its α/β skills. cds is one profile; cdw/cdr are siblings of the
+  overlay, and its α/β skills. cds is one fill family; cdw/cdr are siblings of the
   same shape.
 
 ### The abstract cell (cdd) vs. the concrete cells (cds/cdr/cdw)

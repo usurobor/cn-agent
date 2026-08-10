@@ -4,10 +4,10 @@
 // so a closure can state exactly which skill text was injected into a seat.
 // Printing a skill's name into a prompt is not loading it.
 //
-// Roots resolve like `$PATH`: an ordered list, first match wins, supplied by
-// the composition root from a hub or repository anchor. Nothing here is
-// relative to the process working directory, and no filesystem path ever
-// reaches a receipt — the content digest is the identity.
+// Roots are supplied by the application composition root — in production the
+// single canonical installed package root under the hub, in tests an explicit
+// tree. Nothing here is relative to the process working directory, and no
+// filesystem path ever reaches a receipt: the content digest is the identity.
 package cellskill
 
 import (
@@ -79,15 +79,4 @@ func LoadAll(r Resolver, refs []string) ([]Skill, error) {
 		out = append(out, s)
 	}
 	return out, nil
-}
-
-// Roots is the resolution order for one environment anchor: installed
-// packages first (the canonical identity), then the source tree so a
-// development checkout that has not vendored anything still resolves. The
-// anchor is a hub or repository root — never the process working directory.
-func Roots(anchor string) []string {
-	return []string{
-		filepath.Join(anchor, ".cn", "vendor", "packages"),
-		filepath.Join(anchor, "src", "packages"),
-	}
 }

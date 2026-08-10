@@ -67,6 +67,11 @@ func New(cfg Config) (Coder, Mode, error) {
 		}
 		return CodexCLI{Model: cfg.Model}, ModeCognitive, nil
 	case "fake":
+		// A model id the fake would ignore must not be receipted as though it
+		// selected something: the rule is identical in the CUE overlay.
+		if cfg.Model != "" {
+			return nil, "", fmt.Errorf("cellcog: provider %q takes no model, got %q", cfg.Provider, cfg.Model)
+		}
 		return FakeCoder{}, ModeMechanical, nil
 	default:
 		return nil, "", fmt.Errorf("cellcog: unknown provider %q (want claude-cli, codex-cli, or fake)", cfg.Provider)

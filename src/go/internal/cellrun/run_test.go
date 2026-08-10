@@ -10,7 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/usurobor/cnos/src/go/internal/cellfill"
+	"github.com/usurobor/cnos/src/go/internal/cellfills"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellskill"
 	"github.com/usurobor/cnos/src/go/internal/cellspec"
 )
 
@@ -20,19 +23,15 @@ const boolSpecJSON = `{"version":"cnos.cellspec.v0",` +
 	`"params":{"value":{"required":true,"domain":["true","false"]}},` +
 	`"alpha":{"fill":"cdd.bool","value":"$value"},"beta":{"fill":"cdd.bool-check"}}`
 
-// repoRoot anchors package resolution for the tests the same way the CLI
-// does, so nothing here depends on the process working directory either.
-func repoRoot() string {
-	wd, err := os.Getwd()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(wd, "..", "..", "..", "..")
+// testRegistry is the assembled registry with an empty skill tree: these
+// cases exercise generic dispatch, not skill loading.
+func testRegistry() cellfill.Registry {
+	return cellfills.With(cellskill.Tree{Roots: []string{"/nonexistent"}})
 }
 
 func run(stdin string, args ...string) (code int, stdout, stderr string) {
 	var out, errb bytes.Buffer
-	code = Run(context.Background(), repoRoot(), args, strings.NewReader(stdin), &out, &errb)
+	code = Run(context.Background(), testRegistry(), args, strings.NewReader(stdin), &out, &errb)
 	return code, out.String(), errb.String()
 }
 
@@ -48,7 +47,7 @@ func parseExpected(t *testing.T) (cellkernel.Contract, cellkernel.RunMeta) {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, meta, err := r.Build(context.Background(), registry(repoRoot()))
+	kspec, meta, err := r.Build(context.Background(), testRegistry())
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}

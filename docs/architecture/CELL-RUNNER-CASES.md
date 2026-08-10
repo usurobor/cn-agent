@@ -107,25 +107,28 @@ append-only sequence of results. Children never write upward or sideways.
   fills parameter holes, runs one episode, emits a generic
   `cnos.cellkernel.episode-closure.v0`, exit `0/1/2/3` (3 = `simulated`).
   Zero GitHub/network.
-- **Case 2 — rented α, mechanical β.** ✅ Cognition behind α via `internal/cellcog`:
-  the frozen contract renders to a prompt, a **provider** answers, and the
-  answer parses into candidates. `cn cell run --contract <spec> --param
-  provider=claude` runs a real episode; `provider=fake` runs the same seam
-  deterministically offline for CI. β is `MatterBeta` — a deliberately weak
-  mechanical review that says so in its notes. Required evidence stays V's
-  business, so a model that omits it closes `needs_repair`.
-- **CDS Case 2 — rented α on real code.** ✅ The `code` profile: a disposable
-  worktree is cut at `base_sha` (`internal/cellwork`, outside the kernel), the
-  rented seat edits files in it with file tools only — **no shell** — and the
-  runtime then **measures** the change as a unified diff. Scope is a
-  working-directory boundary plus the provider's workspace rules, *not* an OS
-  sandbox; what it guarantees is that only the worktree is ever measured, so
-  anything written elsewhere cannot become evidence. The diff is the
-  matter β reviews and the `diff` artifact V checks; `base_sha` is bound as a
-  runtime-computed artifact, never a seat claim. A seat that changed nothing
-  produces no diff, so false completion is unrepresentable rather than caught
-  late. The caller's checkout is never touched and no worktree outlives the
-  episode.
+- **Case 2 — rented α, mechanical β.** ✅ Seats are **fill-owned**: each is one
+  tagged value whose `fill` selects a constructor and whose sibling fields are
+  that constructor's arguments. `cds.patch` owns the patch alpha — it composes
+  the cognition adapter, the loaded skills, and the worktree; the generic
+  runner only dispatches a fill id. A disposable worktree is cut at a base
+  commit pinned at construction, the rented seat edits files in it, and the
+  runtime then **measures** the change as a unified diff. A seat that changed
+  nothing produces no diff, so false completion is unrepresentable rather than
+  caught late.
+
+  The seat is offered a restricted built-in tool surface (`--tools`, file
+  tools only) and no ambient settings or MCP servers, so local customization
+  cannot become a second, unreceipted component definition. That is *not* OS
+  confinement and is not claimed as such: the honest authority is the offered
+  tool surface plus the measured worktree — whatever a seat touches elsewhere
+  simply never becomes evidence. Worktree cleanup is best-effort for the same
+  reason: an episode's truth does not depend on it.
+
+  β is `cdd.mechanical-unmet`, which **never passes what it cannot judge**: a
+  non-empty diff is not a met contract, it is work awaiting review, so a real
+  measured change closes `needs_repair` with the diff preserved. Acceptance of
+  real work arrives with Case 3's independent reviewer.
 - **Case 3 — rented α and β.** Full single-episode CDS. V validates
   evidence/bindings; it never re-judges β's prose.
 - **Case 4 — bounded repair driver.** A `Drive` loop invokes the same episode
@@ -141,7 +144,7 @@ outcome tests**, not new rungs.
 
 A parameter is a typed hole resolved like `$PATH`: `skill`-kind values resolve to
 a skill and splice into a seat via `$name`; `value`-kind values are scalars
-passed to a builtin profile. Required vs optional-with-default = positional vs
+consumed by whichever fill reads it. Required vs optional-with-default = positional vs
 flag; a closed `domain` makes a typo fail resolution. The invoker (CLI now, a
 parent cell later) fills the hole; the cell body never changes.
 

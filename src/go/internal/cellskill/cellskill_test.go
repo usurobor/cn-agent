@@ -109,16 +109,3 @@ func TestLoadAllPreservesOrder(t *testing.T) {
 		t.Fatalf("order not preserved: %v", refs)
 	}
 }
-
-// Roots derive from one anchor and are absolute: installed first, then the
-// source tree of a development checkout. Nothing is relative to the process
-// working directory.
-func TestRootsFromAnchor(t *testing.T) {
-	roots := Roots("/anchor")
-	want := []string{"/anchor/.cn/vendor/packages", "/anchor/src/packages"}
-	for i, w := range want {
-		if roots[i] != filepath.FromSlash(w) {
-			t.Fatalf("root %d = %q, want %q", i, roots[i], w)
-		}
-	}
-}

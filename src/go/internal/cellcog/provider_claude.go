@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+// ToolSurface is the built-in tool set a producing seat is offered. File tools
+// only: a seat needs to change files, not command the host.
+const ToolSurface = "Read,Write,Edit,Glob,Grep"
+
 // ClaudeCLI rents workspace cognition from the Claude Code CLI. Stateless: a
 // Work call is one fresh bounded subprocess; no session is started or kept.
 type ClaudeCLI struct {
@@ -18,9 +22,33 @@ type ClaudeCLI struct {
 
 func (ClaudeCLI) Name() string { return "claude-cli" }
 
-// Work runs the CLI confined to dir with FILE tools only — read, write, edit,
-// search. No shell: a producing seat needs to change files, not command the
-// host. Output is discarded up to a bound; the fill measures the worktree.
+// ClaudeArgv is the exact invocation, built purely so it can be asserted
+// without spawning anything.
+//
+//   - `--tools` RESTRICTS the available built-in set. `--allowedTools` only
+//     pre-approves tools that remain available, so using it would have left
+//     Bash reachable while claiming otherwise; it must never appear here.
+//   - `--setting-sources ""` loads no user/project/local settings, and
+//     `--strict-mcp-config` admits no ambient MCP servers, so local
+//     customization cannot become a second, unreceipted component definition
+//     beside the fill's digested skills.
+//   - `--no-session-persistence` keeps the adapter stateless.
+//
+// What this does NOT provide is OS confinement. The honest authority is the
+// offered tool surface plus the runtime-measured worktree: whatever a seat
+// touches elsewhere simply never becomes evidence.
+func ClaudeArgv(model string) []string {
+	return []string{
+		"-p",
+		"--model", model,
+		"--no-session-persistence",
+		"--setting-sources", "",
+		"--strict-mcp-config",
+		"--tools", ToolSurface,
+		"--output-format", "text",
+	}
+}
+
 func (c ClaudeCLI) Work(ctx context.Context, dir, prompt string) error {
 	if dir == "" {
 		return fmt.Errorf("claude-cli: Work needs a directory")
@@ -29,13 +57,7 @@ func (c ClaudeCLI) Work(ctx context.Context, dir, prompt string) error {
 	if bin == "" {
 		bin = "claude"
 	}
-	args := []string{
-		"-p", "--output-format", "text",
-		"--model", c.Model,
-		"--permission-mode", "acceptEdits",
-		"--allowedTools", "Read,Write,Edit,Glob,Grep",
-	}
-	return runCLI(ctx, bin, dir, prompt, args, c.Timeout)
+	return runCLI(ctx, bin, dir, prompt, ClaudeArgv(c.Model), c.Timeout)
 }
 
 // runCLI is the one subprocess shape every adapter shares: prompt on stdin,

@@ -19,6 +19,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 )
@@ -58,17 +60,23 @@ type Registry struct {
 
 // FillID extracts the tag that selects a constructor. It is the ONLY field
 // the generic path reads from a seat declaration.
+//
+// The lookup is by exact key: decoding into a struct would let `Fill` or
+// `FILL` select a constructor that the closed CUE overlay rejects.
 func FillID(decl json.RawMessage) (string, error) {
-	var tag struct {
-		Fill string `json:"fill"`
-	}
-	if err := json.Unmarshal(decl, &tag); err != nil {
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(decl, &obj); err != nil {
 		return "", fmt.Errorf("seat declaration is not an object: %w", err)
 	}
-	if tag.Fill == "" {
+	raw, ok := obj["fill"]
+	if !ok {
 		return "", fmt.Errorf("seat declaration has no fill")
 	}
-	return tag.Fill, nil
+	var id string
+	if err := json.Unmarshal(raw, &id); err != nil || id == "" {
+		return "", fmt.Errorf("seat declaration has no fill")
+	}
+	return id, nil
 }
 
 // ConstructAlpha dispatches an alpha declaration. Unknown fills fail here,
@@ -145,11 +153,20 @@ func CombineModes(a, b cellkernel.ExecutionMode) cellkernel.ExecutionMode {
 	}
 }
 
-// StrictDecode is the shared decode discipline for fill arguments: exact
-// case-sensitive keys via DisallowUnknownFields over canonical lowercase
-// structs, no trailing data. Fills use it so Go and CUE reject the same
-// shapes. (Null and duplicate keys are rejected once, at the envelope walk.)
+// StrictDecode is the shared decode discipline for fill arguments: every key
+// must match a declared json tag EXACTLY, and there must be no trailing data.
+//
+// DisallowUnknownFields alone is not enough. encoding/json matches field names
+// case-insensitively, so `Fill`, `COGNITION`, or a nested `Provider` would
+// decode happily in Go while the closed CUE overlay rejects them — the two
+// authorities would accept different languages. exactKeys closes that by
+// walking the declaration against the target's declared tags, so a fill's Go
+// shape and its CUE shape admit the same keys by construction rather than by
+// a hand-maintained list per fill.
 func StrictDecode(decl json.RawMessage, into any) error {
+	if err := exactKeys(decl, reflect.TypeOf(into), "seat declaration"); err != nil {
+		return err
+	}
 	dec := json.NewDecoder(bytesReader(decl))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(into); err != nil {
@@ -158,6 +175,58 @@ func StrictDecode(decl json.RawMessage, into any) error {
 	var extra json.RawMessage
 	if dec.Decode(&extra) == nil {
 		return fmt.Errorf("trailing data after seat declaration")
+	}
+	return nil
+}
+
+// exactKeys checks one JSON value's object keys against the json tags of the
+// Go type it will decode into, recursing through nested structs and slices.
+// It validates KEYS only — types and values remain the decoder's and the
+// fill's business, so this stays a boundary check rather than a schema engine.
+func exactKeys(raw json.RawMessage, t reflect.Type, where string) error {
+	for t != nil && (t.Kind() == reflect.Pointer || t.Kind() == reflect.Interface) {
+		t = t.Elem()
+	}
+	if t == nil {
+		return nil
+	}
+	switch t.Kind() {
+	case reflect.Struct:
+		var obj map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &obj); err != nil {
+			return nil // not an object here; the decoder reports the type error
+		}
+		allowed := make(map[string]reflect.Type, t.NumField())
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			name, _, _ := strings.Cut(f.Tag.Get("json"), ",")
+			if name == "" {
+				name = f.Name
+			}
+			if name == "-" {
+				continue
+			}
+			allowed[name] = f.Type
+		}
+		for k, v := range obj {
+			ft, ok := allowed[k]
+			if !ok {
+				return fmt.Errorf("%s has unknown key %q (keys are exact and case-sensitive)", where, k)
+			}
+			if err := exactKeys(v, ft, where+"."+k); err != nil {
+				return err
+			}
+		}
+	case reflect.Slice, reflect.Array:
+		var items []json.RawMessage
+		if err := json.Unmarshal(raw, &items); err != nil {
+			return nil
+		}
+		for i, item := range items {
+			if err := exactKeys(item, t.Elem(), fmt.Sprintf("%s[%d]", where, i)); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

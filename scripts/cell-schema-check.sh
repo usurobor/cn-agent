@@ -31,20 +31,6 @@ run_vet() { # want-exit, cn args...
     echo "  ✗ CLI output failed #EpisodeClosure ($*)"; fail=1
   else echo "  ✓ CLI output vets ($*)"; fi
 }
-# A resolved seat declaration must survive its fill's RESOLVED schema: no holes
-# left, base pinned to a commit, skills carrying content digests. This proves
-# resolution actually happened instead of trusting that it did.
-vet_resolved_alpha() { # definition, cn args...
-  local def=$1; shift
-  "$CN" cell run "$@" >"$tmp" 2>/dev/null
-  local decl="$tmpdir/resolved-alpha.json"
-  if ! python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$tmp" "$decl" 2>/dev/null; then
-    echo "  ✗ could not extract the resolved alpha declaration ($*)"; fail=1; return
-  fi
-  if ! "$CUE" vet ./schemas/cds:cds "$decl" -d "$def" >/dev/null 2>&1; then
-    echo "  ✗ resolved alpha failed $def ($*)"; fail=1
-  else echo "  ✓ resolved alpha vets $def"; fi
-}
 
 echo "# positive cell specs"
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/empty-cell-spec.json -d '#CellSpec'
@@ -58,10 +44,12 @@ echo "# positive closures"
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-accepted.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-needs-repair.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-simulated.json -d '#EpisodeClosure'
-# The committed Case-2 closure, reproducible from its committed input:
-#   cn cell run --contract schemas/cds/fixtures/code-cell-spec.json \
-#     --param language=cnos.eng:eng/go --param provider=fake --param base_sha=<head>
-vet_ok schemas/cdd/episode-closure.cue schemas/cds/fixtures/episode-closure-cds-case2.json -d '#EpisodeClosure'
+# A committed SCHEMA EXAMPLE of a Case-2 closure — deliberately not a proof.
+# Episode ids are minted per invocation, so a stored file can never be
+# byte-reproduced; the authority is the live run below, which executes the
+# committed spec from an installed hub and vets both the closure and its
+# resolved declaration.
+vet_ok schemas/cdd/episode-closure.cue schemas/cds/fixtures/episode-closure-cds-case2.example.json -d '#EpisodeClosure'
 
 echo "# negative cell specs (must be rejected)"
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.json -d '#CellSpec'
@@ -75,8 +63,15 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-diff-not-first.json -
 # rejected by the CDS overlay (and by the fill decoder below).
 vet_bad ./schemas/cds:cds schemas/cdd/fixtures/invalid/cellspec-null-skills.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-smuggled-argv.json -d '#CDSCellSpec'
-# A real provider without an exact model must be rejected by BOTH authorities.
+# A real provider without an exact model must be rejected by BOTH authorities,
+# and so must a fake carrying a model it would ignore.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-modelless-provider.json -d '#CDSCellSpec'
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-fake-with-model.json -d '#CDSCellSpec'
+# Fill-owned keys are exact and case-sensitive at every depth: encoding/json
+# would otherwise decode these while the closed overlay rejects them.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-top-arg.json -d '#CDSCellSpec'
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-nested-arg.json -d '#CDSCellSpec'
 
 echo "# Go-only negatives (executable authority = the CLI)"
 run_bad schemas/cdd/fixtures/invalid/cellspec-dup-required-id.json
@@ -88,6 +83,10 @@ run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json
 run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json
 run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json
+run_bad schemas/cds/fixtures/invalid/cds-fake-with-model.json
+run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json
+run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json
+run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json
 
 echo "# SIGINT terminates a blocked stdin reader (Pi round-5 D3)"
 mkfifo "$tmpdir/stdin.fifo"
@@ -128,10 +127,40 @@ mkdir -p "$coderepo"
   cd "$coderepo" && git init -q -b main && echo base >README.md && git add -A &&
     GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t \
       git commit -qm base
-) >/dev/null 2>&1 || { echo "  ✗ could not build the code-profile fixture repo"; fail=1; }
-run_vet 1 --contract schemas/cds/fixtures/code-cell-spec.json \
-  --param language=cnos.eng:eng/go --param provider=fake --param base_sha=HEAD --param repo="$coderepo"
-vet_resolved_alpha '#CDSPatchAlphaResolved' --contract schemas/cds/fixtures/code-cell-spec.json \
-  --param language=cnos.eng:eng/go --param provider=fake --param base_sha=HEAD --param repo="$coderepo"
+) >/dev/null 2>&1 || { echo "  ✗ could not build the code-cell fixture repo"; fail=1; }
+# Skill authority is the INSTALLED package root under a hub — never the
+# working directory and never this checkout's source tree. Vendor the skills
+# the fixture names into a throwaway hub and run from inside it.
+hub="$tmpdir/hub"
+mkdir -p "$hub/.cn/vendor/packages"
+for ref in cnos.eng:eng/code cnos.eng:eng/test cnos.eng:eng/go cnos.eng:eng/write-functional; do
+  pkg=${ref%%:*}; path=${ref#*:}
+  mkdir -p "$hub/.cn/vendor/packages/$pkg/skills/$path"
+  cp "src/packages/$pkg/skills/$path/SKILL.md" "$hub/.cn/vendor/packages/$pkg/skills/$path/SKILL.md" ||
+    { echo "  ✗ could not vendor $ref into the fixture hub"; fail=1; }
+done
+# Absolute paths for the subshell that runs INSIDE the hub; CUE package paths
+# stay relative to the repo root, where the rest of this script runs.
+CN=$(cd "$(dirname "$CN")" && pwd)/$(basename "$CN")
+spec=$(pwd)/schemas/cds/fixtures/code-cell-spec.json
+(
+  cd "$hub" || exit 1
+  "$CN" cell run --contract "$spec" \
+    --param language=cnos.eng:eng/go --param provider=fake \
+    --param base_sha=HEAD --param repo="$coderepo" >"$tmp" 2>/dev/null
+  echo $? >"$tmpdir/code.exit"
+)
+code=$(cat "$tmpdir/code.exit")
+if [ "$code" != 1 ]; then
+  echo "  ✗ cds.patch cell exit=$code want=1 (needs_repair: beta cannot judge the goal)"; fail=1
+else echo "  ✓ cds.patch cell closes needs_repair from an installed hub"; fi
+if ! "$CUE" vet schemas/cdd/episode-closure.cue "$tmp" -d '#EpisodeClosure' >/dev/null 2>&1; then
+  echo "  ✗ cds.patch closure failed #EpisodeClosure"; fail=1
+else echo "  ✓ cds.patch closure vets #EpisodeClosure"; fi
+decl="$tmpdir/resolved-alpha.json"
+if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$tmp" "$decl" 2>/dev/null &&
+   "$CUE" vet ./schemas/cds:cds "$decl" -d '#CDSPatchAlphaResolved' >/dev/null 2>&1; then
+  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (no holes, pinned base, digested skills)"
+else echo "  ✗ resolved alpha failed #CDSPatchAlphaResolved"; fail=1; fi
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi
