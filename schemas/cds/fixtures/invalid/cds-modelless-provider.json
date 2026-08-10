@@ -1,0 +1,33 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "cds-code",
+    "goal": "Carry out the change described by the issue in the repository at base_sha",
+    "required_evidence": [
+      {
+        "id": "diff",
+        "kind": "diff",
+        "producer": "alpha"
+      }
+    ]
+  },
+  "protocol_id": "cnos.cdd.cds.receipt.v1",
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "provider": "claude-cli",
+      "model": ""
+    },
+    "workspace": {
+      "kind": "git-worktree",
+      "repo": ".",
+      "base_sha": "x"
+    },
+    "skills": [
+      "cnos.eng:eng/go"
+    ]
+  },
+  "beta": {
+    "fill": "cdd.mechanical-unmet"
+  }
+}

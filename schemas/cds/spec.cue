@@ -22,10 +22,13 @@ import "cnos.dev/cnos/schemas/cdd"
 // #CDSPatchAlpha is the complete cds.patch alpha declaration.
 #CDSPatchAlpha: {
 	fill: "cds.patch"
-	cognition: {
-		provider: "claude-cli" | "codex-cli" | "fake" | #Hole
-		model:    string // exact model id; may be empty only for "fake"
-	}
+	// A provider that really rents cognition must name an EXACT model; only
+	// the deterministic fake may omit it. Written as a disjunction rather
+	// than two independent fields so this schema rejects exactly what
+	// cellcog.New rejects — the two authorities must not disagree.
+	cognition: {provider: "fake", model: ""} |
+		{provider: "claude-cli" | "codex-cli", model: string & !=""} |
+		{provider: #Hole, model: string} // unresolved: the model travels with it
 	workspace: {
 		kind:     "git-worktree"
 		repo:     string & !=""

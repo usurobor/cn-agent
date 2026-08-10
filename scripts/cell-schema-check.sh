@@ -61,6 +61,8 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-diff-not-first.json -
 # rejected by the CDS overlay (and by the fill decoder below).
 vet_bad ./schemas/cds:cds schemas/cdd/fixtures/invalid/cellspec-null-skills.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-smuggled-argv.json -d '#CDSCellSpec'
+# A real provider without an exact model must be rejected by BOTH authorities.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-modelless-provider.json -d '#CDSCellSpec'
 
 echo "# Go-only negatives (executable authority = the CLI)"
 run_bad schemas/cdd/fixtures/invalid/cellspec-dup-required-id.json
@@ -71,6 +73,7 @@ run_bad schemas/cdd/fixtures/invalid/cellspec-empty-goal.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json
 run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json
+run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json
 
 echo "# SIGINT terminates a blocked stdin reader (Pi round-5 D3)"
 mkfifo "$tmpdir/stdin.fifo"
