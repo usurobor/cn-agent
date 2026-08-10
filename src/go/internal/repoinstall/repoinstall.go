@@ -4,8 +4,12 @@
 // It makes an arbitrary Git repository CDS-ready with one command: it
 // resolves a cnos release (or an explicit package index), writes a
 // deterministic .cn/deps.json + .cn/deps.lock.json, restores the default
-// package set (cnos.core, cnos.cdd, cnos.cds) under .cn/vendor/packages/,
-// and ensures .gitignore excludes the vendor tree.
+// package set (cnos.core, cnos.cdd, cnos.cds, cnos.eng) under
+// .cn/vendor/packages/, and ensures .gitignore excludes the vendor tree.
+//
+// cnos.eng is in that set because cell fills LOAD skill bodies from the
+// installed root: a shipped cell naming cnos.eng:eng/go cannot be constructed
+// by a hub that did not install it. closure_test.go holds the two together.
 //
 // This package reuses the existing lock/restore substrate directly
 // (internal/restore) rather than reimplementing SHA-256 verification or

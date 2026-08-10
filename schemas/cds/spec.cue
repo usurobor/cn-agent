@@ -30,8 +30,14 @@ import "cnos.dev/cnos/schemas/cdd"
 // schema rejects exactly what cellcog.New rejects — the two authorities must
 // not disagree. There is no argv/flags escape: a cell cannot smuggle
 // arguments into an adapter.
+//
+// codex-cli is deliberately absent (Pi #55 D1). Its available suppression
+// flags reach $CODEX_HOME/config.toml and execpolicy .rules only, while
+// global/project AGENTS.md and discovered skills still load — a second,
+// unreceipted component definition beside the fill's digested skills. It is
+// held here exactly as it is held in cellcog.New.
 #Cognition: {provider: "fake", model: ""} |
-	{provider: "claude-cli" | "codex-cli", model: string & !=""}
+	{provider: "claude-cli", model: string & !=""}
 
 // #CDSPatchAlphaResolved is what a closure records: no holes, and a base_sha
 // pinned to a commit at construction.

@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"slices"
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
@@ -167,8 +168,14 @@ func StrictDecode(decl json.RawMessage, into any) error {
 		return err
 	}
 	var extra json.RawMessage
-	if dec.Decode(&extra) == nil {
-		return fmt.Errorf("trailing data after seat declaration")
+	if err := dec.Decode(&extra); err != io.EOF {
+		// Only a real EOF proves the declaration ended. Accepting ANY error
+		// here would report "clean" for a stream that failed for some other
+		// reason, which is the claim this check exists to make (Pi #55 C2).
+		if err == nil {
+			return fmt.Errorf("trailing data after seat declaration")
+		}
+		return fmt.Errorf("malformed data after seat declaration: %w", err)
 	}
 	return nil
 }

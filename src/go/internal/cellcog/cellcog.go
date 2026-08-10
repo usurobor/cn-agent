@@ -14,6 +14,18 @@
 // elsewhere is not stopped here — it merely gains nothing, because only the
 // worktree is ever measured. Real containment belongs under the adapter and
 // is not implemented.
+//
+// The admitted provider set is claude-cli and fake. codex-cli is HELD, not
+// forgotten (Pi #55 D1): a seat may carry only the fill's ordered, digested
+// skills, and Codex's available suppression flags do not reach far enough —
+// `--ignore-user-config` suppresses only $CODEX_HOME/config.toml and
+// `--ignore-rules` only execpolicy .rules, while global and project AGENTS.md
+// and discovered skills still load. Admitting the provider on those flags
+// would let ambient instructions become a second, unreceipted component
+// definition. It returns when the execution substrate can supply a clean
+// CODEX_HOME and a real run proves poisoned AGENTS.md and ambient skills do
+// not reach the invocation; the argv research is preserved in
+// docs/architecture/CDS-CELL-MIGRATION.md rather than in unreachable code.
 package cellcog
 
 import (
@@ -61,11 +73,6 @@ func New(cfg Config) (Coder, Mode, error) {
 			return nil, "", fmt.Errorf("cellcog: provider %q requires an exact model id", cfg.Provider)
 		}
 		return ClaudeCLI{Model: cfg.Model}, ModeCognitive, nil
-	case "codex-cli":
-		if cfg.Model == "" {
-			return nil, "", fmt.Errorf("cellcog: provider %q requires an exact model id", cfg.Provider)
-		}
-		return CodexCLI{Model: cfg.Model}, ModeCognitive, nil
 	case "fake":
 		// A model id the fake would ignore must not be receipted as though it
 		// selected something: the rule is identical in the CUE overlay.
@@ -74,7 +81,7 @@ func New(cfg Config) (Coder, Mode, error) {
 		}
 		return FakeCoder{}, ModeMechanical, nil
 	default:
-		return nil, "", fmt.Errorf("cellcog: unknown provider %q (want claude-cli, codex-cli, or fake)", cfg.Provider)
+		return nil, "", fmt.Errorf("cellcog: unknown provider %q (want claude-cli or fake)", cfg.Provider)
 	}
 }
 

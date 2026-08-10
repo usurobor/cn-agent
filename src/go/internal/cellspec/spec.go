@@ -370,11 +370,36 @@ func checkExactKeys(data []byte) error {
 		}
 	}
 	for name, p := range params {
+		if !validParamName(name) {
+			return fmt.Errorf("parameter %q is not a legal identifier "+
+				"(letters, digits and underscore, not starting with a digit)", name)
+		}
 		if err := objectKeys(p, fmt.Sprintf("parameter %q", name), "required", "default", "domain"); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// validParamName is the ONE identifier grammar, mirrored exactly by
+// `#ParamName` in schemas/cdd/spec.cue. A name is also a hole spelling —
+// `$name` — so a name legal here and illegal there would resolve in Go and be
+// rejected by CUE, which is the divergence this closes (Pi #55 C1). Written
+// out rather than compiled as a regexp: it is four comparisons, and the
+// authority it mirrors is a pattern, not a library.
+func validParamName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for i, r := range name {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r == '_':
+		case i > 0 && r >= '0' && r <= '9':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // objectKeys checks one raw JSON object's keys against an exact allowed set.

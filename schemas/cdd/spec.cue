@@ -30,6 +30,13 @@ package cdd
 	producer: #Role
 }
 
+// #ParamName is the ONE identifier grammar for a parameter, and therefore for
+// the `$name` hole that references it. It lives in the generic layer because
+// holes are a generic resolution concept: a name legal here must be legal
+// everywhere, or a spec resolves in Go and is rejected by CUE (Pi #55 C1).
+// `cellspec.Parse` enforces the identical pattern.
+#ParamName: =~"^[A-Za-z_][A-Za-z0-9_]*$"
+
 // #Param is a Unix-shaped typed hole. Holes appear as `$name` string values
 // inside seat declarations and are replaced in place at resolution. There is
 // deliberately no "kind": what a filled value MEANS belongs to the fill that
@@ -60,7 +67,7 @@ package cdd
 	// Declared protocol (provenance). The v0 runner emits a generic episode
 	// receipt and sets protocol_validated=false; it does not validate this.
 	protocol_id: string & !=""
-	params?: {[string]: #Param}
+	params?: {[#ParamName]: #Param}
 	alpha: #Seat
 	beta:  #Seat
 }

@@ -6,7 +6,7 @@ Software) process into an existing software repository.
 Installing CDS has two layers, and they are separate trust decisions:
 
 - **Layer 1 — Base package install.** Pins the `cn` toolchain reference and
-  the cnos packages (`cnos.core`, `cnos.cdd`, `cnos.cds`) in your repo. This is
+  the cnos packages (`cnos.core`, `cnos.cdd`, `cnos.cds`, `cnos.eng`) in your repo. This is
   the safe default — enough for you, or a Claude attached to the repo, to run
   the CDS method by hand. **This is what this guide covers.**
 - **Layer 2 — Autonomous dispatch (opt-in).** A scheduled workflow that wakes
@@ -98,7 +98,7 @@ cn repo install
 ```
 
 This resolves the latest cnos release, writes `.cn/deps.json` +
-`.cn/deps.lock.json`, restores `cnos.core` / `cnos.cdd` / `cnos.cds` under
+`.cn/deps.lock.json`, restores `cnos.core` / `cnos.cdd` / `cnos.cds` / `cnos.eng` under
 `.cn/vendor/packages/`, and adds `.cn/vendor/` to `.gitignore`. It prints the
 resolved release tag and a summary of what it wrote/restored.
 
@@ -113,7 +113,7 @@ case):
 
 ```sh
 cn repo install --release <tag>              # pin a specific cnos release instead of latest
-cn repo install --packages cnos.core,cnos.cdd,cnos.cds
+cn repo install --packages cnos.core,cnos.cdd,cnos.cds,cnos.eng
 cn repo install --index ./dist/packages/index.json   # local/offline package index
 ```
 
@@ -320,7 +320,7 @@ The agent tier runs `claude-code-action`, which needs two credentials:
 
 ```sh
 cn repo install          # idempotent; re-running produces no further diff
-ls .cn/vendor/packages    # cnos.core, cnos.cdd, cnos.cds
+ls .cn/vendor/packages    # cnos.core, cnos.cdd, cnos.cds, cnos.eng
 cat .cn/vendor/packages/cnos.cds/skills/cds/SKILL.md   # the CDS loader skill
 ```
 

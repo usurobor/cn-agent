@@ -43,14 +43,30 @@ func TestDefaultPackagesCoverShippedCells(t *testing.T) {
 			t.Fatalf("%s: skills: %v", path, err)
 		}
 		// A hole stands for every value its declared domain allows, so the
-		// closure must cover all of them.
+		// closure must cover all of them. A hole whose parameter is missing or
+		// whose domain is empty expands to NOTHING — the skill would silently
+		// go unchecked while the surrounding fixed refs keep `checked > 0` and
+		// the assertion green. That is the vacuity this guard closes
+		// (Pi #55 C2), so an unbounded hole is a failure, not a skip.
 		var concrete []string
 		for _, ref := range refs {
-			if name, isHole := strings.CutPrefix(ref, "$"); isHole {
-				concrete = append(concrete, spec.Params[name].Domain...)
+			name, isHole := strings.CutPrefix(ref, "$")
+			if !isHole {
+				concrete = append(concrete, ref)
 				continue
 			}
-			concrete = append(concrete, ref)
+			p, declared := spec.Params[name]
+			if !declared {
+				t.Errorf("%s: skill hole %q references undeclared parameter %q",
+					filepath.Base(path), ref, name)
+				continue
+			}
+			if len(p.Domain) == 0 {
+				t.Errorf("%s: skill hole %q has no domain, so it expands to no skill "+
+					"and this closure check would not cover it", filepath.Base(path), ref)
+				continue
+			}
+			concrete = append(concrete, p.Domain...)
 		}
 		for _, ref := range concrete {
 			pkg, sub, ok := strings.Cut(ref, ":")

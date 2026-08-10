@@ -359,10 +359,10 @@ func TestRun_LocalIndex_EndToEnd(t *testing.T) {
 	}
 }
 
-// AC4 (literal default set): absent --packages, Run installs exactly the
-// default triple (cnos.core, cnos.cdd, cnos.cds) under
+// AC4 (literal default set): absent --packages, Run installs exactly
+// DefaultPackages (cnos.core, cnos.cdd, cnos.cds, cnos.eng) under
 // .cn/vendor/packages/<name>/, each with a validated cn.package.json.
-func TestRun_DefaultPackageSet_AllThreeRestored(t *testing.T) {
+func TestRun_DefaultPackageSet_AllRestored(t *testing.T) {
 	dir := t.TempDir()
 	idx := pkg.PackageIndex{Schema: "cn.package-index.v1", Packages: map[string]map[string]pkg.IndexEntry{}}
 	for _, name := range DefaultPackages {
@@ -380,7 +380,7 @@ func TestRun_DefaultPackageSet_AllThreeRestored(t *testing.T) {
 	stdout, stderr := noopStdio()
 	res, err := Run(context.Background(), Options{
 		RepoRoot:  repoRoot,
-		Release:   "3.82.0", // pins the shared version across all three, mirroring Mock A
+		Release:   "3.82.0", // pins one shared version across the whole default set, mirroring Mock A
 		IndexPath: indexPath,
 		Stdout:    stdout,
 		Stderr:    stderr,
@@ -389,7 +389,7 @@ func TestRun_DefaultPackageSet_AllThreeRestored(t *testing.T) {
 		t.Fatalf("Run: %v\nstderr: %s", err, stderr.String())
 	}
 	if len(res.Manifest.Packages) != len(DefaultPackages) {
-		t.Fatalf("manifest packages = %+v, want the default triple", res.Manifest.Packages)
+		t.Fatalf("manifest packages = %+v, want exactly DefaultPackages", res.Manifest.Packages)
 	}
 	for i, name := range DefaultPackages {
 		if res.Manifest.Packages[i].Name != name {

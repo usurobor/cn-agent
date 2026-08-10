@@ -28,9 +28,6 @@ func TestNewClosedProviderSet(t *testing.T) {
 	if _, mode, err := New(Config{Provider: "claude-cli", Model: "m"}); err != nil || mode != ModeCognitive {
 		t.Fatalf("claude-cli: mode=%q err=%v", mode, err)
 	}
-	if _, mode, err := New(Config{Provider: "codex-cli", Model: "m"}); err != nil || mode != ModeCognitive {
-		t.Fatalf("codex-cli: mode=%q err=%v", mode, err)
-	}
 	if _, _, err := New(Config{Provider: "clyde", Model: "m"}); err == nil {
 		t.Fatal("unknown provider must fail construction")
 	}
@@ -92,16 +89,18 @@ func TestWorkHonorsCallerCancellation(t *testing.T) {
 	}
 }
 
-func TestCodexArgsAreTypedNotSmuggled(t *testing.T) {
+// The model reaches the child as a typed argument and nothing else does: a
+// seat declares which model, never how the process is invoked.
+func TestClaudeArgsAreTypedNotSmuggled(t *testing.T) {
 	dir := t.TempDir()
 	bin := fakeBin(t, `printf '%s\n' "$@" > "`+dir+`/args.txt"; cat >/dev/null`)
-	if err := (CodexCLI{Model: "m1", Bin: bin}).Work(context.Background(), dir, "p"); err != nil {
+	if err := (ClaudeCLI{Model: "m1", Bin: bin}).Work(context.Background(), dir, "p"); err != nil {
 		t.Fatalf("work: %v", err)
 	}
 	got, _ := os.ReadFile(filepath.Join(dir, "args.txt"))
-	for _, want := range []string{"exec", "--model", "m1", "--sandbox", "workspace-write", "--cd"} {
+	for _, want := range []string{"-p", "--model", "m1", "--safe-mode", "--tools"} {
 		if !strings.Contains(string(got), want) {
-			t.Fatalf("codex argv missing %q: %q", want, got)
+			t.Fatalf("claude argv missing %q: %q", want, got)
 		}
 	}
 }

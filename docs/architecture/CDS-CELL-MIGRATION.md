@@ -315,12 +315,60 @@ not re-derive them):*
   orchestration.
   <https://github.com/anthropics/claude-code-action/blob/6b082c41935b4c8a3b8b0ef85ba4ba4d9eeb8975/action.yml>
 - OpenAI's action at `52fe01ec70a42f454c9d2ebd47598f9fd6893d56` is also
-  composite: it installs exact npm CLI/proxy packages, starts a loopback
-  Responses API proxy for the API-key path, then runs `codex exec` under
-  declared permissions. Pin the action commit and CLI/proxy version rather
-  than tracking `@v1`/`latest`.
+  composite: it installs npm CLI/proxy packages, starts a loopback Responses
+  API proxy for the API-key path, then runs `codex exec` under declared
+  permissions. **Correction (Pi #55 B1):** an earlier reading of this called
+  the installed versions exact. They are not — the action's `codex-version`
+  input defaults to blank, which tracks npm latest, and is exact only when the
+  workflow supplies a version. Our decision is unchanged and now rests on the
+  right reason: CNOS must pin the action commit *and* pass an explicit
+  version, because the default is a moving target.
   <https://learn.chatgpt.com/docs/github-action> ·
   <https://github.com/openai/codex-action/blob/52fe01ec70a42f454c9d2ebd47598f9fd6893d56/action.yml>
+
+## HELD — codex-cli as a provider (withdrawn from Case 2, not abandoned)
+
+**Status: held.** `codex-cli` is absent from the admitted provider set in both
+authorities — `cellcog.New` and `#Cognition` — and `provider_codex.go` is
+deleted rather than left unreachable, because code whose comments claim an
+isolation it does not deliver is worse than no code.
+
+**Why it was withdrawn (Pi #55 D1).** A seat may carry only the fill's
+ordered, digested skills; anything else is a second, unreceipted component
+definition. The flags we had do not reach that far:
+
+- `--ignore-user-config` suppresses only `$CODEX_HOME/config.toml`;
+- `--ignore-rules` suppresses only user/project execpolicy `.rules`;
+- global and project `AGENTS.md` guidance still loads;
+- skills are still discovered from repository, user, admin and system
+  locations.
+
+The adapter's comments and tests claimed broader isolation than that, and
+because `codex-cli` was admitted by both authorities this was a live
+constructor boundary rather than a documentation error.
+
+**What returning requires**, in order:
+
+1. Typed suppression knobs in the installed Codex version, sealed into the
+   argv — never env, config, or argv supplied by cell JSON.
+2. A dedicated clean `CODEX_HOME` provided by the execution substrate.
+3. A real run proving that a poisoned project `AGENTS.md`, a poisoned global
+   `AGENTS.md`, and an ambient discoverable skill all fail to reach the
+   invocation. This is the part that cannot be done in the current
+   environment: `codex` is not installed and no credential is available, so
+   the claim would be an assertion, not a measurement.
+
+**Preserved argv research**, so re-enabling does not re-derive it: `exec`,
+`--model <exact>`, `--ephemeral` (without it Codex persists rollout state
+between invocations and the adapter stops being stateless),
+`--ignore-user-config`, `--ignore-rules`, `--sandbox workspace-write`,
+`--skip-git-repo-check`, `--cd <dir>`, `-` for prompt-on-stdin. Forbidden in
+any future revival: `danger-full-access`, `--yolo`, `--full-auto`,
+`--dangerously-bypass-approvals-and-sandbox`.
+
+References: <https://learn.chatgpt.com/docs/developer-commands?surface=cli> ·
+<https://learn.chatgpt.com/docs/agent-configuration/agents-md> ·
+<https://learn.chatgpt.com/docs/build-skills>
 
 ## HELD — promote the generic cognition schema to CDD (captured, not implemented)
 

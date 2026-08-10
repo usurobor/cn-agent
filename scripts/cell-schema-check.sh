@@ -21,13 +21,31 @@ tmpdir=$(mktemp -d)
 tmp="$tmpdir/envelope.json" # .json so `cue` infers the format, not CUE
 trap 'rm -rf "$tmpdir"' EXIT
 
+# files_exist guards the negative helpers below. A negative asserts a NON-ZERO
+# exit, and a missing or misnamed fixture produces one too — so without this a
+# deleted or typo'd fixture reads as the schema correctly rejecting it, which
+# is the same vacuity class as an absent tool (Pi #55 C2).
+files_exist() {
+  local ok=0 a
+  for a in "$@"; do
+    case "$a" in
+      *.json|*.cue) [ -f "$a" ] || { echo "  ✗ fixture not found: $a"; ok=1; } ;;
+    esac
+  done
+  return $ok
+}
+
 vet_ok() {
   if ! "$CUE" vet "$@" >/dev/null 2>&1; then echo "  ✗ expected PASS: cue vet $*"; fail=1; else echo "  ✓ vet $*"; fi
 }
 vet_bad() {
+  if ! files_exist "$@"; then fail=1; return; fi
   if "$CUE" vet "$@" >/dev/null 2>&1; then echo "  ✗ expected FAIL: cue vet $*"; fail=1; else echo "  ✓ rejected $*"; fi
 }
 run_bad() { # Go-only negatives: the CLI is the executable authority (exit 2).
+  # Exit 2 is ALSO the runner's missing-contract exit, so the fixture has to be
+  # proven present or this helper cannot tell rejection from absence.
+  if ! files_exist "$1"; then fail=1; return; fi
   "$CN" cell run --contract "$1" >/dev/null 2>&1; local code=$?
   if [ "$code" != 2 ]; then echo "  ✗ expected CLI exit 2: $1 (got $code)"; fail=1; else echo "  ✓ CLI rejected $1"; fi
 }
@@ -64,6 +82,9 @@ vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-missing-fill.json -d '#CellSpec'
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-empty-goal.json -d '#CellSpec'
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-case-alias.json -d '#CellSpec'
+# One identifier grammar: a param name legal in Go must be legal in CUE, or a
+# spec resolves in one authority and is rejected by the other (Pi #55 C1).
+vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-param-name.json -d '#CellSpec'
 vet_bad schemas/cdd/episode-closure.cue schemas/cdd/fixtures/invalid/episode-closure-null-arrays.json -d '#EpisodeClosure'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-no-diff.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-diff-not-first.json -d '#CDSCellSpec'
@@ -75,6 +96,9 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-smuggled-argv.json -d
 # and so must a fake carrying a model it would ignore.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-modelless-provider.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-fake-with-model.json -d '#CDSCellSpec'
+# codex-cli is held out of the admitted provider set until its ambient-context
+# suppression can be proven by a real run (Pi #55 D1).
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-codex-held.json -d '#CDSCellSpec'
 # Fill-owned keys are exact and case-sensitive at every depth: encoding/json
 # would otherwise decode these while the closed overlay rejects them.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
@@ -88,10 +112,12 @@ run_bad schemas/cdd/fixtures/invalid/cellspec-missing-fill.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-unknown-fill.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-empty-goal.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json
+run_bad schemas/cdd/fixtures/invalid/cellspec-bad-param-name.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json
 run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json
 run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json
 run_bad schemas/cds/fixtures/invalid/cds-fake-with-model.json
+run_bad schemas/cds/fixtures/invalid/cds-codex-held.json
 run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json
 run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json
 run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json

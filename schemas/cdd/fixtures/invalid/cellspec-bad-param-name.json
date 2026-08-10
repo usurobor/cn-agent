@@ -1,0 +1,23 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "c",
+    "goal": "g"
+  },
+  "protocol_id": "cnos.cellkernel.episode-closure.v0",
+  "params": {
+    "provider-name": {
+      "required": true,
+      "domain": [
+        "fake"
+      ]
+    }
+  },
+  "alpha": {
+    "fill": "cdd.stub",
+    "value": "$provider-name"
+  },
+  "beta": {
+    "fill": "cdd.stub"
+  }
+}

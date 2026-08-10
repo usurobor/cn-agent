@@ -47,34 +47,15 @@ func TestClaudeArgvForbidsPreApprovalAndShell(t *testing.T) {
 	}
 }
 
-// Codex must run stateless and ignore ambient configuration, while
-// authentication stays ambient.
-func TestCodexArgvIsExact(t *testing.T) {
-	got := CodexArgv("gpt-5-codex", "/w")
-	want := []string{
-		"exec",
-		"--model", "gpt-5-codex",
-		"--ephemeral",
-		"--ignore-user-config",
-		"--ignore-rules",
-		"--sandbox", "workspace-write",
-		"--skip-git-repo-check",
-		"--cd", "/w",
-		"-",
-	}
-	if joined(got) != joined(want) {
-		t.Fatalf("argv drifted:\n got %q\nwant %q", got, want)
-	}
-}
-
-func TestCodexArgvForbidsDangerousModes(t *testing.T) {
-	got := joined(CodexArgv("m", "/w"))
-	for _, forbidden := range []string{
-		"danger-full-access", "--yolo", "--dangerously-bypass-approvals-and-sandbox",
-		"--full-auto",
-	} {
-		if strings.Contains(got, forbidden) {
-			t.Errorf("argv must not contain %q: %s", forbidden, got)
+// codex-cli is held, and the hold has to be a fact about the code rather than
+// a note in a document: its suppression flags do not cover AGENTS.md or
+// discovered skills, so admitting it would let ambient instructions stand
+// beside the fill's digested skills (Pi #55 D1). A model id must not make it
+// constructible either.
+func TestCodexIsHeld(t *testing.T) {
+	for _, model := range []string{"", "gpt-5-codex"} {
+		if _, _, err := New(Config{Provider: "codex-cli", Model: model}); err == nil {
+			t.Fatalf("codex-cli must not construct while held (model %q)", model)
 		}
 	}
 }

@@ -5,7 +5,7 @@
 //
 // The constructor composes three reusable subsystems and owns none of their
 // internals: cellcog constructs the bounded provider adapter (this package
-// contains no Claude/Codex argv), cellskill resolves and loads exact skill
+// contains no provider argv at all), cellskill resolves and loads exact skill
 // bodies, and cellwork prepares the disposable worktree. What comes back is
 // one immutable, provider-neutral PatchAlpha.
 package cdspatch
