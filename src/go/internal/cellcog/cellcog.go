@@ -36,9 +36,16 @@ import (
 	"time"
 )
 
-// Coder carries out a prompt inside one directory. Its return value says only
-// whether it ran — what it actually did is measured from the worktree by the
-// fill, never taken from its word.
+// Coder is a workspace-EDIT cognition port, and only that: a directory goes
+// in, nothing comes back but whether the process ran. Successful stdout is
+// deliberately discarded, because what the seat actually did is measured from
+// the worktree rather than taken from its word.
+//
+// That shape is honest about its limits (Pi #56 B1): a seat whose product is
+// an ANSWER rather than an edit — planning, research, review — cannot use
+// this port, because there is no value to return. Case 3 may add the smallest
+// returned-value port when beta actually needs one. Nothing here should be
+// widened in advance to look like a general cognition framework.
 type Coder interface {
 	Name() string
 	Work(ctx context.Context, dir, prompt string) error

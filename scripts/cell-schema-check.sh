@@ -99,6 +99,9 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-fake-with-model.json 
 # codex-cli is held out of the admitted provider set until its ambient-context
 # suppression can be proven by a real run (Pi #55 D1).
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-codex-held.json -d '#CDSCellSpec'
+# A hole-capable CDS field must not accept a malformed hole through an
+# unrestricted string arm: Go reads every $... as a hole (Pi #56 C1).
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-bad-hole-name.json -d '#CDSCellSpec'
 # Fill-owned keys are exact and case-sensitive at every depth: encoding/json
 # would otherwise decode these while the closed overlay rejects them.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
@@ -118,6 +121,7 @@ run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json
 run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json
 run_bad schemas/cds/fixtures/invalid/cds-fake-with-model.json
 run_bad schemas/cds/fixtures/invalid/cds-codex-held.json
+run_bad schemas/cds/fixtures/invalid/cds-bad-hole-name.json
 run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json
 run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json
 run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json

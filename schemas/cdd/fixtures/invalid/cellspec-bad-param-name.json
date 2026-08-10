@@ -1,23 +1,32 @@
 {
   "version": "cnos.cellspec.v0",
   "contract": {
-    "id": "c",
-    "goal": "g"
+    "id": "cell-bool",
+    "goal": "produce bool true",
+    "required_evidence": [
+      {
+        "id": "bool",
+        "kind": "value",
+        "producer": "alpha"
+      }
+    ]
   },
   "protocol_id": "cnos.cellkernel.episode-closure.v0",
   "params": {
-    "provider-name": {
-      "required": true,
+    "bad-name": {
+      "required": false,
+      "default": "true",
       "domain": [
-        "fake"
+        "true",
+        "false"
       ]
     }
   },
   "alpha": {
-    "fill": "cdd.stub",
-    "value": "$provider-name"
+    "fill": "cdd.bool",
+    "value": "$bad-name"
   },
   "beta": {
-    "fill": "cdd.stub"
+    "fill": "cdd.bool-check"
   }
 }

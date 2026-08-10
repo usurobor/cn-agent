@@ -189,7 +189,7 @@ Four layers, matching the rest of the architecture:
 |---|---|---|
 | Receipt schema (output contract) | cnos.cdd + cds | ✅ shipped |
 | CCNF kernel (`RunEpisode` → verifiable `Closure`) | src/go `internal/cellkernel` | ✅ shipped (PR #718; hardened through Pi β #31–#45) |
-| Cognition subsystem (bounded, stateless provider adapters) | src/go `internal/cellcog` (`Coder` port; `ClaudeCLI`, `CodexCLI`, `FakeCoder` over one process seam) | ✅ shipped — explicit model, typed argv, no arbitrary command from cell JSON |
+| Workspace-edit cognition (bounded, stateless provider adapters) | src/go `internal/cellcog` (`Coder` port; `ClaudeCLI`, `FakeCoder` over one process seam) | ✅ shipped — explicit model, typed argv, sealed permission mode, no arbitrary command from cell JSON. `codex-cli` HELD (see below). `Coder` is a workspace-EDIT port: directory in, no value out. It does not yet serve planning or research. |
 | `#CellSpec` CUE schema (input contract) | cnos.cdd (`schemas/cdd/spec.cue`) | ✅ shipped |
 | cds params-domain overlay (`#CDSCellSpec`) | cnos.cds (`schemas/cds/spec.cue`) | ✅ shipped (canonical diff-first evidence rule) |
 | spec loader/binder (strict parse → kernel Spec) | src/go `internal/cellspec` | ✅ shipped |
@@ -248,8 +248,10 @@ required holes with a Unix-style usage line. Seats load the resolved skills
 
 **Phase 3 — rented α + CDS patch fill.** ◐ *First half shipped.* Cognition is
 a **fill**, not an architecture: `internal/cellcog` constructs bounded,
-stateless provider adapters (claude-cli, codex-cli, and a deterministic fake)
-with an explicit model and typed argv — a cell cannot smuggle flags into one.
+stateless provider adapters (claude-cli and a deterministic fake; codex-cli is
+HELD, see below) with an explicit model, typed argv and a sealed permission
+mode — a cell cannot smuggle flags into one, nor inherit edit authority from
+the host.
 `internal/cellskill` resolves canonical installed refs and **loads** the
 bodies, recording ordered refs and content digests in the closure, because
 naming a skill is not loading it. `internal/cdspatch` composes those with the

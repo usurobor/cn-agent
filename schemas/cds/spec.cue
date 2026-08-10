@@ -21,8 +21,17 @@ package cds
 
 import "cnos.dev/cnos/schemas/cdd"
 
-// #Hole is an unresolved `$param` reference.
+// #Hole is an unresolved `$param` reference. Its identifier grammar is the
+// generic one — a hole IS a parameter name, so the two cannot diverge.
 #Hole: =~"^\\$[A-Za-z_][A-Za-z0-9_]*$"
+
+// #Concrete is an already-resolved value: nonempty, and NOT hole-shaped.
+// Written as an explicit exclusion because Go treats EVERY `$...` string as a
+// hole. A plain `string & !=""` arm silently accepted `$bad-name` — the value
+// looks concrete to CUE and is a malformed hole to Go, so the two authorities
+// disagreed about the same document (Pi #56 C1). Anywhere a field may carry
+// either, the union must be #Concrete | #Hole, never string | #Hole.
+#Concrete: string & !="" & !~"^\\$"
 
 // #Cognition is the inline provider declaration. A provider that really rents
 // cognition must name an EXACT model; only the deterministic fake may omit
@@ -37,6 +46,16 @@ import "cnos.dev/cnos/schemas/cdd"
 // unreceipted component definition beside the fill's digested skills. It is
 // held here exactly as it is held in cellcog.New.
 #Cognition: {provider: "fake", model: ""} |
+	{provider: "claude-cli", model: string & !=""}
+
+// #CognitionAuthored is the same rule at AUTHORING time, where a fake may
+// simply omit the model it would ignore. Go's decoder yields "" for an absent
+// field, so a spec omitting it constructs there; requiring the key only in
+// the authored shape made the two authorities disagree about the same
+// document (Pi #56 C2). The RESOLVED form above still requires `model: ""`
+// present, because a receipt records what held the seat rather than what the
+// author chose not to type.
+#CognitionAuthored: {provider: "fake", model?: ""} |
 	{provider: "claude-cli", model: string & !=""}
 
 // #CDSPatchAlphaResolved is what a closure records: no holes, and a base_sha
@@ -58,13 +77,13 @@ import "cnos.dev/cnos/schemas/cdd"
 // holes admitted in the positions resolution fills.
 #CDSPatchAlphaAuthored: {
 	fill: "cds.patch"
-	cognition: #Cognition | {provider: #Hole, model: string}
+	cognition: #CognitionAuthored | {provider: #Hole, model: string}
 	workspace: {
 		kind:     "git-worktree"
-		repo:     (string & !="") | #Hole
-		base_sha: (string & !="") | #Hole
+		repo:     #Concrete | #Hole
+		base_sha: #Concrete | #Hole
 	}
-	skills: [(string & !="") | #Hole, ...(string & !="") | #Hole]
+	skills: [#Concrete | #Hole, ...#Concrete | #Hole]
 }
 
 // #CDSMechanicalUnmetBeta is Case 2's honest reviewer: a mechanical seat that
