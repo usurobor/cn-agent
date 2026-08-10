@@ -1,0 +1,1 @@
+{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"gamma"}]},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}

@@ -1,0 +1,47 @@
+name: Cell schema/CLI corpus
+
+# Pi PR-#718 β D6: gate the cell-spec + episode-envelope CUE schemas and the
+# actual `cn cell run` output against one shared positive/negative fixture
+# corpus. This is what makes the "the emitted envelope re-verifies and vets"
+# claim CI-enforced rather than asserted.
+on:
+  push:
+    branches: [main, 'cycle/*']
+    paths:
+      - 'schemas/**'
+      - 'src/go/**'
+      - 'scripts/cell-schema-check.sh'
+      - '.github/workflows/cell-schema.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'schemas/**'
+      - 'src/go/**'
+      - 'scripts/cell-schema-check.sh'
+      - '.github/workflows/cell-schema.yml'
+
+jobs:
+  cell-schema:
+    name: Cell schema/CLI corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: src/go/go.sum
+
+      - name: Install cue
+        run: go install cuelang.org/go/cmd/cue@v0.11.0
+
+      - name: Build cn
+        working-directory: src/go
+        run: go build -o "$GITHUB_WORKSPACE/cn" ./cmd/cn
+
+      - name: Cell schema + CLI corpus
+        env:
+          CN: ${{ github.workspace }}/cn
+          CUE: cue
+        run: bash scripts/cell-schema-check.sh

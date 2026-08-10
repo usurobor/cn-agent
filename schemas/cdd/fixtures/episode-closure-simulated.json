@@ -1,0 +1,43 @@
+{
+  "closure_schema": "cnos.cellkernel.episode-closure.v0",
+  "protocol_validated": false,
+  "status": "simulated",
+  "decision": "accept",
+  "verdict": {
+    "pass": true
+  },
+  "receipt": {
+    "record": {
+      "canon": "cnos.cellkernel.episode-record-canon.v0",
+      "episode_id": "ep-0e820ba6eb5d59fc582a6fc89cf9b454",
+      "execution_mode": "stub",
+      "resolved_spec": {
+        "version": "cnos.cellspec.v0",
+        "declared_protocol": "cnos.cdd.receipt.v1",
+        "profile": "stub",
+        "alpha_skills": [],
+        "beta_skills": []
+      },
+      "contract": {
+        "id": "cell-0",
+        "goal": "empty"
+      },
+      "alpha": {
+        "execution_id": "alpha-7cf4959e0fc3c38c2da3e3937748bb35",
+        "artifacts": []
+      },
+      "matter": {
+        "data": "stub-alpha produced for \"empty\" with skills []"
+      },
+      "beta": {
+        "execution_id": "beta-27d773fa08f5503ff207242f9a0c9bd0",
+        "artifacts": []
+      },
+      "review": {
+        "pass": true,
+        "notes": "stub-beta accepted with skills []"
+      }
+    },
+    "scope_lift_digest": "2474530ad394b901eb4f0ccf3928287d6e6bea8c69a6fe53270df2fd64a669e5"
+  }
+}

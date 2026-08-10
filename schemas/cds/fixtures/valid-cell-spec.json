@@ -1,0 +1,23 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "cnos-cell-demo",
+    "goal": "Add retry with exponential backoff to internal/dispatch.Backend",
+    "required_evidence": [
+      { "id": "diff", "kind": "diff", "producer": "alpha" },
+      { "id": "beta_review", "kind": "review", "producer": "beta" }
+    ]
+  },
+  "protocol_id": "cnos.cdd.cds.receipt.v1",
+  "profile": "stub",
+  "params": {
+    "language": {
+      "kind": "skill",
+      "required": true,
+      "domain": ["go", "ocaml", "rust", "python", "typescript"]
+    },
+    "style": { "kind": "skill", "required": false, "default": "functional" }
+  },
+  "alpha": { "skills": ["eng", "$language", "$style"] },
+  "beta": { "skills": ["$language", "cds-review"] }
+}

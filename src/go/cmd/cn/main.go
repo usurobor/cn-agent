@@ -24,6 +24,10 @@ var (
 )
 
 func main() {
+	// Default signal disposition is deliberate (Pi pr718 round-5 D3): a global
+	// NotifyContext swallows SIGINT while readContract blocks on stdin with no
+	// EOF. Library callers of the kernel still get cancellation via their own
+	// contexts; the process relies on the default terminate-on-signal path.
 	ctx := context.Background()
 
 	// Build the kernel command registry.
@@ -42,6 +46,7 @@ func main() {
 	reg.Register(&cli.ActivateCmd{})
 	reg.Register(&cli.DispatchCmd{})
 	reg.Register(&cli.CddVerifyCmd{})
+	reg.Register(&cli.CellRunCmd{})
 	reg.Register(&cli.CellReturnCmd{})
 	reg.Register(&cli.CellResumeCmd{})
 	reg.Register(&cli.CellFinalizeCmd{})
@@ -140,6 +145,9 @@ func main() {
 		// error so we can propagate the same status code to the operator.
 		// See src/go/internal/cli/cmd_cdd_verify.go.
 		if e, ok := err.(*cli.CddVerifyExit); ok {
+			os.Exit(e.Code)
+		}
+		if e, ok := err.(*cli.CellRunExit); ok {
 			os.Exit(e.Code)
 		}
 		// Other commands already printed user-facing output to stderr.
