@@ -29,7 +29,7 @@ func InstalledPackages(hubPath string) string {
 // Assemble builds the fill registry this binary ships: the generic cdd fills
 // plus the CDS patch constructor, closed over the installed package root.
 func Assemble(hubPath string) cellfill.Registry {
-	return With(cellskill.Tree{Roots: []string{InstalledPackages(hubPath)}})
+	return With(cellskill.Tree{Root: InstalledPackages(hubPath)})
 }
 
 // With is Assemble over an explicit skill resolver, for tests that supply

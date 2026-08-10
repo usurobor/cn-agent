@@ -43,9 +43,18 @@ type stubDecl struct {
 	Fill string `json:"fill"`
 }
 
+// decodeTagOnly is the shape shared by the fills whose entire declaration is
+// the tag: each states its own exact key set rather than deriving one.
+func decodeTagOnly(decl json.RawMessage, d *stubDecl) error {
+	if err := OnlyKeys(decl, "declaration", "fill"); err != nil {
+		return err
+	}
+	return StrictDecode(decl, d)
+}
+
 func stubAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
 	var d stubDecl
-	if err := StrictDecode(decl, &d); err != nil {
+	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillStubAlpha, err)
 	}
 	canon, _ := json.Marshal(d)
@@ -57,7 +66,7 @@ func stubAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha
 
 func stubBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
 	var d stubDecl
-	if err := StrictDecode(decl, &d); err != nil {
+	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillStubBeta, err)
 	}
 	canon, _ := json.Marshal(d)
@@ -110,6 +119,9 @@ type boolDecl struct {
 
 func boolAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
 	var d boolDecl
+	if err := OnlyKeys(decl, "cdd.bool", "fill", "value"); err != nil {
+		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillBoolAlpha, err)
+	}
 	if err := StrictDecode(decl, &d); err != nil {
 		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillBoolAlpha, err)
 	}
@@ -126,7 +138,7 @@ func boolAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha
 
 func boolCheckBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
 	var d stubDecl
-	if err := StrictDecode(decl, &d); err != nil {
+	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillBoolCheckBeta, err)
 	}
 	canon, _ := json.Marshal(d)
@@ -140,7 +152,7 @@ func boolCheckBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedB
 
 func mechanicalUnmetFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
 	var d stubDecl
-	if err := StrictDecode(decl, &d); err != nil {
+	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillMechanicalUnmet, err)
 	}
 	canon, _ := json.Marshal(d)

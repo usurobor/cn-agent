@@ -26,7 +26,7 @@ const boolSpecJSON = `{"version":"cnos.cellspec.v0",` +
 // testRegistry is the assembled registry with an empty skill tree: these
 // cases exercise generic dispatch, not skill loading.
 func testRegistry() cellfill.Registry {
-	return cellfills.With(cellskill.Tree{Roots: []string{"/nonexistent"}})
+	return cellfills.With(cellskill.Tree{Root: "/nonexistent"})
 }
 
 func run(stdin string, args ...string) (code int, stdout, stderr string) {

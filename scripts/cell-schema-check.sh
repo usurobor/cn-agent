@@ -9,6 +9,14 @@ cd "$(dirname "$0")/.."
 CUE=${CUE:-cue}
 CN=${CN:-./cn}
 fail=0
+
+# A missing tool must not read as a corpus that passed. Every negative below is
+# an expected NON-ZERO exit, so an absent `cue` or `cn` would satisfy all of
+# them vacuously — the failure mode this gate exists to prevent.
+for tool in "$CUE" "$CN"; do
+  command -v "$tool" >/dev/null 2>&1 || { echo "✗ required tool not found: $tool" >&2; exit 1; }
+done
+
 tmpdir=$(mktemp -d)
 tmp="$tmpdir/envelope.json" # .json so `cue` infers the format, not CUE
 trap 'rm -rf "$tmpdir"' EXIT
@@ -129,15 +137,24 @@ mkdir -p "$coderepo"
       git commit -qm base
 ) >/dev/null 2>&1 || { echo "  ✗ could not build the code-cell fixture repo"; fail=1; }
 # Skill authority is the INSTALLED package root under a hub — never the
-# working directory and never this checkout's source tree. Vendor the skills
-# the fixture names into a throwaway hub and run from inside it.
+# working directory and never this checkout's source tree. Vendor the DEFAULT
+# INSTALLED PACKAGE SET (what `cn repo install` pins) into a throwaway hub and
+# run from inside it, so this proves a hub the product can actually produce
+# rather than a hand-picked fixture. repoinstall.DefaultPackages is the source
+# of truth; TestDefaultPackagesCoverShippedCells keeps it and the shipped
+# cells in agreement.
 hub="$tmpdir/hub"
 mkdir -p "$hub/.cn/vendor/packages"
-for ref in cnos.eng:eng/code cnos.eng:eng/test cnos.eng:eng/go cnos.eng:eng/write-functional; do
-  pkg=${ref%%:*}; path=${ref#*:}
-  mkdir -p "$hub/.cn/vendor/packages/$pkg/skills/$path"
-  cp "src/packages/$pkg/skills/$path/SKILL.md" "$hub/.cn/vendor/packages/$pkg/skills/$path/SKILL.md" ||
-    { echo "  ✗ could not vendor $ref into the fixture hub"; fail=1; }
+default_packages=$(grep -o 'var DefaultPackages = \[\]string{[^}]*}' src/go/internal/repoinstall/repoinstall.go |
+  grep -o '"[^"]*"' | tr -d '"')
+if [ -z "$default_packages" ]; then
+  echo "  ✗ could not read DefaultPackages"; fail=1
+fi
+for pkg in $default_packages; do
+  [ -d "src/packages/$pkg/skills" ] || continue
+  mkdir -p "$hub/.cn/vendor/packages/$pkg"
+  cp -r "src/packages/$pkg/skills" "$hub/.cn/vendor/packages/$pkg/skills" ||
+    { echo "  ✗ could not vendor $pkg into the fixture hub"; fail=1; }
 done
 # Absolute paths for the subshell that runs INSIDE the hub; CUE package paths
 # stay relative to the repo root, where the rest of this script runs.

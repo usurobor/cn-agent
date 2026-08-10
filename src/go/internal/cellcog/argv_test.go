@@ -8,15 +8,15 @@ import (
 func joined(args []string) string { return strings.Join(args, " ") }
 
 // The Claude invocation must RESTRICT the tool surface, not merely
-// pre-approve it, and must not inherit ambient configuration.
+// pre-approve it, and must disable ambient customization — CLAUDE.md
+// included — so the receipted skills are the only component definition.
 func TestClaudeArgvIsExact(t *testing.T) {
 	got := ClaudeArgv("claude-opus-4-1")
 	want := []string{
 		"-p",
 		"--model", "claude-opus-4-1",
+		"--safe-mode",
 		"--no-session-persistence",
-		"--setting-sources", "",
-		"--strict-mcp-config",
 		"--tools", "Read,Write,Edit,Glob,Grep",
 		"--output-format", "text",
 	}
@@ -41,6 +41,9 @@ func TestClaudeArgvForbidsPreApprovalAndShell(t *testing.T) {
 	}
 	if !strings.Contains(got, "--tools ") {
 		t.Errorf("argv must restrict the tool surface with --tools: %s", got)
+	}
+	if !strings.Contains(got, "--safe-mode") {
+		t.Errorf("argv must disable ambient customization with --safe-mode: %s", got)
 	}
 }
 

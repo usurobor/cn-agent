@@ -86,7 +86,7 @@ func TestInstalledHubLoadsFromForeignCwd(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Same canonical identities and digests as the direct-tree construction.
-	want, err := cellskill.LoadAll(cellskill.Tree{Roots: []string{installed}}, testSkills)
+	want, err := cellskill.LoadAll(cellskill.Tree{Root: installed}, testSkills)
 	if err != nil {
 		t.Fatal(err)
 	}

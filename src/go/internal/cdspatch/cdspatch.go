@@ -74,6 +74,9 @@ type ResolvedSkill struct {
 func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 	return func(ctx context.Context, decl json.RawMessage) (cellfill.ConstructedAlpha, error) {
 		var d Decl
+		if err := exactShape(decl); err != nil {
+			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
+		}
 		if err := cellfill.StrictDecode(decl, &d); err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
 		}
@@ -126,6 +129,28 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 			},
 		}, nil
 	}
+}
+
+// exactShape states this fill's closed key language explicitly, at each of
+// its three object shapes. encoding/json matches field names
+// case-insensitively even with DisallowUnknownFields, so `Fill`, `Cognition`
+// or a nested `Provider` would otherwise decode in Go while the closed CUE
+// overlay rejects them. The fill owns this, not the generic runner.
+func exactShape(decl json.RawMessage) error {
+	if err := cellfill.OnlyKeys(decl, "cds.patch", "fill", "cognition", "workspace", "skills"); err != nil {
+		return err
+	}
+	if cog, ok := cellfill.Field(decl, "cognition"); ok {
+		if err := cellfill.OnlyKeys(cog, "cds.patch.cognition", "provider", "model"); err != nil {
+			return err
+		}
+	}
+	if ws, ok := cellfill.Field(decl, "workspace"); ok {
+		if err := cellfill.OnlyKeys(ws, "cds.patch.workspace", "kind", "repo", "base_sha"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // PatchAlpha is the provider-neutral patch-producing seat. It materializes a

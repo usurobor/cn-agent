@@ -19,25 +19,25 @@ func writeSkill(t *testing.T, root, ref, body string) {
 	}
 }
 
-// Roots resolve like $PATH: first match wins, so an installed package shadows
-// the source tree rather than the other way round.
-func TestRootsResolveInOrder(t *testing.T) {
-	installed, source := t.TempDir(), t.TempDir()
+// One root, one lookup: there is no second place to look, so a ref that is
+// not installed fails instead of resolving from somewhere else. The previous
+// installed-then-source fallback is gone — a second place to look would be a
+// second authority.
+func TestSingleRootHasNoFallback(t *testing.T) {
+	installed, elsewhere := t.TempDir(), t.TempDir()
 	writeSkill(t, installed, "cnos.eng:eng/go", "installed body\n")
-	writeSkill(t, source, "cnos.eng:eng/go", "source body\n")
-	writeSkill(t, source, "cnos.eng:eng/test", "only in source\n")
+	writeSkill(t, elsewhere, "cnos.eng:eng/test", "somewhere else\n")
 
-	tree := Tree{Roots: []string{installed, source}}
+	tree := Tree{Root: installed}
 	got, err := tree.Load("cnos.eng:eng/go")
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
 	if got.Body != "installed body\n" {
-		t.Fatalf("first root did not win: %q", got.Body)
+		t.Fatalf("wrong body: %q", got.Body)
 	}
-	// A ref only the later root has still resolves.
-	if _, err := tree.Load("cnos.eng:eng/test"); err != nil {
-		t.Fatalf("later root not searched: %v", err)
+	if _, err := tree.Load("cnos.eng:eng/test"); err == nil {
+		t.Fatal("a skill outside the single root must not resolve")
 	}
 }
 
@@ -46,7 +46,7 @@ func TestRootsResolveInOrder(t *testing.T) {
 func TestDigestTracksBody(t *testing.T) {
 	root := t.TempDir()
 	writeSkill(t, root, "p:a", "one\n")
-	tree := Tree{Roots: []string{root}}
+	tree := Tree{Root: root}
 	first, err := tree.Load("p:a")
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestDigestTracksBody(t *testing.T) {
 func TestLoadFailsClosed(t *testing.T) {
 	root := t.TempDir()
 	writeSkill(t, root, "p:a", "body\n")
-	tree := Tree{Roots: []string{root}}
+	tree := Tree{Root: root}
 	bad := []string{
 		"no-colon",
 		":path",
@@ -97,7 +97,7 @@ func TestLoadAllPreservesOrder(t *testing.T) {
 	for _, ref := range []string{"p:a", "p:b", "p:c"} {
 		writeSkill(t, root, ref, "body of "+ref+"\n")
 	}
-	got, err := LoadAll(Tree{Roots: []string{root}}, []string{"p:c", "p:a", "p:b"})
+	got, err := LoadAll(Tree{Root: root}, []string{"p:c", "p:a", "p:b"})
 	if err != nil {
 		t.Fatalf("load all: %v", err)
 	}

@@ -72,7 +72,14 @@ const (
 // written to .cn/deps.json (manifest order is operator-controlled, per
 // restore.GenerateLockFromIndex's own doc comment; the lockfile it
 // generates is independently sorted for determinism).
-var DefaultPackages = []string{"cnos.core", "cnos.cdd", "cnos.cds"}
+//
+// cnos.eng is part of the closure because the shipped CDS cell names its
+// skills (`cnos.eng:eng/code`, `eng/test`, a language, `eng/write-functional`)
+// and a fill LOADS skill bodies from the installed root. Without it a normally
+// installed hub cannot construct the checked-in cell — the cell would only run
+// against a hand-assembled tree. TestDefaultPackagesCoverShippedCells pins
+// that relationship.
+var DefaultPackages = []string{"cnos.core", "cnos.cdd", "cnos.cds", "cnos.eng"}
 
 // httpClientDefault mirrors the timeout used by restore.go/binupdate.go
 // (OCaml curl flags: --connect-timeout 10 --max-time 300).

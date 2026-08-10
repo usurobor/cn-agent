@@ -189,12 +189,13 @@ Four layers, matching the rest of the architecture:
 |---|---|---|
 | Receipt schema (output contract) | cnos.cdd + cds | ✅ shipped |
 | CCNF kernel (`RunEpisode` → verifiable `Closure`) | src/go `internal/cellkernel` | ✅ shipped (PR #718; hardened through Pi β #31–#45) |
-| Provider seam for rented cognition | src/go `internal/cellcog` (`Provider` port + `ClaudeCLI`/`Fake`) | ✅ shipped (Case 2: rented α, mechanical β) |
+| Cognition subsystem (bounded, stateless provider adapters) | src/go `internal/cellcog` (`Coder` port; `ClaudeCLI`, `CodexCLI`, `FakeCoder` over one process seam) | ✅ shipped — explicit model, typed argv, no arbitrary command from cell JSON |
 | `#CellSpec` CUE schema (input contract) | cnos.cdd (`schemas/cdd/spec.cue`) | ✅ shipped |
 | cds params-domain overlay (`#CDSCellSpec`) | cnos.cds (`schemas/cds/spec.cue`) | ✅ shipped (canonical diff-first evidence rule) |
 | spec loader/binder (strict parse → kernel Spec) | src/go `internal/cellspec` | ✅ shipped |
 | `cn cell run` (fill holes, run, emit closure) | src/go `internal/cellrun` (+ thin `cli` wrapper) | ✅ shipped (exits 0/1/2/3; closure self-verifies) |
-| skill-path resolver (value → loaded skill) | cnos.cdd | ◐ names resolve and splice into the rented α's prompt; loading skill *bodies* is still open |
+| skill resolution + loading | src/go `internal/cellskill` (one installed root under the hub) | ✅ shipped — bodies are LOADED and injected; ordered refs + content digests recorded in the closure |
+| fill-owned seat construction | src/go `internal/cellfill` (registry) + `internal/cdspatch` (`cds.patch`) + `internal/cellfills` (composition root) | ✅ shipped |
 | matter substrate (diff at a base SHA) | src/go `internal/cellwork` (worktree adapter, outside the kernel) | ✅ shipped (G1) — the runtime measures the diff; a seat cannot claim one |
 | typed findings on `BetaOutput` | src/go `internal/cellkernel` | ❌ G3 — the findings ARE the repair plan |
 | `main.cell` compiler (surface → spec.json) | cnos.cdd | ❌ Phase 4 sugar (deliberately deferred) |
@@ -276,6 +277,50 @@ earns its keep**, and explicitly *not* on the frozen S4/S6 critical path.
 **Horizon (out of this pass):** `Drive` bounded-repair loop (Case 4); the
 `cds-dispatch` parent (`let!` = α-proposes-child / runtime-executes, Case 5);
 rewiring the GitHub wake to a thin adapter that fills holes + lands artifacts.
+
+## HELD — GitHub Actions provisioning (captured, not implemented)
+
+**Status: held.** Nothing below is built, and nothing in it belongs to
+`cellrun`, `cds.patch`, `cellcog`, or cell JSON. It is written down now so the
+later invocation adapter inherits decisions rather than rediscovering them.
+
+1. **CLI installation and authentication belong to the runner/workflow image**,
+   never to the runner code or a cell declaration.
+2. **Provision exact pinned Claude and Codex CLI versions before an episode**,
+   and fail before α if the selected executable is absent. Never
+   opportunistically download during cognition — a cell that installs its own
+   tools mid-episode has an unbounded, unreceipted dependency.
+3. **Credentials stay secrets/environment supplied by the workflow** and never
+   enter cell JSON or a receipt. Only the selected provider's credential should
+   reach its child process.
+4. **Model remains the explicit fill property.** The later execution receipt
+   should record the resolved executable identity, observed CLI version (and
+   artifact digest where available), provider-policy version, and requested
+   model — never secrets, never the full environment.
+5. **A workflow may install both pinned CLIs** so provider selection stays in
+   the one alpha declaration; a prebuilt image is a later latency
+   optimization, not a design change.
+6. **The child environment must eventually be an explicit provider-specific
+   allowlist**, not arbitrary inherited ambient configuration. Outer OS
+   sandboxing remains a separate execution-substrate concern — this project
+   claims no OS confinement.
+
+*Empirical source notes (inspected commits, preserved so the later work does
+not re-derive them):*
+
+- Anthropic's action at `6b082c41935b4c8a3b8b0ef85ba4ba4d9eeb8975` is a
+  composite action: it installs a pinned native Claude CLI during the job (or
+  accepts a supplied executable path) and injects API/OAuth/WIF authentication
+  from the workflow. Borrow the **provisioning boundary**, not the GitHub
+  orchestration.
+  <https://github.com/anthropics/claude-code-action/blob/6b082c41935b4c8a3b8b0ef85ba4ba4d9eeb8975/action.yml>
+- OpenAI's action at `52fe01ec70a42f454c9d2ebd47598f9fd6893d56` is also
+  composite: it installs exact npm CLI/proxy packages, starts a loopback
+  Responses API proxy for the API-key path, then runs `codex exec` under
+  declared permissions. Pin the action commit and CLI/proxy version rather
+  than tracking `@v1`/`latest`.
+  <https://learn.chatgpt.com/docs/github-action> ·
+  <https://github.com/openai/codex-action/blob/52fe01ec70a42f454c9d2ebd47598f9fd6893d56/action.yml>
 
 ## Boundary the kernel never owns (Pi β #31, C3)
 

@@ -58,18 +58,6 @@ func ResolveBase(ctx context.Context, repo, base string) (string, error) {
 	return strings.TrimSpace(sha), nil
 }
 
-// RepoRoot reports the top level of the repository containing dir. The
-// composition root uses it to anchor package resolution when no hub is
-// present (the cnos#593 fallback), so nothing resolves relative to the
-// process working directory.
-func RepoRoot(ctx context.Context, dir string) (string, error) {
-	out, err := git(ctx, dir, maxRefBytes, "rev-parse", "--show-toplevel")
-	if err != nil {
-		return "", fmt.Errorf("cellwork: no git repository at %s: %w", dir, err)
-	}
-	return strings.TrimSpace(out), nil
-}
-
 func repoPath(repo string) (string, error) {
 	abs, err := filepath.Abs(repo)
 	if err != nil {

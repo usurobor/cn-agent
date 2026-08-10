@@ -54,7 +54,7 @@ func skillTree(t *testing.T, refs ...string) cellskill.Tree {
 			t.Fatal(err)
 		}
 	}
-	return cellskill.Tree{Roots: []string{root}}
+	return cellskill.Tree{Root: root}
 }
 
 var patchContract = cellkernel.Contract{

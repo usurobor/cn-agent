@@ -19,8 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
-	"strings"
+	"slices"
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 )
@@ -52,7 +51,7 @@ type AlphaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedAl
 type BetaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedBeta, error)
 
 // Registry is the small statically assembled fill map. No DI container, no
-// reflection, no service locator — the assembly point lists its fills.
+// service locator — the assembly point lists its fills.
 type Registry struct {
 	Alpha map[string]AlphaFactory
 	Beta  map[string]BetaFactory
@@ -153,20 +152,15 @@ func CombineModes(a, b cellkernel.ExecutionMode) cellkernel.ExecutionMode {
 	}
 }
 
-// StrictDecode is the shared decode discipline for fill arguments: every key
-// must match a declared json tag EXACTLY, and there must be no trailing data.
+// StrictDecode decodes a fill's arguments with no unknown fields and no
+// trailing data. It does NOT derive a key language: deriving every fill's
+// accepted shape here would make the generic package learn fill semantics
+// through a small schema engine — the leak the one-place fill design removed.
 //
-// DisallowUnknownFields alone is not enough. encoding/json matches field names
-// case-insensitively, so `Fill`, `COGNITION`, or a nested `Provider` would
-// decode happily in Go while the closed CUE overlay rejects them — the two
-// authorities would accept different languages. exactKeys closes that by
-// walking the declaration against the target's declared tags, so a fill's Go
-// shape and its CUE shape admit the same keys by construction rather than by
-// a hand-maintained list per fill.
+// encoding/json matches field names case-insensitively even with
+// DisallowUnknownFields, so each fill pairs this with OnlyKeys over the exact
+// keys ITS closed shape declares.
 func StrictDecode(decl json.RawMessage, into any) error {
-	if err := exactKeys(decl, reflect.TypeOf(into), "seat declaration"); err != nil {
-		return err
-	}
 	dec := json.NewDecoder(bytesReader(decl))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(into); err != nil {
@@ -179,54 +173,29 @@ func StrictDecode(decl json.RawMessage, into any) error {
 	return nil
 }
 
-// exactKeys checks one JSON value's object keys against the json tags of the
-// Go type it will decode into, recursing through nested structs and slices.
-// It validates KEYS only — types and values remain the decoder's and the
-// fill's business, so this stays a boundary check rather than a schema engine.
-func exactKeys(raw json.RawMessage, t reflect.Type, where string) error {
-	for t != nil && (t.Kind() == reflect.Pointer || t.Kind() == reflect.Interface) {
-		t = t.Elem()
+// OnlyKeys requires one JSON object to carry no key outside `allowed`, exactly
+// and case-sensitively. It is a five-line helper a fill applies to each of its
+// own closed shapes — not a validator generator: types and values stay the
+// decoder's and the fill's business.
+func OnlyKeys(raw json.RawMessage, where string, allowed ...string) error {
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return fmt.Errorf("%s is not an object: %w", where, err)
 	}
-	if t == nil {
-		return nil
-	}
-	switch t.Kind() {
-	case reflect.Struct:
-		var obj map[string]json.RawMessage
-		if err := json.Unmarshal(raw, &obj); err != nil {
-			return nil // not an object here; the decoder reports the type error
-		}
-		allowed := make(map[string]reflect.Type, t.NumField())
-		for i := 0; i < t.NumField(); i++ {
-			f := t.Field(i)
-			name, _, _ := strings.Cut(f.Tag.Get("json"), ",")
-			if name == "" {
-				name = f.Name
-			}
-			if name == "-" {
-				continue
-			}
-			allowed[name] = f.Type
-		}
-		for k, v := range obj {
-			ft, ok := allowed[k]
-			if !ok {
-				return fmt.Errorf("%s has unknown key %q (keys are exact and case-sensitive)", where, k)
-			}
-			if err := exactKeys(v, ft, where+"."+k); err != nil {
-				return err
-			}
-		}
-	case reflect.Slice, reflect.Array:
-		var items []json.RawMessage
-		if err := json.Unmarshal(raw, &items); err != nil {
-			return nil
-		}
-		for i, item := range items {
-			if err := exactKeys(item, t.Elem(), fmt.Sprintf("%s[%d]", where, i)); err != nil {
-				return err
-			}
+	for k := range obj {
+		if !slices.Contains(allowed, k) {
+			return fmt.Errorf("%s has unknown key %q (keys are exact and case-sensitive)", where, k)
 		}
 	}
 	return nil
+}
+
+// Field returns one raw member of a JSON object, if present.
+func Field(raw json.RawMessage, name string) (json.RawMessage, bool) {
+	var obj map[string]json.RawMessage
+	if json.Unmarshal(raw, &obj) != nil {
+		return nil, false
+	}
+	v, ok := obj[name]
+	return v, ok
 }
