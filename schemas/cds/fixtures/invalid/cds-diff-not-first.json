@@ -1,1 +1,38 @@
-{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"tests","kind":"log","producer":"beta"},{"id":"diff","kind":"diff","producer":"alpha"}]},"protocol_id":"cnos.cdd.cds.receipt.v1","profile":"stub","params":{"language":{"kind":"skill","required":true,"domain":["go"]}},"alpha":{"skills":[]},"beta":{"skills":[]}}
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "c",
+    "goal": "g",
+    "required_evidence": [
+      {
+        "id": "tests",
+        "kind": "log",
+        "producer": "beta"
+      },
+      {
+        "id": "diff",
+        "kind": "diff",
+        "producer": "alpha"
+      }
+    ]
+  },
+  "protocol_id": "cnos.cdd.cds.receipt.v1",
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "provider": "fake",
+      "model": ""
+    },
+    "workspace": {
+      "kind": "git-worktree",
+      "repo": ".",
+      "base_sha": "x"
+    },
+    "skills": [
+      "cnos.eng:eng/go"
+    ]
+  },
+  "beta": {
+    "fill": "cdd.mechanical-unmet"
+  }
+}

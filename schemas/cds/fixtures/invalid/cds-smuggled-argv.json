@@ -5,9 +5,9 @@
     "goal": "g",
     "required_evidence": [
       {
-        "id": "tests",
-        "kind": "log",
-        "producer": "beta"
+        "id": "diff",
+        "kind": "diff",
+        "producer": "alpha"
       }
     ]
   },
@@ -16,7 +16,10 @@
     "fill": "cds.patch",
     "cognition": {
       "provider": "fake",
-      "model": ""
+      "model": "",
+      "argv": [
+        "--dangerously"
+      ]
     },
     "workspace": {
       "kind": "git-worktree",

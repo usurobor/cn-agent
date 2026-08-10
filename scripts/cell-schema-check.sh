@@ -35,43 +35,42 @@ run_vet() { # want-exit, cn args...
 echo "# positive cell specs"
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/empty-cell-spec.json -d '#CellSpec'
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/bool-cell-spec.json -d '#CellSpec'
-vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/cognitive-cell-spec.json -d '#CellSpec'
-vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/cognitive-evidence-cell-spec.json -d '#CellSpec'
-vet_ok ./schemas/cds:cds schemas/cds/fixtures/valid-cell-spec.json -d '#CDSCellSpec'
+# The CDS patch cell (fill-owned seats) vets against BOTH oracles: the generic
+# tagged envelope and the CDS overlay's closed seat shapes.
+vet_ok schemas/cdd/spec.cue schemas/cds/fixtures/code-cell-spec.json -d '#CellSpec'
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/code-cell-spec.json -d '#CDSCellSpec'
 
 echo "# positive closures"
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-accepted.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-needs-repair.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-simulated.json -d '#EpisodeClosure'
-vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-opaque-profile.json -d '#EpisodeClosure'
-# Emitted by real `--param provider=claude` runs: a model held alpha. The
-# second is a code episode — its diff was measured from a worktree, not
-# reported by the seat.
-vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-cognitive.json -d '#EpisodeClosure'
-vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-code.json -d '#EpisodeClosure'
+# The committed Case-2 closure, reproducible from its committed input:
+#   cn cell run --contract schemas/cds/fixtures/code-cell-spec.json \
+#     --param language=cnos.eng:eng/go --param provider=fake --param base_sha=<head>
+vet_ok schemas/cdd/episode-closure.cue schemas/cds/fixtures/episode-closure-cds-case2.json -d '#EpisodeClosure'
 
 echo "# negative cell specs (must be rejected)"
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.json -d '#CellSpec'
-vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-missing-profile.json -d '#CellSpec'
+vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-missing-fill.json -d '#CellSpec'
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-empty-goal.json -d '#CellSpec'
-vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-missing-skills.json -d '#CellSpec'
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-case-alias.json -d '#CellSpec'
-vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-null-skills.json -d '#CellSpec'
 vet_bad schemas/cdd/episode-closure.cue schemas/cdd/fixtures/invalid/episode-closure-null-arrays.json -d '#EpisodeClosure'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-no-diff.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-diff-not-first.json -d '#CDSCellSpec'
+# Fill-owned strictness: null skill lists and smuggled provider argv are
+# rejected by the CDS overlay (and by the fill decoder below).
+vet_bad ./schemas/cds:cds schemas/cdd/fixtures/invalid/cellspec-null-skills.json -d '#CDSCellSpec'
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-smuggled-argv.json -d '#CDSCellSpec'
 
 echo "# Go-only negatives (executable authority = the CLI)"
 run_bad schemas/cdd/fixtures/invalid/cellspec-dup-required-id.json
-run_bad schemas/cdd/fixtures/invalid/bool-missing-value.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-bad-producer.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-missing-profile.json
+run_bad schemas/cdd/fixtures/invalid/cellspec-missing-fill.json
+run_bad schemas/cdd/fixtures/invalid/cellspec-unknown-fill.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-empty-goal.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-missing-skills.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json
-run_bad schemas/cdd/fixtures/invalid/cognitive-missing-provider.json
+run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json
 
 echo "# SIGINT terminates a blocked stdin reader (Pi round-5 D3)"
 mkfifo "$tmpdir/stdin.fifo"
@@ -101,16 +100,11 @@ echo "# actual CLI output vetted against the terminal schema"
 run_vet 0 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=true
 run_vet 1 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=false
 run_vet 3 --contract schemas/cdd/fixtures/empty-cell-spec.json
-# The cognition seam, offline: prompt render -> provider -> envelope parse ->
-# seat -> closure. `fake` rents nothing, so these runs are `mechanical`; the
-# second proves a rented answer that omits required evidence is judged, not
-# trusted (V alone routes it to needs_repair).
-run_vet 0 --contract schemas/cdd/fixtures/cognitive-cell-spec.json --param provider=fake
-run_vet 1 --contract schemas/cdd/fixtures/cognitive-evidence-cell-spec.json --param provider=fake
-
-# The code profile against a hermetic throwaway repository: the runtime cuts a
-# worktree, the seat changes a file, and the diff in the closure is MEASURED
-# from that worktree rather than reported by the seat.
+# The cds.patch cell against a hermetic throwaway repository: the runtime cuts
+# a worktree, the fake coder changes a file, the diff in the closure is
+# MEASURED from that worktree — and the episode still closes needs_repair
+# (exit 1), because the mechanical-unmet beta cannot judge the goal. Case-2
+# honesty is part of the corpus.
 coderepo="$tmpdir/coderepo"
 mkdir -p "$coderepo"
 (
@@ -118,7 +112,7 @@ mkdir -p "$coderepo"
     GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t \
       git commit -qm base
 ) >/dev/null 2>&1 || { echo "  ✗ could not build the code-profile fixture repo"; fail=1; }
-run_vet 0 --contract schemas/cds/fixtures/code-cell-spec.json \
-  --param language=go --param provider=fake --param base_sha=HEAD --param repo="$coderepo"
+run_vet 1 --contract schemas/cds/fixtures/code-cell-spec.json \
+  --param language=cnos.eng:eng/go --param provider=fake --param base_sha=HEAD --param repo="$coderepo"
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi

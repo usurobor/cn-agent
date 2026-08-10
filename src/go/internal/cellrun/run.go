@@ -18,9 +18,21 @@ import (
 	"os"
 	"strings"
 
+	"github.com/usurobor/cnos/src/go/internal/cdspatch"
+	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellskill"
 	"github.com/usurobor/cnos/src/go/internal/cellspec"
 )
+
+// registry is the statically assembled fill map (Pi cds-fill-construction-51):
+// the generic cdd fills plus the CDS patch constructor, closed over the skill
+// tree it loads bodies from. The loader itself never names a fill.
+func registry() cellfill.Registry {
+	reg := cellfill.CddFills()
+	reg.Alpha[cdspatch.Fill] = cdspatch.Factory(cellskill.Tree{Root: "src/packages"})
+	return reg
+}
 
 // maxContractBytes bounds the serialized spec read from a file or stdin.
 const maxContractBytes = 1 << 20 // 1 MiB
@@ -72,7 +84,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return 2
 	}
 
-	kspec, meta, err := resolved.Build()
+	kspec, meta, err := resolved.Build(registry())
 	if err != nil {
 		fmt.Fprintf(stderr, "✗ %v\n", err)
 		return 2

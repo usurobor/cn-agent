@@ -4,14 +4,29 @@
     "id": "cell-bool",
     "goal": "produce bool true",
     "required_evidence": [
-      { "id": "bool", "kind": "value", "producer": "alpha" }
+      {
+        "id": "bool",
+        "kind": "value",
+        "producer": "alpha"
+      }
     ]
   },
   "protocol_id": "cnos.cellkernel.episode-closure.v0",
-  "profile": "bool",
   "params": {
-    "value": { "kind": "value", "required": true, "domain": ["true", "false"] }
+    "value": {
+      "kind": "value",
+      "required": true,
+      "domain": [
+        "true",
+        "false"
+      ]
+    }
   },
-  "alpha": { "skills": [] },
-  "beta": { "skills": [] }
+  "alpha": {
+    "fill": "cdd.bool",
+    "value": "$value"
+  },
+  "beta": {
+    "fill": "cdd.bool-check"
+  }
 }

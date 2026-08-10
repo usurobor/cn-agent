@@ -47,14 +47,15 @@ package cdd
 	resolved_spec: {
 		version:           string & !=""
 		declared_protocol: string & !=""
-		// Opaque at the generic output boundary (Pi round-7 C2): the builtin
-		// stub|bool whitelist is an INPUT rule (#CellSpec / cellspec); the
-		// kernel and its closure accept any non-empty profile. Coherence with
-		// execution_mode is re-derived by the verifier, not encoded here.
-		profile: string & !=""
-		params?: {[string]: string}
-		alpha_skills: [...string]
-		beta_skills: [...string]
+		// The complete RESOLVED seat declarations (fill-owned construction):
+		// each is the tagged object whose fill selected its constructor, with
+		// holes resolved and — for fills that load skills — ordered canonical
+		// skill refs + content digests. Opaque at the generic output boundary
+		// (Pi round-7 C2): fill whitelists are an input/registry rule; the
+		// closure only requires the tag. Mode truth is bound to the parent-
+		// trusted metadata by VerifyClosure, not encoded here.
+		alpha: {fill!: string & !="", ...}
+		beta: {fill!: string & !="", ...}
 	}
 	contract: {
 		id:   string & !=""

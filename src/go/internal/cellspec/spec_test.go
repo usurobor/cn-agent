@@ -5,9 +5,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 )
 
+// The CDS-shaped fixture: fill-owned seats with holes in constructor-argument
+// positions (Pi cds-fill-construction-51).
 const fixture = `{
   "version": "cnos.cellspec.v0",
   "contract": {"id": "c1", "goal": "do the thing",
@@ -16,13 +19,17 @@ const fixture = `{
       {"id": "beta_review", "kind": "review", "producer": "beta"}
     ]},
   "protocol_id": "cnos.cdd.cds.receipt.v1",
-  "profile": "stub",
   "params": {
-    "language": {"kind": "skill", "required": true, "domain": ["go", "ocaml"]},
-    "style": {"kind": "skill", "required": false, "default": "functional"}
+    "language": {"kind": "skill", "required": true, "domain": ["cnos.eng:eng/go", "cnos.eng:eng/ocaml"]},
+    "base_sha": {"kind": "value", "required": true}
   },
-  "alpha": {"skills": ["eng", "$language", "$style"]},
-  "beta": {"skills": ["$language", "cds-review"]}
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {"provider": "fake", "model": ""},
+    "workspace": {"kind": "git-worktree", "repo": ".", "base_sha": "$base_sha"},
+    "skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "$language", "cnos.eng:eng/write-functional"]
+  },
+  "beta": {"fill": "cdd.mechanical-unmet"}
 }`
 
 func mustParse(t *testing.T) CellSpec {
@@ -34,57 +41,69 @@ func mustParse(t *testing.T) CellSpec {
 	return s
 }
 
-func TestResolveFillsAndSplices(t *testing.T) {
-	r, err := mustParse(t).Resolve(map[string]string{"language": "go"})
+// Holes resolve IN PLACE inside the seat trees: the workspace hole and the
+// skill-list hole are replaced where they sit.
+func TestResolveFillsHolesInPlace(t *testing.T) {
+	r, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "abc123"})
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	if got := strings.Join(r.AlphaSkills, ","); got != "eng,go,functional" {
-		t.Errorf("alpha skills = %q, want eng,go,functional", got)
+	a := string(r.Alpha)
+	for _, want := range []string{`"base_sha":"abc123"`, `"cnos.eng:eng/go"`, `"fill":"cds.patch"`} {
+		if !strings.Contains(a, want) {
+			t.Errorf("resolved alpha missing %s: %s", want, a)
+		}
 	}
-	if got := strings.Join(r.BetaSkills, ","); got != "go,cds-review" {
-		t.Errorf("beta skills = %q, want go,cds-review", got)
+	if strings.Contains(a, "$") {
+		t.Fatalf("unresolved hole survived: %s", a)
 	}
 }
 
 func TestResolveMissingRequired(t *testing.T) {
-	if _, err := mustParse(t).Resolve(nil); err == nil || !strings.Contains(err.Error(), "language") {
+	if _, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go"}); err == nil || !strings.Contains(err.Error(), "base_sha") {
 		t.Fatalf("want missing-required error, got %v", err)
 	}
 }
 
 func TestResolveDomainRejectsTypo(t *testing.T) {
-	if _, err := mustParse(t).Resolve(map[string]string{"language": "cobol"}); err == nil || !strings.Contains(err.Error(), "domain") {
+	if _, err := mustParse(t).Resolve(map[string]string{"language": "cobol", "base_sha": "x"}); err == nil || !strings.Contains(err.Error(), "domain") {
 		t.Fatalf("want domain error, got %v", err)
 	}
 }
 
-func TestResolveUnknownParam(t *testing.T) {
-	if _, err := mustParse(t).Resolve(map[string]string{"language": "go", "bogus": "x"}); err == nil || !strings.Contains(err.Error(), "unknown parameter") {
-		t.Fatalf("want unknown-parameter error, got %v", err)
+func TestResolveUnknownParamAndHole(t *testing.T) {
+	if _, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "x", "bogus": "y"}); err == nil {
+		t.Fatal("want unknown-parameter error")
+	}
+	undeclared := strings.Replace(fixture, `"$base_sha"`, `"$undeclared"`, 1)
+	s, err := Parse([]byte(undeclared))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if _, err := s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "x"}); err == nil {
+		t.Fatal("a hole referencing an undeclared parameter must fail resolution")
 	}
 }
 
-// TestParseRejects covers the strict-parse negatives (Pi #32 D5).
+// TestParseRejects covers the strict generic-envelope negatives (Pi #32 D5,
+// round-5 D2, round-6 D2). Seat interiors belong to fills, not to Parse.
 func TestParseRejects(t *testing.T) {
-	base := `"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}`
+	base := `"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{"fill":"cdd.stub"},"beta":{"fill":"cdd.stub"}`
 	cases := map[string]string{
 		"unknown field":     "{" + base + `,"bogus":1}`,
 		"trailing data":     "{" + base + "}{}",
-		"duplicate key":     `{"version":"cnos.cellspec.v0","version":"x","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"missing version":   `{"contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"wrong version":     `{"version":"v9","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"missing beta":      `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]}}`,
-		"unknown profile":   "{" + base + `,"profile":"wat"}`,
+		"duplicate key":     `{"version":"cnos.cellspec.v0","version":"x",` + base[len(`"version":"cnos.cellspec.v0",`):] + `}`,
+		"missing version":   `{"contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
+		"wrong version":     `{"version":"v9","contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
+		"missing beta":      `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{"fill":"f"}}`,
+		"missing fill":      `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{},"beta":{"fill":"f"}}`,
+		"empty goal":        `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":""},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
+		"case-alias key":    `{"version":"bad","Version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
+		"case-alias nested": `{"version":"cnos.cellspec.v0","contract":{"id":"c","Goal":"g","goal":"g"},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
+		"null anywhere":     `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{"fill":"f","skills":null},"beta":{"fill":"f"}}`,
 		"bad param kind":    "{" + base + `,"params":{"p":{"kind":"weird"}}}`,
-		"bad evidence prod": `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"gamma"}]},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"dup evidence id":   `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"alpha"},{"id":"x","kind":"k","producer":"beta"}]},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"empty goal":        `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":""},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"missing skills":    `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{},"beta":{"skills":[]}}`,
-		"case-alias key":    `{"version":"bad","Version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"case-alias nested": `{"version":"cnos.cellspec.v0","contract":{"id":"c","Goal":"g","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
-		"null skills":       `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":null},"beta":{"skills":[]}}`,
-		"null evidence":     `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":null},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
+		"bad evidence prod": `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"gamma"}]},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
+		"dup evidence id":   `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"alpha"},{"id":"x","kind":"k","producer":"beta"}]},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
 	}
 	for name, in := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -95,15 +114,41 @@ func TestParseRejects(t *testing.T) {
 	}
 }
 
-func TestStubProfileIsSimulated(t *testing.T) {
-	r, err := mustParse(t).Resolve(map[string]string{"language": "go"})
+// --- Build through the fill registry --------------------------------------
+
+const stubCell = `{
+  "version": "cnos.cellspec.v0",
+  "contract": {"id": "cell-0", "goal": "empty",
+    "required_evidence": [
+      {"id": "diff", "kind": "diff", "producer": "alpha"},
+      {"id": "beta_review", "kind": "review", "producer": "beta"}
+    ]},
+  "protocol_id": "cnos.cdd.receipt.v1",
+  "alpha": {"fill": "cdd.stub"},
+  "beta": {"fill": "cdd.stub"}
+}`
+
+func buildCell(t *testing.T, src string, params map[string]string) (cellkernel.Spec, cellkernel.RunMeta) {
+	t.Helper()
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	r, err := s.Resolve(params)
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, meta, err := r.Build()
+	kspec, meta, err := r.Build(cellfill.CddFills())
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
+	return kspec, meta
+}
+
+// Stub fills make an honestly simulated episode; positional artifacts land on
+// their own sides; the closure verifies against the caller's contract+meta.
+func TestStubFillsAreSimulated(t *testing.T) {
+	kspec, meta := buildCell(t, stubCell, nil)
 	if meta.ExecutionMode != cellkernel.ModeStub {
 		t.Fatalf("mode = %q, want stub", meta.ExecutionMode)
 	}
@@ -117,49 +162,32 @@ func TestStubProfileIsSimulated(t *testing.T) {
 	if err := cellkernel.VerifyClosure(kspec.Contract, meta, cl); err != nil {
 		t.Fatalf("closure must verify: %v", err)
 	}
-	// Positional ownership: the diff sits under Alpha, beta_review under Beta.
 	var diffAlpha, reviewBeta bool
 	for _, a := range cl.Receipt.Record.Alpha.Artifacts {
-		if a.ID == "diff" {
-			diffAlpha = true
-		}
+		diffAlpha = diffAlpha || a.ID == "diff"
 	}
 	for _, a := range cl.Receipt.Record.Beta.Artifacts {
-		if a.ID == "beta_review" {
-			reviewBeta = true
-		}
+		reviewBeta = reviewBeta || a.ID == "beta_review"
 	}
 	if !diffAlpha || !reviewBeta {
-		t.Fatalf("positional artifacts not bound: alpha=%+v beta=%+v",
-			cl.Receipt.Record.Alpha.Artifacts, cl.Receipt.Record.Beta.Artifacts)
+		t.Fatal("positional artifacts not bound to their sides")
 	}
 }
 
-const boolFixture = `{
+const boolCell = `{
   "version": "cnos.cellspec.v0",
   "contract": {"id":"cell-bool","goal":"produce bool true",
     "required_evidence":[{"id":"bool","kind":"value","producer":"alpha"}]},
   "protocol_id": "cnos.cellkernel.episode-closure.v0",
-  "profile": "bool",
   "params": {"value": {"kind":"value","required":true,"domain":["true","false"]}},
-  "alpha": {"skills": []},
-  "beta": {"skills": []}
+  "alpha": {"fill": "cdd.bool", "value": "$value"},
+  "beta": {"fill": "cdd.bool-check"}
 }`
 
-func TestBoolProfileAcceptedAndUnmet(t *testing.T) {
-	s, err := Parse([]byte(boolFixture))
-	if err != nil {
-		t.Fatalf("parse: %v", err)
-	}
+// The bool cell has a genuinely mechanical review predicate, so it may accept.
+func TestBoolFillAcceptedAndUnmet(t *testing.T) {
 	run := func(value string) cellkernel.Status {
-		r, err := s.Resolve(map[string]string{"value": value})
-		if err != nil {
-			t.Fatalf("resolve(%s): %v", value, err)
-		}
-		kspec, meta, err := r.Build()
-		if err != nil {
-			t.Fatalf("build: %v", err)
-		}
+		kspec, meta := buildCell(t, boolCell, map[string]string{"value": value})
 		if meta.ExecutionMode != cellkernel.ModeMechanical {
 			t.Fatalf("mode = %q, want mechanical", meta.ExecutionMode)
 		}
@@ -177,105 +205,36 @@ func TestBoolProfileAcceptedAndUnmet(t *testing.T) {
 	}
 }
 
-// --- Cognitive profile (Phase 3, Case 2) ----------------------------------
-
-const cognitiveFixture = `{
-  "version": "cnos.cellspec.v0",
-  "contract": {"id":"cell-cog","goal":"answer the question"},
-  "protocol_id": "cnos.cellkernel.episode-closure.v0",
-  "profile": "cognitive",
-  "params": {"provider": {"kind":"value","required":true,"domain":["claude","fake"]}},
-  "alpha": {"skills": ["eng"]},
-  "beta": {"skills": []}
-}`
-
-// The provider decides the mode, because the mode must tell the truth about
-// how the work was produced: only a provider that really rents cognition may
-// run `cognitive`; the deterministic fake is `mechanical`.
-func TestCognitiveProfileModeFollowsProvider(t *testing.T) {
-	s, err := Parse([]byte(cognitiveFixture))
+// The loader is fill-blind: an unknown fill fails at Build, before any seat
+// or provider is touched, with the same corpus shape CUE rejects.
+func TestUnknownFillFailsAtBuild(t *testing.T) {
+	src := strings.Replace(stubCell, `"fill": "cdd.stub"}`, `"fill": "no.such"}`, 1)
+	s, err := Parse([]byte(src))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
-	for provider, want := range map[string]cellkernel.ExecutionMode{
-		"fake":   cellkernel.ModeMechanical,
-		"claude": cellkernel.ModeCognitive,
-	} {
-		t.Run(provider, func(t *testing.T) {
-			r, err := s.Resolve(map[string]string{"provider": provider})
-			if err != nil {
-				t.Fatalf("resolve: %v", err)
-			}
-			_, meta, err := r.Build()
-			if err != nil {
-				t.Fatalf("build: %v", err)
-			}
-			if meta.ExecutionMode != want {
-				t.Fatalf("provider %q: mode = %q, want %q", provider, meta.ExecutionMode, want)
-			}
-			if meta.ResolvedSpec.Params["provider"] != provider {
-				t.Fatal("the provider that held the seat is not disclosed in the record")
-			}
-		})
-	}
-}
-
-// A cognitive episode closes through the real loader path and self-verifies.
-func TestCognitiveProfileClosesWithFake(t *testing.T) {
-	s, err := Parse([]byte(cognitiveFixture))
-	if err != nil {
-		t.Fatalf("parse: %v", err)
-	}
-	r, err := s.Resolve(map[string]string{"provider": "fake"})
+	r, err := s.Resolve(nil)
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, meta, err := r.Build()
-	if err != nil {
-		t.Fatalf("build: %v", err)
-	}
-	cl, err := cellkernel.RunEpisode(context.Background(), kspec, meta)
-	if err != nil {
-		t.Fatalf("run: %v", err)
-	}
-	if cl.Status != cellkernel.Accepted {
-		t.Fatalf("status = %q, want accepted", cl.Status)
-	}
-	if err := cellkernel.VerifyClosure(kspec.Contract, meta, cl); err != nil {
-		t.Fatalf("closure must verify: %v", err)
+	if _, _, err := r.Build(cellfill.CddFills()); err == nil || !strings.Contains(err.Error(), "no.such") {
+		t.Fatalf("want unknown-fill error, got %v", err)
 	}
 }
 
-func TestCognitiveProfileRejectsBadProvider(t *testing.T) {
-	s, err := Parse([]byte(cognitiveFixture))
+// A fill's arguments are strict: an unknown key inside a seat fails that
+// fill's decode even though the generic envelope cannot know the shape.
+func TestFillArgumentsAreStrict(t *testing.T) {
+	src := strings.Replace(stubCell, `"alpha": {"fill": "cdd.stub"}`, `"alpha": {"fill": "cdd.stub", "Extra": 1}`, 1)
+	s, err := Parse([]byte(src))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
-	// A typo must fail resolution against the closed domain...
-	if _, err := s.Resolve(map[string]string{"provider": "clyde"}); err == nil {
-		t.Fatal("provider outside the declared domain must fail resolution")
-	}
-	// ...and an undeclared provider must fail the build even if a spec widens
-	// its own domain.
-	wide := strings.Replace(cognitiveFixture, `["claude","fake"]`, `["clyde"]`, 1)
-	ws, err := Parse([]byte(wide))
-	if err != nil {
-		t.Fatalf("parse: %v", err)
-	}
-	r, err := ws.Resolve(map[string]string{"provider": "clyde"})
+	r, err := s.Resolve(nil)
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	if _, _, err := r.Build(); err == nil {
-		t.Fatal("unknown provider must fail the build")
-	}
-}
-
-// The profile must declare the hole that steers it.
-func TestCognitiveProfileRequiresProviderParam(t *testing.T) {
-	noParam := `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},` +
-		`"protocol_id":"p","profile":"cognitive","alpha":{"skills":[]},"beta":{"skills":[]}}`
-	if _, err := Parse([]byte(noParam)); err == nil {
-		t.Fatal("cognitive profile without a provider parameter must be rejected")
+	if _, _, err := r.Build(cellfill.CddFills()); err == nil {
+		t.Fatal("an unknown key in a seat declaration must fail the fill decode")
 	}
 }

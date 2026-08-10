@@ -4,18 +4,67 @@
     "id": "cds-code",
     "goal": "Carry out the change described by the issue in the repository at base_sha",
     "required_evidence": [
-      { "id": "diff", "kind": "diff", "producer": "alpha" }
+      {
+        "id": "diff",
+        "kind": "diff",
+        "producer": "alpha"
+      }
     ]
   },
   "protocol_id": "cnos.cdd.cds.receipt.v1",
-  "profile": "code",
   "params": {
-    "language": { "kind": "skill", "required": true, "domain": ["go", "ocaml", "rust", "python", "typescript"] },
-    "style": { "kind": "skill", "required": false, "default": "functional" },
-    "provider": { "kind": "value", "required": true, "domain": ["claude", "fake"] },
-    "base_sha": { "kind": "value", "required": true },
-    "repo": { "kind": "value", "required": false, "default": "." }
+    "language": {
+      "kind": "skill",
+      "required": true,
+      "domain": [
+        "cnos.eng:eng/go",
+        "cnos.eng:eng/ocaml",
+        "cnos.eng:eng/typescript"
+      ]
+    },
+    "provider": {
+      "kind": "value",
+      "required": true,
+      "domain": [
+        "claude-cli",
+        "codex-cli",
+        "fake"
+      ]
+    },
+    "model": {
+      "kind": "value",
+      "required": false,
+      "default": ""
+    },
+    "base_sha": {
+      "kind": "value",
+      "required": true
+    },
+    "repo": {
+      "kind": "value",
+      "required": false,
+      "default": "."
+    }
   },
-  "alpha": { "skills": ["eng", "$language", "$style"] },
-  "beta": { "skills": ["$language", "cds-review"] }
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "provider": "$provider",
+      "model": "$model"
+    },
+    "workspace": {
+      "kind": "git-worktree",
+      "repo": "$repo",
+      "base_sha": "$base_sha"
+    },
+    "skills": [
+      "cnos.eng:eng/code",
+      "cnos.eng:eng/test",
+      "$language",
+      "cnos.eng:eng/write-functional"
+    ]
+  },
+  "beta": {
+    "fill": "cdd.mechanical-unmet"
+  }
 }

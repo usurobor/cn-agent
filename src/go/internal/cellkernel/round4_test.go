@@ -2,6 +2,7 @@ package cellkernel
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 )
 
@@ -73,34 +74,35 @@ func TestRepairTamperFails(t *testing.T) {
 	}
 }
 
-// D3: a hostile alpha that captured the caller's Params map cannot mutate
-// runtime-owned invocation truth — the record binds the frozen ingress copy.
-type paramMutatingAlpha struct{ captured map[string]string }
+// D3: a hostile alpha that captured the caller's declaration bytes cannot
+// mutate runtime-owned invocation truth — the record binds the frozen ingress
+// copy.
+type declMutatingAlpha struct{ captured []byte }
 
-func (a paramMutatingAlpha) Produce(context.Context, AlphaInput) (AlphaOutput, error) {
-	a.captured["language"] = "corrupted"
+func (a declMutatingAlpha) Produce(context.Context, AlphaInput) (AlphaOutput, error) {
+	copy(a.captured, []byte(`{"fill":"corrupted"`))
 	return AlphaOutput{Matter: Matter{Data: "true"}, Artifacts: []ArtifactCandidate{{ID: "bool", Kind: "value", Text: "true"}}}, nil
 }
 
 func TestHostileAlphaCannotMutateResolvedSpec(t *testing.T) {
-	params := map[string]string{"language": "go"}
+	decl := []byte(`{"fill":"t.alpha","language":"go"}`)
 	meta := testMeta(ModeMechanical)
-	meta.ResolvedSpec.Params = params // caller's map, also captured by alpha
+	meta.ResolvedSpec.Alpha = decl // caller's bytes, also captured by alpha
 
 	s := BoolSpec(true)
-	s.Alpha = paramMutatingAlpha{captured: params}
+	s.Alpha = declMutatingAlpha{captured: decl}
 	cl, err := RunEpisode(context.Background(), s, meta,
 		WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}))
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	if got := cl.Receipt.Record.ResolvedSpec.Params["language"]; got != "go" {
+	if got := string(cl.Receipt.Record.ResolvedSpec.Alpha); got != `{"fill":"t.alpha","language":"go"}` {
 		t.Fatalf("frozen resolved spec mutated through captured alias: %q", got)
 	}
-	// The parent's trusted meta is what it originally supplied — a fresh copy,
-	// not the map alpha corrupted through the captured alias.
+	// The parent's trusted meta is what it originally supplied — fresh bytes,
+	// not the buffer alpha corrupted through the captured alias.
 	trusted := testMeta(ModeMechanical)
-	trusted.ResolvedSpec.Params = map[string]string{"language": "go"}
+	trusted.ResolvedSpec.Alpha = json.RawMessage(`{"fill":"t.alpha","language":"go"}`)
 	if err := VerifyClosure(BoolSpec(true).Contract, trusted, cl); err != nil {
 		t.Fatalf("closure must verify: %v", err)
 	}

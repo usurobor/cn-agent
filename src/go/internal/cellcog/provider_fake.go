@@ -1,21 +1,22 @@
 package cellcog
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+)
 
-// Fake answers deterministically without renting anything. It exists so the
-// cognition seam — prompt render, provider call, envelope parse, seat return,
-// kernel close — runs in CI on every commit, offline and without a model.
-//
-// A run behind Fake is therefore `mechanical`, never `cognitive`: nothing was
-// rented, and the closure must not imply otherwise. The provider name is
-// disclosed in the record's resolved parameters, so a reader can always tell
-// which of the two happened.
-type Fake struct{}
+// FakeCoder makes one deterministic, real change so CI exercises the whole
+// substrate — worktree, edit, measured diff — offline and without a model. A
+// run behind it is `mechanical`: nothing was rented, and the closure must not
+// imply otherwise.
+type FakeCoder struct{}
 
-func (Fake) Name() string { return "fake" }
+func (FakeCoder) Name() string { return "fake" }
 
-func (Fake) Complete(_ context.Context, _ string) (string, error) {
-	return fakeAnswer, nil
+func (FakeCoder) Work(_ context.Context, dir, prompt string) error {
+	note := "fake coder: deterministic change, no cognition was rented\n" +
+		fmt.Sprintf("prompt bytes: %d\n", len(prompt))
+	return os.WriteFile(filepath.Join(dir, "CELL-FAKE-CHANGE.txt"), []byte(note), 0o600)
 }
-
-const fakeAnswer = `{"matter":"fake provider: deterministic answer, no cognition was rented","artifacts":[]}`
