@@ -15,22 +15,17 @@
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-81bc60f2a735130685c9f661d93887fa",
+      "episode_id": "ep-f9707ac4b098e80e5b8620b90a5f766f",
       "execution_mode": "mechanical",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
         "declared_protocol": "cnos.cdd.cds.receipt.v1",
         "alpha": {
-          "fill": "cds.patch",
           "cognition": {
-            "provider": "fake",
-            "model": ""
+            "model": "",
+            "provider": "fake"
           },
-          "workspace": {
-            "kind": "git-worktree",
-            "repo": ".",
-            "base_sha": "37ab92111267b98216ac18050051c0e3819d44d9"
-          },
+          "fill": "cds.patch",
           "skills": [
             {
               "ref": "cnos.eng:eng/code",
@@ -48,7 +43,12 @@
               "ref": "cnos.eng:eng/write-functional",
               "sha256": "ecfd67aaad27e7663db721a7119ce0e951184e589a703c86e01622baed526f77"
             }
-          ]
+          ],
+          "workspace": {
+            "base_sha": "7af7ad5d1a663d64b57c1256cfbd152fc6e43211",
+            "kind": "git-worktree",
+            "repo": "."
+          }
         },
         "beta": {
           "fill": "cdd.mechanical-unmet"
@@ -66,13 +66,13 @@
         ]
       },
       "alpha": {
-        "execution_id": "alpha-641223a1f5b0d90acccddd3ef14ef4de",
+        "execution_id": "alpha-3c37371316a47fe72177d2b425a021b4",
         "artifacts": [
           {
             "id": "base_sha",
             "kind": "sha",
             "encoding": "utf8",
-            "text": "37ab92111267b98216ac18050051c0e3819d44d9"
+            "text": "7af7ad5d1a663d64b57c1256cfbd152fc6e43211"
           },
           {
             "id": "diff",
@@ -86,7 +86,7 @@
         "data": "diff --git a/CELL-FAKE-CHANGE.txt b/CELL-FAKE-CHANGE.txt\nnew file mode 100644\nindex 00000000..263f77f3\n--- /dev/null\n+++ b/CELL-FAKE-CHANGE.txt\n@@ -0,0 +1,2 @@\n+fake coder: deterministic change, no cognition was rented\n+prompt bytes: 49879\n"
       },
       "beta": {
-        "execution_id": "beta-606f0b05fb49ecfb7ff46696f633bdfa",
+        "execution_id": "beta-772757f9cd2052cf19af16a37da2d17b",
         "artifacts": []
       },
       "review": {
@@ -94,7 +94,7 @@
         "notes": "mechanical seat cannot judge the goal; matter (240 bytes) preserved for independent review"
       }
     },
-    "scope_lift_digest": "85ee4dcad9c57c8667a33be22f9bc1910c9321bef85e36449001d7d21c6821d0"
+    "scope_lift_digest": "625cdfdd524ff878efaca661574e65a3b30c7ebfc5599f9c52c2325fd4b6f573"
   },
   "repair": {
     "reason": "contract unmet",

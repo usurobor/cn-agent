@@ -24,7 +24,7 @@ func (c *CellRunCmd) Spec() CommandSpec {
 func (c *CellRunCmd) Help() string { return cellrun.Help }
 
 func (c *CellRunCmd) Run(ctx context.Context, inv Invocation) error {
-	code := cellrun.Run(ctx, inv.Args, inv.Stdin, inv.Stdout, inv.Stderr)
+	code := cellrun.Run(ctx, inv.HubPath, inv.Args, inv.Stdin, inv.Stdout, inv.Stderr)
 	if code == 0 {
 		return nil
 	}

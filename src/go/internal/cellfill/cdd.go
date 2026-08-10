@@ -43,7 +43,7 @@ type stubDecl struct {
 	Fill string `json:"fill"`
 }
 
-func stubAlphaFactory(decl json.RawMessage) (ConstructedAlpha, error) {
+func stubAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
 	var d stubDecl
 	if err := StrictDecode(decl, &d); err != nil {
 		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillStubAlpha, err)
@@ -55,7 +55,7 @@ func stubAlphaFactory(decl json.RawMessage) (ConstructedAlpha, error) {
 	}, nil
 }
 
-func stubBetaFactory(decl json.RawMessage) (ConstructedBeta, error) {
+func stubBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := StrictDecode(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillStubBeta, err)
@@ -108,7 +108,7 @@ type boolDecl struct {
 	Value string `json:"value"`
 }
 
-func boolAlphaFactory(decl json.RawMessage) (ConstructedAlpha, error) {
+func boolAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
 	var d boolDecl
 	if err := StrictDecode(decl, &d); err != nil {
 		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillBoolAlpha, err)
@@ -124,7 +124,7 @@ func boolAlphaFactory(decl json.RawMessage) (ConstructedAlpha, error) {
 	}, nil
 }
 
-func boolCheckBetaFactory(decl json.RawMessage) (ConstructedBeta, error) {
+func boolCheckBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := StrictDecode(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillBoolCheckBeta, err)
@@ -138,7 +138,7 @@ func boolCheckBetaFactory(decl json.RawMessage) (ConstructedBeta, error) {
 
 // --- cdd.mechanical-unmet -------------------------------------------------
 
-func mechanicalUnmetFactory(decl json.RawMessage) (ConstructedBeta, error) {
+func mechanicalUnmetFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := StrictDecode(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillMechanicalUnmet, err)

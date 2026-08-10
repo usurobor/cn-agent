@@ -23,15 +23,43 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
 	"github.com/usurobor/cnos/src/go/internal/cellspec"
+	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
 // registry is the statically assembled fill map (Pi cds-fill-construction-51):
 // the generic cdd fills plus the CDS patch constructor, closed over the skill
 // tree it loads bodies from. The loader itself never names a fill.
-func registry() cellfill.Registry {
+//
+// anchor is the environment fact this composition root supplies: a hub, or
+// the enclosing repository when there is none. Skill roots derive from it, so
+// nothing resolves relative to the process working directory.
+func registry(anchor string) cellfill.Registry {
 	reg := cellfill.CddFills()
-	reg.Alpha[cdspatch.Fill] = cdspatch.Factory(cellskill.Tree{Root: "src/packages"})
+	reg.Alpha[cdspatch.Fill] = cdspatch.Factory(cellskill.Tree{Roots: cellskill.Roots(anchor)})
 	return reg
+}
+
+// resolveAnchor prefers the hub the CLI discovered and falls back to the
+// enclosing git repository (the cnos#593 fallback) so a plain checkout with
+// no `.cn/` still resolves its packages.
+//
+// The anchor is an ENVIRONMENT fact and never comes from the cell: a spec
+// that could name its own package root would choose where its own skills are
+// read from, which is authority a declaration must not have.
+func resolveAnchor(ctx context.Context, hubPath string) (string, error) {
+	if hubPath != "" {
+		return hubPath, nil
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("locate packages: %w", err)
+	}
+	root, err := cellwork.RepoRoot(ctx, cwd)
+	if err != nil {
+		return "", fmt.Errorf("cannot locate installed packages: no `.cn/` hub, and %s is not inside a repository — "+
+			"run from a hub or a checkout (skill roots are never taken from the cell spec)", cwd)
+	}
+	return root, nil
 }
 
 // maxContractBytes bounds the serialized spec read from a file or stdin.
@@ -59,7 +87,7 @@ FLAGS:
   --param <name>=<value> fill a declared parameter hole (repeatable, no dups)`
 
 // Run executes one `cn cell run` invocation and returns its exit code.
-func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func Run(ctx context.Context, hubPath string, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	contractPath, params, err := parseArgs(args)
 	if err != nil {
 		fmt.Fprintf(stderr, "✗ %v\n\n%s\n", err, Help)
@@ -84,7 +112,12 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return 2
 	}
 
-	kspec, meta, err := resolved.Build(registry())
+	anchor, err := resolveAnchor(ctx, hubPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "✗ %v\n", err)
+		return 2
+	}
+	kspec, meta, err := resolved.Build(ctx, registry(anchor))
 	if err != nil {
 		fmt.Fprintf(stderr, "✗ %v\n", err)
 		return 2

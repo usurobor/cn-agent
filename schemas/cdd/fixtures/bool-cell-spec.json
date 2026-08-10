@@ -14,7 +14,6 @@
   "protocol_id": "cnos.cellkernel.episode-closure.v0",
   "params": {
     "value": {
-      "kind": "value",
       "required": true,
       "domain": [
         "true",

@@ -54,7 +54,7 @@ func skillTree(t *testing.T, refs ...string) cellskill.Tree {
 			t.Fatal(err)
 		}
 	}
-	return cellskill.Tree{Root: root}
+	return cellskill.Tree{Roots: []string{root}}
 }
 
 var patchContract = cellkernel.Contract{
@@ -79,7 +79,7 @@ var testSkills = []string{"cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:en
 func construct(t *testing.T, repo, provider string) cellfill.ConstructedAlpha {
 	t.Helper()
 	f := Factory(skillTree(t, testSkills...))
-	a, err := f(declJSON(repo, provider))
+	a, err := f(context.Background(), declJSON(repo, provider))
 	if err != nil {
 		t.Fatalf("construct: %v", err)
 	}
@@ -111,6 +111,35 @@ func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
 	if a.Mode != cellkernel.ModeMechanical {
 		t.Fatalf("fake provider mode = %q, want mechanical", a.Mode)
 	}
+	// "resolved" must mean resolved: the recorded declaration names the exact
+	// commit, never the moving ref the caller passed.
+	if rd.Workspace.BaseSHA == "HEAD" || len(rd.Workspace.BaseSHA) != 40 {
+		t.Fatalf("resolved declaration did not pin the base commit: %q", rd.Workspace.BaseSHA)
+	}
+}
+
+// The registry canonicalizes what a fill returns, so the recorded bytes — and
+// therefore the digest — do not depend on how the fill happened to serialize,
+// and constructing twice yields byte-identical declarations.
+func TestConstructionIsCanonicalAndStable(t *testing.T) {
+	repo, _ := testRepo(t)
+	reg := cellfill.CddFills()
+	reg.Alpha[Fill] = Factory(skillTree(t, testSkills...))
+	first, err := reg.ConstructAlpha(context.Background(), declJSON(repo, "fake"))
+	if err != nil {
+		t.Fatalf("construct: %v", err)
+	}
+	second, err := reg.ConstructAlpha(context.Background(), declJSON(repo, "fake"))
+	if err != nil {
+		t.Fatalf("construct again: %v", err)
+	}
+	if string(first.Decl) != string(second.Decl) {
+		t.Fatalf("construction is not stable:\n%s\n%s", first.Decl, second.Decl)
+	}
+	// Canonical form: keys sorted, no insignificant whitespace.
+	if !strings.HasPrefix(string(first.Decl), `{"cognition":`) {
+		t.Fatalf("declaration is not canonical: %s", first.Decl)
+	}
 }
 
 func TestConstructionFailsClosed(t *testing.T) {
@@ -126,7 +155,7 @@ func TestConstructionFailsClosed(t *testing.T) {
 	}
 	for name, decl := range bad {
 		t.Run(name, func(t *testing.T) {
-			if _, err := f(json.RawMessage(decl)); err == nil {
+			if _, err := f(context.Background(), json.RawMessage(decl)); err == nil {
 				t.Fatalf("%s must fail construction", name)
 			}
 		})
@@ -168,7 +197,7 @@ func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 	repo, head := testRepo(t)
 	a := construct(t, repo, "fake")
 	betas := cellfill.CddFills()
-	b, err := betas.ConstructBeta(json.RawMessage(`{"fill":"cdd.mechanical-unmet"}`))
+	b, err := betas.ConstructBeta(context.Background(), json.RawMessage(`{"fill":"cdd.mechanical-unmet"}`))
 	if err != nil {
 		t.Fatalf("beta: %v", err)
 	}

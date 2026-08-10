@@ -7,6 +7,13 @@
 // the cds.patch Go decoder it mirrors — strictly defines every constructor
 // argument. Unknown, mixed-case, and null fields still fail.
 //
+// AUTHORED vs RESOLVED are separate definitions on purpose. An authored spec
+// may carry `$param` holes; a resolved declaration — the one the closure
+// records and the digest covers — may not, and its base_sha must be a real
+// commit rather than a moving ref. One schema serving both would let a hole
+// survive into a receipt unnoticed, so the corpus vets the emitted closure's
+// declaration against the RESOLVED shape.
+//
 // NOTE (Pi #32 D1): declaring protocol_id "cnos.cdd.cds.receipt.v1" is a
 // declaration of intent, not proof. The v0 runner carries it as provenance and
 // sets protocol_validated=false.
@@ -14,27 +21,44 @@ package cds
 
 import "cnos.dev/cnos/schemas/cdd"
 
-// #Hole is an unresolved `$param` reference. Authored form may carry holes in
-// argument positions; resolution replaces them in place, so this closed shape
-// vets both — enum-constrained fields admit a hole explicitly.
+// #Hole is an unresolved `$param` reference.
 #Hole: =~"^\\$[A-Za-z_][A-Za-z0-9_]*$"
 
-// #CDSPatchAlpha is the complete cds.patch alpha declaration.
-#CDSPatchAlpha: {
-	fill: "cds.patch"
-	// A provider that really rents cognition must name an EXACT model; only
-	// the deterministic fake may omit it. Written as a disjunction rather
-	// than two independent fields so this schema rejects exactly what
-	// cellcog.New rejects — the two authorities must not disagree.
-	cognition: {provider: "fake", model: ""} |
-		{provider: "claude-cli" | "codex-cli", model: string & !=""} |
-		{provider: #Hole, model: string} // unresolved: the model travels with it
+// #Cognition is the inline provider declaration. A provider that really rents
+// cognition must name an EXACT model; only the deterministic fake may omit
+// it. Written as a disjunction rather than two independent fields so this
+// schema rejects exactly what cellcog.New rejects — the two authorities must
+// not disagree. There is no argv/flags escape: a cell cannot smuggle
+// arguments into an adapter.
+#Cognition: {provider: "fake", model: ""} |
+	{provider: "claude-cli" | "codex-cli", model: string & !=""}
+
+// #CDSPatchAlphaResolved is what a closure records: no holes, and a base_sha
+// pinned to a commit at construction.
+#CDSPatchAlphaResolved: {
+	fill:      "cds.patch"
+	cognition: #Cognition
 	workspace: {
 		kind:     "git-worktree"
 		repo:     string & !=""
-		base_sha: string & !=""
+		base_sha: =~"^[0-9a-f]{40}$"
 	}
-	skills: [string & !="", ...string & !=""] // ordered canonical refs (or holes)
+	// Ordered canonical refs with the content digest of the body that was
+	// actually injected — naming a skill is not loading it.
+	skills: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ...{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}]
+}
+
+// #CDSPatchAlphaAuthored is what a cell spec may carry: the same shape with
+// holes admitted in the positions resolution fills.
+#CDSPatchAlphaAuthored: {
+	fill: "cds.patch"
+	cognition: #Cognition | {provider: #Hole, model: string}
+	workspace: {
+		kind:     "git-worktree"
+		repo:     (string & !="") | #Hole
+		base_sha: (string & !="") | #Hole
+	}
+	skills: [(string & !="") | #Hole, ...(string & !="") | #Hole]
 }
 
 // #CDSMechanicalUnmetBeta is Case 2's honest reviewer: a mechanical seat that
@@ -57,6 +81,6 @@ import "cnos.dev/cnos/schemas/cdd"
 	// (fixtures/invalid/cds-diff-not-first.json).
 	contract: required_evidence: [{id: "diff", kind: "diff", producer: "alpha"}, ...cdd.#RequiredRef]
 
-	alpha: #CDSPatchAlpha
+	alpha: #CDSPatchAlphaAuthored
 	beta:  #CDSMechanicalUnmetBeta
 }

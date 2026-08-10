@@ -16,6 +16,7 @@ package cellspec
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -55,9 +56,12 @@ type RequiredRef struct {
 	Producer string `json:"producer"`
 }
 
+// ParamSpec is a typed hole. There is deliberately no "kind": under
+// fill-owned construction a hole is substituted as a string wherever it
+// sits, and what the value MEANS is the fill's business — a skill ref is
+// validated by loading it, not by a label in the generic envelope.
 type ParamSpec struct {
-	Kind     string `json:"kind"`
-	Required bool   `json:"required"`
+	Required bool `json:"required"`
 	// Pointer so a declared empty-string default ("model": "" for the fake
 	// provider) is distinguishable from no default at all.
 	Default *string  `json:"default,omitempty"`
@@ -112,11 +116,6 @@ func Parse(data []byte) (CellSpec, error) {
 	}
 	if err := validateEvidence(s.Contract.RequiredEvidence); err != nil {
 		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
-	}
-	for name, p := range s.Params {
-		if p.Kind != "skill" && p.Kind != "value" {
-			return CellSpec{}, fmt.Errorf("cell spec: parameter %q has unsupported kind %q (want \"skill\" or \"value\")", name, p.Kind)
-		}
 	}
 	return s, nil
 }
@@ -250,12 +249,12 @@ func spliceValue(v any, declared map[string]ParamSpec, vals map[string]string) (
 // the complete canonical resolved declarations and the truthful combined
 // mode. The registry arrives from the assembly point (the CLI domain) — this
 // package never names a fill.
-func (r Resolved) Build(reg cellfill.Registry) (cellkernel.Spec, cellkernel.RunMeta, error) {
-	alpha, err := reg.ConstructAlpha(r.Alpha)
+func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.Spec, cellkernel.RunMeta, error) {
+	alpha, err := reg.ConstructAlpha(ctx, r.Alpha)
 	if err != nil {
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
 	}
-	beta, err := reg.ConstructBeta(r.Beta)
+	beta, err := reg.ConstructBeta(ctx, r.Beta)
 	if err != nil {
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("beta: %w", err)
 	}
@@ -371,7 +370,7 @@ func checkExactKeys(data []byte) error {
 		}
 	}
 	for name, p := range params {
-		if err := objectKeys(p, fmt.Sprintf("parameter %q", name), "kind", "required", "default", "domain"); err != nil {
+		if err := objectKeys(p, fmt.Sprintf("parameter %q", name), "required", "default", "domain"); err != nil {
 			return err
 		}
 	}

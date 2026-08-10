@@ -72,7 +72,7 @@ type ResolvedSkill struct {
 // Factory returns the cds.patch alpha factory, closed over the skill
 // resolver it loads bodies from (the one construction-time effect).
 func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
-	return func(decl json.RawMessage) (cellfill.ConstructedAlpha, error) {
+	return func(ctx context.Context, decl json.RawMessage) (cellfill.ConstructedAlpha, error) {
 		var d Decl
 		if err := cellfill.StrictDecode(decl, &d); err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
@@ -95,11 +95,17 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 		if err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
 		}
+		// Pin the revision now, so the recorded declaration names a commit
+		// rather than a moving ref: "resolved" has to mean resolved.
+		base, err := cellwork.ResolveBase(ctx, d.Workspace.Repo, d.Workspace.BaseSHA)
+		if err != nil {
+			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
+		}
 
 		resolved := ResolvedDecl{
 			Fill:      Fill,
 			Cognition: d.Cognition,
-			Workspace: d.Workspace,
+			Workspace: WorkspaceDecl{Kind: d.Workspace.Kind, Repo: d.Workspace.Repo, BaseSHA: base},
 			Skills:    make([]ResolvedSkill, 0, len(loaded)),
 		}
 		for _, s := range loaded {
@@ -115,7 +121,7 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 			Seat: PatchAlpha{
 				coder:  coder,
 				repo:   d.Workspace.Repo,
-				base:   d.Workspace.BaseSHA,
+				base:   base,
 				skills: loaded,
 			},
 		}, nil

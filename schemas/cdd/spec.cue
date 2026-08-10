@@ -31,9 +31,10 @@ package cdd
 }
 
 // #Param is a Unix-shaped typed hole. Holes appear as `$name` string values
-// inside seat declarations and are replaced in place at resolution.
+// inside seat declarations and are replaced in place at resolution. There is
+// deliberately no "kind": what a filled value MEANS belongs to the fill that
+// consumes it, not to the generic envelope.
 #Param: {
-	kind:     "skill" | "value"
 	required: bool | *false
 	default?: string
 	domain?: [...string]

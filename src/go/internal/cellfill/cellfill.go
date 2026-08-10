@@ -15,6 +15,8 @@
 package cellfill
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -40,11 +42,12 @@ type ConstructedBeta struct {
 	Seat cellkernel.Beta
 }
 
-// AlphaFactory and BetaFactory construct one side from its complete resolved
-// declaration. The declaration arrives strict-decoded by the factory itself:
-// each fill owns the meaning AND the exact shape of its arguments.
-type AlphaFactory func(decl json.RawMessage) (ConstructedAlpha, error)
-type BetaFactory func(decl json.RawMessage) (ConstructedBeta, error)
+// AlphaFactory and BetaFactory construct one side from its complete
+// declaration. Each fill owns the meaning AND the exact shape of its
+// arguments. Construction may do bounded IO — loading skill bodies, pinning a
+// revision — so it takes a context; it must not start or retain a session.
+type AlphaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedAlpha, error)
+type BetaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedBeta, error)
 
 // Registry is the small statically assembled fill map. No DI container, no
 // reflection, no service locator — the assembly point lists its fills.
@@ -69,8 +72,10 @@ func FillID(decl json.RawMessage) (string, error) {
 }
 
 // ConstructAlpha dispatches an alpha declaration. Unknown fills fail here,
-// before any seat or provider is touched.
-func (r Registry) ConstructAlpha(decl json.RawMessage) (ConstructedAlpha, error) {
+// before any seat or provider is touched, and the returned declaration is
+// canonicalized centrally so no fill can make the record's digest depend on
+// how it happened to serialize.
+func (r Registry) ConstructAlpha(ctx context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
 	id, err := FillID(decl)
 	if err != nil {
 		return ConstructedAlpha{}, err
@@ -79,10 +84,15 @@ func (r Registry) ConstructAlpha(decl json.RawMessage) (ConstructedAlpha, error)
 	if !ok {
 		return ConstructedAlpha{}, fmt.Errorf("unknown alpha fill %q", id)
 	}
-	return f(decl)
+	c, err := f(ctx, decl)
+	if err != nil {
+		return ConstructedAlpha{}, err
+	}
+	c.Decl, err = canonical(id, c.Decl)
+	return c, err
 }
 
-func (r Registry) ConstructBeta(decl json.RawMessage) (ConstructedBeta, error) {
+func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage) (ConstructedBeta, error) {
 	id, err := FillID(decl)
 	if err != nil {
 		return ConstructedBeta{}, err
@@ -91,7 +101,34 @@ func (r Registry) ConstructBeta(decl json.RawMessage) (ConstructedBeta, error) {
 	if !ok {
 		return ConstructedBeta{}, fmt.Errorf("unknown beta fill %q", id)
 	}
-	return f(decl)
+	c, err := f(ctx, decl)
+	if err != nil {
+		return ConstructedBeta{}, err
+	}
+	c.Decl, err = canonical(id, c.Decl)
+	return c, err
+}
+
+// canonical re-serializes a fill's resolved declaration into one canonical
+// form: object keys sorted, no insignificant whitespace, numeric literals
+// preserved exactly. The scope-lift digest covers these bytes, so making the
+// runtime own the form means a fill cannot destabilize a digest by changing
+// how it marshals — and reordering a Go struct's fields never moves a digest.
+func canonical(fill string, raw json.RawMessage) (json.RawMessage, error) {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var v any
+	if err := dec.Decode(&v); err != nil {
+		return nil, fmt.Errorf("fill %q returned a non-JSON declaration: %w", fill, err)
+	}
+	if _, ok := v.(map[string]any); !ok {
+		return nil, fmt.Errorf("fill %q returned a declaration that is not an object", fill)
+	}
+	out, err := json.Marshal(v)
+	if err != nil {
+		return nil, fmt.Errorf("fill %q: canonicalize: %w", fill, err)
+	}
+	return out, nil
 }
 
 // CombineModes states the episode's truthful mode from its two seats: any

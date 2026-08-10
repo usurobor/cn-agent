@@ -31,6 +31,20 @@ run_vet() { # want-exit, cn args...
     echo "  ✗ CLI output failed #EpisodeClosure ($*)"; fail=1
   else echo "  ✓ CLI output vets ($*)"; fi
 }
+# A resolved seat declaration must survive its fill's RESOLVED schema: no holes
+# left, base pinned to a commit, skills carrying content digests. This proves
+# resolution actually happened instead of trusting that it did.
+vet_resolved_alpha() { # definition, cn args...
+  local def=$1; shift
+  "$CN" cell run "$@" >"$tmp" 2>/dev/null
+  local decl="$tmpdir/resolved-alpha.json"
+  if ! python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$tmp" "$decl" 2>/dev/null; then
+    echo "  ✗ could not extract the resolved alpha declaration ($*)"; fail=1; return
+  fi
+  if ! "$CUE" vet ./schemas/cds:cds "$decl" -d "$def" >/dev/null 2>&1; then
+    echo "  ✗ resolved alpha failed $def ($*)"; fail=1
+  else echo "  ✓ resolved alpha vets $def"; fi
+}
 
 echo "# positive cell specs"
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/empty-cell-spec.json -d '#CellSpec'
@@ -116,6 +130,8 @@ mkdir -p "$coderepo"
       git commit -qm base
 ) >/dev/null 2>&1 || { echo "  ✗ could not build the code-profile fixture repo"; fail=1; }
 run_vet 1 --contract schemas/cds/fixtures/code-cell-spec.json \
+  --param language=cnos.eng:eng/go --param provider=fake --param base_sha=HEAD --param repo="$coderepo"
+vet_resolved_alpha '#CDSPatchAlphaResolved' --contract schemas/cds/fixtures/code-cell-spec.json \
   --param language=cnos.eng:eng/go --param provider=fake --param base_sha=HEAD --param repo="$coderepo"
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi

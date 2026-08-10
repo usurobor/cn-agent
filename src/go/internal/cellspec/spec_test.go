@@ -20,8 +20,8 @@ const fixture = `{
     ]},
   "protocol_id": "cnos.cdd.cds.receipt.v1",
   "params": {
-    "language": {"kind": "skill", "required": true, "domain": ["cnos.eng:eng/go", "cnos.eng:eng/ocaml"]},
-    "base_sha": {"kind": "value", "required": true}
+    "language": {"required": true, "domain": ["cnos.eng:eng/go", "cnos.eng:eng/ocaml"]},
+    "base_sha": {"required": true}
   },
   "alpha": {
     "fill": "cds.patch",
@@ -101,7 +101,7 @@ func TestParseRejects(t *testing.T) {
 		"case-alias key":    `{"version":"bad","Version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
 		"case-alias nested": `{"version":"cnos.cellspec.v0","contract":{"id":"c","Goal":"g","goal":"g"},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
 		"null anywhere":     `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"p","alpha":{"fill":"f","skills":null},"beta":{"fill":"f"}}`,
-		"bad param kind":    "{" + base + `,"params":{"p":{"kind":"weird"}}}`,
+		"unknown param key": "{" + base + `,"params":{"p":{"kind":"weird"}}}`,
 		"bad evidence prod": `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"gamma"}]},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
 		"dup evidence id":   `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"alpha"},{"id":"x","kind":"k","producer":"beta"}]},"protocol_id":"p","alpha":{"fill":"f"},"beta":{"fill":"f"}}`,
 	}
@@ -138,7 +138,7 @@ func buildCell(t *testing.T, src string, params map[string]string) (cellkernel.S
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, meta, err := r.Build(cellfill.CddFills())
+	kspec, meta, err := r.Build(context.Background(), cellfill.CddFills())
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
@@ -179,7 +179,7 @@ const boolCell = `{
   "contract": {"id":"cell-bool","goal":"produce bool true",
     "required_evidence":[{"id":"bool","kind":"value","producer":"alpha"}]},
   "protocol_id": "cnos.cellkernel.episode-closure.v0",
-  "params": {"value": {"kind":"value","required":true,"domain":["true","false"]}},
+  "params": {"value": {"required":true,"domain":["true","false"]}},
   "alpha": {"fill": "cdd.bool", "value": "$value"},
   "beta": {"fill": "cdd.bool-check"}
 }`
@@ -217,7 +217,7 @@ func TestUnknownFillFailsAtBuild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	if _, _, err := r.Build(cellfill.CddFills()); err == nil || !strings.Contains(err.Error(), "no.such") {
+	if _, _, err := r.Build(context.Background(), cellfill.CddFills()); err == nil || !strings.Contains(err.Error(), "no.such") {
 		t.Fatalf("want unknown-fill error, got %v", err)
 	}
 }
@@ -234,7 +234,7 @@ func TestFillArgumentsAreStrict(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	if _, _, err := r.Build(cellfill.CddFills()); err == nil {
+	if _, _, err := r.Build(context.Background(), cellfill.CddFills()); err == nil {
 		t.Fatal("an unknown key in a seat declaration must fail the fill decode")
 	}
 }

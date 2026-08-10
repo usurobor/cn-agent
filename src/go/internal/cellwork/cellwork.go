@@ -38,6 +38,44 @@ type Worktree struct {
 	BaseSHA string // resolved commit the work starts from
 }
 
+// ResolveBase pins a revision to its exact commit SHA. Construction calls it
+// so a declaration recorded as "resolved" names a commit and not a moving
+// name like HEAD; the episode then materializes at that pinned SHA.
+func ResolveBase(ctx context.Context, repo, base string) (string, error) {
+	repoAbs, err := repoPath(repo)
+	if err != nil {
+		return "", err
+	}
+	sha, err := git(ctx, repoAbs, "rev-parse", "--verify", base+"^{commit}")
+	if err != nil {
+		return "", fmt.Errorf("cellwork: base %q does not resolve in %s: %w", base, repoAbs, err)
+	}
+	return strings.TrimSpace(sha), nil
+}
+
+// RepoRoot reports the top level of the repository containing dir. The
+// composition root uses it to anchor package resolution when no hub is
+// present (the cnos#593 fallback), so nothing resolves relative to the
+// process working directory.
+func RepoRoot(ctx context.Context, dir string) (string, error) {
+	out, err := git(ctx, dir, "rev-parse", "--show-toplevel")
+	if err != nil {
+		return "", fmt.Errorf("cellwork: no git repository at %s: %w", dir, err)
+	}
+	return strings.TrimSpace(out), nil
+}
+
+func repoPath(repo string) (string, error) {
+	abs, err := filepath.Abs(repo)
+	if err != nil {
+		return "", fmt.Errorf("cellwork: resolve repo path: %w", err)
+	}
+	if _, err := os.Stat(filepath.Join(abs, ".git")); err != nil {
+		return "", fmt.Errorf("cellwork: %s is not a git repository: %w", abs, err)
+	}
+	return abs, nil
+}
+
 // Materialize cuts a detached worktree of repo at base and returns it with a
 // release function. base may be any revision git resolves; the resolved SHA is
 // recorded so the episode binds the exact commit, not a moving name.
@@ -45,19 +83,14 @@ type Worktree struct {
 // The caller must always call release, which removes the worktree and the
 // seat's ability to touch anything.
 func Materialize(ctx context.Context, repo, base string) (Worktree, func(), error) {
-	repoAbs, err := filepath.Abs(repo)
+	repoAbs, err := repoPath(repo)
 	if err != nil {
-		return Worktree{}, nil, fmt.Errorf("cellwork: resolve repo path: %w", err)
+		return Worktree{}, nil, err
 	}
-	if _, err := os.Stat(filepath.Join(repoAbs, ".git")); err != nil {
-		return Worktree{}, nil, fmt.Errorf("cellwork: %s is not a git repository: %w", repoAbs, err)
-	}
-
-	sha, err := git(ctx, repoAbs, "rev-parse", "--verify", base+"^{commit}")
+	sha, err := ResolveBase(ctx, repoAbs, base)
 	if err != nil {
-		return Worktree{}, nil, fmt.Errorf("cellwork: base %q does not resolve in %s: %w", base, repoAbs, err)
+		return Worktree{}, nil, err
 	}
-	sha = strings.TrimSpace(sha)
 
 	dir, err := os.MkdirTemp("", "cnos-cell-worktree-")
 	if err != nil {

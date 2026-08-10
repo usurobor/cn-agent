@@ -14,7 +14,6 @@
   "protocol_id": "cnos.cdd.cds.receipt.v1",
   "params": {
     "language": {
-      "kind": "skill",
       "required": true,
       "domain": [
         "cnos.eng:eng/go",
@@ -23,7 +22,6 @@
       ]
     },
     "provider": {
-      "kind": "value",
       "required": true,
       "domain": [
         "claude-cli",
@@ -32,16 +30,13 @@
       ]
     },
     "model": {
-      "kind": "value",
       "required": false,
       "default": ""
     },
     "base_sha": {
-      "kind": "value",
       "required": true
     },
     "repo": {
-      "kind": "value",
       "required": false,
       "default": "."
     }
