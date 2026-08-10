@@ -5,11 +5,12 @@ import (
 	"strconv"
 )
 
-// Case 1: a one-shot mechanical cell where β INDEPENDENTLY checks α's artifact
+// Case 1: a one-shot mechanical cell where β INDEPENDENTLY reviews the matter
 // from its own immutable projection (non-tautological). α produces a bool as
-// its matter plus the required "bool" artifact; β re-reads the matter from its
-// BetaInput and passes iff it is true. Provenance is positional: the "bool"
-// artifact satisfies the contract only because it sits under record.Alpha.
+// its matter plus the required "bool" artifact; β re-reads only the matter
+// from its BetaInput and passes iff it is true — V, not β, checks the
+// required α artifact. Provenance is positional: the "bool" artifact
+// satisfies the contract only because it sits under record.Alpha.
 
 // BoolAlpha produces a fixed bool as its matter plus the "bool" artifact.
 type BoolAlpha struct {

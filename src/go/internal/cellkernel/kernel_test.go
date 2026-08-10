@@ -192,9 +192,6 @@ func TestBetaCannotMutateSealedAlpha(t *testing.T) {
 	if cl.Receipt.Record.Matter.Data != "true" {
 		t.Fatalf("sealed alpha matter mutated via beta projection: %q", cl.Receipt.Record.Matter.Data)
 	}
-	if got := cl.Receipt.Record.Alpha.Artifacts[0].Text; got != "true" {
-		t.Fatalf("sealed alpha artifact mutated via beta projection: %q", got)
-	}
 	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), cl); err != nil {
 		t.Fatalf("closure must still verify: %v", err)
 	}

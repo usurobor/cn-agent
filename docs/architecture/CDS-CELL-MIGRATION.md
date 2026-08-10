@@ -221,13 +221,14 @@ Emits a **generic** `cnos.cellkernel.episode-closure.v0` with
 `protocol_validated=false` — the declared `protocol_id` is provenance, never a
 validated CDS claim. A `profile` (explicit; no default) selects the builtin
 seat pair: `stub` (a non-authoritative **`simulated`** smoke run, exit 3) or
-`bool` (a real mechanical episode where β **independently verifies** α's
-artifact). **Zero GitHub/network.**
+`bool` (a real mechanical episode where β **independently reviews** the matter
+and V checks the required α artifact). **Zero GitHub/network.**
 
 Implementation follows the operator-ratified **FIDO/functional doctrine**
 (`msg-cn-pi-cnos-cell-runner-fido-functional-44`): no mutable shared episode
 state; immutable seat scopes (`AlphaInput → Result<AlphaOutput>`, sealed before
-crossing scope; β gets a fresh projection of sealed α output); **positional
+crossing scope; β gets a fresh projection of the sealed α matter only —
+artifact validation stays with V); **positional
 ownership** (no seat-authored provenance — a required α artifact must sit under
 `record.alpha`); **one** immutable `EpisodeRecord` with **one** scope-lift
 digest; `VerifyClosure` as the single verification boundary (digest recomputes;

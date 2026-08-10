@@ -25,7 +25,8 @@
 // The primary safety mechanism is structural isolation of the untrusted
 // cognitive seats, not the trusted runtime proving its own internal steps to
 // itself: sealed results carry unexported state (unforgeable outside this
-// package), β receives fresh copies (projections) of sealed α output, and the
+// package), β receives a fresh projection of the sealed α MATTER only (never
+// α's artifacts — those are γ/V's evidence channel), and the
 // single scope-lift digest over the canonical EpisodeRecord is the one proof a
 // downstream verifier recomputes (VerifyClosure).
 //
