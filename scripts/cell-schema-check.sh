@@ -41,6 +41,7 @@ echo "# positive closures"
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-accepted.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-needs-repair.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-simulated.json -d '#EpisodeClosure'
+vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-opaque-profile.json -d '#EpisodeClosure'
 
 echo "# negative cell specs (must be rejected)"
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.json -d '#CellSpec'

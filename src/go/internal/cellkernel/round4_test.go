@@ -14,7 +14,7 @@ func TestEpisodeIDAliasFailsAtScopeLift(t *testing.T) {
 	cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
 	cl.Receipt.Record.EpisodeID = cl.Receipt.Record.Alpha.ExecutionID
 	cl.Receipt.ScopeLiftDigest = sha256hex(cl.Receipt.Record.canonicalBytes())
-	if err := VerifyClosure(BoolSpec(true).Contract, cl); err == nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), cl); err == nil {
 		t.Fatal("aliased episode id with recomputed digest verified")
 	}
 	// Even the honest re-derivation of the tampered record is not accepted.
@@ -30,7 +30,7 @@ func TestInvalidProducerFailsClosed(t *testing.T) {
 	cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
 	cl.Receipt.Record.Contract.RequiredEvidence = []RequiredRef{{ID: "bool", Kind: "value", Producer: "gamma"}}
 	cl.Receipt.ScopeLiftDigest = sha256hex(cl.Receipt.Record.canonicalBytes())
-	if err := VerifyClosure(BoolSpec(true).Contract, cl); err == nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), cl); err == nil {
 		t.Fatal("invalid producer with recomputed digest verified")
 	}
 	v := validate(BoolSpec(true).Contract, cl.Receipt)
@@ -58,17 +58,17 @@ func TestRepairTamperFails(t *testing.T) {
 	if cl.Status != NeedsRepair || cl.Repair == nil {
 		t.Fatalf("precondition: want needs_repair with repair, got %q", cl.Status)
 	}
-	if err := VerifyClosure(BoolSpec(true).Contract, cl); err != nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), cl); err != nil {
 		t.Fatalf("untouched repair closure must verify: %v", err)
 	}
 	mut := cl
 	mut.Repair = &RepairRequest{Reason: "rewritten", Failed: cl.Repair.Failed}
-	if err := VerifyClosure(BoolSpec(true).Contract, mut); err == nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), mut); err == nil {
 		t.Fatal("rewritten repair.reason verified")
 	}
 	mut2 := cl
 	mut2.Repair = &RepairRequest{Reason: cl.Repair.Reason, Failed: []string{"dropped"}}
-	if err := VerifyClosure(BoolSpec(true).Contract, mut2); err == nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), mut2); err == nil {
 		t.Fatal("rewritten repair.failed verified")
 	}
 }
@@ -97,7 +97,11 @@ func TestHostileAlphaCannotMutateResolvedSpec(t *testing.T) {
 	if got := cl.Receipt.Record.ResolvedSpec.Params["language"]; got != "go" {
 		t.Fatalf("frozen resolved spec mutated through captured alias: %q", got)
 	}
-	if err := VerifyClosure(BoolSpec(true).Contract, cl); err != nil {
+	// The parent's trusted meta is what it originally supplied — a fresh copy,
+	// not the map alpha corrupted through the captured alias.
+	trusted := testMeta(ModeMechanical)
+	trusted.ResolvedSpec.Params = map[string]string{"language": "go"}
+	if err := VerifyClosure(BoolSpec(true).Contract, trusted, cl); err != nil {
 		t.Fatalf("closure must verify: %v", err)
 	}
 }

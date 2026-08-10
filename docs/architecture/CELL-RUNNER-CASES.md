@@ -9,7 +9,8 @@ wording lives in Git history only.
 
 ## One kernel, every case
 
-`RunEpisode(ctx, spec, …opts)` runs the five-step closure once, at one scope:
+`RunEpisode(ctx, spec, meta, …opts)` — invocation metadata is a required
+argument, not an option — runs the five-step closure once, at one scope:
 
 ```
 matter   := α.produce(contract)          α: open seat (may rent cognition)
@@ -60,12 +61,14 @@ steps to itself.
   by an artifact sitting under `record.alpha`.
 - **I4 — one record, one digest.** `compose` builds ONE immutable
   `EpisodeRecord` (identity, mode, resolved spec, contract, both stations,
-  matter, review, policy); γ serializes it with ONE scope-lift digest.
-  `VerifyClosure(contract, closure)` is the single verification boundary: the
-  expected contract arrives as an argument (never out of the closure being
-  judged), the digest recomputes, and `verdict←V(contract, receipt)`,
-  `decision←δ(verdict)`, `status←lift(...)` re-derive purely. No overlapping
-  proof objects.
+  matter, review); γ serializes it with ONE scope-lift digest.
+  `VerifyClosure(contract, meta, closure)` is the single verification
+  boundary: the expected contract AND invocation metadata arrive as arguments
+  (never out of the closure being judged — the parent invoked the episode, so
+  it owns both), the digest recomputes, the record's mode and resolved spec
+  bind to the trusted metadata, and `verdict←V(contract, receipt)`,
+  `decision←δ(receipt, verdict)`, `status←lift(...)` re-derive purely. No
+  overlapping proof objects.
 - **I5 — identity is per-invocation and fail-closed.** The identity tuple is
   minted through one error-returning op and must be non-empty and pairwise
   distinct before α runs.
@@ -91,7 +94,7 @@ append-only sequence of results. Children never write upward or sideways.
 - **Case 0 — empty.** `NoopAlpha` + `AcceptBeta`; no required evidence.
   Terminates `accepted`. The runner smoke reference (`cell-0`).
 - **Case 1 — one-shot mechanical (bool).** α produces a bool; β **independently
-  verifies** it from its bundle (non-tautological). `value=true → accepted`,
+  verifies** it from the matter (non-tautological). `value=true → accepted`,
   `value=false → needs_repair`. No repair loop.
 - **CLI 0 — local runner.** `cn cell run --contract <path|-> [--param k=v]`
   fills parameter holes, runs one episode, emits a generic

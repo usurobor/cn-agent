@@ -26,9 +26,9 @@ func run(stdin string, args ...string) (code int, stdout, stderr string) {
 	return code, out.String(), errb.String()
 }
 
-// parseExpectedContract derives the trusted contract from boolSpecJSON via the
-// same loader path — independently of any emitted closure.
-func parseExpectedContract(t *testing.T) cellkernel.Contract {
+// parseExpected derives the trusted contract and invocation metadata from
+// boolSpecJSON via the same loader path — independently of any emitted closure.
+func parseExpected(t *testing.T) (cellkernel.Contract, cellkernel.RunMeta) {
 	t.Helper()
 	s, err := cellspec.Parse([]byte(boolSpecJSON))
 	if err != nil {
@@ -38,11 +38,11 @@ func parseExpectedContract(t *testing.T) cellkernel.Contract {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, _, err := r.Build()
+	kspec, meta, err := r.Build()
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
-	return kspec.Contract
+	return kspec.Contract, meta
 }
 
 func TestAcceptedFromStdin(t *testing.T) {
@@ -65,8 +65,8 @@ func TestAcceptedFromStdin(t *testing.T) {
 	}
 	// Re-verify against the contract the test itself trusts — parsed and
 	// resolved independently of the emitted closure.
-	expected := parseExpectedContract(t)
-	if err := cellkernel.VerifyClosure(expected, cl); err != nil {
+	expected, meta := parseExpected(t)
+	if err := cellkernel.VerifyClosure(expected, meta, cl); err != nil {
 		t.Fatalf("emitted closure does not verify: %v", err)
 	}
 }

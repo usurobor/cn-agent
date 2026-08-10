@@ -9,16 +9,13 @@
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-525669c6355c53f90ce0e5c73a338ae2",
+      "episode_id": "ep-opaque",
       "execution_mode": "mechanical",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
-        "declared_protocol": "cnos.cellkernel.episode-closure.v0",
-        "profile": "bool",
-        "params": {
-          "value": "true"
-        },
-        "alpha_skills": null,
+        "declared_protocol": "p",
+        "profile": "custom-provider",
+        "alpha_skills": [],
         "beta_skills": []
       },
       "contract": {
@@ -33,14 +30,21 @@
         ]
       },
       "alpha": {
-        "execution_id": "alpha-596ecce78d4bb7ad93e8c1d5dd2524bd",
-        "artifacts": null
+        "execution_id": "alpha-opaque",
+        "artifacts": [
+          {
+            "id": "bool",
+            "kind": "value",
+            "encoding": "utf8",
+            "text": "true"
+          }
+        ]
       },
       "matter": {
         "data": "true"
       },
       "beta": {
-        "execution_id": "beta-c7faa08c93640d080b897efbcf24ae3e",
+        "execution_id": "beta-opaque",
         "artifacts": []
       },
       "review": {
@@ -48,6 +52,6 @@
         "notes": "beta independently verified matter is bool true"
       }
     },
-    "scope_lift_digest": "6413916b1102c12a33c9ba4a99c04c15265c9e4b3eb5a788ae45d9f8cf1d31a4"
+    "scope_lift_digest": "7bd4566196a154045afc367bd6fe92dde7ac390501080ab4cb74faa687c0a685"
   }
 }

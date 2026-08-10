@@ -67,7 +67,7 @@ func TestStubPromotionFailsClosed(t *testing.T) {
 	cl.Receipt.Record.Mode = ModeMechanical
 	cl.Receipt.ScopeLiftDigest = sha256hex(cl.Receipt.Record.canonicalBytes())
 	cl.Status = Accepted
-	if err := VerifyClosure(BoolSpec(true).Contract, cl); err == nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeStub), cl); err == nil {
 		t.Fatal("promoted stub record with recomputed digest verified")
 	}
 	v := validate(BoolSpec(true).Contract, cl.Receipt)
@@ -84,7 +84,7 @@ func TestStubPromotionFailsClosed(t *testing.T) {
 func TestSubstitutedContractFailsAgainstExpected(t *testing.T) {
 	original := BoolSpec(true).Contract
 	cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
-	if err := VerifyClosure(original, cl); err != nil {
+	if err := VerifyClosure(original, testMeta(ModeMechanical), cl); err != nil {
 		t.Fatalf("honest closure must verify against its own contract: %v", err)
 	}
 
@@ -94,7 +94,7 @@ func TestSubstitutedContractFailsAgainstExpected(t *testing.T) {
 	weak.Receipt.Record.Contract.RequiredEvidence = nil
 	weak.Receipt.ScopeLiftDigest = sha256hex(weak.Receipt.Record.canonicalBytes())
 	weak.Verdict = validate(weak.Receipt.Record.Contract, weak.Receipt)
-	weak.Decision = decide(weak.Verdict)
+	weak.Decision = decide(weak.Receipt, weak.Verdict)
 	st, err := lift(weak.Verdict, weak.Decision, weak.Receipt.Record.Mode)
 	if err != nil {
 		t.Fatalf("lift: %v", err)
@@ -102,7 +102,7 @@ func TestSubstitutedContractFailsAgainstExpected(t *testing.T) {
 	weak.Status = st
 	weak.Repair = repairFrom(weak.Verdict, st)
 
-	if err := VerifyClosure(original, weak); err == nil {
+	if err := VerifyClosure(original, testMeta(ModeMechanical), weak); err == nil {
 		t.Fatal("substituted embedded contract verified against the original contract")
 	}
 	v := validate(original, weak.Receipt)
@@ -149,7 +149,7 @@ func TestNullRequiredArraysFailAtScopeLift(t *testing.T) {
 			cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
 			mut(&cl.Receipt.Record)
 			cl.Receipt.ScopeLiftDigest = sha256hex(cl.Receipt.Record.canonicalBytes())
-			if err := VerifyClosure(BoolSpec(true).Contract, cl); err == nil {
+			if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), cl); err == nil {
 				t.Fatalf("%s: null array with recomputed digest verified", name)
 			}
 			v := validate(BoolSpec(true).Contract, cl.Receipt)

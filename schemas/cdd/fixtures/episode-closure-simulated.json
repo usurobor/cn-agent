@@ -9,7 +9,7 @@
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-5206ae69aeda4f47ebe4da88276d3951",
+      "episode_id": "ep-0e820ba6eb5d59fc582a6fc89cf9b454",
       "execution_mode": "stub",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
@@ -23,22 +23,21 @@
         "goal": "empty"
       },
       "alpha": {
-        "execution_id": "alpha-563f3774bf1fd871a119f055cec39397",
+        "execution_id": "alpha-7cf4959e0fc3c38c2da3e3937748bb35",
         "artifacts": []
       },
       "matter": {
         "data": "stub-alpha produced for \"empty\" with skills []"
       },
       "beta": {
-        "execution_id": "beta-fc538795298d9584cd9f1452c434901e",
+        "execution_id": "beta-27d773fa08f5503ff207242f9a0c9bd0",
         "artifacts": []
       },
       "review": {
         "pass": true,
         "notes": "stub-beta accepted with skills []"
-      },
-      "beta_input_policy": "cnos.cellkernel.beta-input.v1"
+      }
     },
-    "scope_lift_digest": "fe79ba623bbfe1feec29bf4430c3dde66748a68a46922828487b2fe9af27457d"
+    "scope_lift_digest": "2474530ad394b901eb4f0ccf3928287d6e6bea8c69a6fe53270df2fd64a669e5"
   }
 }

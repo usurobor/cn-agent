@@ -43,7 +43,11 @@ package cdd
 	resolved_spec: {
 		version:           string & !=""
 		declared_protocol: string & !=""
-		profile:           "stub" | "bool"
+		// Opaque at the generic output boundary (Pi round-7 C2): the builtin
+		// stub|bool whitelist is an INPUT rule (#CellSpec / cellspec); the
+		// kernel and its closure accept any non-empty profile. Coherence with
+		// execution_mode is re-derived by the verifier, not encoded here.
+		profile: string & !=""
 		params?: {[string]: string}
 		alpha_skills: [...string]
 		beta_skills: [...string]
@@ -57,7 +61,6 @@ package cdd
 	matter: {data: string}
 	beta: #StationRecord
 	review: {pass: bool, notes: string}
-	beta_input_policy: "cnos.cellkernel.beta-input.v1"
 }
 
 #EpisodeClosure: {

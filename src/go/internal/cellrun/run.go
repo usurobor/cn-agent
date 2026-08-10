@@ -85,8 +85,9 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	}
 
 	// Self-check: the emitted closure must independently re-verify whole,
-	// against the contract this invocation built — never the closure's own.
-	if err := cellkernel.VerifyClosure(kspec.Contract, cl); err != nil {
+	// against the contract AND invocation metadata this invocation built —
+	// never the closure's own.
+	if err := cellkernel.VerifyClosure(kspec.Contract, meta, cl); err != nil {
 		fmt.Fprintf(stderr, "✗ closure failed self-verification: %v\n", err)
 		return 2
 	}

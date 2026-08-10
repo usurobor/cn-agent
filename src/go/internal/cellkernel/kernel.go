@@ -6,13 +6,13 @@
 //	alphaIn  := AlphaInput{frozen contract}
 //	aOut     := α(alphaIn)                        Result<AlphaOutput, error>
 //	sealedA  := sealAlpha(aOut)                   runtime-owned, immutable
-//	betaIn   := BetaInput{contract, matter, policy}
+//	betaIn   := BetaInput{contract, matter}
 //	bOut     := β(betaIn)                         Result<BetaOutput, error>
 //	sealedB  := sealBeta(bOut)
 //	record   := compose(start, sealedA, sealedB)  one immutable EpisodeRecord
 //	receipt  := γ(record)                         canonical bytes + ONE digest
 //	verdict  := V(contract, receipt)              typed failures
-//	decision := δ(verdict)
+//	decision := δ(receipt, verdict)
 //	status   := lift(decision, mode)
 //
 // Governing rule: NO MUTABLE SHARED EPISODE STATE. Each seat is a pure-shaped
@@ -54,9 +54,6 @@ import (
 const (
 	ClosureSchema = "cnos.cellkernel.episode-closure.v0"
 	RecordCanon   = "cnos.cellkernel.episode-record-canon.v0"
-	// v1: β's input surface is (contract, matter, policy) only — the CCNF
-	// review signature; α's artifacts no longer cross into β (Pi round-6 D1).
-	BetaInputPolicyID = "cnos.cellkernel.beta-input.v1"
 )
 
 // Bounds enforced at the kernel boundary.
@@ -148,14 +145,15 @@ type AlphaOutput struct {
 	Artifacts []ArtifactCandidate
 }
 
-// BetaInput is the runtime-owned review surface — the CCNF signature
-// β.review(contract, matter): a fresh frozen contract copy, the sealed matter,
-// and the review policy. Artifacts/evidence are γ/V's channel, never β's
-// (Pi round-6 D1); a profile needing richer review matter widens Matter.
+// BetaInput is the runtime-owned review surface — exactly the CCNF signature
+// β.review(contract, matter): a fresh frozen contract copy and the sealed
+// matter. Artifacts/evidence are γ/V's channel, never β's (Pi round-6 D1); a
+// profile needing richer review matter widens Matter. The input shape is
+// defined by this type and the closure schema version — there is no
+// self-reported policy id (Pi round-7 C1).
 type BetaInput struct {
 	Contract Contract
 	Matter   Matter
-	PolicyID string
 }
 
 type BetaOutput struct {
@@ -276,16 +274,15 @@ type StationRecord struct {
 // EpisodeRecord is the ONE immutable account of the episode, composed by the
 // runtime from the sealed results. Everything downstream derives from it.
 type EpisodeRecord struct {
-	Canon           string        `json:"canon"`
-	EpisodeID       string        `json:"episode_id"`
-	Mode            ExecutionMode `json:"execution_mode"`
-	ResolvedSpec    ResolvedSpec  `json:"resolved_spec"`
-	Contract        Contract      `json:"contract"`
-	Alpha           StationRecord `json:"alpha"`
-	Matter          Matter        `json:"matter"`
-	Beta            StationRecord `json:"beta"`
-	Review          Review        `json:"review"`
-	BetaInputPolicy string        `json:"beta_input_policy"`
+	Canon        string        `json:"canon"`
+	EpisodeID    string        `json:"episode_id"`
+	Mode         ExecutionMode `json:"execution_mode"`
+	ResolvedSpec ResolvedSpec  `json:"resolved_spec"`
+	Contract     Contract      `json:"contract"`
+	Alpha        StationRecord `json:"alpha"`
+	Matter       Matter        `json:"matter"`
+	Beta         StationRecord `json:"beta"`
+	Review       Review        `json:"review"`
 }
 
 // canonicalBytes is the record's canonical serialization (schema-ordered JSON,
@@ -440,7 +437,6 @@ func RunEpisode(ctx context.Context, s Spec, meta RunMeta, opts ...RunOption) (C
 	bOut, err := s.Beta.Review(ctx, BetaInput{
 		Contract: frozen.clone(),
 		Matter:   sealedA.projection(),
-		PolicyID: BetaInputPolicyID,
 	})
 	if err != nil {
 		return Closure{}, fmt.Errorf("beta review: %w", err)
@@ -460,7 +456,7 @@ func RunEpisode(ctx context.Context, s Spec, meta RunMeta, opts ...RunOption) (C
 	}
 	receipt := gamma(record)
 	verdict := validate(frozen, receipt)
-	decision := decide(verdict)
+	decision := decide(receipt, verdict)
 	status, err := lift(verdict, decision, record.Mode)
 	if err != nil {
 		return Closure{}, err
@@ -535,16 +531,15 @@ func compose(id Identity, meta RunMeta, frozen Contract, a SealedAlpha, b Sealed
 		return EpisodeRecord{}, fmt.Errorf("cellkernel: aggregate artifact bytes exceed %d", maxAggregateArtifact)
 	}
 	return EpisodeRecord{
-		Canon:           RecordCanon,
-		EpisodeID:       id.Episode,
-		Mode:            meta.ExecutionMode,
-		ResolvedSpec:    meta.ResolvedSpec,
-		Contract:        frozen,
-		Alpha:           StationRecord{ExecutionID: a.exec, Artifacts: a.artifacts},
-		Matter:          a.matter,
-		Beta:            StationRecord{ExecutionID: b.exec, Artifacts: b.artifacts},
-		Review:          b.review,
-		BetaInputPolicy: BetaInputPolicyID,
+		Canon:        RecordCanon,
+		EpisodeID:    id.Episode,
+		Mode:         meta.ExecutionMode,
+		ResolvedSpec: meta.ResolvedSpec,
+		Contract:     frozen,
+		Alpha:        StationRecord{ExecutionID: a.exec, Artifacts: a.artifacts},
+		Matter:       a.matter,
+		Beta:         StationRecord{ExecutionID: b.exec, Artifacts: b.artifacts},
+		Review:       b.review,
 	}, nil
 }
 
@@ -568,7 +563,6 @@ func validateRecord(r EpisodeRecord) []Failure {
 
 	add(r.Canon != RecordCanon, InvalidRecord, "wrong record canon")
 	add(!knownMode(r.Mode), InvalidRecord, "unknown execution mode")
-	add(r.BetaInputPolicy != BetaInputPolicyID, InvalidRecord, "unknown beta-input policy")
 
 	// Invocation authority (Pi round-5 D1): the resolved spec is inside the one
 	// boundary — a stub closure cannot be promoted to mechanical/accepted while
@@ -680,9 +674,11 @@ func hasArtifact(arts []Artifact, id, kind string) bool {
 	return false
 }
 
-// decide (δ) routes by failure class: integrity fails closed; contract-unmet
-// repairs; pass accepts (pure).
-func decide(v Verdict) Decision {
+// decide is δ(receipt, verdict) — the canonical CCNF signature (Pi round-7
+// C1). The v0 router is verdict-only (routes by failure class: integrity
+// fails closed; contract-unmet repairs; pass accepts — pure); the receipt is
+// where a later δ policy would look, never a new authority surface.
+func decide(_ Receipt, v Verdict) Decision {
 	switch {
 	case v.Pass:
 		return Accept

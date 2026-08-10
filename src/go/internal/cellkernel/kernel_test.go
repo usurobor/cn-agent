@@ -55,7 +55,7 @@ func TestEmptyCellRunsToAccepted(t *testing.T) {
 	if cl.Status != Accepted {
 		t.Fatalf("status: want accepted, got %q", cl.Status)
 	}
-	if err := VerifyClosure(EmptySpec().Contract, cl); err != nil {
+	if err := VerifyClosure(EmptySpec().Contract, testMeta(ModeMechanical), cl); err != nil {
 		t.Fatalf("closure must self-verify: %v", err)
 	}
 }
@@ -80,7 +80,7 @@ func TestStubIsSimulated(t *testing.T) {
 	if cl.Status != Simulated {
 		t.Fatalf("stub status: want simulated, got %q", cl.Status)
 	}
-	if err := VerifyClosure(EmptySpec().Contract, cl); err != nil {
+	if err := VerifyClosure(EmptySpec().Contract, testMeta(ModeStub), cl); err != nil {
 		t.Fatalf("stub closure must verify: %v", err)
 	}
 }
@@ -111,7 +111,7 @@ func TestResolvedInputChangesDigest(t *testing.T) {
 
 func TestClosureReVerifiesAfterSerialization(t *testing.T) {
 	cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
-	if err := VerifyClosure(BoolSpec(true).Contract, cl); err != nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), cl); err != nil {
 		t.Fatalf("round-tripped closure must verify: %v", err)
 	}
 }
@@ -137,7 +137,7 @@ func TestTamperedClosureFails(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
 			mut(&cl)
-			if err := VerifyClosure(BoolSpec(true).Contract, cl); err == nil {
+			if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), cl); err == nil {
 				t.Fatalf("tamper %q passed verification", name)
 			}
 		})
@@ -195,7 +195,7 @@ func TestBetaCannotMutateSealedAlpha(t *testing.T) {
 	if got := cl.Receipt.Record.Alpha.Artifacts[0].Text; got != "true" {
 		t.Fatalf("sealed alpha artifact mutated via beta projection: %q", got)
 	}
-	if err := VerifyClosure(BoolSpec(true).Contract, cl); err != nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeMechanical), cl); err != nil {
 		t.Fatalf("closure must still verify: %v", err)
 	}
 }
@@ -231,11 +231,11 @@ func TestAlphaArtifactCannotSatisfyBetaRequirement(t *testing.T) {
 
 func TestIntegrityFailureFailsClosed(t *testing.T) {
 	integrity := Verdict{Pass: false, Failures: []Failure{{InvalidRecord, "x"}}}
-	if d := decide(integrity); d != Reject {
+	if d := decide(Receipt{}, integrity); d != Reject {
 		t.Fatalf("integrity failure -> %q, want reject", d)
 	}
 	unmet := Verdict{Pass: false, Failures: []Failure{{ContractUnmet, "x"}}}
-	if d := decide(unmet); d != RepairDispatch {
+	if d := decide(Receipt{}, unmet); d != RepairDispatch {
 		t.Fatalf("contract-unmet -> %q, want repair_dispatch", d)
 	}
 }

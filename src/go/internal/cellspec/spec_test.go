@@ -114,7 +114,7 @@ func TestStubProfileIsSimulated(t *testing.T) {
 	if cl.Status != cellkernel.Simulated {
 		t.Fatalf("status = %q, want simulated", cl.Status)
 	}
-	if err := cellkernel.VerifyClosure(kspec.Contract, cl); err != nil {
+	if err := cellkernel.VerifyClosure(kspec.Contract, meta, cl); err != nil {
 		t.Fatalf("closure must verify: %v", err)
 	}
 	// Positional ownership: the diff sits under Alpha, beta_review under Beta.

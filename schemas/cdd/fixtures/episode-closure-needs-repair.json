@@ -15,7 +15,7 @@
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-d48464dbf0da01588bf951c19e9b47ea",
+      "episode_id": "ep-941f43ec6cf3b0e6c9adf2492eef8113",
       "execution_mode": "mechanical",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
@@ -39,7 +39,7 @@
         ]
       },
       "alpha": {
-        "execution_id": "alpha-ea0dc9dda83a517a07a8e8f937afd1aa",
+        "execution_id": "alpha-3dc83bfe8c03d8d7601a956339ba2121",
         "artifacts": [
           {
             "id": "bool",
@@ -53,16 +53,15 @@
         "data": "false"
       },
       "beta": {
-        "execution_id": "beta-f877bc4378ae5b5a13592fea94805ef1",
+        "execution_id": "beta-2f3e630e27810ff86c0d37a7073cadaf",
         "artifacts": []
       },
       "review": {
         "pass": false,
         "notes": "matter is not bool true"
-      },
-      "beta_input_policy": "cnos.cellkernel.beta-input.v1"
+      }
     },
-    "scope_lift_digest": "11d36c408de557ee7cd48dd4cc013a3ea70fdeb8c2e3590acd34264d370da1ef"
+    "scope_lift_digest": "74b8fb19aa766577caec39e3975fbe26f430a219675001015dbbf942873ff060"
   },
   "repair": {
     "reason": "contract unmet",
