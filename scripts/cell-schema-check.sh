@@ -35,6 +35,8 @@ run_vet() { # want-exit, cn args...
 echo "# positive cell specs"
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/empty-cell-spec.json -d '#CellSpec'
 vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/bool-cell-spec.json -d '#CellSpec'
+vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/cognitive-cell-spec.json -d '#CellSpec'
+vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/cognitive-evidence-cell-spec.json -d '#CellSpec'
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/valid-cell-spec.json -d '#CDSCellSpec'
 
 echo "# positive closures"
@@ -42,6 +44,8 @@ vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-acce
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-needs-repair.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-simulated.json -d '#EpisodeClosure'
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-opaque-profile.json -d '#EpisodeClosure'
+# Emitted by a real `--param provider=claude` run: a model held alpha.
+vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-cognitive.json -d '#EpisodeClosure'
 
 echo "# negative cell specs (must be rejected)"
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.json -d '#CellSpec'
@@ -63,6 +67,7 @@ run_bad schemas/cdd/fixtures/invalid/cellspec-empty-goal.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-missing-skills.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json
+run_bad schemas/cdd/fixtures/invalid/cognitive-missing-provider.json
 
 echo "# SIGINT terminates a blocked stdin reader (Pi round-5 D3)"
 mkfifo "$tmpdir/stdin.fifo"
@@ -92,5 +97,11 @@ echo "# actual CLI output vetted against the terminal schema"
 run_vet 0 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=true
 run_vet 1 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=false
 run_vet 3 --contract schemas/cdd/fixtures/empty-cell-spec.json
+# The cognition seam, offline: prompt render -> provider -> envelope parse ->
+# seat -> closure. `fake` rents nothing, so these runs are `mechanical`; the
+# second proves a rented answer that omits required evidence is judged, not
+# trusted (V alone routes it to needs_repair).
+run_vet 0 --contract schemas/cdd/fixtures/cognitive-cell-spec.json --param provider=fake
+run_vet 1 --contract schemas/cdd/fixtures/cognitive-evidence-cell-spec.json --param provider=fake
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi

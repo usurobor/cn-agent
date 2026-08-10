@@ -45,9 +45,11 @@ package cdd
 	skills!: [...string]
 }
 
-// #Profile is a builtin v0 seat profile (no cognition yet). "stub" is smoke;
-// "bool" is a real independently-checked mechanical episode.
-#Profile: "stub" | "bool"
+// #Profile is a builtin seat profile. "stub" is smoke; "bool" is a real
+// independently-checked mechanical episode; "cognitive" rents alpha from a
+// provider while beta stays mechanical (Case 2). The whitelist is an INPUT
+// rule — the kernel and the closure treat a profile as opaque.
+#Profile: "stub" | "bool" | "cognitive"
 
 // #CellSpec is the serialized cell.
 #CellSpec: {

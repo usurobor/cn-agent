@@ -6,20 +6,33 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/usurobor/cnos/src/go/internal/cellcog"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 )
 
-// Builtin v0 seat profiles. v0 has no cognition; a profile selects a mechanical
-// seat pair. Rented cognition (Phase 3) adds a provider-backed profile.
+// Builtin seat profiles. A profile selects a seat pair; the loader — never the
+// kernel — owns this whitelist, so the kernel stays domain-neutral.
 const (
-	ProfileStub = "stub" // smoke: fabricates required artifacts; non-authoritative `simulated`
-	ProfileBool = "bool" // real: alpha produces a bool, beta INDEPENDENTLY verifies it
+	ProfileStub      = "stub"      // smoke: fabricates required artifacts; non-authoritative `simulated`
+	ProfileBool      = "bool"      // real: alpha produces a bool, beta INDEPENDENTLY verifies it
+	ProfileCognitive = "cognitive" // rented alpha behind a provider; beta still mechanical (Case 2)
 )
 
-func isKnownProfile(p string) bool { return p == ProfileStub || p == ProfileBool }
+func isKnownProfile(p string) bool {
+	return p == ProfileStub || p == ProfileBool || p == ProfileCognitive
+}
 
-// buildProfile constructs the seat pair for a resolved spec's profile and its
-// execution mode. A stub run is non-authoritative (kernel status `simulated`).
+// Providers the cognitive profile may rent. Closed set: a typo must fail
+// resolution rather than silently pick a backend.
+const (
+	ProviderClaude = "claude" // the Claude Code CLI — real cognition
+	ProviderFake   = "fake"   // deterministic, rents nothing (CI)
+)
+
+// buildProfile constructs the seat pair for a resolved spec's profile and the
+// execution mode that honestly describes how the work was produced: `stub`
+// fabricates (non-authoritative `simulated`), `mechanical` is deterministic
+// and reproducible from the record, `cognitive` means a provider held a seat.
 func buildProfile(r Resolved) (cellkernel.Alpha, cellkernel.Beta, cellkernel.ExecutionMode, error) {
 	switch r.Spec.Profile {
 	case ProfileStub:
@@ -34,8 +47,28 @@ func buildProfile(r Resolved) (cellkernel.Alpha, cellkernel.Beta, cellkernel.Exe
 			return nil, nil, "", fmt.Errorf("profile %q: value %q is not a bool", ProfileBool, v)
 		}
 		return cellkernel.BoolAlpha{Value: b}, cellkernel.BoolBeta{}, cellkernel.ModeMechanical, nil
+	case ProfileCognitive:
+		provider, mode, err := buildProvider(r.Params["provider"])
+		if err != nil {
+			return nil, nil, "", err
+		}
+		return cellcog.Alpha{Provider: provider, Skills: r.AlphaSkills}, cellcog.MatterBeta{}, mode, nil
 	default:
 		return nil, nil, "", fmt.Errorf("unknown profile %q", r.Spec.Profile)
+	}
+}
+
+// buildProvider pairs a provider with the mode that tells the truth about it:
+// only a provider that actually rents cognition may run `cognitive`.
+func buildProvider(name string) (cellcog.Provider, cellkernel.ExecutionMode, error) {
+	switch name {
+	case ProviderClaude:
+		return cellcog.ClaudeCLI{}, cellkernel.ModeCognitive, nil
+	case ProviderFake:
+		return cellcog.Fake{}, cellkernel.ModeMechanical, nil
+	default:
+		return nil, "", fmt.Errorf("profile %q: unknown provider %q (want %q or %q)",
+			ProfileCognitive, name, ProviderClaude, ProviderFake)
 	}
 }
 

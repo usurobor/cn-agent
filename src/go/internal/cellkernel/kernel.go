@@ -76,15 +76,25 @@ const (
 	RoleBeta  Role = "beta"
 )
 
-// ExecutionMode: a stub run is a non-authoritative smoke test.
+// ExecutionMode is how the episode's work was produced. It is invocation
+// truth: the parent supplies it and VerifyClosure binds it, so a closure
+// cannot misreport how it ran.
+//
+//	stub       — nothing real was produced; non-authoritative (`simulated`)
+//	mechanical — deterministic seats; reproducible from the record
+//	cognitive  — a provider (a model) held at least one seat; authoritative
+//	             work, but NOT reproducible by re-running
 type ExecutionMode string
 
 const (
 	ModeStub       ExecutionMode = "stub"
 	ModeMechanical ExecutionMode = "mechanical"
+	ModeCognitive  ExecutionMode = "cognitive"
 )
 
-func knownMode(m ExecutionMode) bool { return m == ModeStub || m == ModeMechanical }
+func knownMode(m ExecutionMode) bool {
+	return m == ModeStub || m == ModeMechanical || m == ModeCognitive
+}
 
 // --- Immutable values ----------------------------------------------------
 

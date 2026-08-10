@@ -189,12 +189,14 @@ Four layers, matching the rest of the architecture:
 |---|---|---|
 | Receipt schema (output contract) | cnos.cdd + cds | ✅ shipped |
 | CCNF kernel (`RunEpisode` → verifiable `Closure`) | src/go `internal/cellkernel` | ✅ shipped (PR #718; hardened through Pi β #31–#45) |
-| Provider seam for rented cognition | src/go `internal/dispatch.Backend` | ✅ exists |
+| Provider seam for rented cognition | src/go `internal/cellcog` (`Provider` port + `ClaudeCLI`/`Fake`) | ✅ shipped (Case 2: rented α, mechanical β) |
 | `#CellSpec` CUE schema (input contract) | cnos.cdd (`schemas/cdd/spec.cue`) | ✅ shipped |
 | cds params-domain overlay (`#CDSCellSpec`) | cnos.cds (`schemas/cds/spec.cue`) | ✅ shipped (canonical diff-first evidence rule) |
 | spec loader/binder (strict parse → kernel Spec) | src/go `internal/cellspec` | ✅ shipped |
 | `cn cell run` (fill holes, run, emit closure) | src/go `internal/cellrun` (+ thin `cli` wrapper) | ✅ shipped (exits 0/1/2/3; closure self-verifies) |
-| skill-path resolver (value → loaded skill) | cnos.cdd | ❌ Phase 2/3 (params→skill names shipped; loading comes with cognition) |
+| skill-path resolver (value → loaded skill) | cnos.cdd | ◐ names resolve and splice into the rented α's prompt; loading skill *bodies* is still open |
+| matter substrate (diff at a base SHA) | src/go, outside the kernel | ❌ G1 — blocks a real CDS episode; next |
+| typed findings on `BetaOutput` | src/go `internal/cellkernel` | ❌ G3 — the findings ARE the repair plan |
 | `main.cell` compiler (surface → spec.json) | cnos.cdd | ❌ Phase 4 sugar (deliberately deferred) |
 | `cnos.cds/main.cell` | cnos.cds | ❌ Phase 4 (JSON fixtures are the current authored form) |
 
@@ -243,11 +245,23 @@ against a shared positive/negative corpus (Pi #31–#33 + PR-#718 β + #44).
 required holes with a Unix-style usage line. Seats load the resolved skills
 (cognition still stubbed). *Proves parameters map to real skills.*
 
-**Phase 3 — rented α + CDS profile.** First `internal/dispatch.Backend` adapter
-behind the GitHub-free provider port; trivial escalation predicate ("compiled
-implementation absent → rent α", Pi Q2). Expose `cn cds run --issue N --contract
-<path|->` (`--issue N` is identity/output metadata only — no hidden `gh`). One
-real bounded CDS episode closes locally. *This is #717/F.*
+**Phase 3 — rented α + CDS profile.** ◐ *First half shipped.* The provider
+port and the `cognitive` profile live in `internal/cellcog`: the frozen
+contract renders (purely) to a prompt, a `Provider` answers, and the answer
+parses (purely) into kernel candidates. `--param provider=claude` rents the
+Claude Code CLI — bounded by timeout, output cap and `WaitDelay`, because a
+rented seat is the one part of an episode the runtime cannot predict;
+`provider=fake` runs the identical seam deterministically so CI exercises
+cognition on every commit without a model. The mode follows the provider, so
+the closure never implies cognition that was not rented. β stays mechanical
+(`MatterBeta`) and honestly says its review is weak; V still checks required
+evidence positionally, so a model that omits it closes `needs_repair`.
+
+*Still open before a real CDS episode:* **G1** the matter substrate (a diff at
+a base SHA, materialized by a workspace adapter outside the kernel) and **G3**
+typed findings — until then a rented α can only produce text, which is why the
+CDS profile itself is not yet operational. `cn cds run --issue N` and the
+escalation predicate (Pi Q2) follow those.
 
 **Phase 4 — the surface + compiler (sugar, later).** `cn cell compile main.cell
 → spec.json` (Go `participle`, ~150 lines; CUE stays the independent oracle) +

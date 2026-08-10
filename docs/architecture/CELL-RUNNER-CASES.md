@@ -28,6 +28,13 @@ orchestrator invoke this kernel repeatedly — they are not extra seats.
 
 ## Outcomes
 
+The record also states **how** the work was produced, and the parent's trusted
+metadata pins it: `stub` fabricated it (non-authoritative `simulated`),
+`mechanical` is deterministic and reproducible from the record, `cognitive`
+means a provider held a seat — authoritative work that re-running does not
+reproduce. Renting cognition never lowers the bar a closure must clear; it
+only changes who filled the seat.
+
 `RunEpisode` returns a `Closure` whose `Status` is terminal
 (`accepted` | `degraded` | `rejected` | `simulated`) or non-terminal
 (`needs_repair`, the parent stays open — the closure then carries a
@@ -100,8 +107,13 @@ append-only sequence of results. Children never write upward or sideways.
   fills parameter holes, runs one episode, emits a generic
   `cnos.cellkernel.episode-closure.v0`, exit `0/1/2/3` (3 = `simulated`).
   Zero GitHub/network.
-- **Case 2 — rented α, mechanical β.** First cognition behind α (a provider
-  seam); β still mechanical. (Phase 3 / #717-F; held until CI + Pi converge.)
+- **Case 2 — rented α, mechanical β.** ✅ Cognition behind α via `internal/cellcog`:
+  the frozen contract renders to a prompt, a **provider** answers, and the
+  answer parses into candidates. `cn cell run --contract <spec> --param
+  provider=claude` runs a real episode; `provider=fake` runs the same seam
+  deterministically offline for CI. β is `MatterBeta` — a deliberately weak
+  mechanical review that says so in its notes. Required evidence stays V's
+  business, so a model that omits it closes `needs_repair`.
 - **Case 3 — rented α and β.** Full single-episode CDS. V validates
   evidence/bindings; it never re-judges β's prose.
 - **Case 4 — bounded repair driver.** A `Drive` loop invokes the same episode

@@ -1,0 +1,11 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "cell-cognitive",
+    "goal": "Explain what a coherence cell guarantees"
+  },
+  "protocol_id": "cnos.cellkernel.episode-closure.v0",
+  "profile": "cognitive",
+  "alpha": { "skills": [] },
+  "beta": { "skills": [] }
+}

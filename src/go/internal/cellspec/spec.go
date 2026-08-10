@@ -130,18 +130,33 @@ func Parse(data []byte) (CellSpec, error) {
 }
 
 // checkProfileParams enforces a builtin profile's parameter contract (Pi #33
-// D5): the bool profile needs a `value` parameter of kind "value".
+// D5): a profile that is steered by a scalar must declare that hole.
 func checkProfileParams(s CellSpec) error {
-	if s.Profile == ProfileBool {
-		p, ok := s.Params["value"]
-		if !ok {
-			return fmt.Errorf("profile %q requires a \"value\" parameter", ProfileBool)
-		}
-		if p.Kind != "value" {
-			return fmt.Errorf("profile %q parameter \"value\" must have kind \"value\", got %q", ProfileBool, p.Kind)
-		}
+	name, needed := requiredValueParam(s.Profile)
+	if !needed {
+		return nil
+	}
+	p, ok := s.Params[name]
+	if !ok {
+		return fmt.Errorf("profile %q requires a %q parameter", s.Profile, name)
+	}
+	if p.Kind != "value" {
+		return fmt.Errorf("profile %q parameter %q must have kind \"value\", got %q", s.Profile, name, p.Kind)
 	}
 	return nil
+}
+
+// requiredValueParam names the value-kind hole a builtin profile is steered
+// by: the bool profile's literal, the cognitive profile's provider.
+func requiredValueParam(profile string) (string, bool) {
+	switch profile {
+	case ProfileBool:
+		return "value", true
+	case ProfileCognitive:
+		return "provider", true
+	default:
+		return "", false
+	}
 }
 
 func validateEvidence(refs []RequiredRef) error {

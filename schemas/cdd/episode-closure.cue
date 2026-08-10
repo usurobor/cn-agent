@@ -39,7 +39,11 @@ package cdd
 #EpisodeRecord: {
 	canon:          "cnos.cellkernel.episode-record-canon.v0"
 	episode_id:     string & !=""
-	execution_mode: "stub" | "mechanical"
+	// How the work was produced: "stub" fabricated it (non-authoritative
+	// `simulated`), "mechanical" is deterministic and reproducible from the
+	// record, "cognitive" means a provider held a seat — authoritative work
+	// that re-running does not reproduce.
+	execution_mode: "stub" | "mechanical" | "cognitive"
 	resolved_spec: {
 		version:           string & !=""
 		declared_protocol: string & !=""

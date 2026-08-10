@@ -176,3 +176,106 @@ func TestBoolProfileAcceptedAndUnmet(t *testing.T) {
 		t.Errorf("value=false: status %q, want needs_repair", got)
 	}
 }
+
+// --- Cognitive profile (Phase 3, Case 2) ----------------------------------
+
+const cognitiveFixture = `{
+  "version": "cnos.cellspec.v0",
+  "contract": {"id":"cell-cog","goal":"answer the question"},
+  "protocol_id": "cnos.cellkernel.episode-closure.v0",
+  "profile": "cognitive",
+  "params": {"provider": {"kind":"value","required":true,"domain":["claude","fake"]}},
+  "alpha": {"skills": ["eng"]},
+  "beta": {"skills": []}
+}`
+
+// The provider decides the mode, because the mode must tell the truth about
+// how the work was produced: only a provider that really rents cognition may
+// run `cognitive`; the deterministic fake is `mechanical`.
+func TestCognitiveProfileModeFollowsProvider(t *testing.T) {
+	s, err := Parse([]byte(cognitiveFixture))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	for provider, want := range map[string]cellkernel.ExecutionMode{
+		"fake":   cellkernel.ModeMechanical,
+		"claude": cellkernel.ModeCognitive,
+	} {
+		t.Run(provider, func(t *testing.T) {
+			r, err := s.Resolve(map[string]string{"provider": provider})
+			if err != nil {
+				t.Fatalf("resolve: %v", err)
+			}
+			_, meta, err := r.Build()
+			if err != nil {
+				t.Fatalf("build: %v", err)
+			}
+			if meta.ExecutionMode != want {
+				t.Fatalf("provider %q: mode = %q, want %q", provider, meta.ExecutionMode, want)
+			}
+			if meta.ResolvedSpec.Params["provider"] != provider {
+				t.Fatal("the provider that held the seat is not disclosed in the record")
+			}
+		})
+	}
+}
+
+// A cognitive episode closes through the real loader path and self-verifies.
+func TestCognitiveProfileClosesWithFake(t *testing.T) {
+	s, err := Parse([]byte(cognitiveFixture))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	r, err := s.Resolve(map[string]string{"provider": "fake"})
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	kspec, meta, err := r.Build()
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	cl, err := cellkernel.RunEpisode(context.Background(), kspec, meta)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if cl.Status != cellkernel.Accepted {
+		t.Fatalf("status = %q, want accepted", cl.Status)
+	}
+	if err := cellkernel.VerifyClosure(kspec.Contract, meta, cl); err != nil {
+		t.Fatalf("closure must verify: %v", err)
+	}
+}
+
+func TestCognitiveProfileRejectsBadProvider(t *testing.T) {
+	s, err := Parse([]byte(cognitiveFixture))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	// A typo must fail resolution against the closed domain...
+	if _, err := s.Resolve(map[string]string{"provider": "clyde"}); err == nil {
+		t.Fatal("provider outside the declared domain must fail resolution")
+	}
+	// ...and an undeclared provider must fail the build even if a spec widens
+	// its own domain.
+	wide := strings.Replace(cognitiveFixture, `["claude","fake"]`, `["clyde"]`, 1)
+	ws, err := Parse([]byte(wide))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	r, err := ws.Resolve(map[string]string{"provider": "clyde"})
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	if _, _, err := r.Build(); err == nil {
+		t.Fatal("unknown provider must fail the build")
+	}
+}
+
+// The profile must declare the hole that steers it.
+func TestCognitiveProfileRequiresProviderParam(t *testing.T) {
+	noParam := `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},` +
+		`"protocol_id":"p","profile":"cognitive","alpha":{"skills":[]},"beta":{"skills":[]}}`
+	if _, err := Parse([]byte(noParam)); err == nil {
+		t.Fatal("cognitive profile without a provider parameter must be rejected")
+	}
+}

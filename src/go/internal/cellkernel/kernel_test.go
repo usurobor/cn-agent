@@ -339,3 +339,23 @@ func TestBoundedOutput(t *testing.T) {
 		t.Fatal("want error for oversized matter")
 	}
 }
+
+// A cognitive episode is authoritative work: renting a seat does not make the
+// closure non-authoritative the way a stub does. Only `stub` lifts to
+// `simulated`.
+func TestCognitiveModeIsAuthoritative(t *testing.T) {
+	meta := testMeta(ModeMechanical)
+	meta.ExecutionMode = ModeCognitive
+	meta.ResolvedSpec.Profile = "cognitive"
+	cl, err := RunEpisode(context.Background(), BoolSpec(true), meta,
+		WithIDSource(seqIDs{"ep-c", "alpha-c", "beta-c"}))
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if cl.Status != Accepted {
+		t.Fatalf("cognitive status: want accepted, got %q", cl.Status)
+	}
+	if err := VerifyClosure(BoolSpec(true).Contract, meta, cl); err != nil {
+		t.Fatalf("cognitive closure must verify: %v", err)
+	}
+}
