@@ -81,6 +81,10 @@ func TestParseRejects(t *testing.T) {
 		"dup evidence id":   `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":[{"id":"x","kind":"k","producer":"alpha"},{"id":"x","kind":"k","producer":"beta"}]},"protocol_id":"cnos.cdd.receipt.v1","alpha":{"skills":[]},"beta":{"skills":[]}}`,
 		"empty goal":        `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":""},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
 		"missing skills":    `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{},"beta":{"skills":[]}}`,
+		"case-alias key":    `{"version":"bad","Version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
+		"case-alias nested": `{"version":"cnos.cellspec.v0","contract":{"id":"c","Goal":"g","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
+		"null skills":       `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":null},"beta":{"skills":[]}}`,
+		"null evidence":     `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g","required_evidence":null},"protocol_id":"cnos.cdd.receipt.v1","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`,
 	}
 	for name, in := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -103,14 +107,14 @@ func TestStubProfileIsSimulated(t *testing.T) {
 	if meta.ExecutionMode != cellkernel.ModeStub {
 		t.Fatalf("mode = %q, want stub", meta.ExecutionMode)
 	}
-	cl, err := cellkernel.RunEpisode(context.Background(), kspec, cellkernel.WithMeta(meta))
+	cl, err := cellkernel.RunEpisode(context.Background(), kspec, meta)
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if cl.Status != cellkernel.Simulated {
 		t.Fatalf("status = %q, want simulated", cl.Status)
 	}
-	if err := cellkernel.VerifyClosure(cl); err != nil {
+	if err := cellkernel.VerifyClosure(kspec.Contract, cl); err != nil {
 		t.Fatalf("closure must verify: %v", err)
 	}
 	// Positional ownership: the diff sits under Alpha, beta_review under Beta.
@@ -159,7 +163,7 @@ func TestBoolProfileAcceptedAndUnmet(t *testing.T) {
 		if meta.ExecutionMode != cellkernel.ModeMechanical {
 			t.Fatalf("mode = %q, want mechanical", meta.ExecutionMode)
 		}
-		cl, err := cellkernel.RunEpisode(context.Background(), kspec, cellkernel.WithMeta(meta))
+		cl, err := cellkernel.RunEpisode(context.Background(), kspec, meta)
 		if err != nil {
 			t.Fatalf("run: %v", err)
 		}

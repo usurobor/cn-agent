@@ -35,7 +35,7 @@ type CellSpec struct {
 	Version    string               `json:"version"`
 	Contract   ContractSpec         `json:"contract"`
 	ProtocolID string               `json:"protocol_id"`
-	Profile    string               `json:"profile,omitempty"` // builtin seat profile; default "stub"
+	Profile    string               `json:"profile,omitempty"` // builtin seat profile; explicit, no default (Pi PR-#718 β D5)
 	Params     map[string]ParamSpec `json:"params,omitempty"`
 	Alpha      *SeatSpec            `json:"alpha"`
 	Beta       *SeatSpec            `json:"beta"`
@@ -69,6 +69,9 @@ type SeatSpec struct {
 // Parse strictly decodes and validates a serialized cell spec.
 func Parse(data []byte) (CellSpec, error) {
 	if err := checkNoDuplicateKeys(data); err != nil {
+		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
+	}
+	if err := checkExactKeys(data); err != nil {
 		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
 	}
 
@@ -154,6 +157,78 @@ func validateEvidence(refs []RequiredRef) error {
 			return fmt.Errorf("duplicate required_evidence id %q", r.ID)
 		}
 		seen[r.ID] = true
+	}
+	return nil
+}
+
+// checkExactKeys walks the five known CellSpec object shapes and requires
+// every key to be in the shape's exact (case-sensitive) set. This closes the
+// legacy encoding/json case-insensitivity hole (Pi round-6 D2): `"Version"`
+// would otherwise both satisfy DisallowUnknownFields and bypass the
+// exact-string duplicate walker while CUE rejects it. Not a schema engine —
+// the value grammar stays with the strict decode; only object keys are
+// checked here.
+func checkExactKeys(data []byte) error {
+	var root map[string]json.RawMessage
+	if err := json.Unmarshal(data, &root); err != nil {
+		return err
+	}
+	if err := keysIn("spec", root, "version", "contract", "protocol_id", "profile", "params", "alpha", "beta"); err != nil {
+		return err
+	}
+	if err := objectKeys(root["contract"], "contract", "id", "goal", "required_evidence"); err != nil {
+		return err
+	}
+	var contract struct {
+		RequiredEvidence []json.RawMessage `json:"required_evidence"`
+	}
+	if len(root["contract"]) > 0 {
+		if err := json.Unmarshal(root["contract"], &contract); err != nil {
+			return err
+		}
+	}
+	for _, ref := range contract.RequiredEvidence {
+		if err := objectKeys(ref, "required_evidence entry", "id", "kind", "producer"); err != nil {
+			return err
+		}
+	}
+	var params map[string]json.RawMessage
+	if len(root["params"]) > 0 {
+		if err := json.Unmarshal(root["params"], &params); err != nil {
+			return err
+		}
+	}
+	for name, p := range params {
+		if err := objectKeys(p, fmt.Sprintf("parameter %q", name), "kind", "required", "default", "domain"); err != nil {
+			return err
+		}
+	}
+	for _, seat := range []string{"alpha", "beta"} {
+		if err := objectKeys(root[seat], seat, "skills"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// objectKeys checks one raw JSON object's keys against an exact allowed set.
+// Absent or non-object values are left for the strict decode to judge.
+func objectKeys(raw json.RawMessage, where string, allowed ...string) error {
+	if len(raw) == 0 || raw[0] != '{' {
+		return nil
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return err
+	}
+	return keysIn(where, m, allowed...)
+}
+
+func keysIn(where string, m map[string]json.RawMessage, allowed ...string) error {
+	for k := range m {
+		if !slices.Contains(allowed, k) {
+			return fmt.Errorf("%s has unknown key %q (keys are exact and case-sensitive)", where, k)
+		}
 	}
 	return nil
 }
@@ -263,8 +338,10 @@ func (r Resolved) Build() (cellkernel.Spec, cellkernel.RunMeta, error) {
 	return cellkernel.Spec{Contract: contract, Alpha: alpha, Beta: beta}, meta, nil
 }
 
-// checkNoDuplicateKeys rejects duplicate object keys anywhere in the JSON, which
-// encoding/json otherwise silently accepts (last-wins).
+// checkNoDuplicateKeys rejects duplicate object keys anywhere in the JSON,
+// which encoding/json otherwise silently accepts (last-wins), and rejects
+// JSON null anywhere — the schema admits none, and a null collection would
+// silently decode to a Go nil (Pi round-6 D2).
 func checkNoDuplicateKeys(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	return walkNoDup(dec)
@@ -274,6 +351,9 @@ func walkNoDup(dec *json.Decoder) error {
 	t, err := dec.Token()
 	if err != nil {
 		return err
+	}
+	if t == nil {
+		return fmt.Errorf("null is not allowed (the cell-spec schema admits no null)")
 	}
 	delim, ok := t.(json.Delim)
 	if !ok {

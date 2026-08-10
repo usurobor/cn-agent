@@ -9,7 +9,7 @@
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-cdb6be9cb352af9eba163e4f15a4c9af",
+      "episode_id": "ep-5206ae69aeda4f47ebe4da88276d3951",
       "execution_mode": "stub",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
@@ -23,22 +23,22 @@
         "goal": "empty"
       },
       "alpha": {
-        "execution_id": "alpha-3094058621304dbba9d56008c12be16c",
+        "execution_id": "alpha-563f3774bf1fd871a119f055cec39397",
         "artifacts": []
       },
       "matter": {
         "data": "stub-alpha produced for \"empty\" with skills []"
       },
       "beta": {
-        "execution_id": "beta-7b313946bc0389f4650d1953e3435273",
+        "execution_id": "beta-fc538795298d9584cd9f1452c434901e",
         "artifacts": []
       },
       "review": {
         "pass": true,
         "notes": "stub-beta accepted with skills []"
       },
-      "beta_input_policy": "cnos.cellkernel.beta-input.v0"
+      "beta_input_policy": "cnos.cellkernel.beta-input.v1"
     },
-    "scope_lift_digest": "6b880dcc6cbbbd0f06404ff52d099b3ff8ee680e06e77ff569b1d9320af4f4d7"
+    "scope_lift_digest": "fe79ba623bbfe1feec29bf4430c3dde66748a68a46922828487b2fe9af27457d"
   }
 }

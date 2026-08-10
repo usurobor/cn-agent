@@ -6,12 +6,12 @@
 //	alphaIn  := AlphaInput{frozen contract}
 //	aOut     := α(alphaIn)                        Result<AlphaOutput, error>
 //	sealedA  := sealAlpha(aOut)                   runtime-owned, immutable
-//	betaIn   := BetaInput{contract, projection(sealedA), policy}
+//	betaIn   := BetaInput{contract, matter, policy}
 //	bOut     := β(betaIn)                         Result<BetaOutput, error>
 //	sealedB  := sealBeta(bOut)
 //	record   := compose(start, sealedA, sealedB)  one immutable EpisodeRecord
 //	receipt  := γ(record)                         canonical bytes + ONE digest
-//	verdict  := V(receipt)                        typed failures
+//	verdict  := V(contract, receipt)              typed failures
 //	decision := δ(verdict)
 //	status   := lift(decision, mode)
 //
@@ -37,6 +37,7 @@
 package cellkernel
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -51,9 +52,11 @@ import (
 
 // Schema / canon identifiers.
 const (
-	ClosureSchema     = "cnos.cellkernel.episode-closure.v0"
-	RecordCanon       = "cnos.cellkernel.episode-record-canon.v0"
-	BetaInputPolicyID = "cnos.cellkernel.beta-input.v0"
+	ClosureSchema = "cnos.cellkernel.episode-closure.v0"
+	RecordCanon   = "cnos.cellkernel.episode-record-canon.v0"
+	// v1: β's input surface is (contract, matter, policy) only — the CCNF
+	// review signature; α's artifacts no longer cross into β (Pi round-6 D1).
+	BetaInputPolicyID = "cnos.cellkernel.beta-input.v1"
 )
 
 // Bounds enforced at the kernel boundary.
@@ -145,14 +148,14 @@ type AlphaOutput struct {
 	Artifacts []ArtifactCandidate
 }
 
-// BetaInput is the runtime-owned review surface: a fresh frozen contract copy,
-// a projection of sealed α output (copies — never α's live scope), and the
-// review policy. Nothing of α's private state crosses.
+// BetaInput is the runtime-owned review surface — the CCNF signature
+// β.review(contract, matter): a fresh frozen contract copy, the sealed matter,
+// and the review policy. Artifacts/evidence are γ/V's channel, never β's
+// (Pi round-6 D1); a profile needing richer review matter widens Matter.
 type BetaInput struct {
-	Contract       Contract
-	Matter         Matter
-	AlphaArtifacts []Artifact
-	PolicyID       string
+	Contract Contract
+	Matter   Matter
+	PolicyID string
 }
 
 type BetaOutput struct {
@@ -171,8 +174,8 @@ type SealedAlpha struct {
 	artifacts []Artifact
 }
 
-func (s SealedAlpha) projection() ([]Artifact, Matter) {
-	return append([]Artifact(nil), s.artifacts...), s.matter
+func (s SealedAlpha) projection() Matter {
+	return s.matter
 }
 
 type SealedBeta struct {
@@ -376,33 +379,30 @@ type RunMeta struct {
 }
 
 type runConfig struct {
-	ids  IDSource
-	meta RunMeta
+	ids IDSource
 }
 
 type RunOption func(*runConfig)
 
 func WithIDSource(s IDSource) RunOption { return func(c *runConfig) { c.ids = s } }
-func WithMeta(m RunMeta) RunOption      { return func(c *runConfig) { c.meta = m } }
 
 var ErrInvalidClosure = errors.New("cellkernel: inconsistent (verdict, decision) pair")
 
 // RunEpisode executes the five-step closure as a pure-shaped pipeline over
-// immutable values. A returned error is a malfunction (invalid spec, identity
-// failure, seat error, bound violation); otherwise the Closure's Status reports
-// how the episode closed.
-func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error) {
-	cfg := runConfig{ids: randomIDs{}, meta: RunMeta{ExecutionMode: ModeMechanical}}
+// immutable values. meta is required — an episode that cannot state its
+// resolved invocation truth is a malfunction, not a closable cell (Pi round-6
+// B1). A returned error is a malfunction (invalid spec/meta, identity failure,
+// seat error, bound violation); otherwise the Closure's Status reports how the
+// episode closed.
+func RunEpisode(ctx context.Context, s Spec, meta RunMeta, opts ...RunOption) (Closure, error) {
+	cfg := runConfig{ids: randomIDs{}}
 	for _, o := range opts {
 		o(&cfg)
-	}
-	if !knownMode(cfg.meta.ExecutionMode) {
-		return Closure{}, fmt.Errorf("cellkernel: unknown execution mode %q", cfg.meta.ExecutionMode)
 	}
 	if err := validateSpec(s); err != nil {
 		return Closure{}, err
 	}
-	if err := validateMeta(cfg.meta); err != nil { // D1: invocation truth is part of the boundary.
+	if err := validateMeta(meta); err != nil { // D1: invocation truth is part of the boundary.
 		return Closure{}, err
 	}
 	if err := ctx.Err(); err != nil {
@@ -421,7 +421,7 @@ func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error)
 	}
 
 	frozen := s.Contract.clone()
-	frozenMeta := RunMeta{ExecutionMode: cfg.meta.ExecutionMode, ResolvedSpec: cfg.meta.ResolvedSpec.clone()}
+	frozenMeta := RunMeta{ExecutionMode: meta.ExecutionMode, ResolvedSpec: meta.ResolvedSpec.clone()}
 
 	// Station α: isolated input → output → sealed.
 	aOut, err := s.Alpha.Produce(ctx, AlphaInput{Contract: frozen.clone()})
@@ -436,13 +436,11 @@ func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error)
 		return Closure{}, fmt.Errorf("cellkernel: context after alpha: %w", err)
 	}
 
-	// Station β: fresh projection of sealed α — never α's live scope.
-	projArtifacts, projMatter := sealedA.projection()
+	// Station β: fresh projection of sealed α matter — never α's live scope.
 	bOut, err := s.Beta.Review(ctx, BetaInput{
-		Contract:       frozen.clone(),
-		Matter:         projMatter,
-		AlphaArtifacts: projArtifacts,
-		PolicyID:       BetaInputPolicyID,
+		Contract: frozen.clone(),
+		Matter:   sealedA.projection(),
+		PolicyID: BetaInputPolicyID,
 	})
 	if err != nil {
 		return Closure{}, fmt.Errorf("beta review: %w", err)
@@ -461,7 +459,7 @@ func RunEpisode(ctx context.Context, s Spec, opts ...RunOption) (Closure, error)
 		return Closure{}, err
 	}
 	receipt := gamma(record)
-	verdict := validate(receipt)
+	verdict := validate(frozen, receipt)
 	decision := decide(verdict)
 	status, err := lift(verdict, decision, record.Mode)
 	if err != nil {
@@ -574,12 +572,21 @@ func validateRecord(r EpisodeRecord) []Failure {
 
 	// Invocation authority (Pi round-5 D1): the resolved spec is inside the one
 	// boundary — a stub closure cannot be promoted to mechanical/accepted while
-	// resolved_spec.profile still says stub.
+	// resolved_spec.profile still says stub. The profile is otherwise opaque
+	// here (round-6 C1): domain profile names live in cellspec and the input
+	// schema, never in the kernel.
 	add(r.ResolvedSpec.Version == "" || r.ResolvedSpec.DeclaredProtocol == "" || r.ResolvedSpec.Profile == "",
 		InvalidRecord, "resolved spec missing version/protocol/profile")
-	add(!knownProfile(r.ResolvedSpec.Profile), InvalidRecord, "unknown profile")
 	add((r.Mode == ModeStub) != (r.ResolvedSpec.Profile == "stub"),
 		InvalidRecord, "profile is incoherent with execution mode")
+
+	// Required arrays are arrays, never null (round-6 D2): the closure schema
+	// admits no null, so a nil slice surviving to canonical JSON must not
+	// self-verify.
+	add(r.ResolvedSpec.AlphaSkills == nil || r.ResolvedSpec.BetaSkills == nil,
+		InvalidRecord, "resolved spec skills must be arrays, not null")
+	add(r.Alpha.Artifacts == nil || r.Beta.Artifacts == nil,
+		InvalidRecord, "station artifacts must be arrays, not null")
 
 	// Identity: non-empty and pairwise distinct across the whole triple.
 	add(r.EpisodeID == "" || r.Alpha.ExecutionID == "" || r.Beta.ExecutionID == "", InvalidIdentity, "missing identity")
@@ -619,18 +626,25 @@ func validateRecord(r EpisodeRecord) []Failure {
 	return fs
 }
 
-// validate (V) checks the receipt at the scope-lift boundary: the one digest,
-// the full record boundary (validateRecord), and contract satisfaction — with
-// typed failures. Producer authority is positional and fails closed: a
-// required artifact with an invalid producer never resolves to a side.
-func validate(rc Receipt) Verdict {
+// validate is V(contract, receipt) — the CCNF signature (Pi round-6 D1): the
+// trusted expected contract arrives as an argument, never out of the receipt
+// being judged. It checks the one digest, the full record boundary
+// (validateRecord), that the embedded frozen snapshot equals the expected
+// contract, and contract satisfaction against the EXPECTED contract — so a
+// substituted embedded contract cannot re-scope what V requires. Producer
+// authority is positional and fails closed: a required artifact with an
+// invalid producer never resolves to a side.
+func validate(expected Contract, rc Receipt) Verdict {
 	r := rc.Record
 	fs := validateRecord(r)
 	if sha256hex(r.canonicalBytes()) != rc.ScopeLiftDigest {
 		fs = append(fs, Failure{InvalidRecord, "scope-lift digest does not recompute"})
 	}
+	if !bytes.Equal(mustJSON(r.Contract), mustJSON(expected)) {
+		fs = append(fs, Failure{InvalidRecord, "record contract does not match the expected contract"})
+	}
 
-	for _, req := range r.Contract.RequiredEvidence {
+	for _, req := range expected.RequiredEvidence {
 		var side []Artifact
 		switch req.Producer {
 		case RoleAlpha:
@@ -734,20 +748,13 @@ func validateMeta(m RunMeta) error {
 	if rs.Version == "" || rs.DeclaredProtocol == "" || rs.Profile == "" {
 		return errors.New("cellkernel: resolved spec must carry version, declared_protocol, and profile")
 	}
-	if !knownProfile(rs.Profile) {
-		return fmt.Errorf("cellkernel: unknown profile %q", rs.Profile)
-	}
+	// Profile names are otherwise opaque to the kernel (round-6 C1): the
+	// builtin whitelist lives in cellspec and the input schema. Only the
+	// kernel-owned trust mode's coupling to its smoke profile is checked.
 	if (m.ExecutionMode == ModeStub) != (rs.Profile == "stub") {
 		return fmt.Errorf("cellkernel: profile %q is incoherent with execution mode %q", rs.Profile, m.ExecutionMode)
 	}
 	return nil
-}
-
-// knownProfile mirrors the closed #Profile enum in schemas/cdd/spec.cue — a
-// closure carrying any other profile is schema-invalid and must not
-// self-verify (Pi round-5 D1).
-func knownProfile(p string) bool {
-	return p == "stub" || p == "bool"
 }
 
 func validateSpec(s Spec) error {

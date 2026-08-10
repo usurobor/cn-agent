@@ -11,7 +11,8 @@ triggers:
   - review context
 scope: task-local
 inputs:
-  - diff (or artifact set) at a stated base
+  - branch
+  - diff
   - issue contract results from Phase 2a
 outputs:
   - findings with severity and type (mechanical / judgment / contract)
@@ -57,7 +58,7 @@ When a file is moved, renamed, or deleted:
 
 ### 2.1.5 Branch naming and conventions
 
-When the review target is a branch, verify its name follows project convention (n/a when reviewing a diff or artifact set directly). Check for duplicate list entries, convention violations, or inconsistencies introduced by the diff.
+Verify branch name follows project convention. Check for duplicate list entries, convention violations, or inconsistencies introduced by the diff.
 
 ### 2.1.6 Execution timeline for state-changing paths
 

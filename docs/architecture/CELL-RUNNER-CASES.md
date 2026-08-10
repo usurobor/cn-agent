@@ -15,7 +15,7 @@ wording lives in Git history only.
 matter   := α.produce(contract)          α: open seat (may rent cognition)
 review   := β.review(betaInput)          β: open seat (may rent cognition)
 receipt  := γ.close(record)              γ: kernel-owned, mechanical
-verdict  := V(record, receipt)           V: kernel-owned, mechanical
+verdict  := V(contract, receipt)         V: kernel-owned, mechanical
 decision := δ.decide(receipt, verdict)   δ: kernel-owned, mechanical
 ```
 
@@ -47,7 +47,8 @@ steps to itself.
 - **I1 — immutable seat scopes.** `α: AlphaInput → Result<AlphaOutput>`,
   `β: BetaInput → Result<BetaOutput>`. Each seat sees an isolated frozen
   contract copy; β additionally receives a fresh **projection** of sealed α
-  output (copies) — never α's live scope, session, or a shared episode object.
+  matter (a copy) — never α's artifacts (those are γ/V's evidence channel,
+  Pi round-6 D1), α's live scope, session, or a shared episode object.
 - **I2 — sealed results.** The runtime seals each return (`sealAlpha`,
   `sealBeta`) before it can cross scope. Sealed values carry unexported state:
   no seat or external caller can construct or mutate one; a β that mutates its
@@ -60,9 +61,11 @@ steps to itself.
 - **I4 — one record, one digest.** `compose` builds ONE immutable
   `EpisodeRecord` (identity, mode, resolved spec, contract, both stations,
   matter, review, policy); γ serializes it with ONE scope-lift digest.
-  `VerifyClosure` is the single verification boundary: the digest recomputes,
-  and `verdict←V(receipt)`, `decision←δ(verdict)`, `status←lift(...)` re-derive
-  purely. No overlapping proof objects.
+  `VerifyClosure(contract, closure)` is the single verification boundary: the
+  expected contract arrives as an argument (never out of the closure being
+  judged), the digest recomputes, and `verdict←V(contract, receipt)`,
+  `decision←δ(verdict)`, `status←lift(...)` re-derive purely. No overlapping
+  proof objects.
 - **I5 — identity is per-invocation and fail-closed.** The identity tuple is
   minted through one error-returning op and must be non-empty and pairwise
   distinct before α runs.

@@ -57,7 +57,7 @@ package cdd
 	matter: {data: string}
 	beta: #StationRecord
 	review: {pass: bool, notes: string}
-	beta_input_policy: "cnos.cellkernel.beta-input.v0"
+	beta_input_policy: "cnos.cellkernel.beta-input.v1"
 }
 
 #EpisodeClosure: {

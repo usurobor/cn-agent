@@ -13,16 +13,19 @@ func mustJSON(v any) []byte {
 
 // VerifyClosure is the ONE scope-lift verification boundary (FIDO doctrine,
 // msg-cn-pi-cnos-cell-runner-fido-functional-44): a parent or another runtime
-// re-checks a serialized closure with a single reproducible proof plus pure
-// re-derivation — no overlapping hash authorities.
+// re-checks a serialized closure against the contract IT trusts — the CCNF
+// V(contract, receipt) signature (Pi round-6 D1). The expected contract never
+// comes out of the closure being judged, so a substituted embedded contract
+// with an honestly recomputed digest and tail cannot verify.
 //
 //  1. the scope-lift digest recomputes over the record's canonical bytes;
-//  2. verdict ← V(receipt), decision ← δ(verdict), status ← lift(...) all
-//     re-derive to exactly the closure's values;
+//  2. verdict ← V(expected, receipt), decision ← δ(verdict), status ←
+//     lift(...) all re-derive to exactly the closure's values;
 //  3. schema/protocol pins hold and repair is present iff status needs it.
 //
-// Returns nil iff the closure is fully self-consistent.
-func VerifyClosure(cl Closure) error {
+// Returns nil iff the closure is fully self-consistent against the expected
+// contract.
+func VerifyClosure(expected Contract, cl Closure) error {
 	var f []string
 	add := func(cond bool, msg string) {
 		if cond {
@@ -39,7 +42,7 @@ func VerifyClosure(cl Closure) error {
 
 	// (2) pure re-derivation of the mechanical tail — including the repair
 	// surface, so repair is never a second unauthenticated authority (D2).
-	wantVerdict := validate(cl.Receipt)
+	wantVerdict := validate(expected, cl.Receipt)
 	add(string(mustJSON(wantVerdict)) != string(mustJSON(cl.Verdict)), "verdict does not derive from the receipt")
 	wantDecision := decide(wantVerdict)
 	add(wantDecision != cl.Decision, "decision does not derive from the verdict")

@@ -1,30 +1,24 @@
 {
   "closure_schema": "cnos.cellkernel.episode-closure.v0",
   "protocol_validated": false,
-  "status": "needs_repair",
-  "decision": "repair_dispatch",
+  "status": "accepted",
+  "decision": "accept",
   "verdict": {
-    "pass": false,
-    "failures": [
-      {
-        "class": "contract_unmet",
-        "detail": "review.pass=false"
-      }
-    ]
+    "pass": true
   },
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-d48464dbf0da01588bf951c19e9b47ea",
+      "episode_id": "ep-b1cf3f4afc2ded14075feafe90dc9d86",
       "execution_mode": "mechanical",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
         "declared_protocol": "cnos.cellkernel.episode-closure.v0",
         "profile": "bool",
         "params": {
-          "value": "false"
+          "value": "true"
         },
-        "alpha_skills": [],
+        "alpha_skills": null,
         "beta_skills": []
       },
       "contract": {
@@ -39,35 +33,22 @@
         ]
       },
       "alpha": {
-        "execution_id": "alpha-ea0dc9dda83a517a07a8e8f937afd1aa",
-        "artifacts": [
-          {
-            "id": "bool",
-            "kind": "value",
-            "encoding": "utf8",
-            "text": "false"
-          }
-        ]
+        "execution_id": "alpha-43f3fe576f1f2f9bb5c95210d076f200",
+        "artifacts": null
       },
       "matter": {
-        "data": "false"
+        "data": "true"
       },
       "beta": {
-        "execution_id": "beta-f877bc4378ae5b5a13592fea94805ef1",
+        "execution_id": "beta-99d2f694171c69f8cb0cdfdcaf000d83",
         "artifacts": []
       },
       "review": {
-        "pass": false,
-        "notes": "matter is not bool true"
+        "pass": true,
+        "notes": "beta independently verified matter is bool true"
       },
       "beta_input_policy": "cnos.cellkernel.beta-input.v1"
     },
-    "scope_lift_digest": "11d36c408de557ee7cd48dd4cc013a3ea70fdeb8c2e3590acd34264d370da1ef"
-  },
-  "repair": {
-    "reason": "contract unmet",
-    "failed": [
-      "contract_unmet: review.pass=false"
-    ]
+    "scope_lift_digest": "8b6373a60128c20f6aca120c80b4d70d4eebe8e3f052b398e03fcd0efb4ac751"
   }
 }

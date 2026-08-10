@@ -9,7 +9,7 @@
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-2adee1ee9d80eb75e21cf7d57c630d1f",
+      "episode_id": "ep-b1cf3f4afc2ded14075feafe90dc9d86",
       "execution_mode": "mechanical",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
@@ -33,7 +33,7 @@
         ]
       },
       "alpha": {
-        "execution_id": "alpha-3c10a7bd354d82b0fe1b880fec42b40e",
+        "execution_id": "alpha-43f3fe576f1f2f9bb5c95210d076f200",
         "artifacts": [
           {
             "id": "bool",
@@ -47,15 +47,15 @@
         "data": "true"
       },
       "beta": {
-        "execution_id": "beta-695faaf10255868e449394b2539e5044",
+        "execution_id": "beta-99d2f694171c69f8cb0cdfdcaf000d83",
         "artifacts": []
       },
       "review": {
         "pass": true,
         "notes": "beta independently verified matter is bool true"
       },
-      "beta_input_policy": "cnos.cellkernel.beta-input.v0"
+      "beta_input_policy": "cnos.cellkernel.beta-input.v1"
     },
-    "scope_lift_digest": "f6ef056315a4d008ae05e14ce87814f04bbd3029882a9155fcb77a78a2905054"
+    "scope_lift_digest": "8b6373a60128c20f6aca120c80b4d70d4eebe8e3f052b398e03fcd0efb4ac751"
   }
 }

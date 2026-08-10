@@ -29,8 +29,8 @@ func testMeta(mode ExecutionMode) RunMeta {
 
 func mechClosure(t *testing.T, s Spec) Closure {
 	t.Helper()
-	cl, err := RunEpisode(context.Background(), s,
-		WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}), WithMeta(testMeta(ModeMechanical)))
+	cl, err := RunEpisode(context.Background(), s, testMeta(ModeMechanical),
+		WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}))
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestEmptyCellRunsToAccepted(t *testing.T) {
 	if cl.Status != Accepted {
 		t.Fatalf("status: want accepted, got %q", cl.Status)
 	}
-	if err := VerifyClosure(cl); err != nil {
+	if err := VerifyClosure(EmptySpec().Contract, cl); err != nil {
 		t.Fatalf("closure must self-verify: %v", err)
 	}
 }
@@ -72,23 +72,23 @@ func TestBoolCellAcceptedAndRepair(t *testing.T) {
 
 // Stub runs are non-authoritative `simulated`.
 func TestStubIsSimulated(t *testing.T) {
-	cl, err := RunEpisode(context.Background(), EmptySpec(),
-		WithIDSource(seqIDs{"ep-s", "alpha-s", "beta-s"}), WithMeta(testMeta(ModeStub)))
+	cl, err := RunEpisode(context.Background(), EmptySpec(), testMeta(ModeStub),
+		WithIDSource(seqIDs{"ep-s", "alpha-s", "beta-s"}))
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if cl.Status != Simulated {
 		t.Fatalf("stub status: want simulated, got %q", cl.Status)
 	}
-	if err := VerifyClosure(cl); err != nil {
+	if err := VerifyClosure(EmptySpec().Contract, cl); err != nil {
 		t.Fatalf("stub closure must verify: %v", err)
 	}
 }
 
 // Identity is per-invocation; resolved input is covered by the one digest.
 func TestEpisodeIdentityIsPerInvocation(t *testing.T) {
-	a, _ := RunEpisode(context.Background(), BoolSpec(true), WithMeta(testMeta(ModeMechanical)))
-	b, _ := RunEpisode(context.Background(), BoolSpec(true), WithMeta(testMeta(ModeMechanical)))
+	a, _ := RunEpisode(context.Background(), BoolSpec(true), testMeta(ModeMechanical))
+	b, _ := RunEpisode(context.Background(), BoolSpec(true), testMeta(ModeMechanical))
 	if a.Receipt.Record.EpisodeID == b.Receipt.Record.EpisodeID {
 		t.Fatal("identities are not per-invocation")
 	}
@@ -98,8 +98,8 @@ func TestResolvedInputChangesDigest(t *testing.T) {
 	mk := func(skill string) Closure {
 		m := testMeta(ModeMechanical)
 		m.ResolvedSpec.AlphaSkills = []string{skill}
-		cl, _ := RunEpisode(context.Background(), BoolSpec(true),
-			WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}), WithMeta(m))
+		cl, _ := RunEpisode(context.Background(), BoolSpec(true), m,
+			WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}))
 		return cl
 	}
 	if mk("go").Receipt.ScopeLiftDigest == mk("rust").Receipt.ScopeLiftDigest {
@@ -111,7 +111,7 @@ func TestResolvedInputChangesDigest(t *testing.T) {
 
 func TestClosureReVerifiesAfterSerialization(t *testing.T) {
 	cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
-	if err := VerifyClosure(cl); err != nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, cl); err != nil {
 		t.Fatalf("round-tripped closure must verify: %v", err)
 	}
 }
@@ -137,7 +137,7 @@ func TestTamperedClosureFails(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cl := roundTrip(t, mechClosure(t, BoolSpec(true)))
 			mut(&cl)
-			if err := VerifyClosure(cl); err == nil {
+			if err := VerifyClosure(BoolSpec(true).Contract, cl); err == nil {
 				t.Fatalf("tamper %q passed verification", name)
 			}
 		})
@@ -173,16 +173,16 @@ func TestSeatCannotMutateItsInputContract(t *testing.T) {
 	}
 }
 
-// projectionMutatingBeta mutates the α projection it receives; the sealed
-// original must be unaffected.
+// projectionMutatingBeta mutates everything it receives (matter projection,
+// frozen contract copy); the sealed originals must be unaffected.
 type projectionMutatingBeta struct{}
 
 func (projectionMutatingBeta) Review(_ context.Context, in BetaInput) (BetaOutput, error) {
-	for i := range in.AlphaArtifacts {
-		in.AlphaArtifacts[i].Text = "corrupted-by-beta"
-	}
 	in.Matter.Data = "corrupted-by-beta"
-	return BetaOutput{Review: Review{Pass: true, Notes: "beta tried to corrupt alpha output"}}, nil
+	for i := range in.Contract.RequiredEvidence {
+		in.Contract.RequiredEvidence[i].ID = "neutralized"
+	}
+	return BetaOutput{Review: Review{Pass: true, Notes: "beta tried to corrupt its inputs"}}, nil
 }
 
 func TestBetaCannotMutateSealedAlpha(t *testing.T) {
@@ -195,7 +195,7 @@ func TestBetaCannotMutateSealedAlpha(t *testing.T) {
 	if got := cl.Receipt.Record.Alpha.Artifacts[0].Text; got != "true" {
 		t.Fatalf("sealed alpha artifact mutated via beta projection: %q", got)
 	}
-	if err := VerifyClosure(cl); err != nil {
+	if err := VerifyClosure(BoolSpec(true).Contract, cl); err != nil {
 		t.Fatalf("closure must still verify: %v", err)
 	}
 }
@@ -251,7 +251,7 @@ func (dupIDs) Mint() (Identity, error) { return Identity{"x", "x", "x"}, nil }
 func TestIdentityFailsClosed(t *testing.T) {
 	for name, src := range map[string]IDSource{"mint error": errIDs{}, "not distinct": dupIDs{}} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := RunEpisode(context.Background(), BoolSpec(true), WithIDSource(src)); err == nil {
+			if _, err := RunEpisode(context.Background(), BoolSpec(true), testMeta(ModeMechanical), WithIDSource(src)); err == nil {
 				t.Fatalf("want error for %s", name)
 			}
 		})
@@ -267,7 +267,7 @@ func (badBytesAlpha) Produce(context.Context, AlphaInput) (AlphaOutput, error) {
 
 func TestNonUTF8ArtifactRejected(t *testing.T) {
 	s := Spec{Contract: Contract{ID: "c", Goal: "g"}, Alpha: badBytesAlpha{}, Beta: AcceptBeta{}}
-	if _, err := RunEpisode(context.Background(), s, WithMeta(testMeta(ModeMechanical))); err == nil {
+	if _, err := RunEpisode(context.Background(), s, testMeta(ModeMechanical)); err == nil {
 		t.Fatal("want error for non-UTF-8 artifact")
 	}
 }
@@ -281,7 +281,7 @@ func (brokenBeta) Review(context.Context, BetaInput) (BetaOutput, error) {
 func TestBetaMalfunctionReturnsError(t *testing.T) {
 	s := EmptySpec()
 	s.Beta = brokenBeta{}
-	if _, err := RunEpisode(context.Background(), s, WithMeta(testMeta(ModeMechanical))); err == nil {
+	if _, err := RunEpisode(context.Background(), s, testMeta(ModeMechanical)); err == nil {
 		t.Fatal("want error from beta malfunction")
 	}
 }
@@ -309,7 +309,7 @@ func TestNoSelfCertification(t *testing.T) {
 func TestCancelledContextFailsClosed(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := RunEpisode(ctx, BoolSpec(true), WithMeta(testMeta(ModeMechanical))); err == nil {
+	if _, err := RunEpisode(ctx, BoolSpec(true), testMeta(ModeMechanical)); err == nil {
 		t.Fatal("want error for cancelled context")
 	}
 }
@@ -323,7 +323,7 @@ func TestKernelRejectsInvalidSpec(t *testing.T) {
 	}
 	for name, s := range cases {
 		t.Run(name, func(t *testing.T) {
-			if _, err := RunEpisode(context.Background(), s, WithMeta(testMeta(ModeMechanical))); err == nil {
+			if _, err := RunEpisode(context.Background(), s, testMeta(ModeMechanical)); err == nil {
 				t.Fatalf("invalid spec %q ran", name)
 			}
 		})
@@ -338,7 +338,7 @@ func (oversizeAlpha) Produce(context.Context, AlphaInput) (AlphaOutput, error) {
 
 func TestBoundedOutput(t *testing.T) {
 	s := Spec{Contract: Contract{ID: "c"}, Alpha: oversizeAlpha{}, Beta: AcceptBeta{}}
-	if _, err := RunEpisode(context.Background(), s, WithMeta(testMeta(ModeMechanical))); err == nil {
+	if _, err := RunEpisode(context.Background(), s, testMeta(ModeMechanical)); err == nil {
 		t.Fatal("want error for oversized matter")
 	}
 }

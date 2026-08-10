@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellspec"
 )
 
 const boolSpecJSON = `{"version":"cnos.cellspec.v0",` +
@@ -23,6 +24,25 @@ func run(stdin string, args ...string) (code int, stdout, stderr string) {
 	var out, errb bytes.Buffer
 	code = Run(context.Background(), args, strings.NewReader(stdin), &out, &errb)
 	return code, out.String(), errb.String()
+}
+
+// parseExpectedContract derives the trusted contract from boolSpecJSON via the
+// same loader path — independently of any emitted closure.
+func parseExpectedContract(t *testing.T) cellkernel.Contract {
+	t.Helper()
+	s, err := cellspec.Parse([]byte(boolSpecJSON))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	r, err := s.Resolve(map[string]string{"value": "true"})
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	kspec, _, err := r.Build()
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	return kspec.Contract
 }
 
 func TestAcceptedFromStdin(t *testing.T) {
@@ -43,7 +63,10 @@ func TestAcceptedFromStdin(t *testing.T) {
 	if err := dec.Decode(&extra); err != io.EOF {
 		t.Fatalf("stdout carried trailing data (want io.EOF, got %v)", err)
 	}
-	if err := cellkernel.VerifyClosure(cl); err != nil {
+	// Re-verify against the contract the test itself trusts — parsed and
+	// resolved independently of the emitted closure.
+	expected := parseExpectedContract(t)
+	if err := cellkernel.VerifyClosure(expected, cl); err != nil {
 		t.Fatalf("emitted closure does not verify: %v", err)
 	}
 }

@@ -47,6 +47,9 @@ vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-bad-producer.
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-missing-profile.json -d '#CellSpec'
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-empty-goal.json -d '#CellSpec'
 vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-missing-skills.json -d '#CellSpec'
+vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-case-alias.json -d '#CellSpec'
+vet_bad schemas/cdd/spec.cue schemas/cdd/fixtures/invalid/cellspec-null-skills.json -d '#CellSpec'
+vet_bad schemas/cdd/episode-closure.cue schemas/cdd/fixtures/invalid/episode-closure-null-arrays.json -d '#EpisodeClosure'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-no-diff.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-diff-not-first.json -d '#CDSCellSpec'
 
@@ -57,6 +60,8 @@ run_bad schemas/cdd/fixtures/invalid/cellspec-bad-producer.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-missing-profile.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-empty-goal.json
 run_bad schemas/cdd/fixtures/invalid/cellspec-missing-skills.json
+run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json
+run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json
 
 echo "# SIGINT terminates a blocked stdin reader (Pi round-5 D3)"
 mkfifo "$tmpdir/stdin.fifo"
@@ -68,6 +73,11 @@ set -m
 set +m
 exec 9>"$tmpdir/stdin.fifo" # hold the writer open: no EOF, reader stays blocked
 sleep 1
+# The child must still be blocked when signaled — an early exit would make the
+# regression pass vacuously (Pi round-6 B1).
+if ! kill -0 "$cnpid" 2>/dev/null; then
+  echo "  ✗ blocked reader exited before SIGINT was sent"; fail=1
+fi
 kill -INT "$cnpid" 2>/dev/null
 deadline=$((SECONDS + 5))
 while kill -0 "$cnpid" 2>/dev/null && [ "$SECONDS" -lt "$deadline" ]; do sleep 0.1; done

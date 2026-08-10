@@ -78,14 +78,15 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return 2
 	}
 
-	cl, err := cellkernel.RunEpisode(ctx, kspec, cellkernel.WithMeta(meta))
+	cl, err := cellkernel.RunEpisode(ctx, kspec, meta)
 	if err != nil {
 		fmt.Fprintf(stderr, "✗ episode malfunction: %v\n", err)
 		return 2
 	}
 
-	// Self-check: the emitted closure must independently re-verify whole.
-	if err := cellkernel.VerifyClosure(cl); err != nil {
+	// Self-check: the emitted closure must independently re-verify whole,
+	// against the contract this invocation built — never the closure's own.
+	if err := cellkernel.VerifyClosure(kspec.Contract, cl); err != nil {
 		fmt.Fprintf(stderr, "✗ closure failed self-verification: %v\n", err)
 		return 2
 	}

@@ -11,9 +11,9 @@ triggers:
   - review AC coverage
 scope: task-local
 inputs:
-  - contract / acceptance criteria (issue text, PR body, or equivalent)
-  - diff (or artifact set) at a stated base
-  - protocol-supplied artifact locations, when the invoking protocol names them (optional context per review/SKILL.md rule 3.11b)
+  - issue
+  - PR body
+  - .cdd/unreleased/{N}/ artifacts
   - contract integrity results from Phase 1
 outputs:
   - AC coverage table
@@ -28,7 +28,7 @@ calls: []
 
 # Review — Phase 2a: Issue Contract Walk
 
-**PRE-GATE: §2.0.0 Contract Integrity (Phase 1) must be completed.** When the review target is a branch, verify it is unmerged at the stated base; when reviewing a diff or artifact set directly, this check is n/a.
+**PRE-GATE: §2.0.0 Contract Integrity (Phase 1) must be completed.** Verify branch is unmerged.
 
 ---
 
@@ -47,8 +47,6 @@ Build these tables before reading the diff:
 ### CDD Artifact Contract
 | Artifact | Required? | Present? | Notes |
 |----------|-----------|----------|-------|
-
-This table covers only artifacts the contract under review explicitly names as deliverables. Protocol-supplied artifact locations (a coordination scaffold, a wave manifest, a closure record) are optional context per `review/SKILL.md` rule 3.11b — verify them against the contract when supplied; when none are supplied, the table is n/a.
 
 ### Active Skill Consistency
 | Skill | Required by | Loaded? | Applied? | Notes |
