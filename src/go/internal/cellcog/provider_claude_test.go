@@ -104,3 +104,26 @@ func TestClaudeArgsAreTypedNotSmuggled(t *testing.T) {
 		}
 	}
 }
+
+// A hang is the one failure with no other trace — no diff to measure, no
+// answer returned — so what the provider emitted before stalling is the only
+// evidence of where it stalled. That path used to discard both streams.
+func TestTimeoutCarriesDiagnostics(t *testing.T) {
+	// Emits on both streams, then stalls forever.
+	bin := fakeBin(t, `cat >/dev/null; echo partial-answer; echo "provider: waiting on upstream" >&2; sleep 30`)
+	err := (ClaudeCLI{Model: "m", Bin: bin, Timeout: 400 * time.Millisecond}).
+		Work(context.Background(), t.TempDir(), "p")
+	if err == nil {
+		t.Fatal("a stalled provider must fail")
+	}
+	got := err.Error()
+	for _, want := range []string{
+		"did not finish within",
+		"stdout bytes before the stall",
+		"provider: waiting on upstream", // the stderr tail survives the timeout
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("timeout error must carry %q, got: %s", want, got)
+		}
+	}
+}

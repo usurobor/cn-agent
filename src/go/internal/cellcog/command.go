@@ -55,7 +55,17 @@ func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout
 
 	err := cmd.Run()
 	if ctxErr := ctx.Err(); ctxErr != nil {
-		return "", fmt.Errorf("%s did not finish within %s: %w", bin, timeout, ctxErr)
+		// A hang is the one failure that leaves no other trace: the child is
+		// killed, no diff is measured, and no answer comes back. What it
+		// managed to emit before stalling is the only evidence of where it
+		// stalled, and this path previously discarded both streams.
+		//
+		// It goes into the ERROR, not a side file. A diagnostic written
+		// somewhere durable becomes a second, unreceipted account of the
+		// episode; an error is already the explicit outcome channel and
+		// cannot be mistaken for evidence.
+		return "", fmt.Errorf("%s did not finish within %s: %w (captured %d stdout bytes before the stall; stderr tail: %q)",
+			bin, timeout, ctxErr, len(stdout.String()), tail(stderr.String(), diagnosticTailBytes))
 	}
 	if err != nil {
 		return "", fmt.Errorf("%s failed: %w (stderr: %s)", bin, err, strings.TrimSpace(stderr.String()))
@@ -64,4 +74,15 @@ func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout
 		return "", fmt.Errorf("%s produced more than %d bytes of output", bin, maxOutputBytes)
 	}
 	return stdout.String(), nil
+}
+
+// tail returns at most n trailing bytes of s, kept valid UTF-8 so a truncated
+// diagnostic cannot corrupt the error it is embedded in. Trailing, not
+// leading: when a provider stalls, its last output is what says where.
+func tail(s string, n int) string {
+	s = strings.TrimSpace(s)
+	if len(s) <= n {
+		return s
+	}
+	return "…" + strings.ToValidUTF8(s[len(s)-n:], "")
 }

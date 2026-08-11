@@ -140,10 +140,11 @@ func New(cfg Config) (Coder, Mode, error) {
 // episode the runtime cannot predict: an unbounded provider burns the whole
 // budget and dies mid-cell.
 const (
-	defaultTimeout = 10 * time.Minute
-	maxOutputBytes = 4 << 20 // matches the kernel's aggregate artifact bound
-	maxStderrBytes = 8 << 10 // diagnostics only
-	waitDelay      = 2 * time.Second
+	defaultTimeout      = 10 * time.Minute
+	maxOutputBytes      = 4 << 20 // matches the kernel's aggregate artifact bound
+	maxStderrBytes      = 8 << 10 // diagnostics only
+	waitDelay           = 2 * time.Second
+	diagnosticTailBytes = 400 // bounded stderr tail carried in a timeout error
 )
 
 // boundedBuffer captures at most max bytes and remembers that it had to stop.
