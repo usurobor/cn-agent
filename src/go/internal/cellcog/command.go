@@ -12,15 +12,32 @@ import (
 // pure argv recipe; this file owns the bounded, stateless execution around it,
 // so neither provider owns mechanics the other also needs.
 
-// ToolSurface is the built-in tool set a PRODUCING seat is offered. File tools
-// only: a seat needs to change files, not command the host.
-const ToolSurface = "Read,Write,Edit,Glob,Grep"
+// CodingToolSurface is the built-in tool set a PRODUCING seat is offered. It
+// matches the live `cnos-cds-dispatch` workflow's allow-list exactly, because
+// a cell is meant to mechanize what the operator already does by hand — not to
+// be a weaker Claude.
+//
+// Bash is here deliberately, and its earlier absence was a mistake worth
+// naming: a software-development seat that cannot run `go test`, `cue vet` or
+// `gofmt` cannot verify its own work, so it produces plausible code it has no
+// way to check. The only real α episode before this change wrote a Markdown
+// file, because prose was all an unverifying seat could honestly finish.
+//
+// This list is a CAPABILITY DECLARATION, not a containment mechanism, and the
+// distinction was previously blurred. Withholding Bash never provided
+// confinement — this package claims none — it only removed the seat's ability
+// to check itself. What actually bounds an episode is unchanged: a disposable
+// worktree, a runtime-measured diff, credentials that never enter cell JSON,
+// and `--safe-mode`. A seat with Bash has the same reach as the operator
+// running Claude Code themselves; real containment belongs to the execution
+// substrate, which is why CI and local use the identical surface.
+const CodingToolSurface = "Read,Write,Edit,MultiEdit,Glob,Grep,Bash"
 
-// NoTools is the surface an ANSWERING seat is offered. A reviewer's canonical
-// input is `(contract, matter)` and nothing else, so giving it file tools
-// would let it reach outside that input and read the very workspace it is
-// meant to judge from the outside. Its authority is therefore strictly less
-// than a producer's: no tools, and consequently no permission mode to declare.
+// NoTools is the surface an ANSWERING seat is offered. Unlike the coding
+// surface above, this one IS load-bearing: a reviewer's canonical input is
+// `(contract, matter)` and nothing else, so any file tool would let it reach
+// outside that input and read the very workspace it is meant to judge from
+// the outside. Independence is the property at stake, not containment.
 const NoTools = ""
 
 // runCLI runs one provider invocation: prompt on stdin, output bounded as it

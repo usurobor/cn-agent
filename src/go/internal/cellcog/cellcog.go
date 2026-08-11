@@ -16,12 +16,13 @@
 // no fill semantics — what a prompt means, what a worktree is for, and what
 // counts as evidence belong to the fill that rents the cognition.
 //
-// Scope, stated honestly: an adapter points a provider at one directory with
-// file tools only. That is a working-directory boundary plus the provider's
-// own workspace rules, NOT an OS sandbox; a provider writing an absolute path
-// elsewhere is not stopped here — it merely gains nothing, because only the
-// worktree is ever measured. Real containment belongs under the adapter and
-// is not implemented.
+// Scope, stated honestly: an adapter points a provider at one directory and
+// declares a tool surface. That is NOT confinement of any kind — a producing
+// seat is offered Bash and can reach the whole host, exactly as the operator
+// running Claude Code can. Nothing here stops it; what it touches outside the
+// worktree simply never becomes evidence, because only the worktree is
+// measured. Real containment belongs to the execution substrate and is not
+// implemented, attempted, or claimed.
 //
 // The admitted provider set is claude-cli and fake. codex-cli is HELD, not
 // forgotten (Pi #55 D1): a seat may carry only the fill's ordered, digested

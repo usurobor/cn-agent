@@ -36,9 +36,13 @@ func (ClaudeCLI) Name() string { return "claude-cli" }
 //     overrides it. So the honest claim is that the digested skills are the
 //     only context THIS CELL contributes — not the only context that exists.
 //
-//   - `--tools` RESTRICTS the available built-in set. `--allowedTools` merely
-//     pre-approves tools that remain available, so using it would have left
-//     Bash reachable while claiming otherwise; it must never appear here.
+//   - `--tools` sets the available built-in set — see CodingToolSurface for
+//     why it includes Bash and why it is a capability declaration rather than
+//     a boundary. `--allowedTools` is a different flag that only PRE-APPROVES
+//     tools already available; it is absent because `--permission-mode`
+//     already grants approval, and because using it *instead of* `--tools`
+//     was a real defect once: it left the surface unrestricted while the
+//     comment claimed otherwise.
 //
 //   - `--permission-mode acceptEdits` is what AUTHORIZES the edits this seat
 //     exists to make. Availability and approval are two different things: with
@@ -47,7 +51,9 @@ func (ClaudeCLI) Name() string { return "claude-cli" }
 //     on whatever ambient permission settings the host happens to carry or
 //     produce no patch at all (Pi #56 D1). Sealing the mode makes the
 //     BASELINE explicit rather than inherited from user or project defaults.
-//     It approves edits only — Bash is absent from the tool set entirely, and
+//     It covers Bash as well as file edits — verified against the CLI, which
+//     ran a Bash command under this mode with `permission_denials: []` — so a
+//     seat can run its own tests without a second pre-approval flag.
 //     bypassPermissions is never used.
 //
 //     Not more than that (Pi #59 B1): this does not make the episode
@@ -69,7 +75,7 @@ func ClaudeArgv(model string) []string {
 		"--model", model,
 		"--safe-mode",
 		"--no-session-persistence",
-		"--tools", ToolSurface,
+		"--tools", CodingToolSurface,
 		"--permission-mode", "acceptEdits",
 		"--output-format", "stream-json",
 		"--verbose",

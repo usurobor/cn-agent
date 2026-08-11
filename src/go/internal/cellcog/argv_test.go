@@ -21,7 +21,7 @@ func TestClaudeArgvIsExact(t *testing.T) {
 		"--model", "claude-opus-4-1",
 		"--safe-mode",
 		"--no-session-persistence",
-		"--tools", "Read,Write,Edit,Glob,Grep",
+		"--tools", "Read,Write,Edit,MultiEdit,Glob,Grep,Bash",
 		"--permission-mode", "acceptEdits",
 		"--output-format", "stream-json",
 		"--verbose",
@@ -47,16 +47,16 @@ func TestClaudeArgvAuthorizesEditsExplicitly(t *testing.T) {
 }
 
 // `--allowedTools` only pre-approves tools that remain available; using it
-// while claiming a restricted surface is exactly the defect this pins.
-// Bypass modes and a Bash grant must never appear — acceptEdits approves
-// edits, it does not widen the surface.
+// while claiming a restricted surface is exactly the defect this pins. Bypass
+// modes must never appear. Bash is NOT forbidden — it is the capability a
+// software-development seat needs to verify its own work, and it is approved
+// by the declared permission mode rather than by widening anything.
 func TestClaudeArgvForbidsPreApprovalAndShell(t *testing.T) {
 	got := joined(ClaudeArgv("m"))
 	for _, forbidden := range []string{
 		"--allowedTools", "--allowed-tools",
 		"--dangerously-skip-permissions", "--allow-dangerously-skip-permissions",
 		"bypassPermissions", "dontAsk",
-		"Bash",
 	} {
 		if strings.Contains(got, forbidden) {
 			t.Errorf("argv must not contain %q: %s", forbidden, got)
@@ -175,5 +175,23 @@ func TestTerminalStructuredOutput(t *testing.T) {
 				t.Fatalf("want error mentioning %q, got %v", tc.want, err)
 			}
 		})
+	}
+}
+
+// The producing surface must match the live cnos-cds-dispatch allow-list. A
+// cell mechanizes what the operator does by hand, so a seat that cannot run
+// its own tests is a weaker Claude than the workflow it replaces — which is
+// how Bash came to be missing in the first place.
+func TestProducingSurfaceMatchesLiveDispatch(t *testing.T) {
+	// Source of truth: .github/workflows/cnos-cds-dispatch.yml
+	// settings.permissions.allow
+	for _, tool := range []string{"Read", "Write", "Edit", "MultiEdit", "Glob", "Grep", "Bash"} {
+		if !strings.Contains(CodingToolSurface, tool) {
+			t.Errorf("producing surface is missing %q, so the cell is weaker than the live dispatch: %s", tool, CodingToolSurface)
+		}
+	}
+	// The answering surface stays empty: that one IS load-bearing.
+	if NoTools != "" {
+		t.Errorf("a reviewing seat must be offered no tools, got %q", NoTools)
 	}
 }

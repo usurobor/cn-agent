@@ -103,8 +103,11 @@ that was missing before — the preserved stdout — is the committed file.
 
 ## What this establishes
 
-1. **The declared authority is sufficient.** The seat edited files with only
-   `--tools Read,Write,Edit,Glob,Grep` and `--permission-mode acceptEdits`.
+1. **The declared authority is sufficient.** The seat edited files under the
+   declared `--tools` surface and `--permission-mode acceptEdits`. (That
+   surface has since been corrected to include `MultiEdit` and `Bash`, so a
+   seat can run its own tests; this episode predates the change and did not
+   need them.)
 2. **The runtime measures rather than believes.** The diff was computed from
    the disposable worktree.
 3. **Case-2 honesty holds under real cognition.** A genuine change still
