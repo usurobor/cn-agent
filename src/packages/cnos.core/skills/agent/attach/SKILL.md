@@ -47,12 +47,14 @@ The channel surfaces and cursor mechanics are defined in `docs/reference/convent
 
 The failure mode this skill prevents is **silent channel drift** — a body that writes an entry without first reading what the other side said since the last cursor, or that writes a cursor without doing the read, or that self-registers a new activation without home's approval. Each of these is a cursor-integrity violation; together they erode the channel's value as durable evidence.
 
+An **inaugural** attach also mutates the repo — it creates channel/log surfaces, registers an activation entry + cursor in home's registry, and wires the wake loop. Because that is a repo-mutating act, it is **never silent**: before the first mutation the body **discloses exactly what attaching changes** and attaches **only on confirmation** (§2.3). This is the attach-side half of the activation-case taxonomy's Case-C behavior (`agent/activate/SKILL.md §2.0`); attaching without prior disclosure is `SILENT_MUTATION` (cnos#686).
+
 ## Algorithm
 
 1. **Detect mode** — observe `pwd` origin; classify as home, foreign-activation, or ephemeral (§2.1).
 2. **Detect attached state** — check writer-surface for prior cursor evidence; classify as attached or not-attached (§2.2).
 3. **Execute procedure**:
-   - **Not attached → attach** (inaugural). Verify preconditions; initialize writer-surface; write the inaugural entry; establish the cursor at other-side HEAD as observed today.
+   - **Not attached → attach** (inaugural). Verify preconditions; **disclose the repo-side consequences and attach only on confirmation** (§2.3 — never silent); initialize writer-surface; write the inaugural entry; establish the cursor at other-side HEAD as observed today.
    - **Attached → sync.** Walk the other side from prior cursor to HEAD; process inbound directives per standing posture; append today's entry; advance the cursor.
 4. **Commit and push to `main`** for home and foreign-activation modes. Ephemeral emits a receipt only.
 
@@ -156,11 +158,16 @@ Triggered when (mode ∈ {home per-activation, foreign-activation}) and (attache
 
 **Foreign-activation inaugural attach:**
 1. **Verify precondition.** This hub's URL must be registered in home's `.cn-{agent}/state/activations.md`. If not, append `deferred to operator: foreign-activation inaugural attach requires home registration at <hub-url>` to the body's working scratchpad and stop. Do not self-register; do not initialize `.cn-{agent}/logs/`. Home must register first.
-2. **Initialize writer-surface.** Create `.cn-{agent}/logs/` if it does not exist. (For first ever attach, this is the directory creation.)
-3. **Read all of home's thread.** Walk `cn-{agent}:.cn-{agent}/threads/activations/{name}/` from start to home HEAD. The thread may be empty; that's a valid signal — there are no inbound directives yet.
-4. **Write inaugural entry.** Append today's entry to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` per the convention's §4 entry format. The H2 header carries the wake's full UTC timestamp: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — Inaugural attach at <hub> as Sigma-at-{name}`. Body: name the inaugural binding (e.g., "Walked home thread; no prior directives.").
-5. **Pin inaugural cursor.** Set `cursor_in: <agent>@<sha>` and `cursor_out: <agent>@<sha>` in the entry's frontmatter, both equal to home `main` HEAD as observed in step 3. Set `class: inaugural`.
-6. **Commit and push** to local hub's `main`.
+2. **Disclose consequences and get confirmation (before any mutation).** Inaugural attach is repo-mutating; it is never silent. Emit the **exact list** of repo-side changes attaching will make, then attach **only on the activator's confirmation**:
+   - **Channel/log surface** — creates `.cn-{agent}/logs/` in this repo (this body's writer-surface) and begins appending dated entries to it.
+   - **Registry entry + cursor** — registers this hub's activation entry and a read cursor (`last_read_foreign_log`) in home's `.cn-{agent}/state/activations.md`.
+   - **Wake wiring** — wires the wake/attach loop, so this body syncs the channel on each subsequent wake.
+   Channel _transport_ details (orphan refs, cursor ownership, ref layout) are specified in **cnos#684** and are not re-specified here — disclose the surfaces created, not the transport internals. If the activator does not confirm, append `deferred to operator: inaugural attach not confirmed at <hub-url>` and stop — do **not** create `.cn-{agent}/logs/`, do **not** touch home's registry. Mutating any of the three surfaces without this prior disclosure is `SILENT_MUTATION` (§5, A9).
+3. **Initialize writer-surface.** Create `.cn-{agent}/logs/` if it does not exist. (For first ever attach, this is the directory creation.)
+4. **Read all of home's thread.** Walk `cn-{agent}:.cn-{agent}/threads/activations/{name}/` from start to home HEAD. The thread may be empty; that's a valid signal — there are no inbound directives yet.
+5. **Write inaugural entry.** Append today's entry to `.cn-{agent}/logs/$(date -u +%Y%m%d).md` per the convention's §4 entry format. The H2 header carries the wake's full UTC timestamp: `## $(date -u +%Y-%m-%dT%H:%M:%SZ) — Inaugural attach at <hub> as Sigma-at-{name}`. Body: name the inaugural binding (e.g., "Walked home thread; no prior directives.").
+6. **Pin inaugural cursor.** Set `cursor_in: <agent>@<sha>` and `cursor_out: <agent>@<sha>` in the entry's frontmatter, both equal to home `main` HEAD as observed in step 4. Set `class: inaugural`.
+7. **Commit and push** to local hub's `main`.
 
 **Home inaugural attach (per activation):**
 1. **Verify precondition.** This activation must be registered in `.cn-{agent}/state/activations.md`. If `.cn-{agent}/state/activations.md` does not yet name this activation, the registration step is operator-driven — append `deferred to operator: home inaugural attach for activation <name> requires registry entry` and stop.
@@ -272,6 +279,13 @@ If mode, attached state, registration status, or directive interpretation is amb
 - ❌ "Reasonable interpretation; proceed"
 - ✅ "Ambiguous between X and Y; deferred to operator; stop"
 
+### 3.9. Disclose consequences before inaugural attach
+
+Inaugural attach mutates the repo. Before the first mutation, emit the exact list of repo-side changes — channel/log surface created, activation-registry entry + cursor registered, wake loop wired (§2.3 step 2) — and attach **only on confirmation**. This is the attach-side realization of Case C in `agent/activate/SKILL.md §2.0`. Attach that creates any of those surfaces without the prior disclosure is `SILENT_MUTATION` (§5, A9). Follow-up sync (already attached) does not re-disclose — the surfaces already exist and were disclosed at inaugural.
+
+- ❌ Body registers a cursor and creates `.cn-{agent}/logs/`, then reports it attached
+- ✅ Body lists the three consequences, waits for confirmation, then attaches
+
 ---
 
 ## 4. Verify
@@ -294,7 +308,11 @@ Confirm this skill does not redefine the convention's two-artifact shape, cursor
 
 ### 4.5. Author-test on a fresh foreign-activation inaugural
 
-Run the foreign-activation inaugural procedure (§2.3) against a fresh hub. Confirm: (a) preconditions are checked before initialization, (b) home thread is read fully, (c) inaugural entry pins cursor at home HEAD, (d) commit/push lands on local main, (e) writer-surface integrity is preserved.
+Run the foreign-activation inaugural procedure (§2.3) against a fresh hub. Confirm: (a) preconditions are checked before initialization, (b) the consequence disclosure is emitted and confirmation obtained **before** any surface is created (§2.3 step 2), (c) home thread is read fully, (d) inaugural entry pins cursor at home HEAD, (e) commit/push lands on local main, (f) writer-surface integrity is preserved.
+
+### 4.6. Consequence-disclosure check (`SILENT_MUTATION`)
+
+Confirm the inaugural procedure emits the **exact repo-side consequence list** (channel/log surface, registry entry + cursor, wake wiring) before the first mutation, and creates no surface without confirmation. Any inaugural attach that initializes `.cn-{agent}/logs/` or touches home's registry without the prior disclosure trips `SILENT_MUTATION` (A9). Confirm transport internals (orphan refs, cursor ownership) are **not** re-specified here — they are cnos#684; this skill discloses the surfaces created, not the transport.
 
 ---
 
@@ -313,6 +331,7 @@ Implementation-level:
 - **A6 — Cursor parse error.** _Symptom:_ Body finds malformed YAML frontmatter (typo, partial match, missing `cursor_out`) and either crashes or misreads. _Fix:_ strict YAML parse of frontmatter block; if no valid `cursor_out`, treat as not-attached and defer to operator.
 - **A7 — Concurrent wake collision.** _Symptom:_ Two wakes write to the same `YYYYMMDD.md` and one's push is rejected. _Fix:_ append-only with rebase-on-push; if rebase fails, defer to operator (the convention's §7 single-writer caveat covers this).
 - **A8 — Stale clone for read.** _Symptom:_ Body uses an old clone of home and reads stale directives. _Fix:_ `git fetch + git log origin/main` immediately before the walk; cursor compared against `origin/main` HEAD, not local HEAD.
+- **A9 — Silent inaugural mutation (`SILENT_MUTATION`).** _Symptom:_ Inaugural attach creates `.cn-{agent}/logs/`, registers a registry entry + cursor, or wires the wake loop **without first disclosing** these consequences to the activator and obtaining confirmation. _Fix:_ §2.3 step 2 + §3.9 — disclose the exact repo-side changes before any mutation; attach only on confirmation. This is the attach-side of Case C in `agent/activate/SKILL.md §2.0` (cnos#686).
 
 ---
 
@@ -324,7 +343,7 @@ Implementation-level:
 
 ### Peer skill
 
-- `agent/activate/SKILL.md` — identity load (Kernel + CA + Persona + Operator + state + identity confirmation). Attach requires activate to have completed first. §2.5 defines the Tier 1a/1b foreign-body shape detection; the shape detected there is what the body records in today's attach entry.
+- `agent/activate/SKILL.md` — identity load (Kernel + CA + Persona + Operator + state + identity confirmation). Attach requires activate to have completed first. §2.5 defines the Tier 1a/1b foreign-body shape detection; the shape detected there is what the body records in today's attach entry. **§2.0 defines the activation-case taxonomy; this skill's inaugural-attach disclosure (§2.3 step 2, §3.9) is the attach-side realization of activate's Case C (unattached, attachable).**
 
 ### Composition pattern
 
@@ -334,6 +353,11 @@ Implementation-level:
 
 - `cnos:.cn-sigma/logs/20260601.md` — claude-code-action substrate verification; established that GH Actions can run the channel work end-to-end with operator's subscription billing.
 - `cnos:docs/reference/conventions/AGENT-ACTIVATION-LOG-v0.md` — the convention this skill operationalizes; field experience across three activations (Sigma-at-cnos, Sigma-at-bumpt, Sigma-at-home) confirmed the topology-fit framing.
+
+### Activation-case taxonomy and channel transport
+
+- cnos#686 — the five-case activation taxonomy. Case C (unattached, attachable) is the case whose attach step this skill's §2.3-step-2 consequence disclosure operationalizes; `SILENT_MUTATION` (A9) is the named violation for attaching without it.
+- cnos#684 — channel _transport_ (orphan refs, cursor ownership, ref layout). The inaugural disclosure names the surfaces attaching creates; it does **not** re-specify transport internals, which are #684's concern.
 
 ### Authority and stability
 
