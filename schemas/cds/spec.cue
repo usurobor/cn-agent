@@ -219,10 +219,24 @@ import "cnos.dev/cnos/schemas/cdd"
 #CDSCellSpec: cdd.#CellSpec & {
 	protocol_id: "cnos.cdd.cds.receipt.v1"
 
-	// A CDS cell MUST carry an admissible issue. The generic layer leaves
-	// `task` optional and open; here it is required and closed, so a CDS cell
-	// whose task is missing or malformed fails `cue vet` before it is ever run.
-	contract: task: #CDSIssue
+	// A task, if declared, must be an admissible issue — closed and checked,
+	// where the generic layer leaves it optional and open.
+	//
+	// OPTIONAL here, required at the door. Making it mandatory in this schema
+	// forced every CDS fixture to carry a full valid issue merely to remain
+	// invalid for its own single reason — a fixture about a held provider or a
+	// mis-ordered evidence list had to declare a problem statement and
+	// acceptance criteria. That is an admission barrier leaking into documents
+	// that pass through it for unrelated purposes, and it cost ~575 lines of
+	// duplicated JSON.
+	//
+	// The load-bearing gate is cdsissue.Admit, which both seats run before
+	// renting cognition: a CDS cell with no issue does not execute. Stated
+	// exactly, because it is a real gap: a taskless CDS spec vets clean here
+	// and fails at run time. That is one named case, caught before any
+	// cognition is rented, and it is the only place this schema knowingly
+	// admits a document the runtime will refuse.
+	contract: task?: #CDSIssue
 
 	// CANONICAL ORDER (explicit rule, not an accident): a CDS spec's first
 	// required_evidence entry IS the alpha diff. Chosen over order-independent

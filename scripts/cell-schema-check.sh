@@ -7,8 +7,25 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 CUE=${CUE:-cue}
-CN=${CN:-./cn}
 fail=0
+
+tmpdir=$(mktemp -d)
+tmp="$tmpdir/envelope.json" # .json so `cue` infers the format, not CUE
+trap 'rm -rf "$tmpdir"' EXIT
+
+# The CLI is one of the two authorities this corpus checks, so it must be the
+# CLI BUILT FROM THE SOURCE UNDER REVIEW. Unless CN names one explicitly, build
+# it here: the previous default of `./cn` ran whatever binary happened to be in
+# the repo root, so a local run reported every CLI check green against a binary
+# that could predate the change entirely. CI builds first and was never
+# affected — this closes the gap between what CI measures and what a local run
+# measures, which is the whole point of a shared corpus.
+if [ -n "${CN:-}" ]; then
+  echo "# using CN=$CN (caller-supplied; not rebuilt)"
+else
+  CN=$tmpdir/cn
+  go -C src/go build -o "$CN" ./cmd/cn || { echo "✗ cannot build cn from source" >&2; exit 1; }
+fi
 
 # A missing tool must not read as a corpus that passed. Every negative below is
 # an expected NON-ZERO exit, so an absent `cue` or `cn` would satisfy all of
@@ -16,10 +33,6 @@ fail=0
 for tool in "$CUE" "$CN"; do
   command -v "$tool" >/dev/null 2>&1 || { echo "✗ required tool not found: $tool" >&2; exit 1; }
 done
-
-tmpdir=$(mktemp -d)
-tmp="$tmpdir/envelope.json" # .json so `cue` infers the format, not CUE
-trap 'rm -rf "$tmpdir"' EXIT
 
 # files_exist guards the negative helpers below. A negative asserts a NON-ZERO
 # exit, and a missing or misnamed fixture produces one too — so without this a
@@ -121,13 +134,16 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-review-with-workspace
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-top-arg.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-nested-arg.json -d '#CDSCellSpec'
-# A CDS cell must declare an admissible issue. The SAME file still vets against
-# the generic #CellSpec: knowing that a task is required — and what one is — is
-# the CDS overlay's business, and the pair of lines is what shows the boundary
-# sits where it is claimed to sit rather than having leaked into the kernel's
-# schema.
-vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-no-task.json -d '#CDSCellSpec'
-vet_ok schemas/cdd/spec.cue schemas/cds/fixtures/invalid/cds-no-task.json -d '#CellSpec'
+# A declared task must be an admissible issue, and knowing what one IS belongs
+# to the CDS overlay: the same malformed file vets clean against the generic
+# #CellSpec, which is what shows the boundary sits where it is claimed to sit
+# rather than having leaked into the kernel's schema.
+#
+# Absence is a different case and is deliberately NOT checked here — see
+# #CDSCellSpec on why `task` is optional in this schema and mandatory at the
+# door. The runtime witness for it is below, with the live cells.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-malformed-task.json -d '#CDSCellSpec'
+vet_ok schemas/cdd/spec.cue schemas/cds/fixtures/invalid/cds-malformed-task.json -d '#CellSpec'
 
 echo "# CDS issue corpus (one corpus, two authorities)"
 # cdsissue.Admit and #CDSIssue must accept and reject exactly the same
@@ -329,6 +345,25 @@ if [ "$c3code" != 1 ]; then
   echo "  ✗ case-3 cell exit=$c3code want=1 (fake reviewer never passes)"; fail=1
 else echo "  ✓ case-3 cell closes needs_repair with a constructed cds.review beta"; fi
 vet_ok schemas/cdd/episode-closure.cue "$c3out" -d '#EpisodeClosure'
+# The runtime half of issue admission, and the reason #CDSCellSpec can leave
+# `task` optional: the SAME spec with its task removed vets clean and does not
+# run. Asserted by REASON rather than by exit code — exit 2 is also the
+# missing-contract and unresolvable-base exit, so a bare code would prove
+# refusal without proving cause. The seat must refuse before renting anything.
+nt="$(pwd)/schemas/cds/fixtures/invalid/cds-no-task.json"
+if ! files_exist "$nt"; then fail=1; fi
+vet_ok ./schemas/cds:cds "$nt" -d '#CDSCellSpec'
+(
+  cd "$hub" || exit 1
+  "$CN" cell run --contract "$nt" \
+    --param language=cnos.eng:eng/go --param provider=fake \
+    --param base_sha=HEAD --param repo="$coderepo" >/dev/null 2>"$tmpdir/nt.err"
+  echo $? >"$tmpdir/nt.exit"
+)
+if [ "$(cat "$tmpdir/nt.exit")" = 0 ] || ! grep -q "contract carries no task" "$tmpdir/nt.err"; then
+  echo "  ✗ a taskless CDS cell must be refused at admission, got exit $(cat "$tmpdir/nt.exit"): $(head -c 200 "$tmpdir/nt.err")"; fail=1
+else echo "  ✓ a taskless CDS cell vets and is refused at the door"; fi
+
 c3beta="$tmpdir/case3-beta.json"
 if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["beta"], open(sys.argv[2],"w"))' "$c3out" "$c3beta" 2>/dev/null; then
   vet_ok ./schemas/cds:cds "$c3beta" -d '#CDSReviewBetaResolved'

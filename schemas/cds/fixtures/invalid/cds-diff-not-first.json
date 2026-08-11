@@ -3,36 +3,6 @@
   "contract": {
     "id": "c",
     "goal": "g",
-    "task": {
-      "kind": "cnos.cds.issue.v0",
-      "id": "fixture-issue",
-      "problem": {
-        "exists": "The fixture repository states no contribution procedure.",
-        "expected": "The fixture repository states its contribution procedure in one file.",
-        "diverges": "Nothing in the repository says how a change is proposed."
-      },
-      "sources": [
-        {
-          "claim": "what the repository is",
-          "path": "README.md"
-        }
-      ],
-      "scope": {
-        "in": [
-          "add CONTRIBUTING.md at the repository root"
-        ],
-        "out": [
-          "changing the build system"
-        ]
-      },
-      "acceptance": [
-        {
-          "id": "AC1",
-          "statement": "CONTRIBUTING.md exists and states how a change is proposed.",
-          "verification": "the diff adds CONTRIBUTING.md; read it for that statement"
-        }
-      ]
-    },
     "required_evidence": [
       {
         "id": "tests",
