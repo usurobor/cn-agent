@@ -16,6 +16,7 @@
 ## Runtime
 
 - [CELL-RUNTIME.md](CELL-RUNTIME.md) — cell classes (WC/PC/CC), matter domains, and the generic cell runner. *Proposed* (#627 / #628); realization peer of `COHERENCE-CELL-NORMAL-FORM.md`.
+- [AGENT-DIALOGUE-PROTOCOL.md](AGENT-DIALOGUE-PROTOCOL.md) — agent-to-agent dialogue v0: writer-owned `{agent, locus}` activation streams, thread reconstruction, and the boundaries separating dialogue from #690 memory and from project authority. Canonical design of record, ratified 2026-08-05 (#698).
 
 ## Security & observability
 
