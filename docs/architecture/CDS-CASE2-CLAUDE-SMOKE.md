@@ -16,7 +16,9 @@ Stated exactly, because the earlier version of this file overclaimed
 provider/model/base metadata, the scope-lift digest, or JSON whitespace.
 Those are reproduced below as transcription from the artifact, and a reader
 who cares should read the artifact. This is an evidence fixture, not a
-provider harness: nothing in the corpus invokes a provider.
+provider harness: nothing in the corpus invokes a RENTED cognition provider.
+(The corpus does run the deterministic `fake`; what it never does is call the
+Claude CLI.)
 
 **Why it exists (Pi #57 D1).** The exact-argv oracle proves the recipe; it
 cannot prove the runtime. Before `--permission-mode acceptEdits` was sealed,
@@ -37,7 +39,9 @@ Runtime was an immutable, clean commit — not "a head plus changes":
 | fixture repo base | `1d79f7552649357165ce9addf3fbe7c57f3b62b0` |
 
 Built with `go -C src/go build -o /home/user/cnos/cn ./cmd/cn` at that commit.
-The invocation, verbatim, with the paths as variables rather than prose:
+The exact invocation SHAPE below — every flag and value is literal; only the
+disposable scratch prefix is abbreviated as `<scratch>`, since it was a
+per-run temporary directory that no longer exists:
 
 ```sh
 CN=/home/user/cnos/cn
@@ -63,12 +67,13 @@ in the runtime asks the provider what actually served the request.
 ## Result
 
 Rows marked **gate** are recomputed by `scripts/cell-schema-check.sh`. Rows
-marked *observed* were seen at run time and are not derivable from the
-artifact — nothing asserts them.
+marked *transcribed* are present in the artifact but not asserted by the gate.
+Rows marked *observed* were seen at run time and are **not** in the artifact at
+all.
 
 | | |
 |---|---|
-| episode *(observed)* | `ep-7a83e6c07a2749068aab291152113946` |
+| episode *(transcribed)* | `ep-7a83e6c07a2749068aab291152113946` |
 | exit *(observed)* | `1` |
 | `execution_mode` **(gate)** | **`cognitive`** |
 | status **(gate)** | `needs_repair` |

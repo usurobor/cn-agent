@@ -185,14 +185,17 @@ So a value is a **canonical ref**, not a short name: `cnos.eng:eng/go`, not
 - No CUE check of supplied values. A schema cannot do it — it never sees the
   invocation.
 
-A shorthand resolver may arrive later; it would change only *how a value
-becomes a ref*, never the cell, which is the point of the seam.
+The shipped operation is **hole splice + exact skill loading**: `Resolve`
+replaces `$name` in place, and `cds.patch` loads the ref that name resolved
+to. Calling it "value → implementation resolution" would overstate it.
 
 **Staging of who fills the hole (the cell never changes):**
 - *Now (CLI bootstrap):* the runner fills every hole from CLI flags.
 - *Later:* a parent cell fills `language` mechanically (`language_of(repo)`) or
-  cognitively (`triage(issue)`). Only the *filler* changes; resolution
-  (value→skill) and the `cds` cell body are untouched.
+  cognitively (`triage(issue)`). What a later filler must supply is whatever
+  the declared domain holds — today, canonical refs. Whether a shorthand could
+  be introduced without touching the cell is not established, so it is not
+  claimed.
 
 ## Piece inventory
 
@@ -264,8 +267,10 @@ dependencies**, not a fill itself and not a new architecture.
 `internal/cellcog` constructs bounded,
 stateless provider adapters (claude-cli and a deterministic fake; codex-cli is
 HELD, see below) with an explicit model, typed argv and a sealed permission
-mode — a cell cannot smuggle flags into one, nor inherit edit authority from
-the host.
+mode — a cell cannot smuggle flags into one. The adapter DECLARES its
+baseline and does not rely on user or project defaults; managed substrate
+policy remains above that baseline, so this is not environment-independent
+authority.
 `internal/cellskill` resolves canonical installed refs and **loads** the
 bodies, recording ordered refs and content digests in the closure, because
 naming a skill is not loading it. `internal/cdspatch` composes those with the
@@ -386,26 +391,34 @@ References: <https://learn.chatgpt.com/docs/developer-commands?surface=cli> ·
 <https://learn.chatgpt.com/docs/agent-configuration/agents-md> ·
 <https://learn.chatgpt.com/docs/build-skills>
 
-## HELD — promote the generic cognition schema to CDD (captured, not implemented)
+## HELD — promote the shared schema definitions to CDD (captured, not implemented)
 
-**Status: held until a second cognitive fill exists.** CDD is the generic
-layer, CDS a concrete one; a mechanism every fill can rent belongs to CDD, and
-no future fill may depend on CDS to reach it.
+**Status: held until a second consumer exists.** CDD is the generic layer, CDS
+a concrete one; a mechanism more than one fill can use belongs to CDD, and no
+future fill should depend on CDS to reach it.
+
+Scoped precisely (Pi #60 B1): what is reusable today is the **process and
+provider seam** — argv recipes, bounded execution, timeouts, output limits.
+`cellcog` is NOT general cognition. `Coder` takes a directory and returns no
+value, so it serves workspace EDITS only. A research or text fill could not
+rent it unchanged; it would need a returned-value port, and the second
+consumer is what should earn that port rather than speculation here.
 
 The **Go** layer already obeys this, and the dependency graph is what enforces
 it rather than a naming convention:
 
 ```text
-cellcog    -> (no internal deps)     generic cognition
-cellskill  -> (no internal deps)     generic skill loading
-cellwork   -> (no internal deps)     generic worktree substrate
-cellfill   -> cellkernel             generic registry + cdd fills
+cellcog    -> (no internal deps)     workspace-edit provider adapters
+cellskill  -> (no internal deps)     skill loading
+cellwork   -> (no internal deps)     worktree substrate
+cellfill   -> cellkernel             registry + cdd fills
 cdspatch   -> cellcog, cellskill, cellwork, cellfill, cellkernel
 ```
 
 `cellcog` is a leaf; nothing depends on `cdspatch` but the composition root. A
-later `text.write` or `research` fill sits exactly where `cdspatch` sits — it
-rents cognition, it does not reimplement it, and it never imports CDS.
+later fill sits where `cdspatch` sits and never imports CDS. Whether it can
+reuse `cellcog` depends on what it produces: an edit-producing fill can, an
+answer-producing one cannot until a returned-value port exists.
 
 The **CUE** layer does not yet obey it. Two generic definitions live in the
 concrete overlay `schemas/cds/spec.cue`:
@@ -444,8 +457,9 @@ follow only when their preceding cases have executable evidence.
 ## Ownership split
 
 - **cnos.cdd** owns the *substrate*: the `#CellSpec` schema, the compiler, the
-  loader, the runner (`cn cell compile` / `cn cell run`), and the skill-path
-  resolver. It is the language + kernel.
+  loader, and the runner (`cn cell compile` / `cn cell run`). It is the
+  language + kernel. There is no skill-path resolver; a caller supplies the
+  canonical ref.
 - **cnos.cds** owns a *program written in it*: `main.cell`, the params-domain
   overlay, and its α/β skills. cds is one fill family; cdw/cdr are siblings of the
   same shape.

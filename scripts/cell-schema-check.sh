@@ -141,8 +141,13 @@ echo "# committed rented-Claude evidence (one-off receipt, NOT a provider run)"
 # here. The committed closure below IS that witness, and these checks make it
 # accountable rather than narrative (Pi #58 D1): both CUE oracles are
 # recomputed from the artifact, and the measurement is recomputed from the
-# diff the artifact carries. A one-byte edit or a deletion fails this block.
-# Nothing here invokes a provider.
+# diff the artifact carries.
+#
+# Scoped exactly (Pi #60 D1): a one-byte edit INSIDE `matter.data`, or deleting
+# the artifact, fails this block. Metadata and JSON whitespace are not covered,
+# and nothing here claims they are. Nothing in this gate invokes a RENTED
+# cognition provider — the corpus does invoke the deterministic `fake`, which
+# is the point of it being deterministic.
 ev=docs/architecture/evidence/cds-case2-claude-closure.json
 ev_diff_sha=3826a7e883a9fb78769d1ef99ca54a16bad631aea244620412e2d5be58261766
 ev_diff_bytes=2479
