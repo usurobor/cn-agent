@@ -1,0 +1,85 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "cds-code-reviewed",
+    "goal": "Carry out the change described by the issue in the repository at base_sha",
+    "required_evidence": [
+      {
+        "id": "diff",
+        "kind": "diff",
+        "producer": "alpha"
+      }
+    ]
+  },
+  "protocol_id": "cnos.cdd.cds.receipt.v1",
+  "params": {
+    "language": {
+      "required": true,
+      "domain": [
+        "cnos.eng:eng/go",
+        "cnos.eng:eng/ocaml",
+        "cnos.eng:eng/typescript"
+      ]
+    },
+    "provider": {
+      "required": true,
+      "domain": [
+        "claude-cli",
+        "fake"
+      ]
+    },
+    "model": {
+      "required": false,
+      "default": ""
+    },
+    "base_sha": {
+      "required": true
+    },
+    "repo": {
+      "required": false,
+      "default": "."
+    },
+    "review_provider": {
+      "required": false,
+      "default": "fake"
+    },
+    "review_model": {
+      "required": false,
+      "default": ""
+    }
+  },
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "provider": "$provider",
+      "model": "$model"
+    },
+    "workspace": {
+      "kind": "git-worktree",
+      "repo": "$repo",
+      "base_sha": "$base_sha"
+    },
+    "skills": [
+      "cnos.eng:eng/code",
+      "cnos.eng:eng/test",
+      "$language",
+      "cnos.eng:eng/write-functional"
+    ]
+  },
+  "beta": {
+    "fill": "cds.review",
+    "cognition": {
+      "provider": "$review_provider",
+      "model": "$review_model"
+    },
+    "skills": [
+      "cnos.cdd:cdd/review",
+      "$language"
+    ],
+    "workspace": {
+      "kind": "git-worktree",
+      "repo": ".",
+      "base_sha": "x"
+    }
+  }
+}

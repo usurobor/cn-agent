@@ -72,6 +72,8 @@ vet_ok ./schemas/cds:cds schemas/cds/fixtures/code-cell-spec.json -d '#CDSCellSp
 # omitted, are both structurally possible; both were rejected before this arm.
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/fake-model-hole-cell-spec.json -d '#CDSCellSpec'
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/provider-hole-cell-spec.json -d '#CDSCellSpec'
+# Case 3 differs from Case 2 by ONE field: beta.fill. Both must vet.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/reviewed-code-cell-spec.json -d '#CDSCellSpec'
 
 echo "# positive closures"
 vet_ok schemas/cdd/episode-closure.cue schemas/cdd/fixtures/episode-closure-accepted.json -d '#EpisodeClosure'
@@ -111,6 +113,9 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-codex-held.json -d '#
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-bad-hole-name.json -d '#CDSCellSpec'
 # ...including in the cognition model position, which was bare `string`.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-bad-model-hole.json -d '#CDSCellSpec'
+# A reviewer's canonical input is (contract, matter). Declaring a workspace
+# would let it reach the very worktree it judges, so the key is not admitted.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-review-with-workspace.json -d '#CDSCellSpec'
 # Fill-owned keys are exact and case-sensitive at every depth: encoding/json
 # would otherwise decode these while the closed overlay rejects them.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
@@ -274,5 +279,32 @@ if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"
    "$CUE" vet ./schemas/cds:cds "$decl" -d '#CDSPatchAlphaResolved' >/dev/null 2>&1; then
   echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, pinned base, digested skills)"
 else echo "  ✗ resolved alpha failed #CDSPatchAlphaResolved"; fail=1; fi
+
+# Case 3 end to end from the same installed hub: alpha produces, and a
+# cds.review beta is CONSTRUCTED and INVOKED rather than stubbed out. The
+# reviewer rents `fake`, which never passes, so this proves wiring — seat
+# construction, skill loading, prompt, verdict decode, closure shape — not
+# semantic review. Semantic review is proven by the rented evidence below.
+c3spec=$(pwd)/schemas/cds/fixtures/reviewed-code-cell-spec.json
+c3out="$tmpdir/case3.json"
+(
+  cd "$hub" || exit 1
+  "$CN" cell run --contract "$c3spec" \
+    --param language=cnos.eng:eng/go --param provider=fake \
+    --param base_sha=HEAD --param repo="$coderepo" >"$c3out" 2>/dev/null
+  echo $? >"$tmpdir/c3.exit"
+)
+c3code=$(cat "$tmpdir/c3.exit")
+if [ "$c3code" != 1 ]; then
+  echo "  ✗ case-3 cell exit=$c3code want=1 (fake reviewer never passes)"; fail=1
+else echo "  ✓ case-3 cell closes needs_repair with a constructed cds.review beta"; fi
+vet_ok schemas/cdd/episode-closure.cue "$c3out" -d '#EpisodeClosure'
+c3beta="$tmpdir/case3-beta.json"
+if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["beta"], open(sys.argv[2],"w"))' "$c3out" "$c3beta" 2>/dev/null; then
+  vet_ok ./schemas/cds:cds "$c3beta" -d '#CDSReviewBetaResolved'
+else
+  echo "  ✗ case-3 closure has no resolved beta"; fail=1
+fi
+
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi

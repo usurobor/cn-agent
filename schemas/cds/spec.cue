@@ -120,6 +120,25 @@ import "cnos.dev/cnos/schemas/cdd"
 	fill: "cdd.mechanical-unmet"
 }
 
+// #CDSReviewBetaAuthored is Case 3's rented reviewer. Note what it does NOT
+// carry: there is no workspace. A reviewer's canonical input is
+// `(contract, matter)`, so a seat that could open the worktree would be
+// reaching outside the input its independence rests on. The absence is the
+// design, not an omission — the Go decoder rejects a `workspace` key here for
+// the same reason.
+#CDSReviewBetaAuthored: {
+	fill: "cds.review"
+	cognition: #CognitionAuthored
+	skills: [#Concrete | #Hole, ...#Concrete | #Hole]
+}
+
+// #CDSReviewBetaResolved is what a closure records for a rented reviewer.
+#CDSReviewBetaResolved: {
+	fill:      "cds.review"
+	cognition: #Cognition
+	skills: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ...{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}]
+}
+
 #CDSCellSpec: cdd.#CellSpec & {
 	protocol_id: "cnos.cdd.cds.receipt.v1"
 
@@ -134,5 +153,8 @@ import "cnos.dev/cnos/schemas/cdd"
 	contract: required_evidence: [{id: "diff", kind: "diff", producer: "alpha"}, ...cdd.#RequiredRef]
 
 	alpha: #CDSPatchAlphaAuthored
-	beta:  #CDSMechanicalUnmetBeta
+	// Case 2 and Case 3 differ by exactly this one field: a mechanical seat
+	// that refuses to judge, or a rented one that does. Everything else about
+	// the cell is unchanged, which is what the fill boundary was for.
+	beta: #CDSMechanicalUnmetBeta | #CDSReviewBetaAuthored
 }

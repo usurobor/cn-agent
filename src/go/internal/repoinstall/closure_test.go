@@ -30,17 +30,27 @@ func TestDefaultPackagesCoverShippedCells(t *testing.T) {
 				Domain []string `json:"domain"`
 			} `json:"params"`
 			Alpha map[string]json.RawMessage `json:"alpha"`
+			Beta  map[string]json.RawMessage `json:"beta"`
 		}
 		if err := json.Unmarshal(data, &spec); err != nil {
 			t.Fatalf("%s: %v", path, err)
 		}
-		raw, ok := spec.Alpha["skills"]
-		if !ok {
-			continue // this cell's fill takes no skills
-		}
+		// BOTH seats load skills once a rented reviewer exists, and a beta
+		// naming an uninstallable skill breaks a hub exactly as an alpha does.
 		var refs []string
-		if err := json.Unmarshal(raw, &refs); err != nil {
-			t.Fatalf("%s: skills: %v", path, err)
+		for _, seat := range []map[string]json.RawMessage{spec.Alpha, spec.Beta} {
+			raw, ok := seat["skills"]
+			if !ok {
+				continue // this seat's fill takes no skills
+			}
+			var seatRefs []string
+			if err := json.Unmarshal(raw, &seatRefs); err != nil {
+				t.Fatalf("%s: skills: %v", path, err)
+			}
+			refs = append(refs, seatRefs...)
+		}
+		if len(refs) == 0 {
+			continue
 		}
 		// A hole stands for every value its declared domain allows, so the
 		// closure must cover all of them. A hole whose parameter is missing or
