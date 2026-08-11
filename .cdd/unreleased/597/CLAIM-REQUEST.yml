@@ -1,0 +1,7 @@
+# cnos#575 AC1 -- dispatch wake's explicit request to claim this cell
+# (status:todo -> status:in-progress) via the CDS issue-state FSM.
+wake: cds-dispatch
+protocol: cds
+issue: 597
+requested_at: 2026-07-05T12:13:17Z
+run_class: first_pass
