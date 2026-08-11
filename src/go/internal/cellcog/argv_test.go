@@ -1,6 +1,7 @@
 package cellcog
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -22,7 +23,8 @@ func TestClaudeArgvIsExact(t *testing.T) {
 		"--no-session-persistence",
 		"--tools", "Read,Write,Edit,Glob,Grep",
 		"--permission-mode", "acceptEdits",
-		"--output-format", "text",
+		"--output-format", "stream-json",
+		"--verbose",
 	}
 	if joined(got) != joined(want) {
 		t.Fatalf("argv drifted:\n got %q\nwant %q", got, want)
@@ -94,5 +96,84 @@ func TestFakeRejectsModel(t *testing.T) {
 	}
 	if _, _, err := New(Config{Provider: "fake"}); err != nil {
 		t.Fatalf("fake without a model must construct: %v", err)
+	}
+}
+
+// The ANSWERING recipe must be strictly less authoritative than the producing
+// one, and must stream for the same reason: a stalled seat should say where.
+func TestClaudeAnswerArgvIsExact(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object"}`)
+	got := ClaudeAnswerArgv("claude-opus-5", schema)
+	want := []string{
+		"-p",
+		"--model", "claude-opus-5",
+		"--safe-mode",
+		"--no-session-persistence",
+		"--tools", "",
+		"--output-format", "stream-json",
+		"--verbose",
+		"--json-schema", `{"type":"object"}`,
+	}
+	if joined(got) != joined(want) {
+		t.Fatalf("answer argv drifted:\n got %q\nwant %q", got, want)
+	}
+}
+
+// A reviewer is offered NO tools and therefore declares no permission mode:
+// its canonical input is (contract, matter), and a tool would let it read the
+// workspace it is meant to judge from outside. Asking for edit authority it
+// cannot use would be requesting power for nothing.
+func TestClaudeAnswerArgvIsLessAuthoritativeThanProducing(t *testing.T) {
+	answer := joined(ClaudeAnswerArgv("m", json.RawMessage(`{}`)))
+	for _, forbidden := range []string{
+		"--permission-mode", "acceptEdits", "bypassPermissions",
+		"Read", "Write", "Edit", "Glob", "Grep", "Bash",
+		"--allowedTools", "--dangerously-skip-permissions",
+	} {
+		if strings.Contains(answer, forbidden) {
+			t.Errorf("answering argv must not contain %q: %s", forbidden, answer)
+		}
+	}
+	if !strings.Contains(answer, "--safe-mode") {
+		t.Errorf("answering argv must still suppress user/project context: %s", answer)
+	}
+}
+
+// Only the TERMINAL result event is an answer. A progress event that happens
+// to carry a structured payload must not be mistaken for the verdict, and a
+// stream that never reaches a result has not answered at all.
+func TestTerminalStructuredOutput(t *testing.T) {
+	cases := []struct {
+		name   string
+		stream string
+		want   string // want=="" means success
+		value  string
+	}{
+		{
+			name:   "terminal result wins over earlier events",
+			stream: `{"type":"assistant","structured_output":{"pass":true}}` + "\n" + `{"type":"result","is_error":false,"structured_output":{"pass":false}}`,
+			value:  `{"pass":false}`,
+		},
+		{name: "no result event", stream: `{"type":"assistant"}`, want: "no result event"},
+		{name: "error result", stream: `{"type":"result","is_error":true}`, want: "error result"},
+		{name: "result without structured output", stream: `{"type":"result","is_error":false}`, want: "no structured_output"},
+		{name: "not ndjson", stream: `{"type":"result"} <garbage>`, want: "not NDJSON"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := terminalStructuredOutput(tc.stream)
+			if tc.want == "" {
+				if err != nil {
+					t.Fatalf("want success, got %v", err)
+				}
+				if string(got) != tc.value {
+					t.Fatalf("got %s, want %s", got, tc.value)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("want error mentioning %q, got %v", tc.want, err)
+			}
+		})
 	}
 }

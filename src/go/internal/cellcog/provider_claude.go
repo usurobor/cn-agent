@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
 	"time"
 )
 
@@ -52,6 +54,14 @@ func (ClaudeCLI) Name() string { return "claude-cli" }
 //     independent of the environment. Managed substrate policy remains above
 //     the declared baseline, and nothing here detects or overrides it.
 //
+//   - `--output-format stream-json --verbose` emits events AS THEY HAPPEN
+//     instead of one dump after the run ends. The bytes are still discarded
+//     on success — the product is the measured diff — but a stalled provider
+//     now leaves a trail: "captured 0 bytes" and "captured 40KB then stopped"
+//     are different diagnoses, and under `text` both looked identical because
+//     print mode emits nothing until it finishes. `--verbose` is not optional
+//     here; the CLI refuses `--print` with `stream-json` without it.
+//
 //   - `--no-session-persistence` keeps the adapter stateless.
 func ClaudeArgv(model string) []string {
 	return []string{
@@ -61,7 +71,8 @@ func ClaudeArgv(model string) []string {
 		"--no-session-persistence",
 		"--tools", ToolSurface,
 		"--permission-mode", "acceptEdits",
-		"--output-format", "text",
+		"--output-format", "stream-json",
+		"--verbose",
 	}
 }
 
@@ -74,8 +85,10 @@ func (c ClaudeCLI) Work(ctx context.Context, dir, prompt string) error {
 		bin = "claude"
 	}
 	// stdout is discarded on purpose: a producing seat is judged by the
-	// worktree diff, never by its own account of what it did.
-	_, err := runCLI(ctx, bin, dir, prompt, ClaudeArgv(c.Model), c.Timeout)
+	// worktree diff, never by its own account of what it did. Truncation is
+	// tolerated for the same reason — the stream is progress, so losing its
+	// tail costs nothing the episode depends on.
+	_, _, err := runCLI(ctx, bin, dir, prompt, ClaudeArgv(c.Model), c.Timeout)
 	return err
 }
 
@@ -88,9 +101,12 @@ func (c ClaudeCLI) Work(ctx context.Context, dir, prompt string) error {
 //     outside, which is the independence the seat exists to provide.
 //   - no `--permission-mode` — with no tools there is nothing to approve, so
 //     declaring edit authority would be requesting power the seat cannot use.
-//   - `--output-format json` + `--json-schema` — the provider constrains the
-//     answer to the caller's shape, so the verdict is decoded rather than
-//     parsed hopefully out of prose.
+//   - `--json-schema` — the provider constrains the answer to the caller's
+//     shape, so the verdict is decoded rather than parsed hopefully out of
+//     prose. It survives streaming: the terminal `result` event carries
+//     `structured_output`.
+//   - `--output-format stream-json --verbose` for the same reason as the
+//     producing recipe: a reviewer that stalls should say where.
 func ClaudeAnswerArgv(model string, schema json.RawMessage) []string {
 	return []string{
 		"-p",
@@ -98,7 +114,8 @@ func ClaudeAnswerArgv(model string, schema json.RawMessage) []string {
 		"--safe-mode",
 		"--no-session-persistence",
 		"--tools", NoTools,
-		"--output-format", "json",
+		"--output-format", "stream-json",
+		"--verbose",
 		"--json-schema", string(schema),
 	}
 }
@@ -115,22 +132,55 @@ func (c ClaudeCLI) Answer(ctx context.Context, prompt string, schema json.RawMes
 	if bin == "" {
 		bin = "claude"
 	}
-	out, err := runCLI(ctx, bin, "", prompt, ClaudeAnswerArgv(c.Model, schema), c.Timeout)
+	out, truncated, err := runCLI(ctx, bin, "", prompt, ClaudeAnswerArgv(c.Model, schema), c.Timeout)
 	if err != nil {
 		return nil, err
 	}
-	var env struct {
-		IsError    bool            `json:"is_error"`
-		Structured json.RawMessage `json:"structured_output"`
+	// Here the stream IS the product, so a clipped one is fatal: the terminal
+	// result event may be exactly what was lost.
+	if truncated {
+		return nil, fmt.Errorf("claude-cli: answer stream exceeded %d bytes, so the verdict may be incomplete", maxOutputBytes)
 	}
-	if err := json.Unmarshal([]byte(out), &env); err != nil {
-		return nil, fmt.Errorf("claude-cli: result envelope is not JSON: %w", err)
+	return terminalStructuredOutput(out)
+}
+
+// terminalStructuredOutput reads the NDJSON event stream and returns the
+// schema-constrained value from the terminal `result` event.
+//
+// Decoded as a sequence of JSON values rather than scanned by line: an event
+// carrying a long verdict can exceed any line-buffer size, and a diagnostic
+// that fails on long input is not a diagnostic. Progress events are skipped —
+// only the terminal result is an answer, and an intermediate assistant
+// message that happens to look like one is not.
+func terminalStructuredOutput(stream string) (json.RawMessage, error) {
+	dec := json.NewDecoder(strings.NewReader(stream))
+	var (
+		found      bool
+		isError    bool
+		structured json.RawMessage
+	)
+	for {
+		var ev struct {
+			Type       string          `json:"type"`
+			IsError    bool            `json:"is_error"`
+			Structured json.RawMessage `json:"structured_output"`
+		}
+		if err := dec.Decode(&ev); err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, fmt.Errorf("claude-cli: event stream is not NDJSON: %w", err)
+		}
+		if ev.Type == "result" {
+			found, isError, structured = true, ev.IsError, ev.Structured
+		}
 	}
-	if env.IsError {
+	switch {
+	case !found:
+		return nil, fmt.Errorf("claude-cli: event stream ended with no result event")
+	case isError:
 		return nil, fmt.Errorf("claude-cli: provider reported an error result")
+	case len(structured) == 0:
+		return nil, fmt.Errorf("claude-cli: result carried no structured_output for the requested schema")
 	}
-	if len(env.Structured) == 0 {
-		return nil, fmt.Errorf("claude-cli: provider returned no structured_output for the requested schema")
-	}
-	return env.Structured, nil
+	return structured, nil
 }

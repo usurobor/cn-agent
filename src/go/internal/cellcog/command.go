@@ -28,16 +28,18 @@ const NoTools = ""
 // unblock Wait, because anything it spawned inherits the output pipe and holds
 // it open; WaitDelay bounds that second wait.
 //
-// It returns captured stdout. A producing seat discards it — what it did is
-// measured from the worktree — while an answering seat's whole product IS that
-// output.
+// It returns captured stdout and whether the bound cut it short. Truncation
+// is reported rather than decided: for a producing seat stdout is PROGRESS
+// (the product is the worktree diff, so a clipped stream costs nothing),
+// while for an answering seat stdout IS the product and a clipped stream
+// means an answer that cannot be trusted. Only the caller knows which.
 //
 // Nothing here is an OS sandbox. The honest authority is the offered tool
 // surface plus the runtime-measured worktree: whatever a seat touches
 // elsewhere simply never becomes evidence.
-func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout time.Duration) (string, error) {
+func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout time.Duration) (string, bool, error) {
 	if _, err := exec.LookPath(bin); err != nil {
-		return "", fmt.Errorf("%q not found in PATH: %w", bin, err)
+		return "", false, fmt.Errorf("%q not found in PATH: %w", bin, err)
 	}
 	if timeout <= 0 {
 		timeout = defaultTimeout
@@ -64,16 +66,13 @@ func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout
 		// somewhere durable becomes a second, unreceipted account of the
 		// episode; an error is already the explicit outcome channel and
 		// cannot be mistaken for evidence.
-		return "", fmt.Errorf("%s did not finish within %s: %w (captured %d stdout bytes before the stall; stderr tail: %q)",
+		return "", stdout.truncated, fmt.Errorf("%s did not finish within %s: %w (captured %d stdout bytes before the stall; stderr tail: %q)",
 			bin, timeout, ctxErr, len(stdout.String()), tail(stderr.String(), diagnosticTailBytes))
 	}
 	if err != nil {
-		return "", fmt.Errorf("%s failed: %w (stderr: %s)", bin, err, strings.TrimSpace(stderr.String()))
+		return "", stdout.truncated, fmt.Errorf("%s failed: %w (stderr: %s)", bin, err, strings.TrimSpace(stderr.String()))
 	}
-	if stdout.truncated {
-		return "", fmt.Errorf("%s produced more than %d bytes of output", bin, maxOutputBytes)
-	}
-	return stdout.String(), nil
+	return stdout.String(), stdout.truncated, nil
 }
 
 // tail returns at most n trailing bytes of s, kept valid UTF-8 so a truncated
