@@ -1,0 +1,17 @@
+schema: cn.dispatch.claim-request.v1
+issue: 662
+wake: cds-dispatch
+protocol: cds
+substrate: interactive-session
+claimed_by: sigma
+head_at_claim: 5ca785cd
+note: >
+  Claimed via the cds-dispatch dispatch-protocol claim sequence
+  (dispatch-protocol/SKILL.md). This firing is an interactive cn-sigma
+  session acting as the cds-dispatch wake, not a rendered GitHub Actions
+  substrate run -- no workflow run URL exists to cite. The cycle/662
+  branch base and this marker's presence are the claim evidence.
+  Explicit operator authorization for this dispatch is recorded on
+  cnos#662 (comment by usurobor, 2026-07-13T19:14:52Z): "The cds-dispatch
+  wake claims this at its next firing and runs gamma->alpha->beta on the
+  shipped generic runner."
