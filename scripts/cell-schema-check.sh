@@ -65,10 +65,11 @@ vet_ok schemas/cdd/spec.cue schemas/cdd/fixtures/bool-cell-spec.json -d '#CellSp
 # tagged envelope and the CDS overlay's closed seat shapes.
 vet_ok schemas/cdd/spec.cue schemas/cds/fixtures/code-cell-spec.json -d '#CellSpec'
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/code-cell-spec.json -d '#CDSCellSpec'
-# Cognition's authored language must admit exactly what survives resolution
-# (Pi #57 C1): a literal fake whose model is a hole resolving to empty, and a
-# hole in the PROVIDER position with the model omitted because the hole may
-# resolve to fake. Both were rejected before this arm existed.
+# The authored cognition shape admits what is STRUCTURALLY POSSIBLE before
+# resolution (Pi #59 B1) — wider than what will succeed, since a provider hole
+# may resolve to claude-cli and then fail construction. A literal fake whose
+# model is a hole resolving to empty, and a provider hole with the model
+# omitted, are both structurally possible; both were rejected before this arm.
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/fake-model-hole-cell-spec.json -d '#CDSCellSpec'
 vet_ok ./schemas/cds:cds schemas/cds/fixtures/provider-hole-cell-spec.json -d '#CDSCellSpec'
 
@@ -144,7 +145,7 @@ echo "# committed rented-Claude evidence (one-off receipt, NOT a provider run)"
 # Nothing here invokes a provider.
 ev=docs/architecture/evidence/cds-case2-claude-closure.json
 ev_diff_sha=3826a7e883a9fb78769d1ef99ca54a16bad631aea244620412e2d5be58261766
-ev_diff_bytes=2475
+ev_diff_bytes=2479
 ev_touched="CONTRIBUTING.md README.md"
 if ! files_exist "$ev"; then
   fail=1
@@ -166,7 +167,10 @@ got_touched = sorted({l.split(" b/")[-1] for l in d.splitlines() if l.startswith
 checks = [
     ("execution_mode", r["execution_mode"], "cognitive"),
     ("status", c["status"], "needs_repair"),
-    ("diff bytes", len(d), want_bytes),
+    # UTF-8 BYTES, not code points: len(d) undercounted this diff by 4
+    # because it carries two em dashes, and Go — which wrote the record —
+    # measures bytes (Pi #59 D1).
+    ("diff bytes", len(d.encode()), want_bytes),
     ("diff sha256", hashlib.sha256(d.encode()).hexdigest(), want_sha),
     ("touched files", got_touched, sorted(want_touched)),
 ]
@@ -176,7 +180,7 @@ for n, g, w in bad:
 sys.exit(1 if bad else 0)
 PYEOF
   then
-    echo "  ✓ evidence closure measurement recomputes (cognitive, needs_repair, $ev_diff_bytes bytes, digest, touched files)"
+    echo "  ✓ evidence measurement recomputes (mode, status, $ev_diff_bytes UTF-8 diff bytes, diff digest, touched files)"
   else
     echo "  ✗ evidence closure measurement does NOT recompute"; fail=1
   fi

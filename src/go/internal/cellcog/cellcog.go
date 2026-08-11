@@ -1,5 +1,12 @@
-// Package cellcog is the reusable cognition subsystem: it constructs bounded,
-// stateless provider adapters that a fill's constructor composes into a seat.
+// Package cellcog constructs bounded, stateless provider adapters that a
+// fill's constructor composes into a seat.
+//
+// Scope of the word "reusable" (Pi #59 B1): the PROCESS AND PROVIDER SEAM
+// here is reusable — argv recipes, bounded execution, timeouts, output
+// limits. The PORT is not general cognition. `Coder` supports workspace
+// edits only, so a planning or research fill cannot rent it as it stands; it
+// would need a returned-value port that does not exist yet. Do not describe
+// this package as a general cognition subsystem.
 //
 // The package owns exactly what Pi's construction boundary assigns it
 // (msg-cn-pi-cnos-cds-fill-construction-51): explicit model selection,

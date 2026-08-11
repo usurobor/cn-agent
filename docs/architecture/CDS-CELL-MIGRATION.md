@@ -98,8 +98,10 @@ as much as the steps, because each decision closed a specific fork.
 8. **Parameters are Unix typed holes — because that is the seam that lets us
    start simple and grow.** Filling `language` from the CLI now, from a parent
    cell (mechanically or cognitively) later, changes only *who fills the hole* —
-   never the cell. Unix already solved value→implementation resolution (`$PATH`)
-   and required/optional inputs (positional vs flag); we borrow it wholesale.
+   never the cell. Unix already solved required/optional inputs (positional vs
+   flag) and we borrow that. We did NOT borrow `$PATH`-style
+   value→implementation resolution: a caller passes the canonical ref. See
+   "Parameters → skills" for the shipped surface.
 
 9. **The four protocols already differ in only two things** (verified against
    `schemas/cds/receipt.cue` and `schemas/cdr/receipt.cue`: both are
@@ -250,10 +252,11 @@ size-bounded artifacts. A CI job (`.github/workflows/cell-schema.yml`) vets the
 CUE schemas + actual `cn cell run` output (accepted / needs-repair / simulated)
 against a shared positive/negative corpus (Pi #31–#33 + PR-#718 β + #44).
 
-**Phase 2 — skill resolution.** The `$PATH`-like resolver (`value → skill ref`)
-+ required/optional/default hole logic; `cn cell run` errors on unfilled
-required holes with a Unix-style usage line. Seats load the resolved skills
-(cognition still stubbed). *Proves parameters map to real skills.*
+**Phase 2 — skill loading.** Required/optional/default hole logic; `cn cell
+run` errors on unfilled required holes with a Unix-style usage line; seats LOAD
+the skills a canonical ref names. *Proves parameters map to real skills.* What
+shipped is loading, not resolution: there is no `value → skill ref` resolver,
+and the "What ships" section above is the authority on the surface.
 
 **Phase 3 — rented α + CDS patch fill.** ◐ *First half shipped.* Stated
 precisely: **`cds.patch` is the fill; cognition is one of its constructor
@@ -467,6 +470,6 @@ cdd's canonical instance of the abstract cell is the **empty / identity cell**
 (`schemas/cdd/fixtures/empty-cell-spec.json`) — the smallest well-formed
 `#CellSpec`, the data analogue of the kernel's `EmptySpec`/`cell-0`, and the
 runner's reference. It runs today (`cn cell run --contract …/empty-cell-spec.json`
-→ `simulated`, exit 3 — its `stub` profile is honest, non-authoritative smoke);
+→ `simulated`, exit 3 — the `cdd.stub` fill is honest, non-authoritative smoke);
 at Phase 4 it becomes `cdd/main.cell`. The generic cdd cell and a
 concrete cds cell close through the **same kernel**; only the overlay differs.

@@ -44,9 +44,8 @@ import "cnos.dev/cnos/schemas/cdd"
 #Concrete: string & !="" & !~"^\\$"
 
 // #Cognition is the inline provider declaration. A provider that really rents
-// cognition must name a REQUESTED MODEL SELECTOR; only the deterministic
-// fake may omit
-// it. Written as a disjunction rather than two independent fields so this
+// cognition must name a REQUESTED MODEL SELECTOR; only the deterministic fake
+// may omit it. Written as a disjunction rather than two independent fields so this
 // schema rejects exactly what cellcog.New rejects — the two authorities must
 // not disagree. There is no argv/flags escape: a cell cannot smuggle
 // arguments into an adapter.
@@ -59,9 +58,12 @@ import "cnos.dev/cnos/schemas/cdd"
 #Cognition: {provider: "fake", model: ""} |
 	{provider: "claude-cli", model: string & !=""}
 
-// #CognitionAuthored is the same rule at AUTHORING time, and it has to admit
-// exactly what survives resolution — no more and no less (Pi #57 C1). Three
-// stages exist, so there are three arms:
+// #CognitionAuthored is the AUTHORING-time shape: what is STRUCTURALLY
+// POSSIBLE before resolution. It is deliberately wider than what will
+// succeed — a provider hole with the model omitted may resolve to claude-cli
+// and then fail construction, so this shape admits it and `Resolve` plus the
+// fill's constructor judge the selected combination (Pi #59 B1). Three
+// resolution stages exist, so there are three arms:
 //
 //   - a literal fake ignores the model, so it may omit the key, write it
 //     empty, or carry a hole that resolution fills with the empty value;

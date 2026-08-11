@@ -159,9 +159,16 @@ func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 	vals := make(map[string]string)
 	var missing []string
 	for name, p := range s.Params {
+		// PRESENCE, not emptiness (Pi #59 C2). `--param p=` supplies the empty
+		// string deliberately — it is how a fake's meaningless model is
+		// written — and testing `given[name] != ""` silently reclassified that
+		// as "absent", so an explicit empty either picked up a default or was
+		// reported missing. Whether empty is LEGAL is the declared domain's
+		// question, and then the fill's; it is not this loop's.
+		v, supplied := given[name]
 		switch {
-		case given[name] != "":
-			vals[name] = given[name]
+		case supplied:
+			vals[name] = v
 		case p.Default != nil:
 			vals[name] = *p.Default
 		case p.Required:
@@ -211,6 +218,15 @@ func spliceValue(v any, declared map[string]ParamSpec, vals map[string]string) (
 			return t, nil
 		}
 		name := strings.TrimPrefix(t, "$")
+		// A hole is MALFORMED or UNDECLARED, and the two are different facts
+		// (Pi #59 C1). Checking only declaration made a malformed hole report
+		// "undeclared" by accident — an illegal name cannot be declared, so
+		// the wrong check happened to fire. It is the same predicate the
+		// parameter declaration uses, because a hole spelling IS a name.
+		if !validParamName(name) {
+			return nil, fmt.Errorf("hole %q is malformed: %q is not a legal identifier "+
+				"(letters, digits and underscore, not starting with a digit)", t, name)
+		}
 		if _, ok := declared[name]; !ok {
 			return nil, fmt.Errorf("hole %q references undeclared parameter %q", t, name)
 		}

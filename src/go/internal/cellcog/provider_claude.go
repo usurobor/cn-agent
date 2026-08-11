@@ -42,14 +42,14 @@ func (ClaudeCLI) Name() string { return "claude-cli" }
 //     the tool set restricted but no mode declared, Write and Edit are offered
 //     and then not approved, so the same resolved cell would either fall back
 //     on whatever ambient permission settings the host happens to carry or
-//     produce no patch at all (Pi #56 D1). Sealing the mode here is what makes
-//     the episode depend on the declaration rather than the environment. It
-//     approves edits only — Bash is absent from the tool set entirely, and
+//     produce no patch at all (Pi #56 D1). Sealing the mode makes the
+//     BASELINE explicit rather than inherited from user or project defaults.
+//     It approves edits only — Bash is absent from the tool set entirely, and
 //     bypassPermissions is never used.
 //
-//     Scoped honestly: this seals the DECLARED BASELINE permission mode. It
-//     does not make execution independent of all environment policy, since
-//     higher-authority managed substrate policy can still apply above it.
+//     Not more than that (Pi #59 B1): this does not make the episode
+//     independent of the environment. Managed substrate policy remains above
+//     the declared baseline, and nothing here detects or overrides it.
 //
 //   - `--no-session-persistence` keeps the adapter stateless.
 func ClaudeArgv(model string) []string {

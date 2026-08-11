@@ -239,35 +239,79 @@ func TestFillArgumentsAreStrict(t *testing.T) {
 	}
 }
 
-// A malformed hole must be rejected FOR ITS OWN REASON, not incidentally. The
-// shared corpus cannot prove this: its fixtures also carry a base SHA no
-// repository resolves, so worktree construction would return the same exit 2
-// even if the hole checks disappeared entirely (Pi #58 C1). Each case here
-// pins a DISTINCT diagnostic, so neither can stand in for the other.
-func TestMalformedHolesRejectedForTheirOwnReason(t *testing.T) {
-	// An illegal identifier is caught at Parse, as a parameter NAME, because a
-	// hole spelling and a parameter name are the same grammar.
-	declared := strings.Replace(fixture, `"base_sha": {"required": true}`,
-		`"base_sha": {"required": true}, "bad-name": {"required": false, "default": "x"}`, 1)
-	declared = strings.Replace(declared, `"$base_sha"`, `"$bad-name"`, 1)
-	if _, err := Parse([]byte(declared)); err == nil {
-		t.Fatal("an illegal parameter identifier must fail Parse")
-	} else if !strings.Contains(err.Error(), "is not a legal identifier") {
-		t.Fatalf("rejected for the wrong reason: %v", err)
+// A hole is rejected for ITS OWN fact. Malformed and undeclared are different
+// facts, and the earlier version of this test proved neither: it inserted an
+// illegal DECLARED PARAMETER KEY, so Parse rejected the key before the seat
+// value was ever examined, and the surviving case covered only the
+// well-formed undeclared spelling (Pi #59 C1). These drive `spliceValue`
+// directly, through a spec whose declarations are all legal.
+func TestHolesRejectedForTheirOwnFact(t *testing.T) {
+	cases := []struct {
+		name string
+		hole string
+		want string
+	}{
+		{name: "malformed", hole: `"$bad-name"`, want: `hole "$bad-name" is malformed`},
+		{name: "undeclared", hole: `"$nosuchparam"`, want: `undeclared parameter "nosuchparam"`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			src := strings.Replace(fixture, `"$base_sha"`, tc.hole, 1)
+			s, err := Parse([]byte(src))
+			if err != nil {
+				t.Fatalf("the spec's DECLARATIONS are legal; only the seat hole is at issue: %v", err)
+			}
+			_, err = s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "x"})
+			if err == nil {
+				t.Fatalf("hole %s must fail resolution", tc.hole)
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("rejected for the wrong reason: got %v, want mention of %q", err, tc.want)
+			}
+		})
+	}
+}
+
+// An explicitly supplied empty value is a VALUE, not an absence. `--param p=`
+// is how a fake's meaningless model is written, so collapsing it into "unset"
+// silently substituted a default or reported the parameter missing
+// (Pi #59 C2).
+func TestExplicitEmptyValueIsPreserved(t *testing.T) {
+	const spec = `{
+  "version": "cnos.cellspec.v0",
+  "contract": {"id": "c1", "goal": "g"},
+  "protocol_id": "cnos.cellkernel.episode-closure.v0",
+  "params": {
+    "model": {"required": false, "default": "a-default"},
+    "needed": {"required": true}
+  },
+  "alpha": {"fill": "cdd.stub", "model": "$model"},
+  "beta": {"fill": "cdd.stub"}
+}`
+	s, err := Parse([]byte(spec))
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	// An undeclared hole survives Parse and dies at Resolve, which is the only
-	// stage that knows which parameters exist.
-	undeclared := strings.Replace(fixture, `"$base_sha"`, `"$nosuchparam"`, 1)
-	s, err := Parse([]byte(undeclared))
+	r, err := s.Resolve(map[string]string{"model": "", "needed": "y"})
 	if err != nil {
-		t.Fatalf("a well-formed but undeclared hole must survive Parse: %v", err)
+		t.Fatalf("an explicitly supplied empty value must resolve: %v", err)
 	}
-	_, err = s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "x"})
-	if err == nil {
-		t.Fatal("a hole referencing an undeclared parameter must fail resolution")
+	if got := string(r.Alpha); !strings.Contains(got, `"model":""`) {
+		t.Fatalf("explicit empty was not preserved: %s", got)
 	}
-	if !strings.Contains(err.Error(), `undeclared parameter "nosuchparam"`) {
-		t.Fatalf("rejected for the wrong reason: %v", err)
+
+	// Omitting it still falls back to the declared default...
+	r, err = s.Resolve(map[string]string{"needed": "y"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(r.Alpha); !strings.Contains(got, `"model":"a-default"`) {
+		t.Fatalf("omitted value must take the default: %s", got)
+	}
+
+	// ...and an omitted REQUIRED parameter still fails.
+	if _, err := s.Resolve(map[string]string{"model": ""}); err == nil {
+		t.Fatal("an omitted required parameter must still fail")
 	}
 }

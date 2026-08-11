@@ -26,7 +26,7 @@ func TestCoherentModeRewriteFailsAgainstTrustedMeta(t *testing.T) {
 		t.Fatalf("honest stub closure must verify against its own meta: %v", err)
 	}
 
-	// Paired rewrite: mode AND profile move together, so the record stays
+	// Paired rewrite: mode AND status move together, so the record stays
 	// internally coherent; the attacker re-derives the full tail honestly.
 	laundered := roundTrip(t, cl)
 	laundered.Receipt.Record.Mode = ModeMechanical
@@ -44,7 +44,7 @@ func TestCoherentModeRewriteFailsAgainstTrustedMeta(t *testing.T) {
 	}
 
 	if err := VerifyClosure(BoolSpec(true).Contract, trusted, laundered); err == nil {
-		t.Fatal("dual mode/profile rewrite verified against the original trusted meta")
+		t.Fatal("dual mode/status rewrite verified against the original trusted meta")
 	}
 }
 

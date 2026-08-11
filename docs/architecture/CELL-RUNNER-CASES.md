@@ -147,11 +147,16 @@ outcome tests**, not new rungs.
 
 ## Parameters → skills (Unix typed holes)
 
-A parameter is a typed hole resolved like `$PATH`: `skill`-kind values resolve to
-a skill and splice into a seat via `$name`; `value`-kind values are scalars
-consumed by whichever fill reads it. Required vs optional-with-default = positional vs
-flag; a closed `domain` makes a typo fail resolution. The invoker (CLI now, a
-parent cell later) fills the hole; the cell body never changes.
+A parameter is a typed hole spliced into a seat via `$name`. There are no
+parameter KINDS — `kind` was deleted, because what a filled value means belongs
+to the fill that consumes it, not to the generic envelope. There is also no
+`$PATH`-style resolver: a caller supplies the canonical skill ref itself
+(`--param language=cnos.eng:eng/go`), and `cds.patch` loads it.
+
+Required vs optional-with-default mirrors positional vs flag, and a closed
+`domain` makes a typo fail resolution — in Go, at `Resolve`, which is the only
+stage that sees supplied values. The invoker (CLI now, a parent cell later)
+fills the hole; the cell body never changes.
 
 ## What the runner does not own (custody boundary)
 

@@ -9,7 +9,7 @@ import (
 // Regression pairs for Pi β msg-cn-pi-cnos-pr718-fido-round5-beta-46 (D1).
 
 // D1: meta is validated at the kernel boundary — empty fields or a
-// profile/mode incoherence error out before alpha ever runs.
+// metadata/mode incoherence error out before alpha ever runs.
 type recordingAlpha struct{ ran *bool }
 
 func (a recordingAlpha) Produce(ctx context.Context, in AlphaInput) (AlphaOutput, error) {

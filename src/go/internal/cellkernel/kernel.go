@@ -159,7 +159,7 @@ type AlphaOutput struct {
 // BetaInput is the runtime-owned review surface — exactly the CCNF signature
 // β.review(contract, matter): a fresh frozen contract copy and the sealed
 // matter. Artifacts/evidence are γ/V's channel, never β's (Pi round-6 D1); a
-// profile needing richer review matter widens Matter. The input shape is
+// fill needing richer review matter widens Matter. The input shape is
 // defined by this type and the closure schema version — there is no
 // self-reported policy id (Pi round-7 C1).
 type BetaInput struct {
@@ -738,8 +738,8 @@ func failureDetails(v Verdict) []string {
 
 // validateMeta rejects an unmetadata'd or incoherent invocation before alpha
 // runs (Pi round-5 D1): the resolved spec is invocation authority, so a run
-// that cannot state its version/protocol/profile — or whose profile and mode
-// disagree — is a malfunction, not a closable episode.
+// that cannot state its version and declared protocol — or whose mode and
+// seat declarations disagree — is a malfunction, not a closable episode.
 func validateMeta(m RunMeta) error {
 	if !knownMode(m.ExecutionMode) {
 		return fmt.Errorf("cellkernel: unknown execution mode %q", m.ExecutionMode)

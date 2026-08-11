@@ -4,13 +4,19 @@ One bounded, disposable episode, recorded because the shared corpus cannot
 carry it: the corpus rents `fake`, and a CI job that rents real cognition would
 be the provider service this project deliberately does not build.
 
-Everything below is **recomputable from the committed artifact**. The raw
-closure stdout is at
-[`evidence/cds-case2-claude-closure.json`](evidence/cds-case2-claude-closure.json),
-and `scripts/cell-schema-check.sh` re-derives the CUE verdicts and the
-measurement from it on every run — so a one-byte edit or a deletion fails the
-gate rather than this file quietly going stale. This is an evidence fixture,
-not a provider harness: nothing in the corpus invokes a provider.
+The raw closure stdout is committed at
+[`evidence/cds-case2-claude-closure.json`](evidence/cds-case2-claude-closure.json).
+`scripts/cell-schema-check.sh` re-derives **a named subset** from it on every
+run — the two CUE shapes, `execution_mode`, `status`, the UTF-8 diff byte
+count, the diff SHA-256, and the touched-file list. A one-byte edit **inside
+the diff**, or deleting the file, fails the gate.
+
+Stated exactly, because the earlier version of this file overclaimed
+(Pi #59 D1): the gate does **not** check the episode id, the recorded
+provider/model/base metadata, the scope-lift digest, or JSON whitespace.
+Those are reproduced below as transcription from the artifact, and a reader
+who cares should read the artifact. This is an evidence fixture, not a
+provider harness: nothing in the corpus invokes a provider.
 
 **Why it exists (Pi #57 D1).** The exact-argv oracle proves the recipe; it
 cannot prove the runtime. Before `--permission-mode acceptEdits` was sealed,
@@ -26,40 +32,53 @@ Runtime was an immutable, clean commit — not "a head plus changes":
 |---|---|
 | runtime commit | `ca1f241b36b0835b8be3922af2e6a34c8a8270ef` |
 | runtime tree | `9d85c712beafd632c8cdaeecf040cb033917bf91` |
-| working tree at run | clean (`git status --porcelain` empty) |
-| `claude --version` | `2.1.226 (Claude Code)` |
+| working tree at run *(observed)* | clean (`git status --porcelain` empty) |
+| `claude --version` *(observed)* | `2.1.226 (Claude Code)` |
 | fixture repo base | `1d79f7552649357165ce9addf3fbe7c57f3b62b0` |
 
-Built with `go -C src/go build -o ./cn ./cmd/cn` at that commit, then, from
-inside a hub vendored from `repoinstall.DefaultPackages`:
+Built with `go -C src/go build -o /home/user/cnos/cn ./cmd/cn` at that commit.
+The invocation, verbatim, with the paths as variables rather than prose:
 
 ```sh
-cn cell run \
-  --contract schemas/cds/fixtures/code-cell-spec.json \
+CN=/home/user/cnos/cn
+SPEC=/home/user/cnos/schemas/cds/fixtures/code-cell-spec.json
+REPO=<scratch>/coderepo          # throwaway git repo, base 1d79f755
+HUB=<scratch>/hub                # .cn/vendor/packages/ from DefaultPackages
+EV=<scratch>/closure.json
+
+cd "$HUB"
+timeout 900 "$CN" cell run \
+  --contract "$SPEC" \
   --param language=cnos.eng:eng/go \
   --param provider=claude-cli \
   --param model=claude-opus-5 \
   --param base_sha=1d79f7552649357165ce9addf3fbe7c57f3b62b0 \
-  --param repo=<throwaway repo>
+  --param repo="$REPO" > "$EV" 2><scratch>/stderr.txt; rc=$?
+# rc=1, stderr empty; "$EV" is the committed artifact
 ```
 
 `model` is a **requested selector**, not an observed model identity. Nothing
 in the runtime asks the provider what actually served the request.
 
-## Result — every value below is re-derived by the gate
+## Result
+
+Rows marked **gate** are recomputed by `scripts/cell-schema-check.sh`. Rows
+marked *observed* were seen at run time and are not derivable from the
+artifact — nothing asserts them.
 
 | | |
 |---|---|
-| episode | `ep-7a83e6c07a2749068aab291152113946` |
-| exit | `1` — `needs_repair` |
-| `execution_mode` | **`cognitive`** |
-| measured diff | **2475 bytes** |
-| diff sha256 | `3826a7e883a9fb78769d1ef99ca54a16bad631aea244620412e2d5be58261766` |
-| touched | `CONTRIBUTING.md` (new), `README.md` |
-| recorded cognition | `{"provider":"claude-cli","model":"claude-opus-5"}` |
-| recorded base | `1d79f7552649357165ce9addf3fbe7c57f3b62b0` |
-| `#EpisodeClosure` | vets |
-| `#CDSPatchAlphaResolved` | vets |
+| episode *(observed)* | `ep-7a83e6c07a2749068aab291152113946` |
+| exit *(observed)* | `1` |
+| `execution_mode` **(gate)** | **`cognitive`** |
+| status **(gate)** | `needs_repair` |
+| measured diff **(gate)** | **2479 UTF-8 bytes** |
+| diff sha256 **(gate)** | `3826a7e883a9fb78769d1ef99ca54a16bad631aea244620412e2d5be58261766` |
+| touched **(gate)** | `CONTRIBUTING.md` (new), `README.md` |
+| recorded cognition *(transcribed)* | `{"provider":"claude-cli","model":"claude-opus-5"}` |
+| recorded base *(transcribed)* | `1d79f7552649357165ce9addf3fbe7c57f3b62b0` |
+| `#EpisodeClosure` **(gate)** | vets |
+| `#CDSPatchAlphaResolved` **(gate)** | vets |
 
 Recompute by hand:
 
@@ -68,7 +87,7 @@ ev=docs/architecture/evidence/cds-case2-claude-closure.json
 cue vet schemas/cdd/episode-closure.cue "$ev" -d '#EpisodeClosure'
 python3 -c 'import json,sys;json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"],open("/tmp/a.json","w"))' "$ev"
 cue vet ./schemas/cds:cds /tmp/a.json -d '#CDSPatchAlphaResolved'
-python3 -c 'import hashlib,json,sys;d=json.load(open(sys.argv[1]))["receipt"]["record"]["matter"]["data"];print(len(d),hashlib.sha256(d.encode()).hexdigest())' "$ev"
+python3 -c 'import hashlib,json,sys;d=json.load(open(sys.argv[1]))["receipt"]["record"]["matter"]["data"];print(len(d.encode()),hashlib.sha256(d.encode()).hexdigest())' "$ev"
 ```
 
 **`VerifyClosure`.** `cellrun` self-verifies the emitted closure against the
