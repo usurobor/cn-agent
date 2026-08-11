@@ -98,8 +98,10 @@ as much as the steps, because each decision closed a specific fork.
 8. **Parameters are Unix typed holes — because that is the seam that lets us
    start simple and grow.** Filling `language` from the CLI now, from a parent
    cell (mechanically or cognitively) later, changes only *who fills the hole* —
-   never the cell. Unix already solved value→implementation resolution (`$PATH`)
-   and required/optional inputs (positional vs flag); we borrow it wholesale.
+   never the cell. Unix already solved required/optional inputs (positional vs
+   flag) and we borrow that. We did NOT borrow `$PATH`-style
+   value→implementation resolution: a caller passes the canonical ref. See
+   "Parameters → skills" for the shipped surface.
 
 9. **The four protocols already differ in only two things** (verified against
    `schemas/cds/receipt.cue` and `schemas/cdr/receipt.cue`: both are
@@ -153,35 +155,47 @@ two cell algorithms.
 
 ## Parameters → skills (the resolution model)
 
-A parameter is a **typed hole**, resolved exactly like a Unix command resolves
-argv against `$PATH`:
+A parameter is a **typed hole**. What ships today is deliberately simpler than
+the Unix analogy that motivated it, and the difference matters (Pi #58 B1):
+**there is no skill-path resolver.** A caller passes the canonical ref itself.
 
-| Concern | Unix analogue | Here |
+### What ships
+
+```sh
+cn cell run --contract schemas/cds/fixtures/code-cell-spec.json \
+  --param language=cnos.eng:eng/go --param provider=claude-cli --param model=<selector>
+```
+
+| Stage | Who | What it actually checks |
 |---|---|---|
-| required vs optional | positional arg vs flag-with-default | `language: skill` (required) vs `style?: skill = functional` |
-| value → implementation | `ls` → `/bin/ls` via `$PATH` | `"ocaml"` → the `ocaml` skill via the **skill path** |
-| domain / typo check | — | CUE constrains `language: "go"|"ocaml"|"rust"`; bad value fails `vet` |
-| splice into the seat | — | `$language` in `produce with` |
-| pass down to a child | wrapper `exec cmd "$@"` | `let! impl = cds(issue, repo, $language)` |
+| declaration | CUE `#CellSpec` / `#CDSCellSpec` | that a parameter's NAME, flags and domain are well shaped, and that seat values are either concrete or well-formed holes. CUE never sees a supplied CLI value. |
+| supplied values | Go `cellspec.Resolve` | that every required parameter was given, that no unknown parameter was passed, and that a given value lies in its declared `domain` |
+| splice | Go `cellspec.Resolve` | `$language` is replaced in place, wherever it sits in the seat tree |
+| loading | `cds.patch` via `cellskill` | the canonical ref `cnos.eng:eng/go` is looked up under the installed package root and its BODY is loaded, with ref + content digest recorded |
 
-Four layers, matching the rest of the architecture:
+So a value is a **canonical ref**, not a short name: `cnos.eng:eng/go`, not
+`go`. `domain` is what constrains it, and the domain lists refs.
 
-1. **Surface** declares holes (`language: skill`, `style?: skill = functional`)
-   and splices them (`$language`).
-2. **CUE `#CellSpec`** carries the holes and (via the cds overlay) constrains
-   their domains — a missing *required* hole or an out-of-domain value fails
-   vet. Mirror of how `#CDSReceipt` overlays `#Receipt` with `evidence_refs`.
-3. **Runner** fills holes from the CLI (`--language go`), resolves each value to
-   a concrete skill ref against the skill path, loads it into the seat.
-4. **Kernel / seats** receive *loaded skills*. α/β never see the string
-   `"ocaml"` — they get the resolved skill. (Seats consume skills, never
-   resolve them — same top-down rule as everywhere.)
+### What does not ship
+
+- No `$PATH`-like skill resolver mapping `"go"` → the `eng/go` skill. The
+  `<package>:<path>` ref IS the address; `cellskill.Tree` does one exact
+  lookup with no search order.
+- No `--language go` flag. Holes are filled generically by `--param NAME=VALUE`.
+- No CUE check of supplied values. A schema cannot do it — it never sees the
+  invocation.
+
+The shipped operation is **hole splice + exact skill loading**: `Resolve`
+replaces `$name` in place, and `cds.patch` loads the ref that name resolved
+to. Calling it "value → implementation resolution" would overstate it.
 
 **Staging of who fills the hole (the cell never changes):**
 - *Now (CLI bootstrap):* the runner fills every hole from CLI flags.
 - *Later:* a parent cell fills `language` mechanically (`language_of(repo)`) or
-  cognitively (`triage(issue)`). Only the *filler* changes; resolution
-  (value→skill) and the `cds` cell body are untouched.
+  cognitively (`triage(issue)`). What a later filler must supply is whatever
+  the declared domain holds — today, canonical refs. Whether a shorthand could
+  be introduced without touching the cell is not established, so it is not
+  claimed.
 
 ## Piece inventory
 
@@ -189,12 +203,15 @@ Four layers, matching the rest of the architecture:
 |---|---|---|
 | Receipt schema (output contract) | cnos.cdd + cds | ✅ shipped |
 | CCNF kernel (`RunEpisode` → verifiable `Closure`) | src/go `internal/cellkernel` | ✅ shipped (PR #718; hardened through Pi β #31–#45) |
-| Provider seam for rented cognition | src/go `internal/dispatch.Backend` | ✅ exists |
+| Workspace-edit cognition (bounded, stateless provider adapters) | src/go `internal/cellcog` (`Coder` port; `ClaudeCLI`, `FakeCoder` over one process seam) | ✅ shipped — explicit model, typed argv, sealed permission mode, no arbitrary command from cell JSON. `codex-cli` HELD (see below). `Coder` is a workspace-EDIT port: directory in, no value out. It does not yet serve planning or research. |
 | `#CellSpec` CUE schema (input contract) | cnos.cdd (`schemas/cdd/spec.cue`) | ✅ shipped |
 | cds params-domain overlay (`#CDSCellSpec`) | cnos.cds (`schemas/cds/spec.cue`) | ✅ shipped (canonical diff-first evidence rule) |
 | spec loader/binder (strict parse → kernel Spec) | src/go `internal/cellspec` | ✅ shipped |
 | `cn cell run` (fill holes, run, emit closure) | src/go `internal/cellrun` (+ thin `cli` wrapper) | ✅ shipped (exits 0/1/2/3; closure self-verifies) |
-| skill-path resolver (value → loaded skill) | cnos.cdd | ❌ Phase 2/3 (params→skill names shipped; loading comes with cognition) |
+| skill resolution + loading | src/go `internal/cellskill` (one installed root under the hub) | ✅ shipped — bodies are LOADED and injected; ordered refs + content digests recorded in the closure |
+| fill-owned seat construction | src/go `internal/cellfill` (registry) + `internal/cdspatch` (`cds.patch`) + `internal/cellfills` (composition root) | ✅ shipped |
+| matter substrate (diff at a base SHA) | src/go `internal/cellwork` (worktree adapter, outside the kernel) | ✅ shipped (G1) — the runtime measures the diff; a seat cannot claim one |
+| typed findings on `BetaOutput` | src/go `internal/cellkernel` | ❌ G3 — the findings ARE the repair plan |
 | `main.cell` compiler (surface → spec.json) | cnos.cdd | ❌ Phase 4 sugar (deliberately deferred) |
 | `cnos.cds/main.cell` | cnos.cds | ❌ Phase 4 (JSON fixtures are the current authored form) |
 
@@ -208,7 +225,7 @@ reference; the piece inventory above reflects it.
 
 **Phase 0 — the input contract.** Write `schemas/cdd/spec.cue` (`#CellSpec`:
 `{version, contract (producer-attributed required_evidence), protocol_id,
-profile, params, alpha:{skills}, beta:{skills}}`) and the cds overlay
+params, alpha:{fill, …}, beta:{fill, …}}`) and the cds overlay
 (`#CDSCellSpec` pinning `protocol_id` + param domains). Hand-write a
 `cds.spec.json` for a real issue; `cue vet` it. *Proves the data shape before
 any Go or compiler.* (`budget` was removed as decorative per Pi #32 D5; it
@@ -219,10 +236,10 @@ returns only when it is actually enforced.)
 --contract <path|-> [--param k=v]` that fills holes and calls `RunEpisode`.
 Emits a **generic** `cnos.cellkernel.episode-closure.v0` with
 `protocol_validated=false` — the declared `protocol_id` is provenance, never a
-validated CDS claim. A `profile` (explicit; no default) selects the builtin
-seat pair: `stub` (a non-authoritative **`simulated`** smoke run, exit 3) or
-`bool` (a real mechanical episode where β **independently reviews** the matter
-and V checks the required α artifact). **Zero GitHub/network.**
+validated CDS claim. Each seat names its own `fill`: `cdd.stub` (a
+non-authoritative **`simulated`** smoke run, exit 3), `cdd.bool` +
+`cdd.bool-check` (a real mechanical episode with a genuine review predicate),
+or `cds.patch` + `cdd.mechanical-unmet` (Case 2). **Zero GitHub/network.**
 
 Implementation follows the operator-ratified **FIDO/functional doctrine**
 (`msg-cn-pi-cnos-cell-runner-fido-functional-44`): no mutable shared episode
@@ -238,16 +255,40 @@ size-bounded artifacts. A CI job (`.github/workflows/cell-schema.yml`) vets the
 CUE schemas + actual `cn cell run` output (accepted / needs-repair / simulated)
 against a shared positive/negative corpus (Pi #31–#33 + PR-#718 β + #44).
 
-**Phase 2 — skill resolution.** The `$PATH`-like resolver (`value → skill ref`)
-+ required/optional/default hole logic; `cn cell run` errors on unfilled
-required holes with a Unix-style usage line. Seats load the resolved skills
-(cognition still stubbed). *Proves parameters map to real skills.*
+**Phase 2 — skill loading.** Required/optional/default hole logic; `cn cell
+run` errors on unfilled required holes with a Unix-style usage line; seats LOAD
+the skills a canonical ref names. *Proves parameters map to real skills.* What
+shipped is loading, not resolution: there is no `value → skill ref` resolver,
+and the "What ships" section above is the authority on the surface.
 
-**Phase 3 — rented α + CDS profile.** First `internal/dispatch.Backend` adapter
-behind the GitHub-free provider port; trivial escalation predicate ("compiled
-implementation absent → rent α", Pi Q2). Expose `cn cds run --issue N --contract
-<path|->` (`--issue N` is identity/output metadata only — no hidden `gh`). One
-real bounded CDS episode closes locally. *This is #717/F.*
+**Phase 3 — rented α + CDS patch fill.** ◐ *First half shipped.* Stated
+precisely: **`cds.patch` is the fill; cognition is one of its constructor
+dependencies**, not a fill itself and not a new architecture.
+`internal/cellcog` constructs bounded,
+stateless provider adapters (claude-cli and a deterministic fake; codex-cli is
+HELD, see below) with an explicit model, typed argv and a sealed permission
+mode — a cell cannot smuggle flags into one. The adapter DECLARES its
+baseline and does not rely on user or project defaults; managed substrate
+policy remains above that baseline, so this is not environment-independent
+authority.
+`internal/cellskill` resolves canonical installed refs and **loads** the
+bodies, recording ordered refs and content digests in the closure, because
+naming a skill is not loading it. `internal/cdspatch` composes those with the
+worktree substrate into one provider-neutral patch alpha; the generic runner
+learns none of it.
+
+**G1 shipped with it.** The runtime **measures** the change: `cellwork` cuts a
+disposable worktree at a commit pinned during construction, and computes the
+diff itself. A seat that claims a sweeping change and wrote nothing produces
+no diff, and an episode with no diff cannot satisfy a contract requiring one —
+false completion (the #514/#516 scar) is unrepresentable rather than a review
+failure to catch later. Bounds are applied as output streams, not after it is
+buffered.
+
+*Still open before CDS is complete:* **Case 3** (an independent rented β
+reviewing that diff — the first real judgement in the loop, and a one-field
+`beta.fill` change under this boundary) and **G3** typed findings.
+`cn cds run --issue N` and the escalation predicate (Pi Q2) follow those.
 
 **Phase 4 — the surface + compiler (sugar, later).** `cn cell compile main.cell
 → spec.json` (Go `participle`, ~150 lines; CUE stays the independent oracle) +
@@ -257,6 +298,98 @@ earns its keep**, and explicitly *not* on the frozen S4/S6 critical path.
 **Horizon (out of this pass):** `Drive` bounded-repair loop (Case 4); the
 `cds-dispatch` parent (`let!` = α-proposes-child / runtime-executes, Case 5);
 rewiring the GitHub wake to a thin adapter that fills holes + lands artifacts.
+
+## HELD — GitHub Actions provisioning (captured, not implemented)
+
+**Status: held.** Nothing below is built, and nothing in it belongs to
+`cellrun`, `cds.patch`, `cellcog`, or cell JSON. It is written down now so the
+later invocation adapter inherits decisions rather than rediscovering them.
+
+1. **CLI installation and authentication belong to the runner/workflow image**,
+   never to the runner code or a cell declaration.
+2. **Provision exact pinned Claude and Codex CLI versions before an episode**,
+   and fail before α if the selected executable is absent. Never
+   opportunistically download during cognition — a cell that installs its own
+   tools mid-episode has an unbounded, unreceipted dependency.
+3. **Credentials stay secrets/environment supplied by the workflow** and never
+   enter cell JSON or a receipt. Only the selected provider's credential should
+   reach its child process.
+4. **Model remains the explicit fill property.** The later execution receipt
+   should record the resolved executable identity, observed CLI version (and
+   artifact digest where available), provider-policy version, and requested
+   model — never secrets, never the full environment.
+5. **A workflow may install both pinned CLIs** so provider selection stays in
+   the one alpha declaration; a prebuilt image is a later latency
+   optimization, not a design change.
+6. **The child environment must eventually be an explicit provider-specific
+   allowlist**, not arbitrary inherited ambient configuration. Outer OS
+   sandboxing remains a separate execution-substrate concern — this project
+   claims no OS confinement.
+
+*Empirical source notes (inspected commits, preserved so the later work does
+not re-derive them):*
+
+- Anthropic's action at `6b082c41935b4c8a3b8b0ef85ba4ba4d9eeb8975` is a
+  composite action: it installs a pinned native Claude CLI during the job (or
+  accepts a supplied executable path) and injects API/OAuth/WIF authentication
+  from the workflow. Borrow the **provisioning boundary**, not the GitHub
+  orchestration.
+  <https://github.com/anthropics/claude-code-action/blob/6b082c41935b4c8a3b8b0ef85ba4ba4d9eeb8975/action.yml>
+- OpenAI's action at `52fe01ec70a42f454c9d2ebd47598f9fd6893d56` is also
+  composite: it installs npm CLI/proxy packages, starts a loopback Responses
+  API proxy for the API-key path, then runs `codex exec` under declared
+  permissions. **Correction (Pi #55 B1):** an earlier reading of this called
+  the installed versions exact. They are not — the action's `codex-version`
+  input defaults to blank, which tracks npm latest, and is exact only when the
+  workflow supplies a version. Our decision is unchanged and now rests on the
+  right reason: CNOS must pin the action commit *and* pass an explicit
+  version, because the default is a moving target.
+  <https://learn.chatgpt.com/docs/github-action> ·
+  <https://github.com/openai/codex-action/blob/52fe01ec70a42f454c9d2ebd47598f9fd6893d56/action.yml>
+
+## HELD — codex-cli as a provider (withdrawn from Case 2, not abandoned)
+
+**Status: held.** `codex-cli` is absent from the admitted provider set in both
+authorities — `cellcog.New` and `#Cognition` — and `provider_codex.go` is
+deleted rather than left unreachable, because code whose comments claim an
+isolation it does not deliver is worse than no code.
+
+**Why it was withdrawn (Pi #55 D1).** A seat may carry only the fill's
+ordered, digested skills; anything else is a second, unreceipted component
+definition. The flags we had do not reach that far:
+
+- `--ignore-user-config` suppresses only `$CODEX_HOME/config.toml`;
+- `--ignore-rules` suppresses only user/project execpolicy `.rules`;
+- global and project `AGENTS.md` guidance still loads;
+- skills are still discovered from repository, user, admin and system
+  locations.
+
+The adapter's comments and tests claimed broader isolation than that, and
+because `codex-cli` was admitted by both authorities this was a live
+constructor boundary rather than a documentation error.
+
+**What returning requires**, in order:
+
+1. Typed suppression knobs in the installed Codex version, sealed into the
+   argv — never env, config, or argv supplied by cell JSON.
+2. A dedicated clean `CODEX_HOME` provided by the execution substrate.
+3. A real run proving that a poisoned project `AGENTS.md`, a poisoned global
+   `AGENTS.md`, and an ambient discoverable skill all fail to reach the
+   invocation. This is the part that cannot be done in the current
+   environment: `codex` is not installed and no credential is available, so
+   the claim would be an assertion, not a measurement.
+
+**Preserved argv research**, so re-enabling does not re-derive it: `exec`,
+`--model <exact>`, `--ephemeral` (without it Codex persists rollout state
+between invocations and the adapter stops being stateless),
+`--ignore-user-config`, `--ignore-rules`, `--sandbox workspace-write`,
+`--skip-git-repo-check`, `--cd <dir>`, `-` for prompt-on-stdin. Forbidden in
+any future revival: `danger-full-access`, `--yolo`, `--full-auto`,
+`--dangerously-bypass-approvals-and-sandbox`.
+
+References: <https://learn.chatgpt.com/docs/developer-commands?surface=cli> ·
+<https://learn.chatgpt.com/docs/agent-configuration/agents-md> ·
+<https://learn.chatgpt.com/docs/build-skills>
 
 ## Boundary the kernel never owns (Pi β #31, C3)
 
@@ -277,10 +410,11 @@ follow only when their preceding cases have executable evidence.
 ## Ownership split
 
 - **cnos.cdd** owns the *substrate*: the `#CellSpec` schema, the compiler, the
-  loader, the runner (`cn cell compile` / `cn cell run`), and the skill-path
-  resolver. It is the language + kernel.
+  loader, and the runner (`cn cell compile` / `cn cell run`). It is the
+  language + kernel. There is no skill-path resolver; a caller supplies the
+  canonical ref.
 - **cnos.cds** owns a *program written in it*: `main.cell`, the params-domain
-  overlay, and its α/β skills. cds is one profile; cdw/cdr are siblings of the
+  overlay, and its α/β skills. cds is one fill family; cdw/cdr are siblings of the
   same shape.
 
 ### The abstract cell (cdd) vs. the concrete cells (cds/cdr/cdw)
@@ -303,6 +437,6 @@ cdd's canonical instance of the abstract cell is the **empty / identity cell**
 (`schemas/cdd/fixtures/empty-cell-spec.json`) — the smallest well-formed
 `#CellSpec`, the data analogue of the kernel's `EmptySpec`/`cell-0`, and the
 runner's reference. It runs today (`cn cell run --contract …/empty-cell-spec.json`
-→ `simulated`, exit 3 — its `stub` profile is honest, non-authoritative smoke);
+→ `simulated`, exit 3 — the `cdd.stub` fill is honest, non-authoritative smoke);
 at Phase 4 it becomes `cdd/main.cell`. The generic cdd cell and a
 concrete cds cell close through the **same kernel**; only the overlay differs.

@@ -76,15 +76,25 @@ const (
 	RoleBeta  Role = "beta"
 )
 
-// ExecutionMode: a stub run is a non-authoritative smoke test.
+// ExecutionMode is how the episode's work was produced. It is invocation
+// truth: the parent supplies it and VerifyClosure binds it, so a closure
+// cannot misreport how it ran.
+//
+//	stub       — nothing real was produced; non-authoritative (`simulated`)
+//	mechanical — deterministic seats; reproducible from the record
+//	cognitive  — a provider (a model) held at least one seat; authoritative
+//	             work, but NOT reproducible by re-running
 type ExecutionMode string
 
 const (
 	ModeStub       ExecutionMode = "stub"
 	ModeMechanical ExecutionMode = "mechanical"
+	ModeCognitive  ExecutionMode = "cognitive"
 )
 
-func knownMode(m ExecutionMode) bool { return m == ModeStub || m == ModeMechanical }
+func knownMode(m ExecutionMode) bool {
+	return m == ModeStub || m == ModeMechanical || m == ModeCognitive
+}
 
 // --- Immutable values ----------------------------------------------------
 
@@ -149,7 +159,7 @@ type AlphaOutput struct {
 // BetaInput is the runtime-owned review surface — exactly the CCNF signature
 // β.review(contract, matter): a fresh frozen contract copy and the sealed
 // matter. Artifacts/evidence are γ/V's channel, never β's (Pi round-6 D1); a
-// profile needing richer review matter widens Matter. The input shape is
+// fill needing richer review matter widens Matter. The input shape is
 // defined by this type and the closure schema version — there is no
 // self-reported policy id (Pi round-7 C1).
 type BetaInput struct {
@@ -240,29 +250,24 @@ func (randomIDs) Mint() (Identity, error) {
 // --- Episode record, receipt, closure ------------------------------------
 
 // ResolvedSpec is the normalized executable spec, carried whole so the scope-
-// lift digest covers it and any verifier can reproduce it.
+// lift digest covers it and any verifier can reproduce it. Alpha and Beta are
+// the COMPLETE resolved seat declarations — each a tagged object whose "fill"
+// selected its constructor and whose remaining fields were that constructor's
+// arguments (fill-owned construction, Pi cds-fill-construction-51). The kernel
+// treats them as opaque canonical bytes: it never learns what a fill means.
 type ResolvedSpec struct {
-	Version          string            `json:"version"`
-	DeclaredProtocol string            `json:"declared_protocol"`
-	Profile          string            `json:"profile"`
-	Params           map[string]string `json:"params,omitempty"`
-	AlphaSkills      []string          `json:"alpha_skills"`
-	BetaSkills       []string          `json:"beta_skills"`
+	Version          string          `json:"version"`
+	DeclaredProtocol string          `json:"declared_protocol"`
+	Alpha            json.RawMessage `json:"alpha"`
+	Beta             json.RawMessage `json:"beta"`
 }
 
 // clone deep-copies the resolved spec so no caller- or seat-retained alias can
 // mutate runtime-owned invocation truth (Pi PR-#718-fido β D3).
 func (r ResolvedSpec) clone() ResolvedSpec {
 	cp := r
-	if r.Params != nil {
-		cp.Params = make(map[string]string, len(r.Params))
-		for k, v := range r.Params {
-			cp.Params[k] = v
-		}
-	}
-	// Always non-nil so the canonical JSON is [] rather than null.
-	cp.AlphaSkills = append(make([]string, 0, len(r.AlphaSkills)), r.AlphaSkills...)
-	cp.BetaSkills = append(make([]string, 0, len(r.BetaSkills)), r.BetaSkills...)
+	cp.Alpha = append(json.RawMessage(nil), r.Alpha...)
+	cp.Beta = append(json.RawMessage(nil), r.Beta...)
 	return cp
 }
 
@@ -565,21 +570,19 @@ func validateRecord(r EpisodeRecord) []Failure {
 	add(r.Canon != RecordCanon, InvalidRecord, "wrong record canon")
 	add(!knownMode(r.Mode), InvalidRecord, "unknown execution mode")
 
-	// Invocation authority (Pi round-5 D1): the resolved spec is inside the one
-	// boundary — a stub closure cannot be promoted to mechanical/accepted while
-	// resolved_spec.profile still says stub. The profile is otherwise opaque
-	// here (round-6 C1): domain profile names live in cellspec and the input
-	// schema, never in the kernel.
-	add(r.ResolvedSpec.Version == "" || r.ResolvedSpec.DeclaredProtocol == "" || r.ResolvedSpec.Profile == "",
-		InvalidRecord, "resolved spec missing version/protocol/profile")
-	add((r.Mode == ModeStub) != (r.ResolvedSpec.Profile == "stub"),
-		InvalidRecord, "profile is incoherent with execution mode")
+	// Invocation authority (Pi round-5 D1, round-7 D1): the resolved spec is
+	// inside the one boundary. The seat declarations are opaque here — fill
+	// semantics live with the fills — but they must be present and non-null;
+	// mode itself is bound to the parent-trusted metadata by VerifyClosure,
+	// so a mode rewrite cannot survive even with a recomputed digest.
+	add(r.ResolvedSpec.Version == "" || r.ResolvedSpec.DeclaredProtocol == "",
+		InvalidRecord, "resolved spec missing version/protocol")
+	add(validSeatEnvelope(r.ResolvedSpec.Alpha) != nil, InvalidRecord, "alpha declaration is not a tagged object")
+	add(validSeatEnvelope(r.ResolvedSpec.Beta) != nil, InvalidRecord, "beta declaration is not a tagged object")
 
 	// Required arrays are arrays, never null (round-6 D2): the closure schema
 	// admits no null, so a nil slice surviving to canonical JSON must not
 	// self-verify.
-	add(r.ResolvedSpec.AlphaSkills == nil || r.ResolvedSpec.BetaSkills == nil,
-		InvalidRecord, "resolved spec skills must be arrays, not null")
 	add(r.Alpha.Artifacts == nil || r.Beta.Artifacts == nil,
 		InvalidRecord, "station artifacts must be arrays, not null")
 
@@ -735,21 +738,45 @@ func failureDetails(v Verdict) []string {
 
 // validateMeta rejects an unmetadata'd or incoherent invocation before alpha
 // runs (Pi round-5 D1): the resolved spec is invocation authority, so a run
-// that cannot state its version/protocol/profile — or whose profile and mode
-// disagree — is a malfunction, not a closable episode.
+// that cannot state its version and declared protocol — or whose mode and
+// seat declarations disagree — is a malfunction, not a closable episode.
 func validateMeta(m RunMeta) error {
 	if !knownMode(m.ExecutionMode) {
 		return fmt.Errorf("cellkernel: unknown execution mode %q", m.ExecutionMode)
 	}
 	rs := m.ResolvedSpec
-	if rs.Version == "" || rs.DeclaredProtocol == "" || rs.Profile == "" {
-		return errors.New("cellkernel: resolved spec must carry version, declared_protocol, and profile")
+	if rs.Version == "" || rs.DeclaredProtocol == "" {
+		return errors.New("cellkernel: resolved spec must carry version and declared_protocol")
 	}
-	// Profile names are otherwise opaque to the kernel (round-6 C1): the
-	// builtin whitelist lives in cellspec and the input schema. Only the
-	// kernel-owned trust mode's coupling to its smoke profile is checked.
-	if (m.ExecutionMode == ModeStub) != (rs.Profile == "stub") {
-		return fmt.Errorf("cellkernel: profile %q is incoherent with execution mode %q", rs.Profile, m.ExecutionMode)
+	// Fill semantics are opaque to the kernel (round-6 C1); the declarations
+	// only have to exist. Mode truth is bound to the parent-trusted metadata
+	// at VerifyClosure (round-7 D1).
+	if err := validSeatEnvelope(rs.Alpha); err != nil {
+		return fmt.Errorf("cellkernel: alpha declaration: %w", err)
+	}
+	if err := validSeatEnvelope(rs.Beta); err != nil {
+		return fmt.Errorf("cellkernel: beta declaration: %w", err)
+	}
+	return nil
+}
+
+// validSeatEnvelope checks the ONLY thing the generic boundary knows about a
+// seat declaration: it is a JSON object carrying a non-empty string `fill`.
+// Everything else stays opaque. Without this a direct caller could emit `{}`,
+// `[]`, or a scalar, self-verify it, and still fail the closure schema — the
+// kernel would be certifying something no reader could parse.
+func validSeatEnvelope(raw json.RawMessage) error {
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return errors.New("must be a JSON object")
+	}
+	tag, ok := obj["fill"]
+	if !ok {
+		return errors.New("must carry a fill")
+	}
+	var id string
+	if err := json.Unmarshal(tag, &id); err != nil || id == "" {
+		return errors.New("fill must be a non-empty string")
 	}
 	return nil
 }

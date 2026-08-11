@@ -5,7 +5,10 @@
     "goal": "empty"
   },
   "protocol_id": "cnos.cdd.receipt.v1",
-  "profile": "stub",
-  "alpha": { "skills": [] },
-  "beta": { "skills": [] }
+  "alpha": {
+    "fill": "cdd.stub"
+  },
+  "beta": {
+    "fill": "cdd.stub"
+  }
 }

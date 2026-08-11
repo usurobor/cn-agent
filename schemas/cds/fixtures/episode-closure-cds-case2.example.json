@@ -1,0 +1,105 @@
+{
+  "closure_schema": "cnos.cellkernel.episode-closure.v0",
+  "protocol_validated": false,
+  "status": "needs_repair",
+  "decision": "repair_dispatch",
+  "verdict": {
+    "pass": false,
+    "failures": [
+      {
+        "class": "contract_unmet",
+        "detail": "review.pass=false"
+      }
+    ]
+  },
+  "receipt": {
+    "record": {
+      "canon": "cnos.cellkernel.episode-record-canon.v0",
+      "episode_id": "ep-f9707ac4b098e80e5b8620b90a5f766f",
+      "execution_mode": "mechanical",
+      "resolved_spec": {
+        "version": "cnos.cellspec.v0",
+        "declared_protocol": "cnos.cdd.cds.receipt.v1",
+        "alpha": {
+          "cognition": {
+            "model": "",
+            "provider": "fake"
+          },
+          "fill": "cds.patch",
+          "skills": [
+            {
+              "ref": "cnos.eng:eng/code",
+              "sha256": "3c1393921912d38f6e2bb7fd7b1b01bd5f32e79729455594402557b892e5bf29"
+            },
+            {
+              "ref": "cnos.eng:eng/test",
+              "sha256": "5d6c4b6c30fabf991616e8a78d2b2f8bae61da245066c48b0251c47847abe829"
+            },
+            {
+              "ref": "cnos.eng:eng/go",
+              "sha256": "3549fad413250be29994e3d7a0e4590847b443eb6565c503d19fec668e48a5aa"
+            },
+            {
+              "ref": "cnos.eng:eng/write-functional",
+              "sha256": "ecfd67aaad27e7663db721a7119ce0e951184e589a703c86e01622baed526f77"
+            }
+          ],
+          "workspace": {
+            "base_sha": "7af7ad5d1a663d64b57c1256cfbd152fc6e43211",
+            "kind": "git-worktree",
+            "repo": "."
+          }
+        },
+        "beta": {
+          "fill": "cdd.mechanical-unmet"
+        }
+      },
+      "contract": {
+        "id": "cds-code",
+        "goal": "Carry out the change described by the issue in the repository at base_sha",
+        "required_evidence": [
+          {
+            "id": "diff",
+            "kind": "diff",
+            "producer": "alpha"
+          }
+        ]
+      },
+      "alpha": {
+        "execution_id": "alpha-3c37371316a47fe72177d2b425a021b4",
+        "artifacts": [
+          {
+            "id": "base_sha",
+            "kind": "sha",
+            "encoding": "utf8",
+            "text": "7af7ad5d1a663d64b57c1256cfbd152fc6e43211"
+          },
+          {
+            "id": "diff",
+            "kind": "diff",
+            "encoding": "utf8",
+            "text": "diff --git a/CELL-FAKE-CHANGE.txt b/CELL-FAKE-CHANGE.txt\nnew file mode 100644\nindex 00000000..263f77f3\n--- /dev/null\n+++ b/CELL-FAKE-CHANGE.txt\n@@ -0,0 +1,2 @@\n+fake coder: deterministic change, no cognition was rented\n+prompt bytes: 49879\n"
+          }
+        ]
+      },
+      "matter": {
+        "data": "diff --git a/CELL-FAKE-CHANGE.txt b/CELL-FAKE-CHANGE.txt\nnew file mode 100644\nindex 00000000..263f77f3\n--- /dev/null\n+++ b/CELL-FAKE-CHANGE.txt\n@@ -0,0 +1,2 @@\n+fake coder: deterministic change, no cognition was rented\n+prompt bytes: 49879\n"
+      },
+      "beta": {
+        "execution_id": "beta-772757f9cd2052cf19af16a37da2d17b",
+        "artifacts": []
+      },
+      "review": {
+        "pass": false,
+        "notes": "mechanical seat cannot judge the goal; matter (240 bytes) preserved for independent review"
+      }
+    },
+    "scope_lift_digest": "625cdfdd524ff878efaca661574e65a3b30c7ebfc5599f9c52c2325fd4b6f573"
+  },
+  "repair": {
+    "reason": "contract unmet",
+    "failed": [
+      "contract_unmet: review.pass=false"
+    ]
+  }
+}

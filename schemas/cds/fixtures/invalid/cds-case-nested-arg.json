@@ -1,0 +1,33 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "c",
+    "goal": "g",
+    "required_evidence": [
+      {
+        "id": "diff",
+        "kind": "diff",
+        "producer": "alpha"
+      }
+    ]
+  },
+  "protocol_id": "cnos.cdd.cds.receipt.v1",
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "Provider": "fake",
+      "model": ""
+    },
+    "workspace": {
+      "kind": "git-worktree",
+      "repo": ".",
+      "base_sha": "x"
+    },
+    "skills": [
+      "cnos.eng:eng/go"
+    ]
+  },
+  "beta": {
+    "fill": "cdd.mechanical-unmet"
+  }
+}

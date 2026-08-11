@@ -15,17 +15,18 @@
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-941f43ec6cf3b0e6c9adf2492eef8113",
+      "episode_id": "ep-69942431cdae47c17b209b1e4d05cd51",
       "execution_mode": "mechanical",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
         "declared_protocol": "cnos.cellkernel.episode-closure.v0",
-        "profile": "bool",
-        "params": {
+        "alpha": {
+          "fill": "cdd.bool",
           "value": "false"
         },
-        "alpha_skills": [],
-        "beta_skills": []
+        "beta": {
+          "fill": "cdd.bool-check"
+        }
       },
       "contract": {
         "id": "cell-bool",
@@ -39,7 +40,7 @@
         ]
       },
       "alpha": {
-        "execution_id": "alpha-3dc83bfe8c03d8d7601a956339ba2121",
+        "execution_id": "alpha-9ff760786b20bc15e4d54bd964127538",
         "artifacts": [
           {
             "id": "bool",
@@ -53,7 +54,7 @@
         "data": "false"
       },
       "beta": {
-        "execution_id": "beta-2f3e630e27810ff86c0d37a7073cadaf",
+        "execution_id": "beta-e51f11481e405296186695992377b096",
         "artifacts": []
       },
       "review": {
@@ -61,7 +62,7 @@
         "notes": "matter is not bool true"
       }
     },
-    "scope_lift_digest": "74b8fb19aa766577caec39e3975fbe26f430a219675001015dbbf942873ff060"
+    "scope_lift_digest": "702c7aedacb3adbde0f9e74050f14e5752ff47ff5597f5f2fb8079b75af87e10"
   },
   "repair": {
     "reason": "contract unmet",

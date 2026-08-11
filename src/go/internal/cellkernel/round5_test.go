@@ -2,13 +2,14 @@ package cellkernel
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 )
 
 // Regression pairs for Pi β msg-cn-pi-cnos-pr718-fido-round5-beta-46 (D1).
 
 // D1: meta is validated at the kernel boundary — empty fields or a
-// profile/mode incoherence error out before alpha ever runs.
+// metadata/mode incoherence error out before alpha ever runs.
 type recordingAlpha struct{ ran *bool }
 
 func (a recordingAlpha) Produce(ctx context.Context, in AlphaInput) (AlphaOutput, error) {
@@ -23,15 +24,8 @@ func TestMetaValidatedAtIngress(t *testing.T) {
 	}{
 		{"empty version", func(m *RunMeta) { m.ResolvedSpec.Version = "" }},
 		{"empty protocol", func(m *RunMeta) { m.ResolvedSpec.DeclaredProtocol = "" }},
-		{"empty profile", func(m *RunMeta) { m.ResolvedSpec.Profile = "" }},
-		{"stub mode, non-stub profile", func(m *RunMeta) {
-			m.ExecutionMode = ModeStub
-			m.ResolvedSpec.Profile = "bool"
-		}},
-		{"mechanical mode, stub profile", func(m *RunMeta) {
-			m.ExecutionMode = ModeMechanical
-			m.ResolvedSpec.Profile = "stub"
-		}},
+		{"missing alpha declaration", func(m *RunMeta) { m.ResolvedSpec.Alpha = nil }},
+		{"null beta declaration", func(m *RunMeta) { m.ResolvedSpec.Beta = json.RawMessage("null") }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -51,11 +45,13 @@ func TestMetaValidatedAtIngress(t *testing.T) {
 	}
 }
 
-// D1: promoting a stub record to mechanical (laundering simulated into
-// accepted authority) fails closed even with a recomputed digest — the
-// record replays profile/mode coherence at scope lift.
+// D1 (round 5, re-anchored by fill construction): promoting a stub record to
+// mechanical — laundering simulated into accepted authority — fails against
+// the parent-trusted metadata, even with digest and status recomputed. The
+// parent invoked the episode, so its meta, not the record, is mode truth.
 func TestStubPromotionFailsClosed(t *testing.T) {
-	cl, err := RunEpisode(context.Background(), BoolSpec(true), testMeta(ModeStub),
+	trusted := testMeta(ModeStub)
+	cl, err := RunEpisode(context.Background(), BoolSpec(true), trusted,
 		WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}))
 	if err != nil {
 		t.Fatalf("run: %v", err)
@@ -67,12 +63,8 @@ func TestStubPromotionFailsClosed(t *testing.T) {
 	cl.Receipt.Record.Mode = ModeMechanical
 	cl.Receipt.ScopeLiftDigest = sha256hex(cl.Receipt.Record.canonicalBytes())
 	cl.Status = Accepted
-	if err := VerifyClosure(BoolSpec(true).Contract, testMeta(ModeStub), cl); err == nil {
-		t.Fatal("promoted stub record with recomputed digest verified")
-	}
-	v := validate(BoolSpec(true).Contract, cl.Receipt)
-	if v.Pass || !v.hasIntegrityFailure() {
-		t.Fatalf("profile/mode incoherence must be an integrity failure, got %+v", v)
+	if err := VerifyClosure(BoolSpec(true).Contract, trusted, cl); err == nil {
+		t.Fatal("promoted stub record verified against the original trusted meta")
 	}
 }
 
@@ -139,8 +131,8 @@ func TestRoleSplitBetaPassesVCatchesUnmet(t *testing.T) {
 // not self-verify, even with a recomputed digest — CUE rejects it, so must Go.
 func TestNullRequiredArraysFailAtScopeLift(t *testing.T) {
 	muts := map[string]func(*EpisodeRecord){
-		"alpha skills null":    func(r *EpisodeRecord) { r.ResolvedSpec.AlphaSkills = nil },
-		"beta skills null":     func(r *EpisodeRecord) { r.ResolvedSpec.BetaSkills = nil },
+		"alpha decl null":      func(r *EpisodeRecord) { r.ResolvedSpec.Alpha = json.RawMessage("null") },
+		"beta decl null":       func(r *EpisodeRecord) { r.ResolvedSpec.Beta = nil },
 		"alpha artifacts null": func(r *EpisodeRecord) { r.Alpha.Artifacts = nil },
 		"beta artifacts null":  func(r *EpisodeRecord) { r.Beta.Artifacts = nil },
 	}

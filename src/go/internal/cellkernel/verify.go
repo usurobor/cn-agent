@@ -16,7 +16,7 @@ func mustJSON(v any) []byte {
 // re-checks a serialized closure against the contract AND invocation metadata
 // IT trusts (Pi round-6 D1, round-7 D1). Neither ever comes out of the
 // closure being judged, so a substituted embedded contract — or a coherent
-// mode+profile rewrite (stub/simulated laundered to mechanical/accepted) —
+// mode+status rewrite (stub/simulated laundered to mechanical/accepted) —
 // cannot verify even with an honestly recomputed digest and tail. The parent
 // invoked the episode, so it owns both values; this is ordinary argument
 // passing, not a second proof surface.

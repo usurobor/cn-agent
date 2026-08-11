@@ -9,17 +9,15 @@
   "receipt": {
     "record": {
       "canon": "cnos.cellkernel.episode-record-canon.v0",
-      "episode_id": "ep-525669c6355c53f90ce0e5c73a338ae2",
+      "episode_id": "ep-258f869c3128e3a17c7692036cc44289",
       "execution_mode": "mechanical",
       "resolved_spec": {
         "version": "cnos.cellspec.v0",
         "declared_protocol": "cnos.cellkernel.episode-closure.v0",
-        "profile": "bool",
-        "params": {
-          "value": "true"
-        },
-        "alpha_skills": null,
-        "beta_skills": []
+        "alpha": null,
+        "beta": {
+          "fill": "cdd.bool-check"
+        }
       },
       "contract": {
         "id": "cell-bool",
@@ -33,14 +31,14 @@
         ]
       },
       "alpha": {
-        "execution_id": "alpha-596ecce78d4bb7ad93e8c1d5dd2524bd",
+        "execution_id": "alpha-22551c0aef9e359414f509c52bd12eb9",
         "artifacts": null
       },
       "matter": {
         "data": "true"
       },
       "beta": {
-        "execution_id": "beta-c7faa08c93640d080b897efbcf24ae3e",
+        "execution_id": "beta-1d897042b93976f2c06f10af7c203d29",
         "artifacts": []
       },
       "review": {
@@ -48,6 +46,6 @@
         "notes": "beta independently verified matter is bool true"
       }
     },
-    "scope_lift_digest": "6413916b1102c12a33c9ba4a99c04c15265c9e4b3eb5a788ae45d9f8cf1d31a4"
+    "scope_lift_digest": "7d31806c2d5db7c39565155505d20a962fca34b597b5fd40c3446e99bfcf06d8"
   }
 }

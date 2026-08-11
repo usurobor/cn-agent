@@ -1,11 +1,14 @@
 {
   "version": "cnos.cellspec.v0",
   "contract": {
-    "id": "cell-0",
+    "id": "c",
     "goal": ""
   },
-  "protocol_id": "cnos.cdd.receipt.v1",
-  "profile": "stub",
-  "alpha": { "skills": [] },
-  "beta": { "skills": [] }
+  "protocol_id": "p",
+  "alpha": {
+    "fill": "cdd.stub"
+  },
+  "beta": {
+    "fill": "cdd.stub"
+  }
 }

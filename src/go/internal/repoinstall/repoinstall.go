@@ -4,8 +4,12 @@
 // It makes an arbitrary Git repository CDS-ready with one command: it
 // resolves a cnos release (or an explicit package index), writes a
 // deterministic .cn/deps.json + .cn/deps.lock.json, restores the default
-// package set (cnos.core, cnos.cdd, cnos.cds) under .cn/vendor/packages/,
-// and ensures .gitignore excludes the vendor tree.
+// package set (cnos.core, cnos.cdd, cnos.cds, cnos.eng) under
+// .cn/vendor/packages/, and ensures .gitignore excludes the vendor tree.
+//
+// cnos.eng is in that set because cell fills LOAD skill bodies from the
+// installed root: a shipped cell naming cnos.eng:eng/go cannot be constructed
+// by a hub that did not install it. closure_test.go holds the two together.
 //
 // This package reuses the existing lock/restore substrate directly
 // (internal/restore) rather than reimplementing SHA-256 verification or
@@ -72,7 +76,14 @@ const (
 // written to .cn/deps.json (manifest order is operator-controlled, per
 // restore.GenerateLockFromIndex's own doc comment; the lockfile it
 // generates is independently sorted for determinism).
-var DefaultPackages = []string{"cnos.core", "cnos.cdd", "cnos.cds"}
+//
+// cnos.eng is part of the closure because the shipped CDS cell names its
+// skills (`cnos.eng:eng/code`, `eng/test`, a language, `eng/write-functional`)
+// and a fill LOADS skill bodies from the installed root. Without it a normally
+// installed hub cannot construct the checked-in cell — the cell would only run
+// against a hand-assembled tree. TestDefaultPackagesCoverShippedCells pins
+// that relationship.
+var DefaultPackages = []string{"cnos.core", "cnos.cdd", "cnos.cds", "cnos.eng"}
 
 // httpClientDefault mirrors the timeout used by restore.go/binupdate.go
 // (OCaml curl flags: --connect-timeout 10 --max-time 300).

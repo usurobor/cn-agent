@@ -1,0 +1,14 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "c",
+    "goal": "g"
+  },
+  "protocol_id": "p",
+  "alpha": {
+    "fill": "no.such"
+  },
+  "beta": {
+    "fill": "cdd.stub"
+  }
+}

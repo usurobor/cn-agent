@@ -1,0 +1,32 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "cell-bool",
+    "goal": "produce bool true",
+    "required_evidence": [
+      {
+        "id": "bool",
+        "kind": "value",
+        "producer": "alpha"
+      }
+    ]
+  },
+  "protocol_id": "cnos.cellkernel.episode-closure.v0",
+  "params": {
+    "bad-name": {
+      "required": false,
+      "default": "true",
+      "domain": [
+        "true",
+        "false"
+      ]
+    }
+  },
+  "alpha": {
+    "fill": "cdd.bool",
+    "value": "$bad-name"
+  },
+  "beta": {
+    "fill": "cdd.bool-check"
+  }
+}

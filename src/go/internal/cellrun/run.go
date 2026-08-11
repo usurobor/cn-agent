@@ -18,6 +18,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellspec"
 )
@@ -46,8 +47,10 @@ FLAGS:
   --contract <path|->    serialized cell spec; "-" reads stdin (required, once)
   --param <name>=<value> fill a declared parameter hole (repeatable, no dups)`
 
-// Run executes one `cn cell run` invocation and returns its exit code.
-func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+// Run executes one `cn cell run` invocation and returns its exit code. The
+// fill registry arrives already assembled from the application composition
+// root: this package dispatches it and never learns what a fill needs.
+func Run(ctx context.Context, reg cellfill.Registry, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	contractPath, params, err := parseArgs(args)
 	if err != nil {
 		fmt.Fprintf(stderr, "✗ %v\n\n%s\n", err, Help)
@@ -72,7 +75,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return 2
 	}
 
-	kspec, meta, err := resolved.Build()
+	kspec, meta, err := resolved.Build(ctx, reg)
 	if err != nil {
 		fmt.Fprintf(stderr, "✗ %v\n", err)
 		return 2

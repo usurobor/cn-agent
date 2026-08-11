@@ -5,14 +5,17 @@
 // runner binds to the kernel. It is the mirror of schemas/cdd/receipt.cue
 // #Receipt on the *output* side.
 //
-// γ, V, and δ are kernel-owned and mechanical (Pi β
-// msg-cn-pi-cnos-cell-runner-cases-review-31 D2 / cell-prototype-beta-32); they
-// deliberately do NOT appear here. A cell spec supplies only the pinned schema
-// version, the contract (with producer-attributed required evidence), the
-// protocol_id (declared provenance), a builtin seat profile, the typed
-// parameter holes, and the α/β skill lines.
+// Seats are FILL-OWNED (msg-cn-pi-cnos-cds-fill-construction-51,
+// operator-ratified): each seat is one tagged object whose `fill` selects a
+// constructor and whose remaining fields are that constructor's arguments.
+// The generic schema therefore owns only the minimum tagged envelope — it
+// deliberately does NOT enumerate any fill's fields, providers, skills, or
+// workspaces; the selected fill's overlay (e.g. cds.#CDSPatchAlphaAuthored)
+// owns the closed schema for the complete object, exactly as the fill's Go
+// decoder owns the strict shape at build time.
 //
-// See docs/architecture/CDS-CELL-MIGRATION.md (Phase 0).
+// γ, V, and δ are kernel-owned and mechanical; they deliberately do NOT
+// appear here. See docs/architecture/CDS-CELL-MIGRATION.md.
 package cdd
 
 // #Role is which seat is authorized to produce an artifact.
@@ -27,27 +30,37 @@ package cdd
 	producer: #Role
 }
 
-// #Param is a Unix-shaped typed hole. "skill" resolves to a skill and may be
-// spliced into a seat via `$name`; "value" is a literal scalar passed to a
-// builtin profile.
+// #ParamName is the ONE identifier grammar for a parameter, and therefore for
+// the `$name` hole that references it. It lives in the generic layer because
+// holes are a generic resolution concept: a name legal here must be legal
+// everywhere, or a spec resolves in Go and is rejected by CUE (Pi #55 C1).
+// `cellspec.Parse` enforces the identical pattern.
+#ParamName: =~"^[A-Za-z_][A-Za-z0-9_]*$"
+
+// #Param is a Unix-shaped typed hole. Holes appear as `$name` string values
+// inside seat declarations and are replaced in place at resolution. There is
+// deliberately no "kind": what a filled value MEANS belongs to the fill that
+// consumes it, not to the generic envelope.
+//
+// Division of labour, stated so neither authority is credited with the
+// other's work (Pi #57 B2): CUE validates the DECLARATION — that a parameter's
+// name, flags and domain are well shaped. Go's `Resolve` validates SUPPLIED
+// VALUES — that required parameters were given and that a given value lies in
+// its declared domain. A schema cannot check the second; it never sees the
+// invocation.
 #Param: {
-	kind:     "skill" | "value"
 	required: bool | *false
 	default?: string
 	domain?: [...string]
 }
 
-// #Seat is a seat's skill line: literal skill names or `$param` splices.
-// `skills!` — required-field marker: an open list defaults to [] under
-// unification, so without it an absent skills field is indistinguishable
-// from an empty one and vet cannot reject it (Pi round-5 D2 parity).
+// #Seat is the minimum tagged envelope: a fill id, plus whatever constructor
+// arguments that fill owns. `fill!` — required-field marker, so an absent
+// tag is rejected rather than defaulting (Pi round-5 D2 parity).
 #Seat: {
-	skills!: [...string]
+	fill!: string & !=""
+	...
 }
-
-// #Profile is a builtin v0 seat profile (no cognition yet). "stub" is smoke;
-// "bool" is a real independently-checked mechanical episode.
-#Profile: "stub" | "bool"
 
 // #CellSpec is the serialized cell.
 #CellSpec: {
@@ -61,8 +74,7 @@ package cdd
 	// Declared protocol (provenance). The v0 runner emits a generic episode
 	// receipt and sets protocol_validated=false; it does not validate this.
 	protocol_id: string & !=""
-	profile:     #Profile // explicit; no default (Pi PR-#718 β D5)
-	params?: {[string]: #Param}
+	params?: {[#ParamName]: #Param}
 	alpha: #Seat
 	beta:  #Seat
 }

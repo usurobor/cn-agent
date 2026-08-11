@@ -10,19 +10,28 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/usurobor/cnos/src/go/internal/cellfill"
+	"github.com/usurobor/cnos/src/go/internal/cellfills"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellskill"
 	"github.com/usurobor/cnos/src/go/internal/cellspec"
 )
 
 const boolSpecJSON = `{"version":"cnos.cellspec.v0",` +
 	`"contract":{"id":"cell-bool","goal":"b","required_evidence":[{"id":"bool","kind":"value","producer":"alpha"}]},` +
-	`"protocol_id":"cnos.cellkernel.episode-closure.v0","profile":"bool",` +
-	`"params":{"value":{"kind":"value","required":true,"domain":["true","false"]}},` +
-	`"alpha":{"skills":[]},"beta":{"skills":[]}}`
+	`"protocol_id":"cnos.cellkernel.episode-closure.v0",` +
+	`"params":{"value":{"required":true,"domain":["true","false"]}},` +
+	`"alpha":{"fill":"cdd.bool","value":"$value"},"beta":{"fill":"cdd.bool-check"}}`
+
+// testRegistry is the assembled registry with an empty skill tree: these
+// cases exercise generic dispatch, not skill loading.
+func testRegistry() cellfill.Registry {
+	return cellfills.With(cellskill.Tree{Root: "/nonexistent"})
+}
 
 func run(stdin string, args ...string) (code int, stdout, stderr string) {
 	var out, errb bytes.Buffer
-	code = Run(context.Background(), args, strings.NewReader(stdin), &out, &errb)
+	code = Run(context.Background(), testRegistry(), args, strings.NewReader(stdin), &out, &errb)
 	return code, out.String(), errb.String()
 }
 
@@ -38,7 +47,7 @@ func parseExpected(t *testing.T) (cellkernel.Contract, cellkernel.RunMeta) {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, meta, err := r.Build()
+	kspec, meta, err := r.Build(context.Background(), testRegistry())
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
@@ -77,8 +86,8 @@ func TestExitCodes(t *testing.T) {
 		t.Fatal(err)
 	}
 	stubSpec := `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},` +
-		`"protocol_id":"cnos.cellkernel.episode-closure.v0","profile":"stub",` +
-		`"alpha":{"skills":[]},"beta":{"skills":[]}}`
+		`"protocol_id":"cnos.cellkernel.episode-closure.v0",` +
+		`"alpha":{"fill":"cdd.stub"},"beta":{"fill":"cdd.stub"}}`
 	big := "{" + strings.Repeat(" ", maxContractBytes+10) + "}"
 
 	cases := []struct {
@@ -93,10 +102,11 @@ func TestExitCodes(t *testing.T) {
 		{"malformed json", "{not json", []string{"--contract", "-"}, 2},
 		{"unknown arg", "", []string{"--bogus"}, 2},
 		{"missing contract", "", []string{"--param", "value=true"}, 2},
-		{"missing profile", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cellkernel.episode-closure.v0","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 2},
+		{"missing fill", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cellkernel.episode-closure.v0","alpha":{},"beta":{"fill":"cdd.stub"}}`, []string{"--contract", "-"}, 2},
+		{"unknown fill", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"cnos.cellkernel.episode-closure.v0","alpha":{"fill":"no.such"},"beta":{"fill":"cdd.stub"}}`, []string{"--contract", "-"}, 2},
 		{"dup param", boolSpecJSON, []string{"--contract", "-", "--param", "value=true", "--param", "value=false"}, 2},
 		{"dup contract", boolSpecJSON, []string{"--contract", "-", "--contract", "-"}, 2},
-		{"opaque protocol runs", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"made.up","profile":"stub","alpha":{"skills":[]},"beta":{"skills":[]}}`, []string{"--contract", "-"}, 3},
+		{"opaque protocol runs", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"made.up","alpha":{"fill":"cdd.stub"},"beta":{"fill":"cdd.stub"}}`, []string{"--contract", "-"}, 3},
 		{"trailing brace", boolSpecJSON + "}", []string{"--contract", "-", "--param", "value=true"}, 2},
 		{"oversize contract", big, []string{"--contract", "-"}, 2},
 	}

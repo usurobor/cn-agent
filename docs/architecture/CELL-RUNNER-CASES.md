@@ -28,6 +28,13 @@ orchestrator invoke this kernel repeatedly — they are not extra seats.
 
 ## Outcomes
 
+The record also states **how** the work was produced, and the parent's trusted
+metadata pins it: `stub` fabricated it (non-authoritative `simulated`),
+`mechanical` is deterministic and reproducible from the record, `cognitive`
+means a provider held a seat — authoritative work that re-running does not
+reproduce. Renting cognition never lowers the bar a closure must clear; it
+only changes who filled the seat.
+
 `RunEpisode` returns a `Closure` whose `Status` is terminal
 (`accepted` | `degraded` | `rejected` | `simulated`) or non-terminal
 (`needs_repair`, the parent stays open — the closure then carries a
@@ -100,8 +107,33 @@ append-only sequence of results. Children never write upward or sideways.
   fills parameter holes, runs one episode, emits a generic
   `cnos.cellkernel.episode-closure.v0`, exit `0/1/2/3` (3 = `simulated`).
   Zero GitHub/network.
-- **Case 2 — rented α, mechanical β.** First cognition behind α (a provider
-  seam); β still mechanical. (Phase 3 / #717-F; held until CI + Pi converge.)
+- **Case 2 — rented α, mechanical β.** ✅ Seats are **fill-owned**: each is one
+  tagged value whose `fill` selects a constructor and whose sibling fields are
+  that constructor's arguments. `cds.patch` owns the patch alpha — it composes
+  the cognition adapter, the loaded skills, and the worktree; the generic
+  runner only dispatches a fill id. A disposable worktree is cut at a base
+  commit pinned at construction, the rented seat edits files in it, and the
+  runtime then **measures** the change as a unified diff. A seat that changed
+  nothing produces no diff, so false completion is unrepresentable rather than
+  caught late.
+
+  The seat is offered a restricted built-in tool surface (`--tools`, file
+  tools only), a declared baseline permission mode (`--permission-mode
+  acceptEdits`), and no USER OR PROJECT settings, skills or MCP servers
+  (`--safe-mode`), so local customization cannot become a second, unreceipted
+  component definition. Scoped exactly: that closes the user/project layer.
+  Authentication stays ambient by design, and vendor-managed substrate policy
+  can still apply above the declared baseline — the adapter neither detects
+  nor overrides it. It is *not* OS confinement and is not claimed as such: the
+  honest authority is the offered tool surface, the declared permission mode,
+  and the measured worktree — whatever a seat touches elsewhere simply never
+  becomes evidence. Worktree cleanup is best-effort for the same
+  reason: an episode's truth does not depend on it.
+
+  β is `cdd.mechanical-unmet`, which **never passes what it cannot judge**: a
+  non-empty diff is not a met contract, it is work awaiting review, so a real
+  measured change closes `needs_repair` with the diff preserved. Acceptance of
+  real work arrives with Case 3's independent reviewer.
 - **Case 3 — rented α and β.** Full single-episode CDS. V validates
   evidence/bindings; it never re-judges β's prose.
 - **Case 4 — bounded repair driver.** A `Drive` loop invokes the same episode
@@ -115,11 +147,16 @@ outcome tests**, not new rungs.
 
 ## Parameters → skills (Unix typed holes)
 
-A parameter is a typed hole resolved like `$PATH`: `skill`-kind values resolve to
-a skill and splice into a seat via `$name`; `value`-kind values are scalars
-passed to a builtin profile. Required vs optional-with-default = positional vs
-flag; a closed `domain` makes a typo fail resolution. The invoker (CLI now, a
-parent cell later) fills the hole; the cell body never changes.
+A parameter is a typed hole spliced into a seat via `$name`. There are no
+parameter KINDS — `kind` was deleted, because what a filled value means belongs
+to the fill that consumes it, not to the generic envelope. There is also no
+`$PATH`-style resolver: a caller supplies the canonical skill ref itself
+(`--param language=cnos.eng:eng/go`), and `cds.patch` loads it.
+
+Required vs optional-with-default mirrors positional vs flag, and a closed
+`domain` makes a typo fail resolution — in Go, at `Resolve`, which is the only
+stage that sees supplied values. The invoker (CLI now, a parent cell later)
+fills the hole; the cell body never changes.
 
 ## What the runner does not own (custody boundary)
 

@@ -1,0 +1,105 @@
+{
+  "closure_schema": "cnos.cellkernel.episode-closure.v0",
+  "protocol_validated": false,
+  "status": "needs_repair",
+  "decision": "repair_dispatch",
+  "verdict": {
+    "pass": false,
+    "failures": [
+      {
+        "class": "contract_unmet",
+        "detail": "review.pass=false"
+      }
+    ]
+  },
+  "receipt": {
+    "record": {
+      "canon": "cnos.cellkernel.episode-record-canon.v0",
+      "episode_id": "ep-7a83e6c07a2749068aab291152113946",
+      "execution_mode": "cognitive",
+      "resolved_spec": {
+        "version": "cnos.cellspec.v0",
+        "declared_protocol": "cnos.cdd.cds.receipt.v1",
+        "alpha": {
+          "cognition": {
+            "model": "claude-opus-5",
+            "provider": "claude-cli"
+          },
+          "fill": "cds.patch",
+          "skills": [
+            {
+              "ref": "cnos.eng:eng/code",
+              "sha256": "3c1393921912d38f6e2bb7fd7b1b01bd5f32e79729455594402557b892e5bf29"
+            },
+            {
+              "ref": "cnos.eng:eng/test",
+              "sha256": "5d6c4b6c30fabf991616e8a78d2b2f8bae61da245066c48b0251c47847abe829"
+            },
+            {
+              "ref": "cnos.eng:eng/go",
+              "sha256": "3549fad413250be29994e3d7a0e4590847b443eb6565c503d19fec668e48a5aa"
+            },
+            {
+              "ref": "cnos.eng:eng/write-functional",
+              "sha256": "ecfd67aaad27e7663db721a7119ce0e951184e589a703c86e01622baed526f77"
+            }
+          ],
+          "workspace": {
+            "base_sha": "1d79f7552649357165ce9addf3fbe7c57f3b62b0",
+            "kind": "git-worktree",
+            "repo": "/tmp/claude-0/-home-user-cnos/999625b6-7f42-543b-824e-1d2565331a5b/scratchpad/sm2/coderepo"
+          }
+        },
+        "beta": {
+          "fill": "cdd.mechanical-unmet"
+        }
+      },
+      "contract": {
+        "id": "cds-code",
+        "goal": "Carry out the change described by the issue in the repository at base_sha",
+        "required_evidence": [
+          {
+            "id": "diff",
+            "kind": "diff",
+            "producer": "alpha"
+          }
+        ]
+      },
+      "alpha": {
+        "execution_id": "alpha-bdddd8738fce499c56a835414557fdf1",
+        "artifacts": [
+          {
+            "id": "base_sha",
+            "kind": "sha",
+            "encoding": "utf8",
+            "text": "1d79f7552649357165ce9addf3fbe7c57f3b62b0"
+          },
+          {
+            "id": "diff",
+            "kind": "diff",
+            "encoding": "utf8",
+            "text": "diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md\nnew file mode 100644\nindex 0000000..7850d16\n--- /dev/null\n+++ b/CONTRIBUTING.md\n@@ -0,0 +1,62 @@\n+# Contributing\n+\n+Thanks for helping out. This is a small project, so the process is short.\n+\n+## Before you start\n+\n+- For anything beyond a typo, open an issue first and describe the change you\n+  want to make. Agreeing on the approach up front is cheaper than reworking a\n+  finished branch.\n+- Check open issues and pull requests so two people don't build the same thing.\n+\n+## Making a change\n+\n+1. Create a branch off `main`, named for the change (`fix-readme-links`, not\n+   `patch-1`).\n+2. Keep the branch scoped to one change. Unrelated cleanups belong in their own\n+   branch — they make review slower and bisects less useful.\n+3. Commit in logical steps. Each commit should leave the repository in a working\n+   state.\n+\n+## Commit messages\n+\n+Use a short imperative subject line (under ~72 characters), then a blank line,\n+then the body if the change needs explanation:\n+\n+```\n+Add contributing notes\n+\n+The README pointed at guidelines that did not exist. Document how to\n+propose and review changes so contributors do not have to guess.\n+```\n+\n+Explain *why* in the body. The diff already shows *what*.\n+\n+## Pull requests\n+\n+- Describe what changed and why, and link the issue it addresses.\n+- Say how you verified the change. If you could not verify it, say that too —\n+  an honest gap is more useful than an implied guarantee.\n+- Expect at least one review before merge. Address comments with follow-up\n+  commits rather than force-pushing over the reviewed history; squash on merge\n+  if the history is noisy.\n+\n+## Building and testing\n+\n+This project currently has no build system, test suite, or CI. If your change\n+introduces code, introduce the tooling to exercise it in the same pull request,\n+and update this section to describe how to run it. Please don't add code that\n+has no way to be checked.\n+\n+## Reporting bugs\n+\n+Open an issue with:\n+\n+- what you did,\n+- what you expected,\n+- what happened instead,\n+- the version or commit you were on.\n+\n+## Code of conduct\n+\n+Be straightforward and civil. Review the change, not the person who wrote it.\ndiff --git a/README.md b/README.md\nindex 805f48e..4aefd86 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,3 +1,4 @@\n # demo\n \n-This project has no CONTRIBUTING notes yet.\n+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose, review, and land\n+changes.\n"
+          }
+        ]
+      },
+      "matter": {
+        "data": "diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md\nnew file mode 100644\nindex 0000000..7850d16\n--- /dev/null\n+++ b/CONTRIBUTING.md\n@@ -0,0 +1,62 @@\n+# Contributing\n+\n+Thanks for helping out. This is a small project, so the process is short.\n+\n+## Before you start\n+\n+- For anything beyond a typo, open an issue first and describe the change you\n+  want to make. Agreeing on the approach up front is cheaper than reworking a\n+  finished branch.\n+- Check open issues and pull requests so two people don't build the same thing.\n+\n+## Making a change\n+\n+1. Create a branch off `main`, named for the change (`fix-readme-links`, not\n+   `patch-1`).\n+2. Keep the branch scoped to one change. Unrelated cleanups belong in their own\n+   branch — they make review slower and bisects less useful.\n+3. Commit in logical steps. Each commit should leave the repository in a working\n+   state.\n+\n+## Commit messages\n+\n+Use a short imperative subject line (under ~72 characters), then a blank line,\n+then the body if the change needs explanation:\n+\n+```\n+Add contributing notes\n+\n+The README pointed at guidelines that did not exist. Document how to\n+propose and review changes so contributors do not have to guess.\n+```\n+\n+Explain *why* in the body. The diff already shows *what*.\n+\n+## Pull requests\n+\n+- Describe what changed and why, and link the issue it addresses.\n+- Say how you verified the change. If you could not verify it, say that too —\n+  an honest gap is more useful than an implied guarantee.\n+- Expect at least one review before merge. Address comments with follow-up\n+  commits rather than force-pushing over the reviewed history; squash on merge\n+  if the history is noisy.\n+\n+## Building and testing\n+\n+This project currently has no build system, test suite, or CI. If your change\n+introduces code, introduce the tooling to exercise it in the same pull request,\n+and update this section to describe how to run it. Please don't add code that\n+has no way to be checked.\n+\n+## Reporting bugs\n+\n+Open an issue with:\n+\n+- what you did,\n+- what you expected,\n+- what happened instead,\n+- the version or commit you were on.\n+\n+## Code of conduct\n+\n+Be straightforward and civil. Review the change, not the person who wrote it.\ndiff --git a/README.md b/README.md\nindex 805f48e..4aefd86 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,3 +1,4 @@\n # demo\n \n-This project has no CONTRIBUTING notes yet.\n+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose, review, and land\n+changes.\n"
+      },
+      "beta": {
+        "execution_id": "beta-1f9d9cf4517009e8631c38006c7e7f2b",
+        "artifacts": []
+      },
+      "review": {
+        "pass": false,
+        "notes": "mechanical seat cannot judge the goal; matter (2479 bytes) preserved for independent review"
+      }
+    },
+    "scope_lift_digest": "8eec8e13d4fa4027e2176fa61f9d8473e777f55e75692032b87b9e5f91887c12"
+  },
+  "repair": {
+    "reason": "contract unmet",
+    "failed": [
+      "contract_unmet: review.pass=false"
+    ]
+  }
+}

@@ -16,14 +16,10 @@ func (s seqIDs) Mint() (Identity, error) {
 }
 
 func testMeta(mode ExecutionMode) RunMeta {
-	// Profile must be mode-coherent: stub ⇔ profile "stub" (round-5 D1).
-	profile := "bool"
-	if mode == ModeStub {
-		profile = "stub"
-	}
 	return RunMeta{ExecutionMode: mode, ResolvedSpec: ResolvedSpec{
-		Version: "cnos.cellspec.v0", DeclaredProtocol: "p", Profile: profile,
-		AlphaSkills: []string{}, BetaSkills: []string{},
+		Version: "cnos.cellspec.v0", DeclaredProtocol: "p",
+		Alpha: json.RawMessage(`{"fill":"t.alpha"}`),
+		Beta:  json.RawMessage(`{"fill":"t.beta"}`),
 	}}
 }
 
@@ -97,7 +93,7 @@ func TestEpisodeIdentityIsPerInvocation(t *testing.T) {
 func TestResolvedInputChangesDigest(t *testing.T) {
 	mk := func(skill string) Closure {
 		m := testMeta(ModeMechanical)
-		m.ResolvedSpec.AlphaSkills = []string{skill}
+		m.ResolvedSpec.Alpha = json.RawMessage(`{"fill":"t.alpha","skill":"` + skill + `"}`)
 		cl, _ := RunEpisode(context.Background(), BoolSpec(true), m,
 			WithIDSource(seqIDs{"ep-t", "alpha-t", "beta-t"}))
 		return cl
@@ -125,7 +121,7 @@ func TestTamperedClosureFails(t *testing.T) {
 		"rewrite record matter": func(c *Closure) { c.Receipt.Record.Matter.Data = "changed" },
 		"rewrite record review": func(c *Closure) { c.Receipt.Record.Review.Pass = false },
 		"forge alpha artifact":  func(c *Closure) { c.Receipt.Record.Alpha.Artifacts[0].Text = "x" },
-		"rewrite resolved spec": func(c *Closure) { c.Receipt.Record.ResolvedSpec.Profile = "x" },
+		"rewrite resolved spec": func(c *Closure) { c.Receipt.Record.ResolvedSpec.Alpha = json.RawMessage(`{"fill":"x"}`) },
 		"substitute digest":     func(c *Closure) { c.Receipt.ScopeLiftDigest = strings.Repeat("0", 64) },
 		"spurious repair":       func(c *Closure) { c.Repair = &RepairRequest{Reason: "spurious"} },
 		"move artifact to beta": func(c *Closure) {
@@ -337,5 +333,24 @@ func TestBoundedOutput(t *testing.T) {
 	s := Spec{Contract: Contract{ID: "c"}, Alpha: oversizeAlpha{}, Beta: AcceptBeta{}}
 	if _, err := RunEpisode(context.Background(), s, testMeta(ModeMechanical)); err == nil {
 		t.Fatal("want error for oversized matter")
+	}
+}
+
+// A cognitive episode is authoritative work: renting a seat does not make the
+// closure non-authoritative the way a stub does. Only `stub` lifts to
+// `simulated`.
+func TestCognitiveModeIsAuthoritative(t *testing.T) {
+	meta := testMeta(ModeMechanical)
+	meta.ExecutionMode = ModeCognitive
+	cl, err := RunEpisode(context.Background(), BoolSpec(true), meta,
+		WithIDSource(seqIDs{"ep-c", "alpha-c", "beta-c"}))
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if cl.Status != Accepted {
+		t.Fatalf("cognitive status: want accepted, got %q", cl.Status)
+	}
+	if err := VerifyClosure(BoolSpec(true).Contract, meta, cl); err != nil {
+		t.Fatalf("cognitive closure must verify: %v", err)
 	}
 }
