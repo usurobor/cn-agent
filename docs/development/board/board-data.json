@@ -3241,27 +3241,5 @@
     "created": "2026-08-07T03:38:02Z",
     "updated": "2026-08-07T03:38:02Z",
     "url": "https://github.com/usurobor/cnos/issues/715"
-  },
-  {
-    "n": 717,
-    "t": "wave: generic cell runner — walking skeleton to `cn cds build --issue N` (GitHub-free core; salvage #673)",
-    "kind": "feature",
-    "areas": [
-      "cds",
-      "cli",
-      "runtime"
-    ],
-    "pri": "P1",
-    "status": "",
-    "dispatch": false,
-    "protocol": "",
-    "effort": "",
-    "effort_weight": 1,
-    "unestimated": true,
-    "tracking": false,
-    "assignee": "",
-    "created": "2026-08-08T18:22:16Z",
-    "updated": "2026-08-08T18:22:16Z",
-    "url": "https://github.com/usurobor/cnos/issues/717"
   }
 ]
