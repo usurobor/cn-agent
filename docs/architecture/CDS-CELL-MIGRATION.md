@@ -391,53 +391,6 @@ References: <https://learn.chatgpt.com/docs/developer-commands?surface=cli> ·
 <https://learn.chatgpt.com/docs/agent-configuration/agents-md> ·
 <https://learn.chatgpt.com/docs/build-skills>
 
-## HELD — promote the shared schema definitions to CDD (captured, not implemented)
-
-**Status: held until a second consumer exists.** CDD is the generic layer, CDS
-a concrete one; a mechanism more than one fill can use belongs to CDD, and no
-future fill should depend on CDS to reach it.
-
-Scoped precisely (Pi #60 B1): what is reusable today is the **process and
-provider seam** — argv recipes, bounded execution, timeouts, output limits.
-`cellcog` is NOT general cognition. `Coder` takes a directory and returns no
-value, so it serves workspace EDITS only. A research or text fill could not
-rent it unchanged; it would need a returned-value port, and the second
-consumer is what should earn that port rather than speculation here.
-
-The **Go** layer already obeys this, and the dependency graph is what enforces
-it rather than a naming convention:
-
-```text
-cellcog    -> (no internal deps)     workspace-edit provider adapters
-cellskill  -> (no internal deps)     skill loading
-cellwork   -> (no internal deps)     worktree substrate
-cellfill   -> cellkernel             registry + cdd fills
-cdspatch   -> cellcog, cellskill, cellwork, cellfill, cellkernel
-```
-
-`cellcog` is a leaf; nothing depends on `cdspatch` but the composition root. A
-later fill sits where `cdspatch` sits and never imports CDS. Whether it can
-reuse `cellcog` depends on what it produces: an edit-producing fill can, an
-answer-producing one cannot until a returned-value port exists.
-
-The **CUE** layer does not yet obey it. Two generic definitions live in the
-concrete overlay `schemas/cds/spec.cue`:
-
-- `#Cognition` — mirrors `cellcog.New`, which is a generic mechanism.
-- `#Hole` — a generic cellspec param-resolution concept, not a CDS one.
-
-A second cognitive fill would have to duplicate them or import `schemas/cds`.
-Both belong in `schemas/cdd/`.
-
-What correctly stays in CDS is the **composition**, not the pieces:
-`#CDSPatchAlphaResolved` binds cognition + workspace + skills into the shape a
-diff-producing alpha takes. Likewise `cellwork` is generic substrate that only
-diff-producing fills rent — a researcher or text cell would never touch it.
-
-Deliberately deferred: promoting a definition with exactly one consumer is
-speculative, and the move is mechanical once a real second consumer exists to
-prove the boundary. Do it when the second cognitive fill lands, not before.
-
 ## Boundary the kernel never owns (Pi β #31, C3)
 
 The episode kernel owns no GitHub, ref, PR, branch, cursor, writer-locality, or
