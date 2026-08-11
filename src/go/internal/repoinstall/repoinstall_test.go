@@ -90,6 +90,69 @@ func noopStdio() (*bytes.Buffer, *bytes.Buffer) {
 	return &bytes.Buffer{}, &bytes.Buffer{}
 }
 
+// --- cnos#706 preflight test fixtures ---
+//
+// setPreflightSatisfiedEnv / setPreflightMissingEnv point the cnos#706
+// --dispatch cds preflight gate (runPreflight, repoinstall.go) at a
+// local httptest.Server via $CN_INSTALL_PREFLIGHT_API_BASE_URL and
+// override its target-repo resolution via $CN_INSTALL_PREFLIGHT_REPO —
+// BOTH deliberately bypass git-remote resolution entirely, rather than
+// git-initializing repoRoot with a real "origin" remote. This is a
+// load-bearing choice, not a shortcut: every dispatch-cds fixture in
+// this file uses a plain repoRoot with NO git remote configured so that
+// ensureCanonicalDispatchLabels' OWN (unrelated, downstream)
+// label-doctor call continues to fail locally with "could not resolve
+// target repo" exactly as it did before this cycle — label-doctor
+// hardcodes its own githubAPIBase and is not reachable from this
+// env-var seam. If these tests instead git-init'd repoRoot with a
+// resolvable origin remote to satisfy preflight, label-doctor's
+// resolution would ALSO start succeeding and attempt a REAL,
+// uncontrolled network call to api.github.com — turning every one of
+// these tests non-hermetic. Env vars sidestep that entirely: MY
+// preflight check is satisfied via Repo/APIBaseURL overrides, while
+// repoRoot itself stays exactly as before (a plain t.TempDir(), no
+// .git at all in most cases).
+func setPreflightSatisfiedEnv(t *testing.T, presentSecrets ...string) {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.HasSuffix(r.URL.Path, "/actions/secrets") {
+			var b strings.Builder
+			fmt.Fprintf(&b, `{"total_count":%d,"secrets":[`, len(presentSecrets))
+			for i, name := range presentSecrets {
+				if i > 0 {
+					b.WriteString(",")
+				}
+				fmt.Fprintf(&b, `{"name":%q,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`, name)
+			}
+			b.WriteString("]}")
+			fmt.Fprint(w, b.String())
+			return
+		}
+		fmt.Fprint(w, `{"permissions":{"push":true}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("CN_INSTALL_PREFLIGHT_API_BASE_URL", srv.URL)
+	t.Setenv("CN_INSTALL_PREFLIGHT_REPO", "acme/widgets")
+}
+
+// setPreflightMissingEnv reports zero secrets present and no push
+// access — the AC1/AC2 "operator prerequisites missing" fixture.
+func setPreflightMissingEnv(t *testing.T) {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.HasSuffix(r.URL.Path, "/actions/secrets") {
+			fmt.Fprint(w, `{"total_count":0,"secrets":[]}`)
+			return
+		}
+		fmt.Fprint(w, `{"permissions":{"push":false}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("CN_INSTALL_PREFLIGHT_API_BASE_URL", srv.URL)
+	t.Setenv("CN_INSTALL_PREFLIGHT_REPO", "acme/widgets")
+}
+
 // --- validateDispatch ---
 
 // cnos#610: "cds" is no longer unconditionally refused — validateDispatch
@@ -577,6 +640,7 @@ func TestRun_SHAMismatchPropagates(t *testing.T) {
 // subprocess is even spawned, and — matching Mock C2 "no partial
 // render" — no .github/workflows/ file or directory may exist.
 func TestRun_DispatchCds_RendererNotVendored_FailsWithNoPartialWrite(t *testing.T) {
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "CN_DISPATCH_PAT")
 	indexPath := writeLocalIndex(t, "cnos.core", "9.9.9", `{"name": "cnos.core", "version": "9.9.9"}`)
 	repoRoot := t.TempDir()
 	stdout, stderr := noopStdio()
@@ -601,9 +665,107 @@ func TestRun_DispatchCds_RendererNotVendored_FailsWithNoPartialWrite(t *testing.
 		t.Error("no .github/ directory may exist after a missing-renderer failure (no partial render)")
 	}
 	// Base install artifacts, by contrast, are unaffected — base install
-	// (C1) always precedes the dispatch render attempt.
+	// (C1) always precedes the dispatch render attempt, and cnos#706's
+	// preflight has ALREADY PASSED by the time this specific failure
+	// fires (setPreflightSatisfiedEnv above) — this assertion is
+	// deliberately left unchanged (not flipped) because it is still
+	// correct for THIS failure mode. Contrast with
+	// TestRun_DispatchCds_PreflightRunsBeforeAnythingElse_NoPartialArtifacts
+	// below, which asserts the OPPOSITE (.cn/ absent) for the distinct,
+	// earlier missing-prerequisites failure mode AC2 newly governs. Both
+	// are correct; they gate different failure points in the same
+	// pipeline (γ scaffold Friction note 1).
 	if _, statErr := os.Stat(filepath.Join(repoRoot, ".cn", "deps.json")); statErr != nil {
 		t.Errorf("expected base install artifact .cn/deps.json to still exist: %v", statErr)
+	}
+}
+
+// TestRun_DispatchCds_PreflightRunsBeforeAnythingElse_NoPartialArtifacts
+// is the AC1/AC2 oracle test: when operator prerequisites are missing,
+// Run must fail as the FIRST thing it does on the --dispatch cds path —
+// strictly before resolveIndex (proven here via a deliberately
+// unreadable IndexPath: if preflight ran after index resolution, this
+// test would instead see an index-read error), before applyInstall (no
+// .cn/ write), and before runDispatchCds (no render, no label-doctor
+// call). This is the stricter "no partial deploy artifacts" bar AC2
+// sets for the missing-prerequisites failure mode specifically — see
+// the comment above TestRun_DispatchCds_RendererNotVendored_
+// FailsWithNoPartialWrite for why that test's own (unflipped) assertion
+// is still correct for its own, later failure mode.
+func TestRun_DispatchCds_PreflightRunsBeforeAnythingElse_NoPartialArtifacts(t *testing.T) {
+	setPreflightMissingEnv(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, err := Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		IndexPath: filepath.Join(t.TempDir(), "does-not-exist-index.json"),
+		Dispatch:  "cds",
+		Stdout:    stdout,
+		Stderr:    stderr,
+	})
+
+	if err == nil {
+		t.Fatal("expected --dispatch cds to fail when operator prerequisites are missing")
+	}
+	for _, want := range []string{"CLAUDE_CODE_OAUTH_TOKEN", "CN_DISPATCH_PAT", "push access"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("preflight error should name missing prerequisite %q, got: %v", want, err)
+		}
+	}
+	// Proves ordering: if preflight ran AFTER resolveIndex, this would
+	// instead be an index-read error naming the nonexistent path.
+	if strings.Contains(err.Error(), "read package index") || strings.Contains(err.Error(), "does-not-exist-index") {
+		t.Errorf("preflight must fail BEFORE index resolution is ever attempted, got: %v", err)
+	}
+
+	// AC2: no partial deploy artifacts at all.
+	if _, statErr := os.Stat(filepath.Join(repoRoot, ".cn")); !os.IsNotExist(statErr) {
+		t.Error(".cn must not exist — preflight failure must precede applyInstall (AC1/AC2)")
+	}
+	if _, statErr := os.Stat(filepath.Join(repoRoot, ".github")); !os.IsNotExist(statErr) {
+		t.Error(".github must not exist — preflight failure must precede any render (AC1/AC2)")
+	}
+	if strings.Contains(stdout.String(), "rendered") || strings.Contains(stdout.String(), "label-doctor") {
+		t.Errorf("no render/label-doctor call may be attempted before preflight passes, stdout: %s", stdout.String())
+	}
+}
+
+// TestFormatPreflightFailure_ContainsOperatorWording is the AC7 oracle:
+// the preflight failure message must include, per missing prerequisite,
+// the operator's verbatim final wording from the issue thread — not a
+// paraphrase. Exercised through the same missing-prerequisites path as
+// above so the assertion covers the real, wired-up message (not just
+// formatPreflightFailure called in isolation).
+func TestFormatPreflightFailure_ContainsOperatorWording(t *testing.T) {
+	setPreflightMissingEnv(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, err := Run(context.Background(), Options{
+		RepoRoot: repoRoot,
+		Dispatch: "cds",
+		Stdout:   stdout,
+		Stderr:   stderr,
+	})
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	msg := err.Error()
+	for _, want := range []string{
+		"claude setup-token",
+		"fine-grained",
+		"Contents", "Issues", "Pull requests", "Workflows",
+		"Settings", "Developer settings", "Personal access tokens", "Fine-grained tokens",
+	} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("preflight message missing operator wording %q:\n%s", want, msg)
+		}
+	}
+	// The same message must also appear on stderr (existing convention:
+	// every Run() error is echoed to Stderr with a ✗ prefix).
+	if !strings.Contains(stderr.String(), "claude setup-token") {
+		t.Errorf("stderr should carry the same operator wording, got: %q", stderr.String())
 	}
 }
 
@@ -954,6 +1116,7 @@ func writeDispatchFixtureIndex(t *testing.T) string {
 // scenarios (cnos#493 replaced the label-install stub this test
 // originally pinned; see .cdd/unreleased/493/self-coherence.md).
 func TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap(t *testing.T) {
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "ACME_WORKFLOW_PAT")
 	indexPath := writeDispatchFixtureIndex(t)
 	repoRoot := t.TempDir()
 	stdout, stderr := noopStdio()
@@ -1046,6 +1209,7 @@ func TestRun_DispatchCds_RendersWorkflow_ThenSurfacesLabelGap(t *testing.T) {
 // has no git remote); what this test isolates is that the identity gate
 // itself does not fire for the sigma default.
 func TestRun_DispatchCds_SigmaDefault_NoIdentityFlagsRequired(t *testing.T) {
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "CN_DISPATCH_PAT")
 	indexPath := writeDispatchFixtureIndex(t)
 	repoRoot := t.TempDir()
 	stdout, stderr := noopStdio()
@@ -1076,12 +1240,121 @@ func TestRun_DispatchCds_SigmaDefault_NoIdentityFlagsRequired(t *testing.T) {
 	if strings.Contains(stderr.String(), "--workflow-pat-secret is required") {
 		t.Errorf("sigma default must not trip the identity gate, stderr: %q", stderr.String())
 	}
+
+	// AC9: a fresh sigma-default render carries NO cosmetic bot_name/
+	// bot_id keys at all — the per-agent lookup table
+	// (agent_bot_name()/agent_bot_id()) that used to default sigma to
+	// "sigma@cnos.cn-sigma.cnos" / "41898282" is deleted; bot_name/
+	// bot_id are strictly opt-in via --bot-name/--bot-id now, and
+	// neither flag was passed here.
+	content := string(data)
+	for _, leak := range []string{"bot_name:", "bot_id:", "sigma@cnos.cn-sigma.cnos", "41898282"} {
+		if strings.Contains(content, leak) {
+			t.Errorf("sigma-default render must carry no cosmetic bot identity by default (AC9), found %q:\n%s", leak, content)
+		}
+	}
+}
+
+// TestRun_DispatchCds_BotFlags_StillOptIn is AC9's positive counterpart:
+// --bot-name/--bot-id remain available as a STRICTLY OPT-IN cosmetic
+// commit-author override — passing them explicitly (even for the sigma
+// default) still lands in the render. Only the DEFAULT (no flags) case
+// is bot-less; this proves the opt-in path was not accidentally deleted
+// along with the per-agent lookup table.
+func TestRun_DispatchCds_BotFlags_StillOptIn(t *testing.T) {
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "CN_DISPATCH_PAT")
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+	stdout, stderr := noopStdio()
+
+	_, _ = Run(context.Background(), Options{
+		RepoRoot:  repoRoot,
+		IndexPath: indexPath,
+		Packages:  []string{"cnos.core", "cnos.cds"},
+		Dispatch:  "cds",
+		BotName:   "custom-label",
+		BotID:     "999",
+		Stdout:    stdout,
+		Stderr:    stderr,
+	})
+
+	workflowPath := filepath.Join(repoRoot, ".github", "workflows", "cnos-cds-dispatch.yml")
+	data, statErr := os.ReadFile(workflowPath)
+	if statErr != nil {
+		t.Fatalf("expected rendered workflow at %s: %v", workflowPath, statErr)
+	}
+	content := string(data)
+	if !strings.Contains(content, `bot_name: "custom-label"`) {
+		t.Errorf("explicit --bot-name should still land in the render:\n%s", content)
+	}
+	if !strings.Contains(content, `bot_id: "999"`) {
+		t.Errorf("explicit --bot-id should still land in the render:\n%s", content)
+	}
+}
+
+// TestRun_DispatchCds_PreflightSatisfied_SecondRunByteIdentical is
+// AC4's idempotent-re-run oracle for the --dispatch cds path,
+// mirroring TestRun_Idempotent_ByteIdenticalArtifacts's shape (base
+// install) for the dispatch case: with prerequisites present, calling
+// Run twice against the same repoRoot produces byte-identical
+// .cn/deps.json and rendered workflow output both times — "re-run
+// resumes cleanly" (AC4) holds even though the overall Run() call
+// still returns label-doctor's own (unrelated, pre-existing,
+// downstream) target-resolution error in this fixture (see
+// setPreflightSatisfiedEnv's doc comment for why that error is
+// deliberately still present here — it is not a preflight failure).
+func TestRun_DispatchCds_PreflightSatisfied_SecondRunByteIdentical(t *testing.T) {
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "CN_DISPATCH_PAT")
+	indexPath := writeDispatchFixtureIndex(t)
+	repoRoot := t.TempDir()
+
+	run := func() ([]byte, []byte) {
+		stdout, stderr := noopStdio()
+		_, err := Run(context.Background(), Options{
+			RepoRoot:  repoRoot,
+			IndexPath: indexPath,
+			Packages:  []string{"cnos.core", "cnos.cds"},
+			Dispatch:  "cds",
+			Stdout:    stdout,
+			Stderr:    stderr,
+		})
+		// Preflight passes both times; the label-doctor target-
+		// resolution error is expected and unrelated to AC4.
+		if err == nil || !strings.Contains(err.Error(), "canonical dispatch labels not ensured") {
+			t.Fatalf("expected only the canonical-dispatch-labels error, got: %v\nstderr: %s", err, stderr.String())
+		}
+		deps, rerr := os.ReadFile(filepath.Join(repoRoot, ".cn", "deps.json"))
+		if rerr != nil {
+			t.Fatal(rerr)
+		}
+		workflow, rerr := os.ReadFile(filepath.Join(repoRoot, ".github", "workflows", "cnos-cds-dispatch.yml"))
+		if rerr != nil {
+			t.Fatal(rerr)
+		}
+		return deps, workflow
+	}
+
+	deps1, workflow1 := run()
+	deps2, workflow2 := run()
+
+	if !bytes.Equal(deps1, deps2) {
+		t.Errorf("deps.json not byte-identical across re-runs of --dispatch cds")
+	}
+	if !bytes.Equal(workflow1, workflow2) {
+		t.Errorf("rendered workflow not byte-identical across re-runs of --dispatch cds")
+	}
 }
 
 // AC2/C2 (Mock C2 "no partial render"): a non-sigma --agent with no
 // --workflow-pat-secret must fail early, before the renderer ever runs
 // — nonzero exit, no .github/workflows/ directory created at all.
 func TestRun_DispatchCds_MissingIdentity_FailsEarlyNoPartialWrite(t *testing.T) {
+	// Only CLAUDE_CODE_OAUTH_TOKEN is checked by preflight here — a
+	// non-sigma agent with no --workflow-pat-secret has no PAT-secret
+	// NAME to check yet (requiredSecretNames, repoinstall.go); that is
+	// this test's own, distinct, pre-existing gate (unchanged by
+	// cnos#706), fired further downstream in runDispatchCds.
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN")
 	indexPath := writeDispatchFixtureIndex(t)
 	repoRoot := t.TempDir()
 	stdout, stderr := noopStdio()
@@ -1409,6 +1682,9 @@ func TestRun_Engine_WithoutDispatchCds_Rejected(t *testing.T) {
 // plain t.TempDir() with no git remote) — the render itself (asserted here)
 // completed first.
 func TestRun_DispatchCds_EngineTier_RendersPatFreeMechanicalWake(t *testing.T) {
+	// Engine tier needs no repo secret at all (requiredSecretNames
+	// returns nil for Engine: true) — only push access is checked.
+	setPreflightSatisfiedEnv(t)
 	indexPath := writeDispatchFixtureIndex(t)
 	repoRoot := t.TempDir()
 	stdout, stderr := noopStdio()
@@ -1509,6 +1785,7 @@ func TestRun_DispatchCds_EngineTier_RendersPatFreeMechanicalWake(t *testing.T) {
 // the two tiers render independently, and adding the engine tier did not
 // perturb the agent path.
 func TestRun_DispatchCds_AgentTier_StillRendersClaudeCodeAction(t *testing.T) {
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "CN_DISPATCH_PAT")
 	indexPath := writeDispatchFixtureIndex(t)
 	repoRoot := t.TempDir()
 	stdout, stderr := noopStdio()
@@ -1553,6 +1830,7 @@ func TestRun_DispatchCds_AgentTier_StillRendersClaudeCodeAction(t *testing.T) {
 // the labels obligation runs off git+API, so it is never silently skipped
 // for want of a hub.
 func TestRun_DispatchCds_Engine_HubLessLabelReconcile(t *testing.T) {
+	setPreflightSatisfiedEnv(t)
 	indexPath := writeDispatchFixtureIndex(t)
 	repoRoot := t.TempDir()
 	stdout, stderr := noopStdio()

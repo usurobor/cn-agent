@@ -8,6 +8,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -185,6 +188,43 @@ func runGit(t *testing.T, dir string, args ...string) string {
 	return string(out)
 }
 
+// setPreflightSatisfiedEnv points the cnos#706 --dispatch cds preflight
+// gate (repoinstall.runPreflight) at a local httptest.Server via
+// $CN_INSTALL_PREFLIGHT_API_BASE_URL / $CN_INSTALL_PREFLIGHT_REPO, so
+// CLI-level tests (which drive RepoInstallCmd.Run — either in-process
+// via runRepoInstall, or as the real `cn` subprocess via
+// buildCnBinary — with no Options-level seam) can satisfy preflight
+// without also git-initializing repoDir with a resolvable "origin"
+// remote, which would make label-doctor's OWN (unrelated, downstream)
+// resolution start succeeding and attempt a real network call. Mirrors
+// repoinstall_test.go's identically-named helper exactly (test-fixture
+// duplication across packages, not production parser duplication — see
+// that file's doc comment for the full rationale).
+func setPreflightSatisfiedEnv(t *testing.T, presentSecrets ...string) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.HasSuffix(r.URL.Path, "/actions/secrets") {
+			var b strings.Builder
+			fmt.Fprintf(&b, `{"total_count":%d,"secrets":[`, len(presentSecrets))
+			for i, name := range presentSecrets {
+				if i > 0 {
+					b.WriteString(",")
+				}
+				fmt.Fprintf(&b, `{"name":%q,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`, name)
+			}
+			b.WriteString("]}")
+			fmt.Fprint(w, b.String())
+			return
+		}
+		fmt.Fprint(w, `{"permissions":{"push":true}}`)
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("CN_INSTALL_PREFLIGHT_API_BASE_URL", srv.URL)
+	t.Setenv("CN_INSTALL_PREFLIGHT_REPO", "acme/widgets")
+	return srv
+}
+
 func runRepoInstall(t *testing.T, args []string) (string, string, error) {
 	t.Helper()
 	var stdout, stderr bytes.Buffer
@@ -223,7 +263,7 @@ func TestRepoInstall_HelpFlag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	for _, want := range []string{"cn repo install", "--release", "--index", "--packages", "--dispatch", "--dry-run"} {
+	for _, want := range []string{"cn repo install", "--release", "--index", "--packages", "--dispatch", "--dry-run", "INSTALL-CDS.md"} {
 		if !strings.Contains(stdout, want) {
 			t.Errorf("--help output missing %q:\n%s", want, stdout)
 		}
@@ -359,6 +399,7 @@ func TestRepoInstall_DryRun_GitStatusStaysClean(t *testing.T) {
 // itself was never vendored. No partial .github/workflows/ may exist
 // either way.
 func TestRepoInstall_DispatchCds_RendererNotVendored_CliWiring(t *testing.T) {
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "CN_DISPATCH_PAT")
 	indexPath := writeFixtureIndex(t, "cnos.core", "9.9.9")
 
 	repoDir := t.TempDir()
@@ -381,6 +422,12 @@ func TestRepoInstall_DispatchCds_RendererNotVendored_CliWiring(t *testing.T) {
 // the full CLI wiring, before any renderer invocation — no partial
 // .github/workflows/ directory.
 func TestRepoInstall_DispatchCds_MissingIdentity_CliWiring(t *testing.T) {
+	// Only CLAUDE_CODE_OAUTH_TOKEN is checked by preflight here — see
+	// repoinstall_test.go's TestRun_DispatchCds_MissingIdentity_
+	// FailsEarlyNoPartialWrite for why (requiredSecretNames has no
+	// PAT-secret name to check yet for a non-sigma agent with no
+	// --workflow-pat-secret).
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN")
 	indexPath := writeFixtureIndex(t, "cnos.core", "9.9.9")
 
 	repoDir := t.TempDir()
@@ -408,6 +455,10 @@ func TestRepoInstall_DispatchCds_MissingIdentity_CliWiring(t *testing.T) {
 // binary and drives it as a subprocess against a fixture vendoring the
 // REAL cn-install-wake renderer + the REAL cds-dispatch/SKILL.md.
 func TestRepoInstall_DispatchCds_IdentityFlagsWireThrough(t *testing.T) {
+	// t.Setenv affects this test process's environment for the
+	// subprocess too: exec.Command with a nil Env inherits os.Environ()
+	// at Start() time, which includes anything t.Setenv touched.
+	setPreflightSatisfiedEnv(t, "CLAUDE_CODE_OAUTH_TOKEN", "ACME_WORKFLOW_PAT")
 	binPath := buildCnBinary(t)
 	indexPath := writeCliDispatchFixtureIndex(t)
 

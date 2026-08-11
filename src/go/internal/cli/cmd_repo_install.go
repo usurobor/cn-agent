@@ -24,8 +24,17 @@ DESCRIPTION:
 
   Base install never writes .github/workflows/ and never requires a
   workflow/agent PAT. Autonomous dispatch install (--dispatch cds) is a
-  separate, explicit opt-in (cnos#610): after the base install, it
-  renders .github/workflows/cnos-cds-dispatch.yml via the cnos.core wake
+  separate, explicit opt-in (cnos#610): before anything else, it
+  preflights the operator-only prerequisites (cnos#706) — the
+  CLAUDE_CODE_OAUTH_TOKEN and CN_DISPATCH_PAT repo secrets exist BY
+  NAME (never their values), and the installing token has push access.
+  Missing prerequisites exit nonzero with exactly what's missing, why,
+  and how to get it — before any label/render/commit, so no partial
+  .github/workflows/ or .cn/ write occurs. Re-running once satisfied
+  resumes cleanly. See docs/guides/INSTALL-CDS.md for the full
+  quickstart (also printed by the preflight failure message).
+  Once prerequisites pass, it renders
+  .github/workflows/cnos-cds-dispatch.yml via the cnos.core wake
   renderer (cnos#609), requires an explicit caller identity, is PR-only
   (this command never pushes to main), and requires the installing
   token to hold workflow scope. It also ensures the canonical cnos.core
@@ -37,6 +46,11 @@ DESCRIPTION:
   is unavailable, --dispatch cds still renders the workflow but exits
   nonzero naming the label-doctor failure, and labels must be applied
   manually (e.g. via "cn label doctor").
+
+  cnos#706: the rendered workflow injects no cosmetic bot_name/bot_id
+  by default — commits are authored by the configured token's own
+  account. A dedicated bot account is future/opt-in work (cnos#449,
+  cnos#702), never a first-run requirement.
 
 FLAGS:
   --release V     "latest" (default) or a pinned release tag (e.g. 3.82.0)
@@ -57,7 +71,7 @@ FLAGS:
   --workflow-pat-secret NAME
                   GitHub Actions secret name holding the dispatch agent's
                   workflow-scoped PAT. Required for --dispatch cds with a
-                  non-sigma --agent (sigma defaults to SIGMA_WORKFLOW_PAT).
+                  non-sigma --agent (sigma defaults to CN_DISPATCH_PAT).
   --bot-name NAME Overrides the rendered claude-code-action bot_name input
                   (--dispatch cds only).
   --bot-id ID     Overrides the rendered claude-code-action bot_id input
@@ -75,7 +89,10 @@ EXAMPLES:
 EXIT CODES:
   0  Success (installed, or --dry-run reported the plan)
   1  Error (not a git repo, package/index resolution failure, restore
-     failure, or a --dispatch cds precondition: missing identity, or the
+     failure, a --dispatch cds preflight failure (missing
+     CLAUDE_CODE_OAUTH_TOKEN / CN_DISPATCH_PAT / push access — see
+     docs/guides/INSTALL-CDS.md), a --dispatch cds identity precondition
+     (missing --workflow-pat-secret for a non-sigma --agent), or the
      cnos#493 label-doctor mechanism failing to resolve the installing
      repo's target/token or to reach the GitHub API)
 
@@ -86,6 +103,14 @@ INVARIANTS:
   - Idempotent: a second run produces no further git diff.
   - No agent-hub scaffold is written (no spec/SOUL.md, agent/, threads/,
     state/) — contrast with 'cn init'.
+  - --dispatch cds: operator prerequisites are checked BEFORE any
+    label/render/commit (cnos#706). A missing prerequisite leaves no
+    partial .cn/ or .github/workflows/ artifact.
+
+SEE ALSO:
+  docs/guides/INSTALL-CDS.md — the one-page CDS install quickstart:
+  what a PAT/repo secret/default branch/"bot" is, the two operator
+  secrets, and why the merge-to-default-branch gate exists.
 `
 
 // RepoInstallCmd implements "cn repo install" (cnos#608) — the base
