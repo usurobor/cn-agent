@@ -112,12 +112,24 @@ func Materialize(ctx context.Context, repo, base string) (Worktree, func(), erro
 // including files it created. An empty result means the seat changed nothing —
 // the caller must not manufacture evidence from it.
 func (w Worktree) Diff(ctx context.Context) (string, error) {
+	// Without a pinned base there is nothing to measure against, and a diff
+	// against an unnamed revision would either fail obscurely or silently
+	// measure the wrong thing. Fail closed instead.
+	if w.BaseSHA == "" {
+		return "", fmt.Errorf("cellwork: worktree has no pinned base to measure against")
+	}
 	// Staging everything is what makes new files visible to `diff`; the index
 	// belongs to this disposable worktree alone.
 	if _, err := git(ctx, w.Dir, maxRefBytes, "add", "-A"); err != nil {
 		return "", fmt.Errorf("cellwork: stage worktree: %w", err)
 	}
-	out, err := git(ctx, w.Dir, maxDiffBytes, "diff", "--cached", "--no-color")
+	// Against the PINNED BASE, not against HEAD. A seat has a shell and
+	// therefore git, so it may commit its own work; once it does, the index
+	// equals the worktree's HEAD and `diff --cached` alone reports nothing —
+	// the runtime would record "no change was made" on real work. Naming the
+	// base explicitly makes the measurement independent of where the seat
+	// left HEAD, which is the whole point of pinning it at materialization.
+	out, err := git(ctx, w.Dir, maxDiffBytes, "diff", "--cached", "--no-color", w.BaseSHA)
 	if err != nil {
 		return "", fmt.Errorf("cellwork: compute diff: %w", err)
 	}
