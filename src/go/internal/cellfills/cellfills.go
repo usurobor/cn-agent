@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 
 	"github.com/usurobor/cnos/src/go/internal/cdspatch"
+	"github.com/usurobor/cnos/src/go/internal/cdsreview"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
 )
@@ -37,5 +38,6 @@ func Assemble(hubPath string) cellfill.Registry {
 func With(skills cellskill.Resolver) cellfill.Registry {
 	reg := cellfill.CddFills()
 	reg.Alpha[cdspatch.Fill] = cdspatch.Factory(skills)
+	reg.Beta[cdsreview.Fill] = cdsreview.Factory(skills)
 	return reg
 }

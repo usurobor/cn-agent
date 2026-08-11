@@ -3,10 +3,11 @@
 //
 // Scope of the word "reusable" (Pi #59 B1): the PROCESS AND PROVIDER SEAM
 // here is reusable — argv recipes, bounded execution, timeouts, output
-// limits. The PORT is not general cognition. `Coder` supports workspace
-// edits only, so a planning or research fill cannot rent it as it stands; it
-// would need a returned-value port that does not exist yet. Do not describe
-// this package as a general cognition subsystem.
+// limits. The PORTS are narrow and capability-specific, not general
+// cognition: `Coder` edits a workspace and returns nothing, `Answerer`
+// returns a structured value and touches no workspace. Each exists because a
+// real consumer needed exactly it. Do not describe this package as a general
+// cognition subsystem, and do not add a port before its consumer exists.
 //
 // The package owns exactly what Pi's construction boundary assigns it
 // (msg-cn-pi-cnos-cds-fill-construction-51): explicit model selection,
@@ -38,6 +39,7 @@ package cellcog
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -56,6 +58,22 @@ import (
 type Coder interface {
 	Name() string
 	Work(ctx context.Context, dir, prompt string) error
+}
+
+// Answerer produces a VALUE rather than an edit: a prompt goes in, a
+// structured answer comes back. It is the second cognition port, added
+// because a REVIEWING seat's whole product is a judgement — there is nothing
+// in a worktree to measure afterwards, so `Coder` cannot serve it.
+//
+// The caller supplies the JSON Schema its answer must satisfy and receives
+// the provider's structured result; what the shape MEANS stays with the fill,
+// exactly as prompt meaning does. This package still owns no fill semantics.
+//
+// Deliberately not a widening of `Coder`: a producing seat must not gain a
+// return channel it could use to report on itself instead of being measured.
+type Answerer interface {
+	Name() string
+	Answer(ctx context.Context, prompt string, schema json.RawMessage) (json.RawMessage, error)
 }
 
 // ErrNoProvider is returned when a seat is constructed without cognition.
@@ -77,6 +95,25 @@ const (
 	ModeCognitive  Mode = "cognitive"
 	ModeMechanical Mode = "mechanical"
 )
+
+// NewAnswerer is New for the answering port. Same closed provider set and the
+// same model rule; only the capability differs.
+func NewAnswerer(cfg Config) (Answerer, Mode, error) {
+	switch cfg.Provider {
+	case "claude-cli":
+		if cfg.Model == "" {
+			return nil, "", fmt.Errorf("cellcog: provider %q requires a model selector", cfg.Provider)
+		}
+		return ClaudeCLI{Model: cfg.Model}, ModeCognitive, nil
+	case "fake":
+		if cfg.Model != "" {
+			return nil, "", fmt.Errorf("cellcog: provider %q takes no model, got %q", cfg.Provider, cfg.Model)
+		}
+		return FakeAnswerer{}, ModeMechanical, nil
+	default:
+		return nil, "", fmt.Errorf("cellcog: unknown provider %q (want claude-cli or fake)", cfg.Provider)
+	}
+}
 
 // New constructs the adapter for a cognition declaration. The provider set is
 // closed — a typo fails construction, before any invocation.

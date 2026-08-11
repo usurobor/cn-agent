@@ -2,6 +2,7 @@ package cellcog
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -72,5 +73,64 @@ func (c ClaudeCLI) Work(ctx context.Context, dir, prompt string) error {
 	if bin == "" {
 		bin = "claude"
 	}
-	return runCLI(ctx, bin, dir, prompt, ClaudeArgv(c.Model), c.Timeout)
+	// stdout is discarded on purpose: a producing seat is judged by the
+	// worktree diff, never by its own account of what it did.
+	_, err := runCLI(ctx, bin, dir, prompt, ClaudeArgv(c.Model), c.Timeout)
+	return err
+}
+
+// ClaudeAnswerArgv is the ANSWERING recipe. It differs from the producing one
+// in exactly the ways the capability differs, and is strictly less
+// authoritative:
+//
+//   - `--tools ""` — a reviewer's canonical input is (contract, matter). File
+//     tools would let it read the workspace it is meant to judge from the
+//     outside, which is the independence the seat exists to provide.
+//   - no `--permission-mode` — with no tools there is nothing to approve, so
+//     declaring edit authority would be requesting power the seat cannot use.
+//   - `--output-format json` + `--json-schema` — the provider constrains the
+//     answer to the caller's shape, so the verdict is decoded rather than
+//     parsed hopefully out of prose.
+func ClaudeAnswerArgv(model string, schema json.RawMessage) []string {
+	return []string{
+		"-p",
+		"--model", model,
+		"--safe-mode",
+		"--no-session-persistence",
+		"--tools", NoTools,
+		"--output-format", "json",
+		"--json-schema", string(schema),
+	}
+}
+
+// Answer runs one bounded invocation and returns the provider's structured
+// result. The envelope carries execution metadata; `structured_output` is the
+// schema-constrained value, and its absence is a failure rather than an empty
+// answer — a reviewer that returned nothing has not reviewed.
+func (c ClaudeCLI) Answer(ctx context.Context, prompt string, schema json.RawMessage) (json.RawMessage, error) {
+	if len(schema) == 0 {
+		return nil, fmt.Errorf("claude-cli: Answer needs an answer schema")
+	}
+	bin := c.Bin
+	if bin == "" {
+		bin = "claude"
+	}
+	out, err := runCLI(ctx, bin, "", prompt, ClaudeAnswerArgv(c.Model, schema), c.Timeout)
+	if err != nil {
+		return nil, err
+	}
+	var env struct {
+		IsError    bool            `json:"is_error"`
+		Structured json.RawMessage `json:"structured_output"`
+	}
+	if err := json.Unmarshal([]byte(out), &env); err != nil {
+		return nil, fmt.Errorf("claude-cli: result envelope is not JSON: %w", err)
+	}
+	if env.IsError {
+		return nil, fmt.Errorf("claude-cli: provider reported an error result")
+	}
+	if len(env.Structured) == 0 {
+		return nil, fmt.Errorf("claude-cli: provider returned no structured_output for the requested schema")
+	}
+	return env.Structured, nil
 }
