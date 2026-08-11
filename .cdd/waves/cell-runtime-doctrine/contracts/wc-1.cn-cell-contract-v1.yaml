@@ -1,0 +1,124 @@
+# WC-1 — Cell classes & the typed cell contract
+# Re-lands #662's converged CELL-RUNTIME-CLASSES.md core, re-scoped and correctly classified
+# as WC-doctrine. Imports the cm_ref interface from WC-2 (does NOT own CM internals).
+# Depends on WC-2 (keystone) — resolves the hidden-cm_ref-edge finding (WC-2 → WC-1).
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-1"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
+  carrier:
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+inputs:
+  required:
+    # --- external roots ---
+    - ref_kind: "external"          # #628/S1 class doctrine — RATIFIED per #628 (PRs #629/#646 merged 2026-07-11, issue closed, beta-review R1 converged); the pinned "Proposed/Not ratified" banner is STALE-HISTORICAL, superseded (bound in wave.external_roots) — does NOT trigger source_doctrine_conflicts
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "docs/architecture/CELL-RUNTIME.md"
+    - ref_kind: "external"          # #628 β/γ CONVERGENCE EVIDENCE (γ pre-boundary closeout, sha256 8aeffcff…) — SUPPORTING EVIDENCE, NOT the decision: establishes β R1 converged + γ bound the receipt, but its own scope says "PR-time close-out … not release-time closure" and records issue #628 still OPEN at capture. It corroborates ratification; the boundary DECISION below is the authority.
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: ".cdd/unreleased/628/gamma-closeout.md"
+    - ref_kind: "external"          # #628 S1-RATIFICATION DECISION 1/2 — PR #629 ratifying MERGE: the S1 doctrine landed at merge commit 562e8025… ("Merge #629: S1 — Cell Runtime doctrine"). Atomic, canonical, resolvable (git commit+path); the WC-2 ref-resolver verifies the commit resolves and is an ancestor of the authorized base. This merge is the boundary DECISION, not the γ evidence above; removing it makes "S1 ratified" underivable.
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "562e8025172864588f3083ea9b42ada96f9dc5de"
+        path: "docs/architecture/CELL-RUNTIME.md"
+    - ref_kind: "external"          # #628 S1-RATIFICATION DECISION 2/2 — PR #646 MERGE: the independent β ratification receipt landed at merge commit a08c56ad… ("Merge #646: #628 β ratification receipt"). Atomic repo_artifact (git commit+path); ancestor of the pinned 6e40d934. Corroborated by issue #628's close event (cnos#628 close event 27848824089).
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "a08c56ad72cff80c8c851b3d10a394eb1ecacfb5"
+        path: ".cdd/unreleased/628/beta-review.md"
+    - ref_kind: "external"          # shipped contract schema (envelope V validates against)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "schemas/cdd/contract.cue"
+    - ref_kind: "external"          # #662 converged contract shape to re-land (cycle/662 immutable commit)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "30a9455afaf7f9f63ca0c60b5c91477b321ca49f"
+        path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
+    - ref_kind: "external"          # grounding CM (content-bound) — L0-B1 telos FAIL this node closes
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
+    # --- sibling_output (creates edge WC-2 → WC-1) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"    # imports the cm_ref interface; V predicates gate on it
+    - ref_kind: "external"          # AUTHORITATIVE oracle registry (content-bound); this WC's oracle slice
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#oracle-registry"
+        revision: "sha256:fe4eb56110fa2484c271fa9bf7c2d685b260ef8bc50ad7f618975b91e1b66ee2@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+  optional: []
+requested_output:
+  id: "cell-classes-and-contract"
+  kind: "artifact"
+  path: "docs/architecture/CELL-RUNTIME-CLASSES.md"
+acceptance:
+  predicates:
+    - "wc_pc_cc_classes_defined_by_canonical_output_telos__wc_artifact_pc_relation_graph_cc_judgment__closes_L0_B1"
+    - "cn_cell_contract_v1_envelope_specified__cell_id_class_mode_protocol_matter_domain__inputs_required_provenance_tagged_union__requested_output_id_kind_path__acceptance__constraints__gates__doctrine_affecting__stop_conditions"
+    - "input_reference_model_is_the_provenance_tagged_union__external_locator_classed_or_sibling_output_producer_output_id"
+    - "class_specific_v_predicates_reference_an_imported_cm_ref__wc1_does_not_inline_cm_internals"
+    - "cm_ref_field_shape_is_imported_verbatim_from_wc2_output_realized_within_the_four_schemas__no_re_derivation_no_fifth_schema"
+    - "kappa_neq_alpha_role_logic_unconditional__state_a_is_hosting_identity_collapse_not_role_equality__carries_repaired_CC_1_as_settled_input"
+    - "review_evidence_content_bound_not_identity_bound__carries_repaired_CC_2_as_settled_input"
+    - "gate_invariants_hold__doctrine_affecting_true_implies_operator_acceptance_required_true__reason_present_iff_a_gate_bool_true"
+    - "key_path_parity__template_and_worked_instance_normalize_to_identical_key_path_sets"
+    - "scope_guard__no_cm_internals_no_cell_or_wave_fsm_no_migration_authored_here"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__contract_template_yaml__worked_instance_yaml__input_union_fixtures__each_validated_by_the_named_acceptance_oracle_command"
+    # R10: the oracle-ownership BIJECTION is a WHOLE-WAVE cross-contract property -> owned at the WAVE BOUNDARY
+    # (wave_predicates.wave_oracle_ownership_bijection_enforced, deferred_owner: "wave"), NOT by WC-1. WC-1's
+    # former deferred_validator_owned__go_oracle_ownership gating predicate is REMOVED. WC-1 keeps only the
+    # SELF-owned per-child oracle predicate below (its own mechanically-verifiable rows, bound in its receipt).
+    - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
+constraints:
+  allowed_paths:
+    - "docs/architecture/CELL-RUNTIME-CLASSES.md"
+    - ".cdd/unreleased/wc-1/**"
+    - ".cdd/unreleased/wc-1/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
+    - ".cdd/unreleased/wc-1/validators/**"   # R10: WC-1's SELF-owned per-child oracle checker + fixtures (the whole-wave oracle-ownership bijection moved to the wave boundary)
+  forbidden_paths:
+    - "schemas/**"
+    - "src/**"
+    - ".github/workflows/**"
+    - "docs/architecture/COHERENCE-MEASUREMENT.md"   # WC-2's surface
+    - "src/packages/cnos.cdd/skills/cdd/CELL-KINDS.md"  # CELL-KINDS:137 repoint is a downstream migration, not this node
+  non_goals:
+    - "own_cm_internals__that_is_wc2"
+    - "author_the_cell_or_wave_fsm__that_is_wc3a_wc3b"
+    - "author_the_shipped_to_specified_migration__that_is_wc4"
+    - "edit_shipped_schemas_or_cell_kinds_md"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting cell-class + contract doctrine; operator final-read required at merge"
+doctrine_affecting: true
+stop_conditions:
+  - "source_doctrine_conflicts"
+  - "cm_ref_shape_unresolved"                 # blocks if WC-2 output absent (readiness fails)
+  - "required_decision_unresolved"

@@ -1,0 +1,121 @@
+# WC-3b — Wave FSM (multi-child wave orchestration lifecycle)
+# Split from the draft's single WC-3. Different state space / events / aggregation / terminals
+# from the cell FSM; a separate authority. Closes L3-G1 (wave "FSM" is a sketch, not executable).
+# Depends on WC-1 (typed contract) + WC-2 (CM, for V-gating dispatchability).
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-3b"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
+  carrier:
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+inputs:
+  required:
+    - ref_kind: "external"          # #628/S1 — the runtime coherence-loop the wave FSM mechanizes; RATIFIED per #628 (PRs #629/#646 merged 2026-07-11, issue closed, beta-review R1); pinned "Proposed/Not ratified" banner is STALE-HISTORICAL, superseded (bound in wave.external_roots) — does NOT trigger source_doctrine_conflicts
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "docs/architecture/CELL-RUNTIME.md"
+    - ref_kind: "external"          # #628 β/γ CONVERGENCE EVIDENCE (γ pre-boundary closeout, sha256 8aeffcff…) — SUPPORTING EVIDENCE, NOT the decision: establishes β R1 converged + γ bound the receipt, but its own scope says "PR-time close-out … not release-time closure" and records issue #628 still OPEN at capture. It corroborates ratification; the boundary DECISION below is the authority.
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: ".cdd/unreleased/628/gamma-closeout.md"
+    - ref_kind: "external"          # #628 S1-RATIFICATION DECISION 1/2 — PR #629 ratifying MERGE: the S1 doctrine landed at merge commit 562e8025… ("Merge #629: S1 — Cell Runtime doctrine"). Atomic, canonical, resolvable (git commit+path); the WC-2 ref-resolver verifies the commit resolves and is an ancestor of the authorized base. This merge is the boundary DECISION, not the γ evidence above; removing it makes "S1 ratified" underivable.
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "562e8025172864588f3083ea9b42ada96f9dc5de"
+        path: "docs/architecture/CELL-RUNTIME.md"
+    - ref_kind: "external"          # #628 S1-RATIFICATION DECISION 2/2 — PR #646 MERGE: the independent β ratification receipt landed at merge commit a08c56ad… ("Merge #646: #628 β ratification receipt"). Atomic repo_artifact (git commit+path); ancestor of the pinned 6e40d934. Corroborated by issue #628's close event (cnos#628 close event 27848824089).
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "a08c56ad72cff80c8c851b3d10a394eb1ecacfb5"
+        path: ".cdd/unreleased/628/beta-review.md"
+    - ref_kind: "external"          # CCNF scope-lift (wave = scope n+1 coordination)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md"
+    - ref_kind: "external"          # grounding CM (content-bound) — L3-G1 finding this node closes
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
+    # --- sibling_output (edges WC-1 → WC-3b, WC-2 → WC-3b) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-1"
+      output_id: "cell-classes-and-contract"       # child-contract shape the wave graph carries per node
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"  # CM the CC consumes; dispatchability V gates on it
+    - ref_kind: "external"          # AUTHORITATIVE oracle registry (content-bound); this WC's oracle slice
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#oracle-registry"
+        revision: "sha256:fe4eb56110fa2484c271fa9bf7c2d685b260ef8bc50ad7f618975b91e1b66ee2@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+  optional: []
+requested_output:
+  id: "wave-fsm"
+  kind: "artifact"
+  path: "docs/architecture/WAVE-FSM.md"
+acceptance:
+  predicates:
+    - "wave_fsm_state_set_closed__intent_planning_required_d0_review_wave_planning_wave_review_dispatchable_executing_holding_replanning_completing_complete_complete_with_residuals"
+    - "total_event_guard_action_relation__distinct_from_the_cell_fsm_state_space_and_events"
+    - "invalid_transition_semantics_defined"
+    - "child_receipt_aggregation_rule__child_completion_predicates_aggregate_into_wave_state_without_cc_mutating_state"
+    - "total_mapping_all_eight_cc_dispositions_to_wave_transition_requests__request_planning_request_working_hold_request_human_continue_wave_complete_complete_with_residuals_block"
+    - "dependency_and_gate_dispatch_rules__wave_boundary_authorization_once_then_children_scheduled_by_dependencies_no_per_child_operator_gate"
+    - "holding_and_replanning_exits_and_terminal_semantics_defined"
+    - "wave_transition_request_shape_pinned__mirrors_the_cell_fsm_request_marker_pattern_with_guards"
+    - "separate_authority_from_the_cell_fsm__two_independently_total_machines_one_shared_transition_algebra_or_two_tagged_instances"
+    - "child_and_whole_wave_completion_predicates_defined__derived_from_child_acceptance_v_receipt_surfaces_not_a_new_contract_field"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__wave_fsm_state_table_json__and_eight_disposition_to_transition_map_json__for_totality_and_mapping_oracles"
+    # R9/R10: WC-3b is the SOLE owner of the deferred Go wave-graph validators (DAG, edge-parity, write-surface,
+    # and — R10 — COMBINED-graph acyclicity over construction ∪ cross-owner assurance edges); each PASS gates WC-3b completion.
+    - "deferred_validator_owned__go_wave_dag_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
+    - "deferred_validator_owned__go_edge_parity_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
+    - "deferred_validator_owned__go_write_surface_disjointness_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
+    - "deferred_validator_owned__go_combined_assurance_graph_acyclicity_validator_emitted_by_wc3b_positive_and_named_negative_fixtures_green_gates_wc3b_completion"
+    - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
+constraints:
+  allowed_paths:
+    - "docs/architecture/WAVE-FSM.md"
+    - ".cdd/unreleased/wc-3b/**"
+    - ".cdd/unreleased/wc-3b/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
+    - ".cdd/unreleased/wc-3b/validators/**"  # R9: WC-3b's deferred Go DAG/edge-parity/write-surface validators + fixtures
+  forbidden_paths:
+    - "schemas/**"
+    - "src/**"
+    - ".github/workflows/**"
+    - "docs/architecture/CELL-FSM.md"   # WC-3a's surface
+  non_goals:
+    - "author_the_cell_fsm__that_is_wc3a"
+    - "implement_the_wave_fsm_in_go"
+    - "auto_dispatch_any_child__operator_authorizes_the_wave_boundary"
+    - "own_cm_internals_or_the_contract_envelope"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting wave-orchestration FSM; operator final-read required at merge"
+doctrine_affecting: true
+stop_conditions:
+  - "source_doctrine_conflicts"
+  - "predecessor_output_unavailable"
+  - "cc_disposition_vocabulary_incomplete"

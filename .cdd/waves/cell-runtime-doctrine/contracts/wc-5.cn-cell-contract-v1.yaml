@@ -1,0 +1,110 @@
+# WC-5 — Integration / seal (whole-wave proof)
+# New node the external-β required: four/six child closures do NOT by themselves prove the
+# objective. WC-5 is the whole-wave proof. Depends on WC-1, WC-2, WC-3a, WC-3b, WC-4.
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-5"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
+  carrier:
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+inputs:
+  required:
+    - ref_kind: "external"          # grounding CM (content-bound) — the residual-debt trace WC-5 re-checks
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
+    - ref_kind: "external"          # the #627 refinement map (content-bound) — parity source for the seal
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#reconcile-627"
+        revision: "sha256:1d2ad1c400ada2c22c61ea8216539706ce00882e2e7e15a4d55655310e4c9704@.cdd/waves/cell-runtime-doctrine/reconcile-627.md"
+    # --- sibling_output (edges WC-1,2,3a,3b,4 → WC-5) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-1"
+      output_id: "cell-classes-and-contract"
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"
+    - ref_kind: "sibling_output"
+      producer: "wc-3a"
+      output_id: "cell-fsm"
+    - ref_kind: "sibling_output"
+      producer: "wc-3b"
+      output_id: "wave-fsm"
+    - ref_kind: "sibling_output"
+      producer: "wc-4"
+      output_id: "contract-migration"
+    - ref_kind: "external"          # AUTHORITATIVE oracle registry (content-bound); this WC's oracle slice
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#oracle-registry"
+        revision: "sha256:fe4eb56110fa2484c271fa9bf7c2d685b260ef8bc50ad7f618975b91e1b66ee2@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+  optional: []
+requested_output:
+  id: "cell-runtime-integration-seal"
+  kind: "artifact"
+  path: "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
+acceptance:
+  predicates:
+    - "cross_artifact_vocabulary_consistent__one_canonical_input_ref_and_requested_output_vocabulary_one_cm_object_one_kappa_neq_alpha_logic_across_wc1_through_wc4"
+    - "schema_fixtures_pass__every_worked_instance_validates_against_the_selected_cn_cell_contract_v1_shape"
+    - "graph_parity__wave_edges_equal_the_sibling_output_relations_exactly_no_missing_or_spurious_edge"
+    - "migration_round_trips__wc4_round_trip_oracle_is_green_on_the_named_fixtures"
+    - "reconcile_627_mapping_complete__every_S_node_classified_exactly_once_no_duplicate_owner_no_omitted_executable_child"
+    - "residual_debt_disposed__every_grounding_fail_is_closed_by_or_retired_instance_defect_or_tracked_follow_up_exactly_once"
+    - "final_integration_v_fails_closed_on__a_conflicting_cm_ref_a_conflicting_fsm_state_a_conflicting_schema_field_a_missing_adapter_case_or_an_unmapped_627_node"
+    - "wc5_readiness_over_non_recursive_construction_set_N__a_completion_receipt_exists_for_every_node_in_N_where_N_equals_wc1_wc2_wc3a_wc3b_wc4_and_excludes_wc5"
+    - "wc5_own_completion_is_non_recursive__wc5_requested_output_produced_plus_wc5_acceptance_pass_plus_integration_v_pass_plus_bound_receipt__does_not_quantify_over_wc5_itself_nor_over_the_whole_wave_predicate"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__reconcile_627_audit_json__fail_disposition_audit_json__vocab_consistency_json__schema_fixture_log_json__for_the_integration_seal_oracles"
+    # R9: WC-5 is the SOLE owner of the deferred Go completion-evidence, ledger, and classification-totality bijection validators; each PASS gates WC-5 completion.
+    - "deferred_validator_owned__go_completion_evidence_validator_emitted_by_wc5_typed_resolver_input_derives_the_five_constituents_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    - "deferred_validator_owned__go_ledger_consistency_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    - "deferred_validator_owned__go_classification_totality_bijection_validator_emitted_by_wc5_positive_and_named_negative_fixtures_green_gates_wc5_completion"
+    # R10: the seal consumes (sibling_output) each UPSTREAM CHILD owner's deferred validator PASS (wc-2 ref/hash;
+    # wc-3b DAG/edge-parity/write-surface/combined-graph-acyclicity); the whole-wave oracle-ownership bijection is
+    # verified at the WAVE BOUNDARY (pre-authorization), a precondition of the authorized wave, not an upstream child
+    # validator. Each bound PASS is a precondition of wc5_readiness via child_complete, so WC-5 cannot seal until every
+    # upstream deferred validator exists and passes.
+    - "seal_readiness_consumes_every_upstream_deferred_validator_pass__wc2_ref_content_hash_resolution__wc3b_dag_edge_parity_write_surface_combined_graph_acyclicity__with_wave_boundary_oracle_ownership_bijection_preauthorized__each_bound_pass_is_a_precondition_of_wc5_readiness_via_child_complete"
+    - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
+constraints:
+  allowed_paths:
+    - "docs/architecture/CELL-RUNTIME-INTEGRATION.md"
+    - ".cdd/unreleased/wc-5/**"
+    - ".cdd/unreleased/wc-5/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
+    - ".cdd/unreleased/wc-5/validators/**"   # R9: WC-5's deferred Go completion-evidence/ledger/classification validators + fixtures
+  forbidden_paths:
+    - "schemas/**"
+    - "src/**"
+    - ".github/workflows/**"
+    - "docs/architecture/CELL-RUNTIME-CLASSES.md"
+    - "docs/architecture/COHERENCE-MEASUREMENT.md"
+    - "docs/architecture/CELL-FSM.md"
+    - "docs/architecture/WAVE-FSM.md"
+    - "docs/architecture/CONTRACT-MIGRATION.md"
+  non_goals:
+    - "author_new_doctrine__wc5_only_validates_and_seals_the_child_artifacts"
+    - "edit_any_child_artifact__it_reports_conflicts_it_does_not_repair_them"
+    - "implement_any_runtime_schema_or_fsm_code"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting whole-wave seal; operator final-read closes the wave"
+doctrine_affecting: true
+stop_conditions:
+  - "any_child_artifact_missing_or_unbound"
+  - "cross_artifact_conflict_detected"          # WC-5 holds/blocks and names the conflicting node
+  - "reconcile_627_map_incomplete_or_double_owned"

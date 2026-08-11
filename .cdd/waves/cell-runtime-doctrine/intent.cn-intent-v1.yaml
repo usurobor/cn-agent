@@ -1,0 +1,101 @@
+# cn.intent.v1 — TRANSITIONAL BOOTSTRAP PROJECTION of operator intent for the cell-runtime wave.
+#
+# HONEST PROVENANCE (State-A disclosure, mirroring CELL-RUNTIME-CLASSES.md §8's hosting-identity
+# disclosure). This object is a bootstrap projection authored DURING this Planning Cell (#671); it is
+# NOT a durable pre-cell object and does NOT claim to have existed before any cell:
+#   * D9 NAMES cn.intent.v1 but does NOT implement it — "no durable intent object exists on a pinned
+#     surface today" (CELL-RUNTIME-CLASSES.md §2, §13). In this MANUAL bootstrap NO durable pre-cell
+#     cn.intent.v1 existed; this file did not exist before the cell — it first appeared mid-cell.
+#   * It is therefore explicitly a TRANSITIONAL projection of the operator's authoritative intent onto
+#     a pinned repo surface, so the child contracts' intent_ref.id can resolve during bootstrap. It is
+#     NOT asserted to have been produced by κ before any cell exists.
+#   * captured_by: kappa records the intent-capture ROLE (κ carries operator intent onto the control
+#     plane); it is NOT a claim of a durable pre-cell capture event.
+#   * SUPERSESSION: this projection is superseded by a durable cn.intent.v1 object materialized by the
+#     schema / PC-Wave implementation work (#627 S2 / #644) once cn.intent.v1 is implemented; at that
+#     point intent_ref.id resolves to the durable object and this bootstrap projection retires.
+#
+# IDENTITY vs CARRIER (finding-2, semantics kept DISTINCT, not collapsed). The intent IDENTITY is `id`
+# below; every child contract's intent_ref.id resolves to that identity. A child contract's carrier
+# (kind: repo_artifact_bootstrap, ref: sha256:<hash>@<this path>) is a PROJECTION POINTER to this
+# transitional snapshot — a carrier, NOT the identity-authoring mechanism.
+#
+# STATEMENT below carries ONLY authoritative operator matter (the objective as the operator directed
+# it in the #627 wave master, incl. the operator's verbatim final doctrine line). Every α-derived
+# planning conclusion — the WC decomposition graph, the D9 realization detail, the β-repair outcomes —
+# has been MOVED OUT of intent into decision-provenance.md (see carriers below).
+schema: cn.intent.v1
+id: "intent-2026-0719-671-cell-runtime-doctrine"
+source: "operator"
+captured_by: "kappa"                       # intent-capture role (κ); NOT a durable pre-cell capture claim
+projection_status: "transitional-bootstrap"   # authored DURING this cell; no durable pre-cell cn.intent.v1 existed
+authored_during_cell: "671"
+first_pinned: "2026-07-19 — this cell (this file did not exist before the cell; it first appeared mid-cell)"
+supersedes: null
+superseded_by: "a durable cn.intent.v1 object materialized by #627 S2 / #644 once cn.intent.v1 is implemented"
+
+# Operator-authoritative carriers / projections (REAL operator-intent sources — none invented).
+carriers:
+  - kind: "control_plane"
+    role: "operator-authored wave master — the authoritative operator intent for this objective"
+    ref: "cnos#627"
+    note: "the operator's wave master 'Generic Cell Runner + Cohering Cell'; this wave's parent (#627)"
+  - kind: "operator_verbatim"
+    role: "the operator's verbatim final doctrine line (carried, not paraphrased)"
+    ref: "cnos#627 — section 'Final doctrine line (operator, verbatim)'"
+    text: >-
+      Planner Cell defines intended relation. Worker Cell produces local matter. Coherence Cell
+      preserves process identity. Generic Cell Runner mechanically moves inputs, outputs, receipts,
+      and coherence measurements between them. Cognition is delegated only after mechanical coherence
+      measurement shows that the next pulse is not mechanically determined.
+  - kind: "repo_artifact_bootstrap_projection"
+    role: "this transitional intent snapshot — the projection-pointer TARGET; NOT the identity"
+    ref: ".cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+    note: "child contracts pin this by sha256:<hash>@path; identity is `id` above, not this pointer"
+  - kind: "decision_provenance"
+    role: "where every α/β-derived planning conclusion lives (moved OUT of this intent)"
+    ref: ".cdd/waves/cell-runtime-doctrine/decision-provenance.md"
+    note: "the WC decomposition graph, the D9 realization detail, and the β-repair outcomes — each citing its actual α/β/settled-doctrine source"
+
+# The objective, as the operator directed it (operator matter only; NO α planning conclusions here).
+statement: >-
+  Bootstrap a three-cell agent — Working / Planning / Cohering — over the one CCNF kernel, so the
+  system keeps itself coherent while bounded tasks unfold, instead of a wave advancing only on human
+  prompting between cells. The missing layer is a generic cell runner plus a Cohering Cell that keeps
+  planner intent, worker outputs, issue/PR/label/release state, and operator gates describing one
+  system over time. The operator's final doctrine line governs: the Planner Cell defines the intended
+  relation, the Worker Cell produces local matter, the Coherence Cell preserves process identity, the
+  Generic Cell Runner mechanically moves inputs/outputs/receipts/coherence-measurements between them,
+  and cognition is delegated only after mechanical coherence measurement shows the next pulse is not
+  mechanically determined. This Planning Cell's charter is the doctrine/design layer that FEEDS #627's
+  implementation: settle the cell-runtime doctrine as a coherent, mechanically-checkable specification,
+  grounded in an immutable coherence measurement, so a Working Cell can implement the runtime (Go/CUE)
+  without inventing dependency, measurement, authority, or gate policy.
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_wave: "627"
+  in_scope:                          # operator-authorized doctrine surfaces (#627 S1 + this cell's charter)
+    - "the typed cell contract envelope and its input/edge/gate model (doctrine only)"
+    - "the coherence-measurement backbone that V gates on (CM measures; V gates; δ effects)"
+    - "the cell lifecycle and the wave lifecycle as distinct state machines"
+    - "the shipped→specified contract migration as a doctrine/schema-boundary design"
+  out_of_scope:
+    - "implementing the CM engine, CUE schemas, or Go runtime (that is #627 S2–S8)"
+    - "reopening the D9 four-schema boundary to a fifth canonical schema (operator-settled)"
+    - "forking or replacing #627 as the single implementation authority"
+    - "any control-plane action (filing / dispatching / commenting / merging)"
+constraints:                          # operator / settled-doctrine constraints only
+  - "grounding must be an immutable, content-bound measurement (source SHA-256 + retrievable snapshot)"
+  - "CM is a runner/provider-produced object; a CC output is a JUDGMENT that consumes CM refs; the two are distinct tagged objects (settled S1 doctrine, #627)"
+  - "the D9 four-schema boundary stays settled by operator decision; no authorized reopening at wave scope"
+  - "operator authorization binds once at the wave boundary, to the exact authorized wave revision (§9)"
+  - "every doctrine-affecting child requires operator acceptance at merge (gate invariant 1, §2)"
+desired_outcome: >-
+  A coherent, mechanically-checkable specification of the cnos cell-runtime doctrine under
+  docs/architecture/, such that #627's S2–S8 implementation Working Cells can build the runtime
+  without inventing dependency, measurement, authority, or gate policy — the operator's "a wave
+  advances itself, asking a human only when the move is genuinely non-deterministic or a gate
+  requires it" made specifiable. The concrete decomposition that delivers this outcome (the node set,
+  the edges, the completion predicate, the integration seal) is α PLANNING matter recorded in
+  decision-provenance.md, NOT operator intent.

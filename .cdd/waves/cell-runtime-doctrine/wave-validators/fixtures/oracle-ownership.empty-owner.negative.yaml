@@ -1,0 +1,10 @@
+# NEGATIVE fixture (cnos#671 R16) — an assurance entry with an EMPTY owner.
+# A missing/empty semantic field must FAIL CLOSED (exit 2), never collapse to an empty-string slot
+# that spuriously matches. This directly pins the R11 finding that dropped fields could false-pass.
+# Run:  go run ../oracle_ownership_bijection.go oracle-ownership.empty-owner.negative.yaml  -> exit 2
+child_predicates: [
+  {owner: "wc-x", predicate: "alpha_mechanical"},
+]
+assurance: [
+  {owner: "", predicate: "alpha_mechanical", classification: "mechanically-verifiable", checker: "check_alpha.go"},
+]

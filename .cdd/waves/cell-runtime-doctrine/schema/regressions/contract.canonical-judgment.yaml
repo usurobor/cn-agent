@@ -1,0 +1,46 @@
+# CANONICAL VARIANT (must PASS #CellContract) — requested_output.kind == judgment (CC telos).
+# A cohering cell producing a judgment: CANONICAL (passes #CellContract), would FAIL #WorkingCellContract.
+# Also exercises operator_authorization_required alone ⇒ reason nonempty (truth table).
+schema: cn.cell.contract.v1
+cell:
+  id: "canonical-cc"
+  class: "cohering"
+  mode: "review"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: null
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-canonical"
+  carrier:
+    kind: "github_issue"
+    ref: "cnos#671"
+inputs:
+  required:
+    - ref_kind: "external"
+      locator:
+        kind: "prior_receipt"
+        receipt: "receipt-under-review"
+        binding: "sha256:9999aaaa8888bbbb7777cccc6666dddd5555eeee4444ffff3333aaaa2222bbbb"
+  optional: []
+requested_output:
+  id: "canonical-judgment"
+  kind: "judgment"
+  path: "docs/review/disposition.md"
+acceptance:
+  predicates:
+    - "cohering_cell_emits_a_judgment_over_immutable_evidence"
+constraints:
+  allowed_paths:
+    - "docs/review/**"
+  forbidden_paths: []
+  non_goals: []
+gates:
+  operator_authorization_required: true
+  operator_acceptance_required: false
+  reason: "operator authorization required to open the review"
+doctrine_affecting: false
+stop_conditions: []

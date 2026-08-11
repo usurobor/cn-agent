@@ -1,0 +1,95 @@
+# WC-3a — Cell FSM (one cell instance's lifecycle)
+# Split from the draft's single WC-3 (external-β finding: cell and wave lifecycles are
+# different state spaces). Closes L3-A1/B1 (cell lifecycle authority split).
+# Depends on WC-1 (typed contract) + WC-2 (CM, for V-gating).
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-3a"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
+  carrier:
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+inputs:
+  required:
+    - ref_kind: "external"          # the shipped cell-status FSM table (State A ground truth)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "src/packages/cnos.cds/skills/cds/fsm/transitions.json"
+    - ref_kind: "external"          # CCNF (repair-dispatch recursion mode, role firebreak)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md"
+    - ref_kind: "external"          # grounding CM (content-bound) — L3-A1/B1 finding this node closes
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
+    # --- sibling_output (edges WC-1 → WC-3a, WC-2 → WC-3a) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-1"
+      output_id: "cell-classes-and-contract"       # cell.class/guards + the typed contract the FSM reads
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"  # V-gating on cm_ref at the review/close edges
+    - ref_kind: "external"          # AUTHORITATIVE oracle registry (content-bound); this WC's oracle slice
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#oracle-registry"
+        revision: "sha256:fe4eb56110fa2484c271fa9bf7c2d685b260ef8bc50ad7f618975b91e1b66ee2@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+  optional: []
+requested_output:
+  id: "cell-fsm"
+  kind: "artifact"
+  path: "docs/architecture/CELL-FSM.md"
+acceptance:
+  predicates:
+    - "cell_fsm_state_set_closed_and_declared__blocked_is_a_declared_member_not_only_a_transition_target"
+    - "exactly_one_authority_per_edge__reconciles_transitions_json_and_cn_issues_dispatch_and_cn_cell_resume_and_spec"
+    - "total_event_guard_action_relation__every_nonterminal_state_has_owned_exits"
+    - "invalid_transition_semantics_defined"
+    - "deterministic_or_normatively_prioritized_transition_selection__same_bundle_hash_same_decision"
+    - "review_return_conflict_resolved__the_11_1_changes_to_todo_vs_11_2_changes_to_in_progress_ambiguity_settled_to_one_edge"
+    - "cc_disposition_to_cell_transition_request_adapter__cc_selects_a_judgment_the_fsm_validates_and_effects_the_transition__cc_never_mutates_state_directly"
+    - "command_table_parity__cn_cell_and_cn_issues_surfaces_map_onto_declared_table_edges"
+    - "request_marker_pattern_pinned__typed_marker_plus_evidentiary_guards"
+    - "reachability_proved__every_declared_state_reachable_from_the_initial_state"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__cell_fsm_state_table_json__for_state_set_closure_totality_and_reachability_oracles"
+    - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
+constraints:
+  allowed_paths:
+    - "docs/architecture/CELL-FSM.md"
+    - ".cdd/unreleased/wc-3a/**"
+    - ".cdd/unreleased/wc-3a/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
+  forbidden_paths:
+    - "schemas/**"
+    - "src/**"                       # editing transitions.json / Go is #627 S4–S7 implementation
+    - ".github/workflows/**"
+    - "docs/architecture/WAVE-FSM.md"   # WC-3b's surface
+  non_goals:
+    - "author_the_wave_fsm__that_is_wc3b"
+    - "implement_the_fsm_in_go_or_edit_transitions_json"
+    - "own_cm_internals_or_the_contract_envelope"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting cell-lifecycle FSM; operator final-read required at merge"
+doctrine_affecting: true
+stop_conditions:
+  - "source_doctrine_conflicts"
+  - "predecessor_output_unavailable"           # WC-1 or WC-2 output absent
+  - "review_return_authority_unresolvable"

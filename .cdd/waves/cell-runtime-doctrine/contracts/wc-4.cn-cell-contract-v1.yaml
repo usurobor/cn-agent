@@ -1,0 +1,95 @@
+# WC-4 — Shipped→specified contract migration (doctrine/schema-boundary design)
+# Closes L2-B2 (no shipped→specified adapter). It is the S2 migration sub-contract
+# (design only; the CUE/Go adapter implementation stays in #627 S2).
+# Depends on WC-1 (specified contract shape) + WC-2 (CM edge representation) —
+# resolves the missing WC-2 → WC-4 dependency the external-β flagged.
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-4"
+  class: "working"
+  mode: "doctrine"
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
+  carrier:
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+inputs:
+  required:
+    - ref_kind: "external"          # shipped contract schema (the State-A source shape)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "schemas/cdd/contract.cue"
+    - ref_kind: "external"          # shipped receipt schema (migration must preserve receipt semantics)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "schemas/cdd/receipt.cue"
+    - ref_kind: "external"          # grounding CM (content-bound) — L2-B2 finding this node closes
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
+    # --- sibling_output (edges WC-1 → WC-4, WC-2 → WC-4) ---
+    - ref_kind: "sibling_output"
+      producer: "wc-1"
+      output_id: "cell-classes-and-contract"       # the specified cn.cell.contract.v1 target shape
+    - ref_kind: "sibling_output"
+      producer: "wc-2"
+      output_id: "coherence-measurement-contract"  # the target contract's CM edge semantics/representation
+    - ref_kind: "external"          # AUTHORITATIVE oracle registry (content-bound); this WC's oracle slice
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#oracle-registry"
+        revision: "sha256:fe4eb56110fa2484c271fa9bf7c2d685b260ef8bc50ad7f618975b91e1b66ee2@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+  optional: []
+requested_output:
+  id: "contract-migration"
+  kind: "artifact"
+  path: "docs/architecture/CONTRACT-MIGRATION.md"
+acceptance:
+  predicates:
+    - "versioned_projection_specified__cnos_cdd_contract_v1_to_cn_cell_contract_v1_with_a_named_version_and_direction"
+    - "field_by_field_preservation_rules__every_shipped_field_mapped_or_explicitly_marked_added_or_deprecated"
+    - "cm_edge_representation_consumed_from_wc2__the_target_contract_cm_ref_shape_is_wc2_output_realized_within_the_four_schemas_not_a_fifth_schema_not_re_derived"
+    - "state_a_state_b_field_enumeration__shipped_commands_and_schema_fields_vs_target_fields_enumerated_per_field"
+    - "round_trip_oracle__lossless_paths_proven_lossless_and_lossy_points_named"
+    - "negative_fixtures__reject_unknown_field_dropped_required_field_mutable_root_input_identity_only_revision_missing_adapter_case"
+    - "migration_is_doctrine_schema_boundary_only__no_cue_or_go_adapter_implemented_here"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__field_map_json__round_trip_fixtures__five_negative_fixtures__for_field_preservation_and_round_trip_oracles"
+    - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
+constraints:
+  allowed_paths:
+    - "docs/architecture/CONTRACT-MIGRATION.md"
+    - ".cdd/unreleased/wc-4/**"
+    - ".cdd/unreleased/wc-4/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
+  forbidden_paths:
+    - "schemas/**"                 # writing the CUE adapter is #627 S2
+    - "src/**"
+    - ".github/workflows/**"
+    - "docs/architecture/CELL-RUNTIME-CLASSES.md"
+    - "docs/architecture/COHERENCE-MEASUREMENT.md"
+  non_goals:
+    - "implement_the_adapter_in_cue_or_go__that_is_627_S2"
+    - "edit_shipped_schemas"
+    - "redefine_the_target_contract_shape__that_is_wc1"
+    - "redefine_the_cm_edge__that_is_wc2"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false
+  operator_acceptance_required: true
+  reason: "doctrine-affecting migration/preservation rules; operator final-read required at merge"
+doctrine_affecting: true
+stop_conditions:
+  - "source_doctrine_conflicts"
+  - "predecessor_output_unavailable"           # WC-1 or WC-2 output absent (readiness fails)
+  - "target_cm_edge_semantics_unresolved"

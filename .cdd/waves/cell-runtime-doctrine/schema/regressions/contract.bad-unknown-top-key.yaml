@@ -1,0 +1,105 @@
+# WC-2 — The Coherence-Measurement (CM) contract  [KEYSTONE ROOT]
+# Repairs external-β BLOCKER-1 (CM-ownership) and finding L1-A1 (kernel ordering).
+# CM is the runner/provider-produced measurement object; it is NOT a cell's telos and
+# NOT the CC's judgment. Root of the wave: only external inputs, no sibling_output refs.
+schema: cn.cell.contract.v1
+cell:
+  id: "wc-2"
+  class: "working"                 # WC — its output is a repo doctrine artifact (per the settled telos rule)
+  mode: "doctrine"                 # spec-authoring WC mode
+  protocol: "cds"
+  matter_domain: "doctrine"
+scope:
+  repo: "usurobor/cnos"
+  wave: "671"
+  parent_cell: "671"
+intent_ref:
+  schema: "cn.intent.v1"
+  id: "intent-2026-0719-671-cell-runtime-doctrine"        # the intent IDENTITY; resolves to the transitional bootstrap intent projection (identity != carrier)
+  carrier:
+    kind: "repo_artifact_bootstrap"                       # PROJECTION POINTER to the transitional bootstrap intent snapshot; NOT the identity-authoring mechanism (identity is intent_ref.id). §2 carrier {kind, ref} shape preserved.
+    ref: "sha256:1e246846774c43365cb00dc1b39b6998bab535f4833a16fcfe32ca3e2825560e@.cdd/waves/cell-runtime-doctrine/intent.cn-intent-v1.yaml"
+inputs:
+  required:
+    # --- external roots (immutable, revision-pinned; create no wave edge) ---
+    - ref_kind: "external"          # #628/S1 landed doctrine: "CM measures; V gates; δ effects"
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "docs/architecture/CELL-RUNTIME.md"
+    - ref_kind: "external"          # shipped receipt schema — source of the L1-A1 circularity (requires validation+boundary_decision)
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "schemas/cdd/receipt.cue"
+    - ref_kind: "external"          # shipped boundary/verdict schema — the V/δ typed outputs
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "schemas/cdd/boundary_decision.cue"
+    - ref_kind: "external"          # CCNF kernel — α→β→γ→V→δ ordering
+      locator:
+        kind: "repo_artifact"
+        repo: "usurobor/cnos"
+        commit: "6e40d93497589afd96e6c891e94851cdabe2ef3a"
+        path: "src/packages/cnos.cdd/skills/cdd/COHERENCE-CELL-NORMAL-FORM.md"
+    - ref_kind: "external"          # the grounding CM — content-bound (hash of the captured file), NOT a bare comment id
+      locator:
+        kind: "control_plane"
+        ref: "cnos#667#issuecomment-5015460988"
+        revision: "sha256:9d1ab3a50d00e642fdeb87728dd71f7c7499c60878afe7001f2ddb832b161dbb@.cdd/waves/cell-runtime-doctrine/grounding-source-5015460988.md"
+    - ref_kind: "external"          # AUTHORITATIVE oracle registry (content-bound); this WC's oracle slice
+      locator:
+        kind: "control_plane"
+        ref: "cnos#671#oracle-registry"
+        revision: "sha256:fe4eb56110fa2484c271fa9bf7c2d685b260ef8bc50ad7f618975b91e1b66ee2@.cdd/waves/cell-runtime-doctrine/oracle-registry.yaml"
+  optional: []
+requested_output:
+  id: "coherence-measurement-contract"     # the cm_ref interface every other node imports
+  kind: "artifact"
+  path: "docs/architecture/COHERENCE-MEASUREMENT.md"
+acceptance:
+  predicates:
+    - "cm_defined_as_runner_or_provider_produced_object__producer_is_cm_provider_or_runtime_op_eg_tsc_not_cc"
+    - "cm_object_fields_typed__s_alpha_s_beta_s_gamma_c_sigma_geom_mean_degeneracy_bottleneck_witnesses_defects_mode_target_bundle_digest_thresholds_standing_provenance"
+    - "cc_class_result_is_a_separate_tagged_object_that_consumes_immutable_cm_refs__cm_and_cc_judgment_validate_as_distinct_tagged_objects"
+    - "cm_to_v_edge_pinned__v_consumes_an_immutable_cm_ref_as_a_named_input_the_frozen_contract_times_receipt_signature_is_extended_to_carry"
+    - "receipt_core_to_cm_to_v_to_delta_to_final_receipt_type_path_declared__provisional_receipt_core_without_validation_or_boundary_decision_then_measurement_then_final_receipt_satisfying_shipped_receipt_cue"
+    - "cm_producers_and_consumers_pinned__producer_provider_runtime_op__consumers_v_gates_on_it_cc_judgment_consumes_refs_pc_wave_grounded_in_it"
+    - "d9_four_schema_boundary_settled__cm_is_realized_within_the_authorized_four_schemas_not_as_a_fifth_canonical_cn_cm_v1__operator_settled_no_authorized_reopening"
+    - "cm_realized_within_four_schemas__a_typed_cm_field_or_edge_in_the_receipt_plus_a_cm_ref_resolving_within_the_existing_four_schemas__wc1_and_wc4_consume_this_same_cm_ref_shape"
+    - "negative_fixture_reject_fifth_canonical_schema__a_proposed_fifth_cn_cm_v1_canonical_schema_is_rejected_while_the_four_schema_boundary_remains_settled"
+    - "reproducible__same_frozen_inputs_plus_provider_version_reproduce_the_mechanically_claimed_cm_result"
+    - "cm_ref_field_shape_is_the_single_interface_all_other_nodes_import__no_second_cm_shape_introduced_downstream"
+    - "emits_machine_readable_acceptance_fixtures_into_receipt__cm_object_json__cc_judgment_json__receipt_core_json__final_receipt_json__reject_fifth_schema_json__each_validated_by_the_named_acceptance_oracle_command"
+    - "mechanical_oracles_owned__every_mechanically_verifiable_predicate_binds_a_concrete_checker_or_schema_path_no_placeholder_operand_positive_fixture_exit_0_and_named_negative_fixture_exit_nonzero_within_allowed_paths_or_a_pinned_immutable_input_and_bound_in_the_receipt"
+constraints:
+  allowed_paths:
+    - "docs/architecture/COHERENCE-MEASUREMENT.md"
+    - ".cdd/unreleased/wc-2/**"
+    - ".cdd/unreleased/wc-2/fixtures/**"     # machine-readable acceptance fixtures/tables its V needs (finding-3)
+  forbidden_paths:
+    - "schemas/**"                 # implementing CM *fields* in CUE is #627 S2; building the CM *engine* is S3
+    - "src/**"
+    - ".github/workflows/**"
+    - "docs/architecture/CELL-RUNTIME-CLASSES.md"   # WC-1's surface
+  non_goals:
+    - "implement_the_cm_engine__that_is_627_S3"
+    - "extend_the_shipped_cue_schemas__that_is_627_S2"
+    - "build_or_modify_usurobor_tsc"
+    - "author_the_cell_or_wave_fsm"
+    - "make_cc_the_universal_measurement_producer"
+    - "file_or_dispatch_child_issues"
+gates:
+  operator_authorization_required: false     # pre-authorized at the wave boundary (§9), not per-child
+  operator_acceptance_required: true         # doctrine_affecting ⇒ acceptance required (gate invariant 1)
+  reason: "doctrine-affecting CM backbone; operator final-read required at merge"
+doctrine_affecting: true
+stop_conditions:
+  - "source_doctrine_conflicts"
+  - "fifth_canonical_schema_proposed__d9_four_schema_boundary_is_settled_no_authorized_reopening"
+  - "grounding_cm_ref_unresolvable_or_stale"
+oracles: []
