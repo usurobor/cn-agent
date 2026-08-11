@@ -205,7 +205,9 @@ to. Calling it "value → implementation resolution" would overstate it.
 | CCNF kernel (`RunEpisode` → verifiable `Closure`) | src/go `internal/cellkernel` | ✅ shipped (PR #718; hardened through Pi β #31–#45) |
 | Workspace-edit cognition (bounded, stateless provider adapters) | src/go `internal/cellcog` (`Coder` port; `ClaudeCLI`, `FakeCoder` over one process seam) | ✅ shipped — explicit model, typed argv, sealed permission mode, no arbitrary command from cell JSON. `codex-cli` HELD (see below). `Coder` is a workspace-EDIT port: directory in, no value out. It does not yet serve planning or research. |
 | `#CellSpec` CUE schema (input contract) | cnos.cdd (`schemas/cdd/spec.cue`) | ✅ shipped |
-| cds params-domain overlay (`#CDSCellSpec`) | cnos.cds (`schemas/cds/spec.cue`) | ✅ shipped (canonical diff-first evidence rule) |
+| cds params-domain overlay (`#CDSCellSpec`) | cnos.cds (`schemas/cds/spec.cue`) | ✅ shipped (canonical diff-first evidence rule; a CDS cell must carry an admissible `contract.task`) |
+| typed CDS issue (`contract.task`) | src/go `internal/cdsissue` + `#CDSIssue` (`schemas/cds/spec.cue`) | ✅ shipped — the kernel and `cellspec` carry opaque bytes; admission, the closed key language, and the ONE renderer both seats call live here. `$param` holes are NOT substituted inside a task: it is authored literally and frozen literally |
+| matter admission before the reviewing seat | src/go `internal/cdsreview` | ✅ shipped — matter that carries no `diff --git ` header returns `pass:false` without renting cognition. `unverified` as an outcome distinct from `judged and failed` is not shipped; the distinction lives in the verdict notes |
 | spec loader/binder (strict parse → kernel Spec) | src/go `internal/cellspec` | ✅ shipped |
 | `cn cell run` (fill holes, run, emit closure) | src/go `internal/cellrun` (+ thin `cli` wrapper) | ✅ shipped (exits 0/1/2/3; closure self-verifies) |
 | skill resolution + loading | src/go `internal/cellskill` (one installed root under the hub) | ✅ shipped — bodies are LOADED and injected; ordered refs + content digests recorded in the closure |
@@ -224,8 +226,8 @@ superseded by the stronger FIDO refactor below — the shipped kernel is the
 reference; the piece inventory above reflects it.
 
 **Phase 0 — the input contract.** Write `schemas/cdd/spec.cue` (`#CellSpec`:
-`{version, contract (producer-attributed required_evidence), protocol_id,
-params, alpha:{fill, …}, beta:{fill, …}}`) and the cds overlay
+`{version, contract (producer-attributed required_evidence, plus an optional
+opaque task), protocol_id, params, alpha:{fill, …}, beta:{fill, …}}`) and the cds overlay
 (`#CDSCellSpec` pinning `protocol_id` + param domains). Hand-write a
 `cds.spec.json` for a real issue; `cue vet` it. *Proves the data shape before
 any Go or compiler.* (`budget` was removed as decorative per Pi #32 D5; it

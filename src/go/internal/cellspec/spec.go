@@ -43,9 +43,16 @@ type CellSpec struct {
 }
 
 type ContractSpec struct {
-	ID               string        `json:"id"`
-	Goal             string        `json:"goal"`
-	RequiredEvidence []RequiredRef `json:"required_evidence,omitempty"`
+	ID   string `json:"id"`
+	Goal string `json:"goal"`
+	// Task is the structured task specification, carried through to
+	// cellkernel.Contract.Task as opaque bytes. This package deliberately does
+	// not know what any protocol's task looks like — a CDS issue is admitted by
+	// cdsissue at the seats, not here — and `$param` holes are NOT substituted
+	// inside it: Resolve splices the seat declarations only, so a task is
+	// authored literally and frozen literally.
+	Task             json.RawMessage `json:"task,omitempty"`
+	RequiredEvidence []RequiredRef   `json:"required_evidence,omitempty"`
 }
 
 // RequiredRef names a required evidence ref and the producer role authorized
@@ -282,6 +289,7 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.
 	contract := cellkernel.Contract{
 		ID:               r.Spec.Contract.ID,
 		Goal:             r.Spec.Contract.Goal,
+		Task:             r.Spec.Contract.Task,
 		RequiredEvidence: req,
 	}
 	meta := cellkernel.RunMeta{
@@ -363,7 +371,7 @@ func checkExactKeys(data []byte) error {
 	if err := keysIn("spec", root, "version", "contract", "protocol_id", "params", "alpha", "beta"); err != nil {
 		return err
 	}
-	if err := objectKeys(root["contract"], "contract", "id", "goal", "required_evidence"); err != nil {
+	if err := objectKeys(root["contract"], "contract", "id", "goal", "task", "required_evidence"); err != nil {
 		return err
 	}
 	var contract struct {

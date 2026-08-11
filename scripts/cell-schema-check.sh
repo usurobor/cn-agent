@@ -121,6 +121,36 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-review-with-workspace
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-top-arg.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-nested-arg.json -d '#CDSCellSpec'
+# A CDS cell must declare an admissible issue. The SAME file still vets against
+# the generic #CellSpec: knowing that a task is required — and what one is — is
+# the CDS overlay's business, and the pair of lines is what shows the boundary
+# sits where it is claimed to sit rather than having leaked into the kernel's
+# schema.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-no-task.json -d '#CDSCellSpec'
+vet_ok schemas/cdd/spec.cue schemas/cds/fixtures/invalid/cds-no-task.json -d '#CellSpec'
+
+echo "# CDS issue corpus (one corpus, two authorities)"
+# cdsissue.Admit and #CDSIssue must accept and reject exactly the same
+# documents, so both read THESE files: schemas/cds/fixtures/issue/ is vetted
+# here and table-tested by internal/cdsissue. Each negative is invalid for
+# exactly ONE reason — a fixture breaking two rules cannot show which fired —
+# and the Go test additionally pins WHICH rule that is.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/issue/valid-issue.json -d '#CDSIssue'
+# scope.out PRESENT but empty is admissible: non-goals are load-bearing, so an
+# empty list says "considered, none" where an absent key says nothing at all.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/issue/valid-empty-scope-out.json -d '#CDSIssue'
+# blank-unicode-whitespace carries EVERY rune unicode.IsSpace covers in one
+# field. It is the witness that #NonBlank and cdsissue's nonBlankPattern are
+# the same class: a rune missing from the CUE enumeration would make this
+# document vet clean while Go rejects it, which is the divergence the two
+# authorities exist to catch.
+for neg in bad-kind empty-id blank-problem-line blank-unicode-whitespace \
+           no-sources source-without-path \
+           empty-scope-in missing-scope-out no-acceptance \
+           criterion-without-verification duplicate-acceptance-id \
+           unknown-key mixed-case-key; do
+  vet_bad ./schemas/cds:cds "schemas/cds/fixtures/issue/issue-$neg.json" -d '#CDSIssue'
+done
 
 echo "# Go-only negatives (executable authority = the CLI)"
 run_bad schemas/cdd/fixtures/invalid/cellspec-dup-required-id.json

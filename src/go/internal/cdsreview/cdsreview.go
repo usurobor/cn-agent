@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsissue"
 	"github.com/usurobor/cnos/src/go/internal/cellcog"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
@@ -134,7 +135,26 @@ func (b ReviewBeta) Review(ctx context.Context, in cellkernel.BetaInput) (cellke
 	if b.answerer == nil {
 		return cellkernel.BetaOutput{}, cellcog.ErrNoProvider
 	}
-	raw, err := b.answerer.Answer(ctx, RenderPrompt(in.Contract, in.Matter, b.skills), VerdictSchema)
+	// The contract's issue is admitted before any cognition is rented, and by
+	// the same predicate alpha used. A reviewer given criteria it cannot read
+	// would be back to judging plausibility.
+	issue, err := cdsissue.Admit(in.Contract.Task)
+	if err != nil {
+		return cellkernel.BetaOutput{}, fmt.Errorf("cds.review: %w", err)
+	}
+	if fault := matterFault(in.Matter); fault != "" {
+		// Not an error: the episode ran, and its outcome is that nothing
+		// reviewable reached the reviewer. Returning pass:false without renting
+		// anything is the honest verdict — a reviewer handed no diff has not
+		// passed it, and asking a provider to judge `cds.patch`'s "no change
+		// was made to ..." sentence buys an opinion about a sentence.
+		//
+		// The verdict shape is unchanged this cycle: `unverified` as a distinct
+		// outcome from `judged and failed` is the next cycle's work, so today
+		// the distinction lives in the notes.
+		return cellkernel.BetaOutput{Review: cellkernel.Review{Pass: false, Notes: fault}}, nil
+	}
+	raw, err := b.answerer.Answer(ctx, RenderPrompt(in.Contract, issue, in.Matter, b.skills), VerdictSchema)
 	if err != nil {
 		return cellkernel.BetaOutput{}, fmt.Errorf("cds.review: answerer %q: %w", b.answerer.Name(), err)
 	}
@@ -153,16 +173,41 @@ func (b ReviewBeta) Review(ctx context.Context, in cellkernel.BetaInput) (cellke
 	return cellkernel.BetaOutput{Review: v}, nil
 }
 
+// matterFault reports why the matter cannot be reviewed, or "" if it can.
+//
+// `cds.patch`'s product is a unified diff, so this is the whole admission
+// rule: at least one `diff --git ` file header. It is a structural check, not
+// a diff parser — the reviewer reads the diff, this only decides whether there
+// is one to read. The alternative, sending everything to a provider and
+// trusting it to notice, is what produced a passing verdict on the sentence
+// "no change was made to ...".
+func matterFault(m cellkernel.Matter) string {
+	switch {
+	case strings.TrimSpace(m.Data) == "":
+		return "not reviewed: the matter is empty, so there is no change to judge"
+	case !strings.Contains("\n"+m.Data, "\ndiff --git "):
+		return "not reviewed: the matter carries no unified diff (no `diff --git ` file header), " +
+			"so there is no change to judge"
+	}
+	return ""
+}
+
 // RenderPrompt builds the reviewer's entire world: the contract it judges
-// against, the matter it judges, and the skill bodies it judges by. Nothing
-// else reaches the seat.
-func RenderPrompt(c cellkernel.Contract, m cellkernel.Matter, skills []cellskill.Skill) string {
+// against, the issue whose criteria it decides, the matter it judges, and the
+// skill bodies it judges by. Nothing else reaches the seat.
+//
+// The issue block is cdsissue.Render — the same call the producing seat makes.
+// β is told exactly what α was told it must satisfy, which is the property
+// that makes verification cheaper than production.
+func RenderPrompt(c cellkernel.Contract, issue cdsissue.Issue, m cellkernel.Matter, skills []cellskill.Skill) string {
 	var b strings.Builder
 	b.WriteString("You are the beta (reviewing) seat of a CNOS coherence cell.\n")
 	b.WriteString("You did not produce this work and you cannot see the workspace it came\n")
 	b.WriteString("from. Judge ONLY the matter below against the contract below.\n\n")
-	fmt.Fprintf(&b, "CONTRACT %s\nGOAL: %s\n", c.ID, c.Goal)
+	fmt.Fprintf(&b, "CONTRACT %s\nGOAL: %s\n\n", c.ID, c.Goal)
+	b.WriteString(cdsissue.Render(issue))
 	b.WriteString("\nHOW TO JUDGE\n")
+	b.WriteString("Decide each acceptance criterion above by its stated verification route.\n")
 	b.WriteString("Pass only if the matter actually meets the goal. A change that is real,\n")
 	b.WriteString("large or well written but does not meet the goal FAILS. Absence of\n")
 	b.WriteString("evidence is failure, not doubt: you cannot run anything, so a claim you\n")

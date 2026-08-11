@@ -139,8 +139,90 @@ import "cnos.dev/cnos/schemas/cdd"
 	skills: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ...{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}]
 }
 
+// #NonBlank is a string carrying at least one non-whitespace rune, and it is
+// the ONE blankness predicate the issue schema has: `!=""` is not it, since
+// "   " satisfies that while reading as an authored sentence to every human
+// and to neither authority.
+//
+// The class is transcribed CHARACTER FOR CHARACTER from cdsissue's
+// nonBlankPattern, which compiles the same string with Go's regexp. Two
+// hand-written predicates were what diverged before: `=~"\\S"` here beside
+// `strings.TrimSpace` there accepted a NO-BREAK-SPACE-only field in CUE and
+// rejected it in Go, because `\s` in RE2 is only `[\t\n\f\r ]` while
+// TrimSpace strips everything unicode.IsSpace covers. The enumeration below
+// is that set; issue-blank-unicode-whitespace.json holds all of it in one
+// field, so a transcription slip fails the corpus instead of production.
+#NonBlank: string & =~#"[^\t\n\v\f\r \x{0085}\x{00A0}\x{1680}\x{2000}-\x{200A}\x{2028}\x{2029}\x{202F}\x{205F}\x{3000}]"#
+
+// #CDSIssue is the CDS typed issue: the structured task a CDS cell carries on
+// `contract.task`. It mirrors cdsissue.Issue field for field, and the two are
+// vetted against ONE corpus (schemas/cds/fixtures/issue/) so a document
+// admitted by one authority and rejected by the other is a gate failure rather
+// than a discovery in production.
+//
+// Closed: unknown and mixed-case keys fail here, and cdsissue.Admit closes the
+// same key language with cellfill.OnlyKeys at every level, because
+// encoding/json would otherwise match `Kind` case-insensitively.
+#CDSIssue: {
+	// `!` throughout — the required-field marker, same reason `#Seat.fill!`
+	// carries it: without it an ABSENT field unifies with its declared value
+	// and vets clean, so an issue document omitting `kind` entirely would pass
+	// CUE while cdsissue.Admit rejects it. Absence must be rejected, not
+	// defaulted.
+	kind!: "cnos.cds.issue.v0"
+	id!:   #NonBlank
+
+	// The incoherence in three lines.
+	problem!: {
+		exists!:   #NonBlank
+		expected!: #NonBlank
+		diverges!: #NonBlank
+	}
+
+	// One canonical path per load-bearing claim; at least one.
+	sources!: [#CDSSource, ...#CDSSource]
+
+	// The execution boundary. `out` is REQUIRED but may be empty: non-goals are
+	// load-bearing, so an author must have considered them, and an empty list
+	// says "considered, none" where an absent key says nothing at all. Go reads
+	// the same present-vs-absent distinction off the raw document, since both
+	// decode to an empty slice.
+	scope!: {
+		in!: [#NonBlank, ...#NonBlank]
+		out!: [...#NonBlank]
+	}
+
+	// At least one criterion, each naming its verification route, with ids
+	// unique. Uniqueness is expressed as a length agreement rather than a
+	// membership validator: comprehension-built key sets unify through
+	// `vet -d` against a closed definition on the CI-pinned cue, where computed
+	// list validators did not (the same constraint that made required_evidence
+	// order structural).
+	acceptance!: [#CDSCriterion, ...#CDSCriterion]
+	_acceptanceIDs: {for c in acceptance {(c.id): true}}
+	_uniqueAcceptanceIDs: len(_acceptanceIDs) & len(acceptance)
+}
+
+#CDSSource: {
+	claim!: #NonBlank
+	path!:  #NonBlank
+}
+
+// A criterion without a verification route is exactly the ill-defined
+// criterion this schema exists to reject: it leaves beta judging plausibility.
+#CDSCriterion: {
+	id!:           #NonBlank
+	statement!:    #NonBlank
+	verification!: #NonBlank
+}
+
 #CDSCellSpec: cdd.#CellSpec & {
 	protocol_id: "cnos.cdd.cds.receipt.v1"
+
+	// A CDS cell MUST carry an admissible issue. The generic layer leaves
+	// `task` optional and open; here it is required and closed, so a CDS cell
+	// whose task is missing or malformed fails `cue vet` before it is ever run.
+	contract: task: #CDSIssue
 
 	// CANONICAL ORDER (explicit rule, not an accident): a CDS spec's first
 	// required_evidence entry IS the alpha diff. Chosen over order-independent

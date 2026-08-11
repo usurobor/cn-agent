@@ -61,6 +61,7 @@ const (
 const (
 	maxRequiredEvidence  = 64
 	maxMatterBytes       = 1 << 20 // 1 MiB
+	maxTaskBytes         = 64 << 10
 	maxReviewNotesBytes  = 64 << 10
 	maxArtifacts         = 64
 	maxArtifactBytes     = 1 << 20 // per artifact
@@ -105,15 +106,30 @@ type RequiredRef struct {
 }
 
 type Contract struct {
-	ID               string        `json:"id"`
-	Goal             string        `json:"goal"`
-	RequiredEvidence []RequiredRef `json:"required_evidence,omitempty"`
+	ID   string `json:"id"`
+	Goal string `json:"goal"`
+	// Task is the structured task specification, opaque here. The kernel never
+	// learns what a task MEANS — that belongs to whichever protocol authored it
+	// (for CDS, cdsissue.Issue) — so the only rules at this boundary are
+	// structural: valid JSON, within maxTaskBytes. Because EpisodeRecord
+	// carries the frozen Contract, the task is inside canonicalBytes() and
+	// therefore inside the one scope-lift digest; there is no second digest to
+	// bind it, and adding one would be a second proof surface for the same
+	// bytes.
+	Task             json.RawMessage `json:"task,omitempty"`
+	RequiredEvidence []RequiredRef   `json:"required_evidence,omitempty"`
 }
 
 func (c Contract) clone() Contract {
 	cp := c
 	if c.RequiredEvidence != nil {
 		cp.RequiredEvidence = append([]RequiredRef(nil), c.RequiredEvidence...)
+	}
+	// A shared slice is a mutable value inside a struct otherwise frozen by
+	// copy: without this, a seat handed AlphaInput.Contract could write through
+	// Task into the contract the runtime composes the record from.
+	if c.Task != nil {
+		cp.Task = append(json.RawMessage(nil), c.Task...)
 	}
 	return cp
 }
@@ -593,6 +609,7 @@ func validateRecord(r EpisodeRecord) []Failure {
 
 	// Contract validity (same rules validateSpec enforces on the honest path).
 	add(r.Contract.ID == "", InvalidRecord, "contract id is empty")
+	add(taskIntegrity(r.Contract.Task) != nil, InvalidRecord, "contract task is not structurally admissible")
 	add(len(r.Contract.RequiredEvidence) > maxRequiredEvidence, InvalidRecord, "too many required evidence refs")
 	seenReq := make(map[string]bool)
 	for _, req := range r.Contract.RequiredEvidence {
@@ -781,6 +798,26 @@ func validSeatEnvelope(raw json.RawMessage) error {
 	return nil
 }
 
+// taskIntegrity is the COMPLETE set of rules the kernel applies to the opaque
+// task slot: it must parse as JSON and stay within the declared bound. Valid
+// JSON is not taste — canonicalBytes() serializes the record with
+// encoding/json, which cannot represent a RawMessage that is not JSON, so an
+// unparseable task would silently collapse the canonical bytes the one digest
+// is taken over. An absent task is admissible here; requiring one is a
+// protocol's rule, not the kernel's.
+func taskIntegrity(task json.RawMessage) error {
+	if len(task) == 0 {
+		return nil
+	}
+	if len(task) > maxTaskBytes {
+		return fmt.Errorf("exceeds %d bytes", maxTaskBytes)
+	}
+	if !json.Valid(task) {
+		return errors.New("is not valid JSON")
+	}
+	return nil
+}
+
 func validateSpec(s Spec) error {
 	if seatIsNil(s.Alpha) {
 		return errors.New("cellkernel: spec has nil alpha")
@@ -790,6 +827,9 @@ func validateSpec(s Spec) error {
 	}
 	if s.Contract.ID == "" {
 		return errors.New("cellkernel: contract.id is empty")
+	}
+	if err := taskIntegrity(s.Contract.Task); err != nil {
+		return fmt.Errorf("cellkernel: contract.task: %w", err)
 	}
 	if len(s.Contract.RequiredEvidence) > maxRequiredEvidence {
 		return fmt.Errorf("cellkernel: too many required evidence refs (%d > %d)", len(s.Contract.RequiredEvidence), maxRequiredEvidence)

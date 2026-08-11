@@ -26,6 +26,17 @@ the seat's tools were *available* but not *approved*, so earlier real episodes
 were resting on ambient host permission authority rather than on the cell's
 declaration. The claim was open exactly where the fix landed.
 
+**The recorded contract is older than the fixture it names.** Since this run,
+`code-cell-spec.json` gained a required `contract.task` — a typed CDS issue —
+and this episode ran without one. Its goal line, *"Carry out the change
+described by the issue in the repository at base_sha"*, is exactly the sentence
+that motivated the change: it refers to an issue the cell was never given.
+Re-running the invocation below against today's fixture would therefore produce
+a DIFFERENT contract, a different digest, and a differently prompted seat; the
+committed closure is a record of what ran then, not a reproduction recipe for
+now. Nothing in the gate compares the two, and this note is here so nobody
+reads the agreement of paths as agreement of contracts.
+
 ## Invocation
 
 Runtime was an immutable, clean commit — not "a head plus changes":

@@ -3,6 +3,43 @@
   "contract": {
     "id": "cds-code",
     "goal": "Carry out the change described by the issue in the repository at base_sha",
+    "task": {
+      "kind": "cnos.cds.issue.v0",
+      "id": "cds-fixture-contributing",
+      "problem": {
+        "exists": "The repository carries no contribution guide, so a new contributor infers how to build and test it from the source tree.",
+        "expected": "A CONTRIBUTING.md at the repository root states how to build the project, how to run its tests, and what a change must satisfy before it is proposed.",
+        "diverges": "Nothing in the repository states the contribution procedure, so every contributor reconstructs one and they do not reconstruct the same one."
+      },
+      "sources": [
+        {
+          "claim": "what the repository is and how it is built",
+          "path": "README.md"
+        }
+      ],
+      "scope": {
+        "in": [
+          "add CONTRIBUTING.md at the repository root",
+          "link CONTRIBUTING.md from README.md"
+        ],
+        "out": [
+          "changing the build system",
+          "changing any file other than README.md and CONTRIBUTING.md"
+        ]
+      },
+      "acceptance": [
+        {
+          "id": "AC1",
+          "statement": "CONTRIBUTING.md exists at the repository root and states the build command, the test command, and the standard a change must meet before it is proposed.",
+          "verification": "the diff adds CONTRIBUTING.md; read it for all three statements — a missing one fails this criterion"
+        },
+        {
+          "id": "AC2",
+          "statement": "README.md points a reader at CONTRIBUTING.md.",
+          "verification": "the diff modifies README.md so that it names CONTRIBUTING.md"
+        }
+      ]
+    },
     "required_evidence": [
       {
         "id": "diff",

@@ -60,6 +60,12 @@ package cdd
 	contract: {
 		id:   string & !=""
 		goal: string
+		// The frozen task, opaque at the generic output boundary for the same
+		// reason the resolved seat declarations are: whose task language it is
+		// belongs to the protocol, not to the closure schema. It appears here
+		// because the record carries the whole frozen contract, which is what
+		// binds the task into the one scope-lift digest.
+		task?: {...}
 		required_evidence?: [...#RequiredRef]
 	}
 	alpha: #StationRecord

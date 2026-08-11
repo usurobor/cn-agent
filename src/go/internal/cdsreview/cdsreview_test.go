@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsissue"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
@@ -38,17 +39,59 @@ func declJSON(provider string) json.RawMessage {
 			`"skills":["cnos.cdd:cdd/review","cnos.eng:eng/go"]}`, provider))
 }
 
-var reviewContract = cellkernel.Contract{ID: "c", Goal: "add a CONTRIBUTING guide"}
+// testIssue is an admissible CDS issue. The reviewing seat admits the
+// contract's issue before it rents anything, so every test that expects to
+// reach the answerer must carry one.
+const testIssue = `{
+	"kind": "cnos.cds.issue.v0",
+	"id": "test-contributing",
+	"problem": {
+		"exists": "The repository carries no contribution guide.",
+		"expected": "A CONTRIBUTING.md states how a change is proposed.",
+		"diverges": "Nothing states the procedure, so every contributor invents one."
+	},
+	"sources": [{"claim": "what the repository is", "path": "README.md"}],
+	"scope": {"in": ["add CONTRIBUTING.md"], "out": []},
+	"acceptance": [{
+		"id": "AC1",
+		"statement": "CONTRIBUTING.md exists at the repository root.",
+		"verification": "the diff adds CONTRIBUTING.md"
+	}]
+}`
+
+// aDiff is the smallest matter the gate admits: a real unified-diff header.
+const aDiff = "diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md\n" +
+	"--- /dev/null\n+++ b/CONTRIBUTING.md\n@@ -0,0 +1 @@\n+how to contribute\n"
+
+var reviewContract = cellkernel.Contract{
+	ID:   "c",
+	Goal: "add a CONTRIBUTING guide",
+	Task: json.RawMessage(testIssue),
+}
+
+func admittedTestIssue(t *testing.T) cdsissue.Issue {
+	t.Helper()
+	iss, err := cdsissue.Admit([]byte(testIssue))
+	if err != nil {
+		t.Fatalf("the test issue must be admissible: %v", err)
+	}
+	return iss
+}
 
 // stubAnswerer returns exactly what a test wants back, so the decode boundary
-// can be driven without renting anything.
+// can be driven without renting anything. `called` is what proves the
+// NEGATIVE — that nothing was rented — which an error return could not.
 type stubAnswerer struct {
-	raw string
-	err error
+	raw    string
+	err    error
+	called *bool
 }
 
 func (stubAnswerer) Name() string { return "stub" }
 func (s stubAnswerer) Answer(context.Context, string, json.RawMessage) (json.RawMessage, error) {
+	if s.called != nil {
+		*s.called = true
+	}
 	if s.err != nil {
 		return nil, s.err
 	}
@@ -122,7 +165,7 @@ func TestUnreadableVerdictFailsRatherThanDefaulting(t *testing.T) {
 			seat := ReviewBeta{answerer: stubAnswerer{raw: tc.raw}}
 			_, err := seat.Review(context.Background(), cellkernel.BetaInput{
 				Contract: reviewContract,
-				Matter:   cellkernel.Matter{Data: "diff --git a/x b/x\n"},
+				Matter:   cellkernel.Matter{Data: aDiff},
 			})
 			if err == nil {
 				t.Fatalf("verdict %s must fail, not become a review", tc.raw)
@@ -141,7 +184,7 @@ func TestWellFormedVerdictIsCarried(t *testing.T) {
 		raw := fmt.Sprintf(`{"pass":%t,"notes":"because"}`, pass)
 		out, err := ReviewBeta{answerer: stubAnswerer{raw: raw}}.Review(
 			context.Background(),
-			cellkernel.BetaInput{Contract: reviewContract, Matter: cellkernel.Matter{Data: "d"}})
+			cellkernel.BetaInput{Contract: reviewContract, Matter: cellkernel.Matter{Data: aDiff}})
 		if err != nil {
 			t.Fatalf("%s: %v", raw, err)
 		}
@@ -158,7 +201,7 @@ func TestWellFormedVerdictIsCarried(t *testing.T) {
 // were missing from it, the reviewer would be judging something else.
 func TestPromptCarriesContractAndMatter(t *testing.T) {
 	skills := []cellskill.Skill{{Ref: "cnos.cdd:cdd/review", Body: "REVIEW-SKILL-BODY"}}
-	got := RenderPrompt(reviewContract, cellkernel.Matter{Data: "THE-MATTER"}, skills)
+	got := RenderPrompt(reviewContract, admittedTestIssue(t), cellkernel.Matter{Data: "THE-MATTER"}, skills)
 	for _, want := range []string{"add a CONTRIBUTING guide", "THE-MATTER", "REVIEW-SKILL-BODY", "cnos.cdd:cdd/review"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("prompt is missing %q", want)
@@ -222,13 +265,93 @@ func TestFakeReviewerNeverPasses(t *testing.T) {
 	}
 	out, err := c.Seat.Review(context.Background(), cellkernel.BetaInput{
 		Contract: reviewContract,
-		Matter:   cellkernel.Matter{Data: "a very convincing diff"},
+		Matter:   cellkernel.Matter{Data: aDiff},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if out.Review.Pass {
 		t.Fatal("the deterministic fake must never pass a review it did not perform")
+	}
+}
+
+// AC3: the reviewing seat admits the contract's issue before renting, by the
+// same predicate alpha used. A reviewer whose criteria cannot be read is back
+// to judging plausibility, which is the failure this cycle exists to remove.
+func TestIllDefinedIssueFailsBeforeRentingCognition(t *testing.T) {
+	for name, task := range map[string]string{
+		"absent":                 ``,
+		"not an issue at all":    `{"goal":"judge the work"}`,
+		"criterion unverifiable": strings.Replace(testIssue, `"the diff adds CONTRIBUTING.md"`, `""`, 1),
+		"scope.out absent":       strings.Replace(testIssue, `, "out": []`, ``, 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			called := false
+			contract := reviewContract
+			contract.Task = json.RawMessage(task)
+			seat := ReviewBeta{answerer: stubAnswerer{raw: `{"pass":true,"notes":"n"}`, called: &called}}
+			_, err := seat.Review(context.Background(), cellkernel.BetaInput{
+				Contract: contract,
+				Matter:   cellkernel.Matter{Data: aDiff},
+			})
+			if err == nil {
+				t.Fatal("an ill-defined issue must fail the cell")
+			}
+			if !strings.Contains(err.Error(), "cds issue") {
+				t.Fatalf("failed for the wrong reason: %v", err)
+			}
+			if called {
+				t.Fatal("cognition was rented for an issue that was never admissible")
+			}
+		})
+	}
+}
+
+// AC5, both directions. A reviewer handed nothing reviewable has NOT passed
+// it, and asking a provider to judge `cds.patch`'s "no change was made to …"
+// sentence buys an opinion about a sentence. The second half of the table is
+// what stops this from being a gate that rejects everything.
+func TestOnlyAUnifiedDiffReachesTheAnswerer(t *testing.T) {
+	cases := []struct {
+		name  string
+		data  string
+		reach bool
+	}{
+		{"alpha's no-change sentence", "no change was made to /tmp/repo at abc123", false},
+		{"empty", "", false},
+		{"whitespace", "   \n\t\n", false},
+		{"prose about a diff", "I refactored the parser and everything passes now.", false},
+		{"a header-shaped near miss", "diff --gita/x b/x\n", false},
+		{"a unified diff", aDiff, true},
+		{"a diff after a preamble", "here is the change:\n" + aDiff, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			called := false
+			seat := ReviewBeta{answerer: stubAnswerer{raw: `{"pass":true,"notes":"looks fine"}`, called: &called}}
+			out, err := seat.Review(context.Background(), cellkernel.BetaInput{
+				Contract: reviewContract,
+				Matter:   cellkernel.Matter{Data: tc.data},
+			})
+			if err != nil {
+				t.Fatalf("the gate returns a verdict, never an error: %v", err)
+			}
+			if called != tc.reach {
+				t.Fatalf("answerer called=%v, want %v", called, tc.reach)
+			}
+			if tc.reach {
+				if !out.Review.Pass {
+					t.Fatal("a reviewable diff must carry the answerer's verdict through")
+				}
+				return
+			}
+			if out.Review.Pass {
+				t.Fatal("unreviewable matter was passed")
+			}
+			if !strings.Contains(out.Review.Notes, "not reviewed") {
+				t.Fatalf("the verdict must say it did not review: %q", out.Review.Notes)
+			}
+		})
 	}
 }
 

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsissue"
 	"github.com/usurobor/cnos/src/go/internal/cellcog"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
@@ -179,6 +180,13 @@ type PatchAlpha struct {
 }
 
 func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cellkernel.AlphaOutput, error) {
+	// Admission first: an ill-defined issue is a failure of the cell, not of
+	// the work, and renting cognition to attempt it would spend a provider on
+	// a task nobody can state — and would produce matter β could not judge.
+	issue, err := cdsissue.Admit(in.Contract.Task)
+	if err != nil {
+		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: %w", err)
+	}
 	if a.coder == nil {
 		return cellkernel.AlphaOutput{}, cellcog.ErrNoProvider
 	}
@@ -188,7 +196,7 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 	}
 	defer release()
 
-	if err := a.coder.Work(ctx, wt.Dir, RenderPrompt(in.Contract, a.skills)); err != nil {
+	if err := a.coder.Work(ctx, wt.Dir, RenderPrompt(in.Contract, issue, a.skills)); err != nil {
 		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: coder %q: %w", a.coder.Name(), err)
 	}
 	diff, err := wt.Diff(ctx)
@@ -217,14 +225,17 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 	}, nil
 }
 
-// RenderPrompt is pure and deterministic over the contract and the LOADED
-// skills: the exact skill bodies are injected, not their names — naming a
-// skill without its text is not loading it.
-func RenderPrompt(c cellkernel.Contract, skills []cellskill.Skill) string {
+// RenderPrompt is pure and deterministic over the contract, the admitted
+// issue and the LOADED skills: the exact skill bodies are injected, not their
+// names — naming a skill without its text is not loading it. The issue block
+// comes from cdsissue.Render, the same call the reviewing seat makes, so the
+// two seats cannot be shown different issues.
+func RenderPrompt(c cellkernel.Contract, issue cdsissue.Issue, skills []cellskill.Skill) string {
 	var b strings.Builder
 	b.WriteString("You are the alpha (producing) seat of a CNOS coherence cell, working on real code.\n")
 	b.WriteString("You are in a disposable worktree. Edit the files here to meet the contract.\n\n")
-	fmt.Fprintf(&b, "CONTRACT %s\nGOAL: %s\n", c.ID, c.Goal)
+	fmt.Fprintf(&b, "CONTRACT %s\nGOAL: %s\n\n", c.ID, c.Goal)
+	b.WriteString(cdsissue.Render(issue))
 	b.WriteString("\nHOW YOUR WORK IS RECORDED\n")
 	b.WriteString("Your change is measured as a unified diff of this worktree, not taken from\n")
 	b.WriteString("your summary. Anything you do not write to a file does not exist. An empty\n")

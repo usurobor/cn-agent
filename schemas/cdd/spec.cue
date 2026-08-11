@@ -69,6 +69,12 @@ package cdd
 	contract: {
 		id:   string & !=""
 		goal: string & !=""
+		// The structured task. OPEN and OPTIONAL on purpose: the generic layer
+		// knows that a cell may carry a task and nothing whatever about what one
+		// means. A protocol overlay pins the closed shape (cds.#CDSIssue) and
+		// makes it required; `cellspec` carries these bytes without decoding
+		// them, and no `$param` hole is substituted inside them.
+		task?: {...}
 		required_evidence?: [...#RequiredRef]
 	}
 	// Declared protocol (provenance). The v0 runner emits a generic episode

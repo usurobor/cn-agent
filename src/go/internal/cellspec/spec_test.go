@@ -315,3 +315,37 @@ func TestExplicitEmptyValueIsPreserved(t *testing.T) {
 		t.Fatal("an omitted required parameter must still fail")
 	}
 }
+
+// The task is carried OPAQUELY: this package must not learn what a CDS issue
+// is, so a task that is not one — and a `$hole` string sitting inside one —
+// both survive to the kernel byte for byte. Holes are spliced into the seat
+// declarations only; a task is authored literally and frozen literally, so
+// what a seat admits is what the author wrote.
+func TestTaskIsCarriedOpaquelyAndHoleFree(t *testing.T) {
+	const task = `{"kind":"not.a.cds.issue","note":"$base_sha stays a literal here"}`
+	// Seats swapped for cdd fills so this test needs no CDS registry: whether
+	// a task is carried is the GENERIC loader's property, not any fill's.
+	src := strings.Replace(fixture,
+		`"contract": {"id": "c1", "goal": "do the thing",`,
+		`"contract": {"id": "c1", "goal": "do the thing", "task": `+task+`,`, 1)
+	src = src[:strings.Index(src, `  "alpha": {`)] +
+		`  "alpha": {"fill": "cdd.bool", "value": "true"},
+  "beta": {"fill": "cdd.bool-check"}
+}`
+
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	r, err := s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "abc123"})
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	spec, _, err := r.Build(context.Background(), cellfill.CddFills())
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if got := string(spec.Contract.Task); got != task {
+		t.Fatalf("task did not reach the kernel unchanged:\n got: %s\nwant: %s", got, task)
+	}
+}

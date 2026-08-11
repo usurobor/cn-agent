@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsissue"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
@@ -57,12 +58,42 @@ func skillTree(t *testing.T, refs ...string) cellskill.Tree {
 	return cellskill.Tree{Root: root}
 }
 
+// testIssue is an admissible CDS issue. Every seat test needs one, because a
+// cell whose contract carries no admissible issue no longer reaches a provider
+// at all — which is the point of this cycle.
+const testIssue = `{
+	"kind": "cnos.cds.issue.v0",
+	"id": "test-notes",
+	"problem": {
+		"exists": "The repository records nothing about the change it is under.",
+		"expected": "A NOTES file records it.",
+		"diverges": "There is no NOTES file."
+	},
+	"sources": [{"claim": "what the repository is", "path": "README.md"}],
+	"scope": {"in": ["add a NOTES file"], "out": ["changing README.md"]},
+	"acceptance": [{
+		"id": "AC1",
+		"statement": "A NOTES file exists at the repository root.",
+		"verification": "the diff adds NOTES"
+	}]
+}`
+
 var patchContract = cellkernel.Contract{
 	ID:   "cds-code",
 	Goal: "add a NOTES file",
+	Task: json.RawMessage(testIssue),
 	RequiredEvidence: []cellkernel.RequiredRef{
 		{ID: DiffArtifactID, Kind: DiffArtifactKind, Producer: cellkernel.RoleAlpha},
 	},
+}
+
+func admittedTestIssue(t *testing.T) cdsissue.Issue {
+	t.Helper()
+	iss, err := cdsissue.Admit([]byte(testIssue))
+	if err != nil {
+		t.Fatalf("the test issue must be admissible: %v", err)
+	}
+	return iss
 }
 
 func declJSON(repo, provider string) json.RawMessage {
@@ -104,7 +135,7 @@ func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
 		}
 	}
 	seat := a.Seat.(PatchAlpha)
-	prompt := RenderPrompt(patchContract, seat.skills)
+	prompt := RenderPrompt(patchContract, admittedTestIssue(t), seat.skills)
 	if !strings.Contains(prompt, "# body of cnos.eng:eng/go") {
 		t.Fatal("skill BODY was not injected into the prompt — naming is not loading")
 	}
@@ -159,6 +190,62 @@ func TestConstructionFailsClosed(t *testing.T) {
 				t.Fatalf("%s must fail construction", name)
 			}
 		})
+	}
+}
+
+// recordingCoder proves a NEGATIVE: that the provider was never reached. A
+// coder that merely returned an error could not distinguish "refused before
+// renting" from "rented and then failed".
+type recordingCoder struct{ called bool }
+
+func (*recordingCoder) Name() string { return "recording" }
+func (c *recordingCoder) Work(context.Context, string, string) error {
+	c.called = true
+	return nil
+}
+
+// AC3: an ill-defined issue fails the cell BEFORE any cognition is rented.
+// Cognition is the expensive, non-reproducible resource; spending it on a task
+// nobody managed to state is the waste this admission exists to prevent, and
+// the matter it would produce is matter beta could not judge.
+func TestIllDefinedIssueFailsBeforeRentingCognition(t *testing.T) {
+	repo, _ := testRepo(t)
+	for name, task := range map[string]string{
+		"absent":                 ``,
+		"not an issue at all":    `{"goal":"do the thing"}`,
+		"criterion unverifiable": strings.Replace(testIssue, `"the diff adds NOTES"`, `""`, 1),
+		"unknown key":            strings.Replace(testIssue, `"kind"`, `"knid"`, 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			coder := &recordingCoder{}
+			seat := construct(t, repo, "fake").Seat.(PatchAlpha)
+			seat.coder = coder
+
+			contract := patchContract
+			contract.Task = json.RawMessage(task)
+			_, err := seat.Produce(context.Background(), cellkernel.AlphaInput{Contract: contract})
+			if err == nil {
+				t.Fatal("an ill-defined issue must fail the cell")
+			}
+			if !strings.Contains(err.Error(), "cds issue") {
+				t.Fatalf("failed for the wrong reason: %v", err)
+			}
+			if coder.called {
+				t.Fatal("cognition was rented for an issue that was never admissible")
+			}
+		})
+	}
+
+	// The guard is not vacuous: the SAME double IS reached when the issue is
+	// admissible, so `called` can be true.
+	coder := &recordingCoder{}
+	seat := construct(t, repo, "fake").Seat.(PatchAlpha)
+	seat.coder = coder
+	if _, err := seat.Produce(context.Background(), cellkernel.AlphaInput{Contract: patchContract}); err != nil {
+		t.Fatalf("an admissible issue must reach the coder: %v", err)
+	}
+	if !coder.called {
+		t.Fatal("the recording coder was never called even for an admissible issue")
 	}
 }
 
