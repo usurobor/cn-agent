@@ -154,7 +154,10 @@ constraint, not an ontological claim that mechanical cells are impossible.
 Every conforming cell preserves these invariants:
 
 1. **One contract:** production and assessment receive the same frozen admitted contract.
-2. **One methodology:** constructive and adversarial views derive from one normative bundle.
+2. **One methodology:** the WORK methodology is one normative bundle from which the
+   constructive and adversarial views derive. Admission judges the input contract rather than
+   the work, so it declares its own separate bundle; the invariant forbids two authorities
+   over one obligation set, not two obligation sets over different questions.
 3. **One matter channel:** assessment sees production only through sealed matter.
 4. **Independent assessment:** no private producer state, session, or self-report crosses to
    assessment.
@@ -350,6 +353,14 @@ witness must fail when they diverge.
 
 Every gate states which artifact it measured and how that artifact was obtained.
 
+**Provenance rule.** A gate must build or fetch the artifact it measures from the revision
+under review; it may not measure whatever happens to be present. This is not a general
+caution. The eighth observed defect was exactly this: the shared corpus ran `./cn` from the
+repository root rather than building it, so local runs reported every CLI check green against
+a binary that could predate the change, and a mutation test passed after the guard it was
+testing had been deleted. CI, which builds first, was never affected — which is why the gap
+survived. A gate whose artifact provenance is unstated reports on an unknown object.
+
 | Gate | Artifact | Green proves | Green does not prove |
 |---|---|---|---|
 | Source/IR CUE vet | exact source or normalized IR bytes | structural schema conformance | construction, runtime behavior, semantic adequacy |
@@ -360,6 +371,7 @@ Every gate states which artifact it measured and how that artifact was obtained.
 | Property checker | reconstructed candidate view identified in receipt | its one declared predicate for that artifact | any undeclared property |
 | Assessment coverage | methodology + assessment output | every property has a typed disposition | that every `pass` is mechanically true unless its provider proves it |
 | V | contract + receipt + dereferenced evidence | receipt integrity and validation policy | authorization to effect |
+| Corpus / CLI gate | fixtures plus an executable **built from the revision under review** | both authorities agree over the corpus and the live cells close and vet | anything about a rented provider; the corpus rents only the deterministic fake |
 | Exact-head CI | source at named commit | encoded tests and checks pass for that commit | absence of unencoded defects or cognitive reproducibility |
 
 ### 4.7 End-to-end flow
@@ -1192,6 +1204,14 @@ bounded reconstructed value with no filesystem tools or a genuinely isolated rea
 subject substrate. Merely omitting the producer's workspace handle does not contain an
 unconstrained host file tool, and the current substrate does not prove such containment.
 
+**Bootstrap therefore takes the first option, and this is a decision rather than an
+observation.** Bootstrap beta receives the reconstructed view as a bounded value and is
+offered no filesystem tools, so the independence argument rests only on channel closure and
+on nothing this project cannot demonstrate. Giving beta real tools waits on an isolated
+read-only substrate; that trigger is recorded in the deferred-decision table. Without this
+sentence the design names a containment requirement it does not satisfy and leaves the
+bootstrap undefined at exactly the point where implementation would have to guess.
+
 ### 11.5 Gamma, V, and delta
 
 - Gamma canonically composes contract, matter, assessment, and evidence refs into
@@ -1642,7 +1662,11 @@ A runtime conforms to this design only when executable witnesses show:
 7. production and assessment receive the same contract and cannot share private mutable state;
 8. matter is measured by the adapter against the pinned subject, not accepted from model prose;
 9. bootstrap projections bind the same ordered complete skill-body digests, and later Coh
-   projections have checkable stable property-id coverage equality;
+   projections have checkable stable property-id coverage equality. The bootstrap half is
+   **vacuous by construction** and must be labelled so where it is implemented: when both
+   views carry identical bodies under role wrappers, a digest-equality check cannot fail. It
+   becomes a real witness only once projections can differ — that is, once property ids exist
+   and a criterion can be absent from one view;
 10. beta receives the CCNF pair `(contract, matter)` and returns a complete typed property map;
 11. property-check pass, fail, unavailable, and mechanism fault each take a distinct tested
     path;
@@ -1666,6 +1690,7 @@ A runtime conforms to this design only when executable witnesses show:
 | mechanical-only cell support | one use case shows receipts/composition outperform a function/workflow |
 | station-specific provider/model holes | one cell demonstrably needs different configured engines |
 | issue-declared additional skills | admission, authority, merge, and digest semantics are designed |
+| beta with genuine filesystem tools over the reconstructed subject | an isolated read-only subject substrate exists and is demonstrated; until then bootstrap beta takes the bounded-value form of §11.4 |
 | generalized provider registry | more than the bounded adapter switch creates real maintenance pressure |
 | telemetry retention and epsilon learning schema | a learning cell and privacy/cost policy exist |
 | full repair/main-loop orchestration | working, planning, and cohering cell contracts are independently implemented |
