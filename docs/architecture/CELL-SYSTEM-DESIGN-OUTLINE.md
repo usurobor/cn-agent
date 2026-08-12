@@ -5,7 +5,11 @@
 canonical cell design must settle before Case 3 or later cell work continues.
 **Review mode:** Pi/Sigma design convergence. Review this artifact as architecture;
 do not implement around an unresolved question.
-**Current baseline:** `usurobor/cnos` main after the Case-2 merge.
+**Current baseline:** branch `claude/cds-case3-rented-beta`, parent `d94ca9f7`.
+That head carries Case-2 as merged **plus** unmerged Case-3 work this document
+describes as executed: the `Answerer` port, the `cds.review` fill, the typed
+`contract.task` slot with `internal/cdsissue`, and the matter gate. Statements
+below marked `executed` mean executed *there*, not on `main`.
 **Companions:** CCNF owns the substrate-independent closure kernel; TSC owns
 coherence-methodology semantics; this document will own their end-to-end CNOS cell
 realization once promoted from outline to design.
@@ -94,6 +98,312 @@ The final design must satisfy both current CNOS design disciplines:
 
 ---
 
+## Part I — The seven inventories
+
+These come first deliberately. They are the load-bearing part of the design:
+concrete, checkable against the code that exists today, and each one closes a
+class of defect that this workstream discovered only after implementation.
+Part II's narrative sections explain decisions the inventories cannot express;
+where the two disagree, the inventories are what a reviewer checks.
+
+**Status vocabulary used throughout.** `executed` — exists and runs today;
+`partial` — exists but not in the position this design gives it; `designed` —
+decided here, not built; `absent` — named as a gap with no decision yet.
+
+**Scope.** These inventories describe the CDS implementation cell. A second
+cell kind will re-instantiate them; the shapes are meant to survive that, the
+CDS-specific rows are not.
+
+---
+
+### Inventory 1 — Components
+
+One row per component: its single reason to change, what it owns, and what it
+must not know. "Must not know" is the load-bearing column — most boundary
+erosion in this codebase has been a component learning something it had no
+business learning.
+
+| Component | Realization | One responsibility | Owns | Must not know | Status |
+|---|---|---|---|---|---|
+| Invocation runner | `cellrun` | turn one invocation into a closure and an exit code | argument parsing, contract reading, closure encoding, exit mapping | any fill's semantics; any provider; git; what a task is | executed |
+| Composition root | `cellfills` | bind fill ids to constructors once | the registry passed to `Build` | how any fill works internally | executed |
+| Spec normalizer | `cellspec.Parse`, `.Resolve` | source JSON → normalized IR, purely | exact key language, hole grammar, parameter domains, presence-vs-absence | fills, CDS, issue shape, providers, the filesystem | executed |
+| Plan compiler | `cellspec.Resolved.Build` + `cellfill` | normalized IR → constructed components | construction order, strict per-fill decoding, the one construction-time effect | seat semantics; what a prompt means | executed (not yet a distinct `CompiledCellPlan` type) |
+| Protocol kernel | `cellkernel` | run the fixed closure protocol and emit one receipt | `Contract`/`Matter`/`Review`/`Artifact`/`Receipt`/`Closure`, sealing, γ, V, δ, lift, the single digest | providers, git, CDS, what `Task` bytes mean | executed |
+| Cognition adapters | `cellcog` | one bounded, stateless provider invocation | argv recipes, timeouts, output bounds, truthful execution mode | fill semantics, worktrees, what counts as evidence | executed |
+| Skill loader | `cellskill` | refs → ordered bodies with content digests | ref grammar, load order, digesting | why a skill was selected | executed |
+| **Subject adapter** | `cellwork` | materialize, measure, and reconstruct the subject | `materialize(base)`, `measure(workspace, base)`, `reconstruct(base, matter)`, disposability | contract semantics, prompts, verdicts | **partial** — exists, but constructed privately by the producing fill |
+| **Admission** | `cdsissue` + designed `cds.work-contract-admission` | decide whether the run input is executable, before production | the typed issue/design contract, structural rules, the cognitive semantic check, the admission receipt | how the work is done; how it is judged | **partial** — the predicate exists; the component and its receipt do not |
+| Producing fill | `cdspatch` | construct and run the producing seat | prompt composition, artifact identity | how the subject is cut (should be the adapter's); how it is judged |  executed |
+| Assessing fill | `cdsreview` | construct and run the assessing seat | verdict decoding, refusal to judge unreviewable matter | the producing seat's internals |  executed — but see the CDS predicate in Inventory 3 |
+| **Methodology bundle** | — | be the ONE normative source of assessable obligations | the obligations, and both projections of them | which seat is reading it | **absent** — today two independent skill lists |
+| **Oracle suite** | — | run declared mechanical checks and emit their receipts | check identity, artifact provenance, proof limits | matter semantics; verdicts | **absent** — `scripts/cell-schema-check.sh` is one, and it lives outside every cell |
+
+**What Inventory 1 already shows.** Three of thirteen components are absent or
+mispositioned, and each corresponds to an unresolved question the outline
+raised independently: the subject adapter (Pi decision 1), the methodology
+bundle (decision 2), and the oracle suite. That is the inventory doing its
+job — it makes a missing component a visible empty row rather than a defect
+found later.
+
+---
+
+### Inventory 2 — Value catalogue
+
+Every value that crosses a component boundary: who produces it, who consumes
+it, which schema surfaces must admit it, and whether it enters the one
+scope-lift digest. This closes the class that produced the HEAD-versus-base
+measurement bug and the closure-schema omission — both were values whose
+consumer list was never written down.
+
+**Rule this inventory exists to enforce:** a value may not gain a consumer or
+a schema surface without gaining a row here first.
+
+| Value | Producer | Consumers | Schema surfaces | In digest |
+|---|---|---|---|---|
+| cell source bytes | author / future compiler | `cellspec.Parse` | `cdd.#CellSpec`, `cds.#CDSCellSpec` | no (its resolved form is) |
+| parameters (`--param`) | invoker | `cellspec.Resolve` | `#Param` declaration only; values are Go's authority | no |
+| `contract.id`, `contract.goal` | source | both seats, record, V | `#CellSpec`, `#EpisodeRecord` | **yes** |
+| `contract.task` (opaque bytes) | source | `cdsissue.Admit` at both seats; record | `#CellSpec.contract.task?` (open), `#CDSIssue` (closed), `#EpisodeRecord.contract.task?` | **yes** |
+| `contract.required_evidence` | source | V's producer-authority check, record | `#RequiredRef`, `#CDSCellSpec` order rule | **yes** |
+| resolved spec (per-seat declarations) | `Build` | record; `VerifyClosure` re-compares against `RunMeta` | `#CDSPatchAlphaResolved`, `#CDSReviewBetaResolved` | **yes** |
+| execution mode | `cellcog.New` (follows the provider) | `RunMeta`, record, `lift` | `#EpisodeClosure` | **yes** |
+| `base_sha` (pinned) | subject adapter at materialization | **the measurement** (`measure`), the `base_sha` artifact, and — designed — `reconstruct` | `#CDSPatchAlphaResolved.workspace.base_sha` (40 hex) | **yes**, via artifact and resolved spec |
+| workspace directory | subject adapter | producing seat only | none (runtime-local, disposable) | no |
+| matter (unified diff) | subject adapter's `measure` | assessing seat; record; the `diff` artifact | `#EpisodeRecord.matter` | **yes** |
+| evaluation view | designed `reconstruct(base, matter)` | assessing seat | none yet | no — derived, see Inventory 4 |
+| artifacts `base_sha`, `diff` | producing station | V's required-evidence check; record | `#EpisodeRecord.alpha.artifacts` | **yes** |
+| skill bodies | `cellskill.LoadAll` | prompts only | none | **no** — deliberately |
+| skill refs + sha256 | `cellskill.LoadAll` | resolved declarations, record | `…Resolved.skills` | **yes** |
+| review verdict | assessing seat | record; V; δ | `#EpisodeRecord.review` | **yes** |
+| verdict / decision / status / repair | γ→V→δ→lift, mechanically | closure; exit code | `#EpisodeClosure` | derived, re-derivable |
+| scope-lift digest | `sha256(canonicalBytes(record))` | `VerifyClosure`, any downstream verifier | `#EpisodeClosure.receipt.scope_lift_digest` | is the digest |
+| admission receipt | **designed** | closure; downstream custody | **to be defined** | **must be** |
+| oracle receipts | **designed** | V; assessment | **to be defined** | **must be** |
+| provider credentials | ambient operator configuration | provider child process only | none, ever | **never** |
+| telemetry | provider stream | diagnostics on the error path only | none | no |
+
+**Two rows are the design's current debt.** The admission receipt and the
+oracle receipts have no schema surface and no digest binding, which is exactly
+the state `contract.task` was in before it was traced. They are written here
+before they are built.
+
+---
+
+### Inventory 3 — Authority table
+
+Per component: what it **enforces** (something breaks if violated), what it
+merely **declares** (a truthful statement carrying no enforcement), and what it
+**claims nothing** about. This closes the class that produced the withheld-Bash
+mistake, the availability-versus-approval confusion, and the admission barrier
+leaking into unrelated fixtures.
+
+**Rule this inventory exists to enforce:** any sentence in code or docs
+asserting a property must appear in the *enforces* column of some row, or be
+rewritten as a declaration.
+
+| Component | Enforces | Declares | Claims nothing about |
+|---|---|---|---|
+| `cellspec.Parse`/`Resolve` | exact keys, case-sensitivity, hole grammar, parameter domains, required-parameter presence | that a normalized IR has no unresolved holes | whether the declared components can be constructed |
+| `cellfill` strict decoding | closed per-fill key language, including case-insensitive Go aliases | that a fill's arguments are exactly its own | whether the arguments are semantically sensible |
+| `cellkernel` | seat isolation by construction (unexported sealed values), record validity bounds, digest recomputation, producer authority for required evidence, re-derivability of verdict/decision/status | the declared protocol id (provenance only; `protocol_validated=false`) | what any fill's declaration means |
+| `cellcog` argv | that a cell cannot smuggle argv, env, executable paths, or safety overrides | the offered tool surface and the declared permission mode | **containment of any kind** — a seat with Bash reaches the whole host |
+| `--safe-mode` | suppression of USER and PROJECT customization | that this cell's digested skills are the only context *this cell* contributes | vendor-managed substrate policy above the baseline |
+| Subject adapter | that matter is computed from the worktree against the pinned base, never taken from a seat's account | disposability of the workspace | anything a seat did outside the workspace |
+| Admission (structural) | the typed issue contract: closed keys, non-blank fields, unique criterion ids, a verification route per criterion | that the input is *well-formed* | that the input is *executable* |
+| Admission (cognitive, designed) | nothing | an **attested, unverified** judgement that the issue and design are semantically executable | correctness — it is cognition, and it is not itself reviewed |
+| Assessing seat | that a verdict decodes to the requested schema or the seat fails; that unreviewable matter is refused without renting cognition | its findings and its citations | anything it could not check from its input — hence `unverified` |
+| `scripts/cell-schema-check.sh` | that both authorities agree over one corpus; that the CLI under test is built from source | what green proves (Inventory 6) | any property of a rented provider |
+
+**Barrier locations, stated once.** A barrier belongs at exactly one place and
+must not follow the guarded thing around:
+
+| Barrier | Sits at | Explicitly does NOT sit at |
+|---|---|---|
+| issue admissibility | the door — `Admit`, before cognition is rented | the shape of every CDS document (`#CDSCellSpec` leaves `task` optional for exactly this reason) |
+| matter reviewability | the assessing fill, before cognition is rented | the kernel, which never inspects matter |
+| capability | the execution substrate | the tool list, which declares and does not contain |
+| provider credentials | ambient operator configuration | cell JSON, receipts, telemetry — at any point |
+
+---
+
+### Inventory 4 — Seat specifications
+
+Per cognitive station: the decision it makes, the input it receives, the
+**argument that the input suffices for that decision**, its representable
+outcomes, and what makes it independent. This closes the class that produced
+the confident false finding.
+
+**Rule this inventory exists to enforce:** a station may not be asked for a
+decision whose sufficiency argument is missing. If the argument cannot be
+written, either the input changes or the decision does.
+
+#### 4.1 Admission
+
+| | |
+|---|---|
+| **Decision** | is this run input executable? |
+| **Input** | the untrusted run-input envelope: contract bytes, design bytes, subject reference |
+| **Outcomes** | `admitted` · `rejected` · `incomplete` · `failed` |
+| **Sufficiency (structural)** | complete. Every structural rule is decidable from the bytes alone. |
+| **Sufficiency (cognitive)** | **partial, and labelled as such.** A model reading Markdown cannot prove total obligation coverage. The outcome is an attestation, not a verification, and must be receipted as one. |
+| **Independence** | it judges input, not work; it never sees matter |
+
+#### 4.2 Production
+
+| | |
+|---|---|
+| **Decision** | none — it produces, it does not judge |
+| **Input** | frozen contract (including the admitted issue), the constructive projection of the methodology bundle, a materialized workspace |
+| **Product** | the measured diff — **not** its own account of what it did |
+| **Capability required** | the full practical engineering surface, including a shell. A seat that cannot run the project's tests cannot check its own work, and produces plausible code it has no way to verify. Withholding that was never containment (Inventory 3). |
+| **Outcomes** | matter, possibly empty; empty matter closes the episode unmet |
+| **Sufficiency** | the contract must state acceptance criteria and their verification routes; a one-line goal is insufficient and was the root of the false-verdict episode |
+
+#### 4.3 Assessment
+
+| | |
+|---|---|
+| **Decision** | for each declared obligation: is it satisfied by this matter? |
+| **Input** | frozen contract (same bytes as production received), matter, the adversarial projection of the same methodology bundle, and the runtime-derived evaluation view |
+| **Outcomes** | `pass` · `finding` (with citation) · `unverified` · `failed` |
+| **Sufficiency** | this is the argument the design turns on, below |
+| **Independence** | reconstruction, not blindness — below |
+
+**Sufficiency argument.** An obligation is decidable by assessment when its
+verification route resolves against the evaluation view. Routes that resolve:
+"the diff adds file X", "X states Y", "no call site of Z remains". Routes that
+do **not** resolve without an oracle: "the tests pass", "it vets", "it builds".
+Those are the oracle suite's obligations, and assessment must be given their
+receipts rather than asked to guess — which is why the oracle suite is a
+component and not a convenience.
+
+Where a route resolves against neither, the outcome is `unverified`. That arm
+is not a courtesy; it is what makes the sufficiency argument honest. Without
+it a station under-informed for its question must guess, and the recorded
+episode shows what guessing produces: a specific, confident, false claim that a
+file lacked an import the file contains at line 126.
+
+**Independence argument.** Assessment's evaluation view is
+`reconstruct(base_sha, matter)` — a deterministic runtime function of two
+values already inside the CCNF pair. It adds **no information** to
+`(contract, matter)`; it changes the **form** from a patch to a tree.
+
+Therefore independence does not rest on the seat being unable to look. It rests
+on there being no channel from production to assessment except matter, which
+assessment reads anyway. Production cannot influence the view except by
+changing the patch, and the patch is the thing under review.
+
+This is checkable rather than promised, and the check is the property to build:
+the reconstruction takes exactly `(base_sha, matter)`, and the assessing seat's
+constructor receives no other source. It also survives assessment gaining
+tools, which the previous property — no tools, therefore cannot look — did not.
+
+---
+
+### Inventory 5 — Rule ownership
+
+Every rule stated in two authorities needs a named owner, a named mirror, and a
+**mechanism that checks they agree**. This closes the class that produced eight
+whitespace runes admitted by CUE and rejected by Go under a comment asserting
+the two were the same predicate.
+
+**Rule this inventory exists to enforce:** a sentence claiming two authorities
+agree is not an agreement mechanism. Name the artifact that fails when they
+diverge.
+
+| Rule | Normative owner | Mirror | Agreement mechanism | Status |
+|---|---|---|---|---|
+| parameter/hole name grammar | `cdd.#ParamName` | `cellspec.validParamName` | shared corpus; a name legal in one and not the other fails a fixture | executed |
+| concrete-vs-hole value | `cds.#Concrete` | `cellspec` hole detection | `fixtures/invalid/cds-bad-hole-name.json` | executed |
+| provider/model pairing | `cds.#Cognition` | `cellcog.New` | `cds-fake-with-model.json`, `cds-modelless-provider.json` | executed |
+| issue admissibility | `cds.#CDSIssue` | `cdsissue.Admit` | one corpus read by both: `fixtures/issue/`, 2 positives + 13 single-reason negatives | executed |
+| blankness | one pattern string | transcribed into both | Go: predicate compared against `unicode.IsSpace` over the whole rune space. CUE: a fixture carrying the entire whitespace set in one field, so dropping any rune makes it vet clean and fails the gate | executed |
+| closure shape | `cdd.#EpisodeClosure` | `cellkernel` record + `VerifyClosure` | live cells' output vetted in the corpus | executed |
+| evidence order (diff first) | `#CDSCellSpec` structural list | — | `cds-diff-not-first.json` | executed (CUE-only by choice) |
+| producing tool surface | `.github/workflows/cnos-cds-dispatch.yml` | `cellcog.CodingToolSurface` | parity test that **reads the YAML** | executed |
+| methodology obligations | **the bundle** (designed) | both projections | **absent** — the projection property is the mechanism to build | designed |
+| admission result vocabulary | **absent** | — | — | designed |
+
+**The pattern worth naming.** Every executed row's mechanism is a *fixture or a
+test that fails*, never a comment. The two designed rows have no mechanism yet,
+and that is the honest reading of their status.
+
+---
+
+### Inventory 6 — Gate specification
+
+Per oracle: how the artifact under test is **obtained**, what a green result
+proves, and — the column that matters — what it does not. This closes the class
+in which the shared corpus ran a stale binary and reported green after the
+guard it was testing had been deleted.
+
+**Rule this inventory exists to enforce:** an oracle must state how it obtains
+what it measures. An oracle that does not is measuring something unknown.
+
+| Oracle | Artifact under test | How obtained | Green proves | Green does NOT prove |
+|---|---|---|---|---|
+| `go test -race -count=1 ./...` | the source tree | compiled per run; `-count=1` because a cached PASS is not a result | the assertions that exist hold | that the assertions can fail — only mutation shows that |
+| `go vet ./...` | the source tree | compiled per run | no vet-detectable defect | nothing semantic |
+| `cue vet … -d '#X'` | a fixture or a live closure | read from disk | the document satisfies that definition | nothing about the other authority — that is Inventory 5's job |
+| `scripts/cell-schema-check.sh` corpus | fixtures **and the CLI** | **the CLI is now built from source per run**; previously `./cn` from the repo root, which meant local runs measured a possibly-stale binary while CI (which builds first) did not | both authorities agree over the corpus, and the live cells close and vet | anything about a rented provider — the corpus rents only the deterministic fake |
+| live rented-cognition episode | one real provider run | run by hand from an immutable clean commit; raw closure committed | that the declared authority sufficed on that occasion | reproducibility — the mode is `cognitive` and honestly irreproducible |
+| declared cell oracles | the candidate workspace | **designed** — run by the runtime over the evaluation view, receipts to assessment and V | the declared mechanical checks | any obligation no oracle covers |
+
+**The proof-limit statement, once, plainly.** No gate here proves the absence of
+defects. Each proves that a specific stated property held for a specific
+obtained artifact. Where a gate's artifact provenance is unstated, its green
+result is evidence about an unknown object — which is what happened, and what
+this inventory exists to prevent recurring.
+
+---
+
+### Inventory 7 — End-to-end flow
+
+Every gate in order, with its typed failure and its exit. `executed` rows are
+today's behaviour; `designed` rows are this document's decisions.
+
+| # | Step | Gate | On failure | Exit | Status |
+|---|---|---|---|---|---|
+| 1 | parse arguments | flags well formed, no duplicates | usage error | 2 | executed |
+| 2 | read contract | readable | usage error | 2 | executed |
+| 3 | `Parse` | exact keys, case, hole grammar | spec rejected | 2 | executed |
+| 4 | `Resolve` | required parameters supplied, values in domain | resolution rejected | 2 | executed |
+| 5 | `Build` | fills known; per-fill strict decode; skills load; providers construct | construction rejected | 2 | executed |
+| 6 | **admit** | structural, then cognitive | `rejected`/`incomplete` | **1 with an admission closure** | **designed** — today the seats refuse and **no closure is emitted at all** |
+| 7 | mint identity | non-empty, pairwise distinct | fail closed before production | 2 | executed |
+| 8 | freeze contract + metadata | clone; no seat holds a shared reference | — | — | executed |
+| 9 | **materialize subject** | base resolves to a commit | subject failure | 2 | **partial** — inside the producing fill today |
+| 10 | produce | provider runs within bounds | seat malfunction | 2 | executed |
+| 11 | **measure** | diff against the **pinned base**, not `HEAD` | measurement failure | 2 | executed (since `4e8fe9c8`) |
+| 12 | seal α | matter and artifact bounds | invalid record | 2 | executed |
+| 13 | **run oracles** | declared mechanical checks | oracle unavailable → assessment `INCOMPLETE` | 1 | **designed** |
+| 14 | **reconstruct view** | pure function of `(base, matter)` | reconstruction failure | 2 | **designed** |
+| 15 | assess | verdict decodes to the requested schema; unreviewable matter refused before renting | seat malfunction | 2 | executed |
+| 16 | seal β | bounds | invalid record | 2 | executed |
+| 17 | γ closes | record composed; one digest taken | — | — | executed |
+| 18 | V validates | record validity, digest recomputes, contract matches, required evidence present with producer authority, review passes | verdict carries typed failures | — | executed |
+| 19 | δ decides | mechanical from receipt + verdict | — | — | executed |
+| 20 | lift | status from (verdict, decision, mode) | inconsistent | 2 | executed |
+| 21 | self-verify | `VerifyClosure` against **this invocation's** contract and metadata, never the closure's own | closure rejected, empty stdout | 2 | executed |
+| 22 | encode + exit | — | — | 0 accepted · 1 non-accepted terminal · 3 simulated | executed |
+
+**The gap this inventory makes visible.** Step 6 is the one refusal path that
+currently emits nothing. A taskless CDS cell exits non-zero with no closure, so
+the refusal is invisible to every downstream consumer — no receipt, no reason,
+no custody. Every other terminal state in this table produces an artifact. That
+asymmetry should be an acceptance criterion for promotion, not a footnote.
+
+---
+
+## Part II — Narrative, decisions, and open questions
+
+The sections below explain decisions the inventories cannot express, and hold
+the questions still open. Where a narrative sentence and an inventory row
+disagree, the row is what a reviewer checks.
+
+---
+
 ## 1. Working thesis
 
 ### 1.1. Conceptual definition
@@ -155,12 +465,27 @@ oracle must deliberately promote an observation into a digested evidence artifac
 
 Yes, substantially—but not into one model call.
 
-The cell-specific, configurable spine appears to be:
+The cell-specific, configurable **semantic** spine is three cognitive
+stations — this is unchanged, and the subject adapter is deliberately not a
+fourth:
 
 ```text
 admit contract + subject
   → produce candidate matter
   → assess candidate matter
+```
+
+The **execution** flow shows where the substrate serves those stations. The
+subject adapter is a declared runtime-substrate component, not a station: it
+makes no decision and rents no cognition, but two stations depend on it and
+therefore it can belong to neither.
+
+```text
+admit
+  → materialize(base) ──────────→ produce
+                                     │ measure(workspace, base) → matter
+                                     ▼
+                   reconstruct(base, matter) → evaluation view → assess
 ```
 
 The remaining tail is fixed mechanics:
@@ -169,10 +494,23 @@ The remaining tail is fixed mechanics:
 γ closes → V validates → δ decides
 ```
 
+**Why the adapter had to be named.** In the executed code, materialization
+lives inside the producing fill and the workspace is released when production
+returns (`cdspatch.go:193-197`, `defer release()`). Assessment runs afterwards,
+so a reconstructed candidate workspace is not merely unbuilt — the subject no
+longer exists when assessment needs it. The measurement defect has the same
+origin: measuring "what changed relative to what" was a private detail of the
+producing seat rather than the whole job of a named component. It measured
+against `HEAD` from Case 2 until `4e8fe9c8`, through a merged case and nine
+review rounds, because no component's specification made the question its own.
+
 For the bootstrap:
 
-- **admission** is a CDS-owned component combining structural validation with an
-  optional cognitive issue/design review;
+- **admission** is a CDS-owned peer component combining structural validation with
+  a receipted, explicitly attested cognitive issue/design review;
+- the **subject adapter** is a declared runtime-substrate component — it makes no
+  decision and rents no cognition, but production and assessment both depend on
+  it, so it belongs to neither;
 - **production** is a full engineering cognition component over a disposable,
   pinned subject;
 - **assessment** is a fixed cognitive review component using the admitted contract,
@@ -214,8 +552,26 @@ For CDS v0, a `cds.work-contract-admission` constructor owns:
 4. an explicit `admitted | rejected | incomplete | failed` result;
 5. a digest binding the admitted issue/design bytes.
 
-Malformed or unreviewable input emits an admission receipt and stops before alpha.
-It is never silently discarded.
+Admission is a PEER component of the cell definition, not a constructor nested
+under `input`: an untrusted run-input envelope enters it, and success produces an
+`AdmittedContract` plus an admission receipt that production then consumes.
+
+**Target state:** malformed or unreviewable input emits an admission receipt and
+stops before production. It is never silently discarded.
+
+**Current state, stated exactly:** this does not hold. Both seats call
+`cdsissue.Admit` before renting cognition, so an inadmissible issue does stop the
+run — but it stops it with a non-zero exit and **no closure at all**
+(`cellrun/run.go` returns 2 on a seat error, before any receipt exists). The
+refusal is therefore invisible to every downstream consumer: no receipt, no
+reason, no custody. Every other terminal state in Inventory 7 produces an
+artifact. Closing that asymmetry is an acceptance criterion for promotion.
+
+**Bootstrap cognitive admission is an attestation, not a verification.** It is
+rented cognition, it is not itself reviewed, and it must be labelled
+`attested / unverified` in its receipt until an independent review or Coh
+replaces it. γ, V and δ go unreviewed because they are mechanical and
+re-derivable; cognitive admission is neither, and must not borrow their standing.
 
 ---
 
@@ -300,25 +656,27 @@ This candidate is a completeness probe, not a schema decision:
     },
     "subject": {
       "kind": "git.snapshot/0.1"
-    },
-    "admission": {
-      "fill": "cds.work-contract-admission",
-      "cognition": {
-        "provider": "$provider",
-        "model": "$model"
-      },
-      "skills": [
-        "cnos.cdd:cdd/issue",
-        "cnos.cdd:cdd/design"
-      ]
     }
+  },
+  "admit": {
+    "fill": "cds.work-contract-admission",
+    "cognition": {
+      "provider": "$provider",
+      "model": "$model"
+    },
+    "skills": [
+      "cnos.cdd:cdd/issue",
+      "cnos.cdd:cdd/design"
+    ]
   },
   "produce": {
     "fill": "cds.patch",
     "cognition": {
       "provider": "$provider",
       "model": "$model"
-    },
+    }
+  },
+  "methodology": {
     "skills": [
       "cnos.eng:eng/code",
       "cnos.eng:eng/test",
@@ -327,15 +685,11 @@ This candidate is a completeness probe, not a schema decision:
     ]
   },
   "assess": {
-    "fill": "cdd.review",
+    "fill": "cds.bootstrap-falsifier",
     "cognition": {
       "provider": "$provider",
       "model": "$model"
-    },
-    "skills": [
-      "$language",
-      "$style"
-    ]
+    }
   },
   "output": {
     "matter": {
@@ -343,14 +697,14 @@ This candidate is a completeness probe, not a schema decision:
     },
     "required_evidence": [
       {
-        "id": "candidate-diff",
-        "kind": "git.diff",
-        "producer": "runtime"
+        "id": "diff",
+        "kind": "diff",
+        "producer": "alpha"
       },
       {
         "id": "assessment",
         "kind": "property-assessment",
-        "producer": "assess"
+        "producer": "beta"
       }
     ]
   }
@@ -361,6 +715,17 @@ This candidate is a completeness probe, not a schema decision:
 
 - **Issue, design, repo, and base SHA are not holes.** They are run-specific
   contract/subject values carried by `RunRequest`.
+- **No `producer: "runtime"`.** `cellkernel.Role` is `alpha | beta`
+  (`kernel.go:76-77`) and `validateRecord` rejects anything else
+  (`kernel.go:617`). Station ownership and observation origin are different
+  questions and are not being conflated in this round: runtime-measured
+  evidence stays positioned on the producing station's side under the current
+  kernel, and the distinction is deferred to a later design round with its own
+  evidence.
+- **No per-station skills list.** One `methodology` bundle is declared once;
+  production receives its constructive projection and assessment its
+  adversarial one. A `produce.skills` or `assess.skills` key would be two
+  normative sources of obligations wearing one name.
 - **Gamma, V, and delta are not configurable components here.** The declared
   protocol selects the fixed mechanical closure/validation/boundary contracts.
 - **No arbitrary binary, argv, environment, command, or capability list appears.**
@@ -368,6 +733,16 @@ This candidate is a completeness probe, not a schema decision:
   it can be provided.
 - **No `bindings.alpha` or component-reference plane exists.** Each component is
   declared once with its constructor properties inline.
+- **`subject.kind` names an adapter, not a runner capability.** It selects a
+  declared subject adapter at the composition root, exactly as `fill` selects a
+  constructor. The generic runner stays unaware of git.
+- **`assess.fill` is provisional.** `cds.bootstrap-falsifier` is a placeholder
+  for whatever §3.7 settles, and is deliberately not the executable-looking
+  `cdd.review`: a generic reviewer must not contain a CDS predicate, and the
+  current implementation does — `cdsreview.go:188` gates matter on
+  `\ndiff --git `. Either the matter type carries its own admissibility
+  predicate or the cell definition supplies one; that is an open decision, not
+  a naming choice.
 - **No task-specific skills hole appears yet.** The design must decide whether
   admitted issue/design contracts may declare additional canonical skills and how
   the fill merges them without creating an unbounded prompt-extension escape.
@@ -386,6 +761,8 @@ This candidate is a completeness probe, not a schema decision:
 | repo + base SHA | runtime subject, not holes | they define the exact state operated on |
 | timeout/tool policy | runtime/fill policy, not holes yet | making them arbitrary weakens the boundary without demonstrated need |
 | issue-specific skills | open decision | should be admitted contract data if allowed, not arbitrary CLI injection |
+| methodology bundle | declared once, not a hole | one normative source; `$language` and `$style` are holes INSIDE it |
+| subject adapter | selected by `subject.kind`, not a hole | the substrate serving two stations, not per-episode configuration |
 
 The same provider/model holes may populate admission, alpha, and beta while each
 station still receives a fresh, independent invocation. We should not add
@@ -416,12 +793,22 @@ can implement TSC, after which beta becomes Coh execution.
 
 However, the current `cdd/review` skill cannot simply be assumed suitable. It
 contains branch, issue/PR, `.cdd`, CI, and write/merge expectations. A no-workspace
-answering seat cannot obey that full contract. The design must choose one of:
+answering seat cannot obey that full contract. Three options were on the table:
 
 1. define a narrow bootstrap review skill over `(issue, design, subject, matter)`;
-2. define a mechanically selected projection of the existing review skill;
+2. define a mechanically selected projection of the one methodology bundle;
 3. give the review component the complete capability/input contract the existing
    skill requires.
+
+**Decided: option 2.** Option 1 creates a second normative source of criteria —
+the thing the single-bundle decision forbids and the thing Coh exists to end.
+Option 3 grants branch, PR, `.cdd` and CI authority the review does not need,
+which makes independence harder to argue rather than easier.
+
+The projection is stated as a PROPERTY rather than a procedure, so it survives
+Coh replacing the mechanism: the two views must be derived from one bundle such
+that no obligation appears in one and not the other. That is checkable today and
+is the missing agreement mechanism in Inventory 5's methodology row.
 
 The fixed review algorithm should be:
 
@@ -831,3 +1218,7 @@ not authorization to continue Case-3 implementation.
       invocation consumer.
 - [ ] Every final implementation AC names a specific artifact and an oracle, including
       a negative/mutation witness.
+- [ ] Every refusal path emits a closure. A refusal that produces no artifact is
+      invisible to custody, repair, and learning.
+- [ ] Every oracle states how it obtains the artifact it measures. An oracle with
+      unstated provenance reports on an unknown object.
