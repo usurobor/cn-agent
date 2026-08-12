@@ -14,11 +14,6 @@
   "protocol_id": "cnos.cdd.cds.receipt.v1",
   "alpha": {
     "fill": "cds.patch",
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": ".",
-      "base_sha": "x"
-    },
     "skills": [
       "cnos.eng:eng/go"
     ],

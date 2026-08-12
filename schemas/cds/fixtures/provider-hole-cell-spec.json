@@ -3,6 +3,11 @@
   "contract": {
     "id": "c",
     "goal": "g",
+    "subject": {
+      "kind": "git.snapshot/0.1",
+      "repo": ".",
+      "base_sha": "0123456789abcdef0123456789abcdef01234567"
+    },
     "required_evidence": [
       {
         "id": "diff",
@@ -22,11 +27,6 @@
     "fill": "cds.patch",
     "cognition": {
       "provider": "$provider"
-    },
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": ".",
-      "base_sha": "0123456789abcdef0123456789abcdef01234567"
     },
     "skills": [
       "cnos.eng:eng/go"

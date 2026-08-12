@@ -7,9 +7,10 @@ be the provider service this project deliberately does not build.
 The raw closure stdout is committed at
 [`evidence/cds-case2-claude-closure.json`](evidence/cds-case2-claude-closure.json).
 `scripts/cell-schema-check.sh` re-derives **a named subset** from it on every
-run — the two CUE shapes, `execution_mode`, `status`, the UTF-8 diff byte
-count, the diff SHA-256, and the touched-file list. A one-byte edit **inside
-the diff**, or deleting the file, fails the gate.
+run — the closure schema, the generic seat envelope, `execution_mode`,
+`status`, the UTF-8 diff byte count, the diff SHA-256, and the touched-file
+list. A one-byte edit **inside the diff**, or deleting the file, fails the
+gate.
 
 Stated exactly, because the earlier version of this file overclaimed
 (Pi #59 D1): the gate does **not** check the episode id, the recorded
@@ -28,7 +29,21 @@ declaration. The claim was open exactly where the fix landed.
 
 **The recorded contract is older than the fixture it names.** Since this run,
 `code-cell-spec.json` gained a required `contract.task` — a typed CDS issue —
-and this episode ran without one. Its goal line, *"Carry out the change
+and then a `contract.subject`, the repository and commit both stations receive
+frozen; this episode ran with neither. Its recorded alpha declaration still
+carries the `workspace` block that `cds.patch` no longer accepts, so the gate
+vets that declaration against the generic seat envelope rather than
+`#CDSPatchAlphaResolved`: the artifact records a shape that has since been
+deleted, and editing it to fit would break the digest it is evidence for.
+
+State the reduction plainly rather than let "envelope" carry it: `#Seat` is
+`{fill!: string & !="", ...}`, so what that row still checks is that the
+declaration names a fill — nearly nothing. The canonical-shape claim this
+fixture used to carry is gone, not narrowed. What it still proves is
+unchanged and is in the gate rows below: the mode, the status, the measured
+diff's byte count and digest, and the touched-file list.
+
+Its goal line, *"Carry out the change
 described by the issue in the repository at base_sha"*, is exactly the sentence
 that motivated the change: it refers to an issue the cell was never given.
 Re-running the invocation below against today's fixture would therefore produce
@@ -102,7 +117,7 @@ Recompute by hand:
 ev=docs/architecture/evidence/cds-case2-claude-closure.json
 cue vet schemas/cdd/episode-closure.cue "$ev" -d '#EpisodeClosure'
 python3 -c 'import json,sys;json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"],open("/tmp/a.json","w"))' "$ev"
-cue vet ./schemas/cds:cds /tmp/a.json -d '#CDSPatchAlphaResolved'
+cue vet schemas/cdd/spec.cue /tmp/a.json -d '#Seat'   # not #CDSPatchAlphaResolved; see above
 python3 -c 'import hashlib,json,sys;d=json.load(open(sys.argv[1]))["receipt"]["record"]["matter"]["data"];print(len(d.encode()),hashlib.sha256(d.encode()).hexdigest())' "$ev"
 ```
 

@@ -1,0 +1,5 @@
+{
+  "kind": "git.snapshot/0.1",
+  "repo": "/srv/repositories/example",
+  "base_sha": "HEAD"
+}

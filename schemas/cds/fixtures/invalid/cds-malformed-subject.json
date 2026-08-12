@@ -5,8 +5,9 @@
     "goal": "g",
     "subject": {
       "kind": "git.snapshot/0.1",
-      "repo": "$bad-name",
-      "base_sha": "0123456789abcdef0123456789abcdef01234567"
+      "repo": ".",
+      "base_sha": "0123456789abcdef0123456789abcdef01234567",
+      "branch": "main"
     },
     "required_evidence": [
       {

@@ -16,19 +16,17 @@ import (
 // DisallowUnknownFields, so without an exact-key check `Fill` or a nested
 // `Provider` would execute in Go while CUE rejects it.
 func TestMixedCaseKeysRejected(t *testing.T) {
-	repo, _ := testRepo(t)
 	f := Factory(skillTree(t, testSkills...))
 	base := `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},` +
-		`"workspace":{"kind":"git-worktree","repo":"` + repo + `","base_sha":"HEAD"},` +
 		`"skills":["cnos.eng:eng/go"]}`
 	if _, err := f(context.Background(), json.RawMessage(base)); err != nil {
 		t.Fatalf("canonical declaration must construct: %v", err)
 	}
 	mixed := map[string]string{
-		"seat tag":         strings.Replace(base, `"fill"`, `"Fill"`, 1),
-		"top-level arg":    strings.Replace(base, `"cognition"`, `"Cognition"`, 1),
-		"nested arg":       strings.Replace(base, `"provider"`, `"Provider"`, 1),
-		"nested workspace": strings.Replace(base, `"base_sha"`, `"Base_SHA"`, 1),
+		"seat tag":      strings.Replace(base, `"fill"`, `"Fill"`, 1),
+		"top-level arg": strings.Replace(base, `"cognition"`, `"Cognition"`, 1),
+		"nested arg":    strings.Replace(base, `"provider"`, `"Provider"`, 1),
+		"skill list":    strings.Replace(base, `"skills"`, `"Skills"`, 1),
 	}
 	for name, decl := range mixed {
 		t.Run(name, func(t *testing.T) {

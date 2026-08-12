@@ -75,7 +75,6 @@ func TestInstalledHubLoadsFromForeignCwd(t *testing.T) {
 
 	reg := cellfills.Assemble(hub)
 	decl := json.RawMessage(`{"fill":"cds.patch","cognition":{"provider":"fake","model":""},` +
-		`"workspace":{"kind":"git-worktree","repo":"` + repo + `","base_sha":"HEAD"},` +
 		`"skills":["cnos.eng:eng/code","cnos.eng:eng/test","cnos.eng:eng/go","cnos.eng:eng/write-functional"]}`)
 	got, err := reg.ConstructAlpha(context.Background(), decl)
 	if err != nil {
@@ -100,5 +99,32 @@ func TestInstalledHubLoadsFromForeignCwd(t *testing.T) {
 	missing := strings.Replace(string(decl), `"cnos.eng:eng/go"`, `"cnos.eng:eng/nope"`, 1)
 	if _, err := reg.ConstructAlpha(context.Background(), json.RawMessage(missing)); err == nil {
 		t.Fatal("an uninstalled skill must fail construction, not fall back")
+	}
+
+	// The assembled registry also carries the ONE subject adapter this binary
+	// ships. Without it a spec declaring a subject cannot be built at all, so a
+	// registry that forgot to wire it would fail every CDS cell at construction
+	// rather than silently running one unpinned.
+	if reg.PinSubject == nil {
+		t.Fatal("the assembled registry wires no subject adapter")
+	}
+	authored, err := json.Marshal(map[string]string{
+		"kind": "git.snapshot/0.1", "repo": repo, "base_sha": "HEAD",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pinned, err := reg.PinSubject(context.Background(), authored)
+	if err != nil {
+		t.Fatalf("the wired subject adapter must pin a real repository: %v", err)
+	}
+	var snapshot struct {
+		BaseSHA string `json:"base_sha"`
+	}
+	if err := json.Unmarshal(pinned, &snapshot); err != nil {
+		t.Fatal(err)
+	}
+	if len(snapshot.BaseSHA) != 40 {
+		t.Fatalf("the wired adapter did not pin the base: %s", pinned)
 	}
 }

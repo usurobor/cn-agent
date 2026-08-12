@@ -202,11 +202,11 @@ This draft describes both an executed baseline and a target realization.
 | Kernel | Functional single-episode `cellkernel` with frozen inputs, sealed station values, digest, V, delta, and self-verification | Retained |
 | Generic runner | Parses, resolves, builds fills, runs one episode, emits a closure | Also emits typed pre-episode refusal outcomes and consumes a compiled plan |
 | CDS production | `cds.patch` builds cognition, installed skills, and a disposable Git worktree | Full engineering capability inside an explicit execution substrate; subject handling becomes a declared component |
-| CDS assessment | Branch implementation has a cognitive `cds.review` fill | Fixed bootstrap falsifier derived from the same methodology, later replaced by Coh execution |
-| Admission | Branch code structurally admits typed CDS issues inside seats; failure emits no closure | Peer admission component before the episode; success creates an admitted contract, refusal creates a receipt |
+| CDS assessment | Branch implementation has a cognitive `cds.review` fill that reconstructs a bounded evaluation view from `(contract.subject, matter)` before renting, and is offered no tools | Fixed bootstrap falsifier derived from the same methodology, later replaced by Coh execution |
+| Admission | Branch code structurally admits the typed CDS issue and the pinned subject inside seats; failure emits no closure | Peer admission component before the episode; success creates an admitted contract, refusal creates a receipt |
 | Methodology | Independent seat skill lists | One compiled bundle with deterministic constructive/adversarial projections |
 | Oracles | CI/corpus scripts outside the cell | Methodology-declared property providers invoked inside assessment and bound as evidence |
-| Subject | Git worktree privately owned by producer | Declared subject/matter adapter shared by production and assessment through a pinned subject contract |
+| Subject | `contract.subject` carries a `git.snapshot/0.1` pinned once at construction; both stations receive those bytes, and the adapter also reconstructs assessment's view from them. The adapter is wired at the composition root rather than declared in source | Declared subject/matter adapter shared by production and assessment through a pinned subject contract |
 | Containment | Disposable worktree and bounded argv; no general host containment proof | Explicit substrate policy; full capability is permitted only inside the named boundary |
 | Coh | Design direction only; no general runtime | Embedded methodology/property graph; runner ownership remains in CNOS |
 

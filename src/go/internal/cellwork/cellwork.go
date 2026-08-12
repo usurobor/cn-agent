@@ -129,7 +129,20 @@ func (w Worktree) Diff(ctx context.Context) (string, error) {
 	// the runtime would record "no change was made" on real work. Naming the
 	// base explicitly makes the measurement independent of where the seat
 	// left HEAD, which is the whole point of pinning it at materialization.
-	out, err := git(ctx, w.Dir, maxDiffBytes, "diff", "--cached", "--no-color", w.BaseSHA)
+	//
+	// `--binary` because the measurement must be a COMPLETE description of the
+	// change: git's default for a binary path is the sentence "Binary files …
+	// differ", which no one — including this runtime, in Reconstruct — can turn
+	// back into the state it measured. A diff that cannot reproduce what it
+	// reports is a claim about the change, not a measurement of it.
+	//
+	// It is not free, and the cost belongs here rather than in a surprise: a
+	// binary path inflates to roughly 1.3x its raw bytes, so a change carrying
+	// one big enough to pass maxDiffBytes now fails the measurement where the
+	// unreproducible sentence would have fit. Failing closed on a change too
+	// large to describe is the correct direction, but it IS a behaviour change
+	// for binary-touching episodes. Text output is byte-identical either way.
+	out, err := git(ctx, w.Dir, maxDiffBytes, "diff", "--cached", "--no-color", "--binary", w.BaseSHA)
 	if err != nil {
 		return "", fmt.Errorf("cellwork: compute diff: %w", err)
 	}
@@ -141,11 +154,22 @@ func (w Worktree) Diff(ctx context.Context) (string, error) {
 // repository can produce a diff far larger than memory, and a limit checked
 // on a fully buffered result is not a limit.
 func git(ctx context.Context, dir string, max int, args ...string) (string, error) {
+	return gitInput(ctx, dir, "", max, args...)
+}
+
+// gitInput is git with `stdin` fed to the child — the one thing applying a
+// patch needs that measuring one does not. Writing the patch to a temporary
+// file and naming it would be a second way to hand git the same bytes, and one
+// that leaves a file behind if the process dies mid-call.
+func gitInput(ctx context.Context, dir, stdin string, max int, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, gitTimeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
+	if stdin != "" {
+		cmd.Stdin = strings.NewReader(stdin)
+	}
 	stdout := &boundedBuffer{max: max}
 	stderr := &boundedBuffer{max: maxStderrBytes}
 	cmd.Stdout, cmd.Stderr = stdout, stderr

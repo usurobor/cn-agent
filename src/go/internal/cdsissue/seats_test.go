@@ -15,6 +15,7 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cdsreview"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
 const oneIssue = `{
@@ -53,7 +54,8 @@ func TestBothSeatsAreShownTheSameIssueBlock(t *testing.T) {
 	skills := []cellskill.Skill{{Ref: "cnos.eng:eng/go", Body: "SKILL-BODY"}}
 
 	alpha := cdspatch.RenderPrompt(contract, issue, skills)
-	beta := cdsreview.RenderPrompt(contract, issue, cellkernel.Matter{Data: "diff --git a/x b/x\n"}, skills)
+	beta := cdsreview.RenderPrompt(contract, issue, cellkernel.Matter{Data: "diff --git a/x b/x\n"},
+		cellwork.View{Files: []cellwork.FileState{{Path: "x", Status: cellwork.FileAdded, Content: "x\n"}}}, skills)
 
 	block := cdsissue.Render(issue)
 	if strings.Count(alpha, block) != 1 || strings.Count(beta, block) != 1 {

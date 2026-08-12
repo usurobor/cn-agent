@@ -59,9 +59,13 @@ const (
 
 // Bounds enforced at the kernel boundary.
 const (
-	maxRequiredEvidence  = 64
-	maxMatterBytes       = 1 << 20 // 1 MiB
-	maxTaskBytes         = 64 << 10
+	maxRequiredEvidence = 64
+	maxMatterBytes      = 1 << 20 // 1 MiB
+	// One bound for every opaque contract slot. A per-slot bound would be the
+	// kernel deciding that one opaque payload deserves more room than another,
+	// which is a judgement about what they MEAN — exactly what this boundary
+	// refuses to make.
+	maxOpaqueSlotBytes   = 64 << 10
 	maxReviewNotesBytes  = 64 << 10
 	maxArtifacts         = 64
 	maxArtifactBytes     = 1 << 20 // per artifact
@@ -111,12 +115,22 @@ type Contract struct {
 	// Task is the structured task specification, opaque here. The kernel never
 	// learns what a task MEANS — that belongs to whichever protocol authored it
 	// (for CDS, cdsissue.Issue) — so the only rules at this boundary are
-	// structural: valid JSON, within maxTaskBytes. Because EpisodeRecord
+	// structural: valid JSON, within maxOpaqueSlotBytes. Because EpisodeRecord
 	// carries the frozen Contract, the task is inside canonicalBytes() and
 	// therefore inside the one scope-lift digest; there is no second digest to
 	// bind it, and adding one would be a second proof surface for the same
 	// bytes.
-	Task             json.RawMessage `json:"task,omitempty"`
+	Task json.RawMessage `json:"task,omitempty"`
+	// Subject is the thing the episode acts on, opaque here under exactly the
+	// rules Task obeys, and for the same reason: what a subject IS belongs to
+	// the adapter that pins and reconstructs it, never to this boundary.
+	//
+	// It is a CONTRACT value rather than a seat argument because both stations
+	// need the same one: the producing seat materializes it, and the assessing
+	// seat reconstructs its own view from (subject, matter). Frozen once, it is
+	// the same bytes on both sides by construction — there is no second place
+	// to state it and therefore nothing to keep in step.
+	Subject          json.RawMessage `json:"subject,omitempty"`
 	RequiredEvidence []RequiredRef   `json:"required_evidence,omitempty"`
 }
 
@@ -127,9 +141,12 @@ func (c Contract) clone() Contract {
 	}
 	// A shared slice is a mutable value inside a struct otherwise frozen by
 	// copy: without this, a seat handed AlphaInput.Contract could write through
-	// Task into the contract the runtime composes the record from.
+	// an opaque slot into the contract the runtime composes the record from.
 	if c.Task != nil {
 		cp.Task = append(json.RawMessage(nil), c.Task...)
+	}
+	if c.Subject != nil {
+		cp.Subject = append(json.RawMessage(nil), c.Subject...)
 	}
 	return cp
 }
@@ -609,7 +626,8 @@ func validateRecord(r EpisodeRecord) []Failure {
 
 	// Contract validity (same rules validateSpec enforces on the honest path).
 	add(r.Contract.ID == "", InvalidRecord, "contract id is empty")
-	add(taskIntegrity(r.Contract.Task) != nil, InvalidRecord, "contract task is not structurally admissible")
+	add(opaqueSlotIntegrity(r.Contract.Task) != nil, InvalidRecord, "contract task is not structurally admissible")
+	add(opaqueSlotIntegrity(r.Contract.Subject) != nil, InvalidRecord, "contract subject is not structurally admissible")
 	add(len(r.Contract.RequiredEvidence) > maxRequiredEvidence, InvalidRecord, "too many required evidence refs")
 	seenReq := make(map[string]bool)
 	for _, req := range r.Contract.RequiredEvidence {
@@ -798,21 +816,23 @@ func validSeatEnvelope(raw json.RawMessage) error {
 	return nil
 }
 
-// taskIntegrity is the COMPLETE set of rules the kernel applies to the opaque
-// task slot: it must parse as JSON and stay within the declared bound. Valid
-// JSON is not taste — canonicalBytes() serializes the record with
-// encoding/json, which cannot represent a RawMessage that is not JSON, so an
-// unparseable task would silently collapse the canonical bytes the one digest
-// is taken over. An absent task is admissible here; requiring one is a
-// protocol's rule, not the kernel's.
-func taskIntegrity(task json.RawMessage) error {
-	if len(task) == 0 {
+// opaqueSlotIntegrity is the COMPLETE set of rules the kernel applies to EITHER
+// opaque contract slot — task and subject — and it is one function rather than
+// two because the kernel's interest in them is identical: they must parse as
+// JSON and stay within the declared bound. Valid JSON is not taste —
+// canonicalBytes() serializes the record with encoding/json, which cannot
+// represent a RawMessage that is not JSON, so an unparseable slot would
+// silently collapse the canonical bytes the one digest is taken over. An
+// absent slot is admissible here; requiring one is a protocol's rule, not the
+// kernel's.
+func opaqueSlotIntegrity(raw json.RawMessage) error {
+	if len(raw) == 0 {
 		return nil
 	}
-	if len(task) > maxTaskBytes {
-		return fmt.Errorf("exceeds %d bytes", maxTaskBytes)
+	if len(raw) > maxOpaqueSlotBytes {
+		return fmt.Errorf("exceeds %d bytes", maxOpaqueSlotBytes)
 	}
-	if !json.Valid(task) {
+	if !json.Valid(raw) {
 		return errors.New("is not valid JSON")
 	}
 	return nil
@@ -828,8 +848,11 @@ func validateSpec(s Spec) error {
 	if s.Contract.ID == "" {
 		return errors.New("cellkernel: contract.id is empty")
 	}
-	if err := taskIntegrity(s.Contract.Task); err != nil {
+	if err := opaqueSlotIntegrity(s.Contract.Task); err != nil {
 		return fmt.Errorf("cellkernel: contract.task: %w", err)
+	}
+	if err := opaqueSlotIntegrity(s.Contract.Subject); err != nil {
+		return fmt.Errorf("cellkernel: contract.subject: %w", err)
 	}
 	if len(s.Contract.RequiredEvidence) > maxRequiredEvidence {
 		return fmt.Errorf("cellkernel: too many required evidence refs (%d > %d)", len(s.Contract.RequiredEvidence), maxRequiredEvidence)

@@ -1,13 +1,8 @@
 {
   "version": "cnos.cellspec.v0",
   "contract": {
-    "id": "cds-code",
+    "id": "cds-code-no-subject",
     "goal": "Carry out the change described by the issue in the repository at base_sha",
-    "subject": {
-      "kind": "git.snapshot/0.1",
-      "repo": "$repo",
-      "base_sha": "$base_sha"
-    },
     "task": {
       "kind": "cnos.cds.issue.v0",
       "id": "cds-fixture-contributing",

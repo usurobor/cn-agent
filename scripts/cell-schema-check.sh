@@ -144,6 +144,26 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-nested-arg.json 
 # door. The runtime witness for it is below, with the live cells.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-malformed-task.json -d '#CDSCellSpec'
 vet_ok schemas/cdd/spec.cue schemas/cds/fixtures/invalid/cds-malformed-task.json -d '#CellSpec'
+# The subject draws the SAME boundary, and it is drawn the same way: an unknown
+# key inside `contract.subject` is a CDS-overlay violation and nothing at all to
+# the generic schema, which knows only that a cell may name a subject. Absence
+# is again a different case, witnessed at run time below.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-malformed-subject.json -d '#CDSCellSpec'
+vet_ok schemas/cdd/spec.cue schemas/cds/fixtures/invalid/cds-malformed-subject.json -d '#CellSpec'
+
+echo "# CDS subject corpus (one corpus, two authorities)"
+# cellwork.AdmitSubject and #GitSnapshotPinned must accept and reject exactly
+# the same documents, so both read THESE files: schemas/cds/fixtures/subject/ is
+# vetted here and table-tested by internal/cellwork. Each negative is invalid
+# for exactly ONE reason, and the Go test pins WHICH rule that is.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/subject/valid-subject.json -d '#GitSnapshotPinned'
+for neg in bad-kind missing-repo empty-base unpinned-base unknown-key mixed-case-key; do
+  vet_bad ./schemas/cds:cds "schemas/cds/fixtures/subject/subject-$neg.json" -d '#GitSnapshotPinned'
+done
+# The authored form is WIDER by exactly one rule: a base that is still a moving
+# revision. It is admissible before pinning and inadmissible in a record, and
+# this pair is what shows the two definitions are not the same definition.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/subject/subject-unpinned-base.json -d '#GitSnapshotAuthored'
 
 echo "# CDS issue corpus (one corpus, two authorities)"
 # cdsissue.Admit and #CDSIssue must accept and reject exactly the same
@@ -186,6 +206,10 @@ run_bad schemas/cds/fixtures/invalid/cds-bad-model-hole.json
 run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json
 run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json
 run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json
+# The subject is closed in Go too, and by the same document the CUE overlay
+# rejects above: the unknown key fails at the subject adapter, before any seat
+# is constructed.
+run_bad schemas/cds/fixtures/invalid/cds-malformed-subject.json
 
 echo "# committed rented-Claude evidence (one-off receipt, NOT a provider run)"
 # The live corpus rents `fake`, so the cognitive path has no runtime witness
@@ -208,8 +232,14 @@ if ! files_exist "$ev"; then
 else
   vet_ok schemas/cdd/episode-closure.cue "$ev" -d '#EpisodeClosure'
   evalpha="$tmpdir/evidence-alpha.json"
+  # Against the GENERIC seat envelope, not #CDSPatchAlphaResolved. This artifact
+  # predates the subject becoming contract truth, so its recorded alpha still
+  # carries the `workspace` block that shape no longer admits — and the record
+  # cannot be edited to suit, because its digest would stop recomputing. A
+  # labelled stale artifact beats a forged fresh one, and the claim is narrowed
+  # to what the artifact can still support rather than the assertion dropped.
   if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$ev" "$evalpha" 2>/dev/null; then
-    vet_ok ./schemas/cds:cds "$evalpha" -d '#CDSPatchAlphaResolved'
+    vet_ok schemas/cdd/spec.cue "$evalpha" -d '#Seat'
   else
     echo "  ✗ evidence closure has no resolved alpha"; fail=1
   fi
@@ -323,8 +353,17 @@ else echo "  ✓ cds.patch closure vets #EpisodeClosure"; fi
 decl="$tmpdir/resolved-alpha.json"
 if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$tmp" "$decl" 2>/dev/null &&
    "$CUE" vet ./schemas/cds:cds "$decl" -d '#CDSPatchAlphaResolved' >/dev/null 2>&1; then
-  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, pinned base, digested skills)"
+  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, digested skills)"
 else echo "  ✗ resolved alpha failed #CDSPatchAlphaResolved"; fail=1; fi
+# The RUNTIME half of pinning, and the one that matters: the spec was invoked
+# with `--param base_sha=HEAD`, a moving name, and the RECORDED subject must
+# name a commit. This is the live witness that pinning happened once, before
+# the stations, rather than being a claim in a schema.
+subj="$tmpdir/recorded-subject.json"
+if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["contract"]["subject"], open(sys.argv[2],"w"))' "$tmp" "$subj" 2>/dev/null &&
+   "$CUE" vet ./schemas/cds:cds "$subj" -d '#GitSnapshotPinned' >/dev/null 2>&1; then
+  echo "  ✓ the recorded contract subject vets #GitSnapshotPinned (HEAD was resolved to a commit)"
+else echo "  ✗ the recorded contract subject failed #GitSnapshotPinned"; fail=1; fi
 
 # Case 3 end to end from the same installed hub: alpha produces, and a
 # cds.review beta is CONSTRUCTED and INVOKED rather than stubbed out. The
@@ -363,6 +402,23 @@ vet_ok ./schemas/cds:cds "$nt" -d '#CDSCellSpec'
 if [ "$(cat "$tmpdir/nt.exit")" = 0 ] || ! grep -q "contract carries no task" "$tmpdir/nt.err"; then
   echo "  ✗ a taskless CDS cell must be refused at admission, got exit $(cat "$tmpdir/nt.exit"): $(head -c 200 "$tmpdir/nt.err")"; fail=1
 else echo "  ✓ a taskless CDS cell vets and is refused at the door"; fi
+
+# The same half for the subject, and the same reason #CDSCellSpec can leave it
+# optional: a spec with no subject vets clean and does not run. Asserted by
+# REASON, not by exit code, for the reason above.
+nsu="$(pwd)/schemas/cds/fixtures/invalid/cds-no-subject.json"
+if ! files_exist "$nsu"; then fail=1; fi
+vet_ok ./schemas/cds:cds "$nsu" -d '#CDSCellSpec'
+(
+  cd "$hub" || exit 1
+  "$CN" cell run --contract "$nsu" \
+    --param language=cnos.eng:eng/go --param provider=fake \
+    --param base_sha=HEAD --param repo="$coderepo" >/dev/null 2>"$tmpdir/nsu.err"
+  echo $? >"$tmpdir/nsu.exit"
+)
+if [ "$(cat "$tmpdir/nsu.exit")" = 0 ] || ! grep -q "contract carries no subject" "$tmpdir/nsu.err"; then
+  echo "  ✗ a subjectless CDS cell must be refused at admission, got exit $(cat "$tmpdir/nsu.exit"): $(head -c 200 "$tmpdir/nsu.err")"; fail=1
+else echo "  ✓ a subjectless CDS cell vets and is refused at the door"; fi
 
 c3beta="$tmpdir/case3-beta.json"
 if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["beta"], open(sys.argv[2],"w"))' "$c3out" "$c3beta" 2>/dev/null; then

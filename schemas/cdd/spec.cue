@@ -75,6 +75,13 @@ package cdd
 		// makes it required; `cellspec` carries these bytes without decoding
 		// them, and no `$param` hole is substituted inside them.
 		task?: {...}
+		// What the cell acts on. OPEN and OPTIONAL for the same reason the task
+		// is: this layer knows that a cell may name a subject and nothing about
+		// what one is — the subject adapter owns the kind and its shape, and a
+		// protocol overlay pins the closed form (cds.#GitSnapshotAuthored).
+		// Unlike the task, `$param` holes ARE substituted inside it, because a
+		// subject names where THIS run acts.
+		subject?: {...}
 		required_evidence?: [...#RequiredRef]
 	}
 	// Declared protocol (provenance). The v0 runner emits a generic episode

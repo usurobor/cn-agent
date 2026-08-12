@@ -19,6 +19,7 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cdsreview"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
 // InstalledPackages is the canonical skill authority under a hub:
@@ -39,5 +40,10 @@ func With(skills cellskill.Resolver) cellfill.Registry {
 	reg := cellfill.CddFills()
 	reg.Alpha[cdspatch.Fill] = cdspatch.Factory(skills)
 	reg.Beta[cdsreview.Fill] = cdsreview.Factory(skills)
+	// The one subject adapter this binary ships. It is wired here, next to the
+	// fills, because the same reason applies: the generic loader must not learn
+	// that a subject is a repository at a commit, and the seats must not each
+	// resolve one for themselves.
+	reg.PinSubject = cellwork.Pin
 	return reg
 }

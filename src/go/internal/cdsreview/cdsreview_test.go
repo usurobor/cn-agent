@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
 var testSkills = []string{"cnos.cdd:cdd/review", "cnos.eng:eng/go"}
@@ -67,6 +69,72 @@ var reviewContract = cellkernel.Contract{
 	ID:   "c",
 	Goal: "add a CONTRIBUTING guide",
 	Task: json.RawMessage(testIssue),
+}
+
+// testRepo builds a one-commit git repository and returns its path and HEAD.
+// The reviewing seat now reconstructs its view from the contract's subject, so
+// a test that expects to reach the answerer needs a real repository the real
+// matter applies to — a stub subject would only prove that a stub was accepted.
+func testRepo(t *testing.T) (string, string) {
+	t.Helper()
+	dir := t.TempDir()
+	run := func(args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	run("init", "-q", "-b", "main")
+	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("base\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	run("add", "-A")
+	run("commit", "-qm", "base")
+	return dir, run("rev-parse", "HEAD")
+}
+
+// contractOn is the review contract acting on a real repository at its pinned
+// HEAD — the frozen value construction would have handed both stations.
+func contractOn(t *testing.T, repo string) cellkernel.Contract {
+	t.Helper()
+	authored, err := json.Marshal(cellwork.Subject{Kind: cellwork.SubjectKind, Repo: repo, BaseSHA: "HEAD"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pinned, err := cellwork.Pin(context.Background(), authored)
+	if err != nil {
+		t.Fatalf("pin the test subject: %v", err)
+	}
+	c := reviewContract
+	c.Subject = pinned
+	return c
+}
+
+// contributingRepo is a repository plus the measured matter that adds a
+// CONTRIBUTING.md to it — real matter for the fixture issue, produced the way
+// a producing seat produces it.
+func contributingRepo(t *testing.T) (cellkernel.Contract, cellkernel.Matter) {
+	t.Helper()
+	repo, head := testRepo(t)
+	wt, release, err := cellwork.Materialize(context.Background(), repo, head)
+	if err != nil {
+		t.Fatalf("materialize: %v", err)
+	}
+	defer release()
+	if err := os.WriteFile(filepath.Join(wt.Dir, "CONTRIBUTING.md"), []byte("how to contribute\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	diff, err := wt.Diff(context.Background())
+	if err != nil {
+		t.Fatalf("diff: %v", err)
+	}
+	return contractOn(t, repo), cellkernel.Matter{Data: diff}
 }
 
 func admittedTestIssue(t *testing.T) cdsissue.Issue {
@@ -160,12 +228,13 @@ func TestUnreadableVerdictFailsRatherThanDefaulting(t *testing.T) {
 		{name: "empty notes", raw: `{"pass":false,"notes":"   "}`, want: "no notes"},
 		{name: "passing with no reason", raw: `{"pass":true,"notes":""}`, want: "no notes"},
 	}
+	contract, matter := contributingRepo(t)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			seat := ReviewBeta{answerer: stubAnswerer{raw: tc.raw}}
 			_, err := seat.Review(context.Background(), cellkernel.BetaInput{
-				Contract: reviewContract,
-				Matter:   cellkernel.Matter{Data: aDiff},
+				Contract: contract,
+				Matter:   matter,
 			})
 			if err == nil {
 				t.Fatalf("verdict %s must fail, not become a review", tc.raw)
@@ -180,11 +249,12 @@ func TestUnreadableVerdictFailsRatherThanDefaulting(t *testing.T) {
 // A well-formed verdict passes through unchanged, in both directions, and
 // carries no artifacts — evidence is gamma/V's channel, never beta's.
 func TestWellFormedVerdictIsCarried(t *testing.T) {
+	contract, matter := contributingRepo(t)
 	for _, pass := range []bool{true, false} {
 		raw := fmt.Sprintf(`{"pass":%t,"notes":"because"}`, pass)
 		out, err := ReviewBeta{answerer: stubAnswerer{raw: raw}}.Review(
 			context.Background(),
-			cellkernel.BetaInput{Contract: reviewContract, Matter: cellkernel.Matter{Data: aDiff}})
+			cellkernel.BetaInput{Contract: contract, Matter: matter})
 		if err != nil {
 			t.Fatalf("%s: %v", raw, err)
 		}
@@ -201,8 +271,12 @@ func TestWellFormedVerdictIsCarried(t *testing.T) {
 // were missing from it, the reviewer would be judging something else.
 func TestPromptCarriesContractAndMatter(t *testing.T) {
 	skills := []cellskill.Skill{{Ref: "cnos.cdd:cdd/review", Body: "REVIEW-SKILL-BODY"}}
-	got := RenderPrompt(reviewContract, admittedTestIssue(t), cellkernel.Matter{Data: "THE-MATTER"}, skills)
-	for _, want := range []string{"add a CONTRIBUTING guide", "THE-MATTER", "REVIEW-SKILL-BODY", "cnos.cdd:cdd/review"} {
+	view := cellwork.View{Files: []cellwork.FileState{
+		{Path: "CONTRIBUTING.md", Status: cellwork.FileAdded, Content: "THE-VIEWED-CONTENT"},
+	}}
+	got := RenderPrompt(reviewContract, admittedTestIssue(t), cellkernel.Matter{Data: "THE-MATTER"}, view, skills)
+	for _, want := range []string{"add a CONTRIBUTING guide", "THE-MATTER", "THE-VIEWED-CONTENT",
+		"REVIEW-SKILL-BODY", "cnos.cdd:cdd/review"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("prompt is missing %q", want)
 		}
@@ -263,9 +337,10 @@ func TestFakeReviewerNeverPasses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	contract, matter := contributingRepo(t)
 	out, err := c.Seat.Review(context.Background(), cellkernel.BetaInput{
-		Contract: reviewContract,
-		Matter:   cellkernel.Matter{Data: aDiff},
+		Contract: contract,
+		Matter:   matter,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -279,6 +354,7 @@ func TestFakeReviewerNeverPasses(t *testing.T) {
 // same predicate alpha used. A reviewer whose criteria cannot be read is back
 // to judging plausibility, which is the failure this cycle exists to remove.
 func TestIllDefinedIssueFailsBeforeRentingCognition(t *testing.T) {
+	repo, _ := testRepo(t)
 	for name, task := range map[string]string{
 		"absent":                 ``,
 		"not an issue at all":    `{"goal":"judge the work"}`,
@@ -287,7 +363,7 @@ func TestIllDefinedIssueFailsBeforeRentingCognition(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			called := false
-			contract := reviewContract
+			contract := contractOn(t, repo)
 			contract.Task = json.RawMessage(task)
 			seat := ReviewBeta{answerer: stubAnswerer{raw: `{"pass":true,"notes":"n"}`, called: &called}}
 			_, err := seat.Review(context.Background(), cellkernel.BetaInput{
@@ -325,13 +401,21 @@ func TestOnlyAUnifiedDiffReachesTheAnswerer(t *testing.T) {
 		{"a unified diff", aDiff, true},
 		{"a diff after a preamble", "here is the change:\n" + aDiff, true},
 	}
+	contract, real := contributingRepo(t)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			data := tc.data
+			if tc.reach {
+				// A matter that passes the gate is then RECONSTRUCTED, so the
+				// admissible cases carry a diff that really applies to the
+				// contract's subject rather than a hand-written stand-in.
+				data = strings.Replace(tc.data, aDiff, real.Data, 1)
+			}
 			called := false
 			seat := ReviewBeta{answerer: stubAnswerer{raw: `{"pass":true,"notes":"looks fine"}`, called: &called}}
 			out, err := seat.Review(context.Background(), cellkernel.BetaInput{
-				Contract: reviewContract,
-				Matter:   cellkernel.Matter{Data: tc.data},
+				Contract: contract,
+				Matter:   cellkernel.Matter{Data: data},
 			})
 			if err != nil {
 				t.Fatalf("the gate returns a verdict, never an error: %v", err)
@@ -356,3 +440,199 @@ func TestOnlyAUnifiedDiffReachesTheAnswerer(t *testing.T) {
 }
 
 var _ cellfill.BetaFactory = Factory(cellskill.Tree{})
+
+// The reviewing seat admits the contract's SUBJECT before renting, exactly as
+// it admits the issue. A reviewer that could not say what state it is judging
+// would have to take the diff's word for it — which is the position it was in
+// before this cycle.
+func TestInadmissibleSubjectFailsBeforeRentingCognition(t *testing.T) {
+	repo, _ := testRepo(t)
+	good := contractOn(t, repo)
+	unpinned, err := json.Marshal(cellwork.Subject{Kind: cellwork.SubjectKind, Repo: repo, BaseSHA: "HEAD"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Each case names the reason it must fail for. "cds.review" alone was not a
+	// reason — every error this fill returns contains it, so the unpinned case
+	// passed even when the seat admitted a moving ref and died later on a patch
+	// that did not apply. A shared prefix is not a witness.
+	for name, tc := range map[string]struct {
+		subject json.RawMessage
+		want    string
+	}{
+		"absent":        {nil, "carries no subject"},
+		"not a subject": {json.RawMessage(`{"repo":"/tmp/x"}`), "kind"},
+		"unpinned base": {unpinned, "is not pinned"},
+	} {
+		subject, want := tc.subject, tc.want
+		t.Run(name, func(t *testing.T) {
+			called := false
+			contract := good
+			contract.Subject = subject
+			seat := ReviewBeta{answerer: stubAnswerer{raw: `{"pass":true,"notes":"n"}`, called: &called}}
+			_, err := seat.Review(context.Background(), cellkernel.BetaInput{
+				Contract: contract,
+				Matter:   cellkernel.Matter{Data: aDiff},
+			})
+			if err == nil {
+				t.Fatal("an inadmissible subject must fail the cell")
+			}
+			if !strings.Contains(err.Error(), want) {
+				t.Fatalf("failed for the wrong reason:\n got: %v\nwant mention of: %q", err, want)
+			}
+			if called {
+				t.Fatal("cognition was rented to judge a state the cell could not name")
+			}
+		})
+	}
+}
+
+// A reconstruction that cannot be built is a mechanism fault, not a verdict.
+// Returning pass:false here would report a judgement nobody made — the same
+// sin as fabricating completion, from the reviewing side.
+func TestUnreconstructableMatterIsAFaultAndNotAVerdict(t *testing.T) {
+	repo, _ := testRepo(t)
+	called := false
+	seat := ReviewBeta{answerer: stubAnswerer{raw: `{"pass":true,"notes":"n"}`, called: &called}}
+	// Structurally a unified diff — so it passes the matter gate — but its
+	// context does not exist at the contract's base.
+	stale := "diff --git a/README.md b/README.md\n" +
+		"--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-a line the base never had\n+rewritten\n"
+	out, err := seat.Review(context.Background(), cellkernel.BetaInput{
+		Contract: contractOn(t, repo),
+		Matter:   cellkernel.Matter{Data: stale},
+	})
+	if err == nil {
+		t.Fatalf("an unreconstructable matter must not become a verdict, got %+v", out.Review)
+	}
+	if !strings.Contains(err.Error(), "does not apply") {
+		t.Fatalf("failed for the wrong reason: %v", err)
+	}
+	if called {
+		t.Fatal("cognition was rented for a view that was never built")
+	}
+}
+
+// AC4 at the seat: the reviewer's prompt carries what the hunks cannot. This is
+// the recorded defect — a reviewer blocked on a missing import that the file
+// imports far outside every hunk — reproduced and closed.
+func TestPromptCarriesTheFileTheHunksDoNotShow(t *testing.T) {
+	repo, _ := testRepo(t)
+	var body strings.Builder
+	body.WriteString("package widget\n\nimport (\n\t\"bytes\"\n\t\"fmt\"\n)\n\n")
+	for i := 0; i < 120; i++ {
+		body.WriteString("// filler line so the import is nowhere near the change\n")
+	}
+	body.WriteString("func Render() string {\n\tvar out bytes.Buffer\n\tfmt.Fprint(&out, \"old\")\n\treturn out.String()\n}\n")
+	if err := os.WriteFile(filepath.Join(repo, "widget.go"), []byte(body.String()), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"add", "-A"}, {"commit", "-qm", "widget"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		cmd.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	wt, release, err := cellwork.Materialize(context.Background(), repo, "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+	if err := os.WriteFile(filepath.Join(wt.Dir, "widget.go"),
+		[]byte(strings.Replace(body.String(), `"old"`, `"new"`, 1)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	matter, err := wt.Diff(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(matter, `"bytes"`) {
+		t.Fatalf("the fixture diff shows the import, so it proves nothing:\n%s", matter)
+	}
+
+	var prompt string
+	seat := ReviewBeta{answerer: promptCapturingAnswerer{&prompt}}
+	if _, err := seat.Review(context.Background(), cellkernel.BetaInput{
+		Contract: contractOn(t, repo),
+		Matter:   cellkernel.Matter{Data: matter},
+	}); err != nil {
+		t.Fatalf("review: %v", err)
+	}
+	if !strings.Contains(prompt, "\t\"bytes\"\n") {
+		t.Fatal("the reviewer's prompt does not carry the import the hunks omit")
+	}
+	if !strings.Contains(prompt, "RECONSTRUCTED VIEW") {
+		t.Fatal("the prompt does not say what the view is, so the reviewer cannot know whose account it is")
+	}
+	// And the matter is still there: the view is additional evidence, not a
+	// replacement for the change under review.
+	if !strings.Contains(prompt, matter) {
+		t.Fatal("the matter no longer reaches the reviewer")
+	}
+}
+
+// promptCapturingAnswerer keeps the prompt so a test can assert on the
+// reviewer's whole world without renting anything.
+type promptCapturingAnswerer struct{ prompt *string }
+
+func (promptCapturingAnswerer) Name() string { return "capturing" }
+func (a promptCapturingAnswerer) Answer(_ context.Context, prompt string, _ json.RawMessage) (json.RawMessage, error) {
+	*a.prompt = prompt
+	return json.RawMessage(`{"pass":true,"notes":"captured"}`), nil
+}
+
+// A truncated view must be told to the reviewer as a limit on what it may
+// conclude. The verdict shape has no `unverified` yet, so the instruction is to
+// fail and name it — never to pass a criterion whose evidence was not shown.
+func TestTruncatedViewIsRenderedAsALimitOnConclusions(t *testing.T) {
+	full := renderView(cellwork.View{Files: []cellwork.FileState{
+		{Path: "kept.go", Status: cellwork.FileModified, Content: "package kept\n"},
+	}})
+	if strings.Contains(full, "INCOMPLETE") {
+		t.Fatal("a complete view must not warn about truncation")
+	}
+	cut := renderView(cellwork.View{
+		Truncated: true,
+		Files: []cellwork.FileState{
+			{Path: "big.go", Status: cellwork.FileModified, Omitted: true},
+			{Path: "gone.go", Status: cellwork.FileDeleted},
+			{Path: "logo.bin", Status: cellwork.FileAdded, Omitted: true, Binary: true},
+			{Path: "empty.txt", Status: cellwork.FileAdded},
+		},
+	})
+	for _, want := range []string{"INCOMPLETE", "unverified", "size bound", "binary", "deleted", "empty"} {
+		if !strings.Contains(cut, want) {
+			t.Errorf("the rendered view does not mention %q:\n%s", want, cut)
+		}
+	}
+	// The four empty-content cases must read differently from one another, or a
+	// reviewer cannot tell "checked, absent" from "not shown".
+	lines := map[string]bool{}
+	for _, l := range strings.Split(cut, "\n") {
+		if strings.HasPrefix(l, "(") {
+			lines[l] = true
+		}
+	}
+	if len(lines) != 4 {
+		t.Fatalf("the four content-absent cases do not read distinctly: %v", lines)
+	}
+}
+
+// A link target must never be rendered as if it were the file's bytes: the
+// reviewer decides criteria from this text, and "the file contains /etc/passwd"
+// and "the file IS a link to /etc/passwd" are different facts.
+func TestRenderViewNamesASymlinkRatherThanShowingItAsContent(t *testing.T) {
+	out := renderView(cellwork.View{Files: []cellwork.FileState{
+		{Path: "shim", Status: cellwork.FileAdded, Symlink: true, Content: "../tools/real"},
+	}})
+	if !strings.Contains(out, "symbolic link") || !strings.Contains(out, "did not follow") {
+		t.Fatalf("the rendered view does not say the path is a link the runtime left alone:\n%s", out)
+	}
+	if !strings.Contains(out, "../tools/real") {
+		t.Fatalf("the rendered view drops the link target, which IS its content:\n%s", out)
+	}
+}

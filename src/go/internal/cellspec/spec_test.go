@@ -2,6 +2,8 @@ package cellspec
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -14,6 +16,7 @@ import (
 const fixture = `{
   "version": "cnos.cellspec.v0",
   "contract": {"id": "c1", "goal": "do the thing",
+    "subject": {"kind": "git.snapshot/0.1", "repo": ".", "base_sha": "$base_sha"},
     "required_evidence": [
       {"id": "diff", "kind": "diff", "producer": "alpha"},
       {"id": "beta_review", "kind": "review", "producer": "beta"}
@@ -26,7 +29,6 @@ const fixture = `{
   "alpha": {
     "fill": "cds.patch",
     "cognition": {"provider": "fake", "model": ""},
-    "workspace": {"kind": "git-worktree", "repo": ".", "base_sha": "$base_sha"},
     "skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "$language", "cnos.eng:eng/write-functional"]
   },
   "beta": {"fill": "cdd.mechanical-unmet"}
@@ -41,21 +43,29 @@ func mustParse(t *testing.T) CellSpec {
 	return s
 }
 
-// Holes resolve IN PLACE inside the seat trees: the workspace hole and the
-// skill-list hole are replaced where they sit.
+// Holes resolve IN PLACE inside the seat trees AND inside the contract's
+// subject: the skill-list hole and the subject's base hole are each replaced
+// where they sit. The subject is the one contract field holes reach, because it
+// names where this run acts and that is exactly what an invoker supplies.
 func TestResolveFillsHolesInPlace(t *testing.T) {
 	r, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "abc123"})
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
 	a := string(r.Alpha)
-	for _, want := range []string{`"base_sha":"abc123"`, `"cnos.eng:eng/go"`, `"fill":"cds.patch"`} {
+	for _, want := range []string{`"cnos.eng:eng/go"`, `"fill":"cds.patch"`} {
 		if !strings.Contains(a, want) {
 			t.Errorf("resolved alpha missing %s: %s", want, a)
 		}
 	}
 	if strings.Contains(a, "$") {
 		t.Fatalf("unresolved hole survived: %s", a)
+	}
+	if got := string(r.Subject); !strings.Contains(got, `"base_sha":"abc123"`) {
+		t.Fatalf("the subject hole was not filled: %s", got)
+	}
+	if strings.Contains(string(r.Subject), "$") {
+		t.Fatalf("unresolved hole survived in the subject: %s", r.Subject)
 	}
 }
 
@@ -325,7 +335,11 @@ func TestTaskIsCarriedOpaquelyAndHoleFree(t *testing.T) {
 	const task = `{"kind":"not.a.cds.issue","note":"$base_sha stays a literal here"}`
 	// Seats swapped for cdd fills so this test needs no CDS registry: whether
 	// a task is carried is the GENERIC loader's property, not any fill's.
+	// No subject either: the cdd fills act on nothing, and a spec that declared
+	// one would need an adapter this registry does not wire.
 	src := strings.Replace(fixture,
+		`"subject": {"kind": "git.snapshot/0.1", "repo": ".", "base_sha": "$base_sha"},`, "", 1)
+	src = strings.Replace(src,
 		`"contract": {"id": "c1", "goal": "do the thing",`,
 		`"contract": {"id": "c1", "goal": "do the thing", "task": `+task+`,`, 1)
 	src = src[:strings.Index(src, `  "alpha": {`)] +
@@ -347,5 +361,109 @@ func TestTaskIsCarriedOpaquelyAndHoleFree(t *testing.T) {
 	}
 	if got := string(spec.Contract.Task); got != task {
 		t.Fatalf("task did not reach the kernel unchanged:\n got: %s\nwant: %s", got, task)
+	}
+}
+
+// subjectFixture is the generic-envelope spec used for subject tests: cdd
+// seats, so no CDS registry is needed, and the ONE hole sits in the contract's
+// subject, which is the position under test.
+const subjectFixture = `{
+  "version": "cnos.cellspec.v0",
+  "contract": {"id": "c1", "goal": "do the thing",
+    "subject": {"kind": "opaque.to.this.package/0.1", "at": "$where"}},
+  "protocol_id": "cnos.cdd.cds.receipt.v1",
+  "params": {"where": {"required": true}},
+  "alpha": {"fill": "cdd.bool", "value": "true"},
+  "beta": {"fill": "cdd.bool-check"}
+}`
+
+func buildSubjectFixture(t *testing.T, src string, reg cellfill.Registry) (cellkernel.Spec, error) {
+	t.Helper()
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	r, err := s.Resolve(map[string]string{"where": "abc123"})
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	spec, _, err := r.Build(context.Background(), reg)
+	return spec, err
+}
+
+// The subject is carried OPAQUELY and pinned by the wired adapter, ONCE. This
+// package never learns what a subject is: it hands the resolved bytes over and
+// records the bytes it gets back, so a git snapshot and any later kind cost
+// this loader the same nothing.
+func TestSubjectIsPinnedOnceByTheWiredAdapter(t *testing.T) {
+	calls := 0
+	reg := cellfill.CddFills()
+	reg.PinSubject = func(_ context.Context, subject json.RawMessage) (json.RawMessage, error) {
+		calls++
+		if !strings.Contains(string(subject), `"at":"abc123"`) {
+			return nil, fmt.Errorf("the adapter was handed an unresolved subject: %s", subject)
+		}
+		return json.RawMessage(`{"kind":"opaque.to.this.package/0.1","at":"pinned"}`), nil
+	}
+
+	spec, err := buildSubjectFixture(t, subjectFixture, reg)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if calls != 1 {
+		t.Fatalf("the subject was pinned %d times; both stations must receive one pinning", calls)
+	}
+	if string(spec.Contract.Subject) != `{"kind":"opaque.to.this.package/0.1","at":"pinned"}` {
+		t.Fatalf("the kernel contract does not carry the PINNED subject: %s", spec.Contract.Subject)
+	}
+}
+
+// A declared subject with no adapter fails construction. Running anyway would
+// mean each station resolving the subject for itself, which is the divergence
+// the contract slot exists to remove; and a spec with no subject must still
+// build, or every cell that acts on nothing would need an adapter.
+func TestSubjectWithoutAnAdapterFailsAndNoSubjectStillBuilds(t *testing.T) {
+	_, err := buildSubjectFixture(t, subjectFixture, cellfill.CddFills())
+	if err == nil {
+		t.Fatal("a declared subject with no wired adapter must fail construction")
+	}
+	if !strings.Contains(err.Error(), "no subject adapter") {
+		t.Fatalf("failed for the wrong reason: %v", err)
+	}
+
+	subjectless := strings.Replace(subjectFixture,
+		`,
+    "subject": {"kind": "opaque.to.this.package/0.1", "at": "$where"}`, "", 1)
+	if subjectless == subjectFixture {
+		t.Fatal("the subjectless variant is identical to the fixture, so it proves nothing")
+	}
+	s, err := Parse([]byte(strings.Replace(subjectless, `"params": {"where": {"required": true}},`, "", 1)))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	r, err := s.Resolve(nil)
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	spec, _, err := r.Build(context.Background(), cellfill.CddFills())
+	if err != nil {
+		t.Fatalf("a cell that acts on nothing must still build: %v", err)
+	}
+	if spec.Contract.Subject != nil {
+		t.Fatalf("a subjectless spec grew one: %s", spec.Contract.Subject)
+	}
+}
+
+// A subject the adapter refuses stops the run at construction, before either
+// seat exists — the same discipline that keeps an ill-defined issue from
+// reaching a provider.
+func TestRefusedSubjectFailsBuild(t *testing.T) {
+	reg := cellfill.CddFills()
+	reg.PinSubject = func(context.Context, json.RawMessage) (json.RawMessage, error) {
+		return nil, fmt.Errorf("no such revision")
+	}
+	if _, err := buildSubjectFixture(t, subjectFixture, reg); err == nil ||
+		!strings.Contains(err.Error(), "no such revision") {
+		t.Fatalf("a refused subject must fail the build with its own reason, got %v", err)
 	}
 }

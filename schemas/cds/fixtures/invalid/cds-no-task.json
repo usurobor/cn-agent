@@ -3,6 +3,11 @@
   "contract": {
     "id": "cds-code-reviewed",
     "goal": "Carry out the change described by the issue in the repository at base_sha",
+    "subject": {
+      "kind": "git.snapshot/0.1",
+      "repo": "$repo",
+      "base_sha": "$base_sha"
+    },
     "required_evidence": [
       {
         "id": "diff",
@@ -53,11 +58,6 @@
     "cognition": {
       "provider": "$provider",
       "model": "$model"
-    },
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": "$repo",
-      "base_sha": "$base_sha"
     },
     "skills": [
       "cnos.eng:eng/code",

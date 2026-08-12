@@ -84,17 +84,47 @@ import "cnos.dev/cnos/schemas/cdd"
 	{provider: "claude-cli", model: #Concrete | #Hole} |
 	{provider: #Hole, model?: "" | #Concrete | #Hole}
 
+// #GitSnapshotPinned is a subject as a RECORD carries it: one repository at
+// one exact commit. It mirrors cellwork.Subject field for field, and the two
+// are vetted against ONE corpus (schemas/cds/fixtures/subject/), so a subject
+// admitted by one authority and rejected by the other is a gate failure rather
+// than a discovery in production.
+//
+// It lives in this package because #CDSCellSpec is where a subject is required
+// and CUE has no separate adapter package; the LANGUAGE is the git subject
+// adapter's, not CDS's — cellwork owns it on the Go side.
+//
+// `!` throughout, for the reason #CDSIssue carries it: without the required-
+// field marker an ABSENT field unifies with its declared value and vets clean.
+#GitSnapshotPinned: {
+	kind!:     "git.snapshot/0.1"
+	repo!:     string & !=""
+	base_sha!: =~"^[0-9a-f]{40}$"
+}
+
+// #GitSnapshotAuthored is what a cell spec may carry: the same shape with holes
+// admitted where resolution fills them, and a base that may still be a moving
+// revision. Pinning happens once at construction; the record then carries the
+// pinned form above. Every position is `#Concrete | #Hole` rather than bare
+// `string`, because Go reads EVERY `$...` value as a hole.
+#GitSnapshotAuthored: {
+	kind!:     "git.snapshot/0.1"
+	repo!:     #Concrete | #Hole
+	base_sha!: #Concrete | #Hole
+}
+
 // #CDSPatchAlphaResolved is what a closure records: the canonical structural
-// shape, a base_sha pinned to a commit at construction, and digested skills.
-// Hole-freedom is proven by resolution, not by this shape — see the header.
+// shape and digested skills. Hole-freedom is proven by resolution, not by this
+// shape — see the header.
+//
+// There is NO workspace, and its absence is the design: the repository and the
+// commit are contract truth (`contract.subject`), received frozen by both
+// stations. A seat-declared copy would be a second place to say the same thing
+// with nothing making the two agree, and the Go decoder rejects the key for
+// exactly that reason.
 #CDSPatchAlphaResolved: {
 	fill:      "cds.patch"
 	cognition: #Cognition
-	workspace: {
-		kind:     "git-worktree"
-		repo:     string & !=""
-		base_sha: =~"^[0-9a-f]{40}$"
-	}
 	// Ordered canonical refs with the content digest of the body that was
 	// actually injected — naming a skill is not loading it.
 	skills: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ...{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}]
@@ -105,11 +135,6 @@ import "cnos.dev/cnos/schemas/cdd"
 #CDSPatchAlphaAuthored: {
 	fill: "cds.patch"
 	cognition: #CognitionAuthored
-	workspace: {
-		kind:     "git-worktree"
-		repo:     #Concrete | #Hole
-		base_sha: #Concrete | #Hole
-	}
 	skills: [#Concrete | #Hole, ...#Concrete | #Hole]
 }
 
@@ -126,6 +151,11 @@ import "cnos.dev/cnos/schemas/cdd"
 // reaching outside the input its independence rests on. The absence is the
 // design, not an omission — the Go decoder rejects a `workspace` key here for
 // the same reason.
+//
+// The reviewer's fill DOES reconstruct a view from `(contract.subject, matter)`
+// before it rents anything, and that is not a workspace: the runtime cuts a
+// throwaway checkout and reduces it to a bounded value, and the rented seat
+// receives that value with no tool to look anywhere else.
 #CDSReviewBetaAuthored: {
 	fill: "cds.review"
 	cognition: #CognitionAuthored
@@ -237,6 +267,18 @@ import "cnos.dev/cnos/schemas/cdd"
 	// cognition is rented, and it is the only place this schema knowingly
 	// admits a document the runtime will refuse.
 	contract: task?: #CDSIssue
+
+	// A subject, if declared, must be an admissible git snapshot — closed and
+	// checked, where the generic layer leaves it optional and open.
+	//
+	// OPTIONAL here and mandatory at the door, exactly as `task` is, and for the
+	// same reason: making it required in this schema would force every fixture
+	// that is invalid for an unrelated single reason to carry a full subject.
+	// The load-bearing gate is cellwork.AdmitSubject, which BOTH seats run
+	// before renting cognition — a CDS cell with no subject does not execute.
+	// Stated exactly, because it is the same named gap: such a spec vets clean
+	// here and fails at run time.
+	contract: subject?: #GitSnapshotAuthored
 
 	// CANONICAL ORDER (explicit rule, not an accident): a CDS spec's first
 	// required_evidence entry IS the alpha diff. Chosen over order-independent

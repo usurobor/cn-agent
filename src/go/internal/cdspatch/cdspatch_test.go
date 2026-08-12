@@ -1,6 +1,7 @@
 package cdspatch
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
 // testRepo builds a one-commit git repository and returns its path and HEAD.
@@ -96,21 +98,44 @@ func admittedTestIssue(t *testing.T) cdsissue.Issue {
 	return iss
 }
 
-func declJSON(repo, provider string) json.RawMessage {
+func declJSON(provider string) json.RawMessage {
 	return json.RawMessage(fmt.Sprintf(`{
 		"fill": "cds.patch",
 		"cognition": {"provider": %q, "model": ""},
-		"workspace": {"kind": "git-worktree", "repo": %q, "base_sha": "HEAD"},
 		"skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"]
-	}`, provider, repo))
+	}`, provider))
+}
+
+// pinnedSubject is what construction hands both stations: the repository and
+// the exact commit, resolved once. Every seat test needs one, because a
+// producing seat now materializes what the CONTRACT names.
+func pinnedSubject(t *testing.T, repo string) json.RawMessage {
+	t.Helper()
+	authored, err := json.Marshal(cellwork.Subject{Kind: cellwork.SubjectKind, Repo: repo, BaseSHA: "HEAD"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pinned, err := cellwork.Pin(context.Background(), authored)
+	if err != nil {
+		t.Fatalf("pin the test subject: %v", err)
+	}
+	return pinned
+}
+
+// contractOn is the test contract acting on repo.
+func contractOn(t *testing.T, repo string) cellkernel.Contract {
+	t.Helper()
+	c := patchContract
+	c.Subject = pinnedSubject(t, repo)
+	return c
 }
 
 var testSkills = []string{"cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"}
 
-func construct(t *testing.T, repo, provider string) cellfill.ConstructedAlpha {
+func construct(t *testing.T, provider string) cellfill.ConstructedAlpha {
 	t.Helper()
 	f := Factory(skillTree(t, testSkills...))
-	a, err := f(context.Background(), declJSON(repo, provider))
+	a, err := f(context.Background(), declJSON(provider))
 	if err != nil {
 		t.Fatalf("construct: %v", err)
 	}
@@ -120,8 +145,7 @@ func construct(t *testing.T, repo, provider string) cellfill.ConstructedAlpha {
 // The constructor resolves and LOADS skill bodies: the resolved declaration
 // records ordered refs + content digests, and the prompt carries the bodies.
 func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
-	repo, _ := testRepo(t)
-	a := construct(t, repo, "fake")
+	a := construct(t, "fake")
 	var rd ResolvedDecl
 	if err := json.Unmarshal(a.Decl, &rd); err != nil {
 		t.Fatalf("resolved decl: %v", err)
@@ -142,10 +166,17 @@ func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
 	if a.Mode != cellkernel.ModeMechanical {
 		t.Fatalf("fake provider mode = %q, want mechanical", a.Mode)
 	}
-	// "resolved" must mean resolved: the recorded declaration names the exact
-	// commit, never the moving ref the caller passed.
-	if rd.Workspace.BaseSHA == "HEAD" || len(rd.Workspace.BaseSHA) != 40 {
-		t.Fatalf("resolved declaration did not pin the base commit: %q", rd.Workspace.BaseSHA)
+	// The declaration says nothing about WHERE the work happens. That is
+	// contract truth, and a seat-declared copy of it is exactly the second
+	// source this change removed.
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(a.Decl, &raw); err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{"workspace", "repo", "base_sha"} {
+		if _, present := raw[forbidden]; present {
+			t.Errorf("resolved patch declaration must not carry %q: %s", forbidden, a.Decl)
+		}
 	}
 }
 
@@ -153,14 +184,13 @@ func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
 // therefore the digest — do not depend on how the fill happened to serialize,
 // and constructing twice yields byte-identical declarations.
 func TestConstructionIsCanonicalAndStable(t *testing.T) {
-	repo, _ := testRepo(t)
 	reg := cellfill.CddFills()
 	reg.Alpha[Fill] = Factory(skillTree(t, testSkills...))
-	first, err := reg.ConstructAlpha(context.Background(), declJSON(repo, "fake"))
+	first, err := reg.ConstructAlpha(context.Background(), declJSON("fake"))
 	if err != nil {
 		t.Fatalf("construct: %v", err)
 	}
-	second, err := reg.ConstructAlpha(context.Background(), declJSON(repo, "fake"))
+	second, err := reg.ConstructAlpha(context.Background(), declJSON("fake"))
 	if err != nil {
 		t.Fatalf("construct again: %v", err)
 	}
@@ -174,15 +204,17 @@ func TestConstructionIsCanonicalAndStable(t *testing.T) {
 }
 
 func TestConstructionFailsClosed(t *testing.T) {
-	repo, _ := testRepo(t)
 	f := Factory(skillTree(t, testSkills...))
 	bad := map[string]string{
-		"unknown key":       `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"],"Extra":1}`,
-		"unknown provider":  `{"fill":"cds.patch","cognition":{"provider":"clyde","model":"m"},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"]}`,
-		"modelless claude":  `{"fill":"cds.patch","cognition":{"provider":"claude-cli","model":""},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"]}`,
-		"bad workspace":     `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"zip","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"]}`,
-		"no skills":         `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":[]}`,
-		"uninstalled skill": `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"git-worktree","repo":"` + repo + `","base_sha":"HEAD"},"skills":["cnos.eng:eng/nope"]}`,
+		"unknown key":       `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":["cnos.eng:eng/go"],"Extra":1}`,
+		"unknown provider":  `{"fill":"cds.patch","cognition":{"provider":"clyde","model":"m"},"skills":["cnos.eng:eng/go"]}`,
+		"modelless claude":  `{"fill":"cds.patch","cognition":{"provider":"claude-cli","model":""},"skills":["cnos.eng:eng/go"]}`,
+		"no skills":         `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":[]}`,
+		"uninstalled skill": `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":["cnos.eng:eng/nope"]}`,
+		// A workspace is no longer a cds.patch argument at all: where the work
+		// happens is the contract's to say, and a seat that could name a second
+		// repository could produce a diff against a tree beta never sees.
+		"declared workspace": `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"]}`,
 	}
 	for name, decl := range bad {
 		t.Run(name, func(t *testing.T) {
@@ -218,10 +250,10 @@ func TestIllDefinedIssueFailsBeforeRentingCognition(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			coder := &recordingCoder{}
-			seat := construct(t, repo, "fake").Seat.(PatchAlpha)
+			seat := construct(t, "fake").Seat.(PatchAlpha)
 			seat.coder = coder
 
-			contract := patchContract
+			contract := contractOn(t, repo)
 			contract.Task = json.RawMessage(task)
 			_, err := seat.Produce(context.Background(), cellkernel.AlphaInput{Contract: contract})
 			if err == nil {
@@ -239,9 +271,9 @@ func TestIllDefinedIssueFailsBeforeRentingCognition(t *testing.T) {
 	// The guard is not vacuous: the SAME double IS reached when the issue is
 	// admissible, so `called` can be true.
 	coder := &recordingCoder{}
-	seat := construct(t, repo, "fake").Seat.(PatchAlpha)
+	seat := construct(t, "fake").Seat.(PatchAlpha)
 	seat.coder = coder
-	if _, err := seat.Produce(context.Background(), cellkernel.AlphaInput{Contract: patchContract}); err != nil {
+	if _, err := seat.Produce(context.Background(), cellkernel.AlphaInput{Contract: contractOn(t, repo)}); err != nil {
 		t.Fatalf("an admissible issue must reach the coder: %v", err)
 	}
 	if !coder.called {
@@ -259,9 +291,9 @@ func (idleCoder) Work(context.Context, string, string) error { return nil }
 
 func TestIdleCoderCannotFalselyComplete(t *testing.T) {
 	repo, _ := testRepo(t)
-	a := construct(t, repo, "fake").Seat.(PatchAlpha)
+	a := construct(t, "fake").Seat.(PatchAlpha)
 	a.coder = idleCoder{}
-	out, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: patchContract})
+	out, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: contractOn(t, repo)})
 	if err != nil {
 		t.Fatalf("produce: %v", err)
 	}
@@ -282,7 +314,7 @@ func TestIdleCoderCannotFalselyComplete(t *testing.T) {
 // change a passing mechanical beta would have wrongly blessed.)
 func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 	repo, head := testRepo(t)
-	a := construct(t, repo, "fake")
+	a := construct(t, "fake")
 	betas := cellfill.CddFills()
 	b, err := betas.ConstructBeta(context.Background(), json.RawMessage(`{"fill":"cdd.mechanical-unmet"}`))
 	if err != nil {
@@ -295,8 +327,9 @@ func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 			Alpha: a.Decl, Beta: b.Decl,
 		},
 	}
+	contract := contractOn(t, repo)
 	cl, err := cellkernel.RunEpisode(context.Background(),
-		cellkernel.Spec{Contract: patchContract, Alpha: a.Seat, Beta: b.Seat}, meta)
+		cellkernel.Spec{Contract: contract, Alpha: a.Seat, Beta: b.Seat}, meta)
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
@@ -318,7 +351,7 @@ func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 	if base != head {
 		t.Fatalf("base_sha = %q, want resolved HEAD %q", base, head)
 	}
-	if err := cellkernel.VerifyClosure(patchContract, meta, cl); err != nil {
+	if err := cellkernel.VerifyClosure(contract, meta, cl); err != nil {
 		t.Fatalf("closure must verify: %v", err)
 	}
 }
@@ -326,8 +359,8 @@ func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 // The worktree is disposable and the repository is left untouched.
 func TestWorktreeIsDisposableAndRepoUntouched(t *testing.T) {
 	repo, head := testRepo(t)
-	a := construct(t, repo, "fake").Seat.(PatchAlpha)
-	if _, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: patchContract}); err != nil {
+	a := construct(t, "fake").Seat.(PatchAlpha)
+	if _, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: contractOn(t, repo)}); err != nil {
 		t.Fatalf("produce: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(repo, "CELL-FAKE-CHANGE.txt")); !os.IsNotExist(err) {
@@ -350,25 +383,58 @@ func TestWorktreeIsDisposableAndRepoUntouched(t *testing.T) {
 	}
 }
 
+// The seat fails closed on every way its inputs can be wrong, and each cause
+// is named. The subject cases are contract-level now: a seat cannot be given a
+// bad repository or a moving base by its own declaration, only by a contract
+// that carries one.
 func TestPatchAlphaFailsClosed(t *testing.T) {
 	repo, _ := testRepo(t)
-	in := cellkernel.AlphaInput{Contract: patchContract}
-	base := construct(t, repo, "fake").Seat.(PatchAlpha)
+	seat := construct(t, "fake").Seat.(PatchAlpha)
 
-	noCoder := base
+	noCoder := seat
 	noCoder.coder = nil
-	if _, err := noCoder.Produce(context.Background(), in); err == nil {
+	if _, err := noCoder.Produce(context.Background(), cellkernel.AlphaInput{Contract: contractOn(t, repo)}); err == nil {
 		t.Fatal("nil coder must fail closed")
 	}
-	badBase := base
-	badBase.base = "no-such-rev"
-	if _, err := badBase.Produce(context.Background(), in); err == nil {
-		t.Fatal("an unresolvable base must fail before any work")
+
+	badSubject := func(t *testing.T, s cellwork.Subject) cellkernel.Contract {
+		t.Helper()
+		raw, err := json.Marshal(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := patchContract
+		c.Subject = raw
+		return c
 	}
-	notRepo := base
-	notRepo.repo = t.TempDir()
-	if _, err := notRepo.Produce(context.Background(), in); err == nil {
-		t.Fatal("a non-repository must fail closed")
+	pinned := func(t *testing.T) string {
+		t.Helper()
+		s, err := cellwork.AdmitSubject(pinnedSubject(t, repo))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return s.BaseSHA
+	}
+	for name, tc := range map[string]struct {
+		contract cellkernel.Contract
+		want     string
+	}{
+		"no subject":       {patchContract, "contract carries no subject"},
+		"unpinned base":    {badSubject(t, cellwork.Subject{Kind: cellwork.SubjectKind, Repo: repo, BaseSHA: "HEAD"}), "is not pinned"},
+		"unknown kind":     {badSubject(t, cellwork.Subject{Kind: "svn.checkout/0.1", Repo: repo, BaseSHA: pinned(t)}), "subject kind must be"},
+		"not a repository": {badSubject(t, cellwork.Subject{Kind: cellwork.SubjectKind, Repo: t.TempDir(), BaseSHA: pinned(t)}), "is not a git repository"},
+		"absent commit": {badSubject(t, cellwork.Subject{Kind: cellwork.SubjectKind, Repo: repo,
+			BaseSHA: "0000000000000000000000000000000000000000"}), "does not resolve"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := seat.Produce(context.Background(), cellkernel.AlphaInput{Contract: tc.contract})
+			if err == nil {
+				t.Fatal("must fail closed")
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("failed for the wrong reason: got %v, want mention of %q", err, tc.want)
+			}
+		})
 	}
 }
 
@@ -378,13 +444,11 @@ func TestPatchAlphaFailsClosed(t *testing.T) {
 // (Pi #57 C1), and the RESOLVED declaration must still record `model: ""`
 // so a receipt says what held the seat rather than what the author typed.
 func TestFakeMayOmitModelAndStillRecordsIt(t *testing.T) {
-	repo, _ := testRepo(t)
-	decl := json.RawMessage(fmt.Sprintf(`{
+	decl := json.RawMessage(`{
 		"fill": "cds.patch",
 		"cognition": {"provider": "fake"},
-		"workspace": {"kind": "git-worktree", "repo": %q, "base_sha": "HEAD"},
 		"skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"]
-	}`, repo))
+	}`)
 	a, err := Factory(skillTree(t, testSkills...))(context.Background(), decl)
 	if err != nil {
 		t.Fatalf("a fake omitting its meaningless model must construct: %v", err)
@@ -399,5 +463,78 @@ func TestFakeMayOmitModelAndStillRecordsIt(t *testing.T) {
 	}
 	if m, present := cog["model"]; !present || m != "" {
 		t.Fatalf("resolved cognition must record model:\"\", got %v (present=%v)", m, present)
+	}
+}
+
+// subjectWatchBeta records what the reviewing station was handed. A real
+// cds.review beta cannot be used here — it lives downstream of this package —
+// and what is under test is the kernel-facing half anyway: whether the two
+// stations are handed the same value.
+type subjectWatchBeta struct{ saw *json.RawMessage }
+
+func (b subjectWatchBeta) Review(_ context.Context, in cellkernel.BetaInput) (cellkernel.BetaOutput, error) {
+	*b.saw = in.Contract.Subject
+	return cellkernel.BetaOutput{Review: cellkernel.Review{Pass: true, Notes: "watched"}}, nil
+}
+
+// AC2: the author names a moving revision, the runtime pins it once, and BOTH
+// stations receive those same bytes. The producing seat's own measurement is
+// checked against them too — a seat that resolved `HEAD` for itself could
+// measure against a commit the reviewer never sees, which is the whole failure
+// this contract slot removes.
+func TestBothStationsReceiveTheSamePinnedSubject(t *testing.T) {
+	repo, head := testRepo(t)
+	authored, err := json.Marshal(cellwork.Subject{Kind: cellwork.SubjectKind, Repo: repo, BaseSHA: "HEAD"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pinned, err := cellwork.Pin(context.Background(), authored)
+	if err != nil {
+		t.Fatalf("pin: %v", err)
+	}
+	if bytes.Equal(pinned, authored) {
+		t.Fatal("the authored subject was already pinned, so this proves nothing")
+	}
+
+	contract := patchContract
+	contract.Subject = pinned
+	a := construct(t, "fake")
+	var atBeta json.RawMessage
+	meta := cellkernel.RunMeta{
+		ExecutionMode: cellfill.CombineModes(a.Mode, cellkernel.ModeMechanical),
+		ResolvedSpec: cellkernel.ResolvedSpec{
+			Version: "cnos.cellspec.v0", DeclaredProtocol: "cnos.cdd.cds.receipt.v1",
+			Alpha: a.Decl, Beta: json.RawMessage(`{"fill":"test.subject-watch"}`),
+		},
+	}
+	cl, err := cellkernel.RunEpisode(context.Background(),
+		cellkernel.Spec{Contract: contract, Alpha: a.Seat, Beta: subjectWatchBeta{&atBeta}}, meta)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	if !bytes.Equal(atBeta, pinned) {
+		t.Fatalf("the reviewing station saw %s, want the pinned %s", atBeta, pinned)
+	}
+	if !bytes.Equal(cl.Receipt.Record.Contract.Subject, pinned) {
+		t.Fatalf("the record carries %s, want the pinned %s", cl.Receipt.Record.Contract.Subject, pinned)
+	}
+	// The producing station's measurement was taken at that same commit: its
+	// base_sha artifact is what the runtime actually materialized at.
+	var measured string
+	for _, art := range cl.Receipt.Record.Alpha.Artifacts {
+		if art.ID == BaseArtifactID {
+			measured = art.Text
+		}
+	}
+	if measured != head {
+		t.Fatalf("alpha measured at %q, want the pinned commit %q", measured, head)
+	}
+	var got cellwork.Subject
+	if err := json.Unmarshal(pinned, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.BaseSHA != measured {
+		t.Fatalf("the contract names %q and the measurement was taken at %q", got.BaseSHA, measured)
 	}
 }

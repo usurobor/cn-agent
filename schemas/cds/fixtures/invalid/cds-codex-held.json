@@ -18,11 +18,6 @@
       "provider": "codex-cli",
       "model": "gpt-5-codex"
     },
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": ".",
-      "base_sha": "x"
-    },
     "skills": [
       "cnos.eng:eng/go"
     ]

@@ -21,11 +21,6 @@
         "--dangerously"
       ]
     },
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": ".",
-      "base_sha": "x"
-    },
     "skills": [
       "cnos.eng:eng/go"
     ]

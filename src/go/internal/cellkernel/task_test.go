@@ -79,7 +79,7 @@ func TestStructurallyInadmissibleTaskIsAnInvalidRecord(t *testing.T) {
 	cases := map[string]json.RawMessage{
 		"not JSON": json.RawMessage(`{"id":`),
 		"over bound": json.RawMessage(`{"pad":"` +
-			strings.Repeat("x", maxTaskBytes) + `"}`),
+			strings.Repeat("x", maxOpaqueSlotBytes) + `"}`),
 	}
 	for name, task := range cases {
 		t.Run(name, func(t *testing.T) {

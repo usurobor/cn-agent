@@ -66,6 +66,12 @@ package cdd
 		// because the record carries the whole frozen contract, which is what
 		// binds the task into the one scope-lift digest.
 		task?: {...}
+		// The frozen subject — what the episode acted on — opaque here for the
+		// same reason the task is. It appears because the record carries the
+		// whole frozen contract, which is what binds it into the one scope-lift
+		// digest and what makes "both stations saw the same subject" a property
+		// of the record rather than a claim about the runtime.
+		subject?: {...}
 		required_evidence?: [...#RequiredRef]
 	}
 	alpha: #StationRecord

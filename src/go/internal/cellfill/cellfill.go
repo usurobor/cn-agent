@@ -51,11 +51,27 @@ type ConstructedBeta struct {
 type AlphaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedAlpha, error)
 type BetaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedBeta, error)
 
+// SubjectPinner resolves the contract's AUTHORED subject to the exact,
+// immutable one both stations receive. It is a plain function because there is
+// one subject adapter and the generic path needs exactly one operation from it
+// here; a kind-keyed map of adapters would be a seam with nothing on the other
+// side of it.
+//
+// It sits beside the fills because it is wired by the same assembly point and
+// consumed by the same construction step. The generic path still learns nothing
+// about subjects: it hands over opaque bytes and records the opaque bytes it
+// gets back.
+type SubjectPinner func(ctx context.Context, subject json.RawMessage) (json.RawMessage, error)
+
 // Registry is the small statically assembled fill map. No DI container, no
 // service locator — the assembly point lists its fills.
 type Registry struct {
 	Alpha map[string]AlphaFactory
 	Beta  map[string]BetaFactory
+	// PinSubject is nil in a registry assembled for cells that act on nothing;
+	// a spec declaring a subject then fails construction rather than running
+	// with an unpinned one.
+	PinSubject SubjectPinner
 }
 
 // FillID extracts the tag that selects a constructor. It is the ONLY field

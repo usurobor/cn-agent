@@ -51,7 +51,18 @@ type ContractSpec struct {
 	// cdsissue at the seats, not here — and `$param` holes are NOT substituted
 	// inside it: Resolve splices the seat declarations only, so a task is
 	// authored literally and frozen literally.
-	Task             json.RawMessage `json:"task,omitempty"`
+	Task json.RawMessage `json:"task,omitempty"`
+	// Subject is what the cell acts on, carried through to
+	// cellkernel.Contract.Subject as opaque bytes. This package does not know
+	// what a subject is either — that belongs to the adapter the assembly point
+	// wired in as the Registry's SubjectPinner.
+	//
+	// Unlike the task, `$param` holes ARE substituted inside it, and the
+	// difference is not a convenience: a task states what must be true and is
+	// the same sentence on every run, while a subject names WHERE this run acts
+	// and is exactly the thing an invoker supplies. A subject that could not
+	// carry a hole would have to be edited into the spec for every invocation.
+	Subject          json.RawMessage `json:"subject,omitempty"`
 	RequiredEvidence []RequiredRef   `json:"required_evidence,omitempty"`
 }
 
@@ -145,18 +156,20 @@ func validateEvidence(refs []RequiredRef) error {
 }
 
 // Resolved is a cell spec with its parameter holes filled in place — the seat
-// declarations are complete tagged objects ready for their fills.
+// declarations and the contract's subject are complete objects ready for their
+// fills and its adapter.
 type Resolved struct {
-	Spec  CellSpec
-	Alpha json.RawMessage
-	Beta  json.RawMessage
+	Spec    CellSpec
+	Subject json.RawMessage
+	Alpha   json.RawMessage
+	Beta    json.RawMessage
 }
 
 // Resolve fills `$param` holes from `given` (with defaults and closed
-// domains) IN PLACE inside both seat declarations: any string value equal to
-// `$name` is replaced by the parameter's value, wherever it sits in the seat
-// tree. Unresolved authored JSON carries holes in the same positions the
-// resolved tree fills.
+// domains) IN PLACE inside both seat declarations and the contract's subject:
+// any string value equal to `$name` is replaced by the parameter's value,
+// wherever it sits in those trees. Unresolved authored JSON carries holes in
+// the same positions the resolved tree fills.
 func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 	for name := range given {
 		if _, ok := s.Params[name]; !ok {
@@ -200,7 +213,13 @@ func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 	if err != nil {
 		return Resolved{}, fmt.Errorf("beta: %w", err)
 	}
-	return Resolved{Spec: s, Alpha: alpha, Beta: beta}, nil
+	var subject json.RawMessage
+	if len(s.Contract.Subject) > 0 {
+		if subject, err = splice(s.Contract.Subject, s.Params, vals); err != nil {
+			return Resolved{}, fmt.Errorf("contract.subject: %w", err)
+		}
+	}
+	return Resolved{Spec: s, Subject: subject, Alpha: alpha, Beta: beta}, nil
 }
 
 // splice walks a seat's JSON tree replacing `$name` string values in place.
@@ -271,8 +290,18 @@ func spliceValue(v any, declared map[string]ParamSpec, vals map[string]string) (
 // the result to a runnable kernel Spec plus the RunMeta the record carries:
 // the complete canonical resolved declarations and the truthful combined
 // mode. The registry arrives from the assembly point (the CLI domain) — this
-// package never names a fill.
+// package never names a fill, and never names a subject kind either.
 func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.Spec, cellkernel.RunMeta, error) {
+	// The subject is pinned ONCE, here, before either seat is constructed and
+	// long before either runs. Both stations then receive the same frozen
+	// bytes. Pinning per station would let a moving reference resolve twice and
+	// two stations measure against two trees while the record named one — the
+	// defect class this contract slot exists to close.
+	subject, err := r.pinSubject(ctx, reg)
+	if err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, err
+	}
+
 	alpha, err := reg.ConstructAlpha(ctx, r.Alpha)
 	if err != nil {
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
@@ -290,6 +319,7 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.
 		ID:               r.Spec.Contract.ID,
 		Goal:             r.Spec.Contract.Goal,
 		Task:             r.Spec.Contract.Task,
+		Subject:          subject,
 		RequiredEvidence: req,
 	}
 	meta := cellkernel.RunMeta{
@@ -302,6 +332,27 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.
 		},
 	}
 	return cellkernel.Spec{Contract: contract, Alpha: alpha.Seat, Beta: beta.Seat}, meta, nil
+}
+
+// pinSubject hands the resolved subject to the wired adapter and returns what
+// it gets back, unread. A spec that declares no subject pins nothing; a spec
+// that declares one and meets a registry with no adapter fails here, because
+// running it would mean the stations pinning it themselves.
+func (r Resolved) pinSubject(ctx context.Context, reg cellfill.Registry) (json.RawMessage, error) {
+	if len(r.Subject) == 0 {
+		return nil, nil
+	}
+	if reg.PinSubject == nil {
+		return nil, fmt.Errorf("contract.subject: this runtime wires no subject adapter")
+	}
+	pinned, err := reg.PinSubject(ctx, r.Subject)
+	if err != nil {
+		return nil, fmt.Errorf("contract.subject: %w", err)
+	}
+	if len(pinned) == 0 {
+		return nil, fmt.Errorf("contract.subject: the subject adapter returned nothing")
+	}
+	return pinned, nil
 }
 
 // checkNoDuplicateKeysOrNull rejects duplicate object keys anywhere in the
@@ -371,7 +422,7 @@ func checkExactKeys(data []byte) error {
 	if err := keysIn("spec", root, "version", "contract", "protocol_id", "params", "alpha", "beta"); err != nil {
 		return err
 	}
-	if err := objectKeys(root["contract"], "contract", "id", "goal", "task", "required_evidence"); err != nil {
+	if err := objectKeys(root["contract"], "contract", "id", "goal", "task", "subject", "required_evidence"); err != nil {
 		return err
 	}
 	var contract struct {

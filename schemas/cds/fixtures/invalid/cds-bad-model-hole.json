@@ -18,11 +18,6 @@
       "provider": "claude-cli",
       "model": "$bad-name"
     },
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": ".",
-      "base_sha": "0123456789abcdef0123456789abcdef01234567"
-    },
     "skills": [
       "cnos.eng:eng/go"
     ]
