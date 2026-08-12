@@ -1,12 +1,12 @@
 # Cell System Design
 
-**Version:** 0.1.0-draft  
-**Status:** Proposed canonical design · pre-ratification · not yet an implementation contract  
-**Doc class:** Architecture design  
-**Evidence baseline:** `claude/cds-case3-rented-beta@5b0274c215839a193009ff3484e3f2ed6bcb87df`  
+**Version:** 0.1.0-draft
+**Status:** Proposed canonical design · pre-ratification · not yet an implementation contract
+**Doc class:** Architecture design
+**Evidence baseline:** `claude/cds-case3-rented-beta@5b0274c215839a193009ff3484e3f2ed6bcb87df`
 **Owns:** The end-to-end CNOS realization of a cell: definition, construction, admission,
 subject handling, cognition, methodology, assessment, evidence, closure, failure, and
-composition.  
+composition.
 **Does not own:** The substrate-independent CCNF kernel, TSC/Coh methodology semantics,
 provider-specific model behavior, or application-specific issue and design content.
 
