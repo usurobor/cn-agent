@@ -67,6 +67,18 @@ const (
 	maxAggregateArtifact = 4 << 20 // sum over both seats
 )
 
+// MaxOpaqueSlotBytes is the one bound for every opaque contract slot. A
+// per-slot bound would be the kernel deciding that one opaque payload deserves
+// more room than another, which is a judgement about what they MEAN — exactly
+// what this boundary refuses to make.
+//
+// It is EXPORTED because a profile's admission gate must refuse what this
+// boundary will refuse, and the only way for two gates to agree on a number is
+// for there to be one number. A gate that restated it would drift silently:
+// nothing fails when two constants disagree, a document simply passes the door
+// and then breaks the episode.
+const MaxOpaqueSlotBytes = 64 << 10
+
 // Role names which station a required artifact must come from. The check is
 // positional (which side of the record the artifact sits on), never a stamp.
 type Role string
@@ -105,9 +117,51 @@ type RequiredRef struct {
 }
 
 type Contract struct {
-	ID               string        `json:"id"`
-	Goal             string        `json:"goal"`
-	RequiredEvidence []RequiredRef `json:"required_evidence,omitempty"`
+	ID   string `json:"id"`
+	Goal string `json:"goal"`
+	// Issue and Design are the two halves of the admitted contract, opaque
+	// here. The kernel never learns what either MEANS — that belongs to
+	// whichever protocol authored them — so the only rules at this boundary
+	// are structural: valid JSON, within MaxOpaqueSlotBytes. They are two
+	// slots rather than one because they are logically distinct documents:
+	// merging them here would let the record lose the distinction that the
+	// problem statement and the proposed change are separately authored and
+	// separately admitted.
+	//
+	// Because EpisodeRecord carries the frozen Contract, both are inside
+	// canonicalBytes() and therefore inside the one scope-lift digest; there
+	// is no second digest to bind them, and adding one would be a second proof
+	// surface for the same bytes.
+	Issue  json.RawMessage `json:"issue,omitempty"`
+	Design json.RawMessage `json:"design,omitempty"`
+	// Subject is the thing the episode acts on, opaque here under exactly the
+	// rules Issue and Design obey, and for the same reason: what a subject IS
+	// belongs to the adapter that pins it, never to this boundary.
+	//
+	// It is a CONTRACT value rather than a seat argument because both stations
+	// need the same one. Frozen once, it is the same bytes on both sides by
+	// construction — there is no second place to state it and therefore
+	// nothing to keep in step.
+	Subject          json.RawMessage `json:"subject,omitempty"`
+	RequiredEvidence []RequiredRef   `json:"required_evidence,omitempty"`
+}
+
+// opaqueSlots is the complete list of the contract's opaque slots, paired with
+// the name a diagnostic uses. Written once so a slot added to the struct and
+// forgotten here is the only way to escape the boundary rules — rather than
+// three near-identical checks in each of the three places that apply them.
+func (c Contract) opaqueSlots() []struct {
+	name string
+	raw  json.RawMessage
+} {
+	return []struct {
+		name string
+		raw  json.RawMessage
+	}{
+		{"issue", c.Issue},
+		{"design", c.Design},
+		{"subject", c.Subject},
+	}
 }
 
 func (c Contract) clone() Contract {
@@ -115,7 +169,24 @@ func (c Contract) clone() Contract {
 	if c.RequiredEvidence != nil {
 		cp.RequiredEvidence = append([]RequiredRef(nil), c.RequiredEvidence...)
 	}
+	// A shared slice is a mutable value inside a struct otherwise frozen by
+	// copy: without this, a seat handed AlphaInput.Contract could write through
+	// an opaque slot into the contract the runtime composes the record from.
+	cp.Issue = cloneRaw(c.Issue)
+	cp.Design = cloneRaw(c.Design)
+	cp.Subject = cloneRaw(c.Subject)
 	return cp
+}
+
+// cloneRaw copies a raw slot, preserving the nil/empty distinction: a nil slot
+// is absent and `omitempty` keeps it out of the canonical bytes entirely, so
+// turning nil into an empty non-nil slice here would change no JSON today and
+// would be a trap the first time a caller tested for absence.
+func cloneRaw(raw json.RawMessage) json.RawMessage {
+	if raw == nil {
+		return nil
+	}
+	return append(json.RawMessage{}, raw...)
 }
 
 type Matter struct {
@@ -593,6 +664,10 @@ func validateRecord(r EpisodeRecord) []Failure {
 
 	// Contract validity (same rules validateSpec enforces on the honest path).
 	add(r.Contract.ID == "", InvalidRecord, "contract id is empty")
+	for _, slot := range r.Contract.opaqueSlots() {
+		add(opaqueSlotIntegrity(slot.raw) != nil, InvalidRecord,
+			"contract "+slot.name+" is not structurally admissible")
+	}
 	add(len(r.Contract.RequiredEvidence) > maxRequiredEvidence, InvalidRecord, "too many required evidence refs")
 	seenReq := make(map[string]bool)
 	for _, req := range r.Contract.RequiredEvidence {
@@ -781,6 +856,46 @@ func validSeatEnvelope(raw json.RawMessage) error {
 	return nil
 }
 
+// opaqueSlotIntegrity is the COMPLETE set of rules the kernel applies to EVERY
+// opaque contract slot — issue, design and subject — and it is one function
+// rather than three because the kernel's interest in them is identical: they
+// must be a JSON object and stay within the declared bound. Valid JSON is not
+// taste — canonicalBytes() serializes the record with encoding/json, which
+// cannot represent a RawMessage that is not JSON, so an unparseable slot would
+// silently collapse the canonical bytes the one digest is taken over. An
+// absent slot is admissible here; requiring one is a protocol's rule, not the
+// kernel's.
+//
+// THE OBJECT RULE IS THE BOUNDARY'S, NOT ANY PROFILE'S. It states what a slot
+// IS at this layer: a carrier for one tagged value, whose tag and vocabulary
+// belong to whatever admitted it. A bare scalar is not a tagged anything — no
+// reader downstream can ask it what it is — so it is inadmissible here whatever
+// a profile would have made of it. The kernel still reads no key and knows no
+// kind. Without the rule the two authorities disagreed: this function admitted
+// any valid JSON while the closure schema declares the three slots `{...}`, so
+// a record with a scalar slot self-verified here and then failed `cue vet` with
+// a type conflict. Today's three CDS admitters all require objects, which made
+// the disagreement unreachable through the shipped door and reachable by the
+// first Door that does not.
+func opaqueSlotIntegrity(raw json.RawMessage) error {
+	if len(raw) == 0 {
+		return nil
+	}
+	if len(raw) > MaxOpaqueSlotBytes {
+		return fmt.Errorf("exceeds %d bytes", MaxOpaqueSlotBytes)
+	}
+	if !json.Valid(raw) {
+		return errors.New("is not valid JSON")
+	}
+	// Valid JSON already, so the only way this fails is a non-object. `null`
+	// decodes into a nil map without error and is not an object either.
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &obj); err != nil || obj == nil {
+		return errors.New("is not a JSON object")
+	}
+	return nil
+}
+
 func validateSpec(s Spec) error {
 	if seatIsNil(s.Alpha) {
 		return errors.New("cellkernel: spec has nil alpha")
@@ -790,6 +905,11 @@ func validateSpec(s Spec) error {
 	}
 	if s.Contract.ID == "" {
 		return errors.New("cellkernel: contract.id is empty")
+	}
+	for _, slot := range s.Contract.opaqueSlots() {
+		if err := opaqueSlotIntegrity(slot.raw); err != nil {
+			return fmt.Errorf("cellkernel: contract.%s: %w", slot.name, err)
+		}
 	}
 	if len(s.Contract.RequiredEvidence) > maxRequiredEvidence {
 		return fmt.Errorf("cellkernel: too many required evidence refs (%d > %d)", len(s.Contract.RequiredEvidence), maxRequiredEvidence)

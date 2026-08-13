@@ -72,7 +72,11 @@ type ParamSpec struct {
 // cell spec. Seat interiors are validated by their fills at Build time and by
 // the fill's CUE overlay at vet time.
 func Parse(data []byte) (CellSpec, error) {
-	if err := checkNoDuplicateKeysOrNull(data); err != nil {
+	// Duplicate keys and nulls: the schema admits none, and a null collection
+	// would silently decode to a Go nil (Pi round-6 D2). The walk lives in
+	// cellfill because the run input needs the identical rule against the
+	// identical CUE-side expectation.
+	if err := cellfill.NoDuplicateKeysOrNull(data); err != nil {
 		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
 	}
 	if err := checkExactKeys(data); err != nil {
@@ -260,12 +264,56 @@ func spliceValue(v any, declared map[string]ParamSpec, vals map[string]string) (
 	}
 }
 
+// Binding is the per-run contract content a caller freezes into the cell: the
+// admitted issue, the admitted design, and the PINNED subject.
+//
+// The three are `json.RawMessage` and stay that way. This package is the
+// generic loader — it already refuses to learn what a fill means, and it
+// refuses to learn what an issue or a repository is for the same reason. It
+// carries the bytes to the one place the record digests them and reads none of
+// them. A zero Binding is a cell with no run input, which is every cell that
+// existed before the run input did.
+//
+// Admission, not this type, decides whether a given profile REQUIRES the three
+// to be present: a generic loader that demanded an issue would have made the
+// CDS profile's rule everyone's.
+type Binding struct {
+	Issue   json.RawMessage
+	Design  json.RawMessage
+	Subject json.RawMessage
+}
+
 // Build dispatches both seat declarations through the fill registry and binds
 // the result to a runnable kernel Spec plus the RunMeta the record carries:
 // the complete canonical resolved declarations and the truthful combined
 // mode. The registry arrives from the assembly point (the CLI domain) — this
 // package never names a fill.
-func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.Spec, cellkernel.RunMeta, error) {
+//
+// bind is spliced into the kernel contract and therefore into the canonical
+// record bytes and the one scope-lift digest. It is a Build argument rather
+// than something a caller sets on the returned Spec so that there is one
+// construction point for the contract: a caller that assembled half of it here
+// and half of it afterwards would have two places for the frozen value to
+// come from.
+func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding) (cellkernel.Spec, cellkernel.RunMeta, error) {
+	// The alpha fill's DECLARED requirement is checked against the binding
+	// before its constructor runs. A missing subject is decided entirely by two
+	// values both already in hand — the registration and `bind` — so nothing
+	// about it needs a seat to exist. Constructing first made the refusal wait
+	// for a provider adapter and every skill body to be built, and then arrive
+	// from a station as an episode malfunction, which is not what a run with no
+	// subject is. This package still learns nothing about fills: it reads one
+	// declared bool and never asks what a subject is for.
+	alphaID, alphaFill, err := reg.LookupAlpha(r.Alpha)
+	if err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
+	}
+	if alphaFill.NeedsSubject && len(bind.Subject) == 0 {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(
+			"cell spec: alpha fill %q requires contract.subject, and no run input supplied one "+
+				"(pass --input)", alphaID)
+	}
+
 	alpha, err := reg.ConstructAlpha(ctx, r.Alpha)
 	if err != nil {
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
@@ -282,6 +330,9 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.
 	contract := cellkernel.Contract{
 		ID:               r.Spec.Contract.ID,
 		Goal:             r.Spec.Contract.Goal,
+		Issue:            bind.Issue,
+		Design:           bind.Design,
+		Subject:          bind.Subject,
 		RequiredEvidence: req,
 	}
 	meta := cellkernel.RunMeta{
@@ -294,60 +345,6 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.
 		},
 	}
 	return cellkernel.Spec{Contract: contract, Alpha: alpha.Seat, Beta: beta.Seat}, meta, nil
-}
-
-// checkNoDuplicateKeysOrNull rejects duplicate object keys anywhere in the
-// JSON, which encoding/json otherwise silently accepts (last-wins), and JSON
-// null anywhere — the schema admits none, and a null collection would
-// silently decode to a Go nil (Pi round-6 D2).
-func checkNoDuplicateKeysOrNull(data []byte) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	return walkNoDup(dec)
-}
-
-func walkNoDup(dec *json.Decoder) error {
-	t, err := dec.Token()
-	if err != nil {
-		return err
-	}
-	if t == nil {
-		return fmt.Errorf("null is not allowed (the cell-spec schema admits no null)")
-	}
-	delim, ok := t.(json.Delim)
-	if !ok {
-		return nil
-	}
-	switch delim {
-	case '{':
-		keys := make(map[string]bool)
-		for dec.More() {
-			kt, err := dec.Token()
-			if err != nil {
-				return err
-			}
-			key, _ := kt.(string)
-			if keys[key] {
-				return fmt.Errorf("duplicate key %q", key)
-			}
-			keys[key] = true
-			if err := walkNoDup(dec); err != nil {
-				return err
-			}
-		}
-		if _, err := dec.Token(); err != nil { // consume '}'
-			return err
-		}
-	case '[':
-		for dec.More() {
-			if err := walkNoDup(dec); err != nil {
-				return err
-			}
-		}
-		if _, err := dec.Token(); err != nil { // consume ']'
-			return err
-		}
-	}
-	return nil
 }
 
 // checkExactKeys walks the known GENERIC object shapes and requires every key

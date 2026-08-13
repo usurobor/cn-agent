@@ -64,6 +64,17 @@ timeout 900 "$CN" cell run \
 `model` is a **requested selector**, not an observed model identity. Nothing
 in the runtime asks the provider what actually served the request.
 
+**This invocation no longer runs, and is kept because it is what was run.** The
+`cds.patch` seat used to declare its own `workspace`, which is what the
+`--param base_sha` / `--param repo` pair above filled. Two declarations of the
+repository could disagree — the record's `contract.subject` naming one and its
+`resolved_spec.alpha` naming another — and the closure still self-verified, so
+the workspace declaration was deleted. The repository and the base now come
+only from the run input's pinned subject: the same run today supplies `--input`
+and neither of those two parameters. The artifact below is untouched, digest
+included; `schemas/cds/spec.cue` holds its pre-deletion shape under
+`#CDSPatchAlphaResolvedPreWorkspaceDeletion` so the gate can still check it.
+
 ## Result
 
 Rows marked **gate** are recomputed by `scripts/cell-schema-check.sh`. Rows

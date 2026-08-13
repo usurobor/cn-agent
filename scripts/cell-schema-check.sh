@@ -7,8 +7,26 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 CUE=${CUE:-cue}
-CN=${CN:-./cn}
 fail=0
+
+tmpdir=$(mktemp -d)
+tmp="$tmpdir/envelope.json" # .json so `cue` infers the format, not CUE
+trap 'rm -rf "$tmpdir"' EXIT
+
+# The CLI is one of the two authorities this corpus checks, so it must be the
+# CLI BUILT FROM THE SOURCE UNDER REVIEW. Unless CN names one explicitly, build
+# it here: the previous default of `./cn` ran whatever binary happened to be in
+# the repository root, so a local run reported every CLI check green against a
+# binary that could predate the change entirely — and a mutation test passed
+# after the guard it was testing had been deleted. CI builds first and was
+# never affected; this closes the gap between what CI measures and what a local
+# run measures, which is the whole point of a shared corpus.
+if [ -n "${CN:-}" ]; then
+  echo "# using CN=$CN (caller-supplied; not rebuilt)"
+else
+  CN=$tmpdir/cn
+  go -C src/go build -o "$CN" ./cmd/cn || { echo "✗ cannot build cn from source" >&2; exit 1; }
+fi
 
 # A missing tool must not read as a corpus that passed. Every negative below is
 # an expected NON-ZERO exit, so an absent `cue` or `cn` would satisfy all of
@@ -16,10 +34,6 @@ fail=0
 for tool in "$CUE" "$CN"; do
   command -v "$tool" >/dev/null 2>&1 || { echo "✗ required tool not found: $tool" >&2; exit 1; }
 done
-
-tmpdir=$(mktemp -d)
-tmp="$tmpdir/envelope.json" # .json so `cue` infers the format, not CUE
-trap 'rm -rf "$tmpdir"' EXIT
 
 # files_exist guards the negative helpers below. A negative asserts a NON-ZERO
 # exit, and a missing or misnamed fixture produces one too — so without this a
@@ -43,11 +57,28 @@ vet_bad() {
   if "$CUE" vet "$@" >/dev/null 2>&1; then echo "  ✗ expected FAIL: cue vet $*"; fail=1; else echo "  ✓ rejected $*"; fi
 }
 run_bad() { # Go-only negatives: the CLI is the executable authority (exit 2).
-  # Exit 2 is ALSO the runner's missing-contract exit, so the fixture has to be
-  # proven present or this helper cannot tell rejection from absence.
-  if ! files_exist "$1"; then fail=1; return; fi
-  "$CN" cell run --contract "$1" >/dev/null 2>&1; local code=$?
-  if [ "$code" != 2 ]; then echo "  ✗ expected CLI exit 2: $1 (got $code)"; fail=1; else echo "  ✓ CLI rejected $1"; fi
+  # Usage: run_bad <fixture> <reason substring> [extra cn args...]
+  #
+  # Exit 2 is ALSO the runner's missing-contract exit, the missing-run-input
+  # exit, and now the unmet-fill-requirement exit, so the CODE proves refusal
+  # and never proves CAUSE. A fixture must therefore name the reason it is
+  # rejected for. This is not hypothetical: when the subject requirement moved
+  # ahead of construction, six of these fixtures began short-circuiting there
+  # and stopped exercising their own defect entirely, while this helper went on
+  # printing a tick for each. Fixture presence is still checked, for the same
+  # reason at one remove.
+  local fixture=$1 reason=$2; shift 2
+  if ! files_exist "$fixture"; then fail=1; return; fi
+  local err; err=$("$CN" cell run --contract "$fixture" "$@" 2>&1 >/dev/null); local code=$?
+  if [ "$code" != 2 ]; then
+    echo "  ✗ expected CLI exit 2: $fixture (got $code)"; fail=1
+  elif ! printf '%s' "$err" | grep -qF -- "$reason"; then
+    echo "  ✗ rejected for the wrong reason: $fixture"
+    echo "      got:  $err"
+    echo "      want: $reason"; fail=1
+  else
+    echo "  ✓ CLI rejected $fixture ($reason)"
+  fi
 }
 run_vet() { # want-exit, cn args...
   local want=$1; shift
@@ -117,24 +148,170 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-top-arg.json -d '#CDSCellSpec'
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-nested-arg.json -d '#CDSCellSpec'
 
+echo "# CDS subject corpus (one corpus, two authorities)"
+# cellwork.AdmitSubject and #GitSnapshotPinned must accept and reject exactly
+# the same documents, so both read THESE files: schemas/cds/fixtures/subject/ is
+# vetted here and table-tested by internal/cellwork. Each negative is invalid
+# for exactly ONE reason, and the Go test pins WHICH rule that is.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/subject/valid-subject.json -d '#GitSnapshotPinned'
+for neg in bad-kind missing-repo empty-base unpinned-base unknown-key mixed-case-key; do
+  vet_bad ./schemas/cds:cds "schemas/cds/fixtures/subject/subject-$neg.json" -d '#GitSnapshotPinned'
+done
+# The authored form is WIDER by exactly one rule: a base that is still a moving
+# revision. It is admissible before pinning and inadmissible in a record, and
+# this pair is what shows the two definitions are not the same definition.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/subject/subject-unpinned-base.json -d '#GitSnapshotAuthored'
+
+echo "# CDS issue corpus (one corpus, two authorities)"
+# cdsissue.Admit and #CDSIssue must accept and reject exactly the same
+# documents, so both read THESE files: schemas/cds/fixtures/issue/ is vetted
+# here and table-tested by internal/cdsissue. Each negative is invalid for
+# exactly ONE reason — a fixture breaking two rules cannot show which fired —
+# and the Go test additionally pins WHICH rule that is.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/issue/valid-issue.json -d '#CDSIssue'
+# scope.out PRESENT but empty is admissible: non-goals are load-bearing, so an
+# empty list says "considered, none" where an absent key says nothing at all.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/issue/valid-empty-scope-out.json -d '#CDSIssue'
+# blank-unicode-whitespace carries EVERY rune unicode.IsSpace covers in one
+# field. It is the witness that #NonBlank and cdsissue's nonBlankPattern are
+# the same class: a rune missing from the CUE enumeration would make this
+# document vet clean while Go rejects it, which is the divergence the two
+# authorities exist to catch.
+for neg in bad-kind empty-id blank-problem-line blank-unicode-whitespace \
+           no-sources source-without-path \
+           empty-scope-in missing-scope-out no-acceptance \
+           criterion-without-verification duplicate-acceptance-id \
+           unknown-key mixed-case-key; do
+  vet_bad ./schemas/cds:cds "schemas/cds/fixtures/issue/issue-$neg.json" -d '#CDSIssue'
+done
+
+echo "# CDS design corpus (one corpus, two authorities)"
+# cdsdesign.Admit and #CDSDesign, same discipline as the issue above. The
+# design is a SEPARATE document with a separate schema on purpose: an issue
+# that could also state architecture would let the problem be redefined by the
+# same act that proposes the change.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/design/valid-design.json -d '#CDSDesign'
+for neg in bad-kind blank-approach no-invariants blank-invariant \
+           no-impact blank-surface impact-without-why \
+           unknown-key mixed-case-key; do
+  vet_bad ./schemas/cds:cds "schemas/cds/fixtures/design/design-$neg.json" -d '#CDSDesign'
+done
+
+echo "# CDS run-input corpus (one corpus, two authorities)"
+# The whole run contract in one document, vetted here and table-tested by
+# internal/cdsadmit. The two authorities do NOT report identically and are not
+# claimed to: Go distinguishes an absent payload (incomplete) from a malformed
+# one (rejected), while CUE has one verdict. What must agree — and is what this
+# block checks — is WHICH documents are admissible.
+vet_ok ./schemas/cds:cds schemas/cds/fixtures/runinput/valid-run-input.json -d '#CDSRunInput'
+for neg in bad-kind no-issue no-design no-subject \
+           malformed-issue malformed-design wrong-kind-subject \
+           unknown-key mixed-case-key; do
+  vet_bad ./schemas/cds:cds "schemas/cds/fixtures/runinput/runinput-$neg.json" -d '#CDSRunInput'
+done
+
+echo "# every negative is invalid for exactly ONE reason"
+# The rejections above prove only that each negative is inadmissible — not that
+# it is inadmissible for the single reason its name claims. A fixture that
+# broke two rules would still be rejected, and the Go table's expected
+# substring would still match the first rule to fire, so both gates would stay
+# green while the corpus quietly stopped isolating defects.
+#
+# The check is structural and needs no repair table: every negative is derived
+# from its directory's positive by ONE mutation, so it must differ from that
+# positive in exactly one place. Restoring that one place reproduces the
+# positive document itself — which both authorities accept above — so "repair
+# the one defect and both authorities pass" is proven rather than asserted.
+#
+# A renamed key (`kind` → `Kind`) is one defect spelled as a removal plus an
+# addition, and is counted as one only when the two names differ by case alone
+# AND carry the same value.
+if python3 - <<'PYEOF'
+import json, os, sys
+
+CORPORA = {
+    "schemas/cds/fixtures/issue": "valid-issue.json",
+    "schemas/cds/fixtures/design": "valid-design.json",
+    "schemas/cds/fixtures/subject": "valid-subject.json",
+    "schemas/cds/fixtures/runinput": "valid-run-input.json",
+}
+
+def diffs(good, bad, path=""):
+    """JSON locations at which bad departs from good."""
+    if isinstance(good, dict) and isinstance(bad, dict):
+        out, gone, added = [], [], []
+        for k in good:
+            if k not in bad:
+                gone.append(k)
+            else:
+                out += diffs(good[k], bad[k], f"{path}.{k}")
+        added = [k for k in bad if k not in good]
+        # A key present under a differently-cased name, same value, is ONE
+        # defect: the key was misspelled, not removed and something else added.
+        for g in list(gone):
+            for a in list(added):
+                if g.lower() == a.lower() and good[g] == bad[a]:
+                    gone.remove(g); added.remove(a)
+                    out.append(f"{path}.{g}~{a}")
+        out += [f"{path}.{k} (absent)" for k in gone]
+        out += [f"{path}.{k} (extra)" for k in added]
+        return out
+    if isinstance(good, list) and isinstance(bad, list):
+        # Same length: compare element-wise, so a single changed element is one
+        # defect. Different length: the list itself is the one defect.
+        if len(good) != len(bad):
+            return [f"{path} (list)"]
+        out = []
+        for i, (g, b) in enumerate(zip(good, bad)):
+            out += diffs(g, b, f"{path}[{i}]")
+        return out
+    return [] if good == bad else [path or "."]
+
+bad = False
+checked = 0
+for d, positive in CORPORA.items():
+    good = json.load(open(os.path.join(d, positive)))
+    names = sorted(n for n in os.listdir(d)
+                   if n.endswith(".json") and not n.startswith("valid-"))
+    if not names:
+        print(f"    {d}: no negatives found"); bad = True; continue
+    for n in names:
+        found = diffs(good, json.load(open(os.path.join(d, n))))
+        checked += 1
+        if len(found) != 1:
+            print(f"    {d}/{n}: {len(found)} defects, want exactly 1: {found}")
+            bad = True
+# A run that compared nothing would report a corpus it never opened.
+if checked == 0:
+    print("    no negatives were compared"); bad = True
+else:
+    print(f"    compared {checked} negatives against their positives")
+sys.exit(1 if bad else 0)
+PYEOF
+then
+  echo "  ✓ every negative differs from its positive in exactly one place"
+else
+  echo "  ✗ a negative fixture carries more than one defect"; fail=1
+fi
+
 echo "# Go-only negatives (executable authority = the CLI)"
-run_bad schemas/cdd/fixtures/invalid/cellspec-dup-required-id.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-bad-producer.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-missing-fill.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-unknown-fill.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-empty-goal.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-bad-param-name.json
-run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json
-run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json
-run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json
-run_bad schemas/cds/fixtures/invalid/cds-fake-with-model.json
-run_bad schemas/cds/fixtures/invalid/cds-codex-held.json
-run_bad schemas/cds/fixtures/invalid/cds-bad-hole-name.json
-run_bad schemas/cds/fixtures/invalid/cds-bad-model-hole.json
-run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json
-run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json
-run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json
+run_bad schemas/cdd/fixtures/invalid/cellspec-dup-required-id.json 'duplicate required_evidence id'
+run_bad schemas/cdd/fixtures/invalid/cellspec-bad-producer.json 'producer'
+run_bad schemas/cdd/fixtures/invalid/cellspec-missing-fill.json 'fill'
+run_bad schemas/cdd/fixtures/invalid/cellspec-unknown-fill.json 'unknown alpha fill'
+run_bad schemas/cdd/fixtures/invalid/cellspec-empty-goal.json 'goal'
+run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json 'unknown key'
+run_bad schemas/cdd/fixtures/invalid/cellspec-bad-param-name.json 'parameter'
+run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json 'null'
+run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json 'argv' --input schemas/cds/fixtures/runinput/valid-run-input.json
+run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json 'requires a model selector' --input schemas/cds/fixtures/runinput/valid-run-input.json
+run_bad schemas/cds/fixtures/invalid/cds-fake-with-model.json 'takes no model' --input schemas/cds/fixtures/runinput/valid-run-input.json
+run_bad schemas/cds/fixtures/invalid/cds-codex-held.json 'unknown provider' --input schemas/cds/fixtures/runinput/valid-run-input.json
+run_bad schemas/cds/fixtures/invalid/cds-bad-hole-name.json 'malformed'
+run_bad schemas/cds/fixtures/invalid/cds-bad-model-hole.json 'malformed'
+run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json 'seat declaration has no fill'
+run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json 'unknown key' --input schemas/cds/fixtures/runinput/valid-run-input.json
+run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json 'unknown key' --input schemas/cds/fixtures/runinput/valid-run-input.json
 
 echo "# committed rented-Claude evidence (one-off receipt, NOT a provider run)"
 # The live corpus rents `fake`, so the cognitive path has no runtime witness
@@ -157,8 +334,21 @@ if ! files_exist "$ev"; then
 else
   vet_ok schemas/cdd/episode-closure.cue "$ev" -d '#EpisodeClosure'
   evalpha="$tmpdir/evidence-alpha.json"
+  # ...against the FROZEN PRE-DELETION shape, deliberately. This episode ran
+  # while the cds.patch fill still declared its own workspace; its record is
+  # covered by a digest that recomputes, so editing the declaration out of it
+  # would break that digest and turn evidence into a claim. The artifact stays
+  # byte-for-byte and is held to the closed shape it was actually produced in.
+  # A cell authored today cannot reach that shape: #CDSCellSpec.alpha is
+  # #CDSPatchAlphaAuthored, which has no workspace key at all.
   if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$ev" "$evalpha" 2>/dev/null; then
-    vet_ok ./schemas/cds:cds "$evalpha" -d '#CDSPatchAlphaResolved'
+    vet_ok ./schemas/cds:cds "$evalpha" -d '#CDSPatchAlphaResolvedPreWorkspaceDeletion'
+    # ...and it really is the pre-deletion shape, or the line above would be
+    # vetting a current-shape declaration against a definition that merely
+    # tolerates it.
+    if "$CUE" vet ./schemas/cds:cds "$evalpha" -d '#CDSPatchAlphaResolved' >/dev/null 2>&1; then
+      echo "  ✗ the evidence alpha vets the CURRENT shape: the frozen definition is guarding nothing"; fail=1
+    else echo "  ✓ the evidence alpha is the pre-deletion shape the current definition rejects"; fi
   else
     echo "  ✗ evidence closure has no resolved alpha"; fail=1
   fi
@@ -231,6 +421,21 @@ mkdir -p "$coderepo"
     GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t \
       git commit -qm base
 ) >/dev/null 2>&1 || { echo "  ✗ could not build the code-cell fixture repo"; fail=1; }
+# The run input is built HERE, before the cds.patch run, because the seat no
+# longer names a repository: the repository and the base come from the pinned
+# contract subject, so a cds.patch cell without a run input has nothing to act
+# on. The committed fixture names `.`, which is what an author writes; pinning
+# really opens it, so the live witness points it at the hermetic repository
+# above. Only the subject is rewritten — the issue and the design are the corpus
+# documents both authorities vetted.
+ri="$tmpdir/run-input.json"
+if python3 - "schemas/cds/fixtures/runinput/valid-run-input.json" "$coderepo" "$ri" <<'PYEOF'
+import json, sys
+doc = json.load(open(sys.argv[1]))
+doc["subject"] = {"kind": "git.snapshot/0.1", "repo": sys.argv[2], "base_sha": "HEAD"}
+json.dump(doc, open(sys.argv[3], "w"))
+PYEOF
+then :; else echo "  ✗ could not build the live run input"; fail=1; fi
 # Skill authority is the INSTALLED package root under a hub — never the
 # working directory and never this checkout's source tree. Vendor the DEFAULT
 # INSTALLED PACKAGE SET (what `cn repo install` pins) into a throwaway hub and
@@ -257,9 +462,8 @@ CN=$(cd "$(dirname "$CN")" && pwd)/$(basename "$CN")
 spec=$(pwd)/schemas/cds/fixtures/code-cell-spec.json
 (
   cd "$hub" || exit 1
-  "$CN" cell run --contract "$spec" \
-    --param language=cnos.eng:eng/go --param provider=fake \
-    --param base_sha=HEAD --param repo="$coderepo" >"$tmp" 2>/dev/null
+  "$CN" cell run --contract "$spec" --input "$ri" \
+    --param language=cnos.eng:eng/go --param provider=fake >"$tmp" 2>/dev/null
   echo $? >"$tmpdir/code.exit"
 )
 code=$(cat "$tmpdir/code.exit")
@@ -272,7 +476,108 @@ else echo "  ✓ cds.patch closure vets #EpisodeClosure"; fi
 decl="$tmpdir/resolved-alpha.json"
 if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$tmp" "$decl" 2>/dev/null &&
    "$CUE" vet ./schemas/cds:cds "$decl" -d '#CDSPatchAlphaResolved' >/dev/null 2>&1; then
-  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, pinned base, digested skills)"
+  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, digested skills, no repository)"
 else echo "  ✗ resolved alpha failed #CDSPatchAlphaResolved"; fail=1; fi
+# ONE REPOSITORY DECLARATION, live. The seat measured its base from the worktree
+# it actually cut, and the contract's subject is the only place the run was told
+# which repository and which commit that is — so these two must be the same
+# string. While the fill resolved its own workspace they were two independent
+# resolutions, and a closure recording a repository the episode never acted on
+# still self-verified. Asserted on the emitted closure, not on the source.
+if python3 - "$tmp" <<'PYEOF'
+import json, sys
+r = json.load(open(sys.argv[1]))["receipt"]["record"]
+subject = json.loads(r["contract"]["subject"]) if isinstance(r["contract"]["subject"], str) else r["contract"]["subject"]
+measured = [a["text"] for a in r["alpha"]["artifacts"] if a["id"] == "base_sha"]
+if len(measured) != 1:
+    print(f"    the record carries {len(measured)} measured base_sha artifacts, want exactly 1"); sys.exit(1)
+if measured[0] != subject["base_sha"]:
+    print(f"    measured base {measured[0]} != contract.subject.base_sha {subject['base_sha']}"); sys.exit(1)
+# ...and the declaration names no repository at all, or "one source" would be
+# a claim about which of two the seat happened to prefer.
+if "workspace" in r["resolved_spec"]["alpha"]:
+    print("    the resolved alpha still declares a workspace"); sys.exit(1)
+PYEOF
+then
+  echo "  ✓ the measured base equals contract.subject.base_sha, and the seat declares no repository"
+else echo "  ✗ the record carries two repository declarations, or they disagree"; fail=1; fi
+
+echo "# run input: admitted at the door, pinned once, bound into the record"
+# `$ri` was built above, before the cds.patch run that consumes it.
+
+# A refused run input mints no episode. Asserted by REASON and by SHAPE, not by
+# exit code alone: exit 4 is this refusal's own code, but a receipt on stdout
+# and the ABSENCE of a closure are what show that nothing was run.
+"$CN" cell run --contract schemas/cdd/fixtures/empty-cell-spec.json \
+  --input schemas/cds/fixtures/runinput/runinput-malformed-issue.json \
+  >"$tmpdir/refused.json" 2>"$tmpdir/refused.err"; refcode=$?
+if [ "$refcode" != 4 ]; then
+  echo "  ✗ a malformed issue must be refused at the door, got exit $refcode: $(head -c 200 "$tmpdir/refused.err")"; fail=1
+elif ! grep -q '"outcome": "rejected"' "$tmpdir/refused.json" ||
+     ! grep -q 'problem.diverges is required' "$tmpdir/refused.json" ||
+     grep -q 'closure_schema' "$tmpdir/refused.json"; then
+  echo "  ✗ a refusal must emit an admission receipt naming its reason and no closure: $(head -c 300 "$tmpdir/refused.json")"; fail=1
+else echo "  ✓ a malformed issue is refused at the door with its own reason and no episode"; fi
+
+# AN ENVELOPE REFUSAL TAKES THE REFUSAL PATH. A wrong `kind` is decisively
+# inadmissible, not a usage error: it must exit 4 with a receipt exactly as a
+# malformed payload does. It exited 2 with empty stdout and no receipt while the
+# runner decoded the envelope itself — one question answered through two paths,
+# and the one an operator hit told them their file could not be read.
+for env in bad-kind unknown-key mixed-case-key; do
+  "$CN" cell run --contract schemas/cdd/fixtures/empty-cell-spec.json \
+    --input "schemas/cds/fixtures/runinput/runinput-$env.json" \
+    >"$tmpdir/env.json" 2>"$tmpdir/env.err"; envcode=$?
+  if [ "$envcode" != 4 ]; then
+    echo "  ✗ envelope refusal runinput-$env exited $envcode, want 4"; fail=1
+  elif ! grep -q '"outcome": "rejected"' "$tmpdir/env.json" ||
+       grep -q 'closure_schema' "$tmpdir/env.json"; then
+    echo "  ✗ envelope refusal runinput-$env emitted no receipt: $(head -c 200 "$tmpdir/env.json")"; fail=1
+  # O3: the receipt names WHICH document it refused. Nothing is frozen and no
+  # closure exists, so this digest is the only record of the artifact decided on.
+  elif ! python3 - "$tmpdir/env.json" "schemas/cds/fixtures/runinput/runinput-$env.json" <<'PYEOF'
+import hashlib, json, sys
+got = json.load(open(sys.argv[1]))["input_digest"]
+want = hashlib.sha256(open(sys.argv[2], "rb").read()).hexdigest()
+sys.exit(0 if got == want else 1)
+PYEOF
+  then
+    echo "  ✗ envelope refusal runinput-$env carries the wrong input_digest"; fail=1
+  else echo "  ✓ runinput-$env refuses through the receipt path, naming its input digest"; fi
+done
+
+# An absent payload is a DIFFERENT outcome from a malformed one. Two documents
+# refused identically would make the vocabulary decorative.
+"$CN" cell run --contract schemas/cdd/fixtures/empty-cell-spec.json \
+  --input schemas/cds/fixtures/runinput/runinput-no-design.json \
+  >"$tmpdir/incomplete.json" 2>/dev/null
+if ! grep -q '"outcome": "incomplete"' "$tmpdir/incomplete.json"; then
+  echo "  ✗ an absent design must be incomplete, not rejected: $(head -c 200 "$tmpdir/incomplete.json")"; fail=1
+else echo "  ✓ an absent payload is incomplete where a malformed one is rejected"; fi
+
+# The admitted path, and the live half of pinning: the run input was authored
+# with `base_sha: HEAD`, a moving name, and the RECORDED contract subject must
+# name a commit. This is the witness that pinning happened once, before the
+# stations, rather than being a claim in a schema.
+"$CN" cell run --contract schemas/cdd/fixtures/empty-cell-spec.json --input "$ri" \
+  >"$tmpdir/bound.json" 2>/dev/null; bcode=$?
+if [ "$bcode" != 3 ]; then
+  echo "  ✗ an admitted stub run must close simulated (exit 3), got $bcode"; fail=1
+else echo "  ✓ an admitted run input closes an episode"; fi
+vet_ok schemas/cdd/episode-closure.cue "$tmpdir/bound.json" -d '#EpisodeClosure'
+for slot in issue design subject; do
+  if ! python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["contract"][sys.argv[2]], open(sys.argv[3],"w"))' \
+       "$tmpdir/bound.json" "$slot" "$tmpdir/bound-$slot.json" 2>/dev/null; then
+    echo "  ✗ the record carries no contract $slot"; fail=1
+  fi
+done
+vet_ok ./schemas/cds:cds "$tmpdir/bound-issue.json" -d '#CDSIssue'
+vet_ok ./schemas/cds:cds "$tmpdir/bound-design.json" -d '#CDSDesign'
+vet_ok ./schemas/cds:cds "$tmpdir/bound-subject.json" -d '#GitSnapshotPinned'
+# ...and the authored document really did name a moving revision, or the line
+# above would hold for an input that arrived pinned.
+if ! grep -q '"base_sha": "HEAD"' "$ri"; then
+  echo "  ✗ the live run input was not the moving-revision case"; fail=1
+else echo "  ✓ authored HEAD reached the bound contract as an exact commit"; fi
 
 if [ "$fail" = 0 ]; then echo "✓ cell schema/CLI corpus OK"; else echo "✗ cell schema check FAILED"; exit 1; fi

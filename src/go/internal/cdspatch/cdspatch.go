@@ -8,6 +8,17 @@
 // contains no provider argv at all), cellskill resolves and loads exact skill
 // bodies, and cellwork prepares the disposable worktree. What comes back is
 // one immutable, provider-neutral PatchAlpha.
+//
+// THE SEAT DOES NOT NAME A REPOSITORY. The declaration carries no workspace:
+// the repository and the base commit come from the pinned contract subject,
+// read at Produce with cellwork.AdmitSubject. This is not tidying. While the
+// fill resolved its own repo and base, a run could carry two repository
+// declarations that disagreed — the record's contract.subject naming one and
+// its resolved_spec.alpha naming another — and the closure self-verified,
+// because each was internally consistent. Even authored identically they were
+// two ResolveBase calls at different times, so a moving HEAD could pin twice.
+// One source, read once, and the disagreement is unrepresentable rather than
+// caught.
 package cdspatch
 
 import (
@@ -46,14 +57,7 @@ const (
 type Decl struct {
 	Fill      string         `json:"fill"`
 	Cognition cellcog.Config `json:"cognition"`
-	Workspace WorkspaceDecl  `json:"workspace"`
 	Skills    []string       `json:"skills"`
-}
-
-type WorkspaceDecl struct {
-	Kind    string `json:"kind"` // "git-worktree" is the only kind
-	Repo    string `json:"repo"`
-	BaseSHA string `json:"base_sha"`
 }
 
 // ResolvedDecl is what the closure records for this seat: the declaration
@@ -71,7 +75,6 @@ type WorkspaceDecl struct {
 type ResolvedDecl struct {
 	Fill      string          `json:"fill"`
 	Cognition cellcog.Config  `json:"cognition"`
-	Workspace WorkspaceDecl   `json:"workspace"`
 	Skills    []ResolvedSkill `json:"skills"`
 }
 
@@ -91,12 +94,6 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 		if err := cellfill.StrictDecode(decl, &d); err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
 		}
-		if d.Workspace.Kind != "git-worktree" {
-			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: unknown workspace kind %q", Fill, d.Workspace.Kind)
-		}
-		if d.Workspace.Repo == "" || d.Workspace.BaseSHA == "" {
-			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: workspace needs repo and base_sha", Fill)
-		}
 		if len(d.Skills) == 0 {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: a patch alpha needs its skills", Fill)
 		}
@@ -109,17 +106,12 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 		if err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
 		}
-		// Pin the revision now, so the recorded declaration names a commit
-		// rather than a moving ref: "resolved" has to mean resolved.
-		base, err := cellwork.ResolveBase(ctx, d.Workspace.Repo, d.Workspace.BaseSHA)
-		if err != nil {
-			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
-		}
-
+		// Nothing here pins a revision. The subject was pinned once, before
+		// either seat was constructed, and this declaration records only what
+		// it actually selects: the provider and the exact skill bodies.
 		resolved := ResolvedDecl{
 			Fill:      Fill,
 			Cognition: d.Cognition,
-			Workspace: WorkspaceDecl{Kind: d.Workspace.Kind, Repo: d.Workspace.Repo, BaseSHA: base},
 			Skills:    make([]ResolvedSkill, 0, len(loaded)),
 		}
 		for _, s := range loaded {
@@ -132,12 +124,7 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 
 		return cellfill.ConstructedAlpha{
 			Constructed: cellfill.Constructed{Decl: canon, Mode: cellkernel.ExecutionMode(mode)},
-			Seat: PatchAlpha{
-				coder:  coder,
-				repo:   d.Workspace.Repo,
-				base:   base,
-				skills: loaded,
-			},
+			Seat:        PatchAlpha{coder: coder, skills: loaded},
 		}, nil
 	}
 }
@@ -147,17 +134,16 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 // case-insensitively even with DisallowUnknownFields, so `Fill`, `Cognition`
 // or a nested `Provider` would otherwise decode in Go while the closed CUE
 // overlay rejects them. The fill owns this, not the generic runner.
+// `workspace` is absent from the allowed set, and that absence is the whole
+// point of the deletion: a declaration that still names a repository is now
+// refused by name here and by the closed CUE overlay, so the second source
+// cannot come back as a tolerated extra key.
 func exactShape(decl json.RawMessage) error {
-	if err := cellfill.OnlyKeys(decl, "cds.patch", "fill", "cognition", "workspace", "skills"); err != nil {
+	if err := cellfill.OnlyKeys(decl, "cds.patch", "fill", "cognition", "skills"); err != nil {
 		return err
 	}
 	if cog, ok := cellfill.Field(decl, "cognition"); ok {
 		if err := cellfill.OnlyKeys(cog, "cds.patch.cognition", "provider", "model"); err != nil {
-			return err
-		}
-	}
-	if ws, ok := cellfill.Field(decl, "workspace"); ok {
-		if err := cellfill.OnlyKeys(ws, "cds.patch.workspace", "kind", "repo", "base_sha"); err != nil {
 			return err
 		}
 	}
@@ -171,10 +157,12 @@ func exactShape(decl json.RawMessage) error {
 // nothing produces no diff, and an episode with no diff cannot satisfy a
 // contract requiring one — false completion is unrepresentable, not caught
 // late.
+//
+// It holds no repository and no base. Both are read from the contract's
+// pinned subject on every Produce, so what the episode acts on and what the
+// record says it acted on are one value that was resolved once.
 type PatchAlpha struct {
 	coder  cellcog.Coder
-	repo   string
-	base   string
 	skills []cellskill.Skill
 }
 
@@ -182,7 +170,17 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 	if a.coder == nil {
 		return cellkernel.AlphaOutput{}, cellcog.ErrNoProvider
 	}
-	wt, release, err := cellwork.Materialize(ctx, a.repo, a.base)
+	// AdmitSubject, not ParseSubject: a station requires a base already pinned
+	// to an exact commit. Re-resolving a moving name here is precisely how the
+	// two stations could measure against different trees while one record
+	// claimed one. A cds.patch cell therefore cannot run without a run input —
+	// an absent subject fails here rather than silently defaulting to some
+	// repository nobody named.
+	subject, err := cellwork.AdmitSubject(in.Contract.Subject)
+	if err != nil {
+		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: %w", err)
+	}
+	wt, release, err := cellwork.Materialize(ctx, subject.Repo, subject.BaseSHA)
 	if err != nil {
 		return cellkernel.AlphaOutput{}, err
 	}
@@ -196,14 +194,16 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 		return cellkernel.AlphaOutput{}, err
 	}
 
-	// base_sha is runtime-computed — the coder never sees it — binding the
-	// episode to the exact commit even when the caller named a moving ref.
+	// base_sha is MEASURED from the materialized worktree — the coder never
+	// sees it — so it is what the episode actually stood on, not a copy of what
+	// the contract asked for. Equal to contract.subject.base_sha whenever the
+	// subject is honest; the point is that a reader can compare them.
 	artifacts := []cellkernel.ArtifactCandidate{
 		{ID: BaseArtifactID, Kind: BaseArtifactKind, Text: wt.BaseSHA},
 	}
 	if strings.TrimSpace(diff) == "" {
 		return cellkernel.AlphaOutput{
-			Matter:    cellkernel.Matter{Data: fmt.Sprintf("no change was made to %s at %s", a.repo, wt.BaseSHA)},
+			Matter:    cellkernel.Matter{Data: fmt.Sprintf("no change was made to %s at %s", subject.Repo, wt.BaseSHA)},
 			Artifacts: artifacts,
 		}, nil
 	}

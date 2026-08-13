@@ -84,20 +84,25 @@ import "cnos.dev/cnos/schemas/cdd"
 	{provider: "claude-cli", model: #Concrete | #Hole} |
 	{provider: #Hole, model?: "" | #Concrete | #Hole}
 
+// _patchAlphaSkillsResolved is the ordered canonical refs with the content
+// digest of the body that was actually injected — naming a skill is not
+// loading it. Named once because two definitions below carry it.
+_patchAlphaSkillsResolved: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ...{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}]
+
 // #CDSPatchAlphaResolved is what a closure records: the canonical structural
-// shape, a base_sha pinned to a commit at construction, and digested skills.
-// Hole-freedom is proven by resolution, not by this shape — see the header.
+// shape and digested skills. Hole-freedom is proven by resolution, not by this
+// shape — see the header.
+//
+// NO WORKSPACE. A cds.patch seat does not name a repository: it reads the
+// repository and the base commit from the run's pinned contract subject, which
+// is the single source. The key is absent from a CLOSED definition, so a
+// declaration carrying one is rejected here exactly as the fill's exact-key set
+// rejects it in Go — the two authorities delete the field together, or the
+// deletion is only a Go convention.
 #CDSPatchAlphaResolved: {
 	fill:      "cds.patch"
 	cognition: #Cognition
-	workspace: {
-		kind:     "git-worktree"
-		repo:     string & !=""
-		base_sha: =~"^[0-9a-f]{40}$"
-	}
-	// Ordered canonical refs with the content digest of the body that was
-	// actually injected — naming a skill is not loading it.
-	skills: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ...{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}]
+	skills:    _patchAlphaSkillsResolved
 }
 
 // #CDSPatchAlphaAuthored is what a cell spec may carry: the same shape with
@@ -105,12 +110,31 @@ import "cnos.dev/cnos/schemas/cdd"
 #CDSPatchAlphaAuthored: {
 	fill: "cds.patch"
 	cognition: #CognitionAuthored
+	skills: [#Concrete | #Hole, ...#Concrete | #Hole]
+}
+
+// #CDSPatchAlphaResolvedPreWorkspaceDeletion is a FROZEN HISTORICAL shape, and
+// exists for exactly one artifact: docs/architecture/evidence/
+// cds-case2-claude-closure.json, the one committed record of a rented-cognition
+// run. That episode ran while the fill still declared its own workspace, and
+// its record is covered by a scope-lift digest that recomputes — editing the
+// declaration out of it would break the digest and turn evidence into a claim.
+// So the artifact stays byte-for-byte, and this definition is what keeps it
+// accountable to a CLOSED shape rather than to nothing.
+//
+// It is not a second way to name a repository. Nothing authorable references
+// it: #CDSCellSpec.alpha is #CDSPatchAlphaAuthored, the runtime has no decoder
+// for a workspace key, and no new document can be produced in this shape. It
+// describes a record that already exists and cannot be regenerated.
+#CDSPatchAlphaResolvedPreWorkspaceDeletion: {
+	fill:      "cds.patch"
+	cognition: #Cognition
+	skills:    _patchAlphaSkillsResolved
 	workspace: {
 		kind:     "git-worktree"
-		repo:     #Concrete | #Hole
-		base_sha: #Concrete | #Hole
+		repo:     string & !=""
+		base_sha: =~"^[0-9a-f]{40}$"
 	}
-	skills: [#Concrete | #Hole, ...#Concrete | #Hole]
 }
 
 // #CDSMechanicalUnmetBeta is Case 2's honest reviewer: a mechanical seat that
@@ -118,6 +142,150 @@ import "cnos.dev/cnos/schemas/cdd"
 // alone — the fill boundary makes that a one-field change.
 #CDSMechanicalUnmetBeta: {
 	fill: "cdd.mechanical-unmet"
+}
+
+// #GitSnapshotPinned is a subject as a RECORD carries it: one repository at
+// one exact commit. It mirrors cellwork.Subject field for field, and the two
+// are vetted against ONE corpus (schemas/cds/fixtures/subject/), so a subject
+// admitted by one authority and rejected by the other is a gate failure rather
+// than a discovery in production.
+//
+// It lives in this package because the CDS run input is where a subject is
+// required and CUE has no separate adapter package; the LANGUAGE is the git
+// subject adapter's, not CDS's — cellwork owns it on the Go side.
+//
+// `!` throughout, for the reason #CDSIssue carries it: without the required-
+// field marker an ABSENT field unifies with its declared value and vets clean.
+#GitSnapshotPinned: {
+	kind!:     "git.snapshot/0.1"
+	repo!:     string & !=""
+	base_sha!: =~"^[0-9a-f]{40}$"
+}
+
+// #GitSnapshotAuthored is what a run input may carry: the same shape with a
+// base that may still be a moving revision. Pinning happens once, before
+// either seat is constructed; the record then carries the pinned form above.
+// This pair is what shows the two definitions are not the same definition.
+#GitSnapshotAuthored: {
+	kind!:     "git.snapshot/0.1"
+	repo!:     string & !=""
+	base_sha!: string & !=""
+}
+
+// #NonBlank is a string carrying at least one non-whitespace rune, and it is
+// the ONE blankness predicate the issue and design schemas have: `!=""` is not
+// it, since "   " satisfies that while reading as an authored sentence to
+// every human and to neither authority.
+//
+// The class is transcribed CHARACTER FOR CHARACTER from cdsissue's
+// nonBlankPattern, which compiles the same string with Go's regexp. Two
+// hand-written predicates were what diverged before: `=~"\\S"` here beside
+// `strings.TrimSpace` there accepted a NO-BREAK-SPACE-only field in CUE and
+// rejected it in Go, because `\s` in RE2 is only `[\t\n\f\r ]` while
+// TrimSpace strips everything unicode.IsSpace covers. The enumeration below
+// is that set; issue-blank-unicode-whitespace.json carries all of it in one
+// field, so a transcription slip fails the corpus instead of production.
+#NonBlank: string & =~#"[^\t\n\v\f\r \x{0085}\x{00A0}\x{1680}\x{2000}-\x{200A}\x{2028}\x{2029}\x{202F}\x{205F}\x{3000}]"#
+
+// #CDSIssue is the CDS typed issue: the problem half of the run contract. It
+// mirrors cdsissue.Issue field for field, and the two are vetted against ONE
+// corpus (schemas/cds/fixtures/issue/) so a document admitted by one authority
+// and rejected by the other is a gate failure rather than a discovery in
+// production.
+//
+// Closed: unknown and mixed-case keys fail here, and cdsissue.Admit closes the
+// same key language with cellfill.OnlyKeys at every level, because
+// encoding/json would otherwise match `Kind` case-insensitively.
+#CDSIssue: {
+	// `!` throughout — the required-field marker, same reason `#Seat.fill!`
+	// carries it: without it an ABSENT field unifies with its declared value
+	// and vets clean, so an issue document omitting `kind` entirely would pass
+	// CUE while cdsissue.Admit rejects it. Absence must be rejected, not
+	// defaulted.
+	kind!: "cnos.cds.issue.v0"
+	id!:   #NonBlank
+
+	// The incoherence in three lines.
+	problem!: {
+		exists!:   #NonBlank
+		expected!: #NonBlank
+		diverges!: #NonBlank
+	}
+
+	// One canonical path per load-bearing claim; at least one.
+	sources!: [#CDSSource, ...#CDSSource]
+
+	// The execution boundary. `out` is REQUIRED but may be empty: non-goals are
+	// load-bearing, so an author must have considered them, and an empty list
+	// says "considered, none" where an absent key says nothing at all. Go reads
+	// the same present-vs-absent distinction off the raw document, since both
+	// decode to an empty slice.
+	scope!: {
+		in!: [#NonBlank, ...#NonBlank]
+		out!: [...#NonBlank]
+	}
+
+	// At least one criterion, each naming its verification route, with ids
+	// unique. Uniqueness is expressed as a length agreement rather than a
+	// membership validator: comprehension-built key sets unify through
+	// `vet -d` against a closed definition on the CI-pinned cue, where computed
+	// list validators did not (the same constraint that made required_evidence
+	// order structural).
+	acceptance!: [#CDSCriterion, ...#CDSCriterion]
+	_acceptanceIDs: {for c in acceptance {(c.id): true}}
+	_uniqueAcceptanceIDs: len(_acceptanceIDs) & len(acceptance)
+}
+
+#CDSSource: {
+	claim!: #NonBlank
+	path!:  #NonBlank
+}
+
+// A criterion without a verification route is exactly the ill-defined
+// criterion this schema exists to reject: it leaves beta judging plausibility.
+#CDSCriterion: {
+	id!:           #NonBlank
+	statement!:    #NonBlank
+	verification!: #NonBlank
+}
+
+// #CDSDesign is the CDS typed design: the change half of the run contract, and
+// a SEPARATE document from the issue so that neither can silently become the
+// other. It mirrors cdsdesign.Design field for field against ONE corpus
+// (schemas/cds/fixtures/design/).
+//
+// The shape is the minimum a structural gate can decide. Alternatives,
+// trade-offs and known debt belong to a design as CELL-SYSTEM-DESIGN §10.1
+// describes it and are deliberately absent here: every one of them is prose
+// this authority could only check for non-emptiness, which would grow the
+// authoring burden without growing what admission proves.
+#CDSDesign: {
+	kind!:     "cnos.cds.design.v0"
+	approach!: #NonBlank
+	// At least one thing the change must not break, and at least one surface
+	// it reaches: a design that names neither has not been thought about.
+	invariants!: [#NonBlank, ...#NonBlank]
+	impact!: [#CDSImpact, ...#CDSImpact]
+}
+
+#CDSImpact: {
+	surface!: #NonBlank
+	why!:     #NonBlank
+}
+
+// #CDSRunInput is the per-run document `cn cell run --input` reads: the issue,
+// the design, and the subject the episode acts on. It is separate from
+// #CDSCellSpec because a cell definition is reusable while these three belong
+// to one run — folding them in would make every run author a new cell.
+//
+// All three are REQUIRED here. The Go door distinguishes an absent payload
+// (incomplete) from a malformed one (rejected); CUE has one verdict, so this
+// schema states only that a complete run input carries all three.
+#CDSRunInput: {
+	kind!:    "cnos.cds.run-input.v0"
+	issue!:   #CDSIssue
+	design!:  #CDSDesign
+	subject!: #GitSnapshotAuthored
 }
 
 #CDSCellSpec: cdd.#CellSpec & {

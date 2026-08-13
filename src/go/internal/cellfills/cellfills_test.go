@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -15,27 +14,9 @@ import (
 
 var testSkills = []string{"cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"}
 
-func testRepo(t *testing.T) string {
-	t.Helper()
-	dir := t.TempDir()
-	run := func(args ...string) {
-		t.Helper()
-		cmd := exec.Command("git", args...)
-		cmd.Dir = dir
-		cmd.Env = append(os.Environ(),
-			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-		}
-	}
-	run("init", "-q", "-b", "main")
-	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("base\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	run("add", "-A")
-	run("commit", "-qm", "base")
-	return dir
-}
+// There is no repository here, and its absence is the assertion: constructing
+// a cds.patch alpha touches no git at all now. The repository the episode acts
+// on comes from the run's pinned contract subject, at Produce.
 
 type resolvedDecl struct {
 	Skills []struct {
@@ -48,7 +29,6 @@ type resolvedDecl struct {
 // tree while the process runs somewhere else entirely — skill authority is
 // the hub, never the working directory.
 func TestInstalledHubLoadsFromForeignCwd(t *testing.T) {
-	repo := testRepo(t)
 	hub := t.TempDir()
 	installed := cellfills.InstalledPackages(hub)
 	for _, ref := range testSkills {
@@ -75,7 +55,6 @@ func TestInstalledHubLoadsFromForeignCwd(t *testing.T) {
 
 	reg := cellfills.Assemble(hub)
 	decl := json.RawMessage(`{"fill":"cds.patch","cognition":{"provider":"fake","model":""},` +
-		`"workspace":{"kind":"git-worktree","repo":"` + repo + `","base_sha":"HEAD"},` +
 		`"skills":["cnos.eng:eng/code","cnos.eng:eng/test","cnos.eng:eng/go","cnos.eng:eng/write-functional"]}`)
 	got, err := reg.ConstructAlpha(context.Background(), decl)
 	if err != nil {

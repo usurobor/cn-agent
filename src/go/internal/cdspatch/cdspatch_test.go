@@ -13,6 +13,7 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
 // testRepo builds a one-commit git repository and returns its path and HEAD.
@@ -57,29 +58,46 @@ func skillTree(t *testing.T, refs ...string) cellskill.Tree {
 	return cellskill.Tree{Root: root}
 }
 
-var patchContract = cellkernel.Contract{
-	ID:   "cds-code",
-	Goal: "add a NOTES file",
-	RequiredEvidence: []cellkernel.RequiredRef{
-		{ID: DiffArtifactID, Kind: DiffArtifactKind, Producer: cellkernel.RoleAlpha},
-	},
+// pinnedSubject is the contract slot a station reads its repository and base
+// from — the ONLY place either is stated. Written with cellwork.Subject rather
+// than a literal so this file cannot drift from the language cellwork owns.
+func pinnedSubject(t *testing.T, repo, base string) json.RawMessage {
+	t.Helper()
+	raw, err := json.Marshal(cellwork.Subject{Kind: cellwork.SubjectKind, Repo: repo, BaseSHA: base})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
 }
 
-func declJSON(repo, provider string) json.RawMessage {
+// contractFor is the frozen contract an episode hands the seat. The subject is
+// part of it because the subject is what says where the work happens.
+func contractFor(t *testing.T, repo, base string) cellkernel.Contract {
+	t.Helper()
+	return cellkernel.Contract{
+		ID:      "cds-code",
+		Goal:    "add a NOTES file",
+		Subject: pinnedSubject(t, repo, base),
+		RequiredEvidence: []cellkernel.RequiredRef{
+			{ID: DiffArtifactID, Kind: DiffArtifactKind, Producer: cellkernel.RoleAlpha},
+		},
+	}
+}
+
+func declJSON(provider string) json.RawMessage {
 	return json.RawMessage(fmt.Sprintf(`{
 		"fill": "cds.patch",
 		"cognition": {"provider": %q, "model": ""},
-		"workspace": {"kind": "git-worktree", "repo": %q, "base_sha": "HEAD"},
 		"skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"]
-	}`, provider, repo))
+	}`, provider))
 }
 
 var testSkills = []string{"cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"}
 
-func construct(t *testing.T, repo, provider string) cellfill.ConstructedAlpha {
+func construct(t *testing.T, provider string) cellfill.ConstructedAlpha {
 	t.Helper()
 	f := Factory(skillTree(t, testSkills...))
-	a, err := f(context.Background(), declJSON(repo, provider))
+	a, err := f(context.Background(), declJSON(provider))
 	if err != nil {
 		t.Fatalf("construct: %v", err)
 	}
@@ -89,8 +107,8 @@ func construct(t *testing.T, repo, provider string) cellfill.ConstructedAlpha {
 // The constructor resolves and LOADS skill bodies: the resolved declaration
 // records ordered refs + content digests, and the prompt carries the bodies.
 func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
-	repo, _ := testRepo(t)
-	a := construct(t, repo, "fake")
+	repo, head := testRepo(t)
+	a := construct(t, "fake")
 	var rd ResolvedDecl
 	if err := json.Unmarshal(a.Decl, &rd); err != nil {
 		t.Fatalf("resolved decl: %v", err)
@@ -104,17 +122,125 @@ func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
 		}
 	}
 	seat := a.Seat.(PatchAlpha)
-	prompt := RenderPrompt(patchContract, seat.skills)
+	prompt := RenderPrompt(contractFor(t, repo, head), seat.skills)
 	if !strings.Contains(prompt, "# body of cnos.eng:eng/go") {
 		t.Fatal("skill BODY was not injected into the prompt — naming is not loading")
 	}
 	if a.Mode != cellkernel.ModeMechanical {
 		t.Fatalf("fake provider mode = %q, want mechanical", a.Mode)
 	}
-	// "resolved" must mean resolved: the recorded declaration names the exact
-	// commit, never the moving ref the caller passed.
-	if rd.Workspace.BaseSHA == "HEAD" || len(rd.Workspace.BaseSHA) != 40 {
-		t.Fatalf("resolved declaration did not pin the base commit: %q", rd.Workspace.BaseSHA)
+}
+
+// F1. The declaration cannot name a repository — not as a workspace block, not
+// as a stray key, not at any case spelling. Both halves are asserted, because
+// they fail differently: a rejected key proves the fill refuses to be told, and
+// the absent field in the RECORDED declaration proves it does not put one there
+// itself. Together they are "the record has one repository declaration", which
+// is the property; while there were two, a closure naming a repository the
+// episode never touched still self-verified.
+func TestTheDeclarationCannotNameARepository(t *testing.T) {
+	f := Factory(skillTree(t, testSkills...))
+	const skills = `"skills":["cnos.eng:eng/go"]`
+	const cog = `"cognition":{"provider":"fake","model":""}`
+	for name, decl := range map[string]string{
+		"workspace block": `{"fill":"cds.patch",` + cog + `,` + skills +
+			`,"workspace":{"kind":"git-worktree","repo":".","base_sha":"HEAD"}}`,
+		"workspace, mixed case": `{"fill":"cds.patch",` + cog + `,` + skills +
+			`,"Workspace":{"kind":"git-worktree","repo":".","base_sha":"HEAD"}}`,
+		"bare repo key":     `{"fill":"cds.patch",` + cog + `,` + skills + `,"repo":"."}`,
+		"bare base_sha key": `{"fill":"cds.patch",` + cog + `,` + skills + `,"base_sha":"HEAD"}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := f(context.Background(), json.RawMessage(decl)); err == nil {
+				t.Fatal("a declaration naming a repository must not construct")
+			} else if !strings.Contains(err.Error(), "unknown key") {
+				t.Fatalf("rejected for the wrong reason: %v", err)
+			}
+		})
+	}
+
+	// ...and the canonical declaration the record carries states nothing about
+	// a repository either. Checked on the raw canonical bytes, not on
+	// ResolvedDecl: a struct with no field for it could not report one.
+	a := construct(t, "fake")
+	var recorded map[string]json.RawMessage
+	if err := json.Unmarshal(a.Decl, &recorded); err != nil {
+		t.Fatal(err)
+	}
+	for key := range recorded {
+		switch key {
+		case "workspace", "repo", "base_sha":
+			t.Fatalf("the recorded declaration names a repository: %s", a.Decl)
+		}
+	}
+}
+
+// F1's other half: what the seat MEASURES is what the contract's subject
+// pinned. There is one repository declaration in the record, so the base the
+// episode actually stood on and the base the record says it stood on are one
+// resolution, not two that happened to agree.
+func TestTheMeasuredBaseIsTheContractSubjectsBase(t *testing.T) {
+	repo, head := testRepo(t)
+	seat := construct(t, "fake").Seat.(PatchAlpha)
+	contract := contractFor(t, repo, head)
+
+	out, err := seat.Produce(context.Background(), cellkernel.AlphaInput{Contract: contract})
+	if err != nil {
+		t.Fatalf("produce: %v", err)
+	}
+	var measured string
+	for _, c := range out.Artifacts {
+		if c.ID == BaseArtifactID {
+			measured = c.Text
+		}
+	}
+	subject, err := cellwork.AdmitSubject(contract.Subject)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if measured != subject.BaseSHA {
+		t.Fatalf("measured base %q != contract.subject.base_sha %q", measured, subject.BaseSHA)
+	}
+	// The assertion above would hold vacuously if the seat could measure
+	// anything at all: pointed at a subject naming a commit that does not
+	// exist, it must fail rather than fall back to some other revision.
+	absent := contractFor(t, repo, strings.Repeat("0", 40))
+	if _, err := seat.Produce(context.Background(), cellkernel.AlphaInput{Contract: absent}); err == nil {
+		t.Fatal("a subject naming an unresolvable commit must fail the seat")
+	}
+}
+
+// A cds.patch seat with no subject cannot invent one. Before the deletion it
+// carried its own repository and would happily run against it while the
+// contract said nothing — which is how a record could describe work on a
+// repository the contract never named.
+func TestNoSubjectIsARefusalNotADefault(t *testing.T) {
+	seat := construct(t, "fake").Seat.(PatchAlpha)
+	_, err := seat.Produce(context.Background(), cellkernel.AlphaInput{
+		Contract: cellkernel.Contract{ID: "c", Goal: "g"},
+	})
+	if err == nil {
+		t.Fatal("a contract with no subject must not produce")
+	}
+	if !strings.Contains(err.Error(), "carries no subject") {
+		t.Fatalf("rejected for the wrong reason: %v", err)
+	}
+}
+
+// An UNPINNED subject is refused at the seat too. The subject is pinned once,
+// before either station exists; a station that re-resolved `HEAD` is exactly
+// the two-resolutions failure in a different place.
+func TestAnUnpinnedSubjectIsRefusedAtTheSeat(t *testing.T) {
+	repo, _ := testRepo(t)
+	seat := construct(t, "fake").Seat.(PatchAlpha)
+	_, err := seat.Produce(context.Background(), cellkernel.AlphaInput{
+		Contract: contractFor(t, repo, "HEAD"),
+	})
+	if err == nil {
+		t.Fatal("an unpinned base must not reach a station")
+	}
+	if !strings.Contains(err.Error(), "is not pinned") {
+		t.Fatalf("rejected for the wrong reason: %v", err)
 	}
 }
 
@@ -122,14 +248,13 @@ func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
 // therefore the digest — do not depend on how the fill happened to serialize,
 // and constructing twice yields byte-identical declarations.
 func TestConstructionIsCanonicalAndStable(t *testing.T) {
-	repo, _ := testRepo(t)
 	reg := cellfill.CddFills()
-	reg.Alpha[Fill] = Factory(skillTree(t, testSkills...))
-	first, err := reg.ConstructAlpha(context.Background(), declJSON(repo, "fake"))
+	reg.Alpha[Fill] = cellfill.AlphaFill{Construct: Factory(skillTree(t, testSkills...)), NeedsSubject: true}
+	first, err := reg.ConstructAlpha(context.Background(), declJSON("fake"))
 	if err != nil {
 		t.Fatalf("construct: %v", err)
 	}
-	second, err := reg.ConstructAlpha(context.Background(), declJSON(repo, "fake"))
+	second, err := reg.ConstructAlpha(context.Background(), declJSON("fake"))
 	if err != nil {
 		t.Fatalf("construct again: %v", err)
 	}
@@ -143,15 +268,13 @@ func TestConstructionIsCanonicalAndStable(t *testing.T) {
 }
 
 func TestConstructionFailsClosed(t *testing.T) {
-	repo, _ := testRepo(t)
 	f := Factory(skillTree(t, testSkills...))
 	bad := map[string]string{
-		"unknown key":       `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"],"Extra":1}`,
-		"unknown provider":  `{"fill":"cds.patch","cognition":{"provider":"clyde","model":"m"},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"]}`,
-		"modelless claude":  `{"fill":"cds.patch","cognition":{"provider":"claude-cli","model":""},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"]}`,
-		"bad workspace":     `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"zip","repo":".","base_sha":"x"},"skills":["cnos.eng:eng/go"]}`,
-		"no skills":         `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"git-worktree","repo":".","base_sha":"x"},"skills":[]}`,
-		"uninstalled skill": `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"workspace":{"kind":"git-worktree","repo":"` + repo + `","base_sha":"HEAD"},"skills":["cnos.eng:eng/nope"]}`,
+		"unknown key":       `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":["cnos.eng:eng/go"],"Extra":1}`,
+		"unknown provider":  `{"fill":"cds.patch","cognition":{"provider":"clyde","model":"m"},"skills":["cnos.eng:eng/go"]}`,
+		"modelless claude":  `{"fill":"cds.patch","cognition":{"provider":"claude-cli","model":""},"skills":["cnos.eng:eng/go"]}`,
+		"no skills":         `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":[]}`,
+		"uninstalled skill": `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":["cnos.eng:eng/nope"]}`,
 	}
 	for name, decl := range bad {
 		t.Run(name, func(t *testing.T) {
@@ -171,10 +294,10 @@ func (idleCoder) Name() string                               { return "idle" }
 func (idleCoder) Work(context.Context, string, string) error { return nil }
 
 func TestIdleCoderCannotFalselyComplete(t *testing.T) {
-	repo, _ := testRepo(t)
-	a := construct(t, repo, "fake").Seat.(PatchAlpha)
+	repo, head := testRepo(t)
+	a := construct(t, "fake").Seat.(PatchAlpha)
 	a.coder = idleCoder{}
-	out, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: patchContract})
+	out, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: contractFor(t, repo, head)})
 	if err != nil {
 		t.Fatalf("produce: %v", err)
 	}
@@ -195,7 +318,8 @@ func TestIdleCoderCannotFalselyComplete(t *testing.T) {
 // change a passing mechanical beta would have wrongly blessed.)
 func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 	repo, head := testRepo(t)
-	a := construct(t, repo, "fake")
+	a := construct(t, "fake")
+	patchContract := contractFor(t, repo, head)
 	betas := cellfill.CddFills()
 	b, err := betas.ConstructBeta(context.Background(), json.RawMessage(`{"fill":"cdd.mechanical-unmet"}`))
 	if err != nil {
@@ -239,8 +363,8 @@ func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 // The worktree is disposable and the repository is left untouched.
 func TestWorktreeIsDisposableAndRepoUntouched(t *testing.T) {
 	repo, head := testRepo(t)
-	a := construct(t, repo, "fake").Seat.(PatchAlpha)
-	if _, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: patchContract}); err != nil {
+	a := construct(t, "fake").Seat.(PatchAlpha)
+	if _, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: contractFor(t, repo, head)}); err != nil {
 		t.Fatalf("produce: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(repo, "CELL-FAKE-CHANGE.txt")); !os.IsNotExist(err) {
@@ -263,25 +387,23 @@ func TestWorktreeIsDisposableAndRepoUntouched(t *testing.T) {
 	}
 }
 
+// The seat fails closed on every input it cannot honour. The repository and
+// base cases arrive through the CONTRACT now, which is the only place they are
+// stated — reaching into the seat's fields to corrupt them is no longer
+// possible, and that is the fix rather than a limitation of this test.
 func TestPatchAlphaFailsClosed(t *testing.T) {
-	repo, _ := testRepo(t)
-	in := cellkernel.AlphaInput{Contract: patchContract}
-	base := construct(t, repo, "fake").Seat.(PatchAlpha)
+	repo, head := testRepo(t)
+	seat := construct(t, "fake").Seat.(PatchAlpha)
 
-	noCoder := base
+	noCoder := seat
 	noCoder.coder = nil
-	if _, err := noCoder.Produce(context.Background(), in); err == nil {
+	if _, err := noCoder.Produce(context.Background(),
+		cellkernel.AlphaInput{Contract: contractFor(t, repo, head)}); err == nil {
 		t.Fatal("nil coder must fail closed")
 	}
-	badBase := base
-	badBase.base = "no-such-rev"
-	if _, err := badBase.Produce(context.Background(), in); err == nil {
-		t.Fatal("an unresolvable base must fail before any work")
-	}
-	notRepo := base
-	notRepo.repo = t.TempDir()
-	if _, err := notRepo.Produce(context.Background(), in); err == nil {
-		t.Fatal("a non-repository must fail closed")
+	if _, err := seat.Produce(context.Background(),
+		cellkernel.AlphaInput{Contract: contractFor(t, t.TempDir(), head)}); err == nil {
+		t.Fatal("a subject naming a non-repository must fail closed")
 	}
 }
 
@@ -291,13 +413,11 @@ func TestPatchAlphaFailsClosed(t *testing.T) {
 // (Pi #57 C1), and the RESOLVED declaration must still record `model: ""`
 // so a receipt says what held the seat rather than what the author typed.
 func TestFakeMayOmitModelAndStillRecordsIt(t *testing.T) {
-	repo, _ := testRepo(t)
-	decl := json.RawMessage(fmt.Sprintf(`{
+	decl := json.RawMessage(`{
 		"fill": "cds.patch",
 		"cognition": {"provider": "fake"},
-		"workspace": {"kind": "git-worktree", "repo": %q, "base_sha": "HEAD"},
 		"skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"]
-	}`, repo))
+	}`)
 	a, err := Factory(skillTree(t, testSkills...))(context.Background(), decl)
 	if err != nil {
 		t.Fatalf("a fake omitting its meaningless model must construct: %v", err)

@@ -60,6 +60,20 @@ package cdd
 	contract: {
 		id:   string & !=""
 		goal: string
+		// The frozen issue and design — the admitted run contract — opaque at
+		// the generic output boundary for the same reason the resolved seat
+		// declarations are: whose contract language it is belongs to the
+		// protocol, not to the closure schema. They appear here because the
+		// record carries the whole frozen contract, which is what binds them
+		// into the one scope-lift digest.
+		issue?: {...}
+		design?: {...}
+		// The frozen subject — what the episode acted on — opaque here for the
+		// same reason. It appears because the record carries the whole frozen
+		// contract, which is what binds it into the one scope-lift digest and
+		// what makes "both stations saw the same subject" a property of the
+		// record rather than a claim about the runtime.
+		subject?: {...}
 		required_evidence?: [...#RequiredRef]
 	}
 	alpha: #StationRecord

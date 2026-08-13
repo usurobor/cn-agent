@@ -15,6 +15,7 @@ package cellfills
 import (
 	"path/filepath"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsadmit"
 	"github.com/usurobor/cnos/src/go/internal/cdspatch"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
@@ -26,16 +27,33 @@ func InstalledPackages(hubPath string) string {
 	return filepath.Join(hubPath, ".cn", "vendor", "packages")
 }
 
-// Assemble builds the fill registry this binary ships: the generic cdd fills
-// plus the CDS patch constructor, closed over the installed package root.
+// Assemble builds the fill registry this binary ships: the generic cdd fills,
+// the CDS patch constructor closed over the installed package root, and the CDS
+// admission door.
 func Assemble(hubPath string) cellfill.Registry {
 	return With(cellskill.Tree{Root: InstalledPackages(hubPath)})
 }
 
 // With is Assemble over an explicit skill resolver, for tests that supply
 // their own installed tree.
+//
+// The door is wired here for exactly the reason the fills are: it is the one
+// place that may know which profile this binary ships. `cn cell run` is the
+// generic runner — it dispatches whatever door it is handed and names no CDS
+// package, so a second profile is another line in this function rather than an
+// import and a branch inside the runner.
 func With(skills cellskill.Resolver) cellfill.Registry {
 	reg := cellfill.CddFills()
-	reg.Alpha[cdspatch.Fill] = cdspatch.Factory(skills)
+	// NeedsSubject is declared here, at the registration, because that is where
+	// this binary states what `cds.patch` is: a patch alpha measures a change
+	// against the repository and base the contract's pinned subject names, and
+	// there is nothing for it to act on without one. Declaring it lets the spec
+	// loader refuse a subjectless run before the constructor builds a provider
+	// adapter and reads skill bodies.
+	reg.Alpha[cdspatch.Fill] = cellfill.AlphaFill{
+		Construct:    cdspatch.Factory(skills),
+		NeedsSubject: true,
+	}
+	reg.Door = cdsadmit.Door
 	return reg
 }

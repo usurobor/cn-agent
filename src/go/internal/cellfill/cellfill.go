@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"slices"
@@ -51,11 +52,72 @@ type ConstructedBeta struct {
 type AlphaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedAlpha, error)
 type BetaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedBeta, error)
 
+// Admitted is the per-run contract a door let through: the exact authored bytes
+// of each payload, in the form the cell will freeze them. Raw, because what an
+// issue or a repository reference MEANS belongs to the profile that admitted
+// it — this package carries the bytes and reads none of them, exactly as it
+// carries seat declarations without learning what a fill needs.
+type Admitted struct {
+	Issue   json.RawMessage
+	Design  json.RawMessage
+	Subject json.RawMessage
+}
+
+// ErrRefused is what every non-admitting outcome wraps. It lives here rather
+// than in a profile package because it is part of the Door contract: the
+// generic runner has to tell "this document was judged and refused" from "the
+// door malfunctioned", and it must do so without importing the profile whose
+// door it happens to be dispatching.
+var ErrRefused = errors.New("run input refused")
+
+// Door decides whether one run-input document is executable, and returns the
+// typed receipt of that decision ALREADY SERIALIZED. The receipt is opaque
+// bytes for the same reason a seat declaration is: its shape, its kind tag and
+// its vocabulary belong to the profile, and a runner that decoded it would have
+// learned a profile's language in order to print it.
+//
+// It takes the raw document, not a decoded envelope. The envelope's kind and
+// key language are as much a profile's rule as its payload shapes, so a
+// document with the wrong kind is a REFUSAL with a receipt — not a read error
+// the caller reports some other way. One decision, one channel.
+type Door func(raw []byte) (Admitted, json.RawMessage, error)
+
+// AlphaFill is one registered alpha: its constructor, and the per-run inputs
+// the fill cannot act without.
+//
+// The requirement is declared BESIDE the constructor, for the same reason a
+// fill's arguments sit beside its `fill` tag: the fill is the only thing that
+// knows it. Registering a bare factory forced the fact to be discovered by
+// running the seat, so a decisive inadmissibility — no subject at all —
+// surfaced only after the constructor had built its provider adapter and read
+// every skill body, and then surfaced as a station malfunction. Declaring it
+// here lets the loader refuse before construction without the generic runner
+// learning what any fill needs.
+type AlphaFill struct {
+	Construct AlphaFactory
+	// NeedsSubject: this fill cannot act without contract.subject. It says
+	// nothing about issue or design, and nothing about what a subject MEANS —
+	// that stays the profile's.
+	NeedsSubject bool
+}
+
 // Registry is the small statically assembled fill map. No DI container, no
 // service locator — the assembly point lists its fills.
+//
+// Beta carries a bare factory because no beta shipped today declares a
+// requirement; the field is added to a side when a fill on that side needs it,
+// not in advance.
+//
+// Door sits beside them because it is the same kind of thing: a profile-owned
+// function the composition root wires in and the generic runner only
+// dispatches. Without it the runner had to name a domain package to admit a
+// document, which is the coupling the fill registry exists to prevent. A nil
+// Door is a registry that admits no run input — legitimate, and the shape every
+// cell had before run inputs existed.
 type Registry struct {
-	Alpha map[string]AlphaFactory
+	Alpha map[string]AlphaFill
 	Beta  map[string]BetaFactory
+	Door  Door
 }
 
 // FillID extracts the tag that selects a constructor. It is the ONLY field
@@ -79,20 +141,33 @@ func FillID(decl json.RawMessage) (string, error) {
 	return id, nil
 }
 
+// LookupAlpha resolves a seat declaration to the fill it selects, WITHOUT
+// constructing it. A caller that must judge a fill's declared requirements
+// before its constructor runs looks it up here; ConstructAlpha resolves through
+// the same call, so there is one place a fill id becomes a fill and no second
+// map to keep in step.
+func (r Registry) LookupAlpha(decl json.RawMessage) (string, AlphaFill, error) {
+	id, err := FillID(decl)
+	if err != nil {
+		return "", AlphaFill{}, err
+	}
+	f, ok := r.Alpha[id]
+	if !ok {
+		return "", AlphaFill{}, fmt.Errorf("unknown alpha fill %q", id)
+	}
+	return id, f, nil
+}
+
 // ConstructAlpha dispatches an alpha declaration. Unknown fills fail here,
 // before any seat or provider is touched, and the returned declaration is
 // canonicalized centrally so no fill can make the record's digest depend on
 // how it happened to serialize.
 func (r Registry) ConstructAlpha(ctx context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
-	id, err := FillID(decl)
+	id, f, err := r.LookupAlpha(decl)
 	if err != nil {
 		return ConstructedAlpha{}, err
 	}
-	f, ok := r.Alpha[id]
-	if !ok {
-		return ConstructedAlpha{}, fmt.Errorf("unknown alpha fill %q", id)
-	}
-	c, err := f(ctx, decl)
+	c, err := f.Construct(ctx, decl)
 	if err != nil {
 		return ConstructedAlpha{}, err
 	}
@@ -205,6 +280,64 @@ func OnlyKeys(raw json.RawMessage, where string, allowed ...string) error {
 	for k := range obj {
 		if !slices.Contains(allowed, k) {
 			return fmt.Errorf("%s has unknown key %q (keys are exact and case-sensitive)", where, k)
+		}
+	}
+	return nil
+}
+
+// NoDuplicateKeysOrNull rejects duplicate object keys anywhere in a JSON
+// document, which encoding/json otherwise silently accepts (last-wins), and
+// JSON null anywhere.
+//
+// It lives here, beside OnlyKeys and StrictDecode, because it belongs to the
+// same fact: what encoding/json quietly tolerates and a closed CUE definition
+// does not. Two documents that both go to CUE — the cell spec and the run
+// input — must be read the same way by both authorities, and two copies of
+// this walk would be two chances to drift (eng/go §2.17, one parser per fact).
+func NoDuplicateKeysOrNull(data []byte) error {
+	return walkNoDup(json.NewDecoder(bytes.NewReader(data)))
+}
+
+func walkNoDup(dec *json.Decoder) error {
+	t, err := dec.Token()
+	if err != nil {
+		return err
+	}
+	if t == nil {
+		return fmt.Errorf("null is not allowed (the schema admits no null)")
+	}
+	delim, ok := t.(json.Delim)
+	if !ok {
+		return nil
+	}
+	switch delim {
+	case '{':
+		keys := make(map[string]bool)
+		for dec.More() {
+			kt, err := dec.Token()
+			if err != nil {
+				return err
+			}
+			key, _ := kt.(string)
+			if keys[key] {
+				return fmt.Errorf("duplicate key %q", key)
+			}
+			keys[key] = true
+			if err := walkNoDup(dec); err != nil {
+				return err
+			}
+		}
+		if _, err := dec.Token(); err != nil { // consume '}'
+			return err
+		}
+	case '[':
+		for dec.More() {
+			if err := walkNoDup(dec); err != nil {
+				return err
+			}
+		}
+		if _, err := dec.Token(); err != nil { // consume ']'
+			return err
 		}
 	}
 	return nil
