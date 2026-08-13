@@ -114,8 +114,16 @@ that was missing before — the preserved stdout — is the committed file.
 
 ## What this establishes
 
-1. **The declared authority is sufficient.** The seat edited files with only
+1. **The declared authority is sufficient.** The seat edited files under
    `--tools Read,Write,Edit,Glob,Grep` and `--permission-mode acceptEdits`.
+   The surface is named literally rather than as "the declared surface",
+   because that phrase now resolves to a different list and the committed
+   artifact cannot settle it: the closure records provider, model and skill
+   digests, and no argv. This document is the only record of what that
+   episode ran with. (The surface has since been corrected to include
+   `MultiEdit` and `Bash`, so a seat can run its own tests; this episode
+   predates the change and did not
+   need them.)
 2. **The runtime measures rather than believes.** The diff was computed from
    the disposable worktree.
 3. **Case-2 honesty holds under real cognition.** A genuine change still

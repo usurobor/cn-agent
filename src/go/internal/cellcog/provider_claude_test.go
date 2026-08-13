@@ -104,3 +104,39 @@ func TestClaudeArgsAreTypedNotSmuggled(t *testing.T) {
 		}
 	}
 }
+
+// A hang is the one failure with no other trace — no diff to measure, no
+// answer returned — so what the provider emitted before stalling is the only
+// evidence of where it stalled. That path used to discard both streams.
+func TestTimeoutCarriesDiagnostics(t *testing.T) {
+	// Emits on both streams, then stalls forever.
+	bin := fakeBin(t, `cat >/dev/null; echo partial-answer; echo "provider: waiting on upstream" >&2; sleep 30`)
+	err := (ClaudeCLI{Model: "m", Bin: bin, Timeout: 400 * time.Millisecond}).
+		Work(context.Background(), t.TempDir(), "p")
+	if err == nil {
+		t.Fatal("a stalled provider must fail")
+	}
+	got := err.Error()
+	for _, want := range []string{
+		"did not finish within",
+		"stdout bytes before the stall",
+		"provider: waiting on upstream", // the stderr tail survives the timeout
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("timeout error must carry %q, got: %s", want, got)
+		}
+	}
+}
+
+// Under `--output-format stream-json` stdout is a PROGRESS stream, and a long
+// episode will exceed the output bound as a matter of course. A producing seat
+// is judged by the measured diff, so losing the tail of that stream costs the
+// episode nothing and must not fail the run — which it did while stdout was one
+// dump the adapter treated as the result.
+func TestWorkToleratesATruncatedProgressStream(t *testing.T) {
+	// Deliberately past maxOutputBytes: the bound is what used to end the run.
+	bin := fakeBin(t, `cat >/dev/null; yes `+strings.Repeat("a", 64)+` | head -c 5242880`)
+	if err := (ClaudeCLI{Model: "m", Bin: bin}).Work(context.Background(), t.TempDir(), "p"); err != nil {
+		t.Fatalf("a clipped progress stream must not fail a producing seat: %v", err)
+	}
+}
