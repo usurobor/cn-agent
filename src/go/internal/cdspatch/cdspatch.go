@@ -1,13 +1,19 @@
 // Package cdspatch is the CDS-owned `cds.patch` fill: the constructor for a
 // patch-producing alpha. Only this fill knows that producing a CDS patch
-// takes workspace cognition, a git worktree, and loaded skills — the generic
-// runner dispatches a fill id and receives a cellkernel.Alpha, nothing more.
+// takes workspace cognition and a git worktree — the generic runner dispatches
+// a fill id and receives a cellkernel.Alpha, nothing more.
 //
-// The constructor composes three reusable subsystems and owns none of their
+// The constructor composes two reusable subsystems and owns none of their
 // internals: cellcog constructs the bounded provider adapter (this package
-// contains no provider argv at all), cellskill resolves and loads exact skill
-// bodies, and cellwork prepares the disposable worktree. What comes back is
-// one immutable, provider-neutral PatchAlpha.
+// contains no provider argv at all), and cellwork prepares the disposable
+// worktree. What comes back is one immutable, provider-neutral PatchAlpha.
+//
+// THE SEAT DOES NOT DECLARE ITS SKILLS. It receives the cell's constructive
+// methodology projection and records the bundle digest it was held to. The
+// `skills` key is gone from this fill in both authorities — the Go decoder
+// below and the closed CUE overlay — because two lists of obligations, one on
+// the cell and one on the seat, are two lists that drift with nothing able to
+// notice.
 //
 // THE SEAT DOES NOT NAME A REPOSITORY. The declaration carries no workspace:
 // the repository and the base commit come from the pinned contract subject,
@@ -23,8 +29,6 @@ package cdspatch
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -32,7 +36,7 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellcog"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
-	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
@@ -57,7 +61,6 @@ const (
 type Decl struct {
 	Fill      string         `json:"fill"`
 	Cognition cellcog.Config `json:"cognition"`
-	Skills    []string       `json:"skills"`
 }
 
 // ResolvedDecl is what the closure records for this seat: the declaration
@@ -73,20 +76,31 @@ type Decl struct {
 // to report it and the runtime to check it; neither exists yet, so the field
 // claims only what it is.
 type ResolvedDecl struct {
-	Fill      string          `json:"fill"`
-	Cognition cellcog.Config  `json:"cognition"`
-	Skills    []ResolvedSkill `json:"skills"`
+	Fill      string         `json:"fill"`
+	Cognition cellcog.Config `json:"cognition"`
+	// Methodology is what the seat RECEIVED, not what it chose: this fill has
+	// no skills key and cannot state one. Recording the projection's role and
+	// the bundle digest is how a reader can ask whether the seat was held to
+	// the methodology the cell declared — the refs and their body digests live
+	// once, on the bundle, and are not copied per seat.
+	Methodology MethodologyRef `json:"methodology"`
 }
 
-type ResolvedSkill struct {
-	Ref    string `json:"ref"`
+// MethodologyRef identifies the projection a seat was constructed under.
+type MethodologyRef struct {
+	Role   string `json:"role"`
 	SHA256 string `json:"sha256"`
 }
 
-// Factory returns the cds.patch alpha factory, closed over the skill
-// resolver it loads bodies from (the one construction-time effect).
-func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
-	return func(ctx context.Context, decl json.RawMessage) (cellfill.ConstructedAlpha, error) {
+// Factory returns the cds.patch alpha factory.
+//
+// It closes over nothing. While it held a skill resolver, this fill LOADED its
+// own skills from its own list — a second methodology beside the cell's, with
+// its own digest and no statement that the two were meant to agree. The
+// constructive projection now arrives as an argument, so what holds this seat
+// is the cell's one bundle and the fill can only refuse it, never replace it.
+func Factory() cellfill.AlphaFactory {
+	return func(ctx context.Context, decl json.RawMessage, method cellmethod.View) (cellfill.ConstructedAlpha, error) {
 		var d Decl
 		if err := exactShape(decl); err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
@@ -94,28 +108,34 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 		if err := cellfill.StrictDecode(decl, &d); err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
 		}
-		if len(d.Skills) == 0 {
-			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: a patch alpha needs its skills", Fill)
+		// The fill states its own requirement, and only the fill can: a patch
+		// alpha writes real code and there is nothing to hold it to without a
+		// methodology. A cell declaring none is legitimate for other fills, so
+		// this is refused here rather than by the loader for everyone.
+		if method.Empty() {
+			return cellfill.ConstructedAlpha{}, fmt.Errorf(
+				"fill %q: a patch alpha needs the cell's methodology, and this cell declares none", Fill)
+		}
+		if method.Role != cellmethod.RoleConstructive {
+			// A producing seat handed the adversarial projection would be told to
+			// falsify the work it is about to do. Nothing constructs it that way
+			// today; this refuses the wiring mistake rather than trusting that.
+			return cellfill.ConstructedAlpha{}, fmt.Errorf(
+				"fill %q: a producing seat takes the constructive projection, got %q", Fill, method.Role)
 		}
 
 		coder, mode, err := cellcog.New(d.Cognition)
 		if err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
 		}
-		loaded, err := cellskill.LoadAll(skills, d.Skills)
-		if err != nil {
-			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
-		}
-		// Nothing here pins a revision. The subject was pinned once, before
-		// either seat was constructed, and this declaration records only what
-		// it actually selects: the provider and the exact skill bodies.
+		// Nothing here pins a revision and nothing here loads a skill. The
+		// subject was pinned once and the methodology was loaded once, both
+		// before this constructor ran; this declaration records what it
+		// actually selects — the provider — and what it was handed.
 		resolved := ResolvedDecl{
-			Fill:      Fill,
-			Cognition: d.Cognition,
-			Skills:    make([]ResolvedSkill, 0, len(loaded)),
-		}
-		for _, s := range loaded {
-			resolved.Skills = append(resolved.Skills, ResolvedSkill{Ref: s.Ref, SHA256: s.SHA256})
+			Fill:        Fill,
+			Cognition:   d.Cognition,
+			Methodology: MethodologyRef{Role: string(method.Role), SHA256: method.SHA256},
 		}
 		canon, err := json.Marshal(resolved)
 		if err != nil {
@@ -124,7 +144,7 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 
 		return cellfill.ConstructedAlpha{
 			Constructed: cellfill.Constructed{Decl: canon, Mode: cellkernel.ExecutionMode(mode)},
-			Seat:        PatchAlpha{coder: coder, skills: loaded},
+			Seat:        PatchAlpha{coder: coder, method: method},
 		}, nil
 	}
 }
@@ -139,7 +159,7 @@ func Factory(skills cellskill.Resolver) cellfill.AlphaFactory {
 // refused by name here and by the closed CUE overlay, so the second source
 // cannot come back as a tolerated extra key.
 func exactShape(decl json.RawMessage) error {
-	if err := cellfill.OnlyKeys(decl, "cds.patch", "fill", "cognition", "skills"); err != nil {
+	if err := cellfill.OnlyKeys(decl, "cds.patch", "fill", "cognition"); err != nil {
 		return err
 	}
 	if cog, ok := cellfill.Field(decl, "cognition"); ok {
@@ -163,7 +183,7 @@ func exactShape(decl json.RawMessage) error {
 // record says it acted on are one value that was resolved once.
 type PatchAlpha struct {
 	coder  cellcog.Coder
-	skills []cellskill.Skill
+	method cellmethod.View
 }
 
 func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cellkernel.AlphaOutput, error) {
@@ -186,7 +206,7 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 	}
 	defer release()
 
-	if err := a.coder.Work(ctx, wt.Dir, RenderPrompt(in.Contract, a.skills)); err != nil {
+	if err := a.coder.Work(ctx, wt.Dir, RenderPrompt(in.Contract, a.method)); err != nil {
 		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: coder %q: %w", a.coder.Name(), err)
 	}
 	diff, err := wt.Diff(ctx)
@@ -217,10 +237,13 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 	}, nil
 }
 
-// RenderPrompt is pure and deterministic over the contract and the LOADED
-// skills: the exact skill bodies are injected, not their names — naming a
-// skill without its text is not loading it.
-func RenderPrompt(c cellkernel.Contract, skills []cellskill.Skill) string {
+// RenderPrompt is pure and deterministic over the contract and the CONSTRUCTIVE
+// PROJECTION: the projection's text carries the exact skill bodies the cell's
+// bundle loaded, so what the seat reads is the cell's methodology verbatim.
+// This function no longer renders skills itself — it appends a view it was
+// handed, which is what stops the seat having a second opinion about what it is
+// held to.
+func RenderPrompt(c cellkernel.Contract, method cellmethod.View) string {
 	var b strings.Builder
 	b.WriteString("You are the alpha (producing) seat of a CNOS coherence cell, working on real code.\n")
 	b.WriteString("You are in a disposable worktree. Edit the files here to meet the contract.\n\n")
@@ -230,13 +253,7 @@ func RenderPrompt(c cellkernel.Contract, skills []cellskill.Skill) string {
 	b.WriteString("your summary. Anything you do not write to a file does not exist. An empty\n")
 	b.WriteString("diff closes the episode as unmet, whatever you say about it.\n")
 	b.WriteString("An independent reviewer reads that diff afterwards.\n")
-	for _, s := range skills {
-		sum := sha256.Sum256([]byte(s.Body))
-		fmt.Fprintf(&b, "\n===== SKILL %s (sha256 %s) =====\n", s.Ref, hex.EncodeToString(sum[:8]))
-		b.WriteString(s.Body)
-		if !strings.HasSuffix(s.Body, "\n") {
-			b.WriteString("\n")
-		}
-	}
+	fmt.Fprintf(&b, "\n(methodology bundle sha256 %s)\n", method.SHA256)
+	b.WriteString(method.Text)
 	return b.String()
 }

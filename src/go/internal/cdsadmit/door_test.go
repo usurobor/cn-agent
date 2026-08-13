@@ -22,6 +22,7 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cdsadmit"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellrun"
 )
 
@@ -79,7 +80,7 @@ func doorlessRegistry(l *ledger) cellfill.Registry {
 			// No declared requirement: this witness is about the RUNNER's order
 			// of operations, and a fill that refused a subjectless run would
 			// stop several cases below before the door was ever reached.
-			fill: {Construct: func(context.Context, json.RawMessage) (cellfill.ConstructedAlpha, error) {
+			fill: {Construct: func(context.Context, json.RawMessage, cellmethod.View) (cellfill.ConstructedAlpha, error) {
 				l.note("construct alpha")
 				return cellfill.ConstructedAlpha{
 					Constructed: cellfill.Constructed{

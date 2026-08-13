@@ -23,10 +23,13 @@ const fixture = `{
     "language": {"required": true, "domain": ["cnos.eng:eng/go", "cnos.eng:eng/ocaml"]},
     "model": {"required": true}
   },
+  "methodology": {
+    "kind": "skills.methodology.v0",
+    "skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "$language", "cnos.eng:eng/write-functional"]
+  },
   "alpha": {
     "fill": "cds.patch",
-    "cognition": {"provider": "fake", "model": "$model"},
-    "skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "$language", "cnos.eng:eng/write-functional"]
+    "cognition": {"provider": "fake", "model": "$model"}
   },
   "beta": {"fill": "cdd.mechanical-unmet"}
 }`
@@ -40,21 +43,29 @@ func mustParse(t *testing.T) CellSpec {
 	return s
 }
 
-// Holes resolve IN PLACE inside the seat trees: the nested cognition hole and
-// the skill-list element are replaced where they sit, at two different depths.
+// Holes resolve IN PLACE wherever they sit: the nested cognition hole inside a
+// seat, and the skill-list element inside the CELL's methodology. One
+// substitution rule serves both — a `$name` that meant one thing in a seat and
+// another in the methodology would be two hole languages.
 func TestResolveFillsHolesInPlace(t *testing.T) {
 	r, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go", "model": "abc123"})
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
 	a := string(r.Alpha)
-	for _, want := range []string{`"model":"abc123"`, `"cnos.eng:eng/go"`, `"fill":"cds.patch"`} {
+	for _, want := range []string{`"model":"abc123"`, `"fill":"cds.patch"`} {
 		if !strings.Contains(a, want) {
 			t.Errorf("resolved alpha missing %s: %s", want, a)
 		}
 	}
-	if strings.Contains(a, "$") {
-		t.Fatalf("unresolved hole survived: %s", a)
+	m := string(r.Methodology)
+	for _, want := range []string{`"cnos.eng:eng/go"`, `"kind":"skills.methodology.v0"`} {
+		if !strings.Contains(m, want) {
+			t.Errorf("resolved methodology missing %s: %s", want, m)
+		}
+	}
+	if strings.Contains(a, "$") || strings.Contains(m, "$") {
+		t.Fatalf("unresolved hole survived: %s / %s", a, m)
 	}
 }
 

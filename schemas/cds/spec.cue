@@ -31,17 +31,19 @@ package cds
 
 import "cnos.dev/cnos/schemas/cdd"
 
-// #Hole is an unresolved `$param` reference. Its identifier grammar is the
-// generic one — a hole IS a parameter name, so the two cannot diverge.
-#Hole: =~"^\\$[A-Za-z_][A-Za-z0-9_]*$"
-
-// #Concrete is an already-resolved value: nonempty, and NOT hole-shaped.
-// Written as an explicit exclusion because Go treats EVERY `$...` string as a
-// hole. A plain `string & !=""` arm silently accepted `$bad-name` — the value
-// looks concrete to CUE and is a malformed hole to Go, so the two authorities
-// disagreed about the same document (Pi #56 C1). Anywhere a field may carry
-// either, the union must be #Concrete | #Hole, never string | #Hole.
-#Concrete: string & !="" & !~"^\\$"
+// #Hole and #Concrete are the GENERIC definitions, aliased. They moved to the
+// cdd package when the methodology became a cell field, because the generic
+// envelope then needed the hole-versus-concrete distinction too. Aliased rather
+// than restated: the pattern lived in two files exactly once, and two
+// transcriptions of one grammar are two chances for one authority to admit what
+// the other rejects.
+//
+// Anywhere a field may carry either, the union must be #Concrete | #Hole, never
+// string | #Hole — Go treats EVERY `$...` string as a hole, so an unrestricted
+// string arm silently accepts `$bad-name`, which CUE reads as a concrete value
+// and Go reads as a malformed hole (Pi #56 C1).
+#Hole:     cdd.#Hole
+#Concrete: cdd.#Concrete
 
 // #Cognition is the inline provider declaration. A provider that really rents
 // cognition must name a REQUESTED MODEL SELECTOR; only the deterministic fake
@@ -86,46 +88,62 @@ import "cnos.dev/cnos/schemas/cdd"
 
 // _patchAlphaSkillsResolved is the ordered canonical refs with the content
 // digest of the body that was actually injected — naming a skill is not
-// loading it. Named once because two definitions below carry it.
+// loading it. It survives for the FROZEN historical definition below alone; no
+// current shape carries a per-seat skill list.
 _patchAlphaSkillsResolved: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ...{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}]
 
 // #CDSPatchAlphaResolved is what a closure records: the canonical structural
-// shape and digested skills. Hole-freedom is proven by resolution, not by this
-// shape — see the header.
+// shape, and the identity of the methodology projection that held the seat.
+// Hole-freedom is proven by resolution, not by this shape — see the header.
 //
-// NO WORKSPACE. A cds.patch seat does not name a repository: it reads the
-// repository and the base commit from the run's pinned contract subject, which
-// is the single source. The key is absent from a CLOSED definition, so a
+// NO SKILLS. A cds.patch seat does not declare obligations: the cell declares
+// one methodology bundle and the seat receives a projection of it. What the seat
+// records is the ROLE of the projection it was handed and the DIGEST of the
+// bundle behind it — the refs and their body digests live once, on the bundle,
+// and are not copied per seat. The key is absent from a CLOSED definition, so a
 // declaration carrying one is rejected here exactly as the fill's exact-key set
-// rejects it in Go — the two authorities delete the field together, or the
+// rejects it in Go; the two authorities delete the field together, or the
 // deletion is only a Go convention.
+//
+// NO WORKSPACE, for the same reason at one remove: the repository and the base
+// commit come from the run's pinned contract subject, which is the single
+// source.
+//
+// `!` on methodology — the required-field marker. Without it an ABSENT
+// methodology unifies with its declared value and vets clean, which is exactly
+// the "the seat was held to nothing" record this field exists to make
+// impossible.
 #CDSPatchAlphaResolved: {
 	fill:      "cds.patch"
 	cognition: #Cognition
-	skills:    _patchAlphaSkillsResolved
+	methodology!: {
+		role!:   "constructive"
+		sha256!: =~"^[0-9a-f]{64}$"
+	}
 }
 
-// #CDSPatchAlphaAuthored is what a cell spec may carry: the same shape with
-// holes admitted in the positions resolution fills.
+// #CDSPatchAlphaAuthored is what a cell spec may carry: the tag and the
+// cognition it selects, with holes admitted in the positions resolution fills.
+// Nothing else — the methodology is the cell's, not this seat's.
 #CDSPatchAlphaAuthored: {
 	fill: "cds.patch"
 	cognition: #CognitionAuthored
-	skills: [#Concrete | #Hole, ...#Concrete | #Hole]
 }
 
 // #CDSPatchAlphaResolvedPreWorkspaceDeletion is a FROZEN HISTORICAL shape, and
 // exists for exactly one artifact: docs/architecture/evidence/
 // cds-case2-claude-closure.json, the one committed record of a rented-cognition
-// run. That episode ran while the fill still declared its own workspace, and
-// its record is covered by a scope-lift digest that recomputes — editing the
-// declaration out of it would break the digest and turn evidence into a claim.
-// So the artifact stays byte-for-byte, and this definition is what keeps it
-// accountable to a CLOSED shape rather than to nothing.
+// run. That episode ran while the fill still declared its own workspace AND its
+// own skill list, and its record is covered by a scope-lift digest that
+// recomputes — editing either out of it would break the digest and turn evidence
+// into a claim. So the artifact stays byte-for-byte, and this definition is what
+// keeps it accountable to a CLOSED shape rather than to nothing.
 //
-// It is not a second way to name a repository. Nothing authorable references
-// it: #CDSCellSpec.alpha is #CDSPatchAlphaAuthored, the runtime has no decoder
-// for a workspace key, and no new document can be produced in this shape. It
-// describes a record that already exists and cannot be regenerated.
+// It is not a second way to name a repository, nor a second way to declare
+// obligations. Nothing authorable references it: #CDSCellSpec.alpha is
+// #CDSPatchAlphaAuthored, the runtime has no decoder for a workspace or skills
+// key, and no new document can be produced in this shape. It describes a record
+// that already exists and cannot be regenerated.
 #CDSPatchAlphaResolvedPreWorkspaceDeletion: {
 	fill:      "cds.patch"
 	cognition: #Cognition
@@ -300,6 +318,20 @@ _patchAlphaSkillsResolved: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ..
 	// (v0.11.0). A diff present but not first is a schema violation
 	// (fixtures/invalid/cds-diff-not-first.json).
 	contract: required_evidence: [{id: "diff", kind: "diff", producer: "alpha"}, ...cdd.#RequiredRef]
+
+	// REQUIRED, where the generic envelope leaves it optional: a CDS cell
+	// produces real code and there is nothing to hold its producing seat to
+	// without a methodology. `!` because an absent optional field would
+	// otherwise unify with its declared value and vet clean.
+	//
+	// This NARROWS the generic field rather than restating cdd.#Methodology:
+	// the shape is already unified in from cdd.#CellSpec, and re-unifying that
+	// definition here collapses its `#Concrete | #Hole` element disjunction on
+	// the CI-pinned cue (v0.11.0) — a legal `$language` entry is then read
+	// against the concrete arm alone and rejected, while the identical document
+	// vets clean against the generic #CellSpec. The kind pin is the only thing
+	// CDS adds, so the kind pin is the only thing written.
+	methodology!: kind!: "skills.methodology.v0"
 
 	alpha: #CDSPatchAlphaAuthored
 	beta:  #CDSMechanicalUnmetBeta

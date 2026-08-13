@@ -1,7 +1,22 @@
 {
   "version": "cnos.cellspec.v0",
-  "contract": { "id": "c", "goal": "g" },
+  "contract": {
+    "id": "c",
+    "goal": "g"
+  },
   "protocol_id": "p",
-  "alpha": { "fill": "cds.patch", "skills": null },
-  "beta": { "fill": "cdd.stub" }
+  "methodology": {
+    "kind": "skills.methodology.v0",
+    "skills": null
+  },
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "provider": "fake",
+      "model": ""
+    }
+  },
+  "beta": {
+    "fill": "cdd.stub"
+  }
 }

@@ -35,6 +35,77 @@ for tool in "$CUE" "$CN"; do
   command -v "$tool" >/dev/null 2>&1 || { echo "✗ required tool not found: $tool" >&2; exit 1; }
 done
 
+repo=$(pwd)
+
+# THE FIXTURE HUB, built before anything invokes the CLI. Skill authority is the
+# INSTALLED package root under a hub — never the working directory and never
+# this checkout's source tree — so every `cn cell run` below runs from inside it.
+#
+# It has to exist this early now that a cell declares ONE methodology bundle: the
+# runtime loads that bundle before it constructs either seat, so a CLI negative
+# run from a directory with no installed packages is rejected for an uninstalled
+# skill and never reaches the defect its fixture is named for. Six of them did
+# exactly that, and `run_bad`'s reason check is what said so.
+#
+# The vendored set is the DEFAULT INSTALLED PACKAGE SET (what `cn repo install`
+# pins), so this proves a hub the product can actually produce rather than a
+# hand-picked fixture. repoinstall.DefaultPackages is the source of truth;
+# TestDefaultPackagesCoverShippedCells keeps it and the shipped cells in
+# agreement.
+hub="$tmpdir/hub"
+mkdir -p "$hub/.cn/vendor/packages"
+default_packages=$(grep -o 'var DefaultPackages = \[\]string{[^}]*}' src/go/internal/repoinstall/repoinstall.go |
+  grep -o '"[^"]*"' | tr -d '"')
+if [ -z "$default_packages" ]; then
+  echo "✗ could not read DefaultPackages" >&2; exit 1
+fi
+for pkg in $default_packages; do
+  [ -d "src/packages/$pkg/skills" ] || continue
+  mkdir -p "$hub/.cn/vendor/packages/$pkg"
+  cp -r "src/packages/$pkg/skills" "$hub/.cn/vendor/packages/$pkg/skills" ||
+    { echo "✗ could not vendor $pkg into the fixture hub" >&2; exit 1; }
+done
+# Absolute, for the subshells that run INSIDE the hub; CUE package paths stay
+# relative to the repo root, where the rest of this script runs.
+CN=$(cd "$(dirname "$CN")" && pwd)/$(basename "$CN")
+spec=$repo/schemas/cds/fixtures/code-cell-spec.json
+
+# cn_run invokes the CLI from inside the fixture hub, rewriting every argument
+# that names an existing repo-relative file to an absolute path. ONE helper, so
+# no caller can accidentally run from a directory where skills do not resolve —
+# which is a green tick for the wrong reason, not a failure.
+cn_run() {
+  local -a argv=()
+  local a
+  for a in "$@"; do
+    if [ -f "$repo/$a" ]; then argv+=("$repo/$a"); else argv+=("$a"); fi
+  done
+  (cd "$hub" && "$CN" "${argv[@]}")
+}
+
+# THE HERMETIC CODE REPOSITORY and the live run input, built here for the same
+# reason the hub is: every CLI invocation below runs from inside the hub, and a
+# run input whose subject names `.` would then pin the hub rather than a
+# repository. The committed fixture names `.`, which is what an author writes;
+# pinning really opens it, so the live witness points it at this throwaway
+# repository. Only the subject is rewritten — the issue and the design are the
+# corpus documents both authorities vetted.
+coderepo="$tmpdir/coderepo"
+mkdir -p "$coderepo"
+(
+  cd "$coderepo" && git init -q -b main && echo base >README.md && git add -A &&
+    GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t \
+      git commit -qm base
+) >/dev/null 2>&1 || { echo "✗ could not build the code-cell fixture repo" >&2; exit 1; }
+ri="$tmpdir/run-input.json"
+python3 - "schemas/cds/fixtures/runinput/valid-run-input.json" "$coderepo" "$ri" <<'RIEOF' ||
+import json, sys
+doc = json.load(open(sys.argv[1]))
+doc["subject"] = {"kind": "git.snapshot/0.1", "repo": sys.argv[2], "base_sha": "HEAD"}
+json.dump(doc, open(sys.argv[3], "w"))
+RIEOF
+  { echo "✗ could not build the live run input" >&2; exit 1; }
+
 # files_exist guards the negative helpers below. A negative asserts a NON-ZERO
 # exit, and a missing or misnamed fixture produces one too — so without this a
 # deleted or typo'd fixture reads as the schema correctly rejecting it, which
@@ -69,7 +140,7 @@ run_bad() { # Go-only negatives: the CLI is the executable authority (exit 2).
   # reason at one remove.
   local fixture=$1 reason=$2; shift 2
   if ! files_exist "$fixture"; then fail=1; return; fi
-  local err; err=$("$CN" cell run --contract "$fixture" "$@" 2>&1 >/dev/null); local code=$?
+  local err; err=$(cn_run cell run --contract "$fixture" "$@" 2>&1 >/dev/null); local code=$?
   if [ "$code" != 2 ]; then
     echo "  ✗ expected CLI exit 2: $fixture (got $code)"; fail=1
   elif ! printf '%s' "$err" | grep -qF -- "$reason"; then
@@ -82,7 +153,7 @@ run_bad() { # Go-only negatives: the CLI is the executable authority (exit 2).
 }
 run_vet() { # want-exit, cn args...
   local want=$1; shift
-  "$CN" cell run "$@" >"$tmp" 2>/dev/null; local code=$?
+  cn_run cell run "$@" >"$tmp" 2>/dev/null; local code=$?
   if [ "$code" != "$want" ]; then echo "  ✗ cn cell run exit=$code want=$want ($*)"; fail=1; fi
   if ! "$CUE" vet schemas/cdd/episode-closure.cue "$tmp" -d '#EpisodeClosure' >/dev/null 2>&1; then
     echo "  ✗ CLI output failed #EpisodeClosure ($*)"; fail=1
@@ -142,6 +213,12 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-codex-held.json -d '#
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-bad-hole-name.json -d '#CDSCellSpec'
 # ...including in the cognition model position, which was bare `string`.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-bad-model-hole.json -d '#CDSCellSpec'
+# ONE METHODOLOGY, ONE PLACE. A cds.patch seat has no `skills` key: the cell
+# declares the bundle and the seat receives a projection of it. A declaration
+# that carries its own list is rejected by the closed overlay here and by the
+# fill's exact-key set below — the two authorities delete the field together, or
+# the deletion is only a Go convention.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-seat-skills.json -d '#CDSCellSpec'
 # Fill-owned keys are exact and case-sensitive at every depth: encoding/json
 # would otherwise decode these while the closed overlay rejects them.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
@@ -303,15 +380,16 @@ run_bad schemas/cdd/fixtures/invalid/cellspec-empty-goal.json 'goal'
 run_bad schemas/cdd/fixtures/invalid/cellspec-case-alias.json 'unknown key'
 run_bad schemas/cdd/fixtures/invalid/cellspec-bad-param-name.json 'parameter'
 run_bad schemas/cdd/fixtures/invalid/cellspec-null-skills.json 'null'
-run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json 'argv' --input schemas/cds/fixtures/runinput/valid-run-input.json
-run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json 'requires a model selector' --input schemas/cds/fixtures/runinput/valid-run-input.json
-run_bad schemas/cds/fixtures/invalid/cds-fake-with-model.json 'takes no model' --input schemas/cds/fixtures/runinput/valid-run-input.json
-run_bad schemas/cds/fixtures/invalid/cds-codex-held.json 'unknown provider' --input schemas/cds/fixtures/runinput/valid-run-input.json
+run_bad schemas/cds/fixtures/invalid/cds-smuggled-argv.json 'argv' --input "$ri"
+run_bad schemas/cds/fixtures/invalid/cds-modelless-provider.json 'requires a model selector' --input "$ri"
+run_bad schemas/cds/fixtures/invalid/cds-fake-with-model.json 'takes no model' --input "$ri"
+run_bad schemas/cds/fixtures/invalid/cds-codex-held.json 'unknown provider' --input "$ri"
 run_bad schemas/cds/fixtures/invalid/cds-bad-hole-name.json 'malformed'
 run_bad schemas/cds/fixtures/invalid/cds-bad-model-hole.json 'malformed'
 run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json 'seat declaration has no fill'
-run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json 'unknown key' --input schemas/cds/fixtures/runinput/valid-run-input.json
-run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json 'unknown key' --input schemas/cds/fixtures/runinput/valid-run-input.json
+run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json 'unknown key' --input "$ri"
+run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json 'unknown key' --input "$ri"
+run_bad schemas/cds/fixtures/invalid/cds-seat-skills.json 'unknown key "skills"' --input "$ri"
 
 echo "# committed rented-Claude evidence (one-off receipt, NOT a provider run)"
 # The live corpus rents `fake`, so the cognitive path has no runtime witness
@@ -414,59 +492,12 @@ run_vet 3 --contract schemas/cdd/fixtures/empty-cell-spec.json
 # MEASURED from that worktree — and the episode still closes needs_repair
 # (exit 1), because the mechanical-unmet beta cannot judge the goal. Case-2
 # honesty is part of the corpus.
-coderepo="$tmpdir/coderepo"
-mkdir -p "$coderepo"
-(
-  cd "$coderepo" && git init -q -b main && echo base >README.md && git add -A &&
-    GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t \
-      git commit -qm base
-) >/dev/null 2>&1 || { echo "  ✗ could not build the code-cell fixture repo"; fail=1; }
-# The run input is built HERE, before the cds.patch run, because the seat no
-# longer names a repository: the repository and the base come from the pinned
-# contract subject, so a cds.patch cell without a run input has nothing to act
-# on. The committed fixture names `.`, which is what an author writes; pinning
-# really opens it, so the live witness points it at the hermetic repository
-# above. Only the subject is rewritten — the issue and the design are the corpus
-# documents both authorities vetted.
-ri="$tmpdir/run-input.json"
-if python3 - "schemas/cds/fixtures/runinput/valid-run-input.json" "$coderepo" "$ri" <<'PYEOF'
-import json, sys
-doc = json.load(open(sys.argv[1]))
-doc["subject"] = {"kind": "git.snapshot/0.1", "repo": sys.argv[2], "base_sha": "HEAD"}
-json.dump(doc, open(sys.argv[3], "w"))
-PYEOF
-then :; else echo "  ✗ could not build the live run input"; fail=1; fi
-# Skill authority is the INSTALLED package root under a hub — never the
-# working directory and never this checkout's source tree. Vendor the DEFAULT
-# INSTALLED PACKAGE SET (what `cn repo install` pins) into a throwaway hub and
-# run from inside it, so this proves a hub the product can actually produce
-# rather than a hand-picked fixture. repoinstall.DefaultPackages is the source
-# of truth; TestDefaultPackagesCoverShippedCells keeps it and the shipped
-# cells in agreement.
-hub="$tmpdir/hub"
-mkdir -p "$hub/.cn/vendor/packages"
-default_packages=$(grep -o 'var DefaultPackages = \[\]string{[^}]*}' src/go/internal/repoinstall/repoinstall.go |
-  grep -o '"[^"]*"' | tr -d '"')
-if [ -z "$default_packages" ]; then
-  echo "  ✗ could not read DefaultPackages"; fail=1
-fi
-for pkg in $default_packages; do
-  [ -d "src/packages/$pkg/skills" ] || continue
-  mkdir -p "$hub/.cn/vendor/packages/$pkg"
-  cp -r "src/packages/$pkg/skills" "$hub/.cn/vendor/packages/$pkg/skills" ||
-    { echo "  ✗ could not vendor $pkg into the fixture hub"; fail=1; }
-done
-# Absolute paths for the subshell that runs INSIDE the hub; CUE package paths
-# stay relative to the repo root, where the rest of this script runs.
-CN=$(cd "$(dirname "$CN")" && pwd)/$(basename "$CN")
-spec=$(pwd)/schemas/cds/fixtures/code-cell-spec.json
-(
-  cd "$hub" || exit 1
-  "$CN" cell run --contract "$spec" --input "$ri" \
-    --param language=cnos.eng:eng/go --param provider=fake >"$tmp" 2>/dev/null
-  echo $? >"$tmpdir/code.exit"
-)
-code=$(cat "$tmpdir/code.exit")
+# `$coderepo` and `$ri` were built near the top of this script: the CLI
+# negatives above already need an admissible run input, because the subject is
+# pinned before either seat is constructed.
+cn_run cell run --contract "$spec" --input "$ri" \
+  --param language=cnos.eng:eng/go --param provider=fake >"$tmp" 2>/dev/null
+code=$?
 if [ "$code" != 1 ]; then
   echo "  ✗ cds.patch cell exit=$code want=1 (needs_repair: beta cannot judge the goal)"; fail=1
 else echo "  ✓ cds.patch cell closes needs_repair from an installed hub"; fi
@@ -476,7 +507,7 @@ else echo "  ✓ cds.patch closure vets #EpisodeClosure"; fi
 decl="$tmpdir/resolved-alpha.json"
 if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$tmp" "$decl" 2>/dev/null &&
    "$CUE" vet ./schemas/cds:cds "$decl" -d '#CDSPatchAlphaResolved' >/dev/null 2>&1; then
-  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, digested skills, no repository)"
+  echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, methodology projection, no repository, no skills)"
 else echo "  ✗ resolved alpha failed #CDSPatchAlphaResolved"; fail=1; fi
 # ONE REPOSITORY DECLARATION, live. The seat measured its base from the worktree
 # it actually cut, and the contract's subject is the only place the run was told
@@ -485,7 +516,7 @@ else echo "  ✗ resolved alpha failed #CDSPatchAlphaResolved"; fail=1; fi
 # resolutions, and a closure recording a repository the episode never acted on
 # still self-verified. Asserted on the emitted closure, not on the source.
 if python3 - "$tmp" <<'PYEOF'
-import json, sys
+import json, re, sys
 r = json.load(open(sys.argv[1]))["receipt"]["record"]
 subject = json.loads(r["contract"]["subject"]) if isinstance(r["contract"]["subject"], str) else r["contract"]["subject"]
 measured = [a["text"] for a in r["alpha"]["artifacts"] if a["id"] == "base_sha"]
@@ -495,12 +526,23 @@ if measured[0] != subject["base_sha"]:
     print(f"    measured base {measured[0]} != contract.subject.base_sha {subject['base_sha']}"); sys.exit(1)
 # ...and the declaration names no repository at all, or "one source" would be
 # a claim about which of two the seat happened to prefer.
-if "workspace" in r["resolved_spec"]["alpha"]:
+alpha = r["resolved_spec"]["alpha"]
+if "workspace" in alpha:
     print("    the resolved alpha still declares a workspace"); sys.exit(1)
+# ONE METHODOLOGY, live. The seat declares no skills of its own and records the
+# projection it was handed: the role, and the digest of the cell's one bundle.
+# Asserted on the emitted closure, not on the source, for the same reason the
+# base is.
+if "skills" in alpha:
+    print("    the resolved alpha still declares its own skills"); sys.exit(1)
+m = alpha.get("methodology")
+if not isinstance(m, dict) or m.get("role") != "constructive" or \
+   not re.fullmatch(r"[0-9a-f]{64}", m.get("sha256", "")):
+    print(f"    the resolved alpha records no methodology projection: {m!r}"); sys.exit(1)
 PYEOF
 then
-  echo "  ✓ the measured base equals contract.subject.base_sha, and the seat declares no repository"
-else echo "  ✗ the record carries two repository declarations, or they disagree"; fail=1; fi
+  echo "  ✓ the measured base equals contract.subject.base_sha; the seat declares no repository and no skills, and records the cell's methodology"
+else echo "  ✗ the record carries two repository declarations, or two methodologies, or they disagree"; fail=1; fi
 
 echo "# run input: admitted at the door, pinned once, bound into the record"
 # `$ri` was built above, before the cds.patch run that consumes it.

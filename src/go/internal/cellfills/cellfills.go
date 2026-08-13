@@ -44,14 +44,19 @@ func Assemble(hubPath string) cellfill.Registry {
 // import and a branch inside the runner.
 func With(skills cellskill.Resolver) cellfill.Registry {
 	reg := cellfill.CddFills()
+	// The resolver goes on the REGISTRY, not into a fill. The cell declares one
+	// methodology bundle and the loader loads it once; a fill closed over its
+	// own resolver would be a second place skills could enter a run, which is
+	// what `cds.patch`'s own `skills` list was.
+	reg.Skills = skills
 	// NeedsSubject is declared here, at the registration, because that is where
 	// this binary states what `cds.patch` is: a patch alpha measures a change
 	// against the repository and base the contract's pinned subject names, and
 	// there is nothing for it to act on without one. Declaring it lets the spec
 	// loader refuse a subjectless run before the constructor builds a provider
-	// adapter and reads skill bodies.
+	// adapter.
 	reg.Alpha[cdspatch.Fill] = cellfill.AlphaFill{
-		Construct:    cdspatch.Factory(skills),
+		Construct:    cdspatch.Factory(),
 		NeedsSubject: true,
 	}
 	reg.Door = cdsadmit.Door

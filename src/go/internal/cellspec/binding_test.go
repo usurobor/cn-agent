@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
+	"github.com/usurobor/cnos/src/go/internal/cellskill"
 	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
@@ -149,9 +151,9 @@ func subjectRequiringRegistry(constructions *int) cellfill.Registry {
 	reg := cellfill.CddFills()
 	inner := reg.Alpha[cellfill.FillStubAlpha]
 	reg.Alpha[cellfill.FillStubAlpha] = cellfill.AlphaFill{
-		Construct: func(ctx context.Context, decl json.RawMessage) (cellfill.ConstructedAlpha, error) {
+		Construct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedAlpha, error) {
 			*constructions++
-			return inner.Construct(ctx, decl)
+			return inner.Construct(ctx, decl, m)
 		},
 		NeedsSubject: true,
 	}
@@ -204,3 +206,146 @@ func TestADeclaredSubjectRequirementIsRefusedBeforeConstruction(t *testing.T) {
 // same cell over the UNMODIFIED registry, where `cdd.stub` declares nothing,
 // still builds with an empty binding. That is every corpus cell carrying no run
 // input, and TestAZeroBindingBindsNothing above is its standing witness.
+
+// --- one methodology, loaded once, before any seat -------------------------
+
+const methodCell = `{
+  "version": "cnos.cellspec.v0",
+  "contract": {"id": "m1", "goal": "hold the seat to something"},
+  "protocol_id": "p",
+  "params": {"language": {"required": true}},
+  "methodology": {"kind": "skills.methodology.v0",
+                  "skills": ["cnos.eng:eng/code", "$language"]},
+  "alpha": {"fill": "cdd.stub"},
+  "beta": {"fill": "cdd.stub"}
+}`
+
+// installedTree writes a package tree with the given skills installed.
+func installedTree(t *testing.T, refs ...string) cellskill.Tree {
+	t.Helper()
+	root := t.TempDir()
+	for _, ref := range refs {
+		pkg, path, _ := strings.Cut(ref, ":")
+		dir := filepath.Join(root, pkg, "skills", filepath.FromSlash(path))
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("# body of "+ref+"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return cellskill.Tree{Root: root}
+}
+
+// viewCapturingRegistry records the projection the alpha constructor receives.
+func viewCapturingRegistry(skills cellskill.Resolver, got *cellmethod.View, constructions *int) cellfill.Registry {
+	reg := cellfill.CddFills()
+	reg.Skills = skills
+	inner := reg.Alpha[cellfill.FillStubAlpha]
+	reg.Alpha[cellfill.FillStubAlpha] = cellfill.AlphaFill{
+		Construct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedAlpha, error) {
+			*constructions++
+			*got = m
+			return inner.Construct(ctx, decl, m)
+		},
+	}
+	return reg
+}
+
+// AC1, this package's half: the cell's ONE bundle is loaded here, once, and
+// what reaches the producing seat is a projection of it — carrying the digest
+// of the ordered (ref, body-digest) list and the bodies of the skills the CELL
+// declared, with the hole filled.
+func TestTheCellsOneMethodologyReachesTheProducingSeat(t *testing.T) {
+	tree := installedTree(t, "cnos.eng:eng/code", "cnos.eng:eng/go")
+	s, err := Parse([]byte(methodCell))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := s.Resolve(map[string]string{"language": "cnos.eng:eng/go"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got cellmethod.View
+	var constructions int
+	if _, _, err := r.Build(context.Background(),
+		viewCapturingRegistry(tree, &got, &constructions), Binding{}); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if got.Role != cellmethod.RoleConstructive {
+		t.Fatalf("the seat received the %q projection, want constructive", got.Role)
+	}
+	bundle, _, err := cellmethod.Load(tree, r.Methodology)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.SHA256 != bundle.SHA256 {
+		t.Fatalf("the seat received digest %q, want the cell's bundle %q", got.SHA256, bundle.SHA256)
+	}
+	for _, ref := range []string{"cnos.eng:eng/code", "cnos.eng:eng/go"} {
+		if !strings.Contains(got.Text, "# body of "+ref) {
+			t.Fatalf("the projection does not carry the body of %q", ref)
+		}
+	}
+}
+
+// A methodology that cannot load fails THE CELL, before any seat exists. It is
+// not a per-fill question: a bundle naming an uninstalled skill is a broken
+// cell whatever its seats happen to want, and discovering it inside a
+// constructor would report it as that seat's problem.
+func TestAnUnloadableMethodologyFailsBeforeAnySeatIsConstructed(t *testing.T) {
+	tree := installedTree(t, "cnos.eng:eng/code") // eng/go is NOT installed
+	s, err := Parse([]byte(methodCell))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := s.Resolve(map[string]string{"language": "cnos.eng:eng/go"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got cellmethod.View
+	var constructions int
+	_, _, err = r.Build(context.Background(),
+		viewCapturingRegistry(tree, &got, &constructions), Binding{})
+	if err == nil {
+		t.Fatal("a methodology naming an uninstalled skill must fail the cell")
+	}
+	if !strings.Contains(err.Error(), "cnos.eng:eng/go") {
+		t.Fatalf("the failure does not name the missing skill: %v", err)
+	}
+	if constructions != 0 {
+		t.Fatalf("the alpha constructor ran %d time(s) before the refusal", constructions)
+	}
+	// ...and the SAME cell over a tree that has the skill builds, or the
+	// assertions above would hold for a registry that refused everything.
+	if _, _, err := r.Build(context.Background(),
+		viewCapturingRegistry(installedTree(t, "cnos.eng:eng/code", "cnos.eng:eng/go"), &got, &constructions),
+		Binding{}); err != nil {
+		t.Fatalf("an installed methodology must build: %v", err)
+	}
+}
+
+// A cell that declares NO methodology still builds. Every cell did before the
+// bundle existed, and the generic loader must not have acquired a rule that
+// belongs to the fills that need one.
+func TestACellWithNoMethodologyStillBuilds(t *testing.T) {
+	var got cellmethod.View
+	var constructions int
+	s, err := Parse([]byte(stubCell))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := s.Resolve(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The registry carries no skill resolver either: nothing to load, nothing
+	// to resolve it against.
+	if _, _, err := r.Build(context.Background(),
+		viewCapturingRegistry(nil, &got, &constructions), Binding{}); err != nil {
+		t.Fatalf("a cell declaring no methodology must still build: %v", err)
+	}
+	if !got.Empty() {
+		t.Fatalf("a cell declaring no methodology projected %+v", got)
+	}
+}

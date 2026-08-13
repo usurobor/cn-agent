@@ -26,6 +26,7 @@ import (
 
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 )
 
 // SchemaVersion is the pinned cell-spec version; a spec must declare it exactly.
@@ -33,13 +34,22 @@ const SchemaVersion = "cnos.cellspec.v0"
 
 // CellSpec is the serialized, strictly-validated cell. Alpha and Beta are
 // kept raw: their shape belongs to their fills.
+//
+// Methodology is raw for a different reason: its shape belongs to cellmethod,
+// which is the one parser for it. This package would otherwise be a second
+// place a methodology declaration is read, and two readers of one document are
+// two chances to disagree about it (eng/go §2.17). It is OPTIONAL here — a
+// cell may declare none, which is what every cell did before the bundle
+// existed — and a fill that cannot act without one refuses at its own
+// constructor, because only the fill knows that.
 type CellSpec struct {
-	Version    string               `json:"version"`
-	Contract   ContractSpec         `json:"contract"`
-	ProtocolID string               `json:"protocol_id"`
-	Params     map[string]ParamSpec `json:"params,omitempty"`
-	Alpha      json.RawMessage      `json:"alpha"`
-	Beta       json.RawMessage      `json:"beta"`
+	Version     string               `json:"version"`
+	Contract    ContractSpec         `json:"contract"`
+	ProtocolID  string               `json:"protocol_id"`
+	Params      map[string]ParamSpec `json:"params,omitempty"`
+	Methodology json.RawMessage      `json:"methodology,omitempty"`
+	Alpha       json.RawMessage      `json:"alpha"`
+	Beta        json.RawMessage      `json:"beta"`
 }
 
 type ContractSpec struct {
@@ -142,18 +152,21 @@ func validateEvidence(refs []RequiredRef) error {
 }
 
 // Resolved is a cell spec with its parameter holes filled in place — the seat
-// declarations are complete tagged objects ready for their fills.
+// declarations and the methodology are complete objects ready for their
+// consumers.
 type Resolved struct {
-	Spec  CellSpec
-	Alpha json.RawMessage
-	Beta  json.RawMessage
+	Spec CellSpec
+	// Methodology is empty when the spec declared none.
+	Methodology json.RawMessage
+	Alpha       json.RawMessage
+	Beta        json.RawMessage
 }
 
 // Resolve fills `$param` holes from `given` (with defaults and closed
-// domains) IN PLACE inside both seat declarations: any string value equal to
-// `$name` is replaced by the parameter's value, wherever it sits in the seat
-// tree. Unresolved authored JSON carries holes in the same positions the
-// resolved tree fills.
+// domains) IN PLACE inside the methodology and both seat declarations: any
+// string value equal to `$name` is replaced by the parameter's value, wherever
+// it sits in the tree. Unresolved authored JSON carries holes in the same
+// positions the resolved tree fills.
 func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 	for name := range given {
 		if _, ok := s.Params[name]; !ok {
@@ -189,6 +202,18 @@ func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 		}
 	}
 
+	// The methodology carries holes for the same reason a seat does — a cell
+	// declaring `$language` is one cell, not three — so it is spliced through
+	// the identical walk. A second substitution rule for the same `$name`
+	// spelling is how a hole comes to mean two things.
+	var method json.RawMessage
+	if len(s.Methodology) > 0 {
+		m, err := splice(s.Methodology, s.Params, vals)
+		if err != nil {
+			return Resolved{}, fmt.Errorf("methodology: %w", err)
+		}
+		method = m
+	}
 	alpha, err := splice(s.Alpha, s.Params, vals)
 	if err != nil {
 		return Resolved{}, fmt.Errorf("alpha: %w", err)
@@ -197,7 +222,7 @@ func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 	if err != nil {
 		return Resolved{}, fmt.Errorf("beta: %w", err)
 	}
-	return Resolved{Spec: s, Alpha: alpha, Beta: beta}, nil
+	return Resolved{Spec: s, Methodology: method, Alpha: alpha, Beta: beta}, nil
 }
 
 // splice walks a seat's JSON tree replacing `$name` string values in place.
@@ -314,7 +339,21 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding
 				"(pass --input)", alphaID)
 	}
 
-	alpha, err := reg.ConstructAlpha(ctx, r.Alpha)
+	// ONE bundle, loaded ONCE, here — before either seat exists. A declared
+	// methodology is loaded whatever the fills are, so a cell whose bundle
+	// names an uninstalled skill fails at the cell, not later and only if some
+	// seat happened to ask. What each seat then receives is a PROJECTION of
+	// this one load: two projections of one digest cannot be two methodologies.
+	var constructive cellmethod.View
+	if len(r.Methodology) > 0 {
+		bundle, bodies, err := cellmethod.Load(reg.Skills, r.Methodology)
+		if err != nil {
+			return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("cell spec: %w", err)
+		}
+		constructive = cellmethod.Constructive(bundle, bodies)
+	}
+
+	alpha, err := reg.ConstructAlpha(ctx, r.Alpha, constructive)
 	if err != nil {
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
 	}
@@ -357,7 +396,7 @@ func checkExactKeys(data []byte) error {
 	if err := json.Unmarshal(data, &root); err != nil {
 		return err
 	}
-	if err := keysIn("spec", root, "version", "contract", "protocol_id", "params", "alpha", "beta"); err != nil {
+	if err := keysIn("spec", root, "version", "contract", "protocol_id", "params", "methodology", "alpha", "beta"); err != nil {
 		return err
 	}
 	if err := objectKeys(root["contract"], "contract", "id", "goal", "required_evidence"); err != nil {

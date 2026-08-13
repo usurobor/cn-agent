@@ -12,12 +12,6 @@
     ]
   },
   "protocol_id": "cnos.cdd.cds.receipt.v1",
-  "params": {
-    "provider": {
-      "required": false,
-      "default": "fake"
-    }
-  },
   "methodology": {
     "kind": "skills.methodology.v0",
     "skills": [
@@ -27,8 +21,12 @@
   "alpha": {
     "fill": "cds.patch",
     "cognition": {
-      "provider": "$provider"
-    }
+      "provider": "fake",
+      "model": ""
+    },
+    "skills": [
+      "cnos.eng:eng/code"
+    ]
   },
   "beta": {
     "fill": "cdd.mechanical-unmet"

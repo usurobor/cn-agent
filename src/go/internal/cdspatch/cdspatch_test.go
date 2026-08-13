@@ -12,6 +12,7 @@ import (
 
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
 	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
@@ -84,50 +85,165 @@ func contractFor(t *testing.T, repo, base string) cellkernel.Contract {
 	}
 }
 
+// The declaration is fill + cognition, and nothing else. There is no skills
+// key here and there cannot be one: what holds this seat is the cell's
+// methodology, projected and handed in.
 func declJSON(provider string) json.RawMessage {
 	return json.RawMessage(fmt.Sprintf(`{
 		"fill": "cds.patch",
-		"cognition": {"provider": %q, "model": ""},
-		"skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"]
+		"cognition": {"provider": %q, "model": ""}
 	}`, provider))
 }
 
 var testSkills = []string{"cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"}
 
+// methodology loads the cell's ONE bundle from an installed tree and projects
+// it constructively — the same two calls cellspec.Build makes before it
+// constructs a seat. Built through cellmethod rather than hand-written, so this
+// file cannot drift from the projection the runtime actually hands over.
+func methodology(t *testing.T, tree cellskill.Tree, refs ...string) cellmethod.View {
+	t.Helper()
+	decl, err := json.Marshal(map[string]any{"kind": cellmethod.Kind, "skills": refs})
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, bodies, err := cellmethod.Load(tree, decl)
+	if err != nil {
+		t.Fatalf("load methodology: %v", err)
+	}
+	return cellmethod.Constructive(b, bodies)
+}
+
 func construct(t *testing.T, provider string) cellfill.ConstructedAlpha {
 	t.Helper()
-	f := Factory(skillTree(t, testSkills...))
-	a, err := f(context.Background(), declJSON(provider))
+	a, err := Factory()(context.Background(), declJSON(provider),
+		methodology(t, skillTree(t, testSkills...), testSkills...))
 	if err != nil {
 		t.Fatalf("construct: %v", err)
 	}
 	return a
 }
 
-// The constructor resolves and LOADS skill bodies: the resolved declaration
-// records ordered refs + content digests, and the prompt carries the bodies.
-func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
+// AC1, this package's half: ONE bundle reaches the producing seat. The
+// declaration records the digest of the projection it was handed and the role
+// of that projection, and the prompt carries the bundle's skill BODIES — naming
+// a skill is not loading it.
+func TestTheCellsMethodologyReachesTheSeatAndIsRecorded(t *testing.T) {
 	repo, head := testRepo(t)
-	a := construct(t, "fake")
+	tree := skillTree(t, testSkills...)
+	view := methodology(t, tree, testSkills...)
+	a, err := Factory()(context.Background(), declJSON("fake"), view)
+	if err != nil {
+		t.Fatalf("construct: %v", err)
+	}
 	var rd ResolvedDecl
 	if err := json.Unmarshal(a.Decl, &rd); err != nil {
 		t.Fatalf("resolved decl: %v", err)
 	}
-	if len(rd.Skills) != 4 || rd.Skills[0].Ref != "cnos.eng:eng/code" || rd.Skills[2].Ref != "cnos.eng:eng/go" {
-		t.Fatalf("resolved skills wrong/unordered: %+v", rd.Skills)
+	if rd.Methodology.SHA256 != view.SHA256 || len(rd.Methodology.SHA256) != 64 {
+		t.Fatalf("recorded methodology digest %q != the projected bundle's %q",
+			rd.Methodology.SHA256, view.SHA256)
 	}
-	for _, s := range rd.Skills {
-		if len(s.SHA256) != 64 {
-			t.Fatalf("skill %q has no content digest", s.Ref)
+	if rd.Methodology.Role != string(cellmethod.RoleConstructive) {
+		t.Fatalf("recorded role = %q, want constructive", rd.Methodology.Role)
+	}
+
+	seat := a.Seat.(PatchAlpha)
+	prompt := RenderPrompt(contractFor(t, repo, head), seat.method)
+	for _, ref := range testSkills {
+		if !strings.Contains(prompt, "# body of "+ref) {
+			t.Fatalf("body of %q was not injected into the prompt", ref)
 		}
 	}
-	seat := a.Seat.(PatchAlpha)
-	prompt := RenderPrompt(contractFor(t, repo, head), seat.skills)
-	if !strings.Contains(prompt, "# body of cnos.eng:eng/go") {
-		t.Fatal("skill BODY was not injected into the prompt — naming is not loading")
+	if !strings.Contains(prompt, view.SHA256) {
+		t.Fatal("the prompt does not state which methodology holds the seat")
 	}
 	if a.Mode != cellkernel.ModeMechanical {
 		t.Fatalf("fake provider mode = %q, want mechanical", a.Mode)
+	}
+
+	// ...and the recorded digest MOVES with the bodies. Without this the
+	// equality above would hold for a digest of the ref list alone, which would
+	// record which files were named rather than what they said.
+	changed := skillTree(t, testSkills...)
+	pkg, path, _ := strings.Cut(testSkills[2], ":")
+	body := filepath.Join(changed.Root, pkg, "skills", filepath.FromSlash(path), "SKILL.md")
+	if err := os.WriteFile(body, []byte("# body of "+testSkills[2]+"\n!"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	other, err := Factory()(context.Background(), declJSON("fake"),
+		methodology(t, changed, testSkills...))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rd2 ResolvedDecl
+	if err := json.Unmarshal(other.Decl, &rd2); err != nil {
+		t.Fatal(err)
+	}
+	if rd2.Methodology.SHA256 == rd.Methodology.SHA256 {
+		t.Fatal("a one-byte change to a skill body did not change the recorded methodology digest")
+	}
+}
+
+// AC1, the deletion: `cds.patch` has no `skills` key. It refuses to be told one
+// — at any case spelling — and it puts none in the record. Both halves matter:
+// the first says the fill cannot be given a second methodology, the second says
+// it does not mint one.
+func TestTheDeclarationCannotCarryItsOwnSkills(t *testing.T) {
+	view := methodology(t, skillTree(t, testSkills...), testSkills...)
+	const cog = `"cognition":{"provider":"fake","model":""}`
+	for name, decl := range map[string]string{
+		"skills list":        `{"fill":"cds.patch",` + cog + `,"skills":["cnos.eng:eng/go"]}`,
+		"skills, mixed case": `{"fill":"cds.patch",` + cog + `,"Skills":["cnos.eng:eng/go"]}`,
+		"empty skills list":  `{"fill":"cds.patch",` + cog + `,"skills":[]}`,
+		"a methodology of its own": `{"fill":"cds.patch",` + cog +
+			`,"methodology":{"kind":"skills.methodology.v0","skills":["cnos.eng:eng/go"]}}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := Factory()(context.Background(), json.RawMessage(decl), view)
+			if err == nil {
+				t.Fatal("a declaration carrying its own skills must not construct")
+			}
+			if !strings.Contains(err.Error(), "unknown key") {
+				t.Fatalf("rejected for the wrong reason: %v", err)
+			}
+		})
+	}
+
+	// Checked on the raw canonical bytes, not on ResolvedDecl: a struct with no
+	// field for `skills` could not report one if the fill emitted it.
+	a := construct(t, "fake")
+	var recorded map[string]json.RawMessage
+	if err := json.Unmarshal(a.Decl, &recorded); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := recorded["skills"]; ok {
+		t.Fatalf("the recorded declaration still carries a skills key: %s", a.Decl)
+	}
+}
+
+// A patch alpha cannot act with no methodology at all, and says so itself: the
+// generic loader must not acquire the rule, because a cell with no methodology
+// is legitimate for other fills.
+func TestNoMethodologyIsARefusalAtTheFill(t *testing.T) {
+	_, err := Factory()(context.Background(), declJSON("fake"), cellmethod.View{})
+	if err == nil {
+		t.Fatal("a patch alpha with no methodology must not construct")
+	}
+	if !strings.Contains(err.Error(), "declares none") {
+		t.Fatalf("rejected for the wrong reason: %v", err)
+	}
+	// A producing seat must not be handed the falsification projection.
+	tree := skillTree(t, testSkills...)
+	b, bodies, err := cellmethod.Load(tree, []byte(`{"kind":"`+cellmethod.Kind+
+		`","skills":["cnos.eng:eng/go"]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Factory()(context.Background(), declJSON("fake"),
+		cellmethod.Adversarial(b, bodies)); err == nil ||
+		!strings.Contains(err.Error(), "constructive projection") {
+		t.Fatalf("the adversarial projection must not construct a producing seat: %v", err)
 	}
 }
 
@@ -139,19 +255,19 @@ func TestConstructionLoadsSkillsAndCanonicalizes(t *testing.T) {
 // is the property; while there were two, a closure naming a repository the
 // episode never touched still self-verified.
 func TestTheDeclarationCannotNameARepository(t *testing.T) {
-	f := Factory(skillTree(t, testSkills...))
-	const skills = `"skills":["cnos.eng:eng/go"]`
+	f := Factory()
+	view := methodology(t, skillTree(t, testSkills...), testSkills...)
 	const cog = `"cognition":{"provider":"fake","model":""}`
 	for name, decl := range map[string]string{
-		"workspace block": `{"fill":"cds.patch",` + cog + `,` + skills +
+		"workspace block": `{"fill":"cds.patch",` + cog +
 			`,"workspace":{"kind":"git-worktree","repo":".","base_sha":"HEAD"}}`,
-		"workspace, mixed case": `{"fill":"cds.patch",` + cog + `,` + skills +
+		"workspace, mixed case": `{"fill":"cds.patch",` + cog +
 			`,"Workspace":{"kind":"git-worktree","repo":".","base_sha":"HEAD"}}`,
-		"bare repo key":     `{"fill":"cds.patch",` + cog + `,` + skills + `,"repo":"."}`,
-		"bare base_sha key": `{"fill":"cds.patch",` + cog + `,` + skills + `,"base_sha":"HEAD"}`,
+		"bare repo key":     `{"fill":"cds.patch",` + cog + `,"repo":"."}`,
+		"bare base_sha key": `{"fill":"cds.patch",` + cog + `,"base_sha":"HEAD"}`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := f(context.Background(), json.RawMessage(decl)); err == nil {
+			if _, err := f(context.Background(), json.RawMessage(decl), view); err == nil {
 				t.Fatal("a declaration naming a repository must not construct")
 			} else if !strings.Contains(err.Error(), "unknown key") {
 				t.Fatalf("rejected for the wrong reason: %v", err)
@@ -249,12 +365,13 @@ func TestAnUnpinnedSubjectIsRefusedAtTheSeat(t *testing.T) {
 // and constructing twice yields byte-identical declarations.
 func TestConstructionIsCanonicalAndStable(t *testing.T) {
 	reg := cellfill.CddFills()
-	reg.Alpha[Fill] = cellfill.AlphaFill{Construct: Factory(skillTree(t, testSkills...)), NeedsSubject: true}
-	first, err := reg.ConstructAlpha(context.Background(), declJSON("fake"))
+	reg.Alpha[Fill] = cellfill.AlphaFill{Construct: Factory(), NeedsSubject: true}
+	view := methodology(t, skillTree(t, testSkills...), testSkills...)
+	first, err := reg.ConstructAlpha(context.Background(), declJSON("fake"), view)
 	if err != nil {
 		t.Fatalf("construct: %v", err)
 	}
-	second, err := reg.ConstructAlpha(context.Background(), declJSON("fake"))
+	second, err := reg.ConstructAlpha(context.Background(), declJSON("fake"), view)
 	if err != nil {
 		t.Fatalf("construct again: %v", err)
 	}
@@ -268,17 +385,17 @@ func TestConstructionIsCanonicalAndStable(t *testing.T) {
 }
 
 func TestConstructionFailsClosed(t *testing.T) {
-	f := Factory(skillTree(t, testSkills...))
+	f := Factory()
+	view := methodology(t, skillTree(t, testSkills...), testSkills...)
 	bad := map[string]string{
-		"unknown key":       `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":["cnos.eng:eng/go"],"Extra":1}`,
-		"unknown provider":  `{"fill":"cds.patch","cognition":{"provider":"clyde","model":"m"},"skills":["cnos.eng:eng/go"]}`,
-		"modelless claude":  `{"fill":"cds.patch","cognition":{"provider":"claude-cli","model":""},"skills":["cnos.eng:eng/go"]}`,
-		"no skills":         `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":[]}`,
-		"uninstalled skill": `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"skills":["cnos.eng:eng/nope"]}`,
+		"unknown key":      `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},"Extra":1}`,
+		"unknown provider": `{"fill":"cds.patch","cognition":{"provider":"clyde","model":"m"}}`,
+		"modelless claude": `{"fill":"cds.patch","cognition":{"provider":"claude-cli","model":""}}`,
+		"no cognition":     `{"fill":"cds.patch"}`,
 	}
 	for name, decl := range bad {
 		t.Run(name, func(t *testing.T) {
-			if _, err := f(context.Background(), json.RawMessage(decl)); err == nil {
+			if _, err := f(context.Background(), json.RawMessage(decl), view); err == nil {
 				t.Fatalf("%s must fail construction", name)
 			}
 		})
@@ -415,10 +532,10 @@ func TestPatchAlphaFailsClosed(t *testing.T) {
 func TestFakeMayOmitModelAndStillRecordsIt(t *testing.T) {
 	decl := json.RawMessage(`{
 		"fill": "cds.patch",
-		"cognition": {"provider": "fake"},
-		"skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"]
+		"cognition": {"provider": "fake"}
 	}`)
-	a, err := Factory(skillTree(t, testSkills...))(context.Background(), decl)
+	a, err := Factory()(context.Background(), decl,
+		methodology(t, skillTree(t, testSkills...), testSkills...))
 	if err != nil {
 		t.Fatalf("a fake omitting its meaningless model must construct: %v", err)
 	}

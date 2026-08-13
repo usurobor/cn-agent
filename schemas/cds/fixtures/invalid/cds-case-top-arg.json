@@ -12,11 +12,14 @@
     ]
   },
   "protocol_id": "cnos.cdd.cds.receipt.v1",
-  "alpha": {
-    "fill": "cds.patch",
+  "methodology": {
+    "kind": "skills.methodology.v0",
     "skills": [
       "cnos.eng:eng/go"
-    ],
+    ]
+  },
+  "alpha": {
+    "fill": "cds.patch",
     "Cognition": {
       "provider": "fake",
       "model": ""

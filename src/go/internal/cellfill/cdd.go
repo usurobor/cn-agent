@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 )
 
 func bytesReader(b []byte) *bytes.Reader { return bytes.NewReader(b) }
@@ -55,7 +56,11 @@ func decodeTagOnly(decl json.RawMessage, d *stubDecl) error {
 	return StrictDecode(decl, d)
 }
 
-func stubAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
+// The generic alphas take the constructive projection and IGNORE it: a stub
+// fabricates its own side's artifacts and a bool answers from its declaration,
+// so neither is held to any methodology. Named `_` rather than accepted and
+// dropped silently, so the disinterest is stated.
+func stubAlphaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedAlpha, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillStubAlpha, err)
@@ -120,7 +125,7 @@ type boolDecl struct {
 	Value string `json:"value"`
 }
 
-func boolAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
+func boolAlphaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedAlpha, error) {
 	var d boolDecl
 	if err := OnlyKeys(decl, "cdd.bool", "fill", "value"); err != nil {
 		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillBoolAlpha, err)

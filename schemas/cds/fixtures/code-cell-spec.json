@@ -33,18 +33,21 @@
       "default": ""
     }
   },
-  "alpha": {
-    "fill": "cds.patch",
-    "cognition": {
-      "provider": "$provider",
-      "model": "$model"
-    },
+  "methodology": {
+    "kind": "skills.methodology.v0",
     "skills": [
       "cnos.eng:eng/code",
       "cnos.eng:eng/test",
       "$language",
       "cnos.eng:eng/write-functional"
     ]
+  },
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "provider": "$provider",
+      "model": "$model"
+    }
   },
   "beta": {
     "fill": "cdd.mechanical-unmet"

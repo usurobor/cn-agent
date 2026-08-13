@@ -24,6 +24,8 @@ import (
 	"slices"
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
+	"github.com/usurobor/cnos/src/go/internal/cellskill"
 )
 
 // Constructed is what a factory returns: the seat function, the CANONICAL
@@ -47,9 +49,21 @@ type ConstructedBeta struct {
 
 // AlphaFactory and BetaFactory construct one side from its complete
 // declaration. Each fill owns the meaning AND the exact shape of its
-// arguments. Construction may do bounded IO — loading skill bodies, pinning a
-// revision — so it takes a context; it must not start or retain a session.
-type AlphaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedAlpha, error)
+// arguments. Construction may do bounded IO — pinning a revision — so it takes
+// a context; it must not start or retain a session.
+//
+// An alpha additionally receives the CELL's constructive methodology
+// projection. It is a separate parameter rather than a field of the
+// declaration because the methodology is not the seat's to declare: it is
+// declared once on the cell, loaded once, and projected — so a fill can consume
+// obligations but cannot choose them, and two seats cannot be held to two
+// lists. A fill that needs no methodology ignores it; a fill that cannot act
+// without one says so itself, since only it knows that.
+//
+// Beta takes no projection today. The adversarial projection has no consumer in
+// this increment (cellmethod.Adversarial's doc comment and its test say so), and
+// a parameter every beta ignored would be a claim that something reads it.
+type AlphaFactory func(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedAlpha, error)
 type BetaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedBeta, error)
 
 // Admitted is the per-run contract a door let through: the exact authored bytes
@@ -114,10 +128,19 @@ type AlphaFill struct {
 // document, which is the coupling the fill registry exists to prevent. A nil
 // Door is a registry that admits no run input — legitimate, and the shape every
 // cell had before run inputs existed.
+// Skills is the ONE skill authority this binary was assembled with. It sits
+// here for the same reason Door does — a profile-owned dependency the
+// composition root wires in and the generic path only hands onward — and it is
+// on the registry rather than inside a fill because the methodology is the
+// CELL's: a resolver held privately by one fill would be a second place skills
+// could come from, which is exactly the drift the single bundle removes. A nil
+// resolver is a registry that can load no methodology, which is legitimate for
+// every cell that declares none.
 type Registry struct {
-	Alpha map[string]AlphaFill
-	Beta  map[string]BetaFactory
-	Door  Door
+	Alpha  map[string]AlphaFill
+	Beta   map[string]BetaFactory
+	Door   Door
+	Skills cellskill.Resolver
 }
 
 // FillID extracts the tag that selects a constructor. It is the ONLY field
@@ -162,12 +185,12 @@ func (r Registry) LookupAlpha(decl json.RawMessage) (string, AlphaFill, error) {
 // before any seat or provider is touched, and the returned declaration is
 // canonicalized centrally so no fill can make the record's digest depend on
 // how it happened to serialize.
-func (r Registry) ConstructAlpha(ctx context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
+func (r Registry) ConstructAlpha(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedAlpha, error) {
 	id, f, err := r.LookupAlpha(decl)
 	if err != nil {
 		return ConstructedAlpha{}, err
 	}
-	c, err := f.Construct(ctx, decl)
+	c, err := f.Construct(ctx, decl, method)
 	if err != nil {
 		return ConstructedAlpha{}, err
 	}

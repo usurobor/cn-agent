@@ -16,21 +16,20 @@ import (
 // DisallowUnknownFields, so without an exact-key check `Fill` or a nested
 // `Provider` would execute in Go while CUE rejects it.
 func TestMixedCaseKeysRejected(t *testing.T) {
-	f := Factory(skillTree(t, testSkills...))
-	base := `{"fill":"cds.patch","cognition":{"provider":"fake","model":""},` +
-		`"skills":["cnos.eng:eng/go"]}`
-	if _, err := f(context.Background(), json.RawMessage(base)); err != nil {
+	f := Factory()
+	view := methodology(t, skillTree(t, testSkills...), testSkills...)
+	base := `{"fill":"cds.patch","cognition":{"provider":"fake","model":""}}`
+	if _, err := f(context.Background(), json.RawMessage(base), view); err != nil {
 		t.Fatalf("canonical declaration must construct: %v", err)
 	}
 	mixed := map[string]string{
 		"seat tag":      strings.Replace(base, `"fill"`, `"Fill"`, 1),
 		"top-level arg": strings.Replace(base, `"cognition"`, `"Cognition"`, 1),
 		"nested arg":    strings.Replace(base, `"provider"`, `"Provider"`, 1),
-		"skill list":    strings.Replace(base, `"skills"`, `"Skills"`, 1),
 	}
 	for name, decl := range mixed {
 		t.Run(name, func(t *testing.T) {
-			if _, err := f(context.Background(), json.RawMessage(decl)); err == nil {
+			if _, err := f(context.Background(), json.RawMessage(decl), view); err == nil {
 				t.Fatalf("mixed-case %s must be rejected", name)
 			}
 		})
