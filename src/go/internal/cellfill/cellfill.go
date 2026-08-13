@@ -23,6 +23,7 @@ import (
 	"io"
 	"slices"
 
+	"github.com/usurobor/cnos/src/go/internal/cellcog"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
@@ -339,6 +340,84 @@ func OnlyKeys(raw json.RawMessage, where string, allowed ...string) error {
 		}
 	}
 	return nil
+}
+
+// SeatDecl is the closed {fill, cognition} declaration: a seat that states its
+// tag, rents cognition, and declares nothing else. Both CDS seats speak exactly
+// this shape — no workspace, no skills, no model list of their own — so it is
+// declared ONCE here rather than copied per fill. A second copy would be a
+// second key language, and a rule added to one copy is a rule missing from the
+// other, which is how the fills diverged before.
+//
+// It does not make this package a fill framework and does not put cognition on
+// the dispatch path: nothing in Registry, FillID or ConstructAlpha reads it.
+// It is a decoder a fill CALLS, in the same way the cdd fills in this package
+// call OnlyKeys — the runner still learns nothing about what any fill needs.
+type SeatDecl struct {
+	Fill      string         `json:"fill"`
+	Cognition cellcog.Config `json:"cognition"`
+}
+
+// SeatRefusal is what a fill says about ITSELF when it cannot be constructed.
+// The helper decides WHEN each refusal applies, because that rule is the same
+// for every seat of this shape; the fill owns the words, because "a patch
+// alpha" and "an assessing beta" are each fill's own account of what it is and
+// no generic decoder can write them.
+type SeatRefusal struct {
+	// NoMethodology completes `fill "x": ` when the cell declares no
+	// methodology at all — a whole sentence naming what is missing.
+	NoMethodology string
+	// WrongRole completes `fill "x": ` when the projection carries the other
+	// role. The role actually received is appended as `, got "..."`, so the
+	// sentence stops before its comma.
+	WrongRole string
+}
+
+// AdmitSeatDecl decodes one {fill, cognition} declaration under its closed key
+// language and checks that the projection handed to the seat is the one that
+// seat takes. Everything it refuses is wrapped `fill %q: `, so a caller returns
+// its zero Constructed value and this error unchanged.
+//
+// The key language is stated here explicitly, at both of its object shapes,
+// because encoding/json matches field names case-insensitively even with
+// DisallowUnknownFields: `Fill`, `Cognition` or a nested `Provider` would
+// otherwise decode in Go while the closed CUE overlays reject them. `workspace`
+// and `skills` are absent from the allowed sets, and those absences are
+// load-bearing — a declaration naming a repository or a methodology of its own
+// is refused by name here, so a second source of either cannot come back as a
+// tolerated extra key.
+//
+// An empty projection and the wrong projection are refused HERE but worded by
+// the fill: whether a seat can act with no methodology is the fill's own
+// knowledge — a cell declaring none is legitimate for fills that need none —
+// and this helper is called only by fills that have already decided they need
+// one.
+func AdmitSeatDecl(decl json.RawMessage, fill string, want cellmethod.Role,
+	method cellmethod.View, refusal SeatRefusal) (SeatDecl, error) {
+	if err := OnlyKeys(decl, fill, "fill", "cognition"); err != nil {
+		return SeatDecl{}, fmt.Errorf("fill %q: %w", fill, err)
+	}
+	if cog, ok := Field(decl, "cognition"); ok {
+		if err := OnlyKeys(cog, fill+".cognition", "provider", "model"); err != nil {
+			return SeatDecl{}, fmt.Errorf("fill %q: %w", fill, err)
+		}
+	}
+	var d SeatDecl
+	if err := StrictDecode(decl, &d); err != nil {
+		return SeatDecl{}, fmt.Errorf("fill %q: %w", fill, err)
+	}
+	if method.Empty() {
+		return SeatDecl{}, fmt.Errorf("fill %q: %s", fill, refusal.NoMethodology)
+	}
+	if method.Role != want {
+		// A seat handed the other role's projection would be held to the
+		// opposite obligation — a producer told to falsify its own work, or a
+		// reviewer told to follow the obligations it is meant to test. Nothing
+		// constructs either that way today; this refuses the wiring mistake
+		// rather than trusting that.
+		return SeatDecl{}, fmt.Errorf("fill %q: %s, got %q", fill, refusal.WrongRole, method.Role)
+	}
+	return d, nil
 }
 
 // NoDuplicateKeysOrNull rejects duplicate object keys anywhere in a JSON

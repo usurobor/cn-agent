@@ -53,16 +53,14 @@ const (
 	BaseArtifactKind = "sha"
 )
 
-// Decl is the complete, closed shape of a cds.patch alpha declaration. The
-// fill owns this strictness: unknown keys fail StrictDecode, and the CUE
-// overlays #CDSPatchAlphaAuthored and #CDSPatchAlphaResolved pin the same
-// shapes for the independent oracle: authored admits the structurally
+// The authored declaration is cellfill.SeatDecl: the closed {fill, cognition}
+// shape, shared with `cds.assess` because the two seats declare the same thing
+// and a second copy would be a second key language. What this fill owns is
+// stated at the constructor — its refusals and which cognition port it rents.
+// The CUE overlays #CDSPatchAlphaAuthored and #CDSPatchAlphaResolved pin the
+// same shapes for the independent oracle: authored admits the structurally
 // possible forms, and resolution plus this constructor validate the selected
 // provider/model combination.
-type Decl struct {
-	Fill      string         `json:"fill"`
-	Cognition cellcog.Config `json:"cognition"`
-}
 
 // ResolvedDecl is what the closure records for this seat: the declaration
 // with skills expanded to ordered canonical refs + content digests, and the
@@ -96,27 +94,22 @@ type ResolvedDecl struct {
 // is the cell's one bundle and the fill can only refuse it, never replace it.
 func Factory() cellfill.AlphaFactory {
 	return func(ctx context.Context, decl json.RawMessage, method cellmethod.View) (cellfill.ConstructedAlpha, error) {
-		var d Decl
-		if err := exactShape(decl); err != nil {
-			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
-		}
-		if err := cellfill.StrictDecode(decl, &d); err != nil {
-			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
-		}
+		// The shared decode: the closed {fill, cognition} key language and the
+		// projection-role check, which every seat of this shape needs and no
+		// fill should own a copy of. What stays here is what is genuinely this
+		// fill's — the two refusals, in this seat's own words, and the cognition
+		// port a patch alpha rents.
+		//
 		// The fill states its own requirement, and only the fill can: a patch
 		// alpha writes real code and there is nothing to hold it to without a
 		// methodology. A cell declaring none is legitimate for other fills, so
-		// this is refused here rather than by the loader for everyone.
-		if method.Empty() {
-			return cellfill.ConstructedAlpha{}, fmt.Errorf(
-				"fill %q: a patch alpha needs the cell's methodology, and this cell declares none", Fill)
-		}
-		if method.Role != cellmethod.RoleConstructive {
-			// A producing seat handed the adversarial projection would be told to
-			// falsify the work it is about to do. Nothing constructs it that way
-			// today; this refuses the wiring mistake rather than trusting that.
-			return cellfill.ConstructedAlpha{}, fmt.Errorf(
-				"fill %q: a producing seat takes the constructive projection, got %q", Fill, method.Role)
+		// this is refused for this fill rather than by the loader for everyone.
+		d, err := cellfill.AdmitSeatDecl(decl, Fill, cellmethod.RoleConstructive, method, cellfill.SeatRefusal{
+			NoMethodology: "a patch alpha needs the cell's methodology, and this cell declares none",
+			WrongRole:     "a producing seat takes the constructive projection",
+		})
+		if err != nil {
+			return cellfill.ConstructedAlpha{}, err
 		}
 
 		coder, mode, err := cellcog.New(d.Cognition)
@@ -142,27 +135,6 @@ func Factory() cellfill.AlphaFactory {
 			Seat:        PatchAlpha{coder: coder, method: method},
 		}, nil
 	}
-}
-
-// exactShape states this fill's closed key language explicitly, at each of
-// its three object shapes. encoding/json matches field names
-// case-insensitively even with DisallowUnknownFields, so `Fill`, `Cognition`
-// or a nested `Provider` would otherwise decode in Go while the closed CUE
-// overlay rejects them. The fill owns this, not the generic runner.
-// `workspace` is absent from the allowed set, and that absence is the whole
-// point of the deletion: a declaration that still names a repository is now
-// refused by name here and by the closed CUE overlay, so the second source
-// cannot come back as a tolerated extra key.
-func exactShape(decl json.RawMessage) error {
-	if err := cellfill.OnlyKeys(decl, "cds.patch", "fill", "cognition"); err != nil {
-		return err
-	}
-	if cog, ok := cellfill.Field(decl, "cognition"); ok {
-		if err := cellfill.OnlyKeys(cog, "cds.patch.cognition", "provider", "model"); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // PatchAlpha is the provider-neutral patch-producing seat. It materializes a

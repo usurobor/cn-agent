@@ -48,15 +48,13 @@ import (
 // Fill is the tag this package registers under.
 const Fill = "cds.assess"
 
-// Decl is the complete, closed shape of a cds.assess beta declaration. Note
-// what is absent: no workspace, because a reviewer that could open the worktree
-// would not be reviewing the matter it was handed; and no skills, because the
-// cell declares one methodology bundle and this seat receives a projection of
-// it, exactly as `cds.patch` does.
-type Decl struct {
-	Fill      string         `json:"fill"`
-	Cognition cellcog.Config `json:"cognition"`
-}
+// The authored declaration is cellfill.SeatDecl, the closed {fill, cognition}
+// shape this seat shares with `cds.patch`. Note what is absent from it: no
+// workspace, because a reviewer that could open the worktree would not be
+// reviewing the matter it was handed; and no skills, because the cell declares
+// one methodology bundle and this seat receives a projection of it, exactly as
+// `cds.patch` does. Neither key is admitted by the shared decoder, so those two
+// absences are one rule rather than two copies of one.
 
 // ResolvedDecl is what the closure records for this seat: the provider and the
 // REQUESTED MODEL SELECTOR, and the identity of the projection that held it.
@@ -73,27 +71,21 @@ type ResolvedDecl struct {
 // so there is no second place either could come from.
 func Factory() cellfill.BetaFactory {
 	return func(_ context.Context, decl json.RawMessage, method cellmethod.View) (cellfill.ConstructedBeta, error) {
-		var d Decl
-		if err := exactShape(decl); err != nil {
-			return cellfill.ConstructedBeta{}, fmt.Errorf("fill %q: %w", Fill, err)
-		}
-		if err := cellfill.StrictDecode(decl, &d); err != nil {
-			return cellfill.ConstructedBeta{}, fmt.Errorf("fill %q: %w", Fill, err)
-		}
+		// The shared decode: the closed {fill, cognition} key language and the
+		// projection-role check, identical for both CDS seats and owned by
+		// neither. What remains here is this fill's own — the two refusals in
+		// this seat's words, and the ANSWERING port, which is the one thing
+		// about its cognition that differs from the producing side.
+		//
 		// The fill states its own requirement, and only the fill can: this seat
 		// judges real code against a methodology, and there is nothing to hold
 		// the candidate to without one.
-		if method.Empty() {
-			return cellfill.ConstructedBeta{}, fmt.Errorf(
-				"fill %q: an assessing beta needs the cell's methodology, and this cell declares none", Fill)
-		}
-		if method.Role != cellmethod.RoleAdversarial {
-			// An assessing seat handed the constructive projection would be told
-			// to follow the obligations while producing, not to falsify them
-			// against a candidate. Nothing constructs it that way today; this
-			// refuses the wiring mistake rather than trusting that.
-			return cellfill.ConstructedBeta{}, fmt.Errorf(
-				"fill %q: an assessing seat takes the adversarial projection, got %q", Fill, method.Role)
+		d, err := cellfill.AdmitSeatDecl(decl, Fill, cellmethod.RoleAdversarial, method, cellfill.SeatRefusal{
+			NoMethodology: "an assessing beta needs the cell's methodology, and this cell declares none",
+			WrongRole:     "an assessing seat takes the adversarial projection",
+		})
+		if err != nil {
+			return cellfill.ConstructedBeta{}, err
 		}
 
 		answerer, mode, err := cellcog.NewAnswerer(d.Cognition)
@@ -120,22 +112,6 @@ func Factory() cellfill.BetaFactory {
 			Seat:        AssessBeta{judge: seat, method: method},
 		}, nil
 	}
-}
-
-// exactShape states this fill's closed key language explicitly. encoding/json
-// matches field names case-insensitively even with DisallowUnknownFields, so
-// `Fill` or a nested `Provider` would otherwise decode in Go while the closed
-// CUE overlay rejects them.
-func exactShape(decl json.RawMessage) error {
-	if err := cellfill.OnlyKeys(decl, "cds.assess", "fill", "cognition"); err != nil {
-		return err
-	}
-	if cog, ok := cellfill.Field(decl, "cognition"); ok {
-		if err := cellfill.OnlyKeys(cog, "cds.assess.cognition", "provider", "model"); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // AssessBeta is the reviewing seat. Its ONLY fields are the judge it consults
