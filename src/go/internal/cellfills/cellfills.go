@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 
 	"github.com/usurobor/cnos/src/go/internal/cdsadmit"
+	"github.com/usurobor/cnos/src/go/internal/cdsassess"
 	"github.com/usurobor/cnos/src/go/internal/cdspatch"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
@@ -59,6 +60,16 @@ func With(skills cellskill.Resolver) cellfill.Registry {
 		Construct:    cdspatch.Factory(),
 		NeedsSubject: true,
 	}
+	// The CDS assessing seat. It needs the pinned subject too — it reconstructs
+	// the candidate from it — but the requirement is not declared here, because
+	// the beta side of the registry carries no requirement field: nothing has
+	// needed one yet in a way the loader could act on. A cds.assess cell pairs
+	// with a cds.patch alpha, whose declared requirement already refuses a
+	// subjectless run before either constructor is reached; a cell pairing this
+	// beta with a subjectless alpha would instead be refused by the seat at
+	// review time, which is later and noisier. Stated rather than left as an
+	// asymmetry a reader has to notice.
+	reg.Beta[cdsassess.Fill] = cdsassess.Factory()
 	reg.Door = cdsadmit.Door
 	return reg
 }

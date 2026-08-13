@@ -2,6 +2,7 @@ package cellcog
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -144,6 +145,124 @@ func TestFakeRejectsModel(t *testing.T) {
 	}
 	if _, _, err := New(Config{Provider: "fake"}); err != nil {
 		t.Fatalf("fake without a model must construct: %v", err)
+	}
+}
+
+// AC4, this package's half. The ANSWERING recipe must be strictly less
+// authoritative than the producing one, and must stream for the same reason:
+// a stalled seat should say where.
+func TestClaudeAnswerArgvIsExact(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object"}`)
+	got := ClaudeAnswerArgv("a-model-selector", schema)
+	want := []string{
+		"-p",
+		"--model", "a-model-selector",
+		"--safe-mode",
+		"--no-session-persistence",
+		"--tools", "",
+		"--output-format", "stream-json",
+		"--verbose",
+		"--json-schema", `{"type":"object"}`,
+	}
+	if joined(got) != joined(want) {
+		t.Fatalf("answer argv drifted:\n got %q\nwant %q", got, want)
+	}
+}
+
+// AC4, continued: a reviewer is offered NO tools and therefore declares no
+// permission mode. Its canonical input is the value it is handed, and a tool
+// would let it read the workspace it is meant to judge from outside. Asking
+// for edit authority it cannot use would be requesting power for nothing.
+func TestClaudeAnswerArgvIsLessAuthoritativeThanProducing(t *testing.T) {
+	answer := joined(ClaudeAnswerArgv("m", json.RawMessage(`{}`)))
+	for _, forbidden := range []string{
+		"--permission-mode", "acceptEdits", "bypassPermissions",
+		"Read", "Write", "Edit", "Glob", "Grep", "Bash",
+		"--allowedTools", "--dangerously-skip-permissions",
+	} {
+		if strings.Contains(answer, forbidden) {
+			t.Errorf("answering argv must not contain %q: %s", forbidden, answer)
+		}
+	}
+	if !strings.Contains(answer, "--safe-mode") {
+		t.Errorf("answering argv must still suppress user/project context: %s", answer)
+	}
+	// The tool surface an answering seat is offered is empty, and that one IS
+	// load-bearing. Asserted on the constant as well as on the argv: the argv
+	// check above would still pass if NoTools became a surface whose names
+	// happened to be absent from the forbidden list.
+	if NoTools != "" {
+		t.Errorf("a reviewing seat must be offered no tools, got %q", NoTools)
+	}
+}
+
+// Only the TERMINAL result event is an answer. A progress event that happens
+// to carry a structured payload must not be mistaken for the verdict, and a
+// stream that never reaches a result has not answered at all.
+func TestTerminalStructuredOutput(t *testing.T) {
+	cases := []struct {
+		name   string
+		stream string
+		want   string // want=="" means success
+		value  string
+	}{
+		{
+			name:   "terminal result wins over earlier events",
+			stream: `{"type":"assistant","structured_output":{"units":[]}}` + "\n" + `{"type":"result","is_error":false,"structured_output":{"units":[{"unit":"AC1"}]}}`,
+			value:  `{"units":[{"unit":"AC1"}]}`,
+		},
+		{name: "no result event", stream: `{"type":"assistant"}`, want: "no result event"},
+		{name: "error result", stream: `{"type":"result","is_error":true}`, want: "error result"},
+		{name: "result without structured output", stream: `{"type":"result","is_error":false}`, want: "no structured_output"},
+		{name: "not ndjson", stream: `{"type":"result"} <garbage>`, want: "not NDJSON"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := terminalStructuredOutput(tc.stream)
+			if tc.want == "" {
+				if err != nil {
+					t.Fatalf("want success, got %v", err)
+				}
+				if string(got) != tc.value {
+					t.Fatalf("got %s, want %s", got, tc.value)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("want error mentioning %q, got %v", tc.want, err)
+			}
+		})
+	}
+}
+
+// The answering port has no deterministic provider, and the refusal is TYPED
+// so a caller can branch on it rather than on a provider name it would then
+// own a second copy of. The malformed-declaration rule still fires first: a
+// fake carrying a model is wrong about its declaration, not short of a
+// capability.
+func TestAnswererHasNoDeterministicProvider(t *testing.T) {
+	a, mode, err := NewAnswerer(Config{Provider: "fake"})
+	if !errors.Is(err, ErrNoDeterministicAnswer) {
+		t.Fatalf("fake must refuse the answering port with the typed sentinel, got (%v, %q, %v)", a, mode, err)
+	}
+	if a != nil {
+		t.Fatalf("a refused answerer must be nil, got %#v", a)
+	}
+	if mode != ModeMechanical {
+		t.Fatalf("nothing was rented, so the mode is mechanical, got %q", mode)
+	}
+	if _, _, err := NewAnswerer(Config{Provider: "fake", Model: "a-model-selector"}); err == nil ||
+		errors.Is(err, ErrNoDeterministicAnswer) {
+		t.Fatalf("a fake carrying a model must fail as a malformed declaration, got %v", err)
+	}
+	if _, _, err := NewAnswerer(Config{Provider: "claude-cli"}); err == nil {
+		t.Fatal("a real answering provider without a model selector must fail construction")
+	}
+	if _, mode, err := NewAnswerer(Config{Provider: "claude-cli", Model: "a-model-selector"}); err != nil || mode != ModeCognitive {
+		t.Fatalf("claude-cli must construct as cognitive, got (%q, %v)", mode, err)
+	}
+	if _, _, err := NewAnswerer(Config{Provider: "codex-cli", Model: "a-model-selector"}); err == nil {
+		t.Fatal("the answering provider set is closed exactly as the coding one is")
 	}
 }
 

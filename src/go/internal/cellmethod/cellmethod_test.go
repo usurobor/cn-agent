@@ -181,21 +181,23 @@ func TestBothProjectionsCarryEveryBodyInOrder(t *testing.T) {
 	}
 }
 
-// AC5, this package's half: the adversarial projection has no production
-// caller, and this test fails when it gains one — at which point the sentence
-// in Adversarial's doc comment is what must be rewritten.
+// BOTH projections have a production caller now, and this is what stops the
+// doc comments claiming otherwise from quietly becoming false again. It
+// replaces TestAdversarialHasNoProductionCaller, whose whole content was that
+// the adversarial projection had none: the assessing seat that consumes it
+// landed, so the scope rule expired by being satisfied.
 //
-// The scan is proven able to find a caller before it is trusted to report
-// none: Constructive HAS one (cellspec builds the producing seat's view), and
-// a scan that could not see it would report both as uncalled.
-func TestAdversarialHasNoProductionCaller(t *testing.T) {
-	calledFrom := productionReferences(t, "cellmethod.Adversarial(")
-	if len(calledFrom) != 0 {
-		t.Fatalf("the adversarial projection now has production callers %v — "+
-			"it is no longer consumer-less, and Adversarial's doc comment says it is", calledFrom)
+// The scan is proven able to MISS as well as find: `cellmethod.Nonexistent(`
+// must come back empty, or a scan that matched everything would report both
+// projections called whatever the tree said.
+func TestBothProjectionsHaveProductionCallers(t *testing.T) {
+	for _, needle := range []string{"cellmethod.Constructive(", "cellmethod.Adversarial("} {
+		if callers := productionReferences(t, needle); len(callers) == 0 {
+			t.Errorf("no production caller of %s: the projection is unused and its doc comment says it is not", needle)
+		}
 	}
-	if len(productionReferences(t, "cellmethod.Constructive(")) == 0 {
-		t.Fatal("the scan found no caller of Constructive either: it is not looking at production sources")
+	if found := productionReferences(t, "cellmethod.Nonexistent("); len(found) != 0 {
+		t.Fatalf("the scan matched a symbol that does not exist in %v: it is not looking at what it claims", found)
 	}
 }
 

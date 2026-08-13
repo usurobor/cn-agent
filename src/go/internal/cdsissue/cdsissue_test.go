@@ -24,6 +24,7 @@ var negatives = map[string]string{
 	"issue-empty-id.json":                       "id is required",
 	"issue-blank-problem-line.json":             "problem.diverges is required",
 	"issue-blank-unicode-whitespace.json":       "problem.exists is required",
+	"issue-reserved-acceptance-id.json":         "uses the reserved",
 	"issue-no-sources.json":                     "sources is required",
 	"issue-source-without-path.json":            "sources[1] needs a claim and a path",
 	"issue-empty-scope-in.json":                 "scope.in is required",

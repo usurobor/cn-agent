@@ -31,7 +31,7 @@ func TestReconstructReportsSymlinksWithoutFollowingThem(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	view, err := Reconstruct(context.Background(), repo, base, matter)
+	view, err := Reconstruct(context.Background(), repo, base, matter, nil)
 	if err != nil {
 		t.Fatalf("a matter adding a symlink is a legal patch: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestReconstructTakesADanglingSymlinkInStride(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	view, err := Reconstruct(context.Background(), repo, base, matter)
+	view, err := Reconstruct(context.Background(), repo, base, matter, nil)
 	if err != nil {
 		t.Fatalf("a dangling link must not end the episode: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestViewBoundIsDecidedBeforeReading(t *testing.T) {
 
 	var before, after runtimeMem
 	readMem(&before)
-	view, err := Reconstruct(context.Background(), repo, base, matter)
+	view, err := Reconstruct(context.Background(), repo, base, matter, nil)
 	readMem(&after)
 	if err != nil {
 		t.Fatal(err)

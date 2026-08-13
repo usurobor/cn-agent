@@ -2,10 +2,8 @@ package cellwork
 
 import (
 	"context"
-	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -66,7 +64,7 @@ func TestReconstructReproducesThePostApplicationState(t *testing.T) {
 		write(t, dir, "README.md", rewritten)
 	})
 
-	view, err := Reconstruct(context.Background(), repo, head, matter)
+	view, err := Reconstruct(context.Background(), repo, head, matter, nil)
 	if err != nil {
 		t.Fatalf("reconstruct: %v", err)
 	}
@@ -87,7 +85,7 @@ func TestReconstructReproducesThePostApplicationState(t *testing.T) {
 		t.Fatalf("view is not ordered by path: %+v", view.Files)
 	}
 
-	same, err := Reconstruct(context.Background(), repo, head, matter)
+	same, err := Reconstruct(context.Background(), repo, head, matter, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +107,7 @@ func TestReconstructLeavesNothingBehind(t *testing.T) {
 	matter := changed(t, repo, head, func(dir string) { write(t, dir, "NOTES.md", "x\n") })
 
 	before := gitIn(t, repo, "worktree", "list")
-	if _, err := Reconstruct(context.Background(), repo, head, matter); err != nil {
+	if _, err := Reconstruct(context.Background(), repo, head, matter, nil); err != nil {
 		t.Fatalf("reconstruct: %v", err)
 	}
 	if after := gitIn(t, repo, "worktree", "list"); after != before {
@@ -150,7 +148,7 @@ func TestViewCarriesWhatHunksCannot(t *testing.T) {
 	if strings.Contains(matter, `"bytes"`) {
 		t.Fatalf("the fixture diff shows the import, so it proves nothing:\n%s", matter)
 	}
-	view, err := Reconstruct(context.Background(), repo, head, matter)
+	view, err := Reconstruct(context.Background(), repo, head, matter, nil)
 	if err != nil {
 		t.Fatalf("reconstruct: %v", err)
 	}
@@ -192,7 +190,7 @@ func TestReconstructDegradedPathsAreDistinct(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			v, err := Reconstruct(context.Background(), tc.repo, tc.base, tc.matter)
+			v, err := Reconstruct(context.Background(), tc.repo, tc.base, tc.matter, nil)
 			if err == nil {
 				t.Fatalf("must fail, got a view of %d files", len(v.Files))
 			}
@@ -226,7 +224,7 @@ func TestReconstructReportsATempDirItCannotAllocate(t *testing.T) {
 	// needs a working temp dir of its own.
 	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "no-such-directory"))
 
-	v, err := Reconstruct(context.Background(), repo, head, matter)
+	v, err := Reconstruct(context.Background(), repo, head, matter, nil)
 	if err == nil {
 		t.Fatalf("must fail, got a view of %d files", len(v.Files))
 	}
@@ -256,7 +254,7 @@ func TestReconstructReportsDeletionRenameAndBinaryDistinctly(t *testing.T) {
 		write(t, dir, "logo.bin", "\x00\x01\x02\xff\xfe")
 	})
 
-	view, err := Reconstruct(context.Background(), repo, head, matter)
+	view, err := Reconstruct(context.Background(), repo, head, matter, nil)
 	if err != nil {
 		t.Fatalf("reconstruct: %v", err)
 	}
@@ -291,7 +289,7 @@ func TestReconstructDistinguishesAnEmptyFileFromAnOmittedOne(t *testing.T) {
 	repo, head := testRepo(t)
 	matter := changed(t, repo, head, func(dir string) { write(t, dir, "PLACEHOLDER.md", "") })
 
-	view, err := Reconstruct(context.Background(), repo, head, matter)
+	view, err := Reconstruct(context.Background(), repo, head, matter, nil)
 	if err != nil {
 		t.Fatalf("reconstruct: %v", err)
 	}
@@ -325,7 +323,7 @@ func TestReconstructReportsTruncation(t *testing.T) {
 		t.Fatalf("the fixture matter is %d bytes; the bound under test is the view's", len(matter))
 	}
 
-	view, err := Reconstruct(context.Background(), repo, head, matter)
+	view, err := Reconstruct(context.Background(), repo, head, matter, nil)
 	if err != nil {
 		t.Fatalf("reconstruct: %v", err)
 	}
@@ -343,56 +341,55 @@ func TestReconstructReportsTruncation(t *testing.T) {
 	}
 }
 
-// D4. Reconstruct has no production caller, and the package doc says so in the
-// present tense. A sentence in a doc comment decays the moment someone wires
-// the operation up, so the claim is made a fact about the code: no non-test
-// source outside this package names it.
+// The inspection hook is handed the APPLIED candidate, and the directory is
+// gone by the time Reconstruct returns. Both halves matter: a hook that saw the
+// base tree would let a checker measure something the matter never produced,
+// and a directory that outlived the call would be exactly the reachable
+// workspace the value-only design exists to remove.
 //
-// Not a purity rule — it is a scope rule with an expiry. The reviewing seat
-// that consumes the view is a later increment, and when it lands this test is
-// what must be deleted, deliberately, alongside the doc sentence it guards.
-func TestReconstructHasNoProductionCaller(t *testing.T) {
-	_, thisFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-	// thisFile: <root>/src/go/internal/cellwork/reconstruct_test.go
-	goRoot := filepath.Join(filepath.Dir(thisFile), "..", "..")
-	thisPkg := filepath.Dir(thisFile)
+// This replaces TestReconstructHasNoProductionCaller, which asserted that
+// nothing in the runtime called this operation. It now has one — the CDS
+// assessing fill — so the scope rule it guarded has expired by being satisfied,
+// and what needs guarding instead is the contract the new caller depends on.
+func TestInspectSeesTheAppliedCandidateAndNothingSurvives(t *testing.T) {
+	repo, head := testRepo(t)
+	matter := changed(t, repo, head, func(dir string) {
+		write(t, dir, "README.md", "two\n")
+		write(t, dir, "new.txt", "fresh\n")
+	})
 
-	var callers []string
-	scanned := 0
-	err := filepath.WalkDir(goRoot, func(path string, d fs.DirEntry, err error) error {
+	var seenDir, seenA, seenNew string
+	calls := 0
+	view, err := Reconstruct(context.Background(), repo, head, matter, func(dir string) {
+		calls++
+		seenDir = dir
+		a, err := os.ReadFile(filepath.Join(dir, "README.md"))
 		if err != nil {
-			return err
+			t.Errorf("read README.md in the candidate: %v", err)
 		}
-		if d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		if filepath.Dir(path) == thisPkg {
-			return nil
-		}
-		scanned++
-		data, err := os.ReadFile(path)
+		seenA = string(a)
+		n, err := os.ReadFile(filepath.Join(dir, "new.txt"))
 		if err != nil {
-			return err
+			t.Errorf("read new.txt in the candidate: %v", err)
 		}
-		if strings.Contains(string(data), "Reconstruct(") {
-			callers = append(callers, path)
-		}
-		return nil
+		seenNew = string(n)
 	})
 	if err != nil {
-		t.Fatalf("walk the Go tree: %v", err)
+		t.Fatalf("reconstruct: %v", err)
 	}
-	// A walk that reached nothing proves nothing. Without this the test passes
-	// whenever goRoot resolves somewhere empty — the same vacuity the sibling
-	// dispatchAllowList guard exists to close, held to the same standard.
-	if scanned == 0 {
-		t.Fatalf("scanned no non-test Go files under %s: this guard proved nothing", goRoot)
+	if calls != 1 {
+		t.Fatalf("inspect ran %d times, want exactly 1", calls)
 	}
-	if len(callers) > 0 {
-		t.Fatalf("Reconstruct has acquired production callers, so the package doc is now false: %v", callers)
+	if seenA != "two\n" || seenNew != "fresh\n" {
+		t.Fatalf("the inspection saw the base, not the candidate: README.md=%q new.txt=%q", seenA, seenNew)
+	}
+	// ...and the view really came from the same reconstruction, or the hook
+	// could be inspecting a tree unrelated to the value that was returned.
+	if got := file(t, view, "README.md"); got.Content != "two\n" {
+		t.Fatalf("the returned view disagrees with the inspected tree: %+v", got)
+	}
+	if _, err := os.Stat(seenDir); !os.IsNotExist(err) {
+		t.Fatalf("the candidate directory outlived Reconstruct (stat %s: %v)", seenDir, err)
 	}
 }
 
@@ -424,6 +421,36 @@ func TestParseNameStatus(t *testing.T) {
 	for _, bad := range []string{"A\x00", "R100\x00only-one-path.md\x00", "X\x00mystery.md\x00"} {
 		if _, err := parseNameStatus(bad); err == nil {
 			t.Errorf("%q must not decode into a record", bad)
+		}
+	}
+}
+
+// The view is read BEFORE the inspection, and that ordering is load-bearing
+// rather than incidental. The only production inspector runs `go build` and
+// `go test ./...` inside the candidate; those write caches and can write into
+// the tree. A view read afterwards would carry the checker's leavings as
+// candidate content — and the reviewing seat is told the view is the
+// post-application content of the paths the matter touched.
+//
+// Asserted by making the inspector do exactly what a checker does incidentally:
+// create a file, and overwrite one the matter produced.
+func TestTheViewIsReadBeforeTheInspection(t *testing.T) {
+	repo, head := testRepo(t)
+	matter := changed(t, repo, head, func(dir string) { write(t, dir, "new.txt", "fresh\n") })
+
+	view, err := Reconstruct(context.Background(), repo, head, matter, func(dir string) {
+		write(t, dir, "new.txt", "TAMPERED\n")
+		write(t, dir, "CHECKER-ARTIFACT.txt", "a build left this\n")
+	})
+	if err != nil {
+		t.Fatalf("reconstruct: %v", err)
+	}
+	if got := file(t, view, "new.txt"); got.Content != "fresh\n" {
+		t.Fatalf("the view carries the inspection's write: %q — it was read after the hook ran", got.Content)
+	}
+	for _, f := range view.Files {
+		if f.Path == "CHECKER-ARTIFACT.txt" {
+			t.Fatal("the view carries a file the inspection created; it was read after the hook ran")
 		}
 	}
 }

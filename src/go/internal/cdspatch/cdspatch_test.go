@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsissue"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellmethod"
@@ -73,11 +74,28 @@ func pinnedSubject(t *testing.T, repo, base string) json.RawMessage {
 
 // contractFor is the frozen contract an episode hands the seat. The subject is
 // part of it because the subject is what says where the work happens.
+// fixtureIssue is the corpus's own admissible issue. Read from the shared
+// corpus rather than hand-built here: an issue this package invented could
+// drift from what the door admits, and then the seat would be tested against a
+// document no run can produce.
+func fixtureIssue(t *testing.T) json.RawMessage {
+	t.Helper()
+	raw, err := os.ReadFile("../../../../schemas/cds/fixtures/issue/valid-issue.json")
+	if err != nil {
+		t.Fatalf("read the issue corpus fixture: %v", err)
+	}
+	if _, err := cdsissue.Admit(raw); err != nil {
+		t.Fatalf("the corpus fixture is not admissible: %v", err)
+	}
+	return json.RawMessage(raw)
+}
+
 func contractFor(t *testing.T, repo, base string) cellkernel.Contract {
 	t.Helper()
 	return cellkernel.Contract{
 		ID:      "cds-code",
 		Goal:    "add a NOTES file",
+		Issue:   fixtureIssue(t),
 		Subject: pinnedSubject(t, repo, base),
 		RequiredEvidence: []cellkernel.RequiredRef{
 			{ID: DiffArtifactID, Kind: DiffArtifactKind, Producer: cellkernel.RoleAlpha},
@@ -149,7 +167,25 @@ func TestTheCellsMethodologyReachesTheSeatAndIsRecorded(t *testing.T) {
 	}
 
 	seat := a.Seat.(PatchAlpha)
-	prompt := RenderPrompt(contractFor(t, repo, head), seat.method)
+	c := contractFor(t, repo, head)
+	issue, err := cdsissue.Admit(c.Issue)
+	if err != nil {
+		t.Fatalf("the fixture contract carries no admissible issue: %v", err)
+	}
+	prompt := RenderPrompt(c, issue, seat.method)
+	// The producing seat is judged against the acceptance criteria, so it has
+	// to be shown them. A seat given only the one-line goal writes against a
+	// summary of its contract and is then reviewed against the contract — which
+	// is the defect the typed issue exists to end, and it does not end at the
+	// door.
+	for _, crit := range issue.Acceptance {
+		if !strings.Contains(prompt, crit.ID) || !strings.Contains(prompt, crit.Statement) {
+			t.Fatalf("the producing prompt omits acceptance criterion %q", crit.ID)
+		}
+		if !strings.Contains(prompt, crit.Verification) {
+			t.Fatalf("the producing prompt omits the verification route for %q", crit.ID)
+		}
+	}
 	for _, ref := range testSkills {
 		if !strings.Contains(prompt, "# body of "+ref) {
 			t.Fatalf("body of %q was not injected into the prompt", ref)
@@ -438,7 +474,7 @@ func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 	a := construct(t, "fake")
 	patchContract := contractFor(t, repo, head)
 	betas := cellfill.CddFills()
-	b, err := betas.ConstructBeta(context.Background(), json.RawMessage(`{"fill":"cdd.mechanical-unmet"}`))
+	b, err := betas.ConstructBeta(context.Background(), json.RawMessage(`{"fill":"cdd.mechanical-unmet"}`), cellmethod.View{})
 	if err != nil {
 		t.Fatalf("beta: %v", err)
 	}

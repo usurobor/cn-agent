@@ -92,7 +92,7 @@ func doorlessRegistry(l *ledger) cellfill.Registry {
 			}},
 		},
 		Beta: map[string]cellfill.BetaFactory{
-			fill: func(context.Context, json.RawMessage) (cellfill.ConstructedBeta, error) {
+			fill: func(context.Context, json.RawMessage, cellmethod.View) (cellfill.ConstructedBeta, error) {
 				l.note("construct beta")
 				return cellfill.ConstructedBeta{
 					Constructed: cellfill.Constructed{

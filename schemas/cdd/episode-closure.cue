@@ -79,8 +79,35 @@ package cdd
 	alpha: #StationRecord
 	matter: {data: string}
 	beta: #StationRecord
-	review: {pass: bool, notes: string}
+	review: {
+		pass:  bool
+		notes: string
+		// The per-obligation coverage an assessing seat produced. OPTIONAL,
+		// because the cells that predate assessment state a verdict and no
+		// coverage at all — an empty list forced into their records would claim
+		// that a review with zero units happened. The unit ids are opaque here
+		// for the same reason the contract's issue is: the catalogue's
+		// vocabulary belongs to the profile that built it.
+		assessment?: [...#UnitResult]
+	}
 }
+
+// #UnitResult is one obligation's disposition. `unverified` is its own value
+// and not a shade of failure: "we checked and it is wrong" and "we could not
+// check" call for different next work. A reason is required whenever the
+// disposition is not `pass` — a judgement without a reason is not review — and
+// that rule is expressed as a disjunction so an absent reason cannot unify with
+// a finding.
+#UnitResult: {
+	unit: string & !=""
+	citations?: [...string & !=""]
+} & ({
+	disposition: "pass"
+	reason?:     string
+} | {
+	disposition: "finding" | "unverified"
+	reason!:     string & !=""
+})
 
 #EpisodeClosure: {
 	closure_schema:     "cnos.cellkernel.episode-closure.v0"

@@ -56,10 +56,11 @@ func decodeTagOnly(decl json.RawMessage, d *stubDecl) error {
 	return StrictDecode(decl, d)
 }
 
-// The generic alphas take the constructive projection and IGNORE it: a stub
-// fabricates its own side's artifacts and a bool answers from its declaration,
-// so neither is held to any methodology. Named `_` rather than accepted and
-// dropped silently, so the disinterest is stated.
+// The generic seats take their projection and IGNORE it: a stub fabricates its
+// own side's artifacts, a bool answers from its declaration, and the
+// mechanical-unmet reviewer refuses on principle rather than on obligations —
+// so none of them is held to any methodology. Named `_` rather than accepted
+// and dropped silently, so the disinterest is stated.
 func stubAlphaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedAlpha, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
@@ -72,7 +73,7 @@ func stubAlphaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View
 	}, nil
 }
 
-func stubBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
+func stubBetaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillStubBeta, err)
@@ -144,7 +145,7 @@ func boolAlphaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View
 	}, nil
 }
 
-func boolCheckBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
+func boolCheckBetaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillBoolCheckBeta, err)
@@ -158,7 +159,7 @@ func boolCheckBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedB
 
 // --- cdd.mechanical-unmet -------------------------------------------------
 
-func mechanicalUnmetFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
+func mechanicalUnmetFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillMechanicalUnmet, err)

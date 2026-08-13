@@ -13,11 +13,11 @@
 // seat that changed nothing produces no diff to carry.
 //
 // The package also reconstructs the candidate state from `(pinned subject,
-// measured matter)` alone — see Reconstruct. That operation has NO production
-// caller: nothing in the runtime invokes it today, and its only exercise is
-// this package's own tests. It is here because the reviewing seat that will
-// consume it is a later increment, and porting the operation with its
-// witnesses first is cheaper than porting it under deadline beside a consumer.
+// measured matter)` alone — see Reconstruct. Its production caller is the CDS
+// assessing fill, which derives the reviewing seat's whole view of the
+// candidate that way: the seat is handed a value, never a directory, so the
+// only way production can affect what the reviewer sees is by changing the
+// matter, which is exactly what the reviewer is judging.
 package cellwork
 
 import (

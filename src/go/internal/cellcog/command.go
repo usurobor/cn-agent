@@ -33,6 +33,13 @@ import (
 // substrate, which is why CI and local use the identical surface.
 const CodingToolSurface = "Read,Write,Edit,MultiEdit,Glob,Grep,Bash"
 
+// NoTools is the surface an ANSWERING seat is offered. Unlike the coding
+// surface above, this one IS load-bearing: a reviewer's canonical input is
+// `(contract, matter)` and nothing else, so any file tool would let it reach
+// outside that input and read the very workspace it is meant to judge from
+// the outside. Independence is the property at stake, not containment.
+const NoTools = ""
+
 // runCLI runs one provider invocation: prompt on stdin, output bounded as it
 // streams, timeout, and WaitDelay — killing the child does not by itself
 // unblock Wait, because anything it spawned inherits the output pipe and holds
@@ -41,11 +48,9 @@ const CodingToolSurface = "Read,Write,Edit,MultiEdit,Glob,Grep,Bash"
 // It returns captured stdout and whether the bound cut it short. Truncation
 // is reported rather than decided: for a producing seat stdout is PROGRESS
 // (the product is the worktree diff, so a clipped stream costs nothing),
-// while for a seat whose stdout IS the product a clipped stream means an
-// answer that cannot be trusted. Only the caller knows which. This increment
-// has one caller and it is the producing one; the split is kept as the donor
-// proved it rather than collapsed into a policy runCLI is not entitled to
-// make.
+// while for an answering seat stdout IS the product and a clipped stream
+// means an answer that cannot be trusted. Only the caller knows which, and
+// both callers now exist: Work tolerates truncation, Answer refuses it.
 //
 // Nothing here is an OS sandbox. The honest authority is the offered tool
 // surface plus the runtime-measured worktree: whatever a seat touches

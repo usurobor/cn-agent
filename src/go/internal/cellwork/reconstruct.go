@@ -73,10 +73,19 @@ type View struct {
 // the touched paths are read back, and the worktree is released before this
 // returns. The whole point is that only the value escapes.
 //
-// It has no production caller. Nothing in the runtime invokes it today; the
-// reviewing seat that will consume the view is a later increment, and until
-// that seat exists this operation is exercised by this package's tests alone.
-func Reconstruct(ctx context.Context, repo, baseSHA, matter string) (View, error) {
+// `inspect` is how a caller that must RUN something against the candidate — a
+// checker measuring whether it builds — gets a directory, and it is a callback
+// rather than a returned handle precisely so that the directory cannot outlive
+// the reconstruction: there is no worktree left for a later reader to reach
+// through, which is the property the whole operation rests on. It is called
+// once, after the view has been read from the applied tree, and may be nil for
+// a caller that wants only the value.
+//
+// It returns nothing. An inspection's outcome is the inspector's own value,
+// captured by its own closure; merging it into the reconstruction's error
+// would make "I could not build the candidate" and "the candidate does not
+// build" one channel, and those are opposite facts.
+func Reconstruct(ctx context.Context, repo, baseSHA, matter string, inspect func(dir string)) (View, error) {
 	wt, release, err := Materialize(ctx, repo, baseSHA)
 	if err != nil {
 		return View{}, err
@@ -105,7 +114,18 @@ func Reconstruct(ctx context.Context, repo, baseSHA, matter string) (View, error
 	if err != nil {
 		return View{}, err
 	}
-	return readStates(wt.Dir, changes)
+	view, err := readStates(wt.Dir, changes)
+	if err != nil {
+		return View{}, err
+	}
+	// After the readback, so the view is the tree exactly as the matter left
+	// it: an inspection that compiles or tests the candidate writes caches and
+	// may write into the tree, and a view read afterwards would carry the
+	// inspection's leavings as though they were the candidate's.
+	if inspect != nil {
+		inspect(wt.Dir)
+	}
+	return view, nil
 }
 
 // change is one entry of `git diff --name-status -z`.

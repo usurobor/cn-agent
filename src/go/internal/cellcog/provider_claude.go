@@ -2,7 +2,10 @@ package cellcog
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
 	"time"
 )
 
@@ -110,4 +113,101 @@ func (c ClaudeCLI) Work(ctx context.Context, dir, prompt string) error {
 	// tail costs nothing the episode depends on.
 	_, _, err := runCLI(ctx, bin, dir, prompt, ClaudeArgv(c.Model), c.Timeout)
 	return err
+}
+
+// ClaudeAnswerArgv is the ANSWERING recipe. It differs from the producing one
+// in exactly the ways the capability differs, and is strictly less
+// authoritative:
+//
+//   - `--tools ""` — a reviewer's canonical input is (contract, matter). File
+//     tools would let it read the workspace it is meant to judge from the
+//     outside, which is the independence the seat exists to provide.
+//   - no `--permission-mode` — with no tools there is nothing to approve, so
+//     declaring edit authority would be requesting power the seat cannot use.
+//   - `--json-schema` — the provider constrains the answer to the caller's
+//     shape, so the verdict is decoded rather than parsed hopefully out of
+//     prose. It survives streaming: the terminal `result` event carries
+//     `structured_output`.
+//   - `--output-format stream-json --verbose` for the same reason as the
+//     producing recipe: a reviewer that stalls should say where.
+func ClaudeAnswerArgv(model string, schema json.RawMessage) []string {
+	return []string{
+		"-p",
+		"--model", model,
+		"--safe-mode",
+		"--no-session-persistence",
+		"--tools", NoTools,
+		"--output-format", "stream-json",
+		"--verbose",
+		"--json-schema", string(schema),
+	}
+}
+
+// Answer runs one bounded invocation and returns the provider's structured
+// result. The envelope carries execution metadata; `structured_output` is the
+// schema-constrained value, and its absence is a failure rather than an empty
+// answer — a reviewer that returned nothing has not reviewed.
+//
+// The working directory is empty on purpose: an answering seat is offered no
+// tools, so there is nothing for a directory to scope, and naming one would
+// suggest the seat could reach it.
+func (c ClaudeCLI) Answer(ctx context.Context, prompt string, schema json.RawMessage) (json.RawMessage, error) {
+	if len(schema) == 0 {
+		return nil, fmt.Errorf("claude-cli: Answer needs an answer schema")
+	}
+	bin := c.Bin
+	if bin == "" {
+		bin = "claude"
+	}
+	out, truncated, err := runCLI(ctx, bin, "", prompt, ClaudeAnswerArgv(c.Model, schema), c.Timeout)
+	if err != nil {
+		return nil, err
+	}
+	// Here the stream IS the product, so a clipped one is fatal: the terminal
+	// result event may be exactly what was lost.
+	if truncated {
+		return nil, fmt.Errorf("claude-cli: answer stream exceeded %d bytes, so the verdict may be incomplete", maxOutputBytes)
+	}
+	return terminalStructuredOutput(out)
+}
+
+// terminalStructuredOutput reads the NDJSON event stream and returns the
+// schema-constrained value from the terminal `result` event.
+//
+// Decoded as a sequence of JSON values rather than scanned by line: an event
+// carrying a long verdict can exceed any line-buffer size, and a diagnostic
+// that fails on long input is not a diagnostic. Progress events are skipped —
+// only the terminal result is an answer, and an intermediate assistant
+// message that happens to look like one is not.
+func terminalStructuredOutput(stream string) (json.RawMessage, error) {
+	dec := json.NewDecoder(strings.NewReader(stream))
+	var (
+		found      bool
+		isError    bool
+		structured json.RawMessage
+	)
+	for {
+		var ev struct {
+			Type       string          `json:"type"`
+			IsError    bool            `json:"is_error"`
+			Structured json.RawMessage `json:"structured_output"`
+		}
+		if err := dec.Decode(&ev); err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, fmt.Errorf("claude-cli: event stream is not NDJSON: %w", err)
+		}
+		if ev.Type == "result" {
+			found, isError, structured = true, ev.IsError, ev.Structured
+		}
+	}
+	switch {
+	case !found:
+		return nil, fmt.Errorf("claude-cli: event stream ended with no result event")
+	case isError:
+		return nil, fmt.Errorf("claude-cli: provider reported an error result")
+	case len(structured) == 0:
+		return nil, fmt.Errorf("claude-cli: result carried no structured_output for the requested schema")
+	}
+	return structured, nil
 }

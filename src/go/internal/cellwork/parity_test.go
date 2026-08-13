@@ -97,7 +97,7 @@ func TestReconstructEqualsAnIndependentlyAppliedPatch(t *testing.T) {
 		}
 	})
 
-	view, err := Reconstruct(context.Background(), repo, base, matter)
+	view, err := Reconstruct(context.Background(), repo, base, matter, nil)
 	if err != nil {
 		t.Fatalf("reconstruct: %v", err)
 	}

@@ -48,6 +48,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -65,6 +66,12 @@ const (
 	maxArtifacts         = 64
 	maxArtifactBytes     = 1 << 20 // per artifact
 	maxAggregateArtifact = 4 << 20 // sum over both seats
+	maxAssessmentUnits   = 256
+	// maxAssessmentBytes bounds the assessment's text — unit ids, reasons and
+	// citations summed. One aggregate rather than a bound per field: what must
+	// not grow without limit is the value that travels, and three separate
+	// numbers would be three things to justify for one property.
+	maxAssessmentBytes = 64 << 10
 )
 
 // MaxOpaqueSlotBytes is the one bound for every opaque contract slot. A
@@ -193,9 +200,77 @@ type Matter struct {
 	Data string `json:"data"`
 }
 
+// Disposition is what an assessing seat decided about one obligation. The set
+// is closed and three-valued, and the third value is the point: `unverified`
+// says the seat could not decide, which is different from deciding against.
+// Collapsing it into `finding` would report a judgement nobody made, and
+// collapsing it into `pass` would report evidence nobody saw.
+type Disposition string
+
+const (
+	DispositionPass       Disposition = "pass"
+	DispositionFinding    Disposition = "finding"
+	DispositionUnverified Disposition = "unverified"
+)
+
+func knownDisposition(d Disposition) bool {
+	return d == DispositionPass || d == DispositionFinding || d == DispositionUnverified
+}
+
+// UnitResult is one obligation's disposition. `Unit` names the obligation in
+// whatever catalogue vocabulary the profile that built it uses — the kernel
+// reads the id as an opaque label and never learns what it means, exactly as
+// it does with the contract's opaque slots.
+//
+// WHAT THE KERNEL DOES KNOW is the shape: a disposition from the closed set,
+// and a reason whenever the disposition is not `pass`. That much has to live
+// here rather than with the profile, because V re-derives the verdict from
+// these values and a verifier must be able to make the same derivation from
+// the serialized record alone.
+type UnitResult struct {
+	Unit        string      `json:"unit"`
+	Disposition Disposition `json:"disposition"`
+	Reason      string      `json:"reason,omitempty"`
+	Citations   []string    `json:"citations,omitempty"`
+}
+
+// Review is the assessing seat's product.
+//
+// Assessment is OPTIONAL and omitted when empty, which is deliberate rather
+// than lenient: the cells that predate assessment — the bool checker, the
+// stub, the mechanical-unmet reviewer — state a verdict and no per-obligation
+// coverage, and forcing an empty list into their records would be a claim
+// that a review with zero units happened. What the kernel refuses is an
+// assessment that disagrees with itself, and V refuses one that disagrees
+// with `Pass`: every non-`pass` unit is its own contract-unmet failure, so a
+// seat cannot report findings and a passing verdict in the same breath.
+//
+// COVERAGE AGAINST A CATALOGUE IS NOT CHECKED HERE, and cannot be: the
+// catalogue is derived from the contract's opaque issue by the profile that
+// admitted it, and a kernel that could tell whether coverage was exact would
+// have had to learn that profile's language. The assessing fill enforces
+// exactness before it returns; what the record proves at this boundary is
+// that the units it carries are well formed and that the verdict follows from
+// them.
 type Review struct {
-	Pass  bool   `json:"pass"`
-	Notes string `json:"notes"`
+	Pass       bool         `json:"pass"`
+	Notes      string       `json:"notes"`
+	Assessment []UnitResult `json:"assessment,omitempty"`
+}
+
+// clone deep-copies the assessment so a seat retaining its own slice cannot
+// write through the sealed record — the same rule Contract.clone applies to
+// the opaque slots, for the same reason.
+func (r Review) clone() Review {
+	cp := r
+	if r.Assessment != nil {
+		cp.Assessment = make([]UnitResult, 0, len(r.Assessment))
+		for _, u := range r.Assessment {
+			u.Citations = append([]string(nil), u.Citations...)
+			cp.Assessment = append(cp.Assessment, u)
+		}
+	}
+	return cp
 }
 
 // ArtifactCandidate is what a seat returns: semantic identity + UTF-8 text.
@@ -588,11 +663,60 @@ func sealBeta(o BetaOutput, exec string) (SealedBeta, error) {
 	if len(o.Review.Notes) > maxReviewNotesBytes {
 		return SealedBeta{}, fmt.Errorf("review notes exceed %d bytes", maxReviewNotesBytes)
 	}
+	if err := assessmentIntegrity(o.Review.Assessment); err != nil {
+		return SealedBeta{}, err
+	}
 	arts, err := normalizeArtifacts(o.Artifacts)
 	if err != nil {
 		return SealedBeta{}, err
 	}
-	return SealedBeta{exec: exec, review: o.Review, artifacts: arts}, nil
+	return SealedBeta{exec: exec, review: o.Review.clone(), artifacts: arts}, nil
+}
+
+// assessmentIntegrity is the COMPLETE set of shape rules the kernel applies to
+// an assessment, written once so the seal path and validateRecord cannot
+// diverge: a record that self-verifies must be one the honest path would have
+// produced (eng/go §2.17, one parser per fact).
+//
+// Every rule is about whether the value can be READ as a verdict, never about
+// whether the verdict is right:
+//
+//   - a blank or duplicated unit id makes coverage unreadable — two rows for
+//     one obligation are not a disposition, they are two;
+//   - a disposition outside the closed set says nothing at all;
+//   - a non-`pass` disposition with a blank reason is a judgement without a
+//     reason, which is not review;
+//   - a blank citation is a reference to nothing.
+func assessmentIntegrity(units []UnitResult) error {
+	if len(units) > maxAssessmentUnits {
+		return fmt.Errorf("assessment carries %d units (> %d)", len(units), maxAssessmentUnits)
+	}
+	total := 0
+	seen := make(map[string]bool, len(units))
+	for _, u := range units {
+		switch {
+		case strings.TrimSpace(u.Unit) == "":
+			return errors.New("assessment unit has a blank id")
+		case seen[u.Unit]:
+			return fmt.Errorf("assessment reports unit %q more than once", u.Unit)
+		case !knownDisposition(u.Disposition):
+			return fmt.Errorf("assessment unit %q has unknown disposition %q", u.Unit, u.Disposition)
+		case u.Disposition != DispositionPass && strings.TrimSpace(u.Reason) == "":
+			return fmt.Errorf("assessment unit %q is %q with no reason; a judgement without a reason is not review", u.Unit, u.Disposition)
+		}
+		seen[u.Unit] = true
+		total += len(u.Unit) + len(u.Reason)
+		for _, c := range u.Citations {
+			if strings.TrimSpace(c) == "" {
+				return fmt.Errorf("assessment unit %q carries a blank citation", u.Unit)
+			}
+			total += len(c)
+		}
+	}
+	if total > maxAssessmentBytes {
+		return fmt.Errorf("assessment text exceeds %d bytes", maxAssessmentBytes)
+	}
+	return nil
 }
 
 // compose builds the one immutable EpisodeRecord from sealed results (pure).
@@ -680,6 +804,11 @@ func validateRecord(r EpisodeRecord) []Failure {
 	// Output bounds (same rules the seal path enforces).
 	add(len(r.Matter.Data) > maxMatterBytes, InvalidRecord, "matter exceeds bound")
 	add(len(r.Review.Notes) > maxReviewNotesBytes, InvalidRecord, "review notes exceed bound")
+	if err := assessmentIntegrity(r.Review.Assessment); err != nil {
+		// Integrity, not contract-unmet: a malformed assessment is not a failing
+		// review, it is a value no verifier can read as a review at all.
+		add(true, InvalidRecord, "assessment is not well formed: "+err.Error())
+	}
 	total := 0
 	for _, side := range []StationRecord{r.Alpha, r.Beta} {
 		add(len(side.Artifacts) > maxArtifacts, InvalidRecord, "too many artifacts")
@@ -729,6 +858,22 @@ func validate(expected Contract, rc Receipt) Verdict {
 		}
 		if !hasArtifact(side, req.ID, req.Kind) {
 			fs = append(fs, Failure{ContractUnmet, fmt.Sprintf("missing required %s artifact: %s", req.Producer, req.ID)})
+		}
+	}
+	// Every non-`pass` disposition is its own contract-unmet failure, named by
+	// unit. This is what makes the verdict RE-DERIVABLE: a seat cannot report
+	// findings and set pass=true, because V never reads pass to decide this —
+	// it reads the dispositions the record carries. A verdict a reader cannot
+	// recompute from the receipt is not a verdict.
+	//
+	// `unverified` fails exactly as `finding` does, and deliberately: an
+	// obligation nobody could decide has not been met, whatever the reason. The
+	// two stay DISTINCT in the record and in the failure text, because "we
+	// checked and it is wrong" and "we could not check" call for different next
+	// work — but neither is an accepted episode.
+	for _, u := range r.Review.Assessment {
+		if u.Disposition != DispositionPass {
+			fs = append(fs, Failure{ContractUnmet, fmt.Sprintf("assessment unit %s: %s: %s", u.Unit, u.Disposition, u.Reason)})
 		}
 	}
 	if !r.Review.Pass {

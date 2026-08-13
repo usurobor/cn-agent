@@ -50,6 +50,10 @@
     }
   },
   "beta": {
-    "fill": "cdd.mechanical-unmet"
+    "fill": "cds.assess",
+    "cognition": {
+      "provider": "$provider",
+      "model": "$model"
+    }
   }
 }

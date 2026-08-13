@@ -156,10 +156,39 @@ _patchAlphaSkillsResolved: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ..
 }
 
 // #CDSMechanicalUnmetBeta is Case 2's honest reviewer: a mechanical seat that
-// cannot judge the goal and therefore never passes it. Case 3 replaces beta
-// alone — the fill boundary makes that a one-field change.
+// cannot judge the goal and therefore never passes it. It is no longer what a
+// CDS cell declares — #CDSCellSpec.beta is the assessing seat below — and it
+// survives here because the committed Case-2 evidence closure records it, and
+// because a cell that wants no assessment at all is still expressible.
 #CDSMechanicalUnmetBeta: {
 	fill: "cdd.mechanical-unmet"
+}
+
+// #CDSAssessBetaAuthored is what a cell spec may carry for the reviewing seat:
+// the tag and the cognition it selects, with holes admitted where resolution
+// fills them.
+//
+// NO WORKSPACE, and the absence is the whole shape of the seat: a reviewer that
+// could open the worktree would be reading the workspace it is meant to judge
+// from the outside, rather than judging the matter it was handed. NO SKILLS
+// either, for the reason #CDSPatchAlphaResolved states — the cell declares one
+// methodology bundle and the seat receives a projection of it.
+#CDSAssessBetaAuthored: {
+	fill: "cds.assess"
+	cognition: #CognitionAuthored
+}
+
+// #CDSAssessBetaResolved is what a closure records for that seat: the canonical
+// structural shape and the identity of the ADVERSARIAL projection that held it.
+// The role is pinned, so a record whose reviewing seat was handed the producing
+// projection is rejected here exactly as the Go constructor rejects it.
+#CDSAssessBetaResolved: {
+	fill:      "cds.assess"
+	cognition: #Cognition
+	methodology!: {
+		role!:   "adversarial"
+		sha256!: =~"^[0-9a-f]{64}$"
+	}
 }
 
 // #GitSnapshotPinned is a subject as a RECORD carries it: one repository at
@@ -261,8 +290,14 @@ _patchAlphaSkillsResolved: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ..
 
 // A criterion without a verification route is exactly the ill-defined
 // criterion this schema exists to reject: it leaves beta judging plausibility.
+// `id` may not use the `check:` prefix: the runtime mints assessment units in
+// that namespace, and an author who takes one makes the catalogue carry a
+// duplicate the reviewing seat is then blamed for. cdsissue.ReservedIDPrefix is
+// the Go half; a document admitted by one authority and rejected by the other
+// is a gate failure, so the rule is written twice on purpose and checked by one
+// corpus.
 #CDSCriterion: {
-	id!:           #NonBlank
+	id!:           #NonBlank & !~"^check:"
 	statement!:    #NonBlank
 	verification!: #NonBlank
 }
@@ -334,5 +369,5 @@ _patchAlphaSkillsResolved: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ..
 	methodology!: kind!: "skills.methodology.v0"
 
 	alpha: #CDSPatchAlphaAuthored
-	beta:  #CDSMechanicalUnmetBeta
+	beta:  #CDSAssessBetaAuthored
 }

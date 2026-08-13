@@ -2,6 +2,7 @@ package cellcog
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -138,5 +139,50 @@ func TestWorkToleratesATruncatedProgressStream(t *testing.T) {
 	bin := fakeBin(t, `cat >/dev/null; yes `+strings.Repeat("a", 64)+` | head -c 5242880`)
 	if err := (ClaudeCLI{Model: "m", Bin: bin}).Work(context.Background(), t.TempDir(), "p"); err != nil {
 		t.Fatalf("a clipped progress stream must not fail a producing seat: %v", err)
+	}
+}
+
+// The mirror of the test above, and the reason runCLI reports truncation
+// instead of deciding on it. For an ANSWERING seat stdout IS the product, so
+// the clipped stream that costs a producing seat nothing may be exactly the
+// terminal result event — a verdict that "may be incomplete" must not be
+// returned as a verdict.
+func TestAnswerRefusesATruncatedStream(t *testing.T) {
+	bin := fakeBin(t, `cat >/dev/null; yes `+strings.Repeat("a", 64)+` | head -c 5242880`)
+	_, err := (ClaudeCLI{Model: "m", Bin: bin}).Answer(context.Background(), "p", json.RawMessage(`{"type":"object"}`))
+	if err == nil || !strings.Contains(err.Error(), "may be incomplete") {
+		t.Fatalf("a clipped answer stream must fail the seat, got %v", err)
+	}
+}
+
+// An answering seat is pointed at no directory, and the schema is not
+// optional: a provider asked for an unconstrained answer would be parsed
+// hopefully out of prose, which is the thing --json-schema removes.
+func TestAnswerNeedsASchema(t *testing.T) {
+	if _, err := (ClaudeCLI{Model: "m", Bin: "no-such-binary"}).Answer(context.Background(), "p", nil); err == nil {
+		t.Fatal("an answer with no schema must fail closed")
+	}
+}
+
+// The prompt reaches the child on stdin and the structured result comes back
+// out of the terminal event — the whole answering round trip, without renting
+// anything.
+func TestAnswerRoundTrip(t *testing.T) {
+	bin := fakeBin(t, `cat > "$TMPDIR_SEEN"; printf '%s\n' '{"type":"result","is_error":false,"structured_output":{"units":[]}}'`)
+	seen := filepath.Join(t.TempDir(), "seen.txt")
+	t.Setenv("TMPDIR_SEEN", seen)
+	got, err := (ClaudeCLI{Model: "m", Bin: bin}).Answer(context.Background(), "the prompt", json.RawMessage(`{"type":"object"}`))
+	if err != nil {
+		t.Fatalf("answer: %v", err)
+	}
+	if string(got) != `{"units":[]}` {
+		t.Fatalf("structured answer = %s", got)
+	}
+	data, err := os.ReadFile(seen)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "the prompt") {
+		t.Fatalf("the prompt did not reach the child: %q", data)
 	}
 }

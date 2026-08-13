@@ -7,11 +7,12 @@
 // the candidate said it meant. What a cell may do is decline to be measured by
 // this recipe; it may not redefine it.
 //
-// The observation is not evidence and has no consumer in this increment.
-// Nothing in the runtime calls Run: the assessing seat that will consume an
-// observation is a later increment, and until it exists this package is
-// exercised by its own tests alone. TestCheckerHasNoProductionCaller fails when
-// that stops being true.
+// The observation is not evidence. Its consumer is the CDS assessing fill,
+// which runs the recipe against the candidate it reconstructed and lets the
+// result FORCE one catalogue unit — a `fail` becomes a finding and an
+// `unavailable` becomes `unverified`, with no cognitive seat able to override
+// either. What the observation is not is an artifact: it does not enter the
+// record as evidence, and nothing here mints one.
 //
 // It runs against a DIRECTORY and knows nothing about views, matters, or
 // subjects. The directory must be the root of the candidate repository — the

@@ -83,6 +83,23 @@ type View struct {
 	SHA256 string
 }
 
+// Recorded is the identity of a projection as a SEAT'S RESOLVED DECLARATION
+// carries it: which projection held the seat, and the digest of the bundle
+// behind it. The refs and their body digests live once, on the bundle, and are
+// not copied per seat.
+//
+// It lives here rather than in each fill because both fills record the same
+// fact about the same value, and two identical structs written in two packages
+// would be two spellings of it — the one that changed would silently make one
+// seat's record unreadable against the other's closed schema.
+type Recorded struct {
+	Role   string `json:"role"`
+	SHA256 string `json:"sha256"`
+}
+
+// Recorded projects the view into what a record states about it.
+func (v View) Recorded() Recorded { return Recorded{Role: string(v.Role), SHA256: v.SHA256} }
+
 // Empty reports a view no methodology was projected into. A cell may declare
 // no methodology at all — every cell did before this package existed — so the
 // zero View is a legitimate value, and a fill that cannot act without a
@@ -184,13 +201,9 @@ func Constructive(b Bundle, bodies []cellskill.Skill) View {
 	return project(RoleConstructive, constructiveWrapper, b, bodies)
 }
 
-// Adversarial is the projection an assessing seat receives.
-//
-// IT HAS NO PRODUCTION CALLER. Nothing in the runtime projects it today: the
-// assessing seat that will consume it is a later increment, and until that seat
-// exists this function is exercised by this package's tests alone.
-// TestAdversarialHasNoProductionCaller fails if that stops being true, so the
-// sentence above cannot quietly become false.
+// Adversarial is the projection an assessing seat receives. cellspec.Build
+// projects it from the same load the constructive projection comes off, and
+// hands it to the beta fill's constructor.
 func Adversarial(b Bundle, bodies []cellskill.Skill) View {
 	return project(RoleAdversarial, adversarialWrapper, b, bodies)
 }

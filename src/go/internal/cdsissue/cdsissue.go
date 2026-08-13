@@ -5,15 +5,11 @@
 // neither learns what a CDS issue is. This package is where the meaning lives,
 // and it is the only place it lives.
 //
-// Present tense, exactly: Admit has one caller, the admission door. Render has
-// NO production caller yet — neither seat is given the admitted issue in this
-// increment, and cds.patch still renders a contract id, a goal line and skill
-// bodies. Render exists now because it is what makes "both seats are told the
-// same thing" a property of there being one function rather than of two
-// formatters being kept in step, and the increment that hands the issue to the
-// seats is the one that will rely on that. Until then it is proven and unused,
-// and this comment says so rather than describing the plan as though it had
-// already happened.
+// Both seats are told the same thing because there is ONE Render, not because
+// two formatters are kept in step: the producing fill and the assessing fill
+// call it on the same frozen bytes. Admit has one caller, the admission door,
+// which is what makes the issue those bytes rather than a document either seat
+// interpreted for itself.
 //
 // The issue enters as JSON, already structured. There is deliberately no
 // Markdown parser: prose that has to be parsed is prose two authorities can
@@ -51,6 +47,12 @@ import (
 var nonBlankPattern = `[^\t\n\v\f\r \x{0085}\x{00A0}\x{1680}\x{2000}-\x{200A}\x{2028}\x{2029}\x{202F}\x{205F}\x{3000}]`
 
 var nonBlank = regexp.MustCompile(nonBlankPattern)
+
+// ReservedIDPrefix is the acceptance-id namespace an issue may not use, because
+// the runtime mints unit ids under it. Declared here rather than in the
+// assessing fill: the door is what admits the document, so the door is what has
+// to know which ids are not the author's to choose.
+const ReservedIDPrefix = "check:"
 
 // Kind is the pinned issue schema tag. An issue must declare it exactly; the
 // CUE definition #CDSIssue pins the same string.
@@ -177,6 +179,16 @@ func Admit(raw []byte) (Issue, error) {
 			return Issue{}, fmt.Errorf("cds issue: acceptance %q states no verification route", c.ID)
 		case seen[c.ID]:
 			return Issue{}, fmt.Errorf("cds issue: duplicate acceptance id %q", c.ID)
+		case strings.HasPrefix(c.ID, ReservedIDPrefix):
+			// A criterion id in the reserved namespace collides with a unit the
+			// runtime adds to every assessment catalogue. The collision cannot
+			// be resolved later: the catalogue would then carry one id twice,
+			// every possible answer would trip the coverage rule, and each
+			// episode would die blaming the reviewing seat for a catalogue the
+			// runtime built. Refusing the ISSUE is the only place it can be
+			// refused honestly, because this is the document that is wrong.
+			return Issue{}, fmt.Errorf("cds issue: acceptance id %q uses the reserved %q prefix, which names runtime-measured units",
+				c.ID, ReservedIDPrefix)
 		}
 		seen[c.ID] = true
 	}

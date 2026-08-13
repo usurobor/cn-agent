@@ -1,8 +1,8 @@
 {
   "version": "cnos.cellspec.v0",
   "contract": {
-    "id": "c",
-    "goal": "g",
+    "id": "cds-code",
+    "goal": "Carry out the change described by the issue in the repository the run input's subject pins",
     "required_evidence": [
       {
         "id": "diff",
@@ -15,7 +15,7 @@
   "methodology": {
     "kind": "skills.methodology.v0",
     "skills": [
-      "cnos.eng:eng/go"
+      "cnos.eng:eng/code"
     ]
   },
   "alpha": {
@@ -23,16 +23,18 @@
     "cognition": {
       "provider": "fake",
       "model": ""
-    },
-    "skills": [
-      "cnos.eng:eng/code"
-    ]
+    }
   },
   "beta": {
     "fill": "cds.assess",
     "cognition": {
       "provider": "fake",
       "model": ""
+    },
+    "workspace": {
+      "kind": "git-worktree",
+      "repo": ".",
+      "base_sha": "HEAD"
     }
   }
 }

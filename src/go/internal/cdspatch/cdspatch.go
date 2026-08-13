@@ -33,6 +33,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsissue"
 	"github.com/usurobor/cnos/src/go/internal/cellcog"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
@@ -83,13 +84,7 @@ type ResolvedDecl struct {
 	// the bundle digest is how a reader can ask whether the seat was held to
 	// the methodology the cell declared — the refs and their body digests live
 	// once, on the bundle, and are not copied per seat.
-	Methodology MethodologyRef `json:"methodology"`
-}
-
-// MethodologyRef identifies the projection a seat was constructed under.
-type MethodologyRef struct {
-	Role   string `json:"role"`
-	SHA256 string `json:"sha256"`
+	Methodology cellmethod.Recorded `json:"methodology"`
 }
 
 // Factory returns the cds.patch alpha factory.
@@ -135,7 +130,7 @@ func Factory() cellfill.AlphaFactory {
 		resolved := ResolvedDecl{
 			Fill:        Fill,
 			Cognition:   d.Cognition,
-			Methodology: MethodologyRef{Role: string(method.Role), SHA256: method.SHA256},
+			Methodology: method.Recorded(),
 		}
 		canon, err := json.Marshal(resolved)
 		if err != nil {
@@ -200,13 +195,21 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 	if err != nil {
 		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: %w", err)
 	}
+	// Admitted here as well as at the door, and not because the door is
+	// distrusted: this seat reads the FROZEN contract, so admitting the bytes it
+	// was actually handed is what makes the issue it renders the issue the
+	// episode recorded. It also fails before the worktree is cut.
+	issue, err := cdsissue.Admit(in.Contract.Issue)
+	if err != nil {
+		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: %w", err)
+	}
 	wt, release, err := cellwork.Materialize(ctx, subject.Repo, subject.BaseSHA)
 	if err != nil {
 		return cellkernel.AlphaOutput{}, err
 	}
 	defer release()
 
-	if err := a.coder.Work(ctx, wt.Dir, RenderPrompt(in.Contract, a.method)); err != nil {
+	if err := a.coder.Work(ctx, wt.Dir, RenderPrompt(in.Contract, issue, a.method)); err != nil {
 		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: coder %q: %w", a.coder.Name(), err)
 	}
 	diff, err := wt.Diff(ctx)
@@ -243,11 +246,18 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 // This function no longer renders skills itself — it appends a view it was
 // handed, which is what stops the seat having a second opinion about what it is
 // held to.
-func RenderPrompt(c cellkernel.Contract, method cellmethod.View) string {
+func RenderPrompt(c cellkernel.Contract, issue cdsissue.Issue, method cellmethod.View) string {
 	var b strings.Builder
 	b.WriteString("You are the alpha (producing) seat of a CNOS coherence cell, working on real code.\n")
 	b.WriteString("You are in a disposable worktree. Edit the files here to meet the contract.\n\n")
-	fmt.Fprintf(&b, "CONTRACT %s\nGOAL: %s\n", c.ID, c.Goal)
+	fmt.Fprintf(&b, "CONTRACT %s\nGOAL: %s\n\n", c.ID, c.Goal)
+	// The ISSUE, through the same cdsissue.Render the assessing seat uses. The
+	// goal line is one sentence and the acceptance criteria are what the work
+	// is actually judged against — a seat given only the goal writes against a
+	// summary of its contract and is then reviewed against the contract. Both
+	// seats read the same frozen bytes through the same function, so "they were
+	// told the same thing" is a property of there being one renderer.
+	b.WriteString(cdsissue.Render(issue))
 	b.WriteString("\nHOW YOUR WORK IS RECORDED\n")
 	b.WriteString("Your change is measured as a unified diff of this worktree, not taken from\n")
 	b.WriteString("your summary. Anything you do not write to a file does not exist. An empty\n")

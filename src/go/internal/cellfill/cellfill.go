@@ -52,19 +52,19 @@ type ConstructedBeta struct {
 // arguments. Construction may do bounded IO — pinning a revision — so it takes
 // a context; it must not start or retain a session.
 //
-// An alpha additionally receives the CELL's constructive methodology
-// projection. It is a separate parameter rather than a field of the
-// declaration because the methodology is not the seat's to declare: it is
-// declared once on the cell, loaded once, and projected — so a fill can consume
-// obligations but cannot choose them, and two seats cannot be held to two
-// lists. A fill that needs no methodology ignores it; a fill that cannot act
-// without one says so itself, since only it knows that.
+// EACH SIDE ADDITIONALLY RECEIVES THE CELL'S METHODOLOGY PROJECTION for its
+// role: alpha the constructive one, beta the adversarial one. It is a separate
+// parameter rather than a field of the declaration because the methodology is
+// not the seat's to declare: it is declared once on the cell, loaded once, and
+// projected — so a fill can consume obligations but cannot choose them, and two
+// seats cannot be held to two lists. A fill that needs no methodology ignores
+// it; a fill that cannot act without one says so itself, since only it knows
+// that.
 //
-// Beta takes no projection today. The adversarial projection has no consumer in
-// this increment (cellmethod.Adversarial's doc comment and its test say so), and
-// a parameter every beta ignored would be a claim that something reads it.
+// Beta gained the parameter when the assessing fill landed, and not before: a
+// parameter every beta ignored would have been a claim that something reads it.
 type AlphaFactory func(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedAlpha, error)
-type BetaFactory func(ctx context.Context, decl json.RawMessage) (ConstructedBeta, error)
+type BetaFactory func(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error)
 
 // Admitted is the per-run contract a door let through: the exact authored bytes
 // of each payload, in the form the cell will freeze them. Raw, because what an
@@ -198,7 +198,7 @@ func (r Registry) ConstructAlpha(ctx context.Context, decl json.RawMessage, meth
 	return c, err
 }
 
-func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage) (ConstructedBeta, error) {
+func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error) {
 	id, err := FillID(decl)
 	if err != nil {
 		return ConstructedBeta{}, err
@@ -207,7 +207,7 @@ func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage) (Cons
 	if !ok {
 		return ConstructedBeta{}, fmt.Errorf("unknown beta fill %q", id)
 	}
-	c, err := f(ctx, decl)
+	c, err := f(ctx, decl, method)
 	if err != nil {
 		return ConstructedBeta{}, err
 	}

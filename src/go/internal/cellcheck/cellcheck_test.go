@@ -269,20 +269,21 @@ func TestANonRepositoryMakesFormatUnavailable(t *testing.T) {
 	}
 }
 
-// AC5, this package's half: the checker has no production caller, and this
-// test fails when it gains one — at which point the package header's claim is
-// what must be rewritten.
+// The checker HAS a production caller now — the CDS assessing fill runs it
+// against the reconstructed candidate — and this is what stops the package
+// header's claim to that effect from quietly becoming false. It replaces
+// TestCheckerHasNoProductionCaller, whose whole content was the opposite
+// assertion: the consumer landed, so the scope rule expired by being satisfied.
 //
-// The scan is proven able to find callers before it is trusted to report none:
-// `cellskill.` is imported and used by production code, and a scan that could
-// not see it would report every package as uncalled.
-func TestCheckerHasNoProductionCaller(t *testing.T) {
-	if callers := productionReferences(t, "cellcheck."); len(callers) != 0 {
-		t.Fatalf("the checker now has production callers %v — it is no longer "+
-			"consumer-less, and the package header says it is", callers)
+// The scan is proven able to MISS as well as find: a symbol that does not exist
+// must come back empty, or a scan that matched everything would report a caller
+// whatever the tree said.
+func TestCheckerHasItsProductionCaller(t *testing.T) {
+	if callers := productionReferences(t, "cellcheck.Run("); len(callers) == 0 {
+		t.Fatal("nothing in the runtime runs the checker: it is consumer-less, and the package header says it is not")
 	}
-	if len(productionReferences(t, "cellskill.")) == 0 {
-		t.Fatal("the scan found no reference to cellskill either: it is not looking at production sources")
+	if found := productionReferences(t, "cellcheck.Nonexistent("); len(found) != 0 {
+		t.Fatalf("the scan matched a symbol that does not exist in %v: it is not looking at what it claims", found)
 	}
 }
 

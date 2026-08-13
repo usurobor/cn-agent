@@ -219,6 +219,12 @@ vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-bad-model-hole.json -
 # fill's exact-key set below — the two authorities delete the field together, or
 # the deletion is only a Go convention.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-seat-skills.json -d '#CDSCellSpec'
+# NO WORKSPACE ON THE REVIEWING SEAT, and this is the beta-side counterpart of
+# the rule above. A reviewer that could name a repository could open the
+# workspace it is meant to judge from the outside, which is the independence the
+# seat exists to provide — so the key is absent from the closed overlay here and
+# from the fill's exact-key set below.
+vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-assess-workspace.json -d '#CDSCellSpec'
 # Fill-owned keys are exact and case-sensitive at every depth: encoding/json
 # would otherwise decode these while the closed overlay rejects them.
 vet_bad ./schemas/cds:cds schemas/cds/fixtures/invalid/cds-case-seat-tag.json -d '#CDSCellSpec'
@@ -254,7 +260,7 @@ vet_ok ./schemas/cds:cds schemas/cds/fixtures/issue/valid-empty-scope-out.json -
 # the same class: a rune missing from the CUE enumeration would make this
 # document vet clean while Go rejects it, which is the divergence the two
 # authorities exist to catch.
-for neg in bad-kind empty-id blank-problem-line blank-unicode-whitespace \
+for neg in bad-kind empty-id blank-problem-line blank-unicode-whitespace reserved-acceptance-id \
            no-sources source-without-path \
            empty-scope-in missing-scope-out no-acceptance \
            criterion-without-verification duplicate-acceptance-id \
@@ -390,6 +396,7 @@ run_bad schemas/cds/fixtures/invalid/cds-case-seat-tag.json 'seat declaration ha
 run_bad schemas/cds/fixtures/invalid/cds-case-top-arg.json 'unknown key' --input "$ri"
 run_bad schemas/cds/fixtures/invalid/cds-case-nested-arg.json 'unknown key' --input "$ri"
 run_bad schemas/cds/fixtures/invalid/cds-seat-skills.json 'unknown key "skills"' --input "$ri"
+run_bad schemas/cds/fixtures/invalid/cds-assess-workspace.json 'unknown key "workspace"' --input "$ri"
 
 echo "# committed rented-Claude evidence (one-off receipt, NOT a provider run)"
 # The live corpus rents `fake`, so the cognitive path has no runtime witness
@@ -487,11 +494,14 @@ echo "# actual CLI output vetted against the terminal schema"
 run_vet 0 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=true
 run_vet 1 --contract schemas/cdd/fixtures/bool-cell-spec.json --param value=false
 run_vet 3 --contract schemas/cdd/fixtures/empty-cell-spec.json
-# The cds.patch cell against a hermetic throwaway repository: the runtime cuts
-# a worktree, the fake coder changes a file, the diff in the closure is
-# MEASURED from that worktree — and the episode still closes needs_repair
-# (exit 1), because the mechanical-unmet beta cannot judge the goal. Case-2
-# honesty is part of the corpus.
+# The CDS cell against a hermetic throwaway repository: the runtime cuts a
+# worktree, the deterministic coder changes a file, the diff in the closure is
+# MEASURED from that worktree, the reviewing seat reconstructs the candidate
+# from (subject, matter), the closed checker runs against that reconstruction,
+# and every catalogue unit is disposed of — and the episode still closes
+# needs_repair (exit 1), because nothing was rented, so no acceptance criterion
+# was decided by anyone. A cell that ran the whole chain and still refused to
+# accept is the honest outcome, and it is part of the corpus.
 # `$coderepo` and `$ri` were built near the top of this script: the CLI
 # negatives above already need an admissible run input, because the subject is
 # pinned before either seat is constructed.
@@ -499,16 +509,66 @@ cn_run cell run --contract "$spec" --input "$ri" \
   --param language=cnos.eng:eng/go --param provider=fake >"$tmp" 2>/dev/null
 code=$?
 if [ "$code" != 1 ]; then
-  echo "  ✗ cds.patch cell exit=$code want=1 (needs_repair: beta cannot judge the goal)"; fail=1
-else echo "  ✓ cds.patch cell closes needs_repair from an installed hub"; fi
+  echo "  ✗ CDS cell exit=$code want=1 (needs_repair: nothing was rented, so nothing was decided)"; fail=1
+else echo "  ✓ CDS cell closes needs_repair from an installed hub"; fi
 if ! "$CUE" vet schemas/cdd/episode-closure.cue "$tmp" -d '#EpisodeClosure' >/dev/null 2>&1; then
-  echo "  ✗ cds.patch closure failed #EpisodeClosure"; fail=1
-else echo "  ✓ cds.patch closure vets #EpisodeClosure"; fi
+  echo "  ✗ CDS closure failed #EpisodeClosure"; fail=1
+else echo "  ✓ CDS closure vets #EpisodeClosure"; fi
 decl="$tmpdir/resolved-alpha.json"
 if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["alpha"], open(sys.argv[2],"w"))' "$tmp" "$decl" 2>/dev/null &&
    "$CUE" vet ./schemas/cds:cds "$decl" -d '#CDSPatchAlphaResolved' >/dev/null 2>&1; then
   echo "  ✓ resolved alpha vets #CDSPatchAlphaResolved (canonical shape, methodology projection, no repository, no skills)"
 else echo "  ✗ resolved alpha failed #CDSPatchAlphaResolved"; fail=1; fi
+# ...and the reviewing seat records the ADVERSARIAL projection, so a record whose
+# two seats were held to the same role — or to no methodology — is rejected by
+# the closed shape rather than noticed by a reader.
+bdecl="$tmpdir/resolved-beta.json"
+if python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["receipt"]["record"]["resolved_spec"]["beta"], open(sys.argv[2],"w"))' "$tmp" "$bdecl" 2>/dev/null &&
+   "$CUE" vet ./schemas/cds:cds "$bdecl" -d '#CDSAssessBetaResolved' >/dev/null 2>&1; then
+  echo "  ✓ resolved beta vets #CDSAssessBetaResolved (adversarial projection, no workspace, no skills)"
+else echo "  ✗ resolved beta failed #CDSAssessBetaResolved"; fail=1; fi
+
+# THE ASSESSMENT, LIVE. The catalogue is the admitted issue's acceptance ids
+# plus the two check units, in that order, and every unit that did not pass
+# states a reason. Asserted on the EMITTED CLOSURE rather than on the source,
+# because what a reader can re-derive from the receipt is the whole point of
+# putting the assessment in the record.
+#
+# The expected ids are read from the run input the episode actually consumed, so
+# a corpus issue that grows a third criterion moves this check with it instead of
+# failing it.
+if python3 - "$tmp" "$ri" <<'PYEOF'
+import json, sys
+rec = json.load(open(sys.argv[1]))["receipt"]["record"]
+issue = json.load(open(sys.argv[2]))["issue"]
+want = [c["id"] for c in issue["acceptance"]] + ["check:matter-nonempty", "check:project-verify"]
+units = rec["review"].get("assessment")
+if units is None:
+    print("    the record carries no assessment"); sys.exit(1)
+got = [u["unit"] for u in units]
+if got != want:
+    print(f"    assessment covers {got}, want {want}"); sys.exit(1)
+by = {u["unit"]: u for u in units}
+# The matter unit was decided from a diff the runtime measured, so it passes;
+# nothing was rented, so no acceptance criterion was decided by anyone.
+if by["check:matter-nonempty"]["disposition"] != "pass":
+    print(f"    the measured matter did not pass its unit: {by['check:matter-nonempty']}"); sys.exit(1)
+for c in issue["acceptance"]:
+    if by[c["id"]]["disposition"] != "unverified":
+        print(f"    {c['id']} = {by[c['id']]['disposition']}; a seat that rented nothing decided nothing"); sys.exit(1)
+for u in units:
+    if u["disposition"] != "pass" and not u.get("reason", "").strip():
+        print(f"    unit {u['unit']} is {u['disposition']} with no reason"); sys.exit(1)
+# ...and the checker really ran against the reconstruction: its unit names the
+# recipe, whatever it observed.
+if "cnos.project-verify.v0" not in by["check:project-verify"].get("reason", ""):
+    print(f"    the checker unit does not name the recipe: {by['check:project-verify']}"); sys.exit(1)
+if rec["review"]["pass"]:
+    print("    a review carrying non-passing units reported pass"); sys.exit(1)
+PYEOF
+then
+  echo "  ✓ the closure carries an exact catalogue, each non-pass unit with a reason, and the checker's own unit"
+else echo "  ✗ the live assessment is not the catalogue, or a judgement carries no reason"; fail=1; fi
 # ONE REPOSITORY DECLARATION, live. The seat measured its base from the worktree
 # it actually cut, and the contract's subject is the only place the run was told
 # which repository and which commit that is — so these two must be the same

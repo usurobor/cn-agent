@@ -344,20 +344,27 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding
 	// names an uninstalled skill fails at the cell, not later and only if some
 	// seat happened to ask. What each seat then receives is a PROJECTION of
 	// this one load: two projections of one digest cannot be two methodologies.
-	var constructive cellmethod.View
+	var constructive, adversarial cellmethod.View
 	if len(r.Methodology) > 0 {
 		bundle, bodies, err := cellmethod.Load(reg.Skills, r.Methodology)
 		if err != nil {
 			return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("cell spec: %w", err)
 		}
+		// BOTH projections come off the SAME load. Loading twice — once per
+		// seat — would put two reads of one declaration on the two sides of the
+		// episode, which is the drift the single bundle exists to remove: the
+		// producing seat and the assessing seat would then be held to two
+		// collections that nothing could tell apart if a skill body changed
+		// between the reads.
 		constructive = cellmethod.Constructive(bundle, bodies)
+		adversarial = cellmethod.Adversarial(bundle, bodies)
 	}
 
 	alpha, err := reg.ConstructAlpha(ctx, r.Alpha, constructive)
 	if err != nil {
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
 	}
-	beta, err := reg.ConstructBeta(ctx, r.Beta)
+	beta, err := reg.ConstructBeta(ctx, r.Beta, adversarial)
 	if err != nil {
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("beta: %w", err)
 	}
