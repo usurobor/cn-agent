@@ -115,12 +115,30 @@ type AlphaFill struct {
 	NeedsSubject bool
 }
 
+// BetaFill is one registered beta, and carries the SAME declaration for the
+// same reason: an assessing seat can be as unable to act without the pinned
+// subject as a producing one — `cds.assess` reconstructs the candidate from
+// it — and a requirement the registry cannot state is a requirement discovered
+// by running the seat. Undeclared, it surfaced from inside Review as an
+// episode malfunction; declared, the loader refuses the run before the
+// constructor.
+//
+// The two sides are separate types rather than one because their constructors
+// are separate types: a shared struct would need a factory field wide enough
+// for both, which is exactly the `any` this package refuses to hold.
+type BetaFill struct {
+	Construct BetaFactory
+	// NeedsSubject: as AlphaFill.NeedsSubject, on the assessing side.
+	NeedsSubject bool
+}
+
 // Registry is the small statically assembled fill map. No DI container, no
 // service locator — the assembly point lists its fills.
 //
-// Beta carries a bare factory because no beta shipped today declares a
-// requirement; the field is added to a side when a fill on that side needs it,
-// not in advance.
+// Both sides map a fill id to a fill: a constructor and what that fill cannot
+// act without. They are symmetric because the loader's question is symmetric —
+// "can this seat act on this run input?" is asked of the assessing seat exactly
+// as it is asked of the producing one.
 //
 // Door sits beside them because it is the same kind of thing: a profile-owned
 // function the composition root wires in and the generic runner only
@@ -138,7 +156,7 @@ type AlphaFill struct {
 // every cell that declares none.
 type Registry struct {
 	Alpha  map[string]AlphaFill
-	Beta   map[string]BetaFactory
+	Beta   map[string]BetaFill
 	Door   Door
 	Skills cellskill.Resolver
 }
@@ -198,16 +216,31 @@ func (r Registry) ConstructAlpha(ctx context.Context, decl json.RawMessage, meth
 	return c, err
 }
 
-func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error) {
+// LookupBeta is LookupAlpha on the assessing side, and exists for the same
+// reason: a caller that must judge a fill's declared requirements before its
+// constructor runs needs the fill without the seat. ConstructBeta resolves
+// through it, so a fill id becomes a fill in ONE place on this side too.
+func (r Registry) LookupBeta(decl json.RawMessage) (string, BetaFill, error) {
 	id, err := FillID(decl)
 	if err != nil {
-		return ConstructedBeta{}, err
+		return "", BetaFill{}, err
 	}
 	f, ok := r.Beta[id]
 	if !ok {
-		return ConstructedBeta{}, fmt.Errorf("unknown beta fill %q", id)
+		return "", BetaFill{}, fmt.Errorf("unknown beta fill %q", id)
 	}
-	c, err := f(ctx, decl, method)
+	return id, f, nil
+}
+
+// ConstructBeta dispatches a beta declaration, mirroring ConstructAlpha:
+// unknown fills fail here, before any seat is touched, and the returned
+// declaration is canonicalized centrally.
+func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error) {
+	id, f, err := r.LookupBeta(decl)
+	if err != nil {
+		return ConstructedBeta{}, err
+	}
+	c, err := f.Construct(ctx, decl, method)
 	if err != nil {
 		return ConstructedBeta{}, err
 	}

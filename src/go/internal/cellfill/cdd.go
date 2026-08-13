@@ -26,17 +26,18 @@ const (
 // CddFills returns the statically assembled generic fills.
 func CddFills() Registry {
 	return Registry{
-		// Neither generic alpha reads the contract's subject: a stub fabricates
-		// its own side's artifacts and a bool answers from its declaration, so
-		// both run with an empty binding and neither declares a requirement.
+		// No generic seat reads the contract's subject: a stub fabricates its
+		// own side's artifacts, a bool answers from its declaration and the
+		// mechanical reviewers judge what they are handed, so all of them run
+		// with an empty binding and none declares a requirement.
 		Alpha: map[string]AlphaFill{
 			FillStubAlpha: {Construct: stubAlphaFactory},
 			FillBoolAlpha: {Construct: boolAlphaFactory},
 		},
-		Beta: map[string]BetaFactory{
-			FillStubBeta:        stubBetaFactory,
-			FillBoolCheckBeta:   boolCheckBetaFactory,
-			FillMechanicalUnmet: mechanicalUnmetFactory,
+		Beta: map[string]BetaFill{
+			FillStubBeta:        {Construct: stubBetaFactory},
+			FillBoolCheckBeta:   {Construct: boolCheckBetaFactory},
+			FillMechanicalUnmet: {Construct: mechanicalUnmetFactory},
 		},
 	}
 }

@@ -60,16 +60,16 @@ func With(skills cellskill.Resolver) cellfill.Registry {
 		Construct:    cdspatch.Factory(),
 		NeedsSubject: true,
 	}
-	// The CDS assessing seat. It needs the pinned subject too — it reconstructs
-	// the candidate from it — but the requirement is not declared here, because
-	// the beta side of the registry carries no requirement field: nothing has
-	// needed one yet in a way the loader could act on. A cds.assess cell pairs
-	// with a cds.patch alpha, whose declared requirement already refuses a
-	// subjectless run before either constructor is reached; a cell pairing this
-	// beta with a subjectless alpha would instead be refused by the seat at
-	// review time, which is later and noisier. Stated rather than left as an
-	// asymmetry a reader has to notice.
-	reg.Beta[cdsassess.Fill] = cdsassess.Factory()
+	// The CDS assessing seat needs the pinned subject too — it reconstructs the
+	// candidate from it — and now says so at its registration rather than in a
+	// comment. Today's cells pair it with `cds.patch`, whose requirement already
+	// refuses a subjectless run; declared here, a cell pairing this beta with an
+	// alpha that needs no subject is refused by the spec too, instead of
+	// constructing and failing later inside Review as an episode malfunction.
+	reg.Beta[cdsassess.Fill] = cellfill.BetaFill{
+		Construct:    cdsassess.Factory(),
+		NeedsSubject: true,
+	}
 	reg.Door = cdsadmit.Door
 	return reg
 }

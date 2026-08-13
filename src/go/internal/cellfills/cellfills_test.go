@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsassess"
+	"github.com/usurobor/cnos/src/go/internal/cdspatch"
 	"github.com/usurobor/cnos/src/go/internal/cellfills"
 	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
@@ -106,5 +108,34 @@ func TestInstalledHubLoadsFromForeignCwd(t *testing.T) {
 	// An uninstalled skill fails closed — there is no fallback search.
 	if _, _, err := cellmethod.Load(reg.Skills, methodologyDecl("cnos.eng:eng/nope")); err == nil {
 		t.Fatal("an uninstalled skill must fail the methodology load, not fall back")
+	}
+}
+
+// The SHIPPED registrations declare what their fills cannot act without. This
+// is the witness for the assembly point itself, not for the rule: the rule is
+// exercised in cellspec with stub fills, and the alpha side's real declaration
+// is exercised in cellrun — but flipping `cds.assess`'s NeedsSubject to false
+// left the whole suite green, because the alpha refusal fires first and masks
+// it. A registration nothing reads is a declaration that can quietly become
+// false.
+func TestTheShippedFillsDeclareTheirRunInputRequirements(t *testing.T) {
+	reg := cellfills.With(cellskill.Tree{Root: t.TempDir()})
+	for id, want := range map[string]bool{cdspatch.Fill: true, cdsassess.Fill: true} {
+		alpha, hasAlpha := reg.Alpha[id]
+		beta, hasBeta := reg.Beta[id]
+		switch {
+		case hasAlpha:
+			if alpha.NeedsSubject != want {
+				t.Errorf("alpha fill %q declares NeedsSubject=%v, want %v — it cannot act without contract.subject",
+					id, alpha.NeedsSubject, want)
+			}
+		case hasBeta:
+			if beta.NeedsSubject != want {
+				t.Errorf("beta fill %q declares NeedsSubject=%v, want %v — it reconstructs the candidate from contract.subject",
+					id, beta.NeedsSubject, want)
+			}
+		default:
+			t.Errorf("neither side registers %q; the assembly point no longer ships it", id)
+		}
 	}
 }

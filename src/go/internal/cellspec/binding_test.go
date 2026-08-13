@@ -207,6 +207,102 @@ func TestADeclaredSubjectRequirementIsRefusedBeforeConstruction(t *testing.T) {
 // still builds with an empty binding. That is every corpus cell carrying no run
 // input, and TestAZeroBindingBindsNothing above is its standing witness.
 
+// seatConstructions counts what each side's recording constructor was asked to
+// build. "Refused before construction" is a claim about what did NOT run, so a
+// recorded call is the only thing that can falsify it.
+type seatConstructions struct{ alpha, beta int }
+
+// betaSubjectRequiringRegistry re-registers `cdd.stub` on the ASSESSING side as
+// a fill that declares it cannot act without a subject, leaving the producing
+// side exactly as it ships — declaring nothing. That pairing is the divergence
+// this test exists for: a beta that needs the subject beside an alpha that does
+// not. Both constructors record, because the alpha's silence must not be what
+// lets the run through.
+func betaSubjectRequiringRegistry(built *seatConstructions) cellfill.Registry {
+	reg := cellfill.CddFills()
+	innerAlpha := reg.Alpha[cellfill.FillStubAlpha]
+	reg.Alpha[cellfill.FillStubAlpha] = cellfill.AlphaFill{
+		Construct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedAlpha, error) {
+			built.alpha++
+			return innerAlpha.Construct(ctx, decl, m)
+		},
+	}
+	innerBeta := reg.Beta[cellfill.FillStubBeta]
+	reg.Beta[cellfill.FillStubBeta] = cellfill.BetaFill{
+		Construct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedBeta, error) {
+			built.beta++
+			return innerBeta.Construct(ctx, decl, m)
+		},
+		NeedsSubject: true,
+	}
+	return reg
+}
+
+// refuseBetaConstruction decorates the recording beta so that running it AT ALL
+// fails the test. The count alone would prove the same thing, but only after
+// the build returned; this states the prohibition at the exact point it would
+// be broken, which is where a reader looks for it.
+func refuseBetaConstruction(t *testing.T, reg cellfill.Registry) cellfill.Registry {
+	t.Helper()
+	recording := reg.Beta[cellfill.FillStubBeta]
+	reg.Beta[cellfill.FillStubBeta] = cellfill.BetaFill{
+		Construct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedBeta, error) {
+			t.Errorf("the beta constructor ran for a binding its own fill declared it cannot act on")
+			return recording.Construct(ctx, decl, m)
+		},
+		NeedsSubject: recording.NeedsSubject,
+	}
+	return reg
+}
+
+// The assessing side's declared requirement decides the run BEFORE its
+// constructor runs — the same property the alpha side already holds. This is
+// the `cds.assess` case: a beta that reconstructs the candidate from the pinned
+// subject, paired with an alpha that needs none. Undeclared, such a cell built
+// both seats and failed inside Review as an episode malfunction; declared, it
+// is a spec refusal with nothing constructed.
+func TestADeclaredBetaSubjectRequirementIsRefusedBeforeConstruction(t *testing.T) {
+	s, err := Parse([]byte(stubCell))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := s.Resolve(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var built seatConstructions
+	_, _, err = r.Build(context.Background(),
+		refuseBetaConstruction(t, betaSubjectRequiringRegistry(&built)), Binding{})
+	if err == nil {
+		t.Fatal("a beta that cannot act without a subject must not be built without one")
+	}
+	if built != (seatConstructions{}) {
+		t.Fatalf("constructors ran before the refusal: %+v", built)
+	}
+	// The message names the SIDE, the fill and the input that is missing: a
+	// refusal that said only "requires contract.subject" would leave an operator
+	// looking at two seats.
+	for _, want := range []string{"beta", cellfill.FillStubBeta, "contract.subject", "--input"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("the refusal does not name %q: %v", want, err)
+		}
+	}
+
+	// ...and with a subject the SAME declaration constructs both seats. Without
+	// this the assertions above would hold for a registry that refused
+	// everything. Only the refusing decoration is dropped: the fill still
+	// declares the requirement, and the requirement is now satisfied.
+	var admitted seatConstructions
+	if _, _, err := r.Build(context.Background(), betaSubjectRequiringRegistry(&admitted),
+		Binding{Subject: json.RawMessage(`{"opaque":"subject"}`)}); err != nil {
+		t.Fatalf("a supplied subject must satisfy the requirement: %v", err)
+	}
+	if admitted != (seatConstructions{alpha: 1, beta: 1}) {
+		t.Fatalf("constructions = %+v, want exactly one build of each seat", admitted)
+	}
+}
+
 // --- one methodology, loaded once, before any seat -------------------------
 
 const methodCell = `{

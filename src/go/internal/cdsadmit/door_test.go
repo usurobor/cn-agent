@@ -91,8 +91,10 @@ func doorlessRegistry(l *ledger) cellfill.Registry {
 				}, nil
 			}},
 		},
-		Beta: map[string]cellfill.BetaFactory{
-			fill: func(context.Context, json.RawMessage, cellmethod.View) (cellfill.ConstructedBeta, error) {
+		Beta: map[string]cellfill.BetaFill{
+			// No declared requirement here either, and for the same reason as
+			// the alpha above.
+			fill: {Construct: func(context.Context, json.RawMessage, cellmethod.View) (cellfill.ConstructedBeta, error) {
 				l.note("construct beta")
 				return cellfill.ConstructedBeta{
 					Constructed: cellfill.Constructed{
@@ -101,7 +103,7 @@ func doorlessRegistry(l *ledger) cellfill.Registry {
 					},
 					Seat: recordingBeta{l},
 				}, nil
-			},
+			}},
 		},
 	}
 }

@@ -321,22 +321,42 @@ type Binding struct {
 // and half of it afterwards would have two places for the frozen value to
 // come from.
 func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding) (cellkernel.Spec, cellkernel.RunMeta, error) {
-	// The alpha fill's DECLARED requirement is checked against the binding
-	// before its constructor runs. A missing subject is decided entirely by two
+	// BOTH fills' DECLARED requirements are checked against the binding before
+	// EITHER constructor runs. A missing subject is decided entirely by two
 	// values both already in hand — the registration and `bind` — so nothing
 	// about it needs a seat to exist. Constructing first made the refusal wait
 	// for a provider adapter and every skill body to be built, and then arrive
 	// from a station as an episode malfunction, which is not what a run with no
-	// subject is. This package still learns nothing about fills: it reads one
-	// declared bool and never asks what a subject is for.
+	// subject is. The assessing seat is checked here rather than at its own
+	// constructor for the identical reason: a beta that cannot act without the
+	// subject — `cds.assess` reconstructs the candidate from it — otherwise
+	// discovered the fact from inside Review, one whole produced side later.
+	// This package still learns nothing about fills: it reads one declared bool
+	// per side and never asks what a subject is for.
 	alphaID, alphaFill, err := reg.LookupAlpha(r.Alpha)
 	if err != nil {
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
 	}
-	if alphaFill.NeedsSubject && len(bind.Subject) == 0 {
-		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(
-			"cell spec: alpha fill %q requires contract.subject, and no run input supplied one "+
-				"(pass --input)", alphaID)
+	betaID, betaFill, err := reg.LookupBeta(r.Beta)
+	if err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("beta: %w", err)
+	}
+	// One rule, applied to each side in turn — alpha first, so a cell whose two
+	// seats both need a subject refuses with the producing side named, as it did
+	// before the assessing side could declare anything.
+	for _, side := range []struct {
+		role         cellkernel.Role
+		id           string
+		needsSubject bool
+	}{
+		{cellkernel.RoleAlpha, alphaID, alphaFill.NeedsSubject},
+		{cellkernel.RoleBeta, betaID, betaFill.NeedsSubject},
+	} {
+		if side.needsSubject && len(bind.Subject) == 0 {
+			return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(
+				"cell spec: %s fill %q requires contract.subject, and no run input supplied one "+
+					"(pass --input)", side.role, side.id)
+		}
 	}
 
 	// ONE bundle, loaded ONCE, here — before either seat exists. A declared
