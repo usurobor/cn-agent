@@ -87,7 +87,25 @@ type Receipt struct {
 	Outcome     Outcome `json:"outcome"`
 	InputDigest string  `json:"input_digest"`
 	Reason      string  `json:"reason,omitempty"`
+	// SemanticAdequacy names who decided that this issue and design are
+	// EXECUTABLE, as opposed to well-formed. This door decides the second and
+	// not the first, and the field exists so a reader of the receipt cannot
+	// mistake one for the other (Pi #81 C2).
+	//
+	// Every structural rule here is decidable from the bytes: keys, blankness,
+	// unique criterion ids, a verification route per criterion, a base pinned
+	// to a commit. None of them can tell whether the criteria actually cover
+	// the problem, whether a non-goal has reappeared inside one, or whether the
+	// design's impact graph is complete. Those are the questions cdd/issue
+	// asks, they are not mechanical, and WCC 0.1 does not rent cognition to
+	// answer them — so the honest record is that an operator asserted it.
+	SemanticAdequacy string `json:"semantic_adequacy"`
 }
+
+// SemanticAdequacyOperatorAttested is the only value this profile emits. It is
+// a constant rather than a bool because the field's whole purpose is to be read
+// as a sentence by someone deciding how much a receipt proves.
+const SemanticAdequacyOperatorAttested = "operator-attested; this cell validated structure only"
 
 // Door is this profile's cellfill.Door: the whole decision, from raw bytes to a
 // serialized receipt, in the form the generic runner dispatches. It is what
@@ -221,7 +239,8 @@ func admit(digest string, in cellinput.RunInput) (cellfill.Admitted, Receipt, er
 	// ran".
 
 	return cellfill.Admitted{Issue: in.Issue, Design: in.Design, Subject: in.Subject},
-		Receipt{Kind: ReceiptKind, Outcome: OutcomeAdmitted, InputDigest: digest}, nil
+		Receipt{Kind: ReceiptKind, Outcome: OutcomeAdmitted, InputDigest: digest,
+			SemanticAdequacy: SemanticAdequacyOperatorAttested}, nil
 }
 
 // relate is the cross-facet arm: the rules that are about the issue and the
@@ -256,6 +275,7 @@ func relate(iss cdsissue.Issue, des cdsdesign.Design) error {
 // cellfill.ErrRefused so a caller that ignores the receipt still cannot proceed.
 func refuse(digest string, o Outcome, reason string) (cellfill.Admitted, Receipt, error) {
 	return cellfill.Admitted{},
-		Receipt{Kind: ReceiptKind, Outcome: o, InputDigest: digest, Reason: reason},
+		Receipt{Kind: ReceiptKind, Outcome: o, InputDigest: digest, Reason: reason,
+			SemanticAdequacy: SemanticAdequacyOperatorAttested},
 		fmt.Errorf("%w (%s): %s", cellfill.ErrRefused, o, reason)
 }

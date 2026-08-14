@@ -620,6 +620,12 @@ elif ! grep -q '"outcome": "rejected"' "$tmpdir/refused.json" ||
      grep -q 'closure_schema' "$tmpdir/refused.json"; then
   echo "  ✗ a refusal must emit an admission receipt naming its reason and no closure: $(head -c 300 "$tmpdir/refused.json")"; fail=1
 else echo "  ✓ a malformed issue is refused at the door with its own reason and no episode"; fi
+# The receipt is vetted by BOTH authorities. It had a Go decoder and no CUE
+# half until #CDSAdmissionReceipt, which is the single-authority state this
+# schema pair exists to end — and `semantic_adequacy` is exactly the field that
+# must not quietly stop being emitted, since it is the receipt's own statement
+# that this door judged structure and not executability (Pi #81 C2).
+vet_ok ./schemas/cds:cds "$tmpdir/refused.json" -d '#CDSAdmissionReceipt'
 
 # AN ENVELOPE REFUSAL TAKES THE REFUSAL PATH. A wrong `kind` is decisively
 # inadmissible, not a usage error: it must exit 4 with a receipt exactly as a

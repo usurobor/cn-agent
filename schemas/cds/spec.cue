@@ -341,6 +341,25 @@ _patchAlphaSkillsResolved: [{ref: string & !="", sha256: =~"^[0-9a-f]{64}$"}, ..
 	subject!: #GitSnapshotAuthored
 }
 
+// #CDSAdmissionReceipt is what the door emits on every outcome, admitted or
+// refused. It had no CUE half until now: the Go decoder was the only authority,
+// which is exactly the single-authority state this schema pair exists to end.
+//
+// `semantic_adequacy` is required and pinned to one string. The door decides
+// WELL-FORMEDNESS — keys, blankness, unique criterion ids, a verification route
+// per criterion, a base pinned to a commit — and none of those can tell whether
+// the criteria cover the problem or whether a non-goal reappeared inside one.
+// Those are cdd/issue's questions, they are not mechanical, and WCC 0.1 does
+// not rent cognition to answer them (Pi #81 C2). Pinning the string here means
+// a receipt cannot quietly stop saying so.
+#CDSAdmissionReceipt: {
+	kind!:              "cnos.cds.admission-receipt.v0"
+	outcome!:           "admitted" | "rejected" | "incomplete"
+	input_digest!:      =~"^[0-9a-f]{64}$"
+	semantic_adequacy!: "operator-attested; this cell validated structure only"
+	reason?:            #NonBlank
+}
+
 #CDSCellSpec: cdd.#CellSpec & {
 	protocol_id: "cnos.cdd.cds.receipt.v1"
 

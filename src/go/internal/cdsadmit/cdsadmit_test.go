@@ -229,3 +229,33 @@ func TestRelateRejectsWhatTheFacetsWouldHaveCaught(t *testing.T) {
 		t.Errorf("wrong reason: %v", err)
 	}
 }
+
+// Every receipt this door emits states who decided the issue was EXECUTABLE,
+// not merely well-formed — because this door decides only the second (Pi #81
+// C2). A receipt that carried an outcome and stayed silent on that question
+// would let a reader take a structural pass for a semantic one, which is the
+// overclaim the whole programme exists to stop.
+func TestEveryReceiptNamesWhoAttestedSemanticAdequacy(t *testing.T) {
+	for name := range negatives {
+		raw, err := os.ReadFile(filepath.Join(corpusDir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, r, _ := Decide(raw)
+		if r.SemanticAdequacy != SemanticAdequacyOperatorAttested {
+			t.Errorf("%s: receipt says %q about semantic adequacy, want %q",
+				name, r.SemanticAdequacy, SemanticAdequacyOperatorAttested)
+		}
+	}
+	valid, err := os.ReadFile(filepath.Join(corpusDir, "valid-run-input.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, r, _ := Decide(valid)
+	if r.Outcome != OutcomeAdmitted {
+		t.Fatalf("the corpus positive must be admitted, got %q: %s", r.Outcome, r.Reason)
+	}
+	if r.SemanticAdequacy != SemanticAdequacyOperatorAttested {
+		t.Fatalf("an ADMITTED receipt is exactly where the distinction matters, and it says %q", r.SemanticAdequacy)
+	}
+}
