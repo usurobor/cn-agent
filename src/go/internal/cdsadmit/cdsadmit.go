@@ -1,35 +1,16 @@
 // Package cdsadmit is the door: it decides whether a run input is executable
-// under the CDS profile, and it is the only thing that decides it.
+// under the CDS profile, and it is the only thing that decides it. Reached
+// through cellfill.Registry.Door, wired by internal/cellfills. Envelope and
+// payloads are decided TOGETHER, because a wrong `kind` is this profile's rule
+// as much as an issue's shape is, and must refuse through the same receipt as a
+// design with no approach rather than a second path with its own exit code.
 //
-// Everything here is structural. The question "is this issue REAL, is this
-// design consistent with it, are these criteria sufficient" is the cognitive
-// arm, and it is deliberately not implemented in 0.1 — see the branch marked
-// DEFERRED in admit for why, and what it costs.
-//
-// THE WHOLE DOCUMENT IS DECIDED HERE, envelope and payloads together. Decide
-// takes raw bytes: the declared `kind` and the closed key language are this
-// profile's rules exactly as much as an issue's shape is, so a wrong `kind`
-// refuses through the same receipt as a design with no approach. While the
-// runner decoded the envelope itself, those two questions had two answers —
-// one produced a receipt and its own exit code, the other produced neither.
-//
-// The property this package exists to hold is narrow and mechanical: nothing
-// cognitive runs before admission passes. It is held by shape rather than by
-// discipline — Decide is a pure function of the document's bytes, it takes no
-// provider, constructs no seat, and runs before the fill registry's
-// constructors are dispatched. Its witness is internal/cdsadmit/door_test.go,
-// which invokes the real runner with a recording registry and fails if a seat
-// was ever built.
-//
-// Decide performs no IO and touches no path (eng/go §2.17): it is a function of
-// bytes already in memory. Stated at that precision rather than as "this
-// package is pure", because it calls cellwork.ParseSubject — the pure half of
-// a package that also contains the git adapter, and therefore links one. One
-// decoder per fact is worth that link; a second subject decoder written here
-// would be the parallel-parser violation §2.17 names.
-//
-// It is reached through cellfill.Registry.Door, wired by internal/cellfills.
-// The runner names no CDS package.
+// Everything here is structural, the cognitive arm is DEFERRED in admit, and
+// nothing cognitive runs before admission passes — by shape, not by discipline:
+// Decide is a pure function of the document's bytes, takes no provider, builds
+// no seat, and runs before the registry's constructors (witness door_test.go).
+// No IO, no paths (eng/go §2.17); its one link, cellwork.ParseSubject, is one
+// decoder per fact, not §2.17's parallel parser.
 package cdsadmit
 
 import (
@@ -44,104 +25,56 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
 
-// ReceiptKind is the pinned tag of an admission receipt. An admission refusal
-// is NOT an episode closure — no episode exists before a contract is admitted
-// (CELL-SYSTEM-DESIGN §4.7) — so it carries its own kind and is never emitted
-// under the closure schema. Spelled under the repo's `cnos.<domain>.<name>.vN`
-// convention, like every other `cnos.` tag a reader of this record meets.
+// ReceiptKind is the admission receipt's own tag: a refusal is NOT an episode
+// closure, since no episode exists before a contract is admitted (§4.7).
 const ReceiptKind = "cnos.cds.admission-receipt.v0"
 
 // Outcome is the complete admission vocabulary (CELL-SYSTEM-DESIGN §10.3).
 type Outcome string
 
 const (
-	// OutcomeAdmitted: every structural gate passed. Production may run.
 	OutcomeAdmitted Outcome = "admitted"
-	// OutcomeRejected: a decisive contract defect exists. The document is
-	// present and wrong, and no amount of waiting changes that.
 	OutcomeRejected Outcome = "rejected"
-	// OutcomeIncomplete: a required part is UNAVAILABLE rather than wrong.
-	// Structurally that is exactly one case in 0.1 — an absent payload — and
-	// it is kept distinct from rejection because the repairs differ: supply
-	// the missing document, versus fix the one you supplied.
+	// Incomplete is distinct from rejected because the repairs differ: supply the
+	// missing document, versus fix the one you supplied. One case in 0.1.
 	OutcomeIncomplete Outcome = "incomplete"
 )
 
-// Receipt is the typed record of the decision.
-//
-// InputDigest is the SHA-256 of the exact run-input document this receipt
-// decided on. It is the receipt's ARTIFACT IDENTITY, and it is what a refusal
-// most needs: when a document is refused, nothing is frozen into a contract and
-// no episode closure exists, so the receipt is the only record of the run and
-// the digest is the only thing that says WHICH document it refused.
-//
-// It is not a second proof surface for the admitted payloads. Those are frozen
-// into the contract and covered there by the kernel's one scope-lift digest,
-// which is taken over different bytes — the canonical episode record, not the
-// authored envelope. This digest identifies an untrusted input; that one proves
-// an episode. Carried on every outcome rather than only on refusals, because a
-// receipt that sometimes says what it decided about is harder to read than one
-// that always does.
+// Receipt is the typed record of the decision. InputDigest is the SHA-256 of the
+// document decided on: a refusal freezes nothing and closes no episode, so the
+// digest alone says WHICH one it refused — not a second proof surface for the
+// admitted payloads (CDS-CELL-MIGRATION.md).
 type Receipt struct {
 	Kind        string  `json:"kind"`
 	Outcome     Outcome `json:"outcome"`
 	InputDigest string  `json:"input_digest"`
 	Reason      string  `json:"reason,omitempty"`
-	// SemanticAdequacy names who decided that this issue and design are
-	// EXECUTABLE, as opposed to well-formed. This door decides the second and
-	// not the first, and the field exists so a reader of the receipt cannot
-	// mistake one for the other (Pi #81 C2).
-	//
-	// Every structural rule here is decidable from the bytes: keys, blankness,
-	// unique criterion ids, a verification route per criterion, a base pinned
-	// to a commit. None of them can tell whether the criteria actually cover
-	// the problem, whether a non-goal has reappeared inside one, or whether the
-	// design's impact graph is complete. Those are the questions cdd/issue
-	// asks, they are not mechanical, and WCC 0.1 does not rent cognition to
-	// answer them — so the honest record is that an operator asserted it.
+	// SemanticAdequacy names who decided this issue and design are EXECUTABLE, not
+	// merely well-formed (Pi #81 C2): no rule here can tell whether the criteria
+	// cover the problem, and 0.1 rents no cognition to answer that.
 	SemanticAdequacy string `json:"semantic_adequacy"`
 }
 
-// SemanticAdequacyOperatorAttested is the only value this profile emits. It is
-// a constant rather than a bool because the field's whole purpose is to be read
-// as a sentence by someone deciding how much a receipt proves.
+// SemanticAdequacyOperatorAttested is the only value this profile emits — a
+// constant, not a bool, so it reads as a sentence to someone weighing a receipt.
 const SemanticAdequacyOperatorAttested = "operator-attested; this cell validated structure only"
 
-// Door is this profile's cellfill.Door: the whole decision, from raw bytes to a
-// serialized receipt, in the form the generic runner dispatches. It is what
-// internal/cellfills wires into the registry, exactly as it wires a fill.
-//
-// The receipt is marshaled HERE. The runner emits those bytes without decoding
-// them, so the receipt's kind tag and vocabulary stay this package's and the
-// runner never learns a word of CDS.
+// Door is this profile's cellfill.Door. The receipt is marshaled HERE and the
+// runner emits those bytes undecoded, so its vocabulary stays this package's.
 func Door(raw []byte) (cellfill.Admitted, json.RawMessage, error) {
 	admitted, receipt, decision := Decide(raw)
 	out, err := json.Marshal(receipt)
 	if err != nil {
-		// The receipt is this package's own struct of strings; failing to
-		// marshal it is a broken runtime, not a refusal, so it must not be
-		// reported as one.
+		// Failing to marshal this package's own struct of strings is a broken
+		// runtime, not a refusal, so it must not be reported as one.
 		return cellfill.Admitted{}, nil, fmt.Errorf("cds admission: encode receipt: %w", err)
 	}
 	return admitted, out, decision
 }
 
-// Decide is the whole door as the runner walks it: the ENVELOPE and the
-// payloads, one decision, one receipt.
-//
-// The envelope belongs here and not to the caller. A document declaring the
-// wrong `kind`, carrying an unknown key, or spelling `Kind` with a capital is
-// decisively inadmissible under this profile — the same class of fact as a
-// design with no approach — so it refuses through the receipt path and not as
-// some other kind of error the caller invents a code for. Two refusal paths for
-// one question is how `kind` came to exit differently from `approach`.
-//
-// What it returns on the admitting path is cellfill.Admitted: the exact
-// authored bytes of each payload, in the form the contract will carry them. The
-// SUBJECT there is still the authored one — it may name `HEAD`, a branch or a
-// tag. Pinning it is an effect (it reads a repository) and this function is
-// pure, so resolution happens once afterwards, in cellwork.Pin, before either
-// seat is constructed.
+// Decide returns the exact authored bytes of each payload. The SUBJECT is still
+// the authored one and may name `HEAD` or a branch: pinning reads a repository
+// and this function is pure, so it happens once afterwards in cellwork.Pin.
 func Decide(raw []byte) (cellfill.Admitted, Receipt, error) {
 	digest := cellinput.Digest(raw)
 	in, err := cellinput.Decode(raw)
@@ -151,18 +84,12 @@ func Decide(raw []byte) (cellfill.Admitted, Receipt, error) {
 	return admit(digest, in)
 }
 
-// admit decides one already-decoded run input.
-//
-// The receipt and the error carry the same fact through two channels on
-// purpose: the receipt is the typed result an operator reads, the error is
-// what a Go caller must handle. There is no third, "fault" channel in 0.1 —
-// every rule below is a pure predicate over bytes already in memory, so there
-// is no mechanism here that can malfunction as distinct from refusing.
+// admit decides one already-decoded run input. The receipt is what an operator
+// reads and the error what a Go caller handles; there is no third "fault"
+// channel, because every rule below is a pure predicate that cannot malfunction.
 func admit(digest string, in cellinput.RunInput) (cellfill.Admitted, Receipt, error) {
-	// Absent versus malformed versus oversize. All three refuse, and the first
-	// two are different outcomes: an absent payload is a run input that was
-	// never finished, a malformed one is a document whose author believed it
-	// was.
+	// Absent and malformed are different outcomes: an absent payload is a run input
+	// never finished, a malformed one a document whose author believed it was.
 	for _, p := range []struct {
 		name string
 		raw  json.RawMessage
@@ -174,20 +101,10 @@ func admit(digest string, in cellinput.RunInput) (cellfill.Admitted, Receipt, er
 		if len(p.raw) == 0 {
 			return refuse(digest, OutcomeIncomplete, fmt.Sprintf("run input carries no %s", p.name))
 		}
-		// THE DOOR REFUSES WHAT THE KERNEL WILL REFUSE. Each admitted payload
-		// becomes an opaque contract slot, and the kernel bounds every slot at
-		// cellkernel.MaxOpaqueSlotBytes. Without this check an oversize issue
-		// was admitted, its subject was resolved against a real repository, and
-		// BOTH seats were constructed — a provider adapter built and skill
-		// bodies loaded — before validateSpec reported `episode malfunction`.
-		// Work happened on a document that was never admissible, and the
-		// operator was told the runtime broke rather than that their document
-		// was too large.
-		//
-		// The bound is REFERENCED, never restated: one number, owned by the
-		// boundary that enforces it. A second constant here would be a second
-		// number to keep in step, and the failure it produces is silent — the
-		// door would admit exactly the documents the kernel then rejects.
+		// THE DOOR REFUSES WHAT THE KERNEL WILL REFUSE: without this check both seats
+		// were built before the kernel rejected the oversize slot as `episode
+		// malfunction` (CDS-CELL-MIGRATION.md). The bound is REFERENCED, never
+		// restated: a second constant drifts silently into admitting what it rejects.
 		if len(p.raw) > cellkernel.MaxOpaqueSlotBytes {
 			return refuse(digest, OutcomeRejected, fmt.Sprintf(
 				"run input %s is %d bytes, over the %d-byte contract slot bound",
@@ -204,9 +121,8 @@ func admit(digest string, in cellinput.RunInput) (cellfill.Admitted, Receipt, er
 		return refuse(digest, OutcomeRejected, err.Error())
 	}
 	// ParseSubject, not AdmitSubject: an AUTHORED subject may name a moving
-	// revision, which is precisely what the pinning step exists to resolve.
-	// Requiring 40 hex here would make `HEAD` — the thing a human writes —
-	// inadmissible, and would move pinning into the author's hands.
+	// revision, which is what pinning resolves. Requiring 40 hex here would make
+	// `HEAD` inadmissible and move pinning into the author's hands.
 	if _, err := cellwork.ParseSubject(in.Subject); err != nil {
 		return refuse(digest, OutcomeRejected, err.Error())
 	}
@@ -215,45 +131,20 @@ func admit(digest string, in cellinput.RunInput) (cellfill.Admitted, Receipt, er
 	}
 
 	// --- cognitive arm: DEFERRED ------------------------------------------
-	//
-	// This is where "is the problem real, are issue and design mutually
-	// consistent, is the scope executable" would be attested
-	// (CELL-SYSTEM-DESIGN §10.2 step 6). It is declared and EMPTY: control
-	// falls straight through to admitted, nothing is consulted, and no
-	// provider is reachable from this function.
-	//
-	// Deferred, not dropped, and the reason is order rather than value
-	// (WCC-0.1-PLAN §0 C2). By the design's own authority table the arm is
-	// `attested_unverified`: it enforces nothing and cannot be re-derived, so
-	// a run cannot be refused on its say-so. What it would cost now is a third
-	// cognitive station, a provider fault class, an attestation vocabulary and
-	// a receipt shape — plus one provider round-trip on every run, including
-	// the deterministic-fake corpus. Semantic admission is the right long-term
-	// answer to "is this issue executable"; it is not on the path to a first
-	// accepted patch, and the structural arm above already refuses any
-	// deliberately bad issue before a seat exists.
-	//
-	// The position is a branch and not an unpopulated interface field on
-	// purpose: a nil attestor threaded through the signature would read as a
-	// gate that ran and found nothing, which is a stronger claim than "no gate
-	// ran".
+	// "Is the problem real, are issue and design consistent, is the scope
+	// executable" (CELL-SYSTEM-DESIGN §10.2 step 6) is declared and EMPTY: deferred
+	// for order, not value, at the cost in CDS-CELL-MIGRATION.md. A branch and not
+	// an unfilled interface field, since a nil attestor would read as a gate that ran.
 
 	return cellfill.Admitted{Issue: in.Issue, Design: in.Design, Subject: in.Subject},
 		Receipt{Kind: ReceiptKind, Outcome: OutcomeAdmitted, InputDigest: digest,
 			SemanticAdequacy: SemanticAdequacyOperatorAttested}, nil
 }
 
-// relate is the cross-facet arm: the rules that are about the issue and the
-// design TOGETHER rather than about either alone.
-//
-// Stated exactly, because the honest description matters more than the
-// appearance of coverage: both conjuncts below are ALSO enforced inside
-// cdsissue.Admit and cdsdesign.Admit, so on the full Admit path no document
-// can reach this function and fail it. It is a redundant guard today. It is
-// written anyway because the relation is the door's to own — if either facet
-// ever relaxes its own rule, the door does not silently lose it — and it is
-// unit-tested directly rather than through Admit, since only a direct call can
-// make it fire.
+// relate is the cross-facet arm: rules about issue and design TOGETHER. Both
+// conjuncts are ALSO enforced in cdsissue.Admit and cdsdesign.Admit, so nothing on
+// the full path can reach here and fail it; written anyway because the relation is
+// the door's to own if a facet relaxes its rule, and tested by direct call only.
 func relate(iss cdsissue.Issue, des cdsdesign.Design) error {
 	seen := make(map[string]bool, len(iss.Acceptance))
 	for _, c := range iss.Acceptance {
@@ -270,9 +161,8 @@ func relate(iss cdsissue.Issue, des cdsdesign.Design) error {
 	return nil
 }
 
-// refuse states one refusal in all three channels at once: nothing frozen, a
-// typed receipt naming the document and the reason, and an error wrapping
-// cellfill.ErrRefused so a caller that ignores the receipt still cannot proceed.
+// refuse states one refusal in all three channels: nothing frozen, a typed receipt,
+// and an ErrRefused wrap so a caller ignoring the receipt still cannot proceed.
 func refuse(digest string, o Outcome, reason string) (cellfill.Admitted, Receipt, error) {
 	return cellfill.Admitted{},
 		Receipt{Kind: ReceiptKind, Outcome: o, InputDigest: digest, Reason: reason,

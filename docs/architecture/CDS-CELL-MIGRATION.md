@@ -444,6 +444,85 @@ semantics, so the next fill with a different answer shape would have received a
 fake answering in the wrong language. `cellcog.ErrNoDeterministicAnswer` is the
 refusal that replaced it.
 
+## Admission and fill incident history (moved out of the package comments)
+
+Why this section exists: the same audit finding as above
+(`WCC-CODE-QUALITY-AUDIT.md` Q3) measured `cdsadmit` at 58%, `cellfills` 54%,
+`cellinput` 51% and `cdspatch` 44% comment. The **reasons** stay in the code,
+where a maintainer changing a rule needs them. What moves here is the record of
+what an earlier revision did and how a run falsified it — history a commit
+message and this document can carry, which does not have to be re-read every
+time someone opens the file.
+
+**`cdsadmit` decides the ENVELOPE as well as the payloads.** While the runner
+decoded the envelope itself, a wrong `kind` and a design with no `approach` —
+the same class of fact under this profile — had two different answers: one
+produced an admission receipt and its own exit code, the other produced
+neither. Deciding the whole document in `Decide` is what collapsed the two
+paths into one receipt.
+
+**The oversize check in `cdsadmit.admit` exists because its absence was
+measured, not imagined.** Without it an oversize issue was admitted, its
+subject was resolved against a real repository, and BOTH seats were constructed
+— a provider adapter built and skill bodies loaded — before `validateSpec`
+reported `episode malfunction` against `cellkernel.MaxOpaqueSlotBytes`. Work
+happened on a document that was never admissible, and the operator was told the
+runtime had broken rather than that their document was too large. The surviving
+comment keeps the rule that follows from it: the door refuses what the kernel
+will refuse, and it REFERENCES the kernel's bound instead of restating it.
+
+**The cognitive arm's cost, in full.** `admit` carries a declared and empty
+DEFERRED branch where "is the problem real, are issue and design mutually
+consistent, is the scope executable" would be attested (CELL-SYSTEM-DESIGN
+§10.2 step 6). Implementing it now would cost a third cognitive station, a
+provider fault class, an attestation vocabulary and a receipt shape, plus one
+provider round-trip on every run including the deterministic-fake corpus. By
+the design's own authority table the arm is `attested_unverified` — it enforces
+nothing and cannot be re-derived, so a run cannot be refused on its say-so.
+Semantic admission is the right long-term answer to "is this issue executable";
+it is not on the path to a first accepted patch (WCC-0.1-PLAN §0 C2).
+
+**`Receipt.InputDigest` is not a second proof surface.** It identifies one
+untrusted input document; the kernel's one scope-lift digest proves an episode,
+and is taken over different bytes — the canonical episode record rather than
+the authored envelope. The digest is carried on every outcome, not only on
+refusals, because a receipt that only sometimes says what it decided about is
+harder to read than one that always does.
+
+**`cellinput.Kind` uses the `cnos.<domain>.<name>.vN` spelling** that
+`cnos.cds.issue.v0`, `cnos.cellspec.v0` and `cnos.cellkernel.episode-closure.v0`
+already use. The `/0.1` form belongs to the non-`cnos.` adapter namespace
+(`git.snapshot/0.1`); two spellings inside one namespace would leave a reader
+guessing which one a new tag should follow.
+
+**`cellfills` wires `NeedsSubject` at the registration, and `cds.assess` gained
+it later.** The assessing seat reconstructs the candidate from the pinned
+subject and used to say so only in a comment. Today's cells pair it with
+`cds.patch`, whose own requirement already refuses a subjectless run — but
+declared at the registration, a cell pairing this beta with an alpha that needs
+no subject is refused by the spec loader too, instead of constructing and
+failing later inside `Review` as an episode malfunction.
+
+**`cdspatch` stopped naming a repository, and that was a defect fix.** While
+the fill resolved its own repo and base, a run could carry two repository
+declarations that disagreed — `contract.subject` naming one and
+`resolved_spec.alpha` naming another — and the closure still self-verified,
+because each was internally consistent. Even authored identically they were two
+`ResolveBase` calls at different times, so a moving `HEAD` could pin twice. One
+source, read once, makes the disagreement unrepresentable rather than caught.
+
+**`cdspatch` stopped declaring its own skills for the same reason.** While it
+held a skill resolver the fill LOADED its own list — a second methodology
+beside the cell's, with its own digest and no statement that the two were meant
+to agree. The `skills` key is gone from both authorities, the Go decoder and
+the closed CUE overlay.
+
+**`cds.patch` and `cds.assess` share one declaration shape.** `cellfill.Decl`
+and `exactShape` were written twice, byte-identical apart from a label
+(`WCC-CODE-QUALITY-AUDIT.md` Q1); `cellfill.AdmitSeatDecl` now owns the closed
+`{fill, cognition}` key language and the projection-role check, and each fill
+states only its own refusals and the cognition port it rents.
+
 ## Boundary the kernel never owns (Pi β #31, C3)
 
 The episode kernel owns no GitHub, ref, PR, branch, cursor, writer-locality, or

@@ -1,30 +1,17 @@
 // Package cdspatch is the CDS-owned `cds.patch` fill: the constructor for a
-// patch-producing alpha. Only this fill knows that producing a CDS patch
-// takes workspace cognition and a git worktree — the generic runner dispatches
-// a fill id and receives a cellkernel.Alpha, nothing more.
-//
-// The constructor composes two reusable subsystems and owns none of their
-// internals: cellcog constructs the bounded provider adapter (this package
-// contains no provider argv at all), and cellwork prepares the disposable
-// worktree. What comes back is one immutable, provider-neutral PatchAlpha.
+// patch-producing alpha. Only this fill knows that producing a CDS patch takes
+// workspace cognition and a git worktree — the runner dispatches a fill id and
+// receives a cellkernel.Alpha. cellcog builds the bounded provider adapter (no
+// provider argv lives in this package) and cellwork prepares the worktree.
 //
 // THE SEAT DOES NOT DECLARE ITS SKILLS. It receives the cell's constructive
-// methodology projection and records the bundle digest it was held to. The
-// `skills` key is gone from this fill in both authorities — the Go decoder
-// below and the closed CUE overlay — because two lists of obligations, one on
-// the cell and one on the seat, are two lists that drift with nothing able to
-// notice.
+// projection and records the bundle digest it was held to, because two lists of
+// obligations — one on the cell, one on the seat — drift with nothing able to
+// notice. The `skills` key is gone from both authorities, Go and CUE.
 //
-// THE SEAT DOES NOT NAME A REPOSITORY. The declaration carries no workspace:
-// the repository and the base commit come from the pinned contract subject,
-// read at Produce with cellwork.AdmitSubject. This is not tidying. While the
-// fill resolved its own repo and base, a run could carry two repository
-// declarations that disagreed — the record's contract.subject naming one and
-// its resolved_spec.alpha naming another — and the closure self-verified,
-// because each was internally consistent. Even authored identically they were
-// two ResolveBase calls at different times, so a moving HEAD could pin twice.
-// One source, read once, and the disagreement is unrepresentable rather than
-// caught.
+// THE SEAT DOES NOT NAME A REPOSITORY: repository and base come from the pinned
+// contract subject, read at Produce. One source read once makes two disagreeing
+// repository declarations unrepresentable (CDS-CELL-MIGRATION.md).
 package cdspatch
 
 import (
@@ -54,56 +41,31 @@ const (
 )
 
 // The authored declaration is cellfill.SeatDecl: the closed {fill, cognition}
-// shape, shared with `cds.assess` because the two seats declare the same thing
-// and a second copy would be a second key language. What this fill owns is
-// stated at the constructor — its refusals and which cognition port it rents.
-// The CUE overlays #CDSPatchAlphaAuthored and #CDSPatchAlphaResolved pin the
-// same shapes for the independent oracle: authored admits the structurally
-// possible forms, and resolution plus this constructor validate the selected
-// provider/model combination.
+// shape, shared with `cds.assess` because a second copy would be a second key
+// language. The CUE overlays pin the same shapes for the independent oracle.
 
-// ResolvedDecl is what the closure records for this seat: the declaration
-// with skills expanded to ordered canonical refs + content digests, and the
-// provider plus the REQUESTED MODEL SELECTOR. Deterministic bytes — this is
-// the canonical form the scope-lift digest covers.
-//
-// "Selector", precisely (Pi #57 B2): the recorded model is what the cell
-// asked for, not an independently observed immutable model identity. A
-// provider may remap a selector to another model — the Claude CLI says so on
-// stderr when it does — and nothing here observes or verifies what actually
-// served the request. Recording the served identity would need the provider
-// to report it and the runtime to check it; neither exists yet, so the field
-// claims only what it is.
+// ResolvedDecl is what the closure records for this seat: the provider and the
+// REQUESTED MODEL SELECTOR, as deterministic bytes — the canonical form the
+// scope-lift digest covers. "Selector", precisely (Pi #57 B2): a provider may
+// remap a selector to another model, the Claude CLI says so on stderr when it
+// does, and nothing here verifies what actually served the request.
 type ResolvedDecl struct {
 	Fill      string         `json:"fill"`
 	Cognition cellcog.Config `json:"cognition"`
-	// Methodology is what the seat RECEIVED, not what it chose: this fill has
-	// no skills key and cannot state one. Recording the projection's role and
-	// the bundle digest is how a reader can ask whether the seat was held to
-	// the methodology the cell declared — the refs and their body digests live
-	// once, on the bundle, and are not copied per seat.
+	// Methodology is what the seat RECEIVED, not what it chose: the projection's role
+	// and bundle digest are how a reader asks whether the seat was held to the cell's
+	// methodology. Refs and body digests live once, on the bundle.
 	Methodology cellmethod.Recorded `json:"methodology"`
 }
 
-// Factory returns the cds.patch alpha factory.
-//
-// It closes over nothing. While it held a skill resolver, this fill LOADED its
-// own skills from its own list — a second methodology beside the cell's, with
-// its own digest and no statement that the two were meant to agree. The
-// constructive projection now arrives as an argument, so what holds this seat
-// is the cell's one bundle and the fill can only refuse it, never replace it.
+// Factory closes over nothing: the constructive projection arrives as an argument,
+// so the fill can refuse the cell's one bundle but never replace it with its own.
 func Factory() cellfill.AlphaFactory {
 	return func(ctx context.Context, decl json.RawMessage, method cellmethod.View) (cellfill.ConstructedAlpha, error) {
-		// The shared decode: the closed {fill, cognition} key language and the
-		// projection-role check, which every seat of this shape needs and no
-		// fill should own a copy of. What stays here is what is genuinely this
-		// fill's — the two refusals, in this seat's own words, and the cognition
-		// port a patch alpha rents.
-		//
-		// The fill states its own requirement, and only the fill can: a patch
-		// alpha writes real code and there is nothing to hold it to without a
-		// methodology. A cell declaring none is legitimate for other fills, so
-		// this is refused for this fill rather than by the loader for everyone.
+		// The shared decode owns the key language and the projection-role check every
+		// seat of this shape needs; what stays here is genuinely this fill's. Only the
+		// fill can state that a patch alpha needs a methodology — a cell declaring none
+		// is legitimate for other fills, so this refuses here, not in the loader.
 		d, err := cellfill.AdmitSeatDecl(decl, Fill, cellmethod.RoleConstructive, method, cellfill.SeatRefusal{
 			NoMethodology: "a patch alpha needs the cell's methodology, and this cell declares none",
 			WrongRole:     "a producing seat takes the constructive projection",
@@ -116,10 +78,8 @@ func Factory() cellfill.AlphaFactory {
 		if err != nil {
 			return cellfill.ConstructedAlpha{}, fmt.Errorf("fill %q: %w", Fill, err)
 		}
-		// Nothing here pins a revision and nothing here loads a skill. The
-		// subject was pinned once and the methodology was loaded once, both
-		// before this constructor ran; this declaration records what it
-		// actually selects — the provider — and what it was handed.
+		// Nothing here pins a revision or loads a skill: both happened once before this
+		// constructor ran, so the declaration records what it selects and receives.
 		resolved := ResolvedDecl{
 			Fill:        Fill,
 			Cognition:   d.Cognition,
@@ -137,17 +97,14 @@ func Factory() cellfill.AlphaFactory {
 	}
 }
 
-// PatchAlpha is the provider-neutral patch-producing seat. It materializes a
+// PatchAlpha is the provider-neutral patch-producing seat: it materializes a
 // disposable worktree at the base, lets the coder change files in it, then
-// MEASURES the change as a unified diff. Nothing here trusts the coder's
-// account of itself: a coder that claims a sweeping refactor and wrote
-// nothing produces no diff, and an episode with no diff cannot satisfy a
-// contract requiring one — false completion is unrepresentable, not caught
-// late.
-//
-// It holds no repository and no base. Both are read from the contract's
-// pinned subject on every Produce, so what the episode acts on and what the
-// record says it acted on are one value that was resolved once.
+// MEASURES the change as a unified diff. Nothing trusts the coder's account of
+// itself — one that claims a sweeping refactor and wrote nothing produces no diff,
+// and an episode with no diff cannot satisfy a contract requiring one, so false
+// completion is unrepresentable rather than caught late. It holds no repository
+// and no base: both are read from the pinned subject on every Produce, so the
+// episode acts on the one value the record says it acted on.
 type PatchAlpha struct {
 	coder  cellcog.Coder
 	method cellmethod.View
@@ -157,20 +114,16 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 	if a.coder == nil {
 		return cellkernel.AlphaOutput{}, cellcog.ErrNoProvider
 	}
-	// AdmitSubject, not ParseSubject: a station requires a base already pinned
-	// to an exact commit. Re-resolving a moving name here is precisely how the
-	// two stations could measure against different trees while one record
-	// claimed one. A cds.patch cell therefore cannot run without a run input —
-	// an absent subject fails here rather than silently defaulting to some
-	// repository nobody named.
+	// AdmitSubject, not ParseSubject: a station requires a base already pinned, since
+	// re-resolving a moving name is how two stations could measure different trees
+	// while one record claimed one; an absent subject fails rather than defaulting.
 	subject, err := cellwork.AdmitSubject(in.Contract.Subject)
 	if err != nil {
 		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: %w", err)
 	}
-	// Admitted here as well as at the door, and not because the door is
-	// distrusted: this seat reads the FROZEN contract, so admitting the bytes it
-	// was actually handed is what makes the issue it renders the issue the
-	// episode recorded. It also fails before the worktree is cut.
+	// Admitted here as well as at the door, not because the door is distrusted: this
+	// seat reads the FROZEN contract, so admitting the bytes it was handed makes the
+	// issue it renders the issue the episode recorded, and fails before a worktree.
 	issue, err := cdsissue.Admit(in.Contract.Issue)
 	if err != nil {
 		return cellkernel.AlphaOutput{}, fmt.Errorf("cds.patch: %w", err)
@@ -189,10 +142,9 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 		return cellkernel.AlphaOutput{}, err
 	}
 
-	// base_sha is MEASURED from the materialized worktree — the coder never
-	// sees it — so it is what the episode actually stood on, not a copy of what
-	// the contract asked for. Equal to contract.subject.base_sha whenever the
-	// subject is honest; the point is that a reader can compare them.
+	// base_sha is MEASURED from the materialized worktree — the coder never sees it
+	// — so it is what the episode stood on, not a copy of what the contract asked
+	// for. Equal to contract.subject.base_sha when honest; a reader can compare.
 	artifacts := []cellkernel.ArtifactCandidate{
 		{ID: BaseArtifactID, Kind: BaseArtifactKind, Text: wt.BaseSHA},
 	}
@@ -202,9 +154,8 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 			Artifacts: artifacts,
 		}, nil
 	}
-	// The diff is both what beta reviews (matter) and what V checks
-	// (evidence). Same bytes, two roles: beta never receives artifacts, V
-	// never reads matter.
+	// The diff is both what beta reviews (matter) and what V checks (evidence):
+	// same bytes, two roles — beta never receives artifacts, V never reads matter.
 	return cellkernel.AlphaOutput{
 		Matter: cellkernel.Matter{Data: diff},
 		Artifacts: append(artifacts,
@@ -212,23 +163,17 @@ func (a PatchAlpha) Produce(ctx context.Context, in cellkernel.AlphaInput) (cell
 	}, nil
 }
 
-// RenderPrompt is pure and deterministic over the contract and the CONSTRUCTIVE
-// PROJECTION: the projection's text carries the exact skill bodies the cell's
-// bundle loaded, so what the seat reads is the cell's methodology verbatim.
-// This function no longer renders skills itself — it appends a view it was
-// handed, which is what stops the seat having a second opinion about what it is
-// held to.
+// RenderPrompt is pure over the contract and the CONSTRUCTIVE PROJECTION, whose
+// text carries the exact skill bodies the cell's bundle loaded. It appends that
+// view rather than rendering skills, so the seat holds no second opinion.
 func RenderPrompt(c cellkernel.Contract, issue cdsissue.Issue, method cellmethod.View) string {
 	var b strings.Builder
 	b.WriteString("You are the alpha (producing) seat of a CNOS coherence cell, working on real code.\n")
 	b.WriteString("You are in a disposable worktree. Edit the files here to meet the contract.\n\n")
 	fmt.Fprintf(&b, "CONTRACT %s\nGOAL: %s\n\n", c.ID, c.Goal)
-	// The ISSUE, through the same cdsissue.Render the assessing seat uses. The
-	// goal line is one sentence and the acceptance criteria are what the work
-	// is actually judged against — a seat given only the goal writes against a
-	// summary of its contract and is then reviewed against the contract. Both
-	// seats read the same frozen bytes through the same function, so "they were
-	// told the same thing" is a property of there being one renderer.
+	// The ISSUE, through the same cdsissue.Render the assessing seat uses: a seat
+	// given only the one-sentence goal writes against a summary of its contract and
+	// is then reviewed against the contract — one renderer over the same bytes.
 	b.WriteString(cdsissue.Render(issue))
 	b.WriteString("\nHOW YOUR WORK IS RECORDED\n")
 	b.WriteString("Your change is measured as a unified diff of this worktree, not taken from\n")

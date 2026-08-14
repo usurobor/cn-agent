@@ -1,15 +1,8 @@
-// Package cellfills is the application composition root: the one place that
-// knows which fills this binary ships and what they depend on.
-//
-// It exists so neither side of the boundary has to know the other. The generic
-// runner receives an already-closed registry and only dispatches it; the CLI
-// stays a thin wrapper; and `cds.patch` keeps its own dependency on installed
-// skills without the runner ever learning that a patch alpha needs any.
-//
-// Skill authority is the canonical INSTALLED package root under the hub.
-// There is no fallback search, discovery, or service locator: if a skill is
-// not installed, construction fails and says so. Tests inject an explicit
-// tree instead of relying on a search order.
+// Package cellfills is the application composition root: the one place that knows
+// which fills this binary ships, so the runner receives a closed registry and only
+// dispatches it. Skill authority is the canonical INSTALLED package root under the
+// hub — no fallback search or service locator, so an uninstalled skill fails
+// construction and says so.
 package cellfills
 
 import (
@@ -28,44 +21,27 @@ func InstalledPackages(hubPath string) string {
 	return filepath.Join(hubPath, ".cn", "vendor", "packages")
 }
 
-// Assemble builds the fill registry this binary ships: the generic cdd fills,
-// the CDS patch constructor closed over the installed package root, and the CDS
-// admission door.
+// Assemble builds the fill registry this binary ships.
 func Assemble(hubPath string) cellfill.Registry {
 	return With(cellskill.Tree{Root: InstalledPackages(hubPath)})
 }
 
-// With is Assemble over an explicit skill resolver, for tests that supply
-// their own installed tree.
-//
-// The door is wired here for exactly the reason the fills are: it is the one
-// place that may know which profile this binary ships. `cn cell run` is the
-// generic runner — it dispatches whatever door it is handed and names no CDS
-// package, so a second profile is another line in this function rather than an
-// import and a branch inside the runner.
+// With is Assemble over an explicit skill resolver, for tests with their own tree.
+// The door is wired here for the reason the fills are: the runner names no CDS
+// package, so a second profile is another line here, not a branch in the runner.
 func With(skills cellskill.Resolver) cellfill.Registry {
 	reg := cellfill.CddFills()
-	// The resolver goes on the REGISTRY, not into a fill. The cell declares one
-	// methodology bundle and the loader loads it once; a fill closed over its
-	// own resolver would be a second place skills could enter a run, which is
-	// what `cds.patch`'s own `skills` list was.
+	// The resolver goes on the REGISTRY: a fill closed over its own resolver is a
+	// second place skills could enter a run, which is what `cds.patch`'s list was.
 	reg.Skills = skills
-	// NeedsSubject is declared here, at the registration, because that is where
-	// this binary states what `cds.patch` is: a patch alpha measures a change
-	// against the repository and base the contract's pinned subject names, and
-	// there is nothing for it to act on without one. Declaring it lets the spec
-	// loader refuse a subjectless run before the constructor builds a provider
-	// adapter.
+	// NeedsSubject is declared at the registration: a patch alpha measures a change
+	// against the pinned subject's repository, so the spec loader refuses without one.
 	reg.Alpha[cdspatch.Fill] = cellfill.AlphaFill{
 		Construct:    cdspatch.Factory(),
 		NeedsSubject: true,
 	}
-	// The CDS assessing seat needs the pinned subject too — it reconstructs the
-	// candidate from it — and now says so at its registration rather than in a
-	// comment. Today's cells pair it with `cds.patch`, whose requirement already
-	// refuses a subjectless run; declared here, a cell pairing this beta with an
-	// alpha that needs no subject is refused by the spec too, instead of
-	// constructing and failing later inside Review as an episode malfunction.
+	// The assessing seat needs the subject too (it reconstructs the candidate), so a
+	// pairing with a subjectless alpha is refused by the spec, not later in Review.
 	reg.Beta[cdsassess.Fill] = cellfill.BetaFill{
 		Construct:    cdsassess.Factory(),
 		NeedsSubject: true,
