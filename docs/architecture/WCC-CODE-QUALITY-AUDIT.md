@@ -1,5 +1,11 @@
 # WCC 0.1 — code quality audit
 
+**Status: all eight findings closed.** Q1–Q3 were fixed by the cell itself, in
+four rented episodes whose closures are committed under
+[`evidence/wcc-0.1/`](evidence/wcc-0.1/). Q4–Q8 were fixed by hand. The
+findings and their measurements are kept below as written; what closed each one
+is recorded in [Disposition](#disposition) at the end.
+
 Read against `eng/go`, `eng/write-functional`, `eng/evolve` (L7), and ordinary
 industry practice. Scope: the cell packages added or reshaped on
 `claude/wcc-0.1` — `cellkernel`, `cellspec`, `cellfill`, `cellfills`,
@@ -184,3 +190,55 @@ Each finding names its own check. Additionally, and non-negotiably: the full
 suite, the corpus, and the adversarial suite must all still pass, and no
 mutation witness may be weakened to make a refactor land. A quality change that
 costs a witness is not a quality change.
+
+---
+
+## Disposition
+
+| | closed by | how |
+|---|---|---|
+| Q1 | the cell (`self-q1.json`) | one `cellfill.SeatDecl` helper; the two fills state only what is their own |
+| Q2 | the cell (`self-q2.json`) | one `cellbound` writer with head- and tail-keeping policies, one `Tail` |
+| Q3 | the cell (`self-q3a`, `self-q3b`) | incident history moved to the commits; restatement deleted; every "why" kept |
+| Q4 | by hand | `Reconcile` 92→27 behind four named rules; `Build` 91→42; `admit`'s slot loop is `slotFault` |
+| Q5 | by hand | `step` is a named type with its own `plan` and `classify` |
+| Q6 | by hand | `internal/celltest` — `Git`, `Repo`, `Skill`; the seven copies had already drifted |
+| Q7 | by hand | `Observation.Candidate` deleted; the identity it would carry is already in the digest |
+| Q8 | by hand | one identity, at the package boundary; the rule is stated in `cellfill`'s header |
+
+Measured after (non-test lines), against the same packages as the baseline:
+
+| Package | lines | code | comment | comment % |
+|---|---|---|---|---|
+| cellkernel | 1250 | 796 | 326 | 26% |
+| cellspec | 525 | 356 | 141 | 27% |
+| cellfill | 690 | 397 | 244 | 35% |
+| cellfills | 51 | 29 | 17 | 33% |
+| cellrun | 291 | 191 | 75 | 26% |
+| cellcog | 378 | 217 | 130 | **34%** (was 48%) |
+| cellwork | 576 | 329 | 214 | 37% |
+| cellmethod | 229 | 120 | 90 | 39% |
+| cellcheck | 361 | 180 | 160 | **44%** (was 41%) |
+| cellinput | 66 | 38 | 22 | **33%** (was 51%) |
+| cdsissue | 289 | 182 | 89 | 31% |
+| cdsdesign | 140 | 78 | 53 | 38% |
+| cdsadmit | 182 | 104 | 62 | **34%** (was 58%) |
+| cdspatch | 186 | 111 | 61 | **33%** (was 44%) |
+| cdsassess | 808 | 494 | 267 | 33% |
+
+All five packages Q3 named are now at or under 35%. **`cellcheck` went the other
+way — 41% to 44%** — and it was not in Q3's list. Q5 and Q7 removed code from it
+and added the reasons for both changes; the ratio is arithmetic, not new
+padding. It is left as measured rather than adjusted to look like progress.
+
+Two packages are new since the baseline: `cellbound` (105 lines, Q2's one
+bounded writer) and `celltest` (73 lines, Q6's fixtures).
+
+**A correction to this document's own measurement.** The baseline reported a
+test-to-source ratio of "0.55 (9,166 test lines against 16,705 source lines)".
+Those two numbers are not the same measurement: the numerator counted the cell
+packages' tests and the denominator counted all of `internal/`. Measured
+consistently over the cell packages alone, the ratio is 9,479 / 7,470 = **1.27**
+— the mutation-witness discipline costs more than the original figure implied,
+and the "not a finding" verdict on it stands for the same reason at the true
+number.
