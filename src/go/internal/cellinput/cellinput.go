@@ -44,23 +44,23 @@ func Digest(raw []byte) string {
 // different admission outcomes, and deciding which is admission's job.
 func Decode(raw []byte) (RunInput, error) {
 	if len(raw) == 0 {
-		return RunInput{}, fmt.Errorf("cell run input: document is empty")
+		return RunInput{}, fmt.Errorf("cellinput: document is empty")
 	}
 	// Duplicate keys and nulls are closed here for the reason they are closed on the
 	// cell spec: encoding/json takes the last of a repeated key while CUE rejects the
 	// document, so the two authorities reading these exact bytes would disagree.
 	if err := cellfill.NoDuplicateKeysOrNull(raw); err != nil {
-		return RunInput{}, fmt.Errorf("cell run input: %w", err)
+		return RunInput{}, fmt.Errorf("cellinput: %w", err)
 	}
-	if err := cellfill.OnlyKeys(raw, "cell run input", "kind", "issue", "design", "subject"); err != nil {
-		return RunInput{}, fmt.Errorf("cell run input: %w", err)
+	if err := cellfill.OnlyKeys(raw, "the run input", "kind", "issue", "design", "subject"); err != nil {
+		return RunInput{}, fmt.Errorf("cellinput: %w", err)
 	}
 	var in RunInput
 	if err := cellfill.StrictDecode(raw, &in); err != nil {
-		return RunInput{}, fmt.Errorf("cell run input: %w", err)
+		return RunInput{}, fmt.Errorf("cellinput: %w", err)
 	}
 	if in.Kind != Kind {
-		return RunInput{}, fmt.Errorf("cell run input: kind must be %q, got %q", Kind, in.Kind)
+		return RunInput{}, fmt.Errorf("cellinput: kind must be %q, got %q", Kind, in.Kind)
 	}
 	return in, nil
 }

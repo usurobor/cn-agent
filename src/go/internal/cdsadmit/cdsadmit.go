@@ -67,7 +67,7 @@ func Door(raw []byte) (cellfill.Admitted, json.RawMessage, error) {
 	if err != nil {
 		// Failing to marshal this package's own struct of strings is a broken
 		// runtime, not a refusal, so it must not be reported as one.
-		return cellfill.Admitted{}, nil, fmt.Errorf("cds admission: encode receipt: %w", err)
+		return cellfill.Admitted{}, nil, fmt.Errorf("cdsadmit: encode receipt: %w", err)
 	}
 	return admitted, out, decision
 }
@@ -160,13 +160,13 @@ func relate(iss cdsissue.Issue, des cdsdesign.Design) error {
 	seen := make(map[string]bool, len(iss.Acceptance))
 	for _, c := range iss.Acceptance {
 		if seen[c.ID] {
-			return fmt.Errorf("cds admission: acceptance id %q is not unique", c.ID)
+			return fmt.Errorf("cdsadmit: acceptance id %q is not unique", c.ID)
 		}
 		seen[c.ID] = true
 	}
 	for i, s := range des.Impact {
 		if cdsissue.Blank(s.Surface) {
-			return fmt.Errorf("cds admission: design impact[%d] names no surface", i)
+			return fmt.Errorf("cdsadmit: design impact[%d] names no surface", i)
 		}
 	}
 	return nil

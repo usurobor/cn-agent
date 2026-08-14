@@ -71,40 +71,40 @@ type Surface struct {
 // different documents.
 func Admit(raw []byte) (Design, error) {
 	if len(raw) == 0 {
-		return Design{}, fmt.Errorf("cds design: run input carries no design")
+		return Design{}, fmt.Errorf("cdsdesign: run input carries no design")
 	}
 	if err := exactShape(raw); err != nil {
-		return Design{}, fmt.Errorf("cds design: %w", err)
+		return Design{}, fmt.Errorf("cdsdesign: %w", err)
 	}
 
 	var d Design
 	if err := cellfill.StrictDecode(raw, &d); err != nil {
-		return Design{}, fmt.Errorf("cds design: %w", err)
+		return Design{}, fmt.Errorf("cdsdesign: %w", err)
 	}
 
 	if d.Kind != Kind {
-		return Design{}, fmt.Errorf("cds design: kind must be %q, got %q", Kind, d.Kind)
+		return Design{}, fmt.Errorf("cdsdesign: kind must be %q, got %q", Kind, d.Kind)
 	}
 	if cdsissue.Blank(d.Approach) {
-		return Design{}, fmt.Errorf("cds design: approach is required")
+		return Design{}, fmt.Errorf("cdsdesign: approach is required")
 	}
 	if len(d.Invariants) == 0 {
-		return Design{}, fmt.Errorf("cds design: invariants is required (at least one thing the change must not break)")
+		return Design{}, fmt.Errorf("cdsdesign: invariants is required (at least one thing the change must not break)")
 	}
 	for i, inv := range d.Invariants {
 		if cdsissue.Blank(inv) {
-			return Design{}, fmt.Errorf("cds design: invariants[%d] is blank", i)
+			return Design{}, fmt.Errorf("cdsdesign: invariants[%d] is blank", i)
 		}
 	}
 	if len(d.Impact) == 0 {
-		return Design{}, fmt.Errorf("cds design: impact is required (at least one surface the change reaches)")
+		return Design{}, fmt.Errorf("cdsdesign: impact is required (at least one surface the change reaches)")
 	}
 	for i, s := range d.Impact {
 		if cdsissue.Blank(s.Surface) {
-			return Design{}, fmt.Errorf("cds design: impact[%d] names no surface", i)
+			return Design{}, fmt.Errorf("cdsdesign: impact[%d] names no surface", i)
 		}
 		if cdsissue.Blank(s.Why) {
-			return Design{}, fmt.Errorf("cds design: impact %q states no reason", s.Surface)
+			return Design{}, fmt.Errorf("cdsdesign: impact %q states no reason", s.Surface)
 		}
 	}
 	return d, nil
@@ -115,7 +115,7 @@ func Admit(raw []byte) (Design, error) {
 // field here is required and non-empty, so an absent key and an empty one are
 // refused by the same rule.
 func exactShape(raw json.RawMessage) error {
-	if err := cellfill.OnlyKeys(raw, "cds design", "kind", "approach", "invariants", "impact"); err != nil {
+	if err := cellfill.OnlyKeys(raw, "the design document", "kind", "approach", "invariants", "impact"); err != nil {
 		return err
 	}
 	impact, ok := cellfill.Field(raw, "impact")
@@ -132,7 +132,7 @@ func exactShape(raw json.RawMessage) error {
 		if len(item) == 0 || item[0] != '{' {
 			continue
 		}
-		if err := cellfill.OnlyKeys(item, "cds design impact", "surface", "why"); err != nil {
+		if err := cellfill.OnlyKeys(item, "an impact entry", "surface", "why"); err != nil {
 			return err
 		}
 	}

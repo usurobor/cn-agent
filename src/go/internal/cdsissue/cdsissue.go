@@ -116,19 +116,19 @@ func Blank(s string) bool { return !nonBlank.MatchString(s) }
 // admit different documents.
 func Admit(raw []byte) (Issue, error) {
 	if len(raw) == 0 {
-		return Issue{}, fmt.Errorf("cds issue: no issue bytes to admit")
+		return Issue{}, fmt.Errorf("cdsissue: no issue bytes to admit")
 	}
 	if err := exactShape(raw); err != nil {
-		return Issue{}, fmt.Errorf("cds issue: %w", err)
+		return Issue{}, fmt.Errorf("cdsissue: %w", err)
 	}
 
 	var iss Issue
 	if err := cellfill.StrictDecode(raw, &iss); err != nil {
-		return Issue{}, fmt.Errorf("cds issue: %w", err)
+		return Issue{}, fmt.Errorf("cdsissue: %w", err)
 	}
 
 	if iss.Kind != Kind {
-		return Issue{}, fmt.Errorf("cds issue: kind must be %q, got %q", Kind, iss.Kind)
+		return Issue{}, fmt.Errorf("cdsissue: kind must be %q, got %q", Kind, iss.Kind)
 	}
 	// Blank, not empty, and the SAME rule everywhere. An earlier revision
 	// trimmed the problem triple and tested `!= ""` on the rest, which made a
@@ -136,7 +136,7 @@ func Admit(raw []byte) (Issue, error) {
 	// issue this gate exists to reject. One predicate is also one thing for
 	// #NonBlank to mirror.
 	if Blank(iss.ID) {
-		return Issue{}, fmt.Errorf("cds issue: id is required")
+		return Issue{}, fmt.Errorf("cdsissue: id is required")
 	}
 	for _, f := range []struct{ name, value string }{
 		{"exists", iss.Problem.Exists},
@@ -144,41 +144,41 @@ func Admit(raw []byte) (Issue, error) {
 		{"diverges", iss.Problem.Diverges},
 	} {
 		if Blank(f.value) {
-			return Issue{}, fmt.Errorf("cds issue: problem.%s is required", f.name)
+			return Issue{}, fmt.Errorf("cdsissue: problem.%s is required", f.name)
 		}
 	}
 	if len(iss.Sources) == 0 {
-		return Issue{}, fmt.Errorf("cds issue: sources is required (one canonical path per load-bearing claim)")
+		return Issue{}, fmt.Errorf("cdsissue: sources is required (one canonical path per load-bearing claim)")
 	}
 	for i, s := range iss.Sources {
 		if Blank(s.Claim) || Blank(s.Path) {
-			return Issue{}, fmt.Errorf("cds issue: sources[%d] needs a claim and a path", i)
+			return Issue{}, fmt.Errorf("cdsissue: sources[%d] needs a claim and a path", i)
 		}
 	}
 	if len(iss.Scope.In) == 0 {
-		return Issue{}, fmt.Errorf("cds issue: scope.in is required")
+		return Issue{}, fmt.Errorf("cdsissue: scope.in is required")
 	}
 	for _, s := range [][]string{iss.Scope.In, iss.Scope.Out} {
 		for i, item := range s {
 			if Blank(item) {
-				return Issue{}, fmt.Errorf("cds issue: scope entry %d is blank", i)
+				return Issue{}, fmt.Errorf("cdsissue: scope entry %d is blank", i)
 			}
 		}
 	}
 	if len(iss.Acceptance) == 0 {
-		return Issue{}, fmt.Errorf("cds issue: acceptance is required")
+		return Issue{}, fmt.Errorf("cdsissue: acceptance is required")
 	}
 	seen := make(map[string]bool, len(iss.Acceptance))
 	for i, c := range iss.Acceptance {
 		switch {
 		case Blank(c.ID):
-			return Issue{}, fmt.Errorf("cds issue: acceptance[%d] has no id", i)
+			return Issue{}, fmt.Errorf("cdsissue: acceptance[%d] has no id", i)
 		case Blank(c.Statement):
-			return Issue{}, fmt.Errorf("cds issue: acceptance %q has no statement", c.ID)
+			return Issue{}, fmt.Errorf("cdsissue: acceptance %q has no statement", c.ID)
 		case Blank(c.Verification):
-			return Issue{}, fmt.Errorf("cds issue: acceptance %q states no verification route", c.ID)
+			return Issue{}, fmt.Errorf("cdsissue: acceptance %q states no verification route", c.ID)
 		case seen[c.ID]:
-			return Issue{}, fmt.Errorf("cds issue: duplicate acceptance id %q", c.ID)
+			return Issue{}, fmt.Errorf("cdsissue: duplicate acceptance id %q", c.ID)
 		case strings.HasPrefix(c.ID, ReservedIDPrefix):
 			// A criterion id in the reserved namespace collides with a unit the
 			// runtime adds to every assessment catalogue. The collision cannot
@@ -187,7 +187,7 @@ func Admit(raw []byte) (Issue, error) {
 			// episode would die blaming the reviewing seat for a catalogue the
 			// runtime built. Refusing the ISSUE is the only place it can be
 			// refused honestly, because this is the document that is wrong.
-			return Issue{}, fmt.Errorf("cds issue: acceptance id %q uses the reserved %q prefix, which names runtime-measured units",
+			return Issue{}, fmt.Errorf("cdsissue: acceptance id %q uses the reserved %q prefix, which names runtime-measured units",
 				c.ID, ReservedIDPrefix)
 		}
 		seen[c.ID] = true
@@ -202,25 +202,25 @@ func Admit(raw []byte) (Issue, error) {
 // the raw document — the same present-vs-absent discipline cellspec.Resolve
 // applies to supplied parameters.
 func exactShape(raw json.RawMessage) error {
-	if err := cellfill.OnlyKeys(raw, "cds issue", "kind", "id", "problem", "sources", "scope", "acceptance"); err != nil {
+	if err := cellfill.OnlyKeys(raw, "the issue document", "kind", "id", "problem", "sources", "scope", "acceptance"); err != nil {
 		return err
 	}
 	if p, ok := cellfill.Field(raw, "problem"); ok {
-		if err := cellfill.OnlyKeys(p, "cds issue problem", "exists", "expected", "diverges"); err != nil {
+		if err := cellfill.OnlyKeys(p, "problem", "exists", "expected", "diverges"); err != nil {
 			return err
 		}
 	}
-	if err := eachElement(raw, "sources", "cds issue source", "claim", "path"); err != nil {
+	if err := eachElement(raw, "sources", "a source", "claim", "path"); err != nil {
 		return err
 	}
-	if err := eachElement(raw, "acceptance", "cds issue criterion", "id", "statement", "verification"); err != nil {
+	if err := eachElement(raw, "acceptance", "an acceptance criterion", "id", "statement", "verification"); err != nil {
 		return err
 	}
 	scope, ok := cellfill.Field(raw, "scope")
 	if !ok {
 		return fmt.Errorf("scope is required")
 	}
-	if err := cellfill.OnlyKeys(scope, "cds issue scope", "in", "out"); err != nil {
+	if err := cellfill.OnlyKeys(scope, "scope", "in", "out"); err != nil {
 		return err
 	}
 	out, ok := cellfill.Field(scope, "out")

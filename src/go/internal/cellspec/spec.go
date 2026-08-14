@@ -87,17 +87,17 @@ func Parse(data []byte) (CellSpec, error) {
 	// cellfill because the run input needs the identical rule against the
 	// identical CUE-side expectation.
 	if err := cellfill.NoDuplicateKeysOrNull(data); err != nil {
-		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
+		return CellSpec{}, fmt.Errorf("cellspec: %w", err)
 	}
 	if err := checkExactKeys(data); err != nil {
-		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
+		return CellSpec{}, fmt.Errorf("cellspec: %w", err)
 	}
 
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	var s CellSpec
 	if err := dec.Decode(&s); err != nil {
-		return CellSpec{}, fmt.Errorf("decode cell spec: %w", err)
+		return CellSpec{}, fmt.Errorf("cellspec: decode: %w", err)
 	}
 	// Strict EOF: any non-whitespace byte after the first value — including a
 	// stray delimiter like `]` or `}` — is rejected. dec.More() is an
@@ -105,31 +105,31 @@ func Parse(data []byte) (CellSpec, error) {
 	// require io.EOF.
 	var extra json.RawMessage
 	if err := dec.Decode(&extra); err != io.EOF {
-		return CellSpec{}, fmt.Errorf("cell spec: trailing data after JSON object")
+		return CellSpec{}, fmt.Errorf("cellspec: trailing data after JSON object")
 	}
 
 	if s.Version != SchemaVersion {
-		return CellSpec{}, fmt.Errorf("cell spec: version must be %q, got %q", SchemaVersion, s.Version)
+		return CellSpec{}, fmt.Errorf("cellspec: version must be %q, got %q", SchemaVersion, s.Version)
 	}
 	if s.Contract.ID == "" {
-		return CellSpec{}, fmt.Errorf("cell spec: contract.id is required")
+		return CellSpec{}, fmt.Errorf("cellspec: contract.id is required")
 	}
 	if s.Contract.Goal == "" { // parity with #CellSpec (Pi round-5 D2)
-		return CellSpec{}, fmt.Errorf("cell spec: contract.goal is required")
+		return CellSpec{}, fmt.Errorf("cellspec: contract.goal is required")
 	}
 	if s.ProtocolID == "" { // opaque provenance (Pi PR-#718-fido β D6)
-		return CellSpec{}, fmt.Errorf("cell spec: protocol_id is required")
+		return CellSpec{}, fmt.Errorf("cellspec: protocol_id is required")
 	}
 	for side, decl := range map[string]json.RawMessage{"alpha": s.Alpha, "beta": s.Beta} {
 		if len(decl) == 0 {
-			return CellSpec{}, fmt.Errorf("cell spec: %s is required", side)
+			return CellSpec{}, fmt.Errorf("cellspec: %s is required", side)
 		}
 		if _, err := cellfill.FillID(decl); err != nil {
-			return CellSpec{}, fmt.Errorf("cell spec: %s: %w", side, err)
+			return CellSpec{}, fmt.Errorf("cellspec: %s: %w", side, err)
 		}
 	}
 	if err := validateEvidence(s.Contract.RequiredEvidence); err != nil {
-		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
+		return CellSpec{}, fmt.Errorf("cellspec: %w", err)
 	}
 	return s, nil
 }
@@ -210,17 +210,17 @@ func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 	if len(s.Methodology) > 0 {
 		m, err := splice(s.Methodology, s.Params, vals)
 		if err != nil {
-			return Resolved{}, fmt.Errorf("methodology: %w", err)
+			return Resolved{}, fmt.Errorf("cellspec: methodology: %w", err)
 		}
 		method = m
 	}
 	alpha, err := splice(s.Alpha, s.Params, vals)
 	if err != nil {
-		return Resolved{}, fmt.Errorf("alpha: %w", err)
+		return Resolved{}, fmt.Errorf("cellspec: alpha: %w", err)
 	}
 	beta, err := splice(s.Beta, s.Params, vals)
 	if err != nil {
-		return Resolved{}, fmt.Errorf("beta: %w", err)
+		return Resolved{}, fmt.Errorf("cellspec: beta: %w", err)
 	}
 	return Resolved{Spec: s, Methodology: method, Alpha: alpha, Beta: beta}, nil
 }
@@ -344,11 +344,11 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding
 
 	alpha, err := reg.ConstructAlpha(ctx, r.Alpha, constructive)
 	if err != nil {
-		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("cellspec: alpha: %w", err)
 	}
 	beta, err := reg.ConstructBeta(ctx, r.Beta, adversarial)
 	if err != nil {
-		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("beta: %w", err)
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("cellspec: beta: %w", err)
 	}
 
 	meta := cellkernel.RunMeta{
@@ -372,11 +372,11 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding
 func (r Resolved) checkDeclaredNeeds(reg cellfill.Registry, bind Binding) error {
 	alphaID, alphaFill, err := reg.LookupAlpha(r.Alpha)
 	if err != nil {
-		return fmt.Errorf("alpha: %w", err)
+		return fmt.Errorf("cellspec: alpha: %w", err)
 	}
 	betaID, betaFill, err := reg.LookupBeta(r.Beta)
 	if err != nil {
-		return fmt.Errorf("beta: %w", err)
+		return fmt.Errorf("cellspec: beta: %w", err)
 	}
 	for _, side := range []struct {
 		role         cellkernel.Role
@@ -387,7 +387,7 @@ func (r Resolved) checkDeclaredNeeds(reg cellfill.Registry, bind Binding) error 
 		{cellkernel.RoleBeta, betaID, betaFill.NeedsSubject},
 	} {
 		if side.needsSubject && len(bind.Subject) == 0 {
-			return fmt.Errorf("cell spec: %s fill %q requires contract.subject, and no run input supplied one "+
+			return fmt.Errorf("cellspec: %s fill %q requires contract.subject, and no run input supplied one "+
 				"(pass --input)", side.role, side.id)
 		}
 	}
@@ -412,7 +412,7 @@ func (r Resolved) methodology(reg cellfill.Registry) (constructive, adversarial 
 	}
 	bundle, bodies, err := cellmethod.Load(reg.Skills, r.Methodology)
 	if err != nil {
-		return cellmethod.View{}, cellmethod.View{}, fmt.Errorf("cell spec: %w", err)
+		return cellmethod.View{}, cellmethod.View{}, fmt.Errorf("cellspec: %w", err)
 	}
 	return cellmethod.Constructive(bundle, bodies), cellmethod.Adversarial(bundle, bodies), nil
 }

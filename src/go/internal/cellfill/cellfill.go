@@ -12,6 +12,19 @@
 // worktree, skills, a model, or a provider. A factory is registered already
 // closed over whatever subsystems it composes; construction returns immutable
 // values and starts no session.
+//
+// # Error prefixes across the cell packages
+//
+// One identity, stated once, where the error LEAVES the package that decided
+// it: the package's own name (`cellwork:`, `cdsissue:`), or the fill id
+// (`cds.patch:`) when the error is about a seat the operator declared in cell
+// JSON. Everything inside names the operation or the position and repeats no
+// identity — which is why nothing in THIS package prefixes at all: cellfill's
+// errors are always wrapped by the fill that called it, and that fill is the
+// identity an operator can act on.
+//
+// There were five spellings before, and `cds issue: cds issue problem has
+// unknown key "extra"` is what they cost a reader.
 package cellfill
 
 import (

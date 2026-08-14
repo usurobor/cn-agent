@@ -575,11 +575,11 @@ func RunEpisode(ctx context.Context, s Spec, meta RunMeta, opts ...RunOption) (C
 	// Station α: isolated input → output → sealed.
 	aOut, err := s.Alpha.Produce(ctx, AlphaInput{Contract: frozen.clone()})
 	if err != nil {
-		return Closure{}, fmt.Errorf("alpha produce: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: alpha produce: %w", err)
 	}
 	sealedA, err := sealAlpha(aOut, id.Alpha)
 	if err != nil {
-		return Closure{}, fmt.Errorf("seal alpha: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: seal alpha: %w", err)
 	}
 	if err := ctx.Err(); err != nil {
 		return Closure{}, fmt.Errorf("cellkernel: context after alpha: %w", err)
@@ -591,11 +591,11 @@ func RunEpisode(ctx context.Context, s Spec, meta RunMeta, opts ...RunOption) (C
 		Matter:   sealedA.projection(),
 	})
 	if err != nil {
-		return Closure{}, fmt.Errorf("beta review: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: beta review: %w", err)
 	}
 	sealedB, err := sealBeta(bOut, id.Beta)
 	if err != nil {
-		return Closure{}, fmt.Errorf("seal beta: %w", err)
+		return Closure{}, fmt.Errorf("cellkernel: seal beta: %w", err)
 	}
 	if err := ctx.Err(); err != nil {
 		return Closure{}, fmt.Errorf("cellkernel: context after beta: %w", err)
