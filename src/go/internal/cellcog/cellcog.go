@@ -165,7 +165,20 @@ func New(cfg Config) (Coder, Mode, error) {
 // episode the runtime cannot predict: an unbounded provider burns the whole
 // budget and dies mid-cell.
 const (
-	defaultTimeout      = 10 * time.Minute
+	// defaultTimeout was 10 minutes, chosen before any real episode had run.
+	// Measurement moved it. Across nine rented episodes on this branch the
+	// successful ones cluster at 460-500s — against a 600s bound — and three
+	// failures were edit-dense work on real files, two of which had captured
+	// over a megabyte of provider output when they were killed. That is a seat
+	// that was working, not one that was stuck: the bound was cutting off live
+	// episodes rather than catching runaways.
+	//
+	// 30 minutes is roughly 3.6x the observed peak. It is still a bound, and it
+	// is still the thing that stops an unbounded provider from burning the whole
+	// budget; what changed is that it no longer sits inside the range real work
+	// occupies. It stays a compiled-in constant and not a cell-supplied value —
+	// a timeout a cell could set is a cell that can decline to be bounded.
+	defaultTimeout      = 30 * time.Minute
 	maxOutputBytes      = 4 << 20 // matches the kernel's aggregate artifact bound
 	maxStderrBytes      = 8 << 10 // diagnostics only
 	waitDelay           = 2 * time.Second
