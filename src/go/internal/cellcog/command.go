@@ -10,53 +10,31 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellbound"
 )
 
-// The one process seam every provider adapter shares. Adapters contribute a
-// pure argv recipe; this file owns the bounded, stateless execution around it,
-// so neither provider owns mechanics the other also needs.
+// The one process seam every provider adapter shares: adapters contribute a
+// pure argv recipe, this file the bounded execution, so neither owns mechanics
+// the other also needs.
 
 // CodingToolSurface is the built-in tool set a PRODUCING seat is offered. It
 // matches the live `cnos-cds-dispatch` workflow's allow-list exactly, because
-// a cell is meant to mechanize what the operator already does by hand — not to
-// be a weaker Claude.
-//
-// Bash is here deliberately, and its earlier absence was a mistake worth
-// naming: a software-development seat that cannot run `go test`, `cue vet` or
-// `gofmt` cannot verify its own work, so it produces plausible code it has no
-// way to check. The only real α episode before this change wrote a Markdown
-// file, because prose was all an unverifying seat could honestly finish.
-//
-// This list is a CAPABILITY DECLARATION, not a containment mechanism, and the
-// distinction was previously blurred. Withholding Bash never provided
-// confinement — this package claims none — it only removed the seat's ability
-// to check itself. What actually bounds an episode is unchanged: a disposable
-// worktree, a runtime-measured diff, credentials that never enter cell JSON,
-// and `--safe-mode`. A seat with Bash has the same reach as the operator
-// running Claude Code themselves; real containment belongs to the execution
-// substrate, which is why CI and local use the identical surface.
+// a cell mechanizes what the operator already does by hand rather than being a
+// weaker Claude. Bash is in it because a seat that cannot run `go test`, `cue
+// vet` or `gofmt` cannot verify its own work; withholding it bought no
+// confinement, only a seat that cannot check itself, so CI and local use the
+// identical surface. What bounds an episode is the disposable worktree, the
+// measured diff, credentials that never enter cell JSON, and `--safe-mode`.
 const CodingToolSurface = "Read,Write,Edit,MultiEdit,Glob,Grep,Bash"
 
-// NoTools is the surface an ANSWERING seat is offered. Unlike the coding
-// surface above, this one IS load-bearing: a reviewer's canonical input is
-// `(contract, matter)` and nothing else, so any file tool would let it reach
-// outside that input and read the very workspace it is meant to judge from
-// the outside. Independence is the property at stake, not containment.
+// NoTools is the surface an ANSWERING seat is offered, and unlike the coding
+// surface this one IS load-bearing: a reviewer's canonical input is
+// `(contract, matter)`, so any file tool would cost the independence — not the
+// containment — that the seat exists to provide.
 const NoTools = ""
 
-// runCLI runs one provider invocation: prompt on stdin, output bounded as it
-// streams, timeout, and WaitDelay — killing the child does not by itself
-// unblock Wait, because anything it spawned inherits the output pipe and holds
-// it open; WaitDelay bounds that second wait.
-//
-// It returns captured stdout and whether the bound cut it short. Truncation
-// is reported rather than decided: for a producing seat stdout is PROGRESS
-// (the product is the worktree diff, so a clipped stream costs nothing),
-// while for an answering seat stdout IS the product and a clipped stream
-// means an answer that cannot be trusted. Only the caller knows which, and
-// both callers now exist: Work tolerates truncation, Answer refuses it.
-//
-// Nothing here is an OS sandbox. The honest authority is the offered tool
-// surface plus the runtime-measured worktree: whatever a seat touches
-// elsewhere simply never becomes evidence.
+// runCLI runs one bounded invocation, prompt on stdin. WaitDelay is set
+// because killing the child does not by itself unblock Wait: anything it
+// spawned inherits the output pipe and holds it open. Truncation is reported
+// rather than decided — stdout is PROGRESS for a producing seat but IS the
+// product for an answering one, so only the caller can judge a clipped stream.
 func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout time.Duration) (string, bool, error) {
 	if _, err := exec.LookPath(bin); err != nil {
 		return "", false, fmt.Errorf("%q not found in PATH: %w", bin, err)
@@ -79,15 +57,10 @@ func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout
 
 	err := cmd.Run()
 	if ctxErr := ctx.Err(); ctxErr != nil {
-		// A hang is the one failure that leaves no other trace: the child is
-		// killed, no diff is measured, and no answer comes back. What it
-		// managed to emit before stalling is the only evidence of where it
-		// stalled, and this path previously discarded both streams.
-		//
-		// It goes into the ERROR, not a side file. A diagnostic written
-		// somewhere durable becomes a second, unreceipted account of the
-		// episode; an error is already the explicit outcome channel and
-		// cannot be mistaken for evidence.
+		// A hang leaves no other trace — child killed, no diff, no answer — so
+		// what it emitted is the only evidence of where it stalled. That goes in
+		// the ERROR, not a side file: a durable diagnostic would be a second,
+		// unreceipted account of the episode.
 		return "", stdout.Truncated(), fmt.Errorf("%s did not finish within %s: %w (captured %d stdout bytes before the stall; stderr tail: %q)",
 			bin, timeout, ctxErr, len(stdout.String()), cellbound.Tail(stderr.String(), diagnosticTailBytes))
 	}

@@ -391,6 +391,59 @@ References: <https://learn.chatgpt.com/docs/developer-commands?surface=cli> ·
 <https://learn.chatgpt.com/docs/agent-configuration/agents-md> ·
 <https://learn.chatgpt.com/docs/build-skills>
 
+## `cellcog` measurement history (moved out of the adapter comments)
+
+Why this section exists: the argv and bounds in `internal/cellcog` were each
+corrected by a measurement, and the header comments had grown into a record of
+those corrections — 48% of the package was comment, with a 66-line block on one
+argv function (`WCC-CODE-QUALITY-AUDIT.md` Q3). The **reasons** stay in the
+code, where a maintainer changing a flag needs them. What moved here is the
+incident record: what an earlier revision claimed, and how it was falsified.
+
+**`--allowedTools Bash` was added because `--permission-mode acceptEdits` does
+not reach ordinary commands.** An earlier revision of the comment claimed the
+mode covered Bash outright, on evidence that only ever exercised a redirect
+into a file. Measured against the installed CLI on the donor branch: `echo X >
+file` ran under the mode alone, while `go version` came back denied —
+
+```json
+permission_denials: [{"tool_name":"Bash", …, "command":"go version"}]
+```
+
+— and adding `--allowedTools Bash` brought that to zero denials with the
+command actually executing. The falsified claim is why the flag's comment now
+states the measurement rather than the mode's supposed coverage.
+
+**`--allowedTools` as a REPLACEMENT for `--tools` was a real defect once.** It
+pre-approves without restricting, so the offered surface stayed open while the
+comment claimed it had been narrowed. The tests forbid the substitution; the
+code comment keeps the rule, this keeps the incident.
+
+**Bash's earlier absence.** The surface was widened after the only real α
+episode run without it produced a Markdown file — prose was all an unverifying
+seat could honestly finish. The same revision stopped describing the tool list
+as if withholding a tool were containment; that distinction had been blurred,
+and the package doc now states the honest scope once.
+
+**`--output-format stream-json` replaced `text`.** Under `text` the CLI emits
+nothing until the run finishes, so a stalled provider and a provider that never
+started produced the same evidence: zero captured bytes. The timeout path in
+`runCLI` also used to discard both streams, which is why the stall error now
+carries the captured byte count and a bounded stderr tail.
+
+**`defaultTimeout` 10m → 30m.** Across nine rented episodes on this branch the
+successful ones cluster at 460-500s against the 600s bound, and three failures
+were edit-dense work on real files, two of which had captured over a megabyte
+of provider output when they were killed — seats that were working, not stuck.
+30 minutes is roughly 3.6x the observed peak.
+
+**`FakeAnswerer` was deleted, not ported.** The donor branch shipped one here
+returning `{"pass":false,"notes":"…"}`. `pass` and `notes` are one reviewing
+fill's vocabulary inside a package whose whole boundary is that it owns no fill
+semantics, so the next fill with a different answer shape would have received a
+fake answering in the wrong language. `cellcog.ErrNoDeterministicAnswer` is the
+refusal that replaced it.
+
 ## Boundary the kernel never owns (Pi β #31, C3)
 
 The episode kernel owns no GitHub, ref, PR, branch, cursor, writer-locality, or

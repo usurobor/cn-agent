@@ -8,9 +8,8 @@ import (
 )
 
 // FakeCoder makes one deterministic, real change so CI exercises the whole
-// substrate — worktree, edit, measured diff — offline and without a model. A
-// run behind it is `mechanical`: nothing was rented, and the closure must not
-// imply otherwise.
+// substrate — worktree, edit, measured diff — offline and without a model. The
+// run is `mechanical`: nothing was rented and no closure may imply otherwise.
 type FakeCoder struct{}
 
 func (FakeCoder) Name() string { return "fake" }
