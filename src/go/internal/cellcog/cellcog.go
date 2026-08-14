@@ -38,7 +38,6 @@
 package cellcog
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -172,27 +171,3 @@ const (
 	waitDelay           = 2 * time.Second
 	diagnosticTailBytes = 400 // bounded stderr tail carried in a timeout error
 )
-
-// boundedBuffer captures at most max bytes and remembers that it had to stop.
-// It never reports a short write, so a bound fails the run here rather than
-// killing the child mid-stream with a broken pipe.
-type boundedBuffer struct {
-	max       int
-	buf       bytes.Buffer
-	truncated bool
-}
-
-func (b *boundedBuffer) Write(p []byte) (int, error) {
-	switch room := b.max - b.buf.Len(); {
-	case room >= len(p):
-		b.buf.Write(p)
-	case room > 0:
-		b.buf.Write(p[:room])
-		b.truncated = true
-	default:
-		b.truncated = true
-	}
-	return len(p), nil
-}
-
-func (b *boundedBuffer) String() string { return b.buf.String() }

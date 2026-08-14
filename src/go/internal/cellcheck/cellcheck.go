@@ -29,6 +29,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/usurobor/cnos/src/go/internal/cellbound"
 )
 
 // RecipeID names this recipe. It is part of the observation because a reader
@@ -139,7 +141,7 @@ func formatStep(ctx context.Context, dir, baseSHA string) Step {
 		// The changed set is what makes this step meaningful. Falling back to
 		// repo-wide, or to "nothing changed", would each turn an unanswerable
 		// question into an answer.
-		return Step{Name: "format", Status: Unavailable, Exit: -1, Tail: tail(err.Error())}
+		return Step{Name: "format", Status: Unavailable, Exit: -1, Tail: cellbound.Tail(err.Error(), maxTailBytes)}
 	}
 	if len(paths) == 0 {
 		return Step{Name: "format", Status: Pass, Tail: "no changed .go paths"}
@@ -271,11 +273,17 @@ func run(ctx context.Context, dir, name string, argv []string) (Step, string) {
 	// fully buffered result is not a limit — the same rule cellwork.git states
 	// for the same reason. The TAIL is what a reader needs, so the buffer keeps
 	// the last bytes and drops the rest.
-	buf := &tailBuffer{max: maxStepOutputBytes}
+	buf := cellbound.New(cellbound.KeepTail, maxStepOutputBytes)
 	cmd.Stdout, cmd.Stderr = buf, buf
 	err := cmd.Run()
 	out := buf.String()
-	st := Step{Name: name, Tail: tail(string(out))}
+	if buf.Truncated() {
+		// Announced, not silent: the caller that decides on this output must be
+		// able to tell a step that said little from one whose beginning was
+		// dropped. The writer keeps the bytes; saying so is this caller's call.
+		out = cellbound.Marker + out
+	}
+	st := Step{Name: name, Tail: cellbound.Tail(string(out), maxTailBytes)}
 	switch {
 	case ctx.Err() != nil:
 		// A cancelled or timed-out step was killed; the non-zero exit that
@@ -305,7 +313,7 @@ func run(ctx context.Context, dir, name string, argv []string) (Step, string) {
 			// exec.ExitError can deliver.
 			st.Status, st.Exit = Unavailable, -1
 			if st.Tail == "" {
-				st.Tail = tail(err.Error())
+				st.Tail = cellbound.Tail(err.Error(), maxTailBytes)
 			}
 		}
 	}
@@ -316,39 +324,3 @@ func run(ctx context.Context, dir, name string, argv []string) (Step, string) {
 // larger than maxTailBytes because a reader wants the tail while a diagnostic
 // sometimes needs a little more context than the tail alone.
 const maxStepOutputBytes = 1 << 20
-
-// tailBuffer keeps the LAST max bytes written to it and discards the rest as
-// they arrive, so a child that never stops talking costs a bounded amount of
-// memory rather than all of it. It never reports a short write: a bound must
-// fail the STEP here, not kill the child with a broken pipe and turn a loud
-// test suite into an unavailable checker.
-type tailBuffer struct {
-	max  int
-	buf  []byte
-	over bool
-}
-
-func (b *tailBuffer) Write(p []byte) (int, error) {
-	b.buf = append(b.buf, p...)
-	if len(b.buf) > b.max {
-		b.over = true
-		b.buf = b.buf[len(b.buf)-b.max:]
-	}
-	return len(p), nil
-}
-
-func (b *tailBuffer) String() string {
-	if b.over {
-		return "...[truncated]...\n" + string(b.buf)
-	}
-	return string(b.buf)
-}
-
-// tail keeps the LAST maxTailBytes: a failing build says what went wrong at
-// the end, and the truncation is announced rather than silent.
-func tail(s string) string {
-	if len(s) <= maxTailBytes {
-		return s
-	}
-	return "...[truncated]...\n" + s[len(s)-maxTailBytes:]
-}

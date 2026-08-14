@@ -129,6 +129,32 @@ func TestTimeoutCarriesDiagnostics(t *testing.T) {
 	}
 }
 
+// The diagnostic carried out of a stall is BOUNDED and it is the TAIL. A
+// provider that chattered for a megabyte before stalling must not put a
+// megabyte into an error, and the bytes worth keeping are its last ones —
+// where it stalled, not where it started. Substituting a head-keeping bound
+// here returns the opening chatter and loses the stall site, so this test
+// fails.
+func TestTimeoutDiagnosticIsTheBoundedTailOfStderr(t *testing.T) {
+	// Over diagnosticTailBytes on stderr, with a distinguishable start and end.
+	bin := fakeBin(t, `cat >/dev/null; { echo "OPENING-CHATTER"; head -c 4000 /dev/zero | tr "\0" "x"; echo; echo "STALLED-HERE"; } >&2; sleep 30`)
+	err := (ClaudeCLI{Model: "m", Bin: bin, Timeout: 400 * time.Millisecond}).
+		Work(context.Background(), t.TempDir(), "p")
+	if err == nil {
+		t.Fatal("a stalled provider must fail")
+	}
+	got := err.Error()
+	if !strings.Contains(got, "STALLED-HERE") {
+		t.Errorf("the diagnostic must carry the END of stderr, got: %s", got)
+	}
+	if strings.Contains(got, "OPENING-CHATTER") {
+		t.Errorf("the diagnostic must drop the START of an over-bound stderr, got: %s", got)
+	}
+	if len(got) > 4000 {
+		t.Errorf("the diagnostic must stay bounded, got %d bytes", len(got))
+	}
+}
+
 // Under `--output-format stream-json` stdout is a PROGRESS stream, and a long
 // episode will exceed the output bound as a matter of course. A producing seat
 // is judged by the measured diff, so losing the tail of that stream costs the

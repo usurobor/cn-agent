@@ -158,6 +158,35 @@ func TestAFailingTestFailsNamingTest(t *testing.T) {
 	}
 }
 
+// A loud step's reported output is bounded, and WHICH bytes survive is the
+// point: `go test` says what went wrong at the END, after however much the
+// candidate's own test printed on the way there. A head-keeping bound
+// substituted here would report the opening noise and drop the failure, so
+// this test fails under it.
+func TestALoudStepReportsItsTailNotItsHead(t *testing.T) {
+	dir, base := candidate(t, baseTree(), map[string]string{
+		"src/go/ok/ok_test.go": "package ok\n\nimport (\n\t\"strings\"\n\t\"testing\"\n)\n\n" +
+			"func TestOne(t *testing.T) {\n" +
+			"\tt.Log(\"OPENING-NOISE\")\n" +
+			// Comfortably past maxTailBytes, so the opening cannot survive.
+			"\tt.Log(strings.Repeat(\"filler \", 4000))\n" +
+			"\tt.Fatal(\"the failure at the end\")\n}\n",
+	})
+	s := step(t, Run(context.Background(), dir, base), "test")
+	if s.Status != Fail {
+		t.Fatalf("test step = %q, tail %q", s.Status, s.Tail)
+	}
+	if !strings.Contains(s.Tail, "the failure at the end") {
+		t.Fatalf("the tail must carry the END of a loud step: %q", s.Tail)
+	}
+	if strings.Contains(s.Tail, "OPENING-NOISE") {
+		t.Fatalf("the tail must drop the START of an over-bound step: %q", s.Tail)
+	}
+	if len(s.Tail) > 2*maxTailBytes {
+		t.Fatalf("a step tail must stay bounded, got %d bytes", len(s.Tail))
+	}
+}
+
 // AC3, `fail` naming `format`: an unformatted file the candidate CHANGED.
 // This is the step whose failure predicate is not the exit code — `gofmt -l`
 // exits 0 and reports by listing — so a passing status here would be the

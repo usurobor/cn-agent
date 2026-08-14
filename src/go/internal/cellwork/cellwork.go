@@ -21,7 +21,6 @@
 package cellwork
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -30,6 +29,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/usurobor/cnos/src/go/internal/cellbound"
 )
 
 const (
@@ -177,8 +178,11 @@ func gitInput(ctx context.Context, dir, stdin string, max int, args ...string) (
 	if stdin != "" {
 		cmd.Stdin = strings.NewReader(stdin)
 	}
-	stdout := &boundedBuffer{max: max}
-	stderr := &boundedBuffer{max: maxStderrBytes}
+	// Head-keeping: a diff is content to be reapplied, so a bound that bit is
+	// refused below rather than reported as a shorter diff. Keeping the tail
+	// would hand back a patch whose first hunks are missing.
+	stdout := cellbound.New(cellbound.KeepHead, max)
+	stderr := cellbound.New(cellbound.KeepHead, maxStderrBytes)
 	cmd.Stdout, cmd.Stderr = stdout, stderr
 	cmd.WaitDelay = waitDelay
 	if err := cmd.Run(); err != nil {
@@ -188,34 +192,8 @@ func gitInput(ctx context.Context, dir, stdin string, max int, args ...string) (
 		}
 		return "", errors.New("git " + strings.Join(args, " ") + ": " + msg)
 	}
-	if stdout.truncated {
+	if stdout.Truncated() {
 		return "", fmt.Errorf("git %s produced more than %d bytes", strings.Join(args, " "), max)
 	}
 	return stdout.String(), nil
 }
-
-// boundedBuffer captures at most max bytes and remembers that it had to stop.
-// It never reports a short write, so the bound fails the command here rather
-// than killing the child mid-stream with a broken pipe. (Deliberately the same
-// small pattern the provider adapters use; the two adapters share no
-// dependency worth creating for fifteen lines.)
-type boundedBuffer struct {
-	max       int
-	buf       bytes.Buffer
-	truncated bool
-}
-
-func (b *boundedBuffer) Write(p []byte) (int, error) {
-	switch room := b.max - b.buf.Len(); {
-	case room >= len(p):
-		b.buf.Write(p)
-	case room > 0:
-		b.buf.Write(p[:room])
-		b.truncated = true
-	default:
-		b.truncated = true
-	}
-	return len(p), nil
-}
-
-func (b *boundedBuffer) String() string { return b.buf.String() }

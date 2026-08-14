@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/usurobor/cnos/src/go/internal/cellbound"
 )
 
 // The one process seam every provider adapter shares. Adapters contribute a
@@ -68,8 +70,10 @@ func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout
 	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Dir = dir
 	cmd.Stdin = strings.NewReader(prompt)
-	stdout := &boundedBuffer{max: maxOutputBytes}
-	stderr := &boundedBuffer{max: maxStderrBytes}
+	// Head-keeping: stdout is consumed from the start — Answer parses it and
+	// refuses it when clipped — so the first bytes are the ones worth keeping.
+	stdout := cellbound.New(cellbound.KeepHead, maxOutputBytes)
+	stderr := cellbound.New(cellbound.KeepHead, maxStderrBytes)
 	cmd.Stdout, cmd.Stderr = stdout, stderr
 	cmd.WaitDelay = waitDelay
 
@@ -84,22 +88,11 @@ func runCLI(ctx context.Context, bin, dir, prompt string, args []string, timeout
 		// somewhere durable becomes a second, unreceipted account of the
 		// episode; an error is already the explicit outcome channel and
 		// cannot be mistaken for evidence.
-		return "", stdout.truncated, fmt.Errorf("%s did not finish within %s: %w (captured %d stdout bytes before the stall; stderr tail: %q)",
-			bin, timeout, ctxErr, len(stdout.String()), tail(stderr.String(), diagnosticTailBytes))
+		return "", stdout.Truncated(), fmt.Errorf("%s did not finish within %s: %w (captured %d stdout bytes before the stall; stderr tail: %q)",
+			bin, timeout, ctxErr, len(stdout.String()), cellbound.Tail(stderr.String(), diagnosticTailBytes))
 	}
 	if err != nil {
-		return "", stdout.truncated, fmt.Errorf("%s failed: %w (stderr: %s)", bin, err, strings.TrimSpace(stderr.String()))
+		return "", stdout.Truncated(), fmt.Errorf("%s failed: %w (stderr: %s)", bin, err, strings.TrimSpace(stderr.String()))
 	}
-	return stdout.String(), stdout.truncated, nil
-}
-
-// tail returns at most n trailing bytes of s, kept valid UTF-8 so a truncated
-// diagnostic cannot corrupt the error it is embedded in. Trailing, not
-// leading: when a provider stalls, its last output is what says where.
-func tail(s string, n int) string {
-	s = strings.TrimSpace(s)
-	if len(s) <= n {
-		return s
-	}
-	return "…" + strings.ToValidUTF8(s[len(s)-n:], "")
+	return stdout.String(), stdout.Truncated(), nil
 }
