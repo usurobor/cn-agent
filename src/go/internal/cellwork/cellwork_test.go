@@ -2,49 +2,16 @@ package cellwork
 
 import (
 	"context"
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-// gitIn runs one git command in dir under a fixed identity, so a test can move
-// a repository the way a caller would — including committing after a subject
-// has already been pinned.
-func gitIn(t *testing.T, dir string, args ...string) string {
-	t.Helper()
-	cmd := exec.Command("git", args...)
-	cmd.Dir = dir
-	cmd.Env = append(os.Environ(),
-		"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-	}
-	return strings.TrimSpace(string(out))
-}
-
-// testRepo builds a one-commit git repository and returns its path and HEAD.
-func testRepo(t *testing.T) (string, string) {
-	t.Helper()
-	dir := t.TempDir()
-	run := func(args ...string) string {
-		t.Helper()
-		return gitIn(t, dir, args...)
-	}
-	run("init", "-q", "-b", "main")
-	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("base\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	run("add", "-A")
-	run("commit", "-qm", "base")
-	return dir, run("rev-parse", "HEAD")
-}
-
 // Materialize cuts a worktree at the resolved base SHA, not at a moving name.
 func TestMaterializeResolvesBase(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	wt, release, err := Materialize(context.Background(), repo, "HEAD")
 	if err != nil {
 		t.Fatalf("materialize: %v", err)
@@ -61,7 +28,7 @@ func TestMaterializeResolvesBase(t *testing.T) {
 // Diff reports a file the seat created, and nothing when the seat changed
 // nothing — the caller must not manufacture evidence from an empty diff.
 func TestDiffReportsCreatedFileAndIsEmptyWhenUnchanged(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	wt, release, err := Materialize(context.Background(), repo, "HEAD")
 	if err != nil {
 		t.Fatalf("materialize: %v", err)
@@ -95,7 +62,7 @@ func TestDiffReportsCreatedFileAndIsEmptyWhenUnchanged(t *testing.T) {
 // Both directions are proven here: a committed change still measures, and an
 // untouched worktree still measures as nothing.
 func TestDiffMeasuresAgainstPinnedBaseAfterSeatCommits(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	wt, release, err := Materialize(context.Background(), repo, "HEAD")
 	if err != nil {
 		t.Fatalf("materialize: %v", err)
@@ -116,9 +83,9 @@ func TestDiffMeasuresAgainstPinnedBaseAfterSeatCommits(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(wt.Dir, "NOTES.md"), []byte("hello\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	gitIn(t, wt.Dir, "add", "-A")
-	gitIn(t, wt.Dir, "commit", "-qm", "seat commits its own work")
-	if head := gitIn(t, wt.Dir, "rev-parse", "HEAD"); head == wt.BaseSHA {
+	celltest.Git(t, wt.Dir, "add", "-A")
+	celltest.Git(t, wt.Dir, "commit", "-qm", "seat commits its own work")
+	if head := celltest.Git(t, wt.Dir, "rev-parse", "HEAD"); head == wt.BaseSHA {
 		t.Fatal("the seat's commit left HEAD at the base, so this proves nothing")
 	}
 
@@ -138,7 +105,7 @@ func TestDiffMeasuresAgainstPinnedBaseAfterSeatCommits(t *testing.T) {
 // guard: with the guard the index is never touched, so the seat's file is
 // still untracked afterwards; without it, `git add -A` has already staged it.
 func TestDiffWithoutPinnedBaseRefusesToMeasure(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	wt, release, err := Materialize(context.Background(), repo, "HEAD")
 	if err != nil {
 		t.Fatalf("materialize: %v", err)
@@ -157,14 +124,14 @@ func TestDiffWithoutPinnedBaseRefusesToMeasure(t *testing.T) {
 	if diff != "" {
 		t.Fatalf("a refused measurement still returned %q", diff)
 	}
-	if status := gitIn(t, wt.Dir, "status", "--porcelain"); !strings.HasPrefix(status, "??") {
+	if status := celltest.Git(t, wt.Dir, "status", "--porcelain"); !strings.HasPrefix(status, "??") {
 		t.Fatalf("the refusal touched the index: status = %q, want the file still untracked", status)
 	}
 }
 
 // An unresolvable base fails before any worktree is cut.
 func TestMaterializeUnresolvableBaseFails(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	if _, _, err := Materialize(context.Background(), repo, "no-such-rev"); err == nil {
 		t.Fatal("an unresolvable base must fail")
 	}

@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 // corpusDir is the SAME directory scripts/cell-schema-check.sh vets with
@@ -126,7 +128,7 @@ func TestAbsentSubjectIsRejected(t *testing.T) {
 // commit, and an absolute repository path rather than one relative to whatever
 // directory a later reader is in.
 func TestPinResolvesTheBaseAndTheRepoOnce(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	authored, err := json.Marshal(Subject{Kind: SubjectKind, Repo: repo, BaseSHA: "HEAD"})
 	if err != nil {
 		t.Fatal(err)
@@ -161,8 +163,8 @@ func TestPinResolvesTheBaseAndTheRepoOnce(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(repo, "MOVED.md"), []byte("moved\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	gitIn(t, repo, "add", "-A")
-	gitIn(t, repo, "commit", "-qm", "move HEAD")
+	celltest.Git(t, repo, "add", "-A")
+	celltest.Git(t, repo, "commit", "-qm", "move HEAD")
 	moved, err := Pin(context.Background(), authored)
 	if err != nil {
 		t.Fatal(err)
@@ -175,7 +177,7 @@ func TestPinResolvesTheBaseAndTheRepoOnce(t *testing.T) {
 // Pinning fails closed, and each cause is distinguishable — a repository that
 // is not one, and a revision that does not exist, are different repairs.
 func TestPinFailsClosed(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	cases := map[string]struct {
 		subject Subject
 		want    string

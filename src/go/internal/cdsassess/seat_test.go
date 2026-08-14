@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -17,33 +16,9 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
-
-// testRepo builds a one-commit git repository and returns its path and HEAD.
-func testRepo(t *testing.T) (string, string) {
-	t.Helper()
-	dir := t.TempDir()
-	run := func(args ...string) string {
-		t.Helper()
-		cmd := exec.Command("git", args...)
-		cmd.Dir = dir
-		cmd.Env = append(os.Environ(),
-			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-		}
-		return strings.TrimSpace(string(out))
-	}
-	run("init", "-q", "-b", "main")
-	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("base\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	run("add", "-A")
-	run("commit", "-qm", "base")
-	return dir, run("rev-parse", "HEAD")
-}
 
 // adversarial is the projection this seat is constructed under, built through
 // cellmethod rather than hand-written so the test cannot hold a view the
@@ -240,7 +215,7 @@ func fixture(t *testing.T, parts ...string) string {
 // against that same directory, decides the two check units itself, and
 // reconciles what the judge returned.
 func TestReviewReconstructsChecksAndAssesses(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	matter := matterFor(t, repo, head, map[string]string{"README.md": "changed\n", "NOTES.md": "new\n"})
 
 	j := &recordingJudge{answer: func(c Catalogue) Assessment { return mustJudge(t, c) }}
@@ -313,7 +288,7 @@ func mustJudge(t *testing.T, c Catalogue) Assessment {
 // rather than a malfunction: the matter unit takes the finding, the checker
 // unit is unverified because the recipe never ran, and no worktree is cut.
 func TestAMatterWithNoChangeReconstructsNothing(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	j := &recordingJudge{answer: func(c Catalogue) Assessment { return mustJudge(t, c) }}
 	seat := AssessBeta{judge: j, method: adversarial(t)}
 	out, err := seat.Review(context.Background(), cellkernel.BetaInput{
@@ -342,7 +317,7 @@ func TestAMatterWithNoChangeReconstructsNothing(t *testing.T) {
 // must not manufacture `pass:false` out of an unusable answer — that would put
 // a judgement nobody made into the record.
 func TestANonReviewingJudgeIsAMalfunction(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	matter := matterFor(t, repo, head, map[string]string{"README.md": "changed\n"})
 	in := cellkernel.BetaInput{Contract: contractFor(t, repo, head), Matter: matter}
 
@@ -367,7 +342,7 @@ func TestANonReviewingJudgeIsAMalfunction(t *testing.T) {
 // subject that is not pinned means two stations could have measured different
 // trees.
 func TestReviewRefusesAnUnreadableContract(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	seat := AssessBeta{judge: &recordingJudge{answer: func(c Catalogue) Assessment { return mustJudge(t, c) }}, method: adversarial(t)}
 	good := contractFor(t, repo, head)
 

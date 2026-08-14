@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 var refs = []string{"cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"}
@@ -20,21 +21,9 @@ func tree(t *testing.T, refs ...string) string {
 	t.Helper()
 	root := t.TempDir()
 	for i, ref := range refs {
-		writeSkill(t, root, ref, fmt.Sprintf("# body of %s\nobligation %d\n", ref, i))
+		celltest.Skill(t, root, ref, fmt.Sprintf("# body of %s\nobligation %d\n", ref, i))
 	}
 	return root
-}
-
-func writeSkill(t *testing.T, root, ref, body string) {
-	t.Helper()
-	pkg, path, _ := strings.Cut(ref, ":")
-	dir := filepath.Join(root, pkg, "skills", filepath.FromSlash(path))
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(body), 0o600); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func declFor(refs ...string) []byte {
@@ -86,7 +75,7 @@ func TestTheDigestCoversTheOrderedRefAndBodyDigestList(t *testing.T) {
 
 	// ONE BYTE in one body.
 	moved := tree(t, refs...)
-	writeSkill(t, moved, refs[2], "# body of "+refs[2]+"\nobligation 2\n"+"!")
+	celltest.Skill(t, moved, refs[2], "# body of "+refs[2]+"\nobligation 2\n"+"!")
 	if changed, _ := load(t, moved, refs...); changed.SHA256 == base.SHA256 {
 		t.Fatal("a one-byte change to a skill body did not change the methodology digest")
 	}

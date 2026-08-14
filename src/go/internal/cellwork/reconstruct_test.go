@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 // changed applies fn to a fresh worktree of repo and returns the measured
@@ -56,7 +58,7 @@ func file(t *testing.T, v View, path string) FileState {
 // what the patch produces — checked against a real repository, a real measured
 // diff, and the file the same change leaves on disk.
 func TestReconstructReproducesThePostApplicationState(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	const added = "# notes\n\nthe seat wrote this\n"
 	const rewritten = "base\nand a second line\n"
 	matter := changed(t, repo, head, func(dir string) {
@@ -103,20 +105,20 @@ func TestReconstructReproducesThePostApplicationState(t *testing.T) {
 // Nothing escapes but the value: the reconstruction worktree is gone, the
 // repository is untouched, and git has forgotten the checkout.
 func TestReconstructLeavesNothingBehind(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	matter := changed(t, repo, head, func(dir string) { write(t, dir, "NOTES.md", "x\n") })
 
-	before := gitIn(t, repo, "worktree", "list")
+	before := celltest.Git(t, repo, "worktree", "list")
 	if _, err := Reconstruct(context.Background(), repo, head, matter, nil); err != nil {
 		t.Fatalf("reconstruct: %v", err)
 	}
-	if after := gitIn(t, repo, "worktree", "list"); after != before {
+	if after := celltest.Git(t, repo, "worktree", "list"); after != before {
 		t.Fatalf("a reconstruction worktree outlived the call:\nbefore:\n%s\nafter:\n%s", before, after)
 	}
 	if _, err := os.Stat(filepath.Join(repo, "NOTES.md")); !os.IsNotExist(err) {
 		t.Fatal("reconstruction wrote into the subject repository")
 	}
-	if got := gitIn(t, repo, "rev-parse", "HEAD"); got != head {
+	if got := celltest.Git(t, repo, "rev-parse", "HEAD"); got != head {
 		t.Fatalf("repository HEAD moved to %q", got)
 	}
 }
@@ -126,7 +128,7 @@ func TestReconstructLeavesNothingBehind(t *testing.T) {
 // decided by the FILE. Here the import sits far outside every hunk, so the
 // matter alone cannot answer the question and the view can.
 func TestViewCarriesWhatHunksCannot(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	// A file whose import block is far from the line the change touches.
 	var b strings.Builder
 	b.WriteString("package widget\n\nimport (\n\t\"bytes\"\n\t\"fmt\"\n)\n\n")
@@ -135,9 +137,9 @@ func TestViewCarriesWhatHunksCannot(t *testing.T) {
 	}
 	b.WriteString("func Render() string {\n\tvar out bytes.Buffer\n\tfmt.Fprint(&out, \"old\")\n\treturn out.String()\n}\n")
 	write(t, repo, "widget.go", b.String())
-	gitIn(t, repo, "add", "-A")
-	gitIn(t, repo, "commit", "-qm", "widget")
-	head := gitIn(t, repo, "rev-parse", "HEAD")
+	celltest.Git(t, repo, "add", "-A")
+	celltest.Git(t, repo, "commit", "-qm", "widget")
+	head := celltest.Git(t, repo, "rev-parse", "HEAD")
 
 	matter := changed(t, repo, head, func(dir string) {
 		write(t, dir, "widget.go", strings.Replace(b.String(), `"old"`, `"new"`, 1))
@@ -163,7 +165,7 @@ func TestViewCarriesWhatHunksCannot(t *testing.T) {
 
 // AC6: every degraded path is reported as ITS OWN fact.
 func TestReconstructDegradedPathsAreDistinct(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	matter := changed(t, repo, head, func(dir string) { write(t, dir, "NOTES.md", "x\n") })
 	// A patch whose context does not exist in the base. It has to touch an
 	// EXISTING file to have context at all: a patch that only creates a file
@@ -213,7 +215,7 @@ func TestReconstructDegradedPathsAreDistinct(t *testing.T) {
 // repository that resolves a base and then refuses a worktree, which no
 // fixture in this package produces.
 func TestReconstructReportsATempDirItCannotAllocate(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	matter := changed(t, repo, head, func(dir string) { write(t, dir, "NOTES.md", "x\n") })
 
 	// Materialize allocates the worktree's parent with os.MkdirTemp, which
@@ -236,13 +238,13 @@ func TestReconstructReportsATempDirItCannotAllocate(t *testing.T) {
 // A deletion, a rename and a binary file each report distinctly, and none of
 // them is reported as an empty text file.
 func TestReconstructReportsDeletionRenameAndBinaryDistinctly(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	write(t, repo, "DOOMED.md", "delete me\n")
 	write(t, repo, "OLD-NAME.md", strings.Repeat("stable content\n", 20))
 	write(t, repo, "EMPTY.md", "")
-	gitIn(t, repo, "add", "-A")
-	gitIn(t, repo, "commit", "-qm", "fixtures")
-	head := gitIn(t, repo, "rev-parse", "HEAD")
+	celltest.Git(t, repo, "add", "-A")
+	celltest.Git(t, repo, "commit", "-qm", "fixtures")
+	head := celltest.Git(t, repo, "rev-parse", "HEAD")
 
 	matter := changed(t, repo, head, func(dir string) {
 		if err := os.Remove(filepath.Join(dir, "DOOMED.md")); err != nil {
@@ -286,7 +288,7 @@ func TestReconstructReportsDeletionRenameAndBinaryDistinctly(t *testing.T) {
 // An empty file that IS touched reads as empty content with no flags — the
 // case that makes `Omitted` load-bearing rather than decorative.
 func TestReconstructDistinguishesAnEmptyFileFromAnOmittedOne(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	matter := changed(t, repo, head, func(dir string) { write(t, dir, "PLACEHOLDER.md", "") })
 
 	view, err := Reconstruct(context.Background(), repo, head, matter, nil)
@@ -306,13 +308,13 @@ func TestReconstructDistinguishesAnEmptyFileFromAnOmittedOne(t *testing.T) {
 // post-application state is larger than a view may carry. That asymmetry is
 // the whole reason the view needs its own bound.
 func TestReconstructReportsTruncation(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	big := strings.Repeat("a line that is not evidence anybody asked for\n", 12000) // ~540 KiB
 	write(t, repo, "a-big.txt", big)
 	write(t, repo, "b-big.txt", big)
-	gitIn(t, repo, "add", "-A")
-	gitIn(t, repo, "commit", "-qm", "two large files")
-	head := gitIn(t, repo, "rev-parse", "HEAD")
+	celltest.Git(t, repo, "add", "-A")
+	celltest.Git(t, repo, "commit", "-qm", "two large files")
+	head := celltest.Git(t, repo, "rev-parse", "HEAD")
 
 	matter := changed(t, repo, head, func(dir string) {
 		write(t, dir, "a-big.txt", big+"one more line\n")
@@ -352,7 +354,7 @@ func TestReconstructReportsTruncation(t *testing.T) {
 // assessing fill — so the scope rule it guarded has expired by being satisfied,
 // and what needs guarding instead is the contract the new caller depends on.
 func TestInspectSeesTheAppliedCandidateAndNothingSurvives(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	matter := changed(t, repo, head, func(dir string) {
 		write(t, dir, "README.md", "two\n")
 		write(t, dir, "new.txt", "fresh\n")
@@ -435,7 +437,7 @@ func TestParseNameStatus(t *testing.T) {
 // Asserted by making the inspector do exactly what a checker does incidentally:
 // create a file, and overwrite one the matter produced.
 func TestTheViewIsReadBeforeTheInspection(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	matter := changed(t, repo, head, func(dir string) { write(t, dir, "new.txt", "fresh\n") })
 
 	view, err := Reconstruct(context.Background(), repo, head, matter, func(dir string) {

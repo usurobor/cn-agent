@@ -1,23 +1,10 @@
 package cellskill
 
 import (
-	"os"
-	"path/filepath"
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 	"strings"
 	"testing"
 )
-
-func writeSkill(t *testing.T, root, ref, body string) {
-	t.Helper()
-	pkg, path, _ := strings.Cut(ref, ":")
-	dir := filepath.Join(root, pkg, "skills", filepath.FromSlash(path))
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(body), 0o600); err != nil {
-		t.Fatal(err)
-	}
-}
 
 // One root, one lookup: there is no second place to look, so a ref that is
 // not installed fails instead of resolving from somewhere else. The previous
@@ -25,8 +12,8 @@ func writeSkill(t *testing.T, root, ref, body string) {
 // second authority.
 func TestSingleRootHasNoFallback(t *testing.T) {
 	installed, elsewhere := t.TempDir(), t.TempDir()
-	writeSkill(t, installed, "cnos.eng:eng/go", "installed body\n")
-	writeSkill(t, elsewhere, "cnos.eng:eng/test", "somewhere else\n")
+	celltest.Skill(t, installed, "cnos.eng:eng/go", "installed body\n")
+	celltest.Skill(t, elsewhere, "cnos.eng:eng/test", "somewhere else\n")
 
 	tree := Tree{Root: installed}
 	got, err := tree.Load("cnos.eng:eng/go")
@@ -45,13 +32,13 @@ func TestSingleRootHasNoFallback(t *testing.T) {
 // loaded — a changed body is a changed skill.
 func TestDigestTracksBody(t *testing.T) {
 	root := t.TempDir()
-	writeSkill(t, root, "p:a", "one\n")
+	celltest.Skill(t, root, "p:a", "one\n")
 	tree := Tree{Root: root}
 	first, err := tree.Load("p:a")
 	if err != nil {
 		t.Fatal(err)
 	}
-	writeSkill(t, root, "p:a", "two\n")
+	celltest.Skill(t, root, "p:a", "two\n")
 	second, err := tree.Load("p:a")
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +53,7 @@ func TestDigestTracksBody(t *testing.T) {
 
 func TestLoadFailsClosed(t *testing.T) {
 	root := t.TempDir()
-	writeSkill(t, root, "p:a", "body\n")
+	celltest.Skill(t, root, "p:a", "body\n")
 	tree := Tree{Root: root}
 	bad := []string{
 		"no-colon",
@@ -95,7 +82,7 @@ func TestLoadFailsClosed(t *testing.T) {
 func TestLoadAllPreservesOrder(t *testing.T) {
 	root := t.TempDir()
 	for _, ref := range []string{"p:a", "p:b", "p:c"} {
-		writeSkill(t, root, ref, "body of "+ref+"\n")
+		celltest.Skill(t, root, ref, "body of "+ref+"\n")
 	}
 	got, err := LoadAll(Tree{Root: root}, []string{"p:c", "p:a", "p:b"})
 	if err != nil {

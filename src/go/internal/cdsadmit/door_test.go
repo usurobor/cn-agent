@@ -14,7 +14,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -24,6 +23,8 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellrun"
+
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 const corpusDir = "../../../../schemas/cds/fixtures/runinput"
@@ -349,18 +350,8 @@ func TestADoorlessRuntimeGivenAnInputSaysSoRatherThanRefusing(t *testing.T) {
 func runInputAgainstARealRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
-	for _, args := range [][]string{
-		{"init", "-q", "-b", "main"},
-		{"commit", "-qm", "base", "--allow-empty"},
-	} {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = repo
-		cmd.Env = append(os.Environ(),
-			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-		}
-	}
+	celltest.Git(t, repo, "init", "-q", "-b", "main")
+	celltest.Git(t, repo, "commit", "-qm", "base", "--allow-empty")
 	raw, err := os.ReadFile(filepath.Join(corpusDir, "valid-run-input.json"))
 	if err != nil {
 		t.Fatal(err)

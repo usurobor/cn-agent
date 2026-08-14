@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 // A symlink's content in git is its TARGET PATH. Reading through it would put
@@ -13,7 +15,7 @@ import (
 // prompt, under a header promising the view came from (subject, matter) alone —
 // so this asserts the SECRET IS ABSENT, not merely that the target is present.
 func TestReconstructReportsSymlinksWithoutFollowingThem(t *testing.T) {
-	repo, base := testRepo(t)
+	repo, base := celltest.Repo(t)
 	secret := filepath.Join(t.TempDir(), "host-secret.txt")
 	if err := os.WriteFile(secret, []byte("HOST-SECRET-CONTENT\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -58,7 +60,7 @@ func TestReconstructReportsSymlinksWithoutFollowingThem(t *testing.T) {
 // A relative link whose target is not in the change is a legal patch. Following
 // it ended the whole episode on a file that was never read.
 func TestReconstructTakesADanglingSymlinkInStride(t *testing.T) {
-	repo, base := testRepo(t)
+	repo, base := celltest.Repo(t)
 	wt, release, err := Materialize(context.Background(), repo, base)
 	if err != nil {
 		t.Fatal(err)
@@ -87,16 +89,16 @@ func TestReconstructTakesADanglingSymlinkInStride(t *testing.T) {
 // large in the base would otherwise read the whole file before anything checked
 // it — "a limit checked on a fully buffered result is not a limit".
 func TestViewBoundIsDecidedBeforeReading(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	// Many short lines, not one long one: the patch must stay small while the
 	// FILE is large, which is exactly the case a post-read bound cannot catch.
 	big := strings.Repeat("padding line to make this file large\n", (maxViewBytes+(4<<20))/37)
 	if err := os.WriteFile(filepath.Join(repo, "big.txt"), []byte(big), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	gitIn(t, repo, "add", "-A")
-	gitIn(t, repo, "commit", "-qm", "a file already large in the base")
-	base := gitIn(t, repo, "rev-parse", "HEAD")
+	celltest.Git(t, repo, "add", "-A")
+	celltest.Git(t, repo, "commit", "-qm", "a file already large in the base")
+	base := celltest.Git(t, repo, "rev-parse", "HEAD")
 
 	wt, release, err := Materialize(context.Background(), repo, base)
 	if err != nil {

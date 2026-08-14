@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -14,6 +13,8 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
 	"github.com/usurobor/cnos/src/go/internal/cellwork"
+
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 // pinnedSHA is the shape a RECORDED base must have, transcribed here rather
@@ -22,26 +23,19 @@ import (
 // produces it.
 var pinnedSHA = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
-// oneCommitRepo builds a throwaway repository and returns its path. Kept local
-// and minimal: cellwork's own tests need the same thing, and a shared test
-// helper package for fourteen lines would be a dependency between two test
-// suites that are otherwise independent.
+// oneCommitRepo builds a throwaway repository with an EMPTY base commit — this
+// test is about what the loader pins, and a base with content in it would be
+// content no assertion here reads.
+//
+// The shape stays local; the git runner does not. An earlier note here argued
+// that a shared helper "for fourteen lines would be a dependency between two
+// test suites that are otherwise independent" — true of two, and it was seven
+// by the time anyone counted.
 func oneCommitRepo(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	for _, args := range [][]string{
-		{"init", "-q", "-b", "main"},
-		{"add", "-A"},
-		{"commit", "-qm", "base", "--allow-empty"},
-	} {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = dir
-		cmd.Env = append(os.Environ(),
-			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-		}
-	}
+	celltest.Git(t, dir, "init", "-q", "-b", "main")
+	celltest.Git(t, dir, "commit", "-qm", "base", "--allow-empty")
 	return dir
 }
 

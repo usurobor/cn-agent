@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 // A fixture is a real repository with a real Go module at the path the recipe
@@ -33,19 +35,6 @@ func write(t *testing.T, dir string, files map[string]string) {
 	}
 }
 
-func git(t *testing.T, dir string, args ...string) string {
-	t.Helper()
-	cmd := exec.Command("git", args...)
-	cmd.Dir = dir
-	cmd.Env = append(os.Environ(),
-		"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-	}
-	return string(out)
-}
-
 // candidate builds a repository whose BASE commit is `base` and whose
 // uncommitted working tree adds `change` — which is exactly the shape a
 // materialized candidate has: a worktree at the pinned base with the matter
@@ -58,10 +47,10 @@ func candidate(t *testing.T, base, change map[string]string) (string, string) {
 	t.Helper()
 	dir := t.TempDir()
 	write(t, dir, base)
-	git(t, dir, "init", "-q", "-b", "main")
-	git(t, dir, "add", "-A")
-	git(t, dir, "commit", "-qm", "base")
-	head := strings.TrimSpace(git(t, dir, "rev-parse", "HEAD"))
+	celltest.Git(t, dir, "init", "-q", "-b", "main")
+	celltest.Git(t, dir, "add", "-A")
+	celltest.Git(t, dir, "commit", "-qm", "base")
+	head := strings.TrimSpace(celltest.Git(t, dir, "rev-parse", "HEAD"))
 	write(t, dir, change)
 	return dir, head
 }
@@ -363,12 +352,12 @@ func productionReferences(t *testing.T, needle string) []string {
 // carries a witness for.
 func TestACommittedCandidateIsStillMeasuredAgainstTheBase(t *testing.T) {
 	dir, base := candidate(t, baseTree(), map[string]string{"src/go/ok/messy.go": messyGo})
-	git(t, dir, "add", "-A")
-	git(t, dir, "commit", "-qm", "the seat commits its own work")
-	if head := strings.TrimSpace(git(t, dir, "rev-parse", "HEAD")); head == base {
+	celltest.Git(t, dir, "add", "-A")
+	celltest.Git(t, dir, "commit", "-qm", "the seat commits its own work")
+	if head := strings.TrimSpace(celltest.Git(t, dir, "rev-parse", "HEAD")); head == base {
 		t.Fatal("the commit left HEAD at the base, so this proves nothing")
 	}
-	if status := strings.TrimSpace(git(t, dir, "status", "--porcelain")); status != "" {
+	if status := strings.TrimSpace(celltest.Git(t, dir, "status", "--porcelain")); status != "" {
 		t.Fatalf("git status is not clean, so a HEAD-relative check would still see the change: %q", status)
 	}
 

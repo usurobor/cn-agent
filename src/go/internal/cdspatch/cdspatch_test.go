@@ -15,33 +15,9 @@ import (
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
 	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 	"github.com/usurobor/cnos/src/go/internal/cellwork"
 )
-
-// testRepo builds a one-commit git repository and returns its path and HEAD.
-func testRepo(t *testing.T) (string, string) {
-	t.Helper()
-	dir := t.TempDir()
-	run := func(args ...string) string {
-		t.Helper()
-		cmd := exec.Command("git", args...)
-		cmd.Dir = dir
-		cmd.Env = append(os.Environ(),
-			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-		}
-		return strings.TrimSpace(string(out))
-	}
-	run("init", "-q", "-b", "main")
-	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("base\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	run("add", "-A")
-	run("commit", "-qm", "base")
-	return dir, run("rev-parse", "HEAD")
-}
 
 // skillTree writes a minimal installed package tree with the given skills.
 func skillTree(t *testing.T, refs ...string) cellskill.Tree {
@@ -147,7 +123,7 @@ func construct(t *testing.T, provider string) cellfill.ConstructedAlpha {
 // of that projection, and the prompt carries the bundle's skill BODIES — naming
 // a skill is not loading it.
 func TestTheCellsMethodologyReachesTheSeatAndIsRecorded(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	tree := skillTree(t, testSkills...)
 	view := methodology(t, tree, testSkills...)
 	a, err := Factory()(context.Background(), declJSON("fake"), view)
@@ -332,7 +308,7 @@ func TestTheDeclarationCannotNameARepository(t *testing.T) {
 // episode actually stood on and the base the record says it stood on are one
 // resolution, not two that happened to agree.
 func TestTheMeasuredBaseIsTheContractSubjectsBase(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	seat := construct(t, "fake").Seat.(PatchAlpha)
 	contract := contractFor(t, repo, head)
 
@@ -383,7 +359,7 @@ func TestNoSubjectIsARefusalNotADefault(t *testing.T) {
 // before either station exists; a station that re-resolved `HEAD` is exactly
 // the two-resolutions failure in a different place.
 func TestAnUnpinnedSubjectIsRefusedAtTheSeat(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	seat := construct(t, "fake").Seat.(PatchAlpha)
 	_, err := seat.Produce(context.Background(), cellkernel.AlphaInput{
 		Contract: contractFor(t, repo, "HEAD"),
@@ -447,7 +423,7 @@ func (idleCoder) Name() string                               { return "idle" }
 func (idleCoder) Work(context.Context, string, string) error { return nil }
 
 func TestIdleCoderCannotFalselyComplete(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	a := construct(t, "fake").Seat.(PatchAlpha)
 	a.coder = idleCoder{}
 	out, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: contractFor(t, repo, head)})
@@ -470,7 +446,7 @@ func TestIdleCoderCannotFalselyComplete(t *testing.T) {
 // (The fake coder writes a file unrelated to the NOTES goal — exactly the
 // change a passing mechanical beta would have wrongly blessed.)
 func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	a := construct(t, "fake")
 	patchContract := contractFor(t, repo, head)
 	betas := cellfill.CddFills()
@@ -515,7 +491,7 @@ func TestMeasuredChangeAwaitsIndependentReview(t *testing.T) {
 
 // The worktree is disposable and the repository is left untouched.
 func TestWorktreeIsDisposableAndRepoUntouched(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	a := construct(t, "fake").Seat.(PatchAlpha)
 	if _, err := a.Produce(context.Background(), cellkernel.AlphaInput{Contract: contractFor(t, repo, head)}); err != nil {
 		t.Fatalf("produce: %v", err)
@@ -545,7 +521,7 @@ func TestWorktreeIsDisposableAndRepoUntouched(t *testing.T) {
 // stated — reaching into the seat's fields to corrupt them is no longer
 // possible, and that is the fix rather than a limitation of this test.
 func TestPatchAlphaFailsClosed(t *testing.T) {
-	repo, head := testRepo(t)
+	repo, head := celltest.Repo(t)
 	seat := construct(t, "fake").Seat.(PatchAlpha)
 
 	noCoder := seat

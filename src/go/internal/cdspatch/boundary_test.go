@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/usurobor/cnos/src/go/internal/cellwork"
+
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 // D3: Go must accept exactly the keys the closed CUE overlay accepts.
@@ -38,7 +40,7 @@ func TestMixedCaseKeysRejected(t *testing.T) {
 
 // D4: an oversized diff is refused without ever buffering it whole.
 func TestOversizedDiffIsRefused(t *testing.T) {
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	wt, release, err := cellwork.Materialize(context.Background(), repo, "HEAD")
 	if err != nil {
 		t.Fatalf("materialize: %v", err)

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
+
+	"github.com/usurobor/cnos/src/go/internal/celltest"
 )
 
 // applyIndependently cuts a second worktree of repo at base and applies matter
@@ -21,12 +23,12 @@ import (
 func applyIndependently(t *testing.T, repo, base, matter string) string {
 	t.Helper()
 	dir := filepath.Join(t.TempDir(), "independent")
-	gitIn(t, repo, "worktree", "add", "-q", "--detach", dir, base)
+	celltest.Git(t, repo, "worktree", "add", "-q", "--detach", dir, base)
 	patch := filepath.Join(t.TempDir(), "matter.patch")
 	if err := os.WriteFile(patch, []byte(matter), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	gitIn(t, dir, "apply", "--whitespace=nowarn", patch)
+	celltest.Git(t, dir, "apply", "--whitespace=nowarn", patch)
 	return dir
 }
 
@@ -36,8 +38,8 @@ func applyIndependently(t *testing.T, repo, base, matter string) string {
 // code this test exists to check.
 func changedPaths(t *testing.T, dir, base string) []string {
 	t.Helper()
-	gitIn(t, dir, "add", "-A")
-	out := gitIn(t, dir, "diff", "--cached", "--no-color", "-z", "--name-only", base)
+	celltest.Git(t, dir, "add", "-A")
+	out := celltest.Git(t, dir, "diff", "--cached", "--no-color", "-z", "--name-only", base)
 	var paths []string
 	for _, p := range strings.Split(out, "\x00") {
 		if p != "" {
@@ -65,14 +67,14 @@ func TestReconstructEqualsAnIndependentlyAppliedPatch(t *testing.T) {
 		newlinePath = "two\nlines.txt"
 		crlfAfter   = "new\r\nlines\r\nand more\r\n"
 	)
-	repo, _ := testRepo(t)
+	repo, _ := celltest.Repo(t)
 	write(t, repo, "tool.sh", "#!/bin/sh\necho hi\n")
 	write(t, repo, "crlf.txt", "old\r\nlines\r\n")
 	write(t, repo, "DOOMED.md", "delete me\n")
 	write(t, repo, "OLD-NAME.md", strings.Repeat("stable content\n", 20))
-	gitIn(t, repo, "add", "-A")
-	gitIn(t, repo, "commit", "-qm", "every class of thing a change can be")
-	base := gitIn(t, repo, "rev-parse", "HEAD")
+	celltest.Git(t, repo, "add", "-A")
+	celltest.Git(t, repo, "commit", "-qm", "every class of thing a change can be")
+	base := celltest.Git(t, repo, "rev-parse", "HEAD")
 
 	matter := changed(t, repo, base, func(dir string) {
 		write(t, dir, "NOTES.md", "added\n")                               // added
