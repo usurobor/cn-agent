@@ -213,29 +213,70 @@ type Assessment struct {
 // never shown. The seat is told this in its prompt; the downgrade is what makes
 // the instruction more than a request.
 func Reconcile(c Catalogue, a Assessment, viewComplete bool) ([]cellkernel.UnitResult, error) {
-	answered := make(map[string]cellkernel.UnitResult, len(a.Units))
-	for _, u := range a.Units {
-		if _, dup := answered[u.Unit]; dup {
-			return nil, fmt.Errorf("the assessment disposes of unit %q more than once; one obligation has one disposition", u.Unit)
-		}
-		answered[u.Unit] = u
+	if err := checkVocabulary(a); err != nil {
+		return nil, err
 	}
-	// The vocabulary and the reason rule belong HERE, where the seat's answer is
-	// judged, not at the kernel's seal. Both are things this seat got wrong, and
-	// a rule enforced only downstream surfaces as an episode malfunction naming
-	// neither the fill nor the provider that produced it — a true failure
-	// attributed to the wrong component.
+	if err := checkCoverage(c, a); err != nil {
+		return nil, err
+	}
+	// Coverage passed, so the two sequences are the same units in the same
+	// order: `a.Units[i]` is this catalogue unit's disposition, by position.
+	out := make([]cellkernel.UnitResult, 0, len(c.Units))
+	for i, u := range c.Units {
+		got := a.Units[i]
+		switch {
+		case u.Forced != nil:
+			r, err := forced(u, got)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, r)
+		case !viewComplete && got.Disposition == cellkernel.DispositionPass:
+			out = append(out, downgraded(u, got))
+		default:
+			out = append(out, got)
+		}
+	}
+	return out, nil
+}
+
+// checkVocabulary holds the seat's answer to the closed disposition set and to
+// the reason rule.
+//
+// Both belong HERE, where the seat's answer is judged, and not at the kernel's
+// seal. Both are things this seat got wrong, and a rule enforced only
+// downstream surfaces as an episode malfunction naming neither the fill nor the
+// provider that produced it — a true failure attributed to the wrong component.
+func checkVocabulary(a Assessment) error {
 	for _, u := range a.Units {
 		switch u.Disposition {
 		case cellkernel.DispositionPass, cellkernel.DispositionFinding, cellkernel.DispositionUnverified:
 		default:
-			return nil, fmt.Errorf("the assessment reports disposition %q for unit %q; the vocabulary is pass, finding or unverified",
+			return fmt.Errorf("the assessment reports disposition %q for unit %q; the vocabulary is pass, finding or unverified",
 				u.Disposition, u.Unit)
 		}
 		if u.Disposition != cellkernel.DispositionPass && strings.TrimSpace(u.Reason) == "" {
-			return nil, fmt.Errorf("unit %q is %q with no reason; a judgement that withholds its reason is not a review",
+			return fmt.Errorf("unit %q is %q with no reason; a judgement that withholds its reason is not a review",
 				u.Unit, u.Disposition)
 		}
+	}
+	return nil
+}
+
+// checkCoverage requires the answer to be the catalogue: each unit once, no
+// unit invented, none dropped, and in catalogue order.
+//
+// The order rule is not pedantry — the catalogue is a SEQUENCE. A reader
+// comparing two episodes' assessments reads them positionally, and an answer
+// that permuted the units would compare against the wrong obligations. It is
+// also what lets Reconcile pair them by index afterwards.
+func checkCoverage(c Catalogue, a Assessment) error {
+	answered := make(map[string]bool, len(a.Units))
+	for _, u := range a.Units {
+		if answered[u.Unit] {
+			return fmt.Errorf("the assessment disposes of unit %q more than once; one obligation has one disposition", u.Unit)
+		}
+		answered[u.Unit] = true
 	}
 	known := make(map[string]bool, len(c.Units))
 	for _, u := range c.Units {
@@ -246,64 +287,60 @@ func Reconcile(c Catalogue, a Assessment, viewComplete bool) ([]cellkernel.UnitR
 	// hide the invention.
 	for _, u := range a.Units {
 		if !known[u.Unit] {
-			return nil, fmt.Errorf("the assessment disposes of unit %q, which is not in the catalogue", u.Unit)
+			return fmt.Errorf("the assessment disposes of unit %q, which is not in the catalogue", u.Unit)
 		}
 	}
 	for _, u := range c.Units {
-		if _, ok := answered[u.ID]; !ok {
-			return nil, fmt.Errorf("the assessment does not dispose of catalogue unit %q; coverage must be exact", u.ID)
+		if !answered[u.ID] {
+			return fmt.Errorf("the assessment does not dispose of catalogue unit %q; coverage must be exact", u.ID)
 		}
 	}
-	// Same set, so the only remaining coverage question is ORDER. It is checked
-	// because the catalogue is a sequence: a reader comparing two episodes'
-	// assessments reads them positionally, and an answer that permuted the units
-	// would compare against the wrong obligations.
 	if len(a.Units) != len(c.Units) {
-		return nil, fmt.Errorf("the assessment carries %d dispositions for %d catalogue units", len(a.Units), len(c.Units))
+		return fmt.Errorf("the assessment carries %d dispositions for %d catalogue units", len(a.Units), len(c.Units))
 	}
 	for i, u := range c.Units {
 		if a.Units[i].Unit != u.ID {
-			return nil, fmt.Errorf("the assessment is out of catalogue order: position %d disposes of %q, the catalogue's is %q",
+			return fmt.Errorf("the assessment is out of catalogue order: position %d disposes of %q, the catalogue's is %q",
 				i, a.Units[i].Unit, u.ID)
 		}
 	}
+	return nil
+}
 
-	out := make([]cellkernel.UnitResult, 0, len(c.Units))
-	for i, u := range c.Units {
-		got := a.Units[i]
-		if u.Forced != nil {
-			// The runtime measured this one. A seat that disagrees has claimed
-			// authority it does not have — over a fact it was TOLD in its prompt
-			// — so this is a malfunction and not a difference of opinion.
-			if got.Disposition != u.Forced.Disposition {
-				return nil, fmt.Errorf(
-					"the assessment reports %q for unit %q, which the runtime measured as %q; a measured unit is not the seat's to decide",
-					got.Disposition, u.ID, u.Forced.Disposition)
-			}
-			// The runtime's reason, not the seat's: the seat did not decide this
-			// unit, so it is not the one that can explain it. Citations survive —
-			// a pointer into the matter is the seat's own work.
-			out = append(out, cellkernel.UnitResult{
-				Unit:        u.ID,
-				Disposition: u.Forced.Disposition,
-				Reason:      u.Forced.Reason,
-				Citations:   got.Citations,
-			})
-			continue
-		}
-		if !viewComplete && got.Disposition == cellkernel.DispositionPass {
-			out = append(out, cellkernel.UnitResult{
-				Unit:        u.ID,
-				Disposition: cellkernel.DispositionUnverified,
-				Reason: "the reconstructed view was incomplete, so a pass cannot be told apart from a pass on " +
-					"content that was never shown; the seat's reason was: " + strings.TrimSpace(got.Reason),
-				Citations: got.Citations,
-			})
-			continue
-		}
-		out = append(out, got)
+// forced is the result for a unit the RUNTIME measured. A seat that disagrees
+// has claimed authority it does not have — over a fact it was TOLD in its
+// prompt — so that is a malfunction and not a difference of opinion.
+//
+// The runtime's reason survives, not the seat's: the seat did not decide this
+// unit, so it is not the one that can explain it. Citations survive — a pointer
+// into the matter is the seat's own work.
+func forced(u Unit, got cellkernel.UnitResult) (cellkernel.UnitResult, error) {
+	if got.Disposition != u.Forced.Disposition {
+		return cellkernel.UnitResult{}, fmt.Errorf(
+			"the assessment reports %q for unit %q, which the runtime measured as %q; a measured unit is not the seat's to decide",
+			got.Disposition, u.ID, u.Forced.Disposition)
 	}
-	return out, nil
+	return cellkernel.UnitResult{
+		Unit:        u.ID,
+		Disposition: u.Forced.Disposition,
+		Reason:      u.Forced.Reason,
+		Citations:   got.Citations,
+	}, nil
+}
+
+// downgraded is the result for a `pass` the seat reached on a PARTIAL view: on
+// one, a pass cannot be told apart from a pass on content that was never shown.
+// The seat is told this in its prompt; this is what makes the instruction more
+// than a request. Its reason is carried rather than discarded — the seat did
+// judge, and a reader deciding what to do next needs to know what it judged.
+func downgraded(u Unit, got cellkernel.UnitResult) cellkernel.UnitResult {
+	return cellkernel.UnitResult{
+		Unit:        u.ID,
+		Disposition: cellkernel.DispositionUnverified,
+		Reason: "the reconstructed view was incomplete, so a pass cannot be told apart from a pass on " +
+			"content that was never shown; the seat's reason was: " + strings.TrimSpace(got.Reason),
+		Citations: got.Citations,
+	}
 }
 
 // Pass reports whether every unit passed. It is the ONE derivation of the

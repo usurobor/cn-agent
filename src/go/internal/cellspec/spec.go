@@ -333,51 +333,13 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding
 	// discovered the fact from inside Review, one whole produced side later.
 	// This package still learns nothing about fills: it reads one declared bool
 	// per side and never asks what a subject is for.
-	alphaID, alphaFill, err := reg.LookupAlpha(r.Alpha)
-	if err != nil {
-		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
-	}
-	betaID, betaFill, err := reg.LookupBeta(r.Beta)
-	if err != nil {
-		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("beta: %w", err)
-	}
-	// One rule, applied to each side in turn — alpha first, so a cell whose two
-	// seats both need a subject refuses with the producing side named, as it did
-	// before the assessing side could declare anything.
-	for _, side := range []struct {
-		role         cellkernel.Role
-		id           string
-		needsSubject bool
-	}{
-		{cellkernel.RoleAlpha, alphaID, alphaFill.NeedsSubject},
-		{cellkernel.RoleBeta, betaID, betaFill.NeedsSubject},
-	} {
-		if side.needsSubject && len(bind.Subject) == 0 {
-			return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(
-				"cell spec: %s fill %q requires contract.subject, and no run input supplied one "+
-					"(pass --input)", side.role, side.id)
-		}
+	if err := r.checkDeclaredNeeds(reg, bind); err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, err
 	}
 
-	// ONE bundle, loaded ONCE, here — before either seat exists. A declared
-	// methodology is loaded whatever the fills are, so a cell whose bundle
-	// names an uninstalled skill fails at the cell, not later and only if some
-	// seat happened to ask. What each seat then receives is a PROJECTION of
-	// this one load: two projections of one digest cannot be two methodologies.
-	var constructive, adversarial cellmethod.View
-	if len(r.Methodology) > 0 {
-		bundle, bodies, err := cellmethod.Load(reg.Skills, r.Methodology)
-		if err != nil {
-			return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("cell spec: %w", err)
-		}
-		// BOTH projections come off the SAME load. Loading twice — once per
-		// seat — would put two reads of one declaration on the two sides of the
-		// episode, which is the drift the single bundle exists to remove: the
-		// producing seat and the assessing seat would then be held to two
-		// collections that nothing could tell apart if a skill body changed
-		// between the reads.
-		constructive = cellmethod.Constructive(bundle, bodies)
-		adversarial = cellmethod.Adversarial(bundle, bodies)
+	constructive, adversarial, err := r.methodology(reg)
+	if err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, err
 	}
 
 	alpha, err := reg.ConstructAlpha(ctx, r.Alpha, constructive)
@@ -389,18 +351,6 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding
 		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("beta: %w", err)
 	}
 
-	req := make([]cellkernel.RequiredRef, 0, len(r.Spec.Contract.RequiredEvidence))
-	for _, e := range r.Spec.Contract.RequiredEvidence {
-		req = append(req, cellkernel.RequiredRef{ID: e.ID, Kind: e.Kind, Producer: cellkernel.Role(e.Producer)})
-	}
-	contract := cellkernel.Contract{
-		ID:               r.Spec.Contract.ID,
-		Goal:             r.Spec.Contract.Goal,
-		Issue:            bind.Issue,
-		Design:           bind.Design,
-		Subject:          bind.Subject,
-		RequiredEvidence: req,
-	}
 	meta := cellkernel.RunMeta{
 		ExecutionMode: cellfill.CombineModes(alpha.Mode, beta.Mode),
 		ResolvedSpec: cellkernel.ResolvedSpec{
@@ -410,7 +360,78 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding
 			Beta:             beta.Decl,
 		},
 	}
-	return cellkernel.Spec{Contract: contract, Alpha: alpha.Seat, Beta: beta.Seat}, meta, nil
+	return cellkernel.Spec{Contract: r.contract(bind), Alpha: alpha.Seat, Beta: beta.Seat}, meta, nil
+}
+
+// checkDeclaredNeeds reads each side's DECLARED requirements and refuses a
+// binding that cannot satisfy them — before either constructor runs.
+//
+// One rule, applied to each side in turn, alpha first: a cell whose two seats
+// both need a subject refuses with the producing side named, as it did before
+// the assessing side could declare anything.
+func (r Resolved) checkDeclaredNeeds(reg cellfill.Registry, bind Binding) error {
+	alphaID, alphaFill, err := reg.LookupAlpha(r.Alpha)
+	if err != nil {
+		return fmt.Errorf("alpha: %w", err)
+	}
+	betaID, betaFill, err := reg.LookupBeta(r.Beta)
+	if err != nil {
+		return fmt.Errorf("beta: %w", err)
+	}
+	for _, side := range []struct {
+		role         cellkernel.Role
+		id           string
+		needsSubject bool
+	}{
+		{cellkernel.RoleAlpha, alphaID, alphaFill.NeedsSubject},
+		{cellkernel.RoleBeta, betaID, betaFill.NeedsSubject},
+	} {
+		if side.needsSubject && len(bind.Subject) == 0 {
+			return fmt.Errorf("cell spec: %s fill %q requires contract.subject, and no run input supplied one "+
+				"(pass --input)", side.role, side.id)
+		}
+	}
+	return nil
+}
+
+// methodology loads the declared bundle ONCE and returns the two projections.
+//
+// Once, here, before either seat exists: a declared methodology is loaded
+// whatever the fills are, so a cell whose bundle names an uninstalled skill
+// fails at the cell, not later and only if some seat happened to ask.
+//
+// BOTH projections come off the SAME load. Loading twice — once per seat —
+// would put two reads of one declaration on the two sides of the episode, which
+// is the drift the single bundle exists to remove: the producing seat and the
+// assessing seat would then be held to two collections that nothing could tell
+// apart if a skill body changed between the reads. Two projections of one
+// digest cannot be two methodologies.
+func (r Resolved) methodology(reg cellfill.Registry) (constructive, adversarial cellmethod.View, err error) {
+	if len(r.Methodology) == 0 {
+		return cellmethod.View{}, cellmethod.View{}, nil
+	}
+	bundle, bodies, err := cellmethod.Load(reg.Skills, r.Methodology)
+	if err != nil {
+		return cellmethod.View{}, cellmethod.View{}, fmt.Errorf("cell spec: %w", err)
+	}
+	return cellmethod.Constructive(bundle, bodies), cellmethod.Adversarial(bundle, bodies), nil
+}
+
+// contract freezes the kernel contract: the cell's own fields, plus the three
+// opaque slots exactly as admission pinned them.
+func (r Resolved) contract(bind Binding) cellkernel.Contract {
+	req := make([]cellkernel.RequiredRef, 0, len(r.Spec.Contract.RequiredEvidence))
+	for _, e := range r.Spec.Contract.RequiredEvidence {
+		req = append(req, cellkernel.RequiredRef{ID: e.ID, Kind: e.Kind, Producer: cellkernel.Role(e.Producer)})
+	}
+	return cellkernel.Contract{
+		ID:               r.Spec.Contract.ID,
+		Goal:             r.Spec.Contract.Goal,
+		Issue:            bind.Issue,
+		Design:           bind.Design,
+		Subject:          bind.Subject,
+		RequiredEvidence: req,
+	}
 }
 
 // checkExactKeys walks the known GENERIC object shapes and requires every key

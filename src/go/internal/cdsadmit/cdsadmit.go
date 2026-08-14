@@ -88,28 +88,8 @@ func Decide(raw []byte) (cellfill.Admitted, Receipt, error) {
 // reads and the error what a Go caller handles; there is no third "fault"
 // channel, because every rule below is a pure predicate that cannot malfunction.
 func admit(digest string, in cellinput.RunInput) (cellfill.Admitted, Receipt, error) {
-	// Absent and malformed are different outcomes: an absent payload is a run input
-	// never finished, a malformed one a document whose author believed it was.
-	for _, p := range []struct {
-		name string
-		raw  json.RawMessage
-	}{
-		{"issue", in.Issue},
-		{"design", in.Design},
-		{"subject", in.Subject},
-	} {
-		if len(p.raw) == 0 {
-			return refuse(digest, OutcomeIncomplete, fmt.Sprintf("run input carries no %s", p.name))
-		}
-		// THE DOOR REFUSES WHAT THE KERNEL WILL REFUSE: without this check both seats
-		// were built before the kernel rejected the oversize slot as `episode
-		// malfunction` (CDS-CELL-MIGRATION.md). The bound is REFERENCED, never
-		// restated: a second constant drifts silently into admitting what it rejects.
-		if len(p.raw) > cellkernel.MaxOpaqueSlotBytes {
-			return refuse(digest, OutcomeRejected, fmt.Sprintf(
-				"run input %s is %d bytes, over the %d-byte contract slot bound",
-				p.name, len(p.raw), cellkernel.MaxOpaqueSlotBytes))
-		}
+	if o, reason := slotFault(in); reason != "" {
+		return refuse(digest, o, reason)
 	}
 
 	iss, err := cdsissue.Admit(in.Issue)
@@ -139,6 +119,37 @@ func admit(digest string, in cellinput.RunInput) (cellfill.Admitted, Receipt, er
 	return cellfill.Admitted{Issue: in.Issue, Design: in.Design, Subject: in.Subject},
 		Receipt{Kind: ReceiptKind, Outcome: OutcomeAdmitted, InputDigest: digest,
 			SemanticAdequacy: SemanticAdequacyOperatorAttested}, nil
+}
+
+// slotFault reports what is wrong with a payload before anything looks INSIDE
+// it — or an empty reason if all three are present and within bound.
+//
+// Absent and oversize are different outcomes: an absent payload is a run input
+// never finished, where a malformed or oversize one is a document whose author
+// believed it was.
+//
+// THE DOOR REFUSES WHAT THE KERNEL WILL REFUSE. Without the bound check both
+// seats were built before the kernel rejected the oversize slot as `episode
+// malfunction` (CDS-CELL-MIGRATION.md). The bound is REFERENCED, never
+// restated: a second constant drifts silently into admitting what it rejects.
+func slotFault(in cellinput.RunInput) (Outcome, string) {
+	for _, p := range []struct {
+		name string
+		raw  json.RawMessage
+	}{
+		{"issue", in.Issue},
+		{"design", in.Design},
+		{"subject", in.Subject},
+	} {
+		switch {
+		case len(p.raw) == 0:
+			return OutcomeIncomplete, fmt.Sprintf("run input carries no %s", p.name)
+		case len(p.raw) > cellkernel.MaxOpaqueSlotBytes:
+			return OutcomeRejected, fmt.Sprintf("run input %s is %d bytes, over the %d-byte contract slot bound",
+				p.name, len(p.raw), cellkernel.MaxOpaqueSlotBytes)
+		}
+	}
+	return "", ""
 }
 
 // relate is the cross-facet arm: rules about issue and design TOGETHER. Both
