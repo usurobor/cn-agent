@@ -78,7 +78,7 @@ func names(obs Observation) []string {
 	return out
 }
 
-func step(t *testing.T, obs Observation, name string) Step {
+func stepNamed(t *testing.T, obs Observation, name string) Step {
 	t.Helper()
 	for _, s := range obs.Steps {
 		if s.Name == name {
@@ -110,11 +110,6 @@ func TestTheFourStepsRunInOrderAndPass(t *testing.T) {
 	if obs.Recipe != RecipeID {
 		t.Fatalf("recipe = %q, want %q", obs.Recipe, RecipeID)
 	}
-	// Run is handed a directory, not a view, so it cannot know the candidate's
-	// identity and must not invent one.
-	if obs.Candidate != "" {
-		t.Fatalf("Run assigned a candidate identity %q it has no way to know", obs.Candidate)
-	}
 }
 
 // AC3, `fail` naming `build`: the recipe stops there, so the step list itself
@@ -130,7 +125,7 @@ func TestACompileErrorFailsNamingBuild(t *testing.T) {
 	if got := strings.Join(names(obs), " "); got != "build" {
 		t.Fatalf("steps ran as %q, want the run to stop at \"build\"", got)
 	}
-	b := step(t, obs, "build")
+	b := stepNamed(t, obs, "build")
 	if b.Status != Fail || b.Exit == 0 {
 		t.Fatalf("build step = %q exit %d, want fail with a non-zero exit", b.Status, b.Exit)
 	}
@@ -153,7 +148,7 @@ func TestAFailingTestFailsNamingTest(t *testing.T) {
 	if got := strings.Join(names(obs), " "); got != "build vet test" {
 		t.Fatalf("steps ran as %q, want the run to stop at \"test\"", got)
 	}
-	if s := step(t, obs, "test"); s.Status != Fail || !strings.Contains(s.Tail, "deliberate failure") {
+	if s := stepNamed(t, obs, "test"); s.Status != Fail || !strings.Contains(s.Tail, "deliberate failure") {
 		t.Fatalf("test step = %q, tail %q", s.Status, s.Tail)
 	}
 }
@@ -172,7 +167,7 @@ func TestALoudStepReportsItsTailNotItsHead(t *testing.T) {
 			"\tt.Log(strings.Repeat(\"filler \", 4000))\n" +
 			"\tt.Fatal(\"the failure at the end\")\n}\n",
 	})
-	s := step(t, Run(context.Background(), dir, base), "test")
+	s := stepNamed(t, Run(context.Background(), dir, base), "test")
 	if s.Status != Fail {
 		t.Fatalf("test step = %q, tail %q", s.Status, s.Tail)
 	}
@@ -200,7 +195,7 @@ func TestAnUnformattedChangedFileFailsNamingFormat(t *testing.T) {
 	if got := strings.Join(names(obs), " "); got != "build vet test format" {
 		t.Fatalf("steps ran as %q, want all four with format failing", got)
 	}
-	f := step(t, obs, "format")
+	f := stepNamed(t, obs, "format")
 	if f.Status != Fail {
 		t.Fatalf("format step = %q, tail %q", f.Status, f.Tail)
 	}
@@ -228,7 +223,7 @@ func TestFormatIsScopedToTheChangedPaths(t *testing.T) {
 	if obs.Status != Pass {
 		t.Fatalf("status = %q, want pass; steps: %+v", obs.Status, obs.Steps)
 	}
-	if f := step(t, obs, "format"); f.Status != Pass {
+	if f := stepNamed(t, obs, "format"); f.Status != Pass {
 		t.Fatalf("format step = %q, tail %q — an untouched file was judged", f.Status, f.Tail)
 	}
 
@@ -253,7 +248,7 @@ func TestNoChangedGoPathsPassesFormat(t *testing.T) {
 	if obs.Status != Pass {
 		t.Fatalf("status = %q, want pass; steps: %+v", obs.Status, obs.Steps)
 	}
-	if f := step(t, obs, "format"); f.Status != Pass || !strings.Contains(f.Tail, "no changed .go paths") {
+	if f := stepNamed(t, obs, "format"); f.Status != Pass || !strings.Contains(f.Tail, "no changed .go paths") {
 		t.Fatalf("format step = %q, tail %q", f.Status, f.Tail)
 	}
 }
@@ -273,7 +268,7 @@ func TestAMissingGoIsUnavailable(t *testing.T) {
 	if got := strings.Join(names(obs), " "); got != "build" {
 		t.Fatalf("steps ran as %q, want the run to stop at \"build\"", got)
 	}
-	b := step(t, obs, "build")
+	b := stepNamed(t, obs, "build")
 	if b.Status != Unavailable || b.Exit != -1 {
 		t.Fatalf("build step = %q exit %d, want unavailable with exit -1", b.Status, b.Exit)
 	}
@@ -293,7 +288,7 @@ func TestANonRepositoryMakesFormatUnavailable(t *testing.T) {
 	if obs.Status != Unavailable {
 		t.Fatalf("status = %q, want unavailable; steps: %+v", obs.Status, obs.Steps)
 	}
-	if f := step(t, obs, "format"); f.Status != Unavailable || f.Exit != -1 {
+	if f := stepNamed(t, obs, "format"); f.Status != Unavailable || f.Exit != -1 {
 		t.Fatalf("format step = %q exit %d", f.Status, f.Exit)
 	}
 }
@@ -381,7 +376,7 @@ func TestACommittedCandidateIsStillMeasuredAgainstTheBase(t *testing.T) {
 	if obs.Status != Fail {
 		t.Fatalf("status = %q, want fail; steps: %+v", obs.Status, obs.Steps)
 	}
-	if f := step(t, obs, "format"); f.Status != Fail || !strings.Contains(f.Tail, "messy.go") {
+	if f := stepNamed(t, obs, "format"); f.Status != Fail || !strings.Contains(f.Tail, "messy.go") {
 		t.Fatalf("format = %+v, want a failure naming messy.go", f)
 	}
 }

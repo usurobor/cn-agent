@@ -66,19 +66,55 @@ type Step struct {
 }
 
 // Observation is the whole run.
+//
+// It does not name the candidate. It carried a `Candidate` field that nothing
+// ever filled, held open for a caller that would know the identity of the tree
+// it materialized. That caller exists now — cds.assess reconstructs from a
+// pinned base and a matter — and it still has no use for the field: the
+// identity it would write is `(base_sha, matter)`, which the episode record
+// already binds under the scope-lift digest. A second place to state it would
+// be a second thing to keep in step, and a permanently empty field in a shape
+// that travels teaches readers to expect a value nobody supplies.
 type Observation struct {
 	Recipe string
-	// Candidate identifies what the recipe ran against. Run LEAVES IT EMPTY and
-	// that is deliberate: this package is handed a directory, and a digest it
-	// invented from that directory would not be the identity a caller means by
-	// "the candidate". The caller that materialized the directory from a view
-	// knows that digest and assigns it; until such a caller exists the field is
-	// empty in every observation this package produces.
-	Candidate string
 	// Steps are the steps that RAN, in order. The list is short when the run
 	// stopped early — see Run.
 	Steps  []Step
 	Status Status
+}
+
+// step is one recipe entry: how to plan what runs, and how to read what it
+// said. Both are properties of the STEP because the steps genuinely disagree
+// about them, and an earlier revision hid that by writing the recipe as three
+// uniform entries with `format` bolted on after the loop — a recipe that
+// described itself as four of a kind when it was not.
+type step struct {
+	name string
+	// plan produces the argv to run, or DECLINES by returning a finished step.
+	// `format` cannot be planned without the candidate's changed set, and a
+	// step that cannot be planned still has an outcome.
+	plan func(ctx context.Context, dir, baseSHA string) ([]string, *Step)
+	// classify reads the step's own output. Nil means the exit code decides,
+	// which is what three of the four steps mean by failure.
+	classify func(st Step, out string) Step
+}
+
+// fixed is a step whose argv is a constant and whose exit code is its verdict.
+func fixed(name string, argv ...string) step {
+	return step{name: name, plan: func(context.Context, string, string) ([]string, *Step) { return argv, nil }}
+}
+
+// exec plans, runs, and classifies one step.
+func (s step) exec(ctx context.Context, dir, baseSHA string) Step {
+	argv, declined := s.plan(ctx, dir, baseSHA)
+	if declined != nil {
+		return *declined
+	}
+	st, out := run(ctx, dir, s.name, argv)
+	if s.classify != nil {
+		st = s.classify(st, out)
+	}
+	return st
 }
 
 // recipe is the closed step list, in order. `go -C src/go` because the module
@@ -93,14 +129,13 @@ type Observation struct {
 // nothing in this runtime declares or installs, and a missing tool must be
 // `unavailable` rather than a silent skip — so a step that would be unavailable
 // on every ordinary machine would make every observation unavailable, and no
-// run could accept. Adding it waits on the binary being declared.
-var recipe = []struct {
-	name string
-	argv []string
-}{
-	{"build", []string{"go", "-C", "src/go", "build", "./..."}},
-	{"vet", []string{"go", "-C", "src/go", "vet", "./..."}},
-	{"test", []string{"go", "-C", "src/go", "test", "-count=1", "./..."}},
+// run could accept. Adding it waits on the binary being declared — and is then
+// a line in this list, not a change to any control flow.
+var recipe = []step{
+	fixed("build", "go", "-C", "src/go", "build", "./..."),
+	fixed("vet", "go", "-C", "src/go", "vet", "./..."),
+	fixed("test", "go", "-C", "src/go", "test", "-count=1", "./..."),
+	{name: "format", plan: planFormat, classify: listingIsFailure},
 }
 
 // Run executes the recipe against `dir` and returns what it observed. It never
@@ -115,42 +150,42 @@ var recipe = []struct {
 func Run(ctx context.Context, dir, baseSHA string) Observation {
 	obs := Observation{Recipe: RecipeID, Status: Pass}
 	for _, s := range recipe {
-		st, _ := run(ctx, dir, s.name, s.argv)
+		st := s.exec(ctx, dir, baseSHA)
 		obs.Steps = append(obs.Steps, st)
+		obs.Status = st.Status
 		if st.Status != Pass {
-			obs.Status = st.Status
 			return obs
 		}
 	}
-	st := formatStep(ctx, dir, baseSHA)
-	obs.Steps = append(obs.Steps, st)
-	obs.Status = st.Status
 	return obs
 }
 
-// formatStep checks gofmt over ONLY the .go paths the candidate changed.
+// planFormat scopes gofmt to ONLY the .go paths the candidate changed.
 //
 // Repo-wide would be red for every candidate regardless of its patch: `gofmt -l
 // src/go` lists 18 files on a clean tree of this repository today. That is
 // measured, not hypothetical — a repo-wide step would fail on the base commit
 // itself, so no candidate could ever reach `pass` and the whole recipe would
 // carry no information about any change.
-func formatStep(ctx context.Context, dir, baseSHA string) Step {
+func planFormat(ctx context.Context, dir, baseSHA string) ([]string, *Step) {
 	paths, err := changedGoFiles(ctx, dir, baseSHA)
 	if err != nil {
 		// The changed set is what makes this step meaningful. Falling back to
 		// repo-wide, or to "nothing changed", would each turn an unanswerable
 		// question into an answer.
-		return Step{Name: "format", Status: Unavailable, Exit: -1, Tail: cellbound.Tail(err.Error(), maxTailBytes)}
+		return nil, &Step{Name: "format", Status: Unavailable, Exit: -1, Tail: cellbound.Tail(err.Error(), maxTailBytes)}
 	}
 	if len(paths) == 0 {
-		return Step{Name: "format", Status: Pass, Tail: "no changed .go paths"}
+		return nil, &Step{Name: "format", Status: Pass, Tail: "no changed .go paths"}
 	}
-	st, out := run(ctx, dir, "format", append([]string{"gofmt", "-l"}, paths...))
-	// `gofmt -l` REPORTS BY LISTING: it exits 0 whether or not it found
-	// unformatted files. Trusting the exit code here would make this step pass
-	// for every candidate, which is exactly the vacuous guard the step exists
-	// to avoid. A non-empty listing is the failure.
+	return append([]string{"gofmt", "-l"}, paths...), nil
+}
+
+// listingIsFailure is `format`'s classifier. `gofmt -l` REPORTS BY LISTING: it
+// exits 0 whether or not it found unformatted files. Trusting the exit code
+// here would make this step pass for every candidate, which is exactly the
+// vacuous guard the step exists to avoid. A non-empty listing is the failure.
+func listingIsFailure(st Step, out string) Step {
 	if st.Status == Pass && strings.TrimSpace(out) != "" {
 		st.Status = Fail
 	}
