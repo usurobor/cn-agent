@@ -64,6 +64,17 @@ timeout 900 "$CN" cell run \
 `model` is a **requested selector**, not an observed model identity. Nothing
 in the runtime asks the provider what actually served the request.
 
+**This invocation no longer runs, and is kept because it is what was run.** The
+`cds.patch` seat used to declare its own `workspace`, which is what the
+`--param base_sha` / `--param repo` pair above filled. Two declarations of the
+repository could disagree — the record's `contract.subject` naming one and its
+`resolved_spec.alpha` naming another — and the closure still self-verified, so
+the workspace declaration was deleted. The repository and the base now come
+only from the run input's pinned subject: the same run today supplies `--input`
+and neither of those two parameters. The artifact below is untouched, digest
+included; `schemas/cds/spec.cue` holds its pre-deletion shape under
+`#CDSPatchAlphaResolvedPreWorkspaceDeletion` so the gate can still check it.
+
 ## Result
 
 Rows marked **gate** are recomputed by `scripts/cell-schema-check.sh`. Rows
@@ -103,8 +114,16 @@ that was missing before — the preserved stdout — is the committed file.
 
 ## What this establishes
 
-1. **The declared authority is sufficient.** The seat edited files with only
+1. **The declared authority is sufficient.** The seat edited files under
    `--tools Read,Write,Edit,Glob,Grep` and `--permission-mode acceptEdits`.
+   The surface is named literally rather than as "the declared surface",
+   because that phrase now resolves to a different list and the committed
+   artifact cannot settle it: the closure records provider, model and skill
+   digests, and no argv. This document is the only record of what that
+   episode ran with. (The surface has since been corrected to include
+   `MultiEdit` and `Bash`, so a seat can run its own tests; this episode
+   predates the change and did not
+   need them.)
 2. **The runtime measures rather than believes.** The diff was computed from
    the disposable worktree.
 3. **Case-2 honesty holds under real cognition.** A genuine change still

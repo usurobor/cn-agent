@@ -2,7 +2,7 @@
   "version": "cnos.cellspec.v0",
   "contract": {
     "id": "cds-code",
-    "goal": "Carry out the change described by the issue in the repository at base_sha",
+    "goal": "Carry out the change described by the issue in the repository the run input's subject pins",
     "required_evidence": [
       {
         "id": "diff",
@@ -31,26 +31,10 @@
     "model": {
       "required": false,
       "default": ""
-    },
-    "base_sha": {
-      "required": true
-    },
-    "repo": {
-      "required": false,
-      "default": "."
     }
   },
-  "alpha": {
-    "fill": "cds.patch",
-    "cognition": {
-      "provider": "$provider",
-      "model": "$model"
-    },
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": "$repo",
-      "base_sha": "$base_sha"
-    },
+  "methodology": {
+    "kind": "skills.methodology.v0",
     "skills": [
       "cnos.eng:eng/code",
       "cnos.eng:eng/test",
@@ -58,7 +42,18 @@
       "cnos.eng:eng/write-functional"
     ]
   },
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "provider": "$provider",
+      "model": "$model"
+    }
+  },
   "beta": {
-    "fill": "cdd.mechanical-unmet"
+    "fill": "cds.assess",
+    "cognition": {
+      "provider": "$provider",
+      "model": "$model"
+    }
   }
 }

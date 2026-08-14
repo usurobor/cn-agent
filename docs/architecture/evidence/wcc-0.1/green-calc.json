@@ -1,0 +1,196 @@
+{
+  "closure_schema": "cnos.cellkernel.episode-closure.v0",
+  "protocol_validated": false,
+  "status": "accepted",
+  "decision": "accept",
+  "verdict": {
+    "pass": true
+  },
+  "receipt": {
+    "record": {
+      "canon": "cnos.cellkernel.episode-record-canon.v0",
+      "episode_id": "ep-4db4cbe86df0b6b641aa839d9f97d11e",
+      "execution_mode": "cognitive",
+      "resolved_spec": {
+        "version": "cnos.cellspec.v0",
+        "declared_protocol": "cnos.cdd.cds.receipt.v1",
+        "alpha": {
+          "cognition": {
+            "model": "claude-opus-5",
+            "provider": "claude-cli"
+          },
+          "fill": "cds.patch",
+          "methodology": {
+            "role": "constructive",
+            "sha256": "de9c2313baaa3f34aea8a938e4cc29b30515609d2e195744b4ffa9c26b02caa5"
+          }
+        },
+        "beta": {
+          "cognition": {
+            "model": "claude-opus-5",
+            "provider": "claude-cli"
+          },
+          "fill": "cds.assess",
+          "methodology": {
+            "role": "adversarial",
+            "sha256": "de9c2313baaa3f34aea8a938e4cc29b30515609d2e195744b4ffa9c26b02caa5"
+          }
+        }
+      },
+      "contract": {
+        "id": "cds-code",
+        "goal": "Carry out the change described by the issue in the repository the run input's subject pins",
+        "issue": {
+          "kind": "cnos.cds.issue.v0",
+          "id": "calc-mean",
+          "problem": {
+            "exists": "package calc exposes Sum, which totals a slice of ints.",
+            "expected": "package calc also exposes Mean, which returns the arithmetic mean of a slice of ints as a float64, and returns 0 for an empty slice rather than dividing by zero.",
+            "diverges": "A caller wanting an average has to write the division and the empty-slice guard itself at every call site."
+          },
+          "sources": [
+            {
+              "claim": "the existing package and its style",
+              "path": "src/go/calc/calc.go"
+            }
+          ],
+          "scope": {
+            "in": [
+              "add Mean to src/go/calc/calc.go",
+              "add a test for Mean in src/go/calc/calc_test.go"
+            ],
+            "out": [
+              "changing Sum",
+              "adding any dependency",
+              "changing go.mod"
+            ]
+          },
+          "acceptance": [
+            {
+              "id": "AC1",
+              "statement": "src/go/calc/calc.go declares Mean(xs []int) float64 returning the arithmetic mean.",
+              "verification": "the diff adds a Mean function to calc.go with that exact signature; read it in the reconstructed view"
+            },
+            {
+              "id": "AC2",
+              "statement": "Mean returns 0 for an empty slice instead of dividing by zero.",
+              "verification": "read Mean's body in the view for an explicit len(xs) == 0 guard returning 0"
+            },
+            {
+              "id": "AC3",
+              "statement": "calc_test.go carries a test covering Mean, including the empty-slice case.",
+              "verification": "the diff modifies calc_test.go and the view shows a test that calls Mean with an empty slice"
+            }
+          ]
+        },
+        "design": {
+          "kind": "cnos.cds.design.v0",
+          "approach": "Add Mean beside Sum in the same file, reusing Sum for the total so the summation rule lives in one place. Guard the empty slice before dividing.",
+          "invariants": [
+            "Sum keeps its current signature and behaviour",
+            "the package takes no new imports beyond the standard library already in use"
+          ],
+          "impact": [
+            {
+              "surface": "src/go/calc/calc.go",
+              "why": "the new exported function lives here beside the one it reuses"
+            },
+            {
+              "surface": "src/go/calc/calc_test.go",
+              "why": "the new behaviour needs a test, including the empty case"
+            }
+          ]
+        },
+        "subject": {
+          "kind": "git.snapshot/0.1",
+          "repo": "/tmp/wcc-live/repo",
+          "base_sha": "97b9f31bbe3328f854f2f559904b72a37a754d1b"
+        },
+        "required_evidence": [
+          {
+            "id": "diff",
+            "kind": "diff",
+            "producer": "alpha"
+          }
+        ]
+      },
+      "alpha": {
+        "execution_id": "alpha-f8ba9e67ff716462db856edf3bd829f6",
+        "artifacts": [
+          {
+            "id": "base_sha",
+            "kind": "sha",
+            "encoding": "utf8",
+            "text": "97b9f31bbe3328f854f2f559904b72a37a754d1b"
+          },
+          {
+            "id": "diff",
+            "kind": "diff",
+            "encoding": "utf8",
+            "text": "diff --git a/src/go/calc/calc.go b/src/go/calc/calc.go\nindex c874eab..e594a17 100644\n--- a/src/go/calc/calc.go\n+++ b/src/go/calc/calc.go\n@@ -8,3 +8,11 @@ func Sum(xs []int) int {\n \t}\n \treturn total\n }\n+\n+// Mean returns the arithmetic mean of xs, or 0 when xs is empty.\n+func Mean(xs []int) float64 {\n+\tif len(xs) == 0 {\n+\t\treturn 0\n+\t}\n+\treturn float64(Sum(xs)) / float64(len(xs))\n+}\ndiff --git a/src/go/calc/calc_test.go b/src/go/calc/calc_test.go\nindex 7991fb1..9e51e01 100644\n--- a/src/go/calc/calc_test.go\n+++ b/src/go/calc/calc_test.go\n@@ -7,3 +7,36 @@ func TestSum(t *testing.T) {\n \t\tt.Fatalf(\"Sum = %d, want 6\", got)\n \t}\n }\n+\n+// Every want below is exactly representable in float64, so equality is the\n+// oracle — no tolerance needed.\n+func TestMean(t *testing.T) {\n+\tcases := []struct {\n+\t\tname string\n+\t\txs   []int\n+\t\twant float64\n+\t}{\n+\t\t{\"empty\", []int{}, 0},\n+\t\t{\"nil\", nil, 0},\n+\t\t{\"single\", []int{5}, 5},\n+\t\t{\"whole\", []int{1, 2, 3}, 2},\n+\t\t{\"fractional\", []int{1, 2}, 1.5},\n+\t\t{\"negatives cancel\", []int{-3, 3}, 0},\n+\t}\n+\tfor _, c := range cases {\n+\t\tt.Run(c.name, func(t *testing.T) {\n+\t\t\tif got := Mean(c.xs); got != c.want {\n+\t\t\t\tt.Fatalf(\"Mean(%v) = %v, want %v\", c.xs, got, c.want)\n+\t\t\t}\n+\t\t})\n+\t}\n+}\n+\n+// Invariant: for a non-empty slice, Mean times the length recovers Sum.\n+func TestMeanAgreesWithSum(t *testing.T) {\n+\tfor _, xs := range [][]int{{5}, {1, 2}, {1, 2, 3}, {-3, 3}, {7, 7, 7, 7}} {\n+\t\tif got := Mean(xs) * float64(len(xs)); got != float64(Sum(xs)) {\n+\t\t\tt.Errorf(\"Mean(%v)*%d = %v, want Sum = %d\", xs, len(xs), got, Sum(xs))\n+\t\t}\n+\t}\n+}\n"
+          }
+        ]
+      },
+      "matter": {
+        "data": "diff --git a/src/go/calc/calc.go b/src/go/calc/calc.go\nindex c874eab..e594a17 100644\n--- a/src/go/calc/calc.go\n+++ b/src/go/calc/calc.go\n@@ -8,3 +8,11 @@ func Sum(xs []int) int {\n \t}\n \treturn total\n }\n+\n+// Mean returns the arithmetic mean of xs, or 0 when xs is empty.\n+func Mean(xs []int) float64 {\n+\tif len(xs) == 0 {\n+\t\treturn 0\n+\t}\n+\treturn float64(Sum(xs)) / float64(len(xs))\n+}\ndiff --git a/src/go/calc/calc_test.go b/src/go/calc/calc_test.go\nindex 7991fb1..9e51e01 100644\n--- a/src/go/calc/calc_test.go\n+++ b/src/go/calc/calc_test.go\n@@ -7,3 +7,36 @@ func TestSum(t *testing.T) {\n \t\tt.Fatalf(\"Sum = %d, want 6\", got)\n \t}\n }\n+\n+// Every want below is exactly representable in float64, so equality is the\n+// oracle — no tolerance needed.\n+func TestMean(t *testing.T) {\n+\tcases := []struct {\n+\t\tname string\n+\t\txs   []int\n+\t\twant float64\n+\t}{\n+\t\t{\"empty\", []int{}, 0},\n+\t\t{\"nil\", nil, 0},\n+\t\t{\"single\", []int{5}, 5},\n+\t\t{\"whole\", []int{1, 2, 3}, 2},\n+\t\t{\"fractional\", []int{1, 2}, 1.5},\n+\t\t{\"negatives cancel\", []int{-3, 3}, 0},\n+\t}\n+\tfor _, c := range cases {\n+\t\tt.Run(c.name, func(t *testing.T) {\n+\t\t\tif got := Mean(c.xs); got != c.want {\n+\t\t\t\tt.Fatalf(\"Mean(%v) = %v, want %v\", c.xs, got, c.want)\n+\t\t\t}\n+\t\t})\n+\t}\n+}\n+\n+// Invariant: for a non-empty slice, Mean times the length recovers Sum.\n+func TestMeanAgreesWithSum(t *testing.T) {\n+\tfor _, xs := range [][]int{{5}, {1, 2}, {1, 2, 3}, {-3, 3}, {7, 7, 7, 7}} {\n+\t\tif got := Mean(xs) * float64(len(xs)); got != float64(Sum(xs)) {\n+\t\t\tt.Errorf(\"Mean(%v)*%d = %v, want Sum = %d\", xs, len(xs), got, Sum(xs))\n+\t\t}\n+\t}\n+}\n"
+      },
+      "beta": {
+        "execution_id": "beta-8583243435f3db537f30cc4aa1081a05",
+        "artifacts": []
+      },
+      "review": {
+        "pass": true,
+        "notes": "5 catalogue units: 5 pass, 0 finding, 0 unverified",
+        "assessment": [
+          {
+            "unit": "AC1",
+            "disposition": "pass",
+            "reason": "The reconstructed view of src/go/calc/calc.go declares `func Mean(xs []int) float64` — the exact required signature — and the body returns `float64(Sum(xs)) / float64(len(xs))`, which is the arithmetic mean. The diff shows this function being added, not pre-existing.",
+            "citations": [
+              "src/go/calc/calc.go: func Mean(xs []int) float64 {",
+              "src/go/calc/calc.go: return float64(Sum(xs)) / float64(len(xs))"
+            ]
+          },
+          {
+            "unit": "AC2",
+            "disposition": "pass",
+            "reason": "Mean's body in the view opens with an explicit `if len(xs) == 0 { return 0 }` guard placed before the division, so the empty-slice case returns 0 and never reaches a divide-by-zero. The nil case is covered by the same guard since len(nil) == 0.",
+            "citations": [
+              "src/go/calc/calc.go: if len(xs) == 0 {",
+              "src/go/calc/calc.go: return 0"
+            ]
+          },
+          {
+            "unit": "AC3",
+            "disposition": "pass",
+            "reason": "The diff modifies src/go/calc/calc_test.go, and the view shows TestMean as a table-driven test whose cases include {\"empty\", []int{}, 0} and {\"nil\", nil, 0}, each dispatched through `Mean(c.xs)` in a t.Run subtest. So a test does call Mean with an empty slice and asserts the result is 0. A second test, TestMeanAgreesWithSum, states the Mean*len == Sum invariant for non-empty slices.",
+            "citations": [
+              "src/go/calc/calc_test.go: func TestMean(t *testing.T) {",
+              "src/go/calc/calc_test.go: {\"empty\", []int{}, 0},",
+              "src/go/calc/calc_test.go: if got := Mean(c.xs); got != c.want {",
+              "src/go/calc/calc_test.go: func TestMeanAgreesWithSum(t *testing.T) {"
+            ]
+          },
+          {
+            "unit": "check:matter-nonempty",
+            "disposition": "pass",
+            "reason": "the matter carries a unified diff of 1579 bytes",
+            "citations": [
+              "MATTER (1579 bytes)"
+            ]
+          },
+          {
+            "unit": "check:project-verify",
+            "disposition": "pass",
+            "reason": "cnos.project-verify.v0 passed every step against the reconstructed candidate",
+            "citations": [
+              "overall: pass",
+              "step test: pass (exit 0) — ok example.com/calc/calc 0.003s"
+            ]
+          }
+        ]
+      }
+    },
+    "scope_lift_digest": "df616de4f928aaf18b31bee0712392b7aecf2626b387629d5b6551b4d5135879"
+  }
+}

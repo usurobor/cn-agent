@@ -1,20 +1,15 @@
-// Package cellfills is the application composition root: the one place that
-// knows which fills this binary ships and what they depend on.
-//
-// It exists so neither side of the boundary has to know the other. The generic
-// runner receives an already-closed registry and only dispatches it; the CLI
-// stays a thin wrapper; and `cds.patch` keeps its own dependency on installed
-// skills without the runner ever learning that a patch alpha needs any.
-//
-// Skill authority is the canonical INSTALLED package root under the hub.
-// There is no fallback search, discovery, or service locator: if a skill is
-// not installed, construction fails and says so. Tests inject an explicit
-// tree instead of relying on a search order.
+// Package cellfills is the application composition root: the one place that knows
+// which fills this binary ships, so the runner receives a closed registry and only
+// dispatches it. Skill authority is the canonical INSTALLED package root under the
+// hub — no fallback search or service locator, so an uninstalled skill fails
+// construction and says so.
 package cellfills
 
 import (
 	"path/filepath"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsadmit"
+	"github.com/usurobor/cnos/src/go/internal/cdsassess"
 	"github.com/usurobor/cnos/src/go/internal/cdspatch"
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
@@ -26,16 +21,31 @@ func InstalledPackages(hubPath string) string {
 	return filepath.Join(hubPath, ".cn", "vendor", "packages")
 }
 
-// Assemble builds the fill registry this binary ships: the generic cdd fills
-// plus the CDS patch constructor, closed over the installed package root.
+// Assemble builds the fill registry this binary ships.
 func Assemble(hubPath string) cellfill.Registry {
 	return With(cellskill.Tree{Root: InstalledPackages(hubPath)})
 }
 
-// With is Assemble over an explicit skill resolver, for tests that supply
-// their own installed tree.
+// With is Assemble over an explicit skill resolver, for tests with their own tree.
+// The door is wired here for the reason the fills are: the runner names no CDS
+// package, so a second profile is another line here, not a branch in the runner.
 func With(skills cellskill.Resolver) cellfill.Registry {
 	reg := cellfill.CddFills()
-	reg.Alpha[cdspatch.Fill] = cdspatch.Factory(skills)
+	// The resolver goes on the REGISTRY: a fill closed over its own resolver is a
+	// second place skills could enter a run, which is what `cds.patch`'s list was.
+	reg.Skills = skills
+	// NeedsSubject is declared at the registration: a patch alpha measures a change
+	// against the pinned subject's repository, so the spec loader refuses without one.
+	reg.Alpha[cdspatch.Fill] = cellfill.AlphaFill{
+		Construct:    cdspatch.Factory(),
+		NeedsSubject: true,
+	}
+	// The assessing seat needs the subject too (it reconstructs the candidate), so a
+	// pairing with a subjectless alpha is refused by the spec, not later in Review.
+	reg.Beta[cdsassess.Fill] = cellfill.BetaFill{
+		Construct:    cdsassess.Factory(),
+		NeedsSubject: true,
+	}
+	reg.Door = cdsadmit.Door
 	return reg
 }

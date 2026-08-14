@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"go/parser"
+	"go/token"
 	"io"
 	"os"
 	"path/filepath"
@@ -47,7 +49,7 @@ func parseExpected(t *testing.T) (cellkernel.Contract, cellkernel.RunMeta) {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, meta, err := r.Build(context.Background(), testRegistry())
+	kspec, meta, err := r.Build(context.Background(), testRegistry(), cellspec.Binding{})
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
@@ -80,6 +82,45 @@ func TestAcceptedFromStdin(t *testing.T) {
 	}
 }
 
+// F4, checked mechanically rather than asserted in a comment: this package's
+// own source may not import a protocol package. The admission door arrives in
+// the registry, so a runner that named `cdsadmit` would have taken back the
+// coupling the registry exists to remove — and no test of behaviour would
+// notice, because the CDS door is the one this binary happens to wire in. The
+// leak is in the import graph, so the import graph is what is measured.
+//
+// Test files are excluded: a test that forbids an import has to be able to
+// drive the real door through one.
+func TestTheRunnerNamesNoProtocolPackage(t *testing.T) {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatalf("read the runner's own package directory: %v", err)
+	}
+	scanned := 0
+	for _, e := range entries {
+		name := e.Name()
+		if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		f, err := parser.ParseFile(token.NewFileSet(), name, nil, parser.ImportsOnly)
+		if err != nil {
+			t.Fatalf("parse %s: %v", name, err)
+		}
+		scanned++
+		for _, imp := range f.Imports {
+			path := strings.Trim(imp.Path.Value, `"`)
+			if strings.Contains(path, "/internal/cds") {
+				t.Errorf("%s imports %s: the runner dispatches a door, it does not name one", name, path)
+			}
+		}
+	}
+	// A scan that read no files would report a clean boundary for a package it
+	// never opened.
+	if scanned == 0 {
+		t.Fatal("no runner source files were scanned")
+	}
+}
+
 func TestExitCodes(t *testing.T) {
 	tmp := filepath.Join(t.TempDir(), "spec.json")
 	if err := os.WriteFile(tmp, []byte(boolSpecJSON), 0o600); err != nil {
@@ -109,6 +150,13 @@ func TestExitCodes(t *testing.T) {
 		{"opaque protocol runs", `{"version":"cnos.cellspec.v0","contract":{"id":"c","goal":"g"},"protocol_id":"made.up","alpha":{"fill":"cdd.stub"},"beta":{"fill":"cdd.stub"}}`, []string{"--contract", "-"}, 3},
 		{"trailing brace", boolSpecJSON + "}", []string{"--contract", "-", "--param", "value=true"}, 2},
 		{"oversize contract", big, []string{"--contract", "-"}, 2},
+		{"dup input", boolSpecJSON, []string{"--contract", "-", "--input", "a", "--input", "b"}, 2},
+		{"input without value", boolSpecJSON, []string{"--contract", "-", "--input"}, 2},
+		// One stream cannot carry two documents; taking the whole of stdin for
+		// whichever read ran first would be a corrupt run reported as a
+		// malformed file.
+		{"both read stdin", boolSpecJSON, []string{"--contract", "-", "--input", "-"}, 2},
+		{"missing input file", boolSpecJSON, []string{"--contract", "-", "--input", "/nonexistent/run-input.json"}, 2},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -120,5 +168,47 @@ func TestExitCodes(t *testing.T) {
 				t.Errorf("error path wrote to stdout: %q", stdout)
 			}
 		})
+	}
+}
+
+// The shipped `cds.patch` cell, run with no --input, over the SHIPPED registry.
+// It is refused before its alpha is constructed, and the proof is testRegistry's
+// skill root: it does not exist, so construction could not have succeeded — an
+// error mentioning a skill would say construction had begun, and an "episode
+// malfunction" would say a station had. The run is refused by the declaration
+// alone, which is why removing a skill from an installed hub cannot change what
+// an operator sees here.
+func TestASubjectlessPatchCellIsRefusedBeforeConstruction(t *testing.T) {
+	spec, err := os.ReadFile("../../../../schemas/cds/fixtures/code-cell-spec.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, stdout, stderr := run(string(spec), "--contract", "-",
+		"--param", "language=cnos.eng:eng/go", "--param", "provider=fake")
+
+	if code != 2 {
+		t.Fatalf("exit = %d, want 2; stderr: %s", code, stderr)
+	}
+	if stdout != "" {
+		t.Fatalf("a refused run wrote to stdout: %s", stdout)
+	}
+	for _, want := range []string{`"cds.patch"`, "contract.subject", "--input"} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("the refusal does not name %q: %s", want, stderr)
+		}
+	}
+	// Construction never began. Both markers below belong to work that happens
+	// strictly after the check: skill loading is inside the constructor, and
+	// "episode malfunction" is printed only for a failure raised by a station.
+	for _, forbidden := range []string{"skill", "episode malfunction"} {
+		if strings.Contains(stderr, forbidden) {
+			t.Fatalf("the refusal came after construction (%q): %s", forbidden, stderr)
+		}
+	}
+	// The cell really is the one whose alpha declares the requirement, and the
+	// arguments really are otherwise complete — or the assertions above would
+	// hold for a spec rejected for some unrelated reason.
+	if !strings.Contains(string(spec), `"fill": "cds.patch"`) {
+		t.Fatalf("the fixture is not the cds.patch cell: %s", spec)
 	}
 }

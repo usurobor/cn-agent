@@ -11,10 +11,16 @@
 // of believing a claim about it. A seat may say whatever it likes in its
 // answer; the diff this package computes is what the record carries, and a
 // seat that changed nothing produces no diff to carry.
+//
+// The package also reconstructs the candidate state from `(pinned subject,
+// measured matter)` alone — see Reconstruct. Its production caller is the CDS
+// assessing fill, which derives the reviewing seat's whole view of the
+// candidate that way: the seat is handed a value, never a directory, so the
+// only way production can affect what the reviewer sees is by changing the
+// matter, which is exactly what the reviewer is judging.
 package cellwork
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -23,6 +29,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/usurobor/cnos/src/go/internal/cellbound"
 )
 
 const (
@@ -112,12 +120,37 @@ func Materialize(ctx context.Context, repo, base string) (Worktree, func(), erro
 // including files it created. An empty result means the seat changed nothing —
 // the caller must not manufacture evidence from it.
 func (w Worktree) Diff(ctx context.Context) (string, error) {
+	// Without a pinned base there is nothing to measure against, and a diff
+	// against an unnamed revision would either fail obscurely or silently
+	// measure the wrong thing. Fail closed instead.
+	if w.BaseSHA == "" {
+		return "", fmt.Errorf("cellwork: worktree has no pinned base to measure against")
+	}
 	// Staging everything is what makes new files visible to `diff`; the index
 	// belongs to this disposable worktree alone.
 	if _, err := git(ctx, w.Dir, maxRefBytes, "add", "-A"); err != nil {
 		return "", fmt.Errorf("cellwork: stage worktree: %w", err)
 	}
-	out, err := git(ctx, w.Dir, maxDiffBytes, "diff", "--cached", "--no-color")
+	// Against the PINNED BASE, not against HEAD. A seat has a shell and
+	// therefore git, so it may commit its own work; once it does, the index
+	// equals the worktree's HEAD and `diff --cached` alone reports nothing —
+	// the runtime would record "no change was made" on real work. Naming the
+	// base explicitly makes the measurement independent of where the seat
+	// left HEAD, which is the whole point of pinning it at materialization.
+	//
+	// `--binary` because the measurement must be a COMPLETE description of the
+	// change: git's default for a binary path is the sentence "Binary files …
+	// differ", which no one — including this runtime, in Reconstruct — can turn
+	// back into the state it measured. A diff that cannot reproduce what it
+	// reports is a claim about the change, not a measurement of it.
+	//
+	// It is not free, and the cost belongs here rather than in a surprise: a
+	// binary path inflates to roughly 1.3x its raw bytes, so a change carrying
+	// one big enough to pass maxDiffBytes now fails the measurement where the
+	// unreproducible sentence would have fit. Failing closed on a change too
+	// large to describe is the correct direction, but it IS a behaviour change
+	// for binary-touching episodes. Text output is byte-identical either way.
+	out, err := git(ctx, w.Dir, maxDiffBytes, "diff", "--cached", "--no-color", "--binary", w.BaseSHA)
 	if err != nil {
 		return "", fmt.Errorf("cellwork: compute diff: %w", err)
 	}
@@ -129,13 +162,27 @@ func (w Worktree) Diff(ctx context.Context) (string, error) {
 // repository can produce a diff far larger than memory, and a limit checked
 // on a fully buffered result is not a limit.
 func git(ctx context.Context, dir string, max int, args ...string) (string, error) {
+	return gitInput(ctx, dir, "", max, args...)
+}
+
+// gitInput is git with `stdin` fed to the child — the one thing applying a
+// patch needs that measuring one does not. Writing the patch to a temporary
+// file and naming it would be a second way to hand git the same bytes, and one
+// that leaves a file behind if the process dies mid-call.
+func gitInput(ctx context.Context, dir, stdin string, max int, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, gitTimeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
-	stdout := &boundedBuffer{max: max}
-	stderr := &boundedBuffer{max: maxStderrBytes}
+	if stdin != "" {
+		cmd.Stdin = strings.NewReader(stdin)
+	}
+	// Head-keeping: a diff is content to be reapplied, so a bound that bit is
+	// refused below rather than reported as a shorter diff. Keeping the tail
+	// would hand back a patch whose first hunks are missing.
+	stdout := cellbound.New(cellbound.KeepHead, max)
+	stderr := cellbound.New(cellbound.KeepHead, maxStderrBytes)
 	cmd.Stdout, cmd.Stderr = stdout, stderr
 	cmd.WaitDelay = waitDelay
 	if err := cmd.Run(); err != nil {
@@ -145,34 +192,8 @@ func git(ctx context.Context, dir string, max int, args ...string) (string, erro
 		}
 		return "", errors.New("git " + strings.Join(args, " ") + ": " + msg)
 	}
-	if stdout.truncated {
+	if stdout.Truncated() {
 		return "", fmt.Errorf("git %s produced more than %d bytes", strings.Join(args, " "), max)
 	}
 	return stdout.String(), nil
 }
-
-// boundedBuffer captures at most max bytes and remembers that it had to stop.
-// It never reports a short write, so the bound fails the command here rather
-// than killing the child mid-stream with a broken pipe. (Deliberately the same
-// small pattern the provider adapters use; the two adapters share no
-// dependency worth creating for fifteen lines.)
-type boundedBuffer struct {
-	max       int
-	buf       bytes.Buffer
-	truncated bool
-}
-
-func (b *boundedBuffer) Write(p []byte) (int, error) {
-	switch room := b.max - b.buf.Len(); {
-	case room >= len(p):
-		b.buf.Write(p)
-	case room > 0:
-		b.buf.Write(p[:room])
-		b.truncated = true
-	default:
-		b.truncated = true
-	}
-	return len(p), nil
-}
-
-func (b *boundedBuffer) String() string { return b.buf.String() }

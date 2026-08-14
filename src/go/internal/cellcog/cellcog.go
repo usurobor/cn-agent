@@ -1,82 +1,99 @@
 // Package cellcog constructs bounded, stateless provider adapters that a
-// fill's constructor composes into a seat.
+// fill's constructor composes into a seat: Pi's construction boundary
+// (msg-cn-pi-cnos-cds-fill-construction-51) assigns it model selection, typed
+// safe argv, timeout/output bounds and capability truth, and no fill semantics
+// — what a prompt means, what a worktree is for and what counts as evidence
+// stay with the fill. Ports are narrow, each added only for a consumer that
+// already needs it (Pi #59 B1).
 //
-// Scope of the word "reusable" (Pi #59 B1): the PROCESS AND PROVIDER SEAM
-// here is reusable — argv recipes, bounded execution, timeouts, output
-// limits. The PORT is not general cognition. `Coder` supports workspace
-// edits only, so a planning or research fill cannot rent it as it stands; it
-// would need a returned-value port that does not exist yet. Do not describe
-// this package as a general cognition subsystem.
+// A declared tool surface is NOT confinement, said once here rather than
+// beside every flag: a seat offered Bash reaches as far as the operator
+// running Claude Code does, and only the worktree is measured, so nothing it
+// touches elsewhere becomes evidence. Containment is the execution
+// substrate's, and its managed policy stays above this baseline undetected.
 //
-// The package owns exactly what Pi's construction boundary assigns it
-// (msg-cn-pi-cnos-cds-fill-construction-51): explicit model selection,
-// executable invocation with typed safe arguments, timeout/cancellation/
-// output bounds, stateless operation, and provider capability truth. It owns
-// no fill semantics — what a prompt means, what a worktree is for, and what
-// counts as evidence belong to the fill that rents the cognition.
-//
-// Scope, stated honestly: an adapter points a provider at one directory with
-// file tools only. That is a working-directory boundary plus the provider's
-// own workspace rules, NOT an OS sandbox; a provider writing an absolute path
-// elsewhere is not stopped here — it merely gains nothing, because only the
-// worktree is ever measured. Real containment belongs under the adapter and
-// is not implemented.
-//
-// The admitted provider set is claude-cli and fake. codex-cli is HELD, not
-// forgotten (Pi #55 D1): a seat may carry only the fill's ordered, digested
-// skills, and Codex's available suppression flags do not reach far enough —
-// `--ignore-user-config` suppresses only $CODEX_HOME/config.toml and
-// `--ignore-rules` only execpolicy .rules, while global and project AGENTS.md
-// and discovered skills still load. Admitting the provider on those flags
-// would let ambient instructions become a second, unreceipted component
-// definition. It returns when the execution substrate can supply a clean
-// CODEX_HOME and a real run proves poisoned AGENTS.md and ambient skills do
-// not reach the invocation; the argv research is preserved in
-// docs/architecture/CDS-CELL-MIGRATION.md rather than in unreachable code.
+// Admitted: claude-cli and fake. codex-cli is HELD (Pi #55 D1) — its
+// suppression flags leave global and project AGENTS.md and discovered skills
+// loading, which would make ambient instruction a second, unreceipted
+// component definition. Return conditions, preserved argv research and this
+// package's measurement history: docs/architecture/CDS-CELL-MIGRATION.md.
 package cellcog
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 )
 
-// Coder is a workspace-EDIT cognition port, and only that: a directory goes
-// in, nothing comes back but whether the process ran. Successful stdout is
-// deliberately discarded, because what the seat actually did is measured from
-// the worktree rather than taken from its word.
-//
-// That shape is honest about its limits (Pi #56 B1): a seat whose product is
-// an ANSWER rather than an edit — planning, research, review — cannot use
-// this port, because there is no value to return. Case 3 may add the smallest
-// returned-value port when beta actually needs one. Nothing here should be
-// widened in advance to look like a general cognition framework.
+// Coder is a workspace-EDIT port and only that: a directory goes in, nothing
+// comes back but whether the process ran. Successful stdout is discarded
+// because what the seat did is measured from the worktree, not taken from its
+// word; a seat whose product is an ANSWER uses Answerer (Pi #56 B1).
 type Coder interface {
 	Name() string
 	Work(ctx context.Context, dir, prompt string) error
 }
 
+// Answerer produces a VALUE rather than an edit, because a REVIEWING seat's
+// whole product is a judgement: nothing is left in a worktree to measure, so
+// `Coder` cannot serve it. The caller supplies the JSON Schema; what the shape
+// MEANS stays with the fill. Deliberately not a widening of `Coder` — a
+// producing seat must not gain a channel for reporting on itself.
+type Answerer interface {
+	Name() string
+	Answer(ctx context.Context, prompt string, schema json.RawMessage) (json.RawMessage, error)
+}
+
 // ErrNoProvider is returned when a seat is constructed without cognition.
 var ErrNoProvider = errors.New("cellcog: no provider")
 
-// Config is the inline cognition declaration a fill passes through from the
-// seat: which provider and which REQUESTED MODEL SELECTOR. Nothing else — a
-// cell cannot smuggle argv or flags into an adapter.
+// Config is what a fill passes through from the seat: provider and REQUESTED
+// MODEL SELECTOR, nothing else — no cell can smuggle argv into an adapter.
 type Config struct {
 	Provider string `json:"provider"`
 	Model    string `json:"model"`
 }
 
-// Modes a constructed coder truthfully runs under: a provider that rents
-// real cognition is `cognitive`; the deterministic fake is `mechanical`.
+// Mode is what a constructed coder TRUTHFULLY runs under: renting real
+// cognition is `cognitive`, the deterministic fake is `mechanical`.
 type Mode string
 
 const (
 	ModeCognitive  Mode = "cognitive"
 	ModeMechanical Mode = "mechanical"
 )
+
+// ErrNoDeterministicAnswer is what NewAnswerer returns for `fake`: a REFUSAL,
+// not a gap to fill later. A fake answerer was tried and rejected —
+// `{"pass":false,"notes":"…"}` puts one reviewing fill's verdict vocabulary
+// inside a package that owns no fill semantics, and an honest judgement
+// depends on what was asked, which is the fill's knowledge. The mode still
+// comes back: nothing was rented, and that much IS this package's truth.
+var ErrNoDeterministicAnswer = errors.New("cellcog: the answering port has no deterministic provider (a judgement cannot be fabricated by a provider-neutral adapter)")
+
+// NewAnswerer is New for the answering port: same closed provider set, same
+// model rule, and `fake` differs in what it can honestly supply.
+func NewAnswerer(cfg Config) (Answerer, Mode, error) {
+	switch cfg.Provider {
+	case "claude-cli":
+		if cfg.Model == "" {
+			return nil, "", fmt.Errorf("cellcog: provider %q requires a model selector", cfg.Provider)
+		}
+		return ClaudeCLI{Model: cfg.Model}, ModeCognitive, nil
+	case "fake":
+		// A model id the fake would ignore must not be receipted as though it
+		// selected something (identical rule in the CUE overlay), checked BEFORE
+		// the refusal so a malformed declaration reads as malformed.
+		if cfg.Model != "" {
+			return nil, "", fmt.Errorf("cellcog: provider %q takes no model, got %q", cfg.Provider, cfg.Model)
+		}
+		return nil, ModeMechanical, ErrNoDeterministicAnswer
+	default:
+		return nil, "", fmt.Errorf("cellcog: unknown provider %q (want claude-cli or fake)", cfg.Provider)
+	}
+}
 
 // New constructs the adapter for a cognition declaration. The provider set is
 // closed — a typo fails construction, before any invocation.
@@ -99,36 +116,17 @@ func New(cfg Config) (Coder, Mode, error) {
 	}
 }
 
-// Adapter bounds. They exist because a rented seat is the one part of an
-// episode the runtime cannot predict: an unbounded provider burns the whole
-// budget and dies mid-cell.
+// Adapter bounds. A rented seat is the one part of an episode the runtime
+// cannot predict: an unbounded provider burns the budget and dies mid-cell.
 const (
-	defaultTimeout = 10 * time.Minute
-	maxOutputBytes = 4 << 20 // matches the kernel's aggregate artifact bound
-	maxStderrBytes = 8 << 10 // diagnostics only
-	waitDelay      = 2 * time.Second
+	// defaultTimeout was 10 minutes until measurement moved it: rented episodes
+	// cluster at 460-500s, inside that 600s bound, so it was cutting off live
+	// episodes rather than catching runaways. 30 minutes is ~3.6x the observed
+	// peak. Compiled-in and never cell-supplied: a timeout a cell could set is
+	// a cell that can decline to be bounded.
+	defaultTimeout      = 30 * time.Minute
+	maxOutputBytes      = 4 << 20 // matches the kernel's aggregate artifact bound
+	maxStderrBytes      = 8 << 10 // diagnostics only
+	waitDelay           = 2 * time.Second
+	diagnosticTailBytes = 400 // bounded stderr tail carried in a timeout error
 )
-
-// boundedBuffer captures at most max bytes and remembers that it had to stop.
-// It never reports a short write, so a bound fails the run here rather than
-// killing the child mid-stream with a broken pipe.
-type boundedBuffer struct {
-	max       int
-	buf       bytes.Buffer
-	truncated bool
-}
-
-func (b *boundedBuffer) Write(p []byte) (int, error) {
-	switch room := b.max - b.buf.Len(); {
-	case room >= len(p):
-		b.buf.Write(p)
-	case room > 0:
-		b.buf.Write(p[:room])
-		b.truncated = true
-	default:
-		b.truncated = true
-	}
-	return len(p), nil
-}
-
-func (b *boundedBuffer) String() string { return b.buf.String() }

@@ -1,0 +1,40 @@
+{
+  "version": "cnos.cellspec.v0",
+  "contract": {
+    "id": "cds-code",
+    "goal": "Carry out the change described by the issue in the repository the run input's subject pins",
+    "required_evidence": [
+      {
+        "id": "diff",
+        "kind": "diff",
+        "producer": "alpha"
+      }
+    ]
+  },
+  "protocol_id": "cnos.cdd.cds.receipt.v1",
+  "methodology": {
+    "kind": "skills.methodology.v0",
+    "skills": [
+      "cnos.eng:eng/code"
+    ]
+  },
+  "alpha": {
+    "fill": "cds.patch",
+    "cognition": {
+      "provider": "fake",
+      "model": ""
+    }
+  },
+  "beta": {
+    "fill": "cds.assess",
+    "cognition": {
+      "provider": "fake",
+      "model": ""
+    },
+    "workspace": {
+      "kind": "git-worktree",
+      "repo": ".",
+      "base_sha": "HEAD"
+    }
+  }
+}

@@ -60,13 +60,54 @@ package cdd
 	contract: {
 		id:   string & !=""
 		goal: string
+		// The frozen issue and design — the admitted run contract — opaque at
+		// the generic output boundary for the same reason the resolved seat
+		// declarations are: whose contract language it is belongs to the
+		// protocol, not to the closure schema. They appear here because the
+		// record carries the whole frozen contract, which is what binds them
+		// into the one scope-lift digest.
+		issue?: {...}
+		design?: {...}
+		// The frozen subject — what the episode acted on — opaque here for the
+		// same reason. It appears because the record carries the whole frozen
+		// contract, which is what binds it into the one scope-lift digest and
+		// what makes "both stations saw the same subject" a property of the
+		// record rather than a claim about the runtime.
+		subject?: {...}
 		required_evidence?: [...#RequiredRef]
 	}
 	alpha: #StationRecord
 	matter: {data: string}
 	beta: #StationRecord
-	review: {pass: bool, notes: string}
+	review: {
+		pass:  bool
+		notes: string
+		// The per-obligation coverage an assessing seat produced. OPTIONAL,
+		// because the cells that predate assessment state a verdict and no
+		// coverage at all — an empty list forced into their records would claim
+		// that a review with zero units happened. The unit ids are opaque here
+		// for the same reason the contract's issue is: the catalogue's
+		// vocabulary belongs to the profile that built it.
+		assessment?: [...#UnitResult]
+	}
 }
+
+// #UnitResult is one obligation's disposition. `unverified` is its own value
+// and not a shade of failure: "we checked and it is wrong" and "we could not
+// check" call for different next work. A reason is required whenever the
+// disposition is not `pass` — a judgement without a reason is not review — and
+// that rule is expressed as a disjunction so an absent reason cannot unify with
+// a finding.
+#UnitResult: {
+	unit: string & !=""
+	citations?: [...string & !=""]
+} & ({
+	disposition: "pass"
+	reason?:     string
+} | {
+	disposition: "finding" | "unverified"
+	reason!:     string & !=""
+})
 
 #EpisodeClosure: {
 	closure_schema:     "cnos.cellkernel.episode-closure.v0"

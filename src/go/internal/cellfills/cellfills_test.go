@@ -4,51 +4,47 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/usurobor/cnos/src/go/internal/cdsassess"
+	"github.com/usurobor/cnos/src/go/internal/cdspatch"
 	"github.com/usurobor/cnos/src/go/internal/cellfills"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 	"github.com/usurobor/cnos/src/go/internal/cellskill"
 )
 
 var testSkills = []string{"cnos.eng:eng/code", "cnos.eng:eng/test", "cnos.eng:eng/go", "cnos.eng:eng/write-functional"}
 
-func testRepo(t *testing.T) string {
-	t.Helper()
-	dir := t.TempDir()
-	run := func(args ...string) {
-		t.Helper()
-		cmd := exec.Command("git", args...)
-		cmd.Dir = dir
-		cmd.Env = append(os.Environ(),
-			"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-		}
-	}
-	run("init", "-q", "-b", "main")
-	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("base\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	run("add", "-A")
-	run("commit", "-qm", "base")
-	return dir
-}
+// There is no repository here, and its absence is the assertion: constructing
+// a cds.patch alpha touches no git at all now. The repository the episode acts
+// on comes from the run's pinned contract subject, at Produce.
 
 type resolvedDecl struct {
-	Skills []struct {
-		Ref    string `json:"ref"`
+	Methodology struct {
+		Role   string `json:"role"`
 		SHA256 string `json:"sha256"`
-	} `json:"skills"`
+	} `json:"methodology"`
+}
+
+func methodologyDecl(refs ...string) []byte {
+	d, err := json.Marshal(map[string]any{"kind": cellmethod.Kind, "skills": refs})
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
 
 // D2: the same canonical skill bodies and digests load from an INSTALLED hub
 // tree while the process runs somewhere else entirely — skill authority is
 // the hub, never the working directory.
+//
+// The resolver now sits on the REGISTRY and feeds the cell's one methodology
+// bundle, so this is what it proves: what `Assemble` wires up resolves against
+// `<hub>/.cn/vendor/packages`, and the digest the seat records is that
+// bundle's.
 func TestInstalledHubLoadsFromForeignCwd(t *testing.T) {
-	repo := testRepo(t)
 	hub := t.TempDir()
 	installed := cellfills.InstalledPackages(hub)
 	for _, ref := range testSkills {
@@ -74,31 +70,72 @@ func TestInstalledHubLoadsFromForeignCwd(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chdir(restore) })
 
 	reg := cellfills.Assemble(hub)
-	decl := json.RawMessage(`{"fill":"cds.patch","cognition":{"provider":"fake","model":""},` +
-		`"workspace":{"kind":"git-worktree","repo":"` + repo + `","base_sha":"HEAD"},` +
-		`"skills":["cnos.eng:eng/code","cnos.eng:eng/test","cnos.eng:eng/go","cnos.eng:eng/write-functional"]}`)
-	got, err := reg.ConstructAlpha(context.Background(), decl)
+	if reg.Skills == nil {
+		t.Fatal("the assembled registry carries no skill authority")
+	}
+	bundle, bodies, err := cellmethod.Load(reg.Skills, methodologyDecl(testSkills...))
 	if err != nil {
-		t.Fatalf("installed-hub construction from a foreign cwd failed: %v", err)
+		t.Fatalf("installed-hub methodology load from a foreign cwd failed: %v", err)
 	}
-	var rd resolvedDecl
-	if err := json.Unmarshal(got.Decl, &rd); err != nil {
-		t.Fatal(err)
-	}
-	// Same canonical identities and digests as the direct-tree construction.
+
+	// Same canonical identities and digests as a direct load against the tree.
 	want, err := cellskill.LoadAll(cellskill.Tree{Root: installed}, testSkills)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for i, s := range want {
-		if rd.Skills[i].Ref != s.Ref || rd.Skills[i].SHA256 != s.SHA256 {
-			t.Fatalf("skill %d: got %+v, want %s/%s", i, rd.Skills[i], s.Ref, s.SHA256)
+		if bundle.Skills[i].Ref != s.Ref || bundle.Skills[i].SHA256 != s.SHA256 {
+			t.Fatalf("skill %d: got %+v, want %s/%s", i, bundle.Skills[i], s.Ref, s.SHA256)
 		}
 	}
 
+	// ...and the seat this binary registers records THAT bundle. Without this
+	// the registry could resolve the hub correctly and still hand the fill
+	// something else.
+	decl := json.RawMessage(`{"fill":"cds.patch","cognition":{"provider":"fake","model":""}}`)
+	got, err := reg.ConstructAlpha(context.Background(), decl, cellmethod.Constructive(bundle, bodies))
+	if err != nil {
+		t.Fatalf("construction from the installed hub failed: %v", err)
+	}
+	var rd resolvedDecl
+	if err := json.Unmarshal(got.Decl, &rd); err != nil {
+		t.Fatal(err)
+	}
+	if rd.Methodology.SHA256 != bundle.SHA256 || rd.Methodology.Role != string(cellmethod.RoleConstructive) {
+		t.Fatalf("the seat recorded %+v, want the hub bundle %s", rd.Methodology, bundle.SHA256)
+	}
+
 	// An uninstalled skill fails closed — there is no fallback search.
-	missing := strings.Replace(string(decl), `"cnos.eng:eng/go"`, `"cnos.eng:eng/nope"`, 1)
-	if _, err := reg.ConstructAlpha(context.Background(), json.RawMessage(missing)); err == nil {
-		t.Fatal("an uninstalled skill must fail construction, not fall back")
+	if _, _, err := cellmethod.Load(reg.Skills, methodologyDecl("cnos.eng:eng/nope")); err == nil {
+		t.Fatal("an uninstalled skill must fail the methodology load, not fall back")
+	}
+}
+
+// The SHIPPED registrations declare what their fills cannot act without. This
+// is the witness for the assembly point itself, not for the rule: the rule is
+// exercised in cellspec with stub fills, and the alpha side's real declaration
+// is exercised in cellrun — but flipping `cds.assess`'s NeedsSubject to false
+// left the whole suite green, because the alpha refusal fires first and masks
+// it. A registration nothing reads is a declaration that can quietly become
+// false.
+func TestTheShippedFillsDeclareTheirRunInputRequirements(t *testing.T) {
+	reg := cellfills.With(cellskill.Tree{Root: t.TempDir()})
+	for id, want := range map[string]bool{cdspatch.Fill: true, cdsassess.Fill: true} {
+		alpha, hasAlpha := reg.Alpha[id]
+		beta, hasBeta := reg.Beta[id]
+		switch {
+		case hasAlpha:
+			if alpha.NeedsSubject != want {
+				t.Errorf("alpha fill %q declares NeedsSubject=%v, want %v — it cannot act without contract.subject",
+					id, alpha.NeedsSubject, want)
+			}
+		case hasBeta:
+			if beta.NeedsSubject != want {
+				t.Errorf("beta fill %q declares NeedsSubject=%v, want %v — it reconstructs the candidate from contract.subject",
+					id, beta.NeedsSubject, want)
+			}
+		default:
+			t.Errorf("neither side registers %q; the assembly point no longer ships it", id)
+		}
 	}
 }

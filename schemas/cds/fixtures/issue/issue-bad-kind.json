@@ -1,0 +1,41 @@
+{
+  "kind": "cnos.cds.issue.v1",
+  "id": "cds-issue-corpus-example",
+  "problem": {
+    "exists": "A CDS cell's whole task specification is one free-text goal line.",
+    "expected": "A CDS cell carries a structured issue, and both seats receive the same frozen copy.",
+    "diverges": "Nothing in either authority can tell a well-formed issue from an empty string."
+  },
+  "sources": [
+    {
+      "claim": "the CDS issue type and its admission predicate",
+      "path": "src/go/internal/cdsissue/cdsissue.go"
+    },
+    {
+      "claim": "the CUE authority for the same issue",
+      "path": "schemas/cds/spec.cue"
+    }
+  ],
+  "scope": {
+    "in": [
+      "a typed issue admitted identically by Go and CUE",
+      "both CDS seats rendering one issue through one renderer"
+    ],
+    "out": [
+      "the verdict shape",
+      "any Markdown issue parser"
+    ]
+  },
+  "acceptance": [
+    {
+      "id": "AC1",
+      "statement": "Go and CUE accept and reject the same issue documents.",
+      "verification": "go test ./internal/cdsissue/... and ./scripts/cell-schema-check.sh read one shared fixture corpus"
+    },
+    {
+      "id": "AC2",
+      "statement": "Both seats are shown a byte-identical issue block.",
+      "verification": "a Go test renders both prompts from one contract and compares the issue blocks"
+    }
+  ]
+}

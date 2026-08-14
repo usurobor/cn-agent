@@ -18,22 +18,24 @@
       "default": ""
     }
   },
+  "methodology": {
+    "kind": "skills.methodology.v0",
+    "skills": [
+      "cnos.eng:eng/go"
+    ]
+  },
   "alpha": {
     "fill": "cds.patch",
     "cognition": {
       "provider": "fake",
       "model": "$model"
-    },
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": ".",
-      "base_sha": "0123456789abcdef0123456789abcdef01234567"
-    },
-    "skills": [
-      "cnos.eng:eng/go"
-    ]
+    }
   },
   "beta": {
-    "fill": "cdd.mechanical-unmet"
+    "fill": "cds.assess",
+    "cognition": {
+      "provider": "fake",
+      "model": "$model"
+    }
   }
 }

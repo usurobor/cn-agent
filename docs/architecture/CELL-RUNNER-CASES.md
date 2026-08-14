@@ -117,11 +117,15 @@ append-only sequence of results. Children never write upward or sideways.
   nothing produces no diff, so false completion is unrepresentable rather than
   caught late.
 
-  The seat is offered a restricted built-in tool surface (`--tools`, file
-  tools only), a declared baseline permission mode (`--permission-mode
-  acceptEdits`), and no USER OR PROJECT settings, skills or MCP servers
-  (`--safe-mode`), so local customization cannot become a second, unreceipted
-  component definition. Scoped exactly: that closes the user/project layer.
+  The seat is offered a declared built-in tool surface (`--tools`, matching
+  the live dispatch workflow's allow-list — file tools *and* `Bash`, so the
+  seat can run the tests and vets that check its own work), a declared
+  baseline permission mode (`--permission-mode acceptEdits`) with `Bash`
+  pre-approved beside it (`--allowedTools`, since the mode itself does not
+  reach ordinary commands), and no USER OR PROJECT settings, skills or MCP
+  servers (`--safe-mode`), so local customization cannot become a second,
+  unreceipted component definition. Scoped exactly: that closes the
+  user/project layer.
   Authentication stays ambient by design, and vendor-managed substrate policy
   can still apply above the declared baseline — the adapter neither detects
   nor overrides it. It is *not* OS confinement and is not claimed as such: the

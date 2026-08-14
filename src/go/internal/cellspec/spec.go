@@ -26,6 +26,7 @@ import (
 
 	"github.com/usurobor/cnos/src/go/internal/cellfill"
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 )
 
 // SchemaVersion is the pinned cell-spec version; a spec must declare it exactly.
@@ -33,13 +34,22 @@ const SchemaVersion = "cnos.cellspec.v0"
 
 // CellSpec is the serialized, strictly-validated cell. Alpha and Beta are
 // kept raw: their shape belongs to their fills.
+//
+// Methodology is raw for a different reason: its shape belongs to cellmethod,
+// which is the one parser for it. This package would otherwise be a second
+// place a methodology declaration is read, and two readers of one document are
+// two chances to disagree about it (eng/go §2.17). It is OPTIONAL here — a
+// cell may declare none, which is what every cell did before the bundle
+// existed — and a fill that cannot act without one refuses at its own
+// constructor, because only the fill knows that.
 type CellSpec struct {
-	Version    string               `json:"version"`
-	Contract   ContractSpec         `json:"contract"`
-	ProtocolID string               `json:"protocol_id"`
-	Params     map[string]ParamSpec `json:"params,omitempty"`
-	Alpha      json.RawMessage      `json:"alpha"`
-	Beta       json.RawMessage      `json:"beta"`
+	Version     string               `json:"version"`
+	Contract    ContractSpec         `json:"contract"`
+	ProtocolID  string               `json:"protocol_id"`
+	Params      map[string]ParamSpec `json:"params,omitempty"`
+	Methodology json.RawMessage      `json:"methodology,omitempty"`
+	Alpha       json.RawMessage      `json:"alpha"`
+	Beta        json.RawMessage      `json:"beta"`
 }
 
 type ContractSpec struct {
@@ -72,18 +82,22 @@ type ParamSpec struct {
 // cell spec. Seat interiors are validated by their fills at Build time and by
 // the fill's CUE overlay at vet time.
 func Parse(data []byte) (CellSpec, error) {
-	if err := checkNoDuplicateKeysOrNull(data); err != nil {
-		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
+	// Duplicate keys and nulls: the schema admits none, and a null collection
+	// would silently decode to a Go nil (Pi round-6 D2). The walk lives in
+	// cellfill because the run input needs the identical rule against the
+	// identical CUE-side expectation.
+	if err := cellfill.NoDuplicateKeysOrNull(data); err != nil {
+		return CellSpec{}, fmt.Errorf("cellspec: %w", err)
 	}
 	if err := checkExactKeys(data); err != nil {
-		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
+		return CellSpec{}, fmt.Errorf("cellspec: %w", err)
 	}
 
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	var s CellSpec
 	if err := dec.Decode(&s); err != nil {
-		return CellSpec{}, fmt.Errorf("decode cell spec: %w", err)
+		return CellSpec{}, fmt.Errorf("cellspec: decode: %w", err)
 	}
 	// Strict EOF: any non-whitespace byte after the first value — including a
 	// stray delimiter like `]` or `}` — is rejected. dec.More() is an
@@ -91,31 +105,31 @@ func Parse(data []byte) (CellSpec, error) {
 	// require io.EOF.
 	var extra json.RawMessage
 	if err := dec.Decode(&extra); err != io.EOF {
-		return CellSpec{}, fmt.Errorf("cell spec: trailing data after JSON object")
+		return CellSpec{}, fmt.Errorf("cellspec: trailing data after JSON object")
 	}
 
 	if s.Version != SchemaVersion {
-		return CellSpec{}, fmt.Errorf("cell spec: version must be %q, got %q", SchemaVersion, s.Version)
+		return CellSpec{}, fmt.Errorf("cellspec: version must be %q, got %q", SchemaVersion, s.Version)
 	}
 	if s.Contract.ID == "" {
-		return CellSpec{}, fmt.Errorf("cell spec: contract.id is required")
+		return CellSpec{}, fmt.Errorf("cellspec: contract.id is required")
 	}
 	if s.Contract.Goal == "" { // parity with #CellSpec (Pi round-5 D2)
-		return CellSpec{}, fmt.Errorf("cell spec: contract.goal is required")
+		return CellSpec{}, fmt.Errorf("cellspec: contract.goal is required")
 	}
 	if s.ProtocolID == "" { // opaque provenance (Pi PR-#718-fido β D6)
-		return CellSpec{}, fmt.Errorf("cell spec: protocol_id is required")
+		return CellSpec{}, fmt.Errorf("cellspec: protocol_id is required")
 	}
 	for side, decl := range map[string]json.RawMessage{"alpha": s.Alpha, "beta": s.Beta} {
 		if len(decl) == 0 {
-			return CellSpec{}, fmt.Errorf("cell spec: %s is required", side)
+			return CellSpec{}, fmt.Errorf("cellspec: %s is required", side)
 		}
 		if _, err := cellfill.FillID(decl); err != nil {
-			return CellSpec{}, fmt.Errorf("cell spec: %s: %w", side, err)
+			return CellSpec{}, fmt.Errorf("cellspec: %s: %w", side, err)
 		}
 	}
 	if err := validateEvidence(s.Contract.RequiredEvidence); err != nil {
-		return CellSpec{}, fmt.Errorf("cell spec: %w", err)
+		return CellSpec{}, fmt.Errorf("cellspec: %w", err)
 	}
 	return s, nil
 }
@@ -138,18 +152,21 @@ func validateEvidence(refs []RequiredRef) error {
 }
 
 // Resolved is a cell spec with its parameter holes filled in place — the seat
-// declarations are complete tagged objects ready for their fills.
+// declarations and the methodology are complete objects ready for their
+// consumers.
 type Resolved struct {
-	Spec  CellSpec
-	Alpha json.RawMessage
-	Beta  json.RawMessage
+	Spec CellSpec
+	// Methodology is empty when the spec declared none.
+	Methodology json.RawMessage
+	Alpha       json.RawMessage
+	Beta        json.RawMessage
 }
 
 // Resolve fills `$param` holes from `given` (with defaults and closed
-// domains) IN PLACE inside both seat declarations: any string value equal to
-// `$name` is replaced by the parameter's value, wherever it sits in the seat
-// tree. Unresolved authored JSON carries holes in the same positions the
-// resolved tree fills.
+// domains) IN PLACE inside the methodology and both seat declarations: any
+// string value equal to `$name` is replaced by the parameter's value, wherever
+// it sits in the tree. Unresolved authored JSON carries holes in the same
+// positions the resolved tree fills.
 func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 	for name := range given {
 		if _, ok := s.Params[name]; !ok {
@@ -185,15 +202,27 @@ func (s CellSpec) Resolve(given map[string]string) (Resolved, error) {
 		}
 	}
 
+	// The methodology carries holes for the same reason a seat does — a cell
+	// declaring `$language` is one cell, not three — so it is spliced through
+	// the identical walk. A second substitution rule for the same `$name`
+	// spelling is how a hole comes to mean two things.
+	var method json.RawMessage
+	if len(s.Methodology) > 0 {
+		m, err := splice(s.Methodology, s.Params, vals)
+		if err != nil {
+			return Resolved{}, fmt.Errorf("cellspec: methodology: %w", err)
+		}
+		method = m
+	}
 	alpha, err := splice(s.Alpha, s.Params, vals)
 	if err != nil {
-		return Resolved{}, fmt.Errorf("alpha: %w", err)
+		return Resolved{}, fmt.Errorf("cellspec: alpha: %w", err)
 	}
 	beta, err := splice(s.Beta, s.Params, vals)
 	if err != nil {
-		return Resolved{}, fmt.Errorf("beta: %w", err)
+		return Resolved{}, fmt.Errorf("cellspec: beta: %w", err)
 	}
-	return Resolved{Spec: s, Alpha: alpha, Beta: beta}, nil
+	return Resolved{Spec: s, Methodology: method, Alpha: alpha, Beta: beta}, nil
 }
 
 // splice walks a seat's JSON tree replacing `$name` string values in place.
@@ -260,30 +289,68 @@ func spliceValue(v any, declared map[string]ParamSpec, vals map[string]string) (
 	}
 }
 
+// Binding is the per-run contract content a caller freezes into the cell: the
+// admitted issue, the admitted design, and the PINNED subject.
+//
+// The three are `json.RawMessage` and stay that way. This package is the
+// generic loader — it already refuses to learn what a fill means, and it
+// refuses to learn what an issue or a repository is for the same reason. It
+// carries the bytes to the one place the record digests them and reads none of
+// them. A zero Binding is a cell with no run input, which is every cell that
+// existed before the run input did.
+//
+// Admission, not this type, decides whether a given profile REQUIRES the three
+// to be present: a generic loader that demanded an issue would have made the
+// CDS profile's rule everyone's.
+type Binding struct {
+	Issue   json.RawMessage
+	Design  json.RawMessage
+	Subject json.RawMessage
+}
+
 // Build dispatches both seat declarations through the fill registry and binds
 // the result to a runnable kernel Spec plus the RunMeta the record carries:
 // the complete canonical resolved declarations and the truthful combined
 // mode. The registry arrives from the assembly point (the CLI domain) — this
 // package never names a fill.
-func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.Spec, cellkernel.RunMeta, error) {
-	alpha, err := reg.ConstructAlpha(ctx, r.Alpha)
-	if err != nil {
-		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("alpha: %w", err)
-	}
-	beta, err := reg.ConstructBeta(ctx, r.Beta)
-	if err != nil {
-		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("beta: %w", err)
+//
+// bind is spliced into the kernel contract and therefore into the canonical
+// record bytes and the one scope-lift digest. It is a Build argument rather
+// than something a caller sets on the returned Spec so that there is one
+// construction point for the contract: a caller that assembled half of it here
+// and half of it afterwards would have two places for the frozen value to
+// come from.
+func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding) (cellkernel.Spec, cellkernel.RunMeta, error) {
+	// BOTH fills' DECLARED requirements are checked against the binding before
+	// EITHER constructor runs. A missing subject is decided entirely by two
+	// values both already in hand — the registration and `bind` — so nothing
+	// about it needs a seat to exist. Constructing first made the refusal wait
+	// for a provider adapter and every skill body to be built, and then arrive
+	// from a station as an episode malfunction, which is not what a run with no
+	// subject is. The assessing seat is checked here rather than at its own
+	// constructor for the identical reason: a beta that cannot act without the
+	// subject — `cds.assess` reconstructs the candidate from it — otherwise
+	// discovered the fact from inside Review, one whole produced side later.
+	// This package still learns nothing about fills: it reads one declared bool
+	// per side and never asks what a subject is for.
+	if err := r.checkDeclaredNeeds(reg, bind); err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, err
 	}
 
-	req := make([]cellkernel.RequiredRef, 0, len(r.Spec.Contract.RequiredEvidence))
-	for _, e := range r.Spec.Contract.RequiredEvidence {
-		req = append(req, cellkernel.RequiredRef{ID: e.ID, Kind: e.Kind, Producer: cellkernel.Role(e.Producer)})
+	constructive, adversarial, err := r.methodology(reg)
+	if err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, err
 	}
-	contract := cellkernel.Contract{
-		ID:               r.Spec.Contract.ID,
-		Goal:             r.Spec.Contract.Goal,
-		RequiredEvidence: req,
+
+	alpha, err := reg.ConstructAlpha(ctx, r.Alpha, constructive)
+	if err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("cellspec: alpha: %w", err)
 	}
+	beta, err := reg.ConstructBeta(ctx, r.Beta, adversarial)
+	if err != nil {
+		return cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf("cellspec: beta: %w", err)
+	}
+
 	meta := cellkernel.RunMeta{
 		ExecutionMode: cellfill.CombineModes(alpha.Mode, beta.Mode),
 		ResolvedSpec: cellkernel.ResolvedSpec{
@@ -293,61 +360,78 @@ func (r Resolved) Build(ctx context.Context, reg cellfill.Registry) (cellkernel.
 			Beta:             beta.Decl,
 		},
 	}
-	return cellkernel.Spec{Contract: contract, Alpha: alpha.Seat, Beta: beta.Seat}, meta, nil
+	return cellkernel.Spec{Contract: r.contract(bind), Alpha: alpha.Seat, Beta: beta.Seat}, meta, nil
 }
 
-// checkNoDuplicateKeysOrNull rejects duplicate object keys anywhere in the
-// JSON, which encoding/json otherwise silently accepts (last-wins), and JSON
-// null anywhere — the schema admits none, and a null collection would
-// silently decode to a Go nil (Pi round-6 D2).
-func checkNoDuplicateKeysOrNull(data []byte) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	return walkNoDup(dec)
-}
-
-func walkNoDup(dec *json.Decoder) error {
-	t, err := dec.Token()
+// checkDeclaredNeeds reads each side's DECLARED requirements and refuses a
+// binding that cannot satisfy them — before either constructor runs.
+//
+// One rule, applied to each side in turn, alpha first: a cell whose two seats
+// both need a subject refuses with the producing side named, as it did before
+// the assessing side could declare anything.
+func (r Resolved) checkDeclaredNeeds(reg cellfill.Registry, bind Binding) error {
+	alphaID, alphaFill, err := reg.LookupAlpha(r.Alpha)
 	if err != nil {
-		return err
+		return fmt.Errorf("cellspec: alpha: %w", err)
 	}
-	if t == nil {
-		return fmt.Errorf("null is not allowed (the cell-spec schema admits no null)")
+	betaID, betaFill, err := reg.LookupBeta(r.Beta)
+	if err != nil {
+		return fmt.Errorf("cellspec: beta: %w", err)
 	}
-	delim, ok := t.(json.Delim)
-	if !ok {
-		return nil
-	}
-	switch delim {
-	case '{':
-		keys := make(map[string]bool)
-		for dec.More() {
-			kt, err := dec.Token()
-			if err != nil {
-				return err
-			}
-			key, _ := kt.(string)
-			if keys[key] {
-				return fmt.Errorf("duplicate key %q", key)
-			}
-			keys[key] = true
-			if err := walkNoDup(dec); err != nil {
-				return err
-			}
-		}
-		if _, err := dec.Token(); err != nil { // consume '}'
-			return err
-		}
-	case '[':
-		for dec.More() {
-			if err := walkNoDup(dec); err != nil {
-				return err
-			}
-		}
-		if _, err := dec.Token(); err != nil { // consume ']'
-			return err
+	for _, side := range []struct {
+		role         cellkernel.Role
+		id           string
+		needsSubject bool
+	}{
+		{cellkernel.RoleAlpha, alphaID, alphaFill.NeedsSubject},
+		{cellkernel.RoleBeta, betaID, betaFill.NeedsSubject},
+	} {
+		if side.needsSubject && len(bind.Subject) == 0 {
+			return fmt.Errorf("cellspec: %s fill %q requires contract.subject, and no run input supplied one "+
+				"(pass --input)", side.role, side.id)
 		}
 	}
 	return nil
+}
+
+// methodology loads the declared bundle ONCE and returns the two projections.
+//
+// Once, here, before either seat exists: a declared methodology is loaded
+// whatever the fills are, so a cell whose bundle names an uninstalled skill
+// fails at the cell, not later and only if some seat happened to ask.
+//
+// BOTH projections come off the SAME load. Loading twice — once per seat —
+// would put two reads of one declaration on the two sides of the episode, which
+// is the drift the single bundle exists to remove: the producing seat and the
+// assessing seat would then be held to two collections that nothing could tell
+// apart if a skill body changed between the reads. Two projections of one
+// digest cannot be two methodologies.
+func (r Resolved) methodology(reg cellfill.Registry) (constructive, adversarial cellmethod.View, err error) {
+	if len(r.Methodology) == 0 {
+		return cellmethod.View{}, cellmethod.View{}, nil
+	}
+	bundle, bodies, err := cellmethod.Load(reg.Skills, r.Methodology)
+	if err != nil {
+		return cellmethod.View{}, cellmethod.View{}, fmt.Errorf("cellspec: %w", err)
+	}
+	return cellmethod.Constructive(bundle, bodies), cellmethod.Adversarial(bundle, bodies), nil
+}
+
+// contract freezes the kernel contract: the cell's own fields, plus the three
+// opaque slots exactly as admission pinned them.
+func (r Resolved) contract(bind Binding) cellkernel.Contract {
+	req := make([]cellkernel.RequiredRef, 0, len(r.Spec.Contract.RequiredEvidence))
+	for _, e := range r.Spec.Contract.RequiredEvidence {
+		req = append(req, cellkernel.RequiredRef{ID: e.ID, Kind: e.Kind, Producer: cellkernel.Role(e.Producer)})
+	}
+	return cellkernel.Contract{
+		ID:               r.Spec.Contract.ID,
+		Goal:             r.Spec.Contract.Goal,
+		Issue:            bind.Issue,
+		Design:           bind.Design,
+		Subject:          bind.Subject,
+		RequiredEvidence: req,
+	}
 }
 
 // checkExactKeys walks the known GENERIC object shapes and requires every key
@@ -360,7 +444,7 @@ func checkExactKeys(data []byte) error {
 	if err := json.Unmarshal(data, &root); err != nil {
 		return err
 	}
-	if err := keysIn("spec", root, "version", "contract", "protocol_id", "params", "alpha", "beta"); err != nil {
+	if err := keysIn("spec", root, "version", "contract", "protocol_id", "params", "methodology", "alpha", "beta"); err != nil {
 		return err
 	}
 	if err := objectKeys(root["contract"], "contract", "id", "goal", "required_evidence"); err != nil {

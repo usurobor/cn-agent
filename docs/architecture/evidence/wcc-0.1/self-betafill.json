@@ -1,0 +1,240 @@
+{
+  "closure_schema": "cnos.cellkernel.episode-closure.v0",
+  "protocol_validated": false,
+  "status": "accepted",
+  "decision": "accept",
+  "verdict": {
+    "pass": true
+  },
+  "receipt": {
+    "record": {
+      "canon": "cnos.cellkernel.episode-record-canon.v0",
+      "episode_id": "ep-1e2570d01e0a26c0fb28a2592b0c3c8c",
+      "execution_mode": "cognitive",
+      "resolved_spec": {
+        "version": "cnos.cellspec.v0",
+        "declared_protocol": "cnos.cdd.cds.receipt.v1",
+        "alpha": {
+          "cognition": {
+            "model": "claude-opus-5",
+            "provider": "claude-cli"
+          },
+          "fill": "cds.patch",
+          "methodology": {
+            "role": "constructive",
+            "sha256": "de9c2313baaa3f34aea8a938e4cc29b30515609d2e195744b4ffa9c26b02caa5"
+          }
+        },
+        "beta": {
+          "cognition": {
+            "model": "claude-opus-5",
+            "provider": "claude-cli"
+          },
+          "fill": "cds.assess",
+          "methodology": {
+            "role": "adversarial",
+            "sha256": "de9c2313baaa3f34aea8a938e4cc29b30515609d2e195744b4ffa9c26b02caa5"
+          }
+        }
+      },
+      "contract": {
+        "id": "cds-code",
+        "goal": "Carry out the change described by the issue in the repository the run input's subject pins",
+        "issue": {
+          "kind": "cnos.cds.issue.v0",
+          "id": "cellfill-beta-needs-subject",
+          "problem": {
+            "exists": "cellfill.Registry.Alpha maps a fill id to AlphaFill{Construct, NeedsSubject}, and cellspec.Build refuses before construction when a declared alpha needs contract.subject and the run input supplied none. Registry.Beta maps a fill id to a bare BetaFactory with no such declaration.",
+            "expected": "A beta fill can declare the same requirement, and cellspec.Build enforces it the same way \u2014 before the beta constructor runs.",
+            "diverges": "cds.assess cannot act without contract.subject (it reconstructs the candidate from it), but declares nothing. A cell pairing cds.assess with an alpha that does not need a subject would construct beta and fail later, inside Review, as an episode malfunction rather than a spec refusal."
+          },
+          "sources": [
+            {
+              "claim": "how the alpha side declares and enforces the requirement",
+              "path": "src/go/internal/cellfill/cellfill.go"
+            },
+            {
+              "claim": "where the alpha requirement is checked before construction",
+              "path": "src/go/internal/cellspec/spec.go"
+            },
+            {
+              "claim": "the beta that needs the subject and says so only in a comment",
+              "path": "src/go/internal/cellfills/cellfills.go"
+            }
+          ],
+          "scope": {
+            "in": [
+              "add BetaFill{Construct BetaFactory; NeedsSubject bool} in cellfill and change Registry.Beta to map[string]BetaFill",
+              "add Registry.LookupBeta mirroring LookupAlpha, and route ConstructBeta through it",
+              "check the beta requirement in cellspec.Build before the beta constructor runs",
+              "declare NeedsSubject on cds.assess in cellfills",
+              "update every construction site and test for the new value type"
+            ],
+            "out": [
+              "changing the alpha side's behaviour",
+              "adding any requirement other than NeedsSubject",
+              "changing any CUE schema or fixture",
+              "changing cellkernel, cdsassess, cdspatch or cellwork"
+            ]
+          },
+          "acceptance": [
+            {
+              "id": "AC1",
+              "statement": "cellfill declares BetaFill with a Construct field and a NeedsSubject bool, and Registry.Beta is map[string]BetaFill.",
+              "verification": "the reconstructed view of src/go/internal/cellfill/cellfill.go shows the BetaFill type and the Beta field typed map[string]BetaFill"
+            },
+            {
+              "id": "AC2",
+              "statement": "cellfill.Registry has LookupBeta resolving a declaration to its BetaFill without constructing it, and ConstructBeta resolves through LookupBeta rather than reading the map a second time.",
+              "verification": "the view of cellfill.go shows LookupBeta, and shows ConstructBeta calling it; grep the view for r.Beta[ and confirm it appears only inside LookupBeta"
+            },
+            {
+              "id": "AC3",
+              "statement": "cellspec.Build refuses, before calling the beta constructor, when the declared beta needs contract.subject and the binding carries none; the error names the fill and contract.subject.",
+              "verification": "the view of src/go/internal/cellspec/spec.go shows the check placed before ConstructBeta, and its message names both"
+            },
+            {
+              "id": "AC4",
+              "statement": "cds.assess is registered with NeedsSubject true.",
+              "verification": "the view of src/go/internal/cellfills/cellfills.go shows the cds.assess registration carrying NeedsSubject: true"
+            },
+            {
+              "id": "AC5",
+              "statement": "A test proves the beta requirement is refused before construction, using a recording constructor that fails the test if it ran.",
+              "verification": "the diff adds such a test; the view shows it asserts zero constructor calls, and check:project-verify passing shows the whole suite still builds and passes"
+            }
+          ]
+        },
+        "design": {
+          "kind": "cnos.cds.design.v0",
+          "approach": "Mirror the alpha side exactly. AlphaFill/LookupAlpha/ConstructAlpha and the Build check already exist and were reviewed; the beta side becomes their reflection so there is one pattern rather than two shapes for one idea. Registry.Beta's value type changes, so every construction site and test updates mechanically; no compatibility shim.",
+          "invariants": [
+            "the alpha side keeps its current behaviour and error text",
+            "a fill id resolves to its registration in exactly one place per side",
+            "the generic runner still names no domain package"
+          ],
+          "impact": [
+            {
+              "surface": "src/go/internal/cellfill/cellfill.go",
+              "why": "the new type, the new lookup, and the Beta field's type live here"
+            },
+            {
+              "surface": "src/go/internal/cellfill/cdd.go",
+              "why": "the generic beta registrations are built with the old value type"
+            },
+            {
+              "surface": "src/go/internal/cellspec/spec.go",
+              "why": "the requirement is checked before the beta constructor runs"
+            },
+            {
+              "surface": "src/go/internal/cellfills/cellfills.go",
+              "why": "cds.assess is registered here and is the fill that needs the subject"
+            },
+            {
+              "surface": "src/go/internal/cellspec/binding_test.go",
+              "why": "the new refusal needs a witness beside the alpha one"
+            }
+          ]
+        },
+        "subject": {
+          "kind": "git.snapshot/0.1",
+          "repo": "/home/user/cnos",
+          "base_sha": "2a968d30a27a06f3620622763733a50391204dcc"
+        },
+        "required_evidence": [
+          {
+            "id": "diff",
+            "kind": "diff",
+            "producer": "alpha"
+          }
+        ]
+      },
+      "alpha": {
+        "execution_id": "alpha-e32ffd77ee60c80f3d1c4869abdb4933",
+        "artifacts": [
+          {
+            "id": "base_sha",
+            "kind": "sha",
+            "encoding": "utf8",
+            "text": "2a968d30a27a06f3620622763733a50391204dcc"
+          },
+          {
+            "id": "diff",
+            "kind": "diff",
+            "encoding": "utf8",
+            "text": "diff --git a/src/go/internal/cdsadmit/door_test.go b/src/go/internal/cdsadmit/door_test.go\nindex ea3f0599..0301d5c8 100644\n--- a/src/go/internal/cdsadmit/door_test.go\n+++ b/src/go/internal/cdsadmit/door_test.go\n@@ -91,8 +91,10 @@ func doorlessRegistry(l *ledger) cellfill.Registry {\n \t\t\t\t}, nil\n \t\t\t}},\n \t\t},\n-\t\tBeta: map[string]cellfill.BetaFactory{\n-\t\t\tfill: func(context.Context, json.RawMessage, cellmethod.View) (cellfill.ConstructedBeta, error) {\n+\t\tBeta: map[string]cellfill.BetaFill{\n+\t\t\t// No declared requirement here either, and for the same reason as\n+\t\t\t// the alpha above.\n+\t\t\tfill: {Construct: func(context.Context, json.RawMessage, cellmethod.View) (cellfill.ConstructedBeta, error) {\n \t\t\t\tl.note(\"construct beta\")\n \t\t\t\treturn cellfill.ConstructedBeta{\n \t\t\t\t\tConstructed: cellfill.Constructed{\n@@ -101,7 +103,7 @@ func doorlessRegistry(l *ledger) cellfill.Registry {\n \t\t\t\t\t},\n \t\t\t\t\tSeat: recordingBeta{l},\n \t\t\t\t}, nil\n-\t\t\t},\n+\t\t\t}},\n \t\t},\n \t}\n }\ndiff --git a/src/go/internal/cellfill/cdd.go b/src/go/internal/cellfill/cdd.go\nindex fb125784..a44ecc64 100644\n--- a/src/go/internal/cellfill/cdd.go\n+++ b/src/go/internal/cellfill/cdd.go\n@@ -26,17 +26,18 @@ const (\n // CddFills returns the statically assembled generic fills.\n func CddFills() Registry {\n \treturn Registry{\n-\t\t// Neither generic alpha reads the contract's subject: a stub fabricates\n-\t\t// its own side's artifacts and a bool answers from its declaration, so\n-\t\t// both run with an empty binding and neither declares a requirement.\n+\t\t// No generic seat reads the contract's subject: a stub fabricates its\n+\t\t// own side's artifacts, a bool answers from its declaration and the\n+\t\t// mechanical reviewers judge what they are handed, so all of them run\n+\t\t// with an empty binding and none declares a requirement.\n \t\tAlpha: map[string]AlphaFill{\n \t\t\tFillStubAlpha: {Construct: stubAlphaFactory},\n \t\t\tFillBoolAlpha: {Construct: boolAlphaFactory},\n \t\t},\n-\t\tBeta: map[string]BetaFactory{\n-\t\t\tFillStubBeta:        stubBetaFactory,\n-\t\t\tFillBoolCheckBeta:   boolCheckBetaFactory,\n-\t\t\tFillMechanicalUnmet: mechanicalUnmetFactory,\n+\t\tBeta: map[string]BetaFill{\n+\t\t\tFillStubBeta:        {Construct: stubBetaFactory},\n+\t\t\tFillBoolCheckBeta:   {Construct: boolCheckBetaFactory},\n+\t\t\tFillMechanicalUnmet: {Construct: mechanicalUnmetFactory},\n \t\t},\n \t}\n }\ndiff --git a/src/go/internal/cellfill/cellfill.go b/src/go/internal/cellfill/cellfill.go\nindex ccf20360..efded0bd 100644\n--- a/src/go/internal/cellfill/cellfill.go\n+++ b/src/go/internal/cellfill/cellfill.go\n@@ -115,12 +115,30 @@ type AlphaFill struct {\n \tNeedsSubject bool\n }\n \n+// BetaFill is one registered beta, and carries the SAME declaration for the\n+// same reason: an assessing seat can be as unable to act without the pinned\n+// subject as a producing one — `cds.assess` reconstructs the candidate from\n+// it — and a requirement the registry cannot state is a requirement discovered\n+// by running the seat. Undeclared, it surfaced from inside Review as an\n+// episode malfunction; declared, the loader refuses the run before the\n+// constructor.\n+//\n+// The two sides are separate types rather than one because their constructors\n+// are separate types: a shared struct would need a factory field wide enough\n+// for both, which is exactly the `any` this package refuses to hold.\n+type BetaFill struct {\n+\tConstruct BetaFactory\n+\t// NeedsSubject: as AlphaFill.NeedsSubject, on the assessing side.\n+\tNeedsSubject bool\n+}\n+\n // Registry is the small statically assembled fill map. No DI container, no\n // service locator — the assembly point lists its fills.\n //\n-// Beta carries a bare factory because no beta shipped today declares a\n-// requirement; the field is added to a side when a fill on that side needs it,\n-// not in advance.\n+// Both sides map a fill id to a fill: a constructor and what that fill cannot\n+// act without. They are symmetric because the loader's question is symmetric —\n+// \"can this seat act on this run input?\" is asked of the assessing seat exactly\n+// as it is asked of the producing one.\n //\n // Door sits beside them because it is the same kind of thing: a profile-owned\n // function the composition root wires in and the generic runner only\n@@ -138,7 +156,7 @@ type AlphaFill struct {\n // every cell that declares none.\n type Registry struct {\n \tAlpha  map[string]AlphaFill\n-\tBeta   map[string]BetaFactory\n+\tBeta   map[string]BetaFill\n \tDoor   Door\n \tSkills cellskill.Resolver\n }\n@@ -198,16 +216,31 @@ func (r Registry) ConstructAlpha(ctx context.Context, decl json.RawMessage, meth\n \treturn c, err\n }\n \n-func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error) {\n+// LookupBeta is LookupAlpha on the assessing side, and exists for the same\n+// reason: a caller that must judge a fill's declared requirements before its\n+// constructor runs needs the fill without the seat. ConstructBeta resolves\n+// through it, so a fill id becomes a fill in ONE place on this side too.\n+func (r Registry) LookupBeta(decl json.RawMessage) (string, BetaFill, error) {\n \tid, err := FillID(decl)\n \tif err != nil {\n-\t\treturn ConstructedBeta{}, err\n+\t\treturn \"\", BetaFill{}, err\n \t}\n \tf, ok := r.Beta[id]\n \tif !ok {\n-\t\treturn ConstructedBeta{}, fmt.Errorf(\"unknown beta fill %q\", id)\n+\t\treturn \"\", BetaFill{}, fmt.Errorf(\"unknown beta fill %q\", id)\n+\t}\n+\treturn id, f, nil\n+}\n+\n+// ConstructBeta dispatches a beta declaration, mirroring ConstructAlpha:\n+// unknown fills fail here, before any seat is touched, and the returned\n+// declaration is canonicalized centrally.\n+func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error) {\n+\tid, f, err := r.LookupBeta(decl)\n+\tif err != nil {\n+\t\treturn ConstructedBeta{}, err\n \t}\n-\tc, err := f(ctx, decl, method)\n+\tc, err := f.Construct(ctx, decl, method)\n \tif err != nil {\n \t\treturn ConstructedBeta{}, err\n \t}\ndiff --git a/src/go/internal/cellfills/cellfills.go b/src/go/internal/cellfills/cellfills.go\nindex a5c777b1..2bee2876 100644\n--- a/src/go/internal/cellfills/cellfills.go\n+++ b/src/go/internal/cellfills/cellfills.go\n@@ -60,16 +60,16 @@ func With(skills cellskill.Resolver) cellfill.Registry {\n \t\tConstruct:    cdspatch.Factory(),\n \t\tNeedsSubject: true,\n \t}\n-\t// The CDS assessing seat. It needs the pinned subject too — it reconstructs\n-\t// the candidate from it — but the requirement is not declared here, because\n-\t// the beta side of the registry carries no requirement field: nothing has\n-\t// needed one yet in a way the loader could act on. A cds.assess cell pairs\n-\t// with a cds.patch alpha, whose declared requirement already refuses a\n-\t// subjectless run before either constructor is reached; a cell pairing this\n-\t// beta with a subjectless alpha would instead be refused by the seat at\n-\t// review time, which is later and noisier. Stated rather than left as an\n-\t// asymmetry a reader has to notice.\n-\treg.Beta[cdsassess.Fill] = cdsassess.Factory()\n+\t// The CDS assessing seat needs the pinned subject too — it reconstructs the\n+\t// candidate from it — and now says so at its registration rather than in a\n+\t// comment. Today's cells pair it with `cds.patch`, whose requirement already\n+\t// refuses a subjectless run; declared here, a cell pairing this beta with an\n+\t// alpha that needs no subject is refused by the spec too, instead of\n+\t// constructing and failing later inside Review as an episode malfunction.\n+\treg.Beta[cdsassess.Fill] = cellfill.BetaFill{\n+\t\tConstruct:    cdsassess.Factory(),\n+\t\tNeedsSubject: true,\n+\t}\n \treg.Door = cdsadmit.Door\n \treturn reg\n }\ndiff --git a/src/go/internal/cellspec/binding_test.go b/src/go/internal/cellspec/binding_test.go\nindex aa113c47..3325fb20 100644\n--- a/src/go/internal/cellspec/binding_test.go\n+++ b/src/go/internal/cellspec/binding_test.go\n@@ -207,6 +207,102 @@ func TestADeclaredSubjectRequirementIsRefusedBeforeConstruction(t *testing.T) {\n // still builds with an empty binding. That is every corpus cell carrying no run\n // input, and TestAZeroBindingBindsNothing above is its standing witness.\n \n+// seatConstructions counts what each side's recording constructor was asked to\n+// build. \"Refused before construction\" is a claim about what did NOT run, so a\n+// recorded call is the only thing that can falsify it.\n+type seatConstructions struct{ alpha, beta int }\n+\n+// betaSubjectRequiringRegistry re-registers `cdd.stub` on the ASSESSING side as\n+// a fill that declares it cannot act without a subject, leaving the producing\n+// side exactly as it ships — declaring nothing. That pairing is the divergence\n+// this test exists for: a beta that needs the subject beside an alpha that does\n+// not. Both constructors record, because the alpha's silence must not be what\n+// lets the run through.\n+func betaSubjectRequiringRegistry(built *seatConstructions) cellfill.Registry {\n+\treg := cellfill.CddFills()\n+\tinnerAlpha := reg.Alpha[cellfill.FillStubAlpha]\n+\treg.Alpha[cellfill.FillStubAlpha] = cellfill.AlphaFill{\n+\t\tConstruct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedAlpha, error) {\n+\t\t\tbuilt.alpha++\n+\t\t\treturn innerAlpha.Construct(ctx, decl, m)\n+\t\t},\n+\t}\n+\tinnerBeta := reg.Beta[cellfill.FillStubBeta]\n+\treg.Beta[cellfill.FillStubBeta] = cellfill.BetaFill{\n+\t\tConstruct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedBeta, error) {\n+\t\t\tbuilt.beta++\n+\t\t\treturn innerBeta.Construct(ctx, decl, m)\n+\t\t},\n+\t\tNeedsSubject: true,\n+\t}\n+\treturn reg\n+}\n+\n+// refuseBetaConstruction decorates the recording beta so that running it AT ALL\n+// fails the test. The count alone would prove the same thing, but only after\n+// the build returned; this states the prohibition at the exact point it would\n+// be broken, which is where a reader looks for it.\n+func refuseBetaConstruction(t *testing.T, reg cellfill.Registry) cellfill.Registry {\n+\tt.Helper()\n+\trecording := reg.Beta[cellfill.FillStubBeta]\n+\treg.Beta[cellfill.FillStubBeta] = cellfill.BetaFill{\n+\t\tConstruct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedBeta, error) {\n+\t\t\tt.Errorf(\"the beta constructor ran for a binding its own fill declared it cannot act on\")\n+\t\t\treturn recording.Construct(ctx, decl, m)\n+\t\t},\n+\t\tNeedsSubject: recording.NeedsSubject,\n+\t}\n+\treturn reg\n+}\n+\n+// The assessing side's declared requirement decides the run BEFORE its\n+// constructor runs — the same property the alpha side already holds. This is\n+// the `cds.assess` case: a beta that reconstructs the candidate from the pinned\n+// subject, paired with an alpha that needs none. Undeclared, such a cell built\n+// both seats and failed inside Review as an episode malfunction; declared, it\n+// is a spec refusal with nothing constructed.\n+func TestADeclaredBetaSubjectRequirementIsRefusedBeforeConstruction(t *testing.T) {\n+\ts, err := Parse([]byte(stubCell))\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tr, err := s.Resolve(nil)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\n+\tvar built seatConstructions\n+\t_, _, err = r.Build(context.Background(),\n+\t\trefuseBetaConstruction(t, betaSubjectRequiringRegistry(\u0026built)), Binding{})\n+\tif err == nil {\n+\t\tt.Fatal(\"a beta that cannot act without a subject must not be built without one\")\n+\t}\n+\tif built != (seatConstructions{}) {\n+\t\tt.Fatalf(\"constructors ran before the refusal: %+v\", built)\n+\t}\n+\t// The message names the SIDE, the fill and the input that is missing: a\n+\t// refusal that said only \"requires contract.subject\" would leave an operator\n+\t// looking at two seats.\n+\tfor _, want := range []string{\"beta\", cellfill.FillStubBeta, \"contract.subject\", \"--input\"} {\n+\t\tif !strings.Contains(err.Error(), want) {\n+\t\t\tt.Fatalf(\"the refusal does not name %q: %v\", want, err)\n+\t\t}\n+\t}\n+\n+\t// ...and with a subject the SAME declaration constructs both seats. Without\n+\t// this the assertions above would hold for a registry that refused\n+\t// everything. Only the refusing decoration is dropped: the fill still\n+\t// declares the requirement, and the requirement is now satisfied.\n+\tvar admitted seatConstructions\n+\tif _, _, err := r.Build(context.Background(), betaSubjectRequiringRegistry(\u0026admitted),\n+\t\tBinding{Subject: json.RawMessage(`{\"opaque\":\"subject\"}`)}); err != nil {\n+\t\tt.Fatalf(\"a supplied subject must satisfy the requirement: %v\", err)\n+\t}\n+\tif admitted != (seatConstructions{alpha: 1, beta: 1}) {\n+\t\tt.Fatalf(\"constructions = %+v, want exactly one build of each seat\", admitted)\n+\t}\n+}\n+\n // --- one methodology, loaded once, before any seat -------------------------\n \n const methodCell = `{\ndiff --git a/src/go/internal/cellspec/spec.go b/src/go/internal/cellspec/spec.go\nindex f7a8c43b..d3a996e1 100644\n--- a/src/go/internal/cellspec/spec.go\n+++ b/src/go/internal/cellspec/spec.go\n@@ -321,22 +321,42 @@ type Binding struct {\n // and half of it afterwards would have two places for the frozen value to\n // come from.\n func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding) (cellkernel.Spec, cellkernel.RunMeta, error) {\n-\t// The alpha fill's DECLARED requirement is checked against the binding\n-\t// before its constructor runs. A missing subject is decided entirely by two\n+\t// BOTH fills' DECLARED requirements are checked against the binding before\n+\t// EITHER constructor runs. A missing subject is decided entirely by two\n \t// values both already in hand — the registration and `bind` — so nothing\n \t// about it needs a seat to exist. Constructing first made the refusal wait\n \t// for a provider adapter and every skill body to be built, and then arrive\n \t// from a station as an episode malfunction, which is not what a run with no\n-\t// subject is. This package still learns nothing about fills: it reads one\n-\t// declared bool and never asks what a subject is for.\n+\t// subject is. The assessing seat is checked here rather than at its own\n+\t// constructor for the identical reason: a beta that cannot act without the\n+\t// subject — `cds.assess` reconstructs the candidate from it — otherwise\n+\t// discovered the fact from inside Review, one whole produced side later.\n+\t// This package still learns nothing about fills: it reads one declared bool\n+\t// per side and never asks what a subject is for.\n \talphaID, alphaFill, err := reg.LookupAlpha(r.Alpha)\n \tif err != nil {\n \t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\"alpha: %w\", err)\n \t}\n-\tif alphaFill.NeedsSubject \u0026\u0026 len(bind.Subject) == 0 {\n-\t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\n-\t\t\t\"cell spec: alpha fill %q requires contract.subject, and no run input supplied one \"+\n-\t\t\t\t\"(pass --input)\", alphaID)\n+\tbetaID, betaFill, err := reg.LookupBeta(r.Beta)\n+\tif err != nil {\n+\t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\"beta: %w\", err)\n+\t}\n+\t// One rule, applied to each side in turn — alpha first, so a cell whose two\n+\t// seats both need a subject refuses with the producing side named, as it did\n+\t// before the assessing side could declare anything.\n+\tfor _, side := range []struct {\n+\t\trole         cellkernel.Role\n+\t\tid           string\n+\t\tneedsSubject bool\n+\t}{\n+\t\t{cellkernel.RoleAlpha, alphaID, alphaFill.NeedsSubject},\n+\t\t{cellkernel.RoleBeta, betaID, betaFill.NeedsSubject},\n+\t} {\n+\t\tif side.needsSubject \u0026\u0026 len(bind.Subject) == 0 {\n+\t\t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\n+\t\t\t\t\"cell spec: %s fill %q requires contract.subject, and no run input supplied one \"+\n+\t\t\t\t\t\"(pass --input)\", side.role, side.id)\n+\t\t}\n \t}\n \n \t// ONE bundle, loaded ONCE, here — before either seat exists. A declared\n"
+          }
+        ]
+      },
+      "matter": {
+        "data": "diff --git a/src/go/internal/cdsadmit/door_test.go b/src/go/internal/cdsadmit/door_test.go\nindex ea3f0599..0301d5c8 100644\n--- a/src/go/internal/cdsadmit/door_test.go\n+++ b/src/go/internal/cdsadmit/door_test.go\n@@ -91,8 +91,10 @@ func doorlessRegistry(l *ledger) cellfill.Registry {\n \t\t\t\t}, nil\n \t\t\t}},\n \t\t},\n-\t\tBeta: map[string]cellfill.BetaFactory{\n-\t\t\tfill: func(context.Context, json.RawMessage, cellmethod.View) (cellfill.ConstructedBeta, error) {\n+\t\tBeta: map[string]cellfill.BetaFill{\n+\t\t\t// No declared requirement here either, and for the same reason as\n+\t\t\t// the alpha above.\n+\t\t\tfill: {Construct: func(context.Context, json.RawMessage, cellmethod.View) (cellfill.ConstructedBeta, error) {\n \t\t\t\tl.note(\"construct beta\")\n \t\t\t\treturn cellfill.ConstructedBeta{\n \t\t\t\t\tConstructed: cellfill.Constructed{\n@@ -101,7 +103,7 @@ func doorlessRegistry(l *ledger) cellfill.Registry {\n \t\t\t\t\t},\n \t\t\t\t\tSeat: recordingBeta{l},\n \t\t\t\t}, nil\n-\t\t\t},\n+\t\t\t}},\n \t\t},\n \t}\n }\ndiff --git a/src/go/internal/cellfill/cdd.go b/src/go/internal/cellfill/cdd.go\nindex fb125784..a44ecc64 100644\n--- a/src/go/internal/cellfill/cdd.go\n+++ b/src/go/internal/cellfill/cdd.go\n@@ -26,17 +26,18 @@ const (\n // CddFills returns the statically assembled generic fills.\n func CddFills() Registry {\n \treturn Registry{\n-\t\t// Neither generic alpha reads the contract's subject: a stub fabricates\n-\t\t// its own side's artifacts and a bool answers from its declaration, so\n-\t\t// both run with an empty binding and neither declares a requirement.\n+\t\t// No generic seat reads the contract's subject: a stub fabricates its\n+\t\t// own side's artifacts, a bool answers from its declaration and the\n+\t\t// mechanical reviewers judge what they are handed, so all of them run\n+\t\t// with an empty binding and none declares a requirement.\n \t\tAlpha: map[string]AlphaFill{\n \t\t\tFillStubAlpha: {Construct: stubAlphaFactory},\n \t\t\tFillBoolAlpha: {Construct: boolAlphaFactory},\n \t\t},\n-\t\tBeta: map[string]BetaFactory{\n-\t\t\tFillStubBeta:        stubBetaFactory,\n-\t\t\tFillBoolCheckBeta:   boolCheckBetaFactory,\n-\t\t\tFillMechanicalUnmet: mechanicalUnmetFactory,\n+\t\tBeta: map[string]BetaFill{\n+\t\t\tFillStubBeta:        {Construct: stubBetaFactory},\n+\t\t\tFillBoolCheckBeta:   {Construct: boolCheckBetaFactory},\n+\t\t\tFillMechanicalUnmet: {Construct: mechanicalUnmetFactory},\n \t\t},\n \t}\n }\ndiff --git a/src/go/internal/cellfill/cellfill.go b/src/go/internal/cellfill/cellfill.go\nindex ccf20360..efded0bd 100644\n--- a/src/go/internal/cellfill/cellfill.go\n+++ b/src/go/internal/cellfill/cellfill.go\n@@ -115,12 +115,30 @@ type AlphaFill struct {\n \tNeedsSubject bool\n }\n \n+// BetaFill is one registered beta, and carries the SAME declaration for the\n+// same reason: an assessing seat can be as unable to act without the pinned\n+// subject as a producing one — `cds.assess` reconstructs the candidate from\n+// it — and a requirement the registry cannot state is a requirement discovered\n+// by running the seat. Undeclared, it surfaced from inside Review as an\n+// episode malfunction; declared, the loader refuses the run before the\n+// constructor.\n+//\n+// The two sides are separate types rather than one because their constructors\n+// are separate types: a shared struct would need a factory field wide enough\n+// for both, which is exactly the `any` this package refuses to hold.\n+type BetaFill struct {\n+\tConstruct BetaFactory\n+\t// NeedsSubject: as AlphaFill.NeedsSubject, on the assessing side.\n+\tNeedsSubject bool\n+}\n+\n // Registry is the small statically assembled fill map. No DI container, no\n // service locator — the assembly point lists its fills.\n //\n-// Beta carries a bare factory because no beta shipped today declares a\n-// requirement; the field is added to a side when a fill on that side needs it,\n-// not in advance.\n+// Both sides map a fill id to a fill: a constructor and what that fill cannot\n+// act without. They are symmetric because the loader's question is symmetric —\n+// \"can this seat act on this run input?\" is asked of the assessing seat exactly\n+// as it is asked of the producing one.\n //\n // Door sits beside them because it is the same kind of thing: a profile-owned\n // function the composition root wires in and the generic runner only\n@@ -138,7 +156,7 @@ type AlphaFill struct {\n // every cell that declares none.\n type Registry struct {\n \tAlpha  map[string]AlphaFill\n-\tBeta   map[string]BetaFactory\n+\tBeta   map[string]BetaFill\n \tDoor   Door\n \tSkills cellskill.Resolver\n }\n@@ -198,16 +216,31 @@ func (r Registry) ConstructAlpha(ctx context.Context, decl json.RawMessage, meth\n \treturn c, err\n }\n \n-func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error) {\n+// LookupBeta is LookupAlpha on the assessing side, and exists for the same\n+// reason: a caller that must judge a fill's declared requirements before its\n+// constructor runs needs the fill without the seat. ConstructBeta resolves\n+// through it, so a fill id becomes a fill in ONE place on this side too.\n+func (r Registry) LookupBeta(decl json.RawMessage) (string, BetaFill, error) {\n \tid, err := FillID(decl)\n \tif err != nil {\n-\t\treturn ConstructedBeta{}, err\n+\t\treturn \"\", BetaFill{}, err\n \t}\n \tf, ok := r.Beta[id]\n \tif !ok {\n-\t\treturn ConstructedBeta{}, fmt.Errorf(\"unknown beta fill %q\", id)\n+\t\treturn \"\", BetaFill{}, fmt.Errorf(\"unknown beta fill %q\", id)\n+\t}\n+\treturn id, f, nil\n+}\n+\n+// ConstructBeta dispatches a beta declaration, mirroring ConstructAlpha:\n+// unknown fills fail here, before any seat is touched, and the returned\n+// declaration is canonicalized centrally.\n+func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error) {\n+\tid, f, err := r.LookupBeta(decl)\n+\tif err != nil {\n+\t\treturn ConstructedBeta{}, err\n \t}\n-\tc, err := f(ctx, decl, method)\n+\tc, err := f.Construct(ctx, decl, method)\n \tif err != nil {\n \t\treturn ConstructedBeta{}, err\n \t}\ndiff --git a/src/go/internal/cellfills/cellfills.go b/src/go/internal/cellfills/cellfills.go\nindex a5c777b1..2bee2876 100644\n--- a/src/go/internal/cellfills/cellfills.go\n+++ b/src/go/internal/cellfills/cellfills.go\n@@ -60,16 +60,16 @@ func With(skills cellskill.Resolver) cellfill.Registry {\n \t\tConstruct:    cdspatch.Factory(),\n \t\tNeedsSubject: true,\n \t}\n-\t// The CDS assessing seat. It needs the pinned subject too — it reconstructs\n-\t// the candidate from it — but the requirement is not declared here, because\n-\t// the beta side of the registry carries no requirement field: nothing has\n-\t// needed one yet in a way the loader could act on. A cds.assess cell pairs\n-\t// with a cds.patch alpha, whose declared requirement already refuses a\n-\t// subjectless run before either constructor is reached; a cell pairing this\n-\t// beta with a subjectless alpha would instead be refused by the seat at\n-\t// review time, which is later and noisier. Stated rather than left as an\n-\t// asymmetry a reader has to notice.\n-\treg.Beta[cdsassess.Fill] = cdsassess.Factory()\n+\t// The CDS assessing seat needs the pinned subject too — it reconstructs the\n+\t// candidate from it — and now says so at its registration rather than in a\n+\t// comment. Today's cells pair it with `cds.patch`, whose requirement already\n+\t// refuses a subjectless run; declared here, a cell pairing this beta with an\n+\t// alpha that needs no subject is refused by the spec too, instead of\n+\t// constructing and failing later inside Review as an episode malfunction.\n+\treg.Beta[cdsassess.Fill] = cellfill.BetaFill{\n+\t\tConstruct:    cdsassess.Factory(),\n+\t\tNeedsSubject: true,\n+\t}\n \treg.Door = cdsadmit.Door\n \treturn reg\n }\ndiff --git a/src/go/internal/cellspec/binding_test.go b/src/go/internal/cellspec/binding_test.go\nindex aa113c47..3325fb20 100644\n--- a/src/go/internal/cellspec/binding_test.go\n+++ b/src/go/internal/cellspec/binding_test.go\n@@ -207,6 +207,102 @@ func TestADeclaredSubjectRequirementIsRefusedBeforeConstruction(t *testing.T) {\n // still builds with an empty binding. That is every corpus cell carrying no run\n // input, and TestAZeroBindingBindsNothing above is its standing witness.\n \n+// seatConstructions counts what each side's recording constructor was asked to\n+// build. \"Refused before construction\" is a claim about what did NOT run, so a\n+// recorded call is the only thing that can falsify it.\n+type seatConstructions struct{ alpha, beta int }\n+\n+// betaSubjectRequiringRegistry re-registers `cdd.stub` on the ASSESSING side as\n+// a fill that declares it cannot act without a subject, leaving the producing\n+// side exactly as it ships — declaring nothing. That pairing is the divergence\n+// this test exists for: a beta that needs the subject beside an alpha that does\n+// not. Both constructors record, because the alpha's silence must not be what\n+// lets the run through.\n+func betaSubjectRequiringRegistry(built *seatConstructions) cellfill.Registry {\n+\treg := cellfill.CddFills()\n+\tinnerAlpha := reg.Alpha[cellfill.FillStubAlpha]\n+\treg.Alpha[cellfill.FillStubAlpha] = cellfill.AlphaFill{\n+\t\tConstruct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedAlpha, error) {\n+\t\t\tbuilt.alpha++\n+\t\t\treturn innerAlpha.Construct(ctx, decl, m)\n+\t\t},\n+\t}\n+\tinnerBeta := reg.Beta[cellfill.FillStubBeta]\n+\treg.Beta[cellfill.FillStubBeta] = cellfill.BetaFill{\n+\t\tConstruct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedBeta, error) {\n+\t\t\tbuilt.beta++\n+\t\t\treturn innerBeta.Construct(ctx, decl, m)\n+\t\t},\n+\t\tNeedsSubject: true,\n+\t}\n+\treturn reg\n+}\n+\n+// refuseBetaConstruction decorates the recording beta so that running it AT ALL\n+// fails the test. The count alone would prove the same thing, but only after\n+// the build returned; this states the prohibition at the exact point it would\n+// be broken, which is where a reader looks for it.\n+func refuseBetaConstruction(t *testing.T, reg cellfill.Registry) cellfill.Registry {\n+\tt.Helper()\n+\trecording := reg.Beta[cellfill.FillStubBeta]\n+\treg.Beta[cellfill.FillStubBeta] = cellfill.BetaFill{\n+\t\tConstruct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedBeta, error) {\n+\t\t\tt.Errorf(\"the beta constructor ran for a binding its own fill declared it cannot act on\")\n+\t\t\treturn recording.Construct(ctx, decl, m)\n+\t\t},\n+\t\tNeedsSubject: recording.NeedsSubject,\n+\t}\n+\treturn reg\n+}\n+\n+// The assessing side's declared requirement decides the run BEFORE its\n+// constructor runs — the same property the alpha side already holds. This is\n+// the `cds.assess` case: a beta that reconstructs the candidate from the pinned\n+// subject, paired with an alpha that needs none. Undeclared, such a cell built\n+// both seats and failed inside Review as an episode malfunction; declared, it\n+// is a spec refusal with nothing constructed.\n+func TestADeclaredBetaSubjectRequirementIsRefusedBeforeConstruction(t *testing.T) {\n+\ts, err := Parse([]byte(stubCell))\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tr, err := s.Resolve(nil)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\n+\tvar built seatConstructions\n+\t_, _, err = r.Build(context.Background(),\n+\t\trefuseBetaConstruction(t, betaSubjectRequiringRegistry(\u0026built)), Binding{})\n+\tif err == nil {\n+\t\tt.Fatal(\"a beta that cannot act without a subject must not be built without one\")\n+\t}\n+\tif built != (seatConstructions{}) {\n+\t\tt.Fatalf(\"constructors ran before the refusal: %+v\", built)\n+\t}\n+\t// The message names the SIDE, the fill and the input that is missing: a\n+\t// refusal that said only \"requires contract.subject\" would leave an operator\n+\t// looking at two seats.\n+\tfor _, want := range []string{\"beta\", cellfill.FillStubBeta, \"contract.subject\", \"--input\"} {\n+\t\tif !strings.Contains(err.Error(), want) {\n+\t\t\tt.Fatalf(\"the refusal does not name %q: %v\", want, err)\n+\t\t}\n+\t}\n+\n+\t// ...and with a subject the SAME declaration constructs both seats. Without\n+\t// this the assertions above would hold for a registry that refused\n+\t// everything. Only the refusing decoration is dropped: the fill still\n+\t// declares the requirement, and the requirement is now satisfied.\n+\tvar admitted seatConstructions\n+\tif _, _, err := r.Build(context.Background(), betaSubjectRequiringRegistry(\u0026admitted),\n+\t\tBinding{Subject: json.RawMessage(`{\"opaque\":\"subject\"}`)}); err != nil {\n+\t\tt.Fatalf(\"a supplied subject must satisfy the requirement: %v\", err)\n+\t}\n+\tif admitted != (seatConstructions{alpha: 1, beta: 1}) {\n+\t\tt.Fatalf(\"constructions = %+v, want exactly one build of each seat\", admitted)\n+\t}\n+}\n+\n // --- one methodology, loaded once, before any seat -------------------------\n \n const methodCell = `{\ndiff --git a/src/go/internal/cellspec/spec.go b/src/go/internal/cellspec/spec.go\nindex f7a8c43b..d3a996e1 100644\n--- a/src/go/internal/cellspec/spec.go\n+++ b/src/go/internal/cellspec/spec.go\n@@ -321,22 +321,42 @@ type Binding struct {\n // and half of it afterwards would have two places for the frozen value to\n // come from.\n func (r Resolved) Build(ctx context.Context, reg cellfill.Registry, bind Binding) (cellkernel.Spec, cellkernel.RunMeta, error) {\n-\t// The alpha fill's DECLARED requirement is checked against the binding\n-\t// before its constructor runs. A missing subject is decided entirely by two\n+\t// BOTH fills' DECLARED requirements are checked against the binding before\n+\t// EITHER constructor runs. A missing subject is decided entirely by two\n \t// values both already in hand — the registration and `bind` — so nothing\n \t// about it needs a seat to exist. Constructing first made the refusal wait\n \t// for a provider adapter and every skill body to be built, and then arrive\n \t// from a station as an episode malfunction, which is not what a run with no\n-\t// subject is. This package still learns nothing about fills: it reads one\n-\t// declared bool and never asks what a subject is for.\n+\t// subject is. The assessing seat is checked here rather than at its own\n+\t// constructor for the identical reason: a beta that cannot act without the\n+\t// subject — `cds.assess` reconstructs the candidate from it — otherwise\n+\t// discovered the fact from inside Review, one whole produced side later.\n+\t// This package still learns nothing about fills: it reads one declared bool\n+\t// per side and never asks what a subject is for.\n \talphaID, alphaFill, err := reg.LookupAlpha(r.Alpha)\n \tif err != nil {\n \t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\"alpha: %w\", err)\n \t}\n-\tif alphaFill.NeedsSubject \u0026\u0026 len(bind.Subject) == 0 {\n-\t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\n-\t\t\t\"cell spec: alpha fill %q requires contract.subject, and no run input supplied one \"+\n-\t\t\t\t\"(pass --input)\", alphaID)\n+\tbetaID, betaFill, err := reg.LookupBeta(r.Beta)\n+\tif err != nil {\n+\t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\"beta: %w\", err)\n+\t}\n+\t// One rule, applied to each side in turn — alpha first, so a cell whose two\n+\t// seats both need a subject refuses with the producing side named, as it did\n+\t// before the assessing side could declare anything.\n+\tfor _, side := range []struct {\n+\t\trole         cellkernel.Role\n+\t\tid           string\n+\t\tneedsSubject bool\n+\t}{\n+\t\t{cellkernel.RoleAlpha, alphaID, alphaFill.NeedsSubject},\n+\t\t{cellkernel.RoleBeta, betaID, betaFill.NeedsSubject},\n+\t} {\n+\t\tif side.needsSubject \u0026\u0026 len(bind.Subject) == 0 {\n+\t\t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\n+\t\t\t\t\"cell spec: %s fill %q requires contract.subject, and no run input supplied one \"+\n+\t\t\t\t\t\"(pass --input)\", side.role, side.id)\n+\t\t}\n \t}\n \n \t// ONE bundle, loaded ONCE, here — before either seat exists. A declared\n"
+      },
+      "beta": {
+        "execution_id": "beta-590258e524a25c735050783b10a55945",
+        "artifacts": []
+      },
+      "review": {
+        "pass": true,
+        "notes": "7 catalogue units: 7 pass, 0 finding, 0 unverified",
+        "assessment": [
+          {
+            "unit": "AC1",
+            "disposition": "pass",
+            "reason": "The reconstructed view of src/go/internal/cellfill/cellfill.go declares `type BetaFill struct` with a `Construct BetaFactory` field and a `NeedsSubject bool` field, and the Registry struct field is `Beta map[string]BetaFill`.",
+            "citations": [
+              "type BetaFill struct {\n\tConstruct BetaFactory\n\t// NeedsSubject: as AlphaFill.NeedsSubject, on the assessing side.\n\tNeedsSubject bool\n}",
+              "type Registry struct {\n\tAlpha  map[string]AlphaFill\n\tBeta   map[string]BetaFill\n\tDoor   Door\n\tSkills cellskill.Resolver\n}"
+            ]
+          },
+          {
+            "unit": "AC2",
+            "disposition": "pass",
+            "reason": "The view shows `func (r Registry) LookupBeta(decl json.RawMessage) (string, BetaFill, error)` resolving the id to a BetaFill and returning it without invoking Construct, and ConstructBeta begins with `id, f, err := r.LookupBeta(decl)` then calls `f.Construct(...)`. Grepping the cellfill.go view for `r.Beta[` yields exactly one occurrence, `f, ok := r.Beta[id]`, inside LookupBeta.",
+            "citations": [
+              "func (r Registry) LookupBeta(decl json.RawMessage) (string, BetaFill, error) {\n\tid, err := FillID(decl)\n...\n\tf, ok := r.Beta[id]\n\tif !ok {\n\t\treturn \"\", BetaFill{}, fmt.Errorf(\"unknown beta fill %q\", id)\n\t}\n\treturn id, f, nil\n}",
+              "func (r Registry) ConstructBeta(ctx context.Context, decl json.RawMessage, method cellmethod.View) (ConstructedBeta, error) {\n\tid, f, err := r.LookupBeta(decl)\n...\n\tc, err := f.Construct(ctx, decl, method)"
+            ]
+          },
+          {
+            "unit": "AC3",
+            "disposition": "pass",
+            "reason": "In the spec.go view, Build performs LookupAlpha and LookupBeta, then iterates a two-entry side table refusing when `side.needsSubject \u0026\u0026 len(bind.Subject) == 0`. That loop sits textually and causally before the `reg.ConstructAlpha` / `reg.ConstructBeta` calls further down the function. The error names the side role, the fill id via %q, and the string `contract.subject` (plus `--input`).",
+            "citations": [
+              "\t\t{cellkernel.RoleAlpha, alphaID, alphaFill.NeedsSubject},\n\t\t{cellkernel.RoleBeta, betaID, betaFill.NeedsSubject},\n\t} {\n\t\tif side.needsSubject \u0026\u0026 len(bind.Subject) == 0 {\n\t\t\treturn cellkernel.Spec{}, cellkernel.RunMeta{}, fmt.Errorf(\n\t\t\t\t\"cell spec: %s fill %q requires contract.subject, and no run input supplied one \"+\n\t\t\t\t\t\"(pass --input)\", side.role, side.id)",
+              "\tbeta, err := reg.ConstructBeta(ctx, r.Beta, adversarial)  // appears after the check in Build"
+            ]
+          },
+          {
+            "unit": "AC4",
+            "disposition": "pass",
+            "reason": "The cellfills.go view registers the assessing seat as a BetaFill literal carrying NeedsSubject: true, replacing the previous bare-factory assignment and its explanatory comment.",
+            "citations": [
+              "\treg.Beta[cdsassess.Fill] = cellfill.BetaFill{\n\t\tConstruct:    cdsassess.Factory(),\n\t\tNeedsSubject: true,\n\t}"
+            ]
+          },
+          {
+            "unit": "AC5",
+            "disposition": "pass",
+            "reason": "The diff adds TestADeclaredBetaSubjectRequirementIsRefusedBeforeConstruction in cellspec/binding_test.go. refuseBetaConstruction wraps the recording beta so any call issues t.Errorf, and the test asserts `built != (seatConstructions{})` fails — zero constructor calls on both sides — after Build returns an error; a second Build with a subject proves the registry is not refusing unconditionally. check:project-verify passing (build, vet, test, format all exit 0, cellspec ok) shows the suite still builds and passes.",
+            "citations": [
+              "\tif built != (seatConstructions{}) {\n\t\tt.Fatalf(\"constructors ran before the refusal: %+v\", built)\n\t}",
+              "\t\tConstruct: func(ctx context.Context, decl json.RawMessage, m cellmethod.View) (cellfill.ConstructedBeta, error) {\n\t\t\tt.Errorf(\"the beta constructor ran for a binding its own fill declared it cannot act on\")",
+              "ok  \tgithub.com/usurobor/cnos/src/go/internal/cellspec\t0.132s"
+            ]
+          },
+          {
+            "unit": "check:matter-nonempty",
+            "disposition": "pass",
+            "reason": "the matter carries a unified diff of 15615 bytes"
+          },
+          {
+            "unit": "check:project-verify",
+            "disposition": "pass",
+            "reason": "cnos.project-verify.v0 passed every step against the reconstructed candidate"
+          }
+        ]
+      }
+    },
+    "scope_lift_digest": "39c83b549ce454f06ab7f78daa723057e2d36e64c46048b34f3c98ea8a0832b9"
+  }
+}

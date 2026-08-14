@@ -12,22 +12,24 @@
     ]
   },
   "protocol_id": "cnos.cdd.cds.receipt.v1",
-  "alpha": {
-    "fill": "cds.patch",
-    "workspace": {
-      "kind": "git-worktree",
-      "repo": ".",
-      "base_sha": "x"
-    },
+  "methodology": {
+    "kind": "skills.methodology.v0",
     "skills": [
       "cnos.eng:eng/go"
-    ],
+    ]
+  },
+  "alpha": {
+    "fill": "cds.patch",
     "Cognition": {
       "provider": "fake",
       "model": ""
     }
   },
   "beta": {
-    "fill": "cdd.mechanical-unmet"
+    "fill": "cds.assess",
+    "cognition": {
+      "provider": "fake",
+      "model": ""
+    }
   }
 }

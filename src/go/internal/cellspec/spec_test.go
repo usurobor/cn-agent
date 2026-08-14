@@ -21,13 +21,15 @@ const fixture = `{
   "protocol_id": "cnos.cdd.cds.receipt.v1",
   "params": {
     "language": {"required": true, "domain": ["cnos.eng:eng/go", "cnos.eng:eng/ocaml"]},
-    "base_sha": {"required": true}
+    "model": {"required": true}
+  },
+  "methodology": {
+    "kind": "skills.methodology.v0",
+    "skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "$language", "cnos.eng:eng/write-functional"]
   },
   "alpha": {
     "fill": "cds.patch",
-    "cognition": {"provider": "fake", "model": ""},
-    "workspace": {"kind": "git-worktree", "repo": ".", "base_sha": "$base_sha"},
-    "skills": ["cnos.eng:eng/code", "cnos.eng:eng/test", "$language", "cnos.eng:eng/write-functional"]
+    "cognition": {"provider": "fake", "model": "$model"}
   },
   "beta": {"fill": "cdd.mechanical-unmet"}
 }`
@@ -41,46 +43,54 @@ func mustParse(t *testing.T) CellSpec {
 	return s
 }
 
-// Holes resolve IN PLACE inside the seat trees: the workspace hole and the
-// skill-list hole are replaced where they sit.
+// Holes resolve IN PLACE wherever they sit: the nested cognition hole inside a
+// seat, and the skill-list element inside the CELL's methodology. One
+// substitution rule serves both — a `$name` that meant one thing in a seat and
+// another in the methodology would be two hole languages.
 func TestResolveFillsHolesInPlace(t *testing.T) {
-	r, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "abc123"})
+	r, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go", "model": "abc123"})
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
 	a := string(r.Alpha)
-	for _, want := range []string{`"base_sha":"abc123"`, `"cnos.eng:eng/go"`, `"fill":"cds.patch"`} {
+	for _, want := range []string{`"model":"abc123"`, `"fill":"cds.patch"`} {
 		if !strings.Contains(a, want) {
 			t.Errorf("resolved alpha missing %s: %s", want, a)
 		}
 	}
-	if strings.Contains(a, "$") {
-		t.Fatalf("unresolved hole survived: %s", a)
+	m := string(r.Methodology)
+	for _, want := range []string{`"cnos.eng:eng/go"`, `"kind":"skills.methodology.v0"`} {
+		if !strings.Contains(m, want) {
+			t.Errorf("resolved methodology missing %s: %s", want, m)
+		}
+	}
+	if strings.Contains(a, "$") || strings.Contains(m, "$") {
+		t.Fatalf("unresolved hole survived: %s / %s", a, m)
 	}
 }
 
 func TestResolveMissingRequired(t *testing.T) {
-	if _, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go"}); err == nil || !strings.Contains(err.Error(), "base_sha") {
+	if _, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go"}); err == nil || !strings.Contains(err.Error(), "model") {
 		t.Fatalf("want missing-required error, got %v", err)
 	}
 }
 
 func TestResolveDomainRejectsTypo(t *testing.T) {
-	if _, err := mustParse(t).Resolve(map[string]string{"language": "cobol", "base_sha": "x"}); err == nil || !strings.Contains(err.Error(), "domain") {
+	if _, err := mustParse(t).Resolve(map[string]string{"language": "cobol", "model": "x"}); err == nil || !strings.Contains(err.Error(), "domain") {
 		t.Fatalf("want domain error, got %v", err)
 	}
 }
 
 func TestResolveUnknownParamAndHole(t *testing.T) {
-	if _, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "x", "bogus": "y"}); err == nil {
+	if _, err := mustParse(t).Resolve(map[string]string{"language": "cnos.eng:eng/go", "model": "x", "bogus": "y"}); err == nil {
 		t.Fatal("want unknown-parameter error")
 	}
-	undeclared := strings.Replace(fixture, `"$base_sha"`, `"$undeclared"`, 1)
+	undeclared := strings.Replace(fixture, `"$model"`, `"$undeclared"`, 1)
 	s, err := Parse([]byte(undeclared))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
-	if _, err := s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "x"}); err == nil {
+	if _, err := s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "model": "x"}); err == nil {
 		t.Fatal("a hole referencing an undeclared parameter must fail resolution")
 	}
 }
@@ -138,7 +148,7 @@ func buildCell(t *testing.T, src string, params map[string]string) (cellkernel.S
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	kspec, meta, err := r.Build(context.Background(), cellfill.CddFills())
+	kspec, meta, err := r.Build(context.Background(), cellfill.CddFills(), Binding{})
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
@@ -217,7 +227,7 @@ func TestUnknownFillFailsAtBuild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	if _, _, err := r.Build(context.Background(), cellfill.CddFills()); err == nil || !strings.Contains(err.Error(), "no.such") {
+	if _, _, err := r.Build(context.Background(), cellfill.CddFills(), Binding{}); err == nil || !strings.Contains(err.Error(), "no.such") {
 		t.Fatalf("want unknown-fill error, got %v", err)
 	}
 }
@@ -234,7 +244,7 @@ func TestFillArgumentsAreStrict(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
-	if _, _, err := r.Build(context.Background(), cellfill.CddFills()); err == nil {
+	if _, _, err := r.Build(context.Background(), cellfill.CddFills(), Binding{}); err == nil {
 		t.Fatal("an unknown key in a seat declaration must fail the fill decode")
 	}
 }
@@ -256,12 +266,12 @@ func TestHolesRejectedForTheirOwnFact(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			src := strings.Replace(fixture, `"$base_sha"`, tc.hole, 1)
+			src := strings.Replace(fixture, `"$model"`, tc.hole, 1)
 			s, err := Parse([]byte(src))
 			if err != nil {
 				t.Fatalf("the spec's DECLARATIONS are legal; only the seat hole is at issue: %v", err)
 			}
-			_, err = s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "base_sha": "x"})
+			_, err = s.Resolve(map[string]string{"language": "cnos.eng:eng/go", "model": "x"})
 			if err == nil {
 				t.Fatalf("hole %s must fail resolution", tc.hole)
 			}

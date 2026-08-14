@@ -10,9 +10,16 @@ import (
 )
 
 // The shipped cell specs and the default installed package set must agree:
-// a fill LOADS skill bodies from the installed root, so any skill a committed
-// cell names has to be installable by a normal `cn repo install`. Without
-// this the corpus proves a hand-assembled fixture the product cannot produce.
+// the runtime LOADS skill bodies from the installed root, so any skill a
+// committed cell names has to be installable by a normal `cn repo install`.
+// Without this the corpus proves a hand-assembled fixture the product cannot
+// produce.
+//
+// The refs are read from the CELL's methodology bundle, which is where a cell
+// declares them. While this read `alpha.skills` it went on passing after that
+// key was deleted — every spec took the "this cell names no skills" branch, and
+// only the `checked == 0` guard below stood between that and a green vacuous
+// assertion.
 func TestDefaultPackagesCoverShippedCells(t *testing.T) {
 	root := repoRoot(t)
 	specs, err := filepath.Glob(filepath.Join(root, "schemas", "*", "fixtures", "*-cell-spec.json"))
@@ -29,19 +36,17 @@ func TestDefaultPackagesCoverShippedCells(t *testing.T) {
 			Params map[string]struct {
 				Domain []string `json:"domain"`
 			} `json:"params"`
-			Alpha map[string]json.RawMessage `json:"alpha"`
+			Methodology *struct {
+				Skills []string `json:"skills"`
+			} `json:"methodology"`
 		}
 		if err := json.Unmarshal(data, &spec); err != nil {
 			t.Fatalf("%s: %v", path, err)
 		}
-		raw, ok := spec.Alpha["skills"]
-		if !ok {
-			continue // this cell's fill takes no skills
+		if spec.Methodology == nil {
+			continue // this cell declares no methodology
 		}
-		var refs []string
-		if err := json.Unmarshal(raw, &refs); err != nil {
-			t.Fatalf("%s: skills: %v", path, err)
-		}
+		refs := spec.Methodology.Skills
 		// A hole stands for every value its declared domain allows, so the
 		// closure must cover all of them. A hole whose parameter is missing or
 		// whose domain is empty expands to NOTHING — the skill would silently

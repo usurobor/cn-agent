@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/usurobor/cnos/src/go/internal/cellkernel"
+	"github.com/usurobor/cnos/src/go/internal/cellmethod"
 )
 
 func bytesReader(b []byte) *bytes.Reader { return bytes.NewReader(b) }
@@ -25,14 +26,18 @@ const (
 // CddFills returns the statically assembled generic fills.
 func CddFills() Registry {
 	return Registry{
-		Alpha: map[string]AlphaFactory{
-			FillStubAlpha: stubAlphaFactory,
-			FillBoolAlpha: boolAlphaFactory,
+		// No generic seat reads the contract's subject: a stub fabricates its
+		// own side's artifacts, a bool answers from its declaration and the
+		// mechanical reviewers judge what they are handed, so all of them run
+		// with an empty binding and none declares a requirement.
+		Alpha: map[string]AlphaFill{
+			FillStubAlpha: {Construct: stubAlphaFactory},
+			FillBoolAlpha: {Construct: boolAlphaFactory},
 		},
-		Beta: map[string]BetaFactory{
-			FillStubBeta:        stubBetaFactory,
-			FillBoolCheckBeta:   boolCheckBetaFactory,
-			FillMechanicalUnmet: mechanicalUnmetFactory,
+		Beta: map[string]BetaFill{
+			FillStubBeta:        {Construct: stubBetaFactory},
+			FillBoolCheckBeta:   {Construct: boolCheckBetaFactory},
+			FillMechanicalUnmet: {Construct: mechanicalUnmetFactory},
 		},
 	}
 }
@@ -52,7 +57,12 @@ func decodeTagOnly(decl json.RawMessage, d *stubDecl) error {
 	return StrictDecode(decl, d)
 }
 
-func stubAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
+// The generic seats take their projection and IGNORE it: a stub fabricates its
+// own side's artifacts, a bool answers from its declaration, and the
+// mechanical-unmet reviewer refuses on principle rather than on obligations —
+// so none of them is held to any methodology. Named `_` rather than accepted
+// and dropped silently, so the disinterest is stated.
+func stubAlphaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedAlpha, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillStubAlpha, err)
@@ -64,7 +74,7 @@ func stubAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha
 	}, nil
 }
 
-func stubBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
+func stubBetaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillStubBeta, err)
@@ -117,7 +127,7 @@ type boolDecl struct {
 	Value string `json:"value"`
 }
 
-func boolAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha, error) {
+func boolAlphaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedAlpha, error) {
 	var d boolDecl
 	if err := OnlyKeys(decl, "cdd.bool", "fill", "value"); err != nil {
 		return ConstructedAlpha{}, fmt.Errorf("fill %q: %w", FillBoolAlpha, err)
@@ -136,7 +146,7 @@ func boolAlphaFactory(_ context.Context, decl json.RawMessage) (ConstructedAlpha
 	}, nil
 }
 
-func boolCheckBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
+func boolCheckBetaFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillBoolCheckBeta, err)
@@ -150,7 +160,7 @@ func boolCheckBetaFactory(_ context.Context, decl json.RawMessage) (ConstructedB
 
 // --- cdd.mechanical-unmet -------------------------------------------------
 
-func mechanicalUnmetFactory(_ context.Context, decl json.RawMessage) (ConstructedBeta, error) {
+func mechanicalUnmetFactory(_ context.Context, decl json.RawMessage, _ cellmethod.View) (ConstructedBeta, error) {
 	var d stubDecl
 	if err := decodeTagOnly(decl, &d); err != nil {
 		return ConstructedBeta{}, fmt.Errorf("fill %q: %w", FillMechanicalUnmet, err)

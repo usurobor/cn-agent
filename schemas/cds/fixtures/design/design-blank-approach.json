@@ -1,0 +1,19 @@
+{
+  "kind": "cnos.cds.design.v0",
+  "approach": "   ",
+  "invariants": [
+    "the kernel learns nothing about issues, designs, or git",
+    "no provider is invoked before admission passes",
+    "the subject is pinned exactly once, before either seat is constructed"
+  ],
+  "impact": [
+    {
+      "surface": "src/go/internal/cdsadmit",
+      "why": "the structural admission arm and the outcome vocabulary live here"
+    },
+    {
+      "surface": "src/go/internal/cellkernel/kernel.go",
+      "why": "three opaque contract slots ride the frozen contract into the one scope-lift digest"
+    }
+  ]
+}

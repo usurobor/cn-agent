@@ -2,6 +2,7 @@ package cellcog
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,5 +103,112 @@ func TestClaudeArgsAreTypedNotSmuggled(t *testing.T) {
 		if !strings.Contains(string(got), want) {
 			t.Fatalf("claude argv missing %q: %q", want, got)
 		}
+	}
+}
+
+// A hang is the one failure with no other trace — no diff to measure, no
+// answer returned — so what the provider emitted before stalling is the only
+// evidence of where it stalled. That path used to discard both streams.
+func TestTimeoutCarriesDiagnostics(t *testing.T) {
+	// Emits on both streams, then stalls forever.
+	bin := fakeBin(t, `cat >/dev/null; echo partial-answer; echo "provider: waiting on upstream" >&2; sleep 30`)
+	err := (ClaudeCLI{Model: "m", Bin: bin, Timeout: 400 * time.Millisecond}).
+		Work(context.Background(), t.TempDir(), "p")
+	if err == nil {
+		t.Fatal("a stalled provider must fail")
+	}
+	got := err.Error()
+	for _, want := range []string{
+		"did not finish within",
+		"stdout bytes before the stall",
+		"provider: waiting on upstream", // the stderr tail survives the timeout
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("timeout error must carry %q, got: %s", want, got)
+		}
+	}
+}
+
+// The diagnostic carried out of a stall is BOUNDED and it is the TAIL. A
+// provider that chattered for a megabyte before stalling must not put a
+// megabyte into an error, and the bytes worth keeping are its last ones —
+// where it stalled, not where it started. Substituting a head-keeping bound
+// here returns the opening chatter and loses the stall site, so this test
+// fails.
+func TestTimeoutDiagnosticIsTheBoundedTailOfStderr(t *testing.T) {
+	// Over diagnosticTailBytes on stderr, with a distinguishable start and end.
+	bin := fakeBin(t, `cat >/dev/null; { echo "OPENING-CHATTER"; head -c 4000 /dev/zero | tr "\0" "x"; echo; echo "STALLED-HERE"; } >&2; sleep 30`)
+	err := (ClaudeCLI{Model: "m", Bin: bin, Timeout: 400 * time.Millisecond}).
+		Work(context.Background(), t.TempDir(), "p")
+	if err == nil {
+		t.Fatal("a stalled provider must fail")
+	}
+	got := err.Error()
+	if !strings.Contains(got, "STALLED-HERE") {
+		t.Errorf("the diagnostic must carry the END of stderr, got: %s", got)
+	}
+	if strings.Contains(got, "OPENING-CHATTER") {
+		t.Errorf("the diagnostic must drop the START of an over-bound stderr, got: %s", got)
+	}
+	if len(got) > 4000 {
+		t.Errorf("the diagnostic must stay bounded, got %d bytes", len(got))
+	}
+}
+
+// Under `--output-format stream-json` stdout is a PROGRESS stream, and a long
+// episode will exceed the output bound as a matter of course. A producing seat
+// is judged by the measured diff, so losing the tail of that stream costs the
+// episode nothing and must not fail the run — which it did while stdout was one
+// dump the adapter treated as the result.
+func TestWorkToleratesATruncatedProgressStream(t *testing.T) {
+	// Deliberately past maxOutputBytes: the bound is what used to end the run.
+	bin := fakeBin(t, `cat >/dev/null; yes `+strings.Repeat("a", 64)+` | head -c 5242880`)
+	if err := (ClaudeCLI{Model: "m", Bin: bin}).Work(context.Background(), t.TempDir(), "p"); err != nil {
+		t.Fatalf("a clipped progress stream must not fail a producing seat: %v", err)
+	}
+}
+
+// The mirror of the test above, and the reason runCLI reports truncation
+// instead of deciding on it. For an ANSWERING seat stdout IS the product, so
+// the clipped stream that costs a producing seat nothing may be exactly the
+// terminal result event — a verdict that "may be incomplete" must not be
+// returned as a verdict.
+func TestAnswerRefusesATruncatedStream(t *testing.T) {
+	bin := fakeBin(t, `cat >/dev/null; yes `+strings.Repeat("a", 64)+` | head -c 5242880`)
+	_, err := (ClaudeCLI{Model: "m", Bin: bin}).Answer(context.Background(), "p", json.RawMessage(`{"type":"object"}`))
+	if err == nil || !strings.Contains(err.Error(), "may be incomplete") {
+		t.Fatalf("a clipped answer stream must fail the seat, got %v", err)
+	}
+}
+
+// An answering seat is pointed at no directory, and the schema is not
+// optional: a provider asked for an unconstrained answer would be parsed
+// hopefully out of prose, which is the thing --json-schema removes.
+func TestAnswerNeedsASchema(t *testing.T) {
+	if _, err := (ClaudeCLI{Model: "m", Bin: "no-such-binary"}).Answer(context.Background(), "p", nil); err == nil {
+		t.Fatal("an answer with no schema must fail closed")
+	}
+}
+
+// The prompt reaches the child on stdin and the structured result comes back
+// out of the terminal event — the whole answering round trip, without renting
+// anything.
+func TestAnswerRoundTrip(t *testing.T) {
+	bin := fakeBin(t, `cat > "$TMPDIR_SEEN"; printf '%s\n' '{"type":"result","is_error":false,"structured_output":{"units":[]}}'`)
+	seen := filepath.Join(t.TempDir(), "seen.txt")
+	t.Setenv("TMPDIR_SEEN", seen)
+	got, err := (ClaudeCLI{Model: "m", Bin: bin}).Answer(context.Background(), "the prompt", json.RawMessage(`{"type":"object"}`))
+	if err != nil {
+		t.Fatalf("answer: %v", err)
+	}
+	if string(got) != `{"units":[]}` {
+		t.Fatalf("structured answer = %s", got)
+	}
+	data, err := os.ReadFile(seen)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "the prompt") {
+		t.Fatalf("the prompt did not reach the child: %q", data)
 	}
 }
